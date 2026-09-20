@@ -16,7 +16,9 @@ export function verifyLoginCode(input: { email: string; code: string; returnUrl:
   return api.post<VerifyLoginCodeResponse>("/account/login-code/verify", input);
 }
 
-/// El ingreso con Google es una navegación del navegador, no una llamada de la Api.
+/// El ingreso con Google es una navegación del navegador, no una llamada de la Api. El `returnUrl` llega ya
+/// validado por `authorizeReturnUrl`: con cualquier otro valor el servidor responde el ProblemDetails como
+/// página cruda, fuera del SPA.
 export function externalLoginUrl(returnUrl: string): string {
   return `/account/external/google?returnUrl=${encodeURIComponent(returnUrl)}`;
 }

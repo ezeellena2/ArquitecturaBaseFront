@@ -28,7 +28,7 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 ## Rutas y sesión
 
 - Las rutas del SPA están **en español** (`/usuarios`, `/login/codigo`, `/sin-permiso`), porque son parte de la interfaz. Viven todas juntas en `src/app/routes.tsx`; `router.tsx` solo las monta.
-- **El ingreso arranca siempre en `/login`, y el `returnUrl` lo manda el servidor.** Si se entra a `/login` sin `returnUrl` en la query, la pantalla no muestra nada: dispara el redirect de OIDC y el backend vuelve a mandar a `/login`, esta vez con el `returnUrl` que hay que devolver al terminar. Ese valor se pasa tal cual a `/login/codigo` y al botón de Google, y al verificar el código se navega al `returnUrl` que responde el backend. No se inventa ni se reescribe del lado del front.
+- **El ingreso arranca siempre en `/login`, y el `returnUrl` lo manda el servidor.** Si se entra a `/login` sin `returnUrl` en la query, la pantalla no muestra nada: dispara el redirect de OIDC y el backend vuelve a mandar a `/login`, esta vez con el `returnUrl` que hay que devolver al terminar. Ese valor se pasa tal cual a `/login/codigo` y al botón de Google, y al verificar el código se navega al `returnUrl` que responde el backend. No se inventa ni se reescribe del lado del front. Un `returnUrl` que no sea un pedido de `/connect/authorize` (una URL tipeada, un favorito viejo) no lo va a aceptar el backend: `authorizeReturnUrl` (`features/auth/lib`) lo trata como si no estuviera, y se vuelve a `/login` sin query para que el ingreso arranque de nuevo.
 
 ## Listados
 

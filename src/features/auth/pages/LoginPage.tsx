@@ -6,6 +6,7 @@ import { useAuth } from "react-oidc-context";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { z } from "zod";
 import { externalLoginUrl, requestLoginCode } from "../api/loginCode";
+import { authorizeReturnUrl } from "../lib/returnUrl";
 import { ApiError } from "@/shared/api/ApiError";
 import { applyApiErrorToForm } from "@/shared/api/formErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
@@ -50,15 +51,15 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-/// `/login` (sección 5.2). Sin `returnUrl` en la query, todavía no vino del servidor: arranca el OIDC y no
-/// muestra nada, porque el servidor vuelve a mandar para acá, esta vez con el `returnUrl` correcto.
+/// `/login` (sección 5.2). Sin un `returnUrl` válido en la query, todavía no vino del servidor: arranca el
+/// OIDC y no muestra nada, porque el servidor vuelve a mandar para acá, esta vez con el `returnUrl` correcto.
 export function LoginPage() {
   const { t } = useTranslation("auth");
   const auth = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnUrl = searchParams.get("returnUrl");
+  const returnUrl = authorizeReturnUrl(searchParams.get("returnUrl"));
   const hasStartedRedirectRef = useRef(false);
 
   const [formError, setFormError] = useState<string | undefined>();

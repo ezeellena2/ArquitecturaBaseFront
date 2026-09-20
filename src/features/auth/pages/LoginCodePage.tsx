@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { requestLoginCode, verifyLoginCode } from "../api/loginCode";
 import { OtpInput } from "../components/OtpInput";
+import { authorizeReturnUrl, loginPathFor } from "../lib/returnUrl";
 import { ApiError } from "@/shared/api/ApiError";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
@@ -36,8 +37,8 @@ export function LoginCodePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnUrl = searchParams.get("returnUrl") ?? "/";
-  const loginPath = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+  const returnUrl = authorizeReturnUrl(searchParams.get("returnUrl"));
+  const loginPath = loginPathFor(returnUrl);
 
   const state = location.state as LoginCodeState | null;
   const email = state?.email;
@@ -55,28 +56,30 @@ export function LoginCodePage() {
     restart: restartResend,
   } = useCountdown(state?.resendAfterSeconds ?? 0);
 
-  // Solo depende de `email`: si no hay a quién mandarle el código, vuelve a /login apenas se monta la
-  // pantalla, sin importar si después cambian `navigate` o `loginPath` (no deberían, en la misma visita).
+  // Solo depende de `email` y del `returnUrl`: si no hay a quién mandarle el código, o el `returnUrl` no
+  // sirve, vuelve a /login apenas se monta la pantalla, sin importar si después cambian `navigate` o
+  // `loginPath` (no deberían, en la misma visita).
   useEffect(() => {
-    if (!email) {
+    if (!email || !returnUrl) {
       navigate(loginPath, { replace: true });
     }
-  }, [email, navigate, loginPath]);
+  }, [email, returnUrl, navigate, loginPath]);
 
-  if (!email) {
+  if (!email || !returnUrl) {
     return null;
   }
 
-  // TypeScript no lleva el chequeo de arriba adentro de las funciones anidadas (`handleVerify`,
-  // `handleResend`): esta constante sí queda tipada `string`, porque nunca se reasigna.
+  // TypeScript no lleva los chequeos de arriba adentro de las funciones anidadas (`handleVerify`,
+  // `handleResend`): estas constantes sí quedan tipadas `string`, porque nunca se reasignan.
   const currentEmail = email;
+  const currentReturnUrl = returnUrl;
 
   async function handleVerify() {
     setIsVerifying(true);
     setError(undefined);
 
     try {
-      const response = await verifyLoginCode({ email: currentEmail, code, returnUrl });
+      const response = await verifyLoginCode({ email: currentEmail, code, returnUrl: currentReturnUrl });
 
       // Navegación real, no del router: el servidor ya tiene la cookie y emite el code de OIDC.
       globalThis.location.assign(response.returnUrl);
