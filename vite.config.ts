@@ -18,6 +18,15 @@ export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "./src") },
   },
+  build: {
+    // Segunda entrada: la página del iframe de renovación silenciosa.
+    rollupOptions: {
+      input: {
+        main: path.resolve(import.meta.dirname, "index.html"),
+        silentRenew: path.resolve(import.meta.dirname, "silent-renew.html"),
+      },
+    },
+  },
   server: {
     port: Number(process.env.PORT ?? 5173),
     strictPort: true,
