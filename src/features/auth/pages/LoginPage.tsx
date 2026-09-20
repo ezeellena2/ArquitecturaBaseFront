@@ -124,9 +124,19 @@ export function LoginPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1.5 text-center">
-        <h1 className="text-xl font-semibold text-[var(--color-content)]">{t("login.title")}</h1>
-        <p className="text-sm text-[var(--color-content-muted)]">{t("login.subtitle")}</p>
+      <h1 className="text-center text-xl font-semibold text-[var(--color-content)]">{t("login.title")}</h1>
+
+      <Button asChild variant="outline" className="w-full">
+        <a href={externalLoginUrl(returnUrl)}>
+          <GoogleIcon className="size-4" />
+          {t("login.google")}
+        </a>
+      </Button>
+
+      <div className="flex items-center gap-3 text-xs text-[var(--color-content-muted)]">
+        <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />
+        <span>{t("login.orSeparator")}</span>
+        <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />
       </div>
 
       <form
@@ -150,19 +160,6 @@ export function LoginPage() {
           {isRetryLimited ? t("login.submitRetry", { seconds: retrySeconds }) : t("login.submit")}
         </Button>
       </form>
-
-      <div className="flex items-center gap-3 text-xs text-[var(--color-content-muted)]">
-        <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />
-        <span>{t("login.orSeparator")}</span>
-        <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />
-      </div>
-
-      <Button asChild variant="outline" className="w-full">
-        <a href={externalLoginUrl(returnUrl)}>
-          <GoogleIcon className="size-4" />
-          {t("login.google")}
-        </a>
-      </Button>
     </div>
   );
 }

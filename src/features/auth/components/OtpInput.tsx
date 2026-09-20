@@ -51,7 +51,7 @@ export function OtpInput({ length, value, onChange, label, disabled }: OtpInputP
   }
 
   return (
-    <div role="group" aria-label={label} className="flex gap-2">
+    <div role="group" aria-label={label} className="flex justify-center gap-2">
       {digits.map((digit, index) => (
         <Input
           // El índice es la identidad real de cada casillero.

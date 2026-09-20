@@ -118,8 +118,8 @@ export function LoginCodePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1.5">
-        <Link to={loginPath} className="self-start text-sm font-medium text-[var(--color-brand-600)] hover:underline">
+      <div className="flex flex-col gap-1.5 text-center">
+        <Link to={loginPath} className="self-center text-sm font-medium text-[var(--color-brand-600)] hover:underline">
           {t("code.backLink")}
         </Link>
         <h1 className="text-xl font-semibold text-[var(--color-content)]">{t("code.title")}</h1>
@@ -137,14 +137,14 @@ export function LoginCodePage() {
         <OtpInput length={CODE_LENGTH} value={code} onChange={setCode} label={t("code.otpLabel")} disabled={isVerifying} />
 
         {error ? (
-          <div role="alert" className="flex flex-col gap-1 text-sm text-[var(--color-danger)]">
+          <div role="alert" className="flex flex-col gap-1 text-center text-sm text-[var(--color-danger)]">
             <p>{error}</p>
             {attemptsLeft !== undefined ? <p>{t("code.attemptsLeft", { count: attemptsLeft })}</p> : null}
           </div>
         ) : null}
 
         {isLocked ? (
-          <Link to={loginPath} className="self-start text-sm font-medium text-[var(--color-brand-600)] hover:underline">
+          <Link to={loginPath} className="self-center text-sm font-medium text-[var(--color-brand-600)] hover:underline">
             {t("code.requestNew")}
           </Link>
         ) : null}
