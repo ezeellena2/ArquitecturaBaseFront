@@ -1,0 +1,21 @@
+{
+  "app": { "name": "Arquitectura Base" },
+  "actions": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "search": "Buscar",
+    "retry": "Reintentar",
+    "close": "Cerrar"
+  },
+  "states": {
+    "loading": "Cargando…",
+    "empty": "No hay nada para mostrar",
+    "error": "Algo salió mal"
+  },
+  "errors": {
+    "network": "No pudimos conectarnos. Revisá tu conexión.",
+    "unexpected": "Ocurrió un error inesperado. Si el problema continúa, informá el código {{traceId}}."
+  },
+  "language": { "label": "Idioma", "es": "Español", "en": "Inglés" }
+}

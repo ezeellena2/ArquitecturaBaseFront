@@ -1,3 +1,7 @@
+import { useTranslation } from "react-i18next";
+
 export default function App() {
-  return <h1>Arquitectura Base</h1>;
+  const { t } = useTranslation();
+
+  return <h1>{t("app.name")}</h1>;
 }

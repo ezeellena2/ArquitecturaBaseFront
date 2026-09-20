@@ -1,0 +1,21 @@
+{
+  "app": { "name": "Arquitectura Base" },
+  "actions": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "search": "Search",
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "states": {
+    "loading": "Loading…",
+    "empty": "Nothing to show",
+    "error": "Something went wrong"
+  },
+  "errors": {
+    "network": "We couldn't connect. Check your connection.",
+    "unexpected": "Something went wrong. If it keeps happening, report the code {{traceId}}."
+  },
+  "language": { "label": "Language", "es": "Spanish", "en": "English" }
+}
