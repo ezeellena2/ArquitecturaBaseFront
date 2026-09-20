@@ -26,5 +26,12 @@
       "description": "Check the address or go back to the dashboard."
     }
   },
-  "language": { "label": "Language", "es": "Spanish", "en": "English" }
+  "language": { "label": "Language", "es": "Spanish", "en": "English" },
+  "pagination": {
+    "label": "Pagination",
+    "range": "{{from}}–{{to}} of {{total}}",
+    "page": "Page {{page}} of {{totalPages}}",
+    "previous": "Previous",
+    "next": "Next"
+  }
 }

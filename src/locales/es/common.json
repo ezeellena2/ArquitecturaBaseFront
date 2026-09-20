@@ -26,5 +26,12 @@
       "description": "Revisá la dirección o volvé al tablero."
     }
   },
-  "language": { "label": "Idioma", "es": "Español", "en": "Inglés" }
+  "language": { "label": "Idioma", "es": "Español", "en": "Inglés" },
+  "pagination": {
+    "label": "Paginado",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "page": "Página {{page}} de {{totalPages}}",
+    "previous": "Anterior",
+    "next": "Siguiente"
+  }
 }
