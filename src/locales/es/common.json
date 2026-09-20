@@ -42,6 +42,7 @@
   "errors": {
     "network": "No pudimos conectarnos. Revisá tu conexión.",
     "unexpected": "Ocurrió un error inesperado. Si el problema continúa, informá el código {{traceId}}.",
+    "traceId": "Código para reportar: {{traceId}}",
     "forbidden": {
       "title": "No tenés permiso",
       "description": "No tenés el permiso necesario para ver esta pantalla."

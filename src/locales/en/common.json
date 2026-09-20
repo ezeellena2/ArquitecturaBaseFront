@@ -42,6 +42,7 @@
   "errors": {
     "network": "We couldn't connect. Check your connection.",
     "unexpected": "Something went wrong. If it keeps happening, report the code {{traceId}}.",
+    "traceId": "Code to report: {{traceId}}",
     "forbidden": {
       "title": "You don't have permission",
       "description": "You don't have the permission needed to view this screen."
