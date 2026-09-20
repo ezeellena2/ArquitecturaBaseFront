@@ -1,9 +1,9 @@
-/// <reference types="vitest/config" />
 import path from "node:path";
 import process from "node:process";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { configDefaults } from "vitest/config";
 
 // Aspire inyecta la URL de la Api con WithReference. Esto corre en Node (el proxy), no en el navegador.
 const apiTarget =
@@ -43,5 +43,8 @@ export default defineConfig({
     globals: true,
     setupFiles: "./src/test/setup.ts",
     css: false,
+    // Claude Code arma sus worktrees dentro de .claude/, así que ahí hay copias enteras del proyecto con sus
+    // propios tests. Sin esta exclusión, "npm run test" corre también los de otra sesión y falla por eso.
+    exclude: [...configDefaults.exclude, ".claude/**"],
   },
 });
