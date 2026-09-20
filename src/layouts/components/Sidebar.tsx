@@ -7,6 +7,7 @@ import { usePermissions } from "@/auth/usePermissions";
 import { cn } from "@/shared/lib/utils";
 import { ChevronLeftIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 
 function initialOf(name: string): string {
@@ -72,7 +73,9 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, onCloseMobile }: SidebarProps) {
   const { t } = useTranslation();
   const { has } = usePermissions();
-  const { data: user } = useCurrentUser();
+  // `isPending` es "todavía no sabemos", no "no hay": mientras dura, el menú reserva el lugar de los ítems
+  // que dependen de un permiso y el pie reserva el del usuario, así nada aparece de golpe empujando al resto.
+  const { data: user, isPending } = useCurrentUser();
 
   useEffect(() => {
     if (!isMobile || !mobileOpen) {
@@ -137,7 +140,11 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
         <nav aria-label={t("layout.sidebar.navigation")} className="flex-1 overflow-y-auto px-2 py-3">
           {navigation.map((group, index) => {
-            const visibleItems = group.items.filter((item) => !item.hidden && (!item.permission || has(item.permission)));
+            const items = group.items.filter((item) => !item.hidden);
+            // Hasta que no llegan los permisos no se sabe qué ítems se ven. Filtrarlos igual haría desaparecer
+            // medio menú para después devolverlo de golpe, que es peor que el spinner que esto reemplaza: se
+            // muestran todos, y los que dependen de un permiso van como un bloque de carga del alto de un ítem.
+            const visibleItems = isPending ? items : items.filter((item) => !item.permission || has(item.permission));
 
             if (visibleItems.length === 0) {
               return null;
@@ -154,7 +161,11 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                 <ul className="flex flex-col gap-1">
                   {visibleItems.map((item) => (
                     <li key={item.to}>
-                      <NavItem item={item} label={t(item.labelKey)} collapsed={iconsOnly} onNavigate={onNavigate} />
+                      {isPending && item.permission ? (
+                        <Skeleton aria-hidden="true" className="h-9 rounded-[var(--radius-control)]" />
+                      ) : (
+                        <NavItem item={item} label={t(item.labelKey)} collapsed={iconsOnly} onNavigate={onNavigate} />
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -163,19 +174,41 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           })}
         </nav>
 
-        {user ? (
+        {/* Mientras el perfil no llegó, el pie ocupa el mismo lugar con bloques de carga en vez de quedar
+            vacío y aparecer después empujando la barra. Si /api/me falló (ni datos ni pendiente) no se
+            muestra nada: de ese error se ocupa la pantalla, no la barra lateral. */}
+        {user || isPending ? (
           <div className="border-t border-[var(--color-border)] p-3">
             <div className={cn("flex items-center gap-2", iconsOnly ? "justify-center" : "")}>
-              <span
-                aria-hidden="true"
-                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-sm font-semibold text-white"
-              >
-                {initialOf(user.displayName ?? user.email)}
-              </span>
+              {user ? (
+                <span
+                  aria-hidden="true"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-sm font-semibold text-white"
+                >
+                  {initialOf(user.displayName ?? user.email)}
+                </span>
+              ) : (
+                <Skeleton aria-hidden="true" className="size-8 shrink-0 rounded-full" />
+              )}
               {iconsOnly ? null : (
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-[var(--color-content)]">{user.displayName ?? user.email}</p>
-                  <p className="truncate text-xs text-[var(--color-content-muted)]">{user.email}</p>
+                <div className="min-w-0 flex-1">
+                  {user ? (
+                    <>
+                      <p className="truncate text-sm font-medium text-[var(--color-content)]">{user.displayName ?? user.email}</p>
+                      <p className="truncate text-xs text-[var(--color-content-muted)]">{user.email}</p>
+                    </>
+                  ) : (
+                    // Los contenedores llevan el alto exacto de las dos líneas de texto que reemplazan
+                    // (text-sm y text-xs): así el pie mide lo mismo antes y después, y no salta.
+                    <>
+                      <div className="flex h-5 items-center">
+                        <Skeleton aria-hidden="true" className="h-3.5 w-24" />
+                      </div>
+                      <div className="flex h-4 items-center">
+                        <Skeleton aria-hidden="true" className="h-3 w-32" />
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

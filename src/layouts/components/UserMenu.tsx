@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { ChevronDownIcon, LogOutIcon } from "@/shared/ui/icons";
+import { Skeleton } from "@/shared/ui/skeleton";
 
 function initialOf(name: string): string {
   return name.trim().charAt(0).toUpperCase() || "?";
@@ -24,10 +25,12 @@ function initialOf(name: string): string {
 export function UserMenu() {
   const { t, i18n } = useTranslation();
   const auth = useAuth();
-  const { data: user } = useCurrentUser();
+  const { data: user, isPending } = useCurrentUser();
 
   if (!user) {
-    return null;
+    // El menú necesita el nombre para poder nombrarse, así que hasta que llega no hay menú: queda el bloque
+    // de carga del avatar, del mismo tamaño, para que después no aparezca de golpe.
+    return isPending ? <Skeleton aria-hidden="true" className="size-8 shrink-0 rounded-full" /> : null;
   }
 
   const displayName = user.displayName ?? user.email;

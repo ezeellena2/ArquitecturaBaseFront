@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import type { User } from "oidc-client-ts";
 import type { AuthContextProps } from "react-oidc-context";
@@ -43,8 +43,8 @@ describe("SessionRecovery", () => {
     signinRedirect.mockReset().mockResolvedValue(undefined);
   });
 
-  it("recovers the session in the background instead of bouncing through the login screen", async () => {
-    // La recuperación se completa a mano para poder mirar la transición mientras corre.
+  it("shows the app shell while it recovers the session, instead of taking over the screen", async () => {
+    // La recuperación se completa a mano para poder mirar la pantalla mientras todavía corre.
     let completeRecovery = () => {};
     signinSilent.mockImplementation(
       () =>
@@ -59,20 +59,26 @@ describe("SessionRecovery", () => {
 
     renderRouteWithProviders("/");
 
-    expect(await screen.findByText("Restaurando tu sesión…")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toBeInTheDocument();
-    // Mientras corre no se monta nada abajo, así que ProtectedRoute nunca ve el estado intermedio.
-    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+    // Con la recuperación todavía en curso ya está toda la estructura: barra lateral con sus secciones,
+    // barra de arriba y el contenido. Esta es la aserción que ancla la corrección: falla si alguien vuelve
+    // a bloquear el árbol con una pantalla completa mientras el iframe hace lo suyo.
+    const sidebar = await screen.findByRole("complementary");
+    expect(within(sidebar).getByRole("link", { name: "Inicio" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Migas de pan" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Inicio" })).toBeInTheDocument();
+    // Lo único que falta son los datos: todavía no llegó el perfil, así que no se muestra ninguno.
+    expect(screen.queryByText("ana@example.com")).not.toBeInTheDocument();
 
     completeRecovery();
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Inicio" })).toBeInTheDocument();
+    // Los bloques de carga se rellenan solos, en la misma pantalla: ni recarga, ni cambio de URL.
+    expect(await within(sidebar).findByText("ana@example.com")).toBeInTheDocument();
     expect(signinSilent).toHaveBeenCalledTimes(1);
     // El rebote que se veía al recargar: `LoginPage` sacaba el navegador entero de la aplicación.
     expect(signinRedirect).not.toHaveBeenCalled();
   });
 
-  it("ends at the login screen, and not stuck in the transition, when the server has no session", async () => {
+  it("ends at the login screen, with nothing stuck, when the server has no session", async () => {
     signinSilent.mockRejectedValue(new Error("login_required"));
 
     renderRouteWithProviders("/");
@@ -81,7 +87,7 @@ describe("SessionRecovery", () => {
     // camino que ya existía para quien no tiene sesión.
     await waitFor(() => expect(signinRedirect).toHaveBeenCalledTimes(1));
     expect(await screen.findByRole("button", { name: "Español" })).toBeInTheDocument();
-    expect(screen.queryByText("Restaurando tu sesión…")).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
     expect(signinSilent).toHaveBeenCalledTimes(1);
   });
 
@@ -91,7 +97,8 @@ describe("SessionRecovery", () => {
 
     renderRouteWithProviders("/");
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Inicio" })).toBeInTheDocument();
+    const sidebar = await screen.findByRole("complementary");
+    expect(await within(sidebar).findByText("ana@example.com")).toBeInTheDocument();
     expect(signinSilent).not.toHaveBeenCalled();
   });
 

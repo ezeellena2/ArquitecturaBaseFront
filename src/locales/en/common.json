@@ -34,9 +34,6 @@
     "retry": "Retry",
     "close": "Close"
   },
-  "session": {
-    "restoring": "Restoring your session…"
-  },
   "states": {
     "loading": "Loading…",
     "empty": "Nothing to show",
