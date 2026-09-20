@@ -11,7 +11,7 @@ SPA de la plantilla base. El backend vive en `../ArquitecturaBase` y el diseño 
 ## Comandos
 
 - Desarrollo: `aspire run` desde `../ArquitecturaBase` levanta Postgres, la Api y este front en `https://localhost:5173`.
-- Solo el front: `npm run dev` (necesita la Api aparte y el certificado de desarrollo).
+- Solo el front: `npm run dev`. Necesita la Api levantada aparte, y queda en `http://localhost:5173`: el certificado se lo pasa Aspire, así que por http el ingreso real no anda (las redirect URIs registradas son `https`). Sirve para trabajar en una pantalla suelta.
 - Tests: `npm run test`; en modo watch, `npm run test:watch`.
 
 ## Estructura
@@ -28,9 +28,7 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 ## Rutas y sesión
 
 - Las rutas del SPA están **en español** (`/usuarios`, `/login/codigo`, `/sin-permiso`), porque son parte de la interfaz. Viven todas juntas en `src/app/routes.tsx`; `router.tsx` solo las monta.
-- Cada página se carga con `lazy()`, salvo las tres pantallas de ingreso: son lo primero que ve una visita sin sesión y un trozo aparte agrega una vuelta de red antes de mostrar el formulario.
 - **El ingreso arranca siempre en `/login`, y el `returnUrl` lo manda el servidor.** Si se entra a `/login` sin `returnUrl` en la query, la pantalla no muestra nada: dispara el redirect de OIDC y el backend vuelve a mandar a `/login`, esta vez con el `returnUrl` que hay que devolver al terminar. Ese valor se pasa tal cual a `/login/codigo` y al botón de Google, y al verificar el código se navega al `returnUrl` que responde el backend. No se inventa ni se reescribe del lado del front.
-- Los tokens los maneja `src/auth` (oidc-client-ts). Los permisos del front son solo para la experiencia de uso: quien decide es el backend.
 
 ## Listados
 
