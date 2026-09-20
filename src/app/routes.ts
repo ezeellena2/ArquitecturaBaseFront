@@ -3,6 +3,7 @@ import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { CallbackPage } from "@/features/auth/pages/CallbackPage";
 import { LoginCodePage } from "@/features/auth/pages/LoginCodePage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { AppLayout } from "@/layouts/AppLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
 
 // Las rutas del SPA están en español, porque son parte de la interfaz.
@@ -18,7 +19,12 @@ export const routes: RouteObject[] = [
   {
     Component: ProtectedRoute,
     children: [
-      { path: "/", lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }) },
+      {
+        Component: AppLayout,
+        children: [
+          { path: "/", lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }) },
+        ],
+      },
     ],
   },
   {

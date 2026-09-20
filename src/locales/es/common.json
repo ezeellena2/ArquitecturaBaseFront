@@ -33,5 +33,31 @@
     "page": "Página {{page}} de {{totalPages}}",
     "previous": "Anterior",
     "next": "Siguiente"
+  },
+  "navigation": {
+    "general": "General",
+    "administration": "Administración",
+    "dashboard": "Inicio",
+    "users": "Usuarios",
+    "roles": "Roles y permisos"
+  },
+  "layout": {
+    "sidebar": {
+      "navigation": "Navegación principal",
+      "collapse": "Contraer menú",
+      "expand": "Expandir menú",
+      "closeDrawer": "Cerrar menú"
+    },
+    "topbar": {
+      "toggle": "Menú de navegación"
+    },
+    "breadcrumbs": {
+      "label": "Migas de pan"
+    },
+    "userMenu": {
+      "trigger": "Menú de {{name}}",
+      "profile": "Mi perfil",
+      "signOut": "Cerrar sesión"
+    }
   }
 }

@@ -33,5 +33,31 @@
     "page": "Page {{page}} of {{totalPages}}",
     "previous": "Previous",
     "next": "Next"
+  },
+  "navigation": {
+    "general": "General",
+    "administration": "Administration",
+    "dashboard": "Home",
+    "users": "Users",
+    "roles": "Roles and permissions"
+  },
+  "layout": {
+    "sidebar": {
+      "navigation": "Main navigation",
+      "collapse": "Collapse menu",
+      "expand": "Expand menu",
+      "closeDrawer": "Close menu"
+    },
+    "topbar": {
+      "toggle": "Navigation menu"
+    },
+    "breadcrumbs": {
+      "label": "Breadcrumb"
+    },
+    "userMenu": {
+      "trigger": "{{name}}'s menu",
+      "profile": "My profile",
+      "signOut": "Log out"
+    }
   }
 }
