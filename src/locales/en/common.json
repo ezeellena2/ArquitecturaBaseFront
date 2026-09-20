@@ -1,5 +1,6 @@
 {
   "app": { "name": "Arquitectura Base" },
+  "home": { "title": "Dashboard" },
   "actions": {
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -15,7 +16,15 @@
   },
   "errors": {
     "network": "We couldn't connect. Check your connection.",
-    "unexpected": "Something went wrong. If it keeps happening, report the code {{traceId}}."
+    "unexpected": "Something went wrong. If it keeps happening, report the code {{traceId}}.",
+    "forbidden": {
+      "title": "You don't have permission",
+      "description": "You don't have the permission needed to view this screen."
+    },
+    "notFound": {
+      "title": "We couldn't find this page",
+      "description": "Check the address or go back to the dashboard."
+    }
   },
   "language": { "label": "Language", "es": "Spanish", "en": "English" }
 }

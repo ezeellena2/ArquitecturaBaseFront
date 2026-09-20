@@ -1,5 +1,6 @@
 {
   "app": { "name": "Arquitectura Base" },
+  "home": { "title": "Tablero" },
   "actions": {
     "cancel": "Cancelar",
     "confirm": "Confirmar",
@@ -15,7 +16,15 @@
   },
   "errors": {
     "network": "No pudimos conectarnos. Revisá tu conexión.",
-    "unexpected": "Ocurrió un error inesperado. Si el problema continúa, informá el código {{traceId}}."
+    "unexpected": "Ocurrió un error inesperado. Si el problema continúa, informá el código {{traceId}}.",
+    "forbidden": {
+      "title": "No tenés permiso",
+      "description": "No tenés el permiso necesario para ver esta pantalla."
+    },
+    "notFound": {
+      "title": "No encontramos esta página",
+      "description": "Revisá la dirección o volvé al tablero."
+    }
   },
   "language": { "label": "Idioma", "es": "Español", "en": "Inglés" }
 }

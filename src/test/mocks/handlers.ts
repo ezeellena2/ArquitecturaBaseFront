@@ -8,7 +8,7 @@ export const currentUser = {
   culture: "es",
   timeZoneId: "America/Argentina/Buenos_Aires",
   roles: ["User"],
-  permissions: [] as string[],
+  permissions: ["users.read"] as string[],
 };
 
 /// Handlers por defecto. Cada test agrega los suyos con server.use(...).

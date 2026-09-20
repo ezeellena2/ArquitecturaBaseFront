@@ -12,7 +12,9 @@ export function renderWithProviders(ui: ReactElement) {
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <AppProviders>
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          <div data-testid="ready">{children}</div>
+        </QueryClientProvider>
       </AppProviders>
     );
   }
