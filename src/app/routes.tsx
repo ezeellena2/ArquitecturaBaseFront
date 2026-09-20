@@ -1,5 +1,6 @@
 import type { RouteObject } from "react-router";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
+import { SessionRecovery } from "@/auth/SessionRecovery";
 import { CallbackPage } from "@/features/auth/pages/CallbackPage";
 import { LoginCodePage } from "@/features/auth/pages/LoginCodePage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
@@ -18,18 +19,29 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 // matchea (acá, tampoco el `AuthLayout` de afuera) hasta que se resuelve el `lazy` de la hoja.
 export const routes: RouteObject[] = [
   {
-    Component: ProtectedRoute,
+    // `SessionRecovery` envuelve a `ProtectedRoute`, y solo esta rama: son las pantallas que necesitan sesión.
+    // Al recargar cualquiera de ellas hay que intentar recuperarla antes de que `ProtectedRoute` concluya que
+    // no hay. Las del ingreso, que cuelgan de `AuthLayout`, no tienen nada que recuperar.
+    Component: SessionRecovery,
     children: [
       {
-        Component: AppLayout,
+        Component: ProtectedRoute,
         children: [
-          { path: "/", lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }) },
           {
-            element: <ProtectedRoute permission="users.read" />,
+            Component: AppLayout,
             children: [
               {
-                path: "/usuarios",
-                lazy: async () => ({ Component: (await import("@/features/users/pages/UsersPage")).UsersPage }),
+                path: "/",
+                lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }),
+              },
+              {
+                element: <ProtectedRoute permission="users.read" />,
+                children: [
+                  {
+                    path: "/usuarios",
+                    lazy: async () => ({ Component: (await import("@/features/users/pages/UsersPage")).UsersPage }),
+                  },
+                ],
               },
             ],
           },

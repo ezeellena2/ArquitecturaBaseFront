@@ -34,6 +34,9 @@
     "retry": "Reintentar",
     "close": "Cerrar"
   },
+  "session": {
+    "restoring": "Restaurando tu sesión…"
+  },
   "states": {
     "loading": "Cargando…",
     "empty": "No hay nada para mostrar",
