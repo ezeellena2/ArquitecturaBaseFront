@@ -33,7 +33,7 @@ describe("Sidebar", () => {
 
     renderRouteWithProviders("/");
 
-    expect(await screen.findByRole("heading", { name: /tablero/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /inicio/i })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /usuarios/i })).not.toBeInTheDocument();
   });
 

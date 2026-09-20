@@ -1,0 +1,26 @@
+{
+  "title": "Users",
+  "description": "The accounts that can sign in to the system.",
+  "searchLabel": "Search by email or name",
+  "columns": {
+    "email": "Email",
+    "displayName": "Name",
+    "isActive": "Status",
+    "createdAtUtc": "Created"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "sort": {
+    "none": "Not sorted",
+    "ascending": "Sorted by {{field}}, ascending",
+    "descending": "Sorted by {{field}}, descending"
+  },
+  "empty": {
+    "title": "We couldn't find any users",
+    "description": "There are no users yet.",
+    "searchDescription": "Try another email or name."
+  },
+  "errorTraceId": "Code to report: {{traceId}}"
+}

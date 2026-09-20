@@ -1,0 +1,26 @@
+{
+  "title": "Usuarios",
+  "description": "Las cuentas que pueden entrar al sistema.",
+  "searchLabel": "Buscar por correo o nombre",
+  "columns": {
+    "email": "Correo",
+    "displayName": "Nombre",
+    "isActive": "Estado",
+    "createdAtUtc": "Creado"
+  },
+  "status": {
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "sort": {
+    "none": "Sin ordenar",
+    "ascending": "Ordenado por {{field}}, ascendente",
+    "descending": "Ordenado por {{field}}, descendente"
+  },
+  "empty": {
+    "title": "No encontramos usuarios",
+    "description": "Todavía no hay usuarios cargados.",
+    "searchDescription": "Probá con otro correo o nombre."
+  },
+  "errorTraceId": "Código para reportar: {{traceId}}"
+}

@@ -20,6 +20,8 @@ interface DataTableProps<TRow> {
   rowKey: (row: TRow) => string;
   isLoading?: boolean;
   error?: string;
+  /// Detalle extra del error (por ejemplo, el traceId para poder reportarlo).
+  errorDescription?: string;
   onRetry?: () => void;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -43,6 +45,7 @@ export function DataTable<TRow>({
   rowKey,
   isLoading,
   error,
+  errorDescription,
   onRetry,
   emptyTitle,
   emptyDescription,
@@ -55,6 +58,7 @@ export function DataTable<TRow>({
     return (
       <EmptyState
         title={error}
+        description={errorDescription}
         action={
           onRetry ? (
             <Button type="button" variant="outline" onClick={onRetry}>
