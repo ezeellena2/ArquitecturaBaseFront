@@ -30,17 +30,6 @@
   --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
-
-body {
-  background-color: var(--color-surface-muted);
-  color: var(--color-content);
-}
-
 /* Variables de shadcn/ui (estilo new-york, color base neutral, con variables CSS).
    La CLI de esta versión ("npx shadcn@latest init") es interactiva y solo ofrece
    8 presets con fuente e ícono propios (o "Custom", que abre un sitio externo);
@@ -54,8 +43,10 @@ body {
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  /* Las cuatro que llevan la marca salen de los tokens de arriba. Si no, el botón
+     primario de shadcn queda gris y la marca no se ve en ninguna pantalla. */
+  --primary: var(--color-brand-600);
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -63,9 +54,9 @@ body {
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--color-brand-500);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -131,7 +122,9 @@ body {
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-border: var(--border);
+  /* --color-border no se redeclara acá: ya lo define el @theme de marca de arriba,
+     y --border lo toma de ahí. Si se repitiera, este bloque lo pisaría y "border-border"
+     dejaría de ser el token de marca (además de quedar una referencia circular). */
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -157,15 +150,17 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
 }
 
-/* Los componentes de shadcn se pintan con estas variables. Las tres que llevan
-   la marca salen de los tokens de arriba; el resto de los neutros queda como vino. */
-:root {
-  --primary: var(--color-brand-600);
-  --primary-foreground: oklch(1 0 0);
-  --ring: var(--color-brand-500);
+/* El fondo de la aplicación es la superficie apagada, no el blanco de --background:
+   las tarjetas y la barra lateral son las que van en blanco, y así se despegan. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-surface-muted);
+  color: var(--color-content);
 }
