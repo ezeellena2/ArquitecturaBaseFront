@@ -36,8 +36,11 @@ export function LoginCodePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnUrl = searchParams.get("returnUrl") ?? "/";
-  const loginPath = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+  const returnUrlParam = searchParams.get("returnUrl");
+  const returnUrl = returnUrlParam ?? "/";
+  // Sin returnUrl en la query, esta pantalla no tiene contexto del flujo: manda a /login sin el parámetro,
+  // el mismo caso que hace arrancar el redirect de OIDC (LoginPage) y que el servidor devuelva el correcto.
+  const loginPath = returnUrlParam ? `/login?returnUrl=${encodeURIComponent(returnUrlParam)}` : "/login";
 
   const state = location.state as LoginCodeState | null;
   const email = state?.email;
