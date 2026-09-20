@@ -21,7 +21,7 @@ describe("LoginCodePage", () => {
     });
 
     await userEvent.type(screen.getAllByRole("textbox")[0], "482913");
-    await userEvent.click(screen.getByRole("button", { name: /ingresar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /verificar/i }));
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith(returnUrl));
   });
@@ -40,7 +40,7 @@ describe("LoginCodePage", () => {
     });
 
     await userEvent.type(screen.getAllByRole("textbox")[0], "000000");
-    await userEvent.click(screen.getByRole("button", { name: /ingresar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /verificar/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("El código no es válido.");
     expect(screen.getByText(/te quedan 4 intentos/i)).toBeInTheDocument();

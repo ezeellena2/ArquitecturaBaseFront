@@ -40,7 +40,8 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 
 ## Rendimiento
 
-- Las páginas de cada módulo se cargan con `lazy()` desde el router: cada ruta es su propio trozo del bundle.
+- Las páginas de cada módulo se cargan con `lazy()` desde el router: cada ruta es su propio trozo del bundle. Excepción: las pantallas de ingreso van estáticas, porque son lo primero que ve alguien sin sesión y un trozo aparte agrega una vuelta de red antes de mostrar nada.
+- Una ruta `lazy` no pinta nada hasta que su import se resuelve, y eso nunca es sincrónico. Un test que consulta apenas termina el `render()` va a ver la pantalla vacía: usá `findBy*` o `waitFor`, no saques el `lazy`.
 - No se definen componentes adentro de otros componentes: se remonta todo el subárbol en cada render.
 - El estado derivado se calcula durante el render, no con un `useEffect` que copia datos a otro estado.
 - En condicionales de JSX se usa ternario, no `&&`, para no renderizar un `0` o un `""` sin querer.
