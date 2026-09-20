@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
+import { beginSignOut, cancelSignOut } from "@/auth/signOutStatus";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { changeLanguage, supportedLanguages, type SupportedLanguage } from "@/shared/i18n";
 import {
@@ -30,6 +31,20 @@ export function UserMenu() {
   }
 
   const displayName = user.displayName ?? user.email;
+
+  async function handleSignOut() {
+    // AppLayout se entera por acá y muestra una transición en vez del layout con los datos ya vacíos
+    // (entre que esto limpia la sesión en memoria y auth.signoutRedirect navega a /connect/logout).
+    beginSignOut();
+
+    try {
+      await auth.signoutRedirect();
+    } catch {
+      // Si no se pudo ni empezar el cierre de sesión, seguimos en esta pantalla: no puede quedar trabada
+      // mostrando la transición.
+      cancelSignOut();
+    }
+  }
 
   return (
     <DropdownMenu>
@@ -72,7 +87,7 @@ export function UserMenu() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem onSelect={() => void auth.signoutRedirect()}>
+        <DropdownMenuItem onSelect={() => void handleSignOut()}>
           <LogOutIcon className="size-4" />
           {t("layout.userMenu.signOut")}
         </DropdownMenuItem>

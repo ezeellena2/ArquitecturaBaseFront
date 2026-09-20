@@ -84,6 +84,7 @@
       "trigger": "{{name}}'s menu",
       "profile": "My profile",
       "signOut": "Log out"
-    }
+    },
+    "signingOut": "Signing you out…"
   }
 }

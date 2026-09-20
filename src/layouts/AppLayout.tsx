@@ -1,7 +1,9 @@
 import { Suspense, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
+import { useIsSigningOut } from "@/auth/signOutStatus";
 import { useLocalStorage } from "@/shared/hooks/useLocalStorage";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -11,9 +13,11 @@ type SidebarState = "expanded" | "collapsed";
 /// Caparazón de toda pantalla con sesión (sección 7.2): sidebar + topbar + el contenido de cada módulo
 /// (`Outlet`). Envuelve el contenido en Suspense por las páginas que se cargan con `lazy`.
 export function AppLayout() {
+  const { t } = useTranslation();
   const [sidebarState, setSidebarState] = useLocalStorage<SidebarState>("sidebar", "expanded");
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const isSigningOut = useIsSigningOut();
 
   const collapsed = sidebarState === "collapsed";
 
@@ -31,6 +35,18 @@ export function AppLayout() {
     } else {
       toggleCollapsed();
     }
+  }
+
+  // Entre que UserMenu limpia la sesión en memoria y signoutRedirect navega a /connect/logout, React
+  // alcanza a renderizar: sin esto, el layout se dibujaría con los datos ya vacíos (sección "parpadeo al
+  // cerrar sesión").
+  if (isSigningOut) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-3">
+        <Spinner />
+        <p className="text-sm font-medium text-[var(--color-content)]">{t("layout.signingOut")}</p>
+      </div>
+    );
   }
 
   return (

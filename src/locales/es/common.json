@@ -84,6 +84,7 @@
       "trigger": "Menú de {{name}}",
       "profile": "Mi perfil",
       "signOut": "Cerrar sesión"
-    }
+    },
+    "signingOut": "Cerrando sesión…"
   }
 }
