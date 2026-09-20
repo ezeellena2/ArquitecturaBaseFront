@@ -90,6 +90,26 @@ describe("ProtectedRoute", () => {
     expect(screen.queryByText(/no tenés permiso/i)).not.toBeInTheDocument();
   });
 
+  it("lets a signed in user with the permission reach the protected route", async () => {
+    authState.isAuthenticated = true;
+    authState.user = { access_token: "t" };
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["users.manage"] })));
+
+    renderAt("/usuarios");
+
+    expect(await screen.findByText("usuarios protegidos")).toBeInTheDocument();
+  });
+
+  it("sends a signed in user without the permission to /sin-permiso", async () => {
+    authState.isAuthenticated = true;
+    authState.user = { access_token: "t" };
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: [] })));
+
+    renderAt("/usuarios");
+
+    expect(await screen.findByText("pantalla de sin permiso")).toBeInTheDocument();
+  });
+
   it("retries the permission check when the retry button is clicked", async () => {
     authState.isAuthenticated = true;
     authState.user = { access_token: "t" };

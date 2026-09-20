@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,8 +33,13 @@ describe("Sidebar", () => {
 
     renderRouteWithProviders("/");
 
-    expect(await screen.findByRole("heading", { name: /inicio/i })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /usuarios/i })).not.toBeInTheDocument();
+    // Acotado a la sidebar (el tablero también muestra el correo en su tarjeta de sesión): espera a que
+    // resuelva /api/me, la misma consulta que decide qué ítems esconder. Hasta que no termine, "Usuarios"
+    // también está ausente por estar todo pendiente, no porque el filtro haya funcionado. El pie de la
+    // sidebar solo pinta el correo una vez que esa consulta trajo al usuario.
+    const sidebar = await screen.findByRole("complementary");
+    await within(sidebar).findByText(currentUser.email);
+    expect(within(sidebar).queryByRole("link", { name: /usuarios/i })).not.toBeInTheDocument();
   });
 
   it("remembers that the menu is collapsed", async () => {
