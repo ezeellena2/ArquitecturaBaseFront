@@ -25,10 +25,25 @@ SPA de la plantilla base. El backend vive en `../ArquitecturaBase` y el diseño 
 
 Una feature nunca importa de otra feature: lo común sube a `shared`.
 
+## Rutas y sesión
+
+- Las rutas del SPA están **en español** (`/usuarios`, `/login/codigo`, `/sin-permiso`), porque son parte de la interfaz. Viven todas juntas en `src/app/routes.tsx`; `router.tsx` solo las monta.
+- Cada página se carga con `lazy()`, salvo las tres pantallas de ingreso: son lo primero que ve una visita sin sesión y un trozo aparte agrega una vuelta de red antes de mostrar el formulario.
+- **El ingreso arranca siempre en `/login`, y el `returnUrl` lo manda el servidor.** Si se entra a `/login` sin `returnUrl` en la query, la pantalla no muestra nada: dispara el redirect de OIDC y el backend vuelve a mandar a `/login`, esta vez con el `returnUrl` que hay que devolver al terminar. Ese valor se pasa tal cual a `/login/codigo` y al botón de Google, y al verificar el código se navega al `returnUrl` que responde el backend. No se inventa ni se reescribe del lado del front.
+- Los tokens los maneja `src/auth` (oidc-client-ts). Los permisos del front son solo para la experiencia de uso: quien decide es el backend.
+
+## Listados
+
+- **La paginación vive en la URL**, no en `useState`: `usePagination` (`shared/hooks`) lee y escribe `page`, `pageSize`, `sort` y `search` en la query string. Así el listado se puede compartir y el botón atrás funciona.
+- Escribe con `replace: true` y omite los valores por defecto, para no llenar el historial ni la URL.
+- Cambiar la búsqueda o el orden vuelve a la primera página.
+- Los nombres de los parámetros son los que espera el backend (`PagedRequest`), y `sort` usa el mismo formato: `campo` ascendente, `-campo` descendente. Un campo que no esté en la whitelist del backend da 400.
+
 ## Reglas
 
 - TypeScript estricto: nada de `any` ni de `@ts-ignore`. Los tipos se importan con `import type` (`verbatimModuleSyntax`).
-- Todo texto que ve el usuario sale de i18next. Español rioplatense con voseo e inglés, siempre los dos.
+- Todo texto que ve el usuario sale de i18next. Español rioplatense con voseo e inglés, siempre los dos. Un texto nuevo va en el namespace de su módulo (`src/locales/<idioma>/<módulo>.json`, que se pide con `useTranslation("<módulo>")`) y en los dos idiomas; `parity.test.ts` se pone en rojo si una clave está en uno y no en el otro. A `common.json` sube solo lo que usa más de un módulo.
+- El idioma elegido se guarda en `localStorage` y viaja al backend en `Accept-Language`, así que los errores del servidor también vienen traducidos. **No se guarda en el perfil del usuario:** vale para este navegador, no para la cuenta. Cuando exista el endpoint de actualización de perfil, ahí se persiste.
 - Los datos del servidor se piden con TanStack Query; no hay `useEffect` con `fetch`.
 - Todas las llamadas al backend pasan por `shared/api/httpClient`, que agrega el token, el idioma y convierte los errores en `ApiError`.
 - Los tokens viven en memoria. Nunca en `localStorage` ni en `sessionStorage`.
