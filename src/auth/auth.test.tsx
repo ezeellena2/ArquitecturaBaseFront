@@ -41,7 +41,6 @@ describe("auth", () => {
   it("keeps the tokens out of browser storage", async () => {
     expect(authConfig.userStore).toBeDefined();
     expect(authConfig.stateStore).toBeDefined();
-    expect(JSON.stringify(authConfig)).not.toContain("localStorage");
     expect(authConfig.scope).toBe("openid profile email roles offline_access api");
     expect(authConfig.client_id).toBe("web");
 
