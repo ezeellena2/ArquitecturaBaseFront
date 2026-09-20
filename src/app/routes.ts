@@ -1,0 +1,40 @@
+import type { RouteObject } from "react-router";
+import { ProtectedRoute } from "@/auth/ProtectedRoute";
+import { CallbackPage } from "@/features/auth/pages/CallbackPage";
+import { LoginCodePage } from "@/features/auth/pages/LoginCodePage";
+import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { AuthLayout } from "@/layouts/AuthLayout";
+
+// Las rutas del SPA están en español, porque son parte de la interfaz.
+// Cada página se carga cuando se visita: `lazy` parte el bundle por ruta.
+// `Component` en lugar de `element` evita crear el elemento (y su JSX) en este módulo, que se importa
+// también desde los tests: así no hace falta un archivo .tsx solo para armar el árbol de rutas.
+//
+// Las tres pantallas de ingreso quedan afuera de esa regla: son la puerta de entrada de cualquier visita sin
+// sesión (sección 5.2), así que separarlas en su propio chunk solo suma una ida y vuelta antes de poder
+// mostrar el formulario. Un router de datos como este, además, no pinta nada de toda la rama que matchea
+// (acá, tampoco el `AuthLayout` de afuera) hasta que se resuelve el `lazy` de la hoja.
+export const routes: RouteObject[] = [
+  {
+    Component: ProtectedRoute,
+    children: [
+      { path: "/", lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }) },
+    ],
+  },
+  {
+    Component: AuthLayout,
+    children: [
+      { path: "/login", Component: LoginPage },
+      { path: "/login/codigo", Component: LoginCodePage },
+      { path: "/auth/callback", Component: CallbackPage },
+    ],
+  },
+  {
+    path: "/sin-permiso",
+    lazy: async () => ({ Component: (await import("@/features/errors/pages/ForbiddenPage")).ForbiddenPage }),
+  },
+  {
+    path: "*",
+    lazy: async () => ({ Component: (await import("@/features/errors/pages/NotFoundPage")).NotFoundPage }),
+  },
+];
