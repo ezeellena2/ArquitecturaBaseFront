@@ -28,6 +28,7 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 ## Rutas y sesión
 
 - Las rutas del SPA están **en español** (`/usuarios`, `/login/codigo`, `/sin-permiso`), porque son parte de la interfaz. Viven todas juntas en `src/app/routes.tsx`; `router.tsx` solo las monta.
+- Las pantallas de administración son `/usuarios` (`users.read`), `/roles` (`roles.read`) y `/configuracion` (`settings.manage`). El permiso se pide en `routes.tsx` con `<ProtectedRoute permission="..." />` y se repite en `navigation.ts` para el menú. Son dos lugares a propósito: uno decide si la ruta se abre, el otro si el ítem se ve.
 - **El ingreso arranca siempre en `/login`, y el `returnUrl` lo manda el servidor.** Si se entra a `/login` sin `returnUrl` en la query, la pantalla no muestra nada: dispara el redirect de OIDC y el backend vuelve a mandar a `/login`, esta vez con el `returnUrl` que hay que devolver al terminar. Ese valor se pasa tal cual a `/login/codigo` y al botón de Google, y al verificar el código se navega al `returnUrl` que responde el backend. No se inventa ni se reescribe del lado del front. Un `returnUrl` que no sea un pedido de `/connect/authorize` (una URL tipeada, un favorito viejo) no lo va a aceptar el backend: `authorizeReturnUrl` (`features/auth/lib`) lo trata como si no estuviera, y se vuelve a `/login` sin query para que el ingreso arranque de nuevo.
 - `/perfil` es la pantalla del perfil propio (nombre, idioma y zona horaria) y se entra desde "Mi perfil", en el menú del usuario. No pide permiso: alcanza con tener sesión, porque cada quien edita el suyo. `PUT /api/me` **reemplaza** los tres campos, así que se mandan siempre los tres, aunque se haya tocado uno solo.
 
@@ -52,6 +53,11 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 - Para combinar clases hay una sola función, `cn`, que viene del paquete `cn` (de shadcn) y se reexporta desde `shared/lib/utils`. No volver a agregar `clsx` ni `tailwind-merge`.
 - Tests con Vitest y Testing Library, consultando por rol y texto accesible, no por clases CSS. Las llamadas HTTP se simulan con MSW.
 - Las fechas del backend vienen en UTC y se muestran con `formatDateTimeInZone` (`shared/lib/dateTime`), en la zona horaria del perfil. Es el único formateador de fecha y hora del front: si aparece un segundo, las mismas fechas se ven distinto en dos pantallas.
+- **Las acciones se resuelven en diálogos, no en pantallas de detalle.** El alta y la edición van en un `Dialog` sobre el listado, y lo que no se puede deshacer, en `ConfirmDialog` diciendo qué se pierde. La pantalla monta el diálogo solo mientras está abierto, así los campos arrancan con los valores correctos sin resetearlos a mano.
+- **Los errores del backend se deciden por el `code`, nunca por el texto.** Cada feature tiene su `errors.ts` con un `switch` sobre `ApiError.code`, que traduce los códigos que merecen un texto propio (los que explican cómo destrabar la situación, como `Users.LastAdmin`) y deja pasar el `detail` del servidor para el resto. `Roles.HasUsers` es la excepción a propósito: el backend dice cuántos usuarios tiene el rol, y ese dato no lo tiene el front.
+- Un error de una mutación que nace en un `ConfirmDialog` va a un aviso (`toast`), no a un cartel adentro del diálogo: el diálogo se cierra al confirmar, así que cuando llega la respuesta ya no está. Los de un formulario sí van adentro, en un `<p role="alert">`, y el diálogo queda abierto.
+- Lo que consume más de una feature sube a `shared/api`: el catálogo de roles (`shared/api/roles.ts`) lo usan la pantalla de roles y el diálogo que asigna roles a un usuario.
+- Las mutaciones son `useMutation` e invalidan lo que corresponde: el listado por su prefijo (`usersQueryKeyRoot`), el detalle por su clave, y `currentUserQueryKey` cuando el cambio puede haber tocado los permisos de quien está usando la pantalla.
 
 ## Rendimiento
 

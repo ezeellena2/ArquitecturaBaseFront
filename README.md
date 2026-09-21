@@ -49,11 +49,25 @@ src/
   auth/       sesión OIDC, rutas protegidas y permisos
   shared/     cliente HTTP, hooks, i18n y la biblioteca de componentes (ui)
   layouts/    AuthLayout, AppLayout, menú lateral, barra superior
-  features/   un módulo por área (auth, home, users, errors), cada uno con sus páginas y llamadas
+  features/   un módulo por área (auth, home, users, roles, settings, profile, errors), cada uno con sus páginas y llamadas
   locales/    traducciones, un archivo por idioma y módulo
 ```
 
 Una feature nunca importa de otra: lo común sube a `shared`.
+
+## Administración (Fase 4)
+
+Tres pantallas, cada una detrás de su permiso:
+
+| Ruta | Permiso | Qué hace |
+|---|---|---|
+| `/usuarios` | `users.read` (`users.manage` para las acciones) | listado, alta, edición de nombre y roles, activar, desactivar y eliminar |
+| `/roles` | `roles.read` (`roles.manage` para las acciones) | listado de roles con sus permisos, alta, edición y borrado |
+| `/configuracion` | `settings.manage` | el modo de registro del sistema: abierto o solo por invitación |
+
+Sin el permiso, el menú no muestra la entrada y entrar a mano a la ruta lleva a `/sin-permiso`. Quien decide, igual, es el backend: el front solo acomoda la interfaz.
+
+Aparte de esas tres, cualquiera con sesión tiene **`/perfil`**: nombre, idioma y zona horaria de su propia cuenta, más su último ingreso, desde "Mi perfil" en el menú del usuario. El idioma que se guarda ahí vale para la cuenta, no para el navegador: entrando desde otra máquina, el sistema sigue hablando en ese idioma.
 
 ## Producción
 
