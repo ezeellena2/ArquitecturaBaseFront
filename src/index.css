@@ -15,6 +15,12 @@
 
   --color-surface: oklch(1 0 0);
   --color-surface-muted: oklch(0.97 0.005 250);
+  /* La banda que abre una superficie: encabezado de tabla, de diálogo, de panel y rótulo de grupo.
+     Es más oscura que surface-muted a propósito: con surface-muted el encabezado de una tabla no se
+     despega de sus filas, y la tabla se lee como un bloque sin cabeza. Su borde también es más oscuro
+     que --color-border, porque es el que separa la cabeza del cuerpo y no una división cualquiera. */
+  --color-surface-header: oklch(0.945 0.008 250);
+  --color-surface-header-border: oklch(0.86 0.012 250);
   --color-border: oklch(0.9 0.01 250);
   --color-content: oklch(0.25 0.02 250);
   --color-content-muted: oklch(0.5 0.02 250);

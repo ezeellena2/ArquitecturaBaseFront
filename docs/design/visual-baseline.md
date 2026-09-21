@@ -154,7 +154,7 @@ El lienzo tiene hoy nueve tableros. Los de exploración descartada —las varian
 
 Prioridad sugerida, sin ampliar contratos del backend:
 
-1. Consolidar tokens y primitivas: `--color-surface-header`, las tres alturas (hoy el buscador mide 38 y el botón 36) y un `RowActions` compartido.
+1. Consolidar tokens y primitivas: `--color-surface-header` y un `RowActions` compartido. **Las tres alturas ya se respetan** — se auditó el 2026-09-21: `Input` y `Button` por defecto son `h-9` (36 px), `Button size="sm"` es `h-8` (32) y `TableHead` es `h-10` (40). El único tamaño fuera de la escala es `Button size="lg"` (40), que no se usa en ninguna pantalla y viene del archivo generado por shadcn.
 2. Promover el encabezado decidido a `PageHeader`, y hacer que `main` sea el contenedor que scrollea para que la banda pueda adherirse.
 3. Submenú desplegable en el menú lateral, con permiso por hijo.
 4. Filtros de listado: primero el contrato del backend, después `useFilters` y la barra compartida.

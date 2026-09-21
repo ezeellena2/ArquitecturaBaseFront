@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/shared/lib/utils";
 import { Button } from "./button";
 import { EmptyState } from "./EmptyState";
 import { Spinner } from "./Spinner";
@@ -29,6 +30,11 @@ interface DataTableProps<TRow> {
   sort?: string;
   onSortChange?: (field: string) => void;
 }
+
+/// El nivel "rótulo" de la escala tipográfica: 11 px, semibold, mayúsculas con letter-spacing. Es el mismo
+/// tratamiento que el rótulo de grupo del menú lateral, y es lo que hace que la tabla se vea parte del
+/// sistema y no un widget pegado.
+const headerText = "text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--color-content)]";
 
 function ariaSort(columnId: string, sort: string | undefined): "ascending" | "descending" | "none" {
   if (sort === columnId) {
@@ -85,11 +91,20 @@ export function DataTable<TRow>({
   return (
     <Table>
       <TableHeader>
-        <TableRow>
+        {/* La banda de superficie. El hover se neutraliza porque `TableRow` lo trae para las filas de datos,
+            y un encabezado que se ilumina al pasar por encima parece que se puede apretar entero. */}
+        <TableRow className="bg-[var(--color-surface-header)] border-b-[var(--color-surface-header-border)] hover:bg-[var(--color-surface-header)]">
           {columns.map((column) => (
-            <TableHead key={column.id} scope="col" aria-sort={ariaSort(column.id, sort)} className={column.align === "right" ? "text-right" : undefined}>
+            <TableHead
+              key={column.id}
+              scope="col"
+              aria-sort={ariaSort(column.id, sort)}
+              className={cn(headerText, column.align === "right" ? "text-right" : undefined)}
+            >
               {column.sortable && onSortChange ? (
-                <Button type="button" variant="ghost" size="sm" onClick={() => onSortChange(column.id)}>
+                // El botón hereda la tipografía del encabezado: si se queda con la suya, la columna
+                // ordenable se ve de otro tamaño que las demás.
+                <Button type="button" variant="ghost" size="sm" onClick={() => onSortChange(column.id)} className={headerText}>
                   {column.header}
                 </Button>
               ) : (
@@ -101,7 +116,8 @@ export function DataTable<TRow>({
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={rowKey(row)}>
+          // 44 px: la densidad del proyecto, decidida una vez (fundamento visual, "Tres alturas").
+          <TableRow key={rowKey(row)} className="h-11">
             {columns.map((column) => (
               <TableCell key={column.id} className={column.align === "right" ? "text-right" : undefined}>
                 {column.cell(row)}
