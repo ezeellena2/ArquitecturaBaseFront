@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import { configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import i18n from "@/shared/i18n";
 import { server } from "./mocks/server";
@@ -32,3 +33,20 @@ if (!globalThis.matchMedia) {
       dispatchEvent: () => false,
     }) as MediaQueryList;
 }
+
+// jsdom tampoco implementa ResizeObserver. El Checkbox de Radix mide su control con `useSize` cuando está
+// adentro de un <form>, para montar el input espejo que hace que el valor viaje con el formulario: sin esto,
+// cualquier casilla dentro de un formulario revienta el render (una casilla suelta, no).
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
+
+// Todas las rutas del router son `lazy`: la pantalla no pinta nada hasta que su import dinámico resuelve.
+// Con la suite entera corriendo en paralelo, ese import puede tardar más que el segundo que espera `findBy*`
+// por defecto, y el primer test de cada archivo de pantalla (el único que lo paga; después el módulo ya está
+// cargado) falla sin que haya nada roto. Se espera más, no se saca el `lazy`.
+configure({ asyncUtilTimeout: 5000 });

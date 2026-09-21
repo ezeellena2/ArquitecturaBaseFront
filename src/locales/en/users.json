@@ -6,7 +6,8 @@
     "email": "Email",
     "displayName": "Name",
     "isActive": "Status",
-    "createdAtUtc": "Created"
+    "createdAtUtc": "Created",
+    "actions": "Actions"
   },
   "status": {
     "active": "Active",
@@ -21,6 +22,58 @@
     "title": "We couldn't find any users",
     "description": "There are no users yet.",
     "searchDescription": "Try another email or name."
+  },
+  "actions": {
+    "new": "New user",
+    "editRoles": "Roles",
+    "editRolesFor": "Edit the roles of {{email}}",
+    "activate": "Activate",
+    "activateFor": "Activate {{email}}",
+    "deactivate": "Deactivate",
+    "deactivateFor": "Deactivate {{email}}",
+    "delete": "Delete",
+    "deleteFor": "Delete {{email}}"
+  },
+  "create": {
+    "title": "New user",
+    "description": "Add the email address. They sign in with their code, like everyone else.",
+    "submit": "Add user",
+    "success": "Done: they can sign in now."
+  },
+  "edit": {
+    "title": "Edit user",
+    "description": "Change the name and the roles of {{email}}.",
+    "submit": "Save",
+    "success": "Changes saved."
+  },
+  "form": {
+    "email": "Email address",
+    "emailInvalid": "Enter a valid email address.",
+    "displayName": "Name",
+    "displayNameHint": "Optional. The name shown across the system.",
+    "roles": "Roles",
+    "rolesEmpty": "There are no roles to assign yet.",
+    "rolesNeedPermission": "You need read permission on roles to assign them."
+  },
+  "deactivate": {
+    "title": "Deactivate {{email}}",
+    "description": "Their access is cut right away: any open session stops working and they can't sign in again until you activate them. Their data stays as it is.",
+    "confirm": "Deactivate"
+  },
+  "delete": {
+    "title": "Delete {{email}}",
+    "description": "The account disappears from the listings and can't sign in. Their sign-in history is kept, and if you add the same email again later, the account is restored.",
+    "confirm": "Delete"
+  },
+  "feedback": {
+    "activated": "They can sign in again.",
+    "deactivated": "Their access was cut.",
+    "deleted": "The account was deleted."
+  },
+  "errors": {
+    "alreadyExists": "There is already an account with that email.",
+    "lastAdmin": "You can't leave the system without administrators. Give the Admin role to another active account and try again.",
+    "cannotModifySelf": "You can't do this to your own account. Ask another administrator."
   },
   "errorTraceId": "Code to report: {{traceId}}"
 }

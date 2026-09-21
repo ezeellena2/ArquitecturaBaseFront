@@ -1,15 +1,37 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchUsers, usersQueryKey } from "../api/users";
+import { toast } from "sonner";
+import {
+  deleteUser,
+  fetchUsers,
+  setUserActive,
+  usersQueryKey,
+  usersQueryKeyRoot,
+  type UserListItem,
+} from "../api/users";
 import { createUserColumns } from "../columns";
+import { UserFormDialog } from "../components/UserFormDialog";
+import { UserRolesDialog } from "../components/UserRolesDialog";
+import { userActionErrorMessage } from "../errors";
+import { Can } from "@/auth/Can";
 import { useCurrentUser } from "@/auth/useCurrentUser";
+import { usePermissions } from "@/auth/usePermissions";
 import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
 import { usePagination } from "@/shared/hooks/usePagination";
+import { Button } from "@/shared/ui/button";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable } from "@/shared/ui/DataTable";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { Pagination } from "@/shared/ui/Pagination";
 import { SearchInput } from "@/shared/ui/SearchInput";
+
+/// Las dos acciones que no se hacen de una: antes pasan por el diálogo de confirmación.
+interface PendingConfirmation {
+  kind: "deactivate" | "delete";
+  user: UserListItem;
+}
 
 /// El texto de "orden actual" junto al buscador (maqueta aprobada): el nombre de columna sale de las mismas
 /// columnas que arma la tabla, para no duplicar traducciones por campo.
@@ -29,15 +51,21 @@ function sortDescription(
   return t(descending ? "sort.descending" : "sort.ascending", { field: fieldLabel });
 }
 
-/// `/usuarios` (sección 7.4): listado real contra `/api/users`, con búsqueda, orden y paginado a cargo del
-/// backend. `usePagination` guarda página, orden y búsqueda en la URL.
+/// `/usuarios` (sección 7.4 del spec maestro y sección 11 del de la Fase 4): listado real contra `/api/users`,
+/// con búsqueda, orden y paginado a cargo del backend, más el alta y las acciones por fila, todo en diálogos.
 export function UsersPage() {
   const { t, i18n } = useTranslation("users");
   const { data: currentUser } = useCurrentUser();
+  const { has } = usePermissions();
+  const queryClient = useQueryClient();
   const { page, pageSize, sort, search, setPage, setSearch, toggleSort } = usePagination();
 
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserListItem | undefined>();
+  const [confirmation, setConfirmation] = useState<PendingConfirmation | undefined>();
+
+  const canManage = has("users.manage");
   const query = { page, pageSize, sort, search };
-  const columns = createUserColumns(t, i18n.language, currentUser?.timeZoneId);
 
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: usersQueryKey(query),
@@ -45,7 +73,44 @@ export function UsersPage() {
     placeholderData: keepPreviousData,
   });
 
+  // Las dos acciones de fila que no abren un formulario. El resultado va a un aviso y no a un cartel dentro
+  // del diálogo, porque `ConfirmDialog` se cierra al confirmar: cuando llega la respuesta ya no está.
+  const activation = useMutation({
+    mutationFn: ({ user, isActive }: { user: UserListItem; isActive: boolean }) => setUserActive(user.id, isActive),
+    onSuccess: async (_result, variables) => {
+      toast.success(variables.isActive ? t("feedback.activated") : t("feedback.deactivated"));
+      await queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot });
+    },
+    onError: (mutationError) => toast.error(userActionErrorMessage(mutationError, t)),
+  });
+
+  const removal = useMutation({
+    mutationFn: (user: UserListItem) => deleteUser(user.id),
+    onSuccess: async () => {
+      toast.success(t("feedback.deleted"));
+      await queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot });
+    },
+    onError: (mutationError) => toast.error(userActionErrorMessage(mutationError, t)),
+  });
+
   const apiError = error instanceof ApiError ? error : undefined;
+
+  const columns = createUserColumns(
+    t,
+    i18n.language,
+    currentUser?.timeZoneId,
+    canManage
+      ? {
+          onEditRoles: (user) => setEditingUser(user),
+          // Activar no se confirma: no se pierde nada. Desactivar sí, porque le corta el acceso en el acto.
+          onToggleActive: (user) =>
+            user.isActive
+              ? setConfirmation({ kind: "deactivate", user })
+              : activation.mutate({ user, isActive: true }),
+          onDelete: (user) => setConfirmation({ kind: "delete", user }),
+        }
+      : undefined,
+  );
 
   // La pantalla pide el permiso para no entrar (experiencia de uso), pero quien decide es el backend: un 403
   // acá lleva a la misma pantalla de "sin permiso" que ProtectedRoute.
@@ -53,9 +118,21 @@ export function UsersPage() {
     return <ForbiddenPage />;
   }
 
+  const isDeletion = confirmation?.kind === "delete";
+
   return (
     <div>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          <Can permission="users.manage">
+            <Button type="button" onClick={() => setIsCreating(true)}>
+              {t("actions.new")}
+            </Button>
+          </Can>
+        }
+      />
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="w-full max-w-sm">
@@ -91,6 +168,34 @@ export function UsersPage() {
           />
         ) : null}
       </div>
+
+      {isCreating ? <UserFormDialog onClose={() => setIsCreating(false)} /> : null}
+
+      {editingUser ? <UserRolesDialog user={editingUser} onClose={() => setEditingUser(undefined)} /> : null}
+
+      {confirmation ? (
+        <ConfirmDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) {
+              setConfirmation(undefined);
+            }
+          }}
+          title={t(isDeletion ? "delete.title" : "deactivate.title", { email: confirmation.user.email })}
+          description={t(isDeletion ? "delete.description" : "deactivate.description")}
+          confirmLabel={t(isDeletion ? "delete.confirm" : "deactivate.confirm")}
+          destructive
+          onConfirm={() => {
+            if (isDeletion) {
+              removal.mutate(confirmation.user);
+
+              return;
+            }
+
+            activation.mutate({ user: confirmation.user, isActive: false });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

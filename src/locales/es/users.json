@@ -6,7 +6,8 @@
     "email": "Correo",
     "displayName": "Nombre",
     "isActive": "Estado",
-    "createdAtUtc": "Creado"
+    "createdAtUtc": "Creado",
+    "actions": "Acciones"
   },
   "status": {
     "active": "Activo",
@@ -21,6 +22,58 @@
     "title": "No encontramos usuarios",
     "description": "Todavía no hay usuarios cargados.",
     "searchDescription": "Probá con otro correo o nombre."
+  },
+  "actions": {
+    "new": "Nuevo usuario",
+    "editRoles": "Roles",
+    "editRolesFor": "Editar los roles de {{email}}",
+    "activate": "Activar",
+    "activateFor": "Activar a {{email}}",
+    "deactivate": "Desactivar",
+    "deactivateFor": "Desactivar a {{email}}",
+    "delete": "Eliminar",
+    "deleteFor": "Eliminar a {{email}}"
+  },
+  "create": {
+    "title": "Nuevo usuario",
+    "description": "Dale de alta el correo. Después entra con su código, como todos.",
+    "submit": "Dar de alta",
+    "success": "Listo: ya puede ingresar."
+  },
+  "edit": {
+    "title": "Editar usuario",
+    "description": "Cambiá el nombre y los roles de {{email}}.",
+    "submit": "Guardar",
+    "success": "Guardamos los cambios."
+  },
+  "form": {
+    "email": "Correo electrónico",
+    "emailInvalid": "Ingresá un correo electrónico válido.",
+    "displayName": "Nombre",
+    "displayNameHint": "Opcional. Es el nombre que se muestra en el sistema.",
+    "roles": "Roles",
+    "rolesEmpty": "Todavía no hay roles para asignar.",
+    "rolesNeedPermission": "Para asignar roles necesitás permiso de lectura sobre ellos."
+  },
+  "deactivate": {
+    "title": "Desactivar a {{email}}",
+    "description": "Le cortamos el acceso ahora mismo: la sesión que tenga abierta deja de servir y no va a poder volver a entrar hasta que la actives de nuevo. Sus datos quedan como están.",
+    "confirm": "Desactivar"
+  },
+  "delete": {
+    "title": "Eliminar a {{email}}",
+    "description": "La cuenta desaparece de los listados y no va a poder ingresar. Su historial de ingresos se conserva, y si más adelante la das de alta con el mismo correo, se restaura.",
+    "confirm": "Eliminar"
+  },
+  "feedback": {
+    "activated": "Ya puede volver a ingresar.",
+    "deactivated": "Le cortamos el acceso.",
+    "deleted": "Eliminamos la cuenta."
+  },
+  "errors": {
+    "alreadyExists": "Ya hay una cuenta con ese correo.",
+    "lastAdmin": "No podés dejar al sistema sin administradores. Asigná el rol Admin a otra cuenta activa y volvé a intentar.",
+    "cannotModifySelf": "No podés hacerte esto a vos mismo. Pedíselo a otro administrador."
   },
   "errorTraceId": "Código para reportar: {{traceId}}"
 }
