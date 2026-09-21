@@ -13,7 +13,7 @@ SPA de la plantilla base. El backend vive en `../ArquitecturaBase` y el diseño 
 - **Una pantalla nueva se dibuja antes de programarse.** El tablero va en el Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) —uno por pantalla, siempre en ese Artifact— y muestra la funcionalidad completa: layout, carga, vacío, sin coincidencias, error, sin permiso, el recorrido de diálogos y qué vive en la URL. Se programa después de que el usuario elija. El detalle está en `docs/design/visual-baseline.md`, en “Pantalla nueva: primero el tablero”.
 - Antes de crear o rediseñar una pantalla, leer `docs/design/visual-baseline.md`. El enlace al Artifact de Claude está registrado allí como procedencia; las reglas locales versionadas son la fuente operativa si el enlace cambia o requiere sesión.
 - Una decisión visual no queda cerrada hasta expresarse en tokens de `src/index.css`, componentes de `src/shared/ui` y, cuando sea verificable, tests de accesibilidad o comportamiento.
-- Las propuestas todavía no elegidas viven fuera del código productivo. El primer laboratorio está en `design-lab/page-header/index.html` y se sirve solo durante desarrollo.
+- Las propuestas todavía no elegidas viven fuera del código productivo, en un laboratorio bajo `design-lab/` que no entra al build. **Se borra cuando la decisión se toma**: un laboratorio que sobrevive a su pregunta no se distingue de una propuesta vigente. Las decisiones ya cerradas están en la tabla "Comparaciones cerradas" del fundamento visual.
 - La skill `variant` es explícita: usar `/variant` en Claude Code o `$variant` en Codex. Cada ronda compara una sola pieza, tres variantes y un solo eje; el usuario elige la ganadora.
 
 ## Comandos
