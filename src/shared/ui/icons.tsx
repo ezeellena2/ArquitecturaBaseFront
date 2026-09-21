@@ -98,3 +98,19 @@ export function LogOutIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function SettingsIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="3.25" />
+      <path d="M12 2.75v2" />
+      <path d="M12 19.25v2" />
+      <path d="M21.25 12h-2" />
+      <path d="M4.75 12h-2" />
+      <path d="m18.55 5.45-1.4 1.4" />
+      <path d="m6.85 17.15-1.4 1.4" />
+      <path d="m18.55 18.55-1.4-1.4" />
+      <path d="m6.85 6.85-1.4-1.4" />
+    </Icon>
+  );
+}

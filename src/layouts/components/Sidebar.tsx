@@ -165,7 +165,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           ) : null}
 
           {navigation.map((group, index) => {
-            const items = group.items.filter((item) => !item.hidden);
+            const items = group.items;
             // Hasta que no llegan los permisos no se sabe qué ítems se ven. Filtrarlos igual haría desaparecer
             // medio menú para después devolverlo de golpe, que es peor que el spinner que esto reemplaza: se
             // muestran todos, y los que dependen de un permiso van como un bloque de carga del alto de un ítem.

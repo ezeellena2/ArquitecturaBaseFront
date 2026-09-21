@@ -60,4 +60,16 @@ describe("Sidebar", () => {
 
     expect(globalThis.localStorage.getItem("arquitecturabase.sidebar")).toBe('"collapsed"');
   });
+
+  it("shows Roles and Configuración only to whoever has their permissions", async () => {
+    server.use(
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["roles.read", "settings.manage"] })),
+    );
+
+    renderRouteWithProviders("/");
+
+    expect(await screen.findByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /configuración/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /usuarios/i })).not.toBeInTheDocument();
+  });
 });

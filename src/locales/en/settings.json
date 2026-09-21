@@ -1,0 +1,21 @@
+{
+  "title": "Settings",
+  "description": "The system settings.",
+  "registration": {
+    "title": "Who can sign in",
+    "switchLabel": "Open registration",
+    "open": "Open: anyone signing in with a new email gets an account of their own, with the User role.",
+    "inviteOnly": "Invite only: only people an administrator added can sign in. Nobody else gets a code."
+  },
+  "confirm": {
+    "openTitle": "Open registration",
+    "openDescription": "From the moment you confirm, anyone with a valid email will be able to create an account and sign in without you adding them. You can switch back whenever you want.",
+    "inviteOnlyTitle": "Close registration",
+    "inviteOnlyDescription": "From the moment you confirm, only people you add can sign in. Everyone who already has an account keeps signing in: to lock someone out, deactivate their account.",
+    "confirm": "Change"
+  },
+  "feedback": {
+    "saved": "The change was saved."
+  },
+  "errorTraceId": "Code to report: {{traceId}}"
+}

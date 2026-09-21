@@ -52,6 +52,17 @@ export const routes: RouteObject[] = [
                   },
                 ],
               },
+              {
+                element: <ProtectedRoute permission="settings.manage" />,
+                children: [
+                  {
+                    path: "/configuracion",
+                    lazy: async () => ({
+                      Component: (await import("@/features/settings/pages/SettingsPage")).SettingsPage,
+                    }),
+                  },
+                ],
+              },
             ],
           },
         ],

@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { HomeIcon, ShieldIcon, UsersIcon } from "@/shared/ui/icons";
+import { HomeIcon, SettingsIcon, ShieldIcon, UsersIcon } from "@/shared/ui/icons";
 
 export interface NavigationItem {
   /// Clave del texto en el namespace common (navigation.*).
@@ -8,8 +8,6 @@ export interface NavigationItem {
   icon: ComponentType<{ className?: string }>;
   /// Si está, el ítem se muestra solo a quien tenga el permiso.
   permission?: string;
-  /// Ítems que existen pero todavía no tienen pantalla (Fase 4).
-  hidden?: boolean;
 }
 
 export interface NavigationGroup {
@@ -23,7 +21,8 @@ export const navigation: NavigationGroup[] = [
     labelKey: "navigation.administration",
     items: [
       { labelKey: "navigation.users", to: "/usuarios", icon: UsersIcon, permission: "users.read" },
-      { labelKey: "navigation.roles", to: "/roles", icon: ShieldIcon, permission: "roles.read", hidden: true },
+      { labelKey: "navigation.roles", to: "/roles", icon: ShieldIcon, permission: "roles.read" },
+      { labelKey: "navigation.settings", to: "/configuracion", icon: SettingsIcon, permission: "settings.manage" },
     ],
   },
 ];

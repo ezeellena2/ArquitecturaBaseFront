@@ -1,0 +1,21 @@
+{
+  "title": "Configuración",
+  "description": "Los ajustes del sistema.",
+  "registration": {
+    "title": "Quién puede entrar",
+    "switchLabel": "Registro abierto",
+    "open": "Abierto: cualquiera que ingrese con un correo nuevo se crea la cuenta sola, con el rol User.",
+    "inviteOnly": "Solo por invitación: únicamente entra quien un administrador dio de alta. A los demás no les llega ningún código."
+  },
+  "confirm": {
+    "openTitle": "Abrir el registro",
+    "openDescription": "Desde que confirmes, cualquier persona con un correo válido va a poder crearse una cuenta y entrar sin que vos la des de alta. Podés volver atrás cuando quieras.",
+    "inviteOnlyTitle": "Cerrar el registro",
+    "inviteOnlyDescription": "Desde que confirmes, solo entra quien vos des de alta. Los que ya tienen cuenta siguen entrando igual: para sacar a alguien, desactivá su cuenta.",
+    "confirm": "Cambiar"
+  },
+  "feedback": {
+    "saved": "Guardamos el cambio."
+  },
+  "errorTraceId": "Código para reportar: {{traceId}}"
+}

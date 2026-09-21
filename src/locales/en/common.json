@@ -40,7 +40,8 @@
     "administration": "Administration",
     "dashboard": "Home",
     "users": "Users",
-    "roles": "Roles and permissions"
+    "roles": "Roles and permissions",
+    "settings": "Settings"
   },
   "layout": {
     "sidebar": {
