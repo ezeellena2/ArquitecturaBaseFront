@@ -1,31 +1,6 @@
 {
   "app": { "name": "Arquitectura Base" },
-  "home": {
-    "title": "Home",
-    "description": "A summary of your session and what this template already covers.",
-    "session": {
-      "title": "Your session",
-      "email": "Email",
-      "role": "Role"
-    },
-    "permissions": {
-      "title": "Permissions",
-      "empty": "You don't have any permissions assigned."
-    },
-    "locale": {
-      "title": "Language and format",
-      "language": "Language",
-      "timeZone": "Time zone"
-    },
-    "features": {
-      "title": "What this template already covers",
-      "passwordless": "Passwordless sign-in: a code by email or Google.",
-      "permissions": "Permissions decided by the backend; the front only uses them to show or hide things.",
-      "i18n": "Spanish and English, with the interface texts split by module.",
-      "listings": "Real listings against the backend: search, sort and paging, not in memory.",
-      "dates": "Dates in your profile's time zone, even though the backend sends them in UTC."
-    }
-  },
+  "home": { "title": "Home" },
   "actions": {
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -72,7 +47,9 @@
       "navigation": "Main navigation",
       "collapse": "Collapse menu",
       "expand": "Expand menu",
-      "closeDrawer": "Close menu"
+      "closeDrawer": "Close menu",
+      "loadError": "We couldn't load your menu.",
+      "retryLoad": "Retry loading the menu"
     },
     "topbar": {
       "toggle": "Navigation menu"

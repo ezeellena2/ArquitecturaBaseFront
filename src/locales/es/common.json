@@ -1,31 +1,6 @@
 {
   "app": { "name": "Arquitectura Base" },
-  "home": {
-    "title": "Inicio",
-    "description": "Un resumen de tu sesión y de lo que esta plantilla ya trae resuelto.",
-    "session": {
-      "title": "Tu sesión",
-      "email": "Correo",
-      "role": "Rol"
-    },
-    "permissions": {
-      "title": "Permisos",
-      "empty": "No tenés permisos asignados."
-    },
-    "locale": {
-      "title": "Idioma y formato",
-      "language": "Idioma",
-      "timeZone": "Zona horaria"
-    },
-    "features": {
-      "title": "Lo que esta plantilla ya trae resuelto",
-      "passwordless": "Ingreso sin contraseña: código por correo o Google.",
-      "permissions": "Permisos que decide el backend; el front solo los usa para mostrar u ocultar.",
-      "i18n": "Español e inglés, con los textos de la interfaz separados por módulo.",
-      "listings": "Listados reales contra el backend: búsqueda, orden y paginado, no en memoria.",
-      "dates": "Fechas en la zona horaria de tu perfil, aunque el backend las mande en UTC."
-    }
-  },
+  "home": { "title": "Inicio" },
   "actions": {
     "cancel": "Cancelar",
     "confirm": "Confirmar",
@@ -72,7 +47,9 @@
       "navigation": "Navegación principal",
       "collapse": "Contraer menú",
       "expand": "Expandir menú",
-      "closeDrawer": "Cerrar menú"
+      "closeDrawer": "Cerrar menú",
+      "loadError": "No pudimos cargar tu menú.",
+      "retryLoad": "Reintentar cargar el menú"
     },
     "topbar": {
       "toggle": "Menú de navegación"

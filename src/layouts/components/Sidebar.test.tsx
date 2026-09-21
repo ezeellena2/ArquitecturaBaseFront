@@ -42,6 +42,17 @@ describe("Sidebar", () => {
     expect(within(sidebar).queryByRole("link", { name: /usuarios/i })).not.toBeInTheDocument();
   });
 
+  it("says that the menu could not be loaded instead of shrinking in silence", async () => {
+    server.use(http.get("/api/me", () => HttpResponse.json({ code: "General.Unexpected" }, { status: 500 })));
+
+    renderRouteWithProviders("/");
+
+    const nav = within(await screen.findByRole("navigation", { name: /navegación principal/i }));
+
+    expect(await nav.findByText(/no pudimos cargar tu menú/i)).toBeInTheDocument();
+    expect(nav.getByRole("button", { name: /reintentar/i })).toBeInTheDocument();
+  });
+
   it("remembers that the menu is collapsed", async () => {
     renderRouteWithProviders("/");
 

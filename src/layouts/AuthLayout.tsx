@@ -9,11 +9,9 @@ export function AuthLayout() {
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-[var(--color-surface-muted)] px-4 py-10">
-      <div className="flex items-center gap-2">
-        {/* Cuadrado de marca: placeholder hasta que haya un logo real. */}
-        <span aria-hidden="true" className="size-8 rounded-lg bg-[var(--color-brand-600)]" />
-        <span className="text-lg font-semibold text-[var(--color-content)]">{t("app.name")}</span>
-      </div>
+      {/* Cuadrado de marca: placeholder hasta que haya un logo real. Sin el nombre al lado: la tarjeta ya
+          dice a qué se está entrando, y el nombre de la plantilla no aporta nada ahí. */}
+      <span aria-hidden="true" className="size-8 rounded-lg bg-[var(--color-brand-600)]" />
 
       <div className="w-full max-w-[28rem] rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm sm:p-8">
         <Outlet />

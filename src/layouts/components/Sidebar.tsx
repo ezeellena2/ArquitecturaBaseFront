@@ -5,7 +5,8 @@ import { navigation, type NavigationItem } from "../navigation";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { cn } from "@/shared/lib/utils";
-import { ChevronLeftIcon } from "@/shared/ui/icons";
+import { Button } from "@/shared/ui/button";
+import { ChevronLeftIcon, RefreshIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -72,7 +73,7 @@ interface SidebarProps {
 /// En menos de 768px es un cajón deslizable sobre un fondo oscurecido, que se cierra al navegar y con Escape.
 export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, onCloseMobile }: SidebarProps) {
   const { t } = useTranslation();
-  const { has } = usePermissions();
+  const { has, isError, refetch } = usePermissions();
   // `isPending` es "todavía no sabemos", no "no hay": mientras dura, el menú reserva el lugar de los ítems
   // que dependen de un permiso y el pie reserva el del usuario, así nada aparece de golpe empujando al resto.
   const { data: user, isPending } = useCurrentUser();
@@ -122,10 +123,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
         )}
       >
         <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-3 py-4">
-          <div className="flex min-w-0 items-center gap-2">
-            <span aria-hidden="true" className="size-8 shrink-0 rounded-lg bg-[var(--color-brand-600)]" />
-            {iconsOnly ? null : <span className="truncate text-base font-semibold text-[var(--color-content)]">{t("app.name")}</span>}
-          </div>
+          {/* Cuadrado de marca: placeholder hasta que haya un logo real. Al lado no va ningún nombre: el
+              lugar queda libre para la marca de quien use la plantilla. */}
+          <span aria-hidden="true" className="size-8 shrink-0 rounded-lg bg-[var(--color-brand-600)]" />
 
           {isMobile ? null : (
             <IconButton
@@ -139,6 +139,31 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
         </div>
 
         <nav aria-label={t("layout.sidebar.navigation")} className="flex-1 overflow-y-auto px-2 py-3">
+          {/* Si /api/me falló no sabemos qué ítems mostrar, y el filtro de abajo los esconde. Sin avisar,
+              una caída del backend pasa por un menú más corto de lo habitual, que nadie va a notar. El
+              aviso queda para el lector de pantalla también cuando la barra está contraída. */}
+          {isError ? (
+            <div
+              className={cn(
+                "mb-3 flex flex-col gap-2 rounded-[var(--radius-control)] border border-dashed border-[var(--color-border)] p-2",
+                iconsOnly ? "items-center" : "",
+              )}
+            >
+              <p className={cn("px-1 text-xs text-[var(--color-content-muted)]", iconsOnly ? "sr-only" : "")}>
+                {t("layout.sidebar.loadError")}
+              </p>
+              {iconsOnly ? (
+                <IconButton label={t("layout.sidebar.retryLoad")} onClick={() => void refetch()} size="icon-sm">
+                  <RefreshIcon className="size-4" />
+                </IconButton>
+              ) : (
+                <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
+                  {t("actions.retry")}
+                </Button>
+              )}
+            </div>
+          ) : null}
+
           {navigation.map((group, index) => {
             const items = group.items.filter((item) => !item.hidden);
             // Hasta que no llegan los permisos no se sabe qué ítems se ven. Filtrarlos igual haría desaparecer
