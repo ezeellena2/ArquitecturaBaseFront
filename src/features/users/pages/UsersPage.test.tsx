@@ -170,6 +170,99 @@ describe("UsersPage", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
+  it("shows the message of the field the backend rejected when creating a user", async () => {
+    server.use(
+      ...adminHandlers(),
+      http.post("/api/users", () =>
+        HttpResponse.json(
+          {
+            status: 400,
+            code: "Validation.Failed",
+            detail: "Revisá los datos ingresados.",
+            errors: { displayName: ["El nombre no puede tener más de 100 caracteres."] },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    renderRouteWithProviders("/usuarios");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Nuevo usuario" }));
+    await userEvent.type(await screen.findByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
+    await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), "Ana");
+    await userEvent.click(screen.getByRole("button", { name: "Dar de alta" }));
+
+    // Sin esto el diálogo quedaba abierto sin un solo mensaje, como si el botón no hiciera nada:
+    // `applyApiErrorToForm` daba el error por mostrado y el campo no lo pintaba.
+    expect(await screen.findByRole("alert")).toHaveTextContent("El nombre no puede tener más de 100 caracteres.");
+  });
+
+  it("prefers the backend's message for the email over the generic one", async () => {
+    server.use(
+      ...adminHandlers(),
+      http.post("/api/users", () =>
+        HttpResponse.json(
+          {
+            status: 400,
+            code: "Validation.Failed",
+            detail: "Revisá los datos ingresados.",
+            errors: { email: ["El correo no puede tener más de 254 caracteres."] },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    renderRouteWithProviders("/usuarios");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Nuevo usuario" }));
+    await userEvent.type(await screen.findByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
+    await userEvent.click(screen.getByRole("button", { name: "Dar de alta" }));
+
+    // "Ingresá un correo electrónico válido" no explicaría qué pasó: el formato estaba bien.
+    expect(await screen.findByRole("alert")).toHaveTextContent("El correo no puede tener más de 254 caracteres.");
+  });
+
+  it("explains the error and offers to retry when the user detail cannot be loaded", async () => {
+    server.use(
+      ...adminHandlers(),
+      http.get("/api/users/1", () =>
+        HttpResponse.json(
+          { status: 404, code: "Users.User.NotFound", detail: "No encontramos la cuenta." },
+          { status: 404 },
+        ),
+      ),
+    );
+
+    renderRouteWithProviders("/usuarios");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Editar los roles de ana@example.com" }));
+
+    // Pasa de verdad con dos administradores a la vez: uno elimina la cuenta y el otro abre el diálogo desde
+    // un listado viejo. Antes quedaban dos bloques grises para siempre, sin mensaje ni reintento.
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("No encontramos la cuenta.");
+    expect(within(dialog).getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+  });
+
+  it("gives the focus back to the button that opened the dialog", async () => {
+    server.use(...adminHandlers());
+
+    renderRouteWithProviders("/usuarios");
+
+    const newUser = await screen.findByRole("button", { name: "Nuevo usuario" });
+    newUser.focus();
+    await userEvent.click(newUser);
+    await screen.findByRole("dialog");
+
+    await userEvent.keyboard("{Escape}");
+
+    // Radix solo le devuelve el foco a un DialogTrigger propio, y acá lo abre un Button cualquiera: sin
+    // `onCloseAutoFocus` el foco cae en <body> y el siguiente Tab arranca desde el principio del documento.
+    await waitFor(() => expect(newUser).toHaveFocus());
+  });
+
   it("saves the roles of a user without erasing the name", async () => {
     const updates: unknown[] = [];
     server.use(

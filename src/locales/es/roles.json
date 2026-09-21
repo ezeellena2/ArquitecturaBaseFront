@@ -46,7 +46,9 @@
   },
   "errors": {
     "alreadyExists": "Ya hay un rol con ese nombre.",
-    "systemRole": "Los roles del sistema no se cambian."
+    "systemRole": "Los roles del sistema no se cambian.",
+    "hasUsers_one": "Todavía hay 1 usuario con este rol. Reasignalo antes de borrarlo.",
+    "hasUsers_other": "Todavía hay {{count}} usuarios con este rol. Reasignalos antes de borrarlos."
   },
   "errorTraceId": "Código para reportar: {{traceId}}"
 }

@@ -46,7 +46,9 @@
   },
   "errors": {
     "alreadyExists": "There is already a role with that name.",
-    "systemRole": "System roles can't be changed."
+    "systemRole": "System roles can't be changed.",
+    "hasUsers_one": "1 user still has this role. Reassign them before deleting it.",
+    "hasUsers_other": "{{count}} users still have this role. Reassign them before deleting it."
   },
   "errorTraceId": "Code to report: {{traceId}}"
 }

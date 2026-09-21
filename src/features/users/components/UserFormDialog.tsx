@@ -11,6 +11,7 @@ import { usePermissions } from "@/auth/usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
 import { applyApiErrorToForm } from "@/shared/api/formErrors";
 import { fetchRoles, rolesQueryKey } from "@/shared/api/roles";
+import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -35,6 +36,7 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
 
   const [roles, setRoles] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | undefined>();
+  const restoreFocus = useRestoreFocusOnClose();
 
   const {
     register,
@@ -69,6 +71,20 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
 
   const availableRoles = rolesQuery.data ?? [];
 
+  // El mensaje del backend (`type: "server"`, que pone `applyApiErrorToForm`) gana sobre el genérico de zod:
+  // dice qué pasó de verdad. "Ingresá un correo electrónico válido" no explicaría nada si el formato estaba
+  // bien y lo que falló fue el largo.
+  const emailError = errors.email
+    ? errors.email.type === "server"
+      ? errors.email.message
+      : t("form.emailInvalid")
+    : undefined;
+
+  // A `displayName` zod no lo valida (es opcional): cualquier error suyo viene del backend. Sin pintarlo, un
+  // 400 sobre este campo dejaba el diálogo abierto sin un solo mensaje, porque `applyApiErrorToForm` ya había
+  // devuelto `true` y `formError` nunca se seteaba.
+  const displayNameError = errors.displayName?.message;
+
   function toggleRole(name: string, checked: boolean) {
     setRoles((current) => (checked ? [...current, name] : current.filter((role) => role !== name)));
   }
@@ -82,7 +98,7 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
         }
       }}
     >
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={restoreFocus}>
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
           <DialogDescription>{t("create.description")}</DialogDescription>
@@ -96,11 +112,11 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
             void handleSubmit((values) => mutation.mutate(values))(event);
           }}
         >
-          <FormField label={t("form.email")} required error={errors.email ? t("form.emailInvalid") : undefined}>
+          <FormField label={t("form.email")} required error={emailError}>
             <Input type="email" autoComplete="off" {...register("email")} />
           </FormField>
 
-          <FormField label={t("form.displayName")} hint={t("form.displayNameHint")}>
+          <FormField label={t("form.displayName")} hint={t("form.displayNameHint")} error={displayNameError}>
             <Input type="text" autoComplete="off" {...register("displayName")} />
           </FormField>
 

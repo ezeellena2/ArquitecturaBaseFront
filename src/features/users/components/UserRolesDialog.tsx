@@ -7,6 +7,7 @@ import { userActionErrorMessage } from "../errors";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { fetchRoles, rolesQueryKey } from "@/shared/api/roles";
+import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -33,6 +34,7 @@ export function UserRolesDialog({ user, onClose }: { user: UserListItem; onClose
   const [draft, setDraft] = useState<DraftValues | undefined>();
   const [loadedUserId, setLoadedUserId] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | undefined>();
+  const restoreFocus = useRestoreFocusOnClose();
 
   const detailQuery = useQuery({ queryKey: userQueryKey(user.id), queryFn: () => fetchUser(user.id) });
   const rolesQuery = useQuery({ queryKey: rolesQueryKey, queryFn: fetchRoles, enabled: canReadRoles });
@@ -85,17 +87,30 @@ export function UserRolesDialog({ user, onClose }: { user: UserListItem; onClose
         }
       }}
     >
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={restoreFocus}>
         <DialogHeader>
           <DialogTitle>{t("edit.title")}</DialogTitle>
           <DialogDescription>{t("edit.description", { email: user.email })}</DialogDescription>
         </DialogHeader>
 
         {draft === undefined ? (
-          <div className="flex flex-col gap-3">
-            <Skeleton aria-hidden="true" className="h-9" />
-            <Skeleton aria-hidden="true" className="h-24" />
-          </div>
+          // Sin esta rama, un detalle que falla dejaba dos bloques grises para siempre. Pasa de verdad con dos
+          // administradores a la vez: uno elimina la cuenta y el otro abre el diálogo desde un listado viejo.
+          detailQuery.isError ? (
+            <div className="flex flex-col items-start gap-3">
+              <p role="alert" className="text-sm text-[var(--color-danger)]">
+                {userActionErrorMessage(detailQuery.error, t)}
+              </p>
+              <Button type="button" variant="outline" onClick={() => void detailQuery.refetch()}>
+                {t("common:actions.retry")}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <Skeleton aria-hidden="true" className="h-9" />
+              <Skeleton aria-hidden="true" className="h-24" />
+            </div>
+          )
         ) : (
           <form
             noValidate

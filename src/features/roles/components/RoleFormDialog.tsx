@@ -6,6 +6,7 @@ import { createRole, fetchPermissions, permissionsQueryKey, updateRole, type Rol
 import { roleActionErrorMessage } from "../errors";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
 import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
+import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -26,6 +27,7 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
   const [permissions, setPermissions] = useState<string[]>([...(role?.permissions ?? [])]);
   const [isNameMissing, setIsNameMissing] = useState(false);
   const [formError, setFormError] = useState<string | undefined>();
+  const restoreFocus = useRestoreFocusOnClose();
 
   const groupsQuery = useQuery({ queryKey: permissionsQueryKey, queryFn: fetchPermissions });
 
@@ -66,7 +68,7 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
         }
       }}
     >
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={restoreFocus}>
         <DialogHeader>
           <DialogTitle>{role ? t("form.editTitle", { name: role.name }) : t("form.createTitle")}</DialogTitle>
           <DialogDescription>{t("form.description")}</DialogDescription>

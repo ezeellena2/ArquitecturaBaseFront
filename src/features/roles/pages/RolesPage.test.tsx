@@ -119,13 +119,20 @@ describe("RolesPage", () => {
     );
   });
 
-  it("shows the backend's message, with the count, when the role still has users", async () => {
+  it("says how many users still have the role, taking the count from the backend", async () => {
     const toastError = vi.spyOn(toast, "error");
     server.use(
       ...managerHandlers(),
+      // El backend manda el número como extensión del ProblemDetails (RoleErrors.HasUsers), no en el detail:
+      // el detail del resx es genérico. El texto con el número lo arma el front con ese dato.
       http.delete("/api/roles/r2", () =>
         HttpResponse.json(
-          { status: 409, code: "Roles.Role.HasUsers", detail: "4 usuarios todavía tienen este rol." },
+          {
+            status: 409,
+            code: "Roles.Role.HasUsers",
+            detail: "El rol tiene usuarios asignados. Reasignalos antes de borrarlo.",
+            userCount: 4,
+          },
           { status: 409 },
         ),
       ),
@@ -136,8 +143,56 @@ describe("RolesPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Eliminar el rol Soporte" }));
     await userEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
 
-    // La excepción a decidir el texto por el código: solo el backend sabe cuántos son.
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("4 usuarios todavía tienen este rol."));
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("Todavía hay 4 usuarios con este rol. Reasignalos antes de borrarlos."),
+    );
+  });
+
+  it("says it in singular when only one user has the role", async () => {
+    const toastError = vi.spyOn(toast, "error");
+    server.use(
+      ...managerHandlers(),
+      http.delete("/api/roles/r2", () =>
+        HttpResponse.json(
+          {
+            status: 409,
+            code: "Roles.Role.HasUsers",
+            detail: "El rol tiene usuarios asignados. Reasignalos antes de borrarlo.",
+            userCount: 1,
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    renderRouteWithProviders("/roles");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Eliminar el rol Soporte" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
+
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("Todavía hay 1 usuario con este rol. Reasignalo antes de borrarlo."),
+    );
+  });
+
+  it("falls back to the backend's text when the count did not come", async () => {
+    const toastError = vi.spyOn(toast, "error");
+    server.use(
+      ...managerHandlers(),
+      http.delete("/api/roles/r2", () =>
+        HttpResponse.json(
+          { status: 409, code: "Roles.Role.HasUsers", detail: "El rol tiene usuarios asignados." },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    renderRouteWithProviders("/roles");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Eliminar el rol Soporte" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("El rol tiene usuarios asignados."));
   });
 
   it("hides the create and edit actions without roles.manage", async () => {

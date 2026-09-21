@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "./button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./dialog";
 
@@ -24,27 +24,12 @@ export function ConfirmDialog({
   onConfirm,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
-  // El Dialog de Radix solo devuelve el foco solo a un DialogTrigger propio. Como este diálogo lo abre
-  // cualquier botón de la pantalla (no un DialogTrigger), guardamos ese elemento antes de que el diálogo se
-  // quede con el foco, para devolvérselo nosotros al cerrar. Layout effect y no efecto normal: tiene que
-  // leer el foco antes de que el diálogo se lo lleve, y ese auto-foco corre en un efecto pasivo.
-  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
-
-  useLayoutEffect(() => {
-    if (open) {
-      previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    }
-  }, [open]);
+  const restoreFocus = useRestoreFocusOnClose(open);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        onCloseAutoFocus={(event) => {
-          if (previouslyFocusedRef.current) {
-            event.preventDefault();
-            previouslyFocusedRef.current.focus();
-          }
-        }}
+        onCloseAutoFocus={restoreFocus}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

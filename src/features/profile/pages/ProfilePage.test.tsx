@@ -93,6 +93,36 @@ describe("ProfilePage", () => {
     expect(await screen.findByRole("heading", { name: "My profile" })).toBeInTheDocument();
   });
 
+  it("follows the language when it is changed from the user menu, instead of reverting it on save", async () => {
+    const saved: ProfileBody[] = [];
+    server.use(...profileHandlers(saved));
+
+    renderRouteWithProviders("/perfil");
+
+    await screen.findByRole("textbox", { name: "Nombre" });
+
+    // El idioma se cambia desde el menú del usuario, sin salir de la pantalla.
+    const trigger = await screen.findByRole("button", { name: /ana/i });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
+
+    // El desplegable de la pantalla tiene que acompañar: antes seguía diciendo "Spanish" con la interfaz ya
+    // en inglés, y el primer Guardar mandaba culture: "es" y devolvía la cuenta a español.
+    const language = await screen.findByRole("combobox", { name: "Language" });
+    await waitFor(() => expect(language).toHaveValue("en"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(saved.at(-1)).toEqual({
+        displayName: "Ana",
+        culture: "en",
+        timeZoneId: "America/Argentina/Buenos_Aires",
+      }),
+    );
+  });
+
   it("shows the message of the field the backend rejected, without losing what was typed", async () => {
     server.use(
       http.get("/api/me", () => HttpResponse.json(currentUser)),

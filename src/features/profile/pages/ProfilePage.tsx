@@ -46,6 +46,7 @@ export function ProfilePage() {
 
   const [draft, setDraft] = useState<Draft | undefined>();
   const [loadedUserId, setLoadedUserId] = useState<string | undefined>();
+  const [loadedCulture, setLoadedCulture] = useState<string | undefined>();
 
   const mutation = useMutation({
     mutationFn: (values: Draft) =>
@@ -68,12 +69,20 @@ export function ProfilePage() {
   // (mismo criterio que `UserRolesDialog`).
   if (user && loadedUserId !== user.id) {
     setLoadedUserId(user.id);
+    setLoadedCulture(user.culture);
     setDraft({
       displayName: user.displayName ?? "",
       // Si la cuenta tuviera un idioma que el front no sabe hablar, el desplegable no lo podría mostrar.
       culture: isSupportedLanguage(user.culture) ? user.culture : "es",
       timeZoneId: user.timeZoneId,
     });
+  } else if (user && draft && loadedCulture !== user.culture) {
+    // El idioma de la cuenta cambió desde afuera de esta pantalla (el menú del usuario, que lo guarda de una).
+    // El desplegable tiene que seguirlo: si no, queda contradiciendo a la interfaz y el primer Guardar manda
+    // el idioma viejo, que el PUT reemplaza, y devuelve la cuenta al idioma anterior. Se toca solo `culture`,
+    // para no pisar el nombre a medio escribir.
+    setLoadedCulture(user.culture);
+    setDraft({ ...draft, culture: isSupportedLanguage(user.culture) ? user.culture : "es" });
   }
 
   // La lista no cambia mientras la pantalla está abierta: sin el memo se volvería a armar en cada tecla que
