@@ -40,7 +40,7 @@ function NavItem({
           isActive
             ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
             : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
-          collapsed ? "justify-center px-2" : "",
+          collapsed ? "size-10 justify-center px-0" : "",
         )
       }
     >
@@ -113,7 +113,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
       <aside
         className={cn(
-          "flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]",
+          "relative flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]",
           isMobile
             ? cn(
                 "fixed top-16 bottom-0 left-0 z-50 w-[264px] transition-transform duration-200",
@@ -122,21 +122,32 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             : cn("h-svh shrink-0 transition-[width] duration-200", iconsOnly ? "w-[72px]" : "w-[264px]"),
         )}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-3 py-4">
+        <div
+          className={cn(
+            "flex items-center border-b border-[var(--color-border)] px-3 py-4",
+            iconsOnly ? "justify-center" : "",
+          )}
+        >
           {/* Cuadrado de marca: placeholder hasta que haya un logo real. Al lado no va ningún nombre: el
               lugar queda libre para la marca de quien use la plantilla. */}
           <span aria-hidden="true" className="size-8 shrink-0 rounded-lg bg-[var(--color-brand-600)]" />
-
-          {isMobile ? null : (
-            <IconButton
-              label={iconsOnly ? t("layout.sidebar.expand") : t("layout.sidebar.collapse")}
-              onClick={onToggleCollapsed}
-              size="icon-sm"
-            >
-              <ChevronLeftIcon className={cn("size-4 transition-transform", iconsOnly ? "rotate-180" : "")} />
-            </IconButton>
-          )}
         </div>
+
+        {/* La flecha va montada sobre el borde derecho, como un círculo mitad adentro y mitad afuera, a la
+            altura del primer ítem del menú. Así no le come lugar al encabezado (que contraído queda solo
+            para la marca) y queda siempre en el mismo lugar, se expanda o se contraiga la barra.
+            El desplazamiento es el alto del encabezado (16 + 32 + 16 + 1 de borde = 65) más el `py-3` del
+            nav y medio ítem, menos medio botón: cae centrada con el ícono de Inicio. Va afuera del `nav`
+            a propósito: ese tiene `overflow-y-auto` y la recortaría. */}
+        {isMobile ? null : (
+          <IconButton
+            label={iconsOnly ? t("layout.sidebar.expand") : t("layout.sidebar.collapse")}
+            onClick={onToggleCollapsed}
+            className="absolute top-[84px] -right-3 z-20 size-6 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm hover:bg-[var(--color-surface-muted)]"
+          >
+            <ChevronLeftIcon className={cn("size-3.5 transition-transform", iconsOnly ? "rotate-180" : "")} />
+          </IconButton>
+        )}
 
         <nav aria-label={t("layout.sidebar.navigation")} className="flex-1 overflow-y-auto px-2 py-3">
           {/* Si /api/me falló no sabemos qué ítems mostrar, y el filtro de abajo los esconde. Sin avisar,
@@ -183,11 +194,26 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                     {t(group.labelKey)}
                   </p>
                 ) : null}
-                <ul className="flex flex-col gap-1">
+                {/* Contraída no hay lugar para el rótulo del grupo, y sin él los íconos quedan como una
+                    lista sola. Una línea corta mantiene la separación que el rótulo daba. El rótulo
+                    sigue existiendo para el lector de pantalla. */}
+                {index > 0 && iconsOnly ? (
+                  <>
+                    <span className="sr-only">{t(group.labelKey)}</span>
+                    <div aria-hidden="true" className="mx-auto mb-3 h-px w-8 bg-[var(--color-border)]" />
+                  </>
+                ) : null}
+                <ul className={cn("flex flex-col gap-1", iconsOnly ? "items-center" : "")}>
                   {visibleItems.map((item) => (
                     <li key={item.to}>
                       {isPending && item.permission ? (
-                        <Skeleton aria-hidden="true" className="h-9 rounded-[var(--radius-control)]" />
+                        <Skeleton
+                          aria-hidden="true"
+                          className={cn(
+                            "rounded-[var(--radius-control)]",
+                            iconsOnly ? "size-10" : "h-9",
+                          )}
+                        />
                       ) : (
                         <NavItem item={item} label={t(item.labelKey)} collapsed={iconsOnly} onNavigate={onNavigate} />
                       )}
