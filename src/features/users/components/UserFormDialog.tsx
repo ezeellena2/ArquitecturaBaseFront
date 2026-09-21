@@ -57,7 +57,12 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
       createUser({ email: values.email, displayName: values.displayName?.trim() || null, roles }),
     onSuccess: async () => {
       toast.success(t("create.success"));
-      await queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
+        // El alta/edición/borrado cambia el `userCount` de los roles: sin esto, /roles muestra el conteo
+        // viejo durante los 30 s de staleTime, y puede ofrecer borrar un rol que todavía tiene gente.
+        queryClient.invalidateQueries({ queryKey: rolesQueryKey }),
+      ]);
       onClose();
     },
     onError: (error) => {

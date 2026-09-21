@@ -57,6 +57,7 @@ export function UserRolesDialog({ user, onClose }: { user: UserListItem; onClose
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
         queryClient.invalidateQueries({ queryKey: userQueryKey(user.id) }),
+        queryClient.invalidateQueries({ queryKey: rolesQueryKey }),
         // Si se cambió los roles a sí mismo, sus propios permisos pueden haber cambiado.
         queryClient.invalidateQueries({ queryKey: currentUserQueryKey }),
       ]);

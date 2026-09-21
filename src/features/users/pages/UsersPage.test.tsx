@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { currentUser } from "@/test/mocks/handlers";
 import { queryClient } from "@/shared/api/queryClient";
+import { fetchRoles, rolesQueryKey } from "@/shared/api/roles";
 import { server } from "@/test/mocks/server";
 
 vi.mock("react-oidc-context", async () => {
@@ -329,6 +330,23 @@ describe("UsersPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Eliminar" }));
 
     await waitFor(() => expect(deleted).toBe(1));
+  });
+
+  it("marks the roles catalogue as stale after deleting a user", async () => {
+    server.use(...adminHandlers(), http.delete("/api/users/1", () => new HttpResponse(null, { status: 204 })));
+
+    renderRouteWithProviders("/usuarios");
+
+    // La caché de roles, como si se viniera de /roles.
+    await queryClient.fetchQuery({ queryKey: rolesQueryKey, queryFn: fetchRoles });
+    expect(queryClient.getQueryState(rolesQueryKey)?.isInvalidated).toBe(false);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Eliminar a ana@example.com" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
+
+    // Eliminar una cuenta cambia el `userCount` de los roles que tenía. Sin invalidar, /roles muestra el
+    // conteo viejo durante los 30 s de staleTime, y puede ofrecer borrar un rol que todavía tiene gente.
+    await waitFor(() => expect(queryClient.getQueryState(rolesQueryKey)?.isInvalidated).toBe(true));
   });
 
   it("hides the new user button and the row actions without users.manage", async () => {

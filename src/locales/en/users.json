@@ -13,11 +13,6 @@
     "active": "Active",
     "inactive": "Inactive"
   },
-  "sort": {
-    "none": "Not sorted",
-    "ascending": "Sorted by {{field}}, ascending",
-    "descending": "Sorted by {{field}}, descending"
-  },
   "empty": {
     "title": "We couldn't find any users",
     "description": "There are no users yet.",

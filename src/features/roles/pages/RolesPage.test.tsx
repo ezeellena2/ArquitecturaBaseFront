@@ -80,6 +80,68 @@ describe("RolesPage", () => {
     expect(within(table).getByText("4")).toBeInTheDocument();
   });
 
+  it("says the number of permissions in singular when there is only one", async () => {
+    server.use(...managerHandlers());
+
+    renderRouteWithProviders("/roles");
+
+    const table = await screen.findByRole("table");
+    // Soporte tiene un permiso. Sin las formas `_one`/`_other`, i18next cae a la clave base y escribe
+    // "1 permisos".
+    expect(within(table).getByText("1 permiso")).toBeInTheDocument();
+    expect(within(table).getByText("2 permisos")).toBeInTheDocument();
+  });
+
+  it("labels the permissions block of the dialog", async () => {
+    server.use(...managerHandlers());
+
+    renderRouteWithProviders("/roles");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Nuevo rol" }));
+
+    // Sin esto el diálogo saltaba de "Descripción" a un bloque con "Usuarios" y "Configuración" sin decir en
+    // ningún lado que eso son los permisos del rol.
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Permisos")).toBeInTheDocument();
+  });
+
+  it("edits over the freshest role, not the one the listing had cached", async () => {
+    const updates: unknown[] = [];
+    let supportPermissions = ["users.read"];
+    server.use(
+      http.get("/api/me", () => HttpResponse.json(manager)),
+      http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
+      http.get("/api/roles", () => HttpResponse.json([roles[0], { ...roles[1], permissions: supportPermissions }])),
+      http.put("/api/roles/r2", async ({ request }) => {
+        updates.push(await request.json());
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderRouteWithProviders("/roles");
+    await screen.findByRole("table");
+
+    // Otro administrador le agrega un permiso mientras este listado ya está en caché.
+    supportPermissions = ["users.read", "users.manage"];
+
+    await userEvent.click(screen.getByRole("button", { name: "Editar el rol Soporte" }));
+
+    const usersGroup = await screen.findByRole("group", { name: "Usuarios" });
+    await waitFor(() =>
+      expect(within(usersGroup).getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked(),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    // El PUT reemplaza la lista entera: guardando sobre el snapshot viejo, ese permiso se borraba sin aviso.
+    await waitFor(() =>
+      expect(updates).toEqual([
+        { name: "Soporte", description: "Mira usuarios y nada más.", permissions: ["users.read", "users.manage"] },
+      ]),
+    );
+  });
+
   it("marks the system roles and does not offer to edit or delete them", async () => {
     server.use(...managerHandlers());
 

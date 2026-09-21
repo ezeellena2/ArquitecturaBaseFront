@@ -10,8 +10,9 @@
   },
   "systemBadge": "Del sistema",
   "systemLocked": "No se cambia",
-  "systemNote": "Admin y User son del sistema: no se renombran, no se borran y a Admin no se le editan los permisos. Es la garantía de que siempre haya alguien que pueda arreglar cualquier cosa.",
-  "permissionsCount": "{{count}} permisos",
+  "systemNote": "Admin y User son del sistema: desde acá no se renombran, no se borran y no se les cambian los permisos. Es la garantía de que siempre haya alguien que pueda arreglar cualquier cosa.",
+  "permissionsCount_one": "{{count}} permiso",
+  "permissionsCount_other": "{{count}} permisos",
   "empty": {
     "title": "Todavía no hay roles",
     "description": "Creá el primero para agrupar permisos."
@@ -47,6 +48,7 @@
   "errors": {
     "alreadyExists": "Ya hay un rol con ese nombre.",
     "systemRole": "Los roles del sistema no se cambian.",
+    "gone": "Este rol ya no existe. Alguien lo borró mientras lo tenías abierto.",
     "hasUsers_one": "Todavía hay 1 usuario con este rol. Reasignalo antes de borrarlo.",
     "hasUsers_other": "Todavía hay {{count}} usuarios con este rol. Reasignalos antes de borrarlos."
   },

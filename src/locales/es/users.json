@@ -13,11 +13,6 @@
     "active": "Activo",
     "inactive": "Inactivo"
   },
-  "sort": {
-    "none": "Sin ordenar",
-    "ascending": "Ordenado por {{field}}, ascendente",
-    "descending": "Ordenado por {{field}}, descendente"
-  },
   "empty": {
     "title": "No encontramos usuarios",
     "description": "Todavía no hay usuarios cargados.",

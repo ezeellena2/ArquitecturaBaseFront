@@ -19,6 +19,7 @@ import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
+import { rolesQueryKey } from "@/shared/api/roles";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -31,24 +32,6 @@ import { SearchInput } from "@/shared/ui/SearchInput";
 interface PendingConfirmation {
   kind: "deactivate" | "delete";
   user: UserListItem;
-}
-
-/// El texto de "orden actual" junto al buscador (maqueta aprobada): el nombre de columna sale de las mismas
-/// columnas que arma la tabla, para no duplicar traducciones por campo.
-function sortDescription(
-  t: (key: string, options?: Record<string, unknown>) => string,
-  sort: string | undefined,
-  columns: ReturnType<typeof createUserColumns>,
-): string {
-  if (!sort) {
-    return t("sort.none");
-  }
-
-  const descending = sort.startsWith("-");
-  const field = descending ? sort.slice(1) : sort;
-  const fieldLabel = columns.find((column) => column.id === field)?.header ?? field;
-
-  return t(descending ? "sort.descending" : "sort.ascending", { field: fieldLabel });
 }
 
 /// `/usuarios` (sección 7.4 del spec maestro y sección 11 del de la Fase 4): listado real contra `/api/users`,
@@ -88,7 +71,12 @@ export function UsersPage() {
     mutationFn: (user: UserListItem) => deleteUser(user.id),
     onSuccess: async () => {
       toast.success(t("feedback.deleted"));
-      await queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
+        // Eliminar o restaurar una cuenta cambia el `userCount` de sus roles: sin esto, /roles muestra el
+        // conteo viejo durante los 30 s de staleTime.
+        queryClient.invalidateQueries({ queryKey: rolesQueryKey }),
+      ]);
     },
     onError: (mutationError) => toast.error(userActionErrorMessage(mutationError, t)),
   });
@@ -134,11 +122,8 @@ export function UsersPage() {
         }
       />
 
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="w-full max-w-sm">
-          <SearchInput value={search ?? ""} onChange={setSearch} label={t("searchLabel")} />
-        </div>
-        <p className="text-sm text-[var(--color-content-muted)]">{sortDescription(t, sort, columns)}</p>
+      <div className="mb-3 w-full max-w-sm">
+        <SearchInput value={search ?? ""} onChange={setSearch} label={t("searchLabel")} />
       </div>
 
       <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
