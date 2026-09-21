@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { requestLoginCode, verifyLoginCode } from "../api/loginCode";
 import { OtpInput } from "../components/OtpInput";
+import { authorizeReturnUrl, loginPathFor } from "../lib/returnUrl";
 import { ApiError } from "@/shared/api/ApiError";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
@@ -36,11 +37,8 @@ export function LoginCodePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnUrlParam = searchParams.get("returnUrl");
-  const returnUrl = returnUrlParam ?? "/";
-  // Sin returnUrl en la query, esta pantalla no tiene contexto del flujo: manda a /login sin el parámetro,
-  // el mismo caso que hace arrancar el redirect de OIDC (LoginPage) y que el servidor devuelva el correcto.
-  const loginPath = returnUrlParam ? `/login?returnUrl=${encodeURIComponent(returnUrlParam)}` : "/login";
+  const returnUrl = authorizeReturnUrl(searchParams.get("returnUrl"));
+  const loginPath = loginPathFor(returnUrl);
 
   const state = location.state as LoginCodeState | null;
   const email = state?.email;
@@ -58,28 +56,30 @@ export function LoginCodePage() {
     restart: restartResend,
   } = useCountdown(state?.resendAfterSeconds ?? 0);
 
-  // Solo depende de `email`: si no hay a quién mandarle el código, vuelve a /login apenas se monta la
-  // pantalla, sin importar si después cambian `navigate` o `loginPath` (no deberían, en la misma visita).
+  // It only depends on `email` and `returnUrl`: if there is no one to send the code to, or the `returnUrl` does notno
+  // sirve, vuelve a /login apenas se monta la pantalla, sin importar si después cambian `navigate` o
+  // `loginPath` (no deberían, en la misma visita).
   useEffect(() => {
-    if (!email) {
+    if (!email) { !returnUrl) {
       navigate(loginPath, { replace: true });
     }
-  }, [email, navigate, loginPath]);
+  }, [email, browse, loginPath]);oginPath]);
 
-  if (!email) {
+  if (!email) { !returnUrl) {
     return null;
   }
 
-  // TypeScript no lleva el chequeo de arriba adentro de las funciones anidadas (`handleVerify`,
-  // `handleResend`): esta constante sí queda tipada `string`, porque nunca se reasigna.
+  // TypeScript does not carry out top-to-bottom checking of nested functions (`handleVerify`,
+  // `handleResend`): estas constantes sí quedan tipadas `string`, porque nunca se reasignan.
   const currentEmail = email;
+  const currentReturnUrl = returnUrl;
 
   async function handleVerify() {
     setIsVerifying(true);
     setError(undefined);
 
     try {
-      const response = await verifyLoginCode({ email: currentEmail, code, returnUrl });
+      const response = await verifyLoginCode({ email: currentEmail, code, returnUrl: currentReturnUrl });
 
       // Navegación real, no del router: el servidor ya tiene la cookie y emite el code de OIDC.
       globalThis.location.assign(response.returnUrl);
@@ -137,7 +137,7 @@ export function LoginCodePage() {
         <OtpInput length={CODE_LENGTH} value={code} onChange={setCode} label={t("code.otpLabel")} disabled={isVerifying} />
 
         {error ? (
-          <div role="alert" className="flex flex-col gap-1 text-center text-sm text-[var(--color-danger)]">
+          <div role="alert" className="flex flex-col gap-1 text-sm text-[var(--color-danger)]">r-danger)]">
             <p>{error}</p>
             {attemptsLeft !== undefined ? <p>{t("code.attemptsLeft", { count: attemptsLeft })}</p> : null}
           </div>
