@@ -70,6 +70,19 @@ describe("UsersPage", () => {
     expect(within(table).getByText("beto@example.com")).toBeInTheDocument();
   });
 
+  it("says the status in words and not only with a colour", async () => {
+    // "El color nunca comunica solo" (fundamento visual). El punto es decorativo: lo que se lee es la
+    // palabra, y sin esta prueba el día que alguien deje el punto solo nadie se entera.
+    server.use(http.get("/api/users", () => HttpResponse.json(page)));
+
+    renderRouteWithProviders("/usuarios");
+
+    const rows = within(await screen.findByRole("table")).getAllByRole("row");
+
+    expect(within(rows[1]).getByText("Activo")).toBeInTheDocument();
+    expect(within(rows[2]).getByText("Inactivo")).toBeInTheDocument();
+  });
+
   it("sends the search to the backend and keeps it in the URL", async () => {
     const requests: string[] = [];
     server.use(

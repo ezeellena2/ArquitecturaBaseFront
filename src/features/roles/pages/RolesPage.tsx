@@ -14,7 +14,8 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
-import { ShieldIcon } from "@/shared/ui/icons";
+import { PencilIcon, ShieldIcon, TrashIcon } from "@/shared/ui/icons";
+import { RowActions } from "@/shared/ui/RowActions";
 import { Page } from "@/shared/ui/Page";
 
 /// `/roles` (sección 11 del spec de la Fase 4). El endpoint devuelve la lista entera, no una página: son
@@ -76,27 +77,23 @@ export function RolesPage() {
         row.isSystemRole ? (
           <span className="text-sm text-[var(--color-content-muted)]">{t("systemLocked")}</span>
         ) : (
-          <div className="flex justify-end gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={t("actions.editFor", { name: row.name })}
-              onClick={() => setEditingRole(row)}
-            >
-              {t("actions.edit")}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-[var(--color-danger)]"
-              aria-label={t("actions.deleteFor", { name: row.name })}
-              onClick={() => setDeletingRole(row)}
-            >
-              {t("actions.delete")}
-            </Button>
-          </div>
+          <RowActions
+            actions={[
+              {
+                label: t("actions.edit"),
+                accessibleName: t("actions.editFor", { name: row.name }),
+                icon: PencilIcon,
+                onSelect: () => setEditingRole(row),
+              },
+              {
+                label: t("actions.delete"),
+                accessibleName: t("actions.deleteFor", { name: row.name }),
+                icon: TrashIcon,
+                onSelect: () => setDeletingRole(row),
+                destructive: true,
+              },
+            ]}
+          />
         ),
     });
   }

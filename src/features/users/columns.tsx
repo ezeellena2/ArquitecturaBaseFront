@@ -1,8 +1,9 @@
 import type { UserListItem } from "./api/users";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
-import { Badge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/lib/utils";
 import type { Column } from "@/shared/ui/DataTable";
+import { PowerIcon, ShieldIcon, TrashIcon } from "@/shared/ui/icons";
+import { RowActions } from "@/shared/ui/RowActions";
 
 /// Firma mínima que necesitamos de `t`: alcanza con la del namespace "users" (sin acoplar el tipo exacto de
 /// react-i18next, que cambia de versión en versión).
@@ -14,6 +15,26 @@ export interface UserRowActions {
   onEditRoles: (user: UserListItem) => void;
   onToggleActive: (user: UserListItem) => void;
   onDelete: (user: UserListItem) => void;
+}
+
+/// Estado como punto y texto, no como píldora de color: en veinte filas, veinte fondos teñidos compiten con
+/// los datos. El punto es decorativo (`aria-hidden`) y quien lee el estado lee la palabra, que es además lo
+/// que hace que el estado no dependa del color para entenderse.
+/// Es una función que se llama, no un componente que se monta: el archivo exporta la fábrica de columnas, y
+/// declarar un componente al lado rompe el refresco en caliente (y lo avisa el lint).
+function statusCell(isActive: boolean, label: string) {
+  return (
+    <span className="inline-flex items-center gap-2 text-sm text-[var(--color-content)]">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "size-1.5 shrink-0 rounded-full",
+          isActive ? "bg-[var(--color-success)]" : "bg-[var(--color-content-muted)]",
+        )}
+      />
+      {label}
+    </span>
+  );
 }
 
 /// Las columnas ordenables (email, displayName, createdAtUtc) coinciden con la lista blanca del backend
@@ -30,14 +51,7 @@ export function createUserColumns(
     {
       id: "isActive",
       header: t("columns.isActive"),
-      cell: (row) =>
-        row.isActive ? (
-          <Badge variant="outline" className="border-transparent bg-[var(--color-success)]/15 text-[var(--color-success)]">
-            {t("status.active")}
-          </Badge>
-        ) : (
-          <Badge variant="secondary">{t("status.inactive")}</Badge>
-        ),
+      cell: (row) => statusCell(row.isActive, row.isActive ? t("status.active") : t("status.inactive")),
     },
     {
       id: "createdAtUtc",
@@ -53,45 +67,37 @@ export function createUserColumns(
 
   // El nombre accesible de cada botón lleva el correo de la fila: sin eso, veinte filas dan veinte botones
   // llamados igual, y no hay forma de apretar el de una persona en concreto (ni con el teclado, ni en un test).
+  // El orden y la separación de la acción destructiva los decide `RowActions`, no esta lista.
   columns.push({
     id: "actions",
     header: t("columns.actions"),
     align: "right",
     cell: (row) => (
-      <div className="flex justify-end gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label={t("actions.editRolesFor", { email: row.email })}
-          onClick={() => actions.onEditRoles(row)}
-        >
-          {t("actions.editRoles")}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label={
-            row.isActive
+      <RowActions
+        actions={[
+          {
+            label: t("actions.editRoles"),
+            accessibleName: t("actions.editRolesFor", { email: row.email }),
+            icon: ShieldIcon,
+            onSelect: () => actions.onEditRoles(row),
+          },
+          {
+            label: row.isActive ? t("actions.deactivate") : t("actions.activate"),
+            accessibleName: row.isActive
               ? t("actions.deactivateFor", { email: row.email })
-              : t("actions.activateFor", { email: row.email })
-          }
-          onClick={() => actions.onToggleActive(row)}
-        >
-          {row.isActive ? t("actions.deactivate") : t("actions.activate")}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-[var(--color-danger)]"
-          aria-label={t("actions.deleteFor", { email: row.email })}
-          onClick={() => actions.onDelete(row)}
-        >
-          {t("actions.delete")}
-        </Button>
-      </div>
+              : t("actions.activateFor", { email: row.email }),
+            icon: PowerIcon,
+            onSelect: () => actions.onToggleActive(row),
+          },
+          {
+            label: t("actions.delete"),
+            accessibleName: t("actions.deleteFor", { email: row.email }),
+            icon: TrashIcon,
+            onSelect: () => actions.onDelete(row),
+            destructive: true,
+          },
+        ]}
+      />
     ),
   });
 
