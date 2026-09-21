@@ -10,9 +10,9 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 
-// Se reemplaza el módulo entero, no solo useAuth: el AuthProvider real arma un UserManager y arranca la
-// renovación automática, y este test no tiene por qué depender de lo que ese objeto haga con la red. El
-// puente con el cliente HTTP sí se ejerce, porque vive en nuestro AppAuthProvider.
+// Se reemplaza el módulo entero, no solo useAuth: el AuthProvider real arma un UserManager y ejecuta el flujo
+// OIDC, y este test no tiene por qué depender de lo que ese objeto haga con la red. El puente con el cliente HTTP
+// sí se ejerce, porque vive en nuestro AppAuthProvider.
 vi.mock("react-oidc-context", async () => {
   const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context");
 

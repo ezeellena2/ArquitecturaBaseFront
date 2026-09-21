@@ -127,6 +127,77 @@ describe("httpClient", () => {
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the original 401 problem when the renewal callback rejects", async () => {
+    const renewalFailure = new Error("login_required");
+    const renewSession = vi.fn().mockRejectedValue(renewalFailure);
+    const onSessionExpired = vi.fn();
+    configureHttpClient({ getAccessToken: () => "expired", renewSession, onSessionExpired });
+    server.use(
+      http.get("/api/users", () =>
+        HttpResponse.json(
+          {
+            status: 401,
+            code: "Http.Unauthorized",
+            detail: "La sesión venció.",
+            traceId: "trace-renewal",
+          },
+          { status: 401 },
+        ),
+      ),
+    );
+
+    const error = await api.get("/api/users").catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).not.toBe(renewalFailure);
+    expect(error).toMatchObject({
+      status: 401,
+      code: "Http.Unauthorized",
+      detail: "La sesión venció.",
+      traceId: "trace-renewal",
+    });
+    expect(renewSession).toHaveBeenCalledTimes(1);
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
+  });
+
+  it("shares a rejected renewal and releases it for a later retry", async () => {
+    let token = "expired";
+    let rejectRenewal: (reason?: unknown) => void = () => undefined;
+    const rejectedRenewal = new Promise<string | undefined>((_, reject) => {
+      rejectRenewal = reject;
+    });
+    const renewSession = vi
+      .fn<() => Promise<string | undefined>>()
+      .mockReturnValueOnce(rejectedRenewal)
+      .mockImplementationOnce(async () => {
+        token = "fresh";
+        return token;
+      });
+    const onSessionExpired = vi.fn();
+    configureHttpClient({ getAccessToken: () => token, renewSession, onSessionExpired });
+    server.use(
+      http.get("/api/users", ({ request }) =>
+        request.headers.get("authorization") === "Bearer fresh"
+          ? HttpResponse.json({ items: [] })
+          : HttpResponse.json({ status: 401, code: "Http.Unauthorized" }, { status: 401 }),
+      ),
+    );
+
+    const failedRequests = [api.get("/api/users"), api.get("/api/users"), api.get("/api/users")];
+    await vi.waitFor(() => expect(renewSession).toHaveBeenCalledTimes(1));
+    rejectRenewal(new Error("login_required"));
+
+    const errors = await Promise.all(failedRequests.map((request) => request.catch((caught: unknown) => caught)));
+
+    expect(errors).toHaveLength(3);
+    expect(errors.every((error) => error instanceof ApiError && error.status === 401)).toBe(true);
+    expect(renewSession).toHaveBeenCalledTimes(1);
+    expect(onSessionExpired).toHaveBeenCalledTimes(3);
+
+    await expect(api.get<{ items: unknown[] }>("/api/users")).resolves.toEqual({ items: [] });
+    expect(renewSession).toHaveBeenCalledTimes(2);
+  });
+
   it("throws a 401 error without trying to renew when renewSession is not configured", async () => {
     const onSessionExpired = vi.fn();
     configureHttpClient({ getAccessToken: () => undefined, onSessionExpired });

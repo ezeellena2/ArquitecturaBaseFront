@@ -18,6 +18,8 @@ export const authConfig: UserManagerSettings = {
   // code_verifier, que tiene que sobrevivir la ida y vuelta a /connect/authorize pero no la pestaña.
   // Nunca guarda tokens.
   stateStore: new WebStorageStateStore({ store: globalThis.sessionStorage }),
-  automaticSilentRenew: true,
+  // El cliente HTTP renueva una sola vez al recibir 401. Una renovación automática paralela podría reutilizar el
+  // mismo refresh token rotativo y hacer que el servidor revoque toda la cadena.
+  automaticSilentRenew: false,
   accessTokenExpiringNotificationTimeInSeconds: 60,
 };

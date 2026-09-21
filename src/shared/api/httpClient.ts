@@ -26,9 +26,13 @@ export function resetHttpClient(): void {
 }
 
 function renewOnce(): Promise<string | undefined> {
-  renewal ??= (options.renewSession?.() ?? Promise.resolve(undefined)).finally(() => {
-    renewal = undefined;
-  });
+  renewal ??= (options.renewSession?.() ?? Promise.resolve(undefined))
+    // El 401 original es el contrato de la API. Una falla interna de OIDC también significa que no hay token
+    // nuevo, pero no debe escapar como un Error ajeno ni saltear onSessionExpired.
+    .catch(() => undefined)
+    .finally(() => {
+      renewal = undefined;
+    });
 
   return renewal;
 }
