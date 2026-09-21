@@ -1,6 +1,5 @@
 {
   "title": "Settings",
-  "description": "The system settings.",
   "registration": {
     "title": "Who can sign in",
     "switchLabel": "Open registration",

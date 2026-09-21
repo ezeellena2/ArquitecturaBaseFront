@@ -1,6 +1,5 @@
 {
   "title": "Mi perfil",
-  "description": "Tus datos y cómo querés ver el sistema.",
   "form": {
     "email": "Correo electrónico",
     "emailHint": "No se cambia: es con el que ingresás.",

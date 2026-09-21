@@ -14,7 +14,8 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
-import { PageHeader } from "@/shared/ui/PageHeader";
+import { ShieldIcon } from "@/shared/ui/icons";
+import { Page } from "@/shared/ui/Page";
 
 /// `/roles` (sección 11 del spec de la Fase 4). El endpoint devuelve la lista entera, no una página: son
 /// pocos y se usan como catálogo desde otras pantallas, así que no hay buscador ni paginado.
@@ -105,19 +106,17 @@ export function RolesPage() {
   }
 
   return (
-    <div>
-      <PageHeader
-        title={t("title")}
-        description={t("description")}
-        actions={
-          <Can permission="roles.manage">
-            <Button type="button" onClick={() => setIsCreating(true)}>
-              {t("actions.new")}
-            </Button>
-          </Can>
-        }
-      />
-
+    <Page
+      icon={ShieldIcon}
+      title={t("title")}
+      actions={
+        <Can permission="roles.manage">
+          <Button type="button" onClick={() => setIsCreating(true)}>
+            {t("actions.new")}
+          </Button>
+        </Can>
+      }
+    >
       <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <DataTable
           columns={columns}
@@ -153,6 +152,6 @@ export function RolesPage() {
           onConfirm={() => removal.mutate(deletingRole)}
         />
       ) : null}
-    </div>
+    </Page>
   );
 }

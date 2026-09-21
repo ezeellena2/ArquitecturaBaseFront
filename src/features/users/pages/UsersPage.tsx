@@ -24,7 +24,8 @@ import { usePagination } from "@/shared/hooks/usePagination";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable } from "@/shared/ui/DataTable";
-import { PageHeader } from "@/shared/ui/PageHeader";
+import { Page } from "@/shared/ui/Page";
+import { UsersIcon } from "@/shared/ui/icons";
 import { Pagination } from "@/shared/ui/Pagination";
 import { SearchInput } from "@/shared/ui/SearchInput";
 
@@ -109,19 +110,17 @@ export function UsersPage() {
   const isDeletion = confirmation?.kind === "delete";
 
   return (
-    <div>
-      <PageHeader
-        title={t("title")}
-        description={t("description")}
-        actions={
-          <Can permission="users.manage">
-            <Button type="button" onClick={() => setIsCreating(true)}>
-              {t("actions.new")}
-            </Button>
-          </Can>
-        }
-      />
-
+    <Page
+      icon={UsersIcon}
+      title={t("title")}
+      actions={
+        <Can permission="users.manage">
+          <Button type="button" onClick={() => setIsCreating(true)}>
+            {t("actions.new")}
+          </Button>
+        </Can>
+      }
+    >
       <div className="mb-3 w-full max-w-sm">
         <SearchInput value={search ?? ""} onChange={setSearch} label={t("searchLabel")} />
       </div>
@@ -181,6 +180,6 @@ export function UsersPage() {
           }}
         />
       ) : null}
-    </div>
+    </Page>
   );
 }

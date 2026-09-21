@@ -10,7 +10,8 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
-import { PageHeader } from "@/shared/ui/PageHeader";
+import { UserIcon } from "@/shared/ui/icons";
+import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 interface Draft {
@@ -91,8 +92,7 @@ export function ProfilePage() {
 
   if (!user || !draft) {
     return (
-      <div>
-        <PageHeader title={t("title")} description={t("description")} />
+      <Page icon={UserIcon} title={t("title")}>
         {/* Mientras el perfil no llegó, el formulario ocupa su lugar. Si `/api/me` falló no hay nada que
             editar: de ese error se ocupa el aviso global del queryClient, igual que en el tablero. */}
         {isPending ? (
@@ -102,7 +102,7 @@ export function ProfilePage() {
             <Skeleton aria-hidden="true" className="h-14" />
           </div>
         ) : null}
-      </div>
+      </Page>
     );
   }
 
@@ -117,9 +117,7 @@ export function ProfilePage() {
       : undefined;
 
   return (
-    <div>
-      <PageHeader title={t("title")} description={t("description")} />
-
+    <Page icon={UserIcon} title={t("title")}>
       <form
         noValidate
         className="flex max-w-lg flex-col gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
@@ -208,6 +206,6 @@ export function ProfilePage() {
           </Button>
         </div>
       </form>
-    </div>
+    </Page>
   );
 }

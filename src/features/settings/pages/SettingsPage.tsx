@@ -14,7 +14,8 @@ import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Label } from "@/shared/ui/label";
-import { PageHeader } from "@/shared/ui/PageHeader";
+import { SettingsIcon } from "@/shared/ui/icons";
+import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Switch } from "@/shared/ui/switch";
 
@@ -93,9 +94,7 @@ export function SettingsPage() {
   );
 
   return (
-    <div>
-      <PageHeader title={t("title")} description={t("description")} />
-
+    <Page icon={SettingsIcon} title={t("title")}>
       <section className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <h2 className="text-sm font-semibold text-[var(--color-content)]">{t("registration.title")}</h2>
         {body}
@@ -115,6 +114,6 @@ export function SettingsPage() {
           onConfirm={() => mutation.mutate(pendingMode)}
         />
       ) : null}
-    </div>
+    </Page>
   );
 }

@@ -67,7 +67,9 @@ export function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar sidebarExpanded={isMobile ? mobileOpen : !collapsed} onToggleSidebar={toggleSidebar} />
 
-        <main className="flex-1 overflow-y-auto p-6">
+        {/* Sin padding: la banda de encabezado de cada pantalla llega a los bordes. El margen del contenido
+            lo pone `Page`, que es el único que sabe dónde termina la banda y dónde empieza el cuerpo. */}
+        <main className="flex-1 overflow-y-auto">
           <Suspense fallback={<Spinner />}>
             <Outlet />
           </Suspense>

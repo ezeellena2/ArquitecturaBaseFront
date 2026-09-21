@@ -1,6 +1,5 @@
 {
   "title": "My profile",
-  "description": "Your details and how you want to see the system.",
   "form": {
     "email": "Email address",
     "emailHint": "It can't be changed: it's the one you sign in with.",

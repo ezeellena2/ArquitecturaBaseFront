@@ -1,6 +1,5 @@
 {
   "title": "Roles y permisos",
-  "description": "Qué puede hacer cada grupo de personas.",
   "columns": {
     "name": "Rol",
     "description": "Descripción",

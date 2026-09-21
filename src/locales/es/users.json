@@ -1,6 +1,5 @@
 {
   "title": "Usuarios",
-  "description": "Las cuentas que pueden entrar al sistema.",
   "searchLabel": "Buscar por correo o nombre",
   "columns": {
     "email": "Correo",
