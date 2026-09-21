@@ -56,20 +56,20 @@ export function LoginCodePage() {
     restart: restartResend,
   } = useCountdown(state?.resendAfterSeconds ?? 0);
 
-  // It only depends on `email` and `returnUrl`: if there is no one to send the code to, or the `returnUrl` does notno
+  // Solo depende de `email` y del `returnUrl`: si no hay a quién mandarle el código, o el `returnUrl` no
   // sirve, vuelve a /login apenas se monta la pantalla, sin importar si después cambian `navigate` o
   // `loginPath` (no deberían, en la misma visita).
   useEffect(() => {
-    if (!email) { !returnUrl) {
+    if (!email || !returnUrl) {
       navigate(loginPath, { replace: true });
     }
-  }, [email, browse, loginPath]);oginPath]);
+  }, [email, returnUrl, navigate, loginPath]);
 
-  if (!email) { !returnUrl) {
+  if (!email || !returnUrl) {
     return null;
   }
 
-  // TypeScript does not carry out top-to-bottom checking of nested functions (`handleVerify`,
+  // TypeScript no lleva los chequeos de arriba adentro de las funciones anidadas (`handleVerify`,
   // `handleResend`): estas constantes sí quedan tipadas `string`, porque nunca se reasignan.
   const currentEmail = email;
   const currentReturnUrl = returnUrl;
@@ -137,7 +137,7 @@ export function LoginCodePage() {
         <OtpInput length={CODE_LENGTH} value={code} onChange={setCode} label={t("code.otpLabel")} disabled={isVerifying} />
 
         {error ? (
-          <div role="alert" className="flex flex-col gap-1 text-sm text-[var(--color-danger)]">r-danger)]">
+          <div role="alert" className="flex flex-col gap-1 text-center text-sm text-[var(--color-danger)]">
             <p>{error}</p>
             {attemptsLeft !== undefined ? <p>{t("code.attemptsLeft", { count: attemptsLeft })}</p> : null}
           </div>
