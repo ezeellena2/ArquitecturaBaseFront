@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,18 +13,28 @@ vi.mock("react-oidc-context", async () => {
   return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) };
 });
 
+/// Quien tiene las dos pantallas del grupo.
+function withBothPermissions() {
+  server.use(
+    http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["users.read", "roles.read"] })),
+  );
+}
+
 describe("Sidebar", () => {
   // AppProviders usa el queryClient de la app (un singleton). Sin esto, la respuesta de /api/me de un test
   // queda cacheada (staleTime: 30s) y se filtra al siguiente, que pisó el handler con otro permiso.
   beforeEach(() => {
     queryClient.clear();
+    globalThis.localStorage.clear();
   });
 
   it("hides the items whose permission the user does not have", async () => {
     // El handler por defecto de /api/me devuelve permissions: ["users.read"].
     renderRouteWithProviders("/");
 
-    expect(await screen.findByRole("link", { name: /usuarios/i })).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: /gestión de usuarios/i }));
+
+    expect(screen.getByRole("link", { name: /usuarios/i })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /roles/i })).not.toBeInTheDocument();
   });
 
@@ -68,8 +78,94 @@ describe("Sidebar", () => {
 
     renderRouteWithProviders("/");
 
-    expect(await screen.findByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: /gestión de usuarios/i }));
+
+    expect(screen.getByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /configuración/i })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /usuarios/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^usuarios$/i })).not.toBeInTheDocument();
+  });
+
+  describe("submenu", () => {
+    it("starts folded away from its screens and unfolds when pressed", async () => {
+      withBothPermissions();
+
+      renderRouteWithProviders("/");
+
+      const group = await screen.findByRole("button", { name: /gestión de usuarios/i });
+
+      // En el Inicio ningún hijo está activo: el grupo arranca plegado, y sus pantallas no se dibujan.
+      expect(group).toHaveAttribute("aria-expanded", "false");
+      expect(screen.queryByRole("link", { name: /^usuarios$/i })).not.toBeInTheDocument();
+
+      await userEvent.click(group);
+
+      expect(group).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByRole("link", { name: /^usuarios$/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
+    });
+
+    it("opens itself on the screen of one of its children", async () => {
+      withBothPermissions();
+
+      // Entrar directo a /roles (un favorito, una recarga) tiene que mostrar dónde estás, no un grupo
+      // plegado: el grupo de la ruta activa se despliega solo.
+      renderRouteWithProviders("/roles");
+
+      expect(await screen.findByRole("button", { name: /gestión de usuarios/i })).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      );
+      expect(await screen.findByRole("link", { name: /roles y permisos/i })).toHaveAttribute("aria-current", "page");
+    });
+
+    it("stays open while navigating between its children", async () => {
+      withBothPermissions();
+
+      renderRouteWithProviders("/roles");
+
+      const users = await screen.findByRole("link", { name: /^usuarios$/i });
+
+      await userEvent.click(users);
+
+      // La ruta es `lazy`: el enlace ya existe, lo que tarda en llegar es que pase a ser el activo.
+      await waitFor(() => expect(users).toHaveAttribute("aria-current", "page"));
+      expect(screen.getByRole("button", { name: /gestión de usuarios/i })).toHaveAttribute("aria-expanded", "true");
+    });
+
+    it("shows a single child to whoever has a single permission", async () => {
+      // Este es el riesgo del patrón: que el submenú dibuje sus hijos completos y el permiso se controle
+      // recién al entrar. El permiso es de cada hijo, no del grupo. El handler por defecto trae users.read.
+      renderRouteWithProviders("/usuarios");
+
+      const group = await screen.findByRole("button", { name: /gestión de usuarios/i });
+      const children = within(group.closest("li") as HTMLElement).getAllByRole("link");
+
+      expect(children).toHaveLength(1);
+      expect(children[0]).toHaveAccessibleName(/usuarios/i);
+    });
+
+    it("does not show the group at all to whoever has none of its permissions", async () => {
+      server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["settings.manage"] })));
+
+      renderRouteWithProviders("/configuracion");
+
+      // Configuración es el otro ítem del mismo grupo rotulado: esperar a que aparezca prueba que los
+      // permisos ya llegaron, así la ausencia del grupo no es la del menú todavía pendiente.
+      expect(await screen.findByRole("link", { name: /configuración/i })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /gestión de usuarios/i })).not.toBeInTheDocument();
+    });
+
+    it("flattens the group into loose icons when the bar is collapsed", async () => {
+      withBothPermissions();
+      globalThis.localStorage.setItem("arquitecturabase.sidebar", '"collapsed"');
+
+      renderRouteWithProviders("/");
+
+      // Contraída la barra es un lanzador, no un mapa: no hay grupo que desplegar y las dos pantallas
+      // quedan a un clic, con su nombre para el lector de pantalla.
+      expect(await screen.findByRole("link", { name: /^usuarios$/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /gestión de usuarios/i })).not.toBeInTheDocument();
+    });
   });
 });

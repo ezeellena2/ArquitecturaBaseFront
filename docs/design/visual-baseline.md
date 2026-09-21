@@ -74,10 +74,14 @@ Con esto, `design-lab/page-header/index.html` cumplió su función y se elimina.
 
 - El menú lateral tiene **grupos rotulados** (`ADMINISTRACIÓN`) y, dentro, ítems que pueden abrir un **submenú desplegable**. El grupo padre es un `button` con `aria-expanded`; los hijos van indentados, con una guía vertical que los ata al padre.
 - **Los submenús viven en el menú lateral, no en pestañas del encabezado.** Se evaluaron pestañas en la banda y se descartaron: obligaban a que el encabezado cambiara de alto según la sección, y dejaban el árbol de navegación repartido en dos lugares.
+- **Los grupos arrancan plegados, y el de la ruta activa se despliega solo.** El menú tiene que decir a dónde se puede ir sin listarlo todo siempre; y entrar a `/roles` desde un favorito o recargando tiene que mostrar dónde estás, no un grupo cerrado. El desplegado se calcula durante el render, no con un efecto, así el grupo no aparece plegado y se abre después.
+- **Se pliega a mano y no se recuerda entre visitas.** Que quede abierto porque estás parado adentro no es una preferencia; guardarlo convertiría en silencio "plegado salvo el activo" en "siempre abierto" apenas entrás una vez. La barra contraída sí se recuerda, porque eso sí es una decisión sobre el espacio de trabajo.
 - Se abre solo el grupo activo. Con varios grupos abiertos el menú se vuelve una lista larga que hay que scrollear, y deja de servir para orientarse.
+- **Los hijos van sin ícono**, solo con la sangría y la guía vertical: el ícono del padre ya representa al grupo, y repetirlo en cada hijo empuja el texto casi treinta píxeles a la derecha sin decir nada nuevo. El ícono sigue existiendo en el modelo porque lo usa la barra contraída.
 - **Agrupar en el menú no cambia las rutas.** `Gestión de usuarios` agrupa `/usuarios` y `/roles` sin anidar URLs: los enlaces guardados siguen funcionando y el `returnUrl` del ingreso no se toca.
 - **Cada hijo conserva su permiso.** Quien tiene uno solo ve un solo hijo; quien no tiene ninguno no ve el grupo. El permiso se pide en la ruta y se repite en la navegación: uno decide si se entra, el otro si se ve.
 - Contraída, la barra deja solo los íconos centrados en una caja de 40 px, y el rótulo del grupo se reemplaza por un separador corto. El control para plegarla es un círculo montado sobre el borde derecho, a la altura del primer ítem.
+- **Contraída no hay submenús: los hijos suben a la lista como íconos sueltos.** La barra contraída es un lanzador, no un mapa; esconder destinos detrás de un desplegable de 40 px cambiaría un clic por dos. La jerarquía la siguen contando las migas y el menú expandido.
 
 ## Íconos y acciones
 
@@ -175,6 +179,8 @@ Cuando una decisión visual tiene más de una salida razonable, se compara antes
 | Submenú | pestañas en el encabezado / desplegable en el menú / carril lateral propio | **Desplegable en el menú lateral** |
 | Rutas al agrupar | anidar `/gestion-usuarios/...` o dejarlas | **Se quedan** `/usuarios` y `/roles` |
 | Conteos por opción de filtro | ahora o en una fase posterior | **Ahora**, con el contrato de backend que haga falta |
+| Grupo del menú al entrar | abierto por defecto / plegado salvo el activo | **Plegado salvo el activo** |
+| Submenú con la barra contraída | íconos sueltos / menú flotante / descontraer la barra | **Íconos sueltos**, sin componente nuevo |
 
 `design-lab/page-header/index.html` fue el soporte de la segunda de esas comparaciones y ya no tiene función: se elimina. Un laboratorio vive solo mientras su pregunta está abierta; si se queda, en un mes nadie sabe si es una propuesta vigente o un resto.
 

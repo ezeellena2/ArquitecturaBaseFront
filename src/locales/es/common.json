@@ -1,6 +1,10 @@
 {
-  "app": { "name": "Arquitectura Base" },
-  "home": { "title": "Inicio" },
+  "app": {
+    "name": "Arquitectura Base"
+  },
+  "home": {
+    "title": "Inicio"
+  },
   "actions": {
     "cancel": "Cancelar",
     "confirm": "Confirmar",
@@ -44,6 +48,7 @@
     "general": "General",
     "administration": "Administración",
     "dashboard": "Inicio",
+    "userManagement": "Gestión de usuarios",
     "users": "Usuarios",
     "roles": "Roles y permisos",
     "settings": "Configuración"

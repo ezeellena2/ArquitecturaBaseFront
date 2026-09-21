@@ -1,12 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink } from "react-router";
-import { navigation, type NavigationItem } from "../navigation";
+import { NavLink, useLocation } from "react-router";
+import { branchOf, isBranch, navigation, type NavigationBranch, type NavigationItem, type NavigationLink } from "../navigation";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import { ChevronLeftIcon, RefreshIcon } from "@/shared/ui/icons";
+import { ChevronDownIcon, ChevronLeftIcon, RefreshIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -16,15 +16,19 @@ function initialOf(name: string): string {
 }
 
 /// Un ítem de navegación. Contraído, solo el ícono (con Tooltip) y el texto queda para el lector de pantalla.
+/// Adentro de un submenú va sin ícono: lo dicen la sangría y la guía vertical, y el ícono del padre ya
+/// representa al grupo. El del hijo sigue existiendo en el modelo porque la barra contraída lo usa.
 function NavItem({
   item,
   label,
   collapsed,
+  showIcon = true,
   onNavigate,
 }: {
-  item: NavigationItem;
+  item: NavigationLink;
   label: string;
   collapsed: boolean;
+  showIcon?: boolean;
   onNavigate?: () => void;
 }) {
   const Icon = item.icon;
@@ -44,7 +48,7 @@ function NavItem({
         )
       }
     >
-      <Icon className="size-5 shrink-0" />
+      {showIcon ? <Icon className="size-5 shrink-0" /> : null}
       {collapsed ? <span className="sr-only">{label}</span> : <span className="truncate">{label}</span>}
     </NavLink>
   );
@@ -59,6 +63,93 @@ function NavItem({
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   );
+}
+
+/// Un grupo desplegable. El padre es un `button` con `aria-expanded`, no un enlace: a un grupo no se navega.
+/// Plegado, sus hijos no se dibujan; el menú tiene que decir dónde se puede ir, no listarlo todo siempre.
+function NavBranch({
+  branch,
+  label,
+  open,
+  onToggle,
+  translate,
+  onNavigate,
+}: {
+  branch: NavigationBranch;
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  translate: (key: string) => string;
+  onNavigate?: () => void;
+}) {
+  const Icon = branch.icon;
+  const listId = useId();
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={onToggle}
+        className="flex w-full items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
+      >
+        <Icon className="size-5 shrink-0" />
+        <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+        <ChevronDownIcon
+          aria-hidden="true"
+          className={cn("size-4 shrink-0 transition-transform", open ? "" : "-rotate-90")}
+        />
+      </button>
+      {open ? (
+        // La guía arranca bajo el centro del ícono del padre (px-3 más medio ícono de 20), que es lo que
+        // ata visualmente los hijos al grupo.
+        <ul id={listId} className="mt-1 ml-[22px] flex flex-col gap-1 border-l border-[var(--color-border)] pl-3">
+          {branch.children.map((child) => (
+            <li key={child.to}>
+              <NavItem
+                item={child}
+                label={translate(child.labelKey)}
+                collapsed={false}
+                showIcon={false}
+                onNavigate={onNavigate}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </>
+  );
+}
+
+/// Los ítems que esta persona puede ver, con los hijos de cada grupo ya filtrados. Un grupo se ve si se ve
+/// alguno de sus hijos: no hay permiso que dé acceso al grupo y a ninguna de sus pantallas.
+/// Contraída, los grupos desaparecen y sus hijos suben a la lista: la barra contraída es un lanzador, no un
+/// mapa, y esconder destinos detrás de un desplegable de 40px sería cambiar un clic por dos.
+/// Mientras los permisos no llegaron se muestran todos: filtrarlos igual haría desaparecer medio menú para
+/// devolverlo de golpe, que es peor que el spinner que esto reemplaza.
+function visibleItems(items: NavigationItem[], canSee: (link: NavigationLink) => boolean, iconsOnly: boolean) {
+  return items.flatMap<NavigationItem>((item) => {
+    if (!isBranch(item)) {
+      return canSee(item) ? [item] : [];
+    }
+
+    const children = item.children.filter(canSee);
+
+    if (children.length === 0) {
+      return [];
+    }
+
+    return iconsOnly ? children : [{ ...item, children }];
+  });
+}
+
+/// Si el ítem puede llegar a no verse, mientras los permisos no llegan ocupa su lugar un bloque de carga.
+/// Un grupo lo reserva solo si todos sus hijos dependen de un permiso: si alguno no, el grupo se ve seguro.
+function dependsOnPermissions(item: NavigationItem): boolean {
+  return isBranch(item)
+    ? item.children.every((child) => Boolean(child.permission))
+    : Boolean(item.permission);
 }
 
 interface SidebarProps {
@@ -77,6 +168,30 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   // `isPending` es "todavía no sabemos", no "no hay": mientras dura, el menú reserva el lugar de los ítems
   // que dependen de un permiso y el pie reserva el del usuario, así nada aparece de golpe empujando al resto.
   const { data: user, isPending } = useCurrentUser();
+  const location = useLocation();
+
+  // El grupo de la pantalla en la que estás parado. Los grupos arrancan plegados: el menú muestra a dónde se
+  // puede ir sin desplegar todo, y el que importa —el de la ruta activa— se abre solo.
+  const activeBranchKey = branchOf(location.pathname)?.labelKey;
+  const [openBranchKeys, setOpenBranchKeys] = useState<string[]>(() => (activeBranchKey ? [activeBranchKey] : []));
+  const [lastActiveBranchKey, setLastActiveBranchKey] = useState(activeBranchKey);
+
+  // Entrar a una pantalla del grupo lo despliega, y se calcula durante el render en vez de con un efecto:
+  // si no, al recargar /roles el menú aparecería plegado y recién después se abriría. Navegar entre hermanos
+  // no cambia la clave, así que el grupo se queda como esté, incluso si se plegó a mano.
+  if (activeBranchKey !== lastActiveBranchKey) {
+    setLastActiveBranchKey(activeBranchKey);
+
+    if (activeBranchKey && !openBranchKeys.includes(activeBranchKey)) {
+      setOpenBranchKeys([...openBranchKeys, activeBranchKey]);
+    }
+  }
+
+  function toggleBranch(labelKey: string) {
+    setOpenBranchKeys((previous) =>
+      previous.includes(labelKey) ? previous.filter((key) => key !== labelKey) : [...previous, labelKey],
+    );
+  }
 
   useEffect(() => {
     if (!isMobile || !mobileOpen) {
@@ -97,6 +212,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   // Contraída a solo íconos únicamente en escritorio: el cajón de móvil siempre se ve expandido.
   const iconsOnly = collapsed && !isMobile;
   const onNavigate = isMobile ? onCloseMobile : undefined;
+  const canSee = (link: NavigationLink) => isPending || !link.permission || has(link.permission);
 
   return (
     <>
@@ -176,13 +292,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           ) : null}
 
           {navigation.map((group, index) => {
-            const items = group.items;
-            // Hasta que no llegan los permisos no se sabe qué ítems se ven. Filtrarlos igual haría desaparecer
-            // medio menú para después devolverlo de golpe, que es peor que el spinner que esto reemplaza: se
-            // muestran todos, y los que dependen de un permiso van como un bloque de carga del alto de un ítem.
-            const visibleItems = isPending ? items : items.filter((item) => !item.permission || has(item.permission));
+            const items = visibleItems(group.items, canSee, iconsOnly);
 
-            if (visibleItems.length === 0) {
+            if (items.length === 0) {
               return null;
             }
 
@@ -204,15 +316,21 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                   </>
                 ) : null}
                 <ul className={cn("flex flex-col gap-1", iconsOnly ? "items-center" : "")}>
-                  {visibleItems.map((item) => (
-                    <li key={item.to}>
-                      {isPending && item.permission ? (
+                  {items.map((item) => (
+                    <li key={isBranch(item) ? item.labelKey : item.to}>
+                      {isPending && dependsOnPermissions(item) ? (
                         <Skeleton
                           aria-hidden="true"
-                          className={cn(
-                            "rounded-[var(--radius-control)]",
-                            iconsOnly ? "size-10" : "h-9",
-                          )}
+                          className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-10" : "h-9")}
+                        />
+                      ) : isBranch(item) ? (
+                        <NavBranch
+                          branch={item}
+                          label={t(item.labelKey)}
+                          open={openBranchKeys.includes(item.labelKey)}
+                          onToggle={() => toggleBranch(item.labelKey)}
+                          translate={t}
+                          onNavigate={onNavigate}
                         />
                       ) : (
                         <NavItem item={item} label={t(item.labelKey)} collapsed={iconsOnly} onNavigate={onNavigate} />
