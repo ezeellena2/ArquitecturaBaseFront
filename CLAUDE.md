@@ -29,6 +29,7 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 
 - Las rutas del SPA están **en español** (`/usuarios`, `/login/codigo`, `/sin-permiso`), porque son parte de la interfaz. Viven todas juntas en `src/app/routes.tsx`; `router.tsx` solo las monta.
 - **El ingreso arranca siempre en `/login`, y el `returnUrl` lo manda el servidor.** Si se entra a `/login` sin `returnUrl` en la query, la pantalla no muestra nada: dispara el redirect de OIDC y el backend vuelve a mandar a `/login`, esta vez con el `returnUrl` que hay que devolver al terminar. Ese valor se pasa tal cual a `/login/codigo` y al botón de Google, y al verificar el código se navega al `returnUrl` que responde el backend. No se inventa ni se reescribe del lado del front. Un `returnUrl` que no sea un pedido de `/connect/authorize` (una URL tipeada, un favorito viejo) no lo va a aceptar el backend: `authorizeReturnUrl` (`features/auth/lib`) lo trata como si no estuviera, y se vuelve a `/login` sin query para que el ingreso arranque de nuevo.
+- `/perfil` es la pantalla del perfil propio (nombre, idioma y zona horaria) y se entra desde "Mi perfil", en el menú del usuario. No pide permiso: alcanza con tener sesión, porque cada quien edita el suyo. `PUT /api/me` **reemplaza** los tres campos, así que se mandan siempre los tres, aunque se haya tocado uno solo.
 
 ## Listados
 
@@ -41,7 +42,7 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 
 - TypeScript estricto: nada de `any` ni de `@ts-ignore`. Los tipos se importan con `import type` (`verbatimModuleSyntax`).
 - Todo texto que ve el usuario sale de i18next. Español rioplatense con voseo e inglés, siempre los dos. Un texto nuevo va en el namespace de su módulo (`src/locales/<idioma>/<módulo>.json`, que se pide con `useTranslation("<módulo>")`) y en los dos idiomas; `parity.test.ts` se pone en rojo si una clave está en uno y no en el otro. A `common.json` sube solo lo que usa más de un módulo.
-- El idioma elegido se guarda en `localStorage` y viaja al backend en `Accept-Language`, así que los errores del servidor también vienen traducidos. **No se guarda en el perfil del usuario:** vale para este navegador, no para la cuenta. Cuando exista el endpoint de actualización de perfil, ahí se persiste.
+- **El idioma tiene dos niveles.** `changeLanguage` (`shared/i18n`) lo cambia en la interfaz y lo recuerda en `localStorage`: es lo único que puede hacer la pantalla de ingreso, donde todavía no hay cuenta a la que guardárselo. Con sesión abierta, el cambio pasa por `useLanguagePreference().change` (`src/auth`), que además lo guarda en el perfil con `PUT /api/me` y, si ese guardado falla, devuelve la interfaz al idioma anterior y lo avisa: la interfaz y la cuenta nunca quedan diciendo cosas distintas. **Cuando los dos valores difieren, gana el de la cuenta:** `useProfileLanguageSync`, montado en `AppLayout`, lo aplica apenas llega `/api/me`, así entrar desde otro navegador respeta lo que la persona guardó. El idioma sigue viajando en `Accept-Language`, así que los errores del servidor también vienen traducidos.
 - Los datos del servidor se piden con TanStack Query; no hay `useEffect` con `fetch`.
 - Todas las llamadas al backend pasan por `shared/api/httpClient`, que agrega el token, el idioma y convierte los errores en `ApiError`.
 - Los tokens viven en memoria. Nunca en `localStorage` ni en `sessionStorage`.
@@ -50,6 +51,7 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 - Los archivos en minúscula de `shared/ui` los genera la CLI de shadcn (`npx shadcn@4.21.0 add <componente> --yes`) y se editan lo mínimo, porque un `add` los vuelve a escribir. Los nuestros van en PascalCase. Si volvés a generar uno, revisá si traía texto en inglés: `dialog.tsx` es el caso conocido (el "Close" del botón de cerrar y el del lector de pantalla están traducidos a mano, y `dialog.i18n.test.tsx` se pone en rojo si vuelven). Por eso `.oxlintrc.json` apaga `react/only-export-components` solo para los generados: exportan su `cva` al lado del componente y es su forma, no un descuido. En los nuestros la regla sigue activa.
 - Para combinar clases hay una sola función, `cn`, que viene del paquete `cn` (de shadcn) y se reexporta desde `shared/lib/utils`. No volver a agregar `clsx` ni `tailwind-merge`.
 - Tests con Vitest y Testing Library, consultando por rol y texto accesible, no por clases CSS. Las llamadas HTTP se simulan con MSW.
+- Las fechas del backend vienen en UTC y se muestran con `formatDateTimeInZone` (`shared/lib/dateTime`), en la zona horaria del perfil. Es el único formateador de fecha y hora del front: si aparece un segundo, las mismas fechas se ven distinto en dos pantallas.
 
 ## Rendimiento
 

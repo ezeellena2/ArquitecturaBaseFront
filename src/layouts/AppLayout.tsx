@@ -4,6 +4,7 @@ import { Outlet } from "react-router";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
 import { useIsSigningOut } from "@/auth/signOutStatus";
+import { useProfileLanguageSync } from "@/auth/useLanguagePreference";
 import { useLocalStorage } from "@/shared/hooks/useLocalStorage";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -18,6 +19,10 @@ export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 767px)");
   const isSigningOut = useIsSigningOut();
+
+  // El idioma guardado en la cuenta manda sobre el de este navegador, y acá es donde se aplica: apenas llega
+  // el perfil, y para toda pantalla con sesión (sección 9 del spec de la Fase 4).
+  useProfileLanguageSync();
 
   const collapsed = sidebarState === "collapsed";
 

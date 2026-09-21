@@ -1,4 +1,5 @@
 import type { UserListItem } from "./api/users";
+import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import type { Column } from "@/shared/ui/DataTable";
@@ -13,13 +14,6 @@ export interface UserRowActions {
   onEditRoles: (user: UserListItem) => void;
   onToggleActive: (user: UserListItem) => void;
   onDelete: (user: UserListItem) => void;
-}
-
-/// La fecha llega en UTC (sección 6.3 del spec): se muestra en la zona horaria del perfil, no la cadena cruda.
-function formatCreatedAt(valueUtc: string, language: string, timeZone: string | undefined): string {
-  return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
-    new Date(valueUtc),
-  );
 }
 
 /// Las columnas ordenables (email, displayName, createdAtUtc) coinciden con la lista blanca del backend
@@ -48,7 +42,7 @@ export function createUserColumns(
     {
       id: "createdAtUtc",
       header: t("columns.createdAtUtc"),
-      cell: (row) => formatCreatedAt(row.createdAtUtc, language, timeZone),
+      cell: (row) => formatDateTimeInZone(row.createdAtUtc, language, timeZone),
       sortable: true,
     },
   ];

@@ -1,0 +1,20 @@
+{
+  "title": "Mi perfil",
+  "description": "Tus datos y cómo querés ver el sistema.",
+  "form": {
+    "email": "Correo electrónico",
+    "emailHint": "No se cambia: es con el que ingresás.",
+    "lastLogin": "Último ingreso",
+    "lastLoginNever": "Todavía no hay ninguno.",
+    "displayName": "Nombre",
+    "displayNameHint": "Es el nombre que se muestra en el sistema.",
+    "language": "Idioma",
+    "languageHint": "Queda guardado en tu cuenta: entres desde donde entres, el sistema te habla en este idioma.",
+    "timeZone": "Zona horaria",
+    "timeZoneHint": "Con esto mostramos las fechas y las horas en tu hora local.",
+    "submit": "Guardar"
+  },
+  "feedback": {
+    "saved": "Guardamos tu perfil."
+  }
+}

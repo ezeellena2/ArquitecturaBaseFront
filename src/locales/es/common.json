@@ -27,7 +27,12 @@
       "description": "Revisá la dirección o volvé al tablero."
     }
   },
-  "language": { "label": "Idioma", "es": "Español", "en": "Inglés" },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "Inglés",
+    "saveFailed": "No pudimos guardar el idioma en tu perfil. Probá de nuevo."
+  },
   "pagination": {
     "label": "Paginado",
     "range": "{{from}}–{{to}} de {{total}}",

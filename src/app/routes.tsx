@@ -35,6 +35,12 @@ export const routes: RouteObject[] = [
                 lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }),
               },
               {
+                // Sin permiso: alcanza con tener sesión, que ya la exige el ProtectedRoute de arriba. Cada
+                // quien edita el suyo, y el backend no mira más que el token.
+                path: "/perfil",
+                lazy: async () => ({ Component: (await import("@/features/profile/pages/ProfilePage")).ProfilePage }),
+              },
+              {
                 element: <ProtectedRoute permission="users.read" />,
                 children: [
                   {

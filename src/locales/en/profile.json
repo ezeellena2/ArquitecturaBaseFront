@@ -1,0 +1,20 @@
+{
+  "title": "My profile",
+  "description": "Your details and how you want to see the system.",
+  "form": {
+    "email": "Email address",
+    "emailHint": "It can't be changed: it's the one you sign in with.",
+    "lastLogin": "Last sign-in",
+    "lastLoginNever": "There isn't one yet.",
+    "displayName": "Name",
+    "displayNameHint": "The name shown across the system.",
+    "language": "Language",
+    "languageHint": "It's saved in your account: wherever you sign in from, the system speaks to you in this language.",
+    "timeZone": "Time zone",
+    "timeZoneHint": "We use it to show dates and times in your local time.",
+    "submit": "Save"
+  },
+  "feedback": {
+    "saved": "Your profile was saved."
+  }
+}

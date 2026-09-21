@@ -27,7 +27,12 @@
       "description": "Check the address or go back to the dashboard."
     }
   },
-  "language": { "label": "Language", "es": "Spanish", "en": "English" },
+  "language": {
+    "label": "Language",
+    "es": "Spanish",
+    "en": "English",
+    "saveFailed": "We couldn't save the language in your profile. Try again."
+  },
   "pagination": {
     "label": "Pagination",
     "range": "{{from}}–{{to}} of {{total}}",

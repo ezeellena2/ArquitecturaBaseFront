@@ -9,6 +9,8 @@ export interface CurrentUser {
   readonly displayName: string | null;
   readonly culture: string;
   readonly timeZoneId: string;
+  /// Último ingreso, en UTC (sección 9 del spec de la Fase 4). Viene `null` si todavía no hay ninguno guardado.
+  readonly lastLoginAtUtc: string | null;
   readonly roles: readonly string[];
   readonly permissions: readonly string[];
 }
