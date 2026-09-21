@@ -99,12 +99,12 @@ export function DataTable<TRow>({
               key={column.id}
               scope="col"
               aria-sort={ariaSort(column.id, sort)}
-              className={cn(headerText, column.align === "right" ? "text-right" : undefined)}
+              className={cn(headerText, "px-4", column.align === "right" ? "text-right" : undefined)}
             >
               {column.sortable && onSortChange ? (
                 // El botón hereda la tipografía del encabezado: si se queda con la suya, la columna
                 // ordenable se ve de otro tamaño que las demás.
-                <Button type="button" variant="ghost" size="sm" onClick={() => onSortChange(column.id)} className={headerText}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => onSortChange(column.id)} className={cn(headerText, "-mx-2 px-2")}>
                   {column.header}
                 </Button>
               ) : (
@@ -119,7 +119,7 @@ export function DataTable<TRow>({
           // 44 px: la densidad del proyecto, decidida una vez (fundamento visual, "Tres alturas").
           <TableRow key={rowKey(row)} className="h-11">
             {columns.map((column) => (
-              <TableCell key={column.id} className={column.align === "right" ? "text-right" : undefined}>
+              <TableCell key={column.id} className={cn("px-4", column.align === "right" ? "text-right" : undefined)}>
                 {column.cell(row)}
               </TableCell>
             ))}

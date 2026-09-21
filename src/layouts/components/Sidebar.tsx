@@ -235,7 +235,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                 "fixed top-16 bottom-0 left-0 z-50 w-[264px] transition-transform duration-200",
                 mobileOpen ? "translate-x-0" : "-translate-x-full",
               )
-            : cn("h-svh shrink-0 transition-[width] duration-200", iconsOnly ? "w-[72px]" : "w-[264px]"),
+            // z-30: la flecha de colapsar sale por fuera del borde derecho, y sin esto queda tapada por la
+            // banda del encabezado de la pantalla, que es `sticky z-20` y se pinta después.
+            : cn("h-svh shrink-0 transition-[width] duration-200 z-30", iconsOnly ? "w-[72px]" : "w-[264px]"),
         )}
       >
         <div

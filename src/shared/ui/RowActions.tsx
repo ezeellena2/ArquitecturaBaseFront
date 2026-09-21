@@ -9,8 +9,8 @@ export interface RowAction {
   accessibleName: string;
   icon: ComponentType<{ className?: string }>;
   onSelect: () => void;
-  /// Lo que no se puede deshacer. Va última y se tiñe de rojo solo al interactuar: un ícono rojo permanente
-  /// grita en un listado de veinte filas.
+  /// Lo que no se puede deshacer. Va última del grupo y se tiñe de rojo solo al interactuar: un ícono rojo
+  /// permanente grita en un listado de veinte filas.
   destructive?: boolean;
   /// Sin permiso no se dibuja. No se deja deshabilitada: un botón deshabilitado no recibe foco, así que con
   /// teclado no hay forma de llegar a saber por qué está apagado.
@@ -31,7 +31,9 @@ const tooltip =
   "bg-[var(--color-content)] px-2 py-1.5 text-xs font-medium leading-none text-white opacity-0 transition-opacity " +
   "group-hover/act:opacity-100 group-focus-visible/act:opacity-100";
 
-/// Grupo segmentado: un solo borde alrededor y separadores entre los botones.
+/// Grupo segmentado: un solo borde alrededor y separadores entre los botones. Uno solo para todas las
+/// acciones, incluida la destructiva: separarla en una caja aparte fue una idea propia que el tablero no
+/// tiene, y en una fila de 44 px se lee como dos controles distintos en vez de uno.
 const grupo = "inline-flex overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] divide-x divide-[var(--color-border)]";
 
 function Grupo({ acciones }: { acciones: RowAction[] }) {
@@ -66,8 +68,8 @@ function Grupo({ acciones }: { acciones: RowAction[] }) {
 /// Las acciones de una fila (sección "Íconos y acciones" del fundamento visual): ícono, tooltip al pasar por
 /// encima o al llegar con el teclado, y nombre accesible con el dato de la fila.
 ///
-/// El orden lo decide este componente, no quien lo usa: las inocuas primero y la destructiva última, separada
-/// del grupo. Que sea por construcción es lo que hace que la memoria muscular sirva en todas las pantallas.
+/// El orden lo decide este componente, no quien lo usa: las inocuas primero y la destructiva última. Que sea
+/// por construcción es lo que hace que la memoria muscular sirva en todas las pantallas.
 export function RowActions({ actions }: { actions: RowAction[] }): ReactNode {
   const visibles = actions.filter((accion) => !accion.hidden);
 
@@ -76,13 +78,9 @@ export function RowActions({ actions }: { actions: RowAction[] }): ReactNode {
     return null;
   }
 
-  const inocuas = visibles.filter((accion) => !accion.destructive);
-  const destructivas = visibles.filter((accion) => accion.destructive);
-
   return (
-    <span className="inline-flex items-center gap-1.5">
-      {inocuas.length > 0 ? <Grupo acciones={inocuas} /> : null}
-      {destructivas.length > 0 ? <Grupo acciones={destructivas} /> : null}
+    <span className="inline-flex justify-end">
+      <Grupo acciones={[...visibles.filter((accion) => !accion.destructive), ...visibles.filter((accion) => accion.destructive)]} />
     </span>
   );
 }
