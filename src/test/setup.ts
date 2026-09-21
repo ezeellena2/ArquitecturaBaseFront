@@ -49,4 +49,8 @@ if (!globalThis.ResizeObserver) {
 // Con la suite entera corriendo en paralelo, ese import puede tardar más que el segundo que espera `findBy*`
 // por defecto, y el primer test de cada archivo de pantalla (el único que lo paga; después el módulo ya está
 // cargado) falla sin que haya nada roto. Se espera más, no se saca el `lazy`.
-configure({ asyncUtilTimeout: 5000 });
+//
+// Tiene que quedar por debajo del `testTimeout` de Vitest (5 s): si lo alcanza, el que corta es Vitest, con
+// un "Test timed out" que no dice qué se estaba buscando, en vez del "Unable to find role=..." de
+// Testing Library, que es el que sirve para arreglarlo.
+configure({ asyncUtilTimeout: 3000 });

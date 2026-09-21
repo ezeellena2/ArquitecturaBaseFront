@@ -43,6 +43,15 @@ export const routes: RouteObject[] = [
                   },
                 ],
               },
+              {
+                element: <ProtectedRoute permission="roles.read" />,
+                children: [
+                  {
+                    path: "/roles",
+                    lazy: async () => ({ Component: (await import("@/features/roles/pages/RolesPage")).RolesPage }),
+                  },
+                ],
+              },
             ],
           },
         ],

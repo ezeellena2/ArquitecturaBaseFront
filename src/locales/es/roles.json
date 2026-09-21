@@ -1,0 +1,52 @@
+{
+  "title": "Roles y permisos",
+  "description": "Qué puede hacer cada grupo de personas.",
+  "columns": {
+    "name": "Rol",
+    "description": "Descripción",
+    "userCount": "Usuarios",
+    "permissions": "Permisos",
+    "actions": "Acciones"
+  },
+  "systemBadge": "Del sistema",
+  "systemLocked": "No se cambia",
+  "systemNote": "Admin y User son del sistema: no se renombran, no se borran y a Admin no se le editan los permisos. Es la garantía de que siempre haya alguien que pueda arreglar cualquier cosa.",
+  "permissionsCount": "{{count}} permisos",
+  "empty": {
+    "title": "Todavía no hay roles",
+    "description": "Creá el primero para agrupar permisos."
+  },
+  "actions": {
+    "new": "Nuevo rol",
+    "edit": "Editar",
+    "editFor": "Editar el rol {{name}}",
+    "delete": "Eliminar",
+    "deleteFor": "Eliminar el rol {{name}}"
+  },
+  "form": {
+    "createTitle": "Nuevo rol",
+    "editTitle": "Editar el rol {{name}}",
+    "description": "Elegí qué puede hacer quien tenga este rol. Los cambios valen al instante.",
+    "name": "Nombre",
+    "nameRequired": "Poné un nombre.",
+    "descriptionLabel": "Descripción",
+    "descriptionHint": "Opcional. Una línea que explique para qué sirve.",
+    "permissions": "Permisos",
+    "submit": "Guardar"
+  },
+  "delete": {
+    "title": "Eliminar el rol {{name}}",
+    "description": "Quien lo tenga pierde los permisos que le daba. No se puede deshacer.",
+    "confirm": "Eliminar"
+  },
+  "feedback": {
+    "created": "Creamos el rol.",
+    "updated": "Guardamos los cambios.",
+    "deleted": "Eliminamos el rol."
+  },
+  "errors": {
+    "alreadyExists": "Ya hay un rol con ese nombre.",
+    "systemRole": "Los roles del sistema no se cambian."
+  },
+  "errorTraceId": "Código para reportar: {{traceId}}"
+}

@@ -1,0 +1,52 @@
+{
+  "title": "Roles and permissions",
+  "description": "What each group of people can do.",
+  "columns": {
+    "name": "Role",
+    "description": "Description",
+    "userCount": "Users",
+    "permissions": "Permissions",
+    "actions": "Actions"
+  },
+  "systemBadge": "System role",
+  "systemLocked": "Can't be changed",
+  "systemNote": "Admin and User are system roles: they can't be renamed or deleted, and Admin's permissions can't be edited. That is what guarantees there is always someone who can fix anything.",
+  "permissionsCount": "{{count}} permissions",
+  "empty": {
+    "title": "There are no roles yet",
+    "description": "Create the first one to group permissions."
+  },
+  "actions": {
+    "new": "New role",
+    "edit": "Edit",
+    "editFor": "Edit the {{name}} role",
+    "delete": "Delete",
+    "deleteFor": "Delete the {{name}} role"
+  },
+  "form": {
+    "createTitle": "New role",
+    "editTitle": "Edit the {{name}} role",
+    "description": "Choose what someone with this role can do. Changes take effect right away.",
+    "name": "Name",
+    "nameRequired": "Enter a name.",
+    "descriptionLabel": "Description",
+    "descriptionHint": "Optional. One line explaining what it is for.",
+    "permissions": "Permissions",
+    "submit": "Save"
+  },
+  "delete": {
+    "title": "Delete the {{name}} role",
+    "description": "Whoever has it loses the permissions it granted. This can't be undone.",
+    "confirm": "Delete"
+  },
+  "feedback": {
+    "created": "The role was created.",
+    "updated": "Changes saved.",
+    "deleted": "The role was deleted."
+  },
+  "errors": {
+    "alreadyExists": "There is already a role with that name.",
+    "systemRole": "System roles can't be changed."
+  },
+  "errorTraceId": "Code to report: {{traceId}}"
+}
