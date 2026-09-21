@@ -1,7 +1,7 @@
 # Fundamento visual de ArquitecturaBaseFront
 
 Estado: **vigente**  
-Revisión del Artifact: **2026-09-21**  
+Revisión del Artifact: **2026-09-21** (nueve tableros, exploraciones descartadas eliminadas)  
 Procedencia: [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) (Artifact privado de Claude)
 
 ## Cómo se usa esta base
@@ -18,7 +18,7 @@ Una propuesta del Artifact no se considera implementada por estar dibujada. Prim
 
 ## Pantalla nueva: primero el tablero
 
-Una pantalla nueva no arranca en el editor. Arranca como un tablero en el Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ), el mismo que ya agrupa “Pantalla completa”, “Tabla”, “Filtros” y “Flujo · Nuevo usuario”. Un tablero por pantalla y siempre en ese Artifact: no se abre uno nuevo por pantalla ni por fase, porque el valor está en verlas juntas.
+Una pantalla nueva no arranca en el editor. Arranca como un tablero en el Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ), el mismo que ya agrupa “Gestión de usuarios”, “Filtros”, “Formularios” y “Anatomía”. Un tablero por pantalla y siempre en ese Artifact: no se abre uno nuevo por pantalla ni por fase, porque el valor está en verlas juntas.
 
 El orden no se invierte:
 
@@ -55,11 +55,29 @@ Al terminar, la pantalla suma su fila al mapa Artifact → proyecto y se actuali
 
 Solo hay tres niveles:
 
-1. **Pantalla:** uno por ruta, con título, descripción breve y acción primaria.
+1. **Pantalla:** uno por ruta, con ícono, título y acción primaria.
 2. **Superficie:** abre tabla, formulario, diálogo o panel.
 3. **Grupo:** rotula una lista sin caja, como una sección del menú lateral.
 
-El Artifact propone reemplazar las migas redundantes por un antetítulo contextual, aumentar el contraste tipográfico y compactar el encabezado al hacer scroll sin perder la acción primaria. Esa dirección todavía es una candidata: se compara en `design-lab/page-header/index.html` antes de tocar `PageHeader`.
+**El encabezado de pantalla está decidido** (2026-09-21, elección explícita del usuario sobre el Artifact):
+
+- Es una **banda fija de 56 px**, adherida bajo la barra superior, con el tono de `--color-surface-header` y su borde inferior. **No tiene estado expandido:** se ve igual al entrar que después de scrollear, porque es chrome de la sección y no una portada.
+- Lleva **ícono de la sección** (32 px, radio 8), el **título de la pantalla abierta** en el nivel *título de sección*, y la **acción primaria** a la derecha. La acción es la de la pantalla activa: en Usuarios dice "Nuevo usuario"; en Roles, "Nuevo rol".
+- **Sin antetítulo y sin descripción.** El antetítulo se evaluó y se descartó: el grupo ya se lee en el menú lateral y en las migas, y un tercer lugar diciendo lo mismo no agrega orientación.
+- **Las migas se quedan** en la barra superior, con los tres niveles (`Inicio / Gestión de usuarios / Usuarios`). Al no haber antetítulo, no hay duplicación que resolver.
+
+El peso tipográfico se mantiene en 600. El laboratorio proponía 680, que sería un sexto nivel: el sistema tiene cinco y ampliarlo requiere una decisión deliberada, no un ajuste de una pantalla.
+
+Con esto, `design-lab/page-header/index.html` cumplió su función y se elimina.
+
+## Navegación
+
+- El menú lateral tiene **grupos rotulados** (`ADMINISTRACIÓN`) y, dentro, ítems que pueden abrir un **submenú desplegable**. El grupo padre es un `button` con `aria-expanded`; los hijos van indentados, con una guía vertical que los ata al padre.
+- **Los submenús viven en el menú lateral, no en pestañas del encabezado.** Se evaluaron pestañas en la banda y se descartaron: obligaban a que el encabezado cambiara de alto según la sección, y dejaban el árbol de navegación repartido en dos lugares.
+- Se abre solo el grupo activo. Con varios grupos abiertos el menú se vuelve una lista larga que hay que scrollear, y deja de servir para orientarse.
+- **Agrupar en el menú no cambia las rutas.** `Gestión de usuarios` agrupa `/usuarios` y `/roles` sin anidar URLs: los enlaces guardados siguen funcionando y el `returnUrl` del ingreso no se toca.
+- **Cada hijo conserva su permiso.** Quien tiene uno solo ve un solo hijo; quien no tiene ninguno no ve el grupo. El permiso se pide en la ruta y se repite en la navegación: uno decide si se entra, el otro si se ve.
+- Contraída, la barra deja solo los íconos centrados en una caja de 40 px, y el rótulo del grupo se reemplaza por un separador corto. El control para plegarla es un círculo montado sobre el borde derecho, a la altura del primer ítem.
 
 ## Íconos y acciones
 
@@ -107,6 +125,8 @@ Carga, vacío y error del listado pertenecen a la superficie del listado. Los er
 
 ## Responsive y accesibilidad mínimos
 
+**Ningún tablero del Artifact cubre todavía esta sección.** Todos están dibujados a 1440 px, así que lo de abajo es un contrato escrito pero no dibujado: cómo se ve una tabla de cinco columnas en 320 px, dónde va la acción primaria cuando la banda no entra y cómo se navega el submenú en el cajón de móvil son decisiones que siguen abiertas. Hasta que se dibujen, cada pantalla las va a resolver por su cuenta, que es exactamente lo que este documento existe para evitar.
+
 - Todas las rutas deben funcionar desde 320 px hasta escritorio sin contenido esencial recortado.
 - Lo que hace el puntero también lo hace el teclado; el foco siempre es visible.
 - Cada control tiene nombre accesible y los cambios asincrónicos importantes se anuncian.
@@ -116,50 +136,47 @@ Carga, vacío y error del listado pertenecen a la superficie del listado. Los er
 
 ## Mapa Artifact → proyecto
 
-| Tablero revisado | Destino local | Estado |
+| Tablero | Destino local | Estado |
 | --- | --- | --- |
-| Pantalla completa | `/usuarios`, `AppLayout`, `Sidebar`, `Topbar` | Implementado parcialmente |
-| Encabezado nuevo / Encabezado de pantalla | `shared/ui/PageHeader` | En comparación; no promovido |
-| Flujo · Nuevo usuario | `features/users/components/UserFormDialog` | Flujo existente; revisar detalle visual |
-| Tabla | `shared/ui/DataTable` y futuras acciones masivas | Tabla existente; selección masiva pendiente |
-| Las mismas piezas / Anatomía | `src/index.css` y `shared/ui` | Contrato adoptado; consolidación incremental |
-| Filtros / Reglas de filtrado | futuro `shared/hooks/useFilters` y toolbar compartida | Pendiente |
-| Cómo se sostiene | tokens + componentes + tests | Norma de gobierno adoptada |
-| Encabezados, íconos y color | `PageHeader`, superficies, set de íconos | Parcial; set propio pendiente |
+| Gestión de usuarios | `/usuarios`, `/roles`, `AppLayout`, `Sidebar`, `PageHeader` | Pantalla de referencia; pendiente de implementar |
+| Filtros | futuro `shared/hooks/useFilters` y barra de filtros compartida | Pendiente, requiere filtros nuevos en el backend |
+| Reglas de filtrado | las mismas piezas, más `DataTable` (vacío con filtros) | Pendiente |
+| Formularios | `FormField`, diálogos, perfil y configuración | Implementado; auditar que ningún campo se dibuje fuera de `FormField` |
 | Avisos | Sonner, errores inline, `ConfirmDialog`, banners | Parcialmente implementado |
-| Formularios | `FormField`, diálogos y páginas de perfil/configuración | Implementado; auditar cobertura |
+| Anatomía | `src/index.css` (tokens) y `shared/ui` | Contrato adoptado; falta `--color-surface-header` y unificar alturas |
+| Encabezados, íconos y color | `PageHeader`, superficies, set propio de íconos | Encabezado decidido; set de íconos por completar |
+| Las mismas piezas | `shared/ui` (superficie, banda, control) | Contrato adoptado; consolidación incremental |
+| Cómo se sostiene | tokens + componentes + tests | Norma de gobierno adoptada |
+
+El lienzo tiene hoy nueve tableros. Los de exploración descartada —las variantes de encabezado, el sub-header con pestañas, el carril lateral de submenú y las pantallas previas— se eliminaron al cerrar cada decisión: el Artifact guarda lo vigente, no el historial.
 
 ## Pantallas por completar con esta base
 
 Prioridad sugerida, sin ampliar contratos del backend:
 
-1. Elegir y promover un encabezado común.
-2. Consolidar superficie, banda de encabezado y alturas en tokens/componentes.
-3. Completar toolbar y filtros URL-driven de listados.
-4. Añadir selección y acciones masivas cuando el backend tenga contrato.
-5. Diseñar inicio, estados 403/404 y marca real.
-6. Completar estados responsive y accesibles de usuarios, roles, configuración y perfil.
+1. Consolidar tokens y primitivas: `--color-surface-header`, las tres alturas (hoy el buscador mide 38 y el botón 36) y un `RowActions` compartido.
+2. Promover el encabezado decidido a `PageHeader`, y hacer que `main` sea el contenedor que scrollea para que la banda pueda adherirse.
+3. Submenú desplegable en el menú lateral, con permiso por hijo.
+4. Filtros de listado: primero el contrato del backend, después `useFilters` y la barra compartida.
+5. Completar estados responsive de usuarios, roles, configuración y perfil. **Es el hueco más grande del fundamento actual:** todos los tableros del Artifact son de escritorio, así que 320 px, tablas angostas y objetivos táctiles todavía no están dibujados en ningún lado.
+6. Selección y acciones masivas cuando el backend tenga contrato.
+7. Diseñar inicio, estados 403/404 y marca real.
 
 Dispositivos, sesiones y cualquier pantalla sin contrato pertenecen a una fase funcional posterior; el fundamento visual no autoriza inventar endpoints ni permisos.
 
-## Flujo `variant`
+## Comparaciones cerradas
 
-La primera ronda compara únicamente el encabezado de `/usuarios` sobre el eje **densidad**:
+Cuando una decisión visual tiene más de una salida razonable, se compara antes de programarla y la comparación se tira cuando la decisión se toma. Lo cerrado hasta hoy:
 
-| Variante | Posición del eje | Adecuada cuando | Costo |
-| --- | --- | --- | --- |
-| Respirable | Máximo aire y jerarquía | La llegada a la sección necesita contexto | Consume más altura antes de los datos |
-| Equilibrado | Jerarquía y eficiencia parejas | La pantalla mezcla orientación y trabajo frecuente | No maximiza ninguno de los extremos |
-| Compacto | Máxima densidad operativa | El listado se usa muchas veces por día | La descripción pierde protagonismo |
+| Decisión | Se comparó | Resultado |
+| --- | --- | --- |
+| Densidad de fila | 44 px densa contra 56 px cómoda | **44 px**, una sola para todo el proyecto |
+| Encabezado de pantalla | respirable / equilibrado / compacto, y con o sin estado expandido | **Banda fija de 56 px**, sin expandido, sin antetítulo |
+| Submenú | pestañas en el encabezado / desplegable en el menú / carril lateral propio | **Desplegable en el menú lateral** |
+| Rutas al agrupar | anidar `/gestion-usuarios/...` o dejarlas | **Se quedan** `/usuarios` y `/roles` |
+| Conteos por opción de filtro | ahora o en una fase posterior | **Ahora**, con el contrato de backend que haga falta |
 
-Ejecución local:
-
-```text
-npm run dev
-http://localhost:5173/design-lab/page-header/index.html?variant=equilibrado
-```
-
-El selector preserva la variante en `?variant=`, usa flechas para recorrer y teclas `1`–`3` para saltar. El laboratorio replica el contexto completo pero no importa código productivo ni es importado por él; por eso no entra al build. Tras una elección explícita se implementa la ganadora en `shared/ui/PageHeader` y se elimina el laboratorio.
+`design-lab/page-header/index.html` fue el soporte de la segunda de esas comparaciones y ya no tiene función: se elimina. Un laboratorio vive solo mientras su pregunta está abierta; si se queda, en un mes nadie sabe si es una propuesta vigente o un resto.
 
 ## Criterio de finalización de una pantalla
 
