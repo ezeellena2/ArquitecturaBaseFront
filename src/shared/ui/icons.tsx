@@ -114,3 +114,52 @@ export function SettingsIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function PowerIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 4v7.5" />
+      <path d="M17.7 7.3a8 8 0 1 1-11.4 0" />
+    </Icon>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4.5 7h15" />
+      <path d="M9.5 7V5.5A1.5 1.5 0 0 1 11 4h2a1.5 1.5 0 0 1 1.5 1.5V7" />
+      <path d="m6.8 7 .8 11.1a1.5 1.5 0 0 0 1.5 1.4h5.8a1.5 1.5 0 0 0 1.5-1.4L17.2 7" />
+    </Icon>
+  );
+}
+
+export function PencilIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M15.5 5.5 18.5 8.5 9 18H6v-3z" />
+      <path d="m13.75 7.25 3 3" />
+    </Icon>
+  );
+}
+
+/// Los filtros. Tres líneas de distinto largo: se lee como "acotar" sin depender de un embudo, que a este
+/// tamaño queda como una mancha.
+export function SlidersIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4.5 6.5h15" />
+      <path d="M7.5 12h9" />
+      <path d="M10.5 17.5h3" />
+    </Icon>
+  );
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 3.5 3.5" />
+    </Icon>
+  );
+}
