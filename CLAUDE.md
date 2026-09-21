@@ -1,12 +1,20 @@
 # ArquitecturaBaseFront: guía para agentes
 
-SPA de la plantilla base. El backend vive en `../ArquitecturaBase` y el diseño aprobado, en `../ArquitecturaBase/docs/specs/2026-09-18-arquitectura-base-design.md` (sección 7). Los planes por fase están en `../ArquitecturaBase/docs/plans/`.
+SPA de la plantilla base. El backend vive en `../ArquitecturaBase` y el diseño funcional aprobado, en `../ArquitecturaBase/docs/specs/2026-09-18-arquitectura-base-design.md` (sección 7). El contrato visual versionado vive en `docs/design/visual-baseline.md`; es la misma base que deben usar Claude y Codex para continuar pantallas. Los planes por fase están en `../ArquitecturaBase/docs/plans/`.
 
 ## Forma de trabajo
 
 - Se trabaja directo en `main`. No crear ramas ni hacer push sin un pedido explícito.
 - Commits chicos, en español, con conventional commits.
 - Antes de dar algo por terminado: `npm run build`, `npm run lint` y `npm run test`, los tres limpios.
+
+## Diseño visual
+
+- **Una pantalla nueva se dibuja antes de programarse.** El tablero va en el Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) —uno por pantalla, siempre en ese Artifact— y muestra la funcionalidad completa: layout, carga, vacío, sin coincidencias, error, sin permiso, el recorrido de diálogos y qué vive en la URL. Se programa después de que el usuario elija. El detalle está en `docs/design/visual-baseline.md`, en “Pantalla nueva: primero el tablero”.
+- Antes de crear o rediseñar una pantalla, leer `docs/design/visual-baseline.md`. El enlace al Artifact de Claude está registrado allí como procedencia; las reglas locales versionadas son la fuente operativa si el enlace cambia o requiere sesión.
+- Una decisión visual no queda cerrada hasta expresarse en tokens de `src/index.css`, componentes de `src/shared/ui` y, cuando sea verificable, tests de accesibilidad o comportamiento.
+- Las propuestas todavía no elegidas viven fuera del código productivo. El primer laboratorio está en `design-lab/page-header/index.html` y se sirve solo durante desarrollo.
+- La skill `variant` es explícita: usar `/variant` en Claude Code o `$variant` en Codex. Cada ronda compara una sola pieza, tres variantes y un solo eje; el usuario elige la ganadora.
 
 ## Comandos
 
