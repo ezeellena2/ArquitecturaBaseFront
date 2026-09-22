@@ -125,7 +125,10 @@ export function UsersPage() {
         <SearchInput value={search ?? ""} onChange={setSearch} label={t("searchLabel")} />
       </div>
 
-      <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      {/* Sin padding y con `overflow-hidden`: la banda del encabezado llega a los bordes de la caja y se
+          recorta con su radio. Con padding, la tabla flota adentro y la banda deja de ser la cabecera de la
+          caja para ser un rectángulo suelto. */}
+      <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
         <DataTable
           columns={columns}
           rows={data?.items ?? []}

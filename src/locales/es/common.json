@@ -41,8 +41,8 @@
     "label": "Paginado",
     "range": "{{from}}–{{to}} de {{total}}",
     "page": "Página {{page}} de {{totalPages}}",
-    "previous": "Anterior",
-    "next": "Siguiente"
+    "previous": "Página anterior",
+    "next": "Página siguiente"
   },
   "navigation": {
     "general": "General",

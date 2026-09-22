@@ -240,9 +240,12 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             : cn("h-svh shrink-0 transition-[width] duration-200 z-30", iconsOnly ? "w-[72px]" : "w-[264px]"),
         )}
       >
+        {/* `h-16`, el mismo alto exacto que el Topbar. Con el alto automático medía 65 (16 + 32 + 16 + 1 de
+            borde) contra los 64 del Topbar, que es `h-16` con `box-sizing: border-box`: la línea que cruza
+            la pantalla salía quebrada un píxel justo en el borde de la barra. */}
         <div
           className={cn(
-            "flex items-center border-b border-[var(--color-border)] px-3 py-4",
+            "flex h-16 items-center border-b border-[var(--color-border)] px-3",
             iconsOnly ? "justify-center" : "",
           )}
         >
@@ -251,23 +254,28 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           <span aria-hidden="true" className="size-8 shrink-0 rounded-lg bg-[var(--color-brand-600)]" />
         </div>
 
-        {/* La flecha va montada sobre el borde derecho, como un círculo mitad adentro y mitad afuera, a la
-            altura del primer ítem del menú. Así no le come lugar al encabezado (que contraído queda solo
-            para la marca) y queda siempre en el mismo lugar, se expanda o se contraiga la barra.
-            El desplazamiento es el alto del encabezado (16 + 32 + 16 + 1 de borde = 65) más el `py-3` del
-            nav y medio ítem, menos medio botón: cae centrada con el ícono de Inicio. Va afuera del `nav`
-            a propósito: ese tiene `overflow-y-auto` y la recortaría. */}
+        {/* La flecha va montada sobre el borde derecho, como un círculo mitad adentro y mitad afuera. Su eje
+            es el centro de la banda de encabezado de la pantalla, que arranca donde termina el Topbar (64) y
+            mide 56: 64 + 28 = 92. Restándole medio botón (12) queda en 80. El primer ítem del menú se alinea
+            a ese mismo eje con el `pt` del nav, así el "Inicio" del menú, la flecha y el título de la
+            pantalla quedan los tres sobre la misma línea. Va afuera del `nav` a propósito: ese tiene
+            `overflow-y-auto` y la recortaría. */}
         {isMobile ? null : (
           <IconButton
             label={iconsOnly ? t("layout.sidebar.expand") : t("layout.sidebar.collapse")}
             onClick={onToggleCollapsed}
-            className="absolute top-[84px] -right-3 z-20 size-6 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm hover:bg-[var(--color-surface-muted)]"
+            className="absolute top-20 -right-3 z-20 size-6 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm hover:bg-[var(--color-surface-muted)]"
           >
             <ChevronLeftIcon className={cn("size-3.5 transition-transform", iconsOnly ? "rotate-180" : "")} />
           </IconButton>
         )}
 
-        <nav aria-label={t("layout.sidebar.navigation")} className="flex-1 overflow-y-auto px-2 py-3">
+        {/* El `pt` centra el primer ítem en el eje 92: expandido el ítem mide 36 (74 + 18), contraído mide 40
+            (72 + 20). Son dos valores porque es el centro lo que tiene que coincidir, no el borde de arriba. */}
+        <nav
+          aria-label={t("layout.sidebar.navigation")}
+          className={cn("flex-1 overflow-y-auto px-2 pb-3", iconsOnly ? "pt-2" : "pt-2.5")}
+        >
           {/* Si /api/me falló no sabemos qué ítems mostrar, y el filtro de abajo los esconde. Sin avisar,
               una caída del backend pasa por un menú más corto de lo habitual, que nadie va a notar. El
               aviso queda para el lector de pantalla también cuando la barra está contraída. */}

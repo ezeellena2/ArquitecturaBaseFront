@@ -23,6 +23,9 @@
   --color-surface-header-border: oklch(0.86 0.012 250);
   --color-border: oklch(0.9 0.01 250);
   --color-content: oklch(0.25 0.02 250);
+  /* Los rótulos en versalitas (encabezado de tabla, rótulo de grupo del menú). Un punto más claros que
+     --color-content: en mayúsculas y con espaciado, el negro pleno pesa más que el dato que encabeza. */
+  --color-content-heading: oklch(0.32 0.02 250);
   --color-content-muted: oklch(0.5 0.02 250);
   --color-danger: oklch(0.58 0.2 25);
   --color-success: oklch(0.6 0.14 150);

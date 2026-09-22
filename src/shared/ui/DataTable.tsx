@@ -34,7 +34,7 @@ interface DataTableProps<TRow> {
 /// El nivel "rótulo" de la escala tipográfica: 11 px, semibold, mayúsculas con letter-spacing. Es el mismo
 /// tratamiento que el rótulo de grupo del menú lateral, y es lo que hace que la tabla se vea parte del
 /// sistema y no un widget pegado.
-const headerText = "text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--color-content)]";
+const headerText = "text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]";
 
 function ariaSort(columnId: string, sort: string | undefined): "ascending" | "descending" | "none" {
   if (sort === columnId) {
@@ -117,7 +117,9 @@ export function DataTable<TRow>({
       <TableBody>
         {rows.map((row) => (
           // 44 px: la densidad del proyecto, decidida una vez (fundamento visual, "Tres alturas").
-          <TableRow key={rowKey(row)} className="h-11">
+          // El borde a media opacidad es el del tablero: a opacidad plena la tabla se lee como una grilla
+          // y las líneas compiten con los datos.
+          <TableRow key={rowKey(row)} className="h-11 border-b-[var(--color-border)]/50">
             {columns.map((column) => (
               <TableCell key={column.id} className={cn("px-4", column.align === "right" ? "text-right" : undefined)}>
                 {column.cell(row)}

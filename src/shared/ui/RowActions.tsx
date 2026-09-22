@@ -20,7 +20,7 @@ export interface RowAction {
 /// El tooltip es CSS puro sobre `:hover` y `:focus-visible`, no un Tooltip de Radix: un listado de cien filas
 /// con tres acciones montaría trescientos componentes para mostrar una palabra.
 const boton =
-  "group/act relative inline-flex size-8 items-center justify-center border-0 bg-transparent text-[var(--color-content-muted)] transition-colors cursor-pointer " +
+  "group/act relative inline-flex h-7 w-8 items-center justify-center border-0 bg-transparent text-[var(--color-content-muted)] transition-colors cursor-pointer " +
   "hover:bg-[var(--color-brand-50)] hover:text-[var(--color-brand-700)] " +
   "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)]";
 
