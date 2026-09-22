@@ -32,7 +32,10 @@
     "descriptionLabel": "Descripción",
     "descriptionHint": "Opcional. Una línea que explique para qué sirve.",
     "permissions": "Permisos",
-    "submit": "Guardar"
+    "submit": "Guardar",
+    "permissionsPicked_zero": "Ningún permiso elegido",
+    "permissionsPicked_one": "1 permiso elegido",
+    "permissionsPicked_other": "{{count}} permisos elegidos"
   },
   "delete": {
     "title": "Eliminar el rol {{name}}",

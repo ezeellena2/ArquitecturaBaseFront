@@ -105,6 +105,44 @@ describe("RolesPage", () => {
     expect(within(dialog).getByText("Permisos")).toBeInTheDocument();
   });
 
+  it("keeps each area as a named group even though its visible label is another element", async () => {
+    // El punto delicado del diseño: estilar un `<legend>` obliga a trucos frágiles, así que el legend queda
+    // oculto para la vista y la banda visible va aparte, con `aria-hidden`. Si alguien "limpia" ese legend
+    // oculto, las cajas de permisos se quedan sin nombre accesible y este test se pone en rojo.
+    server.use(...managerHandlers());
+
+    renderRouteWithProviders("/roles");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Nuevo rol" }));
+
+    const dialog = await screen.findByRole("dialog");
+
+    expect(within(dialog).getByRole("group", { name: "Usuarios" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("group", { name: "Configuración" })).toBeInTheDocument();
+    // Y la casilla sigue viviendo adentro de su grupo, no suelta en el formulario.
+    expect(
+      within(within(dialog).getByRole("group", { name: "Configuración" })).getByRole("checkbox", {
+        name: "Cambiar la configuración",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("says how many permissions are picked, and updates as they are picked", async () => {
+    server.use(...managerHandlers());
+
+    renderRouteWithProviders("/roles");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Nuevo rol" }));
+
+    const dialog = await screen.findByRole("dialog");
+
+    expect(within(dialog).getByText("Ningún permiso elegido")).toBeInTheDocument();
+
+    await userEvent.click(within(dialog).getByRole("checkbox", { name: "Ver usuarios" }));
+
+    expect(within(dialog).getByText("1 permiso elegido")).toBeInTheDocument();
+  });
+
   it("edits over the freshest role, not the one the listing had cached", async () => {
     const updates: unknown[] = [];
     let supportPermissions = ["users.read"];

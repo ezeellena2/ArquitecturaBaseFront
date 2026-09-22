@@ -116,15 +116,21 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
         }
       }}
     >
-      <DialogContent onCloseAutoFocus={restoreFocus}>
-        <DialogHeader>
+      {/* `p-0` y `gap-0` sobre lo que trae shadcn: el diálogo es una columna con encabezado y pie fijos y un
+          cuerpo que scrollea, así que el padding lo pone cada parte. Con permisos de varias áreas, un diálogo
+          que crece sin techo deja el botón de guardar abajo de la ventana. */}
+      <DialogContent
+        onCloseAutoFocus={restoreFocus}
+        className="flex max-h-[min(720px,90svh)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[480px]"
+      >
+        <DialogHeader className="px-[18px] pt-[18px] pr-12">
           <DialogTitle>{role ? t("form.editTitle", { name: role.name }) : t("form.createTitle")}</DialogTitle>
           <DialogDescription>{t("form.description")}</DialogDescription>
         </DialogHeader>
 
         {draft === undefined ? (
           rolesQuery.isError || isRoleGone ? (
-            <div className="flex flex-col items-start gap-3">
+            <div className="flex flex-col items-start gap-3 p-[18px]">
               <p role="alert" className="text-sm text-[var(--color-danger)]">
                 {isRoleGone ? t("errors.gone") : roleActionErrorMessage(rolesQuery.error, t)}
               </p>
@@ -135,7 +141,7 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
               )}
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 p-[18px]">
               <Skeleton aria-hidden="true" className="h-9" />
               <Skeleton aria-hidden="true" className="h-24" />
             </div>
@@ -143,7 +149,7 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
         ) : (
           <form
             noValidate
-            className="flex flex-col gap-4"
+            className="flex min-h-0 flex-1 flex-col"
             onSubmit={(event) => {
               event.preventDefault();
               setFormError(undefined);
@@ -164,6 +170,7 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
               });
             }}
           >
+            <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-[18px] py-4">
             <FormField label={t("form.name")} required error={isNameMissing ? t("form.nameRequired") : undefined}>
               <Input
                 type="text"
@@ -181,16 +188,32 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
               />
             </FormField>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               {/* Sin este rótulo el diálogo saltaba de "Descripción" a un bloque con los nombres de las áreas,
-                  sin decir en ningún lado que eso son los permisos del rol. */}
-              <p className="text-sm font-medium text-[var(--color-content)]">{t("form.permissions")}</p>
+                  sin decir en ningún lado que eso son los permisos del rol. El contador va al lado y no
+                  abajo: es lo que se mira mientras se marcan casillas, y hay que poder leerlo sin scrollear. */}
+              <div className="flex items-baseline justify-between gap-2.5">
+                <p className="text-sm font-medium text-[var(--color-content)]">{t("form.permissions")}</p>
+                <p className="text-[12.5px] text-[var(--color-content-muted)]">
+                  {t("form.permissionsPicked", { count: draft.permissions.length })}
+                </p>
+              </div>
 
-              <div className="flex max-h-64 flex-col gap-4 overflow-y-auto">
-                {groupsQuery.isPending ? <Skeleton aria-hidden="true" className="h-24" /> : null}
-                {groups.map((group) => (
-                  <fieldset key={group.area} className="flex flex-col gap-2">
-                    <legend className="mb-1 text-sm font-medium">{group.name}</legend>
+              {groupsQuery.isPending ? <Skeleton aria-hidden="true" className="h-24" /> : null}
+              {groups.map((group) => (
+                <fieldset key={group.area} className="overflow-hidden rounded-[9px] border border-[var(--color-border)]">
+                  {/* El `legend` queda oculto para la vista y la banda visible va aparte, con `aria-hidden`:
+                      estilar un `legend` obliga a trucos frágiles, pero es de donde el `fieldset` saca su
+                      nombre accesible. Si alguien "limpia" este legend, las cajas se quedan sin nombre para
+                      el lector de pantalla; hay un test que se pone en rojo si pasa. */}
+                  <legend className="sr-only">{group.name}</legend>
+                  <div
+                    aria-hidden="true"
+                    className="flex h-[34px] items-center border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-3 text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]"
+                  >
+                    {group.name}
+                  </div>
+                  <div className="flex flex-col gap-1 px-3 py-2">
                     {group.permissions.map((permission) => (
                       <CheckboxField
                         key={permission.code}
@@ -199,9 +222,9 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
                         onCheckedChange={(checked) => togglePermission(permission.code, checked)}
                       />
                     ))}
-                  </fieldset>
-                ))}
-              </div>
+                  </div>
+                </fieldset>
+              ))}
             </div>
 
             {formError ? (
@@ -209,8 +232,9 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
                 {formError}
               </p>
             ) : null}
+            </div>
 
-            <DialogFooter>
+            <DialogFooter className="border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] px-[18px] py-3">
               <Button type="button" variant="outline" onClick={onClose}>
                 {t("common:actions.cancel")}
               </Button>

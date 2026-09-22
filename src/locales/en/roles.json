@@ -32,7 +32,10 @@
     "descriptionLabel": "Description",
     "descriptionHint": "Optional. One line explaining what it is for.",
     "permissions": "Permissions",
-    "submit": "Save"
+    "submit": "Save",
+    "permissionsPicked_zero": "No permission picked",
+    "permissionsPicked_one": "1 permission picked",
+    "permissionsPicked_other": "{{count}} permissions picked"
   },
   "delete": {
     "title": "Delete the {{name}} role",
