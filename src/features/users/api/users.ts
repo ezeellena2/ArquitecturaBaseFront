@@ -7,12 +7,13 @@ export interface UserListItem {
   readonly displayName: string | null;
   readonly isActive: boolean;
   readonly createdAtUtc: string;
-}
-
-/// El detalle que devuelve `GET /api/users/{id}`: lo mismo que el listado, más los roles.
-export interface UserDetail extends UserListItem {
+  /// Ordenados por nombre desde el backend: la tabla los muestra y dos cargas tienen que verse igual.
   readonly roles: readonly string[];
 }
+
+/// El detalle que devuelve `GET /api/users/{id}`. Hoy es exactamente lo mismo que una fila del listado, pero
+/// el nombre se queda: son dos contratos distintos del backend y nada obliga a que sigan coincidiendo.
+export type UserDetail = UserListItem;
 
 export interface UsersQuery {
   readonly page: number;

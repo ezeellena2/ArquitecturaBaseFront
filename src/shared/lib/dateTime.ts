@@ -8,3 +8,10 @@ export function formatDateTimeInZone(valueUtc: string, language: string, timeZon
     new Date(valueUtc),
   );
 }
+
+/// Fecha sola, para las columnas de un listado: "20 sept 2026". La hora no aporta a la hora de barrer una
+/// tabla con la vista, y ocupa el doble. Vive en este archivo a propósito: un formateador suelto en una
+/// pantalla es lo que hace que las mismas fechas se vean distinto en dos lugares.
+export function formatDateInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
+  return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeZone }).format(new Date(valueUtc));
+}

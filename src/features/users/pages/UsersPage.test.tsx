@@ -17,8 +17,8 @@ vi.mock("react-oidc-context", async () => {
 
 const page = {
   items: [
-    { id: "1", email: "ana@example.com", displayName: "Ana", isActive: true, createdAtUtc: "2026-09-18T12:00:00Z" },
-    { id: "2", email: "beto@example.com", displayName: null, isActive: false, createdAtUtc: "2026-09-18T13:00:00Z" },
+    { id: "1", email: "ana@example.com", displayName: "Ana", isActive: true, createdAtUtc: "2026-09-18T12:00:00Z", roles: ["Admin"] },
+    { id: "2", email: "beto@example.com", displayName: null, isActive: false, createdAtUtc: "2026-09-18T13:00:00Z", roles: [] },
   ],
   page: 1,
   pageSize: 20,
@@ -81,6 +81,20 @@ describe("UsersPage", () => {
 
     expect(within(rows[1]).getByText("Activo")).toBeInTheDocument();
     expect(within(rows[2]).getByText("Inactivo")).toBeInTheDocument();
+  });
+
+  it("shows the roles of each row", async () => {
+    // Sin esta columna, saber qué rol tiene alguien obliga a abrir su diálogo fila por fila.
+    server.use(http.get("/api/users", () => HttpResponse.json(page)));
+
+    renderRouteWithProviders("/usuarios");
+
+    const rows = within(await screen.findByRole("table")).getAllByRole("row");
+
+    expect(within(rows[1]).getByText("Admin")).toBeInTheDocument();
+    // Quien no tiene ninguno muestra la raya, no una celda vacía que parece un dato que no cargó. Por celda
+    // y no por texto: beto tampoco tiene nombre, así que la raya aparece dos veces en su fila.
+    expect(within(rows[2]).getAllByRole("cell")[2]).toHaveTextContent("—");
   });
 
   it("sends the search to the backend and keeps it in the URL", async () => {

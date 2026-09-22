@@ -1,6 +1,7 @@
 import type { UserListItem } from "./api/users";
-import { formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { formatDateInZone } from "@/shared/lib/dateTime";
 import { cn } from "@/shared/lib/utils";
+import { Badge } from "@/shared/ui/badge";
 import type { Column } from "@/shared/ui/DataTable";
 import { PowerIcon, ShieldIcon, TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
@@ -17,22 +18,44 @@ export interface UserRowActions {
   onDelete: (user: UserListItem) => void;
 }
 
-/// Estado como punto y texto, no como píldora de color: en veinte filas, veinte fondos teñidos compiten con
-/// los datos. El punto es decorativo (`aria-hidden`) y quien lee el estado lee la palabra, que es además lo
-/// que hace que el estado no dependa del color para entenderse.
-/// Es una función que se llama, no un componente que se monta: el archivo exporta la fábrica de columnas, y
-/// declarar un componente al lado rompe el refresco en caliente (y lo avisa el lint).
-function statusCell(isActive: boolean, label: string) {
+/// El estado va como un punto delante del correo y no como columna propia: así entra la columna de roles, que
+/// es el dato que hace falta mirar fila por fila, y el estado —que casi siempre es "activo"— deja de ocupar
+/// una columna entera para decir lo mismo veinte veces.
+///
+/// El punto es decorativo y la palabra va al lado, oculta para la vista pero no para el lector de pantalla.
+/// Es la única concesión a "el color nunca comunica solo" del fundamento visual: para quien ve, el estado se
+/// lee del color. Se aceptó a cambio de la densidad, y está anotada como excepción.
+///
+/// Son funciones que se llaman, no componentes que se montan: el archivo exporta la fábrica de columnas, y
+/// declarar un componente al lado rompe el refresco en caliente.
+function emailCell(row: UserListItem, statusLabel: string) {
   return (
-    <span className="inline-flex items-center gap-2 text-sm text-[var(--color-content)]">
+    <span className="inline-flex min-w-0 items-center gap-2">
       <span
         aria-hidden="true"
         className={cn(
           "size-1.5 shrink-0 rounded-full",
-          isActive ? "bg-[var(--color-success)]" : "bg-[var(--color-content-muted)]",
+          row.isActive ? "bg-[var(--color-success)]" : "bg-[var(--color-content-muted)]",
         )}
       />
-      {label}
+      <span className="sr-only">{statusLabel}</span>
+      <span className="truncate font-medium text-[var(--color-content)]">{row.email}</span>
+    </span>
+  );
+}
+
+function rolesCell(roles: readonly string[]) {
+  if (roles.length === 0) {
+    return "—";
+  }
+
+  return (
+    <span className="flex flex-wrap gap-1">
+      {roles.map((role) => (
+        <Badge key={role} variant="outline" className="text-[11px] font-medium text-[var(--color-content-muted)]">
+          {role}
+        </Badge>
+      ))}
     </span>
   );
 }
@@ -46,17 +69,22 @@ export function createUserColumns(
   actions?: UserRowActions,
 ): Column<UserListItem>[] {
   const columns: Column<UserListItem>[] = [
-    { id: "email", header: t("columns.email"), cell: (row) => row.email, sortable: true },
-    { id: "displayName", header: t("columns.displayName"), cell: (row) => row.displayName ?? "—", sortable: true },
     {
-      id: "isActive",
-      header: t("columns.isActive"),
-      cell: (row) => statusCell(row.isActive, row.isActive ? t("status.active") : t("status.inactive")),
+      id: "email",
+      header: t("columns.email"),
+      cell: (row) => emailCell(row, row.isActive ? t("status.active") : t("status.inactive")),
+      sortable: true,
     },
+    { id: "displayName", header: t("columns.displayName"), cell: (row) => row.displayName ?? "—", sortable: true },
+    { id: "roles", header: t("columns.roles"), cell: (row) => rolesCell(row.roles) },
     {
       id: "createdAtUtc",
       header: t("columns.createdAtUtc"),
-      cell: (row) => formatDateTimeInZone(row.createdAtUtc, language, timeZone),
+      align: "right",
+      // Cifras tabulares: sin eso, las fechas de una columna alineada a la derecha bailan de fila en fila.
+      cell: (row) => (
+        <span className="tabular-nums">{formatDateInZone(row.createdAtUtc, language, timeZone)}</span>
+      ),
       sortable: true,
     },
   ];
@@ -67,7 +95,7 @@ export function createUserColumns(
 
   // El nombre accesible de cada botón lleva el correo de la fila: sin eso, veinte filas dan veinte botones
   // llamados igual, y no hay forma de apretar el de una persona en concreto (ni con el teclado, ni en un test).
-  // El orden y la separación de la acción destructiva los decide `RowActions`, no esta lista.
+  // El orden y el rojo de la acción destructiva los decide `RowActions`, no esta lista.
   columns.push({
     id: "actions",
     header: t("columns.actions"),

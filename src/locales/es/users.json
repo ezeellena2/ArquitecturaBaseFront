@@ -4,7 +4,7 @@
   "columns": {
     "email": "Correo",
     "displayName": "Nombre",
-    "isActive": "Estado",
+    "roles": "Roles",
     "createdAtUtc": "Creado",
     "actions": "Acciones"
   },
