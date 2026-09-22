@@ -26,6 +26,9 @@ interface DataTableProps<TRow> {
   onRetry?: () => void;
   emptyTitle?: string;
   emptyDescription?: string;
+  /// Lo que se puede hacer desde el vacío. Con filtros puestos, limpiarlos: un vacío que no ofrece salida
+  /// deja a la persona buscando de dónde agarrarse.
+  emptyAction?: ReactNode;
   /// Orden actual, en el formato del backend: "campo" o "-campo".
   sort?: string;
   onSortChange?: (field: string) => void;
@@ -55,6 +58,7 @@ export function DataTable<TRow>({
   onRetry,
   emptyTitle,
   emptyDescription,
+  emptyAction,
   sort,
   onSortChange,
 }: DataTableProps<TRow>) {
@@ -85,7 +89,7 @@ export function DataTable<TRow>({
   }
 
   if (rows.length === 0) {
-    return <EmptyState title={emptyTitle ?? t("states.empty")} description={emptyDescription} />;
+    return <EmptyState title={emptyTitle ?? t("states.empty")} description={emptyDescription} action={emptyAction} />;
   }
 
   return (

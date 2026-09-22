@@ -27,7 +27,9 @@ import { DataTable } from "@/shared/ui/DataTable";
 import { Page } from "@/shared/ui/Page";
 import { UsersIcon } from "@/shared/ui/icons";
 import { Pagination } from "@/shared/ui/Pagination";
-import { SearchInput } from "@/shared/ui/SearchInput";
+import { userFilterKeys } from "../api/users";
+import { UsersFilterBar } from "../components/UsersFilterBar";
+import { useFilters } from "@/shared/hooks/useFilters";
 
 /// Las dos acciones que no se hacen de una: antes pasan por el diálogo de confirmación.
 interface PendingConfirmation {
@@ -43,13 +45,18 @@ export function UsersPage() {
   const { has } = usePermissions();
   const queryClient = useQueryClient();
   const { page, pageSize, sort, search, setPage, setSearch, toggleSort } = usePagination();
+  const filters = useFilters(userFilterKeys);
 
   const [isCreating, setIsCreating] = useState(false);
   const [editingUser, setEditingUser] = useState<UserListItem | undefined>();
   const [confirmation, setConfirmation] = useState<PendingConfirmation | undefined>();
 
   const canManage = has("users.manage");
-  const query = { page, pageSize, sort, search };
+  // La búsqueda cuenta como filtro para el vacío: "ninguno coincide" tiene que aparecer igual si lo único
+  // puesto es el buscador, y el botón de limpiar también lo tiene que sacar.
+  const appliedCount = filters.active.length + (search ? 1 : 0);
+  const hasFilters = appliedCount > 0;
+  const query = { page, pageSize, sort, search, ...filters.values };
 
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: usersQueryKey(query),
@@ -121,9 +128,12 @@ export function UsersPage() {
         </Can>
       }
     >
-      <div className="mb-3 w-full max-w-sm">
-        <SearchInput value={search ?? ""} onChange={setSearch} label={t("searchLabel")} />
-      </div>
+      <UsersFilterBar
+        filters={filters}
+        search={search ?? ""}
+        onSearchChange={setSearch}
+        totalLabel={data ? t("shownOfTotal", { count: data.items.length, total: data.totalCount }) : ""}
+      />
 
       {/* Sin padding y con `overflow-hidden`: la banda del encabezado llega a los bordes de la caja y se
           recorta con su radio. Con padding, la tabla flota adentro y la banda deja de ser la cabecera de la
@@ -139,8 +149,19 @@ export function UsersPage() {
           onRetry={() => void refetch()}
           sort={sort}
           onSortChange={toggleSort}
-          emptyTitle={t("empty.title")}
-          emptyDescription={search ? t("empty.searchDescription") : t("empty.description")}
+          emptyTitle={hasFilters ? t("empty.filteredTitle") : t("empty.title")}
+          emptyDescription={
+            hasFilters
+              ? t("empty.filteredDescription", { filters: t("filters.applied", { count: appliedCount }) })
+              : t("empty.description")
+          }
+          emptyAction={
+            hasFilters ? (
+              <Button type="button" variant="outline" onClick={filters.clear}>
+                {t("empty.clear")}
+              </Button>
+            ) : undefined
+          }
         />
 
         {data ? (

@@ -15,7 +15,10 @@
   "empty": {
     "title": "No encontramos usuarios",
     "description": "Todavía no hay usuarios cargados.",
-    "searchDescription": "Probá con otro correo o nombre."
+    "searchDescription": "Probá con otro correo o nombre.",
+    "filteredTitle": "Ningún usuario coincide",
+    "filteredDescription": "Hay {{filters}}. Probá quitando alguno.",
+    "clear": "Limpiar filtros"
   },
   "actions": {
     "new": "Nuevo usuario",
@@ -69,5 +72,32 @@
     "lastAdmin": "No podés dejar al sistema sin administradores. Asigná el rol Admin a otra cuenta activa y volvé a intentar.",
     "cannotModifySelf": "No podés hacerte esto a vos mismo. Pedíselo a otro administrador."
   },
-  "errorTraceId": "Código para reportar: {{traceId}}"
+  "errorTraceId": "Código para reportar: {{traceId}}",
+  "filters": {
+    "status": {
+      "all": "Todos",
+      "active": "Activos",
+      "inactive": "Inactivos"
+    },
+    "role": {
+      "label": "Filtrar por rol",
+      "any": "Cualquier rol"
+    },
+    "createdWithin": {
+      "any": "Cualquier fecha",
+      "option_one": "Último día",
+      "option_other": "Últimos {{count}} días"
+    },
+    "more": "Más filtros",
+    "clearAll": "Limpiar todo",
+    "chip": {
+      "isActive": "Estado",
+      "role": "Rol",
+      "createdWithinDays": "Creado",
+      "remove": "Quitar el filtro {{name}}"
+    },
+    "applied_one": "{{count}} filtro aplicado",
+    "applied_other": "{{count}} filtros aplicados"
+  },
+  "shownOfTotal": "{{count}} de {{total}}"
 }

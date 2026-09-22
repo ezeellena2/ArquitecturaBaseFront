@@ -1,38 +1,19 @@
 import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router";
+import { useQueryUpdate } from "./useQueryUpdate";
 
 export const defaultPageSize = 20;
 
 /// Página, orden y búsqueda viven en la URL: el listado se puede compartir y el botón atrás funciona.
 export function usePagination() {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
 
   const page = Number(params.get("page") ?? 1);
   const pageSize = Number(params.get("pageSize") ?? defaultPageSize);
   const sort = params.get("sort") ?? undefined;
   const search = params.get("search") ?? undefined;
 
-  const update = useCallback(
-    (changes: Record<string, string | undefined>) => {
-      setParams(
-        (previous) => {
-          const next = new URLSearchParams(previous);
-
-          for (const [key, value] of Object.entries(changes)) {
-            if (value === undefined || value === "") {
-              next.delete(key);
-            } else {
-              next.set(key, value);
-            }
-          }
-
-          return next;
-        },
-        { replace: true },
-      );
-    },
-    [setParams],
-  );
+  const update = useQueryUpdate();
 
   const setPage = useCallback((next: number) => update({ page: next === 1 ? undefined : String(next) }), [update]);
 

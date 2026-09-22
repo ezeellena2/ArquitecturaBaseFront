@@ -15,7 +15,10 @@
   "empty": {
     "title": "We couldn't find any users",
     "description": "There are no users yet.",
-    "searchDescription": "Try another email or name."
+    "searchDescription": "Try another email or name.",
+    "filteredTitle": "No user matches",
+    "filteredDescription": "There are {{filters}}. Try removing one.",
+    "clear": "Clear filters"
   },
   "actions": {
     "new": "New user",
@@ -69,5 +72,32 @@
     "lastAdmin": "You can't leave the system without administrators. Give the Admin role to another active account and try again.",
     "cannotModifySelf": "You can't do this to your own account. Ask another administrator."
   },
-  "errorTraceId": "Code to report: {{traceId}}"
+  "errorTraceId": "Code to report: {{traceId}}",
+  "filters": {
+    "status": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "role": {
+      "label": "Filter by role",
+      "any": "Any role"
+    },
+    "createdWithin": {
+      "any": "Any date",
+      "option_one": "Last day",
+      "option_other": "Last {{count}} days"
+    },
+    "more": "More filters",
+    "clearAll": "Clear all",
+    "chip": {
+      "isActive": "Status",
+      "role": "Role",
+      "createdWithinDays": "Created",
+      "remove": "Remove the {{name}} filter"
+    },
+    "applied_one": "{{count}} filter applied",
+    "applied_other": "{{count}} filters applied"
+  },
+  "shownOfTotal": "{{count}} of {{total}}"
 }

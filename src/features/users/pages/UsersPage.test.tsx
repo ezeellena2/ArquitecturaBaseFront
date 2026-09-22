@@ -36,12 +36,34 @@ const roles = [
   { id: "r2", name: "User", description: null, isSystemRole: true, userCount: 3, permissions: [] },
 ];
 
+const counts = {
+  status: { all: 2, active: 1, inactive: 1 },
+  roles: [
+    { name: "Admin", count: 1 },
+    { name: "Soporte", count: 0 },
+    { name: "User", count: 1 },
+  ],
+  createdWithin: [
+    { days: 7, count: 0 },
+    { days: 30, count: 2 },
+  ],
+};
+
 /// El arnés corre con `onUnhandledRequest: "error"`: cada test declara todo lo que su pantalla va a pedir.
 function adminHandlers() {
   return [
     http.get("/api/me", () => HttpResponse.json(admin)),
     http.get("/api/users", () => HttpResponse.json(page)),
     http.get("/api/roles", () => HttpResponse.json(roles)),
+    http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
+  ];
+}
+
+/// Lo mínimo para dibujar la pantalla con la barra de filtros: el listado, el perfil y los conteos.
+function listHandlers(body: typeof page = page) {
+  return [
+    http.get("/api/users", () => HttpResponse.json(body)),
+    http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
   ];
 }
 
@@ -58,7 +80,7 @@ describe("UsersPage", () => {
   });
 
   it("shows the users of the first page", async () => {
-    server.use(http.get("/api/users", () => HttpResponse.json(page)));
+    server.use(...listHandlers());
 
     renderRouteWithProviders("/usuarios");
 
@@ -73,7 +95,7 @@ describe("UsersPage", () => {
   it("says the status in words and not only with a colour", async () => {
     // "El color nunca comunica solo" (fundamento visual). El punto es decorativo: lo que se lee es la
     // palabra, y sin esta prueba el día que alguien deje el punto solo nadie se entera.
-    server.use(http.get("/api/users", () => HttpResponse.json(page)));
+    server.use(...listHandlers());
 
     renderRouteWithProviders("/usuarios");
 
@@ -85,7 +107,7 @@ describe("UsersPage", () => {
 
   it("shows the roles of each row", async () => {
     // Sin esta columna, saber qué rol tiene alguien obliga a abrir su diálogo fila por fila.
-    server.use(http.get("/api/users", () => HttpResponse.json(page)));
+    server.use(...listHandlers());
 
     renderRouteWithProviders("/usuarios");
 
@@ -104,6 +126,7 @@ describe("UsersPage", () => {
         requests.push(new URL(request.url).search);
         return HttpResponse.json(page);
       }),
+      http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
     );
 
     renderRouteWithProviders("/usuarios");
@@ -114,11 +137,72 @@ describe("UsersPage", () => {
   });
 
   it("shows the message when the search returns nothing", async () => {
-    server.use(http.get("/api/users", () => HttpResponse.json({ ...page, items: [], totalCount: 0, totalPages: 0 })));
+    server.use(...listHandlers({ ...page, items: [], totalCount: 0, totalPages: 0 }));
 
     renderRouteWithProviders("/usuarios");
 
     expect(await screen.findByRole("heading", { name: /no encontramos usuarios/i })).toBeInTheDocument();
+  });
+
+  it("sends the filters to the backend and keeps them in the URL", async () => {
+    const requests: string[] = [];
+    server.use(
+      http.get("/api/users", ({ request }) => {
+        requests.push(new URL(request.url).search);
+        return HttpResponse.json(page);
+      }),
+      http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
+    );
+
+    renderRouteWithProviders("/usuarios");
+    await screen.findByRole("table");
+
+    await userEvent.click(screen.getByRole("button", { name: "Inactivos" }));
+
+
+    await waitFor(() => expect(requests.at(-1)).toContain("isActive=false"));
+  });
+
+  it("shows a chip per filter and takes it out one by one", async () => {
+    server.use(...listHandlers());
+
+    renderRouteWithProviders("/usuarios?isActive=false");
+    await screen.findByRole("table");
+
+    const quitar = screen.getByRole("button", { name: /quitar el filtro estado/i });
+
+    await userEvent.click(quitar);
+
+    expect(screen.queryByRole("button", { name: /quitar el filtro estado/i })).not.toBeInTheDocument();
+  });
+
+  it("disables the options that would bring nothing", async () => {
+    // El número no está para decorar: si una opción da cero, elegirla es un camino que no lleva a ningún
+    // lado, y el desplegable lo dice antes de que se apriete.
+    server.use(...listHandlers());
+
+    renderRouteWithProviders("/usuarios");
+    await screen.findByRole("table");
+
+    // Con teclado y no con clic, por la descoordinación conocida de userEvent con el `pointerdown` de Radix
+    // (el mismo motivo que `openMenu` en UserMenu.test.tsx).
+    const trigger = screen.getByRole("button", { name: /filtrar por rol/i });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+
+    expect(await screen.findByRole("menuitem", { name: /soporte/i })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("menuitem", { name: /admin/i })).not.toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("tells apart an empty list from one that no filter matches", async () => {
+    server.use(...listHandlers({ ...page, items: [], totalCount: 0, totalPages: 0 }));
+
+    renderRouteWithProviders("/usuarios?isActive=false&role=Admin");
+
+    // Son dos vacíos distintos: "todavía no hay usuarios" no se arregla igual que "ninguno coincide".
+    expect(await screen.findByRole("heading", { name: /ningún usuario coincide/i })).toBeInTheDocument();
+    expect(screen.getByText(/2 filtros aplicados/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /limpiar filtros/i })).toBeInTheDocument();
   });
 
   it("shows the forbidden page when the backend answers 403", async () => {
@@ -126,6 +210,7 @@ describe("UsersPage", () => {
       http.get("/api/users", () =>
         HttpResponse.json({ status: 403, code: "Http.Forbidden", detail: "No tenés permiso." }, { status: 403 }),
       ),
+      http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
     );
 
     renderRouteWithProviders("/usuarios");
@@ -142,6 +227,7 @@ describe("UsersPage", () => {
           { status: 500 },
         ),
       ),
+      http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
     );
 
     renderRouteWithProviders("/usuarios");
@@ -378,7 +464,7 @@ describe("UsersPage", () => {
 
   it("hides the new user button and the row actions without users.manage", async () => {
     // El handler por defecto de /api/me devuelve permissions: ["users.read"].
-    server.use(http.get("/api/users", () => HttpResponse.json(page)));
+    server.use(...listHandlers());
 
     renderRouteWithProviders("/usuarios");
 
