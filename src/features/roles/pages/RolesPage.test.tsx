@@ -242,7 +242,7 @@ describe("RolesPage", () => {
     await waitFor(() => expect(toastError).toHaveBeenCalledWith("El rol tiene usuarios asignados."));
   });
 
-  it("hides the create and edit actions without roles.manage", async () => {
+  it("hides every action without roles.manage", async () => {
     server.use(
       http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["roles.read"] })),
       http.get("/api/roles", () => HttpResponse.json(roles)),
@@ -257,5 +257,8 @@ describe("RolesPage", () => {
     expect(screen.queryByRole("button", { name: "Editar el rol Soporte" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Editar el rol User" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Ver el rol Admin" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Eliminar el rol Soporte" })).not.toBeInTheDocument();
+    // Sin ninguna acción, tampoco queda la columna vacía.
+    expect(screen.queryByRole("columnheader", { name: "Acciones" })).not.toBeInTheDocument();
   });
 });
