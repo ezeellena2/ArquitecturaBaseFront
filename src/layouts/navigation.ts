@@ -52,15 +52,28 @@ export const navigation: NavigationGroup[] = [
 ];
 
 /// Todos los enlaces del menú, sin los grupos. Lo usan las migas y cualquiera que busque una ruta: agrupar
-/// en el menú no anida las URLs, así que la ruta activa está siempre en esta lista plana.
+/// en el menú no anida las URLs, así que la ruta activa, o su padre, está siempre en esta lista plana.
 export const navigationLinks: NavigationLink[] = navigation.flatMap((group) =>
   group.items.flatMap((item) => (isBranch(item) ? item.children : [item])),
 );
 
-/// El grupo al que pertenece una ruta, si está adentro de uno. Es el nivel del medio de las migas.
+/// Si una ruta es hija de la de un enlace (`/roles/abc` de `/roles`). La barra del final es la que separa
+/// una hija de un nombre más largo (`/rolesviejos`), y el Inicio no cuenta: todas las rutas empiezan con "/".
+function isChildOf(pathname: string, to: string): boolean {
+  return to !== "/" && pathname.startsWith(`${to}/`);
+}
+
+/// El enlace del menú del que cuelga una ruta hija, como la pantalla de un rol: el menú no la lista, pero
+/// pertenece a esa sección. Las migas lo ponen como enlace, que es el camino de vuelta.
+export function parentLinkOf(pathname: string): NavigationLink | undefined {
+  return navigationLinks.find((link) => isChildOf(pathname, link.to));
+}
+
+/// El grupo al que pertenece una ruta, si está adentro de uno. Es el nivel del medio de las migas. Vale
+/// también para las rutas hijas de sus pantallas: así el menú se despliega solo en `/roles/abc`.
 export function branchOf(pathname: string): NavigationBranch | undefined {
   return navigation
     .flatMap((group) => group.items)
     .filter(isBranch)
-    .find((branch) => branch.children.some((child) => child.to === pathname));
+    .find((branch) => branch.children.some((child) => child.to === pathname || isChildOf(pathname, child.to)));
 }

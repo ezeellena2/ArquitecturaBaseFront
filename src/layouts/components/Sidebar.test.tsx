@@ -1,8 +1,10 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { Sidebar } from "./Sidebar";
+import { renderRouteWithProviders, renderWithProviders } from "@/test/utils/renderWithProviders";
 import { currentUser } from "@/test/mocks/handlers";
 import { queryClient } from "@/shared/api/queryClient";
 import { server } from "@/test/mocks/server";
@@ -110,6 +112,30 @@ describe("Sidebar", () => {
       // Entrar directo a /roles (un favorito, una recarga) tiene que mostrar dónde estás, no un grupo
       // plegado: el grupo de la ruta activa se despliega solo.
       renderRouteWithProviders("/roles");
+
+      expect(await screen.findByRole("button", { name: /gestión de usuarios/i })).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      );
+      expect(await screen.findByRole("link", { name: /roles y permisos/i })).toHaveAttribute("aria-current", "page");
+    });
+
+    it("opens itself on a child route of one of its screens, with that screen marked", async () => {
+      withBothPermissions();
+
+      // /roles/abc (la pantalla de un rol) no está en el menú, pero es parte de "Roles y permisos". La ruta
+      // todavía no existe en `routes.tsx`, así que se monta la barra sola, en esa URL.
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/roles/abc"]}>
+          <Sidebar
+            collapsed={false}
+            onToggleCollapsed={vi.fn()}
+            isMobile={false}
+            mobileOpen={false}
+            onCloseMobile={vi.fn()}
+          />
+        </MemoryRouter>,
+      );
 
       expect(await screen.findByRole("button", { name: /gestión de usuarios/i })).toHaveAttribute(
         "aria-expanded",
