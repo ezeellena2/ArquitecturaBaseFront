@@ -58,8 +58,11 @@ export function AppLayout() {
   // el documento. Con `min-h-svh` la raíz crecía con el contenido, `main` nunca desbordaba y la banda de
   // `Page`, que es `sticky` dentro de `main`, se iba con el resto: adherida a un contenedor que no se mueve.
   // Así, además, la barra superior queda siempre a la vista, y el menú lateral scrollea por su cuenta.
+  //
+  // Al imprimir, la raíz vuelve a crecer con el contenido (`print:h-auto`, y `main` sin recortar): con el alto
+  // de una pantalla, de un listado largo salía solo lo que entraba en la primera hoja.
   return (
-    <div className="flex h-svh">
+    <div className="flex h-svh print:h-auto">
       <Sidebar
         collapsed={collapsed}
         onToggleCollapsed={toggleCollapsed}
@@ -77,8 +80,12 @@ export function AppLayout() {
             `relative` para que `main` contenga lo que se posiciona adentro. Un `sr-only` (como el `legend` de
             cada área del selector de permisos) es `absolute`: sin un ancestro posicionado se ubica respecto
             del documento, `main` no lo recorta, y el que termina scrolleando es el documento, con la barra
-            superior incluida. Visto en un navegador: 400 px de más y una barra de scroll ajena. */}
-        <main className="relative min-h-0 flex-1 overflow-y-auto">
+            superior incluida. Visto en un navegador: 400 px de más y una barra de scroll ajena.
+
+            `scroll-pt-14` (el alto de la banda de `Page`) porque la banda está adherida arriba de `main` y tapa
+            lo que queda debajo. Sin ese margen, el navegador da por visible un control que la banda tapa entero:
+            con Shift+Tab, el foco caía detrás de la banda y `main` no se movía (WCAG 2.4.11). */}
+        <main className="relative min-h-0 flex-1 scroll-pt-14 overflow-y-auto print:overflow-visible">
           <Suspense fallback={<Spinner />}>
             <Outlet />
           </Suspense>
