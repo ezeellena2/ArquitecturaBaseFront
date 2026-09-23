@@ -633,13 +633,22 @@ describe("RoleEditorPage", () => {
     const name = screen.getByRole("textbox", { name: "Nombre" });
     await userEvent.clear(name);
 
-    expect(pageTitle()).toHaveTextContent("Editar el rol sin nombre");
-    await waitFor(() => expect(currentCrumb()).toHaveTextContent("Rol"));
+    // El texto exacto, no `toHaveTextContent`: ese colapsa y recorta los espacios, y no vería si falta el recorte.
+    expect(pageTitle().textContent).toBe("Editar el rol sin nombre");
+    await waitFor(() => expect(currentCrumb()?.textContent).toBe("Rol"));
 
+    // Solo espacios es un nombre vacío: sin el recorte, el título terminaría en blanco y la miga sería un hueco
+    // anunciado como la página actual.
+    await userEvent.type(name, "   ");
+
+    expect(pageTitle().textContent).toBe("Editar el rol sin nombre");
+    await waitFor(() => expect(currentCrumb()?.textContent).toBe("Rol"));
+
+    await userEvent.clear(name);
     await userEvent.type(name, "  Mesa de ayuda ");
 
-    expect(pageTitle()).toHaveTextContent("Editar el rol Mesa de ayuda");
-    await waitFor(() => expect(currentCrumb()).toHaveTextContent("Mesa de ayuda"));
+    expect(pageTitle().textContent).toBe("Editar el rol Mesa de ayuda");
+    await waitFor(() => expect(currentCrumb()?.textContent).toBe("Mesa de ayuda"));
   });
 
   it("says there are unsaved changes, until they are undone", async () => {
@@ -822,10 +831,11 @@ describe("RoleEditorPage", () => {
     );
   });
 
-  it("sends whoever lacks roles.manage to the no-permission screen", async () => {
+  // Las dos rutas del editor: quien solo lee roles no puede crear uno ni abrir uno con "Guardar" a la vista.
+  it.each(["/roles/nuevo", "/roles/r3"])("sends whoever lacks roles.manage from %s to the no-permission screen", async (path) => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["roles.read"] })));
 
-    const { router } = renderRouteWithProviders("/roles/nuevo");
+    const { router } = renderRouteWithProviders(path);
 
     expect(await screen.findByText("No tenés permiso")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/sin-permiso");
