@@ -35,6 +35,37 @@
     "permissionsPicked_one": "1 permission picked",
     "permissionsPicked_other": "{{count}} permissions picked"
   },
+  "summary": {
+    "title": "What it will allow",
+    "none": "None",
+    "empty": "You haven't picked any permission yet. A role without permissions can be saved, but it doesn't allow anything.",
+    "areas_one": "{{count}} area",
+    "areas_other": "{{count}} areas",
+    "count": "{{permissions}} in {{areas}}",
+    "remove": "Remove {{name}}"
+  },
+  "picker": {
+    "title": "Permissions",
+    "searchLabel": "Search for a permission",
+    "searchPlaceholder": "Search for a permission or an area",
+    "show": "Show",
+    "all": "All",
+    "picked": "Picked · {{total}}",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "areaProgress": "{{picked}} of {{total}}",
+    "pickAll": "Pick all",
+    "pickAllFor": "Pick every permission in {{area}}",
+    "clearAll": "Remove all",
+    "clearAllFor": "Remove every permission in {{area}}",
+    "noMatch": {
+      "title": "No permission matches",
+      "nonePicked": "This role has no permissions picked yet.",
+      "query": "There are no permissions or areas that say “{{query}}”.",
+      "queryPicked": "There are no permissions or areas that say “{{query}}” among the picked ones.",
+      "action": "See all permissions"
+    }
+  },
   "delete": {
     "title": "Delete the {{name}} role",
     "description": "Whoever has it loses the permissions it granted. This can't be undone.",

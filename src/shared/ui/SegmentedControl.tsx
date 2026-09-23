@@ -36,7 +36,7 @@ export function SegmentedControl({
           onClick={option.onSelect}
           className={cn(
             // El contorno de foco va hacia adentro: el grupo recorta lo que sale de su borde.
-            "px-3 text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)]",
+            "px-[13px] text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)]",
             option.pressed
               ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
               : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)]",

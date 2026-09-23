@@ -35,6 +35,37 @@
     "permissionsPicked_one": "1 permiso elegido",
     "permissionsPicked_other": "{{count}} permisos elegidos"
   },
+  "summary": {
+    "title": "Lo que va a poder hacer",
+    "none": "Ninguno",
+    "empty": "Todavía no elegiste ningún permiso. Un rol sin permisos se puede guardar, pero no habilita nada.",
+    "areas_one": "{{count}} área",
+    "areas_other": "{{count}} áreas",
+    "count": "{{permissions}} en {{areas}}",
+    "remove": "Quitar {{name}}"
+  },
+  "picker": {
+    "title": "Permisos",
+    "searchLabel": "Buscar un permiso",
+    "searchPlaceholder": "Buscar un permiso o un área",
+    "show": "Mostrar",
+    "all": "Todos",
+    "picked": "Elegidos · {{total}}",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Contraer todo",
+    "areaProgress": "{{picked}} de {{total}}",
+    "pickAll": "Elegir todos",
+    "pickAllFor": "Elegir todos los permisos de {{area}}",
+    "clearAll": "Quitar todos",
+    "clearAllFor": "Quitar todos los permisos de {{area}}",
+    "noMatch": {
+      "title": "Ningún permiso coincide",
+      "nonePicked": "Este rol todavía no tiene permisos elegidos.",
+      "query": "No hay permisos ni áreas que digan “{{query}}”.",
+      "queryPicked": "No hay permisos ni áreas que digan “{{query}}” entre los elegidos.",
+      "action": "Ver todos los permisos"
+    }
+  },
   "delete": {
     "title": "Eliminar el rol {{name}}",
     "description": "Quien lo tenga pierde los permisos que le daba. No se puede deshacer.",
