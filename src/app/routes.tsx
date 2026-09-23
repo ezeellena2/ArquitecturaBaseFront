@@ -64,7 +64,8 @@ export const routes: RouteObject[] = [
                 element: <ProtectedRoute permission="roles.manage" />,
                 children: [
                   {
-                    // Antes que `/:roleId`, para que "nuevo" no se lea como el id de un rol.
+                    // Antes que `/:roleId` solo por legibilidad: react-router rankea las rutas y un segmento
+                    // estático le gana a uno dinámico en cualquier orden, así que "nuevo" nunca se lee como un id.
                     path: "/roles/nuevo",
                     lazy: async () => ({
                       Component: (await import("@/features/roles/pages/RoleEditorPage")).RoleEditorPage,

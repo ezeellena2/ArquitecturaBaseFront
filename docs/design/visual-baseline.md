@@ -164,7 +164,7 @@ El lienzo tiene hoy nueve tableros. Los de exploración descartada —las varian
 
 ## Pantallas por completar con esta base
 
-Los puntos 1 a 4 de la lista original se hicieron en la **Fase 5** (tokens y primitivas, `Page` como banda adherida, submenú con permiso por hijo, y los filtros con su contrato de backend). Lo que queda, sin ampliar contratos:
+Los puntos 1 a 4 de la lista original se hicieron en la **Fase 5** (tokens y primitivas, `Page` como banda, submenú con permiso por hijo, y los filtros con su contrato de backend), salvo que la banda recién quedó adherida de verdad con el rol en su propia pantalla (ver “Encabezados”). Lo que queda, sin ampliar contratos:
 
 1. **Completar estados responsive de usuarios, roles, configuración y perfil.** **Es el hueco más grande del fundamento:** todos los tableros del Artifact son de escritorio (1440 px), así que 320 px, tablas angostas y objetivos táctiles siguen sin dibujarse en ningún lado. La Fase 5 no lo tocó y no hay tablero que copiar: hay que dibujarlo primero.
 2. Selección y acciones masivas cuando el backend tenga contrato. **El tablero las muestra con `<span>` en lugar de casillas reales, así que esa parte es referencia visual y no implementación aceptable.**
