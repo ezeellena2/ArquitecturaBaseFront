@@ -36,6 +36,7 @@ export default defineConfig({
       "/connect": backend,
       "/signin-google": backend,
       "/.well-known": backend,
+      "/webhooks": backend,
     },
   },
   test: {
