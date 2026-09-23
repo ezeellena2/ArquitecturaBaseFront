@@ -49,6 +49,7 @@
     "displayName": "Nombre",
     "displayNameHint": "Opcional. Es el nombre que se muestra en el sistema.",
     "roles": "Roles",
+    "rolesPlaceholder": "Sin roles",
     "rolesEmpty": "Todavía no hay roles para asignar.",
     "rolesNeedPermission": "Para asignar roles necesitás permiso de lectura sobre ellos."
   },

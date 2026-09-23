@@ -67,6 +67,16 @@ function listHandlers(body: typeof page = page) {
   ];
 }
 
+/// Elige un rol en el combo del diálogo. Se abre por teclado y no con un clic: en jsdom, después de un test
+/// que ya abrió un menú de Radix, el clic sobre el disparador deja de abrirlo (en el navegador no pasa).
+async function pickRole(name: string) {
+  const combo = await screen.findByRole("button", { name: "Roles" });
+  combo.focus();
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: new RegExp(`^${name}`) }));
+  await userEvent.keyboard("{Escape}");
+}
+
 describe("UsersPage", () => {
   // AppProviders usa el queryClient de la app (un singleton, con staleTime). Sin esto, la respuesta de
   // /api/users de un test queda cacheada y se filtra al siguiente, que pisó el handler con otra respuesta
@@ -254,7 +264,7 @@ describe("UsersPage", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Nuevo usuario" }));
     await userEvent.type(await screen.findByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
-    await userEvent.click(await screen.findByRole("checkbox", { name: "Admin" }));
+    await pickRole("Admin");
     await userEvent.click(screen.getByRole("button", { name: "Dar de alta" }));
 
     await waitFor(() =>
@@ -392,7 +402,7 @@ describe("UsersPage", () => {
     renderRouteWithProviders("/usuarios");
 
     await userEvent.click(await screen.findByRole("button", { name: "Editar los roles de ana@example.com" }));
-    await userEvent.click(await screen.findByRole("checkbox", { name: "Admin" }));
+    await pickRole("Admin");
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
     // El PUT reemplaza nombre y roles: el nombre que ya tenía tiene que volver tal cual.

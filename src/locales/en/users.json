@@ -49,6 +49,7 @@
     "displayName": "Name",
     "displayNameHint": "Optional. The name shown across the system.",
     "roles": "Roles",
+    "rolesPlaceholder": "No roles",
     "rolesEmpty": "There are no roles to assign yet.",
     "rolesNeedPermission": "You need read permission on roles to assign them."
   },

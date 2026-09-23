@@ -9,10 +9,10 @@ import { usePermissions } from "@/auth/usePermissions";
 import { fetchRoles, rolesQueryKey } from "@/shared/api/roles";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
-import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
+import { MultiSelect } from "@/shared/ui/MultiSelect";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 interface DraftValues {
@@ -68,17 +68,6 @@ export function UserRolesDialog({ user, onClose }: { user: UserListItem; onClose
 
   const availableRoles = rolesQuery.data ?? [];
 
-  function toggleRole(name: string, checked: boolean) {
-    setDraft((current) =>
-      current === undefined
-        ? current
-        : {
-            ...current,
-            roles: checked ? [...current.roles, name] : current.roles.filter((role) => role !== name),
-          },
-    );
-  }
-
   return (
     <Dialog
       open
@@ -132,22 +121,24 @@ export function UserRolesDialog({ user, onClose }: { user: UserListItem; onClose
             </FormField>
 
             {canReadRoles ? (
-              <fieldset className="flex flex-col gap-2">
-                <legend className="mb-1 text-sm font-medium">{t("form.roles")}</legend>
-                {rolesQuery.isPending ? <Skeleton aria-hidden="true" className="h-10" /> : null}
-                {!rolesQuery.isPending && availableRoles.length === 0 ? (
-                  <p className="text-sm text-[var(--color-content-muted)]">{t("form.rolesEmpty")}</p>
-                ) : null}
-                {availableRoles.map((role) => (
-                  <CheckboxField
-                    key={role.id}
-                    label={role.name}
-                    description={role.description ?? undefined}
-                    checked={draft.roles.includes(role.name)}
-                    onCheckedChange={(checked) => toggleRole(role.name, checked)}
+              rolesQuery.isPending ? (
+                <Skeleton aria-hidden="true" className="h-9" />
+              ) : availableRoles.length === 0 ? (
+                <p className="text-sm text-[var(--color-content-muted)]">{t("form.rolesEmpty")}</p>
+              ) : (
+                <FormField label={t("form.roles")}>
+                  <MultiSelect
+                    options={availableRoles.map((role) => ({
+                      value: role.name,
+                      label: role.name,
+                      description: role.description ?? undefined,
+                    }))}
+                    value={draft.roles}
+                    onChange={(roles) => setDraft({ ...draft, roles })}
+                    placeholder={t("form.rolesPlaceholder")}
                   />
-                ))}
-              </fieldset>
+                </FormField>
+              )
             ) : (
               <p className="text-sm text-[var(--color-content-muted)]">{t("form.rolesNeedPermission")}</p>
             )}

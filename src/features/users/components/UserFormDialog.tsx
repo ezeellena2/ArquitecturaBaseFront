@@ -13,10 +13,10 @@ import { applyApiErrorToForm } from "@/shared/api/formErrors";
 import { fetchRoles, rolesQueryKey } from "@/shared/api/roles";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
-import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
+import { MultiSelect } from "@/shared/ui/MultiSelect";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 const schema = z.object({ email: z.email(), displayName: z.string().optional() });
@@ -90,9 +90,6 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
   // devuelto `true` y `formError` nunca se seteaba.
   const displayNameError = errors.displayName?.message;
 
-  function toggleRole(name: string, checked: boolean) {
-    setRoles((current) => (checked ? [...current, name] : current.filter((role) => role !== name)));
-  }
 
   return (
     <Dialog
@@ -126,22 +123,24 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
           </FormField>
 
           {canReadRoles ? (
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-sm font-medium">{t("form.roles")}</legend>
-              {rolesQuery.isPending ? <Skeleton aria-hidden="true" className="h-10" /> : null}
-              {!rolesQuery.isPending && availableRoles.length === 0 ? (
-                <p className="text-sm text-[var(--color-content-muted)]">{t("form.rolesEmpty")}</p>
-              ) : null}
-              {availableRoles.map((role) => (
-                <CheckboxField
-                  key={role.id}
-                  label={role.name}
-                  description={role.description ?? undefined}
-                  checked={roles.includes(role.name)}
-                  onCheckedChange={(checked) => toggleRole(role.name, checked)}
+            rolesQuery.isPending ? (
+              <Skeleton aria-hidden="true" className="h-9" />
+            ) : availableRoles.length === 0 ? (
+              <p className="text-sm text-[var(--color-content-muted)]">{t("form.rolesEmpty")}</p>
+            ) : (
+              <FormField label={t("form.roles")}>
+                <MultiSelect
+                  options={availableRoles.map((role) => ({
+                    value: role.name,
+                    label: role.name,
+                    description: role.description ?? undefined,
+                  }))}
+                  value={roles}
+                  onChange={setRoles}
+                  placeholder={t("form.rolesPlaceholder")}
                 />
-              ))}
-            </fieldset>
+              </FormField>
+            )
           ) : (
             <p className="text-sm text-[var(--color-content-muted)]">{t("form.rolesNeedPermission")}</p>
           )}
