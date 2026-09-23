@@ -44,6 +44,9 @@
     "previous": "Previous page",
     "next": "Next page"
   },
+  "notifications": {
+    "label": "Notifications"
+  },
   "navigation": {
     "general": "General",
     "administration": "Administration",

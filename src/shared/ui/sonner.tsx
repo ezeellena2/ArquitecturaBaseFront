@@ -7,16 +7,22 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
-// Edición nuestra sobre el archivo generado: la CLI ata el tema al del sistema con `useTheme` de next-themes,
-// pero la app tiene un solo tema, el claro, y ningún ThemeProvider. Con el sistema en oscuro, sonner tomaba su
-// tema oscuro sobre el fondo blanco de `--popover` y la descripción quedaba en un gris casi blanco. Es la única
-// diferencia con lo que genera shadcn, y `sonner.theme.test.tsx` se pone en rojo si vuelve.
+// Ediciones nuestras sobre el archivo generado; son las únicas diferencias con lo que genera shadcn:
+// - El tema. La CLI lo ata al del sistema con `useTheme` de next-themes, pero la app tiene un solo tema, el claro,
+//   y ningún ThemeProvider. Con el sistema en oscuro, sonner tomaba su tema oscuro sobre el fondo blanco de
+//   `--popover` y la descripción quedaba en un gris casi blanco. `sonner.theme.test.tsx` se pone en rojo si vuelve.
+// - El nombre de la región de los avisos. Sin `containerAriaLabel`, sonner la anuncia en inglés
+//   ("Notifications alt+T"; el atajo lo agrega él). `sonner.i18n.test.tsx` se pone en rojo si vuelve.
 const Toaster = ({ ...props }: ToasterProps) => {
+  const { t } = useTranslation()
+
   return (
     <Sonner
       theme="light"
+      containerAriaLabel={t("notifications.label")}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
