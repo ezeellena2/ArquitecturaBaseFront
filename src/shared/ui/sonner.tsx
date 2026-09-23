@@ -14,15 +14,18 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 // - El tema. La CLI lo ata al del sistema con `useTheme` de next-themes, pero la app tiene un solo tema, el claro,
 //   y ningún ThemeProvider. Con el sistema en oscuro, sonner tomaba su tema oscuro sobre el fondo blanco de
 //   `--popover` y la descripción quedaba en un gris casi blanco. `sonner.theme.test.tsx` se pone en rojo si vuelve.
-// - El nombre de la región de los avisos. Sin `containerAriaLabel`, sonner la anuncia en inglés
-//   ("Notifications alt+T"; el atajo lo agrega él). `sonner.i18n.test.tsx` se pone en rojo si vuelve.
-const Toaster = ({ ...props }: ToasterProps) => {
+// - Los textos que sonner trae en inglés y lee un lector de pantalla: el nombre de la región de los avisos
+//   ("Notifications alt+T"; el atajo lo agrega él) y el del botón de cerrar un aviso ("Close toast").
+//   `toastOptions` se mezcla en vez de pisarse, para que pasar otras opciones no se lleve la traducción.
+//   `sonner.i18n.test.tsx` se pone en rojo si vuelven.
+const Toaster = ({ toastOptions, ...props }: ToasterProps) => {
   const { t } = useTranslation()
 
   return (
     <Sonner
       theme="light"
       containerAriaLabel={t("notifications.label")}
+      toastOptions={{ closeButtonAriaLabel: t("notifications.close"), ...toastOptions }}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

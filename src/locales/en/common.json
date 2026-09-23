@@ -45,7 +45,8 @@
     "next": "Next page"
   },
   "notifications": {
-    "label": "Notifications"
+    "label": "Notifications",
+    "close": "Close notification"
   },
   "navigation": {
     "general": "General",
