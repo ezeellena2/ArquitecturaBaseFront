@@ -1,9 +1,11 @@
 import { api } from "@/shared/api/httpClient";
 
-/// Un permiso del catálogo (`GET /api/permissions`): el código estable y su nombre ya traducido por el backend.
+/// Un permiso del catálogo (`GET /api/permissions`): el código estable, y su nombre y su descripción ya
+/// traducidos por el backend.
 export interface PermissionItem {
   readonly code: string;
   readonly name: string;
+  readonly description: string;
 }
 
 /// Los permisos agrupados por área (el prefijo del código: users, roles, settings), como los muestra el
