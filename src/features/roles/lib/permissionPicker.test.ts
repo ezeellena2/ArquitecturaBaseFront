@@ -167,6 +167,18 @@ describe("toggleArea", () => {
   it("removes every permission of the area when all were picked", () => {
     expect(toggleArea(users, ["users.read", "roles.read", "users.manage"])).toEqual(["roles.read"]);
   });
+
+  it("never returns a code twice, even when the picked list repeats one", () => {
+    expect(toggleArea(users, ["users.read", "users.read"])).toEqual(["users.read", "users.manage"]);
+    expect(toggleArea(users, ["roles.read", "users.read", "roles.read", "users.manage"])).toEqual(["roles.read"]);
+  });
+
+  it("adds a code only once when the area repeats it", () => {
+    const read = { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta." };
+    const repeated: PermissionGroup = { area: "users", name: "Usuarios", permissions: [read, read] };
+
+    expect(toggleArea(repeated, [])).toEqual(["users.read"]);
+  });
 });
 
 describe("pickedSummary", () => {

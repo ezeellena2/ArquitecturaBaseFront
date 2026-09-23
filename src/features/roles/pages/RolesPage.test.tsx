@@ -7,6 +7,7 @@ import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { currentUser } from "@/test/mocks/handlers";
 import { queryClient } from "@/shared/api/queryClient";
 import { server } from "@/test/mocks/server";
+import type { PermissionGroup } from "../api/roles";
 
 vi.mock("react-oidc-context", async () => {
   const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context");
@@ -33,19 +34,29 @@ const roles = [
   },
 ];
 
-const permissionGroups = [
+const permissionGroups: PermissionGroup[] = [
   {
     area: "users",
     name: "Usuarios",
     permissions: [
-      { code: "users.read", name: "Ver usuarios" },
-      { code: "users.manage", name: "Administrar usuarios" },
+      { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta." },
+      {
+        code: "users.manage",
+        name: "Administrar usuarios",
+        description: "Dar de alta, editar, desactivar y eliminar cuentas.",
+      },
     ],
   },
   {
     area: "settings",
     name: "Configuración",
-    permissions: [{ code: "settings.manage", name: "Cambiar la configuración" }],
+    permissions: [
+      {
+        code: "settings.manage",
+        name: "Cambiar la configuración",
+        description: "El modo de registro y los ajustes del sistema.",
+      },
+    ],
   },
 ];
 

@@ -72,14 +72,17 @@ export function areaProgress(group: PermissionGroup, picked: readonly string[]):
 
 /// "Elegir todos" y "Quitar todos": si el área ya tiene todos elegidos, los saca; si no, suma los que faltan.
 /// Actúa sobre todos los permisos del área, estén o no a la vista, y deja lo demás como estaba.
+///
+/// Lo que devuelve no repite códigos, aunque los elegidos o el área los repitan. Con los datos de hoy no pasa
+/// (el catálogo sale de `Permissions.All` y el backend guarda cada permiso una vez), pero el `Set` hace que
+/// esta función no dependa de eso.
 export function toggleArea(group: PermissionGroup, picked: readonly string[]): string[] {
   const codes = group.permissions.map((permission) => permission.code);
+  const next = areaProgress(group, picked).all
+    ? picked.filter((code) => !codes.includes(code))
+    : [...picked, ...codes];
 
-  if (areaProgress(group, picked).all) {
-    return picked.filter((code) => !codes.includes(code));
-  }
-
-  return [...picked, ...codes.filter((code) => !picked.includes(code))];
+  return [...new Set(next)];
 }
 
 /// Lo que va a poder hacer el rol: los elegidos por área, que es lo mismo que muestra el filtro "Elegidos"

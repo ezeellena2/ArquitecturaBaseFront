@@ -8,8 +8,8 @@ export interface PermissionItem {
   readonly description: string;
 }
 
-/// Los permisos agrupados por área (el prefijo del código: users, roles, settings), como los muestra el
-/// diálogo de rol.
+/// Los permisos agrupados por área (el prefijo del código: users, roles, settings), que es como se eligen
+/// los de un rol.
 export interface PermissionGroup {
   readonly area: string;
   readonly name: string;
