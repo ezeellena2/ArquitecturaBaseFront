@@ -169,9 +169,12 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   });
 
   // Mientras ese pedido está en vuelo, `rolesQuery.data` sigue siendo lo que había en caché: sembrar con eso
-  // sería sembrar con lo viejo, que es justo lo que se quiere evitar. Por eso se espera a que termine.
-  const freshRole =
-    isEditing && !rolesQuery.isFetching ? rolesQuery.data?.find((item) => item.id === roleId) : undefined;
+  // sería sembrar con lo viejo, que es justo lo que se quiere evitar. Por eso se espera a que termine, y a que
+  // termine bien: si falla, TanStack deja en `data` lo que había en caché, y sembrar con eso es lo mismo que no
+  // haber esperado. Sin siembra, la pantalla muestra el error (o el sin permiso) y "Reintentar" pide de nuevo.
+  const hasFreshRoles =
+    isEditing && rolesQuery.isSuccess && rolesQuery.isFetchedAfterMount && !rolesQuery.isFetching;
+  const freshRole = hasFreshRoles ? rolesQuery.data.find((item) => item.id === roleId) : undefined;
 
   const [seededRole, setSeededRole] = useState<RoleListItem | undefined>();
   const [draft, setDraft] = useState<Draft | undefined>(isEditing ? undefined : emptyDraft);
@@ -259,8 +262,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   const apiLoadError = loadError instanceof ApiError ? loadError : undefined;
 
   // El rol no está: otro administrador lo borró, o el link es de antes. No hay nada que reintentar.
-  const isRoleGone =
-    isEditing && seededRole === undefined && rolesQuery.isSuccess && !rolesQuery.isFetching && freshRole === undefined;
+  const isRoleGone = hasFreshRoles && seededRole === undefined && freshRole === undefined;
 
   if (apiLoadError?.status === 403) {
     return <ForbiddenPage />;

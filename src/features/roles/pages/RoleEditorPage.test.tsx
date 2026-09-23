@@ -214,6 +214,81 @@ describe("RoleEditorPage", () => {
     );
   });
 
+  it("does not seed from the listing's cache when asking for the role again fails", async () => {
+    const updates: unknown[] = [];
+    let requests = 0;
+    server.use(
+      http.get("/api/me", () => HttpResponse.json(manager)),
+      http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
+      http.get("/api/roles", () => {
+        requests += 1;
+
+        // El listado llegó antes de que otro administrador le agregara "Administrar usuarios" a Soporte; el pedido
+        // del editor falla, y el de "Reintentar" ya trae lo nuevo.
+        if (requests === 1) {
+          return HttpResponse.json([admin, user, { ...support, permissions: ["users.read", "roles.read"] }, audit]);
+        }
+
+        return requests === 2
+          ? HttpResponse.json(
+              { status: 500, code: "General.Unexpected", detail: "Ocurrió un error.", traceId: "0HN7-Z" },
+              { status: 500 },
+            )
+          : HttpResponse.json(roles);
+      }),
+      http.put("/api/roles/r3", async ({ request }) => {
+        updates.push(await request.json());
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    // El camino de todos los días: el listado deja los roles en caché y "Editar" abre la pantalla.
+    const { router } = renderRouteWithProviders("/roles");
+    await userEvent.click(await screen.findByRole("button", { name: "Editar el rol Soporte" }));
+
+    // Sembrar con lo que había en caché sería guardar encima de una lista de permisos vieja: el PUT la reemplaza
+    // entera y "Administrar usuarios" se borraba sin aviso.
+    expect(await screen.findByText("No pudimos cargar el rol")).toBeInTheDocument();
+    expect(screen.getByText("Código para reportar: 0HN7-Z")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Nombre" })).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/roles/r3");
+
+    await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+
+    const usersGroup = await screen.findByRole("group", { name: "Usuarios" });
+    expect(within(usersGroup).getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), " 2");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() =>
+      expect(updates).toEqual([
+        {
+          name: "Soporte 2",
+          description: "Atiende a los usuarios y revisa sus cuentas.",
+          permissions: ["users.read", "users.manage", "roles.read"],
+        },
+      ]),
+    );
+  });
+
+  it("shows the no-permission page when asking for the role again is forbidden, even with the listing cached", async () => {
+    server.use(
+      http.get("/api/me", () => HttpResponse.json(manager)),
+      http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
+      http.get("/api/roles", () =>
+        HttpResponse.json({ status: 403, code: "Http.Forbidden", detail: "No tenés permiso." }, { status: 403 }),
+      ),
+    );
+    queryClient.setQueryData(rolesQueryKey, roles);
+
+    renderRouteWithProviders("/roles/r3");
+
+    expect(await screen.findByText("No tenés permiso")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Nombre" })).not.toBeInTheDocument();
+  });
+
   it("does not send a permission the catalog no longer declares", async () => {
     // Sacado del catálogo del backend pero todavía guardado en el rol: no tiene casilla ni chip, así que no hay
     // forma de quitarlo, y si viaja en el PUT el backend rechaza el rol entero.
