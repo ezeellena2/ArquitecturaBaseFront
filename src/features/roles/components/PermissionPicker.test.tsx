@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState, type FormEvent } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -294,6 +294,68 @@ describe("PermissionPicker", () => {
     expect(area("Roles")).toBeInTheDocument();
     expect(area("Configuración")).toBeInTheDocument();
     expect(screen.queryByText("Ningún permiso coincide")).not.toBeInTheDocument();
+  });
+
+  // Los controles que se sacan a sí mismos de la vista no dejan el foco en `<body>`: con el teclado se perdería
+  // el lugar justo mientras se revisa y se limpia lo elegido.
+  describe("keeps the focus when what had it goes away", () => {
+    async function showOnlyPicked(total: number) {
+      await userEvent.click(screen.getByRole("button", { name: `Elegidos · ${total}` }));
+    }
+
+    async function pressOn(element: HTMLElement, key: string) {
+      act(() => element.focus());
+      await userEvent.keyboard(key);
+    }
+
+    it("moves to the next permission after unpicking one with only the picked shown", async () => {
+      renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
+      await showOnlyPicked(3);
+
+      await pressOn(screen.getByRole("checkbox", { name: "Administrar usuarios" }), " ");
+
+      expect(screen.queryByRole("checkbox", { name: "Administrar usuarios" })).not.toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: "Ver roles" })).toHaveFocus();
+    });
+
+    it("moves back to the previous permission after unpicking the last one shown", async () => {
+      renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
+      await showOnlyPicked(3);
+
+      await pressOn(screen.getByRole("checkbox", { name: "Ver roles" }), " ");
+
+      expect(screen.queryByRole("group", { name: "Roles" })).not.toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toHaveFocus();
+    });
+
+    it("moves to the next area's button after removing a whole area with only the picked shown", async () => {
+      renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
+      await showOnlyPicked(3);
+
+      await pressOn(screen.getByRole("button", { name: "Quitar todos los permisos de Usuarios" }), "{Enter}");
+
+      expect(screen.queryByRole("group", { name: "Usuarios" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Elegir todos los permisos de Roles" })).toHaveFocus();
+    });
+
+    it("moves to the way out of the empty list after unpicking the only one shown", async () => {
+      renderWithProviders(<Harness initial={["users.read"]} />);
+      await showOnlyPicked(1);
+
+      await pressOn(screen.getByRole("checkbox", { name: "Ver usuarios" }), " ");
+
+      expect(screen.getByRole("button", { name: "Ver todos los permisos" })).toHaveFocus();
+    });
+
+    it("moves to the search after showing every permission from the empty state", async () => {
+      renderWithProviders(<Harness initial={["users.read"]} />);
+      await userEvent.type(searchBox(), "zzz");
+
+      await pressOn(screen.getByRole("button", { name: "Ver todos los permisos" }), "{Enter}");
+
+      expect(screen.queryByRole("button", { name: "Ver todos los permisos" })).not.toBeInTheDocument();
+      expect(searchBox()).toHaveFocus();
+    });
   });
 
   it("does not submit the form it lives in when Enter is pressed in the search", async () => {

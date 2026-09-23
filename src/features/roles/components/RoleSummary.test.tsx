@@ -1,5 +1,6 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { PermissionGroup } from "../api/roles";
 import { RoleSummary } from "./RoleSummary";
@@ -30,6 +31,27 @@ const catalog: PermissionGroup[] = [
 
 function summary() {
   return screen.getByRole("region", { name: "Lo que va a poder hacer" });
+}
+
+/// Hace de pantalla: quitar un chip cambia lo elegido, y el resumen se vuelve a dibujar sin él.
+function Harness({ initial }: { initial: string[] }) {
+  const [picked, setPicked] = useState<readonly string[]>(initial);
+
+  return (
+    <RoleSummary
+      groups={catalog}
+      picked={picked}
+      onRemove={(code) => setPicked((current) => current.filter((item) => item !== code))}
+    />
+  );
+}
+
+/// Con el teclado, como quien no puede usar el mouse: el foco en la cruz del chip y Enter.
+async function removeWithKeyboard(name: string) {
+  const button = screen.getByRole("button", { name });
+  act(() => button.focus());
+  await userEvent.keyboard("{Enter}");
+  expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
 }
 
 describe("RoleSummary", () => {
@@ -63,6 +85,32 @@ describe("RoleSummary", () => {
       ),
     ).toBeInTheDocument();
     expect(within(summary()).queryByRole("list")).not.toBeInTheDocument();
+  });
+
+  // La cruz se va con su chip: sin mover el foco, caería en `<body>` y con el teclado habría que volver a buscar
+  // el lugar después de cada chip.
+  it("moves the focus to the next chip after removing one, even in another area", async () => {
+    renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
+
+    await removeWithKeyboard("Quitar Administrar usuarios");
+
+    expect(screen.getByRole("button", { name: "Quitar Ver roles" })).toHaveFocus();
+  });
+
+  it("moves the focus back to the previous chip after removing the last one", async () => {
+    renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
+
+    await removeWithKeyboard("Quitar Ver roles");
+
+    expect(screen.getByRole("button", { name: "Quitar Administrar usuarios" })).toHaveFocus();
+  });
+
+  it("moves the focus to the card's title when no chip is left", async () => {
+    renderWithProviders(<Harness initial={["roles.read"]} />);
+
+    await removeWithKeyboard("Quitar Ver roles");
+
+    expect(within(summary()).getByRole("heading", { name: "Lo que va a poder hacer" })).toHaveFocus();
   });
 
   it("removes a permission from its chip", async () => {

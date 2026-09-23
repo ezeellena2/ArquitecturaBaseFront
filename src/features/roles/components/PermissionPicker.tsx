@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { PermissionGroup } from "../api/roles";
 import {
@@ -32,6 +32,10 @@ const linkAction = "h-auto p-0 text-[12.5px] text-[var(--color-brand-700)]";
 
 /// El separador entre áreas, más suave que el borde de la tarjeta: separa filas, no superficies.
 const rowBorder = "border-[var(--color-border)]/80";
+
+/// Las listas de controles que un cambio de lo elegido puede sacar de la vista (con "Elegidos" puesto): las
+/// casillas, y el "Elegir todos" / "Quitar todos" de cada área, que lleva la marca `data-area-action`.
+const focusKeepingLists = ['[role="checkbox"]', "[data-area-action]"] as const;
 
 /// Una fila de área y, si está abierta, sus permisos. Es un `fieldset` abierta o cerrada: así cada área es un
 /// grupo con nombre, y una casilla dice de qué área es aunque haya dos que se llamen parecido.
@@ -100,6 +104,7 @@ function PermissionArea({
             aria-label={
               progress.all ? t("picker.clearAllFor", { area: group.name }) : t("picker.pickAllFor", { area: group.name })
             }
+            data-area-action=""
             onClick={() => onChange(toggleArea(group, picked))}
             className={linkAction}
           >
@@ -148,6 +153,47 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
   const [onlyPicked, setOnlyPicked] = useState(false);
   const [openAreas, setOpenAreas] = useState(() => initialOpenAreas(groups, picked));
 
+  const sectionRef = useRef<HTMLElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const showAllRef = useRef<HTMLButtonElement>(null);
+
+  // Con "Elegidos" puesto, desmarcar una casilla o "Quitar todos" saca de la vista al mismo control que tenía el
+  // foco, y el foco caería en `<body>`: con el teclado se perdería el lugar justo mientras se limpia lo elegido.
+  // Antes del cambio se anota qué control era y en qué lugar de su lista estaba; después, si ya no está, el foco
+  // pasa al que quedó en ese lugar (el siguiente), o al último si era el último, o a la salida del vacío.
+  const focusBeforeChange = useRef<{ element: HTMLElement; list: string; index: number } | null>(null);
+
+  function change(next: string[]) {
+    const section = sectionRef.current;
+    const active = document.activeElement;
+
+    if (section !== null && active instanceof HTMLElement && section.contains(active)) {
+      const list = focusKeepingLists.find((selector) => active.matches(selector));
+
+      if (list !== undefined) {
+        const index = [...section.querySelectorAll(list)].indexOf(active);
+
+        focusBeforeChange.current = { element: active, list, index };
+      }
+    }
+
+    onChange(next);
+  }
+
+  // Un efecto y no un cálculo del render: mueve el foco del DOM, que es algo de afuera de React.
+  useLayoutEffect(() => {
+    const before = focusBeforeChange.current;
+    focusBeforeChange.current = null;
+
+    if (before === null || before.element.isConnected) {
+      return;
+    }
+
+    const candidates = [...(sectionRef.current?.querySelectorAll<HTMLElement>(before.list) ?? [])];
+
+    (candidates[before.index] ?? candidates.at(-1) ?? showAllRef.current ?? searchRef.current)?.focus();
+  });
+
   const areas = visibleAreas(groups, { query, onlyPicked, picked });
 
   // Una búsqueda de solo espacios no cuenta: ni filtra ni abre las áreas.
@@ -173,6 +219,7 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
 
   return (
     <section
+      ref={sectionRef}
       aria-labelledby={titleId}
       className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]"
     >
@@ -185,6 +232,7 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
         <div className="relative w-[280px] max-w-full">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-[11px] size-[15px] -translate-y-1/2 text-[var(--color-content-muted)]" />
           <Input
+            ref={searchRef}
             type="search"
             aria-label={t("picker.searchLabel")}
             placeholder={t("picker.searchPlaceholder")}
@@ -235,9 +283,12 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
           description={noMatchReason()}
           action={
             <Button
+              ref={showAllRef}
               type="button"
               variant="outline"
               onClick={() => {
+                // El botón se va con el vacío: el foco pasa al buscador, que es donde sigue la búsqueda.
+                searchRef.current?.focus();
                 setQuery("");
                 setOnlyPicked(false);
               }}
@@ -260,7 +311,7 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
           open={isFiltering || openAreas.includes(area.group.area)}
           readOnly={readOnly}
           onToggleOpen={() => toggleOpen(area.group.area)}
-          onChange={onChange}
+          onChange={change}
         />
       ))}
     </section>
