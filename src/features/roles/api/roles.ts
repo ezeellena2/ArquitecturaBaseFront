@@ -16,6 +16,11 @@ export interface PermissionGroup {
   readonly permissions: readonly PermissionItem[];
 }
 
+/// Los largos que acepta el backend (`ValidationRules.RoleNameMaxLength` y `RoleDescriptionMaxLength`): el
+/// campo no deja pasarse, en vez de dejar escribir de más y que lo rechace el servidor.
+export const roleNameMaxLength = 64;
+export const roleDescriptionMaxLength = 256;
+
 export interface RoleBody {
   readonly name: string;
   readonly description: string | null;

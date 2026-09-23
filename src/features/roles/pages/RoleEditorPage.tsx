@@ -3,7 +3,15 @@ import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } fr
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { createRole, fetchPermissions, permissionsQueryKey, updateRole, type RoleBody } from "../api/roles";
+import {
+  createRole,
+  fetchPermissions,
+  permissionsQueryKey,
+  roleDescriptionMaxLength,
+  roleNameMaxLength,
+  updateRole,
+  type RoleBody,
+} from "../api/roles";
 import { PermissionPicker } from "../components/PermissionPicker";
 import { RoleSummary } from "../components/RoleSummary";
 import { roleActionErrorMessage } from "../errors";
@@ -85,6 +93,7 @@ function EditorSkeleton(): ReactNode {
 function RoleDetails({
   draft,
   nameError,
+  descriptionError,
   isSystemRole,
   readOnly,
   onNameChange,
@@ -92,6 +101,7 @@ function RoleDetails({
 }: {
   draft: Draft;
   nameError: string | undefined;
+  descriptionError: string | undefined;
   isSystemRole: boolean;
   readOnly: boolean;
   onNameChange: (name: string) => void;
@@ -122,18 +132,20 @@ function RoleDetails({
             type="text"
             autoComplete="off"
             readOnly={isSystemRole}
+            maxLength={roleNameMaxLength}
             value={draft.name}
             onChange={(event) => onNameChange(event.target.value)}
             className={readOnlyClassName}
           />
         </FormField>
 
-        <FormField label={t("form.descriptionLabel")}>
+        <FormField label={t("form.descriptionLabel")} error={descriptionError}>
           {/* Tres renglones fijos, como en el tablero: con `field-sizing-content` (lo que trae shadcn) el
               navegador ignora `rows` y el campo crece y achica con cada tecla, empujando la tarjeta de abajo. */}
           <Textarea
             rows={3}
             readOnly={readOnly}
+            maxLength={roleDescriptionMaxLength}
             placeholder={readOnly ? undefined : t("form.descriptionPlaceholder")}
             value={draft.description}
             onChange={(event) => onDescriptionChange(event.target.value)}
@@ -179,6 +191,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   const [seededRole, setSeededRole] = useState<RoleListItem | undefined>();
   const [draft, setDraft] = useState<Draft | undefined>(isEditing ? undefined : emptyDraft);
   const [nameError, setNameError] = useState<string | undefined>();
+  const [descriptionError, setDescriptionError] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | undefined>();
 
   // Se siembra una sola vez, durante el render y no con un efecto que copia datos a otro estado (regla de
@@ -269,21 +282,28 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   }
 
   function showSaveError(error: Error) {
-    // Lo que es del nombre va debajo del nombre; lo demás, arriba de las dos columnas.
-    const nameMessage =
-      error instanceof ApiError
-        ? error.code === "Roles.Role.AlreadyExists"
-          ? t("errors.alreadyExists")
-          : error.errors?.name?.[0]
-        : undefined;
-
-    if (nameMessage) {
-      setNameError(nameMessage);
+    // Lo que es de un campo va debajo de ese campo; lo demás, arriba de las dos columnas.
+    if (error instanceof ApiError && error.code === "Roles.Role.AlreadyExists") {
+      setNameError(t("errors.alreadyExists"));
 
       return;
     }
 
-    setFormError(roleActionErrorMessage(error, t));
+    // Todos a la vez, no solo el primero. Uno de un campo que la pantalla no tiene (los permisos) va arriba con
+    // su propio texto: el `detail` de una validación pide revisar los campos marcados, y no habría ninguno.
+    const fieldErrors: Record<string, readonly string[] | undefined> =
+      (error instanceof ApiError ? error.errors : undefined) ?? {};
+    const { name, description, ...others } = fieldErrors;
+    const nameMessage = name?.[0];
+    const descriptionMessage = description?.[0];
+    const otherMessage = Object.values(others).flat()[0];
+
+    setNameError(nameMessage);
+    setDescriptionError(descriptionMessage);
+
+    if (otherMessage !== undefined || (nameMessage === undefined && descriptionMessage === undefined)) {
+      setFormError(otherMessage ?? roleActionErrorMessage(error, t));
+    }
   }
 
   function changeDraft(change: Partial<Draft>) {
@@ -298,6 +318,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     }
 
     setFormError(undefined);
+    setDescriptionError(undefined);
 
     const name = draft.name.trim();
 
@@ -411,6 +432,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
               <RoleDetails
                 draft={draft}
                 nameError={nameError}
+                descriptionError={descriptionError}
                 isSystemRole={isSystemRole}
                 readOnly={isAdmin}
                 onNameChange={(name) => {
@@ -418,7 +440,10 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
                   // Escribir es corregir: el error se va y vuelve, si hace falta, al guardar.
                   setNameError(undefined);
                 }}
-                onDescriptionChange={(description) => changeDraft({ description })}
+                onDescriptionChange={(description) => {
+                  changeDraft({ description });
+                  setDescriptionError(undefined);
+                }}
               />
               <RoleSummary
                 groups={groups}

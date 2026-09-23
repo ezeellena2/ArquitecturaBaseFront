@@ -401,6 +401,111 @@ describe("RoleEditorPage", () => {
     expect(screen.getAllByRole("alert")).toHaveLength(1);
   });
 
+  it("puts a validation error of the description under its field, and typing takes it away", async () => {
+    server.use(
+      ...editorHandlers(),
+      http.put("/api/roles/r3", () =>
+        HttpResponse.json(
+          {
+            status: 400,
+            code: "Validation.Failed",
+            detail: "Revisá los campos marcados.",
+            errors: { description: ["La descripción no puede tener más de 256 caracteres."] },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    await renderSupport();
+
+    const description = screen.getByRole("textbox", { name: "Descripción" });
+    await userEvent.type(description, "!");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    // El `detail` de una validación pide revisar los campos marcados: arriba, sin ninguno marcado, no diría nada.
+    await waitFor(() =>
+      expect(description).toHaveAccessibleDescription("La descripción no puede tener más de 256 caracteres."),
+    );
+    expect(description).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(screen.queryByText("Revisá los campos marcados.")).not.toBeInTheDocument();
+
+    await userEvent.type(description, "{Backspace}");
+
+    expect(description).not.toHaveAccessibleDescription();
+    expect(description).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("marks every field the backend rejected at once", async () => {
+    server.use(
+      ...editorHandlers(),
+      http.put("/api/roles/r3", () =>
+        HttpResponse.json(
+          {
+            status: 400,
+            code: "Validation.Failed",
+            detail: "Revisá los campos marcados.",
+            errors: {
+              name: ["El nombre no puede tener más de 64 caracteres."],
+              description: ["La descripción no puede tener más de 256 caracteres."],
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    await renderSupport();
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), " 2");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAccessibleDescription(
+        "El nombre no puede tener más de 64 caracteres.",
+      ),
+    );
+    expect(screen.getByRole("textbox", { name: "Descripción" })).toHaveAccessibleDescription(
+      "La descripción no puede tener más de 256 caracteres.",
+    );
+    expect(screen.getAllByRole("alert")).toHaveLength(2);
+  });
+
+  it("says what is wrong with a field the screen does not show, above the two columns", async () => {
+    server.use(
+      ...editorHandlers(),
+      http.put("/api/roles/r3", () =>
+        HttpResponse.json(
+          {
+            status: 400,
+            code: "Validation.Failed",
+            detail: "Revisá los campos marcados.",
+            errors: { permissions: ["Hay un permiso que no existe."] },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    await renderSupport();
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Hay un permiso que no existe.");
+    expect(screen.queryByText("Revisá los campos marcados.")).not.toBeInTheDocument();
+  });
+
+  it("does not let the name and the description grow past what the backend accepts", async () => {
+    server.use(...editorHandlers());
+
+    renderRouteWithProviders("/roles/nuevo");
+
+    expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveAttribute("maxlength", "64");
+    expect(screen.getByRole("textbox", { name: "Descripción" })).toHaveAttribute("maxlength", "256");
+  });
+
   it("puts any other error above the two columns", async () => {
     server.use(
       ...editorHandlers(),
