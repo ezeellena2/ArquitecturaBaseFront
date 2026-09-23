@@ -423,12 +423,14 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
           ) : null}
 
           <div className={columnsClassName}>
-            {/* Adherida al scrollear, justo debajo de la banda (56 px) y el padding del cuerpo (24 px): con veinte
-                áreas abiertas, el nombre y el resumen siguen a la vista. Y nunca más alta que lo que queda de
-                pantalla (la barra superior, la banda y el padding de arriba y de abajo): en una notebook, con
-                muchos elegidos, el final del resumen quedaba debajo del borde hasta llegar al fondo del selector.
-                El que se achica es el resumen, que ya tiene scroll propio; los datos del rol no. */}
-            <div className="flex flex-col gap-4 lg:sticky lg:top-[calc(3.5rem+1.5rem)] lg:max-h-[calc(100svh-4rem-3.5rem-3rem)]">
+            {/* Adherida al scrollear, pegada a la banda (56 px), como en el tablero (`top: 0` dentro de un `main`
+                que en el tablero empieza debajo de la banda): antes de scrollear está a 24 px, el padding del
+                cuerpo, y al scrollear sube hasta tocarla. Con veinte áreas abiertas, el nombre y el resumen siguen a
+                la vista. Y nunca más alta que lo que queda de pantalla antes de scrollear (la barra superior, la
+                banda y el padding de arriba y de abajo), que es cuando está más abajo: en una notebook, con muchos
+                elegidos, el final del resumen quedaba debajo del borde hasta llegar al fondo del selector. El que se
+                achica es el resumen, que ya tiene scroll propio; los datos del rol no. */}
+            <div className="flex flex-col gap-4 lg:sticky lg:top-14 lg:max-h-[calc(100svh-4rem-3.5rem-3rem)]">
               <RoleDetails
                 draft={draft}
                 nameError={nameError}
