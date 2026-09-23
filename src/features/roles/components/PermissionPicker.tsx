@@ -247,6 +247,8 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
             </Button>
           }
           className="rounded-none border-0 px-6 py-12"
+          // Como en el tablero: el motivo repite la búsqueda, y con una larga se parte en renglones.
+          descriptionClassName="max-w-[360px]"
         />
       ) : null}
 
