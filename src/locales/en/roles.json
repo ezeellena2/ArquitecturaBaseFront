@@ -25,11 +25,10 @@
   "form": {
     "createTitle": "New role",
     "editTitle": "Edit the {{name}} role",
-    "description": "Choose what someone with this role can do. Changes take effect right away.",
     "name": "Name",
     "nameRequired": "Enter a name.",
     "descriptionLabel": "Description",
-    "descriptionHint": "Optional. One line explaining what it is for.",
+    "descriptionPlaceholder": "Optional. One line explaining what it is for.",
     "permissions": "Permissions",
     "submit": "Save",
     "permissionsPicked_zero": "No permission picked",

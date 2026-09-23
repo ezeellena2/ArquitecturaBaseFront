@@ -9,7 +9,7 @@ import { fetchRoles, rolesQueryKey, type RoleListItem } from "@/shared/api/roles
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -121,11 +121,13 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
           que crece sin techo deja el botón de guardar abajo de la ventana. */}
       <DialogContent
         onCloseAutoFocus={restoreFocus}
+        // Sin descripción: el título y los rótulos ya dicen qué es cada cosa. `undefined` le avisa a Radix que
+        // falta a propósito, y así no advierte en la consola.
+        aria-describedby={undefined}
         className="flex max-h-[min(720px,90svh)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[480px]"
       >
         <DialogHeader className="px-[18px] pt-[18px] pr-12">
           <DialogTitle>{role ? t("form.editTitle", { name: role.name }) : t("form.createTitle")}</DialogTitle>
-          <DialogDescription>{t("form.description")}</DialogDescription>
         </DialogHeader>
 
         {draft === undefined ? (
@@ -180,9 +182,10 @@ export function RoleFormDialog({ role, onClose }: { role?: RoleListItem; onClose
               />
             </FormField>
 
-            <FormField label={t("form.descriptionLabel")} hint={t("form.descriptionHint")}>
+            <FormField label={t("form.descriptionLabel")}>
               <Textarea
                 rows={2}
+                placeholder={t("form.descriptionPlaceholder")}
                 value={draft.description}
                 onChange={(event) => setDraft({ ...draft, description: event.target.value })}
               />
