@@ -75,9 +75,9 @@
     "collapseAll": "Collapse all",
     "areaProgress": "{{picked}} of {{total}}",
     "pickAll": "Pick all",
-    "pickAllFor": "Pick every permission in {{area}}",
+    "pickAllFor": "Pick all permissions in {{area}}",
     "clearAll": "Remove all",
-    "clearAllFor": "Remove every permission in {{area}}",
+    "clearAllFor": "Remove all permissions in {{area}}",
     "noMatch": {
       "title": "No permission matches",
       "nonePicked": "This role has no permissions picked yet.",

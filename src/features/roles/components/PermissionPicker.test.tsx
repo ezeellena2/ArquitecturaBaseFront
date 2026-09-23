@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { PermissionGroup } from "../api/roles";
 import { PermissionPicker } from "./PermissionPicker";
+import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
 // Las tres áreas reales, con los textos del backend en español.
@@ -165,6 +166,29 @@ describe("PermissionPicker", () => {
 
     expect(within(area("Usuarios")).getByText("0 de 2")).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).not.toBeChecked();
+  });
+
+  // WCAG 2.5.3 (el nombre contiene lo que se ve): quien maneja la pantalla con la voz dice "clic en Elegir
+  // todos", y eso tiene que encontrar al botón. En los dos idiomas, que cada traducción puede romperlo sola.
+  it.each(["es", "en"])("names each area's button starting with the text it shows, in %s", async (language) => {
+    await i18n.changeLanguage(language);
+
+    try {
+      // Usuarios, con todo elegido, muestra "Quitar todos"; Roles, sin nada, "Elegir todos".
+      renderWithProviders(<Harness initial={["users.read", "users.manage"]} />);
+
+      for (const name of ["Usuarios", "Roles"]) {
+        const action = within(await screen.findByRole("group", { name }))
+          .getAllByRole("button")
+          .find((button) => !button.hasAttribute("aria-expanded"));
+        const shown = action?.textContent ?? "";
+
+        expect(shown).not.toBe("");
+        expect(action?.getAttribute("aria-label")?.slice(0, shown.length)).toBe(shown);
+      }
+    } finally {
+      await i18n.changeLanguage("es");
+    }
   });
 
   it("picks the whole area even when the search hides part of it", async () => {
