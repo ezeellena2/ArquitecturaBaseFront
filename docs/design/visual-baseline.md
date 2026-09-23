@@ -1,7 +1,7 @@
 # Fundamento visual de ArquitecturaBaseFront
 
 Estado: **vigente**  
-Revisión del Artifact: **2026-09-21** (nueve tableros, exploraciones descartadas eliminadas). Aplicado al código en la Fase 5; el mapa de abajo dice qué quedó implementado y qué no.  
+Revisión del Artifact: **2026-09-22** (nueve tableros, exploraciones descartadas eliminadas, más los tres de “Un rol en su propia pantalla”). Aplicado al código en la Fase 5 y en el rol en su propia pantalla; el mapa de abajo dice qué quedó implementado y qué no.  
 Procedencia: [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) (Artifact privado de Claude)
 
 ## Cómo se usa esta base
@@ -63,9 +63,12 @@ Solo hay tres niveles:
 **El encabezado de pantalla está decidido** (2026-09-21, elección explícita del usuario sobre el Artifact):
 
 - Es una **banda fija de 56 px**, adherida bajo la barra superior, con el tono de `--color-surface-header` y su borde inferior. **No tiene estado expandido:** se ve igual al entrar que después de scrollear, porque es chrome de la sección y no una portada.
+  - **Adherida de verdad recién desde el rol en su propia pantalla (2026-09-22).** La Fase 5 la dio por implementada, pero la raíz de `AppLayout` era `min-h-svh`: crecía con el contenido, el que scrolleaba era el documento y la banda se iba con el resto, en todas las pantallas. Con la raíz en `h-svh` scrollea `<main>`, y la barra superior y la banda se quedan arriba. jsdom no maqueta, así que ningún test lo había visto: se comprobó en un navegador.
 - Lleva **ícono de la sección** (32 px, radio 8), el **título de la pantalla abierta** en el nivel *título de sección*, y la **acción primaria** a la derecha. La acción es la de la pantalla activa: en Usuarios dice "Nuevo usuario"; en Roles, "Nuevo rol".
+- **Una pantalla hija cambia el ícono por el botón de volver** (`backTo` en `Page`): 32 px, con borde y la flecha a la izquierda, que vuelve a la sección de la que cuelga y dice a dónde en su nombre accesible (“Volver a Roles y permisos”). Al lado del título puede llevar un estado que no es parte del nombre (`status`): la insignia “Del sistema”, o “· Cambios sin guardar” en gris.
 - **Sin antetítulo y sin descripción.** El antetítulo se evaluó y se descartó: el grupo ya se lee en el menú lateral y en las migas, y un tercer lugar diciendo lo mismo no agrega orientación.
 - **Las migas se quedan** en la barra superior, con los tres niveles (`Inicio / Gestión de usuarios / Usuarios`). Al no haber antetítulo, no hay duplicación que resolver.
+- **Las migas de una ruta hija tienen cuatro niveles**, con el padre como enlace y como hoja lo que la pantalla está editando (`Inicio / Gestión de usuarios / Roles y permisos / Soporte`). La hoja la pone la pantalla (`useBreadcrumbLeaf`), porque solo ella sabe cómo se llama; mientras no la pone, el padre queda último y sin marcar como página actual.
 
 El peso tipográfico se mantiene en 600. El laboratorio proponía 680, que sería un sexto nivel: el sistema tiene cinco y ampliarlo requiere una decisión deliberada, no un ajuste de una pantalla.
 
@@ -149,9 +152,11 @@ Carga, vacío y error del listado pertenecen a la superficie del listado. Los er
 | Formularios | `FormField`, diálogos, perfil y configuración | Implementado; auditar que ningún campo se dibuje fuera de `FormField` |
 | Avisos | Sonner, errores inline, `ConfirmDialog`, banners | Parcialmente implementado |
 | Anatomía | `src/index.css` (tokens) y `shared/ui` | **Implementado**: `--color-surface-header`, `--color-surface-header-border`, `--color-content-heading` y las tres alturas |
-| Encabezados, íconos y color | `Page`, superficies, set propio de íconos | **Implementado**: banda adherida y 15 íconos propios |
+| Encabezados, íconos y color | `Page`, superficies, set propio de íconos | **Implementado**: banda adherida (de verdad desde el rol en su propia pantalla, ver “Encabezados”) y 17 íconos propios |
 | Las mismas piezas | `shared/ui` (superficie, banda, control) | Contrato adoptado; consolidación incremental |
 | Cómo se sostiene | tokens + componentes + tests | Norma de gobierno adoptada |
+| Roles · Editar un rol, y Roles · Estados y recorrido | `/roles/nuevo`, `/roles/{id}`, `RoleEditorPage`, `PermissionPicker`, `RoleSummary`, `SegmentedControl`, `useUnsavedChangesGuard`, `useBreadcrumbLeaf` | **Implementado** (2026-09-22) |
+| Roles · Acciones del listado | `/roles`, `RolesPage` con `RowActions` y `EyeIcon`: Admin “Ver”, User “Editar”, ninguno “Eliminar” | **Implementado** (2026-09-22), salvo el separador entre Editar y Eliminar, que `RowActions` no dibuja |
 
 Lo que quedó **fuera** de la Fase 5 y sigue sin dibujarse: el responsive (ningún tablero es de menos de 1440 px), el tablero de inicio, las pantallas 403/404 y la marca real. Ver "Pantallas por completar con esta base".
 
@@ -184,6 +189,7 @@ Cuando una decisión visual tiene más de una salida razonable, se compara antes
 | Estado en el listado de usuarios | columna propia con texto / punto delante del correo | **Punto**, con la palabra para el lector de pantalla, a cambio de la columna de roles |
 | Acciones de fila | un grupo con la destructiva última / la destructiva en un grupo aparte | **Un grupo**, con el rojo solo al interactuar |
 | Paso de página | botones con texto / flechas | **Flechas**, con el nombre completo en el `aria-label` |
+| Alta y edición de un rol | diálogo / pantalla propia | **Pantalla propia** (`/roles/nuevo`, `/roles/{id}`), porque con veinte áreas el diálogo no tiene dónde crecer |
 
 `design-lab/page-header/index.html` fue el soporte de la segunda de esas comparaciones y **ya se eliminó**: hoy no existe ningún laboratorio. Uno vive solo mientras su pregunta está abierta; si se queda, en un mes nadie sabe si es una propuesta vigente o un resto.
 
