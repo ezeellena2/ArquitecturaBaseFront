@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { deleteRole } from "../api/roles";
-import { RoleFormDialog } from "../components/RoleFormDialog";
 import { roleActionErrorMessage } from "../errors";
+import { isAdminRole } from "../lib/systemRoles";
 import { Can } from "@/auth/Can";
 import { usePermissions } from "@/auth/usePermissions";
 import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
@@ -14,19 +15,21 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
-import { PencilIcon, ShieldIcon, TrashIcon } from "@/shared/ui/icons";
+import { EyeIcon, PencilIcon, ShieldIcon, TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { Page } from "@/shared/ui/Page";
 
 /// `/roles` (sección 11 del spec de la Fase 4). El endpoint devuelve la lista entera, no una página: son
 /// pocos y se usan como catálogo desde otras pantallas, así que no hay buscador ni paginado.
+///
+/// El alta y la edición no se hacen acá: "Nuevo rol" y "Editar" llevan a la pantalla del rol (`/roles/nuevo` y
+/// `/roles/{id}`, `RoleEditorPage`). Eliminar sí sigue siendo una confirmación sobre el listado.
 export function RolesPage() {
   const { t } = useTranslation("roles");
   const { has } = usePermissions();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingRole, setEditingRole] = useState<RoleListItem | undefined>();
   const [deletingRole, setDeletingRole] = useState<RoleListItem | undefined>();
 
   const canManage = has("roles.manage");
@@ -66,35 +69,40 @@ export function RolesPage() {
   ];
 
   if (canManage) {
-    // Los roles del sistema se ven igual que el resto, pero en lugar de los botones queda dicho que no se
-    // cambian, y debajo de la tabla, por qué. Botones deshabilitados no servirían: no reciben foco, así que
-    // con el teclado no habría forma de llegar a la explicación.
+    // Los roles del sistema también se abren (tablero "Roles · Acciones del listado"): Admin, para mirarlo,
+    // porque su pantalla es de solo lectura; User, para editarlo, porque la descripción y los permisos sí se
+    // cambian. Ninguno de los dos se elimina: la acción ni se dibuja, como una sin permiso.
     columns.push({
       id: "actions",
       header: t("columns.actions"),
       align: "right",
-      cell: (row) =>
-        row.isSystemRole ? (
-          <span className="text-sm text-[var(--color-content-muted)]">{t("systemLocked")}</span>
-        ) : (
-          <RowActions
-            actions={[
-              {
-                label: t("actions.edit"),
-                accessibleName: t("actions.editFor", { name: row.name }),
-                icon: PencilIcon,
-                onSelect: () => setEditingRole(row),
-              },
-              {
-                label: t("actions.delete"),
-                accessibleName: t("actions.deleteFor", { name: row.name }),
-                icon: TrashIcon,
-                onSelect: () => setDeletingRole(row),
-                destructive: true,
-              },
-            ]}
-          />
-        ),
+      cell: (row) => (
+        <RowActions
+          actions={[
+            isAdminRole(row)
+              ? {
+                  label: t("actions.view"),
+                  accessibleName: t("actions.viewFor", { name: row.name }),
+                  icon: EyeIcon,
+                  onSelect: () => void navigate(`/roles/${row.id}`),
+                }
+              : {
+                  label: t("actions.edit"),
+                  accessibleName: t("actions.editFor", { name: row.name }),
+                  icon: PencilIcon,
+                  onSelect: () => void navigate(`/roles/${row.id}`),
+                },
+            {
+              label: t("actions.delete"),
+              accessibleName: t("actions.deleteFor", { name: row.name }),
+              icon: TrashIcon,
+              onSelect: () => setDeletingRole(row),
+              destructive: true,
+              hidden: row.isSystemRole,
+            },
+          ]}
+        />
+      ),
     });
   }
 
@@ -108,8 +116,8 @@ export function RolesPage() {
       title={t("title")}
       actions={
         <Can permission="roles.manage">
-          <Button type="button" onClick={() => setIsCreating(true)}>
-            {t("actions.new")}
+          <Button asChild>
+            <Link to="/roles/nuevo">{t("actions.new")}</Link>
           </Button>
         </Can>
       }
@@ -130,10 +138,6 @@ export function RolesPage() {
           emptyDescription={t("empty.description")}
         />
       </div>
-
-      {isCreating ? <RoleFormDialog onClose={() => setIsCreating(false)} /> : null}
-
-      {editingRole ? <RoleFormDialog role={editingRole} onClose={() => setEditingRole(undefined)} /> : null}
 
       {deletingRole ? (
         <ConfirmDialog

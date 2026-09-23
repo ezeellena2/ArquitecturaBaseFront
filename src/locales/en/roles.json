@@ -8,7 +8,6 @@
     "actions": "Actions"
   },
   "systemBadge": "System role",
-  "systemLocked": "Can't be changed",
   "permissionsCount_one": "{{count}} permission",
   "permissionsCount_other": "{{count}} permissions",
   "empty": {
@@ -17,23 +16,19 @@
   },
   "actions": {
     "new": "New role",
+    "view": "View",
+    "viewFor": "View the {{name}} role",
     "edit": "Edit",
     "editFor": "Edit the {{name}} role",
     "delete": "Delete",
     "deleteFor": "Delete the {{name}} role"
   },
   "form": {
-    "createTitle": "New role",
-    "editTitle": "Edit the {{name}} role",
     "name": "Name",
     "nameRequired": "Enter a name.",
     "descriptionLabel": "Description",
     "descriptionPlaceholder": "Optional. One line explaining what it is for.",
-    "permissions": "Permissions",
-    "submit": "Save",
-    "permissionsPicked_zero": "No permission picked",
-    "permissionsPicked_one": "1 permission picked",
-    "permissionsPicked_other": "{{count}} permissions picked"
+    "submit": "Save"
   },
   "editor": {
     "createTitle": "New role",
@@ -104,7 +99,6 @@
   "errors": {
     "alreadyExists": "There is already a role with that name.",
     "systemRole": "System roles can't be changed.",
-    "gone": "This role no longer exists. Someone deleted it while you had it open.",
     "hasUsers_one": "1 user still has this role. Reassign them before deleting it.",
     "hasUsers_other": "{{count}} users still have this role. Reassign them before deleting it."
   },

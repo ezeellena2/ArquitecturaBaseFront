@@ -8,7 +8,6 @@
     "actions": "Acciones"
   },
   "systemBadge": "Del sistema",
-  "systemLocked": "No se cambia",
   "permissionsCount_one": "{{count}} permiso",
   "permissionsCount_other": "{{count}} permisos",
   "empty": {
@@ -17,23 +16,19 @@
   },
   "actions": {
     "new": "Nuevo rol",
+    "view": "Ver",
+    "viewFor": "Ver el rol {{name}}",
     "edit": "Editar",
     "editFor": "Editar el rol {{name}}",
     "delete": "Eliminar",
     "deleteFor": "Eliminar el rol {{name}}"
   },
   "form": {
-    "createTitle": "Nuevo rol",
-    "editTitle": "Editar el rol {{name}}",
     "name": "Nombre",
     "nameRequired": "Poné un nombre.",
     "descriptionLabel": "Descripción",
     "descriptionPlaceholder": "Opcional. Una línea que explique para qué sirve.",
-    "permissions": "Permisos",
-    "submit": "Guardar",
-    "permissionsPicked_zero": "Ningún permiso elegido",
-    "permissionsPicked_one": "1 permiso elegido",
-    "permissionsPicked_other": "{{count}} permisos elegidos"
+    "submit": "Guardar"
   },
   "editor": {
     "createTitle": "Nuevo rol",
@@ -104,7 +99,6 @@
   "errors": {
     "alreadyExists": "Ya hay un rol con ese nombre.",
     "systemRole": "Los roles del sistema no se cambian.",
-    "gone": "Este rol ya no existe. Alguien lo borró mientras lo tenías abierto.",
     "hasUsers_one": "Todavía hay 1 usuario con este rol. Reasignalo antes de borrarlo.",
     "hasUsers_other": "Todavía hay {{count}} usuarios con este rol. Reasignalos antes de borrarlos."
   },

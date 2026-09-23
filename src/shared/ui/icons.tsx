@@ -151,6 +151,17 @@ export function PencilIcon(props: IconProps) {
   );
 }
 
+/// Mirar sin cambiar: la acción de lo que se abre de solo lectura (Admin, en el listado de roles). Es el ojo del
+/// tablero "Roles · Acciones del listado": el contorno en un solo trazo y la pupila, sin relleno.
+export function EyeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M2.75 12S6.25 5.75 12 5.75 21.25 12 21.25 12 17.75 18.25 12 18.25 2.75 12 2.75 12Z" />
+      <circle cx="12" cy="12" r="2.75" />
+    </Icon>
+  );
+}
+
 /// Los filtros. Tres líneas de distinto largo: se lee como "acotar" sin depender de un embudo, que a este
 /// tamaño queda como una mancha.
 export function SlidersIcon(props: IconProps) {
