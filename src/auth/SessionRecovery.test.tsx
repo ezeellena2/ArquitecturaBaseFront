@@ -44,8 +44,12 @@ describe("SessionRecovery", () => {
   });
 
   it("shows the app shell while it recovers the session, instead of taking over the screen", async () => {
-    // La recuperación se completa a mano para poder mirar la pantalla mientras todavía corre.
-    let completeRecovery = () => {};
+    // La recuperación se completa a mano para poder mirar la pantalla mientras todavía corre. Antes de que
+    // `SessionRecovery` llame a `signinSilent` no hay nada que completar, y eso no puede pasar en silencio: la
+    // recuperación no terminaría nunca y el test se quedaría esperando un perfil que no va a llegar.
+    let completeRecovery = (): void => {
+      throw new Error("signinSilent has not been called yet: there is no recovery in progress to complete.");
+    };
     signinSilent.mockImplementation(
       () =>
         new Promise<User>((resolve) => {
@@ -58,6 +62,12 @@ describe("SessionRecovery", () => {
     );
 
     renderRouteWithProviders("/");
+
+    // La recuperación está en curso recién cuando `signinSilent` fue llamado, y eso pasa en un efecto. El router
+    // pinta la pantalla en una transición y React puede correr los efectos en una tarea posterior: con la suite
+    // entera en paralelo, `findByRole` encontraba la barra lateral antes de que la recuperación arrancara, y
+    // `completeRecovery` todavía no hacía nada. No es cuestión de esperar más: hay que esperar a la llamada.
+    await waitFor(() => expect(signinSilent).toHaveBeenCalledTimes(1));
 
     // Con la recuperación todavía en curso ya está toda la estructura: barra lateral con sus secciones,
     // barra de arriba y el contenido. Esta es la aserción que ancla la corrección: falla si alguien vuelve
