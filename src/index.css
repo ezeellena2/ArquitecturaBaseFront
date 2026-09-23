@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* La variante dark: depende solo de la clase .dark, como la declara la CLI de shadcn para Tailwind 4.
+   Sin esto, Tailwind 4 la ata a prefers-color-scheme y los componentes de shared/ui toman sus estilos
+   oscuros (la casilla gris, la perilla del switch negra) cuando el sistema está en oscuro, aunque la app
+   se vea clara. */
+@custom-variant dark (&:is(.dark *));
+
 /* Tokens de marca. Cambiar la marca es cambiar estas variables (sección 7.4 del spec). */
 @theme {
   /* La escala tiene dos usos y no son intercambiables:
