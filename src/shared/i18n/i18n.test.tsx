@@ -24,6 +24,18 @@ describe("i18n", () => {
     expect(await screen.findByText("Cancelar")).toBeInTheDocument();
   });
 
+  // Como el anterior, va antes de cualquier cambio de idioma: el primer valor tiene que ser el que se fijó al
+  // arrancar, no el que dejó otro test.
+  it("keeps the document language in step with the interface", async () => {
+    expect(document.documentElement.lang).toBe("es");
+
+    await i18n.changeLanguage("en");
+    expect(document.documentElement.lang).toBe("en");
+
+    await i18n.changeLanguage("es");
+    expect(document.documentElement.lang).toBe("es");
+  });
+
   it("translates the same key to English", async () => {
     await i18n.changeLanguage("en");
     renderWithProviders(<Greeting />);

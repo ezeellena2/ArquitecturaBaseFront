@@ -20,6 +20,14 @@ function initialLanguage(): SupportedLanguage {
   return isSupportedLanguage(stored) ? stored : "es";
 }
 
+// El `lang` del documento sigue al idioma de la interfaz: de ahí saca un lector de pantalla la voz y la
+// pronunciación, y con el "en" que deja la plantilla de Vite leía el español con voz inglesa. Se escucha el evento
+// en vez de tocarlo en cada lugar que cambia el idioma (la pantalla de ingreso, el menú del usuario, la
+// sincronización con el perfil), así ninguno se lo olvida. Va antes del `init`, que lo emite con el idioma inicial.
+i18n.on("languageChanged", (language) => {
+  document.documentElement.lang = language;
+});
+
 // Cada módulo tiene su archivo por idioma y se carga cuando alguien lo pide con useTranslation("modulo").
 await i18n
   .use(resourcesToBackend((language: string, namespace: string) => import(`../../locales/${language}/${namespace}.json`)))
