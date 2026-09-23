@@ -191,3 +191,23 @@ export function UserIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/// Algo que venció: el enlace del chat que ya no sirve (tablero "WhatsApp · El enlace del chat").
+export function ClockIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M12 7.5V12l3 2" />
+    </Icon>
+  );
+}
+
+/// Algo que no se puede hacer: una cuenta que no puede entrar (tablero "WhatsApp · El enlace del chat").
+export function BanIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="m6.2 6.2 11.6 11.6" />
+    </Icon>
+  );
+}

@@ -3,6 +3,7 @@ import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { SessionRecovery } from "@/auth/SessionRecovery";
 import { CallbackPage } from "@/features/auth/pages/CallbackPage";
 import { LoginCodePage } from "@/features/auth/pages/LoginCodePage";
+import { LoginLinkPage } from "@/features/auth/pages/LoginLinkPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { AppLayout } from "@/layouts/AppLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
@@ -13,7 +14,7 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 // sesión (`ProtectedRoute` sin permiso) y el layout no necesitan ninguna. `/usuarios` sí (el permiso), así
 // que esa rama usa `element` con el `<ProtectedRoute permission="..." />` de la sección 7.3 del spec.
 //
-// Las tres pantallas de ingreso quedan afuera de la regla de `lazy`: son la puerta de entrada de cualquier
+// Las pantallas de ingreso quedan afuera de la regla de `lazy`: son la puerta de entrada de cualquier
 // visita sin sesión (sección 5.2), así que separarlas en su propio chunk solo suma una ida y vuelta antes de
 // poder mostrar el formulario. Un router de datos como este, además, no pinta nada de toda la rama que
 // matchea (acá, tampoco el `AuthLayout` de afuera) hasta que se resuelve el `lazy` de la hoja.
@@ -101,6 +102,8 @@ export const routes: RouteObject[] = [
     children: [
       { path: "/login", Component: LoginPage },
       { path: "/login/codigo", Component: LoginCodePage },
+      // La entrada con el enlace que manda el bot al chat de WhatsApp (`/ingresar#t=…`).
+      { path: "/ingresar", Component: LoginLinkPage },
       { path: "/auth/callback", Component: CallbackPage },
     ],
   },

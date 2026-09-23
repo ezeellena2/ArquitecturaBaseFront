@@ -63,6 +63,32 @@ export function verifyErrorMessage(error: ApiError, t: Translate): string {
   return fieldMessage ?? loginCodeErrorMessage(error, t);
 }
 
+/// Qué hace `/ingresar` con un enlace que el servidor no aceptó, en la vista previa o en el canje:
+/// - `invalid`: el enlace ya no sirve. Vencido, usado, invalidado o inventado responden lo mismo, a propósito, y la
+///   pantalla tampoco los distingue.
+/// - `disabled` y `lockedOut`: el enlace era bueno, pero la cuenta no puede entrar. El servidor lo dice recién en el
+///   canje, y el enlace ya quedó gastado: reintentar no sirve, hace falta otro.
+/// - `retry`: nada de eso (el límite de pedidos, la red, un error inesperado). Pasa, y se puede volver a intentar.
+export type LoginLinkFailure = "invalid" | "disabled" | "lockedOut" | "retry";
+
+export function loginLinkFailureOf(error: ApiError): LoginLinkFailure {
+  switch (error.code) {
+    case "Auth.LoginLink.Invalid":
+      return "invalid";
+    // El único campo es el token: uno sin la forma de un token (no son 43 caracteres base64url) es un enlace cortado
+    // o tocado a mano. Para quien lo abrió, tampoco sirve.
+    case "Validation.Failed":
+      return "invalid";
+    case "Auth.Account.Disabled":
+      return "disabled";
+    // Es un 429, pero no el del límite de pedidos: el canje ya gastó el enlace, así que esperar no alcanza.
+    case "Auth.Account.LockedOut":
+      return "lockedOut";
+    default:
+      return "retry";
+  }
+}
+
 /// El mensaje de `/login?error=<código>`, donde manda el servidor cuando falla el ingreso con Google
 /// (`ExternalLoginEndpoints`). Es una navegación, no un ProblemDetails: llega solo el código, sin texto, así que
 /// los textos son propios. Un código que no se conoce tiene uno genérico.
