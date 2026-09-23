@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
-import { branchOf, navigationLinks, parentLinkOf } from "../navigation";
+import { branchOf, navigationLinks, parentLinkOf, withoutTrailingSlash } from "../navigation";
 import { useCurrentBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 
 /// Pantallas que no están en el menú lateral pero igual tienen migas propias: al perfil se entra desde el
@@ -32,7 +32,8 @@ function Separator() {
 /// actual no es el listado.
 export function Breadcrumbs() {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
+  // Sin la barra del final, como la lee el router: `/roles/` es el listado.
+  const pathname = withoutTrailingSlash(useLocation().pathname);
   const leaf = useCurrentBreadcrumbLeaf();
   const activeLabelKey = pathname === "/" ? undefined : findActiveLabelKey(pathname);
   const parentLink = activeLabelKey ? undefined : parentLinkOf(pathname);

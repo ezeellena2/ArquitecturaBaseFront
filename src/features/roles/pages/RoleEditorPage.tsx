@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -101,7 +101,7 @@ function RoleDetails({
   const titleId = useId();
 
   return (
-    <section aria-labelledby={titleId} className={cardClassName}>
+    <section aria-labelledby={titleId} className={cn(cardClassName, "shrink-0")}>
       <div className="flex h-10 items-center border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4">
         <h2
           id={titleId}
@@ -192,8 +192,6 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   const isReady = draft !== undefined && groups !== undefined;
   const isDirty = draft !== undefined && !isAdmin && !isSameDraft(draft, seededRole ? toDraft(seededRole) : emptyDraft);
 
-  const guard = useUnsavedChangesGuard(isDirty);
-
   // El título y la miga siguen al nombre escrito, como en el tablero; Admin no se edita y se llama por su nombre.
   const typedName = draft?.name.trim() ?? "";
   const loadingLabel = t("editor.crumbLoading");
@@ -209,6 +207,19 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
       : isAdmin
         ? typedName
         : t("editor.editTitle", { name: typedName || t("editor.unnamed") });
+
+  // El guardado sigue aunque la persona se vaya de la pantalla mientras tanto. Lo que es de la pantalla (volver
+  // al listado, el error debajo del nombre) va en los callbacks de `mutate`, que TanStack no llama si ya se
+  // desmontó; lo de `useMutation` corre siempre, y este ref le dice si la pantalla sigue ahí.
+  const isOnScreenRef = useRef(false);
+
+  useEffect(() => {
+    isOnScreenRef.current = true;
+
+    return () => {
+      isOnScreenRef.current = false;
+    };
+  }, []);
 
   const mutation = useMutation({
     mutationFn: async (body: RoleBody) => {
@@ -227,28 +238,18 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
         // Cambiar los permisos de un rol puede cambiar los propios: el backend ya invalidó su caché.
         queryClient.invalidateQueries({ queryKey: currentUserQueryKey }),
       ]);
-      // Lo guardado ya no se pierde: la vuelta al listado no tiene por qué preguntar.
-      guard.allowNextNavigation();
-      void navigate("/roles");
     },
     onError: (error) => {
-      // Lo que es del nombre va debajo del nombre; lo demás, arriba de las dos columnas.
-      const nameMessage =
-        error instanceof ApiError
-          ? error.code === "Roles.Role.AlreadyExists"
-            ? t("errors.alreadyExists")
-            : error.errors?.name?.[0]
-          : undefined;
-
-      if (nameMessage) {
-        setNameError(nameMessage);
-
-        return;
+      // Si la persona se fue mientras se guardaba, no queda formulario donde mostrar el error, y sin un aviso
+      // creería que se guardó.
+      if (!isOnScreenRef.current) {
+        toast.error(roleActionErrorMessage(error, t));
       }
-
-      setFormError(roleActionErrorMessage(error, t));
     },
   });
+
+  // Mientras se guarda, salir no pregunta: lo cambiado ya salió, y "no se guardó" no sería cierto.
+  const guard = useUnsavedChangesGuard(isDirty && !mutation.isPending);
 
   // Solo cuentan los errores de antes de tener algo que mostrar. Si un pedido posterior falla (al guardar se
   // vuelven a pedir los roles), la pantalla no se cambia por un cartel y lo escrito sigue ahí.
@@ -265,6 +266,24 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     return <ForbiddenPage />;
   }
 
+  function showSaveError(error: Error) {
+    // Lo que es del nombre va debajo del nombre; lo demás, arriba de las dos columnas.
+    const nameMessage =
+      error instanceof ApiError
+        ? error.code === "Roles.Role.AlreadyExists"
+          ? t("errors.alreadyExists")
+          : error.errors?.name?.[0]
+        : undefined;
+
+    if (nameMessage) {
+      setNameError(nameMessage);
+
+      return;
+    }
+
+    setFormError(roleActionErrorMessage(error, t));
+  }
+
   function changeDraft(change: Partial<Draft>) {
     setDraft((current) => (current === undefined ? current : { ...current, ...change }));
   }
@@ -272,7 +291,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (draft === undefined || isAdmin) {
+    if (draft === undefined || groups === undefined || isAdmin) {
       return;
     }
 
@@ -287,7 +306,25 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     }
 
     setNameError(undefined);
-    mutation.mutate({ name, description: draft.description.trim() || null, permissions: draft.permissions });
+
+    // Un código que el catálogo ya no declara (sacado del backend, pero todavía guardado en el rol) no tiene
+    // casilla ni chip, así que no hay forma de quitarlo, y si viaja el backend rechaza el rol entero. Se limpia
+    // al guardar y no al sembrar: sembrando sin él, la pantalla arrancaría con un cambio que nadie hizo.
+    const catalog = new Set(groups.flatMap((group) => group.permissions.map((permission) => permission.code)));
+    const permissions = draft.permissions.filter((code) => catalog.has(code));
+
+    mutation.mutate(
+      { name, description: draft.description.trim() || null, permissions },
+      {
+        // Solo si la pantalla sigue ahí: a quien se fue mientras se guardaba no se lo trae de vuelta al listado.
+        onSuccess: () => {
+          // Lo guardado ya no se pierde: la vuelta al listado no tiene por qué preguntar.
+          guard.allowNextNavigation();
+          void navigate("/roles");
+        },
+        onError: showSaveError,
+      },
+    );
   }
 
   const status =
@@ -364,8 +401,11 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
 
           <div className={columnsClassName}>
             {/* Adherida al scrollear, justo debajo de la banda (56 px) y el padding del cuerpo (24 px): con veinte
-                áreas abiertas, el nombre y el resumen siguen a la vista. */}
-            <div className="flex flex-col gap-4 lg:sticky lg:top-[calc(3.5rem+1.5rem)]">
+                áreas abiertas, el nombre y el resumen siguen a la vista. Y nunca más alta que lo que queda de
+                pantalla (la barra superior, la banda y el padding de arriba y de abajo): en una notebook, con
+                muchos elegidos, el final del resumen quedaba debajo del borde hasta llegar al fondo del selector.
+                El que se achica es el resumen, que ya tiene scroll propio; los datos del rol no. */}
+            <div className="flex flex-col gap-4 lg:sticky lg:top-[calc(3.5rem+1.5rem)] lg:max-h-[calc(100svh-4rem-3.5rem-3rem)]">
               <RoleDetails
                 draft={draft}
                 nameError={nameError}

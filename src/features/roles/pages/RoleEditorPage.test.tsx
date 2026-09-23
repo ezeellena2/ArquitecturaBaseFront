@@ -214,6 +214,38 @@ describe("RoleEditorPage", () => {
     );
   });
 
+  it("does not send a permission the catalog no longer declares", async () => {
+    // Sacado del catálogo del backend pero todavía guardado en el rol: no tiene casilla ni chip, así que no hay
+    // forma de quitarlo, y si viaja en el PUT el backend rechaza el rol entero.
+    const updates: unknown[] = [];
+    server.use(
+      ...editorHandlers([admin, user, { ...support, permissions: [...support.permissions, "reports.export"] }, audit]),
+      http.put("/api/roles/r3", async ({ request }) => {
+        updates.push(await request.json());
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    await renderSupport();
+
+    // Tampoco cuenta como un cambio: la pantalla arranca sin nada que guardar.
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() =>
+      expect(updates).toEqual([
+        {
+          name: "Soporte",
+          description: "Atiende a los usuarios y revisa sus cuentas.",
+          permissions: ["users.read", "users.manage", "roles.read", "roles.manage"],
+        },
+      ]),
+    );
+  });
+
   it("asks for a name before saving, and typing one takes the error away", async () => {
     const created = vi.fn();
     server.use(
@@ -338,6 +370,77 @@ describe("RoleEditorPage", () => {
     release?.();
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/roles"));
+  });
+
+  it("does not ask while it saves, and a save that ends after leaving does not bring you back", async () => {
+    const toastSuccess = vi.spyOn(toast, "success");
+    let release: (() => void) | undefined;
+    server.use(
+      ...editorHandlers(),
+      http.put("/api/roles/r3", async () => {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const { router } = await renderSupport();
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByRole("button", { name: "Guardando…" })).toBeDisabled();
+
+    // Lo cambiado ya salió: preguntar si se descarta "lo que no se guardó" no sería cierto.
+    const crumbs = within(screen.getByRole("navigation", { name: /migas de pan/i }));
+    await userEvent.click(crumbs.getByRole("link", { name: "Inicio" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await waitFor(() => expect(release).toBeDefined());
+    release?.();
+
+    // El guardado termina y lo avisa, pero la persona ya eligió a dónde ir: no se la lleva al listado.
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Guardamos los cambios."));
+    await waitFor(() => expect(queryClient.isMutating()).toBe(0));
+    await waitFor(() => expect(router.state.navigation.state).toBe("idle"));
+    expect(router.state.location.pathname).toBe("/");
+  });
+
+  it("tells what went wrong when a save fails after leaving the screen", async () => {
+    const toastError = vi.spyOn(toast, "error");
+    let release: (() => void) | undefined;
+    server.use(
+      ...editorHandlers(),
+      http.put("/api/roles/r3", async () => {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+
+        return HttpResponse.json(
+          { status: 409, code: "Roles.Role.AlreadyExists", detail: "Ya existe un rol con ese nombre." },
+          { status: 409 },
+        );
+      }),
+    );
+
+    const { router } = await renderSupport();
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByRole("button", { name: "Guardando…" })).toBeDisabled();
+
+    const crumbs = within(screen.getByRole("navigation", { name: /migas de pan/i }));
+    await userEvent.click(crumbs.getByRole("link", { name: "Inicio" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"));
+
+    await waitFor(() => expect(release).toBeDefined());
+    release?.();
+
+    // La pantalla ya no está para mostrarlo debajo del nombre, y sin aviso la persona creería que se guardó.
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Ya hay un rol con ese nombre."));
   });
 
   it("follows the typed name in the title and the crumbs", async () => {

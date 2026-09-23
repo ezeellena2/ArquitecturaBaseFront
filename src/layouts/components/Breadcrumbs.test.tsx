@@ -61,6 +61,17 @@ describe("Breadcrumbs", () => {
     expect((await breadcrumbs()).map((item) => item.textContent)).toEqual(["Inicio", "Mi perfil"]);
   });
 
+  it("reads a screen with a trailing slash as the screen itself", async () => {
+    // El router abre "/roles/" como "/roles", así que es el listado: sus migas son las del listado, no solo
+    // "Inicio" como página actual.
+    renderBreadcrumbsAt("/roles/");
+
+    const items = await breadcrumbs();
+
+    expect(items.map((item) => item.textContent)).toEqual(["Inicio", "Gestión de usuarios", "Roles y permisos"]);
+    expect(items[2]).toHaveAttribute("aria-current", "page");
+  });
+
   it("is only Inicio on the dashboard", async () => {
     renderRouteWithProviders("/");
 

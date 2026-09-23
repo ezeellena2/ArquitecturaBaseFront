@@ -57,26 +57,35 @@ export const navigationLinks: NavigationLink[] = navigation.flatMap((group) =>
   group.items.flatMap((item) => (isBranch(item) ? item.children : [item])),
 );
 
-/// Si una ruta es hija de la de un enlace (`/roles/abc` de `/roles`). La barra del final es la que separa
-/// una hija de un nombre más largo (`/rolesviejos`), y después de ella tiene que haber algo: `/roles/` es el
-/// listado con una barra de más, no una hija. El Inicio no cuenta: todas las rutas empiezan con "/".
-function isChildOf(pathname: string, to: string): boolean {
-  const prefix = `${to}/`;
+/// La ruta sin la barra del final. El router abre `/roles/` como `/roles`, así que las migas y el menú tienen
+/// que leerla igual: `/roles/` es el listado con una barra de más, no una hija ni una ruta que no conocen. El
+/// Inicio se queda en "/".
+export function withoutTrailingSlash(pathname: string): string {
+  return pathname.replace(/\/+$/, "") || "/";
+}
 
-  return to !== "/" && pathname.startsWith(prefix) && pathname.length > prefix.length;
+/// Si una ruta, ya sin la barra del final, es hija de la de un enlace (`/roles/abc` de `/roles`). La barra es
+/// la que separa una hija de un nombre más largo (`/rolesviejos`). El Inicio no cuenta: todas las rutas
+/// empiezan con "/".
+function isChildOf(pathname: string, to: string): boolean {
+  return to !== "/" && pathname.startsWith(`${to}/`);
 }
 
 /// El enlace del menú del que cuelga una ruta hija, como la pantalla de un rol: el menú no la lista, pero
 /// pertenece a esa sección. Las migas lo ponen como enlace, que es el camino de vuelta.
 export function parentLinkOf(pathname: string): NavigationLink | undefined {
-  return navigationLinks.find((link) => isChildOf(pathname, link.to));
+  const path = withoutTrailingSlash(pathname);
+
+  return navigationLinks.find((link) => isChildOf(path, link.to));
 }
 
 /// El grupo al que pertenece una ruta, si está adentro de uno. Es el nivel del medio de las migas. Vale
 /// también para las rutas hijas de sus pantallas: así el menú se despliega solo en `/roles/abc`.
 export function branchOf(pathname: string): NavigationBranch | undefined {
+  const path = withoutTrailingSlash(pathname);
+
   return navigation
     .flatMap((group) => group.items)
     .filter(isBranch)
-    .find((branch) => branch.children.some((child) => child.to === pathname || isChildOf(pathname, child.to)));
+    .find((branch) => branch.children.some((child) => child.to === path || isChildOf(path, child.to)));
 }

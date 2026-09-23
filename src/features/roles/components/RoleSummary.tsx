@@ -28,14 +28,16 @@ export function RoleSummary({ groups, picked, onRemove }: RoleSummaryProps): Rea
           areas: t("summary.areas", { count: summary.areas }),
         });
 
+  // `min-h-0` y la columna flexible: si la columna de la izquierda no tiene lugar para todo (una pantalla baja),
+  // la tarjeta se achica y la lista scrollea en lo que queda. La banda no se achica nunca.
   return (
     <section
       aria-labelledby={`${id}-title`}
-      className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]"
+      className="flex min-h-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]"
     >
       {/* En 340 px, el título y "3 permisos en 2 áreas" entran justo en una línea. Con números de dos cifras ya
           no: el conteo no se parte nunca, y el que baja de renglón es el título, con la banda creciendo con él. */}
-      <div className="flex min-h-10 items-center justify-between gap-2 border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4 py-2">
+      <div className="flex min-h-10 shrink-0 items-center justify-between gap-2 border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4 py-2">
         <h2
           id={`${id}-title`}
           className="min-w-0 text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]"
@@ -49,7 +51,7 @@ export function RoleSummary({ groups, picked, onRemove }: RoleSummaryProps): Rea
 
       {/* Con alto máximo y scroll propio: la columna de la izquierda queda adherida al scrollear, y un rol con
           muchos permisos no puede empujar el resto fuera de la pantalla. */}
-      <div className="flex max-h-[330px] flex-col gap-3 overflow-y-auto px-4 py-3.5">
+      <div className="flex max-h-[330px] min-h-0 flex-col gap-3 overflow-y-auto px-4 py-3.5">
         {summary.groups.length === 0 ? (
           <p className="text-[13px] leading-normal text-[var(--color-content-muted)]">{t("summary.empty")}</p>
         ) : (

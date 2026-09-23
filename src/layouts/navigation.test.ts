@@ -39,6 +39,11 @@ describe("branchOf", () => {
     expect(branchOf("/roles/abc")?.labelKey).toBe("navigation.userManagement");
   });
 
+  it("finds the group of a screen with a trailing slash", () => {
+    // El router abre "/roles/" como "/roles": el menú tiene que desplegarse igual.
+    expect(branchOf("/roles/")?.labelKey).toBe("navigation.userManagement");
+  });
+
   it("is nothing for a screen that is not inside a group", () => {
     expect(branchOf("/configuracion")).toBeUndefined();
     expect(branchOf("/configuracion/algo")).toBeUndefined();
