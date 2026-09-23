@@ -58,9 +58,12 @@ export const navigationLinks: NavigationLink[] = navigation.flatMap((group) =>
 );
 
 /// Si una ruta es hija de la de un enlace (`/roles/abc` de `/roles`). La barra del final es la que separa
-/// una hija de un nombre más largo (`/rolesviejos`), y el Inicio no cuenta: todas las rutas empiezan con "/".
+/// una hija de un nombre más largo (`/rolesviejos`), y después de ella tiene que haber algo: `/roles/` es el
+/// listado con una barra de más, no una hija. El Inicio no cuenta: todas las rutas empiezan con "/".
 function isChildOf(pathname: string, to: string): boolean {
-  return to !== "/" && pathname.startsWith(`${to}/`);
+  const prefix = `${to}/`;
+
+  return to !== "/" && pathname.startsWith(prefix) && pathname.length > prefix.length;
 }
 
 /// El enlace del menú del que cuelga una ruta hija, como la pantalla de un rol: el menú no la lista, pero

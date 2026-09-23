@@ -59,6 +59,26 @@ export const routes: RouteObject[] = [
                 ],
               },
               {
+                // El alta y la edición de un rol piden `roles.manage`, no el `roles.read` del listado: con ese
+                // solo se ve, y entrar a mano a una de estas rutas lleva a la pantalla de sin permiso.
+                element: <ProtectedRoute permission="roles.manage" />,
+                children: [
+                  {
+                    // Antes que `/:roleId`, para que "nuevo" no se lea como el id de un rol.
+                    path: "/roles/nuevo",
+                    lazy: async () => ({
+                      Component: (await import("@/features/roles/pages/RoleEditorPage")).RoleEditorPage,
+                    }),
+                  },
+                  {
+                    path: "/roles/:roleId",
+                    lazy: async () => ({
+                      Component: (await import("@/features/roles/pages/RoleEditorPage")).RoleEditorPage,
+                    }),
+                  },
+                ],
+              },
+              {
                 element: <ProtectedRoute permission="settings.manage" />,
                 children: [
                   {

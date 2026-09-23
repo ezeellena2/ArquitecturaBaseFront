@@ -17,6 +17,12 @@ describe("parentLinkOf", () => {
     expect(parentLinkOf("/rolesviejos")).toBeUndefined();
   });
 
+  it("does not take the screen itself with a trailing slash for a child", () => {
+    // "/roles/" es el listado con una barra de más: el router lo abre como "/roles". Si contara como hija,
+    // las migas del listado terminarían en su propio enlace, esperando una hoja que nadie va a poner.
+    expect(parentLinkOf("/roles/")).toBeUndefined();
+  });
+
   it("does not count the dashboard as a parent", () => {
     // Todo empieza con "/": si el Inicio contara, cualquier ruta sin dueño colgaría de él.
     expect(parentLinkOf("/no-existe")).toBeUndefined();

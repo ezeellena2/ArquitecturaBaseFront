@@ -72,8 +72,13 @@ export function AppLayout() {
         <Topbar sidebarExpanded={isMobile ? mobileOpen : !collapsed} onToggleSidebar={toggleSidebar} />
 
         {/* Sin padding: la banda de encabezado de cada pantalla llega a los bordes. El margen del contenido
-            lo pone `Page`, que es el único que sabe dónde termina la banda y dónde empieza el cuerpo. */}
-        <main className="min-h-0 flex-1 overflow-y-auto">
+            lo pone `Page`, que es el único que sabe dónde termina la banda y dónde empieza el cuerpo.
+
+            `relative` para que `main` contenga lo que se posiciona adentro. Un `sr-only` (como el `legend` de
+            cada área del selector de permisos) es `absolute`: sin un ancestro posicionado se ubica respecto
+            del documento, `main` no lo recorta, y el que termina scrolleando es el documento, con la barra
+            superior incluida. Visto en un navegador: 400 px de más y una barra de scroll ajena. */}
+        <main className="relative min-h-0 flex-1 overflow-y-auto">
           <Suspense fallback={<Spinner />}>
             <Outlet />
           </Suspense>

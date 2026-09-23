@@ -35,6 +35,31 @@
     "permissionsPicked_one": "1 permiso elegido",
     "permissionsPicked_other": "{{count}} permisos elegidos"
   },
+  "editor": {
+    "createTitle": "Nuevo rol",
+    "editTitle": "Editar el rol {{name}}",
+    "unnamed": "sin nombre",
+    "crumbNew": "Nuevo rol",
+    "crumbLoading": "Editar rol",
+    "crumbUnnamed": "Rol",
+    "back": "Volver a Roles y permisos",
+    "unsaved": "Cambios sin guardar",
+    "allPermissions": "Todos los permisos",
+    "saving": "Guardando…",
+    "details": "Datos del rol",
+    "systemNameHint": "Los roles del sistema no cambian de nombre.",
+    "loadError": "No pudimos cargar el rol",
+    "gone": {
+      "title": "Este rol ya no existe",
+      "description": "Alguien lo borró, o el link que abriste es de antes."
+    },
+    "discard": {
+      "title": "¿Descartar los cambios?",
+      "description": "Lo que cambiaste en este rol no se guardó.",
+      "confirm": "Descartar",
+      "stay": "Seguir editando"
+    }
+  },
   "summary": {
     "title": "Lo que va a poder hacer",
     "none": "Ninguno",

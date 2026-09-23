@@ -35,6 +35,31 @@
     "permissionsPicked_one": "1 permission picked",
     "permissionsPicked_other": "{{count}} permissions picked"
   },
+  "editor": {
+    "createTitle": "New role",
+    "editTitle": "Edit the {{name}} role",
+    "unnamed": "unnamed",
+    "crumbNew": "New role",
+    "crumbLoading": "Edit role",
+    "crumbUnnamed": "Role",
+    "back": "Back to Roles and permissions",
+    "unsaved": "Unsaved changes",
+    "allPermissions": "All permissions",
+    "saving": "Saving…",
+    "details": "Role details",
+    "systemNameHint": "System roles can't be renamed.",
+    "loadError": "We couldn't load the role",
+    "gone": {
+      "title": "This role no longer exists",
+      "description": "Someone deleted it, or the link you opened is outdated."
+    },
+    "discard": {
+      "title": "Discard the changes?",
+      "description": "What you changed in this role wasn't saved.",
+      "confirm": "Discard",
+      "stay": "Keep editing"
+    }
+  },
   "summary": {
     "title": "What it will allow",
     "none": "None",

@@ -123,8 +123,9 @@ describe("Sidebar", () => {
     it("opens itself on a child route of one of its screens, with that screen marked", async () => {
       withBothPermissions();
 
-      // /roles/abc (la pantalla de un rol) no está en el menú, pero es parte de "Roles y permisos". La ruta
-      // todavía no existe en `routes.tsx`, así que se monta la barra sola, en esa URL.
+      // /roles/abc (la pantalla de un rol) no está en el menú, pero es parte de "Roles y permisos". Se monta la
+      // barra sola a propósito, en esa URL, para probar la pieza sin la pantalla del rol y lo que pide; el
+      // recorrido contra las rutas de verdad vive en `RoleEditorPage.test.tsx`.
       renderWithProviders(
         <MemoryRouter initialEntries={["/roles/abc"]}>
           <Sidebar

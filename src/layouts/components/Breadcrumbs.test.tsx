@@ -26,8 +26,9 @@ function ChildScreen({ leaf }: { leaf?: string }) {
   return null;
 }
 
-/// Las migas sueltas, en una ruta cualquiera. Las rutas hijas todavía no existen en `routes.tsx` (y hoy
-/// caen en el `*`, afuera del layout), así que se prueba la pieza y no la app entera.
+/// Las migas sueltas, en una ruta cualquiera. Se prueba la pieza sola a propósito: así cada caso elige la hoja
+/// que quiere, incluso ninguna, sin depender de lo que pida una pantalla real. El recorrido contra las rutas
+/// de verdad (`/roles/{id}` con el nombre del rol) vive en `RoleEditorPage.test.tsx`.
 function renderBreadcrumbsAt(path: string, leaf?: string) {
   return renderWithProviders(
     <MemoryRouter initialEntries={[path]}>

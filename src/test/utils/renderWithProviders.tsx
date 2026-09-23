@@ -24,7 +24,8 @@ export function renderWithProviders(ui: ReactElement) {
   return render(ui, { wrapper: Wrapper });
 }
 
-/// Renderiza la app entera en una ruta concreta, con los providers reales.
+/// Renderiza la app entera en una ruta concreta, con los providers reales. Devuelve también el router, para
+/// saber dónde terminó una navegación o para moverse como lo haría el navegador (`router.navigate`).
 export function renderRouteWithProviders(path: string, options?: { state?: unknown }) {
   const router = createMemoryRouter(routes, {
     initialEntries: [
@@ -36,9 +37,12 @@ export function renderRouteWithProviders(path: string, options?: { state?: unkno
     ],
   });
 
-  return render(
-    <AppProviders>
-      <RouterProvider router={router} />
-    </AppProviders>,
-  );
+  return {
+    router,
+    ...render(
+      <AppProviders>
+        <RouterProvider router={router} />
+      </AppProviders>,
+    ),
+  };
 }
