@@ -9,7 +9,6 @@
   },
   "systemBadge": "System role",
   "systemLocked": "Can't be changed",
-  "systemNote": "Admin and User are system roles: from here they can't be renamed, deleted, or have their permissions changed. That is what guarantees there is always someone who can fix anything.",
   "permissionsCount_one": "{{count}} permission",
   "permissionsCount_other": "{{count}} permissions",
   "empty": {

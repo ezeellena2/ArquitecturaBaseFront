@@ -131,8 +131,6 @@ export function RolesPage() {
         />
       </div>
 
-      <p className="mt-3 text-sm text-[var(--color-content-muted)]">{t("systemNote")}</p>
-
       {isCreating ? <RoleFormDialog onClose={() => setIsCreating(false)} /> : null}
 
       {editingRole ? <RoleFormDialog role={editingRole} onClose={() => setEditingRole(undefined)} /> : null}

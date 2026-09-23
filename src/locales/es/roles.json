@@ -9,7 +9,6 @@
   },
   "systemBadge": "Del sistema",
   "systemLocked": "No se cambia",
-  "systemNote": "Admin y User son del sistema: desde acá no se renombran, no se borran y no se les cambian los permisos. Es la garantía de que siempre haya alguien que pueda arreglar cualquier cosa.",
   "permissionsCount_one": "{{count}} permiso",
   "permissionsCount_other": "{{count}} permisos",
   "empty": {
