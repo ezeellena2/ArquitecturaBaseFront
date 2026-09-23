@@ -156,7 +156,7 @@ Carga, vacío y error del listado pertenecen a la superficie del listado. Los er
 | Las mismas piezas | `shared/ui` (superficie, banda, control) | Contrato adoptado; consolidación incremental |
 | Cómo se sostiene | tokens + componentes + tests | Norma de gobierno adoptada |
 | Roles · Editar un rol, y Roles · Estados y recorrido | `/roles/nuevo`, `/roles/{id}`, `RoleEditorPage`, `PermissionPicker`, `RoleSummary`, `SegmentedControl`, `useUnsavedChangesGuard`, `useBreadcrumbLeaf` | **Implementado** (2026-09-22) |
-| Roles · Acciones del listado | `/roles`, `RolesPage` con `RowActions` y `EyeIcon`: Admin “Ver”, User “Editar”, ninguno “Eliminar” | **Implementado** (2026-09-22), salvo el separador entre Editar y Eliminar, que `RowActions` no dibuja |
+| Roles · Acciones del listado | `/roles`, `RolesPage` con `RowActions` y `EyeIcon`: Admin “Ver”, User “Editar”, ninguno “Eliminar” | **Implementado** (2026-09-22). El separador entre Editar y Eliminar, desde el 2026-09-23: el `border-0` de cada botón de `RowActions` le ganaba al `divide-x` del grupo |
 
 Lo que quedó **fuera** de la Fase 5 y sigue sin dibujarse: el responsive (ningún tablero es de menos de 1440 px), el tablero de inicio, las pantallas 403/404 y la marca real. Ver "Pantallas por completar con esta base".
 
