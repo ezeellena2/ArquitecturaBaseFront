@@ -9,23 +9,32 @@ export interface SegmentedOption {
 }
 
 /// Un segmentado: pocas opciones fijas, a la vista y de un clic, en vez de un desplegable que pide dos. Lo usan
-/// el estado del listado de usuarios y el "Todos | Elegidos" del selector de permisos.
+/// el estado del listado de usuarios, el "Todos | Elegidos" del selector de permisos y el "Correo | WhatsApp" de
+/// la pantalla de ingreso.
 ///
 /// Son botones con `aria-pressed` y no un grupo de radios porque cada uno actúa al apretarse, no al enviarse
 /// un formulario. El nombre del grupo es obligatorio: sin él, el lector anuncia botones sueltos ("Todos",
 /// "Activos") y no dice qué están eligiendo.
+///
+/// `fullWidth` lo estira al ancho de su contenedor, en partes iguales: es la forma que tiene en una tarjeta
+/// angosta, como la del ingreso, donde el segmentado encabeza el formulario. Sin eso, mide lo que sus textos.
 export function SegmentedControl({
   options,
+  fullWidth = false,
   "aria-label": label,
 }: {
   options: readonly SegmentedOption[];
+  fullWidth?: boolean;
   "aria-label": string;
 }): ReactNode {
   return (
     <div
       role="group"
       aria-label={label}
-      className="inline-flex h-9 shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]"
+      className={cn(
+        "h-9 shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]",
+        fullWidth ? "flex w-full" : "inline-flex",
+      )}
     >
       {options.map((option) => (
         <button
@@ -37,6 +46,7 @@ export function SegmentedControl({
           className={cn(
             // El contorno de foco va hacia adentro: el grupo recorta lo que sale de su borde.
             "px-[13px] text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)]",
+            fullWidth ? "flex-1" : "",
             option.pressed
               ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
               : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)]",

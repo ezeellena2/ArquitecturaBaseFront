@@ -1,31 +1,24 @@
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { useForm, type Path } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
-import { useLocation, useNavigate, useSearchParams } from "react-router";
-import { z } from "zod";
-import { externalLoginUrl, requestLoginCode } from "../api/loginCode";
+import { useLocation, useSearchParams } from "react-router";
+import { externalLoginUrl, getLoginMethods, loginMethodsQueryKey } from "../api/loginCode";
+import { EmailCodeForm } from "../components/EmailCodeForm";
+import { WhatsAppCodeForm } from "../components/WhatsAppCodeForm";
+import { loginRedirectErrorMessage } from "../errors";
+import { loginChannelOf, type LoginState } from "../lib/loginCodeState";
+import {
+  carriedLoginRedirectError,
+  carryLoginRedirectError,
+  forgetLoginRedirectError,
+} from "../lib/loginRedirectError";
 import { authorizeReturnUrl } from "../lib/returnUrl";
-import { ApiError } from "@/shared/api/ApiError";
-import { applyApiErrorToForm } from "@/shared/api/formErrors";
-import { useCountdown } from "@/shared/hooks/useCountdown";
+import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { Button } from "@/shared/ui/button";
-import { FormField } from "@/shared/ui/FormField";
-import { Input } from "@/shared/ui/input";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 
-const schema = z.object({ email: z.email() });
-
-type FormValues = z.infer<typeof schema>;
-
-/// El estado que arma `ProtectedRoute` cuando manda para acá sin sesión.
-interface LoginLocationState {
-  returnTo?: string;
-}
-
-function messageFor(error: ApiError, generic: string, network: string): string {
-  return error.detail ?? (error.isNetworkError ? network : generic);
-}
+type LoginChannel = "email" | "whatsapp";
 
 /// Logo de Google, a mano: no hay una versión de marca en lucide-react.
 function GoogleIcon({ className }: { className?: string }) {
@@ -53,24 +46,32 @@ function GoogleIcon({ className }: { className?: string }) {
 
 /// `/login` (sección 5.2). Sin un `returnUrl` válido en la query, todavía no vino del servidor: arranca el
 /// OIDC y no muestra nada, porque el servidor vuelve a mandar para acá, esta vez con el `returnUrl` correcto.
+///
+/// Los medios de ingreso salen de `GET /account/login-methods`. Mientras llega, o si falla, la pantalla es la de
+/// siempre (Google y el correo): que ese pedido falle no puede dejar a nadie sin poder entrar con su correo.
 export function LoginPage() {
   const { t } = useTranslation("auth");
   const auth = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const updateQuery = useQueryUpdate();
   const returnUrl = authorizeReturnUrl(searchParams.get("returnUrl"));
+  const errorCode = searchParams.get("error") ?? undefined;
   const hasStartedRedirectRef = useRef(false);
 
-  const [formError, setFormError] = useState<string | undefined>();
-  const { seconds: retrySeconds, isRunning: isRetryLimited, restart: restartRetry } = useCountdown(0);
+  // "Usar otro número", en la pantalla del código, vuelve con WhatsApp elegido.
+  const [channel, setChannel] = useState<LoginChannel>(() => loginChannelOf(location.state));
+  // El error de un ingreso con Google que cruzó el redirect de OIDC (ver `loginRedirectError`). Se lee una vez.
+  const [carriedErrorCode] = useState(carriedLoginRedirectError);
+  const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  const { data: methods } = useQuery({
+    queryKey: loginMethodsQueryKey,
+    queryFn: getLoginMethods,
+    enabled: returnUrl !== undefined,
+    // Si falla, la pantalla sigue como siempre: no hay nada que avisar.
+    meta: { silent: true },
+  });
 
   useEffect(() => {
     if (returnUrl || hasStartedRedirectRef.current) {
@@ -78,48 +79,44 @@ export function LoginPage() {
     }
 
     hasStartedRedirectRef.current = true;
-    const state = location.state as LoginLocationState | null;
+
+    // El backend manda a `/login?error=<código>` sin `returnUrl` cuando falla Google: el código se guarda para
+    // mostrarlo cuando el servidor vuelva a mandar para acá, ya con el `returnUrl`.
+    if (errorCode !== undefined) {
+      carryLoginRedirectError(errorCode);
+    }
+
+    const state = location.state as LoginState | null;
     void auth.signinRedirect({ state: { returnTo: state?.returnTo ?? "/" } });
-  }, [returnUrl, auth, location.state]);
+  }, [returnUrl, auth, location.state, errorCode]);
+
+  useEffect(() => {
+    if (returnUrl) {
+      // Ya quedó leído en `carriedErrorCode`: una recarga o la próxima visita no lo vuelven a mostrar.
+      forgetLoginRedirectError();
+    }
+  }, [returnUrl]);
 
   if (!returnUrl) {
     return null;
   }
 
-  // TypeScript no lleva el chequeo de arriba adentro de las funciones anidadas (`onSubmit`): esta constante
-  // sí queda tipada `string`, porque nunca se reasigna.
-  const currentReturnUrl = returnUrl;
+  // Google se oculta solo si el servidor dice que está apagado; WhatsApp se ofrece solo si dice que está prendido.
+  const showGoogle = methods?.google !== false;
+  const whatsappCountries = methods?.whatsapp === true ? methods.whatsappCountries : undefined;
+  const activeChannel: LoginChannel = whatsappCountries === undefined ? "email" : channel;
 
-  function setFieldError(field: string, error: { type: string; message: string }) {
-    // El backend responde nombres de campo en camelCase, que acá son las claves de FormValues.
-    setError(field as Path<FormValues>, error);
-  }
+  const noticeCode = isNoticeDismissed ? undefined : (errorCode ?? carriedErrorCode);
+  const notice = noticeCode === undefined ? undefined : loginRedirectErrorMessage(noticeCode, t);
 
-  async function onSubmit(values: FormValues) {
-    setFormError(undefined);
+  // El mensaje del error vale hasta que la persona vuelve a intentar: al enviar el formulario se saca. Si vino en
+  // la dirección, también se saca de ahí (reemplazando la entrada, sin sumar una al historial): si no, volver
+  // atrás desde `/login/codigo` lo mostraría otra vez. El que cruzó el redirect nunca está en la dirección.
+  function dismissNotice() {
+    setIsNoticeDismissed(true);
 
-    try {
-      const response = await requestLoginCode(values.email);
-
-      // Navegación del router, no del navegador: el código nunca pasa por acá, y el email viaja en el
-      // estado de la ruta, no en la URL.
-      void navigate(`/login/codigo?returnUrl=${encodeURIComponent(currentReturnUrl)}`, {
-        state: { email: values.email, resendAfterSeconds: response.resendAfterSeconds },
-      });
-    } catch (caught) {
-      if (!(caught instanceof ApiError)) {
-        throw caught;
-      }
-
-      if (applyApiErrorToForm(caught, setFieldError)) {
-        return;
-      }
-
-      setFormError(messageFor(caught, t("errors.generic"), t("common:errors.network")));
-
-      if (caught.retryAfterSeconds !== undefined) {
-        restartRetry(caught.retryAfterSeconds);
-      }
+    if (errorCode !== undefined) {
+      updateQuery({ error: undefined });
     }
   }
 
@@ -127,40 +124,49 @@ export function LoginPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-center text-xl font-semibold text-[var(--color-content)]">{t("login.title")}</h1>
 
-      <Button asChild variant="outline" className="w-full">
-        <a href={externalLoginUrl(returnUrl)}>
-          <GoogleIcon className="size-4" />
-          {t("login.google")}
-        </a>
-      </Button>
+      {showGoogle ? (
+        <>
+          <Button asChild variant="outline" className="w-full">
+            <a href={externalLoginUrl(returnUrl)}>
+              <GoogleIcon className="size-4" />
+              {t("login.google")}
+            </a>
+          </Button>
 
-      <div className="flex items-center gap-3 text-xs text-[var(--color-content-muted)]">
-        <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />
-        <span>{t("login.orSeparator")}</span>
-        <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />
+          <div className="flex items-center gap-3 text-xs text-[var(--color-content-muted)]">
+            <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />
+            <span>{t("login.orSeparator")}</span>
+            <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />
+          </div>
+        </>
+      ) : null}
+
+      <div className="flex flex-col gap-4">
+        {whatsappCountries === undefined ? null : (
+          <SegmentedControl
+            aria-label={t("login.methodLabel")}
+            fullWidth
+            options={(["email", "whatsapp"] as const).map((option) => ({
+              key: option,
+              label: t(`login.methods.${option}`),
+              pressed: activeChannel === option,
+              onSelect: () => setChannel(option),
+            }))}
+          />
+        )}
+
+        {/* Cambiar de medio arma el otro formulario de cero: lo escrito en uno no sirve en el otro. */}
+        {activeChannel === "whatsapp" && whatsappCountries !== undefined ? (
+          <WhatsAppCodeForm
+            returnUrl={returnUrl}
+            countries={whatsappCountries}
+            notice={notice}
+            onSubmitStart={dismissNotice}
+          />
+        ) : (
+          <EmailCodeForm returnUrl={returnUrl} notice={notice} onSubmitStart={dismissNotice} />
+        )}
       </div>
-
-      <form
-        noValidate
-        className="flex flex-col gap-4"
-        onSubmit={(event) => {
-          void handleSubmit(onSubmit)(event);
-        }}
-      >
-        <FormField label={t("login.emailLabel")} error={errors.email ? t("login.emailInvalid") : undefined}>
-          <Input type="email" autoComplete="email" {...register("email")} />
-        </FormField>
-
-        {formError ? (
-          <p role="alert" className="text-sm text-[var(--color-danger)]">
-            {formError}
-          </p>
-        ) : null}
-
-        <Button type="submit" className="w-full" disabled={isSubmitting || isRetryLimited}>
-          {isRetryLimited ? t("login.submitRetry", { seconds: retrySeconds }) : t("login.submit")}
-        </Button>
-      </form>
     </div>
   );
 }

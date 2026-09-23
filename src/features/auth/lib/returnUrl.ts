@@ -27,3 +27,8 @@ export function authorizeReturnUrl(value: string | null): string | undefined {
 export function loginPathFor(returnUrl: string | undefined): string {
   return returnUrl === undefined ? "/login" : `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
 }
+
+/// El `/login/codigo` al que se pasa después de pedir el código, con el mismo `returnUrl`, tal cual.
+export function loginCodePathFor(returnUrl: string): string {
+  return `/login/codigo?returnUrl=${encodeURIComponent(returnUrl)}`;
+}

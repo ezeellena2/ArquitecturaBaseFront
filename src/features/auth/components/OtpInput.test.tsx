@@ -38,6 +38,20 @@ describe("OtpInput", () => {
     expect(boxes[1]).toHaveFocus();
   });
 
+  it("marks every box when the code is wrong", () => {
+    const { rerender } = render(<OtpInput length={6} value="482915" onChange={vi.fn()} label="Código" invalid />);
+
+    for (const box of screen.getAllByRole("textbox")) {
+      expect(box).toHaveAttribute("aria-invalid", "true");
+    }
+
+    rerender(<OtpInput length={6} value="482915" onChange={vi.fn()} label="Código" />);
+
+    for (const box of screen.getAllByRole("textbox")) {
+      expect(box).not.toHaveAttribute("aria-invalid");
+    }
+  });
+
   it("ignores anything that is not a digit", async () => {
     const onChange = vi.fn();
     render(<OtpInput length={6} value="" onChange={onChange} label="Código" />);

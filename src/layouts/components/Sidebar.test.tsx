@@ -50,7 +50,7 @@ describe("Sidebar", () => {
     // también está ausente por estar todo pendiente, no porque el filtro haya funcionado. El pie de la
     // sidebar solo pinta el correo una vez que esa consulta trajo al usuario.
     const sidebar = await screen.findByRole("complementary");
-    await within(sidebar).findByText(currentUser.email);
+    await within(sidebar).findByText("ana@example.com");
     expect(within(sidebar).queryByRole("link", { name: /usuarios/i })).not.toBeInTheDocument();
   });
 
@@ -71,6 +71,21 @@ describe("Sidebar", () => {
     await userEvent.click(await screen.findByRole("button", { name: /contraer|expandir/i }));
 
     expect(globalThis.localStorage.getItem("arquitecturabase.sidebar")).toBe('"collapsed"');
+  });
+
+  it("names an account without email nor name by its number", async () => {
+    // Una cuenta creada desde WhatsApp: `/api/me` trae el correo y el nombre en null.
+    server.use(
+      http.get("/api/me", () =>
+        HttpResponse.json({ ...currentUser, email: null, displayName: null, phoneNumber: "+5493511234567" }),
+      ),
+    );
+
+    renderRouteWithProviders("/");
+
+    const sidebar = await screen.findByRole("complementary");
+    expect((await within(sidebar).findAllByText("+5493511234567")).length).toBeGreaterThan(0);
+    expect(within(sidebar).getByText("5")).toBeInTheDocument();
   });
 
   it("shows Roles and Configuración only to whoever has their permissions", async () => {

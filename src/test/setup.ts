@@ -45,6 +45,12 @@ if (!globalThis.ResizeObserver) {
   } as unknown as typeof ResizeObserver;
 }
 
+// jsdom tampoco implementa scrollIntoView. El Select de Radix lo usa al abrirse, para traer a la vista la opción
+// elegida (el país del número de WhatsApp, en la pantalla de ingreso).
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 // Todas las rutas del router son `lazy`: la pantalla no pinta nada hasta que su import dinámico resuelve.
 // Con la suite entera corriendo en paralelo, ese import puede tardar más que el segundo que espera `findBy*`
 // por defecto, y el primer test de cada archivo de pantalla (el único que lo paga; después el módulo ya está

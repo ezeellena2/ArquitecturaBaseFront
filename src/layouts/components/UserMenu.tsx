@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import { Link } from "react-router";
+import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { beginSignOut, cancelSignOut } from "@/auth/signOutStatus";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useLanguagePreference } from "@/auth/useLanguagePreference";
@@ -17,10 +18,6 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { ChevronDownIcon, LogOutIcon } from "@/shared/ui/icons";
 import { Skeleton } from "@/shared/ui/skeleton";
-
-function initialOf(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || "?";
-}
 
 /// Menú del usuario, en el avatar de la barra superior (sección 7.2): datos de la sesión, el acceso a su
 /// perfil, el idioma y cerrar sesión.
@@ -40,7 +37,7 @@ export function UserMenu() {
     return isPending ? <Skeleton aria-hidden="true" className="size-8 shrink-0 rounded-full" /> : null;
   }
 
-  const displayName = user.displayName ?? user.email;
+  const displayName = accountNameOf(user);
 
   async function handleSignOut() {
     // AppLayout se entera por acá y muestra una transición en vez del layout con los datos ya vacíos
@@ -72,7 +69,7 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="font-normal">
           <p className="truncate text-sm font-medium text-[var(--color-content)]">{displayName}</p>
-          <p className="truncate text-xs font-normal text-[var(--color-content-muted)]">{user.email}</p>
+          <p className="truncate text-xs font-normal text-[var(--color-content-muted)]">{accountDetailOf(user)}</p>
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />

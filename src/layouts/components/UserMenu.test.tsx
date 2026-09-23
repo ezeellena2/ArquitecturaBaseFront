@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UserMenu } from "./UserMenu";
 import i18n, { changeLanguage, languageStorageKey } from "@/shared/i18n";
+import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
@@ -54,6 +55,26 @@ describe("UserMenu", () => {
     await openMenu();
 
     expect(await screen.findByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /cerrar sesión/i })).toBeInTheDocument();
+  });
+
+  it("names an account without email nor name by its number", async () => {
+    // Una cuenta creada desde WhatsApp: `/api/me` trae el correo y el nombre en null.
+    server.use(
+      http.get("/api/me", () =>
+        HttpResponse.json({ ...currentUser, email: null, displayName: null, phoneNumber: "+5493511234567" }),
+      ),
+    );
+    renderMenu();
+
+    const trigger = await screen.findByRole("button", { name: "Menú de +5493511234567" });
+    // El avatar va primero: su inicial es la primera cifra del número, no el "+".
+    expect(trigger).toHaveTextContent(/^5Menú de/);
+
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+
+    expect((await screen.findAllByText("+5493511234567")).length).toBeGreaterThan(0);
     expect(screen.getByRole("menuitem", { name: /cerrar sesión/i })).toBeInTheDocument();
   });
 

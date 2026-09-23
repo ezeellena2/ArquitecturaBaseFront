@@ -170,4 +170,20 @@ describe("ProfilePage", () => {
 
     expect(await screen.findByText("Todavía no hay ninguno.")).toBeInTheDocument();
   });
+
+  it("opens for an account without email, without an empty email row", async () => {
+    // Una cuenta creada desde WhatsApp. La identidad por número en el perfil es de la Tarea 14; acá alcanza con
+    // que la pantalla abra y no muestre un correo vacío con "es con el que ingresás".
+    server.use(
+      http.get("/api/me", () =>
+        HttpResponse.json({ ...currentUser, email: null, displayName: null, phoneNumber: "+5493511234567" }),
+      ),
+    );
+
+    renderRouteWithProviders("/perfil");
+
+    expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveValue("");
+    expect(screen.queryByText("Correo electrónico")).not.toBeInTheDocument();
+    expect(screen.queryByText("No se cambia: es con el que ingresás.")).not.toBeInTheDocument();
+  });
 });

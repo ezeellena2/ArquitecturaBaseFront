@@ -7,10 +7,12 @@ interface OtpInputProps {
   onChange: (value: string) => void;
   label: string;
   disabled?: boolean;
+  /// El código que se verificó no era el correcto: todas las casillas quedan marcadas hasta que se escriba otro.
+  invalid?: boolean;
 }
 
 /// Casilleros para el código de ingreso: avanzan solos, aceptan pegar y vuelven con Backspace.
-export function OtpInput({ length, value, onChange, label, disabled }: OtpInputProps) {
+export function OtpInput({ length, value, onChange, label, disabled, invalid }: OtpInputProps) {
   const boxes = useRef<(HTMLInputElement | null)[]>([]);
   const digits = value.padEnd(length, " ").slice(0, length).split("");
 
@@ -65,6 +67,7 @@ export function OtpInput({ length, value, onChange, label, disabled }: OtpInputP
           maxLength={1}
           disabled={disabled}
           aria-label={`${label} ${index + 1}`}
+          aria-invalid={invalid ? true : undefined}
           value={digit.trim()}
           onChange={(event) => handleChange(index, event)}
           onKeyDown={(event) => handleKeyDown(index, event)}

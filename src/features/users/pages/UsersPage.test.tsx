@@ -482,7 +482,7 @@ describe("UsersPage", () => {
     // acciones tampoco se ven, con lo cual la aserción pasaría sin haber probado nada. El pie del sidebar
     // solo pinta el correo cuando esa consulta trajo al usuario (mismo patrón que Sidebar.test.tsx).
     const sidebar = await screen.findByRole("complementary");
-    await within(sidebar).findByText(currentUser.email);
+    await within(sidebar).findByText("ana@example.com");
 
     expect(screen.queryByRole("button", { name: "Nuevo usuario" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /eliminar a/i })).not.toBeInTheDocument();

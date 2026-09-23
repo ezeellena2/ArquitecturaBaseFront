@@ -126,12 +126,16 @@ export function ProfilePage() {
           mutation.mutate(draft);
         }}
       >
-        {/* El correo es la identidad de la cuenta: se muestra, no se edita. */}
-        <div className="flex flex-col gap-1.5">
-          <p className="text-sm font-medium text-[var(--color-content)]">{t("form.email")}</p>
-          <p className="text-sm text-[var(--color-content)]">{user.email}</p>
-          <p className="text-sm text-[var(--color-content-muted)]">{t("form.emailHint")}</p>
-        </div>
+        {/* El correo es la identidad de la cuenta: se muestra, no se edita. Una cuenta creada desde WhatsApp no
+            tiene: ahí no va un correo vacío con "es con el que ingresás". Los medios de ingreso (el número, agregar
+            un correo) llegan con la Tarea 14 del ingreso con WhatsApp. */}
+        {user.email ? (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-sm font-medium text-[var(--color-content)]">{t("form.email")}</p>
+            <p className="text-sm text-[var(--color-content)]">{user.email}</p>
+            <p className="text-sm text-[var(--color-content-muted)]">{t("form.emailHint")}</p>
+          </div>
+        ) : null}
 
         {/* El último ingreso tampoco se edita: es lo que el sistema registró. Llega en UTC y se muestra en la
             zona horaria del perfil, igual que las fechas del listado de usuarios. Va acá y no en el tablero,

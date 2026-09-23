@@ -5,7 +5,14 @@ import { api } from "@/shared/api/httpClient";
 /// Perfil, roles y permisos del usuario de la sesión (sección 5.6 del spec).
 export interface CurrentUser {
   readonly id: string;
-  readonly email: string;
+  /// Null en una cuenta creada desde WhatsApp, que se identifica con el número. Una cuenta tiene al menos uno de
+  /// los dos. Para nombrarla en la interfaz, `accountNameOf` (`auth/accountName`).
+  readonly email: string | null;
+  readonly emailConfirmed: boolean;
+  /// En formato internacional ("+5493511234567"), o null.
+  readonly phoneNumber: string | null;
+  readonly phoneNumberConfirmed: boolean;
+  readonly hasGoogleLogin: boolean;
   readonly displayName: string | null;
   readonly culture: string;
   readonly timeZoneId: string;

@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router";
 import { branchOf, isBranch, navigation, type NavigationBranch, type NavigationItem, type NavigationLink } from "../navigation";
+import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { cn } from "@/shared/lib/utils";
@@ -10,10 +11,6 @@ import { ChevronDownIcon, ChevronLeftIcon, RefreshIcon } from "@/shared/ui/icons
 import { IconButton } from "@/shared/ui/IconButton";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
-
-function initialOf(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || "?";
-}
 
 /// Un ítem de navegación. Contraído, solo el ícono (con Tooltip) y el texto queda para el lector de pantalla.
 /// Adentro de un submenú va sin ícono: lo dicen la sangría y la guía vertical, y el ícono del padre ya
@@ -364,7 +361,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                   aria-hidden="true"
                   className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-sm font-semibold text-white"
                 >
-                  {initialOf(user.displayName ?? user.email)}
+                  {initialOf(accountNameOf(user))}
                 </span>
               ) : (
                 <Skeleton aria-hidden="true" className="size-8 shrink-0 rounded-full" />
@@ -373,8 +370,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                 <div className="min-w-0 flex-1">
                   {user ? (
                     <>
-                      <p className="truncate text-sm font-medium text-[var(--color-content)]">{user.displayName ?? user.email}</p>
-                      <p className="truncate text-xs text-[var(--color-content-muted)]">{user.email}</p>
+                      <p className="truncate text-sm font-medium text-[var(--color-content)]">{accountNameOf(user)}</p>
+                      <p className="truncate text-xs text-[var(--color-content-muted)]">{accountDetailOf(user)}</p>
                     </>
                   ) : (
                     // Los contenedores llevan el alto exacto de las dos líneas de texto que reemplazan
