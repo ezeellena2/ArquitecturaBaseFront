@@ -7,15 +7,16 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+// Edición nuestra sobre el archivo generado: la CLI ata el tema al del sistema con `useTheme` de next-themes,
+// pero la app tiene un solo tema, el claro, y ningún ThemeProvider. Con el sistema en oscuro, sonner tomaba su
+// tema oscuro sobre el fondo blanco de `--popover` y la descripción quedaba en un gris casi blanco. Es la única
+// diferencia con lo que genera shadcn, y `sonner.theme.test.tsx` se pone en rojo si vuelve.
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="light"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

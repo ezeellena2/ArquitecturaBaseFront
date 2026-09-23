@@ -19,7 +19,7 @@ const namespaces = [...new Set(Object.keys(localeModules).map((path) => path.spl
 
 beforeAll(() => i18n.loadNamespaces(namespaces));
 
-// jsdom no implementa matchMedia. El Toaster de sonner lo usa para saber si el sistema está en modo oscuro.
+// jsdom no implementa matchMedia. `useMediaQuery` (shared/hooks) lo usa para separar escritorio de móvil.
 if (!globalThis.matchMedia) {
   globalThis.matchMedia = (query: string): MediaQueryList =>
     ({
