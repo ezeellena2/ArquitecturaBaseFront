@@ -13,6 +13,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { ChevronDownIcon, SlidersIcon } from "@/shared/ui/icons";
 import { SearchInput } from "@/shared/ui/SearchInput";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 
 const control =
   "inline-flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-content-muted)] transition-colors hover:border-[var(--color-content-muted)]/50";
@@ -93,27 +94,16 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
         </div>
 
         {/* El estado va como segmentado y no como desplegable: son tres opciones fijas y se elige de un clic
-            en vez de dos. Es `aria-pressed` y no un grupo de radios porque cada botón aplica el filtro al
-            apretarse, no al enviarse un formulario. */}
-        <div className="inline-flex h-9 overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)]">
-          {statusOptions.map((option, index) => (
-            <button
-              key={option.label}
-              type="button"
-              aria-pressed={values.isActive === option.value}
-              onClick={() => setFilter("isActive", option.value)}
-              className={cn(
-                "px-3 text-[13px] font-medium transition-colors",
-                index > 0 ? "border-l border-[var(--color-border)]" : "",
-                values.isActive === option.value
-                  ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
-                  : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)]",
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+            en vez de dos. */}
+        <SegmentedControl
+          aria-label={t("filters.status.label")}
+          options={statusOptions.map((option) => ({
+            key: option.label,
+            label: option.label,
+            pressed: values.isActive === option.value,
+            onSelect: () => setFilter("isActive", option.value),
+          }))}
+        />
 
         <DropdownMenu>
           <DropdownMenuTrigger

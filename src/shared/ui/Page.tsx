@@ -1,4 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
+import { Link } from "react-router";
+import { ChevronLeftIcon } from "./icons";
 
 /// El caparazón de una pantalla: la banda de encabezado y el contenido, en ese orden.
 ///
@@ -9,14 +11,23 @@ import type { ComponentType, ReactNode } from "react";
 ///
 /// La banda queda adherida arriba: en un listado largo, el título y la acción primaria no se van de pantalla.
 /// No tiene estado expandido ni descripción (fundamento visual, "Encabezados").
+///
+/// Una pantalla hija (el rol en `/roles/{id}`) pasa `backTo`: en el lugar del ícono va el enlace para volver a
+/// la sección de la que cuelga. Y `status` es lo que acompaña al título sin ser parte de él ("Del sistema",
+/// "· Cambios sin guardar"): va al lado del `h1` y no adentro, para que el nombre de la pantalla no cambie
+/// con cada tecla.
 export function Page({
   icon: Icono,
   title,
+  backTo,
+  status,
   actions,
   children,
 }: {
   icon?: ComponentType<{ className?: string }>;
   title: string;
+  backTo?: { to: string; label: string };
+  status?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
 }): ReactNode {
@@ -24,7 +35,18 @@ export function Page({
     <>
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-5 border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-6">
         <span className="flex min-w-0 items-center gap-3">
-          {Icono ? (
+          {backTo ? (
+            // Solo la flecha: el nombre accesible dice a dónde vuelve, y el `title` se lo dice a quien pasa el
+            // mouse, como en `IconButton`.
+            <Link
+              to={backTo.to}
+              aria-label={backTo.label}
+              title={backTo.label}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-content-heading)] transition-colors hover:bg-[var(--color-surface-muted)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]"
+            >
+              <ChevronLeftIcon className="size-4" />
+            </Link>
+          ) : Icono ? (
             // Decorativo: el título ya dice dónde estás. Va envuelto para que el `aria-hidden` valga aunque
             // el ícono venga de fuera del set propio.
             <span
@@ -35,6 +57,7 @@ export function Page({
             </span>
           ) : null}
           <h1 className="truncate text-lg font-semibold text-[var(--color-content)]">{title}</h1>
+          {status ? <span className="flex shrink-0 items-center gap-2">{status}</span> : null}
         </span>
         {actions ? <span className="flex shrink-0 items-center gap-2">{actions}</span> : null}
       </header>

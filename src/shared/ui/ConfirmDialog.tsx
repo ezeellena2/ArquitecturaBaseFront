@@ -9,6 +9,9 @@ interface ConfirmDialogProps {
   title: string;
   description?: string;
   confirmLabel: string;
+  /// Por defecto, "Cancelar". Cuando la confirmación es salir o quedarse, conviene nombrar lo que se conserva
+  /// ("Seguir editando"): "Cancelar" frente a "Descartar" no dice si se cancela la salida o los cambios.
+  cancelLabel?: string;
   destructive?: boolean;
   onConfirm: () => void;
 }
@@ -20,6 +23,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel,
   destructive,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -37,7 +41,7 @@ export function ConfirmDialog({
         </DialogHeader>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            {t("actions.cancel")}
+            {cancelLabel ?? t("actions.cancel")}
           </Button>
           <Button
             type="button"

@@ -76,6 +76,7 @@
   "errorTraceId": "Código para reportar: {{traceId}}",
   "filters": {
     "status": {
+      "label": "Estado",
       "all": "Todos",
       "active": "Activos",
       "inactive": "Inactivos"

@@ -76,6 +76,7 @@
   "errorTraceId": "Code to report: {{traceId}}",
   "filters": {
     "status": {
+      "label": "Status",
       "all": "All",
       "active": "Active",
       "inactive": "Inactive"

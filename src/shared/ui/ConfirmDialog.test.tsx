@@ -43,6 +43,30 @@ describe("ConfirmDialog", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it("names the way out after what it keeps when asked to", async () => {
+    const onConfirm = vi.fn();
+    const onOpenChange = vi.fn();
+    renderWithProviders(
+      <ConfirmDialog
+        open
+        onOpenChange={onOpenChange}
+        title="¿Descartar los cambios?"
+        confirmLabel="Descartar"
+        cancelLabel="Seguir editando"
+        destructive
+        onConfirm={onConfirm}
+      />,
+    );
+
+    // "Cancelar" frente a "Descartar" no dice qué se cancela: si la salida o los cambios.
+    expect(screen.queryByRole("button", { name: "Cancelar" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Seguir editando" }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it("traps focus, closes on Escape, and returns focus to the trigger", async () => {
     function Harness() {
       const [open, setOpen] = useState(false);

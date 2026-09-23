@@ -54,8 +54,12 @@ export function AppLayout() {
     );
   }
 
+  // La raíz mide exactamente la pantalla (`h-svh`, no `min-h-svh`) para que el que scrollea sea `<main>` y no
+  // el documento. Con `min-h-svh` la raíz crecía con el contenido, `main` nunca desbordaba y la banda de
+  // `Page`, que es `sticky` dentro de `main`, se iba con el resto: adherida a un contenedor que no se mueve.
+  // Así, además, la barra superior queda siempre a la vista, y el menú lateral scrollea por su cuenta.
   return (
-    <div className="flex min-h-svh">
+    <div className="flex h-svh">
       <Sidebar
         collapsed={collapsed}
         onToggleCollapsed={toggleCollapsed}
@@ -64,12 +68,12 @@ export function AppLayout() {
         onCloseMobile={closeMobileMenu}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Topbar sidebarExpanded={isMobile ? mobileOpen : !collapsed} onToggleSidebar={toggleSidebar} />
 
         {/* Sin padding: la banda de encabezado de cada pantalla llega a los bordes. El margen del contenido
             lo pone `Page`, que es el único que sabe dónde termina la banda y dónde empieza el cuerpo. */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-h-0 flex-1 overflow-y-auto">
           <Suspense fallback={<Spinner />}>
             <Outlet />
           </Suspense>
