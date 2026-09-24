@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 import { renderRouteWithProviders, renderWithProviders } from "@/test/utils/renderWithProviders";
-import { currentUser } from "@/test/mocks/handlers";
+import { currentUser, phoneOnlyUser } from "@/test/mocks/handlers";
 import { queryClient } from "@/shared/api/queryClient";
 import { server } from "@/test/mocks/server";
 
@@ -73,19 +73,27 @@ describe("Sidebar", () => {
     expect(globalThis.localStorage.getItem("arquitecturabase.sidebar")).toBe('"collapsed"');
   });
 
-  it("names an account without email nor name by its number", async () => {
-    // Una cuenta creada desde WhatsApp: `/api/me` trae el correo y el nombre en null.
-    server.use(
-      http.get("/api/me", () =>
-        HttpResponse.json({ ...currentUser, email: null, displayName: null, phoneNumber: "+5493511234567" }),
-      ),
-    );
+  it("names an account without email nor name by its number, formatted for reading", async () => {
+    // Una cuenta creada desde WhatsApp: `/api/me` trae el correo y el nombre en null. El número nunca en E.164.
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...phoneOnlyUser, displayName: null })));
 
     renderRouteWithProviders("/");
 
     const sidebar = await screen.findByRole("complementary");
-    expect((await within(sidebar).findAllByText("+5493511234567")).length).toBeGreaterThan(0);
+    // Una sola vez: sin nombre, el número va en el renglón del nombre y el de abajo no lo repite.
+    expect(await within(sidebar).findByText("+54 9 11 2345-6789")).toBeInTheDocument();
+    expect(within(sidebar).queryByText("+5491123456789")).not.toBeInTheDocument();
     expect(within(sidebar).getByText("5")).toBeInTheDocument();
+  });
+
+  it("shows the number where the email would go when the account has a name but no email", async () => {
+    server.use(http.get("/api/me", () => HttpResponse.json(phoneOnlyUser)));
+
+    renderRouteWithProviders("/");
+
+    const sidebar = await screen.findByRole("complementary");
+    expect(await within(sidebar).findByText("Ana Pérez")).toBeInTheDocument();
+    expect(within(sidebar).getByText("+54 9 11 2345-6789")).toBeInTheDocument();
   });
 
   it("shows Roles and Configuración only to whoever has their permissions", async () => {

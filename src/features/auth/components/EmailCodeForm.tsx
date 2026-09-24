@@ -5,10 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { z } from "zod";
 import { requestLoginCode } from "../api/loginCode";
-import { loginCodeErrorMessage } from "../errors";
 import type { LoginCodeState } from "../lib/loginCodeState";
 import { loginCodePathFor } from "../lib/returnUrl";
 import { ApiError } from "@/shared/api/ApiError";
+import { codeRequestErrorMessage } from "@/shared/api/codeErrors";
 import { applyApiErrorToForm } from "@/shared/api/formErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
@@ -71,7 +71,7 @@ export function EmailCodeForm({ returnUrl, notice, onSubmitStart }: CodeRequestF
         return;
       }
 
-      setFormError(loginCodeErrorMessage(caught, t));
+      setFormError(codeRequestErrorMessage(caught, t));
 
       if (caught.retryAfterSeconds !== undefined) {
         restartRetry(caught.retryAfterSeconds);
@@ -101,7 +101,7 @@ export function EmailCodeForm({ returnUrl, notice, onSubmitStart }: CodeRequestF
       ) : null}
 
       <Button type="submit" className="w-full" disabled={isSubmitting || isRetryLimited}>
-        {isRetryLimited ? t("login.submitRetry", { seconds: retrySeconds }) : t("login.submit")}
+        {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
       </Button>
     </form>
   );

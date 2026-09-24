@@ -3,7 +3,9 @@
     "name": "Arquitectura Base"
   },
   "home": {
-    "title": "Home"
+    "title": "Home",
+    "addEmailNotice": "Add an email so you don't lose access if you change your number.",
+    "addEmail": "Add email"
   },
   "actions": {
     "cancel": "Cancel",
@@ -22,6 +24,7 @@
     "network": "We couldn't connect. Check your connection.",
     "unexpected": "Something went wrong. If it keeps happening, report the code {{traceId}}.",
     "traceId": "Code to report: {{traceId}}",
+    "generic": "Something went wrong. Please try again in a moment.",
     "forbidden": {
       "title": "You don't have permission",
       "description": "You don't have the permission needed to view this screen."
@@ -36,6 +39,27 @@
     "es": "Spanish",
     "en": "English",
     "saveFailed": "We couldn't save the language in your profile. Try again."
+  },
+  "phone": {
+    "label": "WhatsApp number",
+    "country": "Country: {{country}}",
+    "invalid": "Enter a valid mobile number.",
+    "countryNotSupported": "We don't send codes to numbers from that country yet."
+  },
+  "code": {
+    "label": "Code",
+    "send": "Send code",
+    "retryIn": "Retry in {{seconds}} s",
+    "verify": "Verify",
+    "attemptsLeft_one": "{{count}} attempt left",
+    "attemptsLeft_other": "{{count}} attempts left",
+    "resend": "Resend code",
+    "resendIn": "Resend in {{seconds}} s",
+    "otherEmail": "Use a different email",
+    "otherPhone": "Use a different number",
+    "sentToEmail": "We sent a code to {{email}}. It expires in 10 minutes.",
+    "sentToPhone": "We sent a code to <phone>{{phone}}</phone>. It expires in 10 minutes.",
+    "whatsappNotice": "It arrives on WhatsApp on your phone. It doesn't show up on WhatsApp Web."
   },
   "pagination": {
     "label": "Pagination",

@@ -2,31 +2,24 @@ import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { requestLoginCode, requestWhatsAppLoginCode, verifyLoginCode } from "../api/loginCode";
-import { OtpInput } from "../components/OtpInput";
-import {
-  isClosedAccountError,
-  isSpentCodeError,
-  isWrongCodeError,
-  loginCodeErrorMessage,
-  verifyErrorMessage,
-} from "../errors";
+import { isClosedAccountError, isSpentCodeError } from "../errors";
 import { codeDestinationOf, resendAfterSecondsOf, type LoginState } from "../lib/loginCodeState";
 import { authorizeReturnUrl, loginPathFor } from "../lib/returnUrl";
 import { ApiError } from "@/shared/api/ApiError";
+import {
+  attemptsLeftOf,
+  codeRequestErrorMessage,
+  isWrongCodeError,
+  verifyCodeErrorMessage,
+} from "@/shared/api/codeErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
+import { OtpInput } from "@/shared/ui/OtpInput";
 
 const CODE_LENGTH = 6;
 
 /// Con WhatsApp, volver a `/login` (por otro número o por un código nuevo) abre con WhatsApp elegido.
 const whatsappLoginState: LoginState = { channel: "whatsapp" };
-
-/// `attemptsLeft` es una extensión del ProblemDetails (sección 6.1): no tiene un getter propio en ApiError.
-function attemptsLeftFrom(error: ApiError): number | undefined {
-  const value = error.problem.attemptsLeft;
-
-  return typeof value === "number" ? value : undefined;
-}
 
 /// `/login/codigo` (sección 5.2). Verifica el código de 6 dígitos y, si es válido, vuelve al `returnUrl`
 /// original con una navegación real: ahí el servidor ya encuentra la cookie y emite el code de OIDC.
@@ -98,8 +91,8 @@ export function LoginCodePage() {
         throw caught;
       }
 
-      setError(verifyErrorMessage(caught, t));
-      setAttemptsLeft(attemptsLeftFrom(caught));
+      setError(verifyCodeErrorMessage(caught, t));
+      setAttemptsLeft(attemptsLeftOf(caught));
       setIsCodeSpent(isSpentCodeError(caught));
       setIsAccountClosed(isClosedAccountError(caught));
       setIsCodeWrong(isWrongCodeError(caught));
@@ -128,7 +121,7 @@ export function LoginCodePage() {
         throw caught;
       }
 
-      setError(loginCodeErrorMessage(caught, t));
+      setError(codeRequestErrorMessage(caught, t));
     } finally {
       setIsResending(false);
     }
@@ -142,7 +135,7 @@ export function LoginCodePage() {
           state={loginState}
           className="self-center text-sm font-medium text-[var(--color-brand-600)] hover:underline"
         >
-          {destination.channel === "whatsapp" ? t("code.whatsapp.backLink") : t("code.backLink")}
+          {destination.channel === "whatsapp" ? t("common:code.otherPhone") : t("common:code.otherEmail")}
         </Link>
         <h1 className="text-xl font-semibold text-[var(--color-content)]">
           {destination.channel === "whatsapp" ? t("code.whatsapp.title") : t("code.title")}
@@ -153,14 +146,14 @@ export function LoginCodePage() {
             // del mismo número.
             <Trans
               t={t}
-              i18nKey="code.whatsapp.subtitle"
+              i18nKey="common:code.sentToPhone"
               values={{ phone: destination.maskedPhone }}
               components={{
                 phone: <strong className="font-semibold whitespace-nowrap text-[var(--color-content)]" />,
               }}
             />
           ) : (
-            t("code.subtitle", { email: destination.email })
+            t("common:code.sentToEmail", { email: destination.email })
           )}
         </p>
       </div>
@@ -180,7 +173,7 @@ export function LoginCodePage() {
             setCode(value);
             setIsCodeWrong(false);
           }}
-          label={t("code.otpLabel")}
+          label={t("common:code.label")}
           disabled={isVerifying}
           invalid={isCodeWrong}
         />
@@ -188,7 +181,7 @@ export function LoginCodePage() {
         {error ? (
           <div role="alert" className="flex flex-col gap-1 text-center text-sm text-[var(--color-danger)]">
             <p>{error}</p>
-            {attemptsLeft !== undefined ? <p>{t("code.attemptsLeft", { count: attemptsLeft })}</p> : null}
+            {attemptsLeft !== undefined ? <p>{t("common:code.attemptsLeft", { count: attemptsLeft })}</p> : null}
           </div>
         ) : null}
 
@@ -217,7 +210,7 @@ export function LoginCodePage() {
           className="w-full"
           disabled={code.length !== CODE_LENGTH || isVerifying || isCodeSpent || isAccountClosed}
         >
-          {t("code.submit")}
+          {t("common:code.verify")}
         </Button>
       </form>
 
@@ -228,12 +221,12 @@ export function LoginCodePage() {
         disabled={isResendRunning || isResending || isAccountClosed}
         onClick={() => void handleResend()}
       >
-        {isResendRunning ? t("code.resendIn", { seconds: resendSeconds }) : t("code.resend")}
+        {isResendRunning ? t("common:code.resendIn", { seconds: resendSeconds }) : t("common:code.resend")}
       </Button>
 
       {/* El mensaje de WhatsApp lo escribe Meta y no dice para qué es el código: lo dice esta pantalla. */}
       {destination.channel === "whatsapp" ? (
-        <p className="text-center text-sm text-[var(--color-content-muted)]">{t("code.whatsapp.notice")}</p>
+        <p className="text-center text-sm text-[var(--color-content-muted)]">{t("common:code.whatsappNotice")}</p>
       ) : null}
     </div>
   );

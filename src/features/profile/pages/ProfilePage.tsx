@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { LoginMethodsCard } from "../components/LoginMethodsCard";
+import { ProfileSection } from "../components/ProfileSection";
 import { currentUserQueryKey, useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { updateProfile } from "@/shared/api/profile";
@@ -19,6 +21,10 @@ interface Draft {
   culture: SupportedLanguage;
   timeZoneId: string;
 }
+
+/// Las dos superficies van lado a lado desde el ancho de escritorio, y una debajo de la otra en uno más angosto. Cada
+/// una mide lo suyo (`items-start`): la de los medios de ingreso no se estira hasta el alto del formulario.
+const surfacesClassName = "grid items-start gap-4 lg:grid-cols-2";
 
 /// Los desplegables son `<select>` nativos y no el `Select` de shadcn: la lista de zonas horarias pasa las
 /// cuatrocientas opciones, y el nativo trae gratis la búsqueda por teclado del sistema operativo y el
@@ -40,6 +46,10 @@ function timeZoneOptions(current: string | undefined): string[] {
 
 /// `/perfil` (sección 9 del spec de la Fase 4): nombre, idioma y zona horaria de la propia cuenta. No pide
 /// permiso, solo sesión: cualquiera edita el suyo. Se entra desde "Mi perfil", en el menú del usuario.
+///
+/// Son dos superficies, cada una con su banda (tablero "WhatsApp · Perfil: correo y WhatsApp"): los medios de
+/// ingreso (`LoginMethodsCard`: el correo y el número, con lo que se puede agregar o sacar) y los datos del perfil,
+/// que es este formulario. El correo salió del formulario: es un medio de ingreso, no un dato que se edite acá.
 export function ProfilePage() {
   const { t, i18n } = useTranslation("profile");
   const { data: user, isPending } = useCurrentUser();
@@ -93,13 +103,19 @@ export function ProfilePage() {
   if (!user || !draft) {
     return (
       <Page icon={UserIcon} title={t("title")}>
-        {/* Mientras el perfil no llegó, el formulario ocupa su lugar. Si `/api/me` falló no hay nada que
+        {/* Mientras el perfil no llegó, las dos superficies ocupan su lugar. Si `/api/me` falló no hay nada que
             editar: de ese error se ocupa el aviso global del queryClient, igual que en el tablero. */}
         {isPending ? (
-          <div className="flex max-w-lg flex-col gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-            <Skeleton aria-hidden="true" className="h-14" />
-            <Skeleton aria-hidden="true" className="h-14" />
-            <Skeleton aria-hidden="true" className="h-14" />
+          <div className={surfacesClassName}>
+            <div className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+              <Skeleton aria-hidden="true" className="h-14" />
+              <Skeleton aria-hidden="true" className="h-14" />
+            </div>
+            <div className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+              <Skeleton aria-hidden="true" className="h-14" />
+              <Skeleton aria-hidden="true" className="h-14" />
+              <Skeleton aria-hidden="true" className="h-14" />
+            </div>
           </div>
         ) : null}
       </Page>
@@ -118,98 +134,96 @@ export function ProfilePage() {
 
   return (
     <Page icon={UserIcon} title={t("title")}>
-      <form
-        noValidate
-        className="flex max-w-lg flex-col gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          mutation.mutate(draft);
-        }}
-      >
-        {/* El correo es la identidad de la cuenta: se muestra, no se edita. Una cuenta creada desde WhatsApp no
-            tiene: ahí no va un correo vacío con "es con el que ingresás". Los medios de ingreso (el número, agregar
-            un correo) llegan con la Tarea 14 del ingreso con WhatsApp. */}
-        {user.email ? (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-sm font-medium text-[var(--color-content)]">{t("form.email")}</p>
-            <p className="text-sm text-[var(--color-content)]">{user.email}</p>
-            <p className="text-sm text-[var(--color-content-muted)]">{t("form.emailHint")}</p>
-          </div>
-        ) : null}
+      <div className={surfacesClassName}>
+        <LoginMethodsCard user={user} />
 
-        {/* El último ingreso tampoco se edita: es lo que el sistema registró. Llega en UTC y se muestra en la
-            zona horaria del perfil, igual que las fechas del listado de usuarios. Va acá y no en el tablero,
-            que va vacío a propósito: es un dato de la cuenta, y la cuenta se mira en su pantalla. */}
-        <div className="flex flex-col gap-1.5">
-          <p className="text-sm font-medium text-[var(--color-content)]">{t("form.lastLogin")}</p>
-          <p className="text-sm text-[var(--color-content)]">
-            {user.lastLoginAtUtc
-              ? formatDateTimeInZone(user.lastLoginAtUtc, i18n.language, user.timeZoneId)
-              : t("form.lastLoginNever")}
-          </p>
-        </div>
-
-        <FormField
-          label={t("form.displayName")}
-          hint={t("form.displayNameHint")}
-          error={fieldErrors?.displayName?.[0]}
-        >
-          <Input
-            type="text"
-            autoComplete="name"
-            value={draft.displayName}
-            onChange={(event) => setDraft({ ...draft, displayName: event.target.value })}
-          />
-        </FormField>
-
-        <FormField label={t("form.language")} hint={t("form.languageHint")} error={fieldErrors?.culture?.[0]}>
-          <select
-            className={selectClassName}
-            value={draft.culture}
-            onChange={(event) => {
-              const value = event.target.value;
-
-              if (isSupportedLanguage(value)) {
-                setDraft({ ...draft, culture: value });
-              }
+        <ProfileSection title={t("sections.details")}>
+          <form
+            noValidate
+            className="flex flex-col"
+            onSubmit={(event) => {
+              event.preventDefault();
+              mutation.mutate(draft);
             }}
           >
-            {supportedLanguages.map((language) => (
-              <option key={language} value={language}>
-                {t(`common:language.${language}`)}
-              </option>
-            ))}
-          </select>
-        </FormField>
+            <div className="flex flex-col gap-3.5 p-4">
+              {/* El último ingreso no se edita: es lo que el sistema registró. Llega en UTC y se muestra en la zona
+                  horaria del perfil, igual que las fechas del listado de usuarios. Va acá y no en el inicio: es un
+                  dato de la cuenta, y la cuenta se mira en su pantalla. */}
+              <div className="flex flex-col gap-1.5">
+                <p className="text-sm font-medium text-[var(--color-content)]">{t("form.lastLogin")}</p>
+                <p className="text-sm text-[var(--color-content)]">
+                  {user.lastLoginAtUtc
+                    ? formatDateTimeInZone(user.lastLoginAtUtc, i18n.language, user.timeZoneId)
+                    : t("form.lastLoginNever")}
+                </p>
+              </div>
 
-        {/* Los nombres de las zonas no se traducen: son identificadores de IANA, los mismos que guarda el
-            backend, y son la forma en que la gente las busca ("Montevideo", "Madrid"). */}
-        <FormField label={t("form.timeZone")} hint={t("form.timeZoneHint")} error={fieldErrors?.timeZoneId?.[0]}>
-          <select
-            className={selectClassName}
-            value={draft.timeZoneId}
-            onChange={(event) => setDraft({ ...draft, timeZoneId: event.target.value })}
-          >
-            {timeZones.map((zone) => (
-              <option key={zone} value={zone}>
-                {zone}
-              </option>
-            ))}
-          </select>
-        </FormField>
+              <FormField
+                label={t("form.displayName")}
+                hint={t("form.displayNameHint")}
+                error={fieldErrors?.displayName?.[0]}
+              >
+                <Input
+                  type="text"
+                  autoComplete="name"
+                  value={draft.displayName}
+                  onChange={(event) => setDraft({ ...draft, displayName: event.target.value })}
+                />
+              </FormField>
 
-        {formError ? (
-          <p role="alert" className="text-sm text-[var(--color-danger)]">
-            {formError}
-          </p>
-        ) : null}
+              <FormField label={t("form.language")} hint={t("form.languageHint")} error={fieldErrors?.culture?.[0]}>
+                <select
+                  className={selectClassName}
+                  value={draft.culture}
+                  onChange={(event) => {
+                    const value = event.target.value;
 
-        <div>
-          <Button type="submit" disabled={mutation.isPending}>
-            {t("form.submit")}
-          </Button>
-        </div>
-      </form>
+                    if (isSupportedLanguage(value)) {
+                      setDraft({ ...draft, culture: value });
+                    }
+                  }}
+                >
+                  {supportedLanguages.map((language) => (
+                    <option key={language} value={language}>
+                      {t(`common:language.${language}`)}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              {/* Los nombres de las zonas no se traducen: son identificadores de IANA, los mismos que guarda el
+                  backend, y son la forma en que la gente las busca ("Montevideo", "Madrid"). */}
+              <FormField label={t("form.timeZone")} hint={t("form.timeZoneHint")} error={fieldErrors?.timeZoneId?.[0]}>
+                <select
+                  className={selectClassName}
+                  value={draft.timeZoneId}
+                  onChange={(event) => setDraft({ ...draft, timeZoneId: event.target.value })}
+                >
+                  {timeZones.map((zone) => (
+                    <option key={zone} value={zone}>
+                      {zone}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              {formError ? (
+                <p role="alert" className="text-sm text-[var(--color-danger)]">
+                  {formError}
+                </p>
+              ) : null}
+            </div>
+
+            {/* El pie de la superficie, como el de un diálogo: el botón a la derecha, separado de los campos. */}
+            <div className="flex justify-end border-t border-[var(--color-border)] px-4 py-3">
+              <Button type="submit" disabled={mutation.isPending}>
+                {t("form.submit")}
+              </Button>
+            </div>
+          </form>
+        </ProfileSection>
+      </div>
     </Page>
   );
 }

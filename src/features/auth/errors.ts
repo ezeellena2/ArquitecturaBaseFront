@@ -3,35 +3,9 @@ import type { ApiError } from "@/shared/api/ApiError";
 /// Firma mínima que necesitamos de `t` (la del namespace "auth"), sin acoplar el tipo exacto de react-i18next.
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-/// El front decide por el `code`, que es estable, nunca por el texto. Casi todos los errores del ingreso ya vienen
-/// traducidos del servidor (vencido, ya usado, sin intentos, cuenta bloqueada, demasiados pedidos) y se muestran
-/// con su `detail`. Lo que se decide acá es **dónde** va cada uno y qué deja hacer la pantalla después.
-
-/// El mensaje de un pedido que no prosperó, arriba del botón: el `detail` del servidor, o uno propio si no hubo
-/// respuesta.
-export function loginCodeErrorMessage(error: ApiError, t: Translate): string {
-  if (error.isNetworkError) {
-    return t("common:errors.network");
-  }
-
-  return error.detail ?? t("errors.generic");
-}
-
-/// Lo que el servidor le reprocha al número, que va debajo del campo y no arriba del botón. `Users.Phone.Invalid`
-/// y `Auth.WhatsApp.CountryNotSupported` llegan sin `errors` (los arma el caso de uso, no la validación): se atan
-/// al campo por el código. Los de la validación ("number" y "country") sí vienen por campo. Undefined si el error
-/// no es del número.
-export function phoneFieldError(error: ApiError, t: Translate): string | undefined {
-  switch (error.code) {
-    // El mismo texto que el número vacío: para quien lo escribió, es el mismo problema.
-    case "Users.Phone.Invalid":
-      return t("login.phoneInvalid");
-    case "Auth.WhatsApp.CountryNotSupported":
-      return error.detail ?? t("login.phoneCountryNotSupported");
-    default:
-      return error.errors?.number?.[0] ?? error.errors?.country?.[0];
-  }
-}
+/// El front decide por el `code`, que es estable, nunca por el texto. Lo que comparte con el perfil (los mensajes de
+/// pedir y de verificar un código, y el error del número) vive en `shared/api/codeErrors`; acá queda lo que es solo
+/// del ingreso: qué errores cortan el intento o la cuenta, el enlace del chat y el redirect de Google.
 
 // Cortan el intento con este código, pero no el ingreso: se puede pedir otro.
 const spentCodeCodes = new Set(["Auth.Account.LockedOut", "Auth.LoginCode.TooManyAttempts"]);
@@ -46,21 +20,6 @@ export function isSpentCodeError(error: ApiError): boolean {
 
 export function isClosedAccountError(error: ApiError): boolean {
   return error.code !== undefined && closedAccountCodes.has(error.code);
-}
-
-/// El código escrito no era el correcto: las casillas se marcan en error. Uno vencido o ya usado no se marca,
-/// porque no se equivocó al escribirlo.
-export function isWrongCodeError(error: ApiError): boolean {
-  return error.code === "Auth.LoginCode.Invalid";
-}
-
-/// El mensaje de una verificación que falló. Una validación trae el porqué en `errors` (el formato del código, o
-/// el correo y el número a la vez, en `errors.phone`), y su `detail` genérico ("Revisá los campos marcados") no
-/// tendría un campo marcado al que mirar en esta pantalla.
-export function verifyErrorMessage(error: ApiError, t: Translate): string {
-  const fieldMessage = error.errors?.code?.[0] ?? error.errors?.phone?.[0] ?? error.errors?.email?.[0];
-
-  return fieldMessage ?? loginCodeErrorMessage(error, t);
 }
 
 /// Qué hace `/ingresar` con un enlace que el servidor no aceptó, en la vista previa o en el canje:

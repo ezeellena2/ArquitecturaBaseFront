@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import { useLocation, useSearchParams } from "react-router";
-import { externalLoginUrl, getLoginMethods, loginMethodsQueryKey } from "../api/loginCode";
+import { externalLoginUrl } from "../api/loginCode";
 import { EmailCodeForm } from "../components/EmailCodeForm";
 import { WhatsAppCodeForm } from "../components/WhatsAppCodeForm";
 import { loginRedirectErrorMessage } from "../errors";
@@ -14,6 +14,7 @@ import {
   forgetLoginRedirectError,
 } from "../lib/loginRedirectError";
 import { authorizeReturnUrl } from "../lib/returnUrl";
+import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { Button } from "@/shared/ui/button";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";

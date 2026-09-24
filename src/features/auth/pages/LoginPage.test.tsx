@@ -4,7 +4,7 @@ import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import type { AuthContextProps } from "react-oidc-context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { loginMethodsQueryKey, type LoginMethods } from "../api/loginCode";
+import { loginMethodsQueryKey, type LoginMethods } from "@/shared/api/loginMethods";
 import { queryClient } from "@/shared/api/queryClient";
 import { loginMethods } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";

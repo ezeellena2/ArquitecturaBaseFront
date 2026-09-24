@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import type { CurrentUser } from "@/auth/useCurrentUser";
-import type { LoginMethods } from "@/features/auth/api/loginCode";
+import type { LoginMethods } from "@/shared/api/loginMethods";
 
 /// Perfil que devuelve /api/me por defecto. Los tests que necesitan otro lo pisan con server.use(...).
 ///
@@ -12,6 +12,8 @@ export const currentUser: CurrentUser = {
   emailConfirmed: true,
   displayName: "Ana",
   phoneNumber: null,
+  formattedPhoneNumber: null,
+  maskedPhoneNumber: null,
   phoneNumberConfirmed: false,
   hasGoogleLogin: false,
   culture: "es",
@@ -21,6 +23,19 @@ export const currentUser: CurrentUser = {
   permissions: ["users.read"],
 };
 
+/// Una cuenta creada desde WhatsApp: sin correo, con el número verificado. `/api/me` manda el número tres veces: en
+/// E.164, formateado para leer y enmascarado para confirmar algo sin repetirlo entero.
+export const phoneOnlyUser: CurrentUser = {
+  ...currentUser,
+  email: null,
+  emailConfirmed: false,
+  displayName: "Ana Pérez",
+  phoneNumber: "+5491123456789",
+  formattedPhoneNumber: "+54 9 11 2345-6789",
+  maskedPhoneNumber: "+54 9 11 •••• 6789",
+  phoneNumberConfirmed: true,
+};
+
 /// Medios de ingreso por defecto: los de antes de WhatsApp (Google y el correo). Así la pantalla de ingreso se
 /// ve como siempre en los tests que no hablan de WhatsApp.
 export const loginMethods: LoginMethods = {
@@ -28,6 +43,14 @@ export const loginMethods: LoginMethods = {
   whatsapp: false,
   whatsappCountries: [],
   whatsappNumber: null,
+};
+
+/// WhatsApp prendido, con dos países: el perfil ofrece vincular el número y el campo arranca en el primero.
+export const whatsappLoginMethods: LoginMethods = {
+  google: true,
+  whatsapp: true,
+  whatsappCountries: ["AR", "UY"],
+  whatsappNumber: "15551632662",
 };
 
 /// Handlers por defecto. Cada test agrega los suyos con server.use(...).

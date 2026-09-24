@@ -1,9 +1,9 @@
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import { countryDescription, countryOptionLabel } from "../lib/countries";
-import { FormField } from "@/shared/ui/FormField";
-import { Input } from "@/shared/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { FormField } from "./FormField";
+import { Input } from "./input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { countryDescription, countryOptionLabel } from "@/shared/lib/countries";
 
 /// Lo que se le puede pasar al campo del número: lo de `register` de react-hook-form (name, ref, onChange, onBlur)
 /// y poco más. El tipo, el autocompletado y los atributos de accesibilidad los pone este componente.
@@ -11,7 +11,8 @@ type NumberInputProps = Omit<ComponentProps<"input">, "id" | "type" | "autoCompl
 
 interface PhoneFieldProps extends NumberInputProps {
   label: string;
-  hint: string;
+  /// Opcional: en el ingreso dice por dónde llega el código; en el diálogo del perfil eso ya lo dice la descripción.
+  hint?: string;
   /// Reemplaza a la ayuda en el mismo renglón, como en cualquier `FormField`.
   error?: string;
   /// Los países a los que se mandan códigos (`whatsappCountries` de `login-methods`), en ISO 3166-1 alfa-2.
@@ -22,6 +23,8 @@ interface PhoneFieldProps extends NumberInputProps {
 
 /// Un número de celular: el país a la izquierda y el número a la derecha, con la etiqueta, la ayuda y el error de
 /// `FormField`. El país solo dice cómo leer el número; el que lo interpreta es el servidor.
+///
+/// Lo usan el ingreso con WhatsApp (`/login`) y el perfil, al vincular el número: por eso vive acá y no en una feature.
 export function PhoneField({ label, hint, error, countries, country, onCountryChange, ...numberProps }: PhoneFieldProps) {
   return (
     <FormField label={label} hint={hint} error={error}>
@@ -53,14 +56,14 @@ function PhoneInputs({
   onCountryChange,
   numberProps,
 }: PhoneInputsProps) {
-  const { t, i18n } = useTranslation("auth");
+  const { t, i18n } = useTranslation();
 
   return (
     <div className="flex gap-2">
       <Select value={country} onValueChange={onCountryChange}>
         <SelectTrigger
           className="shrink-0"
-          aria-label={t("login.phoneCountry", { country: countryDescription(country, i18n.language) })}
+          aria-label={t("phone.country", { country: countryDescription(country, i18n.language) })}
         >
           <SelectValue />
         </SelectTrigger>

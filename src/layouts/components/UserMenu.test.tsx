@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UserMenu } from "./UserMenu";
 import i18n, { changeLanguage, languageStorageKey } from "@/shared/i18n";
-import { currentUser } from "@/test/mocks/handlers";
+import { phoneOnlyUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
@@ -58,24 +58,31 @@ describe("UserMenu", () => {
     expect(screen.getByRole("menuitem", { name: /cerrar sesión/i })).toBeInTheDocument();
   });
 
-  it("names an account without email nor name by its number", async () => {
-    // Una cuenta creada desde WhatsApp: `/api/me` trae el correo y el nombre en null.
-    server.use(
-      http.get("/api/me", () =>
-        HttpResponse.json({ ...currentUser, email: null, displayName: null, phoneNumber: "+5493511234567" }),
-      ),
-    );
+  it("names an account without email nor name by its number, formatted for reading", async () => {
+    // Una cuenta creada desde WhatsApp: `/api/me` trae el correo y el nombre en null. El número nunca en E.164.
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...phoneOnlyUser, displayName: null })));
     renderMenu();
 
-    const trigger = await screen.findByRole("button", { name: "Menú de +5493511234567" });
+    const trigger = await screen.findByRole("button", { name: "Menú de +54 9 11 2345-6789" });
     // El avatar va primero: su inicial es la primera cifra del número, no el "+".
     expect(trigger).toHaveTextContent(/^5Menú de/);
 
     trigger.focus();
     await userEvent.keyboard("{Enter}");
 
-    expect((await screen.findAllByText("+5493511234567")).length).toBeGreaterThan(0);
+    // Una sola vez: sin nombre, el número va en el renglón del nombre y el de abajo no lo repite.
+    expect(await screen.findByText("+54 9 11 2345-6789")).toBeInTheDocument();
+    expect(screen.queryByText("+5491123456789")).not.toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: /cerrar sesión/i })).toBeInTheDocument();
+  });
+
+  it("shows the number where the email would go when the account has a name but no email", async () => {
+    server.use(http.get("/api/me", () => HttpResponse.json(phoneOnlyUser)));
+    renderMenu();
+
+    await openMenu();
+
+    expect(await screen.findByText("+54 9 11 2345-6789")).toBeInTheDocument();
   });
 
   it("links to the profile screen", async () => {

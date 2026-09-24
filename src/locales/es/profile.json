@@ -1,8 +1,26 @@
 {
   "title": "Mi perfil",
+  "sections": {
+    "loginMethods": "Medios de ingreso",
+    "details": "Datos del perfil"
+  },
+  "methods": {
+    "verified": "Verificado",
+    "email": {
+      "label": "Correo electrónico",
+      "empty": "Todavía no agregaste uno.",
+      "recoveryHint": "Con un correo recuperás la cuenta si cambiás de número.",
+      "add": "Agregar correo"
+    },
+    "whatsapp": {
+      "label": "WhatsApp",
+      "notLinked": "Sin vincular",
+      "link": "Vincular",
+      "unlink": "Desvincular",
+      "onlyMethod": "Es tu único medio de ingreso: para desvincularlo, primero agregá un correo."
+    }
+  },
   "form": {
-    "email": "Correo electrónico",
-    "emailHint": "No se cambia: es con el que ingresás.",
     "lastLogin": "Último ingreso",
     "lastLoginNever": "Todavía no hay ninguno.",
     "displayName": "Nombre",
@@ -12,6 +30,26 @@
     "timeZone": "Zona horaria",
     "timeZoneHint": "Con esto mostramos las fechas y las horas en tu hora local.",
     "submit": "Guardar"
+  },
+  "linkWhatsApp": {
+    "title": "Vincular WhatsApp",
+    "description": "Te mandamos un código a ese número para comprobar que es tuyo.",
+    "taken": "Este número ya está vinculado a otra cuenta. Si es tuyo, pedile a un administrador que lo libere.",
+    "success": "Vinculamos tu WhatsApp."
+  },
+  "addEmail": {
+    "title": "Agregar correo",
+    "description": "Te mandamos un código a ese correo para comprobar que es tuyo.",
+    "emailLabel": "Correo electrónico",
+    "emailInvalid": "Ingresá un correo electrónico válido.",
+    "taken": "Este correo ya está en otra cuenta. Si es tuyo, pedile a un administrador que lo libere.",
+    "success": "Agregamos tu correo."
+  },
+  "unlinkWhatsApp": {
+    "title": "¿Desvincular tu WhatsApp?",
+    "description": "Ya no vas a poder entrar con {{phone}} ni desde el chat. Podés volver a vincularlo cuando quieras.",
+    "confirm": "Desvincular",
+    "success": "Desvinculamos tu WhatsApp."
   },
   "feedback": {
     "saved": "Guardamos tu perfil."

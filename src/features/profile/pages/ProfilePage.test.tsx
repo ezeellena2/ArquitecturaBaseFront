@@ -4,7 +4,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { changeLanguage } from "@/shared/i18n";
-import { currentUser } from "@/test/mocks/handlers";
+import { currentUser, phoneOnlyUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 
@@ -171,19 +171,43 @@ describe("ProfilePage", () => {
     expect(await screen.findByText("Todavía no hay ninguno.")).toBeInTheDocument();
   });
 
-  it("opens for an account without email, without an empty email row", async () => {
-    // Una cuenta creada desde WhatsApp. La identidad por número en el perfil es de la Tarea 14; acá alcanza con
-    // que la pantalla abra y no muestre un correo vacío con "es con el que ingresás".
+  it("splits the screen in two surfaces: the sign-in methods and the profile details", async () => {
     server.use(
-      http.get("/api/me", () =>
-        HttpResponse.json({ ...currentUser, email: null, displayName: null, phoneNumber: "+5493511234567" }),
-      ),
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, lastLoginAtUtc: "2026-09-18T12:00:00Z" })),
     );
 
     renderRouteWithProviders("/perfil");
 
-    expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveValue("");
-    expect(screen.queryByText("Correo electrónico")).not.toBeInTheDocument();
-    expect(screen.queryByText("No se cambia: es con el que ingresás.")).not.toBeInTheDocument();
+    const methods = within(await screen.findByRole("region", { name: "Medios de ingreso" }));
+    const details = within(screen.getByRole("region", { name: "Datos del perfil" }));
+
+    // El correo es un medio de ingreso: sale del formulario y pasa a su superficie.
+    expect(methods.getByText("Correo electrónico")).toBeInTheDocument();
+    expect(methods.getByText("ana@example.com")).toBeInTheDocument();
+    expect(details.queryByText("ana@example.com")).not.toBeInTheDocument();
+
+    // El formulario queda igual: último ingreso, nombre con su ayuda, idioma, zona horaria y Guardar.
+    expect(details.getByText("Último ingreso")).toBeInTheDocument();
+    expect(details.getByText("18 sept 2026, 9:00")).toBeInTheDocument();
+    expect(details.getByRole("textbox", { name: "Nombre" })).toHaveAccessibleDescription(
+      "Es el nombre que se muestra en el sistema.",
+    );
+    expect(details.getByRole("combobox", { name: "Idioma" })).toBeInTheDocument();
+    expect(details.getByRole("combobox", { name: "Zona horaria" })).toBeInTheDocument();
+    expect(details.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
+  });
+
+  it("opens for an account created with WhatsApp, without an empty email", async () => {
+    // Sin correo y sin nombre: la fila del correo invita a agregarlo en vez de mostrar un correo vacío.
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...phoneOnlyUser, displayName: null })));
+
+    renderRouteWithProviders("/perfil");
+
+    const details = within(await screen.findByRole("region", { name: "Datos del perfil" }));
+    expect(details.getByRole("textbox", { name: "Nombre" })).toHaveValue("");
+
+    const methods = within(screen.getByRole("region", { name: "Medios de ingreso" }));
+    expect(methods.getByText("Todavía no agregaste uno.")).toBeInTheDocument();
+    expect(methods.getByText("+54 9 11 2345-6789")).toBeInTheDocument();
   });
 });

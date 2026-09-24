@@ -3,12 +3,13 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "react-oidc-context";
 import { Link } from "react-router";
-import { getLoginMethods, loginMethodsQueryKey } from "../api/loginCode";
 import { loginLinkPreviewQueryKey, previewLoginLink, redeemLoginLink, type LoginLinkPreview } from "../api/loginLink";
-import { loginCodeErrorMessage, loginLinkFailureOf, type LoginLinkFailure } from "../errors";
+import { loginLinkFailureOf, type LoginLinkFailure } from "../errors";
 import { loginLinkTokenFromAddress, removeFragmentFromAddress } from "../lib/loginLinkToken";
 import { initialOf } from "@/auth/accountName";
 import { ApiError } from "@/shared/api/ApiError";
+import { codeRequestErrorMessage } from "@/shared/api/codeErrors";
+import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
@@ -24,7 +25,7 @@ function failureOf(error: Error): LoginLinkFailure {
 }
 
 function retryMessageOf(error: Error, t: Translate): string {
-  return error instanceof ApiError ? loginCodeErrorMessage(error, t) : t("errors.generic");
+  return error instanceof ApiError ? codeRequestErrorMessage(error, t) : t("common:errors.generic");
 }
 
 /// Los botones de esta pantalla miden 44 px y no los 36 del resto del ingreso: el enlace se abre casi siempre en el
@@ -439,7 +440,7 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
             void preview.refetch();
           }}
         >
-          {isRetryLimited ? t("login.submitRetry", { seconds: retrySeconds }) : t("common:actions.retry")}
+          {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:actions.retry")}
         </Button>
       </div>
     );
@@ -467,7 +468,7 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
         disabled={isRetryLimited}
         onClick={() => handleContinue(token)}
       >
-        {isRetryLimited ? t("login.submitRetry", { seconds: retrySeconds }) : t("link.continue")}
+        {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("link.continue")}
       </Button>
       <p className="text-center text-[12.5px] text-[var(--color-content-muted)]">{t("link.notYou")}</p>
     </div>

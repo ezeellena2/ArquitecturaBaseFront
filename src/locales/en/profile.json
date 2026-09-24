@@ -1,8 +1,26 @@
 {
   "title": "My profile",
+  "sections": {
+    "loginMethods": "Sign-in methods",
+    "details": "Profile details"
+  },
+  "methods": {
+    "verified": "Verified",
+    "email": {
+      "label": "Email address",
+      "empty": "You haven't added one yet.",
+      "recoveryHint": "With an email you can recover your account if you change your number.",
+      "add": "Add email"
+    },
+    "whatsapp": {
+      "label": "WhatsApp",
+      "notLinked": "Not linked",
+      "link": "Link",
+      "unlink": "Unlink",
+      "onlyMethod": "It's your only sign-in method: to unlink it, add an email first."
+    }
+  },
   "form": {
-    "email": "Email address",
-    "emailHint": "It can't be changed: it's the one you sign in with.",
     "lastLogin": "Last sign-in",
     "lastLoginNever": "There isn't one yet.",
     "displayName": "Name",
@@ -12,6 +30,26 @@
     "timeZone": "Time zone",
     "timeZoneHint": "We use it to show dates and times in your local time.",
     "submit": "Save"
+  },
+  "linkWhatsApp": {
+    "title": "Link WhatsApp",
+    "description": "We'll send a code to that number to check it's yours.",
+    "taken": "This number is already linked to another account. If it's yours, ask an administrator to release it.",
+    "success": "Your WhatsApp is linked."
+  },
+  "addEmail": {
+    "title": "Add email",
+    "description": "We'll send a code to that email to check it's yours.",
+    "emailLabel": "Email address",
+    "emailInvalid": "Enter a valid email address.",
+    "taken": "This email is already in another account. If it's yours, ask an administrator to release it.",
+    "success": "Your email was added."
+  },
+  "unlinkWhatsApp": {
+    "title": "Unlink your WhatsApp?",
+    "description": "You won't be able to sign in with {{phone}} or from the chat anymore. You can link it again whenever you want.",
+    "confirm": "Unlink",
+    "success": "Your WhatsApp was unlinked."
   },
   "feedback": {
     "saved": "Your profile was saved."

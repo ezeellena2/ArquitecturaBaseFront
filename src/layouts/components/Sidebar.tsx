@@ -210,6 +210,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const iconsOnly = collapsed && !isMobile;
   const onNavigate = isMobile ? onCloseMobile : undefined;
   const canSee = (link: NavigationLink) => isPending || !link.permission || has(link.permission);
+  // Sin nombre no hay renglón de abajo: el del nombre ya muestra el correo o el número.
+  const accountDetail = user ? accountDetailOf(user) : undefined;
 
   return (
     <>
@@ -367,11 +369,15 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                 <Skeleton aria-hidden="true" className="size-8 shrink-0 rounded-full" />
               )}
               {iconsOnly ? null : (
-                <div className="min-w-0 flex-1">
+                // min-h-9 es el alto de los dos renglones (text-sm y text-xs): una cuenta sin nombre tiene uno
+                // solo, y así el pie mide lo mismo que con dos, con ese renglón centrado junto al avatar.
+                <div className="flex min-h-9 min-w-0 flex-1 flex-col justify-center">
                   {user ? (
                     <>
                       <p className="truncate text-sm font-medium text-[var(--color-content)]">{accountNameOf(user)}</p>
-                      <p className="truncate text-xs text-[var(--color-content-muted)]">{accountDetailOf(user)}</p>
+                      {accountDetail === undefined ? null : (
+                        <p className="truncate text-xs text-[var(--color-content-muted)]">{accountDetail}</p>
+                      )}
                     </>
                   ) : (
                     // Los contenedores llevan el alto exacto de las dos líneas de texto que reemplazan

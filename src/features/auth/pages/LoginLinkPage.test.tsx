@@ -5,7 +5,7 @@ import { StrictMode, type ReactNode } from "react";
 import type { AuthContextProps } from "react-oidc-context";
 import { RouterProvider, createMemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { loginMethodsQueryKey, type LoginMethods } from "../api/loginCode";
+import { loginMethodsQueryKey, type LoginMethods } from "@/shared/api/loginMethods";
 import { AppProviders } from "@/app/providers";
 import { routes } from "@/app/routes";
 import { queryClient } from "@/shared/api/queryClient";

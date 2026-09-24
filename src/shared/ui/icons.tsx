@@ -211,3 +211,54 @@ export function BanIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/// El correo, en la fila de los medios de ingreso del perfil (tablero "WhatsApp · Perfil: correo y WhatsApp").
+export function MailIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+      <path d="m4 7 8 6 8-6" />
+    </Icon>
+  );
+}
+
+/// Un celular: el número de WhatsApp, en la fila de los medios de ingreso del perfil.
+export function SmartphoneIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="7" y="3" width="10" height="18" rx="2" />
+      <path d="M11 17.5h2" />
+    </Icon>
+  );
+}
+
+/// Algo comprobado: la insignia "Verificado".
+export function CheckIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 12.5 10 17.5 19 7" />
+    </Icon>
+  );
+}
+
+/// Un aviso que informa (`Banner`): una condición que sigue vigente.
+export function InfoIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M12 11v5" />
+      <path d="M12 8h.01" />
+    </Icon>
+  );
+}
+
+/// Un aviso de error (`Banner` con `tone="danger"`).
+export function AlertCircleIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M12 8v5" />
+      <path d="M12 16h.01" />
+    </Icon>
+  );
+}

@@ -38,6 +38,8 @@ export function UserMenu() {
   }
 
   const displayName = accountNameOf(user);
+  // Sin nombre no hay renglón de abajo: el del nombre ya muestra el correo o el número.
+  const detail = accountDetailOf(user);
 
   async function handleSignOut() {
     // AppLayout se entera por acá y muestra una transición en vez del layout con los datos ya vacíos
@@ -69,7 +71,9 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="font-normal">
           <p className="truncate text-sm font-medium text-[var(--color-content)]">{displayName}</p>
-          <p className="truncate text-xs font-normal text-[var(--color-content-muted)]">{accountDetailOf(user)}</p>
+          {detail === undefined ? null : (
+            <p className="truncate text-xs font-normal text-[var(--color-content-muted)]">{detail}</p>
+          )}
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />

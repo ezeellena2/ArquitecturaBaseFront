@@ -1,16 +1,5 @@
 import { api } from "@/shared/api/httpClient";
 
-/// Los medios de ingreso que ofrece el servidor, además del correo, que está siempre (`GET /account/login-methods`).
-export interface LoginMethods {
-  readonly google: boolean;
-  readonly whatsapp: boolean;
-  /// Los países a los que se mandan códigos por WhatsApp, en ISO 3166-1 alfa-2 ("AR"), en el orden de la
-  /// configuración. Vacío con WhatsApp apagado.
-  readonly whatsappCountries: readonly string[];
-  /// El número del bot, solo con dígitos, para el enlace "Volver a WhatsApp" (Tarea 12). Null con WhatsApp apagado.
-  readonly whatsappNumber: string | null;
-}
-
 export interface RequestLoginCodeResponse {
   readonly resendAfterSeconds: number;
 }
@@ -33,12 +22,6 @@ export interface VerifyLoginCodeResponse {
 export type VerifyLoginCodeRequest =
   | { readonly email: string; readonly code: string; readonly returnUrl: string }
   | { readonly phone: string; readonly code: string; readonly returnUrl: string };
-
-export const loginMethodsQueryKey = ["login-methods"] as const;
-
-export function getLoginMethods(): Promise<LoginMethods> {
-  return api.get<LoginMethods>("/account/login-methods");
-}
 
 export function requestLoginCode(email: string): Promise<RequestLoginCodeResponse> {
   return api.post<RequestLoginCodeResponse>("/account/login-code", { email });

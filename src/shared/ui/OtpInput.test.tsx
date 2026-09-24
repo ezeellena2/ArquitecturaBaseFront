@@ -52,6 +52,17 @@ describe("OtpInput", () => {
     }
   });
 
+  it("focuses the first box when it is asked to, and only then", () => {
+    const { unmount } = render(<OtpInput length={6} value="" onChange={vi.fn()} label="Código" autoFocus />);
+
+    expect(screen.getAllByRole("textbox")[0]).toHaveFocus();
+
+    unmount();
+    render(<OtpInput length={6} value="" onChange={vi.fn()} label="Código" />);
+
+    expect(document.body).toHaveFocus();
+  });
+
   it("ignores anything that is not a digit", async () => {
     const onChange = vi.fn();
     render(<OtpInput length={6} value="" onChange={onChange} label="Código" />);

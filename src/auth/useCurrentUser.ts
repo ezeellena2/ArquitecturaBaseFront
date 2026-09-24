@@ -9,8 +9,13 @@ export interface CurrentUser {
   /// los dos. Para nombrarla en la interfaz, `accountNameOf` (`auth/accountName`).
   readonly email: string | null;
   readonly emailConfirmed: boolean;
-  /// En formato internacional ("+5493511234567"), o null.
+  /// En E.164 ("+5491123456789"), o null. Sirve para comparar, no para mostrar: la interfaz nunca lo muestra así.
   readonly phoneNumber: string | null;
+  /// El número para leer ("+54 9 11 2345-6789"), agrupado por el servidor, que es el que sabe cómo se agrupa cada
+  /// país. Null sin número.
+  readonly formattedPhoneNumber: string | null;
+  /// El número con el medio tapado ("+54 9 11 •••• 6789"), para confirmar algo sin repetirlo entero. Null sin número.
+  readonly maskedPhoneNumber: string | null;
   readonly phoneNumberConfirmed: boolean;
   readonly hasGoogleLogin: boolean;
   readonly displayName: string | null;

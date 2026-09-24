@@ -5,14 +5,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { z } from "zod";
 import { requestWhatsAppLoginCode } from "../api/loginCode";
-import { loginCodeErrorMessage, phoneFieldError } from "../errors";
 import type { LoginCodeState } from "../lib/loginCodeState";
 import { loginCodePathFor } from "../lib/returnUrl";
 import type { CodeRequestFormProps } from "./EmailCodeForm";
-import { PhoneField } from "./PhoneField";
 import { ApiError } from "@/shared/api/ApiError";
+import { codeRequestErrorMessage, phoneFieldError } from "@/shared/api/codeErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
+import { PhoneField } from "@/shared/ui/PhoneField";
 
 // Acá solo se controla que haya algo escrito. Si es un celular, y de qué país, lo decide el servidor, que es el que
 // conoce los formatos de cada uno (con o sin 0, 15 o 9).
@@ -69,7 +69,7 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart }
         return;
       }
 
-      setFormError(loginCodeErrorMessage(caught, t));
+      setFormError(codeRequestErrorMessage(caught, t));
 
       if (caught.retryAfterSeconds !== undefined) {
         restartRetry(caught.retryAfterSeconds);
@@ -81,7 +81,7 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart }
   const numberError = errors.number
     ? errors.number.type === "server"
       ? errors.number.message
-      : t("login.phoneInvalid")
+      : t("common:phone.invalid")
     : undefined;
   const message = formError ?? notice;
 
@@ -95,7 +95,7 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart }
       }}
     >
       <PhoneField
-        label={t("login.phoneLabel")}
+        label={t("common:phone.label")}
         hint={t("login.phoneHint")}
         error={numberError}
         countries={countries}
@@ -111,7 +111,7 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart }
       ) : null}
 
       <Button type="submit" className="w-full" disabled={isSubmitting || isRetryLimited}>
-        {isRetryLimited ? t("login.submitRetry", { seconds: retrySeconds }) : t("login.submit")}
+        {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
       </Button>
     </form>
   );

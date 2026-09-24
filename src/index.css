@@ -35,6 +35,10 @@
   --color-content-muted: oklch(0.5 0.02 250);
   --color-danger: oklch(0.58 0.2 25);
   --color-success: oklch(0.6 0.14 150);
+  /* La insignia "Verificado" (el correo y el número del perfil): el mismo uso que la escala de marca, -50 para el
+     fondo tintado y -700 para el texto encima. -700 sobre -50 da más de 4.5:1. */
+  --color-success-50: oklch(0.96 0.03 150);
+  --color-success-700: oklch(0.42 0.1 150);
   --color-warning: oklch(0.75 0.15 80);
 
   --radius-card: 0.75rem;

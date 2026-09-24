@@ -3,7 +3,9 @@
     "name": "Arquitectura Base"
   },
   "home": {
-    "title": "Inicio"
+    "title": "Inicio",
+    "addEmailNotice": "Agregá un correo para no perder el acceso si cambiás de número.",
+    "addEmail": "Agregar correo"
   },
   "actions": {
     "cancel": "Cancelar",
@@ -22,6 +24,7 @@
     "network": "No pudimos conectarnos. Revisá tu conexión.",
     "unexpected": "Ocurrió un error inesperado. Si el problema continúa, informá el código {{traceId}}.",
     "traceId": "Código para reportar: {{traceId}}",
+    "generic": "Ocurrió un error. Probá de nuevo en un momento.",
     "forbidden": {
       "title": "No tenés permiso",
       "description": "No tenés el permiso necesario para ver esta pantalla."
@@ -36,6 +39,27 @@
     "es": "Español",
     "en": "Inglés",
     "saveFailed": "No pudimos guardar el idioma en tu perfil. Probá de nuevo."
+  },
+  "phone": {
+    "label": "Número de WhatsApp",
+    "country": "País: {{country}}",
+    "invalid": "Ingresá un número de celular válido.",
+    "countryNotSupported": "Todavía no mandamos códigos a números de ese país."
+  },
+  "code": {
+    "label": "Código",
+    "send": "Enviar código",
+    "retryIn": "Reintentá en {{seconds}} s",
+    "verify": "Verificar",
+    "attemptsLeft_one": "Te queda {{count}} intento",
+    "attemptsLeft_other": "Te quedan {{count}} intentos",
+    "resend": "Reenviar código",
+    "resendIn": "Reenviar en {{seconds}} s",
+    "otherEmail": "Usar otro correo",
+    "otherPhone": "Usar otro número",
+    "sentToEmail": "Te mandamos un código a {{email}}. Vence en 10 minutos.",
+    "sentToPhone": "Te mandamos un código al <phone>{{phone}}</phone>. Vence en 10 minutos.",
+    "whatsappNotice": "Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra."
   },
   "pagination": {
     "label": "Paginado",
