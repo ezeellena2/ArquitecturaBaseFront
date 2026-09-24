@@ -73,6 +73,7 @@ Y al revés: piezas y cambios que **ya están en `shared/ui` y todavía no está
 | Íconos: `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye` | ingreso con WhatsApp, Tareas 12, 14 y 16; rol en pantalla propia, Tarea 8 |
 | Tokens `--color-success-50`, `--color-success-700`, `--color-warning-50`, `--color-warning-700` | ingreso con WhatsApp, Tareas 14 y 16 |
 | `Page` con `backTo` y `status`; `ConfirmDialog` con `cancelLabel`; `EmptyState` con `className` y `descriptionClassName`; el caparazón en `h-svh` con `main` `relative`; las migas de cuatro niveles | rol en pantalla propia, Tarea 6 |
+| Íconos `CheckCheck` (las dos tildes de "Entregada" y "Leída") y `Send` (el avión de la invitación); token `--color-danger-700` ("No llegó" en letra chica sobre `surface-muted`) | tablero "Editar usuario · B", la franja de la última invitación (ingreso con WhatsApp, Tareas 15 y 16). El tablero los dibuja a mano: SVG sueltos y el rojo crudo en `.st.bad` |
 
 ## Principios del sistema
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { userFormErrors, type UserFormField } from "./errors";
+import { invitationResendError, userFormErrors, type UserFormField } from "./errors";
 import { ApiError } from "@/shared/api/ApiError";
 import i18n from "@/shared/i18n";
 
@@ -137,6 +137,86 @@ describe("userFormErrors", () => {
     expect(userFormErrors(ApiError.network(), t, allFields)).toEqual({
       fields: {},
       form: "No pudimos conectarnos. Revisá tu conexión.",
+    });
+  });
+});
+
+describe("invitationResendError", () => {
+  it("waits what the server says after a 429, with its text", () => {
+    const error = problem(429, {
+      code: "Users.Invitation.TooManyRequests",
+      detail: "Esperá un minuto antes de volver a invitar a esta persona.",
+      retryAfter: 42,
+    });
+
+    expect(invitationResendError(error, t)).toEqual({
+      place: "wait",
+      seconds: 42,
+      message: "Esperá un minuto antes de volver a invitar a esta persona.",
+    });
+  });
+
+  it("puts the missing consent under the checkbox, by its code or by the field the server names", () => {
+    const byCode = problem(400, {
+      code: "Users.Invitation.ConsentRequired",
+      detail: "Confirmá que la persona aceptó recibir mensajes por WhatsApp.",
+    });
+    const byField = problem(400, {
+      code: "Validation.Failed",
+      detail: "Revisá los datos ingresados.",
+      errors: { consent: ["Confirmá que la persona aceptó recibir mensajes por WhatsApp."] },
+    });
+
+    for (const error of [byCode, byField]) {
+      expect(invitationResendError(error, t)).toEqual({
+        place: "consent",
+        message: "Confirmá que la persona aceptó recibir mensajes por WhatsApp.",
+      });
+    }
+  });
+
+  it("puts a channel the account cannot use under the channels", () => {
+    const error = problem(400, {
+      code: "Validation.Failed",
+      detail: "Revisá los datos ingresados.",
+      errors: { channel: ["Cargá un correo para usar esta opción."] },
+    });
+
+    expect(invitationResendError(error, t)).toEqual({
+      place: "channel",
+      message: "Cargá un correo para usar esta opción.",
+    });
+  });
+
+  it("explains in the panel that the name has to be saved first", () => {
+    // El backend mira el nombre guardado, no el que está escrito arriba: el texto dice cómo destrabarlo.
+    const error = problem(400, {
+      code: "Users.Invitation.NameRequired",
+      detail: "Para invitar por WhatsApp, cargá el nombre de la persona.",
+      errors: { displayName: ["Para invitar por WhatsApp, cargá el nombre de la persona."] },
+    });
+
+    expect(invitationResendError(error, t)).toEqual({
+      place: "panel",
+      message: "Para invitar por WhatsApp hace falta su nombre: cargalo en «Nombre» y guardá antes de reenviar.",
+    });
+  });
+
+  it("sends an inactive account, and anything else, to a toast with the server's text", () => {
+    const inactive = problem(400, {
+      code: "Users.Invitation.UserInactive",
+      detail: "La cuenta está desactivada: activala antes de invitarla.",
+    });
+    const notFound = problem(404, { code: "Users.User.NotFound", detail: "No encontramos la cuenta." });
+
+    expect(invitationResendError(inactive, t)).toEqual({
+      place: "toast",
+      message: "La cuenta está desactivada: activala antes de invitarla.",
+    });
+    expect(invitationResendError(notFound, t)).toEqual({ place: "toast", message: "No encontramos la cuenta." });
+    expect(invitationResendError(ApiError.network(), t)).toEqual({
+      place: "toast",
+      message: "No pudimos conectarnos. Revisá tu conexión.",
     });
   });
 });

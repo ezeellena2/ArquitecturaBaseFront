@@ -103,7 +103,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  // Un 202 sin cuerpo (el reenvío de una invitación) puede llegar sin `Content-Length`, según el servidor y lo que haya
+  // en el medio: se lee el texto y un cuerpo vacío es "sin resultado", no un JSON roto.
+  const text = await response.text();
+
+  return (text === "" ? undefined : JSON.parse(text)) as T;
 }
 
 export const api = {

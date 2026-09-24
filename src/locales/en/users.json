@@ -57,6 +57,7 @@
   "edit": {
     "title": "Edit user",
     "submit": "Save",
+    "saving": "Saving…",
     "success": "Changes saved."
   },
   "methods": {
@@ -65,14 +66,37 @@
     "noEmail": "No email",
     "whatsApp": "WhatsApp",
     "noPhone": "No number",
-    "add": "Add",
     "addEmail": "Add email",
     "addPhone": "Add number",
     "unlink": "Unlink",
+    "unlinkFor": "Unlink the WhatsApp of {{user}}",
     "verified": "Verified",
     "unverified": "Not verified",
     "onlyMethod": "It is their only way to sign in. If you unlink it, they cannot sign in until you add another one.",
     "unverifiedHint": "What an admin adds stays “Not verified” until the person signs in with it."
+  },
+  "lastInvitation": {
+    "title": "Last invitation",
+    "byEmail": "Invitation by email",
+    "byWhatsApp": "Invitation by WhatsApp",
+    "status": {
+      "pending": "Pending",
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "read": "Read",
+      "failed": "Not delivered"
+    },
+    "failedHint": "WhatsApp did not deliver it: it may be Meta's message limit or a rejection.",
+    "resend": "Resend invitation",
+    "resendIn": "You can resend in {{seconds}} s",
+    "resent": "We sent the invitation again."
+  },
+  "resend": {
+    "title": "Resend the invitation",
+    "failed": "It did not arrive by WhatsApp: it may be Meta's limit or a rejection. You can try again or send it by email.",
+    "failedWithoutEmail": "It did not arrive by WhatsApp: it may be Meta's limit or a rejection. You can try again.",
+    "submit": "Resend",
+    "submitLabel": "Resend the invitation"
   },
   "unlink": {
     "title": "Unlink the WhatsApp of {{user}}?",
@@ -111,7 +135,8 @@
     "alreadyExists": "There is already an account with that email.",
     "phoneAlreadyExists": "There is already an account with that number.",
     "lastAdmin": "You can't leave the system without administrators. Give the Admin role to another active account and try again.",
-    "cannotModifySelf": "You can't do this to your own account. Ask another administrator."
+    "cannotModifySelf": "You can't do this to your own account. Ask another administrator.",
+    "invitationNameRequired": "Inviting by WhatsApp needs their name: add it under “Name” and save before resending."
   },
   "errorTraceId": "Code to report: {{traceId}}",
   "filters": {

@@ -224,4 +224,12 @@ describe("httpClient", () => {
 
     await expect(api.delete("/api/users/1")).resolves.toBeUndefined();
   });
+
+  it("returns undefined for an accepted request without a body, even without a content length", async () => {
+    // El reenvío de una invitación responde 202 sin cuerpo. Que llegue el `Content-Length: 0` depende del servidor y
+    // de lo que haya en el medio: sin él, leer el cuerpo como JSON reventaba y el envío, que salió, parecía fallido.
+    server.use(http.post("/api/users/1/invitation", () => new HttpResponse(null, { status: 202 })));
+
+    await expect(api.post("/api/users/1/invitation", { channel: "Email", consent: false })).resolves.toBeUndefined();
+  });
 });

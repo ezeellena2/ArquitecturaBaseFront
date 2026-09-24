@@ -241,6 +241,27 @@ export function CheckIcon(props: IconProps) {
   );
 }
 
+/// Dos tildes: un mensaje de WhatsApp que llegó ("Entregada") o que se leyó ("Leída"), en la franja de la última
+/// invitación (tablero "Editar usuario · B"). Es la marca que la persona ya conoce de WhatsApp.
+export function CheckCheckIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m2.5 12.5 4.5 4.5 9-10" />
+      <path d="m12 16 1 1 9-10" />
+    </Icon>
+  );
+}
+
+/// El avión de papel: un envío, como la invitación de una cuenta (tablero "Editar usuario · B").
+export function SendIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M20.5 3.5 10.5 13.5" />
+      <path d="M20.5 3.5 14 20.5l-3.5-7-7-3.5Z" />
+    </Icon>
+  );
+}
+
 /// Un aviso que informa (`Banner`): una condición que sigue vigente.
 export function InfoIcon(props: IconProps) {
   return (

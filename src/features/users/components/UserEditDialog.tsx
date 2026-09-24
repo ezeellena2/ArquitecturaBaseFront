@@ -15,12 +15,14 @@ import {
 } from "../api/users";
 import { userActionErrorMessage, userFormErrors, type UserFormErrors, type UserFormField } from "../errors";
 import { userName } from "../identity";
+import { LastInvitationStrip } from "./LastInvitationStrip";
 import { RolesField } from "./RolesField";
 import { UnlinkUserWhatsAppDialog } from "./UnlinkUserWhatsAppDialog";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { rolesQueryKey } from "@/shared/api/roles";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import { cn } from "@/shared/lib/utils";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -38,43 +40,114 @@ interface DraftValues {
   roles: string[];
 }
 
-/// Una fila de "Medios de ingreso": el ícono, qué medio es, su valor (o que falta) y, a la derecha, lo que se puede
-/// hacer.
-function MethodRow({
-  icon: Icon,
-  label,
-  action,
-  children,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  action: ReactNode;
-  children: ReactNode;
-}) {
+type IconComponent = ComponentType<{ className?: string }>;
+
+/// Lo que comparten las filas de la caja: el margen de la caja y la raya entre una fila y la siguiente.
+const rowClass = "mx-3.5 grid gap-x-3 border-[var(--color-border)]/60 [&:not(:first-child)]:border-t";
+
+/// El ícono del medio, en su caja de 32 px: la primera columna de cada fila.
+function MethodIcon({ icon: Icon, className }: { icon: IconComponent; className?: string }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span
-        aria-hidden="true"
-        className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-surface-muted)] text-[var(--color-content-muted)]"
-      >
-        <Icon className="size-4" />
-      </span>
-      <div className="flex min-w-0 grow flex-col">
-        <span className="text-[13px] font-medium text-[var(--color-content)]">{label}</span>
-        {children}
-      </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
-    </div>
+    <span
+      aria-hidden="true"
+      className={cn(
+        "inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-muted)] text-[var(--color-content-muted)]",
+        className,
+      )}
+    >
+      <Icon className="size-[17px]" />
+    </span>
   );
 }
 
-/// Edición de un usuario (`PUT /api/users/{id}`, tablero "WhatsApp · Usuarios: alta con teléfono", punto 3): el
-/// nombre, los roles y sus medios de ingreso. El correo y el número que falten se agregan acá mismo, y quedan sin
-/// verificar hasta que la persona entra con eso; el número que tiene se puede desvincular (punto 4).
+/// Una fila de "Medios de ingreso" (tablero "Editar usuario · B", punto 1): el ícono, qué medio es arriba de su valor
+/// (o de lo que falta), la insignia en una columna propia y la acción con su texto. Las columnas son fijas para que las
+/// insignias y las acciones de las dos filas queden alineadas. Una acción sin insignia (agregar) ocupa las dos columnas.
+///
+/// La insignia y la acción van siempre en el mismo lugar del árbol: así "Desvincular" y "Agregar número" son el mismo
+/// botón, y al desvincular el foco se queda en él.
+///
+/// En un teléfono las cuatro columnas no entran (al valor le quedaban 13 px): por debajo de `sm` la insignia baja
+/// debajo del valor y la acción queda a la derecha. El tablero no dibuja el teléfono; desde `sm` es el tablero.
+function MethodRow({
+  icon,
+  label,
+  value,
+  empty,
+  badge,
+  action,
+}: {
+  icon: IconComponent;
+  label: string;
+  value: string | null;
+  /// Lo que se lee cuando falta el valor ("Sin correo").
+  empty: string;
+  badge: ReactNode;
+  action: ReactNode;
+}) {
+  return (
+    <li
+      className={cn(
+        rowClass,
+        "grid-cols-[32px_minmax(0,1fr)_auto] items-center py-2.5 sm:grid-cols-[32px_minmax(0,1fr)_92px_104px]",
+      )}
+    >
+      <MethodIcon icon={icon} className="row-span-2 sm:row-span-1" />
+      <span className="col-start-2 row-start-1 flex min-w-0 flex-col gap-px">
+        <span className="text-[13px] leading-[18px] font-medium text-[var(--color-content)]">{label}</span>
+        {value === null ? (
+          <span className="text-[13.5px] leading-5 text-[var(--color-content-muted)]">{empty}</span>
+        ) : (
+          // Un correo largo se corta con puntos suspensivos; entero, en el `title` y para el lector de pantalla. En un
+          // teléfono no hay lugar ni para un número entero: ahí baja de renglón, que cortarlo es perder dígitos.
+          <span
+            title={value}
+            className="text-sm leading-5 text-[var(--color-content)] [overflow-wrap:anywhere] sm:truncate"
+          >
+            {value}
+          </span>
+        )}
+      </span>
+      {badge ? (
+        <span className="col-start-2 row-start-2 mt-1 justify-self-start sm:col-start-3 sm:row-start-1 sm:mt-0">
+          {badge}
+        </span>
+      ) : null}
+      {action ? (
+        <span
+          className={cn(
+            "col-start-3 row-span-2 row-start-1 justify-self-end sm:row-span-1",
+            badge ? "sm:col-start-4" : "sm:col-span-2 sm:col-start-3",
+          )}
+        >
+          {action}
+        </span>
+      ) : null}
+    </li>
+  );
+}
+
+/// La fila abierta en su campo, al agregar un correo o un número (tablero B, punto 3): el ícono queda en su columna, a
+/// la altura del campo, y el campo ocupa el resto.
+function FieldRow({ icon, children }: { icon: IconComponent; children: ReactNode }) {
+  return (
+    <li className={cn(rowClass, "grid-cols-[32px_minmax(0,1fr)] items-start pt-2.5 pb-3")}>
+      {/* La etiqueta del campo y su separación: el ícono se centra con la caja de texto, no con el rótulo. */}
+      <MethodIcon icon={icon} className="mt-[22px]" />
+      <div className="min-w-0">{children}</div>
+    </li>
+  );
+}
+
+/// Edición de un usuario (`PUT /api/users/{id}`, tablero "Editar usuario · B: filas compactas"): el nombre, los roles,
+/// sus medios de ingreso y, aparte, la última invitación. El correo y el número que falten se agregan acá mismo, en su
+/// fila, y quedan sin verificar hasta que la persona entra con eso; el número que tiene se puede desvincular (punto 5).
 ///
 /// El nombre va en el mismo diálogo que los roles porque el PUT reemplaza los dos campos: mandar solo los
 /// roles le borraría el nombre a la persona. Los roles que ya tiene, y si el correo está verificado, salen de
 /// `GET /api/users/{id}`.
+///
+/// Guardar es el único primario. Desvincular y reenviar la invitación actúan en el momento, sin esperar a Guardar.
 ///
 /// La pantalla lo monta solo mientras está abierto, así arranca con lo que trae el detalle.
 export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose: () => void }) {
@@ -82,6 +155,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   const queryClient = useQueryClient();
   const restoreFocus = useRestoreFocusOnClose();
   const methodsTitleId = useId();
+  const unverifiedNoteId = useId();
 
   const [draft, setDraft] = useState<DraftValues | undefined>();
   const [loadedUserId, setLoadedUserId] = useState<string | undefined>();
@@ -205,6 +279,23 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   // que alcanza con mirar el correo: el detalle no dice si hay Google.
   const isOnlyMethod = phone !== null && detail?.email === null;
 
+  // "Sin verificar" se explica al pie de la caja, y la insignia lo lleva como descripción. Con un campo abierto, la
+  // explicación es la ayuda del campo (punto 3): lo que se está cargando va a quedar así, y no se repite abajo.
+  const emailUnverified = detail?.email != null && !detail.emailConfirmed;
+  const phoneUnverified = phone !== null && detail?.phoneNumberConfirmed === false;
+  const showsUnverifiedNote = (emailUnverified || phoneUnverified) && !isAddingEmail && !isAddingPhone;
+
+  function badgeFor(verified: boolean) {
+    return (
+      <VerificationBadge
+        verified={verified}
+        aria-describedby={!verified && showsUnverifiedNote ? unverifiedNoteId : undefined}
+      >
+        {verified ? t("methods.verified") : t("methods.unverified")}
+      </VerificationBadge>
+    );
+  }
+
   return (
     <Dialog
       open
@@ -214,8 +305,12 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
         }
       }}
     >
-      <DialogContent onCloseAutoFocus={restoreFocus} className="max-h-[calc(100svh-2rem)] overflow-y-auto">
-        <DialogHeader>
+      {/* Con el pie en su banda: el cuerpo scrollea adentro y Guardar queda siempre a la vista. */}
+      <DialogContent
+        onCloseAutoFocus={restoreFocus}
+        className="flex max-h-[min(720px,90svh)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+      >
+        <DialogHeader className="px-[18px] pt-[18px] pr-12">
           <DialogTitle>{t("edit.title")}</DialogTitle>
           <DialogDescription>{userName(detail ?? user)}</DialogDescription>
         </DialogHeader>
@@ -224,7 +319,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
           // Sin esta rama, un detalle que falla dejaba dos bloques grises para siempre. Pasa de verdad con dos
           // administradores a la vez: uno elimina la cuenta y el otro abre el diálogo desde un listado viejo.
           detailQuery.isError ? (
-            <div className="flex flex-col items-start gap-3">
+            <div className="flex flex-col items-start gap-3 p-[18px]">
               <p role="alert" className="text-sm text-[var(--color-danger)]">
                 {userActionErrorMessage(detailQuery.error, t)}
               </p>
@@ -233,7 +328,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
               </Button>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 p-[18px]">
               <Skeleton aria-hidden="true" className="h-9" />
               <Skeleton aria-hidden="true" className="h-24" />
             </div>
@@ -241,155 +336,166 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
         ) : (
           <form
             noValidate
-            className="flex flex-col gap-3.5"
+            className="flex min-h-0 flex-1 flex-col"
             onSubmit={(event) => {
               event.preventDefault();
               submit(draft);
             }}
           >
-            <FormField label={t("form.displayName")} error={errors.fields.displayName}>
-              <Input
-                type="text"
-                autoComplete="off"
-                value={draft.displayName}
-                onChange={(event) => {
-                  setDraft({ ...draft, displayName: event.target.value });
-                  clearError("displayName");
-                }}
-              />
-            </FormField>
-
-            <RolesField value={draft.roles} onChange={(roles) => setDraft({ ...draft, roles })} />
-
-            <div role="group" aria-labelledby={methodsTitleId} className="flex flex-col gap-2.5">
-              <p
-                id={methodsTitleId}
-                className="text-[11px] font-semibold tracking-[0.06em] text-[var(--color-content-heading)] uppercase"
-              >
-                {t("methods.title")}
-              </p>
-
-              {isAddingEmail ? (
-                <FormField label={t("form.email")} error={errors.fields.email}>
-                  <Input
-                    ref={emailRef}
-                    type="email"
-                    autoComplete="off"
-                    placeholder={t("form.emailPlaceholder")}
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      clearError("email");
-                    }}
-                  />
-                </FormField>
-              ) : (
-                <MethodRow
-                  icon={MailIcon}
-                  label={t("methods.email")}
-                  action={
-                    detail.email === null ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        aria-label={t("methods.addEmail")}
-                        onClick={() => startAdding("email")}
-                      >
-                        {t("methods.add")}
-                      </Button>
-                    ) : null
-                  }
-                >
-                  {detail.email === null ? (
-                    <span className="text-[13.5px] text-[var(--color-content-muted)]">{t("methods.noEmail")}</span>
-                  ) : (
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="min-w-0 text-[13.5px] break-all text-[var(--color-content)]">{detail.email}</span>
-                      <VerificationBadge verified={detail.emailConfirmed}>
-                        {detail.emailConfirmed ? t("methods.verified") : t("methods.unverified")}
-                      </VerificationBadge>
-                    </span>
-                  )}
-                </MethodRow>
-              )}
-
-              {isAddingPhone ? (
-                <PhoneField
-                  ref={numberRef}
-                  label={t("common:phone.label")}
-                  error={errors.fields.phone}
-                  countries={countries}
-                  country={effectiveCountry}
-                  onCountryChange={(next) => {
-                    setCountry(next);
-                    clearError("phone");
-                  }}
-                  value={number}
+            <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-[18px] py-4">
+              <FormField label={t("form.displayName")} error={errors.fields.displayName}>
+                <Input
+                  type="text"
+                  autoComplete="off"
+                  value={draft.displayName}
                   onChange={(event) => {
-                    setNumber(event.target.value);
-                    clearError("phone");
+                    setDraft({ ...draft, displayName: event.target.value });
+                    clearError("displayName");
                   }}
                 />
-              ) : phone !== null || whatsappEnabled ? (
-                // Un número que ya está se muestra siempre, aunque WhatsApp se haya apagado, para poder desvincularlo.
-                // El botón es el mismo elemento con "Desvincular" y con "Agregar": al desvincular, el foco se queda en él.
-                <MethodRow
-                  icon={SmartphoneIcon}
-                  label={t("methods.whatsApp")}
-                  action={
-                    phone !== null ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="border-[var(--color-danger)]/45 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/5 hover:text-[var(--color-danger)]"
-                        onClick={() => setIsConfirmingUnlink(true)}
-                      >
-                        {t("methods.unlink")}
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        aria-label={t("methods.addPhone")}
-                        onClick={() => startAdding("phone")}
-                      >
-                        {t("methods.add")}
-                      </Button>
-                    )
-                  }
+              </FormField>
+
+              <RolesField value={draft.roles} onChange={(roles) => setDraft({ ...draft, roles })} />
+
+              {/* `shrink-0`: con `overflow-hidden`, un hijo de una columna flexible se deja achicar por debajo de su
+                  contenido. Con el reenvío abierto el cuerpo no entraba, y en vez de scrollear, la caja se comía la fila
+                  de WhatsApp. */}
+              <section
+                aria-labelledby={methodsTitleId}
+                className="flex shrink-0 flex-col overflow-hidden rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)]"
+              >
+                <h3
+                  id={methodsTitleId}
+                  className="flex h-10 shrink-0 items-center border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-3.5 text-[11px] font-semibold tracking-[0.06em] text-[var(--color-content-heading)] uppercase"
                 >
-                  {phone === null ? (
-                    <span className="text-[13.5px] text-[var(--color-content-muted)]">{t("methods.noPhone")}</span>
+                  {t("methods.title")}
+                </h3>
+
+                <ul className="flex flex-col">
+                  {isAddingEmail ? (
+                    <FieldRow icon={MailIcon}>
+                      <FormField label={t("form.email")} hint={t("methods.unverifiedHint")} error={errors.fields.email}>
+                        <Input
+                          ref={emailRef}
+                          type="email"
+                          autoComplete="off"
+                          placeholder={t("form.emailPlaceholder")}
+                          value={email}
+                          onChange={(event) => {
+                            setEmail(event.target.value);
+                            clearError("email");
+                          }}
+                        />
+                      </FormField>
+                    </FieldRow>
                   ) : (
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-[13.5px] whitespace-nowrap text-[var(--color-content)]">{phone}</span>
-                      <VerificationBadge verified={detail.phoneNumberConfirmed}>
-                        {detail.phoneNumberConfirmed ? t("methods.verified") : t("methods.unverified")}
-                      </VerificationBadge>
-                    </span>
+                    <MethodRow
+                      icon={MailIcon}
+                      label={t("methods.email")}
+                      value={detail.email}
+                      empty={t("methods.noEmail")}
+                      badge={detail.email === null ? null : badgeFor(detail.emailConfirmed)}
+                      action={
+                        detail.email === null ? (
+                          <Button type="button" variant="outline" size="sm" onClick={() => startAdding("email")}>
+                            {t("methods.addEmail")}
+                          </Button>
+                        ) : null
+                      }
+                    />
                   )}
-                </MethodRow>
-              ) : null}
 
-              {isOnlyMethod ? <Banner tone="warning">{t("methods.onlyMethod")}</Banner> : null}
+                  {isAddingPhone ? (
+                    <FieldRow icon={SmartphoneIcon}>
+                      <PhoneField
+                        ref={numberRef}
+                        label={t("common:phone.label")}
+                        hint={t("methods.unverifiedHint")}
+                        error={errors.fields.phone}
+                        countries={countries}
+                        country={effectiveCountry}
+                        onCountryChange={(next) => {
+                          setCountry(next);
+                          clearError("phone");
+                        }}
+                        value={number}
+                        onChange={(event) => {
+                          setNumber(event.target.value);
+                          clearError("phone");
+                        }}
+                      />
+                    </FieldRow>
+                  ) : phone !== null || whatsappEnabled ? (
+                    // Un número que ya está se muestra siempre, aunque WhatsApp se haya apagado, para poder desvincularlo.
+                    // Desvincular va discreto, sin rojo: el rojo aparece recién en la confirmación, que dice qué se pierde.
+                    <MethodRow
+                      icon={SmartphoneIcon}
+                      label={t("methods.whatsApp")}
+                      value={phone}
+                      empty={t("methods.noPhone")}
+                      badge={phone === null ? null : badgeFor(detail.phoneNumberConfirmed)}
+                      action={
+                        <Button
+                          type="button"
+                          variant={phone === null ? "outline" : "ghost"}
+                          size="sm"
+                          // "Desvincular" solo, entre varias filas, no dice qué se desvincula ni de quién.
+                          aria-label={phone === null ? undefined : t("methods.unlinkFor", { user: userName(detail) })}
+                          onClick={() => (phone === null ? startAdding("phone") : setIsConfirmingUnlink(true))}
+                        >
+                          {phone === null ? t("methods.addPhone") : t("methods.unlink")}
+                        </Button>
+                      }
+                    />
+                  ) : null}
+                </ul>
 
-              <p className="text-[12.5px] leading-snug text-[var(--color-content-muted)]">{t("methods.unverifiedHint")}</p>
+                {/* Justo debajo de la fila de la que habla, y sigue hasta guardar aunque se esté agregando un correo. */}
+                {isOnlyMethod ? (
+                  <div className="mx-3.5 mb-3.5">
+                    <Banner tone="warning">{t("methods.onlyMethod")}</Banner>
+                  </div>
+                ) : null}
+
+                {showsUnverifiedNote ? (
+                  <p
+                    id={unverifiedNoteId}
+                    className="mx-3.5 border-t border-[var(--color-border)]/60 pt-[9px] pb-[11px] text-[12.5px] leading-[1.45] text-[var(--color-content-muted)]"
+                  >
+                    {t("methods.unverifiedHint")}
+                  </p>
+                ) : null}
+              </section>
+
+              {detail.lastInvitation === null ? null : (
+                <LastInvitationStrip
+                  user={detail}
+                  invitation={detail.lastInvitation}
+                  receivedAt={detailQuery.dataUpdatedAt}
+                  whatsappEnabled={whatsappEnabled}
+                />
+              )}
             </div>
 
-            {errors.form ? (
-              <p role="alert" className="text-sm text-[var(--color-danger)]">
-                {errors.form}
-              </p>
-            ) : null}
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                {t("common:actions.cancel")}
-              </Button>
-              <Button type="submit" disabled={mutation.isPending}>
-                {t("edit.submit")}
-              </Button>
-            </DialogFooter>
+            {/* El pie en su banda, fuera de lo que scrollea. El error de Guardar que no es de un campo (el último
+                administrador, la red) va ahí, arriba de los botones: al final del cuerpo, cuando el cuerpo no entraba,
+                quedaba debajo del borde y en pantalla no cambiaba nada. En -700 porque el rojo de siempre no llega a
+                4.5:1 sobre este fondo. */}
+            <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] px-[18px] py-3">
+              {errors.form ? (
+                <p role="alert" className="mb-2.5 text-sm text-[var(--color-danger-700)]">
+                  {errors.form}
+                </p>
+              ) : null}
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={onClose}>
+                  {t("common:actions.cancel")}
+                </Button>
+                <Button type="submit" disabled={mutation.isPending}>
+                  {mutation.isPending ? t("edit.saving") : t("edit.submit")}
+                </Button>
+              </DialogFooter>
+            </div>
           </form>
         )}
 

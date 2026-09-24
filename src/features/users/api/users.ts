@@ -25,13 +25,18 @@ export type InvitationChannel = "Email" | "WhatsApp";
 /// Cómo va una invitación por WhatsApp. Por correo no hay estado que seguir.
 export type InvitationDeliveryStatus = "Pending" | "Sent" | "Delivered" | "Read" | "Failed";
 
-/// La última invitación que se le mandó a la cuenta. Todavía no se muestra: el estado de la invitación y el reenvío
-/// no están en el tablero, y una pantalla o un elemento nuevo se dibuja antes de programarse.
+/// La última invitación que se le mandó a la cuenta: la franja de abajo de los medios de ingreso en la edición (tablero
+/// "Editar usuario · B", puntos 1 y 4). `deliveryStatus` es null por correo, que no tiene estado que seguir.
 export interface LastInvitation {
   readonly channel: InvitationChannel;
   readonly sentAtUtc: string;
   readonly deliveryStatus: InvitationDeliveryStatus | null;
 }
+
+/// Entre una invitación y la siguiente a la misma cuenta hay que esperar un minuto (`UserInvitation.ResendCooldown` del
+/// backend, que si no responde 429 con `retryAfter`). También después de una que "No llegó": el backend no la cobra si
+/// la cola no tomó el mensaje, pero sí si el que avisó la falla fue el webhook de Meta, y el detalle no los distingue.
+export const invitationResendWaitSeconds = 60;
 
 /// El detalle que devuelve `GET /api/users/{id}`: lo de la fila, más si el correo está verificado y la última
 /// invitación. Es lo que usa el diálogo de edición.
@@ -169,6 +174,12 @@ export function updateUser(id: string, body: UpdateUserBody): Promise<void> {
 /// `Users.User.LastLoginMethod` si el admin se lo quiere sacar a sí mismo y no tiene otro medio de ingreso.
 export function unlinkUserPhone(id: string): Promise<void> {
   return api.delete<void>(`/api/users/${id}/whatsapp`);
+}
+
+/// 202: la invitación sale en segundo plano. Por WhatsApp, `consent` es la confirmación del admin; por correo va en
+/// false. 429 `Users.Invitation.TooManyRequests` con `retryAfter` si pasó menos de un minuto desde la anterior.
+export function sendInvitation(id: string, body: InvitationRequest): Promise<void> {
+  return api.post<void>(`/api/users/${id}/invitation`, body);
 }
 
 export function setUserActive(id: string, isActive: boolean): Promise<void> {

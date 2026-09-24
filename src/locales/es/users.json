@@ -57,6 +57,7 @@
   "edit": {
     "title": "Editar usuario",
     "submit": "Guardar",
+    "saving": "Guardando…",
     "success": "Guardamos los cambios."
   },
   "methods": {
@@ -65,14 +66,37 @@
     "noEmail": "Sin correo",
     "whatsApp": "WhatsApp",
     "noPhone": "Sin número",
-    "add": "Agregar",
     "addEmail": "Agregar correo",
     "addPhone": "Agregar número",
     "unlink": "Desvincular",
+    "unlinkFor": "Desvincular el WhatsApp de {{user}}",
     "verified": "Verificado",
     "unverified": "Sin verificar",
     "onlyMethod": "Es su único medio de ingreso. Si lo desvinculás, no va a poder entrar hasta que le cargues otro.",
     "unverifiedHint": "Lo que carga un admin queda «Sin verificar» hasta que la persona entra con eso."
+  },
+  "lastInvitation": {
+    "title": "Última invitación",
+    "byEmail": "Invitación por correo",
+    "byWhatsApp": "Invitación por WhatsApp",
+    "status": {
+      "pending": "Pendiente",
+      "sent": "Enviada",
+      "delivered": "Entregada",
+      "read": "Leída",
+      "failed": "No llegó"
+    },
+    "failedHint": "WhatsApp no la entregó: puede ser el límite de mensajes de Meta o un rechazo.",
+    "resend": "Reenviar invitación",
+    "resendIn": "Podés reenviar en {{seconds}} s",
+    "resent": "Reenviamos la invitación."
+  },
+  "resend": {
+    "title": "Reenviar la invitación",
+    "failed": "Por WhatsApp no llegó: puede ser el límite de Meta o un rechazo. Podés probar de nuevo o mandarla por correo.",
+    "failedWithoutEmail": "Por WhatsApp no llegó: puede ser el límite de Meta o un rechazo. Podés probar de nuevo.",
+    "submit": "Reenviar",
+    "submitLabel": "Reenviar la invitación"
   },
   "unlink": {
     "title": "¿Desvincular el WhatsApp de {{user}}?",
@@ -111,7 +135,8 @@
     "alreadyExists": "Ya existe una cuenta con ese correo.",
     "phoneAlreadyExists": "Ya existe una cuenta con ese número.",
     "lastAdmin": "No podés dejar al sistema sin administradores. Asigná el rol Admin a otra cuenta activa y volvé a intentar.",
-    "cannotModifySelf": "No podés hacerte esto a vos mismo. Pedíselo a otro administrador."
+    "cannotModifySelf": "No podés hacerte esto a vos mismo. Pedíselo a otro administrador.",
+    "invitationNameRequired": "Para invitar por WhatsApp hace falta su nombre: cargalo en «Nombre» y guardá antes de reenviar."
   },
   "errorTraceId": "Código para reportar: {{traceId}}",
   "filters": {

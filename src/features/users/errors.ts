@@ -112,3 +112,43 @@ export function userFormErrors(error: unknown, t: Translate, visible: readonly U
 
   return form === undefined ? { fields } : { fields, form };
 }
+
+/// Dónde va un error del reenvío de la invitación (tablero "Editar usuario · B", punto 4): la espera del 429, que apaga
+/// "Reenviar invitación"; el consentimiento, debajo de su casilla; el canal, debajo de las opciones; el nombre, en el
+/// panel; y el resto (la cuenta desactivada, la borrada, la red), en un aviso.
+export type InvitationResendError =
+  | { readonly place: "wait"; readonly seconds: number; readonly message: string }
+  | { readonly place: "consent" | "channel" | "panel" | "toast"; readonly message: string };
+
+export function invitationResendError(error: unknown, t: Translate): InvitationResendError {
+  if (!(error instanceof ApiError) || error.isNetworkError) {
+    return { place: "toast", message: userActionErrorMessage(error, t) };
+  }
+
+  const retryAfter = error.retryAfterSeconds;
+
+  if (retryAfter !== undefined) {
+    return { place: "wait", seconds: retryAfter, message: userActionErrorMessage(error, t) };
+  }
+
+  // El reenvío manda el canal y el consentimiento sueltos, no dentro de `invitation` como el alta.
+  const consent = error.errors?.consent?.[0];
+
+  if (error.code === "Users.Invitation.ConsentRequired" || consent !== undefined) {
+    return { place: "consent", message: consent ?? userActionErrorMessage(error, t) };
+  }
+
+  // El backend mira el nombre guardado, no el que está escrito arriba, y no puede saber que el campo está en la misma
+  // pantalla: el texto dice cómo destrabarlo.
+  if (error.code === "Users.Invitation.NameRequired" || error.errors?.displayName !== undefined) {
+    return { place: "panel", message: t("errors.invitationNameRequired") };
+  }
+
+  const channel = error.errors?.channel?.[0];
+
+  if (channel !== undefined) {
+    return { place: "channel", message: channel };
+  }
+
+  return { place: "toast", message: userActionErrorMessage(error, t) };
+}
