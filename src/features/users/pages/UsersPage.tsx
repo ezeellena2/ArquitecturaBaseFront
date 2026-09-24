@@ -12,8 +12,9 @@ import {
 } from "../api/users";
 import { createUserColumns } from "../columns";
 import { UserFormDialog } from "../components/UserFormDialog";
-import { UserRolesDialog } from "../components/UserRolesDialog";
+import { UserEditDialog } from "../components/UserEditDialog";
 import { userActionErrorMessage } from "../errors";
+import { userIdentifier } from "../identity";
 import { Can } from "@/auth/Can";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
@@ -97,7 +98,7 @@ export function UsersPage() {
     currentUser?.timeZoneId,
     canManage
       ? {
-          onEditRoles: (user) => setEditingUser(user),
+          onEdit: (user) => setEditingUser(user),
           // Activar no se confirma: no se pierde nada. Desactivar sí, porque le corta el acceso en el acto.
           onToggleActive: (user) =>
             user.isActive
@@ -179,7 +180,7 @@ export function UsersPage() {
 
       {isCreating ? <UserFormDialog onClose={() => setIsCreating(false)} /> : null}
 
-      {editingUser ? <UserRolesDialog user={editingUser} onClose={() => setEditingUser(undefined)} /> : null}
+      {editingUser ? <UserEditDialog user={editingUser} onClose={() => setEditingUser(undefined)} /> : null}
 
       {confirmation ? (
         <ConfirmDialog
@@ -189,7 +190,7 @@ export function UsersPage() {
               setConfirmation(undefined);
             }
           }}
-          title={t(isDeletion ? "delete.title" : "deactivate.title", { email: confirmation.user.email })}
+          title={t(isDeletion ? "delete.title" : "deactivate.title", { user: userIdentifier(confirmation.user) })}
           description={t(isDeletion ? "delete.description" : "deactivate.description")}
           confirmLabel={t(isDeletion ? "delete.confirm" : "deactivate.confirm")}
           destructive

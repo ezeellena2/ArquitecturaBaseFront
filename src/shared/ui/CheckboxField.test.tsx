@@ -27,4 +27,24 @@ describe("CheckboxField", () => {
 
     expect(screen.getByRole("checkbox", { name: "Admin" })).toHaveAccessibleDescription("Puede hacer todo.");
   });
+
+  it("shows the error under the box and marks the checkbox as invalid", () => {
+    renderWithProviders(
+      <CheckboxField
+        label="Aceptó recibir mensajes"
+        description="Sin esto, WhatsApp no permite escribirle primero."
+        error="Confirmá que la persona aceptó recibir mensajes por WhatsApp."
+        checked={false}
+        onCheckedChange={vi.fn()}
+      />,
+    );
+
+    const checkbox = screen.getByRole("checkbox", { name: "Aceptó recibir mensajes" });
+    expect(screen.getByRole("alert")).toHaveTextContent("Confirmá que la persona aceptó recibir mensajes por WhatsApp.");
+    expect(checkbox).toHaveAttribute("aria-invalid", "true");
+    // La ayuda sigue: el error dice qué falta y la ayuda, por qué hace falta.
+    expect(checkbox).toHaveAccessibleDescription(
+      "Sin esto, WhatsApp no permite escribirle primero. Confirmá que la persona aceptó recibir mensajes por WhatsApp.",
+    );
+  });
 });

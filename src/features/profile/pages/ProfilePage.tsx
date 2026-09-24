@@ -77,7 +77,7 @@ export function ProfilePage() {
 
   // Los valores del formulario salen del perfil, y se ajustan durante el render en vez de copiarlos con un
   // efecto. Mientras el id no cambie no se vuelven a pisar: lo que esté escrito a medias es de la persona
-  // (mismo criterio que `UserRolesDialog`).
+  // (mismo criterio que `UserEditDialog`).
   if (user && loadedUserId !== user.id) {
     setLoadedUserId(user.id);
     setLoadedCulture(user.culture);

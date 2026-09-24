@@ -262,3 +262,15 @@ export function AlertCircleIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/// Una advertencia (`Banner` con `tone="warning"`): algo que se puede hacer igual, pero que tiene una consecuencia que
+/// conviene saber antes. El triángulo del tablero "WhatsApp · Usuarios: alta con teléfono".
+export function AlertTriangleIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 4 3 19.5h18Z" />
+      <path d="M12 10v4" />
+      <path d="M12 17h.01" />
+    </Icon>
+  );
+}

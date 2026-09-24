@@ -40,6 +40,10 @@
   --color-success-50: oklch(0.96 0.03 150);
   --color-success-700: oklch(0.42 0.1 150);
   --color-warning: oklch(0.75 0.15 80);
+  /* La insignia "Sin verificar" y la advertencia de "único medio de ingreso" (tablero "WhatsApp · Usuarios: alta con
+     teléfono"): el mismo par que el de "Verificado", en ámbar. -700 sobre -50 da más de 4.5:1. */
+  --color-warning-50: oklch(0.97 0.04 85);
+  --color-warning-700: oklch(0.45 0.1 70);
 
   --radius-card: 0.75rem;
   --radius-control: 0.5rem;

@@ -1,8 +1,8 @@
 {
   "title": "Users",
-  "searchLabel": "Search by email or name",
+  "searchLabel": "Search by email, name or number",
   "columns": {
-    "email": "Email",
+    "user": "User",
     "displayName": "Name",
     "roles": "Roles",
     "createdAtUtc": "Created",
@@ -22,29 +22,68 @@
   },
   "actions": {
     "new": "New user",
-    "editRoles": "Roles",
-    "editRolesFor": "Edit the roles of {{email}}",
+    "edit": "Edit",
+    "editFor": "Edit {{user}}",
     "activate": "Activate",
-    "activateFor": "Activate {{email}}",
+    "activateFor": "Activate {{user}}",
     "deactivate": "Deactivate",
-    "deactivateFor": "Deactivate {{email}}",
+    "deactivateFor": "Deactivate {{user}}",
     "delete": "Delete",
-    "deleteFor": "Delete {{email}}"
+    "deleteFor": "Delete {{user}}"
+  },
+  "identity": {
+    "alsoWhatsApp": "Also signs in with WhatsApp",
+    "unverifiedHint": "A number an admin added that the person has not signed in with yet."
   },
   "create": {
     "title": "New user",
-    "description": "Add the email address. They sign in with their code, like everyone else.",
-    "submit": "Add user",
+    "description": "Add an email address, a WhatsApp number or both: one is enough.",
+    "descriptionEmailOnly": "Add the email address. They sign in with their code, like everyone else.",
+    "submit": "Create",
+    "submitAndInvite": "Create and invite",
     "success": "Done: they can sign in now."
+  },
+  "invitation": {
+    "send": "Send them an invitation",
+    "channel": "How",
+    "email": "By email",
+    "whatsApp": "By WhatsApp",
+    "emailNeeded": "Add an email address to use this option.",
+    "phoneNeeded": "Add a number to use this option.",
+    "consent": "{{name}} agreed to receive messages from {{app}} on WhatsApp.",
+    "consentWithoutName": "The person agreed to receive messages from {{app}} on WhatsApp.",
+    "consentHint": "Without this, WhatsApp does not let us message them first."
   },
   "edit": {
     "title": "Edit user",
-    "description": "Change the name and the roles of {{email}}.",
     "submit": "Save",
     "success": "Changes saved."
   },
+  "methods": {
+    "title": "Sign-in methods",
+    "email": "Email address",
+    "noEmail": "No email",
+    "whatsApp": "WhatsApp",
+    "noPhone": "No number",
+    "add": "Add",
+    "addEmail": "Add email",
+    "addPhone": "Add number",
+    "unlink": "Unlink",
+    "verified": "Verified",
+    "unverified": "Not verified",
+    "onlyMethod": "It is their only way to sign in. If you unlink it, they cannot sign in until you add another one.",
+    "unverifiedHint": "What an admin adds stays “Not verified” until the person signs in with it."
+  },
+  "unlink": {
+    "title": "Unlink the WhatsApp of {{user}}?",
+    "descriptionWithEmail": "Their open sessions are closed and they can no longer sign in with {{phone}}. They can keep signing in with their email.",
+    "descriptionWithoutEmail": "Their open sessions are closed and they can no longer sign in with {{phone}}. Since they have no email, they are left without a way to sign in until you add a number or an email.",
+    "confirm": "Unlink",
+    "success": "Their WhatsApp was unlinked."
+  },
   "form": {
     "email": "Email address",
+    "emailPlaceholder": "email@example.com",
     "emailInvalid": "Enter a valid email address.",
     "displayName": "Name",
     "displayNameHint": "Optional. The name shown across the system.",
@@ -54,12 +93,12 @@
     "rolesNeedPermission": "You need read permission on roles to assign them."
   },
   "deactivate": {
-    "title": "Deactivate {{email}}",
+    "title": "Deactivate {{user}}",
     "description": "Their access is cut right away: any open session stops working and they can't sign in again until you activate them. Their data stays as it is.",
     "confirm": "Deactivate"
   },
   "delete": {
-    "title": "Delete {{email}}",
+    "title": "Delete {{user}}",
     "description": "The account disappears from the listings and can't sign in. Their sign-in history is kept, and if you add the same email again later, the account is restored.",
     "confirm": "Delete"
   },
@@ -70,6 +109,7 @@
   },
   "errors": {
     "alreadyExists": "There is already an account with that email.",
+    "phoneAlreadyExists": "There is already an account with that number.",
     "lastAdmin": "You can't leave the system without administrators. Give the Admin role to another active account and try again.",
     "cannotModifySelf": "You can't do this to your own account. Ask another administrator."
   },

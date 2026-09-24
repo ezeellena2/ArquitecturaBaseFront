@@ -1,9 +1,17 @@
 import { api } from "@/shared/api/httpClient";
 import type { PagedResult } from "@/shared/api/pagedResult";
 
+/// Una fila de `GET /api/users`. Una cuenta puede no tener correo (la creó el bot, o un admin con el número), y
+/// entonces se la nombra por el número.
 export interface UserListItem {
   readonly id: string;
-  readonly email: string;
+  readonly email: string | null;
+  /// En E.164 ("+5491123456789"). No se muestra nunca: para eso está `formattedPhoneNumber`.
+  readonly phoneNumber: string | null;
+  /// False mientras la persona no entró con ese número: es lo que cargó un admin, o un invitado que no respondió.
+  readonly phoneNumberConfirmed: boolean;
+  /// El número para mostrar ("+54 9 11 2345-6789"), como lo agrupa el backend para su país. Null sin número.
+  readonly formattedPhoneNumber: string | null;
   readonly displayName: string | null;
   readonly isActive: boolean;
   readonly createdAtUtc: string;
@@ -11,9 +19,26 @@ export interface UserListItem {
   readonly roles: readonly string[];
 }
 
-/// El detalle que devuelve `GET /api/users/{id}`. Hoy es exactamente lo mismo que una fila del listado, pero
-/// el nombre se queda: son dos contratos distintos del backend y nada obliga a que sigan coincidiendo.
-export type UserDetail = UserListItem;
+/// Por dónde sale una invitación (`UserInvitationChannel` del backend, que viaja por su nombre).
+export type InvitationChannel = "Email" | "WhatsApp";
+
+/// Cómo va una invitación por WhatsApp. Por correo no hay estado que seguir.
+export type InvitationDeliveryStatus = "Pending" | "Sent" | "Delivered" | "Read" | "Failed";
+
+/// La última invitación que se le mandó a la cuenta. Todavía no se muestra: el estado de la invitación y el reenvío
+/// no están en el tablero, y una pantalla o un elemento nuevo se dibuja antes de programarse.
+export interface LastInvitation {
+  readonly channel: InvitationChannel;
+  readonly sentAtUtc: string;
+  readonly deliveryStatus: InvitationDeliveryStatus | null;
+}
+
+/// El detalle que devuelve `GET /api/users/{id}`: lo de la fila, más si el correo está verificado y la última
+/// invitación. Es lo que usa el diálogo de edición.
+export interface UserDetail extends UserListItem {
+  readonly emailConfirmed: boolean;
+  readonly lastInvitation: LastInvitation | null;
+}
 
 /// Lo que el backend sabe filtrar (`UserListRequest`). Los tres viajan como están en la URL.
 export interface UserFilters {
@@ -43,16 +68,38 @@ export interface UserFilterCounts {
   readonly createdWithin: readonly { readonly days: number; readonly count: number }[];
 }
 
-export interface CreateUserBody {
-  readonly email: string;
-  readonly displayName: string | null;
-  readonly roles: readonly string[];
+/// Un número como lo carga el admin: el país elegido y el número tal como se escribió. El que lo interpreta es el
+/// servidor, con las mismas reglas que el ingreso (un celular de un país habilitado).
+export interface PhoneInput {
+  readonly country: string;
+  readonly number: string;
 }
 
-/// `PUT /api/users/{id}` reemplaza los dos campos: mandar solo los roles le borraría el nombre a la persona.
+/// `consent` es la confirmación del admin de que la persona aceptó recibir mensajes por WhatsApp. Por correo va en
+/// false: no se pide.
+export interface InvitationRequest {
+  readonly channel: InvitationChannel;
+  readonly consent: boolean;
+}
+
+/// `POST /api/users`: un correo, un número o los dos (sin ninguno, `Users.Identity.Required`), y, si se pide, una
+/// invitación. Lo que no se cargó va en null.
+export interface CreateUserBody {
+  readonly email: string | null;
+  readonly phone: PhoneInput | null;
+  readonly displayName: string | null;
+  readonly roles: readonly string[];
+  readonly invitation: InvitationRequest | null;
+}
+
+/// `PUT /api/users/{id}` reemplaza el nombre y los roles: mandar solo los roles le borraría el nombre a la persona. El
+/// correo y el número son opcionales y solo se mandan si se agregaron: ausentes, no cambian. Lo que se agrega queda
+/// sin verificar hasta que la persona entra con eso.
 export interface UpdateUserBody {
   readonly displayName: string | null;
   readonly roles: readonly string[];
+  readonly email?: string;
+  readonly phone?: PhoneInput;
 }
 
 /// Prefijo de todas las consultas del listado: es lo que invalidan las mutaciones, sin importar la página,
@@ -116,6 +163,12 @@ export function createUser(body: CreateUserBody): Promise<string> {
 
 export function updateUser(id: string, body: UpdateUserBody): Promise<void> {
   return api.put<void>(`/api/users/${id}`, body);
+}
+
+/// 204: le saca el número, suelta su chat y cierra sus sesiones (el caso del teléfono perdido o robado). 409
+/// `Users.User.LastLoginMethod` si el admin se lo quiere sacar a sí mismo y no tiene otro medio de ingreso.
+export function unlinkUserPhone(id: string): Promise<void> {
+  return api.delete<void>(`/api/users/${id}/whatsapp`);
 }
 
 export function setUserActive(id: string, isActive: boolean): Promise<void> {

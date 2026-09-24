@@ -1,10 +1,11 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { isInaccessible, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { adminHandlers, ana, beto, carla, counts, juan, laura, pageOf } from "../testData";
+import type { UserListItem } from "../api/users";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
-import { currentUser } from "@/test/mocks/handlers";
 import { queryClient } from "@/shared/api/queryClient";
 import { fetchRoles, rolesQueryKey } from "@/shared/api/roles";
 import { server } from "@/test/mocks/server";
@@ -15,66 +16,27 @@ vi.mock("react-oidc-context", async () => {
   return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) };
 });
 
-const page = {
-  items: [
-    { id: "1", email: "ana@example.com", displayName: "Ana", isActive: true, createdAtUtc: "2026-09-18T12:00:00Z", roles: ["Admin"] },
-    { id: "2", email: "beto@example.com", displayName: null, isActive: false, createdAtUtc: "2026-09-18T13:00:00Z", roles: [] },
-  ],
-  page: 1,
-  pageSize: 20,
-  totalCount: 2,
-  totalPages: 1,
-  hasPrevious: false,
-  hasNext: false,
-};
-
-/// El perfil de quien sí puede administrar. El handler por defecto solo trae "users.read".
-const admin = { ...currentUser, permissions: ["users.read", "users.manage", "roles.read"] };
-
-const roles = [
-  { id: "r1", name: "Admin", description: "Puede hacer todo.", isSystemRole: true, userCount: 1, permissions: [] },
-  { id: "r2", name: "User", description: null, isSystemRole: true, userCount: 3, permissions: [] },
-];
-
-const counts = {
-  status: { all: 2, active: 1, inactive: 1 },
-  roles: [
-    { name: "Admin", count: 1 },
-    { name: "Soporte", count: 0 },
-    { name: "User", count: 1 },
-  ],
-  createdWithin: [
-    { days: 7, count: 0 },
-    { days: 30, count: 2 },
-  ],
-};
-
-/// El arnés corre con `onUnhandledRequest: "error"`: cada test declara todo lo que su pantalla va a pedir.
-function adminHandlers() {
-  return [
-    http.get("/api/me", () => HttpResponse.json(admin)),
-    http.get("/api/users", () => HttpResponse.json(page)),
-    http.get("/api/roles", () => HttpResponse.json(roles)),
-    http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
-  ];
-}
+const page = pageOf([ana, beto]);
 
 /// Lo mínimo para dibujar la pantalla con la barra de filtros: el listado, el perfil y los conteos.
-function listHandlers(body: typeof page = page) {
+function listHandlers(body: ReturnType<typeof pageOf> = page) {
   return [
     http.get("/api/users", () => HttpResponse.json(body)),
     http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
   ];
 }
 
-/// Elige un rol en el combo del diálogo. Se abre por teclado y no con un clic: en jsdom, después de un test
-/// que ya abrió un menú de Radix, el clic sobre el disparador deja de abrirlo (en el navegador no pasa).
-async function pickRole(name: string) {
-  const combo = await screen.findByRole("button", { name: "Roles" });
-  combo.focus();
-  await userEvent.keyboard("{Enter}");
-  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: new RegExp(`^${name}`) }));
-  await userEvent.keyboard("{Escape}");
+/// La fila de una persona, ya con la tabla cargada. Se busca por el nombre, que está en todas las filas de estos datos.
+async function rowOf(user: UserListItem) {
+  const table = await screen.findByRole("table");
+  const cell = await within(table).findByText(user.displayName ?? "");
+  const row = cell.closest("tr");
+
+  if (row === null) {
+    throw new Error(`No row for ${user.displayName ?? user.id}`);
+  }
+
+  return within(row);
 }
 
 describe("UsersPage", () => {
@@ -100,6 +62,143 @@ describe("UsersPage", () => {
     const table = await screen.findByRole("table");
     expect(within(table).getByText("ana@example.com")).toBeInTheDocument();
     expect(within(table).getByText("beto@example.com")).toBeInTheDocument();
+  });
+
+  it("calls the first column Usuario, and searches by email, name or number", async () => {
+    server.use(...listHandlers());
+
+    renderRouteWithProviders("/usuarios");
+
+    const table = await screen.findByRole("table");
+    // Una cuenta puede no tener correo: la columna dice quién es, con el correo o con el número.
+    expect(within(table).getByRole("columnheader", { name: /usuario/i })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: /correo/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Buscar por correo, nombre o número" })).toHaveAttribute(
+      "placeholder",
+      "Buscar por correo, nombre o número",
+    );
+  });
+
+  it("shows the email and marks that the person also enters with WhatsApp", async () => {
+    server.use(...listHandlers(pageOf([carla])));
+
+    renderRouteWithProviders("/usuarios");
+
+    const row = await rowOf(carla);
+    expect(row.getByText("carla@example.com")).toBeInTheDocument();
+    // El número no se repite al lado del correo: el ícono alcanza para decir que también entra con WhatsApp.
+    expect(row.getByRole("img", { name: "También entra con WhatsApp" })).toBeInTheDocument();
+    expect(row.queryByText("+54 9 11 5555-4444")).not.toBeInTheDocument();
+  });
+
+  it("shows only the email when the person has no number", async () => {
+    server.use(...listHandlers(pageOf([ana])));
+
+    renderRouteWithProviders("/usuarios");
+
+    const row = await rowOf(ana);
+    expect(row.getByText("ana@example.com")).toBeInTheDocument();
+    expect(row.queryByRole("img", { name: "También entra con WhatsApp" })).not.toBeInTheDocument();
+    expect(row.queryByText("Sin verificar")).not.toBeInTheDocument();
+  });
+
+  it("shows the formatted number when there is no email", async () => {
+    server.use(...listHandlers(pageOf([juan])));
+
+    renderRouteWithProviders("/usuarios");
+
+    const row = await rowOf(juan);
+    // El número formateado que manda el backend, nunca el E.164.
+    expect(row.getByText("+54 9 11 2345-6789")).toBeInTheDocument();
+    expect(row.queryByText("+5491123456789")).not.toBeInTheDocument();
+    // El número ya dice que entra con WhatsApp: el ícono de al lado no se anuncia otra vez, con ningún nombre.
+    expect(row.queryByRole("img", { name: /whatsapp/i })).not.toBeInTheDocument();
+    expect(row.queryByText("Sin verificar")).not.toBeInTheDocument();
+  });
+
+  it("marks a number that the person has not used yet, and says what that means", async () => {
+    server.use(...listHandlers(pageOf([laura])));
+
+    renderRouteWithProviders("/usuarios");
+
+    const row = await rowOf(laura);
+    expect(row.getByText("+54 9 351 555-1234")).toBeInTheDocument();
+    expect(row.getByText("Sin verificar")).toBeInTheDocument();
+    // Lo que quiere decir es texto de la fila, al alcance del lector de pantalla. Un `aria-describedby` sobre algo que
+    // no recibe foco no alcanza: jsdom calcula la descripción igual, pero NVDA y JAWS no la leen en modo exploración.
+    const explanation = row.getByText("Número que cargó un admin y con el que la persona todavía no entró.");
+    expect(isInaccessible(explanation)).toBe(false);
+  });
+
+  describe("the help on the marks, which the keyboard reaches too", () => {
+    const explanation = "Número que cargó un admin y con el que la persona todavía no entró.";
+
+    /// Lo que tiene el foco después de un Shift+Tab desde "Editar", la primera acción de la fila: lo último de la
+    /// columna "Usuario", porque el nombre, los roles y la fecha no reciben foco.
+    async function focusBeforeEdit(row: Awaited<ReturnType<typeof rowOf>>, identifier: string) {
+      row.getByRole("button", { name: `Editar a ${identifier}` }).focus();
+      await userEvent.tab({ shift: true });
+
+      return document.activeElement;
+    }
+
+    it("reaches Sin verificar with the keyboard, and what shows up there is what it means", async () => {
+      // "Lo que hace el puntero también lo hace el teclado" (fundamento visual): la ayuda que aparece al pasar el mouse
+      // aparece también al llegar con Tab, y para eso la insignia tiene que poder recibir el foco.
+      server.use(...adminHandlers([laura]));
+
+      renderRouteWithProviders("/usuarios");
+
+      const focused = await focusBeforeEdit(await rowOf(laura), "+54 9 351 555-1234");
+      expect(focused).toHaveTextContent("Sin verificar");
+      expect(focused).toHaveTextContent(explanation);
+    });
+
+    it("reaches the WhatsApp mark next to the email with the keyboard", async () => {
+      server.use(...adminHandlers([carla]));
+
+      renderRouteWithProviders("/usuarios");
+
+      const row = await rowOf(carla);
+      await focusBeforeEdit(row, "carla@example.com");
+      expect(row.getByRole("img", { name: "También entra con WhatsApp" })).toHaveFocus();
+    });
+
+    // jsdom no aplica el CSS: lo que se puede comprobar acá es el atributo que oculta la ayuda, no que se oculte.
+    it("closes the help with Esc without moving the focus, and brings it back on the next visit", async () => {
+      server.use(...adminHandlers([laura]));
+
+      renderRouteWithProviders("/usuarios");
+
+      const row = await rowOf(laura);
+      const badge = await focusBeforeEdit(row, "+54 9 351 555-1234");
+      await userEvent.keyboard("{Escape}");
+
+      // WCAG 1.4.13: la ayuda tapa la fila de arriba, así que tiene que poder cerrarse sin irse de donde se está.
+      expect(badge).toHaveFocus();
+      expect(badge).toHaveAttribute("data-dismissed");
+
+      await userEvent.tab();
+      await focusBeforeEdit(row, "+54 9 351 555-1234");
+      expect(badge).toHaveFocus();
+      expect(badge).not.toHaveAttribute("data-dismissed");
+    });
+
+    it("closes the help with Esc while the pointer is on the mark, wherever the focus is", async () => {
+      server.use(...adminHandlers([carla]));
+
+      renderRouteWithProviders("/usuarios");
+
+      const mark = (await rowOf(carla)).getByRole("img", { name: "También entra con WhatsApp" });
+      await userEvent.hover(mark);
+      await userEvent.keyboard("{Escape}");
+
+      expect(mark).not.toHaveFocus();
+      expect(mark).toHaveAttribute("data-dismissed");
+
+      await userEvent.unhover(mark);
+      expect(mark).not.toHaveAttribute("data-dismissed");
+    });
   });
 
   it("says the status in words and not only with a colour", async () => {
@@ -129,6 +228,35 @@ describe("UsersPage", () => {
     expect(within(rows[2]).getAllByRole("cell")[2]).toHaveTextContent("—");
   });
 
+  it("offers Editar first, and names every action with the email or, without one, the number", async () => {
+    server.use(...adminHandlers([ana, juan]));
+
+    renderRouteWithProviders("/usuarios");
+
+    const anaRow = await rowOf(ana);
+    const anaActions = anaRow.getAllByRole("button");
+    expect(anaActions.map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Editar a ana@example.com",
+      "Desactivar a ana@example.com",
+      "Eliminar a ana@example.com",
+    ]);
+
+    const juanRow = await rowOf(juan);
+    expect(juanRow.getByRole("button", { name: "Editar a +54 9 11 2345-6789" })).toBeInTheDocument();
+    expect(juanRow.getByRole("button", { name: "Desactivar a +54 9 11 2345-6789" })).toBeInTheDocument();
+    expect(juanRow.getByRole("button", { name: "Eliminar a +54 9 11 2345-6789" })).toBeInTheDocument();
+  });
+
+  it("names the confirmation with the number when the person has no email", async () => {
+    server.use(...adminHandlers([juan]));
+
+    renderRouteWithProviders("/usuarios");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Eliminar a +54 9 11 2345-6789" }));
+
+    expect(await screen.findByRole("dialog", { name: "Eliminar a +54 9 11 2345-6789" })).toBeInTheDocument();
+  });
+
   it("sends the search to the backend and keeps it in the URL", async () => {
     const requests: string[] = [];
     server.use(
@@ -147,7 +275,7 @@ describe("UsersPage", () => {
   });
 
   it("shows the message when the search returns nothing", async () => {
-    server.use(...listHandlers({ ...page, items: [], totalCount: 0, totalPages: 0 }));
+    server.use(...listHandlers(pageOf([])));
 
     renderRouteWithProviders("/usuarios");
 
@@ -205,7 +333,7 @@ describe("UsersPage", () => {
   });
 
   it("tells apart an empty list from one that no filter matches", async () => {
-    server.use(...listHandlers({ ...page, items: [], totalCount: 0, totalPages: 0 }));
+    server.use(...listHandlers(pageOf([])));
 
     renderRouteWithProviders("/usuarios?isActive=false&role=Admin");
 
@@ -247,166 +375,6 @@ describe("UsersPage", () => {
     // así que no alcanza con buscar "trace-123" a secas.
     expect(screen.getByText("Código para reportar: trace-123")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /reintentar/i })).toBeInTheDocument();
-  });
-
-  it("creates a user from the new user dialog", async () => {
-    const created: unknown[] = [];
-    server.use(
-      ...adminHandlers(),
-      http.post("/api/users", async ({ request }) => {
-        created.push(await request.json());
-
-        return HttpResponse.json("0199a0c0-0000-7000-8000-000000000001");
-      }),
-    );
-
-    renderRouteWithProviders("/usuarios");
-
-    await userEvent.click(await screen.findByRole("button", { name: "Nuevo usuario" }));
-    await userEvent.type(await screen.findByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
-    await pickRole("Admin");
-    await userEvent.click(screen.getByRole("button", { name: "Dar de alta" }));
-
-    await waitFor(() =>
-      expect(created).toEqual([{ email: "nueva@example.com", displayName: null, roles: ["Admin"] }]),
-    );
-  });
-
-  it("keeps the dialog open and explains that the email already has an account", async () => {
-    server.use(
-      ...adminHandlers(),
-      http.post("/api/users", () =>
-        HttpResponse.json(
-          { status: 409, code: "Users.User.AlreadyExists", detail: "Ese correo ya tiene cuenta." },
-          { status: 409 },
-        ),
-      ),
-    );
-
-    renderRouteWithProviders("/usuarios");
-
-    await userEvent.click(await screen.findByRole("button", { name: "Nuevo usuario" }));
-    await userEvent.type(await screen.findByRole("textbox", { name: "Correo electrónico" }), "ana@example.com");
-    await userEvent.click(screen.getByRole("button", { name: "Dar de alta" }));
-
-    // El texto lo decide el `code`, no el `detail`: el del backend no dice qué hacer con una cuenta borrada.
-    expect(await screen.findByRole("alert")).toHaveTextContent("Ya hay una cuenta con ese correo.");
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-  });
-
-  it("shows the message of the field the backend rejected when creating a user", async () => {
-    server.use(
-      ...adminHandlers(),
-      http.post("/api/users", () =>
-        HttpResponse.json(
-          {
-            status: 400,
-            code: "Validation.Failed",
-            detail: "Revisá los datos ingresados.",
-            errors: { displayName: ["El nombre no puede tener más de 100 caracteres."] },
-          },
-          { status: 400 },
-        ),
-      ),
-    );
-
-    renderRouteWithProviders("/usuarios");
-
-    await userEvent.click(await screen.findByRole("button", { name: "Nuevo usuario" }));
-    await userEvent.type(await screen.findByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
-    await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), "Ana");
-    await userEvent.click(screen.getByRole("button", { name: "Dar de alta" }));
-
-    // Sin esto el diálogo quedaba abierto sin un solo mensaje, como si el botón no hiciera nada:
-    // `applyApiErrorToForm` daba el error por mostrado y el campo no lo pintaba.
-    expect(await screen.findByRole("alert")).toHaveTextContent("El nombre no puede tener más de 100 caracteres.");
-  });
-
-  it("prefers the backend's message for the email over the generic one", async () => {
-    server.use(
-      ...adminHandlers(),
-      http.post("/api/users", () =>
-        HttpResponse.json(
-          {
-            status: 400,
-            code: "Validation.Failed",
-            detail: "Revisá los datos ingresados.",
-            errors: { email: ["El correo no puede tener más de 254 caracteres."] },
-          },
-          { status: 400 },
-        ),
-      ),
-    );
-
-    renderRouteWithProviders("/usuarios");
-
-    await userEvent.click(await screen.findByRole("button", { name: "Nuevo usuario" }));
-    await userEvent.type(await screen.findByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
-    await userEvent.click(screen.getByRole("button", { name: "Dar de alta" }));
-
-    // "Ingresá un correo electrónico válido" no explicaría qué pasó: el formato estaba bien.
-    expect(await screen.findByRole("alert")).toHaveTextContent("El correo no puede tener más de 254 caracteres.");
-  });
-
-  it("explains the error and offers to retry when the user detail cannot be loaded", async () => {
-    server.use(
-      ...adminHandlers(),
-      http.get("/api/users/1", () =>
-        HttpResponse.json(
-          { status: 404, code: "Users.User.NotFound", detail: "No encontramos la cuenta." },
-          { status: 404 },
-        ),
-      ),
-    );
-
-    renderRouteWithProviders("/usuarios");
-
-    await userEvent.click(await screen.findByRole("button", { name: "Editar los roles de ana@example.com" }));
-
-    // Pasa de verdad con dos administradores a la vez: uno elimina la cuenta y el otro abre el diálogo desde
-    // un listado viejo. Antes quedaban dos bloques grises para siempre, sin mensaje ni reintento.
-    const dialog = await screen.findByRole("dialog");
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("No encontramos la cuenta.");
-    expect(within(dialog).getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
-  });
-
-  it("gives the focus back to the button that opened the dialog", async () => {
-    server.use(...adminHandlers());
-
-    renderRouteWithProviders("/usuarios");
-
-    const newUser = await screen.findByRole("button", { name: "Nuevo usuario" });
-    newUser.focus();
-    await userEvent.click(newUser);
-    await screen.findByRole("dialog");
-
-    await userEvent.keyboard("{Escape}");
-
-    // Radix solo le devuelve el foco a un DialogTrigger propio, y acá lo abre un Button cualquiera: sin
-    // `onCloseAutoFocus` el foco cae en <body> y el siguiente Tab arranca desde el principio del documento.
-    await waitFor(() => expect(newUser).toHaveFocus());
-  });
-
-  it("saves the roles of a user without erasing the name", async () => {
-    const updates: unknown[] = [];
-    server.use(
-      ...adminHandlers(),
-      http.get("/api/users/1", () => HttpResponse.json({ ...page.items[0], roles: ["User"] })),
-      http.put("/api/users/1", async ({ request }) => {
-        updates.push(await request.json());
-
-        return new HttpResponse(null, { status: 204 });
-      }),
-    );
-
-    renderRouteWithProviders("/usuarios");
-
-    await userEvent.click(await screen.findByRole("button", { name: "Editar los roles de ana@example.com" }));
-    await pickRole("Admin");
-    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
-
-    // El PUT reemplaza nombre y roles: el nombre que ya tenía tiene que volver tal cual.
-    await waitFor(() => expect(updates).toEqual([{ displayName: "Ana", roles: ["User", "Admin"] }]));
   });
 
   it("explains the protection rule when the backend refuses to deactivate the last admin", async () => {
@@ -485,6 +453,7 @@ describe("UsersPage", () => {
     await within(sidebar).findByText("ana@example.com");
 
     expect(screen.queryByRole("button", { name: "Nuevo usuario" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /editar a/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /eliminar a/i })).not.toBeInTheDocument();
   });
 });

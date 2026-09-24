@@ -18,6 +18,14 @@ describe("Banner", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
+  it("describes a risk as a status, not as an error", () => {
+    // Una advertencia no es algo que haya que corregir para seguir: el lector la anuncia sin interrumpir.
+    render(<Banner tone="warning">Es su único medio de ingreso.</Banner>);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Es su único medio de ingreso.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("keeps its icon away from a screen reader", () => {
     const { container } = render(<Banner>Falta el correo.</Banner>);
 

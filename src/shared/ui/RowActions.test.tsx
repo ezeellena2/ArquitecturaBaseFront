@@ -75,6 +75,21 @@ describe("RowActions", () => {
     expect(nombres).toEqual(["Editar los roles de ana@ejemplo.com", "Eliminar a ana@ejemplo.com"]);
   });
 
+  it("keeps the same button, and its focus, when the row's datum in its name changes", () => {
+    const { rerender } = renderWithProviders(
+      <RowActions actions={[accion({ label: "Editar", accessibleName: "Editar a +54 9 11 2345-6789" })]} />,
+    );
+    const boton = screen.getByRole("button", { name: "Editar a +54 9 11 2345-6789" });
+    boton.focus();
+
+    // Agregarle el correo a quien solo tenía número cambia el dato de la fila. Si el botón se tirara y se montara
+    // otro, el foco que vuelve de un diálogo iría a parar a un nodo que ya no está: a <body>.
+    rerender(<RowActions actions={[accion({ label: "Editar", accessibleName: "Editar a juan@example.com" })]} />);
+
+    expect(screen.getByRole("button", { name: "Editar a juan@example.com" })).toBe(boton);
+    expect(boton).toHaveFocus();
+  });
+
   it("renders nothing when every action is hidden", () => {
     const { container } = renderWithProviders(<RowActions actions={[accion({ hidden: true })]} />);
 

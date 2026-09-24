@@ -11,9 +11,9 @@ import { currentUserQueryKey, type CurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { cn } from "@/shared/lib/utils";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { CheckIcon, MailIcon, SmartphoneIcon } from "@/shared/ui/icons";
+import { MailIcon, SmartphoneIcon } from "@/shared/ui/icons";
+import { VerificationBadge } from "@/shared/ui/VerificationBadge";
 
 type OpenDialog = "addEmail" | "linkWhatsApp" | "unlinkWhatsApp";
 
@@ -21,15 +21,6 @@ type OpenDialog = "addEmail" | "linkWhatsApp" | "unlinkWhatsApp";
 /// un correo verificado o con Google. Un correo sin verificar no cuenta, porque con él no se entra.
 function hasLoginMethodBesidesPhone(user: CurrentUser): boolean {
   return (user.email !== null && user.emailConfirmed) || user.hasGoogleLogin;
-}
-
-function VerifiedBadge({ label }: { label: string }) {
-  return (
-    <Badge className="gap-1 bg-[var(--color-success-50)] text-[11.5px] text-[var(--color-success-700)]">
-      <CheckIcon />
-      {label}
-    </Badge>
-  );
 }
 
 /// Una fila: el ícono, qué medio es, su valor (o que falta) y, a la derecha, lo que se puede hacer. La ayuda va debajo
@@ -158,7 +149,7 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
           {user.email ? (
             <span className="flex flex-wrap items-center gap-2">
               <span className="min-w-0 text-sm break-all text-[var(--color-content)]">{user.email}</span>
-              {user.emailConfirmed ? <VerifiedBadge label={t("methods.verified")} /> : null}
+              {user.emailConfirmed ? <VerificationBadge verified>{t("methods.verified")}</VerificationBadge> : null}
             </span>
           ) : (
             <p className="text-[13.5px] text-[var(--color-content-muted)]">{t("methods.email.empty")}</p>
@@ -187,7 +178,7 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
           >
             <span className="flex flex-wrap items-center gap-2">
               <span className="text-sm whitespace-nowrap text-[var(--color-content)]">{user.formattedPhoneNumber}</span>
-              {user.phoneNumberConfirmed ? <VerifiedBadge label={t("methods.verified")} /> : null}
+              {user.phoneNumberConfirmed ? <VerificationBadge verified>{t("methods.verified")}</VerificationBadge> : null}
             </span>
           </MethodRow>
         ) : canLinkWhatsApp ? (

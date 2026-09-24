@@ -9,6 +9,9 @@ interface CheckboxFieldProps {
   onCheckedChange: (checked: boolean) => void;
   /// Línea de ayuda debajo de la etiqueta.
   description?: string;
+  /// Va debajo de la ayuda, sin reemplazarla: el error dice qué falta y la ayuda, por qué hace falta ("Sin esto,
+  /// WhatsApp no permite escribirle primero"). Es lo que distingue a una casilla de un `FormField`.
+  error?: string;
   disabled?: boolean;
 }
 
@@ -25,10 +28,13 @@ export function CheckboxField({
   checked,
   onCheckedChange,
   description,
+  error,
   disabled,
 }: CheckboxFieldProps): ReactNode {
   const id = useId();
   const descriptionId = `${id}-description`;
+  const errorId = `${id}-error`;
+  const describedBy = [description ? descriptionId : undefined, error ? errorId : undefined].filter(Boolean).join(" ");
 
   return (
     <div
@@ -41,7 +47,8 @@ export function CheckboxField({
         id={id}
         checked={checked}
         disabled={disabled}
-        aria-describedby={description ? descriptionId : undefined}
+        aria-describedby={describedBy || undefined}
+        aria-invalid={error ? true : undefined}
         // Radix informa `boolean | "indeterminate"`; acá solo hay marcada o no.
         onCheckedChange={(value) => onCheckedChange(value === true)}
         // Sin marcar, el borde de `--color-border` casi no se ve sobre blanco: una casilla vacía tiene que
@@ -61,6 +68,11 @@ export function CheckboxField({
         {description ? (
           <p id={descriptionId} className="text-[12.5px] leading-[1.4] text-[var(--color-content-muted)]">
             {description}
+          </p>
+        ) : null}
+        {error ? (
+          <p id={errorId} role="alert" className="text-sm text-[var(--color-danger)]">
+            {error}
           </p>
         ) : null}
       </div>

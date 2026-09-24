@@ -89,7 +89,9 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
   return (
     <div className="mb-4 flex flex-col gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3.5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="w-60">
+        {/* 320 px, como el tablero: "Buscar por correo, nombre o número" no entra entero en menos. En un celular se
+            achica con la fila, que ya se parte en renglones. */}
+        <div className="w-80 max-w-full">
           <SearchInput value={search} onChange={onSearchChange} label={t("searchLabel")} />
         </div>
 

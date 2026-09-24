@@ -43,12 +43,17 @@ const grupo = "inline-flex overflow-hidden rounded-[var(--radius-control)] borde
 function Grupo({ acciones }: { acciones: RowAction[] }) {
   return (
     <span className={grupo}>
-      {acciones.map((accion) => {
+      {acciones.map((accion, posicion) => {
         const Icono = accion.icon;
 
+        // La key es el lugar en el grupo, no el nombre accesible. El nombre lleva el dato de la fila, y ese dato
+        // cambia con lo que hacen las acciones (agregarle el correo a quien solo tenía número, activar a quien
+        // estaba inactivo). Con el nombre de key, React tiraba el botón y montaba otro, y el foco que un diálogo le
+        // devolvía al que lo abrió iba a parar a un nodo que ya no estaba: a <body>. El orden de las acciones es
+        // fijo por construcción, así que el lugar identifica a cada una.
         return (
           <button
-            key={accion.accessibleName}
+            key={posicion}
             type="button"
             aria-label={accion.accessibleName}
             onClick={accion.onSelect}

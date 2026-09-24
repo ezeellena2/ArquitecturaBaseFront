@@ -1,8 +1,8 @@
 {
   "title": "Usuarios",
-  "searchLabel": "Buscar por correo o nombre",
+  "searchLabel": "Buscar por correo, nombre o número",
   "columns": {
-    "email": "Correo",
+    "user": "Usuario",
     "displayName": "Nombre",
     "roles": "Roles",
     "createdAtUtc": "Creado",
@@ -22,29 +22,68 @@
   },
   "actions": {
     "new": "Nuevo usuario",
-    "editRoles": "Roles",
-    "editRolesFor": "Editar los roles de {{email}}",
+    "edit": "Editar",
+    "editFor": "Editar a {{user}}",
     "activate": "Activar",
-    "activateFor": "Activar a {{email}}",
+    "activateFor": "Activar a {{user}}",
     "deactivate": "Desactivar",
-    "deactivateFor": "Desactivar a {{email}}",
+    "deactivateFor": "Desactivar a {{user}}",
     "delete": "Eliminar",
-    "deleteFor": "Eliminar a {{email}}"
+    "deleteFor": "Eliminar a {{user}}"
+  },
+  "identity": {
+    "alsoWhatsApp": "También entra con WhatsApp",
+    "unverifiedHint": "Número que cargó un admin y con el que la persona todavía no entró."
   },
   "create": {
     "title": "Nuevo usuario",
-    "description": "Dale de alta el correo. Después entra con su código, como todos.",
-    "submit": "Dar de alta",
+    "description": "Cargá un correo, un número de WhatsApp o los dos: con uno alcanza.",
+    "descriptionEmailOnly": "Dale de alta el correo. Después entra con su código, como todos.",
+    "submit": "Crear",
+    "submitAndInvite": "Crear e invitar",
     "success": "Listo: ya puede ingresar."
+  },
+  "invitation": {
+    "send": "Mandarle una invitación",
+    "channel": "Por dónde",
+    "email": "Por correo",
+    "whatsApp": "Por WhatsApp",
+    "emailNeeded": "Cargá un correo para usar esta opción.",
+    "phoneNeeded": "Cargá un número para usar esta opción.",
+    "consent": "{{name}} aceptó recibir mensajes de {{app}} por WhatsApp.",
+    "consentWithoutName": "La persona aceptó recibir mensajes de {{app}} por WhatsApp.",
+    "consentHint": "Sin esto, WhatsApp no permite escribirle primero."
   },
   "edit": {
     "title": "Editar usuario",
-    "description": "Cambiá el nombre y los roles de {{email}}.",
     "submit": "Guardar",
     "success": "Guardamos los cambios."
   },
+  "methods": {
+    "title": "Medios de ingreso",
+    "email": "Correo electrónico",
+    "noEmail": "Sin correo",
+    "whatsApp": "WhatsApp",
+    "noPhone": "Sin número",
+    "add": "Agregar",
+    "addEmail": "Agregar correo",
+    "addPhone": "Agregar número",
+    "unlink": "Desvincular",
+    "verified": "Verificado",
+    "unverified": "Sin verificar",
+    "onlyMethod": "Es su único medio de ingreso. Si lo desvinculás, no va a poder entrar hasta que le cargues otro.",
+    "unverifiedHint": "Lo que carga un admin queda «Sin verificar» hasta que la persona entra con eso."
+  },
+  "unlink": {
+    "title": "¿Desvincular el WhatsApp de {{user}}?",
+    "descriptionWithEmail": "Se cierran sus sesiones abiertas y ya no va a poder entrar con {{phone}}. Va a poder seguir entrando con su correo.",
+    "descriptionWithoutEmail": "Se cierran sus sesiones abiertas y ya no va a poder entrar con {{phone}}. Como no tiene correo, se queda sin forma de entrar hasta que le cargues un número o un correo.",
+    "confirm": "Desvincular",
+    "success": "Desvinculamos su WhatsApp."
+  },
   "form": {
     "email": "Correo electrónico",
+    "emailPlaceholder": "correo@ejemplo.com",
     "emailInvalid": "Ingresá un correo electrónico válido.",
     "displayName": "Nombre",
     "displayNameHint": "Opcional. Es el nombre que se muestra en el sistema.",
@@ -54,12 +93,12 @@
     "rolesNeedPermission": "Para asignar roles necesitás permiso de lectura sobre ellos."
   },
   "deactivate": {
-    "title": "Desactivar a {{email}}",
+    "title": "Desactivar a {{user}}",
     "description": "Le cortamos el acceso ahora mismo: la sesión que tenga abierta deja de servir y no va a poder volver a entrar hasta que la actives de nuevo. Sus datos quedan como están.",
     "confirm": "Desactivar"
   },
   "delete": {
-    "title": "Eliminar a {{email}}",
+    "title": "Eliminar a {{user}}",
     "description": "La cuenta desaparece de los listados y no va a poder ingresar. Su historial de ingresos se conserva, y si más adelante la das de alta con el mismo correo, se restaura.",
     "confirm": "Eliminar"
   },
@@ -69,7 +108,8 @@
     "deleted": "Eliminamos la cuenta."
   },
   "errors": {
-    "alreadyExists": "Ya hay una cuenta con ese correo.",
+    "alreadyExists": "Ya existe una cuenta con ese correo.",
+    "phoneAlreadyExists": "Ya existe una cuenta con ese número.",
     "lastAdmin": "No podés dejar al sistema sin administradores. Asigná el rol Admin a otra cuenta activa y volvé a intentar.",
     "cannotModifySelf": "No podés hacerte esto a vos mismo. Pedíselo a otro administrador."
   },
