@@ -143,8 +143,14 @@ describe("RoleEditorPage", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Nuevo rol" })).toBeInTheDocument();
 
-    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre" }), "  Mesa de ayuda  ");
-    await userEvent.type(screen.getByRole("textbox", { name: "Descripción" }), " Atiende a los usuarios. ");
+    // Pegado, no tipeado: acá importa el recorte al guardar, no el tipeo (lo cubre "follows the typed name…").
+    // Tecla por tecla eran 42 renders del editor entero, y con la suite completa en paralelo este test, el primero
+    // del archivo y el que paga el `lazy` de la pantalla, llegaba a los 5 s de Vitest.
+    const name = await screen.findByRole("textbox", { name: "Nombre" });
+    await userEvent.click(name);
+    await userEvent.paste("  Mesa de ayuda  ");
+    await userEvent.click(screen.getByRole("textbox", { name: "Descripción" }));
+    await userEvent.paste(" Atiende a los usuarios. ");
     // En un rol nuevo arranca abierta la primera área.
     await userEvent.click(screen.getByRole("checkbox", { name: "Ver usuarios" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
