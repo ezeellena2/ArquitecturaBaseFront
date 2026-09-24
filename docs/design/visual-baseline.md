@@ -2,7 +2,8 @@
 
 Estado: **vigente**  
 Revisión del Artifact: **2026-09-22** (nueve tableros, exploraciones descartadas eliminadas, más los tres de “Un rol en su propia pantalla”). Aplicado al código en la Fase 5 y en el rol en su propia pantalla; el mapa de abajo dice qué quedó implementado y qué no.  
-Procedencia: [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) (Artifact privado de Claude)
+Procedencia: [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) (Artifact privado de Claude)  
+Biblioteca de piezas: [ArquitecturaBase UI](https://claude.ai/artifact/Ew763kqorVHSYeUqE8CZ7h) (Artifact privado de Claude, instalada en el lienzo del sistema visual)
 
 ## Cómo se usa esta base
 
@@ -22,7 +23,7 @@ Una pantalla nueva no arranca en el editor. Arranca como un tablero en el Artifa
 
 El orden no se invierte:
 
-1. Se agrega el tablero al Artifact con la funcionalidad completa dibujada.
+1. Se agrega el tablero al Artifact con la funcionalidad completa dibujada, **arrancando de una plantilla** (hoy, “Plantilla · Listado”) y **armado con las piezas de la biblioteca**, no dibujado a mano (ver “La biblioteca de piezas”).
 2. El usuario lo mira y elige. Sin elección explícita no se programa.
 3. Recién ahí se escribe el código, y lo elegido termina en tokens, componentes compartidos y tests.
 
@@ -38,6 +39,26 @@ El tablero no es un dibujo lindo: dice **cómo se comporta** la pantalla. Antes 
 Esa lista es, a propósito, la misma que pide el “Criterio de finalización de una pantalla” al cerrar. Lo que no está dibujado se termina decidiendo sobre el teclado, con el costo ya pagado, y así es como una ruta deja de parecerse al resto. Si el tablero la cubre, cerrar la pantalla es implementar, no rediseñar.
 
 Al terminar, la pantalla suma su fila al mapa Artifact → proyecto y se actualiza la revisión del encabezado de este documento.
+
+## La biblioteca de piezas
+
+Hasta el 2026-09-22 cada tablero dibujaba sus botones, campos y tablas a mano, con colores sueltos, y por eso dos tableros nunca salían iguales ni iguales al código. Desde el 2026-09-23 el lienzo tiene instalada la biblioteca [ArquitecturaBase UI](https://claude.ai/artifact/Ew763kqorVHSYeUqE8CZ7h): las piezas de `src/shared/ui` y de `src/layouts`, con los mismos nombres, medidas y tokens, que un tablero monta en vez de redibujar (`<x-import component-from-global-scope="AB.Button" variant="outline">`).
+
+- **Una pantalla nueva se arma, no se dibuja.** Se duplica la plantilla que corresponde y se cambian la entidad, las columnas y los filtros. Lo que la plantilla ya resuelve (dónde va la acción primaria, los vacíos, el error, qué pasa sin permiso, los diálogos) no se vuelve a decidir.
+- **Cada pieza tiene su gemela en el código**, y su ficha lo dice (“En el código: `shared/ui/button.tsx`”). Pasar un tablero al código es traducir pieza por pieza, no interpretar un dibujo.
+- **Un cambio de aspecto se hace en la biblioteca y en `shared/ui` a la vez.** Nunca solo en un tablero, y nunca solo en el código: si divergen, los tableros vuelven a mentir.
+- **Las fuentes viven en el Artifact de la biblioteca**, en `components/src/` (un `.jsx` por grupo, sus estilos en `css/` y `build.mjs`). `node build.mjs <carpeta del front>` regenera el paquete con el rolldown del front; después se vuelven a copiar `bundle.js`, `bundle.css`, `index.d.ts` y `tokens.json` al lienzo, en `project/ds/ab/`. Los pasos están en `components/src/COMO-SE-ARMA.txt`.
+
+Piezas de la biblioteca que **todavía no existen en `shared/ui`** y hay que subir cuando una pantalla las use:
+
+| Pieza | Dónde vive hoy |
+| --- | --- |
+| `FilterBar`, `FilterSelect`, `MoreFilters`, `FilterChip` | `features/users/components/UsersFilterBar.tsx` |
+| `StatusDot` | `emailCell` en `features/users/columns.tsx` |
+| `Avatar` | repetido en `Sidebar.tsx` y `UserMenu.tsx`, cada uno con su `initialOf` |
+| `FormError` | el mismo `<p role="alert">` copiado en seis pantallas |
+| `Surface` | un `div` suelto en `UsersPage.tsx` |
+| `Banner` | no existe: el tablero de Avisos lo dibuja y ninguna pantalla lo usa |
 
 ## Principios del sistema
 
@@ -157,6 +178,7 @@ Carga, vacío y error del listado pertenecen a la superficie del listado. Los er
 | Cómo se sostiene | tokens + componentes + tests | Norma de gobierno adoptada |
 | Roles · Editar un rol, y Roles · Estados y recorrido | `/roles/nuevo`, `/roles/{id}`, `RoleEditorPage`, `PermissionPicker`, `RoleSummary`, `SegmentedControl`, `useUnsavedChangesGuard`, `useBreadcrumbLeaf` | **Implementado** (2026-09-22) |
 | Roles · Acciones del listado | `/roles`, `RolesPage` con `RowActions` y `EyeIcon`: Admin “Ver”, User “Editar”, ninguno “Eliminar” | **Implementado** (2026-09-22). El separador entre Editar y Eliminar, desde el 2026-09-23: el `border-0` de cada botón de `RowActions` le ganaba al `divide-x` del grupo |
+| Plantilla · Listado (y sus estados y recorrido) | el punto de partida de todo listado; su ejemplo es `/usuarios` | **Plantilla** (2026-09-23), armada con la biblioteca. No es una pantalla nueva: se duplica para las que vengan |
 
 Lo que quedó **fuera** de la Fase 5 y sigue sin dibujarse: el responsive (ningún tablero es de menos de 1440 px), el tablero de inicio, las pantallas 403/404 y la marca real. Ver "Pantallas por completar con esta base".
 
