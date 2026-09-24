@@ -1,7 +1,7 @@
 # Fundamento visual de ArquitecturaBaseFront
 
 Estado: **vigente**  
-Revisión del Artifact: **2026-09-22** (nueve tableros, exploraciones descartadas eliminadas, más los tres de “Un rol en su propia pantalla”). Aplicado al código en la Fase 5 y en el rol en su propia pantalla; el mapa de abajo dice qué quedó implementado y qué no.  
+Revisión del Artifact: **2026-09-24** (veintiún tableros: los diez del sistema, los tres de “Un rol en su propia pantalla”, los seis de “Ingreso con WhatsApp” y las dos plantillas; las exploraciones descartadas se eliminaron). Aplicado al código en la Fase 5, en el rol en su propia pantalla y en el ingreso con WhatsApp; el mapa de abajo dice qué quedó implementado y qué no.  
 Procedencia: [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) (Artifact privado de Claude)  
 Biblioteca de piezas: [ArquitecturaBase UI](https://claude.ai/artifact/Ew763kqorVHSYeUqE8CZ7h) (Artifact privado de Claude, instalada en el lienzo del sistema visual)
 
@@ -58,7 +58,21 @@ Piezas de la biblioteca que **todavía no existen en `shared/ui`** y hay que sub
 | `Avatar` | repetido en `Sidebar.tsx` y `UserMenu.tsx`, cada uno con su `initialOf` |
 | `FormError` | el mismo `<p role="alert">` copiado en seis pantallas |
 | `Surface` | un `div` suelto en `UsersPage.tsx` |
-| `Banner` | no existe: el tablero de Avisos lo dibuja y ninguna pantalla lo usa |
+
+Y al revés: piezas y cambios que **ya están en `shared/ui` y todavía no están en la biblioteca**. La regla dice que un cambio de aspecto va a los dos lados a la vez; esto es deuda, y mientras exista los tableros que usen estas piezas van a dibujarlas distinto de como se ven:
+
+| Pieza o cambio | De dónde salió |
+| --- | --- |
+| `Banner` (`info`, `warning`, `danger`) | ingreso con WhatsApp, Tareas 14 y 16 |
+| `RadioGroupField` | ingreso con WhatsApp, Tarea 16 |
+| `VerificationBadge` | ingreso con WhatsApp, Tareas 14 y 16 |
+| `PhoneField` y `OtpInput` (ahora en `shared/ui`) | ingreso con WhatsApp, Tareas 7 y 14 |
+| `SegmentedControl` con `fullWidth`, y entero (es nuevo) | ingreso con WhatsApp, Tarea 7; rol en pantalla propia, Tarea 2 |
+| `CheckboxField` con `error`, y como fila del selector | ingreso con WhatsApp, Tarea 16; rol en pantalla propia, Tarea 6 |
+| `Spinner` con `decorative` | ingreso con WhatsApp, Tarea 12 |
+| Íconos: `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye` | ingreso con WhatsApp, Tareas 12, 14 y 16; rol en pantalla propia, Tarea 8 |
+| Tokens `--color-success-50`, `--color-success-700`, `--color-warning-50`, `--color-warning-700` | ingreso con WhatsApp, Tareas 14 y 16 |
+| `Page` con `backTo` y `status`; `ConfirmDialog` con `cancelLabel`; `EmptyState` con `className` y `descriptionClassName`; el caparazón en `h-svh` con `main` `relative`; las migas de cuatro niveles | rol en pantalla propia, Tarea 6 |
 
 ## Principios del sistema
 
@@ -171,18 +185,24 @@ Carga, vacío y error del listado pertenecen a la superficie del listado. Los er
 | Filtros | `shared/hooks/useFilters`, `features/users/components/UsersFilterBar` | **Implementado** (Fase 5), con `GET /api/users/filter-counts` detrás |
 | Reglas de filtrado | las mismas piezas, más `DataTable` (vacío con filtros) | **Implementado** (Fase 5) |
 | Formularios | `FormField`, diálogos, perfil y configuración | Implementado; auditar que ningún campo se dibuje fuera de `FormField` |
-| Avisos | Sonner, errores inline, `ConfirmDialog`, banners | Parcialmente implementado |
+| Avisos | Sonner, errores inline, `ConfirmDialog`, `Banner` | Parcialmente implementado. El `Banner` persistente ya existe (`shared/ui`), desde el ingreso con WhatsApp |
 | Anatomía | `src/index.css` (tokens) y `shared/ui` | **Implementado**: `--color-surface-header`, `--color-surface-header-border`, `--color-content-heading` y las tres alturas |
 | Encabezados, íconos y color | `Page`, superficies, set propio de íconos | **Implementado**: banda adherida (de verdad desde el rol en su propia pantalla, ver “Encabezados”) y 17 íconos propios |
 | Las mismas piezas | `shared/ui` (superficie, banda, control) | Contrato adoptado; consolidación incremental |
 | Cómo se sostiene | tokens + componentes + tests | Norma de gobierno adoptada |
 | Roles · Editar un rol, y Roles · Estados y recorrido | `/roles/nuevo`, `/roles/{id}`, `RoleEditorPage`, `PermissionPicker`, `RoleSummary`, `SegmentedControl`, `useUnsavedChangesGuard`, `useBreadcrumbLeaf` | **Implementado** (2026-09-22) |
 | Roles · Acciones del listado | `/roles`, `RolesPage` con `RowActions` y `EyeIcon`: Admin “Ver”, User “Editar”, ninguno “Eliminar” | **Implementado** (2026-09-22). El separador entre Editar y Eliminar, desde el 2026-09-23: el `border-0` de cada botón de `RowActions` le ganaba al `divide-x` del grupo |
+| WhatsApp · Ingreso en la web | `/login` con el selector Correo \| WhatsApp (`EmailCodeForm`, `WhatsAppCodeForm`, `PhoneField`, `SegmentedControl` con `fullWidth`) y `/login/codigo` con `OtpInput` | **Implementado** (2026-09-23) |
+| WhatsApp · El enlace del chat | `/ingresar`, `LoginLinkPage`, `ClockIcon`, `BanIcon`, `Spinner` `decorative` | **Implementado** (2026-09-23). El `Spinner` mide 20 px y el tablero lo dibuja de 28 |
+| WhatsApp · Conversaciones con el bot | **backend:** `Application/Resources/Bot.resx` y `Bot.en.resx`, `HandleInboundMessageCommandHandler` | **Implementado** (2026-09-23). No es una pantalla: son los textos del chat, uno por fila de la tabla del bot. El código sumó variantes sin nombre que el tablero no dibuja |
+| WhatsApp · Mensajes que manda el sistema | **backend:** las plantillas de Meta (`codigo_ingreso`, `invitacion_acceso`) y `Infrastructure/Emails/Templates/Invitation.html` | **Implementado** (2026-09-24). **El panel 2 quedó desactualizado:** dibuja el texto con el que la invitación se presentó como Utilidad, y Meta la aprobó recién como Marketing, con otro texto |
+| WhatsApp · Perfil: correo y WhatsApp | `/perfil` con sus dos superficies, `LoginMethodsCard`, `VerifyDestinationDialog`, `UnlinkWhatsAppDialog`, `Banner`, `VerificationBadge`, el aviso de `DashboardPage` | **Implementado** (2026-09-24), con las diferencias anotadas en la Tarea 14 del plan (el número con guion, el pie de los diálogos sin banda gris, el aviso del inicio con 8 px de radio y llevando a Mi perfil). El tablero dibuja un solo diálogo por acción; el código usa **uno** para las dos, con dos configuraciones |
+| WhatsApp · Usuarios: alta con teléfono | `/usuarios`, `columns.tsx`, `UserFormDialog` (alta), `UserEditDialog` (edición), `UnlinkUserWhatsAppDialog`, `RadioGroupField`, `VerificationBadge` | **Implementado** (2026-09-24). **Sin dibujar y por lo tanto sin programar:** el estado de la última invitación y el botón de reenviarla, que el backend ya expone (`lastInvitation.deliveryStatus`) |
 | Plantilla · Listado (y sus estados y recorrido) | el punto de partida de todo listado; su ejemplo es `/usuarios` | **Plantilla** (2026-09-23), armada con la biblioteca. No es una pantalla nueva: se duplica para las que vengan |
 
 Lo que quedó **fuera** de la Fase 5 y sigue sin dibujarse: el responsive (ningún tablero es de menos de 1440 px), el tablero de inicio, las pantallas 403/404 y la marca real. Ver "Pantallas por completar con esta base".
 
-El lienzo tiene hoy nueve tableros. Los de exploración descartada —las variantes de encabezado, el sub-header con pestañas, el carril lateral de submenú y las pantallas previas— se eliminaron al cerrar cada decisión: el Artifact guarda lo vigente, no el historial.
+El lienzo tiene hoy veintiún tableros. **Una nota del lienzo quedó vieja:** la que acompaña a “Ingreso con WhatsApp” todavía dice “Propuesta para aprobar: todavía no hay nada programado”, y los seis tableros están implementados. Los de exploración descartada —las variantes de encabezado, el sub-header con pestañas, el carril lateral de submenú y las pantallas previas— se eliminaron al cerrar cada decisión: el Artifact guarda lo vigente, no el historial.
 
 ## Pantallas por completar con esta base
 
