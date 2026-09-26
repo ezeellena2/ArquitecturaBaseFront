@@ -71,10 +71,10 @@ Aparte de esas tres, cualquiera con sesión tiene **`/perfil`**: nombre, idioma 
 
 ## Producción
 
-`npm run build` deja el sitio estático en `dist/`. En producción lo sirve la Api desde su `wwwroot` (un solo origen, sin CORS). **Hoy no hay nada que copie `dist/` a `wwwroot`:** ese paso todavía no existe y lo tiene que resolver el pipeline de despliegue. Está anotado como pendiente en el [plan de la Fase 3](../ArquitecturaBase/docs/plans/2026-09-19-fase-3-front-base.md).
+`npm run build` deja el sitio estático en `dist/`. En producción lo sirve la Api desde su `wwwroot` (un solo origen, sin CORS). **Hoy no hay nada que copie `dist/` a `wwwroot`:** ese paso todavía no existe y lo tiene que resolver el pipeline de despliegue. Está anotado como pendiente en el [plan de la Fase 3](../ArquitecturaBase/docs/history/plans/2026-09-19-fase-3-front-base.md).
 
 ## Diseño y planes
 
 - Diseño aprobado (sección 7): [`../ArquitecturaBase/docs/specs/2026-09-18-arquitectura-base-design.md`](../ArquitecturaBase/docs/specs/2026-09-18-arquitectura-base-design.md).
-- Planes por fase: [`../ArquitecturaBase/docs/plans/`](../ArquitecturaBase/docs/plans/). Este front sale de la Fase 3.
+- Planes por fase (históricos): [`../ArquitecturaBase/docs/history/plans/`](../ArquitecturaBase/docs/history/plans/). Este front sale de la Fase 3. Los planes en curso están en [`../ArquitecturaBase/docs/plans/`](../ArquitecturaBase/docs/plans/).
 - Convenciones para trabajar acá: [CLAUDE.md](CLAUDE.md).

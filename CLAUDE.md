@@ -1,6 +1,6 @@
 # ArquitecturaBaseFront: guía para agentes
 
-SPA de la plantilla base. El backend vive en `../ArquitecturaBase` y el diseño funcional aprobado, en `../ArquitecturaBase/docs/specs/2026-09-18-arquitectura-base-design.md` (sección 7). El contrato visual versionado vive en `docs/design/visual-baseline.md`; es la misma base que deben usar Claude y Codex para continuar pantallas. Los planes por fase están en `../ArquitecturaBase/docs/plans/`.
+SPA de la plantilla base. El backend vive en `../ArquitecturaBase` y el diseño funcional aprobado, en `../ArquitecturaBase/docs/specs/2026-09-18-arquitectura-base-design.md` (sección 7). El contrato visual versionado vive en `docs/design/visual-baseline.md`; es la misma base que deben usar Claude y Codex para continuar pantallas. Los planes por fase, ya históricos, están en `../ArquitecturaBase/docs/history/plans/`; los planes en curso, en `../ArquitecturaBase/docs/plans/`.
 
 ## Forma de trabajo
 
@@ -45,7 +45,7 @@ Una feature nunca importa de otra feature: lo común sube a `shared`.
 
 ## Ingreso con WhatsApp
 
-Se puede entrar con un código que llega por WhatsApp, o con un enlace que el bot manda al chat. El plan es `../ArquitecturaBase/docs/plans/2026-09-22-ingreso-whatsapp.md` y los tableros son los seis "WhatsApp · …" del Artifact del sistema visual.
+Se puede entrar con un código que llega por WhatsApp, o con un enlace que el bot manda al chat. El plan es `../ArquitecturaBase/docs/history/plans/2026-09-22-ingreso-whatsapp.md` y los tableros son los seis "WhatsApp · …" del Artifact del sistema visual.
 
 - **El servidor dice qué medios ofrecer**, no una constante del front. `getLoginMethods` (`shared/api/loginMethods.ts`, `GET /account/login-methods`) trae `google`, `whatsapp`, `whatsappCountries` y `whatsappNumber`. Vive en `shared` porque lo piden dos features: el ingreso y el perfil, que solo ofrece vincular WhatsApp si está prendido y con esos países. Con WhatsApp apagado el selector de `/login` no aparece y el perfil no ofrece vincular: no hay que esconder nada a mano.
 - **`/login` tiene un selector Correo | WhatsApp** debajo de Google y del separador. Arranca en Correo. Cada rama es su propio formulario (`EmailCodeForm` y `WhatsAppCodeForm`), y las dos navegan a `/login/codigo` pasando el canal en el estado de la ruta (`{ channel, email }` o `{ channel, phone, maskedPhone }`, más `resendAfterSeconds`). La pantalla del código no vuelve a preguntar de dónde viene: lee el estado o vuelve a `/login`.
