@@ -34,12 +34,9 @@ export function AppLayout() {
     setMobileOpen(false);
   }
 
-  function toggleSidebar() {
-    if (isMobile) {
-      setMobileOpen((previous) => !previous);
-    } else {
-      toggleCollapsed();
-    }
+  // Solo el teléfono: en escritorio el menú se contrae con la flecha de su borde, no desde la barra.
+  function toggleMobileMenu() {
+    setMobileOpen((previous) => !previous);
   }
 
   // Entre que UserMenu limpia la sesión en memoria y signoutRedirect navega a /connect/logout, React
@@ -72,7 +69,7 @@ export function AppLayout() {
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <Topbar sidebarExpanded={isMobile ? mobileOpen : !collapsed} onToggleSidebar={toggleSidebar} />
+        <Topbar isMobile={isMobile} drawerOpen={mobileOpen} onToggleDrawer={toggleMobileMenu} />
 
         {/* Sin padding: la banda de encabezado de cada pantalla llega a los bordes. El margen del contenido
             lo pone `Page`, que es el único que sabe dónde termina la banda y dónde empieza el cuerpo.

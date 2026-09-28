@@ -29,6 +29,14 @@ function mockMobileViewport() {
 }
 
 describe("Topbar", () => {
+  it("leaves the collapse control to the menu on the desktop", async () => {
+    renderRouteWithProviders("/");
+
+    // El ☰ de la barra y la flecha del borde del menú hacían lo mismo, a treinta píxeles uno del otro.
+    expect(await screen.findByRole("button", { name: /contraer menú/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /menú de navegación/i })).not.toBeInTheDocument();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
     queryClient.clear();
