@@ -87,6 +87,7 @@
       "failed": "No llegó"
     },
     "failedHint": "WhatsApp no la entregó: puede ser el límite de mensajes de Meta o un rechazo.",
+    "failedHintByEmail": "El correo no salió: no pudimos mandarlo en ese momento.",
     "resend": "Reenviar invitación",
     "resendIn": "Podés reenviar en {{seconds}} s",
     "resent": "Reenviamos la invitación."
@@ -95,6 +96,8 @@
     "title": "Reenviar la invitación",
     "failed": "Por WhatsApp no llegó: puede ser el límite de Meta o un rechazo. Podés probar de nuevo o mandarla por correo.",
     "failedWithoutEmail": "Por WhatsApp no llegó: puede ser el límite de Meta o un rechazo. Podés probar de nuevo.",
+    "failedByEmail": "Por correo no salió. Podés probar de nuevo o mandarla por WhatsApp.",
+    "failedByEmailWithoutWhatsApp": "Por correo no salió. Podés probar de nuevo.",
     "submit": "Reenviar",
     "submitLabel": "Reenviar la invitación"
   },

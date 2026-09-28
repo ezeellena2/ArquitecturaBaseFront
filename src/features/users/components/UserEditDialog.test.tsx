@@ -632,6 +632,44 @@ describe("UserEditDialog", () => {
       }
     });
 
+    it("says an invitation by email did not go out, the same way as one by WhatsApp, and why", async () => {
+      // Por correo no hay estado que seguir, salvo uno: la cola de correo no la tomó (el backend dice `Failed`).
+      withUser(
+        invitedLaura,
+        detailOf(invitedLaura, { lastInvitation: invitation({ channel: "Email", deliveryStatus: "Failed" }) }),
+      );
+
+      const strip = stripOf(await openEdit("laura.rios@gmail.com"));
+
+      expect(strip.getByText("Invitación por correo")).toBeInTheDocument();
+      expect(strip.getByText("No llegó")).toBeInTheDocument();
+      expect(strip.getByText("El correo no salió: no pudimos mandarlo en ese momento.")).toBeInTheDocument();
+      // La explicación de WhatsApp no corresponde: no fue Meta.
+      expect(strip.queryByText(/WhatsApp no la entregó/)).not.toBeInTheDocument();
+    });
+
+    it.each([
+      [
+        "offers WhatsApp when it is on and there is a number",
+        whatsappLoginMethods,
+        "Por correo no salió. Podés probar de nuevo o mandarla por WhatsApp.",
+      ],
+      ["does not offer WhatsApp when it is off", loginMethods, "Por correo no salió. Podés probar de nuevo."],
+    ] as const)("says why it is resending one by email that did not go out: %s", async (_, methods, text) => {
+      withUser(
+        invitedLaura,
+        detailOf(invitedLaura, { lastInvitation: invitation({ channel: "Email", deliveryStatus: "Failed" }) }),
+        methods,
+      );
+
+      const dialog = await openEdit("laura.rios@gmail.com");
+      await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
+
+      const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
+      expect(panel.getByText(text)).toBeInTheDocument();
+      expect(panel.queryByText(/Por WhatsApp no llegó/)).not.toBeInTheDocument();
+    });
+
     it("waits a minute from the time of the last invitation before offering to resend it", async () => {
       withUser(
         invitedLaura,

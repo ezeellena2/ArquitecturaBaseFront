@@ -229,8 +229,9 @@ interface LastInvitationStripProps {
 }
 
 /// La última invitación, aparte y debajo de los medios de ingreso (tablero "Editar usuario · B", puntos 1 y 4): es un
-/// envío, no un medio de ingreso. Dice por dónde salió, cuándo y, por WhatsApp, cómo le fue. "Reenviar invitación" se
-/// abre en el lugar, sin otro diálogo encima, y después del envío hay que esperar un minuto.
+/// envío, no un medio de ingreso. Dice por dónde salió, cuándo y cómo le fue: por WhatsApp, lo que avisa Meta; por
+/// correo, solo "No llegó" si la cola no lo tomó. "Reenviar invitación" se abre en el lugar, sin otro diálogo encima,
+/// y después del envío hay que esperar un minuto.
 ///
 /// Solo se muestra si la cuenta tiene una invitación: el tablero no dibuja invitar a quien nunca se invitó desde acá.
 export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnabled }: LastInvitationStripProps) {
@@ -344,6 +345,21 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
     : t("invitation.consentWithoutName", { app });
 
   const failed = invitation.deliveryStatus === "Failed";
+  // "No llegó" se ve igual por los dos canales; lo que cambia es el porqué y a qué otro canal se puede pasar. Por
+  // WhatsApp avisó Meta (su límite o un rechazo); por correo, la cola no lo tomó. Se ofrece el otro canal solo si se
+  // puede usar, como las opciones del reenvío.
+  const failure = !failed
+    ? undefined
+    : invitation.channel === "Email"
+      ? {
+          hint: t("lastInvitation.failedHintByEmail"),
+          resend:
+            whatsappEnabled && phone !== null ? t("resend.failedByEmail") : t("resend.failedByEmailWithoutWhatsApp"),
+        }
+      : {
+          hint: t("lastInvitation.failedHint"),
+          resend: user.email === null ? t("resend.failedWithoutEmail") : t("resend.failed"),
+        };
   const waiting = seconds > 0;
   const status = invitation.deliveryStatus === null ? undefined : statuses[invitation.deliveryStatus];
   const StatusIcon = status?.icon;
@@ -375,9 +391,7 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
       {isOpen ? (
         <ResendInvitationForm
           titleId={titleId}
-          description={
-            failed ? (user.email === null ? t("resend.failedWithoutEmail") : t("resend.failed")) : undefined
-          }
+          description={failure?.resend}
           options={options}
           initialChannel={initialChannel}
           consentLabel={consentLabel}
@@ -453,9 +467,9 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
               {t("lastInvitation.resendIn", { seconds })}
             </p>
           ) : null}
-          {failed ? (
+          {failure ? (
             <p className="col-start-2 row-start-3 mt-1.5 text-[12.5px] leading-[1.45] text-[var(--color-content-muted)] sm:col-span-2">
-              {t("lastInvitation.failedHint")}
+              {failure.hint}
             </p>
           ) : null}
         </>
