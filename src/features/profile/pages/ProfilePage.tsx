@@ -6,6 +6,7 @@ import { LoginMethodsCard } from "../components/LoginMethodsCard";
 import { ProfileSection } from "../components/ProfileSection";
 import { currentUserQueryKey, useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
+import { displayNameMaxLength } from "@/shared/api/accountRules";
 import { updateProfile } from "@/shared/api/profile";
 import { isSupportedLanguage, supportedLanguages, type SupportedLanguage } from "@/shared/i18n";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
@@ -167,6 +168,7 @@ export function ProfilePage() {
                 <Input
                   type="text"
                   autoComplete="name"
+                  maxLength={displayNameMaxLength}
                   value={draft.displayName}
                   onChange={(event) => setDraft({ ...draft, displayName: event.target.value })}
                 />

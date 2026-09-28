@@ -111,6 +111,14 @@ describe("UserEditDialog", () => {
     expect(dialog.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
   });
 
+  it("does not let the name grow past what the backend accepts", async () => {
+    withUser(juan);
+
+    const dialog = await openEdit("+54 9 11 2345-6789");
+
+    expect(dialog.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("maxlength", "100");
+  });
+
   describe("the login methods", () => {
     it("shows each method as a row with its value, its badge and its action", async () => {
       withUser(invitedLaura, detailOf(invitedLaura, { emailConfirmed: false }));

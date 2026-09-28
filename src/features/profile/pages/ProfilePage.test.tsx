@@ -69,6 +69,14 @@ describe("ProfilePage", () => {
     );
   });
 
+  it("does not let the name grow past what the backend accepts", async () => {
+    server.use(...profileHandlers([]));
+
+    renderRouteWithProviders("/perfil");
+
+    expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveAttribute("maxlength", "100");
+  });
+
   it("shows the time zone of the profile even if the browser spells it another way", async () => {
     server.use(...profileHandlers([]));
 
