@@ -100,6 +100,13 @@ function editorHandlers(roleList: readonly RoleListItem[] = roles) {
   ];
 }
 
+/// El alta responde como el backend: 201, el id en el cuerpo y el `Location` al detalle del rol nuevo.
+function roleCreated() {
+  const id = "0199a0c0-0000-7000-8000-000000000002";
+
+  return HttpResponse.json(id, { status: 201, headers: { Location: `/api/roles/${id}` } });
+}
+
 function pageTitle() {
   return screen.getByRole("heading", { level: 1 });
 }
@@ -135,7 +142,7 @@ describe("RoleEditorPage", () => {
       http.post("/api/roles", async ({ request }) => {
         created.push(await request.json());
 
-        return HttpResponse.json("0199a0c0-0000-7000-8000-000000000002");
+        return roleCreated();
       }),
     );
 
@@ -174,7 +181,7 @@ describe("RoleEditorPage", () => {
       http.post("/api/roles", async ({ request }) => {
         created.push(await request.json());
 
-        return HttpResponse.json("0199a0c0-0000-7000-8000-000000000002");
+        return roleCreated();
       }),
     );
 
@@ -334,7 +341,7 @@ describe("RoleEditorPage", () => {
       http.post("/api/roles", () => {
         created();
 
-        return HttpResponse.json("0199a0c0-0000-7000-8000-000000000002");
+        return roleCreated();
       }),
     );
 

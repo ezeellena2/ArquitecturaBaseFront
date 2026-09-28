@@ -33,7 +33,8 @@ export function fetchPermissions(): Promise<readonly PermissionGroup[]> {
   return api.get<readonly PermissionGroup[]>("/api/permissions");
 }
 
-/// Devuelve el id del rol nuevo: el handler es `ICommand<Guid>` y `ToHttpResult` responde 200 con el valor.
+/// Devuelve el id del rol nuevo: el backend responde 201 con el id en el cuerpo y el `Location` apuntando a
+/// `GET /api/roles/{id}`.
 export function createRole(body: RoleBody): Promise<string> {
   return api.post<string>("/api/roles", body);
 }
