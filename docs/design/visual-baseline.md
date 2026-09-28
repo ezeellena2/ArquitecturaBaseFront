@@ -112,7 +112,9 @@ Con esto, `design-lab/page-header/index.html` cumplió su función y **ya se eli
 
 ## Navegación
 
-- El menú lateral tiene **grupos rotulados** (`ADMINISTRACIÓN`) y, dentro, ítems que pueden abrir un **submenú desplegable**. El grupo padre es un `button` con `aria-expanded`; los hijos van indentados, con una guía vertical que los ata al padre.
+- El menú lateral lista arriba las pantallas del día a día y cierra abajo con **Administración**, separada por una línea. Un ítem puede abrir un **submenú desplegable**: el padre es un `button` con `aria-expanded`, y los hijos van indentados, con una guía vertical que los ata al padre. Un grupo rotulado (`ADMINISTRACIÓN` en versalitas) sigue siendo posible para lo que se use todos los días; Administración ya no lo usa.
+- **Administración abre un panel propio al lado del menú** (264 px, `--color-surface-muted` con su banda de cabecera), con la misma lista de siempre adentro: el desplegable `Gestión de usuarios` y `Configuración`. Se abre solo en cualquier ruta de administración y se cierra al salir de la sección; mientras estás adentro se cierra y se abre a mano, con el mismo botón o con la flecha «‹» montada sobre el borde del panel. Con el panel abierto se esconde la flecha de contraer el menú: las dos viven a la misma altura sobre bordes contiguos y juntas se leen como un círculo partido. Viene del menú de ArquitecturaBaseMultitenant y reemplaza al grupo rotulado que Administración tenía (2026-09-28).
+- **En el teléfono no hay panel:** el cajón ya ocupa la pantalla, así que Administración se despliega adentro como cualquier grupo, y sus pantallas quedan a tres niveles.
 - **Los submenús viven en el menú lateral, no en pestañas del encabezado.** Se evaluaron pestañas en la banda y se descartaron: obligaban a que el encabezado cambiara de alto según la sección, y dejaban el árbol de navegación repartido en dos lugares.
 - **Los grupos arrancan plegados, y el de la ruta activa se despliega solo.** El menú tiene que decir a dónde se puede ir sin listarlo todo siempre; y entrar a `/roles` desde un favorito o recargando tiene que mostrar dónde estás, no un grupo cerrado. El desplegado se calcula durante el render, no con un efecto, así el grupo no aparece plegado y se abre después.
 - **Se pliega a mano y no se recuerda entre visitas.** Que quede abierto porque estás parado adentro no es una preferencia; guardarlo convertiría en silencio "plegado salvo el activo" en "siempre abierto" apenas entrás una vez. La barra contraída sí se recuerda, porque eso sí es una decisión sobre el espacio de trabajo.
@@ -121,7 +123,7 @@ Con esto, `design-lab/page-header/index.html` cumplió su función y **ya se eli
 - **Agrupar en el menú no cambia las rutas.** `Gestión de usuarios` agrupa `/usuarios` y `/roles` sin anidar URLs: los enlaces guardados siguen funcionando y el `returnUrl` del ingreso no se toca.
 - **Cada hijo conserva su permiso.** Quien tiene uno solo ve un solo hijo; quien no tiene ninguno no ve el grupo. El permiso se pide en la ruta y se repite en la navegación: uno decide si se entra, el otro si se ve.
 - Contraída, la barra deja solo los íconos centrados en una caja de 40 px, y el rótulo del grupo se reemplaza por un separador corto. El control para plegarla es un círculo montado sobre el borde derecho, a la altura del primer ítem.
-- **Contraída no hay submenús: los hijos suben a la lista como íconos sueltos.** La barra contraída es un lanzador, no un mapa; esconder destinos detrás de un desplegable de 40 px cambiaría un clic por dos. La jerarquía la siguen contando las migas y el menú expandido.
+- **Contraída no hay submenús: los hijos suben a la lista como íconos sueltos.** La barra contraída es un lanzador, no un mapa; esconder destinos detrás de un desplegable de 40 px cambiaría un clic por dos. La jerarquía la siguen contando las migas y el menú expandido. **Administración es la excepción**, y por la misma razón: contraída sigue siendo un botón, porque lo que abre no es un desplegable de 40 px sino el panel entero.
 
 ## Íconos y acciones
 
@@ -203,7 +205,7 @@ Carga, vacío y error del listado pertenecen a la superficie del listado. Los er
 
 Lo que quedó **fuera** de la Fase 5 y sigue sin dibujarse: el responsive (ningún tablero es de menos de 1440 px), el tablero de inicio, las pantallas 403/404 y la marca real. Ver "Pantallas por completar con esta base".
 
-El lienzo tiene hoy veintiún tableros. **Una nota del lienzo quedó vieja:** la que acompaña a “Ingreso con WhatsApp” todavía dice “Propuesta para aprobar: todavía no hay nada programado”, y los seis tableros están implementados. Los de exploración descartada —las variantes de encabezado, el sub-header con pestañas, el carril lateral de submenú y las pantallas previas— se eliminaron al cerrar cada decisión: el Artifact guarda lo vigente, no el historial.
+El lienzo tiene hoy veintiún tableros. **Una nota del lienzo quedó vieja:** la que acompaña a “Ingreso con WhatsApp” todavía dice “Propuesta para aprobar: todavía no hay nada programado”, y los seis tableros están implementados. Los de exploración descartada —las variantes de encabezado, el sub-header con pestañas y las pantallas previas— se eliminaron al cerrar cada decisión: el Artifact guarda lo vigente, no el historial. El carril lateral volvió, ya no como exploración: los dos tableros del menú con el panel de Administración (escritorio y teléfono) son los vigentes de esta sección.
 
 ## Pantallas por completar con esta base
 
@@ -224,11 +226,11 @@ Cuando una decisión visual tiene más de una salida razonable, se compara antes
 | --- | --- | --- |
 | Densidad de fila | 44 px densa contra 56 px cómoda | **44 px**, una sola para todo el proyecto |
 | Encabezado de pantalla | respirable / equilibrado / compacto, y con o sin estado expandido | **Banda fija de 56 px**, sin expandido, sin antetítulo |
-| Submenú | pestañas en el encabezado / desplegable en el menú / carril lateral propio | **Desplegable en el menú lateral** |
+| Submenú | pestañas en el encabezado / desplegable en el menú / carril lateral propio | **Desplegable en el menú lateral**, y desde 2026-09-28 **un carril lateral propio para Administración**: lo que estaba adentro del desplegable pasó al panel, y el desplegable quedó para los grupos de adentro |
 | Rutas al agrupar | anidar `/gestion-usuarios/...` o dejarlas | **Se quedan** `/usuarios` y `/roles` |
 | Conteos por opción de filtro | ahora o en una fase posterior | **Ahora**, con el contrato de backend que haga falta |
 | Grupo del menú al entrar | abierto por defecto / plegado salvo el activo | **Plegado salvo el activo** |
-| Submenú con la barra contraída | íconos sueltos / menú flotante / descontraer la barra | **Íconos sueltos**, sin componente nuevo |
+| Submenú con la barra contraída | íconos sueltos / menú flotante / descontraer la barra | **Íconos sueltos**, sin componente nuevo. Administración no: contraída abre el panel, que es el ancho entero |
 | Estado en el listado de usuarios | columna propia con texto / punto delante del correo | **Punto**, con la palabra para el lector de pantalla, a cambio de la columna de roles |
 | Acciones de fila | un grupo con la destructiva última / la destructiva en un grupo aparte | **Un grupo**, con el rojo solo al interactuar |
 | Paso de página | botones con texto / flechas | **Flechas**, con el nombre completo en el `aria-label` |

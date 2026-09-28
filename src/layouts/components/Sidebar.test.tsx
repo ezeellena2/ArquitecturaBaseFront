@@ -22,6 +22,21 @@ function withBothPermissions() {
   );
 }
 
+/// Quien ve el panel entero: las dos pantallas del grupo y Configuración.
+function withEveryAdministrationPermission() {
+  server.use(
+    http.get("/api/me", () =>
+      HttpResponse.json({ ...currentUser, permissions: ["users.read", "roles.read", "settings.manage"] }),
+    ),
+  );
+}
+
+/// Fuera de una ruta de administración el panel arranca cerrado, y sus pantallas no están en el menú: hay
+/// que abrirlo, que es exactamente lo que hace quien usa la aplicación.
+async function openAdministration() {
+  await userEvent.click(await screen.findByRole("button", { name: /^administración$/i }));
+}
+
 describe("Sidebar", () => {
   // AppProviders usa el queryClient de la app (un singleton). Sin esto, la respuesta de /api/me de un test
   // queda cacheada (staleTime: 30s) y se filtra al siguiente, que pisó el handler con otro permiso.
@@ -34,6 +49,7 @@ describe("Sidebar", () => {
     // El handler por defecto de /api/me devuelve permissions: ["users.read"].
     renderRouteWithProviders("/");
 
+    await openAdministration();
     await userEvent.click(await screen.findByRole("button", { name: /gestión de usuarios/i }));
 
     expect(screen.getByRole("link", { name: /usuarios/i })).toBeInTheDocument();
@@ -103,6 +119,7 @@ describe("Sidebar", () => {
 
     renderRouteWithProviders("/");
 
+    await openAdministration();
     await userEvent.click(await screen.findByRole("button", { name: /gestión de usuarios/i }));
 
     expect(screen.getByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
@@ -110,11 +127,135 @@ describe("Sidebar", () => {
     expect(screen.queryByRole("link", { name: /^usuarios$/i })).not.toBeInTheDocument();
   });
 
+  describe("administration panel", () => {
+    it("opens from the foot of the menu and closes again from the panel", async () => {
+      withEveryAdministrationPermission();
+
+      renderRouteWithProviders("/");
+
+      const trigger = await screen.findByRole("button", { name: /^administración$/i });
+
+      // En el Inicio el panel no está: el menú dice a dónde se puede ir sin listarlo todo.
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      expect(screen.queryByRole("navigation", { name: /^administración$/i })).not.toBeInTheDocument();
+
+      await userEvent.click(trigger);
+
+      const panel = screen.getByRole("navigation", { name: /^administración$/i });
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
+      expect(within(panel).getByRole("button", { name: /gestión de usuarios/i })).toBeInTheDocument();
+      expect(within(panel).getByRole("link", { name: /configuración/i })).toBeInTheDocument();
+
+      await userEvent.click(within(panel).getByRole("button", { name: /cerrar administración/i }));
+
+      expect(screen.queryByRole("navigation", { name: /^administración$/i })).not.toBeInTheDocument();
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
+
+    it("opens itself on an administration route", async () => {
+      withBothPermissions();
+
+      // Entrar directo a /roles (un favorito, una recarga) tiene que mostrar dónde estás, no un panel
+      // cerrado y un menú de un solo ítem.
+      renderRouteWithProviders("/roles");
+
+      const panel = await screen.findByRole("navigation", { name: /^administración$/i });
+      expect(await within(panel).findByRole("link", { name: /roles y permisos/i })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      expect(screen.getByRole("button", { name: /^administración$/i })).toHaveAttribute("aria-expanded", "true");
+    });
+
+    it("closes itself when leaving administration", async () => {
+      withBothPermissions();
+
+      renderRouteWithProviders("/roles");
+
+      await screen.findByRole("navigation", { name: /^administración$/i });
+
+      // Acotado al menú: "Inicio" también es el primer nivel de las migas.
+      const menu = screen.getByRole("navigation", { name: /navegación principal/i });
+      await userEvent.click(within(menu).getByRole("link", { name: /inicio/i }));
+
+      // El panel es de Administración: fuera de sus rutas, ocupar 264 px con lo que no está en pantalla
+      // sería robarle ancho al contenido.
+      await waitFor(() => expect(screen.queryByRole("navigation", { name: /^administración$/i })).toBeNull());
+    });
+
+    it("hides the collapse arrow while the panel is open", async () => {
+      withBothPermissions();
+
+      renderRouteWithProviders("/");
+
+      expect(await screen.findByRole("button", { name: /contraer menú/i })).toBeInTheDocument();
+
+      await openAdministration();
+
+      // Las dos flechas redondas viven sobre el mismo borde y a la misma altura: con el panel abierto se
+      // pisarían. Manda la de cerrar el panel, que es la que corresponde a lo que está pasando.
+      expect(screen.queryByRole("button", { name: /contraer menú/i })).not.toBeInTheDocument();
+    });
+
+    it("stays a button with the bar collapsed, instead of flattening into loose icons", async () => {
+      withBothPermissions();
+      globalThis.localStorage.setItem("arquitecturabase.sidebar", '"collapsed"');
+
+      renderRouteWithProviders("/");
+
+      // Contraída, esconder destinos detrás de un desplegable de 40 px cambiaría un clic por dos; el panel
+      // no: el mismo clic abre las tres pantallas a la vez, con su ancho entero.
+      const trigger = await screen.findByRole("button", { name: /^administración$/i });
+      expect(screen.queryByRole("link", { name: /^usuarios$/i })).not.toBeInTheDocument();
+
+      await userEvent.click(trigger);
+
+      const panel = screen.getByRole("navigation", { name: /^administración$/i });
+      expect(within(panel).getByRole("button", { name: /gestión de usuarios/i })).toBeInTheDocument();
+    });
+
+    it("does not show Administración at all to whoever has none of its permissions", async () => {
+      server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: [] })));
+
+      renderRouteWithProviders("/");
+
+      // El pie de la barra pinta el correo recién cuando /api/me respondió: hasta entonces la ausencia
+      // sería la del menú pendiente, no la del filtro.
+      const sidebar = await screen.findByRole("complementary");
+      await within(sidebar).findByText("ana@example.com");
+      expect(screen.queryByRole("button", { name: /^administración$/i })).not.toBeInTheDocument();
+    });
+
+    it("unfolds inside the drawer on the phone, with no second panel", async () => {
+      withBothPermissions();
+
+      // El cajón de móvil ya ocupa la pantalla: un panel al lado no entra. Se monta la barra sola, en móvil,
+      // porque `useMediaQuery` no cambia con el ancho en jsdom.
+      renderWithProviders(
+        <MemoryRouter initialEntries={["/"]}>
+          <Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile mobileOpen onCloseMobile={vi.fn()} />
+        </MemoryRouter>,
+      );
+
+      await userEvent.click(await screen.findByRole("button", { name: /^administración$/i }));
+
+      expect(screen.queryByRole("navigation", { name: /^administración$/i })).not.toBeInTheDocument();
+
+      // Los hijos quedan a tres niveles: Administración, el grupo, y la pantalla.
+      await userEvent.click(await screen.findByRole("button", { name: /gestión de usuarios/i }));
+
+      expect(screen.getByRole("link", { name: /^usuarios$/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
+    });
+  });
+
   describe("submenu", () => {
     it("starts folded away from its screens and unfolds when pressed", async () => {
       withBothPermissions();
 
       renderRouteWithProviders("/");
+
+      await openAdministration();
 
       const group = await screen.findByRole("button", { name: /gestión de usuarios/i });
 
@@ -132,8 +273,7 @@ describe("Sidebar", () => {
     it("opens itself on the screen of one of its children", async () => {
       withBothPermissions();
 
-      // Entrar directo a /roles (un favorito, una recarga) tiene que mostrar dónde estás, no un grupo
-      // plegado: el grupo de la ruta activa se despliega solo.
+      // Entrar directo a /roles abre el panel y, adentro, el grupo de la ruta activa.
       renderRouteWithProviders("/roles");
 
       expect(await screen.findByRole("button", { name: /gestión de usuarios/i })).toHaveAttribute(
@@ -199,22 +339,9 @@ describe("Sidebar", () => {
 
       renderRouteWithProviders("/configuracion");
 
-      // Configuración es el otro ítem del mismo grupo rotulado: esperar a que aparezca prueba que los
-      // permisos ya llegaron, así la ausencia del grupo no es la del menú todavía pendiente.
+      // Configuración es el otro ítem del panel: esperar a que aparezca prueba que los permisos ya llegaron,
+      // así la ausencia del grupo no es la del menú todavía pendiente.
       expect(await screen.findByRole("link", { name: /configuración/i })).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /gestión de usuarios/i })).not.toBeInTheDocument();
-    });
-
-    it("flattens the group into loose icons when the bar is collapsed", async () => {
-      withBothPermissions();
-      globalThis.localStorage.setItem("arquitecturabase.sidebar", '"collapsed"');
-
-      renderRouteWithProviders("/");
-
-      // Contraída la barra es un lanzador, no un mapa: no hay grupo que desplegar y las dos pantallas
-      // quedan a un clic, con su nombre para el lector de pantalla.
-      expect(await screen.findByRole("link", { name: /^usuarios$/i })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /gestión de usuarios/i })).not.toBeInTheDocument();
     });
   });

@@ -847,7 +847,7 @@ describe("RoleEditorPage", () => {
     expect(router.state.location.pathname).toBe("/sin-permiso");
   });
 
-  it("puts the role in the crumbs, under its section, and opens its group in the menu", async () => {
+  it("puts the role in the crumbs, under its section, and opens its group in the administration panel", async () => {
     server.use(...editorHandlers());
 
     await renderSupport();
@@ -863,9 +863,10 @@ describe("RoleEditorPage", () => {
     );
     expect(crumbs.getByRole("link", { name: "Roles y permisos" })).toHaveAttribute("href", "/roles");
 
-    const sidebar = within(screen.getByRole("complementary"));
-    expect(sidebar.getByRole("button", { name: /gestión de usuarios/i })).toHaveAttribute("aria-expanded", "true");
-    expect(sidebar.getByRole("link", { name: /roles y permisos/i })).toHaveAttribute("aria-current", "page");
+    // El grupo vive en el panel de Administración, que se abre solo en las rutas de su sección.
+    const panel = within(screen.getByRole("navigation", { name: /^administración$/i }));
+    expect(panel.getByRole("button", { name: /gestión de usuarios/i })).toHaveAttribute("aria-expanded", "true");
+    expect(panel.getByRole("link", { name: /roles y permisos/i })).toHaveAttribute("aria-current", "page");
   });
 
   it("shows the next role when moving from one role's screen to another's", async () => {

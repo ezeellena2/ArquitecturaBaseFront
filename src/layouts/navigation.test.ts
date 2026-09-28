@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { branchOf, parentLinkOf } from "./navigation";
+import { branchOf, isAdministrationPath, parentLinkOf } from "./navigation";
 
 describe("parentLinkOf", () => {
   it("finds the menu link a child route hangs from", () => {
@@ -48,5 +48,29 @@ describe("branchOf", () => {
     expect(branchOf("/configuracion")).toBeUndefined();
     expect(branchOf("/configuracion/algo")).toBeUndefined();
     expect(branchOf("/rolesviejos")).toBeUndefined();
+  });
+});
+
+describe("isAdministrationPath", () => {
+  it("is true for a screen of the panel", () => {
+    expect(isAdministrationPath("/usuarios")).toBe(true);
+    expect(isAdministrationPath("/roles")).toBe(true);
+    expect(isAdministrationPath("/configuracion")).toBe(true);
+  });
+
+  it("is true for a child route of one of its screens", () => {
+    // /roles/abc es la pantalla de un rol: el panel tiene que quedarse abierto, no cerrarse al entrar.
+    expect(isAdministrationPath("/roles/abc")).toBe(true);
+  });
+
+  it("is true for a screen with a trailing slash", () => {
+    expect(isAdministrationPath("/roles/")).toBe(true);
+  });
+
+  it("is false outside the panel", () => {
+    // El Inicio empieza con "/" como todo lo demás: si contara, el panel se abriría en cualquier ruta.
+    expect(isAdministrationPath("/")).toBe(false);
+    expect(isAdministrationPath("/perfil")).toBe(false);
+    expect(isAdministrationPath("/rolesviejos")).toBe(false);
   });
 });

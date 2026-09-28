@@ -1,16 +1,31 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router";
-import { branchOf, isBranch, navigation, type NavigationBranch, type NavigationItem, type NavigationLink } from "../navigation";
+import {
+  administration,
+  branchOf,
+  isAdministrationPath,
+  isBranch,
+  navigation,
+  type NavigationItem,
+  type NavigationLink,
+} from "../navigation";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import { ChevronDownIcon, ChevronLeftIcon, RefreshIcon } from "@/shared/ui/icons";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, RefreshIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
+
+/// Qué grupos están desplegados y cómo se alterna uno. Va por props porque el estado vive en la barra: un
+/// grupo adentro de otro (Administración en el teléfono) lo necesita para plegarse sin conocer al de arriba.
+interface BranchControls {
+  isOpen: (labelKey: string) => boolean;
+  toggle: (labelKey: string) => void;
+}
 
 /// Un ítem de navegación. Contraído, solo el ícono (con Tooltip) y el texto queda para el lector de pantalla.
 /// Adentro de un submenú va sin ícono: lo dicen la sangría y la guía vertical, y el ícono del padre ya
@@ -64,35 +79,38 @@ function NavItem({
 
 /// Un grupo desplegable. El padre es un `button` con `aria-expanded`, no un enlace: a un grupo no se navega.
 /// Plegado, sus hijos no se dibujan; el menú tiene que decir dónde se puede ir, no listarlo todo siempre.
+/// Sus ítems pueden ser otro grupo (Administración en el teléfono, que adentro tiene Gestión de usuarios).
 function NavBranch({
-  branch,
-  label,
-  open,
-  onToggle,
+  labelKey,
+  icon: Icon,
+  items,
+  showIcon = true,
+  controls,
   translate,
   onNavigate,
 }: {
-  branch: NavigationBranch;
-  label: string;
-  open: boolean;
-  onToggle: () => void;
+  labelKey: string;
+  icon: NavigationLink["icon"];
+  items: NavigationItem[];
+  showIcon?: boolean;
+  controls: BranchControls;
   translate: (key: string) => string;
   onNavigate?: () => void;
 }) {
-  const Icon = branch.icon;
   const listId = useId();
+  const open = controls.isOpen(labelKey);
 
   return (
     <>
       <button
         type="button"
         aria-expanded={open}
-        aria-controls={listId}
-        onClick={onToggle}
+        aria-controls={open ? listId : undefined}
+        onClick={() => controls.toggle(labelKey)}
         className="flex w-full items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
       >
-        <Icon className="size-5 shrink-0" />
-        <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+        {showIcon ? <Icon className="size-5 shrink-0" /> : null}
+        <span className="min-w-0 flex-1 truncate text-left">{translate(labelKey)}</span>
         <ChevronDownIcon
           aria-hidden="true"
           className={cn("size-4 shrink-0 transition-transform", open ? "" : "-rotate-90")}
@@ -100,22 +118,123 @@ function NavBranch({
       </button>
       {open ? (
         // La guía arranca bajo el centro del ícono del padre (px-3 más medio ícono de 20), que es lo que
-        // ata visualmente los hijos al grupo.
-        <ul id={listId} className="mt-1 ml-[22px] flex flex-col gap-1 border-l border-[var(--color-border)] pl-3">
-          {branch.children.map((child) => (
-            <li key={child.to}>
-              <NavItem
-                item={child}
-                label={translate(child.labelKey)}
-                collapsed={false}
-                showIcon={false}
-                onNavigate={onNavigate}
-              />
-            </li>
-          ))}
+        // ata visualmente los hijos al grupo. Sin ícono —un grupo adentro de otro— arranca bajo su texto.
+        <ul
+          id={listId}
+          className={cn(
+            "mt-1 flex flex-col gap-1 border-l border-[var(--color-border)] pl-3",
+            showIcon ? "ml-[22px]" : "ml-3",
+          )}
+        >
+          <NavItems items={items} controls={controls} translate={translate} onNavigate={onNavigate} />
         </ul>
       ) : null}
     </>
+  );
+}
+
+/// Los `li` de una lista de ítems ya filtrada, sea la del menú, la de un submenú o la del panel. Adentro de
+/// una lista desplegada nada lleva ícono: la sangría y la guía ya cuentan de quién cuelga.
+/// Mientras los permisos no llegaron, lo que puede llegar a no verse ocupa su lugar con un bloque de carga:
+/// si no, la lista se dibuja entera y se recorta sola un instante después, delante de quien la está leyendo.
+function NavItems({
+  items,
+  controls,
+  translate,
+  onNavigate,
+  showIcons = false,
+  pending = false,
+}: {
+  items: NavigationItem[];
+  controls: BranchControls;
+  translate: (key: string) => string;
+  onNavigate?: () => void;
+  showIcons?: boolean;
+  pending?: boolean;
+}) {
+  return items.map((item) => (
+    <li key={isBranch(item) ? item.labelKey : item.to}>
+      {pending && dependsOnPermissions(item) ? (
+        <Skeleton aria-hidden="true" className="h-9 rounded-[var(--radius-control)]" />
+      ) : isBranch(item) ? (
+        <NavBranch
+          labelKey={item.labelKey}
+          icon={item.icon}
+          items={item.children}
+          showIcon={showIcons}
+          controls={controls}
+          translate={translate}
+          onNavigate={onNavigate}
+        />
+      ) : (
+        <NavItem
+          item={item}
+          label={translate(item.labelKey)}
+          collapsed={false}
+          showIcon={showIcons}
+          onNavigate={onNavigate}
+        />
+      )}
+    </li>
+  ));
+}
+
+/// El botón de Administración, al pie del menú. No es un grupo que se despliega en la lista: abre el panel de
+/// al lado, y por eso la flecha apunta a un costado. Contraído es solo el ícono, con Tooltip, como cualquier
+/// ítem, y con el panel abierto queda activo, que es lo que dice en qué sección estás parado.
+function AdministrationTrigger({
+  label,
+  open,
+  collapsed,
+  panelId,
+  onToggle,
+}: {
+  label: string;
+  open: boolean;
+  collapsed: boolean;
+  panelId: string;
+  onToggle: () => void;
+}) {
+  const Icon = administration.icon;
+
+  const trigger = (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-controls={open ? panelId : undefined}
+      onClick={onToggle}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium transition-colors",
+        open
+          ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
+          : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
+        collapsed ? "size-10 justify-center px-0" : "",
+      )}
+    >
+      <Icon className="size-5 shrink-0" />
+      {collapsed ? (
+        <span className="sr-only">{label}</span>
+      ) : (
+        <>
+          <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+          <ChevronRightIcon
+            aria-hidden="true"
+            className={cn("size-4 shrink-0 transition-transform", open ? "rotate-180" : "")}
+          />
+        </>
+      )}
+    </button>
+  );
+
+  if (!collapsed) {
+    return trigger;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -158,6 +277,7 @@ interface SidebarProps {
 }
 
 /// Barra lateral (sección 7.2): marca + colapso, menú filtrado por permiso, y el bloque del usuario abajo.
+/// Administración va al pie y abre un segundo panel al lado, con sus pantallas adentro.
 /// En menos de 768px es un cajón deslizable sobre un fondo oscurecido, que se cierra al navegar y con Escape.
 export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, onCloseMobile }: SidebarProps) {
   const { t } = useTranslation();
@@ -166,6 +286,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   // que dependen de un permiso y el pie reserva el del usuario, así nada aparece de golpe empujando al resto.
   const { data: user, isPending } = useCurrentUser();
   const location = useLocation();
+  const panelId = useId();
 
   // El grupo de la pantalla en la que estás parado. Los grupos arrancan plegados: el menú muestra a dónde se
   // puede ir sin desplegar todo, y el que importa —el de la ruta activa— se abre solo.
@@ -184,11 +305,31 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
     }
   }
 
+  // El panel sigue a la sección, no a los clics: entrar a una ruta de administración lo abre y salir lo
+  // cierra, también recargando o llegando desde un favorito. Mientras estás adentro se puede cerrar y abrir
+  // a mano cuantas veces quieras; lo que lo vuelve a decidir es cambiar de sección.
+  const adminRoute = isAdministrationPath(location.pathname);
+  const [panelOpen, setPanelOpen] = useState(adminRoute);
+  const [lastAdminRoute, setLastAdminRoute] = useState(adminRoute);
+
+  if (adminRoute !== lastAdminRoute) {
+    setLastAdminRoute(adminRoute);
+    setPanelOpen(adminRoute);
+  }
+
   function toggleBranch(labelKey: string) {
     setOpenBranchKeys((previous) =>
       previous.includes(labelKey) ? previous.filter((key) => key !== labelKey) : [...previous, labelKey],
     );
   }
+
+  // En el teléfono Administración es un grupo más del cajón, así que su apertura tiene que contestar por el
+  // mismo camino que la de cualquier grupo, aunque el estado que la guarda sea el del panel.
+  const controls: BranchControls = {
+    isOpen: (labelKey) => (labelKey === administration.labelKey ? panelOpen : openBranchKeys.includes(labelKey)),
+    toggle: (labelKey) =>
+      labelKey === administration.labelKey ? setPanelOpen((previous) => !previous) : toggleBranch(labelKey),
+  };
 
   useEffect(() => {
     if (!isMobile || !mobileOpen) {
@@ -212,6 +353,13 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const canSee = (link: NavigationLink) => isPending || !link.permission || has(link.permission);
   // Sin nombre no hay renglón de abajo: el del nombre ya muestra el correo o el número.
   const accountDetail = user ? accountDetailOf(user) : undefined;
+
+  // El panel no se aplana nunca: se ve expandido aunque la barra esté contraída, que es justamente lo que lo
+  // hace mejor que un desplegable de 40px.
+  const adminItems = visibleItems(administration.items, canSee, false);
+  const adminPending = isPending && administration.items.every(dependsOnPermissions);
+  const showAdministration = adminItems.length > 0;
+  const panelVisible = showAdministration && panelOpen && !isMobile;
 
   return (
     <>
@@ -258,8 +406,11 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             mide 56: 64 + 28 = 92. Restándole medio botón (12) queda en 80. El primer ítem del menú se alinea
             a ese mismo eje con el `pt` del nav, así el "Inicio" del menú, la flecha y el título de la
             pantalla quedan los tres sobre la misma línea. Va afuera del `nav` a propósito: ese tiene
-            `overflow-y-auto` y la recortaría. */}
-        {isMobile ? null : (
+            `overflow-y-auto` y la recortaría.
+
+            Con el panel abierto no se dibuja: la flecha de cerrarlo ocupa ese mismo lugar sobre el borde de
+            al lado, y dos círculos a la misma altura se leen como uno partido. */}
+        {isMobile || panelVisible ? null : (
           <IconButton
             label={iconsOnly ? t("layout.sidebar.expand") : t("layout.sidebar.collapse")}
             onClick={onToggleCollapsed}
@@ -273,7 +424,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             (72 + 20). Son dos valores porque es el centro lo que tiene que coincidir, no el borde de arriba. */}
         <nav
           aria-label={t("layout.sidebar.navigation")}
-          className={cn("flex-1 overflow-y-auto px-2 pb-3", iconsOnly ? "pt-2" : "pt-2.5")}
+          className={cn("flex flex-1 flex-col overflow-y-auto px-2 pb-3", iconsOnly ? "pt-2" : "pt-2.5")}
         >
           {/* Si /api/me falló no sabemos qué ítems mostrar, y el filtro de abajo los esconde. Sin avisar,
               una caída del backend pasa por un menú más corto de lo habitual, que nadie va a notar. El
@@ -334,10 +485,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                         />
                       ) : isBranch(item) ? (
                         <NavBranch
-                          branch={item}
-                          label={t(item.labelKey)}
-                          open={openBranchKeys.includes(item.labelKey)}
-                          onToggle={() => toggleBranch(item.labelKey)}
+                          labelKey={item.labelKey}
+                          icon={item.icon}
+                          items={item.children}
+                          controls={controls}
                           translate={t}
                           onNavigate={onNavigate}
                         />
@@ -350,6 +501,46 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
               </div>
             );
           })}
+
+          {/* Administración cierra el menú, separada por una línea: es la sección que no se usa todo el día,
+              y abajo queda a la misma distancia esté el menú como esté. En el teléfono no hay lugar para un
+              panel al lado, así que se despliega adentro, como cualquier grupo. */}
+          {adminPending || showAdministration ? (
+            <div
+              className={cn(
+                "mt-auto border-t border-[var(--color-border)] pt-2",
+                iconsOnly ? "flex justify-center" : "",
+              )}
+            >
+              {adminPending ? (
+                <Skeleton
+                  aria-hidden="true"
+                  className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-10" : "h-9 w-full")}
+                />
+              ) : isMobile ? (
+                <ul className="flex flex-col gap-1">
+                  <li>
+                    <NavBranch
+                      labelKey={administration.labelKey}
+                      icon={administration.icon}
+                      items={adminItems}
+                      controls={controls}
+                      translate={t}
+                      onNavigate={onNavigate}
+                    />
+                  </li>
+                </ul>
+              ) : (
+                <AdministrationTrigger
+                  label={t(administration.labelKey)}
+                  open={panelOpen}
+                  collapsed={iconsOnly}
+                  panelId={panelId}
+                  onToggle={() => setPanelOpen((previous) => !previous)}
+                />
+              )}
+            </div>
+          ) : null}
         </nav>
 
         {/* Mientras el perfil no llegó, el pie ocupa el mismo lugar con bloques de carga en vez de quedar
@@ -397,6 +588,45 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           </div>
         ) : null}
       </aside>
+
+      {/* El panel de Administración: un carril propio al lado del menú, con la misma lista de siempre pero
+          entera y sin robarle lugar al menú de todos los días. Es un `nav` y no otro `aside`, porque es
+          navegación y no una segunda barra: el único `complementary` de la pantalla sigue siendo el menú.
+          `z-30` como la barra, y después de ella en el DOM: así su flecha sale sobre la banda de la pantalla. */}
+      {panelVisible ? (
+        <nav
+          id={panelId}
+          aria-label={t(administration.labelKey)}
+          className="relative z-30 flex h-svh w-[264px] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-muted)]"
+        >
+          {/* El mismo alto que la marca del menú y que el Topbar: los tres bordes de arriba forman una sola
+              línea que cruza la pantalla. */}
+          <div className="flex h-16 items-center border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4">
+            <p className="truncate text-sm font-semibold text-[var(--color-content)]">{t(administration.labelKey)}</p>
+          </div>
+
+          <IconButton
+            label={t("layout.sidebar.closeAdministration")}
+            onClick={() => setPanelOpen(false)}
+            className="absolute top-20 -right-3 z-20 size-6 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm hover:bg-[var(--color-surface-muted)]"
+          >
+            <ChevronLeftIcon className="size-3.5" />
+          </IconButton>
+
+          <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
+            <ul className="flex flex-col gap-1">
+              <NavItems
+                items={adminItems}
+                controls={controls}
+                translate={t}
+                onNavigate={onNavigate}
+                showIcons
+                pending={isPending}
+              />
+            </ul>
+          </div>
+        </nav>
+      ) : null}
     </>
   );
 }

@@ -88,7 +88,8 @@
       "expand": "Expandir menú",
       "closeDrawer": "Cerrar menú",
       "loadError": "No pudimos cargar tu menú.",
-      "retryLoad": "Reintentar cargar el menú"
+      "retryLoad": "Reintentar cargar el menú",
+      "closeAdministration": "Cerrar Administración"
     },
     "topbar": {
       "toggle": "Menú de navegación"

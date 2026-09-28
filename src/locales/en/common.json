@@ -88,7 +88,8 @@
       "expand": "Expand menu",
       "closeDrawer": "Close menu",
       "loadError": "We couldn't load your menu.",
-      "retryLoad": "Retry loading the menu"
+      "retryLoad": "Retry loading the menu",
+      "closeAdministration": "Close Administration"
     },
     "topbar": {
       "toggle": "Navigation menu"
