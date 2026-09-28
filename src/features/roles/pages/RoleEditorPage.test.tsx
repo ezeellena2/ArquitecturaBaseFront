@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PermissionGroup } from "../api/roles";
+import { roleQueryKey, type PermissionGroup } from "../api/roles";
 import { queryClient } from "@/shared/api/queryClient";
 import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import { currentUser } from "@/test/mocks/handlers";
@@ -90,12 +90,27 @@ const roles = [admin, user, support, audit];
 
 const manager = { ...currentUser, permissions: ["users.read", "roles.read", "roles.manage"] };
 
+/// `GET /api/roles/{id}`, como el backend: el rol, o 404 con `Roles.Role.NotFound` si no está.
+function roleById(roleList: readonly RoleListItem[]) {
+  return http.get("/api/roles/:roleId", ({ params }) => {
+    const role = roleList.find((item) => item.id === params.roleId);
+
+    return role
+      ? HttpResponse.json(role)
+      : HttpResponse.json(
+          { status: 404, code: "Roles.Role.NotFound", detail: "No encontramos el rol." },
+          { status: 404 },
+        );
+  });
+}
+
 /// El arnés corre con `onUnhandledRequest: "error"`: cada test declara todo lo que su pantalla va a pedir.
-/// Volver al listado también pide los roles, así que el handler está siempre.
+/// El editor pide su rol por id; volver al listado pide los roles, así que los dos handlers están siempre.
 function editorHandlers(roleList: readonly RoleListItem[] = roles) {
   return [
     http.get("/api/me", () => HttpResponse.json(manager)),
     http.get("/api/roles", () => HttpResponse.json(roleList)),
+    roleById(roleList),
     http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
   ];
 }
@@ -204,8 +219,11 @@ describe("RoleEditorPage", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    // El listado quedó en caché antes de que otro administrador le agregara "Administrar usuarios" a Soporte.
-    queryClient.setQueryData(rolesQueryKey, [{ ...support, permissions: ["users.read", "roles.read"] }]);
+    // El listado y el rol quedaron en caché antes de que otro administrador le agregara "Administrar usuarios" a
+    // Soporte.
+    const stale = { ...support, permissions: ["users.read", "roles.read"] };
+    queryClient.setQueryData(rolesQueryKey, [stale]);
+    queryClient.setQueryData(roleQueryKey("r3"), stale);
 
     renderRouteWithProviders("/roles/r3");
 
@@ -227,27 +245,68 @@ describe("RoleEditorPage", () => {
     );
   });
 
+  it("asks for the role it edits by its id, not for the whole listing", async () => {
+    const listRequests = vi.fn();
+    // Antes que los de siempre: en `server.use`, gana el primero que coincide.
+    server.use(
+      http.get("/api/roles", () => {
+        listRequests();
+
+        return HttpResponse.json(roles);
+      }),
+      ...editorHandlers(),
+    );
+
+    await renderSupport();
+
+    expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Soporte");
+    expect(listRequests).not.toHaveBeenCalled();
+  });
+
+  it("invalidates the saved role along with the listing", async () => {
+    let roleRequests = 0;
+    server.use(
+      http.get("/api/roles/r3", () => {
+        roleRequests += 1;
+
+        return HttpResponse.json(support);
+      }),
+      ...editorHandlers(),
+      http.put("/api/roles/r3", () => new HttpResponse(null, { status: 204 })),
+    );
+
+    const { router } = await renderSupport();
+    expect(roleRequests).toBe(1);
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), " 2");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/roles"));
+    // El rol cuelga del prefijo del listado: invalidar los roles lo vuelve a pedir, y en la caché no queda lo de antes
+    // de guardar.
+    expect(roleRequests).toBe(2);
+  });
+
   it("does not seed from the listing's cache when asking for the role again fails", async () => {
     const updates: unknown[] = [];
     let requests = 0;
     server.use(
       http.get("/api/me", () => HttpResponse.json(manager)),
       http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
-      http.get("/api/roles", () => {
+      // El listado llegó antes de que otro administrador le agregara "Administrar usuarios" a Soporte; el pedido
+      // del editor falla, y el de "Reintentar" ya trae lo nuevo.
+      http.get("/api/roles", () =>
+        HttpResponse.json([admin, user, { ...support, permissions: ["users.read", "roles.read"] }, audit]),
+      ),
+      http.get("/api/roles/r3", () => {
         requests += 1;
 
-        // El listado llegó antes de que otro administrador le agregara "Administrar usuarios" a Soporte; el pedido
-        // del editor falla, y el de "Reintentar" ya trae lo nuevo.
-        if (requests === 1) {
-          return HttpResponse.json([admin, user, { ...support, permissions: ["users.read", "roles.read"] }, audit]);
-        }
-
-        return requests === 2
+        return requests === 1
           ? HttpResponse.json(
               { status: 500, code: "General.Unexpected", detail: "Ocurrió un error.", traceId: "0HN7-Z" },
               { status: 500 },
             )
-          : HttpResponse.json(roles);
+          : HttpResponse.json(support);
       }),
       http.put("/api/roles/r3", async ({ request }) => {
         updates.push(await request.json());
@@ -290,11 +349,12 @@ describe("RoleEditorPage", () => {
     server.use(
       http.get("/api/me", () => HttpResponse.json(manager)),
       http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
-      http.get("/api/roles", () =>
+      http.get("/api/roles/r3", () =>
         HttpResponse.json({ status: 403, code: "Http.Forbidden", detail: "No tenés permiso." }, { status: 403 }),
       ),
     );
     queryClient.setQueryData(rolesQueryKey, roles);
+    queryClient.setQueryData(roleQueryKey("r3"), support);
 
     renderRouteWithProviders("/roles/r3");
 
@@ -727,11 +787,15 @@ describe("RoleEditorPage", () => {
   });
 
   it("says the role no longer exists, and its button goes back to the listing", async () => {
+    const toastError = vi.spyOn(toast, "error");
+    // `GET /api/roles/r3` responde 404 con `Roles.Role.NotFound`.
     server.use(...editorHandlers([admin, user, audit]));
 
     const { router } = renderRouteWithProviders("/roles/r3");
 
     expect(await screen.findByText("Este rol ya no existe")).toBeInTheDocument();
+    // La pantalla ya lo explica: un aviso con el `detail` del 404 lo diría dos veces.
+    expect(toastError).not.toHaveBeenCalled();
     expect(screen.getByText("Alguien lo borró, o el link que abriste es de antes.")).toBeInTheDocument();
     // No hay nada que reintentar: el rol no va a volver.
     expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
@@ -753,7 +817,7 @@ describe("RoleEditorPage", () => {
     server.use(
       http.get("/api/me", () => HttpResponse.json(manager)),
       http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
-      http.get("/api/roles", () => {
+      http.get("/api/roles/r3", () => {
         requests += 1;
 
         return requests === 1
@@ -761,7 +825,7 @@ describe("RoleEditorPage", () => {
               { status: 500, code: "General.Unexpected", detail: "Ocurrió un error.", traceId: "0HN7-A2" },
               { status: 500 },
             )
-          : HttpResponse.json(roles);
+          : HttpResponse.json(support);
       }),
     );
 

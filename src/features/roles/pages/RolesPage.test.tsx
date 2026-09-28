@@ -70,11 +70,13 @@ const permissionGroups: PermissionGroup[] = [
 
 const manager = { ...currentUser, permissions: ["roles.read", "roles.manage"] };
 
-/// El arnés corre con `onUnhandledRequest: "error"`: cada test declara todo lo que su pantalla va a pedir.
+/// El arnés corre con `onUnhandledRequest: "error"`: cada test declara todo lo que su pantalla va a pedir. "Editar"
+/// lleva al editor, que pide su rol por id.
 function managerHandlers() {
   return [
     http.get("/api/me", () => HttpResponse.json(manager)),
     http.get("/api/roles", () => HttpResponse.json(roles)),
+    http.get("/api/roles/:roleId", ({ params }) => HttpResponse.json(roles.find((role) => role.id === params.roleId))),
     http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
   ];
 }
