@@ -8,12 +8,15 @@ export function AuthLayout() {
   const { t, i18n } = useTranslation();
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-[var(--color-surface-muted)] px-4 py-10">
-      {/* Cuadrado de marca: placeholder hasta que haya un logo real. Sin el nombre al lado: la tarjeta ya
-          dice a qué se está entrando, y el nombre de la plantilla no aporta nada ahí. */}
-      <span aria-hidden="true" className="size-8 rounded-lg bg-[var(--color-brand-600)]" />
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-[var(--color-canvas)] px-4 py-10">
+      {/* La marca es el nombre escrito, como en el menú: un cuadrado de color es el placeholder que pone
+          cualquier maqueta, y acá arriba de la tarjeta es lo único que hay. */}
+      <span className="text-lg tracking-[-0.02em]">
+        <span className="font-bold text-[var(--color-content)]">Arquitectura</span>
+        <span className="text-[var(--color-content-muted)]">Base</span>
+      </span>
 
-      <div className="w-full max-w-[28rem] rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm sm:p-8">
+      <div className="w-full max-w-[28rem] rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 sm:p-7">
         <Outlet />
       </div>
 

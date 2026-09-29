@@ -139,7 +139,7 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
             <SlidersIcon aria-hidden="true" className="size-4" />
             {t("filters.more")}
             {values.createdWithinDays ? (
-              <span className="inline-flex size-[18px] items-center justify-center rounded-full bg-[var(--color-brand-600)] text-[11px] font-semibold text-white">
+              <span className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-[11px] font-semibold text-white">
                 1
               </span>
             ) : null}
@@ -176,7 +176,7 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
           {active.map((key) => (
             <span
               key={key}
-              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[var(--color-brand-500)]/30 bg-[var(--color-brand-50)] py-0 pr-1 pl-2.5 text-[12.5px] text-[var(--color-brand-700)]"
+              className="inline-flex h-6 items-center gap-1.5 rounded-[var(--radius-control)] border border-[var(--color-brand-500)]/30 bg-[var(--color-brand-50)] py-0 pr-1 pl-2.5 text-[12.5px] text-[var(--color-brand-700)]"
             >
               <span>
                 <span className="opacity-70">{t(`filters.chip.${key}`)}:</span>{" "}
@@ -186,7 +186,7 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
                 type="button"
                 aria-label={t("filters.chip.remove", { name: t(`filters.chip.${key}`) })}
                 onClick={() => setFilter(key, undefined)}
-                className="inline-flex size-[18px] items-center justify-center rounded-full hover:bg-[var(--color-brand-500)]/20"
+                className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control)] hover:bg-[var(--color-brand-500)]/20"
               >
                 <span aria-hidden="true" className="text-[13px] leading-none">
                   ×

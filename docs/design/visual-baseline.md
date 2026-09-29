@@ -5,6 +5,46 @@ Revisión del Artifact: **2026-09-24** (veintiún tableros: los diez del sistema
 Procedencia: [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) (Artifact privado de Claude)  
 Biblioteca de piezas: [ArquitecturaBase UI](https://claude.ai/artifact/Ew763kqorVHSYeUqE8CZ7h) (Artifact privado de Claude, instalada en el lienzo del sistema visual)
 
+## Escala, tema y forma (2026-09-28)
+
+**Esta sección manda sobre cualquier medida, color o forma que diga el resto del documento.** Nació de una
+comparación contra Vercel y DigitalOcean: lo que hacía que esto se viera como una plantilla generada no era
+la paleta, era que todo estaba una talla más grande de lo que usa una herramienta de trabajo, y que arriba de
+eso había una capa de adornos que aparecen en cualquier panel. Los tableros están en el Artifact, bajo "Que no
+parezca una plantilla: la escala".
+
+- **La aplicación es oscura.** El `<html>` lleva `class="dark"` siempre y `src/index.css` no tiene bloque
+  claro: un `:root` claro que nadie usa solo se desincroniza. El fondo es `--color-canvas`, lo más oscuro que
+  hay; el menú, las tarjetas y los diálogos suben un escalón con `--color-surface`, y lo que se destaca
+  adentro sube otro con `--color-surface-muted`. En oscuro la jerarquía se invierte: **más claro es más
+  cerca**.
+- **La marca es ámbar y se lee al revés que en claro:** `-50` y `-100` son fondos tintados oscuros, `-700` el
+  texto que va encima, y `-600` el relleno, con `--color-brand-ink` (no blanco) sobre él.
+- **La escala de texto baja una talla entera**, redefiniendo `--text-*` en `@theme`: la interfaz se lee en
+  13 px (`text-sm`), no en 14. Cambiarla ahí la baja en todas las pantallas a la vez, sin tocar una clase.
+- **Las medidas:** barra superior 48, menú 220 (56 contraído), panel de Administración 200, ítem de menú 30,
+  botón 30 (26 el chico), control de formulario 30, fila de tabla 36, encabezado de tabla 32.
+- **Las esquinas casi no se redondean:** 2 px en un control (`--radius-control`) y 4 px en una tarjeta
+  (`--radius-card`). El redondeo de 8 y 12 px en todo, del más chico al más grande, es lo que hace que
+  cualquier panel se parezca a cualquier otro.
+- **Nada lleva sombra.** La profundidad la dan el escalón de luz y una línea de 1 px. Quedan las de los
+  popovers, que sí flotan.
+- **Lo que se fue, uno por uno:** el cuadrado de color donde iría el logo (ahora la marca es el nombre
+  escrito, en el menú y en el ingreso), la banda tintada del encabezado de pantalla, el ícono de la sección
+  metido en un cuadradito (la prop `icon` de `Page` ya no existe), los íconos de cada ítem del menú
+  expandido —quedan solo para la barra contraída, que sin ellos no tendría nada que mostrar—, las versalitas
+  con espaciado de los rótulos, las pastillas redondas de estado y los avatares circulares.
+- **El ítem activo del menú se marca con una barra de 2 px de la marca y el peso de la tipografía**, no con
+  una pastilla celeste. La pastilla tintada era el único lugar donde aparecía el color de marca en toda la
+  pantalla, y eso lo convertía en decoración.
+- **La tipografía es Public Sans** (`@fontsource-variable/public-sans`), no Inter: está dibujada para
+  formularios y aguanta 13 px mejor. Las tablas llevan figuras tabulares por CSS, para que las columnas de
+  números no se desalineen.
+
+Lo que queda pendiente de esta revisión: la pantalla de roles sigue mostrando el selector de permisos como un
+componente enorme con áreas de ejemplo, que no se parece a nada que exista en un producto real. Eso no lo
+arregla la escala: hay que volver a dibujar esa pantalla.
+
 ## Cómo se usa esta base
 
 El Artifact es el origen visual de esta revisión, pero no puede ser la única fuente: requiere una sesión autorizada y puede evolucionar fuera del historial de Git. Este documento congela sus decisiones aplicables para que Claude, Codex y cualquier persona trabajen con la misma base.

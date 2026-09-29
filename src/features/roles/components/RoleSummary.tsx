@@ -87,7 +87,7 @@ export function RoleSummary({ groups, picked, onRemove }: RoleSummaryProps): Rea
                   <li
                     key={permission.code}
                     className={cn(
-                      "inline-flex h-7 items-center gap-[5px] rounded-full border border-[var(--color-brand-500)]/30 bg-[var(--color-brand-50)] text-[12.5px] text-[var(--color-brand-700)]",
+                      "inline-flex h-6 items-center gap-[5px] rounded-[var(--radius-control)] border border-[var(--color-brand-500)]/30 bg-[var(--color-brand-50)] text-[12.5px] text-[var(--color-brand-700)]",
                       onRemove ? "pr-1 pl-[9px]" : "px-[9px]",
                     )}
                   >
@@ -97,7 +97,7 @@ export function RoleSummary({ groups, picked, onRemove }: RoleSummaryProps): Rea
                         type="button"
                         aria-label={t("summary.remove", { name: permission.name })}
                         onClick={(event) => remove(permission.code, event.currentTarget)}
-                        className="inline-flex size-[18px] items-center justify-center rounded-full hover:bg-[var(--color-brand-500)]/20"
+                        className="inline-flex size-4 items-center justify-center rounded-full hover:bg-[var(--color-brand-500)]/20"
                       >
                         <span aria-hidden="true" className="text-[13px] leading-none">
                           ×

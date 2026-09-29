@@ -1,136 +1,114 @@
 @import "tailwindcss";
 
 /* La variante dark: depende solo de la clase .dark, como la declara la CLI de shadcn para Tailwind 4.
-   Sin esto, Tailwind 4 la ata a prefers-color-scheme y los componentes de shared/ui toman sus estilos
-   oscuros (la casilla gris, la perilla del switch negra) cuando el sistema está en oscuro, aunque la app
-   se vea clara. */
+   La aplicación es oscura y el `<html>` lleva esa clase siempre (index.html): los componentes de
+   shared/ui traen reglas `dark:` propias (el borde del input, la perilla del switch, la casilla) y sin
+   la clase se quedarían con las claras sobre un fondo oscuro. */
 @custom-variant dark (&:is(.dark *));
 
 /* Tokens de marca. Cambiar la marca es cambiar estas variables (sección 7.4 del spec). */
 @theme {
-  /* La escala tiene dos usos y no son intercambiables:
-     -50/-100 para fondos tintados, -500 para bordes, íconos y anillos de foco,
-     -600 para rellenos con texto blanco encima y -700 para su hover.
-     -500 con texto blanco da 3.65:1 y no llega al 4.5:1 de WCAG AA; -600 da 5.2:1.
-     Si cambiás el tono, mantené -600 en L <= 0.56 o el texto blanco deja de leerse. */
-  --color-brand-50: oklch(0.97 0.02 250);
-  --color-brand-100: oklch(0.93 0.04 250);
-  --color-brand-500: oklch(0.62 0.16 250);
-  --color-brand-600: oklch(0.55 0.16 250);
-  --color-brand-700: oklch(0.48 0.14 250);
+  /* La escala de marca es ámbar, y en un tema oscuro se lee al revés que en uno claro:
+     -50 y -100 son fondos tintados (oscuros y apagados), -700 es el texto que va encima de ellos, y
+     -600 es el relleno, lo único que ilumina de verdad. Sobre -600 nunca va blanco: va --color-brand-ink,
+     porque un ámbar que se lee sobre el fondo oscuro es demasiado claro para llevar texto blanco.
+     Si cambiás el tono, mantené -600 en L >= 0.72 o el texto oscuro encima deja de leerse. */
+  --color-brand-50: oklch(0.3 0.045 70);
+  --color-brand-100: oklch(0.37 0.07 70);
+  --color-brand-500: oklch(0.72 0.13 70);
+  --color-brand-600: oklch(0.79 0.14 70);
+  --color-brand-700: oklch(0.88 0.1 70);
+  --color-brand-ink: oklch(0.2 0.03 70);
 
-  --color-surface: oklch(1 0 0);
-  --color-surface-muted: oklch(0.97 0.005 250);
-  /* La banda que abre una superficie: encabezado de tabla, de diálogo, de panel y rótulo de grupo.
-     Es más oscura que surface-muted a propósito: con surface-muted el encabezado de una tabla no se
-     despega de sus filas, y la tabla se lee como un bloque sin cabeza. Su borde también es más oscuro
-     que --color-border, porque es el que separa la cabeza del cuerpo y no una división cualquiera. */
-  --color-surface-header: oklch(0.945 0.008 250);
-  --color-surface-header-border: oklch(0.86 0.012 250);
-  --color-border: oklch(0.9 0.01 250);
-  --color-content: oklch(0.25 0.02 250);
-  /* Los rótulos en versalitas (encabezado de tabla, rótulo de grupo del menú). Un punto más claros que
-     --color-content: en mayúsculas y con espaciado, el negro pleno pesa más que el dato que encabeza. */
-  --color-content-heading: oklch(0.32 0.02 250);
-  --color-content-muted: oklch(0.5 0.02 250);
-  --color-danger: oklch(0.58 0.2 25);
-  /* Un estado malo o un error escritos sobre un fondo tintado: "No llegó", en la franja de la última invitación
-     (tablero "Editar usuario · B"), y el error de Guardar en la banda del pie de la edición. --color-danger no llega
-     a 4.5:1 sobre --color-surface-muted; este sí. */
-  --color-danger-700: oklch(0.5 0.19 25);
-  --color-success: oklch(0.6 0.14 150);
-  /* La insignia "Verificado" (el correo y el número del perfil): el mismo uso que la escala de marca, -50 para el
-     fondo tintado y -700 para el texto encima. -700 sobre -50 da más de 4.5:1. */
-  --color-success-50: oklch(0.96 0.03 150);
-  --color-success-700: oklch(0.42 0.1 150);
-  --color-warning: oklch(0.75 0.15 80);
-  /* La insignia "Sin verificar" y la advertencia de "único medio de ingreso" (tablero "WhatsApp · Usuarios: alta con
-     teléfono"): el mismo par que el de "Verificado", en ámbar. -700 sobre -50 da más de 4.5:1. */
-  --color-warning-50: oklch(0.97 0.04 85);
-  --color-warning-700: oklch(0.45 0.1 70);
+  /* Las superficies, de atrás para adelante. En oscuro la jerarquía se invierte: lo más claro es lo que
+     está más cerca. El fondo de la aplicación es lo más oscuro que hay; los paneles (menú, tarjetas,
+     diálogos) suben un escalón, y lo que se destaca adentro de un panel sube otro. Nada lleva sombra:
+     la profundidad la da el escalón de luz y una línea de 1 px. */
+  --color-canvas: oklch(0.155 0.004 265);
+  --color-surface: oklch(0.2 0.005 265);
+  --color-surface-muted: oklch(0.245 0.006 265);
+  /* La banda que abre una superficie: encabezado de tabla, de diálogo, de panel y rótulo de grupo. */
+  --color-surface-header: oklch(0.225 0.006 265);
+  --color-surface-header-border: oklch(0.32 0.008 265);
+  --color-border: oklch(0.285 0.006 265);
 
-  --radius-card: 0.75rem;
-  --radius-control: 0.5rem;
+  --color-content: oklch(0.95 0.003 265);
+  /* Un punto más apagado que --color-content, para lo que encabeza sin ser el dato. */
+  --color-content-heading: oklch(0.88 0.004 265);
+  --color-content-muted: oklch(0.68 0.006 265);
 
-  /* "Inter Variable" es el nombre de familia que declara @fontsource-variable/inter.
-     Inter queda de respaldo por si alguien la tiene instalada en el sistema. */
-  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --color-danger: oklch(0.7 0.17 25);
+  /* Un error escrito sobre un fondo tintado. */
+  --color-danger-700: oklch(0.8 0.13 25);
+  --color-success: oklch(0.75 0.15 155);
+  --color-success-50: oklch(0.28 0.05 155);
+  --color-success-700: oklch(0.85 0.12 155);
+  --color-warning: oklch(0.8 0.13 85);
+  --color-warning-50: oklch(0.3 0.05 85);
+  --color-warning-700: oklch(0.87 0.11 85);
+
+  /* La escala de texto, una talla más chica que la de Tailwind: la interfaz de una herramienta de
+     trabajo se lee en 13 px, no en 14. Redefinirla acá la baja en todas las pantallas a la vez, sin
+     tocar una sola clase. */
+  --text-xs: 0.6875rem;
+  --text-xs--line-height: calc(1 / 0.6875);
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: calc(1.15 / 0.8125);
+  --text-base: 0.875rem;
+  --text-base--line-height: calc(1.3 / 0.875);
+  --text-lg: 1rem;
+  --text-lg--line-height: calc(1.4 / 1);
+  --text-xl: 1.125rem;
+  --text-xl--line-height: calc(1.5 / 1.125);
+  --text-2xl: 1.25rem;
+  --text-2xl--line-height: calc(1.6 / 1.25);
+
+  /* Las esquinas. Un control casi no se redondea (2 px) y una tarjeta apenas (4 px): el redondeo de 8 y
+     12 px es lo que hace que cualquier panel se parezca a cualquier otro panel. */
+  --radius-card: 0.25rem;
+  --radius-control: 0.125rem;
+
+  /* "Public Sans Variable" es el nombre de familia que declara @fontsource-variable/public-sans. Está
+     dibujada para formularios, así que aguanta 13 px mejor que una grotesca de marketing. */
+  --font-sans: "Public Sans Variable", "Public Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Variables de shadcn/ui (estilo new-york, color base neutral, con variables CSS).
-   La CLI de esta versión ("npx shadcn@latest init") es interactiva y solo ofrece
-   8 presets con fuente e ícono propios (o "Custom", que abre un sitio externo);
-   no hay flag para el combo new-york + neutral que pide la Tarea 2. Este bloque
-   reproduce a mano la salida estándar que genera esa CLI para Tailwind 4. */
+/* Variables de shadcn/ui (estilo new-york, color base neutral, con variables CSS), ya en oscuro: cada
+   una sale de los tokens de arriba, así la marca y las superficies se cambian en un solo lugar.
+   No hay bloque claro: la aplicación es oscura, y un `:root` claro que nadie usa solo se desincroniza. */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* Las cuatro que llevan la marca salen de los tokens de arriba. Si no, el botón
-     primario de shadcn queda gris y la marca no se ve en ninguna pantalla. */
+  --radius: 0.25rem;
+  --background: var(--color-surface);
+  --foreground: var(--color-content);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-content);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-content);
   --primary: var(--color-brand-600);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --primary-foreground: var(--color-brand-ink);
+  --secondary: var(--color-surface-muted);
+  --secondary-foreground: var(--color-content);
+  --muted: var(--color-surface-muted);
+  --muted-foreground: var(--color-content-muted);
+  --accent: var(--color-surface-muted);
+  --accent-foreground: var(--color-content);
+  --destructive: var(--color-danger);
   --border: var(--color-border);
   --input: var(--color-border);
   --ring: var(--color-brand-500);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.439 0 0);
+  --chart-1: var(--color-brand-600);
+  --chart-2: var(--color-success);
+  --chart-3: var(--color-warning);
+  --chart-4: var(--color-danger);
+  --chart-5: var(--color-content-muted);
+  --sidebar: var(--color-surface);
+  --sidebar-foreground: var(--color-content);
+  --sidebar-primary: var(--color-brand-600);
+  --sidebar-primary-foreground: var(--color-brand-ink);
+  --sidebar-accent: var(--color-surface-muted);
+  --sidebar-accent-foreground: var(--color-content);
+  --sidebar-border: var(--color-border);
+  --sidebar-ring: var(--color-brand-500);
 }
 
 @theme inline {
@@ -159,9 +137,9 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -179,15 +157,21 @@
   }
 }
 
-/* El fondo de la aplicación es la superficie apagada, no el blanco de --background:
-   las tarjetas y la barra lateral son las que van en blanco, y así se despegan. */
 html,
 body,
 #root {
   height: 100%;
 }
 
+/* El fondo de la aplicación es lo más oscuro que hay: el menú, las tarjetas y los diálogos son los que
+   suben un escalón, y así se despegan sin necesidad de una sombra. */
 body {
-  background-color: var(--color-surface-muted);
+  background-color: var(--color-canvas);
   color: var(--color-content);
+}
+
+/* Los números de una tabla se comparan en vertical: sin figuras tabulares, un 1 mide menos que un 8 y
+   las columnas se desalinean solas. */
+table {
+  font-variant-numeric: tabular-nums;
 }

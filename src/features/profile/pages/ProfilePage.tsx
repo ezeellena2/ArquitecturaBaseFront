@@ -12,7 +12,6 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
-import { UserIcon } from "@/shared/ui/icons";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 
@@ -31,7 +30,7 @@ const surfacesClassName = "grid items-start gap-4 lg:grid-cols-2";
 /// selector de rueda del teléfono, que es lo que hace usable una lista así. Las clases son las del `Input`
 /// (`shared/ui/input.tsx`) para que los dos controles del formulario se vean igual.
 const selectClassName =
-  "h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40";
+  "h-[30px] w-full min-w-0 rounded-md border border-input bg-transparent px-2.5 py-1 text-base transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40";
 
 /// Las zonas que conoce el navegador (ya vienen ordenadas), más la que tiene guardada el perfil si no está
 /// entre ellas. `Intl.supportedValuesOf` devuelve los nombres canónicos de IANA y el backend puede tener
@@ -102,7 +101,7 @@ export function ProfilePage() {
 
   if (!user || !draft) {
     return (
-      <Page icon={UserIcon} title={t("title")}>
+      <Page title={t("title")}>
         {/* Mientras el perfil no llegó, las dos superficies ocupan su lugar. Si `/api/me` falló no hay nada que
             editar: de ese error se ocupa el aviso global del queryClient, igual que en el tablero. */}
         {isPending ? (
@@ -133,7 +132,7 @@ export function ProfilePage() {
       : undefined;
 
   return (
-    <Page icon={UserIcon} title={t("title")}>
+    <Page title={t("title")}>
       <div className={surfacesClassName}>
         <LoginMethodsCard user={user} />
 

@@ -32,7 +32,7 @@ export function SegmentedControl({
       role="group"
       aria-label={label}
       className={cn(
-        "h-9 shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]",
+        "h-[30px] shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]",
         fullWidth ? "flex w-full" : "inline-flex",
       )}
     >

@@ -3,7 +3,6 @@ import { Link } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
-import { HomeIcon } from "@/shared/ui/icons";
 import { Page } from "@/shared/ui/Page";
 
 /// `/` (sección 7.2): la pantalla de inicio. Va vacía a propósito: es el punto de partida de quien use la
@@ -17,7 +16,7 @@ export function DashboardPage() {
   const { data: user } = useCurrentUser();
 
   return (
-    <Page icon={HomeIcon} title={t("home.title")}>
+    <Page title={t("home.title")}>
       {user && !user.email ? (
         <Banner
           action={

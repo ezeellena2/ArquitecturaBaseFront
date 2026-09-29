@@ -52,15 +52,15 @@ function NavItem({
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium transition-colors",
+          "relative flex h-[30px] items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm transition-colors",
           isActive
-            ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
+            ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
             : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
-          collapsed ? "size-10 justify-center px-0" : "",
+          collapsed ? "size-[30px] justify-center px-0" : "",
         )
       }
     >
-      {showIcon ? <Icon className="size-5 shrink-0" /> : null}
+      {showIcon ? <Icon className="size-4 shrink-0" /> : null}
       {collapsed ? <span className="sr-only">{label}</span> : <span className="truncate">{label}</span>}
     </NavLink>
   );
@@ -107,9 +107,9 @@ function NavBranch({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         onClick={() => controls.toggle(labelKey)}
-        className="flex w-full items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
+        className="flex h-[30px] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
       >
-        {showIcon ? <Icon className="size-5 shrink-0" /> : null}
+        {showIcon ? <Icon className="size-4 shrink-0" /> : null}
         <span className="min-w-0 flex-1 truncate text-left">{translate(labelKey)}</span>
         <ChevronDownIcon
           aria-hidden="true"
@@ -204,14 +204,14 @@ function AdministrationTrigger({
       aria-controls={open ? panelId : undefined}
       onClick={onToggle}
       className={cn(
-        "flex w-full items-center gap-3 rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium transition-colors",
+        "relative flex h-[30px] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm transition-colors",
         open
-          ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
+          ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
           : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
-        collapsed ? "size-10 justify-center px-0" : "",
+        collapsed ? "size-[30px] justify-center px-0" : "",
       )}
     >
-      <Icon className="size-5 shrink-0" />
+      <Icon className="size-4 shrink-0" />
       {collapsed ? (
         <span className="sr-only">{label}</span>
       ) : (
@@ -370,7 +370,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           type="button"
           aria-label={t("layout.sidebar.closeDrawer")}
           onClick={onCloseMobile}
-          className="fixed inset-x-0 top-16 bottom-0 z-40 bg-black/40"
+          className="fixed inset-x-0 top-12 bottom-0 z-40 bg-black/50"
         />
       ) : null}
 
@@ -379,12 +379,12 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           "relative flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]",
           isMobile
             ? cn(
-                "fixed top-16 bottom-0 left-0 z-50 w-[264px] transition-transform duration-200",
+                "fixed top-12 bottom-0 left-0 z-50 w-[220px] transition-transform duration-200",
                 mobileOpen ? "translate-x-0" : "-translate-x-full",
               )
             // z-30: la flecha de colapsar sale por fuera del borde derecho, y sin esto queda tapada por la
             // banda del encabezado de la pantalla, que es `sticky z-20` y se pinta después.
-            : cn("h-svh shrink-0 transition-[width] duration-200 z-30", iconsOnly ? "w-[72px]" : "w-[264px]"),
+            : cn("h-svh shrink-0 transition-[width] duration-200 z-30", iconsOnly ? "w-[56px]" : "w-[220px]"),
         )}
       >
         {/* `h-16`, el mismo alto exacto que el Topbar. Con el alto automático medía 65 (16 + 32 + 16 + 1 de
@@ -392,13 +392,20 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             la pantalla salía quebrada un píxel justo en el borde de la barra. */}
         <div
           className={cn(
-            "flex h-16 items-center border-b border-[var(--color-border)] px-3",
+            "flex h-12 items-center border-b border-[var(--color-border)] px-3",
             iconsOnly ? "justify-center" : "",
           )}
         >
-          {/* Cuadrado de marca: placeholder hasta que haya un logo real. Al lado no va ningún nombre: el
-              lugar queda libre para la marca de quien use la plantilla. */}
-          <span aria-hidden="true" className="size-8 shrink-0 rounded-lg bg-[var(--color-brand-600)]" />
+          {/* La marca es el nombre escrito, no un cuadrado de color esperando un logo: un cuadrado de color
+              es lo que pone cualquier maqueta. Contraída queda la inicial. */}
+          {iconsOnly ? (
+            <span className="text-base font-bold tracking-[-0.02em] text-[var(--color-content)]">AB</span>
+          ) : (
+            <span className="truncate text-base tracking-[-0.02em]">
+              <span className="font-bold text-[var(--color-content)]">Arquitectura</span>
+              <span className="text-[var(--color-content-muted)]">Base</span>
+            </span>
+          )}
         </div>
 
         {/* La flecha va montada sobre el borde derecho, como un círculo mitad adentro y mitad afuera. Su eje
@@ -414,9 +421,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           <IconButton
             label={iconsOnly ? t("layout.sidebar.expand") : t("layout.sidebar.collapse")}
             onClick={onToggleCollapsed}
-            className="absolute top-20 -right-3 z-20 size-6 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm hover:bg-[var(--color-surface-muted)]"
+            className="absolute top-[62px] -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)]"
           >
-            <ChevronLeftIcon className={cn("size-3.5 transition-transform", iconsOnly ? "rotate-180" : "")} />
+            <ChevronLeftIcon className={cn("size-3 transition-transform", iconsOnly ? "rotate-180" : "")} />
           </IconButton>
         )}
 
@@ -424,7 +431,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             (72 + 20). Son dos valores porque es el centro lo que tiene que coincidir, no el borde de arriba. */}
         <nav
           aria-label={t("layout.sidebar.navigation")}
-          className={cn("flex flex-1 flex-col overflow-y-auto px-2 pb-3", iconsOnly ? "pt-2" : "pt-2.5")}
+          className="flex flex-1 flex-col overflow-y-auto px-2 pt-2 pb-2"
         >
           {/* Si /api/me falló no sabemos qué ítems mostrar, y el filtro de abajo los esconde. Sin avisar,
               una caída del backend pasa por un menú más corto de lo habitual, que nadie va a notar. El
@@ -462,7 +469,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
               <div key={group.labelKey} className={index === 0 ? "" : "mt-4"}>
                 {/* El primer grupo (general) no lleva rótulo: coincide con la maqueta aprobada. */}
                 {index > 0 && !iconsOnly ? (
-                  <p className="mb-1 px-3 text-xs font-semibold tracking-wide text-[var(--color-content-muted)] uppercase">
+                  <p className="mt-3 mb-1 px-2 text-xs text-[var(--color-content-muted)]">
                     {t(group.labelKey)}
                   </p>
                 ) : null}
@@ -488,12 +495,19 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                           labelKey={item.labelKey}
                           icon={item.icon}
                           items={item.children}
+                          showIcon={false}
                           controls={controls}
                           translate={t}
                           onNavigate={onNavigate}
                         />
                       ) : (
-                        <NavItem item={item} label={t(item.labelKey)} collapsed={iconsOnly} onNavigate={onNavigate} />
+                        <NavItem
+                          item={item}
+                          label={t(item.labelKey)}
+                          collapsed={iconsOnly}
+                          showIcon={iconsOnly}
+                          onNavigate={onNavigate}
+                        />
                       )}
                     </li>
                   ))}
@@ -524,6 +538,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                       labelKey={administration.labelKey}
                       icon={administration.icon}
                       items={adminItems}
+                      showIcon={false}
                       controls={controls}
                       translate={t}
                       onNavigate={onNavigate}
@@ -547,17 +562,17 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             vacío y aparecer después empujando la barra. Si /api/me falló (ni datos ni pendiente) no se
             muestra nada: de ese error se ocupa la pantalla, no la barra lateral. */}
         {user || isPending ? (
-          <div className="border-t border-[var(--color-border)] p-3">
+          <div className="border-t border-[var(--color-border)] p-2">
             <div className={cn("flex items-center gap-2", iconsOnly ? "justify-center" : "")}>
               {user ? (
                 <span
                   aria-hidden="true"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-sm font-semibold text-white"
+                  className="flex size-6 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-xs font-bold text-[var(--color-brand-ink)]"
                 >
                   {initialOf(accountNameOf(user))}
                 </span>
               ) : (
-                <Skeleton aria-hidden="true" className="size-8 shrink-0 rounded-full" />
+                <Skeleton aria-hidden="true" className="size-6 shrink-0 rounded-[var(--radius-control)]" />
               )}
               {iconsOnly ? null : (
                 // min-h-9 es el alto de los dos renglones (text-sm y text-xs): una cuenta sin nombre tiene uno
@@ -597,32 +612,25 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
         <nav
           id={panelId}
           aria-label={t(administration.labelKey)}
-          className="relative z-30 flex h-svh w-[264px] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-muted)]"
+          className="relative z-30 flex h-svh w-[200px] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]"
         >
           {/* El mismo alto que la marca del menú y que el Topbar: los tres bordes de arriba forman una sola
               línea que cruza la pantalla. */}
-          <div className="flex h-16 items-center border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4">
-            <p className="truncate text-sm font-semibold text-[var(--color-content)]">{t(administration.labelKey)}</p>
+          <div className="flex h-12 items-center border-b border-[var(--color-border)] px-3">
+            <p className="truncate text-sm font-medium text-[var(--color-content)]">{t(administration.labelKey)}</p>
           </div>
 
           <IconButton
             label={t("layout.sidebar.closeAdministration")}
             onClick={() => setPanelOpen(false)}
-            className="absolute top-20 -right-3 z-20 size-6 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm hover:bg-[var(--color-surface-muted)]"
+            className="absolute top-[62px] -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)]"
           >
-            <ChevronLeftIcon className="size-3.5" />
+            <ChevronLeftIcon className="size-3" />
           </IconButton>
 
           <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
             <ul className="flex flex-col gap-1">
-              <NavItems
-                items={adminItems}
-                controls={controls}
-                translate={t}
-                onNavigate={onNavigate}
-                showIcons
-                pending={isPending}
-              />
+              <NavItems items={adminItems} controls={controls} translate={t} onNavigate={onNavigate} pending={isPending} />
             </ul>
           </div>
         </nav>

@@ -67,7 +67,7 @@ function StateIcon({ tone, children }: { tone: "muted" | "danger"; children: Rea
     <span
       aria-hidden="true"
       className={cn(
-        "flex size-11 items-center justify-center self-center rounded-full",
+        "flex size-11 items-center justify-center self-center rounded-[var(--radius-card)]",
         tone === "danger"
           ? "bg-[var(--color-danger)]/10 text-[var(--color-danger)]"
           : "bg-[var(--color-surface-muted)] text-[var(--color-content-muted)]",
@@ -98,7 +98,7 @@ function AccountToEnter({ preview }: { preview: LoginLinkPreview }) {
       >
         <span
           aria-hidden="true"
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-sm font-semibold text-white"
+          className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-sm font-semibold text-white"
         >
           {initialOf(name)}
         </span>

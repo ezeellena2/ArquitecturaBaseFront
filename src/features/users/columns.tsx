@@ -140,7 +140,7 @@ function alsoWhatsAppMark(t: Translate) {
 /// exploración. A la vista, es la ayuda que aparece al pasar el mouse o al llegar con el teclado.
 function unverifiedBadge(t: Translate) {
   return (
-    <span tabIndex={0} className={cn(hintTrigger, "rounded-full")} {...hintEvents}>
+    <span tabIndex={0} className={cn(hintTrigger, "rounded-[var(--radius-control)]")} {...hintEvents}>
       <VerificationBadge verified={false} className="text-[11px]">
         {t("methods.unverified")}
       </VerificationBadge>

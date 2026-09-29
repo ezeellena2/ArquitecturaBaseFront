@@ -15,7 +15,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
-import { EyeIcon, PencilIcon, ShieldIcon, TrashIcon } from "@/shared/ui/icons";
+import { EyeIcon, PencilIcon,  TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { Page } from "@/shared/ui/Page";
 
@@ -112,7 +112,6 @@ export function RolesPage() {
 
   return (
     <Page
-      icon={ShieldIcon}
       title={t("title")}
       actions={
         <Can permission="roles.manage">

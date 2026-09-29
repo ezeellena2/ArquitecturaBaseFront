@@ -34,7 +34,7 @@ export function UserMenu() {
   if (!user) {
     // El menú necesita el nombre para poder nombrarse, así que hasta que llega no hay menú: queda el bloque
     // de carga del avatar, del mismo tamaño, para que después no aparezca de golpe.
-    return isPending ? <Skeleton aria-hidden="true" className="size-8 shrink-0 rounded-full" /> : null;
+    return isPending ? <Skeleton aria-hidden="true" className="size-6 shrink-0 rounded-[var(--radius-control)]" /> : null;
   }
 
   const displayName = accountNameOf(user);
@@ -57,10 +57,10 @@ export function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex shrink-0 items-center gap-1.5 rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+      <DropdownMenuTrigger className="flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
         <span
           aria-hidden="true"
-          className="flex size-8 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-sm font-semibold text-white"
+          className="flex size-6 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-xs font-bold text-[var(--color-brand-ink)]"
         >
           {initialOf(displayName)}
         </span>

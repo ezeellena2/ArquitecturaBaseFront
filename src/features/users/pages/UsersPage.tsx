@@ -26,7 +26,6 @@ import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable } from "@/shared/ui/DataTable";
 import { Page } from "@/shared/ui/Page";
-import { UsersIcon } from "@/shared/ui/icons";
 import { Pagination } from "@/shared/ui/Pagination";
 import { userFilterKeys } from "../api/users";
 import { UsersFilterBar } from "../components/UsersFilterBar";
@@ -119,7 +118,6 @@ export function UsersPage() {
 
   return (
     <Page
-      icon={UsersIcon}
       title={t("title")}
       actions={
         <Can permission="users.manage">
