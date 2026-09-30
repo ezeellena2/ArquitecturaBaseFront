@@ -14,6 +14,8 @@ import {
 import { ChevronDownIcon, SlidersIcon } from "@/shared/ui/icons";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { ActionTooltip } from "@/shared/ui/ActionTooltip";
+import { FilterBar } from "@/shared/ui/FilterBar";
 
 const control =
   "inline-flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-content-muted)] transition-colors hover:border-[var(--color-content-muted)]/50";
@@ -49,7 +51,6 @@ interface UsersFilterBarProps {
   filters: Filters<UserFilterKey>;
   search: string;
   onSearchChange: (value: string) => void;
-  totalLabel: string;
 }
 
 /// La barra de filtros del listado (fundamento visual, "Listados y filtros"): buscador, estado, rol y el
@@ -58,7 +59,7 @@ interface UsersFilterBarProps {
 /// Cada opción muestra **cuántos traería**, y ese número sale de `/api/users/filter-counts`, que lo calcula
 /// con los demás filtros puestos e ignorando el propio. Es lo que hace que elegir una opción no sea una
 /// apuesta: el número dice de antemano si hay algo del otro lado.
-export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: UsersFilterBarProps) {
+export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterBarProps) {
   const { t } = useTranslation("users");
   const { values, active, setFilter, clear } = filters;
 
@@ -87,7 +88,7 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
   };
 
   return (
-    <div className="mb-4 flex flex-col gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3.5">
+    <FilterBar className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         {/* 320 px, como el tablero: "Buscar por correo, nombre o número" no entra entero en menos. En un celular se
             achica con la fila, que ya se parte en renglones. */}
@@ -166,7 +167,6 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <span className="ml-auto text-[13px] text-[var(--color-content-muted)]">{totalLabel}</span>
       </div>
 
       {active.length > 0 ? (
@@ -182,6 +182,7 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
                 <span className="opacity-70">{t(`filters.chip.${key}`)}:</span>{" "}
                 <strong className="font-semibold">{chipLabels[key](values[key] ?? "")}</strong>
               </span>
+              <ActionTooltip label={t("filters.chip.remove", { name: t(`filters.chip.${key}`) })}>
               <button
                 type="button"
                 aria-label={t("filters.chip.remove", { name: t(`filters.chip.${key}`) })}
@@ -192,6 +193,7 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
                   ×
                 </span>
               </button>
+              </ActionTooltip>
             </span>
           ))}
           <Button
@@ -205,6 +207,6 @@ export function UsersFilterBar({ filters, search, onSearchChange, totalLabel }: 
           </Button>
         </div>
       ) : null}
-    </div>
+    </FilterBar>
   );
 }

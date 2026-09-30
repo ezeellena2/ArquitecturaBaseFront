@@ -22,6 +22,7 @@ import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
 import { rolesQueryKey } from "@/shared/api/roles";
 import { usePagination } from "@/shared/hooks/usePagination";
+import { useSystemPresentation } from "@/shared/api/presentation";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable } from "@/shared/ui/DataTable";
@@ -31,9 +32,9 @@ import { userFilterKeys } from "../api/users";
 import { UsersFilterBar } from "../components/UsersFilterBar";
 import { useFilters } from "@/shared/hooks/useFilters";
 
-/// Las dos acciones que no se hacen de una: antes pasan por el diálogo de confirmación.
+/// Las acciones de acceso y borrado pasan primero por el diálogo de confirmación.
 interface PendingConfirmation {
-  kind: "deactivate" | "delete";
+  kind: "activate" | "deactivate" | "delete";
   user: UserListItem;
 }
 
@@ -44,7 +45,8 @@ export function UsersPage() {
   const { data: currentUser } = useCurrentUser();
   const { has } = usePermissions();
   const queryClient = useQueryClient();
-  const { page, pageSize, sort, search, setPage, setSearch, toggleSort } = usePagination();
+  const presentation = useSystemPresentation();
+  const { page, pageSize, sort, search, ready, setPage, setPageSize, setSearch, toggleSort } = usePagination(presentation.data?.defaultPageSize, true);
   const filters = useFilters(userFilterKeys);
 
   const [isCreating, setIsCreating] = useState(false);
@@ -62,6 +64,7 @@ export function UsersPage() {
     queryKey: usersQueryKey(query),
     queryFn: () => fetchUsers(query),
     placeholderData: keepPreviousData,
+    enabled: ready,
   });
 
   // Las dos acciones de fila que no abren un formulario. El resultado va a un aviso y no a un cartel dentro
@@ -98,11 +101,7 @@ export function UsersPage() {
     canManage
       ? {
           onEdit: (user) => setEditingUser(user),
-          // Activar no se confirma: no se pierde nada. Desactivar sí, porque le corta el acceso en el acto.
-          onToggleActive: (user) =>
-            user.isActive
-              ? setConfirmation({ kind: "deactivate", user })
-              : activation.mutate({ user, isActive: true }),
+          onToggleActive: (user) => setConfirmation({ kind: user.isActive ? "deactivate" : "activate", user }),
           onDelete: (user) => setConfirmation({ kind: "delete", user }),
         }
       : undefined,
@@ -131,7 +130,6 @@ export function UsersPage() {
         filters={filters}
         search={search ?? ""}
         onSearchChange={setSearch}
-        totalLabel={data ? t("shownOfTotal", { count: data.items.length, total: data.totalCount }) : ""}
       />
 
       {/* Sin padding y con `overflow-hidden`: la banda del encabezado llega a los bordes de la caja y se
@@ -172,6 +170,7 @@ export function UsersPage() {
             hasPrevious={data.hasPrevious}
             hasNext={data.hasNext}
             onPageChange={setPage}
+            onPageSizeChange={setPageSize}
           />
         ) : null}
       </div>
@@ -188,10 +187,10 @@ export function UsersPage() {
               setConfirmation(undefined);
             }
           }}
-          title={t(isDeletion ? "delete.title" : "deactivate.title", { user: userIdentifier(confirmation.user) })}
-          description={t(isDeletion ? "delete.description" : "deactivate.description")}
-          confirmLabel={t(isDeletion ? "delete.confirm" : "deactivate.confirm")}
-          destructive
+          title={t(`${confirmation.kind}.title`, { user: userIdentifier(confirmation.user) })}
+          description={t(`${confirmation.kind}.description`)}
+          confirmLabel={t(`${confirmation.kind}.confirm`)}
+          destructive={confirmation.kind !== "activate"}
           onConfirm={() => {
             if (isDeletion) {
               removal.mutate(confirmation.user);
@@ -199,7 +198,7 @@ export function UsersPage() {
               return;
             }
 
-            activation.mutate({ user: confirmation.user, isActive: false });
+            activation.mutate({ user: confirmation.user, isActive: confirmation.kind === "activate" });
           }}
         />
       ) : null}

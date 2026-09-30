@@ -1,6 +1,7 @@
-import { useLayoutEffect, type ReactNode } from "react";
+import { useLayoutEffect, useState, type ReactNode } from "react";
 import { AuthProvider as OidcProvider, useAuth, type AuthContextProps } from "react-oidc-context";
 import { authConfig } from "./authConfig";
+import { createSessionRecoveryAttempt, SessionRecoveryAttemptContext } from "./sessionRecoveryStatus";
 import { configureHttpClient } from "@/shared/api/httpClient";
 import i18n from "@/shared/i18n";
 
@@ -41,9 +42,12 @@ function HttpClientBridge({ children }: { children: ReactNode }) {
 }
 
 export function AppAuthProvider({ children }: { children: ReactNode }) {
+  const [recoveryAttempt] = useState(createSessionRecoveryAttempt);
   return (
     <OidcProvider {...authConfig} onSigninCallback={onSigninCallback}>
-      <HttpClientBridge>{children}</HttpClientBridge>
+      <SessionRecoveryAttemptContext.Provider value={recoveryAttempt}>
+        <HttpClientBridge>{children}</HttpClientBridge>
+      </SessionRecoveryAttemptContext.Provider>
     </OidcProvider>
   );
 }

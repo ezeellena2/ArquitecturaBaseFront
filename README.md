@@ -19,7 +19,7 @@ cd ../ArquitecturaBase
 aspire run
 ```
 
-Aspire levanta Postgres, la Api y este front, y le pasa a Vite el certificado de desarrollo. El navegador habla con un solo origen, `https://localhost:5173`: Vite sirve el SPA y reenvía `/api`, `/account`, `/connect`, `/signin-google` y `/.well-known` a la Api (`vite.config.ts`, `server.proxy`). La Api queda en `https://localhost:7180`, pero no hace falta abrirla.
+Aspire levanta Postgres, Redis, la Api y este front, y le pasa a Vite el certificado de desarrollo. El navegador habla con un solo origen, `https://localhost:5173`: Vite sirve el SPA y reenvía `/api`, `/account`, `/connect`, `/signin-google` y `/.well-known` a la Api (`vite.config.ts`, `server.proxy`). La Api queda en `https://localhost:7180`, pero no hace falta abrirla.
 
 **Solo el front.**
 
@@ -55,6 +55,10 @@ src/
 
 Una feature nunca importa de otra: lo común sube a `shared`.
 
+Para desarrollar pantallas, seguir las [premisas de desarrollo del front](docs/guides/premisas-de-desarrollo.md)
+y el [fundamento visual aprobado](docs/design/visual-baseline.md). Estas reglas acompañan a la plantilla
+en los proyectos derivados: las piezas comunes definen el aspecto y el comportamiento.
+
 ## Administración (Fase 4)
 
 Tres pantallas, cada una detrás de su permiso:
@@ -77,4 +81,9 @@ Aparte de esas tres, cualquiera con sesión tiene **`/perfil`**: nombre, idioma 
 
 - Diseño aprobado (sección 7): [`../ArquitecturaBase/docs/specs/2026-09-18-arquitectura-base-design.md`](../ArquitecturaBase/docs/specs/2026-09-18-arquitectura-base-design.md).
 - Planes por fase (históricos): [`../ArquitecturaBase/docs/history/plans/`](../ArquitecturaBase/docs/history/plans/). Este front sale de la Fase 3. Los planes en curso están en [`../ArquitecturaBase/docs/plans/`](../ArquitecturaBase/docs/plans/).
-- Convenciones para trabajar acá: [CLAUDE.md](CLAUDE.md).
+- Reglas para agentes: [AGENTS.md](AGENTS.md); Claude importa la misma fuente desde [CLAUDE.md](CLAUDE.md).
+- Convenciones completas: [docs/architecture.md](docs/architecture.md).
+- Responsabilidades y guías por carpeta: [mapa de instrucciones](docs/mapa-de-instrucciones.md).
+- Premisas para todas las pantallas: [premisas de desarrollo](docs/guides/premisas-de-desarrollo.md).
+- Mensajes en todas las pantallas: [contrato único](docs/guides/mensajes-y-estados.md) y
+  [plan de adopción con inventario](docs/plans/2026-09-30-unificacion-mensajes.md).

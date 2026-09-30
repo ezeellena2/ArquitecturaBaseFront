@@ -18,12 +18,14 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 //   ("Notifications alt+T"; el atajo lo agrega él) y el del botón de cerrar un aviso ("Close toast").
 //   `toastOptions` se mezcla en vez de pisarse, para que pasar otras opciones no se lleve la traducción.
 //   `sonner.i18n.test.tsx` se pone en rojo si vuelven.
+// - La ubicación aprobada es abajo a la derecha, definida acá para toda la plantilla.
 const Toaster = ({ toastOptions, ...props }: ToasterProps) => {
   const { t } = useTranslation()
 
   return (
     <Sonner
       theme="light"
+      position="bottom-right"
       containerAriaLabel={t("notifications.label")}
       toastOptions={{ closeButtonAriaLabel: t("notifications.close"), ...toastOptions }}
       className="toaster group"

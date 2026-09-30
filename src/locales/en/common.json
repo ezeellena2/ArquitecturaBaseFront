@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Arquitectura Base"
+    "name": "Home"
   },
   "home": {
     "title": "Home",
@@ -66,7 +66,10 @@
     "range": "{{from}}–{{to}} of {{total}}",
     "page": "Page {{page}} of {{totalPages}}",
     "previous": "Previous page",
-    "next": "Next page"
+    "next": "Next page",
+    "noPrevious": "There is no previous page",
+    "noNext": "There is no next page",
+    "pageSize": "Rows per page"
   },
   "notifications": {
     "label": "Notifications",
@@ -79,7 +82,11 @@
     "userManagement": "User management",
     "users": "Users",
     "roles": "Roles and permissions",
-    "settings": "Settings"
+    "settings": "Settings",
+    "settingsLanguage": "Language",
+    "settingsTimeZone": "Time zone",
+    "settingsLists": "Lists",
+    "settingsRegistration": "Registration"
   },
   "layout": {
     "sidebar": {
@@ -102,6 +109,7 @@
       "profile": "My profile",
       "signOut": "Log out"
     },
-    "signingOut": "Signing you out…"
+    "signingOut": "Signing you out…",
+    "signOutError": "We could not sign you out. Try again."
   }
 }

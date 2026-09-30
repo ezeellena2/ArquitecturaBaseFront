@@ -65,6 +65,11 @@
     "remove": "Remove {{name}}"
   },
   "picker": {
+    "columns": {
+      "name": "Permission",
+      "description": "Description",
+      "assigned": "Assigned"
+    },
     "title": "Permissions",
     "searchLabel": "Search for a permission",
     "searchPlaceholder": "Search for a permission or an area",

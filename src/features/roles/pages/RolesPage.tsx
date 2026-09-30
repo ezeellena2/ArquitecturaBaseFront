@@ -3,24 +3,25 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { deleteRole } from "../api/roles";
+import { fetchPagedRoles, deleteRole } from "../api/roles";
 import { roleActionErrorMessage } from "../errors";
 import { isAdminRole } from "../lib/systemRoles";
 import { Can } from "@/auth/Can";
 import { usePermissions } from "@/auth/usePermissions";
 import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
-import { fetchRoles, rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
-import { Badge } from "@/shared/ui/badge";
+import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { EyeIcon, PencilIcon,  TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { Page } from "@/shared/ui/Page";
+import { Pagination } from "@/shared/ui/Pagination";
+import { usePagination } from "@/shared/hooks/usePagination";
+import { useSystemPresentation } from "@/shared/api/presentation";
 
-/// `/roles` (sección 11 del spec de la Fase 4). El endpoint devuelve la lista entera, no una página: son
-/// pocos y se usan como catálogo desde otras pantallas, así que no hay buscador ni paginado.
+/// `/roles` usa el endpoint paginado; los selectores conservan el catálogo completo.
 ///
 /// El alta y la edición no se hacen acá: "Nuevo rol" y "Editar" llevan a la pantalla del rol (`/roles/nuevo` y
 /// `/roles/{id}`, `RoleEditorPage`). Eliminar sí sigue siendo una confirmación sobre el listado.
@@ -29,12 +30,14 @@ export function RolesPage() {
   const { has } = usePermissions();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const presentation = useSystemPresentation();
+  const { page, pageSize, ready, setPage, setPageSize } = usePagination(presentation.data?.defaultPageSize, true);
 
   const [deletingRole, setDeletingRole] = useState<RoleListItem | undefined>();
 
   const canManage = has("roles.manage");
 
-  const { data, error, isLoading, refetch } = useQuery({ queryKey: rolesQueryKey, queryFn: fetchRoles });
+  const { data, error, isLoading, refetch } = useQuery({ queryKey: [...rolesQueryKey, "paged", page, pageSize], queryFn: () => fetchPagedRoles(page, pageSize), enabled: ready });
 
   const removal = useMutation({
     mutationFn: (role: RoleListItem) => deleteRole(role.id),
@@ -52,12 +55,7 @@ export function RolesPage() {
     {
       id: "name",
       header: t("columns.name"),
-      cell: (row) => (
-        <span className="flex items-center gap-2">
-          {row.name}
-          {row.isSystemRole ? <Badge variant="secondary">{t("systemBadge")}</Badge> : null}
-        </span>
-      ),
+      cell: (row) => row.name,
     },
     { id: "description", header: t("columns.description"), cell: (row) => row.description ?? "—" },
     { id: "userCount", header: t("columns.userCount"), cell: (row) => String(row.userCount) },
@@ -127,7 +125,7 @@ export function RolesPage() {
       <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
         <DataTable
           columns={columns}
-          rows={data ?? []}
+          rows={data?.items ?? []}
           rowKey={(row) => row.id}
           isLoading={isLoading}
           error={apiError ? (apiError.isNetworkError ? t("common:errors.network") : (apiError.detail ?? apiError.message)) : undefined}
@@ -136,6 +134,7 @@ export function RolesPage() {
           emptyTitle={t("empty.title")}
           emptyDescription={t("empty.description")}
         />
+        {data ? <Pagination {...data} onPageChange={setPage} onPageSizeChange={setPageSize} /> : null}
       </div>
 
       {deletingRole ? (

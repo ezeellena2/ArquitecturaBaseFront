@@ -70,6 +70,15 @@ describe("ProtectedRoute", () => {
     expect(await screen.findByText("tablero")).toBeInTheDocument();
   });
 
+  it("keeps the current screen visible while renewing an authenticated session", async () => {
+    authState.isAuthenticated = true;
+    authState.isLoading = true;
+    authState.user = { access_token: "t" };
+    renderAt("/tablero");
+    expect(await screen.findByText("tablero")).toBeInTheDocument();
+    authState.isLoading = false;
+  });
+
   it("shows a retry state instead of 'no permission' when the permission check fails", async () => {
     authState.isAuthenticated = true;
     authState.user = { access_token: "t" };

@@ -51,6 +51,13 @@ if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
 
+// Sonner usa captura del puntero al interactuar con una notificación; jsdom no implementa estas APIs.
+if (!Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = () => {};
+  Element.prototype.releasePointerCapture = () => {};
+  Element.prototype.hasPointerCapture = () => false;
+}
+
 // Todas las rutas del router son `lazy`: la pantalla no pinta nada hasta que su import dinámico resuelve.
 // Con la suite entera corriendo en paralelo, ese import puede tardar más que el segundo que espera `findBy*`
 // por defecto, y el primer test de cada archivo de pantalla (el único que lo paga; después el módulo ya está

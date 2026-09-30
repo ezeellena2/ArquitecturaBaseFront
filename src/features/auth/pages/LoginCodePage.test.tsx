@@ -103,7 +103,8 @@ describe("LoginCodePage", () => {
     // Sin returnUrl no hay contexto del flujo: nunca se ve el formulario del código...
     expect(screen.queryAllByRole("textbox")).toHaveLength(0);
     // ...y termina en /login sin returnUrl, que es lo que arranca el redirect de OIDC.
-    await waitFor(() => expect(signinRedirect).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
+    expect(signinRedirect).not.toHaveBeenCalled();
   });
 
   it("goes back to /login when nobody asked for a code first", async () => {
@@ -178,7 +179,7 @@ describe("LoginCodePage", () => {
       await typeCodeAndVerify("482913");
 
       await waitFor(() => expect(assign).toHaveBeenCalledWith(returnUrl));
-      expect(bodies).toEqual([{ phone: "+5491123456789", code: "482913", returnUrl }]);
+      expect(bodies).toEqual([{ phone: "+5491123456789", code: "482913", returnUrl, register: false }]);
     });
 
     it("sends the code again by WhatsApp, to the same number", async () => {

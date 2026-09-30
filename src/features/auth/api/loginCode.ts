@@ -19,9 +19,9 @@ export interface VerifyLoginCodeResponse {
 
 /// El código se verifica con el correo **o** con el número, nunca con los dos: el servidor responde un error de
 /// validación en `errors.phone` si llegan juntos.
-export type VerifyLoginCodeRequest =
+export type VerifyLoginCodeRequest = { readonly register?: boolean; readonly displayName?: string } & (
   | { readonly email: string; readonly code: string; readonly returnUrl: string }
-  | { readonly phone: string; readonly code: string; readonly returnUrl: string };
+  | { readonly phone: string; readonly code: string; readonly returnUrl: string });
 
 export function requestLoginCode(email: string): Promise<RequestLoginCodeResponse> {
   return api.post<RequestLoginCodeResponse>("/account/login-code", { email });
@@ -43,6 +43,6 @@ export function verifyLoginCode(input: VerifyLoginCodeRequest): Promise<VerifyLo
 /// El ingreso con Google es una navegación del navegador, no una llamada de la Api. El `returnUrl` llega ya
 /// validado por `authorizeReturnUrl`: con cualquier otro valor el servidor responde el ProblemDetails como
 /// página cruda, fuera del SPA.
-export function externalLoginUrl(returnUrl: string): string {
-  return `/account/external/google?returnUrl=${encodeURIComponent(returnUrl)}`;
+export function externalLoginUrl(returnUrl: string, register?: boolean): string {
+  return `/account/external/google?returnUrl=${encodeURIComponent(returnUrl)}${register === undefined ? "" : `&register=${register}`}`;
 }

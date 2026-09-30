@@ -128,7 +128,7 @@ describe("UserFormDialog", () => {
     });
 
     it("hides the number and the WhatsApp channel when WhatsApp is off", async () => {
-      withCreate({ google: true, whatsapp: false, whatsappCountries: [], whatsappNumber: null });
+      withCreate({ google: true, whatsapp: false, whatsappCountries: [], whatsappNumber: null, registrationOpen: true });
 
       const dialog = await openNewUser();
 
@@ -270,7 +270,7 @@ describe("UserFormDialog", () => {
       expect(dialog.getByRole("radio", { name: "Por WhatsApp" })).toBeChecked();
 
       const consent = dialog.getByRole("checkbox", {
-        name: "Laura aceptó recibir mensajes de Arquitectura Base por WhatsApp.",
+        name: "Laura aceptó recibir mensajes por WhatsApp.",
       });
       expect(consent).toHaveAccessibleDescription("Sin esto, WhatsApp no permite escribirle primero.");
 
@@ -354,7 +354,7 @@ describe("UserFormDialog", () => {
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
 
       expect(
-        dialog.getByRole("checkbox", { name: "La persona aceptó recibir mensajes de Arquitectura Base por WhatsApp." }),
+        dialog.getByRole("checkbox", { name: "La persona aceptó recibir mensajes por WhatsApp." }),
       ).toBeInTheDocument();
     });
   });

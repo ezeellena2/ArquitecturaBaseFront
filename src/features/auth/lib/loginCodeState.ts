@@ -1,6 +1,6 @@
 /// El estado de la ruta con el que `LoginPage` manda a `/login/codigo` después de pedir el código. Viaja en el
 /// estado y no en la URL: el correo o el número no quedan en el historial ni en un enlace copiado.
-export type LoginCodeState =
+export type LoginCodeState = { readonly register?: boolean; readonly displayName?: string } & (
   | { readonly channel: "email"; readonly email: string; readonly resendAfterSeconds: number }
   | {
       readonly channel: "whatsapp";
@@ -8,7 +8,7 @@ export type LoginCodeState =
       readonly phone: string;
       readonly maskedPhone: string;
       readonly resendAfterSeconds: number;
-    };
+    });
 
 /// A dónde se mandó el código.
 export type CodeDestination =
@@ -18,6 +18,7 @@ export type CodeDestination =
 /// El estado con el que se vuelve a `/login` desde la pantalla del código ("Usar otro número"), para que abra con
 /// el mismo medio elegido. `returnTo` es el que arma `ProtectedRoute` cuando manda para acá sin sesión.
 export interface LoginState {
+  readonly displayName?: string;
   readonly channel?: "email" | "whatsapp";
   readonly returnTo?: string;
 }

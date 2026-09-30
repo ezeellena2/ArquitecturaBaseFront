@@ -8,6 +8,7 @@ interface UnlinkUserWhatsAppDialogProps {
   phone: string;
   /// Sin correo, la persona se queda sin forma de entrar; con correo, sigue entrando con él.
   hasEmail: boolean;
+  isOwnAccount?: boolean;
   onConfirm: () => void;
   onClose: () => void;
 }
@@ -18,7 +19,7 @@ interface UnlinkUserWhatsAppDialogProps {
 ///
 /// El pedido lo hace quien lo abre, no el diálogo: `ConfirmDialog` se cierra al confirmar, así que cuando llega la
 /// respuesta ya no está, y su resultado va a un aviso.
-export function UnlinkUserWhatsAppDialog({ name, phone, hasEmail, onConfirm, onClose }: UnlinkUserWhatsAppDialogProps) {
+export function UnlinkUserWhatsAppDialog({ name, phone, hasEmail, isOwnAccount, onConfirm, onClose }: UnlinkUserWhatsAppDialogProps) {
   const { t } = useTranslation("users");
 
   return (
@@ -31,7 +32,7 @@ export function UnlinkUserWhatsAppDialog({ name, phone, hasEmail, onConfirm, onC
       }}
       title={t("unlink.title", { user: name })}
       description={
-        hasEmail ? t("unlink.descriptionWithEmail", { phone }) : t("unlink.descriptionWithoutEmail", { phone })
+        isOwnAccount ? t("unlink.ownDescription", { phone }) : hasEmail ? t("unlink.descriptionWithEmail", { phone }) : t("unlink.descriptionWithoutEmail", { phone })
       }
       confirmLabel={t("unlink.confirm")}
       destructive

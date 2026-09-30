@@ -50,7 +50,7 @@ function Harness({ initial = [], readOnly }: { initial?: string[]; readOnly?: bo
 }
 
 function area(name: string) {
-  return screen.getByRole("group", { name });
+  return screen.getByRole("rowgroup", { name });
 }
 
 function searchBox() {
@@ -58,6 +58,45 @@ function searchBox() {
 }
 
 describe("PermissionPicker", () => {
+  it("renders one table with a common header and collapsible row groups", () => {
+    renderWithProviders(<Harness />);
+
+    const table = screen.getByRole("table", { name: "Permisos" });
+    expect(screen.getAllByRole("table")).toHaveLength(1);
+    expect(within(table).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual([
+      "Permiso", "Descripción", "Asignado",
+    ]);
+    const row = within(table).getByRole("row", { name: /Ver usuarios/ });
+    const cells = within(row).getAllByRole("cell");
+    expect(cells[0]).toHaveTextContent("Ver usuarios");
+    expect(cells[1]).toHaveTextContent("El listado y el detalle de cada cuenta.");
+    expect(within(cells[2]!).getByRole("checkbox", { name: "Ver usuarios" })).not.toBeChecked();
+  });
+
+  it("shows partial selection and selects the full section even through a search", async () => {
+    renderWithProviders(<Harness initial={["users.read", "roles.read"]} />);
+    const section = within(area("Usuarios"));
+    expect(section.getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" })).toBePartiallyChecked();
+    await userEvent.type(searchBox(), "desactivar");
+    await userEvent.click(section.getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" }));
+    await userEvent.clear(searchBox());
+    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Ver roles" })).toBeChecked();
+    expect(section.getByRole("checkbox", { name: "Quitar todos los permisos de Usuarios" })).toBeChecked();
+  });
+
+  it("selects a collapsed section without opening it", async () => {
+    renderWithProviders(<Harness />);
+    const section = within(area("Roles"));
+    await userEvent.click(section.getByRole("checkbox", { name: "Elegir todos los permisos de Roles" }));
+    expect(section.getByRole("button", { expanded: false })).toBeInTheDocument();
+    expect(section.getByRole("checkbox", { name: "Quitar todos los permisos de Roles" })).toBeChecked();
+    await userEvent.click(section.getByRole("button", { expanded: false }));
+    expect(section.getByRole("checkbox", { name: "Ver roles" })).toBeChecked();
+    expect(section.getByRole("checkbox", { name: "Administrar roles" })).toBeChecked();
+  });
+
   it("names every area as a group, even while it is closed", () => {
     renderWithProviders(<Harness initial={["users.read"]} />);
 
@@ -102,11 +141,11 @@ describe("PermissionPicker", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }));
 
-    expect(screen.getAllByRole("checkbox")).toHaveLength(5);
+    expect(screen.getAllByRole("checkbox")).toHaveLength(8);
 
     await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }));
 
-    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(3);
     expect(within(area("Usuarios")).getByRole("button", { expanded: false })).toBeInTheDocument();
   });
 
@@ -123,7 +162,7 @@ describe("PermissionPicker", () => {
     await userEvent.clear(searchBox());
 
     expect(within(area("Usuarios")).getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(3);
   });
 
   it("describes each checkbox with the permission's description", () => {
@@ -150,17 +189,17 @@ describe("PermissionPicker", () => {
 
     expect(within(area("Usuarios")).getByText("1 de 2")).toBeInTheDocument();
 
-    // El texto visible es corto; el nombre accesible dice de qué área, o serían tres botones iguales.
-    const pickAll = screen.getByRole("button", { name: "Elegir todos los permisos de Usuarios" });
-    expect(pickAll).toHaveTextContent("Elegir todos");
+    // El nombre accesible identifica el área; el estado mixto refleja la selección parcial.
+    const pickAll = screen.getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" });
+    expect(pickAll).toBePartiallyChecked();
 
     await userEvent.click(pickAll);
 
     expect(within(area("Usuarios")).getByText("2 de 2")).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
 
-    const clearAll = screen.getByRole("button", { name: "Quitar todos los permisos de Usuarios" });
-    expect(clearAll).toHaveTextContent("Quitar todos");
+    const clearAll = screen.getByRole("checkbox", { name: "Quitar todos los permisos de Usuarios" });
+    expect(clearAll).toBeChecked();
 
     await userEvent.click(clearAll);
 
@@ -168,8 +207,7 @@ describe("PermissionPicker", () => {
     expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).not.toBeChecked();
   });
 
-  // WCAG 2.5.3 (el nombre contiene lo que se ve): quien maneja la pantalla con la voz dice "clic en Elegir
-  // todos", y eso tiene que encontrar al botón. En los dos idiomas, que cada traducción puede romperlo sola.
+  // El check de sección conserva un nombre contextual en ambos idiomas.
   it.each(["es", "en"])("names each area's button starting with the text it shows, in %s", async (language) => {
     await i18n.changeLanguage(language);
 
@@ -178,13 +216,10 @@ describe("PermissionPicker", () => {
       renderWithProviders(<Harness initial={["users.read", "users.manage"]} />);
 
       for (const name of ["Usuarios", "Roles"]) {
-        const action = within(await screen.findByRole("group", { name }))
-          .getAllByRole("button")
-          .find((button) => !button.hasAttribute("aria-expanded"));
-        const shown = action?.textContent ?? "";
-
-        expect(shown).not.toBe("");
-        expect(action?.getAttribute("aria-label")?.slice(0, shown.length)).toBe(shown);
+        const action = within(await screen.findByRole("rowgroup", { name }))
+          .getByRole("checkbox", { name: new RegExp(name + "$") });
+        expect(action).toHaveAccessibleName(new RegExp(name + "$"));
+        expect(action).toHaveAttribute("aria-checked", name === "Usuarios" ? "true" : "false");
       }
     } finally {
       await i18n.changeLanguage("es");
@@ -199,7 +234,7 @@ describe("PermissionPicker", () => {
 
     expect(screen.queryByRole("checkbox", { name: "Administrar usuarios" })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Elegir todos los permisos de Usuarios" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" }));
 
     expect(onChange).toHaveBeenCalledWith(["users.read", "users.manage"]);
   });
@@ -210,8 +245,8 @@ describe("PermissionPicker", () => {
     await userEvent.type(searchBox(), "CONFIGURACION");
 
     expect(area("Configuración")).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: "Usuarios" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: "Roles" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("rowgroup", { name: "Usuarios" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("rowgroup", { name: "Roles" })).not.toBeInTheDocument();
     // Lo que queda a la vista se muestra abierto: buscar y tener que abrir cada resultado es buscar dos veces.
     expect(screen.getByRole("checkbox", { name: "Administrar la configuración" })).toBeInTheDocument();
   });
@@ -223,7 +258,7 @@ describe("PermissionPicker", () => {
 
     expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Ver usuarios" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: "Roles" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("rowgroup", { name: "Roles" })).not.toBeInTheDocument();
   });
 
   it("does not filter on a search of only spaces", async () => {
@@ -248,10 +283,10 @@ describe("PermissionPicker", () => {
     await userEvent.click(within(show).getByRole("button", { name: "Elegidos · 2" }));
 
     expect(within(show).getByRole("button", { name: "Elegidos · 2" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("checkbox")).toHaveLength(2);
+    expect(screen.getAllByRole("checkbox")).toHaveLength(4);
     expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Administrar roles" })).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: "Configuración" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("rowgroup", { name: "Configuración" })).not.toBeInTheDocument();
   });
 
   it("explains that nothing is picked yet when only the picked are shown", async () => {
@@ -324,18 +359,18 @@ describe("PermissionPicker", () => {
 
       await pressOn(screen.getByRole("checkbox", { name: "Ver roles" }), " ");
 
-      expect(screen.queryByRole("group", { name: "Roles" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("rowgroup", { name: "Roles" })).not.toBeInTheDocument();
       expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toHaveFocus();
     });
 
-    it("moves to the next area's button after removing a whole area with only the picked shown", async () => {
+    it("moves to the next section checkbox after removing a whole area with only the picked shown", async () => {
       renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
       await showOnlyPicked(3);
 
-      await pressOn(screen.getByRole("button", { name: "Quitar todos los permisos de Usuarios" }), "{Enter}");
+      await pressOn(screen.getByRole("checkbox", { name: "Quitar todos los permisos de Usuarios" }), " ");
 
-      expect(screen.queryByRole("group", { name: "Usuarios" })).not.toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Elegir todos los permisos de Roles" })).toHaveFocus();
+      expect(screen.queryByRole("rowgroup", { name: "Usuarios" })).not.toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: "Elegir todos los permisos de Roles" })).toHaveFocus();
     });
 
     it("moves to the way out of the empty list after unpicking the only one shown", async () => {
@@ -379,7 +414,9 @@ describe("PermissionPicker", () => {
 
     expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeDisabled();
     expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: /^(Elegir|Quitar) todos los permisos/ })).not.toBeInTheDocument();
+    for (const checkbox of screen.getAllByRole("checkbox", { name: /^(Elegir|Quitar) todos los permisos/ })) {
+      expect(checkbox).toBeDisabled();
+    }
 
     // Mirar sí se puede: abrir áreas y buscar no cambian el rol.
     await userEvent.click(within(area("Roles")).getByRole("button", { expanded: false }));

@@ -52,6 +52,28 @@ async function chooseWhatsApp() {
 const whatsAppCodeResponse = { resendAfterSeconds: 60, phone: "+5491123456789", maskedPhone: "+54 9 11 •••• 6789" };
 
 describe("LoginPage", () => {
+  it.each(["email", "whatsapp"])("shows a disabled account at the %s code request and stays on the form", async (channel) => {
+    withLoginMethods({ whatsapp: true, whatsappCountries: ["AR"] });
+    const endpoint = channel === "email" ? "/account/login-code" : "/account/login-code/whatsapp";
+    server.use(http.post(endpoint, () => HttpResponse.json({
+      status: 403,
+      code: "Auth.Account.Disabled",
+      detail: "Tu cuenta está deshabilitada. Contactá a un administrador.",
+    }, { status: 403 })));
+    const { router } = renderRouteWithProviders(loginUrl);
+    await loginMethodsSettled();
+    if (channel === "whatsapp") {
+      await chooseWhatsApp();
+      await userEvent.type(screen.getByRole("textbox", { name: /número/i }), "1123456789");
+    } else {
+      await userEvent.type(screen.getByRole("textbox", { name: "Correo electrónico" }), "ana@example.com");
+    }
+    await userEvent.click(screen.getByRole("button", { name: "Enviar código" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Tu cuenta está deshabilitada. Contactá a un administrador.");
+    expect(router.state.location.pathname).toBe("/login");
+    expect(screen.queryByRole("heading", { name: "Revisá tu correo" })).not.toBeInTheDocument();
+  });
+
   // AppProviders usa el queryClient de la app (un singleton): sin esto, los medios de ingreso de un test
   // quedarían cacheados para el siguiente.
   beforeEach(() => {
@@ -158,6 +180,7 @@ describe("LoginPage", () => {
       expect(router.state.location.search).toBe(`?returnUrl=${encodeURIComponent(authorizeUrl)}`);
       expect(router.state.location.state).toEqual({
         channel: "whatsapp",
+        register: false,
         phone: "+5491123456789",
         maskedPhone: "+54 9 11 •••• 6789",
         resendAfterSeconds: 60,
@@ -255,7 +278,7 @@ describe("LoginPage", () => {
 
       expect(await screen.findByRole("heading", { name: "Revisá tu correo" })).toBeInTheDocument();
       expect(bodies).toEqual([{ email: "ana@example.com" }]);
-      expect(router.state.location.state).toEqual({ channel: "email", email: "ana@example.com", resendAfterSeconds: 60 });
+      expect(router.state.location.state).toEqual({ channel: "email", email: "ana@example.com", resendAfterSeconds: 60, register: false });
     });
   });
 
@@ -264,10 +287,9 @@ describe("LoginPage", () => {
     /// ingreso de nuevo, y el mensaje se ve cuando el servidor vuelve a mandar para acá con el `returnUrl`.
     async function arriveWithError(code: string) {
       const first = renderRouteWithProviders(`/login?error=${encodeURIComponent(code)}`);
-      await waitFor(() => expect(signinRedirect).toHaveBeenCalledTimes(1));
-      first.unmount();
-
-      return renderRouteWithProviders(loginUrl);
+      await screen.findByRole("textbox", { name: "Correo electrónico" });
+      expect(signinRedirect).not.toHaveBeenCalled();
+      return first;
     }
 
     it("says why the Google sign-in failed", async () => {

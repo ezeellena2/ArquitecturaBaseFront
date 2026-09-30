@@ -18,7 +18,8 @@ import { userName } from "../identity";
 import { LastInvitationStrip } from "./LastInvitationStrip";
 import { RolesField } from "./RolesField";
 import { UnlinkUserWhatsAppDialog } from "./UnlinkUserWhatsAppDialog";
-import { currentUserQueryKey } from "@/auth/useCurrentUser";
+import { currentUserQueryKey, useCurrentUser } from "@/auth/useCurrentUser";
+import { VerifyDestinationDialog } from "@/shared/ui/VerifyDestinationDialog";
 import { displayNameMaxLength } from "@/shared/api/accountRules";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { rolesQueryKey } from "@/shared/api/roles";
@@ -166,6 +167,9 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   const [country, setCountry] = useState("");
   const [number, setNumber] = useState("");
   const [isConfirmingUnlink, setIsConfirmingUnlink] = useState(false);
+  const [isLinkingOwnPhone, setIsLinkingOwnPhone] = useState(false);
+  const { data: currentUser } = useCurrentUser();
+  const isOwnAccount = currentUser?.id === user.id;
   const [errors, setErrors] = useState<UserFormErrors>({ fields: {} });
   const emailRef = useRef<HTMLInputElement>(null);
   const numberRef = useRef<HTMLInputElement>(null);
@@ -437,16 +441,25 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                       empty={t("methods.noPhone")}
                       badge={phone === null ? null : badgeFor(detail.phoneNumberConfirmed)}
                       action={
-                        <Button
-                          type="button"
-                          variant={phone === null ? "outline" : "ghost"}
-                          size="sm"
-                          // "Desvincular" solo, entre varias filas, no dice qué se desvincula ni de quién.
-                          aria-label={phone === null ? undefined : t("methods.unlinkFor", { user: userName(detail) })}
-                          onClick={() => (phone === null ? startAdding("phone") : setIsConfirmingUnlink(true))}
-                        >
-                          {phone === null ? t("methods.addPhone") : t("methods.unlink")}
-                        </Button>
+                        <div className="flex flex-col items-end gap-1">
+                          {isOwnAccount && phone !== null && !detail.phoneNumberConfirmed && whatsappEnabled ? (
+                            <Button type="button" variant="outline" size="sm" onClick={() => setIsLinkingOwnPhone(true)}>
+                              {t("common:code.verify")}
+                            </Button>
+                          ) : null}
+                          <Button
+                            type="button"
+                            variant={phone === null ? "outline" : "ghost"}
+                            size="sm"
+                            // "Desvincular" solo, entre varias filas, no dice qué se desvincula ni de quién.
+                            aria-label={phone === null ? undefined : t("methods.unlinkFor", { user: userName(detail) })}
+                            onClick={() => (phone === null
+                              ? isOwnAccount ? setIsLinkingOwnPhone(true) : startAdding("phone")
+                              : setIsConfirmingUnlink(true))}
+                          >
+                            {phone === null ? t("methods.addPhone") : t("methods.unlink")}
+                          </Button>
+                          </div>
                       }
                     />
                   ) : null}
@@ -506,6 +519,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
             name={userName(detail)}
             phone={phone}
             hasEmail={detail.email !== null}
+            isOwnAccount={isOwnAccount}
             onConfirm={() => {
               if (!unlink.isPending) {
                 unlink.mutate();
@@ -513,6 +527,15 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
             }}
             onClose={() => setIsConfirmingUnlink(false)}
           />
+        ) : null}
+        {isLinkingOwnPhone ? (
+          <VerifyDestinationDialog channel="whatsapp" countries={countries} initialPhone={detail?.phoneNumber ?? undefined} onClose={() => {
+            setIsLinkingOwnPhone(false);
+            void Promise.all([
+              queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
+              queryClient.invalidateQueries({ queryKey: userQueryKey(user.id) }),
+            ]);
+          }} />
         ) : null}
       </DialogContent>
     </Dialog>

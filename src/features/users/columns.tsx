@@ -1,11 +1,11 @@
-import type { FocusEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent } from "react";
+import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import type { UserListItem } from "./api/users";
 import { userIdentifier } from "./identity";
 import { formatDateInZone } from "@/shared/lib/dateTime";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import type { Column } from "@/shared/ui/DataTable";
-import { PencilIcon, PowerIcon, SmartphoneIcon, TrashIcon } from "@/shared/ui/icons";
+import { CheckIcon, PencilIcon, PowerIcon, SmartphoneIcon, TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { VerificationBadge } from "@/shared/ui/VerificationBadge";
 
@@ -21,88 +21,8 @@ export interface UserRowActions {
   onDelete: (user: UserListItem) => void;
 }
 
-/// La ayuda de lo que el tablero explica al pie del listado (qué quiere decir el ícono del teléfono al lado del correo
-/// y "Sin verificar"), puesta sobre la pieza que explica. CSS puro, como el tooltip de `RowActions`: un Tooltip de
-/// Radix por fila montaría cien componentes para una frase. Va arriba y no abajo: debajo de la última fila estiraría
-/// la caja de la tabla, que desborda con scroll.
-///
-/// Aparece al pasar el mouse y al llegar con el teclado ("lo que hace el puntero también lo hace el teclado", fundamento
-/// visual), así que la pieza que la lleva recibe el foco (`hintTrigger`). Y como tapa la fila de arriba, cumple WCAG
-/// 1.4.13: el puntero puede ir hasta ella sin que se cierre (el `before:` tiende un puente sobre los 6 px que la
-/// separan de la pieza; oculta, no atrapa el puntero) y se cierra con Esc (`data-dismissed`, ver `hintEvents`).
-const hint =
-  "pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 z-10 w-max max-w-72 -translate-x-1/2 rounded-md " +
-  "bg-[var(--color-content)] px-2 py-1.5 text-xs font-medium leading-snug whitespace-normal text-white opacity-0 " +
-  "transition-opacity before:absolute before:inset-x-0 before:top-full before:h-1.5 before:content-[''] " +
-  "group-hover/hint:pointer-events-auto group-hover/hint:opacity-100 group-focus-visible/hint:opacity-100 " +
-  "group-data-dismissed/hint:pointer-events-none! group-data-dismissed/hint:opacity-0!";
-
-/// La pieza que lleva la ayuda. Recibe el foco, con el mismo anillo que las acciones de la fila.
-const hintTrigger =
-  "group/hint relative inline-flex shrink-0 " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]";
-
-/// Los Esc que siguen escuchando mientras el puntero está sobre una pieza.
-const escapeWhileHovered = new WeakMap<HTMLElement, (event: KeyboardEvent) => void>();
-
-function dismissHint(trigger: HTMLElement) {
-  trigger.setAttribute("data-dismissed", "");
-}
-
-function restoreHint(trigger: HTMLElement) {
-  trigger.removeAttribute("data-dismissed");
-}
-
-/// Esc cierra la ayuda sin mover ni el puntero ni el foco, y la ayuda vuelve la próxima vez que se llega a la pieza.
-/// Con el foco, el Esc llega a la pieza; con el puntero encima, el foco puede estar en cualquier lado, así que mientras
-/// dura el hover escucha también el documento. Es un atributo del DOM y no estado de React porque esto son funciones
-/// que se llaman, no componentes: un estado por fila es justo lo que se evitó al no usar un Tooltip de Radix.
-const hintEvents = {
-  onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => {
-    if (event.key === "Escape") {
-      dismissHint(event.currentTarget);
-    }
-  },
-  onBlur: (event: FocusEvent<HTMLElement>) => {
-    // Con el puntero todavía encima, sigue cerrada hasta que se vaya.
-    if (!escapeWhileHovered.has(event.currentTarget)) {
-      restoreHint(event.currentTarget);
-    }
-  },
-  onMouseEnter: (event: MouseEvent<HTMLElement>) => {
-    const trigger = event.currentTarget;
-
-    if (escapeWhileHovered.has(trigger)) {
-      return;
-    }
-
-    const onEscape = (key: KeyboardEvent) => {
-      // La fila se pudo ir con el puntero encima (el listado se volvió a pedir): el que escucha se va con ella.
-      if (!trigger.isConnected) {
-        document.removeEventListener("keydown", onEscape);
-      } else if (key.key === "Escape") {
-        dismissHint(trigger);
-      }
-    };
-
-    escapeWhileHovered.set(trigger, onEscape);
-    document.addEventListener("keydown", onEscape);
-  },
-  onMouseLeave: (event: MouseEvent<HTMLElement>) => {
-    const trigger = event.currentTarget;
-    const onEscape = escapeWhileHovered.get(trigger);
-
-    if (onEscape !== undefined) {
-      document.removeEventListener("keydown", onEscape);
-      escapeWhileHovered.delete(trigger);
-    }
-
-    // Con el foco todavía adentro, sigue cerrada hasta que el foco se vaya.
-    if (document.activeElement !== trigger) {
-      restoreHint(trigger);
-    }
-  },
-};
+/// Foco visible para las marcas que también explican su significado con ActionTooltip.
+const hintTrigger = "inline-flex shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]";
 
 /// El ícono del teléfono delante del número: el número ya dice que entra con WhatsApp, así que el ícono queda para la
 /// vista, oculto para el lector como en el tablero. No lleva ayuda: sin foco, le llegaría solo al puntero.
@@ -120,18 +40,16 @@ function alsoWhatsAppMark(t: Translate) {
   const label = t("identity.alsoWhatsApp");
 
   return (
+    <ActionTooltip label={label}>
     <span
       role="img"
       aria-label={label}
       tabIndex={0}
       className={cn(hintTrigger, "rounded-sm text-[var(--color-content-muted)]")}
-      {...hintEvents}
     >
       <SmartphoneIcon className="size-3.5" />
-      <span aria-hidden="true" className={hint}>
-        {label}
-      </span>
     </span>
+    </ActionTooltip>
   );
 }
 
@@ -140,12 +58,14 @@ function alsoWhatsAppMark(t: Translate) {
 /// exploración. A la vista, es la ayuda que aparece al pasar el mouse o al llegar con el teclado.
 function unverifiedBadge(t: Translate) {
   return (
-    <span tabIndex={0} className={cn(hintTrigger, "rounded-[var(--radius-control)]")} {...hintEvents}>
+    <ActionTooltip label={t("identity.unverifiedHint")}>
+    <span tabIndex={0} className={cn(hintTrigger, "rounded-[var(--radius-control)]")}>
       <VerificationBadge verified={false} className="text-[11px]">
         {t("methods.unverified")}
       </VerificationBadge>
-      <span className={hint}>{t("identity.unverifiedHint")}</span>
+      <span className="sr-only">{t("identity.unverifiedHint")}</span>
     </span>
+    </ActionTooltip>
   );
 }
 
@@ -154,7 +74,8 @@ function unverifiedBadge(t: Translate) {
 ///
 /// El estado va como un punto delante y no como columna propia: así entra la columna de roles, que es el dato que
 /// hace falta mirar fila por fila, y el estado —que casi siempre es "activo"— deja de ocupar una columna entera
-/// para decir lo mismo veinte veces. Una cuenta inactiva, además, se escribe apagada.
+/// para decir lo mismo veinte veces. El punto es verde si está activa y rojo si está inactiva; la cuenta inactiva,
+/// además, se escribe apagada. La acción de habilitar usa un check y la de deshabilitar, el ícono de encendido.
 ///
 /// El punto es decorativo y la palabra va al lado, oculta para la vista pero no para el lector de pantalla.
 /// Es la única concesión a "el color nunca comunica solo" del fundamento visual: para quien ve, el estado se
@@ -174,8 +95,8 @@ function identityCell(row: UserListItem, t: Translate) {
       <span
         aria-hidden="true"
         className={cn(
-          "size-1.5 shrink-0 rounded-full",
-          row.isActive ? "bg-[var(--color-success)]" : "bg-[var(--color-content-muted)]",
+          "size-2 shrink-0 rounded-full",
+          row.isActive ? "bg-[var(--color-success)]" : "bg-[var(--color-danger)]",
         )}
       />
       <span className="sr-only">{row.isActive ? t("status.active") : t("status.inactive")}</span>
@@ -266,7 +187,7 @@ export function createUserColumns(
               accessibleName: row.isActive
                 ? t("actions.deactivateFor", { user })
                 : t("actions.activateFor", { user }),
-              icon: PowerIcon,
+              icon: row.isActive ? PowerIcon : CheckIcon,
               onSelect: () => actions.onToggleActive(row),
             },
             {

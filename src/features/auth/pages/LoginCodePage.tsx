@@ -3,7 +3,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { requestLoginCode, requestWhatsAppLoginCode, verifyLoginCode } from "../api/loginCode";
 import { isClosedAccountError, isSpentCodeError } from "../errors";
-import { codeDestinationOf, resendAfterSecondsOf, type LoginState } from "../lib/loginCodeState";
+import { codeDestinationOf, resendAfterSecondsOf, type LoginState, type LoginCodeState } from "../lib/loginCodeState";
 import { authorizeReturnUrl, loginPathFor } from "../lib/returnUrl";
 import { ApiError } from "@/shared/api/ApiError";
 import {
@@ -29,10 +29,12 @@ const whatsappLoginState: LoginState = { channel: "whatsapp" };
 export function LoginCodePage() {
   const { t } = useTranslation("auth");
   const location = useLocation();
+  const registration = location.pathname.startsWith("/registro");
+  const registrationState = location.state as LoginCodeState | null;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnUrl = authorizeReturnUrl(searchParams.get("returnUrl"));
-  const loginPath = loginPathFor(returnUrl);
+  const loginPath = loginPathFor(returnUrl, registration);
   const destination = codeDestinationOf(location.state);
   const hasDestination = destination !== undefined;
 
@@ -47,6 +49,7 @@ export function LoginCodePage() {
   const [isAccountClosed, setIsAccountClosed] = useState(false);
   // El código que se verificó estaba mal escrito: las casillas quedan marcadas hasta que se escriba otro.
   const [isCodeWrong, setIsCodeWrong] = useState(false);
+  const [switchToRegistration, setSwitchToRegistration] = useState<boolean | undefined>();
 
   const {
     seconds: resendSeconds,
@@ -58,10 +61,10 @@ export function LoginCodePage() {
   // sirve, vuelve a /login apenas se monta la pantalla, sin importar si después cambian `navigate` o
   // `loginPath` (no deberían, en la misma visita).
   useEffect(() => {
-    if (!hasDestination || !returnUrl) {
+    if (!hasDestination || !returnUrl || (registration && !registrationState?.displayName)) {
       navigate(loginPath, { replace: true });
     }
-  }, [hasDestination, returnUrl, navigate, loginPath]);
+  }, [hasDestination, returnUrl, navigate, loginPath, registration, registrationState?.displayName]);
 
   if (!destination || !returnUrl) {
     return null;
@@ -71,18 +74,21 @@ export function LoginCodePage() {
   // `handleResend`): estas constantes sí quedan tipadas, porque nunca se reasignan.
   const currentDestination = destination;
   const currentReturnUrl = returnUrl;
-  const loginState = destination.channel === "whatsapp" ? whatsappLoginState : undefined;
+  const loginState = registration ? { channel: destination.channel, displayName: registrationState?.displayName }
+    : destination.channel === "whatsapp" ? whatsappLoginState : undefined;
 
   async function handleVerify() {
     setIsVerifying(true);
     setError(undefined);
 
     try {
-      const response = await verifyLoginCode(
-        currentDestination.channel === "whatsapp"
+      const response = await verifyLoginCode({
+        ...(currentDestination.channel === "whatsapp"
           ? { phone: currentDestination.phone, code, returnUrl: currentReturnUrl }
-          : { email: currentDestination.email, code, returnUrl: currentReturnUrl },
-      );
+          : { email: currentDestination.email, code, returnUrl: currentReturnUrl }),
+        register: registration,
+        ...(registration ? { displayName: registrationState?.displayName } : {}),
+      });
 
       // Navegación real, no del router: el servidor ya tiene la cookie y emite el code de OIDC.
       globalThis.location.assign(response.returnUrl);
@@ -95,6 +101,8 @@ export function LoginCodePage() {
       setAttemptsLeft(attemptsLeftOf(caught));
       setIsCodeSpent(isSpentCodeError(caught));
       setIsAccountClosed(isClosedAccountError(caught));
+      setSwitchToRegistration(caught.code === "Auth.Account.NotRegistered" ? true
+        : caught.code === "Auth.Account.AlreadyRegistered" ? false : undefined);
       setIsCodeWrong(isWrongCodeError(caught));
       setIsVerifying(false);
     }
@@ -129,11 +137,11 @@ export function LoginCodePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1.5 text-center">
+      <div className="flex flex-col gap-3">
         <Link
           to={loginPath}
           state={loginState}
-          className="self-center text-sm font-medium text-[var(--color-brand-600)] hover:underline"
+          className="access-back"
         >
           {destination.channel === "whatsapp" ? t("common:code.otherPhone") : t("common:code.otherEmail")}
         </Link>
@@ -197,11 +205,11 @@ export function LoginCodePage() {
 
         {isAccountClosed ? (
           <Link
-            to={loginPath}
+            to={loginPathFor(returnUrl, switchToRegistration ?? registration)}
             state={loginState}
             className="self-center text-sm font-medium text-[var(--color-brand-600)] hover:underline"
           >
-            {t("code.backToLogin")}
+            {t(switchToRegistration === true ? "access.register" : switchToRegistration === false ? "access.signIn" : "code.backToLogin")}
           </Link>
         ) : null}
 
@@ -210,7 +218,7 @@ export function LoginCodePage() {
           className="w-full"
           disabled={code.length !== CODE_LENGTH || isVerifying || isCodeSpent || isAccountClosed}
         >
-          {t("common:code.verify")}
+          {t(registration ? "registration.verify" : "common:code.verify")}
         </Button>
       </form>
 

@@ -1,18 +1,19 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cancelSignOut } from "@/auth/signOutStatus";
 import { queryClient } from "@/shared/api/queryClient";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 
-const signoutRedirect = vi.fn();
+const { endServerSession, removeUser } = vi.hoisted(() => ({ endServerSession: vi.fn(), removeUser: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/auth/accessRequests", async () => ({ ...await vi.importActual("@/auth/accessRequests"), endServerSession }));
 
 vi.mock("react-oidc-context", async () => {
   const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context");
 
   return {
     ...actual,
-    useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" }, signoutRedirect }),
+    useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t", id_token: "identity-token" }, removeUser }),
   };
 });
 
@@ -29,7 +30,7 @@ async function signOut() {
 describe("AppLayout", () => {
   beforeEach(() => {
     queryClient.clear();
-    signoutRedirect.mockReset();
+    endServerSession.mockReset();
   });
 
   afterEach(() => {
@@ -39,9 +40,9 @@ describe("AppLayout", () => {
   });
 
   it("shows the sign-out transition instead of the layout with empty data", async () => {
-    // signoutRedirect real navega afuera de la SPA y nunca resuelve desde el punto de vista de React: una
+    // endServerSession real navega afuera de la SPA y nunca resuelve desde el punto de vista de React: una
     // promesa que no se resuelve reproduce eso.
-    signoutRedirect.mockReturnValue(new Promise(() => {}));
+    endServerSession.mockReturnValue(new Promise(() => {}));
 
     renderRouteWithProviders("/");
 
@@ -55,10 +56,21 @@ describe("AppLayout", () => {
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
   });
 
+  it("preserves the application shell when navigating away from home and back", async () => {
+    const { router } = renderRouteWithProviders("/");
+    const sidebar = await screen.findByRole("complementary");
+    await act(() => router.navigate("/perfil"));
+    await screen.findByRole("heading", { level: 1, name: "Mi perfil" });
+    expect(screen.getByRole("complementary")).toBe(sidebar);
+    await act(() => router.navigate("/"));
+    await screen.findByRole("heading", { level: 1, name: "Inicio" });
+    expect(screen.getByRole("complementary")).toBe(sidebar);
+  });
+
   it("reverts the transition and lets the layout render again if signing out fails", async () => {
     // El rechazo (y el cancelSignOut del catch) puede resolverse en el mismo lote de microtareas que el
     // click: lo que importa es el estado final, no alcanzar a ver la transición a mitad de camino.
-    signoutRedirect.mockRejectedValue(new Error("no se pudo cerrar la sesión"));
+    endServerSession.mockRejectedValue(new Error("no se pudo cerrar la sesión"));
 
     renderRouteWithProviders("/");
 

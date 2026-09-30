@@ -1,43 +1,42 @@
+import { useQuery } from "@tanstack/react-query";
+import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router";
-import { changeLanguage, supportedLanguages } from "@/shared/i18n";
+import { Link, Outlet, useLocation, useSearchParams } from "react-router";
+import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
+import { changePublicLanguage, supportedLanguages } from "@/shared/i18n";
+import { Button } from "@/shared/ui/button";
+import { PublicPresentationDefaults } from "@/shared/i18n/PublicPresentationDefaults";
 
-/// Chrome común del flujo de ingreso (sección 5.2): marca arriba, tarjeta centrada con la pantalla activa
-/// adentro (`Outlet`) y, afuera de la tarjeta, el cambio de idioma.
-export function AuthLayout() {
-  const { t, i18n } = useTranslation();
+export function AuthLayout({ children }: { children?: ReactNode }) {
+  const { t, i18n } = useTranslation("auth");
+  const { pathname } = useLocation();
+  const [params] = useSearchParams();
+  const registration = pathname.startsWith("/registro");
+  const home = pathname === "/";
+  const { data: methods } = useQuery({ queryKey: loginMethodsQueryKey, queryFn: getLoginMethods, meta: { silent: true } });
+  const returnUrl = params.get("returnUrl");
+  const query = returnUrl ? `?${new URLSearchParams({ returnUrl })}` : "";
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-[var(--color-canvas)] px-4 py-10">
-      {/* La marca es el nombre escrito, como en el menú: un cuadrado de color es el placeholder que pone
-          cualquier maqueta, y acá arriba de la tarjeta es lo único que hay. */}
-      <span className="text-lg tracking-[-0.02em]">
-        <span className="font-bold text-[var(--color-content)]">Arquitectura</span>
-        <span className="text-[var(--color-content-muted)]">Base</span>
-      </span>
-
-      <div className="w-full max-w-[28rem] rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 sm:p-7">
-        <Outlet />
-      </div>
-
-      <div className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]">
-        <span>{t("language.label")}:</span>
-        {supportedLanguages.map((language) => (
-          <button
-            key={language}
-            type="button"
-            aria-pressed={i18n.language === language}
-            onClick={() => void changeLanguage(language)}
-            className={
-              i18n.language === language
-                ? "font-semibold text-[var(--color-content)] underline"
-                : "hover:text-[var(--color-content)] hover:underline"
-            }
-          >
-            {t(`language.${language}`)}
-          </button>
-        ))}
-      </div>
+    <div className="access-shell">
+      <PublicPresentationDefaults />
+      <header className="access-header topbar-surface">
+        <nav aria-label={t("access.navigation")}>
+          {home || registration ? <Button asChild variant="ghost"><Link to={`/login${query}`}>{t("access.signIn")}</Link></Button> : null}
+          {methods?.registrationOpen && !registration ? <Button asChild variant="outline"><Link to={`/registro${query}`}>{t("access.register")}</Link></Button> : null}
+        </nav>
+      </header>
+      <main className={home ? "access-main" : "access-main access-form-main"}>
+        {home ? children : <div className="access-form">{children ?? <Outlet />}</div>}
+      </main>
+      <footer className="access-footer">
+        <div role="group" aria-label={t("common:language.label")}>
+          {supportedLanguages.map((language) => (
+            <button key={language} type="button" aria-pressed={i18n.language === language}
+              onClick={() => void changePublicLanguage(language)}>{t(`common:language.${language}`)}</button>
+          ))}
+        </div>
+      </footer>
     </div>
   );
 }

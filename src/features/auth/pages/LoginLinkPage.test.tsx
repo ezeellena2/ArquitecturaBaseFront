@@ -173,7 +173,7 @@ describe("LoginLinkPage", () => {
       const entries = globalThis.history.length;
       openLink(`#t=${token}`, routerEntry);
 
-      expect(await screen.findByRole("heading", { name: "Entrar a Arquitectura Base" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "Iniciar sesión" })).toBeInTheDocument();
       expect(preview.bodies).toEqual([{ token }]);
       // En la barra queda `/ingresar`, sin el fragmento.
       expect(globalThis.location.pathname).toBe("/ingresar");
@@ -283,7 +283,7 @@ describe("LoginLinkPage", () => {
       loginMethodsAnswer.release();
 
       await screen.findByRole("link", { name: "Volver a WhatsApp" });
-      expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(["Volver a WhatsApp", "Ir al ingreso"]);
+      expect(within(screen.getByRole("main")).getAllByRole("link").map((link) => link.textContent)).toEqual(["Volver a WhatsApp", "Ir al ingreso"]);
     });
 
     it("treats an empty token as no token", async () => {
@@ -622,9 +622,9 @@ describe("LoginLinkPage", () => {
     });
 
     it.each([
-      ["arrives", () => HttpResponse.json(ana), "Entrar a Arquitectura Base"],
+      ["arrives", () => HttpResponse.json(ana), "Iniciar sesión"],
       ["says the link no longer works", () => problem(400, invalidLink), "Este enlace ya no sirve"],
-      ["fails again", () => HttpResponse.error(), "Entrar a Arquitectura Base"],
+      ["fails again", () => HttpResponse.error(), "Iniciar sesión"],
     ])(
       "takes the focus to the title of what comes after Reintentar when the preview %s",
       async (_case, secondAnswer, heading) => {
@@ -638,7 +638,7 @@ describe("LoginLinkPage", () => {
 
         expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos conectarnos. Revisá tu conexión.");
         // Al abrir la página, el foco no se mueve: nadie tocó nada todavía.
-        expect(screen.getByRole("heading", { name: "Entrar a Arquitectura Base" })).not.toHaveFocus();
+        expect(screen.getByRole("heading", { name: "Iniciar sesión" })).not.toHaveFocus();
 
         await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
 
@@ -693,7 +693,7 @@ describe("LoginLinkPage", () => {
 
       expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos conectarnos. Revisá tu conexión.");
       // La cuenta vuelve a la vista después de "Iniciando sesión…": el foco va al título, y de ahí el Tab sigue.
-      expect(screen.getByRole("heading", { name: "Entrar a Arquitectura Base" })).toHaveFocus();
+      expect(screen.getByRole("heading", { name: "Iniciar sesión" })).toHaveFocus();
 
       await userEvent.click(screen.getByRole("button", { name: "Continuar" }));
 

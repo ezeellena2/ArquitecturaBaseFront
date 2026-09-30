@@ -4,7 +4,9 @@
     "title": "Quién puede entrar",
     "switchLabel": "Registro abierto",
     "open": "Abierto: cualquiera que ingrese con un correo nuevo se crea la cuenta sola, con el rol User.",
-    "inviteOnly": "Solo por invitación: únicamente entra quien un administrador dio de alta. A los demás no les llega ningún código."
+    "inviteOnly": "Solo por invitación: únicamente entra quien un administrador dio de alta. A los demás no les llega ningún código.",
+    "OpenLabel": "Registro abierto",
+    "InviteOnlyLabel": "Solo por invitación"
   },
   "confirm": {
     "openTitle": "Abrir el registro",
@@ -14,7 +16,56 @@
     "confirm": "Cambiar"
   },
   "feedback": {
-    "saved": "Guardamos el cambio."
+    "saved": "Guardamos el cambio.",
+    "uncertain": "No pudimos confirmar el guardado. Revisá el valor actual antes de volver a guardar.",
+    "conflict": "Otro administrador cambió la configuración. Revisá el valor actual.",
+    "failed": "No pudimos guardar el ajuste.",
+    "reviewFailed": "No pudimos consultar la configuración actual.",
+    "savedTopic": "Guardamos el ajuste de {{topic}}.",
+    "lateUncertain": "No pudimos confirmar el guardado de {{topic}}. Revisá el valor actual.",
+    "lateFailed": "No pudimos guardar el ajuste de {{topic}}."
   },
-  "errorTraceId": "Código para reportar: {{traceId}}"
+  "errorTraceId": "Código para reportar: {{traceId}}",
+  "topics": {
+    "idioma": "Idioma",
+    "zona-horaria": "Zona horaria",
+    "listados": "Listados",
+    "registro": "Registro"
+  },
+  "hints": {
+    "idioma": "Idioma inicial de las cuentas nuevas y de las pantallas públicas. Cada persona conserva su preferencia.",
+    "zona-horaria": "Zona inicial de las cuentas nuevas. Cada persona conserva la de su perfil; las fechas se guardan en UTC.",
+    "listados": "Cantidad inicial de filas. En cada listado se puede elegir otro tamaño.",
+    "registro": "Elegí quién puede crear una cuenta en el sistema."
+  },
+  "fields": {
+    "defaultCulture": "Idioma predeterminado",
+    "defaultTimeZoneId": "Zona horaria predeterminada",
+    "defaultPageSize": "Filas por página"
+  },
+  "preview": {
+    "label": "Vista previa"
+  },
+  "dirty": "Cambios sin guardar",
+  "discard": "Descartar",
+  "save": "Guardar cambios",
+  "saving": "Guardando…",
+  "unavailable": "Configuración no disponible",
+  "review": {
+    "action": "Revisar valores actuales",
+    "reading": "Consultando…",
+    "title": "Revisión del cambio",
+    "source": "Origen",
+    "value": "Valor",
+    "current": "Guardado actualmente",
+    "mine": "Mi cambio",
+    "useCurrent": "Usar valor actual",
+    "keepMine": "Conservar mi cambio"
+  },
+  "leave": {
+    "title": "¿Descartar los cambios?",
+    "description": "El ajuste todavía no está guardado.",
+    "confirm": "Descartar cambios",
+    "cancel": "Seguir editando"
+  }
 }

@@ -20,7 +20,7 @@ export function Topbar({ isMobile, drawerOpen, onToggleDrawer }: TopbarProps) {
   const { t } = useTranslation();
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4">
+    <header className="topbar-surface flex h-12 shrink-0 items-center justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4">
       <div className="flex min-w-0 items-center gap-3">
         {isMobile ? (
           <IconButton label={t("layout.topbar.toggle")} aria-expanded={drawerOpen} onClick={onToggleDrawer}>

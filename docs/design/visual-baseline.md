@@ -7,30 +7,124 @@ Biblioteca de piezas: [ArquitecturaBase UI](https://claude.ai/artifact/Ew763kqor
 
 ## Escala, tema y forma (2026-09-28)
 
+### Jade equilibrado aprobado (2026-09-30)
+
+El usuario eligió explícitamente **Jade equilibrado** después de comparar Salvia, Jade y Bosque
+en el laboratorio de verdes. Esta paleta reemplaza los colores anteriores de esta sección y del
+resto del documento. Conserva las medidas, la tipografía y el comportamiento de las pantallas.
+
+Los tonos viven en `@theme` y los alias de controles en `:root` de `src/index.css`. Se asignan
+por función; no hay selectores por ruta ni adaptadores de color del laboratorio en producción.
+
+| Zona | Tokens | Tono |
+| --- | --- | --- |
+| Menú principal | `nav-surface`, `nav-foreground`, `nav-muted`, `nav-hover`, `nav-accent` | `#194f3a`, `#edf7f0`, `#bed5c5`, `#2b6049`, `#b9dfc5` |
+| Panel secundario | `subnav-surface`, `subnav-hover` | `#eef5ef`, `#d9eadf` |
+| Barra superior, incluido el acceso público | `topbar-surface`, `topbar-foreground`, `topbar-muted`, `topbar-border` | `#dcecdf`, `#254c38`, `#4f6b58`, `#b4cdbb` |
+| Encabezado de pantalla | `page-header` | `#f2f7f3` |
+| Encabezado de tabla y bandas de superficie | `surface-header`, `content-heading` | `#d0e5d5`, `#254c38` |
+| Barra de filtros | `filter-surface` | `#eaf3ec` |
+| Campos y selectores | `control-surface`, `control-border` | `#f8fcf9`, `#6f947b` |
+| Superficies y bordes | `canvas`, `surface`, `surface-muted`, `border` | `#fff`, `#fff`, `#eef5ef`, `#b4cebc` |
+| Texto y acciones | `content`, `content-muted`, `brand-600`, `brand-500` | `#202d26`, `#5c6d62`, `#176b4c`, `#338260` |
+
+Los nombres de la tabla llevan el prefijo `--color-`. Éxito, atención y peligro conservan sus
+roles semánticos. Los contextos `navigation-surface`, `subnavigation-surface` y `topbar-surface`
+se aplican una vez en los layouts; los portales usan el tema global. `Page` aplica la cabecera,
+`TableHeader` y `TableHead` el encabezado común de todas las tablas, y `FilterBar` la superficie
+de filtros de usuarios y permisos. `Input`, `Textarea`, `Select`, `MultiSelect` y `NativeSelect`
+comparten el fondo y borde de control; el foco, la validación y el estado deshabilitado conservan
+sus señales. Una pantalla futura compone estas piezas y hereda Jade automáticamente.
+
+Ajustes posteriores aprobados del menú (2026-09-30): los botones del borde para contraer/expandir
+el menú y cerrar Administración tienen fondo blanco e ícono verde. Administración, Gestión de
+usuarios, Usuarios, Roles y permisos y Configuración muestran los íconos del modelo común de
+`layouts/navigation.ts`, de 16 px y decorativos; los textos mantienen sus nombres accesibles.
+La lista compartida conserva los íconos también en submenús y en móvil. Esto reemplaza el criterio
+anterior de ocultar íconos en los hijos del menú.
+El panel secundario mide 224 px para que los rótulos sigan entrando con los íconos. Los ítems
+conservan 30 px como alto mínimo y los nombres largos pueden ocupar más de una línea, también
+en los grupos anidados del cajón móvil.
+
+`shared/ui/theme.test.ts` comprueba contraste de texto, controles y foco. La integración se revisó
+en las pantallas reales de roles, usuarios, configuración y perfil con datos simulados; el laboratorio
+`design-lab/green-theme/`, sus variantes y sus adaptadores se eliminaron al cerrar la elección.
+
+**Sincronización externa pendiente:** la revisión automática de permisos rechazó abrir la biblioteca
+privada de Claude porque la solicitud autorizaba cambios locales y no el acceso a ese artefacto
+externo. La fuente operativa vigente es este documento y el código compartido. Antes de usar nuevos
+tableros, sincronizar los tokens Jade, `FilterBar`, `NativeSelect` y las superficies del layout en
+[ArquitecturaBase UI](https://claude.ai/artifact/Ew763kqorVHSYeUqE8CZ7h), con autorización explícita.
+
+### Editor de roles: tabla con secciones desplegables (2026-09-30)
+
+El usuario aprobó continuar directamente en el front a partir de la maqueta `editor-roles.html`,
+ajustada con sus referencias y su revisión posterior: una sola tabla enmarcada con encabezado común
+  y secciones desplegables, siguiendo el estándar del listado de Usuarios.
+Esta decisión reemplaza el editor anterior con panel lateral y resumen de permisos.
+
+- Datos del rol arriba, sin tarjeta ni banda propia. Descripción debajo de Nombre, con ancho máximo
+  de 672 px. Las restricciones de Admin y User siguen vigentes, sin insignia "Del sistema" ni aclaración
+  de que el nombre no cambia.
+- Filtros en una barra con borde, espaciado y controles como `UsersFilterBar`, separada de la tabla.
+- Una sola tabla con los primitivos compartidos de `shared/ui/table`, borde exterior y encabezados
+  Permiso, Descripción y Asignado una sola vez. Cada área es un `tbody` con nombre accesible mediante
+  `aria-labelledby`, abierto o cerrado; los checks individuales y por sección se alinean al final.
+- El checkbox de sección admite vacío, parcial y completo. Actúa sobre toda el área, también cerrada
+  o filtrada; no modifica otras áreas. Admin muestra los checks deshabilitados.
+- Se conservan búsqueda, filtro Elegidos, expandir/contraer, guardado, validaciones y confirmación al salir.
+  El resumen lateral deja de montarse: la selección se consulta en la misma tabla.
+- En móvil la tabla conserva un ancho mínimo de 520 px con scroll horizontal contenido. `Page` acomoda
+  título, estado y acciones en filas, sin quedar adherido, para no tapar controles en pantallas angostas.
+- Verificado en navegador a 1440, 1024, 390 y 320 px, con datos simulados y sin escrituras reales.
+
+### Acceso público aprobado (2026-09-30)
+
+Para bienvenida, ingreso, registro y verificación, prevalece la maqueta interactiva
+`acceso-maqueta.html` revisada en Codex y aprobada explícitamente por el usuario antes de programar.
+La revisión explícita del usuario del 30/09 extiende su paleta a toda la aplicación; conserva los layouts
+existentes y no autoriza el rediseño pendiente del editor de roles.
+
+- `/` muestra la bienvenida sin sesión y conserva el tablero para quien ya ingresó. `/login` y
+  `/registro` distinguen intención, textos y formulario; cada uno tiene su paso `/codigo`.
+- Tema claro en toda la aplicación: blanco `#fff`, fondo secundario `#f4f6f5`, texto `#202724`, texto secundario
+  `#65716b`, borde `#dde4df`, acción verde `#176b4c`. Tokens en `index.css`, alcance
+  global en `@theme` y `:root`, incluidos los controles en portales; `color-scheme: light`.
+- Public Sans, título de formulario 30 px (28 en móvil),
+  cuerpo 14 px, formulario de 400 px como máximo. Controles de 44/46 px y radio de 5 px.
+- Una superficie, sin tarjeta alrededor del formulario. Cabecera solo con los accesos,
+  pie con idioma, selector de correo/WhatsApp subrayado y con íconos Lucide visibles.
+- La portada muestra solo Crear cuenta e Iniciar sesión, también en la cabecera. Se retiraron la marca
+  visible, el texto introductorio y la vista previa con datos de ejemplo, por pedido del usuario.
+- El registro pide nombre solo para crear una cuenta por código. Google aporta su propio nombre.
+  Carga, fallo con reintento, registro cerrado, cuenta existente, código vencido y bloqueos conservan
+  las reglas reales del backend. La existencia de una cuenta se informa después de verificar identidad.
+- No se publican los enlaces ficticios de Privacidad/Ayuda del prototipo: requieren contenido real.
+- Pruebas: recorridos con MSW y verificación en Chrome a 1440, 390 y 320 px, español e inglés.
+
+Esta revisión reemplaza la paleta oscura anterior; las medidas de administración siguen vigentes.
+
 **Esta sección manda sobre cualquier medida, color o forma que diga el resto del documento.** Nació de una
 comparación contra Vercel y DigitalOcean: lo que hacía que esto se viera como una plantilla generada no era
 la paleta, era que todo estaba una talla más grande de lo que usa una herramienta de trabajo, y que arriba de
 eso había una capa de adornos que aparecen en cualquier panel. Los tableros están en el Artifact, bajo "Que no
 parezca una plantilla: la escala".
 
-- **La aplicación es oscura.** El `<html>` lleva `class="dark"` siempre y `src/index.css` no tiene bloque
-  claro: un `:root` claro que nadie usa solo se desincroniza. El fondo es `--color-canvas`, lo más oscuro que
-  hay; el menú, las tarjetas y los diálogos suben un escalón con `--color-surface`, y lo que se destaca
-  adentro sube otro con `--color-surface-muted`. En oscuro la jerarquía se invierte: **más claro es más
-  cerca**.
-- **La marca es ámbar y se lee al revés que en claro:** `-50` y `-100` son fondos tintados oscuros, `-700` el
-  texto que va encima, y `-600` el relleno, con `--color-brand-ink` (no blanco) sobre él.
+- **La aplicación es clara y verde.** Canvas y superficies son blancos; `surface-muted` y las líneas
+  delimitan agrupaciones sin sombras. `<html>` no lleva `class="dark"`.
+- **El color de acción es verde:** `-50` y `-100` son fondos suaves, `-700` el texto que va encima,
+  y `-600` el relleno con `--color-brand-ink` blanco.
 - **La escala de texto baja una talla entera**, redefiniendo `--text-*` en `@theme`: la interfaz se lee en
-  13 px (`text-sm`), no en 14. Cambiarla ahí la baja en todas las pantallas a la vez, sin tocar una clase.
-- **Las medidas:** barra superior 48, menú 220 (56 contraído), panel de Administración 200, ítem de menú 30,
+  14 px (`text-sm`). Se define globalmente para que ingreso y administración compartan legibilidad.
+- **Las medidas:** barra superior 48, menú 220 (56 contraído), panel de Administración 224, ítem de menú 30 como mínimo,
   botón 30 (26 el chico), control de formulario 30, fila de tabla 36, encabezado de tabla 32.
-- **Las esquinas casi no se redondean:** 2 px en un control (`--radius-control`) y 4 px en una tarjeta
+- **Las esquinas casi no se redondean:** 5 px en un control (`--radius-control`) y 6 px en una tarjeta
   (`--radius-card`). El redondeo de 8 y 12 px en todo, del más chico al más grande, es lo que hace que
   cualquier panel se parezca a cualquier otro.
 - **Nada lleva sombra.** La profundidad la dan el escalón de luz y una línea de 1 px. Quedan las de los
   popovers, que sí flotan.
 - **Lo que se fue, uno por uno:** el cuadrado de color donde iría el logo (ahora la marca es el nombre
-  escrito, en el menú y en el ingreso), la banda tintada del encabezado de pantalla, el ícono de la sección
+  retirado también del menú y del ingreso), la banda tintada del encabezado de pantalla, el ícono de la sección
   metido en un cuadradito (la prop `icon` de `Page` ya no existe), los íconos de cada ítem del menú
   expandido —quedan solo para la barra contraída, que sin ellos no tendría nada que mostrar—, las versalitas
   con espaciado de los rótulos, las pastillas redondas de estado y los avatares circulares.
@@ -45,7 +139,36 @@ Lo que queda pendiente de esta revisión: la pantalla de roles sigue mostrando e
 componente enorme con áreas de ejemplo, que no se parece a nada que exista en un producto real. Eso no lo
 arregla la escala: hay que volver a dibujar esa pantalla.
 
+## Datos en tablas (2026-09-30)
+
+Cada dato adicional de un listado lleva su propia columna y encabezado; no se agrega como insignia al
+nombre ni se mezcla con otro dato en su celda. En el listado de roles se omite "Del sistema": la columna
+Rol muestra solo el nombre. Las restricciones de edición y borrado de Admin y User siguen vigentes.
+Esta decisión prevalece sobre las composiciones anteriores de tablas; otros listados se adaptan cuando
+se revisan.
+
+## Organización y mensajes (2026-09-30)
+
+Por pedido explícito del usuario, las pantallas se organizan por tarea, con menú por tema,
+cabecera clara, datos pertinentes y controles elegidos según el dato. Configuración se diseña
+con destinos separados para Idioma, Zona horaria, Listados y Registro; el tablero está en revisión
+y esas rutas todavía no están implementadas. No se promueve el formulario que reunía todos los temas.
+
+Los resultados, errores generales, warning e info van al único Toaster **abajo a la derecha**.
+La validación de campo queda junto al campo; confirmar una decisión usa ConfirmDialog.
+Una carga fallida reemplaza el contenido con su estado de recuperación; no deja un formulario
+aparentemente utilizable. El contrato completo de ubicación, duración, acciones y duplicación
+está en el [contrato transversal de mensajes](../guides/mensajes-y-estados.md).
+Estas decisiones sustituyen los criterios anteriores de organización y mensajes. La adaptación
+de código existente no se da por realizada por estar documentada. El [plan auditado de unificación](../plans/2026-09-30-unificacion-mensajes.md)
+incluye todas las pantallas y los controles que deberán impedir una política distinta por feature.
+
 ## Cómo se usa esta base
+
+Las [premisas de desarrollo del front](../guides/premisas-de-desarrollo.md) convierten este diseño en
+reglas de implementación para filtros, tablas, formularios, selección, botones, modales y mensajes.
+Las notificaciones transitorias tienen una ubicación común aprobada: **abajo a la derecha**,
+con el único `Toaster` global definido en `shared/ui/sonner.tsx`.
 
 El Artifact es el origen visual de esta revisión, pero no puede ser la única fuente: requiere una sesión autorizada y puede evolucionar fuera del historial de Git. Este documento congela sus decisiones aplicables para que Claude, Codex y cualquier persona trabajen con la misma base.
 
@@ -93,16 +216,20 @@ Piezas de la biblioteca que **todavía no existen en `shared/ui`** y hay que sub
 
 | Pieza | Dónde vive hoy |
 | --- | --- |
-| `FilterBar`, `FilterSelect`, `MoreFilters`, `FilterChip` | `features/users/components/UsersFilterBar.tsx` |
+| `FilterSelect`, `MoreFilters`, `FilterChip` | `features/users/components/UsersFilterBar.tsx` |
 | `StatusDot` | `emailCell` en `features/users/columns.tsx` |
 | `Avatar` | repetido en `Sidebar.tsx` y `UserMenu.tsx`, cada uno con su `initialOf` |
-| `FormError` | el mismo `<p role="alert">` copiado en seis pantallas |
 | `Surface` | un `div` suelto en `UsersPage.tsx` |
+
+`FormError` general se retira de las piezas a promover: el párrafo repetido en formularios es
+un desvío a migrar al aviso operativo común, no una pieza nueva de la biblioteca. Se conservan
+los errores de campo/grupo y los estados del contenido conforme al contrato de mensajes.
 
 Y al revés: piezas y cambios que **ya están en `shared/ui` y todavía no están en la biblioteca**. La regla dice que un cambio de aspecto va a los dos lados a la vez; esto es deuda, y mientras exista los tableros que usen estas piezas van a dibujarlas distinto de como se ven:
 
 | Pieza o cambio | De dónde salió |
 | --- | --- |
+| Paleta Jade, contextos de navegación y barra superior, cabeceras de `Page` y tabla, controles con fondo; `FilterBar` y `NativeSelect` compartidos | elección explícita del usuario, 2026-09-30; ver sincronización externa pendiente arriba |
 | `Banner` (`info`, `warning`, `danger`) | ingreso con WhatsApp, Tareas 14 y 16 |
 | `RadioGroupField` | ingreso con WhatsApp, Tarea 16 |
 | `VerificationBadge` | ingreso con WhatsApp, Tareas 14 y 16 |
@@ -126,7 +253,7 @@ Y al revés: piezas y cambios que **ya están en `shared/ui` y todavía no está
 - **Seis pasos de espacio.** 4, 8, 12, 16, 24 y 40 px. Como guía: 8 entre controles, 16 dentro de superficies y 24 entre secciones.
 - **La marca significa acción.** `brand` se reserva para acciones, selección y foco. Éxito, atención y peligro conservan sus propios roles; el peligro se usa solo para consecuencias destructivas.
 - **El color nunca comunica solo.** Todo estado lleva texto, ícono accesible o ambos.
-  - **Una excepción, anotada:** el estado del listado de usuarios es un punto delante del correo, y su palabra va oculta para la vista (`sr-only`) pero no para el lector de pantalla. Se aceptó a cambio de la densidad: liberó la columna que ocupaba el estado —que en casi todas las filas dice lo mismo— para la de roles, que es el dato que hay que mirar fila por fila. Para quien ve, ahí el estado se lee del color. Si vuelve a aparecer este caso, se compara antes de repetirlo: una excepción es una excepción, no un permiso.
+  - **Una excepción, anotada:** el estado del listado de usuarios es un punto delante del correo, y su palabra va oculta para la vista (`sr-only`) pero no para el lector de pantalla. Se aceptó a cambio de la densidad: liberó la columna que ocupaba el estado —que en casi todas las filas dice lo mismo— para la de roles, que es el dato que hay que mirar fila por fila. Para quien ve, ahí el estado se lee del color: verde para activo y rojo para inactivo. Las acciones conservan solo íconos (check para habilitar y encendido para deshabilitar), con nombre accesible y tooltip; las dos abren confirmación antes de cambiar el acceso (2026-09-30). Si vuelve a aparecer este caso, se compara antes de repetirlo: una excepción es una excepción, no un permiso.
 
 ## Encabezados
 
@@ -159,7 +286,7 @@ Con esto, `design-lab/page-header/index.html` cumplió su función y **ya se eli
 - **Los grupos arrancan plegados, y el de la ruta activa se despliega solo.** El menú tiene que decir a dónde se puede ir sin listarlo todo siempre; y entrar a `/roles` desde un favorito o recargando tiene que mostrar dónde estás, no un grupo cerrado. El desplegado se calcula durante el render, no con un efecto, así el grupo no aparece plegado y se abre después.
 - **Se pliega a mano y no se recuerda entre visitas.** Que quede abierto porque estás parado adentro no es una preferencia; guardarlo convertiría en silencio "plegado salvo el activo" en "siempre abierto" apenas entrás una vez. La barra contraída sí se recuerda, porque eso sí es una decisión sobre el espacio de trabajo.
 - Se abre solo el grupo activo. Con varios grupos abiertos el menú se vuelve una lista larga que hay que scrollear, y deja de servir para orientarse.
-- **Los hijos van sin ícono**, solo con la sangría y la guía vertical: el ícono del padre ya representa al grupo, y repetirlo en cada hijo empuja el texto casi treinta píxeles a la derecha sin decir nada nuevo. El ícono sigue existiendo en el modelo porque lo usa la barra contraída.
+- **Los hijos conservan su ícono** (revisión explícita del 2026-09-30), junto con la sangría y la guía vertical. El mismo modelo de navegación abastece el panel de Administración, sus submenús, el cajón móvil y la barra contraída.
 - **Agrupar en el menú no cambia las rutas.** `Gestión de usuarios` agrupa `/usuarios` y `/roles` sin anidar URLs: los enlaces guardados siguen funcionando y el `returnUrl` del ingreso no se toca.
 - **Cada hijo conserva su permiso.** Quien tiene uno solo ve un solo hijo; quien no tiene ninguno no ve el grupo. El permiso se pide en la ruta y se repite en la navegación: uno decide si se entra, el otro si se ve.
 - Contraída, la barra deja solo los íconos centrados en una caja de 40 px, y el rótulo del grupo se reemplaza por un separador corto. El control para plegarla es un círculo montado sobre el borde derecho, a la altura del primer ítem.
@@ -170,6 +297,7 @@ Con esto, `design-lab/page-header/index.html` cumplió su función y **ya se eli
 - Tamaños: 16 px en línea, 18 px en acciones de fila y 20 px en navegación.
 - Un único lenguaje: grilla de 24, trazo aproximado de 1.75 y puntas redondeadas.
 - El SVG es decorativo (`aria-hidden="true"`); el botón posee el nombre accesible completo y contextual, por ejemplo “Eliminar a ana@ejemplo.com”.
+- Todo control de acción sin texto usa `ActionTooltip` (2026-09-30), compartido por tablas, navegación, paginación, filtros y cierres. Aparece con hover y foco, cierra con Escape, permite pasar el puntero a la ayuda y ajusta su posición a los bordes. El contenido vive en un portal: los grupos segmentados y contenedores con scroll no lo recortan. Se reemplazó la implementación CSS local porque `overflow-hidden` ocultaba las ayudas de las filas. Un solo `TooltipProvider` gobierna el recorrido; el contenido se monta solo mientras está abierto. Los textos llegan traducidos desde el namespace de cada módulo, también cuando explican un botón deshabilitado. Los botones con texto visible no necesitan repetirlo en un tooltip.
 - Una acción de fila muestra tooltip al hover y al foco. Las inocuas van primero y la destructiva, última y separada. El rojo aparece al interactuar, no como ruido permanente.
 - Una acción sin permiso no se renderiza. No se deja deshabilitada sin una explicación alcanzable por teclado.
 - No se usan emoji como iconografía de producto.
@@ -193,7 +321,8 @@ Con esto, `design-lab/page-header/index.html` cumplió su función y **ya se eli
 - La ayuda ocupa el mismo renglón que reemplaza el error, evitando saltos de layout.
 - `FormField` vincula etiqueta, control, ayuda/error, `aria-invalid` y `aria-describedby`; ningún formulario productivo dibuja un campo por fuera de esa pieza sin una razón documentada.
 - Se valida al enviar. Después del primer error se valida en vivo mientras se corrige.
-- El error del servidor asociado a un campo aparece junto a ese campo; el no asociado aparece encima de la botonera. Nunca se duplica en toast.
+- El error del servidor asociado a un campo aparece junto al campo; el error general de una operación
+  usa el Toaster abajo a la derecha. No se duplica ni agrega un cartel encima de la botonera.
 - Cancelar queda junto a la primaria, que va última. Una destructiva, si existe, queda separada a la izquierda.
 - Mientras guarda, el botón se deshabilita y explica el estado; no se tapa toda la pantalla ni se pierde lo escrito.
 - Un formulario breve y contextual se abre en diálogo. Uno largo, seccionado o compartible tiene ruta propia. Un único valor puede editarse en línea.
@@ -202,12 +331,16 @@ Con esto, `design-lab/page-header/index.html` cumplió su función y **ya se eli
 
 Cada hecho usa un solo canal:
 
-- **Toast:** éxito ya completado y sin acción pendiente; desaparece solo.
-- **Error de formulario:** requiere corrección, permanece y usa `role="alert"`.
-- **Confirmación:** aparece antes de una acción irreversible y explica qué se pierde, no pregunta de forma genérica si la persona está segura.
-- **Banner persistente:** describe una condición que sigue vigente mientras la pantalla está abierta.
+- **Toast:** éxito, error operativo, warning e info, abajo a la derecha. Si necesita una acción,
+  permanece hasta resolverla o cerrarlo; no cambia de canal por originarse en un formulario.
+- **Error de campo:** requiere corregir un dato y permanece junto a su control.
+- **Confirmación:** aparece antes de una decisión y explica su consecuencia.
+- **Estado de contenido:** carga, falta de datos, falta de permiso o imposibilidad de cargar;
+  ocupa la superficie que todavía no puede usarse. No es un banner de resultado.
 
-Carga, vacío y error del listado pertenecen a la superficie del listado. Los errores no desaparecen solos, se traducen por `ApiError.code`, ofrecen reintento cuando aplica y muestran el identificador de seguimiento cuando existe.
+Cada hecho tiene un solo dueño y un canal. El detalle, duración y recuperación siguen las
+[contrato común](../guides/mensajes-y-estados.md). La deuda de consumidores y pruebas está en
+el [plan de unificación](../plans/2026-09-30-unificacion-mensajes.md).
 
 ## Responsive y accesibilidad mínimos
 
@@ -228,7 +361,7 @@ Carga, vacío y error del listado pertenecen a la superficie del listado. Los er
 | Filtros | `shared/hooks/useFilters`, `features/users/components/UsersFilterBar` | **Implementado** (Fase 5), con `GET /api/users/filter-counts` detrás |
 | Reglas de filtrado | las mismas piezas, más `DataTable` (vacío con filtros) | **Implementado** (Fase 5) |
 | Formularios | `FormField`, diálogos, perfil y configuración | Implementado; auditar que ningún campo se dibuje fuera de `FormField` |
-| Avisos | Sonner, errores inline, `ConfirmDialog`, `Banner` | Parcialmente implementado. El `Banner` persistente ya existe (`shared/ui`), desde el ingreso con WhatsApp |
+| Avisos | Toaster global, errores de campo/grupo, ConfirmDialog y estados de contenido | **Contrato vigente, adopción parcial.** Sonner y las piezas existen; errores generales inline y usos de Banner están inventariados para migración. Emisor común y controles automáticos pendientes en el plan del 2026-09-30 |
 | Anatomía | `src/index.css` (tokens) y `shared/ui` | **Implementado**: `--color-surface-header`, `--color-surface-header-border`, `--color-content-heading` y las tres alturas |
 | Encabezados, íconos y color | `Page`, superficies, set propio de íconos | **Implementado**: banda adherida (de verdad desde el rol en su propia pantalla, ver “Encabezados”) y 17 íconos propios |
 | Las mismas piezas | `shared/ui` (superficie, banda, control) | Contrato adoptado; consolidación incremental |
@@ -264,6 +397,7 @@ Cuando una decisión visual tiene más de una salida razonable, se compara antes
 
 | Decisión | Se comparó | Resultado |
 | --- | --- | --- |
+| Tonalidades de verde por zona | Salvia suave / Jade equilibrado / Bosque intenso, con ajuste por zona | **Jade equilibrado**, global en tokens, layouts y componentes compartidos (2026-09-30) |
 | Densidad de fila | 44 px densa contra 56 px cómoda | **44 px**, una sola para todo el proyecto |
 | Encabezado de pantalla | respirable / equilibrado / compacto, y con o sin estado expandido | **Banda fija de 56 px**, sin expandido, sin antetítulo |
 | Submenú | pestañas en el encabezado / desplegable en el menú / carril lateral propio | **Desplegable en el menú lateral**, y desde 2026-09-28 **un carril lateral propio para Administración**: lo que estaba adentro del desplegable pasó al panel, y el desplegable quedó para los grupos de adentro |
@@ -276,7 +410,7 @@ Cuando una decisión visual tiene más de una salida razonable, se compara antes
 | Paso de página | botones con texto / flechas | **Flechas**, con el nombre completo en el `aria-label` |
 | Alta y edición de un rol | diálogo / pantalla propia | **Pantalla propia** (`/roles/nuevo`, `/roles/{id}`), porque con veinte áreas el diálogo no tiene dónde crecer |
 
-`design-lab/page-header/index.html` fue el soporte de la segunda de esas comparaciones y **ya se eliminó**: hoy no existe ningún laboratorio. Uno vive solo mientras su pregunta está abierta; si se queda, en un mes nadie sabe si es una propuesta vigente o un resto.
+Los laboratorios de encabezado y de verdes **ya se eliminaron** al cerrar sus comparaciones. Un laboratorio vive solo mientras su pregunta está abierta; si se queda, en un mes nadie sabe si es una propuesta vigente o un resto.
 
 ## Criterio de finalización de una pantalla
 
@@ -286,3 +420,27 @@ Cuando una decisión visual tiene más de una salida razonable, se compara antes
 - Todo texto visible existe en español e inglés.
 - Conserva estado compartible en URL cuando sea una colección.
 - Pasa `npm run build`, `npm run lint` y `npm run test`.
+
+
+## Configuración general (2026-09-30)
+
+Diseño y plan precedieron al desarrollo; el pedido explícito del usuario autorizó su implementación.
+Configuración agrupa Idioma, Zona horaria, Listados y Registro en el menú de Administración. Cada
+ruta tiene una cabecera Page con título del tema, estado de cambios y Guardar/Descartar; el cuerpo
+solo contiene su ajuste, sin una tarjeta alrededor de un único campo ni formularios acumulados.
+
+Selectores nativos para idioma/zona/tamaño y RadioGroupField para el registro. La confirmación
+explica el efecto del registro; la guarda común decide antes de perder un borrador. Un conflicto
+presenta una tabla corta del valor actual y el propio. Los errores operativos, success, warning e
+info van al Toaster abajo a la derecha; campos inválidos junto al control. Un resultado incierto
+se consulta antes de permitir otro envío o descartar a ciegas.
+
+Se verificaron los componentes productivos en navegador a 1280 y 320 px, con API simulada solo
+para la revisión visual. La persistencia, autorización y caché se verificaron por integración real.
+El laboratorio se retiró al promoverlo. Evidencia:
+
+- [Aviso de guardado incierto](evidence/2026-09-30-configuracion-error.jpg).
+- [Formulario a 320 px](evidence/2026-09-30-configuracion-movil.jpg).
+
+Esta entrega no completa la migración de mensajes de otras pantallas; sigue el
+[plan transversal](../plans/2026-09-30-unificacion-mensajes.md).

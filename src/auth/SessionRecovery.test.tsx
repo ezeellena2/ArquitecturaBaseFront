@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import type { User } from "oidc-client-ts";
 import type { AuthContextProps } from "react-oidc-context";
@@ -43,7 +43,7 @@ describe("SessionRecovery", () => {
     signinRedirect.mockReset().mockResolvedValue(undefined);
   });
 
-  it("shows the app shell while it recovers the session, instead of taking over the screen", async () => {
+  it("keeps access undecided during recovery and opens the dashboard without flashing the welcome page", async () => {
     // La recuperación se completa a mano para poder mirar la pantalla mientras todavía corre. Antes de que
     // `SessionRecovery` llame a `signinSilent` no hay nada que completar, y eso no puede pasar en silencio: la
     // recuperación no terminaría nunca y el test se quedaría esperando un perfil que no va a llegar.
@@ -69,33 +69,32 @@ describe("SessionRecovery", () => {
     // `completeRecovery` todavía no hacía nada. No es cuestión de esperar más: hay que esperar a la llamada.
     await waitFor(() => expect(signinSilent).toHaveBeenCalledTimes(1));
 
-    // Con la recuperación todavía en curso ya está toda la estructura: barra lateral con sus secciones,
-    // barra de arriba y el contenido. Esta es la aserción que ancla la corrección: falla si alguien vuelve
-    // a bloquear el árbol con una pantalla completa mientras el iframe hace lo suyo.
-    const sidebar = await screen.findByRole("complementary");
-    expect(within(sidebar).getByRole("link", { name: "Inicio" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Migas de pan" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Inicio" })).toBeInTheDocument();
+    // La portada no aparece antes de decidir si existe una sesión en el servidor.
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Crear una cuenta" })).not.toBeInTheDocument();
     // Lo único que falta son los datos: todavía no llegó el perfil, así que no se muestra ninguno.
     expect(screen.queryByText("ana@example.com")).not.toBeInTheDocument();
 
     completeRecovery();
 
     // Los bloques de carga se rellenan solos, en la misma pantalla: ni recarga, ni cambio de URL.
+    const sidebar = await screen.findByRole("complementary");
     expect(await within(sidebar).findByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Inicio" })).toBeInTheDocument();
+    expect(document.documentElement.dataset.theme).not.toBe("public");
     expect(signinSilent).toHaveBeenCalledTimes(1);
     // El rebote que se veía al recargar: `LoginPage` sacaba el navegador entero de la aplicación.
     expect(signinRedirect).not.toHaveBeenCalled();
   });
 
-  it("ends at the login screen, with nothing stuck, when the server has no session", async () => {
+  it("stays at the public welcome page when the server has no session", async () => {
     signinSilent.mockRejectedValue(new Error("login_required"));
 
     renderRouteWithProviders("/");
 
-    // Sin `returnUrl` la pantalla de ingreso no muestra el formulario: dispara el redirect de OIDC, que es el
-    // camino que ya existía para quien no tiene sesión.
-    await waitFor(() => expect(signinRedirect).toHaveBeenCalledTimes(1));
+    // La falta de cookie termina en la portada, sin una redirección interactiva.
+    expect(await screen.findByRole("link", { name: "Crear una cuenta" })).toBeInTheDocument();
+    expect(signinRedirect).not.toHaveBeenCalled();
     expect(await screen.findByRole("button", { name: "Español" })).toBeInTheDocument();
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
     expect(signinSilent).toHaveBeenCalledTimes(1);
@@ -116,6 +115,30 @@ describe("SessionRecovery", () => {
     renderRouteWithProviders("/auth/callback");
 
     expect(await screen.findByText("Iniciando sesión…")).toBeInTheDocument();
+    expect(signinSilent).not.toHaveBeenCalled();
+  });
+
+  it("does not restart recovery when an anonymous visitor comes back from login", async () => {
+    const { router } = renderRouteWithProviders("/");
+    await screen.findByRole("link", { name: "Crear una cuenta" });
+    await act(() => router.navigate("/login"));
+    await screen.findByRole("textbox", { name: "Correo electrónico" });
+    await act(() => router.navigate("/"));
+    await screen.findByRole("link", { name: "Crear una cuenta" });
+    expect(signinSilent).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not recover a session again after a signed-in visitor logs out", async () => {
+    auth.isAuthenticated = true;
+    auth.user = signedInUser;
+    const { router } = renderRouteWithProviders("/");
+    await screen.findByRole("complementary");
+    auth.isAuthenticated = false;
+    auth.user = undefined;
+    await act(() => router.navigate("/login"));
+    await screen.findByRole("textbox", { name: "Correo electrónico" });
+    await act(() => router.navigate("/"));
+    await screen.findByRole("link", { name: "Crear una cuenta" });
     expect(signinSilent).not.toHaveBeenCalled();
   });
 });

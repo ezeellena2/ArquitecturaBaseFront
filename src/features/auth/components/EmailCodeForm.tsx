@@ -15,11 +15,14 @@ import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 
-const schema = z.object({ email: z.email() });
+const schema = z.object({ email: z.email(), displayName: z.string().trim().max(100).optional() });
 
 type FormValues = z.infer<typeof schema>;
 
 export interface CodeRequestFormProps {
+  registration?: boolean;
+  displayName?: string;
+  onDisplayNameChange?: (name: string) => void;
   /// Ya validado por `authorizeReturnUrl`: viaja tal cual a `/login/codigo`.
   returnUrl: string;
   /// Un mensaje que llegó de afuera del formulario (por qué falló el ingreso con Google). Va en el mismo renglón
@@ -30,7 +33,7 @@ export interface CodeRequestFormProps {
 }
 
 /// El pedido del código por correo, en `/login`.
-export function EmailCodeForm({ returnUrl, notice, onSubmitStart }: CodeRequestFormProps) {
+export function EmailCodeForm({ returnUrl, notice, onSubmitStart, registration = false, displayName, onDisplayNameChange }: CodeRequestFormProps) {
   const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const [formError, setFormError] = useState<string | undefined>();
@@ -41,7 +44,7 @@ export function EmailCodeForm({ returnUrl, notice, onSubmitStart }: CodeRequestF
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(registration ? schema.extend({ displayName: z.string().trim().min(1).max(100) }) : schema), defaultValues: { displayName } });
 
   function setFieldError(field: string, error: { type: string; message: string }) {
     // El backend responde nombres de campo en camelCase, que acá son las claves de FormValues.
@@ -55,13 +58,15 @@ export function EmailCodeForm({ returnUrl, notice, onSubmitStart }: CodeRequestF
       const response = await requestLoginCode(values.email);
       const state: LoginCodeState = {
         channel: "email",
+        register: registration,
+        ...(registration ? { displayName: values.displayName } : {}),
         email: values.email,
         resendAfterSeconds: response.resendAfterSeconds,
       };
 
       // Navegación del router, no del navegador: el código nunca pasa por acá, y el email viaja en el
       // estado de la ruta, no en la URL.
-      void navigate(loginCodePathFor(returnUrl), { state });
+      void navigate(loginCodePathFor(returnUrl, registration), { state });
     } catch (caught) {
       if (!(caught instanceof ApiError)) {
         throw caught;
@@ -90,6 +95,9 @@ export function EmailCodeForm({ returnUrl, notice, onSubmitStart }: CodeRequestF
         void handleSubmit(onSubmit)(event);
       }}
     >
+      {registration ? <FormField label={t("registration.name")} error={errors.displayName ? t("registration.nameInvalid") : undefined}>
+        <Input autoComplete="name" maxLength={100} {...register("displayName", { onChange: (event) => onDisplayNameChange?.(event.target.value) })} />
+      </FormField> : null}
       <FormField label={t("login.emailLabel")} error={errors.email ? t("login.emailInvalid") : undefined}>
         <Input type="email" autoComplete="email" {...register("email")} />
       </FormField>

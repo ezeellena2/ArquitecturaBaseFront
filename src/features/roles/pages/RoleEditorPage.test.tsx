@@ -227,7 +227,7 @@ describe("RoleEditorPage", () => {
 
     renderRouteWithProviders("/roles/r3");
 
-    const usersGroup = await screen.findByRole("group", { name: "Usuarios" });
+    const usersGroup = await screen.findByRole("rowgroup", { name: "Usuarios" });
     expect(within(usersGroup).getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
 
     await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), " 2");
@@ -295,8 +295,8 @@ describe("RoleEditorPage", () => {
       http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
       // El listado llegó antes de que otro administrador le agregara "Administrar usuarios" a Soporte; el pedido
       // del editor falla, y el de "Reintentar" ya trae lo nuevo.
-      http.get("/api/roles", () =>
-        HttpResponse.json([admin, user, { ...support, permissions: ["users.read", "roles.read"] }, audit]),
+      http.get("/api/roles/paged", () =>
+        HttpResponse.json({ items: [admin, user, { ...support, permissions: ["users.read", "roles.read"] }, audit], page: 1, pageSize: 20, totalCount: 4, totalPages: 1, hasPrevious: false, hasNext: false }),
       ),
       http.get("/api/roles/r3", () => {
         requests += 1;
@@ -328,7 +328,7 @@ describe("RoleEditorPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
 
-    const usersGroup = await screen.findByRole("group", { name: "Usuarios" });
+    const usersGroup = await screen.findByRole("rowgroup", { name: "Usuarios" });
     expect(within(usersGroup).getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
 
     await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), " 2");
@@ -861,7 +861,8 @@ describe("RoleEditorPage", () => {
     renderRouteWithProviders("/roles/r1");
 
     expect(await screen.findByRole("heading", { level: 1, name: "Admin" })).toBeInTheDocument();
-    expect(screen.getByText("Del sistema")).toBeInTheDocument();
+    expect(screen.queryByText("Del sistema")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Lo que va a poder hacer" })).not.toBeInTheDocument();
     expect(screen.getByText("Todos los permisos")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Cancelar" })).not.toBeInTheDocument();
@@ -870,7 +871,7 @@ describe("RoleEditorPage", () => {
     expect(screen.getByRole("textbox", { name: "Descripción" })).toHaveAttribute("readonly");
 
     const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes).toHaveLength(5);
+    expect(checkboxes).toHaveLength(8);
     for (const checkbox of checkboxes) {
       expect(checkbox).toBeChecked();
       expect(checkbox).toBeDisabled();
@@ -895,8 +896,10 @@ describe("RoleEditorPage", () => {
     const name = await screen.findByRole("textbox", { name: "Nombre" });
     expect(name).toHaveValue("User");
     expect(name).toHaveAttribute("readonly");
-    expect(name).toHaveAccessibleDescription("Los roles del sistema no cambian de nombre.");
-    expect(screen.getByText("Del sistema")).toBeInTheDocument();
+    expect(name).not.toHaveAccessibleDescription();
+    expect(screen.queryByText("Los roles del sistema no cambian de nombre.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Del sistema")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Lo que va a poder hacer" })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("checkbox", { name: "Ver usuarios" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
@@ -951,7 +954,7 @@ describe("RoleEditorPage", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Editar el rol Auditoría" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Auditoría");
     expect(
-      within(screen.getByRole("group", { name: "Configuración" })).getByRole("checkbox", {
+      within(screen.getByRole("rowgroup", { name: "Configuración" })).getByRole("checkbox", {
         name: "Administrar la configuración",
       }),
     ).toBeChecked();

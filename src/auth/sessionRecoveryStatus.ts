@@ -6,6 +6,15 @@ import { createContext, useContext } from "react";
 /// montaje de `SessionRecovery`, así que se apaga solo y no hay que acordarse de limpiarlo entre un test y el
 /// siguiente. Lo provee la propia ruta, así que tampoco suma un provider a `providers.tsx`.
 export const SessionRecoveryContext = createContext(false);
+export function createSessionRecoveryAttempt() {
+  let attempted = false;
+  return {
+    hasAttempted: () => attempted,
+    markAttempted: () => { attempted = true; },
+  };
+}
+
+export const SessionRecoveryAttemptContext = createContext<ReturnType<typeof createSessionRecoveryAttempt> | undefined>(undefined);
 
 /// Afuera de `SessionRecovery` (las pantallas de ingreso, los tests de componentes sueltos) no hay nada que
 /// recuperar: el valor por defecto es `false` y todo se comporta como si esto no existiera.

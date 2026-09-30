@@ -50,8 +50,8 @@
     "whatsApp": "Por WhatsApp",
     "emailNeeded": "Cargá un correo para usar esta opción.",
     "phoneNeeded": "Cargá un número para usar esta opción.",
-    "consent": "{{name}} aceptó recibir mensajes de {{app}} por WhatsApp.",
-    "consentWithoutName": "La persona aceptó recibir mensajes de {{app}} por WhatsApp.",
+    "consent": "{{name}} aceptó recibir mensajes por WhatsApp.",
+    "consentWithoutName": "La persona aceptó recibir mensajes por WhatsApp.",
     "consentHint": "Sin esto, WhatsApp no permite escribirle primero."
   },
   "edit": {
@@ -106,7 +106,8 @@
     "descriptionWithEmail": "Se cierran sus sesiones abiertas y ya no va a poder entrar con {{phone}}. Va a poder seguir entrando con su correo.",
     "descriptionWithoutEmail": "Se cierran sus sesiones abiertas y ya no va a poder entrar con {{phone}}. Como no tiene correo, se queda sin forma de entrar hasta que le cargues un número o un correo.",
     "confirm": "Desvincular",
-    "success": "Desvinculamos su WhatsApp."
+    "success": "Desvinculamos su WhatsApp.",
+    "ownDescription": "Vas a dejar de entrar con {{phone}} y desde su chat. Tu sesión va a seguir abierta."
   },
   "form": {
     "email": "Correo electrónico",
@@ -118,6 +119,11 @@
     "rolesPlaceholder": "Sin roles",
     "rolesEmpty": "Todavía no hay roles para asignar.",
     "rolesNeedPermission": "Para asignar roles necesitás permiso de lectura sobre ellos."
+  },
+  "activate": {
+    "title": "Activar a {{user}}",
+    "description": "Va a poder volver a ingresar con sus medios de acceso y los permisos que ya tiene asignados.",
+    "confirm": "Activar"
   },
   "deactivate": {
     "title": "Desactivar a {{user}}",
@@ -168,6 +174,5 @@
     },
     "applied_one": "{{count}} filtro aplicado",
     "applied_other": "{{count}} filtros aplicados"
-  },
-  "shownOfTotal": "{{count}} de {{total}}"
+  }
 }

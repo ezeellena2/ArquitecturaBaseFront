@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { AuthContextProps } from "react-oidc-context";
@@ -38,16 +38,18 @@ describe("el returnUrl del ingreso", () => {
   it("arranca el ingreso de nuevo cuando alguien abre /login/codigo sin returnUrl", async () => {
     renderRouteWithProviders("/login/codigo");
 
-    await waitFor(() => expect(signinRedirect).toHaveBeenCalled());
-    expect(screen.queryByRole("button", { name: /enviar código/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
+    expect(signinRedirect).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /enviar código/i })).toBeInTheDocument();
   });
 
   it("arranca el ingreso de nuevo cuando el returnUrl no es un pedido de autorización", async () => {
     renderRouteWithProviders(`/login?returnUrl=${encodeURIComponent("/")}`);
 
-    await waitFor(() => expect(signinRedirect).toHaveBeenCalled());
-    expect(screen.queryByRole("button", { name: /enviar código/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /google/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
+    expect(signinRedirect).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /enviar código/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /google/i })).toBeInTheDocument();
   });
 
   it("muestra el formulario y no toca el returnUrl cuando es un pedido de autorización", async () => {
@@ -56,7 +58,7 @@ describe("el returnUrl del ingreso", () => {
     expect(await screen.findByRole("button", { name: /enviar código/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /google/i })).toHaveAttribute(
       "href",
-      `/account/external/google?returnUrl=${encodeURIComponent(authorizeUrl)}`,
+      `/account/external/google?returnUrl=${encodeURIComponent(authorizeUrl)}&register=false`,
     );
     expect(signinRedirect).not.toHaveBeenCalled();
   });

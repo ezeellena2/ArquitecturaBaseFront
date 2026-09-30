@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Mail, MessageCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "react-oidc-context";
-import { useLocation, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { externalLoginUrl } from "../api/loginCode";
 import { EmailCodeForm } from "../components/EmailCodeForm";
 import { WhatsAppCodeForm } from "../components/WhatsAppCodeForm";
@@ -13,11 +13,11 @@ import {
   carryLoginRedirectError,
   forgetLoginRedirectError,
 } from "../lib/loginRedirectError";
-import { authorizeReturnUrl } from "../lib/returnUrl";
+import { authorizeReturnUrl, loginPathFor } from "../lib/returnUrl";
+import { createSigninReturnUrl } from "@/auth/accessRequests";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { Button } from "@/shared/ui/button";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 
 type LoginChannel = "email" | "whatsapp";
 
@@ -45,20 +45,21 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-/// `/login` (sección 5.2). Sin un `returnUrl` válido en la query, todavía no vino del servidor: arranca el
-/// OIDC y no muestra nada, porque el servidor vuelve a mandar para acá, esta vez con el `returnUrl` correcto.
+/// Prepara el pedido OIDC con PKCE y estado sin salir del SPA. El servidor valida el `returnUrl` al ingresar.
 ///
 /// Los medios de ingreso salen de `GET /account/login-methods`. Mientras llega, o si falla, la pantalla es la de
 /// siempre (Google y el correo): que ese pedido falle no puede dejar a nadie sin poder entrar con su correo.
 export function LoginPage() {
   const { t } = useTranslation("auth");
-  const auth = useAuth();
   const location = useLocation();
+  const registration = location.pathname === "/registro";
   const [searchParams] = useSearchParams();
   const updateQuery = useQueryUpdate();
   const returnUrl = authorizeReturnUrl(searchParams.get("returnUrl"));
   const errorCode = searchParams.get("error") ?? undefined;
-  const hasStartedRedirectRef = useRef(false);
+  const hasStartedPreparationRef = useRef(false);
+  const [preparationFailed, setPreparationFailed] = useState(false);
+  const [displayName, setDisplayName] = useState((location.state as LoginState | null)?.displayName ?? "");
 
   // "Usar otro número", en la pantalla del código, vuelve con WhatsApp elegido.
   const [channel, setChannel] = useState<LoginChannel>(() => loginChannelOf(location.state));
@@ -66,7 +67,7 @@ export function LoginPage() {
   const [carriedErrorCode] = useState(carriedLoginRedirectError);
   const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
 
-  const { data: methods } = useQuery({
+  const { data: methods, isPending, isError, refetch } = useQuery({
     queryKey: loginMethodsQueryKey,
     queryFn: getLoginMethods,
     enabled: returnUrl !== undefined,
@@ -75,21 +76,23 @@ export function LoginPage() {
   });
 
   useEffect(() => {
-    if (returnUrl || hasStartedRedirectRef.current) {
+    if (returnUrl || hasStartedPreparationRef.current) {
       return;
     }
 
-    hasStartedRedirectRef.current = true;
+    hasStartedPreparationRef.current = true;
 
     // El backend manda a `/login?error=<código>` sin `returnUrl` cuando falla Google: el código se guarda para
-    // mostrarlo cuando el servidor vuelva a mandar para acá, ya con el `returnUrl`.
+    // mostrarlo después de preparar el `returnUrl`.
     if (errorCode !== undefined) {
       carryLoginRedirectError(errorCode);
     }
 
     const state = location.state as LoginState | null;
-    void auth.signinRedirect({ state: { returnTo: state?.returnTo ?? "/" } });
-  }, [returnUrl, auth, location.state, errorCode]);
+    void createSigninReturnUrl(state?.returnTo ?? "/", registration)
+      .then((prepared) => updateQuery({ returnUrl: prepared }))
+      .catch(() => setPreparationFailed(true));
+  }, [returnUrl, updateQuery, location.state, errorCode, registration]);
 
   useEffect(() => {
     if (returnUrl) {
@@ -99,7 +102,23 @@ export function LoginPage() {
   }, [returnUrl]);
 
   if (!returnUrl) {
-    return null;
+    return <div role="status"><p>{t(preparationFailed ? "login.errors.unknown" : "access.loading")}</p>
+      {preparationFailed ? <Button onClick={() => {
+        setPreparationFailed(false);
+        const state = location.state as LoginState | null;
+        void createSigninReturnUrl(state?.returnTo ?? "/", registration)
+          .then((prepared) => updateQuery({ returnUrl: prepared }))
+          .catch(() => setPreparationFailed(true));
+      }}>{t("access.retry")}</Button> : null}</div>;
+  }
+
+  if (registration && (isPending || isError)) {
+    return <div role="status"><p>{t(isError ? "access.methodsError" : "access.loading")}</p>
+      {isError ? <Button onClick={() => void refetch()}>{t("access.retry")}</Button> : null}</div>;
+  }
+  if (registration && !methods?.registrationOpen) {
+    return <div className="flex flex-col gap-6"><h1>{t("registration.closedTitle")}</h1><p>{t("registration.closed")}</p>
+      <Button asChild><Link to={loginPathFor(returnUrl)}>{t("access.signIn")}</Link></Button></div>;
   }
 
   // Google se oculta solo si el servidor dice que está apagado; WhatsApp se ofrece solo si dice que está prendido.
@@ -123,14 +142,16 @@ export function LoginPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-center text-xl font-semibold text-[var(--color-content)]">{t("login.title")}</h1>
+      <Link to="/" className="access-back"><ArrowLeft size={16} aria-hidden="true" />{t("access.back")}</Link>
+      <div><h1>{t(registration ? "registration.title" : "login.title")}</h1>
+        <p className="access-intro">{t(registration ? "registration.intro" : "login.intro")}</p></div>
 
       {showGoogle ? (
         <>
           <Button asChild variant="outline" className="w-full">
-            <a href={externalLoginUrl(returnUrl)}>
+            <a href={externalLoginUrl(returnUrl, registration)}>
               <GoogleIcon className="size-4" />
-              {t("login.google")}
+              {t(registration ? "registration.google" : "login.google")}
             </a>
           </Button>
 
@@ -144,30 +165,36 @@ export function LoginPage() {
 
       <div className="flex flex-col gap-4">
         {whatsappCountries === undefined ? null : (
-          <SegmentedControl
-            aria-label={t("login.methodLabel")}
-            fullWidth
-            options={(["email", "whatsapp"] as const).map((option) => ({
-              key: option,
-              label: t(`login.methods.${option}`),
-              pressed: activeChannel === option,
-              onSelect: () => setChannel(option),
-            }))}
-          />
+          <div className="access-channel" role="group" aria-label={t("login.methodLabel")}>
+            {(["email", "whatsapp"] as const).map((option) => (
+              <button key={option} type="button" aria-pressed={activeChannel === option} onClick={() => setChannel(option)}>
+                {option === "email" ? <Mail size={18} aria-hidden="true" /> : <MessageCircle size={18} aria-hidden="true" />}
+                {t(`login.methods.${option}`)}
+              </button>
+            ))}
+          </div>
         )}
 
         {/* Cambiar de medio arma el otro formulario de cero: lo escrito en uno no sirve en el otro. */}
         {activeChannel === "whatsapp" && whatsappCountries !== undefined ? (
           <WhatsAppCodeForm
+            key={`whatsapp-${registration}`}
+            registration={registration}
+            displayName={displayName}
+            onDisplayNameChange={setDisplayName}
             returnUrl={returnUrl}
             countries={whatsappCountries}
             notice={notice}
             onSubmitStart={dismissNotice}
           />
         ) : (
-          <EmailCodeForm returnUrl={returnUrl} notice={notice} onSubmitStart={dismissNotice} />
+          <EmailCodeForm key={`email-${registration}`} registration={registration} displayName={displayName} onDisplayNameChange={setDisplayName} returnUrl={returnUrl} notice={notice} onSubmitStart={dismissNotice} />
         )}
       </div>
+      {registration || methods?.registrationOpen ? <p className="access-switch">
+        {t(registration ? "access.haveAccount" : "access.noAccount")} {" "}
+        <Link to={loginPathFor(returnUrl, !registration)}>{t(registration ? "access.signIn" : "access.createAccount")}</Link>
+      </p> : null}
     </div>
   );
 }

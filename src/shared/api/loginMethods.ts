@@ -5,6 +5,7 @@ import { api } from "./httpClient";
 /// Vive en `shared/api` porque lo piden dos features: el ingreso (`/login` y `/ingresar`) y el perfil, que solo ofrece
 /// vincular WhatsApp si está prendido y con los países de acá.
 export interface LoginMethods {
+  readonly registrationOpen: boolean;
   readonly google: boolean;
   readonly whatsapp: boolean;
   /// Los países a los que se mandan códigos por WhatsApp, en ISO 3166-1 alfa-2 ("AR"), en el orden de la

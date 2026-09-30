@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { PermissionGroup } from "../api/roles";
 import { pickedSummary } from "../lib/permissionPicker";
 import { cn } from "@/shared/lib/utils";
+import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 
 interface RoleSummaryProps {
   groups: readonly PermissionGroup[];
@@ -93,6 +94,7 @@ export function RoleSummary({ groups, picked, onRemove }: RoleSummaryProps): Rea
                   >
                     {permission.name}
                     {onRemove ? (
+                      <ActionTooltip label={t("summary.remove", { name: permission.name })}>
                       <button
                         type="button"
                         aria-label={t("summary.remove", { name: permission.name })}
@@ -103,6 +105,7 @@ export function RoleSummary({ groups, picked, onRemove }: RoleSummaryProps): Rea
                           ×
                         </span>
                       </button>
+                      </ActionTooltip>
                     ) : null}
                   </li>
                 ))}

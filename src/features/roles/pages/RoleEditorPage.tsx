@@ -15,7 +15,6 @@ import {
   type RoleBody,
 } from "../api/roles";
 import { PermissionPicker } from "../components/PermissionPicker";
-import { RoleSummary } from "../components/RoleSummary";
 import { roleActionErrorMessage } from "../errors";
 import { sameSelection } from "../lib/permissionPicker";
 import { isAdminRole } from "../lib/systemRoles";
@@ -26,7 +25,6 @@ import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { cn } from "@/shared/lib/utils";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -58,28 +56,21 @@ function isSameDraft(first: Draft, second: Draft): boolean {
   );
 }
 
-/// Las dos columnas: la de la izquierda, de ancho fijo como en el tablero; en menos de `lg` se apilan.
-const columnsClassName = "grid grid-cols-1 items-start gap-4 lg:grid-cols-[340px_minmax(0,1fr)]";
-
-const cardClassName =
-  "overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]";
+const detailsClassName = "grid w-full max-w-2xl grid-cols-1 gap-3.5";
 
 /// Un nombre de solo lectura (los roles del sistema) se ve como tal: apagado, pero legible y seleccionable.
 const readOnlyClassName =
   "read-only:bg-[var(--color-surface-muted)] read-only:text-[var(--color-content-muted)] read-only:shadow-none";
 
-/// Mientras llegan el rol y el catálogo: el esqueleto de las dos columnas, para que la pantalla no salte al
-/// llenarse.
+/// Mantiene el espacio de los datos y las secciones mientras llegan el rol y el catálogo.
 function EditorSkeleton(): ReactNode {
   return (
-    <div aria-hidden="true" className={columnsClassName}>
-      <div className={cn(cardClassName, "flex flex-col gap-2.5 p-4")}>
-        <Skeleton className="h-3 w-1/2" />
-        <Skeleton className="h-9" />
-        <Skeleton className="h-3 w-3/5" />
-        <Skeleton className="h-[74px]" />
+    <div aria-hidden="true" className="flex flex-col gap-6">
+      <div className={detailsClassName}>
+        <div className="space-y-2.5"><Skeleton className="h-3 w-20" /><Skeleton className="h-9" /></div>
+        <div className="space-y-2.5"><Skeleton className="h-3 w-24" /><Skeleton className="h-16" /></div>
       </div>
-      <div className={cn(cardClassName, "flex flex-col gap-2 p-4")}>
+      <div className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-4">
         <Skeleton className="h-9" />
         <Skeleton className="h-[30px]" />
         <Skeleton className="h-[30px]" />
@@ -90,7 +81,7 @@ function EditorSkeleton(): ReactNode {
   );
 }
 
-/// La tarjeta "Datos del rol": nombre y descripción. Un rol del sistema no cambia de nombre, y Admin tampoco de
+/// Nombre y descripción, sin panel lateral. Un rol del sistema no cambia de nombre, y Admin tampoco de
 /// descripción: los campos siguen a la vista, de solo lectura, en vez de desaparecer.
 function RoleDetails({
   draft,
@@ -113,21 +104,12 @@ function RoleDetails({
   const titleId = useId();
 
   return (
-    <section aria-labelledby={titleId} className={cn(cardClassName, "shrink-0")}>
-      <div className="flex h-10 items-center border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4">
-        <h2
-          id={titleId}
-          className="text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]"
-        >
-          {t("editor.details")}
-        </h2>
-      </div>
-
-      <div className="flex flex-col gap-3.5 p-4">
+    <section aria-labelledby={titleId}>
+      <h2 id={titleId} className="sr-only">{t("editor.details")}</h2>
+      <div className={detailsClassName}>
         <FormField
           label={t("form.name")}
           required={!isSystemRole}
-          hint={isSystemRole ? t("editor.systemNameHint") : undefined}
           error={nameError}
         >
           <Input
@@ -142,10 +124,8 @@ function RoleDetails({
         </FormField>
 
         <FormField label={t("form.descriptionLabel")} error={descriptionError}>
-          {/* Tres renglones fijos, como en el tablero: con `field-sizing-content` (lo que trae shadcn) el
-              navegador ignora `rows` y el campo crece y achica con cada tecla, empujando la tarjeta de abajo. */}
           <Textarea
-            rows={3}
+            rows={2}
             readOnly={readOnly}
             maxLength={roleDescriptionMaxLength}
             placeholder={readOnly ? undefined : t("form.descriptionPlaceholder")}
@@ -353,18 +333,12 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     );
   }
 
-  const status =
-    isSystemRole || isDirty ? (
-      <>
-        {isSystemRole ? <Badge variant="secondary">{t("systemBadge")}</Badge> : null}
-        {isDirty ? (
-          <span className="text-[12.5px] text-[var(--color-content-muted)]">
-            <span aria-hidden="true">· </span>
-            {t("editor.unsaved")}
-          </span>
-        ) : null}
-      </>
-    ) : undefined;
+  const status = isDirty ? (
+    <span className="text-[12.5px] text-[var(--color-content-muted)]">
+      <span aria-hidden="true">· </span>
+      {t("editor.unsaved")}
+    </span>
+  ) : undefined;
 
   const actions = !isReady ? undefined : isAdmin ? (
     // Admin no se cambia: en lugar de los botones, lo que tiene.
@@ -418,56 +392,36 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
       ) : !isReady ? (
         <EditorSkeleton />
       ) : (
-        <form id={formId} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form id={formId} noValidate onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-6">
           {formError ? (
             <p role="alert" className="text-sm text-[var(--color-danger)]">
               {formError}
             </p>
           ) : null}
 
-          <div className={columnsClassName}>
-            {/* Adherida al scrollear, pegada a la banda (56 px), como en el tablero (`top: 0` dentro de un `main`
-                que en el tablero empieza debajo de la banda): antes de scrollear está a 24 px, el padding del
-                cuerpo, y al scrollear sube hasta tocarla. Con veinte áreas abiertas, el nombre y el resumen siguen a
-                la vista. Y nunca más alta que lo que queda de pantalla antes de scrollear (la barra superior, la
-                banda y el padding de arriba y de abajo), que es cuando está más abajo: en una notebook, con muchos
-                elegidos, el final del resumen quedaba debajo del borde hasta llegar al fondo del selector. El que se
-                achica es el resumen, que ya tiene scroll propio; los datos del rol no. */}
-            <div className="flex flex-col gap-4 lg:sticky lg:top-14 lg:max-h-[calc(100svh-4rem-3.5rem-3rem)]">
-              <RoleDetails
-                draft={draft}
-                nameError={nameError}
-                descriptionError={descriptionError}
-                isSystemRole={isSystemRole}
-                readOnly={isAdmin}
-                onNameChange={(name) => {
-                  changeDraft({ name });
-                  // Escribir es corregir: el error se va y vuelve, si hace falta, al guardar.
-                  setNameError(undefined);
-                }}
-                onDescriptionChange={(description) => {
-                  changeDraft({ description });
-                  setDescriptionError(undefined);
-                }}
-              />
-              <RoleSummary
-                groups={groups}
-                picked={draft.permissions}
-                onRemove={
-                  isAdmin
-                    ? undefined
-                    : (code) => changeDraft({ permissions: draft.permissions.filter((item) => item !== code) })
-                }
-              />
-            </div>
+          <RoleDetails
+            draft={draft}
+            nameError={nameError}
+            descriptionError={descriptionError}
+            isSystemRole={isSystemRole}
+            readOnly={isAdmin}
+            onNameChange={(name) => {
+              changeDraft({ name });
+              // Escribir es corregir: el error se va y vuelve, si hace falta, al guardar.
+              setNameError(undefined);
+            }}
+            onDescriptionChange={(description) => {
+              changeDraft({ description });
+              setDescriptionError(undefined);
+            }}
+          />
 
-            <PermissionPicker
-              groups={groups}
-              picked={draft.permissions}
-              onChange={(permissions) => changeDraft({ permissions })}
-              readOnly={isAdmin}
-            />
-          </div>
+          <PermissionPicker
+            groups={groups}
+            picked={draft.permissions}
+            onChange={(permissions) => changeDraft({ permissions })}
+            readOnly={isAdmin}
+          />
         </form>
       )}
 

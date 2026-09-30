@@ -34,7 +34,7 @@ describe("queryClient", () => {
     );
 
     await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith(i18n.t("errors.unexpected", { traceId: "trace-abc-123" })),
+      expect(toastError).toHaveBeenCalledWith(i18n.t("errors.unexpected", { traceId: "trace-abc-123" }), expect.objectContaining({ id: expect.any(String) })),
     );
     expect(toastError.mock.calls[0]?.[0]).toContain("trace-abc-123");
   });
@@ -49,7 +49,7 @@ describe("queryClient", () => {
       </QueryClientProvider>,
     );
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Ese correo ya está en uso."));
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Ese correo ya está en uso.", expect.objectContaining({ duration: 10000 })));
   });
 
   it("shows no toast when a query fails with a 403", async () => {

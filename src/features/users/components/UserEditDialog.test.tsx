@@ -7,7 +7,7 @@ import { adminHandlers, ana, carla, detailOf, juan, laura, pageOf } from "../tes
 import { userQueryKey, type LastInvitation, type UserDetail, type UserListItem } from "../api/users";
 import { loginMethodsQueryKey, type LoginMethods } from "@/shared/api/loginMethods";
 import { queryClient } from "@/shared/api/queryClient";
-import { loginMethods, whatsappLoginMethods } from "@/test/mocks/handlers";
+import { currentUser, loginMethods, whatsappLoginMethods } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 
@@ -96,6 +96,36 @@ describe("UserEditDialog", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("sends a verification code when linking the signed-in user's number from administration", async () => {
+    const self = { ...carla, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null };
+    withUser(self);
+    const requests: unknown[] = [];
+    server.use(
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, id: self.id, permissions: ["users.read", "users.manage"] })),
+      http.post("/api/me/whatsapp/code", async ({ request }) => {
+        requests.push(await request.json());
+        return HttpResponse.json({ phone: "+5491123456789", maskedPhone: "+54 9 11 •••• 6789", resendAfterSeconds: 60 }, { status: 202 });
+      }),
+    );
+    const dialog = await openEdit(self.email!);
+    await userEvent.click(dialog.getByRole("button", { name: "Agregar número" }));
+    const verification = await screen.findByRole("dialog", { name: "Vincular WhatsApp" });
+    await userEvent.type(within(verification).getByRole("textbox", { name: "Número de WhatsApp" }), "11 2345-6789");
+    await userEvent.click(within(verification).getByRole("button", { name: "Enviar código" }));
+    expect(await within(verification).findByRole("group", { name: "Código" })).toBeInTheDocument();
+    expect(requests).toEqual([{ country: "AR", number: "11 2345-6789" }]);
+  });
+
+  it("offers verification for the signed-in user's previously saved unverified number", async () => {
+    const self = { ...juan, phoneNumberConfirmed: false };
+    withUser(self);
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, id: self.id, permissions: ["users.read", "users.manage"] })));
+    const dialog = await openEdit(self.formattedPhoneNumber!);
+    await userEvent.click(dialog.getByRole("button", { name: "Verificar" }));
+    const verification = await screen.findByRole("dialog", { name: "Vincular WhatsApp" });
+    expect(within(verification).getByRole("textbox", { name: "Número de WhatsApp" })).toHaveValue(self.phoneNumber);
   });
 
   it("opens from Editar with the name, the roles and the login methods", async () => {
@@ -779,7 +809,7 @@ describe("UserEditDialog", () => {
         expect(byWhatsApp).toHaveFocus();
 
         const consent = panel.getByRole("checkbox", {
-          name: "Laura aceptó recibir mensajes de Arquitectura Base por WhatsApp.",
+          name: "Laura aceptó recibir mensajes por WhatsApp.",
         });
         expect(consent).not.toBeChecked();
         expect(consent).toHaveAccessibleDescription("Sin esto, WhatsApp no permite escribirle primero.");

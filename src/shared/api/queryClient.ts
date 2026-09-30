@@ -1,46 +1,25 @@
 import { QueryCache, QueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import i18n from "@/shared/i18n";
+import { notify } from "@/shared/ui/notifications";
 import { ApiError } from "./ApiError";
+import { errorFeedback } from "./errorFeedback";
 
-export const queryClient = new QueryClient({
-  // Errores que la pantalla no muestra por su cuenta: un aviso, y reintento si fue de red (sección 6.1 del spec).
-  queryCache: new QueryCache({
-    onError: (error, query) => {
-      if (query.meta?.silent === true || !(error instanceof ApiError)) {
-        return;
-      }
-
-      // 401 y 403 los resuelven el cliente HTTP y las pantallas.
-      if (error.status === 401 || error.status === 403) {
-        return;
-      }
-
-      if (error.isNetworkError) {
-        toast.error(i18n.t("errors.network"), {
-          action: { label: i18n.t("actions.retry"), onClick: () => void query.fetch() },
+export function createQueryClient() {
+  return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        // silent conserva consumidores heredados pendientes de la migración transversal.
+        if (query.meta?.silent === true || query.meta?.errorOwner === "local") return;
+        const feedback = errorFeedback(error);
+        if (feedback.kind === "session" || feedback.kind === "forbidden") return;
+        const serverFailure = error instanceof ApiError && error.status >= 500;
+        notify({ id: 'query:' + query.queryHash, kind: "error",
+          message: feedback.network ? i18n.t("errors.network") : serverFailure ? i18n.t("errors.unexpected", { traceId: feedback.traceId ?? "?" }) : feedback.detail ?? i18n.t("states.error"),
+          action: feedback.network ? { label: i18n.t("actions.retry"), onClick: () => void query.fetch() } : undefined,
         });
-
-        return;
-      }
-
-      // Un 500 es un bug o una falla de infraestructura (GlobalExceptionHandler, sección 6.1 del spec): su
-      // detail es un mensaje genérico sin valor propio, así que mostramos el traceId para que se pueda
-      // reportar, en vez de inventar un texto. El resto son errores de negocio: su detail ya viene traducido.
-      if (error.status >= 500) {
-        toast.error(i18n.t("errors.unexpected", { traceId: error.traceId ?? "?" }));
-
-        return;
-      }
-
-      toast.error(error.detail ?? i18n.t("states.error"));
-    },
-  }),
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      // No tiene sentido reintentar lo que el backend ya respondió con un error de negocio.
-      retry: (failureCount, error) => !(error instanceof ApiError) || (error.isNetworkError && failureCount < 2),
-    },
-  },
-});
+      },
+    }),
+    defaultOptions: { queries: { staleTime: 30_000, retry: (failureCount, error) => !(error instanceof ApiError) || (error.isNetworkError && failureCount < 2) } },
+  });
+}
+export const queryClient = createQueryClient();

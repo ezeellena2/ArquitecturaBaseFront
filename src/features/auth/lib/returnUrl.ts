@@ -24,11 +24,12 @@ export function authorizeReturnUrl(value: string | null): string | undefined {
 
 /// El `/login` al que hay que volver. Sin un `returnUrl` válido va sin query, que es lo que dispara el
 /// redirect de OIDC en `LoginPage` y reinicia el ingreso.
-export function loginPathFor(returnUrl: string | undefined): string {
-  return returnUrl === undefined ? "/login" : `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+export function loginPathFor(returnUrl: string | undefined, register = false): string {
+  const path = register ? "/registro" : "/login";
+  return returnUrl === undefined ? path : `${path}?returnUrl=${encodeURIComponent(returnUrl)}`;
 }
 
 /// El `/login/codigo` al que se pasa después de pedir el código, con el mismo `returnUrl`, tal cual.
-export function loginCodePathFor(returnUrl: string): string {
-  return `/login/codigo?returnUrl=${encodeURIComponent(returnUrl)}`;
+export function loginCodePathFor(returnUrl: string, register = false): string {
+  return `${register ? "/registro" : "/login"}/codigo?returnUrl=${encodeURIComponent(returnUrl)}`;
 }

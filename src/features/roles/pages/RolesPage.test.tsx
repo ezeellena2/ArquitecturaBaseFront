@@ -75,7 +75,7 @@ const manager = { ...currentUser, permissions: ["roles.read", "roles.manage"] };
 function managerHandlers() {
   return [
     http.get("/api/me", () => HttpResponse.json(manager)),
-    http.get("/api/roles", () => HttpResponse.json(roles)),
+    http.get("/api/roles/paged", () => HttpResponse.json({ items: roles, page: 1, pageSize: 20, totalCount: roles.length, totalPages: 1, hasPrevious: false, hasNext: false })),
     http.get("/api/roles/:roleId", ({ params }) => HttpResponse.json(roles.find((role) => role.id === params.roleId))),
     http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
   ];
@@ -138,13 +138,15 @@ describe("RolesPage", () => {
     expect(router.state.location.pathname).toBe("/roles/r2");
   });
 
-  it("marks the system roles and lets Admin be viewed, not edited nor deleted", async () => {
+  it("shows plain role names and lets Admin be viewed, not edited nor deleted", async () => {
     server.use(...managerHandlers());
 
     const { router } = renderRouteWithProviders("/roles");
 
     const table = await screen.findByRole("table");
-    expect(within(table).getAllByText("Del sistema")).toHaveLength(2);
+    expect(within(table).getByRole("cell", { name: "Admin" })).toBeInTheDocument();
+    expect(within(table).getByRole("cell", { name: "User" })).toBeInTheDocument();
+    expect(within(table).queryByText("Del sistema")).not.toBeInTheDocument();
     expect(within(table).queryByRole("button", { name: "Editar el rol Admin" })).not.toBeInTheDocument();
     expect(within(table).queryByRole("button", { name: "Eliminar el rol Admin" })).not.toBeInTheDocument();
 
@@ -247,7 +249,7 @@ describe("RolesPage", () => {
   it("hides every action without roles.manage", async () => {
     server.use(
       http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["roles.read"] })),
-      http.get("/api/roles", () => HttpResponse.json(roles)),
+      http.get("/api/roles/paged", () => HttpResponse.json({ items: roles, page: 1, pageSize: 20, totalCount: roles.length, totalPages: 1, hasPrevious: false, hasNext: false })),
     );
 
     renderRouteWithProviders("/roles");

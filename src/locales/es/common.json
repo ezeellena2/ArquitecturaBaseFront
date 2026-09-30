@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Arquitectura Base"
+    "name": "Inicio"
   },
   "home": {
     "title": "Inicio",
@@ -66,7 +66,10 @@
     "range": "{{from}}–{{to}} de {{total}}",
     "page": "Página {{page}} de {{totalPages}}",
     "previous": "Página anterior",
-    "next": "Página siguiente"
+    "next": "Página siguiente",
+    "noPrevious": "No hay una página anterior",
+    "noNext": "No hay una página siguiente",
+    "pageSize": "Filas por página"
   },
   "notifications": {
     "label": "Notificaciones",
@@ -79,7 +82,11 @@
     "userManagement": "Gestión de usuarios",
     "users": "Usuarios",
     "roles": "Roles y permisos",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "settingsLanguage": "Idioma",
+    "settingsTimeZone": "Zona horaria",
+    "settingsLists": "Listados",
+    "settingsRegistration": "Registro"
   },
   "layout": {
     "sidebar": {
@@ -102,6 +109,7 @@
       "profile": "Mi perfil",
       "signOut": "Cerrar sesión"
     },
-    "signingOut": "Cerrando sesión…"
+    "signingOut": "Cerrando sesión…",
+    "signOutError": "No pudimos cerrar la sesión. Probá de nuevo."
   }
 }

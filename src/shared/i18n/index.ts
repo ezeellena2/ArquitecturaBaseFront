@@ -7,6 +7,7 @@ export const supportedLanguages = ["es", "en"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
 
 export const languageStorageKey = "arquitecturabase.language";
+export const publicLanguageStorageKey = "arquitecturabase.public-language";
 
 /// Un valor cualquiera (lo guardado en el navegador, lo que trae el perfil, lo que eligió un `<select>`) es
 /// uno de los idiomas que hay.
@@ -36,7 +37,7 @@ await i18n
     lng: initialLanguage(),
     fallbackLng: "es",
     supportedLngs: [...supportedLanguages],
-    ns: ["common"],
+    ns: ["common", "auth", "profile", "users", "roles", "settings"],
     defaultNS: "common",
     interpolation: { escapeValue: false },
     react: { useSuspense: true },
@@ -50,6 +51,11 @@ export function changeLanguage(language: SupportedLanguage): Promise<unknown> {
   globalThis.localStorage?.setItem(languageStorageKey, language);
 
   return i18n.changeLanguage(language);
+}
+
+export function changePublicLanguage(language: SupportedLanguage): Promise<unknown> {
+  globalThis.localStorage?.setItem(publicLanguageStorageKey, language);
+  return changeLanguage(language);
 }
 
 export default i18n;

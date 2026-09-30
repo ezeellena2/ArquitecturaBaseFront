@@ -50,8 +50,9 @@ export function MultiSelect({
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedBy}
         className={cn(
-          "flex h-[30px] w-full min-w-0 items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-left text-sm outline-none",
+          "flex h-[30px] w-full min-w-0 items-center justify-between gap-2 rounded-md border border-input bg-[var(--color-control-surface)] px-3 text-left text-sm outline-none",
           "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
           picked.length > 0 ? "text-[var(--color-content)]" : "text-[var(--color-content-muted)]",
         )}
       >

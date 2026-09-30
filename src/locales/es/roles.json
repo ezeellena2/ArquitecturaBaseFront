@@ -65,6 +65,11 @@
     "remove": "Quitar {{name}}"
   },
   "picker": {
+    "columns": {
+      "name": "Permiso",
+      "description": "Descripción",
+      "assigned": "Asignado"
+    },
     "title": "Permisos",
     "searchLabel": "Buscar un permiso",
     "searchPlaceholder": "Buscar un permiso o un área",

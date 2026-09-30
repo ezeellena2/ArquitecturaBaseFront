@@ -12,7 +12,7 @@ const spentCodeCodes = new Set(["Auth.Account.LockedOut", "Auth.LoginCode.TooMan
 
 // Cortan el ingreso: ni verificar de nuevo ni pedir otro código lo cambia. Un reintento, además, reemplazaría el
 // mensaje por "El código ya se usó", porque el código correcto ya se gastó al responder esto.
-const closedAccountCodes = new Set(["Auth.Account.NotInvited", "Auth.Account.Disabled"]);
+const closedAccountCodes = new Set(["Auth.Account.NotInvited", "Auth.Account.Disabled", "Auth.Account.NotRegistered", "Auth.Account.AlreadyRegistered"]);
 
 export function isSpentCodeError(error: ApiError): boolean {
   return error.code !== undefined && spentCodeCodes.has(error.code);
@@ -53,6 +53,10 @@ export function loginLinkFailureOf(error: ApiError): LoginLinkFailure {
 /// los textos son propios. Un código que no se conoce tiene uno genérico.
 export function loginRedirectErrorMessage(code: string, t: Translate): string {
   switch (code) {
+    case "Auth.Account.NotRegistered":
+      return t("login.errors.notRegistered");
+    case "Auth.Account.AlreadyRegistered":
+      return t("login.errors.alreadyRegistered");
     case "Auth.Account.NotInvited":
       return t("login.errors.notInvited");
     case "Auth.Account.Disabled":

@@ -7,6 +7,7 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/shared/ui/button"
+import { ActionTooltip } from "./ActionTooltip"
 
 function Dialog({
   ...props
@@ -71,6 +72,7 @@ function DialogContent({
       >
         {children}
         {showCloseButton && (
+          <ActionTooltip label={t("actions.close")}>
           <DialogPrimitive.Close
             data-slot="dialog-close"
             className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
@@ -78,6 +80,7 @@ function DialogContent({
             <XIcon />
             <span className="sr-only">{t("actions.close")}</span>
           </DialogPrimitive.Close>
+          </ActionTooltip>
         )}
       </DialogPrimitive.Content>
     </DialogPortal>

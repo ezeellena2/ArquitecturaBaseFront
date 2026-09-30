@@ -1,21 +1,28 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { useQueryUpdate } from "./useQueryUpdate";
 
 export const defaultPageSize = 20;
 
 /// Página, orden y búsqueda viven en la URL: el listado se puede compartir y el botón atrás funciona.
-export function usePagination() {
+export function usePagination(configuredSize?: number, waitForDefault = false) {
   const [params] = useSearchParams();
 
   const page = Number(params.get("page") ?? 1);
-  const pageSize = Number(params.get("pageSize") ?? defaultPageSize);
+  const pageSize = Number(params.get("pageSize") ?? configuredSize ?? defaultPageSize);
+  const ready = params.has("pageSize") || !waitForDefault || configuredSize !== undefined;
   const sort = params.get("sort") ?? undefined;
   const search = params.get("search") ?? undefined;
 
   const update = useQueryUpdate();
 
+  // Fijar el tamaño al abrir evita que un cambio general altere un listado ya abierto.
+  useEffect(() => {
+    if (ready && (waitForDefault || configuredSize !== undefined) && !params.has("pageSize")) update({ pageSize: String(pageSize) });
+  }, [ready, waitForDefault, configuredSize, params, pageSize, update]);
+
   const setPage = useCallback((next: number) => update({ page: next === 1 ? undefined : String(next) }), [update]);
+  const setPageSize = useCallback((next: number) => update({ pageSize: String(next), page: undefined }), [update]);
 
   // Cambiar la búsqueda o el orden vuelve a la primera página: si no, se puede quedar en una página que ya no existe.
   const setSearch = useCallback((next: string) => update({ search: next, page: undefined }), [update]);
@@ -26,7 +33,7 @@ export function usePagination() {
   );
 
   return useMemo(
-    () => ({ page, pageSize, sort, search, setPage, setSearch, toggleSort }),
-    [page, pageSize, sort, search, setPage, setSearch, toggleSort],
+    () => ({ page, pageSize, sort, search, ready, setPage, setPageSize, setSearch, toggleSort }),
+    [page, pageSize, sort, search, ready, setPage, setPageSize, setSearch, toggleSort],
   );
 }

@@ -1,6 +1,9 @@
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "react-oidc-context";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
+import { endServerSession } from "@/auth/accessRequests";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { beginSignOut, cancelSignOut } from "@/auth/signOutStatus";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -18,6 +21,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { ChevronDownIcon, LogOutIcon } from "@/shared/ui/icons";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 
 /// Menú del usuario, en el avatar de la barra superior (sección 7.2): datos de la sesión, el acceso a su
 /// perfil, el idioma y cerrar sesión.
@@ -28,6 +32,8 @@ import { Skeleton } from "@/shared/ui/skeleton";
 export function UserMenu() {
   const { t, i18n } = useTranslation();
   const auth = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: user, isPending } = useCurrentUser();
   const { change: changeLanguage } = useLanguagePreference();
 
@@ -42,21 +48,27 @@ export function UserMenu() {
   const detail = accountDetailOf(user);
 
   async function handleSignOut() {
-    // AppLayout se entera por acá y muestra una transición en vez del layout con los datos ya vacíos
-    // (entre que esto limpia la sesión en memoria y auth.signoutRedirect navega a /connect/logout).
+    // Conserva una transición mientras el servidor cierra la sesión; después limpia el estado y navega en el SPA.
     beginSignOut();
 
     try {
-      await auth.signoutRedirect();
+      await endServerSession(auth.user?.id_token);
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      await auth.removeUser();
+      navigate("/login", { replace: true });
+      cancelSignOut();
     } catch {
       // Si no se pudo ni empezar el cierre de sesión, seguimos en esta pantalla: no puede quedar trabada
       // mostrando la transición.
       cancelSignOut();
+      toast.error(t("layout.signOutError"));
     }
   }
 
   return (
     <DropdownMenu>
+      <ActionTooltip label={t("layout.userMenu.trigger", { name: displayName })}>
       <DropdownMenuTrigger className="flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
         <span
           aria-hidden="true"
@@ -67,6 +79,7 @@ export function UserMenu() {
         <span className="sr-only">{t("layout.userMenu.trigger", { name: displayName })}</span>
         <ChevronDownIcon className="size-4 text-[var(--color-content-muted)]" />
       </DropdownMenuTrigger>
+      </ActionTooltip>
 
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="font-normal">

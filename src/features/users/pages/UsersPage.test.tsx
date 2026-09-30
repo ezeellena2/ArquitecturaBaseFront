@@ -51,6 +51,46 @@ describe("UsersPage", () => {
     vi.restoreAllMocks();
   });
 
+  it("keeps activation pending until the administrator confirms, and lets them cancel", async () => {
+    let activated = 0;
+    server.use(
+      ...adminHandlers([ana, beto]),
+      http.post("/api/users/2/activate", () => {
+        activated += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderRouteWithProviders("/usuarios");
+    await userEvent.click(await screen.findByRole("button", { name: "Activar a beto@example.com" }));
+    const dialog = await screen.findByRole("dialog", { name: "Activar a beto@example.com" });
+    expect(activated).toBe(0);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(activated).toBe(0);
+    await userEvent.click(screen.getByRole("button", { name: "Activar a beto@example.com" }));
+    await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Activar" }));
+    await waitFor(() => expect(activated).toBe(1));
+  });
+
+  it("keeps the inactive status accessible and the activation action compact without visible labels", async () => {
+    server.use(...adminHandlers([ana, beto]));
+    renderRouteWithProviders("/usuarios");
+    const row = (await screen.findByText("beto@example.com")).closest("tr")!;
+    expect(within(row).getByText("Inactivo")).toHaveClass("sr-only");
+    const button = within(row).getByRole("button", { name: "Activar a beto@example.com" });
+    expect(button).toHaveClass("w-8");
+    expect(button).not.toHaveTextContent("Activar");
+    await userEvent.hover(button);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Activar");
+  });
+
+  it.each(["/usuarios", "/usuarios?search=ana"])("omits the filter result counter at %s and keeps pagination", async (path) => {
+    server.use(...listHandlers());
+    renderRouteWithProviders(path);
+    await screen.findByRole("table");
+    expect(screen.queryByText("2 de 2", { exact: true })).not.toBeInTheDocument();
+    expect(screen.getByText("1–2 de 2")).toBeInTheDocument();
+  });
+
   it("shows the users of the first page", async () => {
     server.use(...listHandlers());
 
@@ -164,7 +204,6 @@ describe("UsersPage", () => {
       expect(row.getByRole("img", { name: "También entra con WhatsApp" })).toHaveFocus();
     });
 
-    // jsdom no aplica el CSS: lo que se puede comprobar acá es el atributo que oculta la ayuda, no que se oculte.
     it("closes the help with Esc without moving the focus, and brings it back on the next visit", async () => {
       server.use(...adminHandlers([laura]));
 
@@ -172,16 +211,17 @@ describe("UsersPage", () => {
 
       const row = await rowOf(laura);
       const badge = await focusBeforeEdit(row, "+54 9 351 555-1234");
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(explanation);
       await userEvent.keyboard("{Escape}");
 
       // WCAG 1.4.13: la ayuda tapa la fila de arriba, así que tiene que poder cerrarse sin irse de donde se está.
       expect(badge).toHaveFocus();
-      expect(badge).toHaveAttribute("data-dismissed");
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 
       await userEvent.tab();
       await focusBeforeEdit(row, "+54 9 351 555-1234");
       expect(badge).toHaveFocus();
-      expect(badge).not.toHaveAttribute("data-dismissed");
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(explanation);
     });
 
     it("closes the help with Esc while the pointer is on the mark, wherever the focus is", async () => {
@@ -191,13 +231,15 @@ describe("UsersPage", () => {
 
       const mark = (await rowOf(carla)).getByRole("img", { name: "También entra con WhatsApp" });
       await userEvent.hover(mark);
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("También entra con WhatsApp");
       await userEvent.keyboard("{Escape}");
 
       expect(mark).not.toHaveFocus();
-      expect(mark).toHaveAttribute("data-dismissed");
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 
       await userEvent.unhover(mark);
-      expect(mark).not.toHaveAttribute("data-dismissed");
+      await userEvent.hover(mark);
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("También entra con WhatsApp");
     });
   });
 

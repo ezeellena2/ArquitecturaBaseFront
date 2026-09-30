@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RowActions, type RowAction } from "./RowActions";
@@ -35,12 +35,25 @@ describe("RowActions", () => {
     expect(boton.querySelector("svg")?.closest("[aria-hidden='true']")).not.toBeNull();
   });
 
-  it("carries the short label as a tooltip, also hidden from the screen reader", () => {
+  it("shows the action tooltip outside the clipped group and dismisses it with Escape", async () => {
     renderWithProviders(<RowActions actions={[accion()]} />);
 
     const boton = screen.getByRole("button", { name: "Editar los roles de ana@ejemplo.com" });
-    // El tooltip es para quien ve; para quien no ve, el nombre accesible ya lo dice, y más completo.
-    expect(within(boton).getByText("Roles")).toHaveAttribute("aria-hidden", "true");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    await userEvent.hover(boton);
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("Roles");
+    expect(boton.closest("span")?.contains(tooltip)).toBe(false);
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
+  it("shows the action tooltip on keyboard focus without triggering the action", async () => {
+    const onSelect = vi.fn();
+    renderWithProviders(<RowActions actions={[accion({ onSelect })]} />);
+    await userEvent.tab();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Roles");
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
   it("does not render an action without permission", () => {

@@ -1,12 +1,12 @@
-import type { RouteObject } from "react-router";
+import { Navigate, type RouteObject } from "react-router";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { SessionRecovery } from "@/auth/SessionRecovery";
 import { CallbackPage } from "@/features/auth/pages/CallbackPage";
 import { LoginCodePage } from "@/features/auth/pages/LoginCodePage";
 import { LoginLinkPage } from "@/features/auth/pages/LoginLinkPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
-import { AppLayout } from "@/layouts/AppLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
+import { HomeLayout } from "@/layouts/HomeLayout";
 
 // Las rutas del SPA están en español, porque son parte de la interfaz.
 // Cada página se carga cuando se visita: `lazy` parte el bundle por ruta.
@@ -26,15 +26,12 @@ export const routes: RouteObject[] = [
     Component: SessionRecovery,
     children: [
       {
-        Component: ProtectedRoute,
+        Component: HomeLayout,
         children: [
+          { path: "/", lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }) },
           {
-            Component: AppLayout,
+            Component: ProtectedRoute,
             children: [
-              {
-                path: "/",
-                lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }),
-              },
               {
                 // Sin permiso: alcanza con tener sesión, que ya la exige el ProtectedRoute de arriba. Cada
                 // quien edita el suyo, y el backend no mira más que el token.
@@ -83,8 +80,9 @@ export const routes: RouteObject[] = [
               {
                 element: <ProtectedRoute permission="settings.manage" />,
                 children: [
+                  { path: "/configuracion", element: <Navigate to="/configuracion/idioma" replace /> },
                   {
-                    path: "/configuracion",
+                    path: "/configuracion/:topic",
                     lazy: async () => ({
                       Component: (await import("@/features/settings/pages/SettingsPage")).SettingsPage,
                     }),
@@ -101,6 +99,8 @@ export const routes: RouteObject[] = [
     Component: AuthLayout,
     children: [
       { path: "/login", Component: LoginPage },
+      { path: "/registro", Component: LoginPage },
+      { path: "/registro/codigo", Component: LoginCodePage },
       { path: "/login/codigo", Component: LoginCodePage },
       // La entrada con el enlace que manda el bot al chat de WhatsApp (`/ingresar#t=…`).
       { path: "/ingresar", Component: LoginLinkPage },

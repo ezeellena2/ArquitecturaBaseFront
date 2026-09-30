@@ -50,8 +50,8 @@
     "whatsApp": "By WhatsApp",
     "emailNeeded": "Add an email address to use this option.",
     "phoneNeeded": "Add a number to use this option.",
-    "consent": "{{name}} agreed to receive messages from {{app}} on WhatsApp.",
-    "consentWithoutName": "The person agreed to receive messages from {{app}} on WhatsApp.",
+    "consent": "{{name}} agreed to receive WhatsApp messages.",
+    "consentWithoutName": "The person agreed to receive WhatsApp messages.",
     "consentHint": "Without this, WhatsApp does not let us message them first."
   },
   "edit": {
@@ -106,7 +106,8 @@
     "descriptionWithEmail": "Their open sessions are closed and they can no longer sign in with {{phone}}. They can keep signing in with their email.",
     "descriptionWithoutEmail": "Their open sessions are closed and they can no longer sign in with {{phone}}. Since they have no email, they are left without a way to sign in until you add a number or an email.",
     "confirm": "Unlink",
-    "success": "Their WhatsApp was unlinked."
+    "success": "Their WhatsApp was unlinked.",
+    "ownDescription": "You will no longer be able to sign in with {{phone}} or its chat. Your session will stay open."
   },
   "form": {
     "email": "Email address",
@@ -118,6 +119,11 @@
     "rolesPlaceholder": "No roles",
     "rolesEmpty": "There are no roles to assign yet.",
     "rolesNeedPermission": "You need read permission on roles to assign them."
+  },
+  "activate": {
+    "title": "Activate {{user}}",
+    "description": "They will be able to sign in again using their sign-in methods and their existing permissions.",
+    "confirm": "Activate"
   },
   "deactivate": {
     "title": "Deactivate {{user}}",
@@ -168,6 +174,5 @@
     },
     "applied_one": "{{count}} filter applied",
     "applied_other": "{{count}} filters applied"
-  },
-  "shownOfTotal": "{{count}} of {{total}}"
+  }
 }

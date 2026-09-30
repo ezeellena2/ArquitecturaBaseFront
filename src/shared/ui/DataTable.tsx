@@ -95,9 +95,8 @@ export function DataTable<TRow>({
   return (
     <Table>
       <TableHeader>
-        {/* La banda de superficie. El hover se neutraliza porque `TableRow` lo trae para las filas de datos,
-            y un encabezado que se ilumina al pasar por encima parece que se puede apretar entero. */}
-        <TableRow className="bg-[var(--color-surface-header)] border-b-[var(--color-surface-header-border)] hover:bg-[var(--color-surface-header)]">
+        {/* TableHeader aporta el tono y neutraliza el hover de la banda para todos los listados. */}
+        <TableRow>
           {columns.map((column) => (
             <TableHead
               key={column.id}

@@ -39,6 +39,7 @@ export const phoneOnlyUser: CurrentUser = {
 /// Medios de ingreso por defecto: los de antes de WhatsApp (Google y el correo). Así la pantalla de ingreso se
 /// ve como siempre en los tests que no hablan de WhatsApp.
 export const loginMethods: LoginMethods = {
+  registrationOpen: true,
   google: true,
   whatsapp: false,
   whatsappCountries: [],
@@ -47,6 +48,7 @@ export const loginMethods: LoginMethods = {
 
 /// WhatsApp prendido, con dos países: el perfil ofrece vincular el número y el campo arranca en el primero.
 export const whatsappLoginMethods: LoginMethods = {
+  registrationOpen: true,
   google: true,
   whatsapp: true,
   whatsappCountries: ["AR", "UY"],
@@ -55,6 +57,12 @@ export const whatsappLoginMethods: LoginMethods = {
 
 /// Handlers por defecto. Cada test agrega los suyos con server.use(...).
 export const handlers = [
+  http.get("/api/settings/presentation", () => HttpResponse.json({ defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20 })),
+  http.get("/.well-known/openid-configuration", () => HttpResponse.json({
+    issuer: location.origin,
+    authorization_endpoint: `${location.origin}/connect/authorize`,
+    end_session_endpoint: `${location.origin}/connect/logout`,
+  })),
   http.get("/api/me", () => HttpResponse.json(currentUser)),
   http.get("/account/login-methods", () => HttpResponse.json(loginMethods)),
 ];

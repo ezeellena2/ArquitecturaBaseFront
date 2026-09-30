@@ -10,14 +10,15 @@ import { phoneOnlyUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
-const signoutRedirect = vi.fn();
+const { endServerSession, removeUser } = vi.hoisted(() => ({ endServerSession: vi.fn(), removeUser: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/auth/accessRequests", async () => ({ ...await vi.importActual("@/auth/accessRequests"), endServerSession }));
 
 vi.mock("react-oidc-context", async () => {
   const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context");
 
   return {
     ...actual,
-    useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" }, signoutRedirect }),
+    useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t", id_token: "identity-token" }, removeUser }),
   };
 });
 
@@ -44,7 +45,8 @@ async function openMenu() {
 
 describe("UserMenu", () => {
   afterEach(async () => {
-    signoutRedirect.mockClear();
+    endServerSession.mockReset();
+    removeUser.mockClear();
     vi.restoreAllMocks();
     await changeLanguage("es");
   });
@@ -142,13 +144,14 @@ describe("UserMenu", () => {
     expect(globalThis.localStorage.getItem(languageStorageKey)).toBe("es");
   });
 
-  it("clears the session and calls signoutRedirect when signing out", async () => {
+  it("ends the server session before removing the user without a document redirect", async () => {
     renderMenu();
 
     await openMenu();
 
     await userEvent.click(await screen.findByRole("menuitem", { name: /cerrar sesión/i }));
 
-    expect(signoutRedirect).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(removeUser).toHaveBeenCalled());
+    expect(endServerSession).toHaveBeenCalledWith("identity-token");
   });
 });

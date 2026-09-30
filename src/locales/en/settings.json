@@ -4,7 +4,9 @@
     "title": "Who can sign in",
     "switchLabel": "Open registration",
     "open": "Open: anyone signing in with a new email gets an account of their own, with the User role.",
-    "inviteOnly": "Invite only: only people an administrator added can sign in. Nobody else gets a code."
+    "inviteOnly": "Invite only: only people an administrator added can sign in. Nobody else gets a code.",
+    "OpenLabel": "Open registration",
+    "InviteOnlyLabel": "Invitation only"
   },
   "confirm": {
     "openTitle": "Open registration",
@@ -14,7 +16,56 @@
     "confirm": "Change"
   },
   "feedback": {
-    "saved": "The change was saved."
+    "saved": "The change was saved.",
+    "uncertain": "We could not confirm the save. Check the current value before saving again.",
+    "conflict": "Another administrator changed the settings. Check the current value.",
+    "failed": "We could not save this setting.",
+    "reviewFailed": "We could not check the current settings.",
+    "savedTopic": "Saved the {{topic}} setting.",
+    "lateUncertain": "We could not confirm the {{topic}} save. Check the current value.",
+    "lateFailed": "We could not save the {{topic}} setting."
   },
-  "errorTraceId": "Code to report: {{traceId}}"
+  "errorTraceId": "Code to report: {{traceId}}",
+  "topics": {
+    "idioma": "Language",
+    "zona-horaria": "Time zone",
+    "listados": "Lists",
+    "registro": "Registration"
+  },
+  "hints": {
+    "idioma": "Initial language for new accounts and public screens. Each person keeps their preference.",
+    "zona-horaria": "Initial time zone for new accounts. Each person keeps their profile preference; dates are stored in UTC.",
+    "listados": "Initial number of rows. Each list can use a different size.",
+    "registro": "Choose who can create an account in the system."
+  },
+  "fields": {
+    "defaultCulture": "Default language",
+    "defaultTimeZoneId": "Default time zone",
+    "defaultPageSize": "Rows per page"
+  },
+  "preview": {
+    "label": "Preview"
+  },
+  "dirty": "Unsaved changes",
+  "discard": "Discard",
+  "save": "Save changes",
+  "saving": "Saving…",
+  "unavailable": "Settings unavailable",
+  "review": {
+    "action": "Review current values",
+    "reading": "Checking…",
+    "title": "Review the change",
+    "source": "Source",
+    "value": "Value",
+    "current": "Currently saved",
+    "mine": "My change",
+    "useCurrent": "Use current value",
+    "keepMine": "Keep my change"
+  },
+  "leave": {
+    "title": "Discard changes?",
+    "description": "This setting has not been saved yet.",
+    "confirm": "Discard changes",
+    "cancel": "Keep editing"
+  }
 }

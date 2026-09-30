@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import { cn } from "@/shared/lib/utils";
+import { ActionTooltip } from "./ActionTooltip";
 
 export interface RowAction {
   /// Texto corto del tooltip: "Roles", "Desactivar", "Eliminar".
@@ -17,9 +18,6 @@ export interface RowAction {
   hidden?: boolean;
 }
 
-/// El tooltip es CSS puro sobre `:hover` y `:focus-visible`, no un Tooltip de Radix: un listado de cien filas
-/// con tres acciones montaría trescientos componentes para mostrar una palabra.
-///
 /// Sin `border-*`: el separador lo pone el `divide-x` del grupo, que Tailwind 4 genera con `:where()`, de
 /// especificidad cero. Cualquier borde del botón le gana, y con el `border-0` que tuvo hasta el 2026-09-23 el
 /// grupo se dibujaba sin separadores. El borde en cero ya lo pone el preflight, en una capa que sí pierde.
@@ -29,11 +27,6 @@ const boton =
   "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)]";
 
 const peligro = "hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)]";
-
-const tooltip =
-  "pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md " +
-  "bg-[var(--color-content)] px-2 py-1.5 text-xs font-medium leading-none text-white opacity-0 transition-opacity " +
-  "group-hover/act:opacity-100 group-focus-visible/act:opacity-100";
 
 /// Grupo segmentado: un solo borde alrededor y separadores entre los botones. Uno solo para todas las
 /// acciones, incluida la destructiva: separarla en una caja aparte fue una idea propia que el tablero no
@@ -52,8 +45,8 @@ function Grupo({ acciones }: { acciones: RowAction[] }) {
         // devolvía al que lo abrió iba a parar a un nodo que ya no estaba: a <body>. El orden de las acciones es
         // fijo por construcción, así que el lugar identifica a cada una.
         return (
+          <ActionTooltip key={posicion} label={accion.label}>
           <button
-            key={posicion}
             type="button"
             aria-label={accion.accessibleName}
             onClick={accion.onSelect}
@@ -64,10 +57,8 @@ function Grupo({ acciones }: { acciones: RowAction[] }) {
             <span aria-hidden="true" className="inline-flex">
               <Icono className="size-[18px]" />
             </span>
-            <span aria-hidden="true" className={tooltip}>
-              {accion.label}
-            </span>
           </button>
+          </ActionTooltip>
         );
       })}
     </span>

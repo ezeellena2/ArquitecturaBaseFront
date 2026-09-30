@@ -62,7 +62,12 @@ export const administration: NavigationPanel = {
         { labelKey: "navigation.roles", to: "/roles", icon: ShieldIcon, permission: "roles.read" },
       ],
     },
-    { labelKey: "navigation.settings", to: "/configuracion", icon: SettingsIcon, permission: "settings.manage" },
+    { labelKey: "navigation.settings", icon: SettingsIcon, children: [
+      { labelKey: "navigation.settingsLanguage", to: "/configuracion/idioma", icon: SettingsIcon, permission: "settings.manage" },
+      { labelKey: "navigation.settingsTimeZone", to: "/configuracion/zona-horaria", icon: SettingsIcon, permission: "settings.manage" },
+      { labelKey: "navigation.settingsLists", to: "/configuracion/listados", icon: SettingsIcon, permission: "settings.manage" },
+      { labelKey: "navigation.settingsRegistration", to: "/configuracion/registro", icon: SettingsIcon, permission: "settings.manage" },
+    ] },
   ],
 };
 
@@ -114,5 +119,5 @@ export function branchOf(pathname: string): NavigationBranch | undefined {
 export function isAdministrationPath(pathname: string): boolean {
   const path = withoutTrailingSlash(pathname);
 
-  return linksOf(administration.items).some((link) => leadsTo(path, link));
+  return path === "/configuracion" || linksOf(administration.items).some((link) => leadsTo(path, link));
 }

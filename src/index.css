@@ -1,60 +1,67 @@
 @import "tailwindcss";
+/* Las propuestas visuales no aportan utilidades al bundle productivo. */
+@source not "../design-lab";
 
-/* La variante dark: depende solo de la clase .dark, como la declara la CLI de shadcn para Tailwind 4.
-   La aplicación es oscura y el `<html>` lleva esa clase siempre (index.html): los componentes de
-   shared/ui traen reglas `dark:` propias (el borde del input, la perilla del switch, la casilla) y sin
-   la clase se quedarían con las claras sobre un fondo oscuro. */
 @custom-variant dark (&:is(.dark *));
 
-/* Tokens de marca. Cambiar la marca es cambiar estas variables (sección 7.4 del spec). */
 @theme {
-  /* La escala de marca es ámbar, y en un tema oscuro se lee al revés que en uno claro:
-     -50 y -100 son fondos tintados (oscuros y apagados), -700 es el texto que va encima de ellos, y
-     -600 es el relleno, lo único que ilumina de verdad. Sobre -600 nunca va blanco: va --color-brand-ink,
-     porque un ámbar que se lee sobre el fondo oscuro es demasiado claro para llevar texto blanco.
-     Si cambiás el tono, mantené -600 en L >= 0.72 o el texto oscuro encima deja de leerse. */
-  --color-brand-50: oklch(0.3 0.045 70);
-  --color-brand-100: oklch(0.37 0.07 70);
-  --color-brand-500: oklch(0.72 0.13 70);
-  --color-brand-600: oklch(0.79 0.14 70);
-  --color-brand-700: oklch(0.88 0.1 70);
-  --color-brand-ink: oklch(0.2 0.03 70);
 
-  /* Las superficies, de atrás para adelante. En oscuro la jerarquía se invierte: lo más claro es lo que
-     está más cerca. El fondo de la aplicación es lo más oscuro que hay; los paneles (menú, tarjetas,
-     diálogos) suben un escalón, y lo que se destaca adentro de un panel sube otro. Nada lleva sombra:
-     la profundidad la da el escalón de luz y una línea de 1 px. */
-  --color-canvas: oklch(0.155 0.004 265);
-  --color-surface: oklch(0.2 0.005 265);
-  --color-surface-muted: oklch(0.245 0.006 265);
-  /* La banda que abre una superficie: encabezado de tabla, de diálogo, de panel y rótulo de grupo. */
-  --color-surface-header: oklch(0.225 0.006 265);
-  --color-surface-header-border: oklch(0.32 0.008 265);
-  --color-border: oklch(0.285 0.006 265);
+  --color-brand-50: #e5f1e8;
+  --color-brand-100: #d8eadd;
+  --color-brand-500: #338260;
+  --color-brand-600: #176b4c;
+  --color-brand-700: #15553e;
+  --color-brand-ink: #fff;
 
-  --color-content: oklch(0.95 0.003 265);
-  /* Un punto más apagado que --color-content, para lo que encabeza sin ser el dato. */
-  --color-content-heading: oklch(0.88 0.004 265);
-  --color-content-muted: oklch(0.68 0.006 265);
 
-  --color-danger: oklch(0.7 0.17 25);
-  /* Un error escrito sobre un fondo tintado. */
-  --color-danger-700: oklch(0.8 0.13 25);
-  --color-success: oklch(0.75 0.15 155);
-  --color-success-50: oklch(0.28 0.05 155);
-  --color-success-700: oklch(0.85 0.12 155);
-  --color-warning: oklch(0.8 0.13 85);
-  --color-warning-50: oklch(0.3 0.05 85);
-  --color-warning-700: oklch(0.87 0.11 85);
+  --color-canvas: #fff;
+  --color-surface: #fff;
+  --color-surface-muted: #eef5ef;
 
-  /* La escala de texto, una talla más chica que la de Tailwind: la interfaz de una herramienta de
-     trabajo se lee en 13 px, no en 14. Redefinirla acá la baja en todas las pantallas a la vez, sin
-     tocar una sola clase. */
-  --text-xs: 0.6875rem;
+  --color-surface-header: #d0e5d5;
+  --color-surface-header-border: var(--color-border);
+  --color-border: #b4cebc;
+
+  --color-content: #202d26;
+
+  --color-content-heading: #254c38;
+  --color-content-muted: #5c6d62;
+
+  /* Jade: superficies por función, compartidas por todas las pantallas. */
+  --color-nav-surface: #194f3a;
+  --color-nav-foreground: #edf7f0;
+  --color-nav-muted: #bed5c5;
+  --color-nav-hover: #2b6049;
+  --color-nav-border: #3d6c55;
+  --color-nav-accent: #b9dfc5;
+  --color-nav-ink: #173d2c;
+  --color-subnav-surface: #eef5ef;
+  --color-subnav-hover: #d9eadf;
+  --color-topbar-surface: #dcecdf;
+  --color-topbar-foreground: #254c38;
+  --color-topbar-muted: #4f6b58;
+  --color-topbar-border: #b4cdbb;
+  --color-page-header: #f2f7f3;
+  --color-filter-surface: #eaf3ec;
+  --color-control-surface: #f8fcf9;
+  --color-control-border: #6f947b;
+
+  --color-danger: #ad3443;
+
+  --color-danger-700: #922b38;
+  --color-success: #176b4c;
+  --color-success-50: #edf5ef;
+  --color-success-700: #15553e;
+  --color-warning: #86621a;
+  --color-warning-50: #fff7df;
+  --color-warning-700: #725418;
+
+
+  --text-xs: 0.75rem;
   --text-xs--line-height: calc(1 / 0.6875);
-  --text-sm: 0.8125rem;
+  --text-sm: 0.875rem;
   --text-sm--line-height: calc(1.15 / 0.8125);
-  --text-base: 0.875rem;
+  --text-base: 1rem;
   --text-base--line-height: calc(1.3 / 0.875);
   --text-lg: 1rem;
   --text-lg--line-height: calc(1.4 / 1);
@@ -63,21 +70,17 @@
   --text-2xl: 1.25rem;
   --text-2xl--line-height: calc(1.6 / 1.25);
 
-  /* Las esquinas. Un control casi no se redondea (2 px) y una tarjeta apenas (4 px): el redondeo de 8 y
-     12 px es lo que hace que cualquier panel se parezca a cualquier otro panel. */
-  --radius-card: 0.25rem;
-  --radius-control: 0.125rem;
 
-  /* "Public Sans Variable" es el nombre de familia que declara @fontsource-variable/public-sans. Está
-     dibujada para formularios, así que aguanta 13 px mejor que una grotesca de marketing. */
+  --radius-card: 6px;
+  --radius-control: 5px;
+
+
   --font-sans: "Public Sans Variable", "Public Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Variables de shadcn/ui (estilo new-york, color base neutral, con variables CSS), ya en oscuro: cada
-   una sale de los tokens de arriba, así la marca y las superficies se cambian en un solo lugar.
-   No hay bloque claro: la aplicación es oscura, y un `:root` claro que nadie usa solo se desincroniza. */
 :root {
-  --radius: 0.25rem;
+  color-scheme: light;
+  --radius: 5px;
   --background: var(--color-surface);
   --foreground: var(--color-content);
   --card: var(--color-surface);
@@ -94,21 +97,21 @@
   --accent-foreground: var(--color-content);
   --destructive: var(--color-danger);
   --border: var(--color-border);
-  --input: var(--color-border);
+  --input: var(--color-control-border);
   --ring: var(--color-brand-500);
   --chart-1: var(--color-brand-600);
   --chart-2: var(--color-success);
   --chart-3: var(--color-warning);
   --chart-4: var(--color-danger);
   --chart-5: var(--color-content-muted);
-  --sidebar: var(--color-surface);
-  --sidebar-foreground: var(--color-content);
-  --sidebar-primary: var(--color-brand-600);
-  --sidebar-primary-foreground: var(--color-brand-ink);
-  --sidebar-accent: var(--color-surface-muted);
-  --sidebar-accent-foreground: var(--color-content);
-  --sidebar-border: var(--color-border);
-  --sidebar-ring: var(--color-brand-500);
+  --sidebar: var(--color-nav-surface);
+  --sidebar-foreground: var(--color-nav-foreground);
+  --sidebar-primary: var(--color-nav-accent);
+  --sidebar-primary-foreground: var(--color-nav-ink);
+  --sidebar-accent: var(--color-nav-hover);
+  --sidebar-accent-foreground: var(--color-nav-foreground);
+  --sidebar-border: var(--color-nav-border);
+  --sidebar-ring: var(--color-nav-accent);
 }
 
 @theme inline {
@@ -127,9 +130,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  /* --color-border no se redeclara acá: ya lo define el @theme de marca de arriba,
-     y --border lo toma de ahí. Si se repitiera, este bloque lo pisaría y "border-border"
-     dejaría de ser el token de marca (además de quedar una referencia circular). */
+
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -157,21 +158,92 @@
   }
 }
 
+@layer components {
+  /* Contextos explícitos del layout. Los portales siguen usando el tema global. */
+  .navigation-surface {
+    --color-surface: var(--color-nav-surface);
+    --color-surface-muted: var(--color-nav-hover);
+    --color-content: var(--color-nav-foreground);
+    --color-content-muted: var(--color-nav-muted);
+    --color-border: var(--color-nav-border);
+    --color-brand-500: var(--color-nav-accent);
+    --color-brand-600: var(--color-nav-accent);
+    --color-brand-ink: var(--color-nav-ink);
+    --primary: var(--color-nav-accent);
+    --primary-foreground: var(--color-nav-ink);
+    --ring: var(--color-nav-accent);
+    color: var(--color-nav-foreground);
+  }
+
+  .subnavigation-surface {
+    --color-surface: var(--color-subnav-surface);
+    --color-surface-muted: var(--color-subnav-hover);
+  }
+
+  .topbar-surface {
+    --color-surface: var(--color-topbar-surface);
+    --color-content: var(--color-topbar-foreground);
+    --color-content-muted: var(--color-topbar-muted);
+    --color-border: var(--color-topbar-border);
+    color: var(--color-topbar-foreground);
+  }
+}
+
 html,
 body,
 #root {
   height: 100%;
 }
 
-/* El fondo de la aplicación es lo más oscuro que hay: el menú, las tarjetas y los diálogos son los que
-   suben un escalón, y así se despegan sin necesidad de una sombra. */
 body {
   background-color: var(--color-canvas);
   color: var(--color-content);
 }
 
-/* Los números de una tabla se comparan en vertical: sin figuras tabulares, un 1 mide menos que un 8 y
-   las columnas se desalinean solas. */
 table {
   font-variant-numeric: tabular-nums;
+}
+
+.access-shell { min-height: 100svh; display: flex; flex-direction: column; background: var(--color-surface); color: var(--color-content); font-size: 14px; line-height: 1.55; letter-spacing: 0; }
+.access-header { min-height: 80px; padding: 16px 42px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
+.access-brand { display: flex; align-items: center; gap: 11px; font-size: 16px; font-weight: 650; }
+.access-brand > span { display: grid; place-items: center; width: 31px; height: 34px; border-radius: var(--radius-control); background: var(--color-brand-600); color: var(--color-brand-ink); }
+.access-header nav { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+.access-header-hint { color: var(--color-content-muted); font-size: 13px; }
+.access-main { flex: 1; min-width: 0; }
+.access-form-main { padding: 38px 24px 48px; }
+.access-form { width: 100%; max-width: 400px; margin: 0 auto; }
+.access-form h1 { font-size: 30px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.access-intro { color: var(--color-content-muted); margin-top: 10px; }
+.access-back { display: inline-flex; align-items: center; gap: 7px; color: var(--color-content-muted); font-size: 13px; min-height: 32px; align-self: flex-start; }
+.access-back:hover { color: var(--color-brand-600); }
+.access-shell [data-slot="button"] { min-height: 44px; height: auto; padding: 10px 18px; white-space: normal; text-align: center; border-radius: var(--radius-control); }
+.access-shell [data-slot="input"], .access-shell [data-slot="select-trigger"] { min-height: 46px; font-size: 14px; }
+.access-shell [data-slot="input"] { padding: 10px 12px; }
+.access-shell [role="group"] > input { width: 100%; max-width: 48px; padding: 4px; font-size: 22px; }
+.access-channel { display: flex; border-bottom: 1px solid var(--color-border); gap: 28px; margin-bottom: 6px; }
+.access-channel button { display: inline-flex; align-items: center; gap: 8px; padding: 0 2px 12px; min-height: 44px; border-bottom: 2px solid transparent; color: var(--color-content-muted); }
+.access-channel button[aria-pressed="true"] { border-bottom-color: var(--color-brand-600); color: var(--color-brand-600); font-weight: 600; }
+.access-switch { border-top: 1px solid var(--color-border); padding-top: 22px; text-align: center; font-size: 13px; color: var(--color-content-muted); }
+.access-switch a { color: var(--color-brand-600); text-decoration: underline; text-underline-offset: 4px; font-weight: 550; }
+.access-footer { display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; border-top: 1px solid var(--color-border); padding: 14px 42px; color: var(--color-content-muted); font-size: 12px; }
+.access-footer > div { display: flex; gap: 16px; }
+.access-footer button { min-height: 44px; }
+.access-footer button[aria-pressed="true"] { color: var(--color-brand-600); text-decoration: underline; text-underline-offset: 4px; }
+.access-shell a:focus-visible, .access-shell button:focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 3px; }
+.access-welcome { text-align: center; padding: 62px 24px 48px; }
+.access-welcome h1 { font-size: 44px; line-height: 1.18; font-weight: 600; overflow-wrap: anywhere; }
+.access-welcome p { font-size: 18px; line-height: 1.65; color: var(--color-content-muted); max-width: 510px; margin: 20px auto 26px; text-wrap: pretty; }
+.access-cta { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.access-cta [data-slot="button"] { min-width: 158px; min-height: 46px; }
+@media (max-width: 650px) {
+  .access-header { padding: 18px 22px; flex-wrap: wrap; gap: 12px; }
+  .access-header-hint { display: none; }
+  .access-welcome { padding: 44px 20px 38px; }
+  .access-welcome h1 { font-size: 34px; }
+  .access-welcome p { font-size: 16px; }
+  .access-form-main { padding: 28px 22px 38px; }
+  .access-form h1 { font-size: 28px; }
+  .access-shell [data-slot="input"], .access-shell [data-slot="select-trigger"] { font-size: 16px; }
+  .access-footer { padding: 14px 22px; }
 }

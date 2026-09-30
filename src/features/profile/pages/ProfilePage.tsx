@@ -13,6 +13,7 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
+import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 
@@ -28,10 +29,8 @@ const surfacesClassName = "grid items-start gap-4 lg:grid-cols-2";
 
 /// Los desplegables son `<select>` nativos y no el `Select` de shadcn: la lista de zonas horarias pasa las
 /// cuatrocientas opciones, y el nativo trae gratis la búsqueda por teclado del sistema operativo y el
-/// selector de rueda del teléfono, que es lo que hace usable una lista así. Las clases son las del `Input`
-/// (`shared/ui/input.tsx`) para que los dos controles del formulario se vean igual.
-const selectClassName =
-  "h-[30px] w-full min-w-0 rounded-md border border-input bg-transparent px-2.5 py-1 text-base transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40";
+/// selector de rueda del teléfono, que es lo que hace usable una lista así. `NativeSelect` comparte los
+/// tokens de los otros controles del sistema visual.
 
 /// Las zonas que conoce el navegador (ya vienen ordenadas), más la que tiene guardada el perfil si no está
 /// entre ellas. `Intl.supportedValuesOf` devuelve los nombres canónicos de IANA y el backend puede tener
@@ -174,8 +173,7 @@ export function ProfilePage() {
               </FormField>
 
               <FormField label={t("form.language")} hint={t("form.languageHint")} error={fieldErrors?.culture?.[0]}>
-                <select
-                  className={selectClassName}
+                <NativeSelect
                   value={draft.culture}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -190,14 +188,13 @@ export function ProfilePage() {
                       {t(`common:language.${language}`)}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </FormField>
 
               {/* Los nombres de las zonas no se traducen: son identificadores de IANA, los mismos que guarda el
                   backend, y son la forma en que la gente las busca ("Montevideo", "Madrid"). */}
               <FormField label={t("form.timeZone")} hint={t("form.timeZoneHint")} error={fieldErrors?.timeZoneId?.[0]}>
-                <select
-                  className={selectClassName}
+                <NativeSelect
                   value={draft.timeZoneId}
                   onChange={(event) => setDraft({ ...draft, timeZoneId: event.target.value })}
                 >
@@ -206,7 +203,7 @@ export function ProfilePage() {
                       {zone}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </FormField>
 
               {formError ? (

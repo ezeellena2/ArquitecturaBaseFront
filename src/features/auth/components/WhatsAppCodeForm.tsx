@@ -13,10 +13,12 @@ import { codeRequestErrorMessage, phoneFieldError } from "@/shared/api/codeError
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
 import { PhoneField } from "@/shared/ui/PhoneField";
+import { FormField } from "@/shared/ui/FormField";
+import { Input } from "@/shared/ui/input";
 
 // Acá solo se controla que haya algo escrito. Si es un celular, y de qué país, lo decide el servidor, que es el que
 // conoce los formatos de cada uno (con o sin 0, 15 o 9).
-const schema = z.object({ number: z.string().trim().min(1) });
+const schema = z.object({ number: z.string().trim().min(1), displayName: z.string().trim().max(100).optional() });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -28,7 +30,7 @@ interface WhatsAppCodeFormProps extends CodeRequestFormProps {
 
 /// El pedido del código por WhatsApp, en `/login`. Tiene las mismas reglas que el del correo: se valida al enviar,
 /// la respuesta es la misma exista o no la cuenta, y un 429 frena el botón con su cuenta regresiva.
-export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart }: WhatsAppCodeFormProps) {
+export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart, registration = false, displayName, onDisplayNameChange }: WhatsAppCodeFormProps) {
   const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const [country, setCountry] = useState(countries[0] ?? "");
@@ -40,7 +42,7 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart }
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { number: "" } });
+  } = useForm<FormValues>({ resolver: zodResolver(registration ? schema.extend({ displayName: z.string().trim().min(1).max(100) }) : schema), defaultValues: { number: "", displayName } });
 
   async function onSubmit(values: FormValues) {
     setFormError(undefined);
@@ -49,13 +51,15 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart }
       const response = await requestWhatsAppLoginCode({ country, number: values.number });
       const state: LoginCodeState = {
         channel: "whatsapp",
+        register: registration,
+        ...(registration ? { displayName: values.displayName } : {}),
         phone: response.phone,
         maskedPhone: response.maskedPhone,
         resendAfterSeconds: response.resendAfterSeconds,
       };
 
       // Como con el correo: el número viaja en el estado de la ruta, no en la URL.
-      void navigate(loginCodePathFor(returnUrl), { state });
+      void navigate(loginCodePathFor(returnUrl, registration), { state });
     } catch (caught) {
       if (!(caught instanceof ApiError)) {
         throw caught;
@@ -94,6 +98,9 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart }
         void handleSubmit(onSubmit)(event);
       }}
     >
+      {registration ? <FormField label={t("registration.name")} error={errors.displayName ? t("registration.nameInvalid") : undefined}>
+        <Input autoComplete="name" maxLength={100} {...register("displayName", { onChange: (event) => onDisplayNameChange?.(event.target.value) })} />
+      </FormField> : null}
       <PhoneField
         label={t("common:phone.label")}
         hint={t("login.phoneHint")}

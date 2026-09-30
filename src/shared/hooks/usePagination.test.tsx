@@ -9,6 +9,13 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe("usePagination", () => {
+  it("uses the system default and resets the page when size changes", () => {
+    const { result } = renderHook(() => usePagination(50), { wrapper });
+    expect(result.current.pageSize).toBe(50);
+    act(() => result.current.setPageSize(10));
+    expect(result.current.pageSize).toBe(10);
+    expect(result.current.page).toBe(1);
+  });
   it("reads the state from the URL", () => {
     const { result } = renderHook(() => usePagination(), { wrapper });
 

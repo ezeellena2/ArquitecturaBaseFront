@@ -123,7 +123,7 @@ describe("Sidebar", () => {
     await userEvent.click(await screen.findByRole("button", { name: /gestión de usuarios/i }));
 
     expect(screen.getByRole("link", { name: /roles y permisos/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /configuración/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /configuración/i })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^usuarios$/i })).not.toBeInTheDocument();
   });
 
@@ -144,7 +144,7 @@ describe("Sidebar", () => {
       const panel = screen.getByRole("navigation", { name: /^administración$/i });
       expect(trigger).toHaveAttribute("aria-expanded", "true");
       expect(within(panel).getByRole("button", { name: /gestión de usuarios/i })).toBeInTheDocument();
-      expect(within(panel).getByRole("link", { name: /configuración/i })).toBeInTheDocument();
+      expect(within(panel).getByRole("button", { name: /configuración/i })).toBeInTheDocument();
 
       await userEvent.click(within(panel).getByRole("button", { name: /cerrar administración/i }));
 
@@ -337,11 +337,12 @@ describe("Sidebar", () => {
     it("does not show the group at all to whoever has none of its permissions", async () => {
       server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["settings.manage"] })));
 
+      server.use(http.get("/api/settings", () => HttpResponse.json({ registrationMode: "InviteOnly", defaultCulture: "es", defaultTimeZoneId: "UTC", defaultPageSize: 20, revision: 1 })));
       renderRouteWithProviders("/configuracion");
 
       // Configuración es el otro ítem del panel: esperar a que aparezca prueba que los permisos ya llegaron,
       // así la ausencia del grupo no es la del menú todavía pendiente.
-      expect(await screen.findByRole("link", { name: /configuración/i })).toBeInTheDocument();
+      expect(await screen.findByRole("button", { name: /configuración/i })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /gestión de usuarios/i })).not.toBeInTheDocument();
     });
   });

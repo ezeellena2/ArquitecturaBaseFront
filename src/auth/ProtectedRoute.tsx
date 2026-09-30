@@ -21,7 +21,7 @@ export function ProtectedRoute({ permission }: { permission?: string } = {}) {
   // árbol entero: la pantalla se dibuja con lo que hay y sus bloques de carga se rellenan cuando llega.
   const isSessionUndecided = isRecoveringSession && !auth.isAuthenticated;
 
-  if (auth.isLoading && !isSessionUndecided) {
+  if (auth.isLoading && !auth.isAuthenticated && !isSessionUndecided) {
     return <Spinner />;
   }
 

@@ -18,7 +18,11 @@ import { Button } from "@/shared/ui/button";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, RefreshIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
+import { ActionTooltip } from "@/shared/ui/ActionTooltip";
+
+const AdministrationIcon = administration.icon;
+const sidebarEdgeToggleClassName =
+  "absolute top-[62px] -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-control-border)] bg-[var(--color-canvas)] text-[var(--color-nav-surface)] hover:bg-[var(--color-subnav-surface)] hover:text-[var(--color-nav-surface)]";
 
 /// Qué grupos están desplegados y cómo se alterna uno. Va por props porque el estado vive en la barra: un
 /// grupo adentro de otro (Administración en el teléfono) lo necesita para plegarse sin conocer al de arriba.
@@ -28,8 +32,7 @@ interface BranchControls {
 }
 
 /// Un ítem de navegación. Contraído, solo el ícono (con Tooltip) y el texto queda para el lector de pantalla.
-/// Adentro de un submenú va sin ícono: lo dicen la sangría y la guía vertical, y el ícono del padre ya
-/// representa al grupo. El del hijo sigue existiendo en el modelo porque la barra contraída lo usa.
+/// Los íconos salen del mismo modelo para el panel, sus submenús y la barra contraída.
 function NavItem({
   item,
   label,
@@ -52,7 +55,7 @@ function NavItem({
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
-          "relative flex h-[30px] items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm transition-colors",
+          "relative flex min-h-[30px] items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm transition-colors",
           isActive
             ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
             : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
@@ -61,7 +64,7 @@ function NavItem({
       }
     >
       {showIcon ? <Icon className="size-4 shrink-0" /> : null}
-      {collapsed ? <span className="sr-only">{label}</span> : <span className="truncate">{label}</span>}
+      {collapsed ? <span className="sr-only">{label}</span> : <span className="min-w-0 break-words leading-4">{label}</span>}
     </NavLink>
   );
 
@@ -70,10 +73,7 @@ function NavItem({
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
+    <ActionTooltip label={label} side="right">{link}</ActionTooltip>
   );
 }
 
@@ -107,18 +107,17 @@ function NavBranch({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         onClick={() => controls.toggle(labelKey)}
-        className="flex h-[30px] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
+        className="flex min-h-[30px] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
       >
         {showIcon ? <Icon className="size-4 shrink-0" /> : null}
-        <span className="min-w-0 flex-1 truncate text-left">{translate(labelKey)}</span>
+        <span className="min-w-0 flex-1 break-words text-left leading-4">{translate(labelKey)}</span>
         <ChevronDownIcon
           aria-hidden="true"
           className={cn("size-4 shrink-0 transition-transform", open ? "" : "-rotate-90")}
         />
       </button>
       {open ? (
-        // La guía arranca bajo el centro del ícono del padre (px-3 más medio ícono de 20), que es lo que
-        // ata visualmente los hijos al grupo. Sin ícono —un grupo adentro de otro— arranca bajo su texto.
+        // La guía arranca bajo el centro del ícono del padre; cuando no se muestra, arranca bajo su texto.
         <ul
           id={listId}
           className={cn(
@@ -126,7 +125,7 @@ function NavBranch({
             showIcon ? "ml-[22px]" : "ml-3",
           )}
         >
-          <NavItems items={items} controls={controls} translate={translate} onNavigate={onNavigate} />
+          <NavItems items={items} controls={controls} translate={translate} onNavigate={onNavigate} showIcons={showIcon} />
         </ul>
       ) : null}
     </>
@@ -134,7 +133,7 @@ function NavBranch({
 }
 
 /// Los `li` de una lista de ítems ya filtrada, sea la del menú, la de un submenú o la del panel. Adentro de
-/// una lista desplegada nada lleva ícono: la sangría y la guía ya cuentan de quién cuelga.
+/// una lista desplegada se conserva el ícono de cada destino, junto a la sangría y la guía del grupo.
 /// Mientras los permisos no llegaron, lo que puede llegar a no verse ocupa su lugar con un bloque de carga:
 /// si no, la lista se dibuja entera y se recorta sola un instante después, delante de quien la está leyendo.
 function NavItems({
@@ -142,7 +141,7 @@ function NavItems({
   controls,
   translate,
   onNavigate,
-  showIcons = false,
+  showIcons = true,
   pending = false,
 }: {
   items: NavigationItem[];
@@ -231,10 +230,7 @@ function AdministrationTrigger({
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
+    <ActionTooltip label={label} side="right">{trigger}</ActionTooltip>
   );
 }
 
@@ -376,7 +372,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
       <aside
         className={cn(
-          "relative flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]",
+          "navigation-surface relative flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]",
           isMobile
             ? cn(
                 "fixed top-12 bottom-0 left-0 z-50 w-[220px] transition-transform duration-200",
@@ -396,16 +392,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             iconsOnly ? "justify-center" : "",
           )}
         >
-          {/* La marca es el nombre escrito, no un cuadrado de color esperando un logo: un cuadrado de color
-              es lo que pone cualquier maqueta. Contraída queda la inicial. */}
-          {iconsOnly ? (
-            <span className="text-base font-bold tracking-[-0.02em] text-[var(--color-content)]">AB</span>
-          ) : (
-            <span className="truncate text-base tracking-[-0.02em]">
-              <span className="font-bold text-[var(--color-content)]">Arquitectura</span>
-              <span className="text-[var(--color-content-muted)]">Base</span>
-            </span>
-          )}
+
         </div>
 
         {/* La flecha va montada sobre el borde derecho, como un círculo mitad adentro y mitad afuera. Su eje
@@ -421,7 +408,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           <IconButton
             label={iconsOnly ? t("layout.sidebar.expand") : t("layout.sidebar.collapse")}
             onClick={onToggleCollapsed}
-            className="absolute top-[62px] -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)]"
+            className={sidebarEdgeToggleClassName}
           >
             <ChevronLeftIcon className={cn("size-3 transition-transform", iconsOnly ? "rotate-180" : "")} />
           </IconButton>
@@ -538,7 +525,6 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                       labelKey={administration.labelKey}
                       icon={administration.icon}
                       items={adminItems}
-                      showIcon={false}
                       controls={controls}
                       translate={t}
                       onNavigate={onNavigate}
@@ -612,18 +598,19 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
         <nav
           id={panelId}
           aria-label={t(administration.labelKey)}
-          className="relative z-30 flex h-svh w-[200px] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]"
+          className="subnavigation-surface relative z-30 flex h-svh w-[224px] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]"
         >
           {/* El mismo alto que la marca del menú y que el Topbar: los tres bordes de arriba forman una sola
               línea que cruza la pantalla. */}
-          <div className="flex h-12 items-center border-b border-[var(--color-border)] px-3">
+          <div className="flex h-12 items-center gap-2 border-b border-[var(--color-border)] px-3">
+            <AdministrationIcon className="size-4 shrink-0 text-[var(--color-content-muted)]" />
             <p className="truncate text-sm font-medium text-[var(--color-content)]">{t(administration.labelKey)}</p>
           </div>
 
           <IconButton
             label={t("layout.sidebar.closeAdministration")}
             onClick={() => setPanelOpen(false)}
-            className="absolute top-[62px] -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)]"
+            className={sidebarEdgeToggleClassName}
           >
             <ChevronLeftIcon className="size-3" />
           </IconButton>
