@@ -22,11 +22,12 @@ export interface UserListItem {
 /// Por dónde sale una invitación (`UserInvitationChannel` del backend, que viaja por su nombre).
 export type InvitationChannel = "Email" | "WhatsApp";
 
-/// Cómo va una invitación por WhatsApp. Por correo no hay estado que seguir.
+/// Cómo va una invitación. Por WhatsApp, cualquiera de estos; por correo, solo `Failed`, si la cola no la tomó.
 export type InvitationDeliveryStatus = "Pending" | "Sent" | "Delivered" | "Read" | "Failed";
 
 /// La última invitación que se le mandó a la cuenta: la franja de abajo de los medios de ingreso en la edición (tablero
-/// "Editar usuario · B", puntos 1 y 4). `deliveryStatus` es null por correo, que no tiene estado que seguir.
+/// "Editar usuario · B", puntos 1 y 4). `deliveryStatus` es null por un correo que salió, que no tiene estado que
+/// seguir, y `Failed` por uno que la cola no tomó (`LastInvitation` del backend).
 export interface LastInvitation {
   readonly channel: InvitationChannel;
   readonly sentAtUtc: string;

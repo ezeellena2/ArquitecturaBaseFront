@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createUser, usersQueryKeyRoot, type CreateUserBody, type InvitationChannel } from "../api/users";
 import { userFormErrors, type UserFormErrors, type UserFormField } from "../errors";
 import { RolesField } from "./RolesField";
+import { displayNameMaxLength } from "@/shared/api/accountRules";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { rolesQueryKey } from "@/shared/api/roles";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
@@ -232,6 +233,7 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
             <Input
               type="text"
               autoComplete="off"
+              maxLength={displayNameMaxLength}
               value={draft.displayName}
               onChange={(event) => change({ displayName: event.target.value }, "displayName")}
             />

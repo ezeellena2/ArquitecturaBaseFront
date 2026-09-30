@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import {
   createRole,
   fetchPermissions,
+  fetchRole,
   permissionsQueryKey,
   roleDescriptionMaxLength,
   roleNameMaxLength,
+  roleQueryKey,
   updateRole,
   type RoleBody,
 } from "../api/roles";
@@ -20,7 +22,7 @@ import { isAdminRole } from "../lib/systemRoles";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
 import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
-import { fetchRoles, rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
+import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { cn } from "@/shared/lib/utils";
@@ -159,10 +161,10 @@ function RoleDetails({
 
 /// El alta (sin `roleId`) o la edición de un rol. `RoleEditorPage` la monta con una `key` por rol.
 ///
-/// Al editar, el formulario **no** se siembra con el rol que había en el listado: ese puede estar viejo en la
-/// caché, y como el PUT reemplaza la lista de permisos entera, guardar un cambio de nombre sobre un snapshot
-/// viejo le borraría sin aviso un permiso que otro administrador acaba de agregar. Se piden los roles de
-/// nuevo al entrar y se siembra con lo que vuelve.
+/// Al editar, el formulario **no** se siembra con lo que había en caché: puede estar viejo, y como el PUT reemplaza
+/// la lista de permisos entera, guardar un cambio de nombre sobre un snapshot viejo le borraría sin aviso un permiso
+/// que otro administrador acaba de agregar. Se pide el rol de nuevo al entrar (`GET /api/roles/{id}`) y se siembra
+/// con lo que vuelve.
 function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   const { t } = useTranslation("roles");
   const queryClient = useQueryClient();
@@ -173,20 +175,21 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
 
   const groupsQuery = useQuery({ queryKey: permissionsQueryKey, queryFn: fetchPermissions });
 
-  const rolesQuery = useQuery({
-    queryKey: rolesQueryKey,
-    queryFn: fetchRoles,
+  // Sin `roleId` la consulta está apagada: la clave con "new" solo existe para que el hook tenga una.
+  const roleQuery = useQuery({
+    queryKey: roleQueryKey(roleId ?? "new"),
+    queryFn: () => fetchRole(roleId ?? ""),
     enabled: isEditing,
     refetchOnMount: "always",
   });
 
-  // Mientras ese pedido está en vuelo, `rolesQuery.data` sigue siendo lo que había en caché: sembrar con eso
+  // Mientras ese pedido está en vuelo, `roleQuery.data` sigue siendo lo que había en caché: sembrar con eso
   // sería sembrar con lo viejo, que es justo lo que se quiere evitar. Por eso se espera a que termine, y a que
   // termine bien: si falla, TanStack deja en `data` lo que había en caché, y sembrar con eso es lo mismo que no
   // haber esperado. Sin siembra, la pantalla muestra el error (o el sin permiso) y "Reintentar" pide de nuevo.
-  const hasFreshRoles =
-    isEditing && rolesQuery.isSuccess && rolesQuery.isFetchedAfterMount && !rolesQuery.isFetching;
-  const freshRole = hasFreshRoles ? rolesQuery.data.find((item) => item.id === roleId) : undefined;
+  const hasFreshRole = isEditing && roleQuery.isSuccess && roleQuery.isFetchedAfterMount && !roleQuery.isFetching;
+  // null es el 404: el rol no existe.
+  const freshRole = hasFreshRole ? (roleQuery.data ?? undefined) : undefined;
 
   const [seededRole, setSeededRole] = useState<RoleListItem | undefined>();
   const [draft, setDraft] = useState<Draft | undefined>(isEditing ? undefined : emptyDraft);
@@ -269,13 +272,13 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
 
   // Solo cuentan los errores de antes de tener algo que mostrar. Si un pedido posterior falla (al guardar se
   // vuelven a pedir los roles), la pantalla no se cambia por un cartel y lo escrito sigue ahí.
-  const rolesLoadError = isEditing && seededRole === undefined ? rolesQuery.error : null;
+  const roleLoadError = isEditing && seededRole === undefined ? roleQuery.error : null;
   const groupsLoadError = groups === undefined ? groupsQuery.error : null;
-  const loadError = rolesLoadError ?? groupsLoadError;
+  const loadError = roleLoadError ?? groupsLoadError;
   const apiLoadError = loadError instanceof ApiError ? loadError : undefined;
 
   // El rol no está: otro administrador lo borró, o el link es de antes. No hay nada que reintentar.
-  const isRoleGone = hasFreshRoles && seededRole === undefined && freshRole === undefined;
+  const isRoleGone = hasFreshRole && seededRole === undefined && roleQuery.data === null;
 
   if (apiLoadError?.status === 403) {
     return <ForbiddenPage />;
@@ -389,8 +392,8 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
               type="button"
               variant="outline"
               onClick={() => {
-                if (rolesLoadError) {
-                  void rolesQuery.refetch();
+                if (roleLoadError) {
+                  void roleQuery.refetch();
                 }
 
                 if (groupsLoadError) {

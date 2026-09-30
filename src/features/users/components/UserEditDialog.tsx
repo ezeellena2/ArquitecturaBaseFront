@@ -19,6 +19,7 @@ import { LastInvitationStrip } from "./LastInvitationStrip";
 import { RolesField } from "./RolesField";
 import { UnlinkUserWhatsAppDialog } from "./UnlinkUserWhatsAppDialog";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
+import { displayNameMaxLength } from "@/shared/api/accountRules";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { rolesQueryKey } from "@/shared/api/roles";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
@@ -347,6 +348,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                 <Input
                   type="text"
                   autoComplete="off"
+                  maxLength={displayNameMaxLength}
                   value={draft.displayName}
                   onChange={(event) => {
                     setDraft({ ...draft, displayName: event.target.value });

@@ -87,6 +87,7 @@
       "failed": "Not delivered"
     },
     "failedHint": "WhatsApp did not deliver it: it may be Meta's message limit or a rejection.",
+    "failedHintByEmail": "The email did not go out: we could not send it at that moment.",
     "resend": "Resend invitation",
     "resendIn": "You can resend in {{seconds}} s",
     "resent": "We sent the invitation again."
@@ -95,6 +96,8 @@
     "title": "Resend the invitation",
     "failed": "It did not arrive by WhatsApp: it may be Meta's limit or a rejection. You can try again or send it by email.",
     "failedWithoutEmail": "It did not arrive by WhatsApp: it may be Meta's limit or a rejection. You can try again.",
+    "failedByEmail": "It did not go out by email. You can try again or send it by WhatsApp.",
+    "failedByEmailWithoutWhatsApp": "It did not go out by email. You can try again.",
     "submit": "Resend",
     "submitLabel": "Resend the invitation"
   },

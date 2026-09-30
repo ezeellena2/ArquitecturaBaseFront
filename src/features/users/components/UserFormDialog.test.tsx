@@ -100,6 +100,15 @@ describe("UserFormDialog", () => {
       expect(dialog.getByRole("button", { name: "Crear" })).toBeInTheDocument();
     });
 
+    it("does not let the name grow past what the backend accepts", async () => {
+      // `AccountRules.DisplayNameMaxLength` del backend: el campo no deja pasarse, en vez de que lo rechace el servidor.
+      withCreate(whatsappLoginMethods);
+
+      const dialog = await openNewUser();
+
+      expect(dialog.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("maxlength", "100");
+    });
+
     it("shows the fields in the order of the board", async () => {
       withCreate(whatsappLoginMethods);
 
