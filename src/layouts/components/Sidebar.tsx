@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router";
 import {
   administration,
+  whatsapp,
+  isWhatsAppPath,
   branchOf,
   isAdministrationPath,
   isBranch,
@@ -20,7 +22,6 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 
-const AdministrationIcon = administration.icon;
 const sidebarEdgeToggleClassName =
   "absolute top-[62px] -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-control-border)] bg-[var(--color-canvas)] text-[var(--color-nav-surface)] hover:bg-[var(--color-subnav-surface)] hover:text-[var(--color-nav-surface)]";
 
@@ -51,7 +52,7 @@ function NavItem({
   const link = (
     <NavLink
       to={item.to}
-      end={item.to === "/"}
+      end={item.exact || item.to === "/"}
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
@@ -181,20 +182,21 @@ function NavItems({
 /// El botón de Administración, al pie del menú. No es un grupo que se despliega en la lista: abre el panel de
 /// al lado, y por eso la flecha apunta a un costado. Contraído es solo el ícono, con Tooltip, como cualquier
 /// ítem, y con el panel abierto queda activo, que es lo que dice en qué sección estás parado.
-function AdministrationTrigger({
+function PanelTrigger({
+  icon: Icon,
   label,
   open,
   collapsed,
   panelId,
   onToggle,
 }: {
+  icon: NavigationLink["icon"];
   label: string;
   open: boolean;
   collapsed: boolean;
   panelId: string;
   onToggle: () => void;
 }) {
-  const Icon = administration.icon;
 
   const trigger = (
     <button
@@ -304,14 +306,18 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   // El panel sigue a la sección, no a los clics: entrar a una ruta de administración lo abre y salir lo
   // cierra, también recargando o llegando desde un favorito. Mientras estás adentro se puede cerrar y abrir
   // a mano cuantas veces quieras; lo que lo vuelve a decidir es cambiar de sección.
-  const adminRoute = isAdministrationPath(location.pathname);
-  const [panelOpen, setPanelOpen] = useState(adminRoute);
-  const [lastAdminRoute, setLastAdminRoute] = useState(adminRoute);
-
-  if (adminRoute !== lastAdminRoute) {
-    setLastAdminRoute(adminRoute);
-    setPanelOpen(adminRoute);
+  const routePanel = isAdministrationPath(location.pathname) ? "admin" : isWhatsAppPath(location.pathname) ? "whatsapp" : undefined;
+  const [openPanel, setOpenPanel] = useState<string | undefined>(routePanel);
+  const [lastRoutePanel, setLastRoutePanel] = useState(routePanel);
+  if (routePanel !== lastRoutePanel) {
+    setLastRoutePanel(routePanel);
+    setOpenPanel(routePanel);
   }
+  const panelOpen = openPanel === "admin";
+  const setPanelOpen = (next: boolean | ((previous: boolean) => boolean)) => {
+    const value = typeof next === "function" ? next(panelOpen) : next;
+    setOpenPanel(value ? "admin" : undefined);
+  };
 
   function toggleBranch(labelKey: string) {
     setOpenBranchKeys((previous) =>
@@ -322,9 +328,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   // En el teléfono Administración es un grupo más del cajón, así que su apertura tiene que contestar por el
   // mismo camino que la de cualquier grupo, aunque el estado que la guarda sea el del panel.
   const controls: BranchControls = {
-    isOpen: (labelKey) => (labelKey === administration.labelKey ? panelOpen : openBranchKeys.includes(labelKey)),
+    isOpen: (labelKey) => labelKey === administration.labelKey ? panelOpen : labelKey === whatsapp.labelKey ? openPanel === "whatsapp" : openBranchKeys.includes(labelKey),
     toggle: (labelKey) =>
-      labelKey === administration.labelKey ? setPanelOpen((previous) => !previous) : toggleBranch(labelKey),
+      labelKey === administration.labelKey ? setPanelOpen((previous) => !previous) : labelKey === whatsapp.labelKey ? setOpenPanel(openPanel === "whatsapp" ? undefined : "whatsapp") : toggleBranch(labelKey),
   };
 
   useEffect(() => {
@@ -355,7 +361,11 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const adminItems = visibleItems(administration.items, canSee, false);
   const adminPending = isPending && administration.items.every(dependsOnPermissions);
   const showAdministration = adminItems.length > 0;
-  const panelVisible = showAdministration && panelOpen && !isMobile;
+  const whatsappItems = visibleItems(whatsapp.items, canSee, false);
+  const selectedPanel = openPanel === "whatsapp" ? whatsapp : administration;
+  const selectedItems = openPanel === "whatsapp" ? whatsappItems : adminItems;
+  const PanelIcon = selectedPanel.icon;
+  const panelVisible = selectedItems.length > 0 && openPanel !== undefined && !isMobile;
 
   return (
     <>
@@ -492,7 +502,6 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                           item={item}
                           label={t(item.labelKey)}
                           collapsed={iconsOnly}
-                          showIcon={iconsOnly}
                           onNavigate={onNavigate}
                         />
                       )}
@@ -502,6 +511,18 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
               </div>
             );
           })}
+
+          {/* WhatsApp se separa de Inicio con la misma línea que Administración. */}
+          {whatsappItems.length > 0 ? (
+            <div className="mt-2 border-t border-[var(--color-border)] pt-2">
+              {isPending ? <Skeleton aria-hidden="true" className="h-9" /> : isMobile ? (
+                <ul><li><NavBranch labelKey={whatsapp.labelKey} icon={whatsapp.icon} items={whatsappItems} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
+              ) : (
+                <PanelTrigger icon={whatsapp.icon} label={t(whatsapp.labelKey)} open={openPanel === "whatsapp"} collapsed={iconsOnly} panelId={panelId}
+                  onToggle={() => setOpenPanel(openPanel === "whatsapp" ? undefined : "whatsapp")} />
+              )}
+            </div>
+          ) : null}
 
           {/* Administración cierra el menú, separada por una línea: es la sección que no se usa todo el día,
               y abajo queda a la misma distancia esté el menú como esté. En el teléfono no hay lugar para un
@@ -532,7 +553,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                   </li>
                 </ul>
               ) : (
-                <AdministrationTrigger
+                <PanelTrigger
+                  icon={administration.icon}
                   label={t(administration.labelKey)}
                   open={panelOpen}
                   collapsed={iconsOnly}
@@ -597,19 +619,19 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
       {panelVisible ? (
         <nav
           id={panelId}
-          aria-label={t(administration.labelKey)}
+          aria-label={t(selectedPanel.labelKey)}
           className="subnavigation-surface relative z-30 flex h-svh w-[224px] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]"
         >
           {/* El mismo alto que la marca del menú y que el Topbar: los tres bordes de arriba forman una sola
               línea que cruza la pantalla. */}
           <div className="flex h-12 items-center gap-2 border-b border-[var(--color-border)] px-3">
-            <AdministrationIcon className="size-4 shrink-0 text-[var(--color-content-muted)]" />
-            <p className="truncate text-sm font-medium text-[var(--color-content)]">{t(administration.labelKey)}</p>
+            <PanelIcon className="size-4 shrink-0 text-[var(--color-content-muted)]" />
+            <p className="truncate text-sm font-medium text-[var(--color-content)]">{t(selectedPanel.labelKey)}</p>
           </div>
 
           <IconButton
-            label={t("layout.sidebar.closeAdministration")}
-            onClick={() => setPanelOpen(false)}
+            label={openPanel === "admin" ? t("layout.sidebar.closeAdministration") : t("layout.sidebar.closeWhatsApp")}
+            onClick={() => setOpenPanel(undefined)}
             className={sidebarEdgeToggleClassName}
           >
             <ChevronLeftIcon className="size-3" />
@@ -617,7 +639,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
           <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
             <ul className="flex flex-col gap-1">
-              <NavItems items={adminItems} controls={controls} translate={t} onNavigate={onNavigate} pending={isPending} />
+              <NavItems items={selectedItems} controls={controls} translate={t} onNavigate={onNavigate} pending={isPending} />
             </ul>
           </div>
         </nav>

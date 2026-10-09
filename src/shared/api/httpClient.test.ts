@@ -5,6 +5,11 @@ import { api, configureHttpClient, resetHttpClient } from "./httpClient";
 import { server } from "@/test/mocks/server";
 
 describe("httpClient", () => {
+  it("preserves cancellation without reporting a network failure", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(api.get("/api/me", { signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
+  });
   beforeEach(() => resetHttpClient());
   afterEach(() => resetHttpClient());
 

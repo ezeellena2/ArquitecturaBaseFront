@@ -8,6 +8,7 @@ import { requestLoginCode } from "../api/loginCode";
 import type { LoginCodeState } from "../lib/loginCodeState";
 import { loginCodePathFor } from "../lib/returnUrl";
 import { ApiError } from "@/shared/api/ApiError";
+import { notifyOperationalError } from "@/shared/ui/notifications";
 import { codeRequestErrorMessage } from "@/shared/api/codeErrors";
 import { applyApiErrorToForm } from "@/shared/api/formErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
@@ -68,6 +69,7 @@ export function EmailCodeForm({ returnUrl, notice, onSubmitStart, registration =
       // estado de la ruta, no en la URL.
       void navigate(loginCodePathFor(returnUrl, registration), { state });
     } catch (caught) {
+      if (notifyOperationalError(caught, "access:email:request", t, true)) return;
       if (!(caught instanceof ApiError)) {
         throw caught;
       }

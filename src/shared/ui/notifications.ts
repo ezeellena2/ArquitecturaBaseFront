@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
 
 type Notification = {
   id: string;
@@ -16,4 +17,13 @@ export function notify({ id, kind, message, description, action }: Notification)
 
 export function dismissNotification(id: string) {
   toast.dismiss(id);
+}
+
+// Returns true when this technical failure was handled, leaving local field/terminal states to the caller.
+export function notifyOperationalError(error: unknown, id: string, t: (key: string, options?: Record<string, unknown>) => string, publicAccess = false): boolean {
+  const feedback = errorFeedback(error, { writing: true, publicAccess });
+  if (feedback.kind === "cancelled") return true;
+  if (feedback.kind !== "uncertain") return false;
+  notify({ id, kind: "error", message: operationalErrorMessage(error, t) });
+  return true;
 }

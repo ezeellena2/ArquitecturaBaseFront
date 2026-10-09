@@ -1,0 +1,46 @@
+{
+  "errors": [],
+  "results": [
+    {
+      "language": "es",
+      "width": 1440,
+      "identicalPaletteTypographyControlsAndGeometry": true
+    },
+    {
+      "language": "es",
+      "width": 390,
+      "identicalPaletteTypographyControlsAndGeometry": true
+    },
+    {
+      "language": "es",
+      "width": 320,
+      "identicalPaletteTypographyControlsAndGeometry": true
+    },
+    {
+      "language": "en",
+      "width": 1440,
+      "identicalPaletteTypographyControlsAndGeometry": true
+    },
+    {
+      "language": "en",
+      "width": 390,
+      "identicalPaletteTypographyControlsAndGeometry": true
+    },
+    {
+      "language": "en",
+      "width": 320,
+      "identicalPaletteTypographyControlsAndGeometry": true
+    }
+  ],
+  "checked": [
+    "real page and hooks",
+    "no provider CSS/runtime",
+    "drafts across shapes and chats",
+    "pending without delivery",
+    "read-only and closed",
+    "secure access summaries",
+    "review",
+    "older history",
+    "empty and loading"
+  ]
+}

@@ -4,6 +4,10 @@ La guía canónica de arquitectura, flujo de trabajo y convenciones está en [`d
 
 Para cualquier trabajo visual, de UX o de nuevas pantallas, leé además `docs/design/visual-baseline.md`. Ese documento es el contrato visual versionado compartido por Codex y Claude; el Artifact externo queda registrado allí como procedencia, no como única fuente.
 
+El [estándar aplicado](docs/guides/estandar-visual.md) fija composiciones, variantes y controles. `npm run lint` verifica sus límites automáticamente; un cambio visual también ejecuta `npm run test:visual` y revisa sus capturas. Usá el catálogo local como referencia de los componentes reales.
+
+El diseño actual de ArquitecturaBase se conserva: Public Sans, densidad, navegación y formas aprobadas. El usuario eligió el 2026-10-02 únicamente los colores Campo en lugar de Jade, sin cambiar componentes ni medidas. Ajustar una pantalla significa componer y mejorar esas mismas piezas, en todas las áreas; una referencia de Multitenant no autoriza copiar su tema ni rediseñar el caparazón. Formularios, filtros, tablas, íconos, modales, campos, desplegables y tooltips nuevos siguen la biblioteca común.
+
 Antes de desarrollar o modificar una pantalla, leé [`docs/guides/premisas-de-desarrollo.md`](docs/guides/premisas-de-desarrollo.md). Sus reglas de filtros, tablas, formularios, selección, botones, modales, errores y notificaciones valen para toda la plantilla y los proyectos derivados.
 
 Los mensajes tienen un [contrato único](docs/guides/mensajes-y-estados.md), obligatorio en todas las
@@ -29,8 +33,12 @@ Reglas adicionales:
 - Antes de editar, leé los `AGENTS.md` de las carpetas que contienen los archivos afectados, desde la raíz hasta el ámbito local. Leé todas las áreas cuando el cambio atraviesa varias.
 - El [mapa de instrucciones](docs/mapa-de-instrucciones.md) explica los ámbitos y qué cubre cada padre. La [receta compartida](../ArquitecturaBase/docs/guides/instrucciones-por-carpeta.md) explica cómo agregar y mantener un par.
 - Al crear una feature o mover una responsabilidad, actualizá su guía y el mapa junto al código; las guías complementan la arquitectura y el contrato visual.
+- Al auditar documentación o cerrar un desarrollo, seguí la [rutina compartida](../ArquitecturaBase/docs/guides/auditar-documentacion.md): consolidá decisiones en sus fuentes, conservá propuestas y adopción parcial, y retirá planes redundantes con procedencia en Git. El [índice de premisas](../ArquitecturaBase/docs/architecture/premisas-de-la-plantilla.md) enlaza las reglas de ambos repositorios.
 
 ## Reglas generales
+
+- Cada cambio sigue la [rutina compartida de revisión y validación](../ArquitecturaBase/docs/guides/validar-un-cambio.md): reutilizar patrones y piezas existentes, justificar responsabilidades nuevas y revisar el diff. La entrega distingue pruebas, revisión y pendientes; una suite verde no acredita por sí sola un diseño coherente. Los avisos del arnés se investigan y registran, sin silenciarlos para obtener verde.
+- [Inteligencia artificial](src/features/artificial-intelligence/AGENTS.md) configura/prueba la conexión compartida y edita Información del negocio con permisos propios, independiente de settings/WhatsApp. Metadatos y hechos confirmados en QueryCache; claves y borradores sólo en el editor activo, sin MutationCache, storage ni reintentos automáticos. Fuente funcional en [el backend](../ArquitecturaBase/docs/features/inteligencia-artificial.md).
 
 - Trabajá directo en `main`; no crear ramas ni hacer push sin pedido explícito. Commits chicos, en español, con conventional commits.
 - Antes de cerrar: `npm run build`, `npm run lint` y `npm run test`, los tres limpios. Si levantaste Aspire desde el backend, terminá con `aspire stop`.

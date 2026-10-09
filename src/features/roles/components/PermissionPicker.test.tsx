@@ -139,30 +139,98 @@ describe("PermissionPicker", () => {
   it("expands and collapses every area", async () => {
     renderWithProviders(<Harness initial={["users.read"]} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }));
+    const toggle = screen.getByRole("button", { name: "Expandir todo" });
+    expect(screen.queryByRole("button", { name: "Contraer todo" })).not.toBeInTheDocument();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(document.getElementById(toggle.getAttribute("aria-controls")!)).toBe(screen.getByRole("table"));
+    await userEvent.click(toggle);
 
     expect(screen.getAllByRole("checkbox")).toHaveLength(8);
+    expect(toggle).toHaveAccessibleName("Contraer todo");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
 
-    await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }));
+    await userEvent.click(toggle);
 
     expect(screen.queryAllByRole("checkbox")).toHaveLength(3);
     expect(within(area("Usuarios")).getByRole("button", { expanded: false })).toBeInTheDocument();
+    expect(toggle).toHaveAccessibleName("Expandir todo");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    await userEvent.click(toggle);
+    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
   });
 
-  it("keeps what was collapsed while searching for when the search is cleared", async () => {
+  it("collapses search results immediately and keeps them collapsed when the search is cleared", async () => {
     renderWithProviders(<Harness initial={["users.read"]} />);
 
     await userEvent.type(searchBox(), "ver");
     await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }));
 
-    // Mientras se busca, lo que queda se sigue viendo abierto.
-    expect(within(area("Usuarios")).getByRole("button", { expanded: true })).toBeInTheDocument();
-    expect(within(area("Roles")).getByRole("button", { expanded: true })).toBeInTheDocument();
+    expect(within(area("Usuarios")).getByRole("button", { expanded: false })).toBeInTheDocument();
+    expect(within(area("Roles")).getByRole("button", { expanded: false })).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Ver usuarios" })).not.toBeInTheDocument();
 
     await userEvent.clear(searchBox());
 
     expect(within(area("Usuarios")).getByRole("button", { expanded: false })).toBeInTheDocument();
     expect(screen.queryAllByRole("checkbox")).toHaveLength(3);
+
+    await userEvent.type(searchBox(), "ver");
+    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
+  });
+
+  it("offers expanding all when an individual area is collapsed", async () => {
+    renderWithProviders(<Harness initial={["users.read", "roles.read", "settings.manage"]} />);
+    expect(screen.getByRole("button", { name: "Contraer todo" })).toBeInTheDocument();
+
+    await userEvent.click(within(area("Roles")).getByRole("button", { expanded: true }));
+    await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }));
+
+    expect(within(area("Roles")).getByRole("button", { expanded: true })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Ver roles" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Administrar roles" })).not.toBeChecked();
+  });
+
+  it.each([false, true])("toggles optional catalog areas without changing permissions, readOnly=%s", async (readOnly) => {
+    const groups = [...catalog,
+      { area: "whatsapp", name: "WhatsApp", permissions: [{ code: "whatsapp.read", name: "Ver chats", description: "Leer chats." }] },
+      { area: "ai", name: "Inteligencia artificial", permissions: [{ code: "ai.read", name: "Ver conexión", description: "Ver la conexión." }] },
+    ];
+    const picked = groups.flatMap((group) => group.permissions.map((permission) => permission.code));
+    const onChange = vi.fn();
+    renderWithProviders(<PermissionPicker groups={groups} picked={picked} onChange={onChange} readOnly={readOnly} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }));
+    for (const group of groups) expect(within(area(group.name)).getByRole("button", { expanded: false })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }));
+    for (const permission of groups.flatMap((group) => group.permissions)) {
+      const checkbox = screen.getByRole("checkbox", { name: permission.name });
+      expect(checkbox).toBeChecked();
+      if (readOnly) expect(checkbox).toBeDisabled();
+    }
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("lets picked results collapse and reopens results for a new search", async () => {
+    renderWithProviders(<Harness initial={["users.read", "roles.read"]} />);
+    await userEvent.click(screen.getByRole("button", { name: "Elegidos · 2" }));
+    await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }));
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(2);
+
+    await userEvent.type(searchBox(), "usuarios");
+    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
+    await userEvent.click(within(area("Usuarios")).getByRole("button", { expanded: true }));
+    expect(screen.getByRole("button", { name: "Expandir todo" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }));
+    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
+  });
+
+  it("disables the global toggle when no areas match", async () => {
+    renderWithProviders(<Harness />);
+    await userEvent.type(searchBox(), "no-match");
+    expect(screen.getByRole("button", { name: "Expandir todo" })).toBeDisabled();
+    await userEvent.clear(searchBox());
+    expect(screen.getByRole("button", { name: "Expandir todo" })).toBeEnabled();
   });
 
   it("describes each checkbox with the permission's description", () => {

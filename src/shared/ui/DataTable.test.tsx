@@ -19,6 +19,21 @@ const rows: Row[] = [
 ];
 
 describe("DataTable", () => {
+  it("keeps the last rows visible after a refresh fails", () => {
+    renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} error="Refresh failed" />);
+
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Refresh failed" })).not.toBeInTheDocument();
+  });
+
+  it("preserves a successfully loaded empty list when refreshing fails", () => {
+    renderWithProviders(<DataTable columns={columns} rows={[]} hasData rowKey={(row) => row.id} error="Refresh failed" emptyTitle="No users" />);
+
+    expect(screen.getByRole("heading", { name: "No users" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Refresh failed" })).not.toBeInTheDocument();
+  });
+
   it("renders the rows", () => {
     renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} />);
 

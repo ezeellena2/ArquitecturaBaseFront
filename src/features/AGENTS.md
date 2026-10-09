@@ -1,10 +1,14 @@
 # Features: áreas del producto
 
-Cada área contiene páginas, componentes, API y errores propios. `auth` muestra acceso; `users`, `roles`, `profile` y `settings`, gestión; `home`, inicio; `errors`, pantallas de navegación fallida.
+Cada área contiene páginas, componentes, API y errores propios. `auth` muestra acceso; `users`, `roles`, `profile` y `settings`, gestión; `home`, inicio; `errors`, la página de ruta inexistente. El estado de falta de permiso vive en `shared/ui/ForbiddenPage` y se comparte con las áreas que reciben un 403.
+
+`whatsapp` contiene el chat productivo de atención, con el diseño aprobado del laboratorio. `artificial-intelligence` configura/prueba la conexión compartida, mantiene información del negocio y aporta el asistente de consultas al Inicio compuesto desde app, independiente de settings y WhatsApp. Sugerencias de IA para WhatsApp, contactos y plantillas siguen pendientes.
 
 ## Al modificar
 
 - Una feature nunca importa otra feature. Contratos, hooks o UI compartidos suben a `shared`.
+- La presentación usa las composiciones y variantes del [estándar visual](../../docs/guides/estandar-visual.md). Los controles de `npm run lint` impiden controles nativos, paletas, radios, tamaños de texto y sobrescrituras locales. Una diferencia visual también se comprueba con `npm run test:visual`.
+- El diseño actual se conserva. Formularios y refinamientos de todas las áreas usan las mismas piezas, incluidos checks, modales, desplegables e íconos de `shared/ui/icons`. La ayuda contextual usa `ActionTooltip`, nunca un `title` nativo. Una referencia externa no autoriza cambiar de tema.
 - Antes de una pantalla nueva, leé el contrato visual y armá el tablero funcional para la elección del usuario.
 - Registrá ruta, permiso y navegación en sus puntos comunes. Los datos van por TanStack Query y la API común.
 - Conservá estados de carga, vacío, error, permisos, filtros y diálogos; probá comportamiento con el arnés compartido.

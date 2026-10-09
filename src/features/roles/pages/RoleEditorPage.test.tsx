@@ -184,7 +184,7 @@ describe("RoleEditorPage", () => {
     );
     expect(await screen.findByRole("heading", { level: 1, name: "Roles y permisos" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/roles");
-    expect(toastSuccess).toHaveBeenCalledWith("Creamos el rol.");
+    expect(toastSuccess).toHaveBeenCalledWith("Creamos el rol.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 4000 }));
     // Lo guardado ya no se pierde: volver al listado no pregunta nada.
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -322,7 +322,7 @@ describe("RoleEditorPage", () => {
     // Sembrar con lo que había en caché sería guardar encima de una lista de permisos vieja: el PUT la reemplaza
     // entera y "Administrar usuarios" se borraba sin aviso.
     expect(await screen.findByText("No pudimos cargar el rol")).toBeInTheDocument();
-    expect(screen.getByText("Código para reportar: 0HN7-Z")).toBeInTheDocument();
+    expect(screen.queryByText("Código para reportar: 0HN7-Z")).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "Nombre" })).not.toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/roles/r3");
 
@@ -545,7 +545,8 @@ describe("RoleEditorPage", () => {
     expect(screen.getAllByRole("alert")).toHaveLength(2);
   });
 
-  it("says what is wrong with a field the screen does not show, above the two columns", async () => {
+  it("says what is wrong with a field the screen does not show, in one notification", async () => {
+    const errorToast = vi.spyOn(toast, "error");
     server.use(
       ...editorHandlers(),
       http.put("/api/roles/r3", () =>
@@ -566,7 +567,9 @@ describe("RoleEditorPage", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Hay un permiso que no existe.");
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Hay un permiso que no existe.", expect.objectContaining({ duration: 10000 })));
+    expect(errorToast).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText("Revisá los campos marcados.")).not.toBeInTheDocument();
   });
 
@@ -579,7 +582,8 @@ describe("RoleEditorPage", () => {
     expect(screen.getByRole("textbox", { name: "Descripción" })).toHaveAttribute("maxlength", "256");
   });
 
-  it("puts any other error above the two columns", async () => {
+  it("puts any other error in one notification", async () => {
+    const errorToast = vi.spyOn(toast, "error");
     server.use(
       ...editorHandlers(),
       // Otro administrador lo borró mientras esta pantalla estaba abierta.
@@ -593,7 +597,9 @@ describe("RoleEditorPage", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("No encontramos el rol.");
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("No encontramos el rol.", expect.objectContaining({ duration: 10000 })));
+    expect(errorToast).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Nombre" })).not.toHaveAccessibleDescription();
   });
 
@@ -651,12 +657,13 @@ describe("RoleEditorPage", () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/"));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await screen.findByRole("heading", { name: "Inicio", level: 1 });
 
     await waitFor(() => expect(release).toBeDefined());
     release?.();
 
     // El guardado termina y lo avisa, pero la persona ya eligió a dónde ir: no se la lleva al listado.
-    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Guardamos los cambios."));
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Guardamos los cambios.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 4000 })));
     await waitFor(() => expect(queryClient.isMutating()).toBe(0));
     await waitFor(() => expect(router.state.navigation.state).toBe("idle"));
     expect(router.state.location.pathname).toBe("/");
@@ -693,7 +700,7 @@ describe("RoleEditorPage", () => {
     release?.();
 
     // La pantalla ya no está para mostrarlo debajo del nombre, y sin aviso la persona creería que se guardó.
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Ya hay un rol con ese nombre."));
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Ya hay un rol con ese nombre.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })));
   });
 
   it("follows the typed name in the title and the crumbs", async () => {
@@ -812,7 +819,7 @@ describe("RoleEditorPage", () => {
     expect(router.state.location.pathname).toBe("/roles");
   });
 
-  it("shows the code to report a failed load, and Retry asks again", async () => {
+  it("keeps the failed load state generic, and Retry asks again", async () => {
     let requests = 0;
     server.use(
       http.get("/api/me", () => HttpResponse.json(manager)),
@@ -832,7 +839,7 @@ describe("RoleEditorPage", () => {
     renderRouteWithProviders("/roles/r3");
 
     expect(await screen.findByText("No pudimos cargar el rol")).toBeInTheDocument();
-    expect(screen.getByText("Código para reportar: 0HN7-A2")).toBeInTheDocument();
+    expect(screen.queryByText("Código para reportar: 0HN7-A2")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
 
@@ -851,7 +858,7 @@ describe("RoleEditorPage", () => {
     renderRouteWithProviders("/roles/nuevo");
 
     expect(await screen.findByText("No pudimos cargar el rol")).toBeInTheDocument();
-    expect(screen.getByText("Código para reportar: 0HN7-B3")).toBeInTheDocument();
+    expect(screen.queryByText("Código para reportar: 0HN7-B3")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
   });
 

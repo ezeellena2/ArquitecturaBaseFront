@@ -17,7 +17,10 @@ export function useQueryUpdate() {
   const [, setParams] = useSearchParams();
 
   return useCallback(
-    (changes: Record<string, string | undefined>) => {
+    (
+      changes: Record<string, string | undefined>,
+      options?: { replace?: boolean },
+    ) => {
       setParams(
         (previous) => {
           const next = new URLSearchParams(previous);
@@ -32,7 +35,7 @@ export function useQueryUpdate() {
 
           return next;
         },
-        { replace: true },
+        { replace: options?.replace ?? true },
       );
     },
     [setParams],

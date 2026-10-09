@@ -15,12 +15,14 @@ import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { BanIcon, ClockIcon } from "@/shared/ui/icons";
 import { Spinner } from "@/shared/ui/Spinner";
+import { dismissNotification, notify } from "@/shared/ui/notifications";
+import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
 
 /// Firma mínima de `t` (la del namespace "auth"), como en `errors.ts`.
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 /// Los pedidos del enlace fallan con `ApiError`; cualquier otra cosa es un bug, y se trata como un error que pasa.
-function failureOf(error: Error): LoginLinkFailure {
+function failureOf(error: unknown): LoginLinkFailure {
   return error instanceof ApiError ? loginLinkFailureOf(error) : "retry";
 }
 
@@ -30,7 +32,7 @@ function retryMessageOf(error: Error, t: Translate): string {
 
 /// Los botones de esta pantalla miden 44 px y no los 36 del resto del ingreso: el enlace se abre casi siempre en el
 /// celular, donde es el mínimo de un objetivo táctil (tablero "WhatsApp · El enlace del chat").
-const touchButtonClassName = "h-11 w-full";
+const touchButtonClassName = "w-full";
 
 /// Un ref que enfoca el elemento apenas se monta. Es una función fija, así React la llama al montar y al desmontar, y
 /// no en cada render.
@@ -55,7 +57,7 @@ function GoToLogin() {
   const { t } = useTranslation("auth");
 
   return (
-    <Button asChild variant="outline" className={touchButtonClassName}>
+    <Button asChild variant="outline" size="touch" className={touchButtonClassName}>
       <Link to="/login">{t("link.goToLogin")}</Link>
     </Button>
   );
@@ -88,7 +90,7 @@ function AccountToEnter({ preview }: { preview: LoginLinkPreview }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <p id={labelId} className="text-center text-[12.5px] text-[var(--color-content-muted)]">
+      <p id={labelId} className="text-center text-xs text-[var(--color-content-muted)]">
         {t("link.signingInAs")}
       </p>
       <div
@@ -116,7 +118,7 @@ function AccountToEnter({ preview }: { preview: LoginLinkPreview }) {
           </span>
           {/* Entero en un renglón: partido, "•••• 6789" no se lee como parte del mismo número. */}
           {detail === null ? null : (
-            <span className="text-[13px] whitespace-nowrap text-[var(--color-content-muted)]">{detail}</span>
+            <span className="text-sm whitespace-nowrap text-[var(--color-content-muted)]">{detail}</span>
           )}
         </span>
       </div>
@@ -136,7 +138,7 @@ function SigningIn() {
       <StateTitle takesFocus className="text-lg font-semibold text-[var(--color-content)]">
         {t("callback.title")}
       </StateTitle>
-      <p className="text-[12.5px] text-[var(--color-content-muted)]">{t("callback.hint")}</p>
+      <p className="text-xs text-[var(--color-content-muted)]">{t("callback.hint")}</p>
     </div>
   );
 }
@@ -170,7 +172,7 @@ function LinkNoLongerValid({ chat, takesFocus }: { chat: ChatToGoBackTo; takesFo
         <div className="flex flex-col gap-2">
           {/* Sin el número del bot (WhatsApp apagado, o `login-methods` no respondió) no hay chat al que volver. */}
           {chat.whatsappNumber ? (
-            <Button asChild className={touchButtonClassName}>
+            <Button asChild size="touch" className={touchButtonClassName}>
               <a href={`https://wa.me/${chat.whatsappNumber}`}>{t("link.invalid.backToWhatsApp")}</a>
             </Button>
           ) : null}
@@ -283,6 +285,11 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
   const [wasRestoredAfterRedeem, setWasRestoredAfterRedeem] = useState(false);
   // La persona tocó Reintentar: lo que venga después llega por ella, como lo que llega por Continuar.
   const [hasRetriedPreview, setHasRetriedPreview] = useState(false);
+  const [requiresReview, setRequiresReview] = useState(false);
+  useEffect(() => () => {
+    dismissNotification("access:link:preview");
+    dismissNotification("access:link:redeem");
+  }, []);
   const { seconds: retrySeconds, isRunning: isRetryLimited, restart: restartRetry } = useCountdown(0);
 
   // Después de entrar, Atrás puede traer esta página de la caché del navegador tal como quedó: en "Iniciando
@@ -317,6 +324,10 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
             // Una consulta no tiene `onError`: la espera arranca acá, cuando llega la respuesta, y no en un efecto.
             previewLoginLink(token).catch((error: unknown) => {
               waitIfLimited(error);
+              const feedback = errorFeedback(error, { publicAccess: true });
+              if (failureOf(error) === "retry" && feedback.kind !== "wait" && feedback.kind !== "cancelled") {
+                notify({ id: "access:link:preview", kind: "error", message: error instanceof Error ? retryMessageOf(error, t) : t("common:errors.generic") });
+              }
               throw error;
             }),
     // Una vez, sin reintentos solos ni al volver a la pestaña: después del canje el enlace ya no sirve, y una vista
@@ -342,6 +353,14 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
     : { status: "settled", whatsappNumber: methods.data?.whatsappNumber ?? null };
 
   const redeem = useMutation({ mutationFn: redeemLoginLink });
+  async function reviewOutcome() {
+    const reviewed = await preview.refetch();
+    if (reviewed.isSuccess || failureOf(reviewed.error) !== "retry") {
+      redeem.reset();
+      setRequiresReview(false);
+      dismissNotification("access:link:redeem");
+    }
+  }
   // Continuar o Reintentar ya se tocaron: el estado que se muestra llegó por la persona, no al abrir la página, y se
   // lleva el foco.
   const cameFromAnAction = !redeem.isIdle || hasRetriedPreview;
@@ -367,6 +386,10 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
       onError: (error) => {
         isRedeemingRef.current = false;
         waitIfLimited(error);
+        if (errorFeedback(error, { writing: true, publicAccess: true }).kind === "uncertain") {
+          setRequiresReview(true);
+          notify({ id: "access:link:redeem", kind: "error", message: operationalErrorMessage(error, t), action: { label: t("common:actions.review"), onClick: () => { void reviewOutcome(); } } });
+        }
       },
     });
   }
@@ -429,11 +452,11 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
           {title}
         </StateTitle>
         <p role="alert" className="text-center text-sm text-[var(--color-danger)]">
-          {retryMessageOf(preview.error, t)}
+          {preview.error instanceof ApiError && preview.error.status === 429 ? retryMessageOf(preview.error, t) : t("common:states.loadFailed")}
         </p>
         <Button
           type="button"
-          className={touchButtonClassName}
+          size="touch" className={touchButtonClassName}
           disabled={preview.isFetching || isRetryLimited}
           onClick={() => {
             setHasRetriedPreview(true);
@@ -457,20 +480,20 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
         {title}
       </StateTitle>
       <AccountToEnter preview={preview.data} />
-      {redeem.error === null ? null : (
+      {redeem.error instanceof ApiError && redeem.error.status === 429 ? (
         <p role="alert" className="text-center text-sm text-[var(--color-danger)]">
           {retryMessageOf(redeem.error, t)}
         </p>
-      )}
+      ) : null}
       <Button
         type="button"
-        className={touchButtonClassName}
-        disabled={isRetryLimited}
-        onClick={() => handleContinue(token)}
+        size="touch" className={touchButtonClassName}
+        disabled={isRetryLimited || preview.isFetching}
+        onClick={() => requiresReview ? void reviewOutcome() : handleContinue(token)}
       >
-        {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("link.continue")}
+        {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : requiresReview ? t("common:actions.review") : t("link.continue")}
       </Button>
-      <p className="text-center text-[12.5px] text-[var(--color-content-muted)]">{t("link.notYou")}</p>
+      <p className="text-center text-xs text-[var(--color-content-muted)]">{t("link.notYou")}</p>
     </div>
   );
 }

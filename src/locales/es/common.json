@@ -1,4 +1,8 @@
 {
+  "messages": {
+    "incoming": "Mensaje recibido",
+    "outgoing": "Mensaje saliente"
+  },
   "app": {
     "name": "Inicio"
   },
@@ -13,14 +17,21 @@
     "save": "Guardar",
     "search": "Buscar",
     "retry": "Reintentar",
+    "review": "Revisar",
     "close": "Cerrar"
   },
   "states": {
     "loading": "Cargando…",
     "empty": "No hay nada para mostrar",
-    "error": "Algo salió mal"
+    "error": "Algo salió mal",
+    "loadFailed": "No pudimos cargar los datos"
   },
   "errors": {
+    "pageLoad": {
+      "title": "No pudimos abrir esta pantalla",
+      "description": "Revisá que la aplicación esté disponible y recargá la pantalla para volver a intentar.",
+      "reload": "Recargar pantalla"
+    },
     "network": "No pudimos conectarnos. Revisá tu conexión.",
     "unexpected": "Ocurrió un error inesperado. Si el problema continúa, informá el código {{traceId}}.",
     "traceId": "Código para reportar: {{traceId}}",
@@ -32,7 +43,8 @@
     "notFound": {
       "title": "No encontramos esta página",
       "description": "Revisá la dirección o volvé al tablero."
-    }
+    },
+    "writeUncertain": "No pudimos confirmar el resultado. Revisá el estado actual antes de repetir la operación. Referencia: {{traceId}}"
   },
   "language": {
     "label": "Idioma",
@@ -86,7 +98,13 @@
     "settingsLanguage": "Idioma",
     "settingsTimeZone": "Zona horaria",
     "settingsLists": "Listados",
-    "settingsRegistration": "Registro"
+    "settingsRegistration": "Registro",
+    "settingsGeneral": "General",
+    "ai": "Inteligencia artificial",
+    "businessInformation": "Información del negocio",
+    "appearance": "Apariencia",
+    "whatsapp": "WhatsApp",
+    "whatsappChat": "Chat"
   },
   "layout": {
     "sidebar": {
@@ -96,7 +114,8 @@
       "closeDrawer": "Cerrar menú",
       "loadError": "No pudimos cargar tu menú.",
       "retryLoad": "Reintentar cargar el menú",
-      "closeAdministration": "Cerrar Administración"
+      "closeAdministration": "Cerrar Administración",
+      "closeWhatsApp": "Cerrar WhatsApp"
     },
     "topbar": {
       "toggle": "Menú de navegación"

@@ -1,4 +1,4 @@
-import { isInaccessible, screen, waitFor, within } from "@testing-library/react";
+import { act, isInaccessible, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { toast } from "sonner";
@@ -40,6 +40,20 @@ async function rowOf(user: UserListItem) {
 }
 
 describe("UsersPage", () => {
+  it("keeps the last list and reports a failed refresh once", async () => {
+    const toastError = vi.spyOn(toast, "error");
+    server.use(...adminHandlers(), ...listHandlers());
+    renderRouteWithProviders("/usuarios");
+    await rowOf(ana);
+    server.use(http.get("/api/users", () => HttpResponse.json({ code: "General.Unexpected", traceId: "refresh-123" }, { status: 500 })));
+
+    await act(async () => { await queryClient.refetchQueries({ predicate: query => query.queryKey[0] === "users" }); });
+
+    expect(await rowOf(ana)).toBeDefined();
+    expect(screen.queryByRole("heading", { name: "No pudimos cargar los datos" })).not.toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError.mock.calls[0]?.[0]).toContain("refresh-123");
+  });
   // AppProviders usa el queryClient de la app (un singleton, con staleTime). Sin esto, la respuesta de
   // /api/users de un test queda cacheada y se filtra al siguiente, que pisó el handler con otra respuesta
   // (mismo patrón que Sidebar.test.tsx).
@@ -400,6 +414,7 @@ describe("UsersPage", () => {
   });
 
   it("shows the error state with the traceId when the backend fails", async () => {
+    const toastError = vi.spyOn(toast, "error");
     server.use(
       http.get("/api/users", () =>
         HttpResponse.json(
@@ -412,10 +427,10 @@ describe("UsersPage", () => {
 
     renderRouteWithProviders("/usuarios");
 
-    expect(await screen.findByRole("heading", { name: /ocurrió un error inesperado/i })).toBeInTheDocument();
-    // El texto exacto: el toast del queryClient global también menciona el traceId (sección 6.1 del spec),
-    // así que no alcanza con buscar "trace-123" a secas.
-    expect(screen.getByText("Código para reportar: trace-123")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "No pudimos cargar los datos" })).toBeInTheDocument();
+    expect(screen.queryByText("Código para reportar: trace-123")).not.toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError.mock.calls[0]?.[0]).toContain("trace-123");
     expect(screen.getByRole("button", { name: /reintentar/i })).toBeInTheDocument();
   });
 
@@ -438,7 +453,7 @@ describe("UsersPage", () => {
 
     await waitFor(() =>
       expect(toastError).toHaveBeenCalledWith(
-        "No podés dejar al sistema sin administradores. Asigná el rol Admin a otra cuenta activa y volvé a intentar.",
+        "No podés dejar al sistema sin administradores. Asigná el rol Admin a otra cuenta activa y volvé a intentar.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })
       ),
     );
   });

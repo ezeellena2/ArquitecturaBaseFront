@@ -19,3 +19,5 @@
 - [Tests del transporte](httpClient.test.ts).
 - [Error común](ApiError.ts).
 - [Contrato de mensajes y estados](../../../docs/guides/mensajes-y-estados.md).
+
+QueryCache emite una vez por queryHash, conserva datos previos y retira acciones sin observadores. Red y errores desconocidos admiten como máximo dos reintentos; HTTP y cancelación no se reintentan. Una cancelación del transporte conserva AbortError.

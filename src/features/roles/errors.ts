@@ -1,3 +1,4 @@
+import { operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { ApiError } from "@/shared/api/ApiError";
 
 /// Firma mínima que necesitamos de `t`, la misma que usa `columns.tsx` en la feature de usuarios.
@@ -8,8 +9,8 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 /// es justo el dato que hace falta para poder reasignar a esa gente antes de borrar el rol. El texto con el
 /// número se arma acá, porque es el front el que sabe pluralizar en el idioma de la interfaz.
 export function roleActionErrorMessage(error: unknown, t: Translate): string {
-  if (!(error instanceof ApiError)) {
-    return t("common:states.error");
+  if (!(error instanceof ApiError) || error.isNetworkError || error.status >= 500) {
+    return operationalErrorMessage(error, t);
   }
 
   if (error.isNetworkError) {

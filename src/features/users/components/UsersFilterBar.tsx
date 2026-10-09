@@ -9,16 +9,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { ChevronDownIcon, SlidersIcon } from "@/shared/ui/icons";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
-import { ActionTooltip } from "@/shared/ui/ActionTooltip";
+import { FilterChip } from "@/shared/ui/FilterChip";
+import { FilterMenuTrigger } from "@/shared/ui/FilterMenuTrigger";
 import { FilterBar } from "@/shared/ui/FilterBar";
-
-const control =
-  "inline-flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-content-muted)] transition-colors hover:border-[var(--color-content-muted)]/50";
 
 /// Una opción de un desplegable, con su conteo a la derecha. La de cero va deshabilitada: elegirla daría una
 /// lista vacía, y el número ya dice por qué. Dejarla apretable es ofrecer un camino que no lleva a ningún lado.
@@ -109,13 +106,12 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
         />
 
         <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(control, values.role ? "text-[var(--color-content)]" : "")}
+          <FilterMenuTrigger
             aria-label={t("filters.role.label")}
           >
             {values.role ?? t("filters.role.any")}
             <ChevronDownIcon aria-hidden="true" className="size-3.5" />
-          </DropdownMenuTrigger>
+          </FilterMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-48">
             <OptionRow
               label={t("filters.role.any")}
@@ -136,17 +132,17 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className={cn(control, "text-[var(--color-content)]")}>
+          <FilterMenuTrigger>
             <SlidersIcon aria-hidden="true" className="size-4" />
             {t("filters.more")}
             {values.createdWithinDays ? (
-              <span className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-[11px] font-semibold text-white">
+              <span className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-[length:var(--text-caption)] font-semibold text-white">
                 1
               </span>
             ) : null}
-          </DropdownMenuTrigger>
+          </FilterMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-56">
-            <DropdownMenuLabel className="text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]">
+            <DropdownMenuLabel className="text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]">
               {t("columns.createdAtUtc")}
             </DropdownMenuLabel>
             <OptionRow
@@ -174,34 +170,22 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
         // filtrando, incluido lo que quedó escondido detrás de "Más filtros".
         <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border)] pt-3">
           {active.map((key) => (
-            <span
+            <FilterChip
               key={key}
-              className="inline-flex h-6 items-center gap-1.5 rounded-[var(--radius-control)] border border-[var(--color-brand-500)]/30 bg-[var(--color-brand-50)] py-0 pr-1 pl-2.5 text-[12.5px] text-[var(--color-brand-700)]"
+              removeLabel={t("filters.chip.remove", { name: t(`filters.chip.${key}`) })}
+              onRemove={() => setFilter(key, undefined)}
             >
               <span>
                 <span className="opacity-70">{t(`filters.chip.${key}`)}:</span>{" "}
                 <strong className="font-semibold">{chipLabels[key](values[key] ?? "")}</strong>
               </span>
-              <ActionTooltip label={t("filters.chip.remove", { name: t(`filters.chip.${key}`) })}>
-              <button
-                type="button"
-                aria-label={t("filters.chip.remove", { name: t(`filters.chip.${key}`) })}
-                onClick={() => setFilter(key, undefined)}
-                className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control)] hover:bg-[var(--color-brand-500)]/20"
-              >
-                <span aria-hidden="true" className="text-[13px] leading-none">
-                  ×
-                </span>
-              </button>
-              </ActionTooltip>
-            </span>
+            </FilterChip>
           ))}
           <Button
             type="button"
-            variant="link"
-            size="sm"
+            variant="muted-link"
+            size="inline"
             onClick={clear}
-            className="h-auto p-0 text-[12.5px] text-[var(--color-content-muted)]"
           >
             {t("filters.clearAll")}
           </Button>

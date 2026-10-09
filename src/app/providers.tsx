@@ -6,11 +6,13 @@ import { queryClient } from "@/shared/api/queryClient";
 import i18n from "@/shared/i18n";
 import { Toaster } from "@/shared/ui/sonner";
 import { TooltipProvider } from "@/shared/ui/tooltip";
+import { SystemTheme } from "./SystemTheme";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={queryClient}>
+        <SystemTheme />
         <AppAuthProvider>
           <TooltipProvider>
             <Suspense fallback={null}>{children}</Suspense>

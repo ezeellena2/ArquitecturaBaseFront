@@ -9,10 +9,11 @@
 - Consultá por rol, texto accesible y comportamiento. Para páginas lazy esperá `findBy` o `waitFor`.
 - Radix se abre por teclado en tests; revisá stubs de jsdom antes de cambiar producto para corregir una limitación del entorno.
 - Layout, scroll, sticky y foco ocluido necesitan navegador: una assertion de clases no demuestra geometría.
+- `architecture` comprueba dependencias entre features, independencia de shared y límites del sistema visual; `visual` tiene el catálogo con componentes reales y Playwright. Sus capturas y geometría completan Vitest; la entrada y los dobles son exclusivamente de pruebas.
 - Mensajes: verificar canal y cantidad, recuperación y borrador además del texto. Las pruebas
   del dueño global usan la política real de QueryCache; aislar caché o apagar retries no debe
-  quitar sus callbacks. La arquitectura limitará Toaster e imports de Sonner según el plan;
-  esos controles todavía no están implementados.
+  quitar sus callbacks. La arquitectura visual verifica el montaje único de Toaster; los límites
+  de imports directos de Sonner y la migración de canales siguen el plan transversal.
 
 ## Referencias
 

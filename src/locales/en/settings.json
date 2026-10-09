@@ -1,5 +1,10 @@
 {
   "title": "Settings",
+  "sections": {
+    "regional": "Regional preferences",
+    "lists": "Lists",
+    "registration": "Account registration"
+  },
   "registration": {
     "title": "Who can sign in",
     "switchLabel": "Open registration",
@@ -16,14 +21,14 @@
     "confirm": "Change"
   },
   "feedback": {
-    "saved": "The change was saved.",
-    "uncertain": "We could not confirm the save. Check the current value before saving again.",
-    "conflict": "Another administrator changed the settings. Check the current value.",
-    "failed": "We could not save this setting.",
+    "saved": "Settings changes were saved.",
+    "uncertain": "We could not confirm the save. Check the current values before saving again.",
+    "conflict": "Another administrator changed the settings. Check the current values.",
+    "failed": "We could not save the settings changes.",
     "reviewFailed": "We could not check the current settings.",
     "savedTopic": "Saved the {{topic}} setting.",
-    "lateUncertain": "We could not confirm the {{topic}} save. Check the current value.",
-    "lateFailed": "We could not save the {{topic}} setting."
+    "lateUncertain": "We could not confirm the settings save. Check the current values.",
+    "lateFailed": "We could not save the settings changes."
   },
   "errorTraceId": "Code to report: {{traceId}}",
   "topics": {
@@ -33,6 +38,7 @@
     "registro": "Registration"
   },
   "hints": {
+    "regional": "Initial values for new accounts and public pages. Each person keeps their preferences.",
     "idioma": "Initial language for new accounts and public screens. Each person keeps their preference.",
     "zona-horaria": "Initial time zone for new accounts. Each person keeps their profile preference; dates are stored in UTC.",
     "listados": "Initial number of rows. Each list can use a different size.",
@@ -41,7 +47,8 @@
   "fields": {
     "defaultCulture": "Default language",
     "defaultTimeZoneId": "Default time zone",
-    "defaultPageSize": "Rows per page"
+    "defaultPageSize": "Rows per page",
+    "registrationMode": "Account registration"
   },
   "preview": {
     "label": "Preview"
@@ -54,18 +61,39 @@
   "review": {
     "action": "Review current values",
     "reading": "Checking…",
-    "title": "Review the change",
+    "title": "Review changes",
+    "setting": "Setting",
     "source": "Source",
     "value": "Value",
     "current": "Currently saved",
-    "mine": "My change",
-    "useCurrent": "Use current value",
-    "keepMine": "Keep my change"
+    "mine": "My draft",
+    "useCurrent": "Use current values",
+    "keepMine": "Keep my changes"
   },
   "leave": {
     "title": "Discard changes?",
-    "description": "This setting has not been saved yet.",
+    "description": "These changes have not been saved yet.",
     "confirm": "Discard changes",
     "cancel": "Keep editing"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "colors": "System colors",
+    "hint": "These colors apply to everyone and to sign-in screens. The preview shows your draft; the system changes when you save.",
+    "contrast": "Text and focus adjust to remain readable. Error, warning and success colors retain their meaning.",
+    "reset": "Restore initial colors",
+    "preview": "Preview",
+    "name": "Name",
+    "role": "Role",
+    "search": "Search users",
+    "newUser": "New user",
+    "saved": "System colors saved.",
+    "failed": "Could not save the colors.",
+    "fields": {
+      "primaryColor": "Buttons and links",
+      "menuColor": "Side menu",
+      "headerColor": "Section and table headings",
+      "alternateRowColor": "Alternating rows"
+    }
   }
 }

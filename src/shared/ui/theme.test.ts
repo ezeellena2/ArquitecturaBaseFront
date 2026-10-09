@@ -43,6 +43,13 @@ describe("The shared theme", () => {
     ["--color-danger", "--color-control-surface"],
     ["--color-success-700", "--color-success-50"],
     ["--color-warning-700", "--color-warning-50"],
+    ["--color-message-content", "--color-message-incoming"],
+    ["--color-message-content", "--color-message-outgoing"],
+    ["--color-message-muted", "--color-message-background"],
+    ["--color-message-muted", "--color-message-date"],
+    ["--color-message-read", "--color-message-background"],
+    ["--color-message-failed", "--color-message-background"],
+    ["--color-message-uncertain", "--color-message-background"],
   ])("keeps normal text readable: %s on %s", (foreground, background) => {
     expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
   });

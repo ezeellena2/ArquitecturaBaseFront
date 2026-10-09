@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, delay, http, type DefaultBodyType } from "msw";
@@ -602,7 +603,8 @@ describe("LoginLinkPage", () => {
       expect(redeems).toBe(2);
     });
 
-    it("shows a generic error with the option to retry when the preview can not reach the server", async () => {
+    it("notifies one preview failure and preserves the retry state", async () => {
+      const error = vi.spyOn(toast, "error");
       let previews = 0;
       previewResponds(() => {
         previews += 1;
@@ -611,7 +613,9 @@ describe("LoginLinkPage", () => {
       });
       openLink();
 
-      expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos conectarnos. Revisá tu conexión.");
+      await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
+      expect(error.mock.calls[0][0]).toContain("No pudimos conectarnos");
+      error.mockRestore();
       // Sin reintentos solos: el error se muestra enseguida, y reintentar lo decide la persona.
       expect(previews).toBe(1);
 
@@ -636,7 +640,7 @@ describe("LoginLinkPage", () => {
         });
         openLink();
 
-        expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos conectarnos. Revisá tu conexión.");
+        expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos cargar los datos");
         // Al abrir la página, el foco no se mueve: nadie tocó nada todavía.
         expect(screen.getByRole("heading", { name: "Iniciar sesión" })).not.toHaveFocus();
 
@@ -679,7 +683,8 @@ describe("LoginLinkPage", () => {
       expect(previews).toBe(2);
     });
 
-    it("shows a generic error and keeps Continuar when the redeem can not reach the server", async () => {
+    it("requires a fresh preview before repeating an uncertain redeem", async () => {
+      const error = vi.spyOn(toast, "error");
       previewResponds(() => HttpResponse.json(ana));
       let redeems = 0;
       redeemResponds(() => {
@@ -691,11 +696,15 @@ describe("LoginLinkPage", () => {
 
       await userEvent.click(await screen.findByRole("button", { name: "Continuar" }));
 
-      expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos conectarnos. Revisá tu conexión.");
+      await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
+      expect(error.mock.calls[0][0]).toContain("No pudimos confirmar el resultado");
+      error.mockRestore();
       // La cuenta vuelve a la vista después de "Iniciando sesión…": el foco va al título, y de ahí el Tab sigue.
       expect(screen.getByRole("heading", { name: "Iniciar sesión" })).toHaveFocus();
 
-      await userEvent.click(screen.getByRole("button", { name: "Continuar" }));
+      await userEvent.click(within(screen.getByRole("main")).getByRole("button", { name: "Revisar" }));
+      expect(redeems).toBe(1);
+      await userEvent.click(await screen.findByRole("button", { name: "Continuar" }));
 
       await waitFor(() => expect(signinRedirect).toHaveBeenCalledTimes(1));
       expect(redeems).toBe(2);

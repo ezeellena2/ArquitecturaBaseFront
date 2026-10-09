@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import {
   deleteUser,
   fetchUsers,
@@ -18,7 +18,7 @@ import { userIdentifier } from "../identity";
 import { Can } from "@/auth/Can";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
-import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
 import { rolesQueryKey } from "@/shared/api/roles";
 import { usePagination } from "@/shared/hooks/usePagination";
@@ -26,6 +26,7 @@ import { useSystemPresentation } from "@/shared/api/presentation";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable } from "@/shared/ui/DataTable";
+import { Surface } from "@/shared/ui/Surface";
 import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
 import { userFilterKeys } from "../api/users";
@@ -72,16 +73,16 @@ export function UsersPage() {
   const activation = useMutation({
     mutationFn: ({ user, isActive }: { user: UserListItem; isActive: boolean }) => setUserActive(user.id, isActive),
     onSuccess: async (_result, variables) => {
-      toast.success(variables.isActive ? t("feedback.activated") : t("feedback.deactivated"));
+      notify({ id: `users:active:${variables.user.id}`, kind: "success", message: variables.isActive ? t("feedback.activated") : t("feedback.deactivated") });
       await queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot });
     },
-    onError: (mutationError) => toast.error(userActionErrorMessage(mutationError, t)),
+    onError: (mutationError, variables) => notify({ id: `users:active:${variables.user.id}`, kind: "error", message: userActionErrorMessage(mutationError, t) }),
   });
 
   const removal = useMutation({
     mutationFn: (user: UserListItem) => deleteUser(user.id),
-    onSuccess: async () => {
-      toast.success(t("feedback.deleted"));
+    onSuccess: async (_result, user) => {
+      notify({ id: `users:delete:${user.id}`, kind: "success", message: t("feedback.deleted") });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
         // Eliminar o restaurar una cuenta cambia el `userCount` de sus roles: sin esto, /roles muestra el
@@ -89,7 +90,7 @@ export function UsersPage() {
         queryClient.invalidateQueries({ queryKey: rolesQueryKey }),
       ]);
     },
-    onError: (mutationError) => toast.error(userActionErrorMessage(mutationError, t)),
+    onError: (mutationError, user) => notify({ id: `users:delete:${user.id}`, kind: "error", message: userActionErrorMessage(mutationError, t) }),
   });
 
   const apiError = error instanceof ApiError ? error : undefined;
@@ -135,14 +136,14 @@ export function UsersPage() {
       {/* Sin padding y con `overflow-hidden`: la banda del encabezado llega a los bordes de la caja y se
           recorta con su radio. Con padding, la tabla flota adentro y la banda deja de ser la cabecera de la
           caja para ser un rectángulo suelto. */}
-      <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <Surface>
         <DataTable
           columns={columns}
           rows={data?.items ?? []}
+          hasData={data !== undefined}
           rowKey={(row) => row.id}
           isLoading={isLoading}
-          error={apiError ? (apiError.isNetworkError ? t("common:errors.network") : (apiError.detail ?? apiError.message)) : undefined}
-          errorDescription={apiError?.traceId ? t("errorTraceId", { traceId: apiError.traceId }) : undefined}
+          error={error ? t("common:states.loadFailed") : undefined}
           onRetry={() => void refetch()}
           sort={sort}
           onSortChange={toggleSort}
@@ -173,7 +174,7 @@ export function UsersPage() {
             onPageSizeChange={setPageSize}
           />
         ) : null}
-      </div>
+      </Surface>
 
       {isCreating ? <UserFormDialog onClose={() => setIsCreating(false)} /> : null}
 

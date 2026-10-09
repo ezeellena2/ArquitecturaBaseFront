@@ -1,0 +1,10 @@
+{
+  "checks": [
+    "chatscope es: mobile layout, drafts across chats/libraries, plain text, queue, scenes, recovery and review",
+    "chatscope en: mobile layout, drafts across chats/libraries, plain text, queue, scenes, recovery and review",
+    "syncfusion es: mobile layout, drafts across chats/libraries, plain text, queue, scenes, recovery and review",
+    "syncfusion en: mobile layout, drafts across chats/libraries, plain text, queue, scenes, recovery and review"
+  ],
+  "failures": [],
+  "license": "Syncfusion original trial banner remains visible; no license registered."
+}

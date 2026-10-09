@@ -74,7 +74,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   try {
     response = await send(path, init, token);
-  } catch {
+  } catch (error) {
+    if (init.signal?.aborted) throw error;
     throw ApiError.network();
   }
 
@@ -85,7 +86,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (token) {
       try {
         response = await send(path, init, token);
-      } catch {
+      } catch (error) {
+        if (init.signal?.aborted) throw error;
         throw ApiError.network();
       }
     }

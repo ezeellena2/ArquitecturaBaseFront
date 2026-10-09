@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { toast } from "sonner";
@@ -82,6 +82,20 @@ function managerHandlers() {
 }
 
 describe("RolesPage", () => {
+  it("keeps the last roles visible and reports a failed refresh once", async () => {
+    const toastError = vi.spyOn(toast, "error");
+    server.use(...managerHandlers());
+    renderRouteWithProviders("/roles");
+    expect(await screen.findByText("Soporte")).toBeInTheDocument();
+    server.use(http.get("/api/roles/paged", () => HttpResponse.json({ code: "General.Unexpected", traceId: "roles-refresh" }, { status: 500 })));
+
+    await act(async () => { await queryClient.refetchQueries({ predicate: query => query.queryKey.includes("paged") }); });
+
+    expect(screen.getByText("Soporte")).toBeInTheDocument();
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError.mock.calls[0]?.[0]).toContain("roles-refresh");
+  });
   beforeEach(() => {
     queryClient.clear();
   });
@@ -195,7 +209,7 @@ describe("RolesPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
 
     await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("Todavía hay 4 usuarios con este rol. Reasignalos antes de borrarlos."),
+      expect(toastError).toHaveBeenCalledWith("Todavía hay 4 usuarios con este rol. Reasignalos antes de borrarlos.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })),
     );
   });
 
@@ -222,7 +236,7 @@ describe("RolesPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
 
     await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("Todavía hay 1 usuario con este rol. Reasignalo antes de borrarlo."),
+      expect(toastError).toHaveBeenCalledWith("Todavía hay 1 usuario con este rol. Reasignalo antes de borrarlo.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })),
     );
   });
 
@@ -243,7 +257,7 @@ describe("RolesPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Eliminar el rol Soporte" }));
     await userEvent.click(await screen.findByRole("button", { name: "Eliminar" }));
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("El rol tiene usuarios asignados."));
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("El rol tiene usuarios asignados.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })));
   });
 
   it("hides every action without roles.manage", async () => {

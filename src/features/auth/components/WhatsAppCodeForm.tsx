@@ -9,6 +9,7 @@ import type { LoginCodeState } from "../lib/loginCodeState";
 import { loginCodePathFor } from "../lib/returnUrl";
 import type { CodeRequestFormProps } from "./EmailCodeForm";
 import { ApiError } from "@/shared/api/ApiError";
+import { notifyOperationalError } from "@/shared/ui/notifications";
 import { codeRequestErrorMessage, phoneFieldError } from "@/shared/api/codeErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
@@ -61,6 +62,7 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart, 
       // Como con el correo: el número viaja en el estado de la ruta, no en la URL.
       void navigate(loginCodePathFor(returnUrl, registration), { state });
     } catch (caught) {
+      if (notifyOperationalError(caught, "access:phone:request", t, true)) return;
       if (!(caught instanceof ApiError)) {
         throw caught;
       }

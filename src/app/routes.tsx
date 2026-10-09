@@ -7,6 +7,8 @@ import { LoginLinkPage } from "@/features/auth/pages/LoginLinkPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { HomeLayout } from "@/layouts/HomeLayout";
+import { Spinner } from "@/shared/ui/Spinner";
+import { RouteErrorPage } from "./RouteErrorPage";
 
 // Las rutas del SPA están en español, porque son parte de la interfaz.
 // Cada página se carga cuando se visita: `lazy` parte el bundle por ruta.
@@ -24,19 +26,26 @@ export const routes: RouteObject[] = [
     // Al recargar cualquiera de ellas hay que intentar recuperarla antes de que `ProtectedRoute` concluya que
     // no hay. Las del ingreso, que cuelgan de `AuthLayout`, no tienen nada que recuperar.
     Component: SessionRecovery,
+    ErrorBoundary: RouteErrorPage,
+    HydrateFallback: Spinner,
     children: [
       {
         Component: HomeLayout,
         children: [
-          { path: "/", lazy: async () => ({ Component: (await import("@/features/home/pages/DashboardPage")).DashboardPage }) },
+          { path: "/", lazy: async () => ({ Component: (await import("@/app/AuthenticatedHome")).AuthenticatedHome }) },
           {
             Component: ProtectedRoute,
+            ErrorBoundary: RouteErrorPage,
             children: [
               {
                 // Sin permiso: alcanza con tener sesión, que ya la exige el ProtectedRoute de arriba. Cada
                 // quien edita el suyo, y el backend no mira más que el token.
                 path: "/perfil",
                 lazy: async () => ({ Component: (await import("@/features/profile/pages/ProfilePage")).ProfilePage }),
+              },
+              {
+                element: <ProtectedRoute permission="whatsapp.read" />,
+                children: [{ path: "/whatsapp/chat", lazy: async () => ({ Component: (await import("@/features/whatsapp/pages/WhatsAppChatPage")).WhatsAppChatPage }) }],
               },
               {
                 element: <ProtectedRoute permission="users.read" />,
@@ -80,14 +89,28 @@ export const routes: RouteObject[] = [
               {
                 element: <ProtectedRoute permission="settings.manage" />,
                 children: [
-                  { path: "/configuracion", element: <Navigate to="/configuracion/idioma" replace /> },
                   {
-                    path: "/configuracion/:topic",
+                    path: "/configuracion",
                     lazy: async () => ({
                       Component: (await import("@/features/settings/pages/SettingsPage")).SettingsPage,
                     }),
                   },
+                  {
+                    path: "/configuracion/apariencia",
+                    lazy: async () => ({ Component: (await import("@/features/settings/pages/AppearancePage")).AppearancePage }),
+                  },
+                  ...["idioma", "zona-horaria", "listados", "registro"].map(topic => ({
+                    path: `/configuracion/${topic}`, element: <Navigate to="/configuracion" replace />,
+                  })),
                 ],
+              },
+              {
+                element: <ProtectedRoute permission="ai.read" />,
+                children: [{ path: "/configuracion/ia", lazy: async () => ({ Component: (await import("@/features/artificial-intelligence/pages/AiSettingsPage")).AiSettingsPage }) }],
+              },
+              {
+                element: <ProtectedRoute permission="ai.business.read" />,
+                children: [{ path: "/configuracion/negocio", lazy: async () => ({ Component: (await import("@/features/artificial-intelligence/pages/BusinessInformationPage")).BusinessInformationPage }) }],
               },
             ],
           },
@@ -97,6 +120,7 @@ export const routes: RouteObject[] = [
   },
   {
     Component: AuthLayout,
+    ErrorBoundary: RouteErrorPage,
     children: [
       { path: "/login", Component: LoginPage },
       { path: "/registro", Component: LoginPage },
@@ -109,10 +133,12 @@ export const routes: RouteObject[] = [
   },
   {
     path: "/sin-permiso",
-    lazy: async () => ({ Component: (await import("@/features/errors/pages/ForbiddenPage")).ForbiddenPage }),
+    ErrorBoundary: RouteErrorPage,
+    lazy: async () => ({ Component: (await import("@/shared/ui/ForbiddenPage")).ForbiddenPage }),
   },
   {
     path: "*",
+    ErrorBoundary: RouteErrorPage,
     lazy: async () => ({ Component: (await import("@/features/errors/pages/NotFoundPage")).NotFoundPage }),
   },
 ];

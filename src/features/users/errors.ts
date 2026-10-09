@@ -1,3 +1,4 @@
+import { operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { ApiError } from "@/shared/api/ApiError";
 import { phoneFieldError } from "@/shared/api/codeErrors";
 import { applyApiErrorToForm } from "@/shared/api/formErrors";
@@ -10,8 +11,8 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 /// (sección 8 del spec de la Fase 4) se explican con lo que hay que hacer para destrabarlas, que es algo que
 /// el backend no puede saber. El resto de los errores ya vienen traducidos del servidor.
 export function userActionErrorMessage(error: unknown, t: Translate): string {
-  if (!(error instanceof ApiError)) {
-    return t("common:states.error");
+  if (!(error instanceof ApiError) || error.isNetworkError || error.status >= 500) {
+    return operationalErrorMessage(error, t);
   }
 
   if (error.isNetworkError) {

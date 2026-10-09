@@ -21,10 +21,12 @@ export interface SegmentedOption {
 export function SegmentedControl({
   options,
   fullWidth = false,
+  appearance = "compact",
   "aria-label": label,
 }: {
   options: readonly SegmentedOption[];
   fullWidth?: boolean;
+  appearance?: "compact" | "public";
   "aria-label": string;
 }): ReactNode {
   return (
@@ -32,8 +34,8 @@ export function SegmentedControl({
       role="group"
       aria-label={label}
       className={cn(
-        "h-[30px] shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]",
-        fullWidth ? "flex w-full" : "inline-flex",
+        appearance === "public" ? "access-channel" : "h-[var(--height-control)] shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]",
+        appearance === "public" ? undefined : fullWidth ? "flex w-full" : "inline-flex",
       )}
     >
       {options.map((option) => (
@@ -45,9 +47,9 @@ export function SegmentedControl({
           onClick={option.onSelect}
           className={cn(
             // El contorno de foco va hacia adentro: el grupo recorta lo que sale de su borde.
-            "px-[13px] text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)]",
+            appearance === "public" ? undefined : "px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)]",
             fullWidth ? "flex-1" : "",
-            option.pressed
+            appearance === "public" ? undefined : option.pressed
               ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
               : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)]",
           )}

@@ -60,7 +60,7 @@ function unverifiedBadge(t: Translate) {
   return (
     <ActionTooltip label={t("identity.unverifiedHint")}>
     <span tabIndex={0} className={cn(hintTrigger, "rounded-[var(--radius-control)]")}>
-      <VerificationBadge verified={false} className="text-[11px]">
+      <VerificationBadge verified={false} className="text-[length:var(--text-caption)]">
         {t("methods.unverified")}
       </VerificationBadge>
       <span className="sr-only">{t("identity.unverifiedHint")}</span>
@@ -127,7 +127,7 @@ function rolesCell(roles: readonly string[]) {
   return (
     <span className="flex flex-wrap gap-1">
       {roles.map((role) => (
-        <Badge key={role} variant="outline" className="text-[11px] font-medium text-[var(--color-content-muted)]">
+        <Badge key={role} variant="outline" className="text-[length:var(--text-caption)] font-medium text-[var(--color-content-muted)]">
           {role}
         </Badge>
       ))}

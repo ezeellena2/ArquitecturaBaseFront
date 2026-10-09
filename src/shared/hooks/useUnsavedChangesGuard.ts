@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
-import { type BlockerFunction, useBeforeUnload, useBlocker } from "react-router";
+import {
+  type BlockerFunction,
+  useBeforeUnload,
+  useBlocker,
+} from "react-router";
 
 export interface UnsavedChangesGuard {
   /// Hay una salida frenada esperando respuesta: es cuando la pantalla muestra "¿Descartar los cambios?".
@@ -18,8 +22,12 @@ export interface UnsavedChangesGuard {
 /// Atrás del navegador) las frena `useBlocker` y la pantalla pregunta con su `ConfirmDialog`; recargar o
 /// cerrar la pestaña no pasan por el router, así que ahí pregunta el navegador (`useBeforeUnload`).
 ///
-/// Solo frena el cambio de `pathname`: en la misma ruta, un cambio de la query string no se lleva lo escrito.
-export function useUnsavedChangesGuard(isDirty: boolean): UnsavedChangesGuard {
+/// Por defecto sólo frena `pathname`. `queryKeys` permite frenar la identidad de una conversación
+/// en la misma ruta sin bloquear cambios de paginado o filtros.
+export function useUnsavedChangesGuard(
+  isDirty: boolean,
+  queryKeys: readonly string[] = [],
+): UnsavedChangesGuard {
   const allowNextRef = useRef(false);
   const leavingRef = useRef(false);
 
@@ -31,9 +39,17 @@ export function useUnsavedChangesGuard(isDirty: boolean): UnsavedChangesGuard {
         return false;
       }
 
-      return isDirty && currentLocation.pathname !== nextLocation.pathname;
+      return (
+        isDirty &&
+        (currentLocation.pathname !== nextLocation.pathname ||
+          queryKeys.some(
+            (key) =>
+              new URLSearchParams(currentLocation.search).get(key) !==
+              new URLSearchParams(nextLocation.search).get(key),
+          ))
+      );
     },
-    [isDirty],
+    [isDirty, queryKeys],
   );
 
   const blocker = useBlocker(shouldBlock);

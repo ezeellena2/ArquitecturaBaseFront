@@ -1,3 +1,4 @@
+import { operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { ApiError } from "@/shared/api/ApiError";
 
 /// Firma mínima que hace falta de `t` (la del namespace "profile"), sin acoplar el tipo exacto de react-i18next.
@@ -12,8 +13,8 @@ export { isTakenError, isSpentCodeError } from "@/shared/api/destinationErrors";
 /// Un error de algo que se confirmó en un `ConfirmDialog` (desvincular): va a un aviso, porque el diálogo ya se cerró.
 /// `Users.User.LastLoginMethod` trae en su `detail` qué hacer para destrabarlo ("primero agregá un correo").
 export function profileActionErrorMessage(error: unknown, t: Translate): string {
-  if (!(error instanceof ApiError)) {
-    return t("common:states.error");
+  if (!(error instanceof ApiError) || error.isNetworkError || error.status >= 500) {
+    return operationalErrorMessage(error, t);
   }
 
   if (error.isNetworkError) {

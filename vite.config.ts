@@ -46,6 +46,6 @@ export default defineConfig({
     css: false,
     // Claude Code arma sus worktrees dentro de .claude/, así que ahí hay copias enteras del proyecto con sus
     // propios tests. Sin esta exclusión, "npm run test" corre también los de otra sesión y falla por eso.
-    exclude: [...configDefaults.exclude, ".claude/**"],
+    exclude: [...configDefaults.exclude, ".claude/**", "src/test/visual/**"],
   },
 });

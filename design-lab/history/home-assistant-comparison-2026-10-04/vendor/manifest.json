@@ -1,0 +1,271 @@
+{
+  "sources": [
+    {
+      "url": "https://r.assistant-ui.com/thread.json",
+      "name": "thread",
+      "files": [
+        "vendor\\assistant\\thread.aui.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/button.json",
+      "name": "button",
+      "files": [
+        "vendor\\ui\\button.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/skeleton.json",
+      "name": "skeleton",
+      "files": [
+        "vendor\\ui\\skeleton.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/attachment.json",
+      "name": "attachment",
+      "files": [
+        "vendor\\assistant\\attachment.aui.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/dialog.json",
+      "name": "dialog",
+      "files": [
+        "vendor\\ui\\dialog.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/tooltip.json",
+      "name": "tooltip",
+      "files": [
+        "vendor\\ui\\tooltip.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/avatar.json",
+      "name": "avatar",
+      "files": [
+        "vendor\\ui\\avatar.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/tooltip-icon-button.json",
+      "name": "tooltip-icon-button",
+      "files": [
+        "vendor\\assistant\\tooltip-icon-button.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/use-attachment-src.json",
+      "name": "use-attachment-src",
+      "files": []
+    },
+    {
+      "url": "https://r.assistant-ui.com/file.json",
+      "name": "file",
+      "files": [
+        "vendor\\assistant\\file.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/elements-media-player.json",
+      "name": "elements-media-player",
+      "files": [
+        "vendor\\assistant\\media-player.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/elements-surfaces.json",
+      "name": "elements-surfaces",
+      "files": [
+        "vendor\\assistant\\surfaces.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/follow-up-suggestions.json",
+      "name": "follow-up-suggestions",
+      "files": [
+        "vendor\\assistant\\follow-up-suggestions.aui.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/image.json",
+      "name": "image",
+      "files": [
+        "vendor\\assistant\\image.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/elements-href.json",
+      "name": "elements-href",
+      "files": []
+    },
+    {
+      "url": "https://r.assistant-ui.com/markdown-text.json",
+      "name": "markdown-text",
+      "files": [
+        "vendor\\assistant\\markdown-text.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/use-copy-to-clipboard.json",
+      "name": "use-copy-to-clipboard",
+      "files": []
+    },
+    {
+      "url": "https://r.assistant-ui.com/reasoning.json",
+      "name": "reasoning",
+      "files": [
+        "vendor\\assistant\\reasoning.aui.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/elements-reasoning.json",
+      "name": "elements-reasoning",
+      "files": [
+        "vendor\\assistant\\reasoning.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/collapsible.json",
+      "name": "collapsible",
+      "files": [
+        "vendor\\ui\\collapsible.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/tool-fallback.json",
+      "name": "tool-fallback",
+      "files": [
+        "vendor\\assistant\\tool-fallback.aui.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/textarea.json",
+      "name": "textarea",
+      "files": [
+        "vendor\\ui\\textarea.tsx"
+      ]
+    },
+    {
+      "url": "https://r.assistant-ui.com/tool-group.json",
+      "name": "tool-group",
+      "files": [
+        "vendor\\assistant\\tool-group.aui.tsx"
+      ]
+    },
+    {
+      "url": "https://elements.ai-sdk.dev/api/registry/conversation.json",
+      "name": "conversation",
+      "files": [
+        "vendor\\elements\\conversation.tsx"
+      ]
+    },
+    {
+      "url": "https://elements.ai-sdk.dev/api/registry/message.json",
+      "name": "message",
+      "files": [
+        "vendor\\elements\\message.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/button-group.json",
+      "name": "button-group",
+      "files": [
+        "vendor\\ui\\button-group.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/separator.json",
+      "name": "separator",
+      "files": [
+        "vendor\\ui\\separator.tsx"
+      ]
+    },
+    {
+      "url": "https://elements.ai-sdk.dev/api/registry/prompt-input.json",
+      "name": "prompt-input",
+      "files": [
+        "vendor\\elements\\prompt-input.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/command.json",
+      "name": "command",
+      "files": [
+        "vendor\\ui\\command.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/dropdown-menu.json",
+      "name": "dropdown-menu",
+      "files": [
+        "vendor\\ui\\dropdown-menu.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/hover-card.json",
+      "name": "hover-card",
+      "files": [
+        "vendor\\ui\\hover-card.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/input-group.json",
+      "name": "input-group",
+      "files": [
+        "vendor\\ui\\input-group.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/input.json",
+      "name": "input",
+      "files": [
+        "vendor\\ui\\input.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/select.json",
+      "name": "select",
+      "files": [
+        "vendor\\ui\\select.tsx"
+      ]
+    },
+    {
+      "url": "https://ui.shadcn.com/r/styles/new-york/spinner.json",
+      "name": "spinner",
+      "files": [
+        "vendor\\ui\\spinner.tsx"
+      ]
+    }
+  ],
+  "dependencies": [
+    "@assistant-ui/react@^0.15.23",
+    "lucide-react",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-tooltip",
+    "@radix-ui/react-avatar",
+    "radix-ui",
+    "zustand",
+    "class-variance-authority",
+    "tw-shimmer@^0.4.13",
+    "@assistant-ui/react-markdown@^0.14.18",
+    "remark-gfm",
+    "@radix-ui/react-collapsible",
+    "ai",
+    "use-stick-to-bottom",
+    "@streamdown/cjk",
+    "@streamdown/code",
+    "@streamdown/math",
+    "@streamdown/mermaid",
+    "streamdown",
+    "@radix-ui/react-separator",
+    "nanoid",
+    "cmdk",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-hover-card",
+    "@radix-ui/react-select"
+  ]
+}

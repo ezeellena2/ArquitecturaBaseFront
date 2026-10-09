@@ -20,6 +20,8 @@ interface DataTableProps<TRow> {
   rows: readonly TRow[];
   rowKey: (row: TRow) => string;
   isLoading?: boolean;
+  /// Includes a successfully loaded empty list; refresh failures preserve its state.
+  hasData?: boolean;
   error?: string;
   /// Detalle extra del error (por ejemplo, el traceId para poder reportarlo).
   errorDescription?: string;
@@ -37,7 +39,7 @@ interface DataTableProps<TRow> {
 /// El nivel "rótulo" de la escala tipográfica: 11 px, semibold, mayúsculas con letter-spacing. Es el mismo
 /// tratamiento que el rótulo de grupo del menú lateral, y es lo que hace que la tabla se vea parte del
 /// sistema y no un widget pegado.
-const headerText = "text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]";
+const headerText = "text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase text-[var(--color-surface-header-foreground)]";
 
 function ariaSort(columnId: string, sort: string | undefined): "ascending" | "descending" | "none" {
   if (sort === columnId) {
@@ -53,6 +55,7 @@ export function DataTable<TRow>({
   rows,
   rowKey,
   isLoading,
+  hasData = rows.length > 0,
   error,
   errorDescription,
   onRetry,
@@ -64,9 +67,10 @@ export function DataTable<TRow>({
 }: DataTableProps<TRow>) {
   const { t } = useTranslation();
 
-  if (error) {
+  if (error && !hasData) {
     return (
       <EmptyState
+        embedded
         title={error}
         description={errorDescription}
         action={
@@ -89,7 +93,7 @@ export function DataTable<TRow>({
   }
 
   if (rows.length === 0) {
-    return <EmptyState title={emptyTitle ?? t("states.empty")} description={emptyDescription} action={emptyAction} />;
+    return <EmptyState embedded title={emptyTitle ?? t("states.empty")} description={emptyDescription} action={emptyAction} />;
   }
 
   return (
@@ -102,7 +106,7 @@ export function DataTable<TRow>({
               key={column.id}
               scope="col"
               aria-sort={ariaSort(column.id, sort)}
-              className={cn(headerText, "px-4", column.align === "right" ? "text-right" : undefined)}
+              className={column.align === "right" ? "text-right" : undefined}
             >
               {column.sortable && onSortChange ? (
                 // El botón hereda la tipografía del encabezado: si se queda con la suya, la columna
@@ -119,10 +123,10 @@ export function DataTable<TRow>({
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          // 44 px: la densidad del proyecto, decidida una vez (fundamento visual, "Tres alturas").
+          // La densidad la define TableRow para todos los listados.
           // El borde a media opacidad es el del tablero: a opacidad plena la tabla se lee como una grilla
           // y las líneas compiten con los datos.
-          <TableRow key={rowKey(row)} className="h-11 border-b-[var(--color-border)]/50">
+          <TableRow key={rowKey(row)}>
             {columns.map((column) => (
               <TableCell key={column.id} className={cn("px-4", column.align === "right" ? "text-right" : undefined)}>
                 {column.cell(row)}

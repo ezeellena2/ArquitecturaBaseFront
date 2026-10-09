@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -58,18 +59,6 @@ async function pickRole(name: string) {
   await userEvent.keyboard("{Enter}");
   await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: new RegExp(`^${name}`) }));
   await userEvent.keyboard("{Escape}");
-}
-
-/// Que un mensaje esté arriba de los botones y no atado a un campo: es un `alert` suelto, antes de "Crear".
-function expectAboveTheButtons(dialog: ReturnType<typeof within>, message: string, submit: string) {
-  const alert = dialog.getByRole("alert");
-  expect(alert).toHaveTextContent(message);
-  expect(alert.compareDocumentPosition(dialog.getByRole("button", { name: submit })) & Node.DOCUMENT_POSITION_FOLLOWING)
-    .toBeTruthy();
-
-  for (const field of dialog.getAllByRole("textbox")) {
-    expect(field).not.toHaveAccessibleDescription(message);
-  }
 }
 
 describe("UserFormDialog", () => {
@@ -360,7 +349,8 @@ describe("UserFormDialog", () => {
   });
 
   describe("the errors", () => {
-    it("says above the buttons that an email or a number is missing", async () => {
+    it("reports a general rejection once without losing the dialog", async () => {
+      const errorToast = vi.spyOn(toast, "error");
       withCreate(
         whatsappLoginMethods,
         problem(400, { code: "Users.Identity.Required", detail: "Cargá un correo o un número de WhatsApp." }),
@@ -369,7 +359,9 @@ describe("UserFormDialog", () => {
       const dialog = await openNewUser();
       await userEvent.click(dialog.getByRole("button", { name: "Crear" }));
 
-      await waitFor(() => expectAboveTheButtons(dialog, "Cargá un correo o un número de WhatsApp.", "Crear"));
+      await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Cargá un correo o un número de WhatsApp.", expect.objectContaining({ id: "users:create:error", duration: 10000 })));
+      expect(errorToast).toHaveBeenCalledTimes(1);
+      expect(dialog.queryByRole("alert")).not.toBeInTheDocument();
       expect(screen.getByRole("dialog", { name: "Nuevo usuario" })).toBeInTheDocument();
     });
 
@@ -518,5 +510,26 @@ describe("UserFormDialog", () => {
     // Radix solo le devuelve el foco a un DialogTrigger propio, y acá lo abre un Button cualquiera: sin
     // `onCloseAutoFocus` el foco cae en <body> y el siguiente Tab arranca desde el principio del documento.
     await waitFor(() => expect(newUser).toHaveFocus());
+  });
+
+  it("reports a field rejection arriving after the dialog was closed", async () => {
+    const error = vi.spyOn(toast, "error");
+    withCreate(whatsappLoginMethods);
+    let respond!: () => void;
+    let started = false;
+    server.use(http.post("/api/users", async () => {
+      started = true;
+      await new Promise<void>(resolve => { respond = resolve; });
+      return HttpResponse.json({ status: 400, errors: { email: ["Ese correo ya está en uso."] } }, { status: 400 });
+    }));
+    const dialog = await openNewUser();
+    await userEvent.type(dialog.getByRole("textbox", { name: "Correo electrónico" }), "existing@example.test");
+    await userEvent.click(dialog.getByRole("button", { name: "Crear" }));
+    await waitFor(() => expect(started).toBe(true));
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    respond();
+    await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
+    expect(error.mock.calls[0][0]).toContain("Ese correo ya está en uso.");
   });
 });

@@ -15,3 +15,15 @@ export function formatDateTimeInZone(valueUtc: string, language: string, timeZon
 export function formatDateInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
   return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeZone }).format(new Date(valueUtc));
 }
+
+export function formatTimeInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
+  return new Intl.DateTimeFormat(language, { timeStyle: "short", timeZone }).format(new Date(valueUtc));
+}
+
+// Stable calendar identity for grouping instants; display labels still use the person's language.
+export function calendarDateInZone(valueUtc: string, timeZone: string | undefined): string {
+  const parts = new Intl.DateTimeFormat("en", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+    .formatToParts(new Date(valueUtc));
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)!.value;
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}

@@ -45,9 +45,15 @@ describe("branchOf", () => {
   });
 
   it("is nothing for a screen that is not inside a group", () => {
-    expect(branchOf("/configuracion")).toBeUndefined();
     expect(branchOf("/configuracion/algo")).toBeUndefined();
     expect(branchOf("/rolesviejos")).toBeUndefined();
+  });
+
+  it("groups General and Appearance without treating Appearance as a child of General", () => {
+    expect(branchOf("/configuracion")?.labelKey).toBe("navigation.settings");
+    expect(branchOf("/configuracion/apariencia")?.labelKey).toBe("navigation.settings");
+    expect(parentLinkOf("/configuracion/apariencia")).toBeUndefined();
+    expect(isAdministrationPath("/configuracion/apariencia")).toBe(true);
   });
 });
 

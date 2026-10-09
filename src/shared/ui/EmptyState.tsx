@@ -13,17 +13,20 @@ export function EmptyState({
   action,
   className,
   descriptionClassName,
+  embedded = false,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
   className?: string;
   descriptionClassName?: string;
+  embedded?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-2 rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)] p-10 text-center",
+        "flex flex-col items-center gap-2 p-10 text-center",
+        embedded ? undefined : "rounded-[var(--radius-card)] border border-dashed border-[var(--color-border)]",
         className,
       )}
     >

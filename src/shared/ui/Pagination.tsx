@@ -37,7 +37,7 @@ export function Pagination({ page, pageSize, totalCount, totalPages, hasPrevious
         >
           <ChevronLeftIcon className="size-4" />
         </IconButton>
-        <span className="tabular-nums">{t("pagination.page", { page, totalPages })}</span>
+        {totalCount > 0 ? <span className="tabular-nums">{t("pagination.page", { page, totalPages })}</span> : null}
         <IconButton
           label={t("pagination.next")}
           disabledLabel={t("pagination.noNext")}

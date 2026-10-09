@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/libraries.tsbuildinfo",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": [],
+    "paths": { "@/*": ["../../../src/*"], "@lab/*": ["./*"], "react": ["../../../node_modules/@types/react/index.d.ts"], "react/*": ["../../../node_modules/@types/react/*"] }
+  },
+  "include": ["./**/*.ts", "./**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

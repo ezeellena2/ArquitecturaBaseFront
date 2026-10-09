@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "react-oidc-context";
 import { Link, useNavigate } from "react-router";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import { endServerSession } from "@/auth/accessRequests";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { beginSignOut, cancelSignOut } from "@/auth/signOutStatus";
@@ -56,13 +56,14 @@ export function UserMenu() {
       await queryClient.cancelQueries();
       queryClient.clear();
       await auth.removeUser();
-      navigate("/login", { replace: true });
+      // Commit /login before releasing the transition: private guards must not carry the old account's URL.
+      await navigate("/login", { replace: true, flushSync: true });
       cancelSignOut();
     } catch {
       // Si no se pudo ni empezar el cierre de sesión, seguimos en esta pantalla: no puede quedar trabada
       // mostrando la transición.
       cancelSignOut();
-      toast.error(t("layout.signOutError"));
+      notify({ id: "layouts/components/UserMenu:1", kind: "error", message: t("layout.signOutError") });
     }
   }
 

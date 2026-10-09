@@ -1,0 +1,493 @@
+{
+  "states": 48,
+  "interactions": "send, followup, clear editor, history, Escape, cancel new conversation",
+  "failures": [],
+  "externalSdkNotices": [
+    "Access to fetch at 'https://chatgpt.com/ces/v1/projects/oai/settings' from origin 'https://cdn.platform.openai.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to fetch",
+    "SDK telemetry intercepted by test fixture"
+  ],
+  "checks": [
+    {
+      "library": "assistant-ui",
+      "lang": "es",
+      "scene": "empty",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "es",
+      "scene": "empty",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "es",
+      "scene": "empty",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "es",
+      "scene": "answer",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "es",
+      "scene": "answer",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "es",
+      "scene": "answer",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "en",
+      "scene": "empty",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "en",
+      "scene": "empty",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "en",
+      "scene": "empty",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "en",
+      "scene": "answer",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "en",
+      "scene": "answer",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "assistant-ui",
+      "lang": "en",
+      "scene": "answer",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "es",
+      "scene": "empty",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "es",
+      "scene": "empty",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "es",
+      "scene": "empty",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "es",
+      "scene": "answer",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "es",
+      "scene": "answer",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "es",
+      "scene": "answer",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "en",
+      "scene": "empty",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "en",
+      "scene": "empty",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "en",
+      "scene": "empty",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "en",
+      "scene": "answer",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "en",
+      "scene": "answer",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "ai-elements",
+      "lang": "en",
+      "scene": "answer",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "es",
+      "scene": "empty",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "es",
+      "scene": "empty",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "es",
+      "scene": "empty",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "es",
+      "scene": "answer",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "es",
+      "scene": "answer",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "es",
+      "scene": "answer",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "en",
+      "scene": "empty",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "en",
+      "scene": "empty",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "en",
+      "scene": "empty",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "en",
+      "scene": "answer",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "en",
+      "scene": "answer",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "copilotkit",
+      "lang": "en",
+      "scene": "answer",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "es",
+      "scene": "empty",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "es",
+      "scene": "empty",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "es",
+      "scene": "empty",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "es",
+      "scene": "answer",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "es",
+      "scene": "answer",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "es",
+      "scene": "answer",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "en",
+      "scene": "empty",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "en",
+      "scene": "empty",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "en",
+      "scene": "empty",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "en",
+      "scene": "answer",
+      "width": 1440,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "en",
+      "scene": "answer",
+      "width": 390,
+      "geometry": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "library": "chatkit",
+      "lang": "en",
+      "scene": "answer",
+      "width": 320,
+      "geometry": {
+        "width": 320,
+        "scroll": 320
+      }
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import { unlinkPhone } from "../api/loginMethods";
 import { profileActionErrorMessage } from "../errors";
-import { ProfileSection } from "./ProfileSection";
+import { Surface } from "@/shared/ui/Surface";
 import { UnlinkWhatsAppDialog } from "./UnlinkWhatsAppDialog";
 import { VerifyDestinationDialog } from "./VerifyDestinationDialog";
 import { currentUserQueryKey, type CurrentUser } from "@/auth/useCurrentUser";
@@ -57,7 +57,7 @@ function MethodRow({
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm font-medium text-[var(--color-content)]">{label}</p>
         {children}
-        {hint ? <p className="text-[12.5px] leading-snug text-[var(--color-content-muted)]">{hint}</p> : null}
+        {hint ? <p className="text-xs leading-snug text-[var(--color-content-muted)]">{hint}</p> : null}
       </div>
       {action ? <div className="col-start-2 sm:col-start-3 sm:row-start-1">{action}</div> : null}
     </li>
@@ -110,11 +110,11 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
   const unlink = useMutation({
     mutationFn: unlinkPhone,
     onSuccess: async () => {
-      toast.success(t("unlinkWhatsApp.success"));
+      notify({ id: "features/profile/components/LoginMethodsCard:1", kind: "success", message: t("unlinkWhatsApp.success") });
       await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
     },
     onError: async (error) => {
-      toast.error(profileActionErrorMessage(error, t));
+      notify({ id: "features/profile/components/LoginMethodsCard:2", kind: "error", message: profileActionErrorMessage(error, t) });
 
       // El servidor dice que el número es lo único: el perfil que se ve está viejo (se sacó el correo o Google desde
       // otro lado). Con el perfil nuevo, la fila explica por qué no se puede.
@@ -127,7 +127,7 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
   const closeDialog = () => setOpenDialog(undefined);
 
   return (
-    <ProfileSection title={t("sections.loginMethods")} titleRef={titleRef}>
+    <Surface title={t("sections.loginMethods")} titleRef={titleRef}>
       <ul className="flex flex-col divide-y divide-[var(--color-border)]/60">
         <MethodRow
           icon={MailIcon}
@@ -152,7 +152,7 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
               {user.emailConfirmed ? <VerificationBadge verified>{t("methods.verified")}</VerificationBadge> : null}
             </span>
           ) : (
-            <p className="text-[13.5px] text-[var(--color-content-muted)]">{t("methods.email.empty")}</p>
+            <p className="text-sm text-[var(--color-content-muted)]">{t("methods.email.empty")}</p>
           )}
         </MethodRow>
 
@@ -196,7 +196,7 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
               </Button>
             }
           >
-            <p className="text-[13.5px] text-[var(--color-content-muted)]">{t("methods.whatsapp.notLinked")}</p>
+            <p className="text-sm text-[var(--color-content-muted)]">{t("methods.whatsapp.notLinked")}</p>
           </MethodRow>
         ) : null}
       </ul>
@@ -225,6 +225,6 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
           onClose={closeDialog}
         />
       ) : null}
-    </ProfileSection>
+    </Surface>
   );
 }

@@ -25,3 +25,8 @@ dist-ssr
 
 # Certificado de desarrollo exportado para el servidor de Vite (Tarea 3)
 .certs/
+
+test-results/
+playwright-report/
+
+.test-artifacts/

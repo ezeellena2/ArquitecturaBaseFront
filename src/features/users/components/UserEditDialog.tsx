@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import { z } from "zod";
 import {
   fetchUser,
@@ -26,6 +26,8 @@ import { rolesQueryKey } from "@/shared/api/roles";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { cn } from "@/shared/lib/utils";
 import { Banner } from "@/shared/ui/Banner";
+import { Surface } from "@/shared/ui/Surface";
+import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
@@ -96,18 +98,17 @@ function MethodRow({
     >
       <MethodIcon icon={icon} className="row-span-2 sm:row-span-1" />
       <span className="col-start-2 row-start-1 flex min-w-0 flex-col gap-px">
-        <span className="text-[13px] leading-[18px] font-medium text-[var(--color-content)]">{label}</span>
+        <span className="text-sm leading-[18px] font-medium text-[var(--color-content)]">{label}</span>
         {value === null ? (
-          <span className="text-[13.5px] leading-5 text-[var(--color-content-muted)]">{empty}</span>
+          <span className="text-sm leading-5 text-[var(--color-content-muted)]">{empty}</span>
         ) : (
-          // Un correo largo se corta con puntos suspensivos; entero, en el `title` y para el lector de pantalla. En un
-          // teléfono no hay lugar ni para un número entero: ahí baja de renglón, que cortarlo es perder dígitos.
-          <span
-            title={value}
-            className="text-sm leading-5 text-[var(--color-content)] [overflow-wrap:anywhere] sm:truncate"
-          >
-            {value}
-          </span>
+          // El tooltip común permite consultar el dato completo con mouse y teclado.
+          // En móvil el valor baja de renglón para conservar todos sus caracteres.
+          <ActionTooltip label={value}>
+            <span tabIndex={0} className="text-sm leading-5 text-[var(--color-content)] [overflow-wrap:anywhere] sm:truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]">
+              {value}
+            </span>
+          </ActionTooltip>
         )}
       </span>
       {badge ? (
@@ -156,7 +157,8 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   const { t } = useTranslation("users");
   const queryClient = useQueryClient();
   const restoreFocus = useRestoreFocusOnClose();
-  const methodsTitleId = useId();
+  const isMounted = useRef(true);
+  useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
   const unverifiedNoteId = useId();
 
   const [draft, setDraft] = useState<DraftValues | undefined>();
@@ -224,7 +226,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   const mutation = useMutation({
     mutationFn: (body: UpdateUserBody) => updateUser(user.id, body),
     onSuccess: async () => {
-      toast.success(t("edit.success"));
+      notify({ id: "features/users/components/UserEditDialog:1", kind: "success", message: t("edit.success") });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
         queryClient.invalidateQueries({ queryKey: userQueryKey(user.id) }),
@@ -234,7 +236,11 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
       ]);
       onClose();
     },
-    onError: (error) => setErrors(userFormErrors(error, t, visibleFields)),
+    onError: (error) => {
+      const next = userFormErrors(error, t, isMounted.current ? visibleFields : []);
+      setErrors({ fields: next.fields });
+      if (next.form) notify({ id: `users:update:${user.id}`, kind: "error", message: next.form });
+    },
   });
 
   // Desvincular es una acción aparte, que no espera a "Guardar": la confirmación se cierra al confirmar, así que el
@@ -242,7 +248,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   const unlink = useMutation({
     mutationFn: () => unlinkUserPhone(user.id),
     onSuccess: async () => {
-      toast.success(t("unlink.success"));
+      notify({ id: "features/users/components/UserEditDialog:2", kind: "success", message: t("unlink.success") });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
         queryClient.invalidateQueries({ queryKey: userQueryKey(user.id) }),
@@ -251,7 +257,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
       ]);
     },
     // El 409 del admin sobre sí mismo sin otro medio de ingreso trae el porqué en el `detail`.
-    onError: (error) => toast.error(userActionErrorMessage(error, t)),
+    onError: (error) => notify({ id: "features/users/components/UserEditDialog:3", kind: "error", message: userActionErrorMessage(error, t) }),
   });
 
   /// El botón "Agregar" se va y en su lugar aparece el campo: el foco pasa al campo, no a `<body>`.
@@ -326,7 +332,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
           detailQuery.isError ? (
             <div className="flex flex-col items-start gap-3 p-[18px]">
               <p role="alert" className="text-sm text-[var(--color-danger)]">
-                {userActionErrorMessage(detailQuery.error, t)}
+                {t("common:states.loadFailed")}
               </p>
               <Button type="button" variant="outline" onClick={() => void detailQuery.refetch()}>
                 {t("common:actions.retry")}
@@ -366,17 +372,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
               {/* `shrink-0`: con `overflow-hidden`, un hijo de una columna flexible se deja achicar por debajo de su
                   contenido. Con el reenvío abierto el cuerpo no entraba, y en vez de scrollear, la caja se comía la fila
                   de WhatsApp. */}
-              <section
-                aria-labelledby={methodsTitleId}
-                className="flex shrink-0 flex-col overflow-hidden rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)]"
-              >
-                <h3
-                  id={methodsTitleId}
-                  className="flex h-10 shrink-0 items-center border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-3.5 text-[11px] font-semibold tracking-[0.06em] text-[var(--color-content-heading)] uppercase"
-                >
-                  {t("methods.title")}
-                </h3>
-
+              <Surface title={t("methods.title")} headingLevel={3}>
                 <ul className="flex flex-col">
                   {isAddingEmail ? (
                     <FieldRow icon={MailIcon}>
@@ -475,12 +471,12 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                 {showsUnverifiedNote ? (
                   <p
                     id={unverifiedNoteId}
-                    className="mx-3.5 border-t border-[var(--color-border)]/60 pt-[9px] pb-[11px] text-[12.5px] leading-[1.45] text-[var(--color-content-muted)]"
+                    className="mx-3.5 border-t border-[var(--color-border)]/60 pt-[9px] pb-[11px] text-xs leading-[1.45] text-[var(--color-content-muted)]"
                   >
                     {t("methods.unverifiedHint")}
                   </p>
                 ) : null}
-              </section>
+              </Surface>
 
               {detail.lastInvitation === null ? null : (
                 <LastInvitationStrip
@@ -497,11 +493,6 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                 quedaba debajo del borde y en pantalla no cambiaba nada. En -700 porque el rojo de siempre no llega a
                 4.5:1 sobre este fondo. */}
             <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] px-[18px] py-3">
-              {errors.form ? (
-                <p role="alert" className="mb-2.5 text-sm text-[var(--color-danger-700)]">
-                  {errors.form}
-                </p>
-              ) : null}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={onClose}>
                   {t("common:actions.cancel")}

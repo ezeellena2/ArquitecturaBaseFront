@@ -25,6 +25,8 @@ beforeEach(() => {
 it("welcomes an anonymous visitor without starting interactive sign-in", async () => {
   renderRouteWithProviders("/");
   expect(await screen.findByRole("link", { name: "Crear una cuenta" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Tu espacio de trabajo, en un solo lugar." })).toBeInTheDocument();
+  expect(screen.getAllByRole("link", { name: "Iniciar sesión" }).every(link => link.getAttribute("href") === "/login")).toBe(true);
   expect(screen.queryByRole("table")).not.toBeInTheDocument();
   expect(screen.queryByText(/ArquitecturaBase/)).not.toBeInTheDocument();
   expect(await screen.findByRole("link", { name: "Crear una cuenta" })).toHaveAttribute("href", "/registro");

@@ -31,7 +31,7 @@ const peligro = "hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-dange
 /// Grupo segmentado: un solo borde alrededor y separadores entre los botones. Uno solo para todas las
 /// acciones, incluida la destructiva: separarla en una caja aparte fue una idea propia que el tablero no
 /// tiene, y en una fila de 44 px se lee como dos controles distintos en vez de uno.
-const grupo = "inline-flex overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] divide-x divide-[var(--color-border)]";
+const grupo = "inline-flex overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] divide-x divide-[var(--color-border)] [--color-content:var(--foreground)] [--color-content-muted:var(--muted-foreground)]";
 
 function Grupo({ acciones }: { acciones: RowAction[] }) {
   return (

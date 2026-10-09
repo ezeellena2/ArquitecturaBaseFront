@@ -3,6 +3,12 @@ import { ApiError } from "./ApiError";
 import { errorFeedback } from "./errorFeedback";
 
 describe("errorFeedback", () => {
+  it("distinguishes cancellation, server waiting and public access errors", () => {
+    expect(errorFeedback(new DOMException("Aborted", "AbortError")).kind).toBe("cancelled");
+    expect(errorFeedback(new ApiError(429, { retryAfter: 60 }))).toMatchObject({ kind: "wait", retryAfterSeconds: 60 });
+    expect(errorFeedback(new ApiError(401, { code: "Auth.LoginCode.Invalid" }), { publicAccess: true }).kind).toBe("error");
+    expect(errorFeedback(new ApiError(403, { code: "Auth.Account.Disabled" }), { publicAccess: true }).kind).toBe("error");
+  });
   it("requires checking an uncertain write before retrying", () => {
     expect(errorFeedback(ApiError.network(), { writing: true }).kind).toBe("uncertain");
     expect(errorFeedback(new ApiError(500, { traceId: "abc" }), { writing: true })).toMatchObject({ kind: "uncertain", traceId: "abc" });

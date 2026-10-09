@@ -2,13 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import { fetchPagedRoles, deleteRole } from "../api/roles";
 import { roleActionErrorMessage } from "../errors";
 import { isAdminRole } from "../lib/systemRoles";
 import { Can } from "@/auth/Can";
 import { usePermissions } from "@/auth/usePermissions";
-import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
 import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import { Button } from "@/shared/ui/button";
@@ -16,6 +16,7 @@ import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { EyeIcon, PencilIcon,  TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
+import { Surface } from "@/shared/ui/Surface";
 import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
 import { usePagination } from "@/shared/hooks/usePagination";
@@ -41,12 +42,12 @@ export function RolesPage() {
 
   const removal = useMutation({
     mutationFn: (role: RoleListItem) => deleteRole(role.id),
-    onSuccess: async () => {
-      toast.success(t("feedback.deleted"));
+    onSuccess: async (_result, role) => {
+      notify({ id: `roles:delete:${role.id}`, kind: "success", message: t("feedback.deleted") });
       await queryClient.invalidateQueries({ queryKey: rolesQueryKey });
     },
     // `ConfirmDialog` se cierra al confirmar, así que el error llega cuando el diálogo ya no está: va a un aviso.
-    onError: (mutationError) => toast.error(roleActionErrorMessage(mutationError, t)),
+    onError: (mutationError, role) => notify({ id: `roles:delete:${role.id}`, kind: "error", message: roleActionErrorMessage(mutationError, t) }),
   });
 
   const apiError = error instanceof ApiError ? error : undefined;
@@ -122,20 +123,20 @@ export function RolesPage() {
       {/* Sin padding y con `overflow-hidden`: la banda del encabezado llega a los bordes de la caja y se
           recorta con su radio. Con padding, la tabla flota adentro y la banda deja de ser la cabecera de la
           caja para ser un rectángulo suelto. */}
-      <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <Surface>
         <DataTable
           columns={columns}
           rows={data?.items ?? []}
+          hasData={data !== undefined}
           rowKey={(row) => row.id}
           isLoading={isLoading}
-          error={apiError ? (apiError.isNetworkError ? t("common:errors.network") : (apiError.detail ?? apiError.message)) : undefined}
-          errorDescription={apiError?.traceId ? t("errorTraceId", { traceId: apiError.traceId }) : undefined}
+          error={error ? t("common:states.loadFailed") : undefined}
           onRetry={() => void refetch()}
           emptyTitle={t("empty.title")}
           emptyDescription={t("empty.description")}
         />
         {data ? <Pagination {...data} onPageChange={setPage} onPageSizeChange={setPageSize} /> : null}
-      </div>
+      </Surface>
 
       {deletingRole ? (
         <ConfirmDialog

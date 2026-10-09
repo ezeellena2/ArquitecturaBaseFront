@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import { currentUserQueryKey, useCurrentUser } from "./useCurrentUser";
 import { updateProfile } from "@/shared/api/profile";
 import i18n, { changeLanguage, isSupportedLanguage, type SupportedLanguage } from "@/shared/i18n";
@@ -66,7 +66,7 @@ export function useLanguagePreference(): { change: (language: SupportedLanguage)
       await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
     } catch {
       await changeLanguage(previous);
-      toast.error(t("language.saveFailed"));
+      notify({ id: "auth/useLanguagePreference:1", kind: "error", message: t("language.saveFailed") });
     }
   }
 

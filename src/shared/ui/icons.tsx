@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 
+// El acceso público conserva los dibujos Lucide de su diseño aprobado. También
+// se consumen desde este módulo, para que una feature no arme otro set propio.
+export { ArrowLeft as PublicBackIcon, Mail as PublicMailIcon, MessageCircle as PublicWhatsAppIcon } from "lucide-react";
+export { FolderOpen as PublicInformationIcon, Users as PublicTeamIcon, ListChecks as PublicTrackingIcon } from "lucide-react";
+
 interface IconProps {
   className?: string;
 }
@@ -64,6 +69,14 @@ export function MenuIcon(props: IconProps) {
   );
 }
 
+export function ArrowUpIcon(props: IconProps) {
+  return <Icon {...props}><path d="M12 19V5m-6 6 6-6 6 6" /></Icon>;
+}
+
+export function CopyIcon(props: IconProps) {
+  return <Icon {...props}><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" /></Icon>;
+}
+
 export function ChevronLeftIcon(props: IconProps) {
   return (
     <Icon {...props}>
@@ -119,6 +132,39 @@ export function SettingsIcon(props: IconProps) {
       <path d="m6.85 17.15-1.4 1.4" />
       <path d="m18.55 18.55-1.4-1.4" />
       <path d="m6.85 6.85-1.4-1.4" />
+    </Icon>
+  );
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Icon>
+  );
+}
+
+/// Preferencias generales: controles de ajuste, distintos del grupo Configuración.
+export function PreferencesIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 6h4m4 0h8M4 12h10m4 0h2M4 18h2m4 0h10" />
+      <circle cx="10" cy="6" r="2" />
+      <circle cx="16" cy="12" r="2" />
+      <circle cx="8" cy="18" r="2" />
+    </Icon>
+  );
+}
+
+/// Apariencia: paleta de colores del sistema.
+export function PaletteIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3.5a8.5 8.5 0 1 0 0 17h1a2 2 0 0 0 1.5-3.3 1.5 1.5 0 0 1 1.1-2.5H18a3 3 0 0 0 3-3C21 7.1 17 3.5 12 3.5Z" />
+      <circle cx="7.5" cy="11" r=".75" />
+      <circle cx="10" cy="7.5" r=".75" />
+      <circle cx="14" cy="7.5" r=".75" />
+      <circle cx="17" cy="10.5" r=".75" />
     </Icon>
   );
 }

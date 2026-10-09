@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/useCurrentUser";
 import { queryClient } from "@/shared/api/queryClient";
@@ -270,7 +271,8 @@ describe("linking WhatsApp", () => {
     expect(screen.getByRole("dialog", { name: "Vincular WhatsApp" })).toBeInTheDocument();
   });
 
-  it("takes the last error away while verifying again, so the same error is said again", async () => {
+  it("uses one notice for each uncertain verification and preserves the code", async () => {
+    const errorToast = vi.spyOn(toast, "error");
     // Dos fallas iguales seguidas (sin conexión, las dos veces): si el cartel quedara montado, el texto no cambiaría y
     // el lector de pantalla no diría nada la segunda vez; y mientras se verifica, se vería el error del intento
     // anterior. Como en el ingreso (LoginCodePage).
@@ -293,17 +295,17 @@ describe("linking WhatsApp", () => {
     await within(dialog).findByRole("group", { name: "Código" });
     await typeCode(dialog, "482913");
     await userEvent.click(within(dialog).getByRole("button", { name: "Verificar" }));
-    const firstAlert = await within(dialog).findByRole("alert");
-    expect(firstAlert).toHaveTextContent("No pudimos conectarnos. Revisá tu conexión.");
+    await waitFor(() => expect(errorToast).toHaveBeenCalledTimes(1));
+    expect(errorToast).toHaveBeenCalledWith(expect.stringContaining("No pudimos confirmar el resultado"), expect.objectContaining({ id: "destination:whatsapp:verify", duration: 10000 }));
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
 
     await userEvent.click(within(dialog).getByRole("button", { name: "Verificar" }));
 
     await waitFor(() => expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument());
 
     second.release();
-    const secondAlert = await within(dialog).findByRole("alert");
-    expect(secondAlert).toHaveTextContent("No pudimos conectarnos. Revisá tu conexión.");
-    expect(secondAlert).not.toBe(firstAlert);
+    await waitFor(() => expect(errorToast).toHaveBeenCalledTimes(2));
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("asks for another code when this one ran out of attempts", async () => {

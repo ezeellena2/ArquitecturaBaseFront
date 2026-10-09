@@ -1,7 +1,7 @@
 # Contrato de mensajes y estados del front
 
 Fecha: **2026-09-30**. El criterio de interacción es vigente por pedido del usuario.
-El emisor, el clasificador y la fábrica de consultas están implementados; la migración de consumidores y sus controles de arquitectura están **pendientes**; su recorrido está
+El emisor, el clasificador, la fábrica de consultas y el límite de imports de Sonner están implementados. La revisión de recorridos específicos se registra
 en el [plan de adopción](../plans/2026-09-30-unificacion-mensajes.md). Este documento es la fuente
 única de este contrato, enlazada desde la arquitectura, las premisas y las instrucciones.
 
@@ -60,9 +60,9 @@ error al fallar un refetch. No confundir una carga fallida con una colección va
   junto al dato, al control o como estado del flujo; no se genera un popup en cada render.
   Los usos actuales de Banner se revisan por su significado; su existencia no autoriza usarlo
   para resultados de operaciones ni promover un `FormError` general a la biblioteca.
-- La futura API común de notificación será el único punto de acceso a Sonner para el código
-  consumidor. Hasta su implementación hay llamadas directas heredadas: no se declaran migradas
-  ni se multiplica ese patrón en pantallas nuevas. Su diseño técnico está en el plan.
+- `shared/ui/notifications.ts` ya implementa la API común de notificación y cierre. Los nuevos
+  consumidores la usan. La prueba AST de arquitectura sólo permite Sonner en el emisor y
+  el adaptador visual; no hay excepciones de features. El avance de cada recorrido está en el plan.
 
 ## Duración, cierre y acciones
 
@@ -166,3 +166,19 @@ solo encuentra el texto del error no demuestra que esté en el lugar correcto.
 La migración se cierra con el inventario completo, sin excepciones temporales, pruebas de
 arquitectura activas y `npm run build`, `npm run lint` y `npm run test` limpios. Ese cierre
 todavía no ocurrió: ver el [plan y el relevamiento de las pantallas](../plans/2026-09-30-unificacion-mensajes.md).
+
+## Controles implementados el 2026-10-03
+
+Los errores desconocidos y de red tienen dos reintentos como máximo (tres pedidos en total); HTTP y cancelación no se reintentan. QueryCache conserva datos anteriores, deduplica por queryHash y retira una acción al salir el último observador. Las tablas sólo reemplazan contenido si no hubo datos; incluso una colección vacía conocida cuenta como datos.
+
+Alta/edición de usuarios, roles y perfil notifican fallos generales conservando valores; los campos permanecen en sus controles. Una respuesta de campo después de cerrar el diálogo se notifica sin reabrirlo. El nombre guardado que impide reenviar una invitación no se presenta como campo del reenvío. Acceso y verificación comparten cancelación, error técnico y distinción de 401/403 públicos. El canje incierto de un enlace requiere una nueva vista previa antes de repetir.
+
+El único Toaster se aloja en un host manual de la capa superior del navegador dentro del Dialog activo. Conserva el foco modal, la ubicación global, anuncios y cierre por teclado sin otro Toaster. Las pruebas de escritorio y 320 px también conservan las capturas previas.
+
+Inicio asistido consume el mismo emisor, sin redefinir duraciones. Question inválida queda en
+FormField; GET fallido pertenece a QueryCache; aceptación/cancelación/borrado inciertos pertenecen
+a la acción. Un turno Failed/Uncertain durable conserva estado funcional y se anuncia una vez por
+actor/requestId/transición observada, sin una falsa respuesta de IA. 429 conserva borrador y
+cooldown común. 409 de revisión confirmada relee antes del siguiente envío explícito; red/5xx
+congelan UUID/body hasta consultar o repetirlo explícitamente. La salida elimina acciones privadas
+de avisos y descarta callbacks tardíos. Esta adopción no cierra pendientes de otras pantallas.

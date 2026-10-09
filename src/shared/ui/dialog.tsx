@@ -1,9 +1,9 @@
 import * as React from "react"
+import { registerNotificationHost } from "./notificationHost"
 import { cn } from "cn"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
-// Edición nuestra sobre el archivo generado: la CLI deja "Close" escrito en inglés, tanto en el texto que lee
-// un lector de pantalla como en el botón del pie. Es la única diferencia con lo que genera shadcn.
+// Preserve translations and the active modal's notification host when regenerating this primitive.
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/shared/ui/button"
@@ -41,7 +41,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -58,6 +58,13 @@ function DialogContent({
   showCloseButton?: boolean
 }) {
   const { t } = useTranslation()
+  const registerHost = React.useCallback((host: HTMLDivElement | null) => {
+    if (!host) return
+    // A manual top-layer host escapes the panel's transform/scroll while remaining in its focus scope.
+    host.showPopover?.()
+    const unregister = registerNotificationHost(host)
+    return () => { unregister(); if (host.isConnected) host.hidePopover?.() }
+  }, [])
 
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -65,12 +72,13 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100svh-2rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 rounded-[var(--radius-card)] border bg-background p-4 duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 motion-reduce:animate-none sm:max-w-lg",
           className
         )}
         {...props}
       >
         {children}
+        <div ref={registerHost} popover="manual" className="m-0 h-0 w-0 overflow-visible border-0 bg-transparent p-0 text-inherit" data-slot="notification-host" />
         {showCloseButton && (
           <ActionTooltip label={t("actions.close")}>
           <DialogPrimitive.Close

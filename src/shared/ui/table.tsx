@@ -20,16 +20,17 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("bg-[var(--color-surface-header)] [&_tr]:border-b [&_tr]:border-[var(--color-surface-header-border)] [&_tr]:bg-[var(--color-surface-header)] [&_tr:hover]:bg-[var(--color-surface-header)]", className)}
+      className={cn("bg-[var(--color-surface-header)] [&_tr]:h-[var(--height-table-header)] [&_tr]:border-b [&_tr]:border-[var(--color-surface-header-border)] [&_tr]:bg-[var(--color-surface-header)] [&_tr:hover]:bg-[var(--color-surface-header)]", className)}
       {...props}
     />
   )
 }
 
-function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+function TableBody({ className, striped = true, ...props }: React.ComponentProps<"tbody"> & { striped?: boolean }) {
   return (
     <tbody
       data-slot="table-body"
+      data-striped={striped}
       className={cn("[&_tr:last-child]:border-0", className)}
       {...props}
     />
@@ -49,12 +50,14 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   )
 }
 
-function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+function TableRow({ className, highlightExpanded = true, tone = "default", ...props }: React.ComponentProps<"tr"> & { highlightExpanded?: boolean; tone?: "default" | "section" }) {
   return (
     <tr
       data-slot="table-row"
+      data-tone={tone}
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
+        "h-[var(--height-table-row)] border-b border-[var(--color-border)]/50 transition-colors hover:bg-[var(--color-table-row-hover)] data-[state=selected]:bg-muted",
+        highlightExpanded && "has-aria-expanded:bg-muted/50",
         className
       )}
       {...props}
@@ -67,7 +70,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-8 px-3 text-left align-middle font-medium whitespace-nowrap text-[var(--color-content-heading)] [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "h-[var(--height-table-header)] px-4 text-left align-middle text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase whitespace-nowrap text-[var(--color-surface-header-foreground)] [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -80,7 +83,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "px-3 py-1.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "px-4 py-0.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -101,6 +104,10 @@ function TableCaption({
   )
 }
 
+function TableRowHeader({ className, ...props }: Omit<React.ComponentProps<"th">, "scope">) {
+  return <th {...props} scope="row" data-slot="table-row-header" className={cn("px-4 py-1.5 text-left align-middle text-sm font-normal", className)} />
+}
+
 export {
   Table,
   TableHeader,
@@ -110,4 +117,5 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  TableRowHeader,
 }

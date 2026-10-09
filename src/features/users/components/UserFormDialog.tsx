@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import { z } from "zod";
 import { createUser, usersQueryKeyRoot, type CreateUserBody, type InvitationChannel } from "../api/users";
 import { userFormErrors, type UserFormErrors, type UserFormField } from "../errors";
@@ -74,6 +74,8 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation("users");
   const queryClient = useQueryClient();
   const restoreFocus = useRestoreFocusOnClose();
+  const isMounted = useRef(true);
+  useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
 
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [errors, setErrors] = useState<UserFormErrors>({ fields: {} });
@@ -120,7 +122,7 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
   const mutation = useMutation({
     mutationFn: (body: CreateUserBody) => createUser(body),
     onSuccess: async () => {
-      toast.success(t("create.success"));
+      notify({ id: "features/users/components/UserFormDialog:1", kind: "success", message: t("create.success") });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
         // El alta/edición/borrado cambia el `userCount` de los roles: sin esto, /roles muestra el conteo
@@ -129,7 +131,11 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
       ]);
       onClose();
     },
-    onError: (error) => setErrors(userFormErrors(error, t, visibleFields)),
+    onError: (error) => {
+      const next = userFormErrors(error, t, isMounted.current ? visibleFields : []);
+      setErrors({ fields: next.fields });
+      if (next.form) notify({ id: "users:create:error", kind: "error", message: next.form });
+    },
   });
 
   function submit() {
@@ -276,12 +282,6 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
               </div>
             ) : null}
           </div>
-
-          {errors.form ? (
-            <p role="alert" className="text-sm text-[var(--color-danger)]">
-              {errors.form}
-            </p>
-          ) : null}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

@@ -8,7 +8,10 @@ import {
   TriangleAlertIcon,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { Toaster as Sonner } from "sonner"
+import { useSyncExternalStore } from "react"
+import { createPortal } from "react-dom"
+import { notificationHost, subscribeNotificationHost } from "./notificationHost"
 
 // Ediciones nuestras sobre el archivo generado; son las únicas diferencias con lo que genera shadcn:
 // - El tema. La CLI lo ata al del sistema con `useTheme` de next-themes, pero la app tiene un solo tema, el claro,
@@ -16,18 +19,19 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 //   `--popover` y la descripción quedaba en un gris casi blanco. `sonner.theme.test.tsx` se pone en rojo si vuelve.
 // - Los textos que sonner trae en inglés y lee un lector de pantalla: el nombre de la región de los avisos
 //   ("Notifications alt+T"; el atajo lo agrega él) y el del botón de cerrar un aviso ("Close toast").
-//   `toastOptions` se mezcla en vez de pisarse, para que pasar otras opciones no se lleve la traducción.
+//   El adaptador no recibe props de apariencia: sus consumidores no cambian posición, tema ni traducciones.
 //   `sonner.i18n.test.tsx` se pone en rojo si vuelven.
 // - La ubicación aprobada es abajo a la derecha, definida acá para toda la plantilla.
-const Toaster = ({ toastOptions, ...props }: ToasterProps) => {
+const Toaster = () => {
   const { t } = useTranslation()
+  const host = useSyncExternalStore(subscribeNotificationHost, notificationHost, () => null)
 
-  return (
+  const toaster = (
     <Sonner
       theme="light"
       position="bottom-right"
       containerAriaLabel={t("notifications.label")}
-      toastOptions={{ closeButtonAriaLabel: t("notifications.close"), ...toastOptions }}
+      toastOptions={{ closeButtonAriaLabel: t("notifications.close") }}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
@@ -44,9 +48,9 @@ const Toaster = ({ toastOptions, ...props }: ToasterProps) => {
           "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }
-      {...props}
     />
   )
+  return host ? createPortal(toaster, host) : toaster
 }
 
 export { Toaster }

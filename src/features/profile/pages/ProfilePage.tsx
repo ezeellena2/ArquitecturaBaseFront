@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import { LoginMethodsCard } from "../components/LoginMethodsCard";
-import { ProfileSection } from "../components/ProfileSection";
+import { Surface } from "@/shared/ui/Surface";
 import { currentUserQueryKey, useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
+import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { displayNameMaxLength } from "@/shared/api/accountRules";
 import { updateProfile } from "@/shared/api/profile";
 import { isSupportedLanguage, supportedLanguages, type SupportedLanguage } from "@/shared/i18n";
@@ -66,11 +67,15 @@ export function ProfilePage() {
         timeZoneId: values.timeZoneId,
       }),
     onSuccess: async () => {
-      toast.success(t("feedback.saved"));
+      notify({ id: "features/profile/pages/ProfilePage:1", kind: "success", message: t("feedback.saved") });
       // El perfil lo usa medio front (el menú, la barra lateral, las fechas de los listados). Y si cambió el
       // idioma, es esta consulta la que lo aplica: `useProfileLanguageSync` mira el `culture` que llegue acá.
       // Por eso la pantalla no toca i18next por su cuenta: el idioma de la cuenta se aplica en un solo lugar.
       await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
+    },
+    onError: (error) => {
+      const feedback = errorFeedback(error, { fields: ["displayName", "culture", "timeZoneId"] });
+      if (feedback.kind !== "fields" && feedback.kind !== "cancelled") notify({ id: "profile:save:error", kind: "error", message: operationalErrorMessage(error, t) });
     },
   });
 
@@ -106,15 +111,15 @@ export function ProfilePage() {
             editar: de ese error se ocupa el aviso global del queryClient, igual que en el tablero. */}
         {isPending ? (
           <div className={surfacesClassName}>
-            <div className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <Surface padded>
               <Skeleton aria-hidden="true" className="h-14" />
               <Skeleton aria-hidden="true" className="h-14" />
-            </div>
-            <div className="flex flex-col gap-4 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            </Surface>
+            <Surface padded>
               <Skeleton aria-hidden="true" className="h-14" />
               <Skeleton aria-hidden="true" className="h-14" />
               <Skeleton aria-hidden="true" className="h-14" />
-            </div>
+            </Surface>
           </div>
         ) : null}
       </Page>
@@ -123,20 +128,13 @@ export function ProfilePage() {
 
   const apiError = mutation.error instanceof ApiError ? mutation.error : undefined;
   const fieldErrors = apiError?.errors;
-  // Lo que el backend no le atribuyó a ningún campo va arriba del botón; lo que sí, debajo de su campo.
-  const formError =
-    mutation.isError && !fieldErrors
-      ? apiError?.isNetworkError
-        ? t("common:errors.network")
-        : (apiError?.detail ?? t("common:states.error"))
-      : undefined;
 
   return (
     <Page title={t("title")}>
       <div className={surfacesClassName}>
         <LoginMethodsCard user={user} />
 
-        <ProfileSection title={t("sections.details")}>
+        <Surface title={t("sections.details")}>
           <form
             noValidate
             className="flex flex-col"
@@ -206,11 +204,6 @@ export function ProfilePage() {
                 </NativeSelect>
               </FormField>
 
-              {formError ? (
-                <p role="alert" className="text-sm text-[var(--color-danger)]">
-                  {formError}
-                </p>
-              ) : null}
             </div>
 
             {/* El pie de la superficie, como el de un diálogo: el botón a la derecha, separado de los campos. */}
@@ -220,7 +213,7 @@ export function ProfilePage() {
               </Button>
             </div>
           </form>
-        </ProfileSection>
+        </Surface>
       </div>
     </Page>
   );

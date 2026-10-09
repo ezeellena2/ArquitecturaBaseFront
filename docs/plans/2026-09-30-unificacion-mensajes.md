@@ -1,6 +1,6 @@
 # Unificación de mensajes del front
 
-Fecha: **2026-09-30**. Estado: **adopción parcial: mecanismo común y configuración implementados; migración transversal pendiente**.
+Fecha: **2026-09-30**. Estado: **adopción transversal del emisor implementada; revisión de recuperaciones específicas pendiente**.
 El usuario pidió establecer un criterio transversal como en el backend y mantener el orden
 diseño → plan → desarrollo. El [contrato de mensajes y estados](../guides/mensajes-y-estados.md)
 fija la interacción; este plan propone el mecanismo técnico, releva desvíos y define el cierre.
@@ -41,14 +41,14 @@ no crear otra familia de avisos ni implementar primero para diseñar después.
 
 ## Inventario auditado
 
-Relevamiento sobre el árbol de trabajo del 2026-09-30. Los archivos tienen otros cambios en
-curso: al comenzar cada etapa hay que confirmar la situación actual sin sobrescribirlos.
-Las filas describen el código existente, no una migración ya realizada.
+Relevamiento del 2026-09-30, actualizado después de Configuración y de la auditoría documental.
+Al comenzar cada etapa hay que confirmar el código y `git status` sin sobrescribir cambios de
+otras sesiones. Las filas distinguen lo ya implementado del trabajo de adopción que sigue abierto.
 
 | Superficie o mecanismo | Situación encontrada | Trabajo de unificación |
 | --- | --- | --- |
-| AppProviders / sonner.tsx | Un Toaster global con bottom-right; admite props que pueden sobrescribir defaults; sin cierre y duración comunes por severidad | Sellar configuración y usar el emisor común |
-| QueryCache | Avisa errores de consultas no silent; sin id estable ni ciclo común; red ofrece reintento con duración por defecto | Emisor común, deduplicación y acciones con contexto |
+| AppProviders / sonner.tsx | Un Toaster global bottom-right; el emisor `notifications.ts` define cierre/duración; el adaptador ya no admite props de apariencia y arquitectura verifica su montaje único | Migrar consumidores restantes al emisor y verificar límites de imports |
+| QueryCache | `createQueryClient` usa el emisor e id por queryHash; conserva compatibilidad silent/errorOwner local y acción de red | Completar pruebas transversales de deduplicación, montaje doble, retries y retiro de acciones |
 | httpClient / ApiError | Transporte común; convierte ProblemDetails y coordina sesión | Conservar el límite; no agregar avisos al transporte |
 | FormField / CheckboxField / RadioGroupField / PhoneField | Piezas para errores de campo | Conservar asociación accesible y comprobar que no se notifica dos veces |
 | OtpInput | Permite invalid y descripción accesible; los consumidores dibujan distintos errores y estados fuera del grupo | Unificar error de grupo y ayuda/estado de código con los mismos consumidores |
@@ -61,7 +61,7 @@ Las filas describen el código existente, no una migración ya realizada.
 | `/perfil`: datos | Éxito por toast; error general inline; si falla la primera carga puede quedar solo la cabecera | Unificar fallo general y recuperación sin formulario; no borrar valores tras refetch |
 | Perfil: desvincular | Toast directo y nueva lectura ante último medio de ingreso | Conservar regla del último medio; usar emisor/fallback comunes |
 | VerifyDestinationDialog | Pedido/reenvío/verificación mezclan error general inline, Banner y estados del código | Compartir política con acceso; conservar campos, destino ocupado, intentos y bloqueos |
-| `/configuracion` existente | Toast directo en mutación; lectura repite causa en EmptyState y QueryCache | Adoptar mecanismo común antes de extender ajustes; no implementar el diseño nuevo en esta etapa |
+| `/configuracion` y `/configuracion/apariencia` | Migrado: emisor común, errores de campo/grupo, dueño local, borrador y Revisar ante escritura incierta; las cuatro URLs anteriores redirigen a General | Conservar evidencia de Settings y Appearance; no repetir su implementación ni dar por migradas las demás pantallas |
 | `/login`, `/registro`: correo/WhatsApp/Google | `formError` y notice dentro del formulario; algunos fallos de carga se manejan silent | Campo donde corresponde; fallo operativo/redirect una sola notificación; registro cerrado como estado |
 | `/login/codigo`, `/registro/codigo` | Una superficie inline mezcla código incorrecto, rechazo general, espera y cuenta bloqueada | Separar campo/grupo, estado terminal y aviso, conservando intención ingreso/registro |
 | `/ingresar`, callback | Fallos recuperables y estados terminales propios, consultas silent | Conservar los estados terminales; aplicar el canal común solo al fallo operativo |
@@ -69,10 +69,10 @@ Las filas describen el código existente, no una migración ya realizada.
 | Guard de permisos / lectura de `/api/me` | Recuperación y QueryCache pueden repetir causa | Estado de acceso/carga más dueño único; mantener renovación y 401/403 |
 | Cambiar idioma / cerrar sesión | Toast directo con fallo propio | Emisor común sin modificar restauración de idioma ni revocación de sesión |
 | `/sin-permiso`, ruta inexistente, bienvenida pública | Son estados de navegación/oferta, no resultados de una mutación | Mantener estados; revisar carga de medios y no agregar avisos repetidos |
-| Arnés `renderWithProviders` | QueryClient aislado anidado sin los callbacks del QueryCache productivo | Usar la misma fábrica de cliente; aislar caché/desactivar retries sin quitar la política |
+| Arnés `renderWithProviders` | Ya usa `createQueryClient` y conserva callbacks del QueryCache productivo | Mantener aislamiento y verificar los casos transversales que faltan |
 | Tests actuales | Cubren muchos textos y reglas; no hay límite de imports de Sonner ni prueba transversal de todos los canales | Pruebas de arquitectura y recorridos; revisar assertions del criterio anterior |
 
-## Mecanismo técnico propuesto
+## Mecanismo implementado y ampliación pendiente
 
 No introduce otro transporte, librería de notificaciones o framework de formularios.
 
@@ -91,8 +91,11 @@ No introduce otro transporte, librería de notificaciones o framework de formula
 - **Piezas de campo, grupo y estado existentes**: cubrir el grupo OTP y la recuperación con
   las piezas comunes. No promover un FormError genérico ni copiar un nuevo párrafo por feature.
 
-Los nombres son una propuesta de implementación; se confirma su API mínima con los primeros
-consumidores en TDD. La ubicación, canales y obligaciones del contrato no dependen de esos nombres.
+`errorFeedback`, `notify`/`dismissNotification`, el adaptador y `createQueryClient` ya existen.
+El clasificador distingue sesión, permiso, conflicto, campos visibles y escritura incierta;
+todavía no clasifica cancelación ni una espera 429 como estados propios. QueryCache omite
+`silent` y `errorOwner="local"`, no notifica 401/403 y usa un id basado en `queryHash`.
+Estas implementaciones parciales no cierran todos los casos de la lista de verificación.
 
 ## Etapas y verificación
 
@@ -104,14 +107,19 @@ consumidores en TDD. La ubicación, canales y obligaciones del contrato no depen
 
 ### 2. Crear el mecanismo y los controles con tests en rojo primero
 
+**Parcialmente implementada.** `errorFeedback.test.ts` comprueba campos visibles/desconocidos,
+sesión, permiso, conflicto y escritura incierta. Settings prueba el canal de sus resultados.
+Las casillas siguientes requieren cobertura completa, no solo que los archivos existan.
+
 - [ ] Clasificador puro: campos visibles/desconocidos, red, 5xx con traceId, negocio, cancelación
   y códigos del ingreso público sin confundirlos con la sesión autenticada.
 - [ ] Emisor común: cuatro tipos, duraciones, cierre, persistencia con acción, id estable y
   retiro de una acción que dejó de ser válida. Probar con reloj controlado.
 - [ ] Fábrica QueryClient: un aviso con dos observadores, retries, silent local y montaje doble;
   mismo comportamiento en el arnés y en la app.
-- [ ] Pruebas de arquitectura dentro de `src/test/architecture/`: un Toaster en providers,
-  import de Toaster/uso de toast de Sonner solo en los adaptadores y consumidor del emisor común.
+- [x] Arquitectura visual: un Toaster productivo en providers; adaptador sin props de apariencia.
+- [ ] Completar límites de imports de Toaster/uso de toast de Sonner solo en los adaptadores
+  y consumidor del emisor común, después de migrar consumidores heredados.
   Analizar imports/JSX con TypeScript, no prohibir indiscriminadamente todo role=alert.
 - [ ] Mientras se migra, registrar excepciones temporales **por archivo auditado** en el test,
   con la etapa que las elimina; una ruta nueva no entra en esa lista. No excluir features enteras
@@ -119,7 +127,8 @@ consumidores en TDD. La ubicación, canales y obligaciones del contrato no depen
 
 ### 3. Migrar administración y perfil
 
-- [ ] Listados/acciones de usuarios y roles, configuración existente, idioma y cierre de sesión.
+- [x] Configuración general y Apariencia migradas al mecanismo común, con pruebas de canal, campos, borrador, conflicto, 500 después de commit y resultado tardío.
+- [ ] Listados/acciones de usuarios y roles, idioma y cierre de sesión.
 - [ ] Alta/edición de usuarios y roles: general al toast; fields al control; un dueño ante navegación
   o cierre mientras llega la respuesta; borrar su excepción temporal.
 - [ ] Perfil, detalle de usuario y fallos de carga/refetch: distinguir datos previos y carga inicial.
@@ -164,8 +173,9 @@ de esos checks acredita controles de mensajes que aún no se implementaron.
 - `git diff --check` para los archivos editados y revisión de espacios en los dos documentos nuevos: limpios.
 - `npm run build` y `npm run lint`: correctos; `npm run test`: 68 archivos y 700 tests correctos.
 
-Estos resultados corresponden a la etapa de diseño y plan. Las casillas de implementación
-siguen pendientes; los tests actuales en verde no prueban la nueva política transversal.
+Estos resultados corresponden a la etapa inicial de diseño y plan. El avance posterior se
+registra abajo; esta cifra histórica no es el resultado de la suite actual ni acredita
+la nueva política transversal en todos los consumidores.
 
 
 ## Avance de configuración (2026-09-30)
@@ -177,6 +187,20 @@ Los tests de Settings cubren canal único, campos, borrador, conflicto, 500 desp
 permisos revocados, navegación y resultado tardío. Las capturas están en visual-baseline.md.
 
 El inventario anterior describe el punto de partida: Configuración ya migró. Continúan
-pendientes los otros consumidores, 429 centralizado, recuperación de cada flujo, sellado del
-adaptador y controles de arquitectura para impedir imports directos de Sonner. meta.silent
+pendientes los otros consumidores, 429 centralizado, recuperación de cada flujo y controles
+de arquitectura para impedir imports directos de Sonner. El adaptador ya está sellado sin props
+y el montaje único está verificado por arquitectura visual. meta.silent
 se conserva solo por compatibilidad con consumidores auditados pendientes de migración.
+
+La reconciliación del **2026-10-02** confirmó este estado leyendo emisor, clasificador,
+QueryClient, consumidores y tests. No se implementó la migración pendiente en esta auditoría.
+
+## Avance transversal (2026-10-03)
+
+Todos los consumidores operativos pasan por notifications.ts. El límite de imports se verifica con TypeScript AST, sin excepciones de features. Se centralizan las cuatro duraciones, cierre y persistencia de acciones. El clasificador cubre cancelación, espera y 401/403 de acceso público. QueryCache prueba dos observadores, un aviso, límites de retries y retiro de acciones; el transporte conserva AbortError.
+
+Usuarios/roles mantienen filas conocidas ante refetch fallido. Alta/edición de usuarios y roles y guardado de perfil conservan valores, campos visibles y un solo aviso general; cerrar un diálogo no pierde un rechazo tardío. Reenvío conserva consentimiento/espera y notifica el nombre guardado que no pertenece al panel. Acceso y VerifyDestinationDialog comparten fallback técnico; el enlace incierto consulta la vista previa antes de repetir el canje.
+
+Dialog aloja el único Toaster dentro de su foco mediante un host de capa superior. Chromium comprueba anuncio accesible, borrador y cierre por teclado en escritorio/320 px; las capturas anteriores se mantienen. CI ejecuta Playwright en Windows y exige la misma revisión del front para empaquetar.
+
+Este avance cierra la migración del emisor, los límites de imports y los defectos operativos identificados en la auditoría. Se conserva el plan porque sus casillas incluyen una revisión más amplia de recuperación incierta en cada flujo de códigos y de redirects: pasar los tests actuales no se presenta como evidencia de escenarios todavía no implementados.

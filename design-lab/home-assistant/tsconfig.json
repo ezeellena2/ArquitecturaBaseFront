@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.app.json",
+  "compilerOptions": { "tsBuildInfoFile": "../../node_modules/.tmp/home-assistant-proposal.tsbuildinfo" },
+  "include": ["./*.tsx", "./*.ts"]
+}

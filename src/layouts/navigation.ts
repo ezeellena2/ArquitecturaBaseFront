@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { HomeIcon, SettingsIcon, ShieldIcon, UsersIcon } from "@/shared/ui/icons";
+import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon } from "@/shared/ui/icons";
 
 interface NavigationEntry {
   /// Clave del texto en el namespace common (navigation.*).
@@ -10,6 +10,7 @@ interface NavigationEntry {
 /// Un enlace del menú: lleva a una ruta y, si declara permiso, se muestra solo a quien lo tenga.
 export interface NavigationLink extends NavigationEntry {
   to: string;
+  exact?: boolean;
   permission?: string;
 }
 
@@ -63,17 +64,26 @@ export const administration: NavigationPanel = {
       ],
     },
     { labelKey: "navigation.settings", icon: SettingsIcon, children: [
-      { labelKey: "navigation.settingsLanguage", to: "/configuracion/idioma", icon: SettingsIcon, permission: "settings.manage" },
-      { labelKey: "navigation.settingsTimeZone", to: "/configuracion/zona-horaria", icon: SettingsIcon, permission: "settings.manage" },
-      { labelKey: "navigation.settingsLists", to: "/configuracion/listados", icon: SettingsIcon, permission: "settings.manage" },
-      { labelKey: "navigation.settingsRegistration", to: "/configuracion/registro", icon: SettingsIcon, permission: "settings.manage" },
+      { labelKey: "navigation.settingsGeneral", to: "/configuracion", exact: true, icon: PreferencesIcon, permission: "settings.manage" },
+      { labelKey: "navigation.appearance", to: "/configuracion/apariencia", icon: PaletteIcon, permission: "settings.manage" },
+      { labelKey: "navigation.ai", to: "/configuracion/ia", icon: PreferencesIcon, permission: "ai.read" },
+      { labelKey: "navigation.businessInformation", to: "/configuracion/negocio", icon: PreferencesIcon, permission: "ai.business.read" },
     ] },
   ],
 };
 
 /// Todos los ítems que el menú puede mostrar, los del panel incluidos. El panel es otra forma de mostrarlos,
 /// no otro árbol: las migas y la ruta activa no tienen por qué saber dónde está dibujado cada uno.
-const allItems: NavigationItem[] = [...navigation.flatMap((group) => group.items), ...administration.items];
+export const whatsapp: NavigationPanel = {
+  labelKey: "navigation.whatsapp", icon: PublicWhatsAppIcon,
+  items: [{ labelKey: "navigation.whatsappChat", to: "/whatsapp/chat", icon: PublicWhatsAppIcon, permission: "whatsapp.read" }],
+};
+export function isWhatsAppPath(pathname: string): boolean {
+  const path = withoutTrailingSlash(pathname);
+  return linksOf(whatsapp.items).some(link => leadsTo(path, link));
+}
+
+const allItems: NavigationItem[] = [...navigation.flatMap((group) => group.items), ...administration.items, ...whatsapp.items];
 
 /// Todos los enlaces del menú, sin los grupos. Lo usan las migas y cualquiera que busque una ruta: agrupar
 /// en el menú no anida las URLs, así que la ruta activa, o su padre, está siempre en esta lista plana.
@@ -95,7 +105,7 @@ function isChildOf(pathname: string, to: string): boolean {
 
 /// Si una ruta es de alguna pantalla del enlace: la suya o una hija.
 function leadsTo(pathname: string, link: NavigationLink): boolean {
-  return link.to === pathname || isChildOf(pathname, link.to);
+  return link.to === pathname || (!link.exact && isChildOf(pathname, link.to));
 }
 
 /// El enlace del menú del que cuelga una ruta hija, como la pantalla de un rol: el menú no la lista, pero
@@ -103,7 +113,7 @@ function leadsTo(pathname: string, link: NavigationLink): boolean {
 export function parentLinkOf(pathname: string): NavigationLink | undefined {
   const path = withoutTrailingSlash(pathname);
 
-  return navigationLinks.find((link) => isChildOf(path, link.to));
+  return navigationLinks.find((link) => !link.exact && isChildOf(path, link.to));
 }
 
 /// El grupo al que pertenece una ruta, si está adentro de uno. Es el nivel del medio de las migas. Vale

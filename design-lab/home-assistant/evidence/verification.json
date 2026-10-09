@@ -1,0 +1,535 @@
+{
+  "states": 48,
+  "interactions": "draft, submit, sources, history, cancel delete, recovery",
+  "pageErrors": [],
+  "checks": [
+    {
+      "lang": "es",
+      "width": 1440,
+      "scene": "empty",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "scene": "answer",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "scene": "loading",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "scene": "paused",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "scene": "missing",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "scene": "denied",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "scene": "uncertain",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "es",
+      "width": 1440,
+      "scene": "failure",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "scene": "empty",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "scene": "answer",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "scene": "loading",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "scene": "paused",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "scene": "missing",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "scene": "denied",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "scene": "uncertain",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "es",
+      "width": 390,
+      "scene": "failure",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "scene": "empty",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "scene": "answer",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "scene": "loading",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "scene": "paused",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "scene": "missing",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "scene": "denied",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "scene": "uncertain",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "es",
+      "width": 320,
+      "scene": "failure",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "scene": "empty",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "scene": "answer",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "scene": "loading",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "scene": "paused",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "scene": "missing",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "scene": "denied",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "scene": "uncertain",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "scene": "failure",
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "mainScroll": 1220,
+        "mainWidth": 1220
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "scene": "empty",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "scene": "answer",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "scene": "loading",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "scene": "paused",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "scene": "missing",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "scene": "denied",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "scene": "uncertain",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "scene": "failure",
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "mainScroll": 390,
+        "mainWidth": 390
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "scene": "empty",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "scene": "answer",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "scene": "loading",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "scene": "paused",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "scene": "missing",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "scene": "denied",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "scene": "uncertain",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "scene": "failure",
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "mainScroll": 320,
+        "mainWidth": 320
+      }
+    }
+  ]
+}

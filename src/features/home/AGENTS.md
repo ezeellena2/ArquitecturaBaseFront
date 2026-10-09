@@ -1,6 +1,6 @@
 # Home: inicio autenticado
 
-`DashboardPage` muestra el inicio para quien tiene sesión. La bienvenida pública vive en `features/auth` y la elección se compone en las rutas.
+`DashboardPage` conserva el inicio base cuando IA no está instalada o falta ai.assistant.use. La bienvenida pública vive en `features/auth`; app/AuthenticatedHome compone el inicio privado sin imports entre features.
 
 ## Al modificar
 

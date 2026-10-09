@@ -1,0 +1,9 @@
+{
+  "name": "home-assistant-chosen-board",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../../node_modules/vite/bin/vite.js --config vite.config.mjs",
+    "build": "node ../../../node_modules/vite/bin/vite.js build --config vite.config.mjs"
+  }
+}

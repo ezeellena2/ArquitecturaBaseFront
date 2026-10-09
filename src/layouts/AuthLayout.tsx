@@ -18,23 +18,29 @@ export function AuthLayout({ children }: { children?: ReactNode }) {
   const query = returnUrl ? `?${new URLSearchParams({ returnUrl })}` : "";
 
   return (
-    <div className="access-shell">
+    <div className={home ? "access-shell access-home" : "access-shell"}>
       <PublicPresentationDefaults />
       <header className="access-header topbar-surface">
-        <nav aria-label={t("access.navigation")}>
-          {home || registration ? <Button asChild variant="ghost"><Link to={`/login${query}`}>{t("access.signIn")}</Link></Button> : null}
-          {methods?.registrationOpen && !registration ? <Button asChild variant="outline"><Link to={`/registro${query}`}>{t("access.register")}</Link></Button> : null}
-        </nav>
+        <div className="access-header-inner">
+          {home ? <Link to="/" className="access-brand"><span aria-hidden="true">{t("landing.brand").charAt(0)}</span>{t("landing.brand")}</Link> : null}
+          <nav aria-label={t("access.navigation")}>
+            {home || registration ? <Button asChild variant="ghost"><Link to={`/login${query}`}>{t("access.signIn")}</Link></Button> : null}
+            {methods?.registrationOpen && !registration ? <Button asChild variant="outline"><Link to={`/registro${query}`}>{t("access.register")}</Link></Button> : null}
+          </nav>
+        </div>
       </header>
       <main className={home ? "access-main" : "access-main access-form-main"}>
         {home ? children : <div className="access-form">{children ?? <Outlet />}</div>}
       </main>
       <footer className="access-footer">
-        <div role="group" aria-label={t("common:language.label")}>
-          {supportedLanguages.map((language) => (
-            <button key={language} type="button" aria-pressed={i18n.language === language}
-              onClick={() => void changePublicLanguage(language)}>{t(`common:language.${language}`)}</button>
-          ))}
+        <div className="access-footer-inner">
+          {home ? <small className="access-copyright">{t("landing.copyright", { year: new Date().getFullYear() })}</small> : null}
+          <div role="group" className="access-languages" aria-label={t("common:language.label")}>
+            {supportedLanguages.map((language) => (
+              <button key={language} type="button" aria-pressed={i18n.language === language}
+                onClick={() => void changePublicLanguage(language)}>{t(`common:language.${language}`)}</button>
+            ))}
+          </div>
         </div>
       </footer>
     </div>

@@ -13,6 +13,7 @@ interface ConfirmDialogProps {
   /// ("Seguir editando"): "Cancelar" frente a "Descartar" no dice si se cancela la salida o los cambios.
   cancelLabel?: string;
   destructive?: boolean;
+  actionSize?: "default" | "touch";
   onConfirm: () => void;
 }
 
@@ -25,6 +26,7 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   destructive,
+  actionSize = "default",
   onConfirm,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
@@ -40,10 +42,11 @@ export function ConfirmDialog({
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button size={actionSize} type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {cancelLabel ?? t("actions.cancel")}
           </Button>
           <Button
+            size={actionSize}
             type="button"
             variant={destructive ? "destructive" : "default"}
             onClick={() => {

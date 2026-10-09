@@ -1,6 +1,9 @@
 # Mapa de instrucciones del front
 
-Relevamiento del 2026-09-30. Hay **22 ámbitos** con `AGENTS.md` y su `CLAUDE.md`. Cada enlace abre la guía del ámbito; el archivo de Claude importa esa misma fuente con `@AGENTS.md`.
+El catálogo de IA del 2026-10-04 amplía `src/features/artificial-intelligence`: modelos por
+proveedor/clave/revisión sólo en el editor, con NativeSelect, entrada manual y prueba separada.
+
+Relevamiento del 2026-10-02. Hay **27 ámbitos** con `AGENTS.md` y su `CLAUDE.md`, incluidos el laboratorio de chat y el workflow de despliegue conjunto. Las propuestas de colores para campo y contraste de mensajes se retiraron al integrar sus elecciones. Cada enlace abre la guía del ámbito; el archivo de Claude importa esa misma fuente con `@AGENTS.md`.
 
 ## Cómo entrar a un desarrollo
 
@@ -17,29 +20,50 @@ vigente de la migración y los controles automáticos pendientes.
 | Ámbito | Para qué sirve |
 |---|---|
 | [`./`](../AGENTS.md) | Reglas generales del front, lectura previa y entrada a las guías canónicas. |
-| [`docs/`](AGENTS.md) | `architecture.md` conserva las reglas canónicas del front; `guides/premisas-de-desarrollo.md`, las premisas de todas las pantallas; `design/visual-baseline.md`, decisiones visuales aprobadas y procedencia; `mapa-de-instrucciones.md`, puntos de entrada por carpeta. |
+| [`.github/workflows/`](../.github/workflows/AGENTS.md) | Solicita el despliegue conjunto al backend; limita el token entre repositorios y distingue solicitud de publicación completada. |
+| [`docs/`](AGENTS.md) | Arquitectura del front, premisas de pantallas, contrato de mensajes, fundamento visual, planes de adopción y mapa local. Sigue la auditoría compartida del backend para consolidar decisiones y retirar planes cumplidos. |
+| [`design-lab/whatsapp-chat/`](../design-lab/whatsapp-chat/AGENTS.md) | Maquetas pendientes de IA asistida, contactos, plantillas, conexión y permisos con datos ficticios. El editor del negocio y su evolución guiada se promovieron al producto; `?screen=negocio-guiado` redirige al catálogo de la página real, con datos simulados. Fuentes previas preservadas como referencia, sin importarlas en producto. [Diseño y evidencia](design/informacion-del-negocio-guiada.md). Fuera del build productivo. |
+| [`design-lab/whatsapp-chat/libraries/`](../design-lab/whatsapp-chat/libraries/AGENTS.md) | Tercera ronda: WhatsAppChatPage real y sólo formas Actuales/Redondeadas, misma paleta y controles, datos en memoria. Las dos rondas de bibliotecas se rechazaron y quedan como procedencia; aviso original de Syncfusion visible en su entrada. Dependencias propias, fuera del router/build productivos. [Maquetas y límites](design/whatsapp-bibliotecas-propuesta.md). |
 | [`src/`](../src/AGENTS.md) | `app` compone la aplicación; `auth` maneja sesión y permisos; `layouts` contiene el caparazón; `features` agrupa producto; `shared` comparte mecanismos y UI; `locales` traduce; `test` contiene el arnés. |
-| [`src/app/`](../src/app/AGENTS.md) | Monta providers, router y árbol de rutas. |
+| [`src/app/`](../src/app/AGENTS.md) | Monta providers, router y árbol de rutas; RouterProvider de DOM confirma la salida voluntaria a login. |
 | [`src/auth/`](../src/auth/AGENTS.md) | Contiene configuración y proveedor OIDC, sesión actual, renovación, guards, permisos, nombre de cuenta y preferencia de idioma. |
 | [`src/features/`](../src/features/AGENTS.md) | Cada área contiene páginas, componentes, API y errores propios. |
-| [`src/features/auth/`](../src/features/auth/AGENTS.md) | Muestra bienvenida pública, ingreso, registro, código, enlace de un solo uso y callback. |
-| [`src/features/errors/`](../src/features/errors/AGENTS.md) | Contiene pantallas de sin permiso y ruta inexistente. |
-| [`src/features/home/`](../src/features/home/AGENTS.md) | `DashboardPage` muestra el inicio para quien tiene sesión. |
+| [`src/features/auth/`](../src/features/auth/AGENTS.md) | Compone la landing pública aprobada con PublicLanding, ingreso, registro, código, enlace de un solo uso y callback. |
+| [`src/features/errors/`](../src/features/errors/AGENTS.md) | Contiene la página de ruta inexistente; falta de permiso es compartida en shared/ui/ForbiddenPage. |
+| [`src/features/home/`](../src/features/home/AGENTS.md) | `DashboardPage` conserva el inicio base; app/AuthenticatedHome compone el asistente según módulo/permisos. |
 | [`src/features/profile/`](../src/features/profile/AGENTS.md) | Muestra medios de ingreso y datos del perfil. |
-| [`src/features/roles/`](../src/features/roles/AGENTS.md) | Contiene catálogo/listado, alta y edición en ruta propia y selector de permisos por área. |
+| [`src/features/roles/`](../src/features/roles/AGENTS.md) | Contiene catálogo/listado, alta y edición en ruta propia y selector de permisos por área. El botón global abre/pliega áreas del catálogo sin modificar selección, incluso en Admin y con filtros. |
 | [`src/features/settings/`](../src/features/settings/AGENTS.md) | Muestra y modifica los ajustes funcionales publicados por el backend. |
 | [`src/features/users/`](../src/features/users/AGENTS.md) | Muestra listado, filtros y conteos, alta, edición de roles, estado de medios de ingreso e invitaciones. |
-| [`src/layouts/`](../src/layouts/AGENTS.md) | Define layouts de acceso, inicio y aplicación autenticada, además de barra, menú, sidebar y migas. |
+| [`src/features/whatsapp/`](../src/features/whatsapp/AGENTS.md) | Chat productivo: API, queries/lectura, acciones y viewport separados; adaptador puro de línea de tiempo por instante/día local y metadata segura de acceso, UI común, borradores y envío/revisión seguros. |
+| [`src/layouts/`](../src/layouts/AGENTS.md) | Define layouts, barra, menú, sidebar y migas; conserva la transición del cierre hasta confirmar login, sin arrastrar la ruta privada a otra cuenta. |
 | [`src/locales/`](../src/locales/AGENTS.md) | Los JSON de `es` y `en` comparten un namespace por módulo. |
 | [`src/shared/`](../src/shared/AGENTS.md) | Contiene cliente y contratos HTTP comunes, hooks, utilidades, i18n y sistema de UI. |
 | [`src/shared/api/`](../src/shared/api/AGENTS.md) | `httpClient` agrega token e idioma, coordina renovación y transforma ProblemDetails en `ApiError`. |
 | [`src/shared/hooks/`](../src/shared/hooks/AGENTS.md) | Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva y guardas de salida. |
 | [`src/shared/i18n/`](../src/shared/i18n/AGENTS.md) | Configura i18next, carga namespaces y aplica idioma, preferencia local y `lang` del documento. |
-| [`src/shared/lib/`](../src/shared/lib/AGENTS.md) | Contiene formato de fechas por zona, nombres de países y `cn`. |
-| [`src/shared/ui/`](../src/shared/ui/AGENTS.md) | Reúne primitivas generadas por shadcn y componentes propios de formularios, tablas, diálogos, navegación y presentación. |
+| [`src/shared/lib/`](../src/shared/lib/AGENTS.md) | Contiene formato de fechas por zona, nombres de países, `cn` y derivación de apariencia con contraste. |
+| [`src/shared/ui/`](../src/shared/ui/AGENTS.md) | Reúne primitivas generadas por shadcn y componentes propios de formularios, tablas, diálogos, navegación y presentación. Delimita zonas con Surface/FilterBar y define el alternado común de filas. |
+| [`src/shared/ui/assistant/`](../src/shared/ui/assistant/AGENTS.md) | Primitivas assistant-ui con UI común; no conoce API/sesión/features. Hilo, compositor y mensajes confirmados aportados por la feature. |
 | [`src/test/`](../src/test/AGENTS.md) | `setup.ts` prepara Vitest/jsdom y MSW; `mocks` contiene servidor y contratos simulados; `utils` renderiza con providers y router de la app. |
+| [`src/test/architecture/`](../src/test/architecture/AGENTS.md) | Verifica con TypeScript independencia entre features y de shared, límites de uso del sistema visual y montaje único del Toaster. |
+| [`src/test/visual/`](../src/test/visual/AGENTS.md) | Catálogo local, fixtures de rutas y Playwright: capturas, medidas, scroll, teclado y cambio de cuenta con OIDC real y HTTP ficticio. No entra en rutas ni entradas del build productivo. |
 
 ## Carpetas cubiertas por su ámbito padre
+
+El [laboratorio de Inicio](../design-lab/home-assistant/AGENTS.md) conserva la procedencia del chat;
+el [panel interno de conversaciones archivado](../design-lab/history/home-assistant-conversations-2026-10-05/AGENTS.md) conserva la propuesta elegida y promovida el 2026-10-05. La implementación vive en la feature IA y shared/ui/assistant. `chosen` conserva el formulario
+rechazado y no acredita aprobación visual;
+el comparador cerrado y sus fuentes/evidencia se preservan en `design-lab/history/home-assistant-comparison-2026-10-04`.
+Ese archivo histórico no es una entrada activa ni depende del bundle productivo.
+
+El laboratorio de WhatsApp también conserva la propuesta pendiente
+[`?screen=ubicacion-lugar`](design/ubicacion-por-lugar.md): búsqueda externa por nombre y
+enlace de ficha, sin cambios en el contrato o guardado productivos.
+
+| Ámbito nuevo | Responsabilidad |
+| --- | --- |
+| [src/features/artificial-intelligence](../src/features/artificial-intelligence/AGENTS.md) | Conexión, catálogo/prueba y editor guiado del negocio; asistente autorizado de consultas con historial privado y recuperación durable. Catálogo/Places sólo en el editor; claves fuera de caches/storage; asistente adapta estado confirmado y conserva UUID/body en aceptación incierta. |
 
 Las páginas, API, componentes y utilidades internas de una feature siguen su guía de área. Los componentes individuales de UI siguen shared/ui; los idiomas siguen locales. Los documentos de diseño y las recetas siguen docs/AGENTS.md.
 

@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
-/// Si se está cerrando la sesión: lo dispara UserMenu, pero lo necesita AppLayout para no dibujar el layout
-/// con los datos ya vacíos entre que signoutRedirect limpia la sesión en memoria y navega a /connect/logout.
+/// UserMenu holds this transition through server revocation, local cleanup and the committed /login route.
+/// HomeLayout keeps AppLayout mounted without the OIDC user, so guards cannot carry the previous account's URL.
 /// Un store module-level con useSyncExternalStore, en vez de un contexto, para no sumar un provider nuevo a
 /// providers.tsx: es el mismo patrón que ya usa AuthProvider para publicar la sesión al cliente HTTP.
 let isSigningOut = false;
@@ -18,7 +18,7 @@ export function beginSignOut(): void {
   notify();
 }
 
-/// Si signoutRedirect falla, hay que volver atrás: si no, la pantalla queda trabada en el spinner.
+/// Release after /login has committed, or after a failure to allow recovery.
 export function cancelSignOut(): void {
   isSigningOut = false;
   notify();

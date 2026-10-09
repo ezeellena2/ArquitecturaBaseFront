@@ -98,6 +98,17 @@ describe("UserEditDialog", () => {
     vi.restoreAllMocks();
   });
 
+  it("shows the complete email with the shared tooltip when focused inside the dialog", async () => {
+    withUser(ana);
+    const dialog = await openEdit(ana.email!);
+    const email = rowOf(dialog, 0).getByText(ana.email!);
+    expect(email).not.toHaveAttribute("title");
+    expect(email).toHaveAttribute("tabindex", "0");
+    await act(async () => email.focus());
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(ana.email!);
+    expect(screen.getByRole("dialog", { name: "Editar usuario" })).toBeInTheDocument();
+  });
+
   it("sends a verification code when linking the signed-in user's number from administration", async () => {
     const self = { ...carla, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null };
     withUser(self);
@@ -126,6 +137,34 @@ describe("UserEditDialog", () => {
     await userEvent.click(dialog.getByRole("button", { name: "Verificar" }));
     const verification = await screen.findByRole("dialog", { name: "Vincular WhatsApp" });
     expect(within(verification).getByRole("textbox", { name: "Número de WhatsApp" })).toHaveValue(self.phoneNumber);
+  });
+
+  it("resumes the destination verification deadline after administration was suspended", async () => {
+    const now = vi.spyOn(performance, "now").mockReturnValue(0);
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    const self = { ...carla, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null };
+    withUser(self);
+    let requests = 0;
+    server.use(
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, id: self.id, permissions: ["users.read", "users.manage"] })),
+      http.post("/api/me/whatsapp/code", () => {
+        requests += 1;
+
+        return HttpResponse.json({ phone: "+5491123456789", maskedPhone: "+54 9 11 •••• 6789", resendAfterSeconds: 60 }, { status: 202 });
+      }),
+    );
+    const dialog = await openEdit(self.email!);
+    await userEvent.click(dialog.getByRole("button", { name: "Agregar número" }));
+    const verification = await screen.findByRole("dialog", { name: "Vincular WhatsApp" });
+    await userEvent.type(within(verification).getByRole("textbox", { name: "Número de WhatsApp" }), "11 2345-6789");
+    await userEvent.click(within(verification).getByRole("button", { name: "Enviar código" }));
+    expect(await within(verification).findByRole("button", { name: "Reenviar en 60 s" })).toBeDisabled();
+
+    now.mockReturnValue(60_000);
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+
+    expect(within(verification).getByRole("button", { name: "Reenviar código" })).toBeEnabled();
+    expect(requests).toBe(1);
   });
 
   it("opens from Editar with the name, the roles and the login methods", async () => {
@@ -499,7 +538,8 @@ describe("UserEditDialog", () => {
       await waitFor(() => expect(number).toHaveAccessibleDescription("Ingresá un número de celular válido."));
     });
 
-    it("explains the protection rule above the buttons", async () => {
+    it("explains the protection rule in one notification and preserves the draft", async () => {
+      const errorToast = vi.spyOn(toast, "error");
       withUser(
         ana,
         detailOf(ana),
@@ -510,9 +550,9 @@ describe("UserEditDialog", () => {
       const dialog = await openEdit("ana@example.com");
       await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
 
-      expect(await dialog.findByRole("alert")).toHaveTextContent(
-        "No podés dejar al sistema sin administradores. Asigná el rol Admin a otra cuenta activa y volvé a intentar.",
-      );
+      await waitFor(() => expect(errorToast).toHaveBeenCalledWith("No podés dejar al sistema sin administradores. Asigná el rol Admin a otra cuenta activa y volvé a intentar.", expect.objectContaining({ duration: 10000 })));
+      expect(errorToast).toHaveBeenCalledTimes(1);
+      expect(dialog.queryByRole("alert")).not.toBeInTheDocument();
     });
 
     it("explains the error and offers to retry when the user detail cannot be loaded", async () => {
@@ -533,7 +573,7 @@ describe("UserEditDialog", () => {
       // Pasa de verdad con dos administradores a la vez: uno elimina la cuenta y el otro abre el diálogo desde
       // un listado viejo. Antes quedaban dos bloques grises para siempre, sin mensaje ni reintento.
       const dialog = await screen.findByRole("dialog");
-      expect(await within(dialog).findByRole("alert")).toHaveTextContent("No encontramos la cuenta.");
+      expect(await within(dialog).findByRole("alert")).toHaveTextContent("No pudimos cargar los datos");
       expect(within(dialog).getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
     });
   });
@@ -818,7 +858,7 @@ describe("UserEditDialog", () => {
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
 
         await waitFor(() => expect(sent).toEqual([{ channel: "WhatsApp", consent: true }]));
-        await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Reenviamos la invitación."));
+        await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Reenviamos la invitación.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 4000 })));
 
         // Vuelve la franja, con la invitación nueva pendiente y un minuto de espera.
         const strip = stripOf(dialog);
@@ -892,7 +932,8 @@ describe("UserEditDialog", () => {
         expect(consent).toBeValid();
       });
 
-      it("explains in the panel that the name has to be saved first", async () => {
+      it("notifies that the stored name must be saved before resending", async () => {
+        const error = vi.spyOn(toast, "error");
         withResend(
           invitedLaura,
           detailOf(invitedLaura, { lastInvitation: invitation() }),
@@ -909,9 +950,9 @@ describe("UserEditDialog", () => {
         await userEvent.click(panel.getByRole("checkbox", { name: /aceptó recibir mensajes/ }));
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
 
-        expect(await panel.findByRole("alert")).toHaveTextContent(
-          "Para invitar por WhatsApp hace falta su nombre: cargalo en «Nombre» y guardá antes de reenviar.",
-        );
+        await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
+        expect(error.mock.calls[0][0]).toContain("cargalo en «Nombre» y guardá antes de reenviar");
+        expect(panel.queryByRole("alert")).not.toBeInTheDocument();
       });
 
       it("says an inactive account cannot be invited with a toast", async () => {
@@ -932,7 +973,7 @@ describe("UserEditDialog", () => {
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
 
         await waitFor(() =>
-          expect(toastError).toHaveBeenCalledWith("La cuenta está desactivada: activala antes de invitarla."),
+          expect(toastError).toHaveBeenCalledWith("La cuenta está desactivada: activala antes de invitarla.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })),
         );
       });
 
@@ -955,7 +996,7 @@ describe("UserEditDialog", () => {
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
 
         await waitFor(() =>
-          expect(toastError).toHaveBeenCalledWith("Esperá un minuto antes de volver a invitar a esta persona."),
+          expect(toastError).toHaveBeenCalledWith("Esperá un minuto antes de volver a invitar a esta persona.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })),
         );
         const resend = stripOf(dialog).getByRole("button", { name: "Reenviar invitación" });
         expect(resend).toBeDisabled();
@@ -1089,7 +1130,7 @@ describe("UserEditDialog", () => {
         release();
 
         // Sin el panel no hay dónde ponerlo: va a un aviso, como la respuesta buena, y no se pierde en silencio.
-        await waitFor(() => expect(toastError).toHaveBeenCalledWith(message));
+        await waitFor(() => expect(toastError).toHaveBeenCalledWith(message, expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })));
       });
     });
   });
@@ -1167,7 +1208,7 @@ describe("UserEditDialog", () => {
       await userEvent.click(within(confirmation).getByRole("button", { name: "Desvincular" }));
 
       await waitFor(() => expect(unlinked).toBe(1));
-      await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Desvinculamos su WhatsApp."));
+      await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Desvinculamos su WhatsApp.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 4000 })));
       // El detalle vuelve sin el número, y el diálogo de edición sigue abierto para seguir trabajando.
       expect(await methodsOf(dialog).findByText("Sin número")).toBeInTheDocument();
       expect(methodsOf(dialog).queryByText("+54 9 11 5555-4444")).not.toBeInTheDocument();
@@ -1230,7 +1271,7 @@ describe("UserEditDialog", () => {
 
       await waitFor(() =>
         expect(toastError).toHaveBeenCalledWith(
-          "Es tu único medio de ingreso: para desvincularlo, primero agregá un correo.",
+          "Es tu único medio de ingreso: para desvincularlo, primero agregá un correo.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })
         ),
       );
     });

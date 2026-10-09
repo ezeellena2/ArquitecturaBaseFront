@@ -136,7 +136,7 @@ describe("userFormErrors", () => {
   it("says there was no connection above the buttons", () => {
     expect(userFormErrors(ApiError.network(), t, allFields)).toEqual({
       fields: {},
-      form: "No pudimos conectarnos. Revisá tu conexión.",
+      form: "No pudimos confirmar el resultado. Revisá el estado actual antes de repetir la operación. Referencia: ?",
     });
   });
 });
@@ -216,7 +216,7 @@ describe("invitationResendError", () => {
     expect(invitationResendError(notFound, t)).toEqual({ place: "toast", message: "No encontramos la cuenta." });
     expect(invitationResendError(ApiError.network(), t)).toEqual({
       place: "toast",
-      message: "No pudimos conectarnos. Revisá tu conexión.",
+      message: "No pudimos confirmar el resultado. Revisá el estado actual antes de repetir la operación. Referencia: ?",
     });
   });
 });

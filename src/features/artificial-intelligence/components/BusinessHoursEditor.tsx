@@ -1,0 +1,86 @@
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import { Button } from "@/shared/ui/button";
+import { Checkbox } from "@/shared/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { FormField } from "@/shared/ui/FormField";
+import { IconButton } from "@/shared/ui/IconButton";
+import { PlusIcon, TrashIcon } from "@/shared/ui/icons";
+import { Input } from "@/shared/ui/input";
+import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Surface } from "@/shared/ui/Surface";
+import { emptyBusinessDetails, emptyPeriod, timeOptions, validateBusinessDetails, validateHours } from "../businessDetailsModel";
+import type { BusinessDetails, OpeningDay, OpeningPeriod, OpeningStatus, SpecialDate } from "../api/businessInformation";
+const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+interface Props { value: BusinessDetails["openingHours"]; onChange: (value: BusinessDetails["openingHours"]) => void; editable: boolean; locked: boolean; error?: string; legacy: React.ReactNode }
+export function BusinessHoursEditor({ value, onChange, editable, locked, error, legacy }: Props) {
+  const { t } = useTranslation("businessInformation");
+  const [special, setSpecial] = useState<SpecialDate | null>(null);
+  const zones = useMemo(() => Array.from(new Set([value.timeZoneId, "UTC", ...Intl.supportedValuesOf("timeZone")])).sort(), [value.timeZoneId]);
+  const validation = validateBusinessDetails({ ...emptyBusinessDetails(value.timeZoneId), openingHours: value })["details.openingHours"];
+  const message = error ?? (validation ? t(validation) : undefined);
+  const disabled = !editable || locked;
+  function changeDay(next: OpeningDay) { onChange({ ...value, days: value.days.map(day => day.weekday === next.weekday ? next : day) }); }
+  return <Surface title={t("hoursSection")} padded><div className="@container space-y-4" id="business-details.openingHours" tabIndex={-1} role="group" aria-label={t("hoursSection")} aria-invalid={!!message} aria-describedby={message ? "business-hours-error" : undefined}>
+    <p className="text-sm text-[var(--color-content-muted)]">{t("hoursHint")}</p>
+    <div className="divide-y divide-[var(--color-border)]">{value.days.map(day => {
+      const label = t(`days.${weekdays[day.weekday]}`);
+      return <div key={day.weekday} className="grid grid-cols-[minmax(0,1fr)_112px] items-start gap-2 py-3 @min-[424px]:grid-cols-[80px_112px_minmax(0,1fr)]">
+        <p className="pt-1.5 text-sm font-medium">{label}</p>
+        <OpeningStatusSelect status={day.status} label={label} disabled={disabled} onChange={status => changeDay({ ...day, status, periods: status === "open" ? day.periods.length ? day.periods : [emptyPeriod()] : [] })} />
+        {day.status === "open" ? <div className="col-span-2 space-y-3 @min-[424px]:col-span-1"><OpeningPeriods periods={day.periods} label={label} disabled={disabled} onChange={periods => changeDay({ ...day, periods })} /></div> : null}
+      </div>;
+    })}</div>
+    {message ? <p id="business-hours-error" role="alert" className="text-sm text-[var(--color-danger)]">{message}</p> : null}
+    {editable ? <Button variant="outline" disabled={locked} onClick={() => onChange({ ...value, days: value.days.map(day => day.weekday < 5 ? { ...structuredClone(value.days[0]), weekday: day.weekday } : day) })}>{t("copyWeek")}</Button> : null}
+    <FormField label={t("timeZoneLabel")} hint={t("timeZoneHint")}><NativeSelect value={value.timeZoneId} disabled={disabled} onChange={event => onChange({ ...value, timeZoneId: event.target.value })}>{zones.map(zone => <option key={zone}>{zone}</option>)}</NativeSelect></FormField>
+    <div className="space-y-3 border-t border-[var(--color-border)] pt-3"><p className="text-sm font-medium">{t("exceptions")}</p>
+      {!value.exceptions.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("noExceptions")}</p> : value.exceptions.map(item => <div key={item.date} className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm">{item.date} · {t(item.status)}{item.status === "open" ? ` · ${item.periods.map(period => `${period.start}–${period.end}${period.nextDay ? " (+1)" : ""}`).join(", ")}` : ""}</p>
+        {editable ? <div className="flex items-center gap-2"><Button variant="muted-link" disabled={locked} onClick={() => setSpecial(structuredClone(item))}>{t("editDate")}</Button><IconButton label={t("removeDate", { date: item.date })} size="icon-sm" disabled={locked} onClick={() => onChange({ ...value, exceptions: value.exceptions.filter(previous => previous.date !== item.date) })}><TrashIcon className="size-4" /></IconButton></div> : null}
+      </div>)}
+      {editable ? <Button variant="outline" disabled={locked || value.exceptions.length >= 32} onClick={() => setSpecial({ date: "", status: "closed", periods: [] })}>{t("addException")}</Button> : null}
+    </div>
+  </div>{legacy}
+  {special && editable && !locked ? <SpecialDateDialog initial={special} hours={value} onCancel={() => setSpecial(null)} onConfirm={next => { onChange({ ...value, exceptions: [...value.exceptions.filter(item => item.date !== special.date), next].sort((a,b) => a.date.localeCompare(b.date)) }); setSpecial(null); }} /> : null}
+  </Surface>;
+}
+function OpeningStatusSelect({ status, label, disabled, onChange }: { status: OpeningStatus; label: string; disabled: boolean; onChange: (status: OpeningStatus) => void }) {
+  const { t } = useTranslation("businessInformation");
+  return <NativeSelect aria-label={`${label} · ${t("attention")}`} value={status} disabled={disabled} onChange={event => onChange(event.target.value as OpeningStatus)}>{["unknown", "open", "closed", "allDay"].map(value => <option key={value} value={value}>{t(value)}</option>)}</NativeSelect>;
+}
+function OpeningPeriods({ periods, label, disabled, onChange }: { periods: OpeningPeriod[]; label: string; disabled: boolean; onChange: (periods: OpeningPeriod[]) => void }) {
+  const { t } = useTranslation("businessInformation");
+  function update(index: number, next: OpeningPeriod) { onChange(periods.map((period,i) => i === index ? next : period)); }
+  return <div className="space-y-3">{periods.map((period,index) => <div key={index} className="space-y-1.5">
+    <div className="flex min-w-0 items-start gap-2">
+      <NativeSelect className="w-20 shrink-0" aria-label={`${label} ${index+1} · ${t("from")}`} disabled={disabled} value={period.start} onChange={event => update(index,{ ...period, start:event.target.value })}><option value="">{t("chooseTime")}</option>{timeOptions.map(time => <option key={time}>{time}</option>)}</NativeSelect>
+      <span className="pt-1 text-xs text-[var(--color-content-muted)]">–</span>
+      <NativeSelect className="w-20 shrink-0" aria-label={`${label} ${index+1} · ${t("to")}`} disabled={disabled} value={period.end} onChange={event => update(index,{ ...period,end:event.target.value })}><option value="">{t("chooseTime")}</option>{timeOptions.map(time => <option key={time}>{time}</option>)}</NativeSelect>
+      {!disabled && periods.length > 1 ? <IconButton label={`${t("removePeriod")} · ${label} ${index+1}`} size="icon-sm" onClick={() => onChange(periods.filter((_,i) => i !== index))}><TrashIcon className="size-4" /></IconButton> : null}
+      {!disabled && periods.length === 1 ? <IconButton label={`${t("addPeriod")} · ${label}`} size="icon-sm" onClick={() => onChange([...periods,emptyPeriod()])}><PlusIcon className="size-4" /></IconButton> : null}
+    </div>
+    {period.nextDay || (period.start && period.end && period.end <= period.start) ? <label className="flex items-center gap-2 text-xs text-[var(--color-content-muted)]"><Checkbox disabled={disabled} checked={period.nextDay} onCheckedChange={checked => update(index,{ ...period,nextDay:checked === true })} />{t("nextDay")}</label> : null}
+  </div>)}{!disabled && periods.length > 1 && periods.length < 4 ? <Button variant="muted-link" size="sm" onClick={() => onChange([...periods,emptyPeriod()])}>{t("addPeriod")}</Button> : null}</div>;
+}
+function SpecialDateDialog({ initial, hours, onCancel, onConfirm }: { initial: SpecialDate; hours: Props["value"]; onCancel: () => void; onConfirm: (value: SpecialDate) => void }) {
+  const { t } = useTranslation("businessInformation");
+  const restore = useRestoreFocusOnClose();
+  const [value,setValue] = useState(initial);
+  const [error,setError] = useState<string>();
+  const periodError = validateHours([{ ...value,weekday:0 }],false);
+  function confirm() {
+    const nextHours = { ...hours, exceptions: [...hours.exceptions.filter(item => item.date !== initial.date),value] };
+    const validation = validateBusinessDetails({ ...emptyBusinessDetails(hours.timeZoneId),openingHours:nextHours })["details.openingHours"];
+    if (validation) { setError(t(validation)); return; } onConfirm(value);
+  }
+  return <Dialog open onOpenChange={open => { if (!open) onCancel(); }}><DialogContent onCloseAutoFocus={restore}>
+    <DialogHeader><DialogTitle>{t("specialTitle")}</DialogTitle><DialogDescription>{t("specialHint")}</DialogDescription></DialogHeader>
+    <FormField label={t("specialDate")} error={error}><Input type="date" min="1900-01-01" max="9998-12-31" value={value.date} onChange={event => { setValue({ ...value,date:event.target.value });setError(undefined); }} /></FormField>
+    <OpeningStatusSelect label={t("specialDate")} status={value.status} disabled={false} onChange={status => { setValue({ ...value,status,periods:status === "open" ? [emptyPeriod()] : [] });setError(undefined); }} />
+    {value.status === "open" ? <OpeningPeriods periods={value.periods} label={t("specialDate")} disabled={false} onChange={periods => { setValue({ ...value,periods });setError(undefined); }} /> : null}
+    {periodError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t(`hourErrors.${periodError}`)}</p> : null}
+    <DialogFooter><Button variant="outline" onClick={onCancel}>{t("cancel")}</Button><Button disabled={!value.date || !!periodError} onClick={confirm}>{t("confirmDate")}</Button></DialogFooter>
+  </DialogContent></Dialog>;
+}

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useId, useState, type RefObject } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { notify, notifyOperationalError } from "@/shared/ui/notifications";
 import { z } from "zod";
 import { confirmEmail, confirmPhoneLink, requestEmailCode, requestPhoneLinkCode } from "@/shared/api/destinationVerification";
 import { isSpentCodeError, isTakenError } from "@/shared/api/destinationErrors";
@@ -119,6 +119,7 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
     },
     onSuccess: ({ destination, resendAfterSeconds }) => startCodeStep(destination, resendAfterSeconds),
     onError: (error) => {
+      if (notifyOperationalError(error, `destination:${channel}:request`, t)) return;
       if (!(error instanceof ApiError)) {
         setRequestError(t("common:states.error"));
 
@@ -154,6 +155,7 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
       restartResend(resendAfterSeconds);
     },
     onError: (error) => {
+      if (notifyOperationalError(error, `destination:${channel}:resend`, t)) return;
       const message = error instanceof ApiError ? codeRequestErrorMessage(error, t) : t("common:states.error");
 
       // El código anterior sigue como estaba: si ya no servía, sigue sin servir.
@@ -176,12 +178,13 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
         ? confirmPhoneLink({ phone: destination.phone, code })
         : confirmEmail({ email: destination.email, code }),
     onSuccess: async () => {
-      toast.success(channel === "whatsapp" ? t("linkWhatsApp.success") : t("addEmail.success"));
+      notify({id: "verify-destination:success", kind: "success", message: channel === "whatsapp" ? t("linkWhatsApp.success") : t("addEmail.success")});
       // El perfil lo usan las filas de esta pantalla, el menú del usuario, la barra lateral y el aviso del inicio.
       await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       onClose();
     },
     onError: (error) => {
+      if (notifyOperationalError(error, `destination:${channel}:verify`, t)) return;
       if (!(error instanceof ApiError)) {
         setFailure({ message: t("common:states.error"), wrong: false, spent: false, taken: false });
 

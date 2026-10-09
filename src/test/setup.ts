@@ -67,3 +67,10 @@ if (!Element.prototype.setPointerCapture) {
 // un "Test timed out" que no dice qué se estaba buscando, en vez del "Unable to find role=..." de
 // Testing Library, que es el que sirve para arreglarlo.
 configure({ asyncUtilTimeout: 3000 });
+// assistant-ui uses Element.scrollTo to anchor its viewport; real scroll geometry is verified in Playwright.
+if (!Element.prototype.scrollTo) {
+  Element.prototype.scrollTo = function (options?: ScrollToOptions | number, top?: number) {
+    this.scrollTop = typeof options === "object" ? options.top ?? this.scrollTop : top ?? this.scrollTop;
+    this.scrollLeft = typeof options === "object" ? options.left ?? this.scrollLeft : options ?? this.scrollLeft;
+  };
+}

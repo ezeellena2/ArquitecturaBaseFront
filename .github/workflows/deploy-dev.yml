@@ -1,0 +1,32 @@
+name: Solicitar despliegue conjunto a Azure dev
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  request-deploy:
+    name: Pedir al backend que prepare y publique ambos proyectos
+    if: github.ref == 'refs/heads/main' && vars.DEV_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Solicitar ejecución de la pipeline del backend
+        env:
+          GH_TOKEN: ${{ secrets.BACKEND_WORKFLOW_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::Falta el secret BACKEND_WORKFLOW_TOKEN en este repositorio."
+            exit 1
+          fi
+          gh workflow run deploy.yml --repo ezeellena2/ArquitecturaBase --ref main
+          {
+            echo "### Solicitud enviada"
+            echo "La compilación, las pruebas y el despliegue se siguen en Actions del backend:"
+            echo "https://github.com/ezeellena2/ArquitecturaBase/actions/workflows/deploy.yml"
+            echo "Esta ejecución confirma la solicitud; el resultado del despliegue está en el backend."
+          } >> "$GITHUB_STEP_SUMMARY"

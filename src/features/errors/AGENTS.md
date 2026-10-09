@@ -1,6 +1,6 @@
 # Errors: páginas de navegación fallida
 
-Contiene pantallas de sin permiso y ruta inexistente. Presenta el estado y un camino de salida dentro del SPA.
+Contiene la página de ruta inexistente. El estado de falta de permiso vive en `shared/ui/ForbiddenPage`, porque también lo usan Usuarios y Roles ante un 403. La ruta `/sin-permiso` lo monta desde la composición de la app.
 
 ## Al modificar
 

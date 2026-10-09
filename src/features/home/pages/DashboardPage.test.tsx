@@ -26,7 +26,8 @@ describe("DashboardPage", () => {
 
     renderRouteWithProviders("/");
 
-    const banner = await screen.findByRole("status");
+    await screen.findByText(notice);
+    const banner = screen.getByRole("status");
     expect(banner).toHaveTextContent(notice);
     expect(within(banner).getByRole("link", { name: "Agregar correo" })).toHaveAttribute("href", "/perfil");
   });

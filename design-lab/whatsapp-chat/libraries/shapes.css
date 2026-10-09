@@ -1,0 +1,14 @@
+@import '../../../src/index.css';
+@source './ShapeComparison.tsx';
+
+/* La prueba cambia sólo la silueta: los colores, borde, texto, medidas,
+   metadata, estados y controles siguen viniendo de los componentes reales. */
+.shape-lab-screen[data-bubble-shape="rounded"] .message-bubble {
+  border-radius: 16px 16px 16px 4px;
+}
+.shape-lab-screen[data-bubble-shape="rounded"] .message-item[data-direction="outgoing"] .message-bubble {
+  border-radius: 16px 16px 4px 16px;
+}
+.shape-lab-screen[data-bubble-shape="rounded"] .message-bubble::before {
+  content: none;
+}

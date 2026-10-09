@@ -6,6 +6,7 @@ import { isClosedAccountError, isSpentCodeError } from "../errors";
 import { codeDestinationOf, resendAfterSecondsOf, type LoginState, type LoginCodeState } from "../lib/loginCodeState";
 import { authorizeReturnUrl, loginPathFor } from "../lib/returnUrl";
 import { ApiError } from "@/shared/api/ApiError";
+import { notifyOperationalError } from "@/shared/ui/notifications";
 import {
   attemptsLeftOf,
   codeRequestErrorMessage,
@@ -93,6 +94,7 @@ export function LoginCodePage() {
       // Navegación real, no del router: el servidor ya tiene la cookie y emite el code de OIDC.
       globalThis.location.assign(response.returnUrl);
     } catch (caught) {
+      if (notifyOperationalError(caught, "access:code:verify", t, true)) return;
       if (!(caught instanceof ApiError)) {
         throw caught;
       }
@@ -125,6 +127,7 @@ export function LoginCodePage() {
       setIsCodeSpent(false);
       restartResend(response.resendAfterSeconds);
     } catch (caught) {
+      if (notifyOperationalError(caught, "access:code:resend", t, true)) return;
       if (!(caught instanceof ApiError)) {
         throw caught;
       }

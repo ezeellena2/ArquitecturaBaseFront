@@ -1,5 +1,16 @@
 # Premisas de desarrollo del front
 
+La conexión IA implementada el 2026-10-02 mantiene tres Surface y un guardado común,
+permisos propios y prueba temporal por borrador. Su clave candidata permanece sólo en el
+editor, nunca en cachés persistidas/MutationCache/URL. Guardado incierto conserva UUID/cuerpo:
+consultar comprobante; 404 no confirma fallo. Un conflicto se revisa antes de otro guardado.
+Fuente: [inteligencia artificial](../../../ArquitecturaBase/docs/features/inteligencia-artificial.md).
+
+El buscador de lugares del 2026-10-04 usa `Autocomplete` compartido: teclado/puntero,
+cancelación de búsquedas obsoletas y espera sin reintento automático al vencer un 429.
+Etiquetas de Google sólo en memoria del editor, con atribución; la clave queda en servidor.
+Elegir prepara el Place ID del borrador; el guardado común lo confirma sin copiar etiquetas.
+
 Estado: **vigente**. Aprobadas por el usuario el **2026-09-30**.
 
 Estas reglas valen para todas las pantallas actuales y futuras, y para cada proyecto que salga de
@@ -10,17 +21,29 @@ la arquitectura y las convenciones. Los contratos del backend y la accesibilidad
 
 ## Una sola base visual
 
-- La paleta es **Jade equilibrado**, en los tokens de `src/index.css`: menú profundo, barra superior
+El [estándar aplicado](estandar-visual.md) describe composiciones, variantes, catálogo y controles.
+`npm run lint` y `npm run test` verifican los límites del sistema; `npm run test:visual` comprueba
+las capturas y la geometría. Los listados y las superficies con banda se construyen con `Surface`.
+
+- La paleta es **Campo**, elegida el 2026-10-02 solo para colores, en los tokens de `src/index.css`: menú profundo, barra superior
   suave, cabecera de pantalla clara, cabecera de tabla más marcada, filtros y campos con sus tonos.
   Public Sans, tamaños, radios, bordes y foco se resuelven desde el sistema común.
-- Usar `AppLayout` o `AuthLayout` y `Page`. Los layouts gestionan navegación, migas, menú móvil y
-  desplazamiento; `Page` aporta el título, las acciones y el margen del contenido. Una feature no
-  vuelve a dibujar esas piezas.
+- Usar los layouts comunes. Dentro de `AppLayout`, `Page` aporta título, acciones y margen del
+  contenido; `AuthLayout` conserva la composición pública aprobada. Los layouts gestionan
+  navegación, migas, menú móvil y desplazamiento. Una feature no vuelve a dibujar esas piezas.
+- Confirmación del usuario del 2026-10-01: el aspecto actual le gusta y se conserva. Los ajustes
+  y formularios futuros siguen las mismas formas en todas las pantallas. Multitenant sirve
+  como referencia de organización, sin trasladar su paleta, medidas o caparazón.
 - Los íconos de navegación salen de `layouts/navigation.ts`, con el set común. Administración y
   sus destinos muestran íconos decorativos de 16 px junto al texto, también en móvil. Los botones
   del borde del menú tienen fondo blanco y flecha verde, en ambos estados.
+  Inicio también muestra su ícono expandido. WhatsApp se separa de Inicio con una línea del mismo
+  estilo que la de Administración, en escritorio, contraída y en el cajón móvil (2026-10-03).
 - El contenido principal y los diálogos conservan superficie blanca; selección, foco, peligro,
   atención y éxito tienen roles propios. Un estado también se explica con texto o un nombre accesible.
+- Pedido del 2026-10-01: delimitar las zonas de campos con `Surface padded`, con borde y margen
+  interno. Filtros (`FilterBar`) y tabla (`Surface`) conservan sus contenedores separados.
+  No repetir el título de Page ni agregar bandas solo para enmarcar un formulario.
 - Todo tono nuevo se define como token. Una variante reutilizable se agrega al componente común;
   no se agregan valores hex, alturas alternativas ni selectores por URL en una pantalla.
 - Lo que usan dos features sube a `shared`. No importar componentes de una feature desde otra.
@@ -33,7 +56,9 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 
 - Una pantalla resuelve una tarea. Los temas independientes tienen destinos propios dentro del
   menú de su área; el menú expresa la estructura, sin agregar otra navegación dentro del contenido.
-  En Configuración: Idioma, Zona horaria, Listados y Registro, cada uno con su cabecera y guardado.
+  Por elección explícita del 2026-10-01, Configuración general reúne los cuatro ajustes iniciales
+  de la instalación en tres secciones breves, con una cabecera y un guardado atómico. Esta elección
+  reemplaza sus cuatro destinos anteriores y conserva la biblioteca común.
 - La cabecera de Page tiene el nombre del tema, el estado necesario y la acción principal.
   Las migas muestran el contexto. No repetir el título en una tarjeta ni llenar la cabecera de ayudas.
 - La información se ordena como etiqueta → valor/control → ayuda breve cuando hace falta.
@@ -59,19 +84,24 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   y filtros viajan en la URL con los nombres del backend; no duplicarlos en estado de la pantalla.
   El borrador interno de `SearchInput` solo permite escribir antes de confirmar la búsqueda.
 - Cambiar búsqueda o filtros vuelve a la primera página. Actualizar filtro y página juntos; omitir
-  valores por defecto y conservar el orden al limpiar. Atrás y una URL compartida restauran la vista.
+  página 1 y filtros ausentes, y conservar el orden al limpiar. `pageSize` se fija explícitamente
+  después de resolver el tamaño general, para conservarlo durante la visita. Atrás y una URL
+  compartida restauran la vista.
 - Los conteos por opción salen del backend con los demás filtros aplicados e ignorando el propio.
   No contarlos sobre la página visible. Una opción con cero coincidencias queda deshabilitada.
 - Mostrar cuántos resultados hay y una acción para limpiar cuando hay filtros activos. Distinguir
   “todavía no hay datos” de “ninguno coincide”: el primero ofrece crear cuando hay permiso; el segundo,
-  limpiar los filtros. Conservar las piezas existentes de `UsersFilterBar` como referencia y promover
-  sus controles genéricos a `shared/ui` cuando otra feature los necesite.
+  limpiar los filtros. Conservar la composición de `UsersFilterBar` como referencia y usar
+  los controles genéricos ya compartidos (`FilterMenuTrigger`, `FilterChip`, `FilterBar` y
+  `SegmentedControl`); las consultas, opciones y composición siguen en la feature.
 
 ## Tablas
 
 - Usar `DataTable` y `Pagination` para listados. Cuando una tabla tiene secciones u otra estructura,
   componer los primitivos de `shared/ui/table`; usar siempre `TableHeader` y `TableHead` para conservar
   cabecera, tono, borde y tipografía comunes. No duplicar las clases de la cabecera en cada tabla.
+- Con cero resultados, `Pagination` conserva el rango 0–0 de 0 y las flechas deshabilitadas,
+  pero omite el contador de páginas: no presentar una página 1 de 0.
 - Cada dato tiene su columna y su encabezado. No mezclar datos distintos como insignias junto al
   nombre. Una excepción requiere una revisión explícita; no se copia la excepción del punto de estado
   de usuarios a otros listados por defecto.
@@ -79,6 +109,8 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   aceptados por el backend; conservar `aria-sort` y ordenar/paginar con el servidor.
 - La tabla contiene su scroll horizontal en móvil; no desborda el documento. Las medidas de los
   componentes comunes son la referencia: no cambiar la densidad de filas en una feature.
+- El cuerpo alterna blanco y el tono Campo suave (`table-row-alternate`); hover, selección y bandas de
+  sección conservan prioridad. El alternado vive en la biblioteca, sin clases por listado. Aclaración elegida el 2026-10-03: Roles deja blancos los permisos individuales y diferencia los encabezados de área con la banda suave TableRow tone="section"; TableBody striped=false y highlightExpanded=false conservan esa jerarquía en ambos estados.
 - Pasar los estados de carga, error, reintento y vacío al componente. No dejar una tabla en blanco
   mientras se carga ni presentar un fallo como si fuera un listado vacío.
 - Las acciones de una fila usan `RowActions`: un grupo, acciones inocuas primero y destructiva al
@@ -87,6 +119,11 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   y la zona de la cuenta. No crear formateadores locales por pantalla.
 
 ## Formularios y selección
+
+El compositor de Inicio conserva la forma del chat assistant-ui elegida por el usuario:
+ComposerPrimitive.Input con etiqueta accesible, ayuda de teclado oculta y error asociado.
+No es un editor administrativo con FormField visible. La excepción queda encapsulada en
+shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguientes.
 
 - Cada campo usa `FormField` con una etiqueta visible, su control y la ayuda o el error asociado.
   El placeholder muestra un ejemplo; no reemplaza la etiqueta. Usar `Input`, `Textarea`, `Select`,
@@ -100,9 +137,10 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - Un grupo de checks admite ninguno, algunos (`indeterminate`) y todos. El alcance de “todos” debe
   ser explícito: sección, resultados filtrados o página. No cambiar otras secciones ni seleccionar
   datos que la persona no puede administrar.
-- Usar `RadioGroupField` para una única opción entre pocas, `MultiSelect` para varias y `Switch`
-  para un ajuste que se aplica de inmediato. Un switch que guarda al cambiar muestra la petición
-  pendiente y recupera el valor anterior si falla, como Configuración.
+- Usar `RadioGroupField` para una única opción entre pocas y `MultiSelect` para varias. `Switch`
+  corresponde a un ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo.
+  Configuración usa guardado explícito: Registro usa radios; Idioma, Zona horaria y Listados usan
+  `NativeSelect`. No convertir esos borradores en guardados automáticos.
 - Un control deshabilitado mantiene el valor legible y, cuando no es evidente, la razón visible.
   Los estados de validación no dependen solo del color.
 - Una mutación conserva el borrador ante un fallo. Mostrar que está guardando y evitar envíos
@@ -170,3 +208,46 @@ uniformidad por haber escrito la regla ni por aprobar un test que solo comprueba
 5. Actualizar el fundamento visual cuando cambie una decisión común. Las propuestas se retiran al
    elegir; la sincronización pendiente de la biblioteca externa se registra sin presentar el Artifact
    como si ya hubiera sido actualizado.
+
+## Apariencia global (2026-10-01)
+
+La paleta de cuatro colores se edita en Configuración → Apariencia y se guarda en el
+backend para todas las personas. La vista previa y Restaurar colores iniciales (Campo) trabajan sobre el
+borrador; Guardar aplica el conjunto. Una sola composición de tema afecta pantallas
+públicas, privadas y portales. Colores semánticos independientes; texto/foco/hover
+legibles con paletas claras y oscuras. El guardado conserva revisión y relectura ante
+conflictos o resultados inciertos. No inventar temas locales por feature.
+
+## Historial de mensajes (2026-10-02)
+
+La biblioteca define dirección, burbuja, metadatos y viewport mediante MessageHistory,
+MessageBubble y MessageDateDivider. Los colores son tokens globales con contraste probado;
+la feature adapta los estados reales y ofrece acciones según permisos, sin inventar entrega.
+La fecha agrupa el día del perfil; hora y estado quedan fuera del cuerpo. Los formatos son
+compartidos, sin cálculos por offset fijo. Cargar historial o recibir mientras se lee conserva
+la posición; al cambiar de conversación se conserva el borrador. Recuperar texto nunca envía
+ni sobrescribe un borrador; incertidumbre y revisión no se representan como entrega.
+
+Los eventos de acceso reutilizan el historial aprobado con etiqueta y resumen traducido,
+fecha y estado confirmados. Se deciden por metadata del servidor: el cuerpo sensible no se
+renderiza ni se ofrece para recuperar como borrador. Sin metadata la historia es Unclassified;
+ninguna frase determina autenticación. La atención Manual no afecta el acceso por código web.
+
+## Inicio con consultas asistidas (2026-10-04)
+
+`app/AuthenticatedHome` compone el Inicio base y el módulo opcional según capacidad instalada y
+permiso actual; las features no se importan entre sí. La feature artificial-intelligence adapta
+el estado confirmado del servidor a assistant-ui, con primitivas reutilizables en shared/ui/assistant.
+El borrador permanece en memoria. La URL contiene sólo el identificador de conversación; preguntas,
+respuestas e historial privado se limpian al cambiar de cuenta, perder permisos o cerrar la superficie.
+
+Una pregunta explícita fija un UUID y un cuerpo inmutable. Tras una aceptación incierta se consulta
+ese UUID; un 404 no habilita otra generación automáticamente. Recargas, GET, polling, foco y Abort
+de lecturas no generan ni cancelan operaciones durables. La cancelación solicitada es metadata
+confirmada, y Running sigue vigente hasta el estado terminal del servidor.
+
+Respuesta completa y fuentes tipadas se publican sin transportar claves, protocolos o URLs del
+modelo al navegador. Enlaces lógicos se resuelven por lista local y permiso actual. Fechas usan
+UTC y el formateador de la zona del perfil. El [contrato funcional](../../../ArquitecturaBase/docs/features/inteligencia-artificial.md)
+conserva límites/calificación y el [registro de entrega](../../../ArquitecturaBase/docs/reviews/2026-10-04-inicio-asistente.md)
+separa handlers falsos, persistencia real y piloto pendiente.

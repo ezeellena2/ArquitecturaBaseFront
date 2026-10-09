@@ -4,7 +4,7 @@ Contiene formato de fechas por zona, nombres de países y `cn`. Son mecanismos r
 
 ## Al modificar
 
-- `formatDateInZone` sirve para listados y `formatDateTimeInZone` para detalles. No agregar formateadores locales ni mostrar UTC crudo.
+- `formatDateInZone` sirve para fechas, `formatDateTimeInZone` para detalles y `formatTimeInZone` para horas de mensajes. `calendarDateInZone` da identidad de día local para agrupaciones, independiente del idioma. No agregar formateadores locales ni mostrar UTC crudo.
 - `cn` se reexporta desde `utils`; no agregar otra librería para combinar clases.
 - El front envía país y número al backend: no implementar normalización telefónica acá.
 - Una utilidad nueva necesita un consumidor compartido y pruebas de su comportamiento cuando tenga lógica.
@@ -14,3 +14,7 @@ Contiene formato de fechas por zona, nombres de países y `cn`. Son mecanismos r
 - [Fechas y utilidades](../../../docs/architecture.md).
 - [Formato común de fechas](dateTime.ts).
 - [Combinación de clases](utils.ts).
+
+- `appearance` define la paleta inicial Campo, valida colores y deriva contraste de texto, foco y hover.
+  No cambia success/warning/danger. Los valores explícitos iniciales permiten que la vista previa
+  del borrador quede independiente de la paleta guardada.

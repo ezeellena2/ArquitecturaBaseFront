@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import {
   createRole,
   fetchPermissions,
@@ -19,12 +19,11 @@ import { roleActionErrorMessage } from "../errors";
 import { sameSelection } from "../lib/permissionPicker";
 import { isAdminRole } from "../lib/systemRoles";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
-import { ForbiddenPage } from "@/features/errors/pages/ForbiddenPage";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
 import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
-import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -32,6 +31,7 @@ import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 
 interface Draft {
@@ -58,18 +58,14 @@ function isSameDraft(first: Draft, second: Draft): boolean {
 
 const detailsClassName = "grid w-full max-w-2xl grid-cols-1 gap-3.5";
 
-/// Un nombre de solo lectura (los roles del sistema) se ve como tal: apagado, pero legible y seleccionable.
-const readOnlyClassName =
-  "read-only:bg-[var(--color-surface-muted)] read-only:text-[var(--color-content-muted)] read-only:shadow-none";
-
 /// Mantiene el espacio de los datos y las secciones mientras llegan el rol y el catálogo.
 function EditorSkeleton(): ReactNode {
   return (
     <div aria-hidden="true" className="flex flex-col gap-6">
-      <div className={detailsClassName}>
+      <Surface padded><div className={detailsClassName}>
         <div className="space-y-2.5"><Skeleton className="h-3 w-20" /><Skeleton className="h-9" /></div>
         <div className="space-y-2.5"><Skeleton className="h-3 w-24" /><Skeleton className="h-16" /></div>
-      </div>
+      </div></Surface>
       <div className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-4">
         <Skeleton className="h-9" />
         <Skeleton className="h-[30px]" />
@@ -104,7 +100,7 @@ function RoleDetails({
   const titleId = useId();
 
   return (
-    <section aria-labelledby={titleId}>
+    <Surface padded><section aria-labelledby={titleId}>
       <h2 id={titleId} className="sr-only">{t("editor.details")}</h2>
       <div className={detailsClassName}>
         <FormField
@@ -119,7 +115,6 @@ function RoleDetails({
             maxLength={roleNameMaxLength}
             value={draft.name}
             onChange={(event) => onNameChange(event.target.value)}
-            className={readOnlyClassName}
           />
         </FormField>
 
@@ -131,11 +126,11 @@ function RoleDetails({
             placeholder={readOnly ? undefined : t("form.descriptionPlaceholder")}
             value={draft.description}
             onChange={(event) => onDescriptionChange(event.target.value)}
-            className={cn("field-sizing-fixed min-h-0 resize-none", readOnlyClassName)}
+            className="field-sizing-fixed min-h-0 resize-none"
           />
         </FormField>
       </div>
-    </section>
+    </section></Surface>
   );
 }
 
@@ -175,7 +170,6 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   const [draft, setDraft] = useState<Draft | undefined>(isEditing ? undefined : emptyDraft);
   const [nameError, setNameError] = useState<string | undefined>();
   const [descriptionError, setDescriptionError] = useState<string | undefined>();
-  const [formError, setFormError] = useState<string | undefined>();
 
   // Se siembra una sola vez, durante el render y no con un efecto que copia datos a otro estado (regla de
   // rendimiento del CLAUDE.md del front). Lo que se pida después (al guardar se invalidan los roles) ya no pisa
@@ -231,7 +225,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
       await updateRole(roleId, body);
     },
     onSuccess: async () => {
-      toast.success(isEditing ? t("feedback.updated") : t("feedback.created"));
+      notify({ id: "features/roles/pages/RoleEditorPage:1", kind: "success", message: isEditing ? t("feedback.updated") : t("feedback.created") });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: rolesQueryKey }),
         // Cambiar los permisos de un rol puede cambiar los propios: el backend ya invalidó su caché.
@@ -242,7 +236,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
       // Si la persona se fue mientras se guardaba, no queda formulario donde mostrar el error, y sin un aviso
       // creería que se guardó.
       if (!isOnScreenRef.current) {
-        toast.error(roleActionErrorMessage(error, t));
+        notify({ id: "features/roles/pages/RoleEditorPage:2", kind: "error", message: roleActionErrorMessage(error, t) });
       }
     },
   });
@@ -285,7 +279,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     setDescriptionError(descriptionMessage);
 
     if (otherMessage !== undefined || (nameMessage === undefined && descriptionMessage === undefined)) {
-      setFormError(otherMessage ?? roleActionErrorMessage(error, t));
+      notify({ id: `roles:save:${roleId ?? "new"}`, kind: "error", message: otherMessage ?? roleActionErrorMessage(error, t) });
     }
   }
 
@@ -300,7 +294,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
       return;
     }
 
-    setFormError(undefined);
+
     setDescriptionError(undefined);
 
     const name = draft.name.trim();
@@ -334,7 +328,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   }
 
   const status = isDirty ? (
-    <span className="text-[12.5px] text-[var(--color-content-muted)]">
+    <span className="text-xs text-[var(--color-content-muted)]">
       <span aria-hidden="true">· </span>
       {t("editor.unsaved")}
     </span>
@@ -342,7 +336,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
 
   const actions = !isReady ? undefined : isAdmin ? (
     // Admin no se cambia: en lugar de los botones, lo que tiene.
-    <span className="text-[12.5px] text-[var(--color-content-muted)]">{t("editor.allPermissions")}</span>
+    <span className="text-xs text-[var(--color-content-muted)]">{t("editor.allPermissions")}</span>
   ) : (
     <>
       <Button asChild variant="outline">
@@ -360,7 +354,6 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
       {loadError ? (
         <EmptyState
           title={t("editor.loadError")}
-          description={apiLoadError?.traceId ? t("errorTraceId", { traceId: apiLoadError.traceId }) : undefined}
           action={
             <Button
               type="button"
@@ -393,11 +386,6 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
         <EditorSkeleton />
       ) : (
         <form id={formId} noValidate onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-6">
-          {formError ? (
-            <p role="alert" className="text-sm text-[var(--color-danger)]">
-              {formError}
-            </p>
-          ) : null}
 
           <RoleDetails
             draft={draft}

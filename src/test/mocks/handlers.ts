@@ -1,3 +1,4 @@
+import { initialAppearance } from "@/shared/lib/appearance";
 import { http, HttpResponse } from "msw";
 import type { CurrentUser } from "@/auth/useCurrentUser";
 import type { LoginMethods } from "@/shared/api/loginMethods";
@@ -57,7 +58,7 @@ export const whatsappLoginMethods: LoginMethods = {
 
 /// Handlers por defecto. Cada test agrega los suyos con server.use(...).
 export const handlers = [
-  http.get("/api/settings/presentation", () => HttpResponse.json({ defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20 })),
+  http.get("/api/settings/presentation", () => HttpResponse.json({ appearance: initialAppearance, defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20 })),
   http.get("/.well-known/openid-configuration", () => HttpResponse.json({
     issuer: location.origin,
     authorization_endpoint: `${location.origin}/connect/authorize`,

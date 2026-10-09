@@ -39,9 +39,7 @@ export function AppLayout() {
     setMobileOpen((previous) => !previous);
   }
 
-  // Entre que UserMenu limpia la sesión en memoria y signoutRedirect navega a /connect/logout, React
-  // alcanza a renderizar: sin esto, el layout se dibujaría con los datos ya vacíos (sección "parpadeo al
-  // cerrar sesión").
+  // Keep the transition while UserMenu revokes the server session, clears local data and commits /login.
   if (isSigningOut) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3">

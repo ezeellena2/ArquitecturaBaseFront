@@ -12,6 +12,7 @@ describe("Pagination", () => {
     );
 
     expect(screen.getByText("11–20 de 25")).toBeInTheDocument();
+    expect(screen.getByText("Página 2 de 3")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /siguiente/i }));
     expect(onPageChange).toHaveBeenCalledWith(3);
@@ -33,6 +34,17 @@ describe("Pagination", () => {
       />,
     );
 
+    expect(screen.getByRole("button", { name: /anterior/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /siguiente/i })).toBeDisabled();
+  });
+
+  it("omits the page counter for an empty result and preserves its range and controls", () => {
+    renderWithProviders(
+      <Pagination page={1} pageSize={20} totalCount={0} totalPages={0} hasPrevious={false} hasNext={false} onPageChange={vi.fn()} />,
+    );
+
+    expect(screen.getByText("0–0 de 0")).toBeInTheDocument();
+    expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /anterior/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /siguiente/i })).toBeDisabled();
   });

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState, type ComponentType } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { notify } from "@/shared/ui/notifications";
 import {
   invitationResendWaitSeconds,
   sendInvitation,
@@ -36,11 +36,10 @@ const statuses: Readonly<
   Failed: { key: "failed", icon: AlertCircleIcon, tone: "text-[var(--color-danger-700)]" },
 };
 
-/// Los errores del reenvío que se muestran en el panel: debajo de la casilla, de las opciones o arriba de los botones.
+/// Only editable consent/channel errors remain in the resend panel.
 interface ResendErrors {
   readonly consent?: string;
   readonly channel?: string;
-  readonly panel?: string;
 }
 
 const second = 1000;
@@ -150,7 +149,7 @@ function ResendInvitationForm({
         {t("resend.title")}
       </h3>
       {description ? (
-        <p className="col-start-2 mt-0.5 text-[12.5px] leading-[1.45] text-[var(--color-content-muted)]">
+        <p className="col-start-2 mt-0.5 text-xs leading-[1.45] text-[var(--color-content-muted)]">
           {description}
         </p>
       ) : null}
@@ -186,12 +185,6 @@ function ResendInvitationForm({
           </div>
         ) : null}
       </div>
-
-      {errors.panel ? (
-        <p role="alert" className="col-start-2 mt-2 text-sm text-[var(--color-danger)]">
-          {errors.panel}
-        </p>
-      ) : null}
 
       <div className="col-start-2 mt-2 flex justify-end gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
@@ -278,7 +271,7 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
     onSuccess: async () => {
       wait(invitationResendWaitSeconds);
       close("strip");
-      toast.success(t("lastInvitation.resent"));
+      notify({ id: `users:invitation:${user.id}`, kind: "success", message: t("lastInvitation.resent") });
       // El detalle trae la invitación nueva, pendiente.
       await queryClient.invalidateQueries({ queryKey: userQueryKey(user.id) });
     },
@@ -291,23 +284,23 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
           // y se trae la invitación que la frenó.
           wait(placed.seconds);
           close("strip");
-          toast.error(placed.message);
+          notify({ id: `users:invitation:${user.id}`, kind: "error", message: placed.message });
           await queryClient.invalidateQueries({ queryKey: userQueryKey(user.id) });
           break;
         case "consent":
         case "channel":
-        case "panel":
           // Van en el panel, en su lugar. Si se canceló con el envío en camino, el panel ya no está, y abrirlo de nuevo
           // los borra: van a un aviso, como la respuesta buena, para que no se pierdan en silencio. `isOpen` es el de
           // ahora y no el del envío: TanStack le pasa las opciones nuevas a la mutación que está en curso.
           if (isOpen) {
             setErrors({ [placed.place]: placed.message });
           } else {
-            toast.error(placed.message);
+            notify({ id: `users:invitation:${user.id}`, kind: "error", message: placed.message });
           }
           break;
+        case "panel":
         case "toast":
-          toast.error(placed.message);
+          notify({ id: `users:invitation:${user.id}`, kind: "error", message: placed.message });
           break;
       }
     },
@@ -374,7 +367,7 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
       // En un teléfono el botón no entra al lado del texto sin aplastarlo: por debajo de `sm` baja debajo, con la
       // espera abajo de él. El tablero no dibuja el teléfono; desde `sm` es el tablero.
       className={cn(
-        "grid grid-cols-[32px_minmax(0,1fr)] gap-x-3 gap-y-px rounded-[10px] bg-[var(--color-surface-muted)] py-2.5 pr-3 pl-3.5 outline-none",
+        "grid grid-cols-[32px_minmax(0,1fr)] gap-x-3 gap-y-px rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] py-2.5 pr-3 pl-3.5 outline-none",
         isOpen ? "items-start pb-3" : "items-center sm:grid-cols-[32px_minmax(0,1fr)_auto]",
       )}
     >
@@ -412,7 +405,7 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
         <>
           <p
             className={cn(
-              "col-start-2 row-start-1 text-[13px] leading-[18px] font-medium text-[var(--color-content)]",
+              "col-start-2 row-start-1 text-sm leading-[18px] font-medium text-[var(--color-content)]",
               waiting ? "sm:self-end" : "",
             )}
           >
@@ -420,7 +413,7 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
           </p>
           <p
             className={cn(
-              "col-start-2 row-start-2 flex flex-wrap items-center gap-1.5 text-[12.5px] leading-[18px] text-[var(--color-content-muted)]",
+              "col-start-2 row-start-2 flex flex-wrap items-center gap-1.5 text-xs leading-[18px] text-[var(--color-content-muted)]",
               waiting ? "sm:self-start" : "",
             )}
           >
@@ -462,13 +455,13 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
           {waiting ? (
             <p
               id={waitId}
-              className="col-start-2 row-start-5 justify-self-start text-[12.5px] leading-[18px] text-[var(--color-content-muted)] tabular-nums sm:col-start-3 sm:row-start-2 sm:self-start sm:justify-self-end"
+              className="col-start-2 row-start-5 justify-self-start text-xs leading-[18px] text-[var(--color-content-muted)] tabular-nums sm:col-start-3 sm:row-start-2 sm:self-start sm:justify-self-end"
             >
               {t("lastInvitation.resendIn", { seconds })}
             </p>
           ) : null}
           {failure ? (
-            <p className="col-start-2 row-start-3 mt-1.5 text-[12.5px] leading-[1.45] text-[var(--color-content-muted)] sm:col-span-2">
+            <p className="col-start-2 row-start-3 mt-1.5 text-xs leading-[1.45] text-[var(--color-content-muted)] sm:col-span-2">
               {failure.hint}
             </p>
           ) : null}

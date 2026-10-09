@@ -10,13 +10,14 @@ import {
   visibleAreas,
   type AreaSubset,
 } from "../lib/permissionPicker";
-import { cn } from "@/shared/lib/utils";
+import { Surface } from "@/shared/ui/Surface";
+import { TableSectionToggle } from "@/shared/ui/TableSectionToggle";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FilterBar } from "@/shared/ui/FilterBar";
-import { ChevronRightIcon, SearchIcon } from "@/shared/ui/icons";
+import { ChevronDownIcon, SearchIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 
@@ -28,11 +29,7 @@ interface PermissionPickerProps {
   readOnly?: boolean;
 }
 
-/// Acciones del buscador: texto de marca, sin caja.
-const linkAction = "h-auto p-0 text-[12.5px] text-[var(--color-brand-700)]";
-
 const focusKeepingLists = ["[data-permission-checkbox]", "[data-area-action]"] as const;
-const headerText = "px-4 text-[11px] font-semibold tracking-normal uppercase text-[var(--color-content-heading)]";
 const checkTarget = "inline-flex min-h-6 min-w-6 items-center justify-center max-sm:min-h-11 max-sm:min-w-11";
 
 /// Cada sección es un grupo de filas de la misma tabla, incluso cuando está plegada.
@@ -53,24 +50,22 @@ function PermissionArea({
 
   return (
     <TableBody
+      striped={false}
       aria-labelledby={`${id}-name`}
       className="[&:not(:last-child)>tr:last-child]:border-b"
     >
-      <TableRow className="border-b-[var(--color-border)]/50 bg-[var(--color-surface-muted)] hover:bg-[var(--color-surface-muted)]">
+      <TableRow data-section tone="section" highlightExpanded={false}>
         <TableCell colSpan={2} className="p-0">
-          <button
-            type="button"
+          <TableSectionToggle
             aria-expanded={open}
             aria-controls={open ? permissions.map((permission) => `${id}-row-${permission.code}`).join(" ") : undefined}
             onClick={onToggleOpen}
-            className="flex min-h-10 w-full items-center gap-2.5 px-4 py-2 text-left text-sm font-medium text-[var(--color-content)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)] max-sm:min-h-11"
           >
-            <ChevronRightIcon className={cn("size-[15px] shrink-0 text-[var(--color-content-muted)] transition-transform duration-[140ms]", open ? "rotate-90" : "")} />
             <span id={`${id}-name`}>{group.name}</span>
             <span className="text-xs font-normal tabular-nums text-[var(--color-content-muted)]">
               {t("picker.areaProgress", { picked: progress.picked, total: progress.total })}
             </span>
-          </button>
+          </TableSectionToggle>
         </TableCell>
         <TableCell className="px-4 py-0 text-right">
           <label className={checkTarget}>
@@ -85,7 +80,7 @@ function PermissionArea({
         </TableCell>
       </TableRow>
       {open ? permissions.map((permission) => (
-        <TableRow key={permission.code} id={`${id}-row-${permission.code}`} className="h-11 border-b-[var(--color-border)]/50">
+        <TableRow key={permission.code} id={`${id}-row-${permission.code}`}>
           <TableCell className="px-4 whitespace-normal">
             <label htmlFor={`${id}-${permission.code}`} className="block break-words">{permission.name}</label>
           </TableCell>
@@ -129,6 +124,7 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
   const [query, setQuery] = useState("");
   const [onlyPicked, setOnlyPicked] = useState(false);
   const [openAreas, setOpenAreas] = useState(() => initialOpenAreas(groups, picked));
+  const [filteredOpenAreas, setFilteredOpenAreas] = useState<string[] | null>(null);
 
   const sectionRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -174,11 +170,16 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
   const areas = visibleAreas(groups, { query, onlyPicked, picked });
 
   // Una búsqueda de solo espacios no cuenta: ni filtra ni abre las áreas.
-  const isSearching = normalizeForSearch(query) !== "";
+  const normalizedQuery = normalizeForSearch(query);
+  const isSearching = normalizedQuery !== "";
 
-  // Buscando o con "Elegidos", lo que queda se ve abierto: buscar y tener que abrir cada resultado sería buscar
-  // dos veces. Lo que se abre o se cierra mientras tanto vale para cuando se limpie.
+  // Una búsqueda o filtro nuevos abren sus resultados. Después se pueden plegar explícitamente,
+  // sin que la apertura automática anule el botón. Se conserva la vista sin filtros por separado.
   const isFiltering = isSearching || onlyPicked;
+  const expandedAreas = isFiltering
+    ? filteredOpenAreas ?? groups.map((group) => group.area)
+    : openAreas;
+  const allExpanded = areas.length > 0 && areas.every((area) => expandedAreas.includes(area.group.area));
 
   function noMatchReason(): string {
     if (!isSearching) {
@@ -191,7 +192,19 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
   }
 
   function toggleOpen(area: string) {
-    setOpenAreas((current) => (current.includes(area) ? current.filter((item) => item !== area) : [...current, area]));
+    const next = expandedAreas.includes(area)
+      ? expandedAreas.filter((item) => item !== area)
+      : [...expandedAreas, area];
+    setOpenAreas((current) => next.includes(area)
+      ? [...new Set([...current, area])]
+      : current.filter((item) => item !== area));
+    if (isFiltering) setFilteredOpenAreas(next);
+  }
+
+  function toggleAll() {
+    const next = allExpanded ? [] : groups.map((group) => group.area);
+    setOpenAreas(next);
+    if (isFiltering) setFilteredOpenAreas(next);
   }
 
   return (
@@ -214,7 +227,10 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
             aria-label={t("picker.searchLabel")}
             placeholder={t("picker.searchPlaceholder")}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setFilteredOpenAreas(null);
+            }}
             // Es el campo donde un Enter es natural, y adentro del formulario del rol dispararía el Guardar.
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -228,39 +244,43 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
         <SegmentedControl
           aria-label={t("picker.show")}
           options={[
-            { key: "all", label: t("picker.all"), pressed: !onlyPicked, onSelect: () => setOnlyPicked(false) },
+            { key: "all", label: t("picker.all"), pressed: !onlyPicked, onSelect: () => {
+              setOnlyPicked(false);
+              setFilteredOpenAreas(null);
+            } },
             {
               key: "picked",
               label: t("picker.picked", { total: pickedSummary(groups, picked).permissions }),
               pressed: onlyPicked,
-              onSelect: () => setOnlyPicked(true),
+              onSelect: () => {
+                setOnlyPicked(true);
+                setFilteredOpenAreas(null);
+              },
             },
           ]}
         />
 
-        <span className="ml-auto inline-flex gap-3.5">
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            onClick={() => setOpenAreas(groups.map((group) => group.area))}
-            className={linkAction}
-          >
-            {t("picker.expandAll")}
-          </Button>
-          <Button type="button" variant="link" size="sm" onClick={() => setOpenAreas([])} className={linkAction}>
-            {t("picker.collapseAll")}
-          </Button>
-        </span>
+        <Button
+          type="button"
+          variant="outline"
+          aria-expanded={allExpanded}
+          aria-controls={`${titleId}-table`}
+          disabled={areas.length === 0}
+          onClick={toggleAll}
+          className="ml-auto"
+        >
+          <ChevronDownIcon className={allExpanded ? "rotate-180" : undefined} />
+          {t(allExpanded ? "picker.collapseAll" : "picker.expandAll")}
+        </Button>
       </FilterBar>
 
-      <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] [&_td:last-child]:pr-4">
-        <Table aria-labelledby={titleId} className="min-w-[520px] table-fixed">
+      <Surface>
+        <Table id={`${titleId}-table`} aria-labelledby={titleId} className="min-w-[520px] table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead scope="col" className={cn(headerText, "w-[34%]")}>{t("picker.columns.name")}</TableHead>
-              <TableHead scope="col" className={headerText}>{t("picker.columns.description")}</TableHead>
-              <TableHead scope="col" className={cn(headerText, "w-24 text-right")}>{t("picker.columns.assigned")}</TableHead>
+              <TableHead scope="col" className="w-[34%]">{t("picker.columns.name")}</TableHead>
+              <TableHead scope="col">{t("picker.columns.description")}</TableHead>
+              <TableHead scope="col" className="w-24 text-right">{t("picker.columns.assigned")}</TableHead>
             </TableRow>
           </TableHeader>
           {areas.length === 0 ? (
@@ -280,13 +300,14 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
                           searchRef.current?.focus();
                           setQuery("");
                           setOnlyPicked(false);
+                          setFilteredOpenAreas(null);
                         }}
                         className="mt-1"
                       >
                         {t("picker.noMatch.action")}
                       </Button>
                     }
-                    className="rounded-none border-0 px-6 py-12"
+                    embedded
                     // Como en el tablero: el motivo repite la búsqueda, y con una larga se parte en renglones.
                     descriptionClassName="max-w-[360px]"
                   />
@@ -300,14 +321,14 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
               key={area.group.area}
               area={area}
               picked={picked}
-              open={isFiltering || openAreas.includes(area.group.area)}
+              open={expandedAreas.includes(area.group.area)}
               readOnly={readOnly}
               onToggleOpen={() => toggleOpen(area.group.area)}
               onChange={change}
             />
           ))}
         </Table>
-      </div>
+      </Surface>
     </section>
   );
 }

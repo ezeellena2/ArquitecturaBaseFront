@@ -26,14 +26,16 @@ export function Page({
   status,
   actions,
   children,
+  viewport = false,
 }: {
   title: string;
   backTo?: { to: string; label: string };
   status?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
+  viewport?: boolean;
 }): ReactNode {
-  return (
+  const content = (
     <>
       <header className="sticky top-0 z-20 flex min-h-12 flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-page-header)] px-5 py-2 sm:flex-nowrap sm:py-0 max-sm:static">
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1 sm:flex-nowrap max-sm:basis-full">
@@ -54,7 +56,8 @@ export function Page({
         {actions ? <span className="flex shrink-0 items-center gap-2 max-sm:ml-auto">{actions}</span> : null}
       </header>
 
-      <div className="px-5 py-4">{children}</div>
+      <div className={viewport ? "flex min-h-0 flex-1 flex-col px-5 py-4" : "px-5 py-4"}>{children}</div>
     </>
   );
+  return viewport ? <div className="flex h-full min-h-0 flex-col">{content}</div> : content;
 }

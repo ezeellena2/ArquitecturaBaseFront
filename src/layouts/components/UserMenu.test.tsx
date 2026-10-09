@@ -138,7 +138,7 @@ describe("UserMenu", () => {
     // Primero hay que esperar a que el guardado haya fallado: afirmar el idioma antes pasaría igual, sin haber
     // probado nada, porque arranca en "es".
     await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("No pudimos guardar el idioma en tu perfil. Probá de nuevo."),
+      expect(toastError).toHaveBeenCalledWith("No pudimos guardar el idioma en tu perfil. Probá de nuevo.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })),
     );
     expect(i18n.language).toBe("es");
     expect(globalThis.localStorage.getItem(languageStorageKey)).toBe("es");

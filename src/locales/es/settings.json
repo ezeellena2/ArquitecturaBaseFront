@@ -1,5 +1,10 @@
 {
   "title": "Configuración",
+  "sections": {
+    "regional": "Preferencias regionales",
+    "lists": "Listados",
+    "registration": "Registro de cuentas"
+  },
   "registration": {
     "title": "Quién puede entrar",
     "switchLabel": "Registro abierto",
@@ -16,14 +21,14 @@
     "confirm": "Cambiar"
   },
   "feedback": {
-    "saved": "Guardamos el cambio.",
-    "uncertain": "No pudimos confirmar el guardado. Revisá el valor actual antes de volver a guardar.",
-    "conflict": "Otro administrador cambió la configuración. Revisá el valor actual.",
-    "failed": "No pudimos guardar el ajuste.",
+    "saved": "Guardamos los cambios de configuración.",
+    "uncertain": "No pudimos confirmar el guardado. Revisá los valores actuales antes de volver a guardar.",
+    "conflict": "Otro administrador cambió la configuración. Revisá los valores actuales.",
+    "failed": "No pudimos guardar los cambios de configuración.",
     "reviewFailed": "No pudimos consultar la configuración actual.",
     "savedTopic": "Guardamos el ajuste de {{topic}}.",
-    "lateUncertain": "No pudimos confirmar el guardado de {{topic}}. Revisá el valor actual.",
-    "lateFailed": "No pudimos guardar el ajuste de {{topic}}."
+    "lateUncertain": "No pudimos confirmar el guardado de configuración. Revisá los valores actuales.",
+    "lateFailed": "No pudimos guardar los cambios de configuración."
   },
   "errorTraceId": "Código para reportar: {{traceId}}",
   "topics": {
@@ -33,6 +38,7 @@
     "registro": "Registro"
   },
   "hints": {
+    "regional": "Valores iniciales para cuentas nuevas y pantallas públicas. Cada persona conserva sus preferencias.",
     "idioma": "Idioma inicial de las cuentas nuevas y de las pantallas públicas. Cada persona conserva su preferencia.",
     "zona-horaria": "Zona inicial de las cuentas nuevas. Cada persona conserva la de su perfil; las fechas se guardan en UTC.",
     "listados": "Cantidad inicial de filas. En cada listado se puede elegir otro tamaño.",
@@ -41,7 +47,8 @@
   "fields": {
     "defaultCulture": "Idioma predeterminado",
     "defaultTimeZoneId": "Zona horaria predeterminada",
-    "defaultPageSize": "Filas por página"
+    "defaultPageSize": "Filas por página",
+    "registrationMode": "Registro de cuentas"
   },
   "preview": {
     "label": "Vista previa"
@@ -54,18 +61,39 @@
   "review": {
     "action": "Revisar valores actuales",
     "reading": "Consultando…",
-    "title": "Revisión del cambio",
+    "title": "Revisar cambios",
+    "setting": "Ajuste",
     "source": "Origen",
     "value": "Valor",
     "current": "Guardado actualmente",
-    "mine": "Mi cambio",
-    "useCurrent": "Usar valor actual",
-    "keepMine": "Conservar mi cambio"
+    "mine": "Mi borrador",
+    "useCurrent": "Usar valores actuales",
+    "keepMine": "Conservar mis cambios"
   },
   "leave": {
     "title": "¿Descartar los cambios?",
-    "description": "El ajuste todavía no está guardado.",
+    "description": "Los cambios todavía no están guardados.",
     "confirm": "Descartar cambios",
     "cancel": "Seguir editando"
+  },
+  "appearance": {
+    "title": "Apariencia",
+    "colors": "Colores del sistema",
+    "hint": "Estos colores se aplican a todas las personas y a las pantallas de ingreso. La vista previa muestra tu borrador; el sistema cambia al guardar.",
+    "contrast": "El texto y el foco se ajustan para conservar la legibilidad. Los colores de error, advertencia y éxito mantienen su significado.",
+    "reset": "Restaurar colores iniciales",
+    "preview": "Vista previa",
+    "name": "Nombre",
+    "role": "Rol",
+    "search": "Buscar usuarios",
+    "newUser": "Nuevo usuario",
+    "saved": "Guardamos los colores del sistema.",
+    "failed": "No pudimos guardar los colores.",
+    "fields": {
+      "primaryColor": "Botones y enlaces",
+      "menuColor": "Menú lateral",
+      "headerColor": "Encabezados de secciones y tablas",
+      "alternateRowColor": "Filas alternadas"
+    }
   }
 }

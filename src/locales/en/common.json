@@ -1,4 +1,8 @@
 {
+  "messages": {
+    "incoming": "Incoming message",
+    "outgoing": "Outgoing message"
+  },
   "app": {
     "name": "Home"
   },
@@ -13,14 +17,21 @@
     "save": "Save",
     "search": "Search",
     "retry": "Retry",
+    "review": "Review",
     "close": "Close"
   },
   "states": {
     "loading": "Loading…",
     "empty": "Nothing to show",
-    "error": "Something went wrong"
+    "error": "Something went wrong",
+    "loadFailed": "We couldn't load the data"
   },
   "errors": {
+    "pageLoad": {
+      "title": "We could not open this page",
+      "description": "Check that the application is available and reload the page to try again.",
+      "reload": "Reload page"
+    },
     "network": "We couldn't connect. Check your connection.",
     "unexpected": "Something went wrong. If it keeps happening, report the code {{traceId}}.",
     "traceId": "Code to report: {{traceId}}",
@@ -32,7 +43,8 @@
     "notFound": {
       "title": "We couldn't find this page",
       "description": "Check the address or go back to the dashboard."
-    }
+    },
+    "writeUncertain": "We could not confirm the outcome. Check the current state before repeating the operation. Reference: {{traceId}}"
   },
   "language": {
     "label": "Language",
@@ -86,7 +98,13 @@
     "settingsLanguage": "Language",
     "settingsTimeZone": "Time zone",
     "settingsLists": "Lists",
-    "settingsRegistration": "Registration"
+    "settingsRegistration": "Registration",
+    "settingsGeneral": "General",
+    "ai": "Artificial intelligence",
+    "businessInformation": "Business information",
+    "appearance": "Appearance",
+    "whatsapp": "WhatsApp",
+    "whatsappChat": "Chat"
   },
   "layout": {
     "sidebar": {
@@ -96,7 +114,8 @@
       "closeDrawer": "Close menu",
       "loadError": "We couldn't load your menu.",
       "retryLoad": "Retry loading the menu",
-      "closeAdministration": "Close Administration"
+      "closeAdministration": "Close Administration",
+      "closeWhatsApp": "Close WhatsApp"
     },
     "topbar": {
       "toggle": "Navigation menu"
