@@ -28,7 +28,8 @@ export function useFormDefinitions(scope: FormReadScope, query: FormListQuery) {
   const list = useQuery({ queryKey: [...root, "page", query], queryFn: ({ signal }) => fetchFormDefinitions(query, signal), enabled,
     placeholderData: (previous, previousQuery) => JSON.stringify(previousQuery?.queryKey.slice(0, root.length)) === owner ? keepPreviousData(previous) : undefined,
     gcTime: 0, meta: { errorOwner: "local" } });
-  useEffect(() => { if (list.data && !list.isPlaceholderData) setLastLoaded({ owner, data: list.data }); }, [list.data, list.isPlaceholderData, owner]);
+  // Retain only a new successful result; a conditional adjustment avoids an extra effect render.
+  if (list.data && !list.isPlaceholderData && (lastLoaded?.owner !== owner || lastLoaded.data !== list.data)) setLastLoaded({ owner, data: list.data });
   const facetQuery = { search: query.search };
   const facets = useQuery({ queryKey: [...root, "facets", facetQuery], queryFn: ({ signal }) => fetchFormFacets(facetQuery, signal), enabled,
     gcTime: 0, meta: { errorOwner: "local" } });
