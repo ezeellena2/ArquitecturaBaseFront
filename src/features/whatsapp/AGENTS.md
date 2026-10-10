@@ -19,7 +19,17 @@ El laboratorio de burbujas se retiró al integrar la elección; no mantener dos 
 - Textos es/en, UI compartida, fechas por zona del perfil. IA, contactos y plantillas se desarrollan después.
 - Purpose/evento vienen del servidor. Access usa resumen es/en y etiqueta de acceso en la burbuja aprobada, sin cuerpo, secreto ni recuperación a borrador. Sin metadata, Unclassified; no inferir por palabras. El acceso por código y las invitaciones no dependen del modo.
 - Fecha agrupada por día local, hora/estado fuera del cuerpo; formatos solo en shared/lib/dateTime.
-- Recuperar Failed prepara un borrador vacío, también desde un mensaje confirmado; nunca envía.
+- Recuperar Failed de texto prepara el borrador, también desde un mensaje confirmado; nunca envía. Failed de Flow conserva su card y exige un envío nuevo explícito desde Enviar formulario; no se reutiliza como texto.
 - Uncertain solo lo revisa su operador con permiso y confirmación. Reviewed no equivale a Delivered.
 
 Referencias: `../../../docs/architecture.md`, `../../../docs/design/visual-baseline.md`, `../../../../ArquitecturaBase/docs/features/whatsapp.md`.
+
+## Formularios C1–C5
+
+`api/forms` consume GET chats/{id}/forms (envelope page + cultura/revisión del destinatario) y POST chats/{id}/form-messages; GET outgoing/{requestId} es la recuperación existente. Son contratos del área, sin importaciones de business-forms ni otra cola. Cuenta vinculada/elegibilidad vienen del servidor; el chat no crea vínculos. Sin whatsapp.send conserva lectura y oculta ambas acciones de envío. Sin cuenta activa/formulario elegible bloquea sólo formularios; correo nulo no impide una cuenta elegible. Modo Manual, ventana24h y operaciones pendientes siguen las guardas comunes de texto.
+
+FormComposer conserva selección de versión fuera de la página/búsqueda y mensaje privado por conversación. El mensaje inicial y CTA usan el idioma de la cuenta, con ambos recursos cargados sin suspender el chat ni sus borradores durante la carga; hasta tener el idioma del destinatario se bloquea sólo el envío del formulario; cambiar contexto no traduce ni pierde texto editado. Validar texto obligatorio y1024 sin recortarlo; diferenciar Abrir formulario del botón final. Paginado, campos, RadioGroupField cards y devolución de foco usan las piezas compartidas.
+
+Congelar UUID/definitionId/versionId/revisión de modo/revisión opaca de destinatario/mensaje fuera de MutationCache, storage, URL y logs. No enviar cuenta o cultura como autoridad. Respuesta incierta conserva exactamente ese intento, requiere GET y permite repetición explícita tras404; no hay POST automático.429 respeta Retry-After tanto en envío como en consultas/listado, sin repetir pedidos al vencer la espera; acciones y notificaciones consultan el plazo actual. Contexto cambiado, formulario retirado, modo/ventana/permisos/pendiente bloquean sin perder texto.403 oculta metadata y retira consultas propias; errores de guard no retienen issues/payloads de Zod.
+
+Historial conserva kind del servidor: Flow sólo si viene explícito, con metadata validada; nunca inferir por el cuerpo ni sustituir Access. MessageCard es presentación compartida dentro de MessageBubble.202 sigue en cola; Reviewed no es entregado; Uncertain se revisa mediante la acción existente del propio operador. API de envío/sesión/backend3 todavía pendiente: MSW/fixtures/navegador sólo acreditan este consumidor y no mensajes reales ni Meta.

@@ -7,16 +7,19 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
 import { chatKey, findOutgoing, sendText, type Chat, type Outgoing } from "../api/chat";
-import { isUnresolved } from "../lib/history";
+import { replyDisabledReason } from "../lib/replyAvailability";
+import { FormComposer } from "./FormComposer";
+import type { FormSendDraft } from "../lib/formSendSession";
 
 export interface ChatDraft {
   body: string;
+  form?: FormSendDraft;
   attempt?: { requestId: string; body: string; checking: boolean; notStored: boolean };
 }
 
-export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateDraft }: {
+export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone }: {
   contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft;
-  updateDraft: (update: (current: ChatDraft) => ChatDraft) => void;
+  updateDraft: (update: (current: ChatDraft) => ChatDraft) => void; timeZone?: string;
 }) {
   const { t } = useTranslation("whatsapp");
   const client = useQueryClient();
@@ -33,7 +36,7 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
   const refresh = () => void client.invalidateQueries({ queryKey: chatKey });
   function accepted(body: string) {
     dismissNotification(noticeId);
-    updateDraft(current => ({ body: current.body.trim() === body ? "" : current.body }));
+    updateDraft(current => ({ ...current, body: current.body.trim() === body ? "" : current.body, attempt: undefined }));
     refresh();
   }
   const sending = useMutation({ retry: false,
@@ -46,7 +49,7 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
         updateDraft(current => ({ ...current, attempt: current.attempt ? { ...current.attempt, checking: true } : undefined }));
         notify({ id: noticeId, kind: "warning", message: t("send.uncertain"), action: { label: t("send.check"), onClick: () => void checkOutcome() } });
       } else {
-        updateDraft(current => ({ body: current.body }));
+        updateDraft(current => ({ ...current, attempt: undefined }));
         setFieldError(feedback.fields.body?.join(" "));
         if (feedback.kind !== "fields" && feedback.kind !== "session") notify({ id: noticeId, kind: "error", message: feedback.kind === "forbidden" ? t("send.forbidden") : feedback.detail ?? t("send.failed") });
         refresh();
@@ -74,7 +77,7 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
     } finally { checkingRef.current = false; setChecking(false); }
   }
   function submit() {
-    if (sendingRef.current || draft.attempt?.checking) return;
+    if (sendingRef.current || draft.attempt?.checking || draftRef.current.form?.attempt) return;
     const body = draft.attempt?.body ?? draft.body.trim();
     if (!body || body.length > 4096) { setFieldError(t("send.validation")); return; }
     const requestId = draft.attempt?.requestId ?? crypto.randomUUID();
@@ -83,21 +86,22 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
     sendingRef.current = true;
     sending.mutate({ requestId, body });
   }
-  const windowOpen = now - Date.parse(contact.lastInboundAtUtc) < 24 * 60 * 60 * 1000;
-  const blocked = outgoing.some(item => isUnresolved(item.state));
-  const disabledReason = !canSend ? "send.readOnly" : contact.mode !== "Manual" ? "send.botMode" : !windowOpen ? "send.windowClosed" : !contact.phoneNumber ? "send.noPhone" : blocked ? "send.pending" : undefined;
+  const disabledReason = replyDisabledReason(contact, canSend, outgoing, now) ?? (draft.form?.attempt ? "send.pending" : undefined);
   return (
     <div className="border-t border-[var(--color-border)] p-3">
       {disabledReason ? <p className="mb-2 text-sm text-[var(--color-content-muted)]">{t(disabledReason)}</p> : null}
       <label htmlFor="chat-reply" className="sr-only">{t("send.label")}</label>
       <Textarea id="chat-reply" value={draft.body} maxLength={4096} rows={3} aria-invalid={Boolean(fieldError)} aria-describedby={fieldError ? "chat-reply-error" : undefined}
         disabled={Boolean(disabledReason) || sending.isPending || Boolean(draft.attempt)}
-        placeholder={t("send.placeholder")} onChange={event => { updateDraft(() => ({ body: event.target.value })); setFieldError(undefined); }}
+        placeholder={t("send.placeholder")} onChange={event => { updateDraft(current => ({ ...current, body: event.target.value, attempt: undefined })); setFieldError(undefined); }}
         onKeyDown={event => { if (event.ctrlKey && event.key === "Enter" && !disabledReason && !draft.attempt?.checking) { event.preventDefault(); submit(); } }} />
       {fieldError ? <p id="chat-reply-error" role="alert" className="mt-1 text-sm text-[var(--color-danger)]">{fieldError}</p> : null}
-      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+      <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
+        <FormComposer contact={contact} actor={actor} canSend={canSend} outgoing={outgoing} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
+        {canSend ? <div className="ml-auto flex flex-wrap justify-end gap-2">
         {draft.attempt?.checking ? <Button variant="outline" size="sm" disabled={checking} onClick={() => void checkOutcome()}>{t("send.check")}</Button> :
           <Button size="sm" disabled={Boolean(disabledReason) || sending.isPending || !draft.body.trim()} onClick={submit}>{t(sending.isPending ? "send.sending" : draft.attempt?.notStored ? "send.retry" : "send.action")}</Button>}
+        </div> : null}
       </div>
     </div>
   );

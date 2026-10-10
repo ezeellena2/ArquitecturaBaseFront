@@ -1,0 +1,37 @@
+import { act, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { createInstance, type ReadCallback } from "i18next";
+import { I18nextProvider, initReactI18next } from "react-i18next";
+import { useState } from "react";
+import { HttpResponse, http } from "msw";
+import { expect, it } from "vitest";
+import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { server } from "@/test/mocks/server";
+import es from "@/locales/es/whatsapp.json";
+import en from "@/locales/en/whatsapp.json";
+import common from "@/locales/es/common.json";
+import { ChatThread } from "./ChatThread";
+import type { ChatDraft } from "./ChatComposer";
+import type { Chat } from "../api/chat";
+it("keeps the selected chat and both private drafts visible while English resources are still loading", async () => {
+ const language = createInstance();
+ let finish: ReadCallback | undefined;
+ await language.use(initReactI18next).use({type:"backend" as const,init(){},read(lng:string,_ns:string,callback:ReadCallback){if(lng==="en"&&_ns==="whatsapp")finish=callback;else callback(null,common);}}).init({lng:"es",fallbackLng:"es",ns:["whatsapp","common"],defaultNS:"whatsapp",partialBundledLanguages:true,resources:{es:{whatsapp:es,common}},interpolation:{escapeValue:false}});
+ const option={definitionId:"019abcde-1000-7000-8000-000000000001",versionId:"019abcde-1000-7000-8000-000000000002",versionNumber:1,name:"Register visit",questionCount:4,submitLabel:"Confirm visit"};
+ const contact: Chat={id:"language-chat",profileName:"Juan",phoneNumber:"+5493515551234",mode:"Manual",modeRevision:7,lastInboundAtUtc:new Date().toISOString(),lastInboundSequence:1,unreadCount:0,preview:"Hola",linkedAccount:{userId:"employee",displayName:"Juan",email:null,isActive:true},formEligibility:{status:"Eligible",recipientCulture:"en",recipientContextRevision:"opaque-1"}};
+ server.use(http.get("/api/whatsapp/chats/:id/messages",()=>HttpResponse.json({contact,messages:[],outgoing:[],beforeAtUtc:null,beforeId:null})),http.put("/api/whatsapp/chats/:id/read",()=>new HttpResponse(null,{status:204})),http.get("/api/whatsapp/chats/:id/forms",()=>HttpResponse.json({page:{items:[option],page:1,pageSize:4,totalCount:1,totalPages:1,hasPrevious:false,hasNext:false},recipientCulture:"en",recipientContextRevision:"opaque-1"})));
+ function SelectedChat(){const[draft,setDraft]=useState<ChatDraft>({body:"Borrador de respuesta",form:{message:"Mensaje de formulario editado",selection:option,recipientCulture:"en",recipientContextRevision:"opaque-1",modeRevision:7,touched:true}});return <I18nextProvider i18n={language}><ChatThread id={contact.id} actor="me" canSend canManage={false} draft={draft} updateDraft={setDraft} onBack={()=>{}} /></I18nextProvider>;}
+ renderWithProviders(<SelectedChat />);
+ const reply=await screen.findByLabelText("Respuesta al cliente");
+ const heading=screen.getByRole("heading",{name:"Juan"});
+ await waitFor(()=>expect(finish).toBeTypeOf("function"));
+ expect(language.hasResourceBundle("en","whatsapp")).toBe(false);
+ expect(reply).toBeVisible();expect(reply).toHaveValue("Borrador de respuesta");expect(reply).toBeEnabled();expect(heading).toBeVisible();
+ expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
+ await act(async()=>{finish!(null,en);});
+ await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
+ expect(screen.getByLabelText("Respuesta al cliente")).toBe(reply);expect(reply).toHaveValue("Borrador de respuesta");expect(screen.getByRole("heading",{name:"Juan"})).toBe(heading);
+ await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");
+ expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Mensaje de formulario editado");
+ expect(await within(dialog).findByRole("radio",{name:"Register visit"})).toHaveAttribute("aria-checked","true");
+});

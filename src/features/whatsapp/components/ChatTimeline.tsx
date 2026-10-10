@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { formatDateInZone, formatDateTimeInZone, formatTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { MessageBubble, MessageDateDivider } from "@/shared/ui/MessageBubble";
+import { MessageCard } from "@/shared/ui/MessageCard";
+import { FormIcon } from "@/shared/ui/icons";
 import { MessageHistory } from "@/shared/ui/MessageHistory";
 import type { Outgoing } from "../api/chat";
 import { groupTimelineByDay, type TimelineItem } from "../lib/timeline";
@@ -17,6 +19,8 @@ export function ChatTimeline({ items, actor, timeZone, canSend, canReuse, review
   hasOlder: boolean; loadingOlder: boolean; historyError: boolean; loadOlder: () => Promise<unknown>;
 }) {
   const { t, i18n } = useTranslation("whatsapp");
+  useTranslation("whatsapp", { lng: "en", useSuspense: false });
+  useTranslation("whatsapp", { lng: "es", useSuspense: false });
   const language = i18n.resolvedLanguage ?? "es";
   const groups = useMemo(() => groupTimelineByDay(items, timeZone), [items, timeZone]);
   const { viewport: viewportRef, onScroll, loadOlder: prependHistory } = useChatHistoryViewport(items, atBottom, onAtBottomChange);
@@ -26,7 +30,8 @@ export function ChatTimeline({ items, actor, timeZone, canSend, canReuse, review
     {groups.map(group => <div key={group.date}>
       <MessageDateDivider date={group.date} label={formatDateInZone(group.items[0].occurredAtUtc, language, timeZone)} />
       {group.items.map(item => <MessageBubble key={item.key} direction={item.direction}
-        text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.body ?? t(item.kind === "Text" ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
+        text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
+        attachment={item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : undefined}
         timestamp={item.occurredAtUtc} timeLabel={formatTimeInZone(item.occurredAtUtc, language, timeZone)}
         dateLabel={formatDateTimeInZone(item.occurredAtUtc, language, timeZone)}
         author={item.purpose === "Access" ? t("access.label") : item.author ? t(item.author === "bot" ? "author.bot" : item.operatorUserId === actor ? "author.you" : "author.operator") : undefined}
@@ -35,8 +40,9 @@ export function ChatTimeline({ items, actor, timeZone, canSend, canReuse, review
           <p>{t("review.description")}</p>
           {canSend && item.operation.operatorUserId === actor ? <Button variant="outline" size="sm" disabled={reviewing} onClick={() => onReview(item.operation)}>{t("review.action")}</Button> : null}
         </> : null}
-        {item.delivery?.code === "Failed" && item.body && canSend ?
+        {item.delivery?.code === "Failed" && item.kind !== "Flow" && item.body && canSend ?
           <Button variant="muted-link" size="inline" disabled={!canReuse} onClick={() => onReuse(item.body!)}>{t("reuse")}</Button> : null}
+        {item.delivery?.code === "Failed" && item.kind === "Flow" ? <p>{t("forms.failed")}</p> : null}
       </MessageBubble>)}
     </div>)}
   </MessageHistory>;

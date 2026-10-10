@@ -30,7 +30,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
   const [unread, setUnread] = useState(false);
   const [page, setPage] = useState(1);
   const [drafts, setDrafts] = useState<Record<string, ChatDraft>>({});
-  const guard = useUnsavedChangesGuard(Object.values(drafts).some(draft => Boolean(draft.body.trim()) || Boolean(draft.attempt)));
+  const guard = useUnsavedChangesGuard(Object.values(drafts).some(draft => Boolean(draft.body.trim()) || Boolean(draft.attempt) || Boolean(draft.form?.touched) || Boolean(draft.form?.attempt)));
   const visible = useVisibleChat();
   const list = useQuery({ queryKey: [...chatKey, actor, "list", page, search, unread], queryFn: ({ signal }) => listChats(page, search, unread, signal),
     refetchInterval: query => query.state.error instanceof ApiError && query.state.error.status === 403 ? false : visible ? 5000 : false });

@@ -45,3 +45,22 @@ describe("chat timeline", () => {
     expect(buildTimeline([received], [])[0]).toMatchObject({ direction: "incoming", author: undefined, delivery: undefined });
   });
 });
+
+const form = { definitionId: "019abcde-1000-7000-8000-000000000001", versionId: "019abcde-1000-7000-8000-000000000002", versionNumber: 1, name: "Visit form", culture: "en" as const };
+describe("Flow timeline metadata", () => {
+  it("keeps a Flow card on its outgoing operation and confirmed message without changing other kinds", () => {
+    const flow = {...outgoing("flow","2026-10-10T12:00:00Z"),kind:"Flow" as const,form};
+    const confirmed = {...message("flow-message","2026-10-10T12:01:00Z","Read"),kind:"Flow",form};
+    const other = {...message("media","2026-10-10T12:02:00Z"),kind:"Other"};
+    const items = buildTimeline([confirmed,other],[flow]);
+    expect(items[0]).toMatchObject({kind:"Flow",form});
+    expect(items[1]).toMatchObject({kind:"Flow",form,delivery:{state:"read"}});
+    expect(items[2]).toMatchObject({kind:"Other",form:null});
+  });
+  it("never manufactures a form card from text or access metadata", () => {
+    const access = {...message("access","2026-10-10T12:00:00Z"),purpose:"Access" as const,form,body:"private"};
+    const other = {...message("other","2026-10-10T12:01:00Z"),kind:"Other",form};
+    expect(buildTimeline([access,other],[]).map(item=>item.form)).toEqual([null,null]);
+    expect(buildTimeline([access],[])[0].body).toBeNull();
+  });
+});

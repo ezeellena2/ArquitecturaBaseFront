@@ -21,13 +21,14 @@ interface RadioGroupFieldProps {
   value: string | undefined;
   onValueChange: (value: string) => void;
   error?: string;
+  variant?: "plain" | "cards";
 }
 
 /// Una elección entre pocas opciones, una debajo de la otra, cada una con su etiqueta y su ayuda al lado: la del canal
 /// de la invitación en el alta de un usuario (tablero "WhatsApp · Usuarios: alta con teléfono", punto 2). Es el Radio
 /// Group de Radix, que da el rol `radiogroup`, las flechas para moverse y el foco en la elegida, con la misma fila que
 /// `CheckboxField`.
-export function RadioGroupField({ label, options, value, onValueChange, error }: RadioGroupFieldProps): ReactNode {
+export function RadioGroupField({ label, options, value, onValueChange, error, variant = "plain" }: RadioGroupFieldProps): ReactNode {
   const id = useId();
   const errorId = `${id}-error`;
 
@@ -48,7 +49,7 @@ export function RadioGroupField({ label, options, value, onValueChange, error }:
           return (
             // `relative`: dentro de un formulario, Radix pone al lado del botón un input escondido y posicionado, para
             // que el valor viaje con el formulario. Sin un ancestro posicionado cerca, se ubica contra el diálogo.
-            <div key={option.value} className="relative flex items-start gap-2.5 px-2.5 py-1.5">
+            <div key={option.value} className={cn("relative flex items-start gap-2.5 px-2.5 py-1.5", variant === "cards" && "rounded-[var(--radius-control)] border border-[var(--color-border)] py-2.5 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-[var(--color-surface-muted)]")}>
               <RadioGroup.Item
                 id={optionId}
                 value={option.value}

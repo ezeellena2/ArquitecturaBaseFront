@@ -26,7 +26,9 @@ export function ChatThread({ id, actor, timeZone, canSend, canManage, draft, upd
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border)] p-3">
         <div className="flex min-w-0 items-center gap-2">
           <div className="md:hidden"><Button variant="outline" size="sm" onClick={onBack}>{t("back")}</Button></div>
-          <div className="min-w-0"><h2 className="truncate text-base font-semibold">{contact.profileName ?? contact.phoneNumber ?? t("unnamed")}</h2><p className="text-xs text-[var(--color-content-muted)]">{contact.phoneNumber ?? t("send.noPhone")}</p></div>
+          <div className="min-w-0"><h2 className="truncate text-base font-semibold">{contact.profileName ?? contact.phoneNumber ?? t("unnamed")}</h2><p className="text-xs text-[var(--color-content-muted)]">{contact.phoneNumber ?? t("send.noPhone")}</p>
+            {contact.linkedAccount === null ? <p className="text-xs text-[var(--color-content-muted)]">{t("forms.unlinkedHeader")}</p> : contact.linkedAccount ? <p className="break-words text-xs text-[var(--color-content-muted)]">{t("forms.linkedHeader",{account:contact.linkedAccount.email??contact.linkedAccount.displayName})}{!contact.linkedAccount.email ? " · "+t("forms.noEmail") : ""}{!contact.linkedAccount.isActive ? " · "+t("forms.inactive") : ""}</p> : null}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-[var(--color-content-muted)]">{t(`mode.${contact.mode}`)}</span>
@@ -36,13 +38,13 @@ export function ChatThread({ id, actor, timeZone, canSend, canManage, draft, upd
       </div>
       {latest.isError ? <div className="flex items-center justify-between gap-2 p-3 text-sm text-[var(--color-content-muted)]"><span>{t(forbidden ? "send.forbidden" : "stale")}</span><Button size="sm" variant="outline" onClick={() => void latest.refetch()}>{t("retry")}</Button></div> : null}
       <ChatTimeline items={items} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
-        canReuse={!draft.attempt && !draft.body} reviewing={reviewing.isPending} onReview={setReview}
-        onReuse={body => updateDraft(() => ({ body }))} atBottom={atBottom} onAtBottomChange={setAtBottom}
+        canReuse={!draft.attempt && !draft.form?.attempt && !draft.body} reviewing={reviewing.isPending} onReview={setReview}
+        onReuse={body => updateDraft(value => ({ ...value, body, attempt: undefined }))} atBottom={atBottom} onAtBottomChange={setAtBottom}
         hasOlder={Boolean(history.data ? history.hasNextPage : latest.data?.beforeId)} loadingOlder={history.isFetchingNextPage}
         historyError={history.isError} loadOlder={() => history.fetchNextPage()} />
       {!atBottom ? <div className="p-2 text-center"><Button size="sm" variant="outline" onClick={() => setAtBottom(true)}>{t("latest")}</Button></div> : null}
       {read.isError ? <div className="p-2 text-sm text-[var(--color-content-muted)]">{t("readFailed")} <Button size="sm" variant="outline" onClick={() => read.reset()}>{t("retry")}</Button></div> : null}
-      <ChatComposer contact={contact} actor={actor} canSend={canSend && !latest.isError} outgoing={latest.data?.outgoing ?? []} draft={draft} updateDraft={updateDraft} />
+      <ChatComposer contact={contact} actor={actor} canSend={canSend && !latest.isError} outgoing={latest.data?.outgoing ?? []} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
       <ConfirmDialog open={Boolean(mode)} onOpenChange={open => { if (!open) setMode(undefined); }} title={t("mode.take")}
         description={t("mode.manualDescription")} confirmLabel={t("confirm")} onConfirm={() => { if (mode) changing.mutate(mode); }} />
       <ConfirmDialog open={Boolean(review)} onOpenChange={open => { if (!open) setReview(undefined); }} title={t("review.title")} description={t("review.confirmDescription")}

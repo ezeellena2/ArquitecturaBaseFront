@@ -10,7 +10,7 @@ const deliveryIcons = {
 } satisfies Record<MessageDeliveryState, typeof ClockIcon>;
 
 // Presentation only: the caller supplies localized content and the delivery stage it can confirm.
-export function MessageBubble({ direction, text, timestamp, timeLabel, dateLabel, author, delivery, children }: {
+export function MessageBubble({ direction, text, timestamp, timeLabel, dateLabel, author, delivery, attachment, children }: {
   direction: "incoming" | "outgoing";
   text: string;
   timestamp: string;
@@ -18,13 +18,14 @@ export function MessageBubble({ direction, text, timestamp, timeLabel, dateLabel
   dateLabel: string;
   author?: string;
   delivery?: { state: MessageDeliveryState; label: string };
+  attachment?: ReactNode;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const Icon = delivery ? deliveryIcons[delivery.state] : undefined;
   const details = Children.toArray(children);
   return <article className="message-item" data-direction={direction} aria-label={t(`messages.${direction}`)}>
-    <div className="message-bubble"><p>{text}</p></div>
+    <div className="message-bubble"><p>{text}</p>{attachment}</div>
     <div className="message-metadata">
       {author ? <span>{author} ·</span> : null}
       <time dateTime={timestamp} aria-label={dateLabel}>{timeLabel}</time>

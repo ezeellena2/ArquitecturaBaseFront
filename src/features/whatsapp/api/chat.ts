@@ -1,10 +1,12 @@
 import { api } from "@/shared/api/httpClient";
+import type { ChatFormMetadata, FormEligibility, LinkedAccount } from "./forms";
 
 export type ChatMode = "Bot" | "Manual";
 export type MessagePurpose = "Unclassified" | "Business" | "Access";
 export type AccessEventKind = "SignInCode" | "VerifyPhoneCode" | "Invitation" | "AccessRequested" | "AccessInstructions";
 export type OutgoingState = "Pending" | "Sending" | "Accepted" | "Failed" | "Uncertain" | "Reviewed";
 export interface Chat {
+  linkedAccount?: LinkedAccount | null; formEligibility?: FormEligibility;
   id: string; profileName: string | null; phoneNumber: string | null; mode: ChatMode; modeRevision: number;
   lastInboundAtUtc: string; lastInboundSequence: number; unreadCount: number; preview: string | null;
   previewPurpose?: MessagePurpose; previewAccessEventKind?: AccessEventKind | null;
@@ -13,8 +15,10 @@ export interface ChatMessage {
   id: string; direction: "Inbound" | "Outbound"; kind: string; body: string | null; occurredAtUtc: string;
   inboundSequence: number; operatorUserId: string | null; status: string | null; errorCode: number | null;
   purpose?: MessagePurpose; accessEventKind?: AccessEventKind | null;
+  form?: ChatFormMetadata | null;
 }
 export interface Outgoing {
+  kind?: "Text" | "Flow"; form?: ChatFormMetadata | null;
   id: string; requestId: string; operatorUserId: string; body: string | null; requestedAtUtc: string;
   state: OutgoingState; waMessageId: string | null;
 }

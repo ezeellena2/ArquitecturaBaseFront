@@ -14,6 +14,7 @@ Reúne primitivas generadas por shadcn y componentes propios de formularios, tab
 - MessageHistory, MessageBubble y MessageDateDivider son presentación compartida: fondo/scroll,
   dirección, cuerpo, metadatos y entrega con texto/ícono. No conocen contratos, estados HTTP ni
   WhatsApp; el consumidor adapta sus datos. Toda fecha se formatea antes de pasarse a la pieza.
+  MessageBubble admite un attachment dentro del cuerpo y conserva revisión/recuperación después de los metadatos; MessageCard presenta título, descripción e ícono sin contratos de una feature. RadioGroupField ofrece filas simples o cards con el mismo control accesible. EmbeddedPreview sólo presenta un iframe con título accesible y sandbox/referrerPolicy; el consumidor valida URL, permisos, idioma y vencimiento.
 - Un cambio visual se contrasta con la biblioteca y el contrato aprobado. Las decisiones nuevas pasan por tablero y elección antes de implementarse.
 - Tests consultan por rol y texto; los de i18n y tema evitan regresiones de componentes generados.
 - El único Toaster se monta en AppProviders y fija la política común. No promover un FormError
