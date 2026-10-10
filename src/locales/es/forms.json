@@ -206,9 +206,29 @@
     "listFailed": "No se pudo publicar",
     "listPublishing": "Publicando",
     "previewNoPermission": "Ya no tenés permiso para ver esta vista previa.",
-    "questionIssue": "Revisá esta pregunta · {{language}}"
+    "questionIssue": "Revisá esta pregunta · {{language}}",
+    "versionTitle": "Publicar la versión {{version}} en WhatsApp",
+    "publishVersion": "Publicar versión {{version}}",
+    "diffTitle": "Qué cambia respecto de la versión {{version}}",
+    "diffAdded": "Agregadas: {{names}}",
+    "diffChanged": "Cambiadas: {{names}}",
+    "diffRemoved_one": "{{count}} pregunta quitada",
+    "diffRemoved_other": "{{count}} preguntas quitadas",
+    "channelIssue": "El canal de publicación",
+    "savedAt": "Se publica el borrador guardado el {{date}}.",
+    "missingTexts_one": "Falta {{count}} texto en {{language}}.",
+    "missingTexts_other": "Faltan {{count}} textos en {{language}}."
   },
-  "viewQuestion": "Ver pregunta {{name}}",
   "reviewNoSave": "Ninguna opción guarda. Después de elegir, revisás los cambios marcados y tocás «Guardar borrador».",
-  "reviewChangesToInspect": "Cambios de la otra revisión para revisar"
+  "reviewChangesToInspect": "Cambios de la otra revisión para revisar",
+  "viewQuestion": "Ver pregunta {{name}}",
+  "changeTypeAction": "Cambiar tipo",
+  "removeOptionAction": "Quitar opción",
+  "removeQuestionAction": "Quitar pregunta",
+  "cultureNamesInText": {
+    "es": "español",
+    "en": "inglés"
+  },
+  "questionLimit": "Podés agregar hasta {{count}} preguntas. Quitá una para agregar otra.",
+  "savingLeave": "Estamos guardando el borrador. Esperá el resultado antes de salir."
 }

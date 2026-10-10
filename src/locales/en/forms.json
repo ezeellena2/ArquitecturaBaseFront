@@ -206,9 +206,29 @@
     "listFailed": "Could not publish",
     "listPublishing": "Publishing",
     "previewNoPermission": "You no longer have permission to view this preview.",
-    "questionIssue": "Review this question · {{language}}"
+    "questionIssue": "Review this question · {{language}}",
+    "versionTitle": "Publish version {{version}} on WhatsApp",
+    "publishVersion": "Publish version {{version}}",
+    "diffTitle": "What changes from version {{version}}",
+    "diffAdded": "Added: {{names}}",
+    "diffChanged": "Changed: {{names}}",
+    "diffRemoved_one": "{{count}} question removed",
+    "diffRemoved_other": "{{count}} questions removed",
+    "channelIssue": "The publication channel",
+    "savedAt": "The draft saved on {{date}} will be published.",
+    "missingTexts_one": "{{count}} text is missing in {{language}}.",
+    "missingTexts_other": "{{count}} texts are missing in {{language}}."
   },
-  "viewQuestion": "View question {{name}}",
   "reviewNoSave": "Neither option saves. After choosing, review the marked changes and select “Save draft”.",
-  "reviewChangesToInspect": "Changes from the other revision to review"
+  "reviewChangesToInspect": "Changes from the other revision to review",
+  "viewQuestion": "View question {{name}}",
+  "changeTypeAction": "Change type",
+  "removeOptionAction": "Remove option",
+  "removeQuestionAction": "Remove question",
+  "cultureNamesInText": {
+    "es": "Spanish",
+    "en": "English"
+  },
+  "questionLimit": "You can add up to {{count}} questions. Remove one to add another.",
+  "savingLeave": "We are saving the draft. Wait for the result before leaving."
 }

@@ -3,7 +3,7 @@ import realFailedDetail from "@/test/fixtures/forms-http/failed/detail-es.json";
 import realFailedStatus from "@/test/fixtures/forms-http/failed/status-es.json";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http } from "msw";
+import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
@@ -32,8 +32,8 @@ describe("Forms routes", () => {
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     await screen.findByLabelText("Nombre");
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
-    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
-    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar versión 1" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Aceptando publicación…" })).toBeInTheDocument();
     expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
@@ -53,8 +53,8 @@ describe("Forms routes", () => {
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     await screen.findByLabelText("Nombre");
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
-    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
-    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar versión 1" }));
     const review = await screen.findByRole("button", { name: "Revisar" });
     expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita");
     expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeDisabled();
@@ -71,8 +71,8 @@ describe("Forms routes", () => {
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     await screen.findByLabelText("Nombre");
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
-    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
-    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar versión 1" }));
     await screen.findByRole("heading", { name: "Publicando · versión 1" });
     expect(screen.queryByText("Publicado · versión 1")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
@@ -86,8 +86,8 @@ describe("Forms routes", () => {
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     await screen.findByLabelText("Nombre");
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
-    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
-    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar versión 1" }));
     await screen.findByRole("heading", { name: "Publicando · versión 1" });
     await userEvent.type(screen.getByLabelText("Nombre"), " nuevo borrador");
     await userEvent.click(screen.getByRole("button", { name: "Consultar publicación" }));
@@ -107,8 +107,8 @@ describe("Forms routes", () => {
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
     const first = await screen.findByRole("dialog", { name: "Primero guardá los cambios" });
     await userEvent.click(within(first).getByRole("button", { name: "Guardar borrador" }));
-    const checked = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
-    await waitFor(() => expect(within(checked).getByRole("button", { name: "Publicar" })).toBeEnabled());
+    const checked = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
+    await waitFor(() => expect(within(checked).getByRole("button", { name: "Publicar versión 1" })).toBeEnabled());
     expect(store.definitions.get(fixtureFormId)?.revision).toBe(2);
     expect(store.calls.filter(call => call.path.endsWith("/publication-checks"))).toHaveLength(1);
     expect(store.calls.filter(call => call.path.endsWith("/publications"))).toHaveLength(0);
@@ -122,7 +122,7 @@ describe("Forms routes", () => {
     server.use(http.post("/api/forms/definitions/:id/publication-checks", () => {
       checks++;
       const current = store.definitions.get(fixtureFormId)!;
-      return Response.json({ definitionId: current.id, draftRevision: current.revision, compatibility: "Blocked", canAccept: false,
+      return Response.json({ definitionId: current.id, draftRevision: current.revision, nextVersionNumber: 1, compatibility: "Blocked", canAccept: false,
         acceptanceAvailability: "Unavailable", checkToken: null, checkExpiresAtUtc: null, channels: [], issues: [{ channelId: null, fieldId: current.draft.fields[5]!.fieldId, choiceId: null,
           path: "draft.fields[5].help.en", code: "Forms.Publication.MissingTranslation", message: "Completá la ayuda en inglés.", limit: null, culture: "en" }],
         diff: { baseVersionId: null, added: current.draft.fields.map(q => q.fieldId), changed: [], removed: [] } });
@@ -130,9 +130,9 @@ describe("Forms routes", () => {
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     await screen.findByLabelText("Nombre");
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
-    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
+    const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
     expect(await within(dialog).findByText("Completá la ayuda en inglés.")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Publicar" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Publicar versión 1" })).toBeDisabled();
     await userEvent.click(within(dialog).getByRole("button", { name: "Ir a la pregunta" }));
     expect(screen.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Ayuda para el empleado")).toHaveValue("");
@@ -313,7 +313,7 @@ it("returns focus to a neighboring row after confirmed question removal", async 
   await screen.findByLabelText("Nombre");
   await userEvent.click(screen.getByRole("button", { name: "Quitar Cliente" }));
   const dialog = await screen.findByRole("dialog");
-  await userEvent.click(within(dialog).getByRole("button", { name: "Confirmar" }));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Quitar pregunta" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   expect(screen.getByRole("button", { name: "Editar Contacto" })).toHaveFocus();
 });
@@ -334,8 +334,8 @@ it("disables Discard while acceptance is pending and while its result is unconfi
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   await screen.findByLabelText("Nombre");
   await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
-  const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
-  await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+  const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
+  await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar versión 1" }));
   try { expect(screen.getByRole("button", { name: "Descartar" })).toBeDisabled(); } finally { release(); }
   await screen.findByRole("heading", { name: "Publicación sin confirmar" });
   expect(screen.getByRole("button", { name: "Descartar" })).toBeDisabled();
@@ -382,6 +382,21 @@ it("retains the table and sort focus through loading and failure without refetch
   expect(store.calls.filter(call => call.path.endsWith("/facets"))).toHaveLength(1);
 });
 
+it("shows Forbidden without issuing form reads when Read is absent", async () => {
+  const store = setup("", ["formtemplates.manage"]);
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByRole("heading", { name: "No tenés permiso" });
+  expect(store.calls).toHaveLength(0);
+});
+it("keeps the read-only list navigable without write actions", async () => {
+  setup("forms-read", ["formtemplates.read"]);
+  renderRouteWithProviders("/formularios");
+  const table = await screen.findByRole("table");
+  expect(within(table).getByRole("link", { name: "Registrar visita" })).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Nuevo formulario" })).not.toBeInTheDocument();
+  expect(within(table).queryByRole("button", { name: /Editar/ })).not.toBeInTheDocument();
+});
+
 it("shows Published with its version from an actual backend list response", async () => {
   setup();
   server.use(http.get("/api/forms/definitions", () => Response.json(realPublishedList)));
@@ -401,4 +416,42 @@ it("marks the affected question and focuses the correct language from actual Fai
   expect(label).toHaveFocus();
   expect(label).toHaveAttribute("aria-invalid", "true");
   expect(document.getElementById(label.getAttribute("aria-describedby")!)).toHaveTextContent(realFailedStatus.issues[0]!.message);
+});
+
+it("preserves unsaved text and focus when a detail refresh fails", async () => {
+  setup();
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  const name = await screen.findByLabelText("Nombre");
+  await userEvent.clear(name);
+  await userEvent.type(name, "Mi cambio sin guardar");
+  server.use(http.get("/api/forms/definitions/:id", () => Response.json({ traceId: "detail-refresh" }, { status: 500 })));
+  await act(() => queryClient.invalidateQueries({ predicate: query => query.queryKey.includes("detail") }));
+  await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.message.includes("detail-refresh"))).toBe(true));
+  expect(name).toHaveValue("Mi cambio sin guardar");
+  expect(name).toHaveFocus();
+  expect(screen.queryByText("No pudimos cargar el formulario.")).not.toBeInTheDocument();
+});
+it("reports the common network cause for a failed detail read", async () => {
+  setup();
+  server.use(http.get("/api/forms/definitions/:id", () => HttpResponse.error()));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByRole("button", { name: "Reintentar" }, { timeout: 5000 });
+  await waitFor(() => expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(1));
+  expect(vi.mocked(notify).mock.calls.find(([notice]) => notice.kind === "error")?.[0].message).toBe("No pudimos conectarnos. Revisá tu conexión.");
+});
+it("offers only Stay when navigation is attempted during an unresolved save", async () => {
+  const store = setup();
+  let release = () => {};
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => { await pending; return store.handle(request); }));
+  const { router } = renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await userEvent.type(await screen.findByLabelText("Nombre"), " cambio");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  await act(() => router.navigate("/formularios"));
+  try {
+    const dialog = await screen.findByRole("dialog", { name: "Guardando…" });
+    expect(within(dialog).getByRole("button", { name: "Seguir editando" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Revisar" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Descartar" })).not.toBeInTheDocument();
+  } finally { release(); }
 });

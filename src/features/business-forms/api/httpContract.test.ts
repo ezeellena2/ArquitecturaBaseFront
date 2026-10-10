@@ -9,8 +9,10 @@ import failedStatusFixture from "@/test/fixtures/forms-http/failed/status-en.jso
 import publishedListFixture from "@/test/fixtures/forms-http/published/list-es.json";
 import draftListFixture from "@/test/fixtures/forms-http/published/draft-list.json";
 import failedDetailFixture from "@/test/fixtures/forms-http/failed/detail-es.json";
-import { readFormDetail, readFormPage, readFormPublicationReceipt, readFormPublicationStatus } from "./response";
+import { readFormDetail, readFormPage, readFormPublicationReceipt, readFormPublicationStatus, readFormPublicationCheck } from "./response";
 
+import firstCheckFixture from "@/test/fixtures/forms-http/published/check-unavailable.json";
+import nextCheckFixture from "@/test/fixtures/forms-http/published/check-next-unavailable.json";
 
 // A fresh producer directory exercises these same guards without updating checked-in fixtures.
 const input = process.env.FORMS_HTTP_CONTRACT_INPUT;
@@ -22,6 +24,8 @@ const failedStatus = body(failedStatusFixture, "failed/status-en.json");
 const publishedList = body(publishedListFixture, "published/list-es.json");
 const draftList = body(draftListFixture, "published/draft-list.json");
 const failedDetail = body(failedDetailFixture, "failed/detail-es.json");
+const firstCheck = body(firstCheckFixture, "published/check-unavailable.json");
+const nextCheck = body(nextCheckFixture, "published/check-next-unavailable.json");
 
 describe("Actual backend HTTP contract", () => {
   it("reads Draft and Published lists including the active version number", () => {
@@ -33,6 +37,13 @@ describe("Actual backend HTTP contract", () => {
     for (const body of [acceptedStatus, publishedStatus, failedStatus]) expect(readFormPublicationStatus(body, body.definitionId, body.requestId)).toEqual(body);
     expect(readFormDetail(failedDetail).publication.currentOperation?.state).toBe("Failed");
     expect(failedStatus.issues[0]).toMatchObject({ fieldId: failedDetail.definition.draft.fields[0]?.fieldId, culture: "en" });
+  });
+  it("reads the next version number from actual checks before and after publication", () => {
+    expect(readFormPublicationCheck(firstCheck, firstCheck.definitionId, firstCheck.draftRevision, [])).toEqual(firstCheck);
+    expect(readFormPublicationCheck(nextCheck, nextCheck.definitionId, nextCheck.draftRevision, [])).toEqual(nextCheck);
+    expect([firstCheck.nextVersionNumber, nextCheck.nextVersionNumber]).toEqual([1, 2]);
+    expect(firstCheck.checkToken).toBeNull();
+    expect(nextCheck.canAccept).toBe(false);
   });
   it("rejects missing or null issues rather than concealing drift from the actual HTTP contract", () => {
     const { issues, ...missing } = acceptedStatus;

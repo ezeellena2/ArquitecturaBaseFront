@@ -11,7 +11,7 @@ vi.mock("../api/forms", () => ({ acceptFormPublication: vi.fn(), fetchFormPublic
 const definition = fixtureDefinition();
 const body = { ...openDraftSession({ actorId: "a", editorId: "p" }, definition).value, expectedRevision: 1 };
 const scope = { actorId: "a", culture: "es" as const, permissions: ["formtemplates.read", "formtemplates.publish"] };
-const checked = { definitionId: definition.id, draftRevision: 1, compatibility: "LocallyValidated" as const,
+const checked = { definitionId: definition.id, draftRevision: 1, nextVersionNumber: 1, compatibility: "LocallyValidated" as const,
   canAccept: true, acceptanceAvailability: "Available" as const, checkToken: "private-ticket", checkExpiresAtUtc: "2099-10-10T16:00:00Z",
   channels: [], issues: [], diff: { baseVersionId: null, added: [], changed: [], removed: [] } };
 const identity = { definitionId: definition.id, requestId: "01990000-0000-7000-8000-000000000090", operationId: "01990000-0000-7000-8000-000000000091",

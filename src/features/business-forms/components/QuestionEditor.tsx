@@ -22,6 +22,8 @@ export function QuestionEditor({ question, position, total, culture, original, e
   const { t } = useTranslation("forms");
   const inputRef = useRef<HTMLInputElement>(null);
   const editButton = useRef<HTMLButtonElement>(null);
+  const addOptionButton = useRef<HTMLButtonElement>(null);
+  const optionRemovalFocus = useRef<HTMLElement | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<{ item: string; delta: number } | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -51,6 +53,14 @@ export function QuestionEditor({ question, position, total, culture, original, e
     setAnnouncement(t("position", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }), position: index + 1 + delta, total: question.options.length }));
     onChange({ ...question, options: moveItem(question.options, index, delta) });
   }
+  function removeOption(localId: string) {
+    if (question.type !== "choice") return;
+    const index = question.options.findIndex(o => o.localId === localId);
+    const neighbor = question.options[index + 1] ?? question.options[index - 1];
+    optionRemovalFocus.current = [...(rootRef.current?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(input => input.dataset.choiceLocalId === neighbor?.localId) ?? addOptionButton.current;
+    onChange({ ...question, options: question.options.filter(o => o.localId !== localId) });
+    if (!confirmation) requestAnimationFrame(() => optionRemovalFocus.current?.focus());
+  }
   function changeType(type: DraftQuestion["type"]) {
     if (type === question.type) return;
     if (question.fieldId) setConfirmation({ type });
@@ -71,7 +81,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
     </div>
     {expanded ? <div className="flex flex-col gap-4 bg-[var(--color-surface-muted)] p-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label={t("question")} hint={reference(question.label)} error={fieldError("label")}><Input data-question-control="label" ref={inputRef} readOnly={readOnly} placeholder={t("missingText", { language: t("cultures." + culture) })} value={question.label[culture] ?? ""} onChange={e => onChange({ ...question, label: { ...question.label, [culture]: e.target.value } })} /></FormField>
+        <FormField label={t("question")} hint={reference(question.label)} error={fieldError("label")}><Input data-question-control="label" ref={inputRef} readOnly={readOnly} placeholder={t("missingText", { language: t("cultureNamesInText." + culture) })} value={question.label[culture] ?? ""} onChange={e => onChange({ ...question, label: { ...question.label, [culture]: e.target.value } })} /></FormField>
         <FormField label={t("type")} error={fieldError("type")} hint={question.type === "date" ? t("dateHint") : undefined}><NativeSelect disabled={readOnly} value={question.type} onChange={e => changeType(e.target.value as DraftQuestion["type"])}>{types.map(type => <option key={type} value={type}>{t(`types.${type}`)}</option>)}</NativeSelect></FormField>
         <FormField label={t("help")} hint={reference(question.help) ?? t("optional")} error={fieldError("help")}><Textarea data-question-control="help" readOnly={readOnly} value={question.help?.[culture] ?? ""} onChange={e => onChange({ ...question, help: { ...question.help, [culture]: e.target.value || null } })} /></FormField>
         <div className="flex flex-col gap-4">
@@ -82,22 +92,22 @@ export function QuestionEditor({ question, position, total, culture, original, e
       {question.type === "choice" ? <div className="flex flex-col gap-3">
         {fieldError("options") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{fieldError("options")}</p> : null}
         {question.options.map((option, index) => <div key={option.localId} className="flex flex-wrap items-end gap-2">
-          <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={languageIssues.find(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))?.messages[0]}><Input data-choice-local-id={option.localId} readOnly={readOnly} placeholder={t("missingText", { language: t("cultures." + culture) })} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>
+          <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={languageIssues.find(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))?.messages[0]}><Input data-choice-local-id={option.localId} readOnly={readOnly} placeholder={t("missingText", { language: t("cultureNamesInText." + culture) })} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>
           {!readOnly ? <div className="flex gap-1">
             <IconButton size="icon-sm" label={t("up", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === 0} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={-1} onClick={() => moveOption(index, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
             <IconButton size="icon-sm" label={t("down", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === question.options.length - 1} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={1} onClick={() => moveOption(index, 1)}><ChevronDownIcon className="size-4" /></IconButton>
-            <IconButton size="icon-sm" label={t("remove", { name: t("option", { number: index + 1 }) })} onClick={() => { if (option.choiceId || Object.values(option.label).some(Boolean)) setConfirmation({ option: option.localId }); else onChange({ ...question, options: question.options.filter(o => o.localId !== option.localId) }); }}><TrashIcon className="size-4" /></IconButton>
+            <IconButton size="icon-sm" label={t("remove", { name: t("option", { number: index + 1 }) })} onClick={() => { if (option.choiceId || Object.values(option.label).some(Boolean)) setConfirmation({ option: option.localId }); else removeOption(option.localId); }}><TrashIcon className="size-4" /></IconButton>
           </div> : null}
         </div>)}
-        {!readOnly ? <Button type="button" variant="outline" disabled={question.options.length >= 50} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button> : null}
+        {!readOnly ? <Button ref={addOptionButton} type="button" variant="outline" disabled={question.options.length >= 50} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button> : null}
       </div> : null}
       <div className="flex justify-end"><Button type="button" variant="outline" onClick={() => { onExpand(false); editButton.current?.focus(); }}>{t("done")}</Button></div>
     </div> : null}
     <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</span>
-    <ConfirmDialog open={confirmation !== null} onOpenChange={open => { if (!open) setConfirmation(null); }} title={t(confirmation && "type" in confirmation ? "changeTypeTitle" : "optionRemovedTitle")} description={t(confirmation && "type" in confirmation ? "changeTypeDescription" : "optionRemovedDescription")} confirmLabel={t("common:actions.confirm")} onConfirm={() => {
+    <ConfirmDialog focusFallback={optionRemovalFocus} open={confirmation !== null} onOpenChange={open => { if (!open) setConfirmation(null); }} title={t(confirmation && "type" in confirmation ? "changeTypeTitle" : "optionRemovedTitle")} description={t(confirmation && "type" in confirmation ? "changeTypeDescription" : "optionRemovedDescription")} confirmLabel={t(confirmation && "type" in confirmation ? "changeTypeAction" : "removeOptionAction")} onConfirm={() => {
       if (readOnly || !confirmation) return;
       if ("type" in confirmation) onChange(replaceQuestionType(question, confirmation.type, crypto.randomUUID(), original));
-      else if (question.type === "choice") onChange({ ...question, options: question.options.filter(o => o.localId !== confirmation.option) });
+      else removeOption(confirmation.option);
     }} />
   </div>;
 }

@@ -50,3 +50,13 @@ it("offers read-only inspection without reorder or edit actions", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Ver pregunta Cliente" }));
   expect(screen.getByLabelText("Pregunta")).toHaveAttribute("readonly");
 });
+
+it("focuses a neighboring option and then Add option when the last option is removed", async () => {
+  await mount({ expandedInitially: true });
+  await userEvent.click(screen.getByRole("button", { name: "Quitar Opción 2" }));
+  await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Quitar opción" }));
+  expect(screen.getByLabelText("Opción 1")).toHaveFocus();
+  await userEvent.click(screen.getByRole("button", { name: "Quitar Opción 1" }));
+  await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Quitar opción" }));
+  expect(screen.getByRole("button", { name: "Agregar opción" })).toHaveFocus();
+});

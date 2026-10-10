@@ -91,7 +91,7 @@ export type FormRecovery = ReturnType<typeof readFormRecovery>;
 const publicationCompatibility = z.enum(["Blocked", "LocallyValidated", "Unavailable"]);
 const publicationIssue = z.strictObject({ channelId: z.string().nullable(), fieldId: guid.nullable(), choiceId: guid.nullable(),
   path: z.string(), code: z.string(), message: z.string(), limit: z.number().int().nullable(), culture: z.enum(["es", "en"]).nullable() });
-const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: revision, compatibility: publicationCompatibility,
+const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: revision, nextVersionNumber: revision, compatibility: publicationCompatibility,
   canAccept: z.boolean(), acceptanceAvailability: z.enum(["Available", "Unavailable", "InProgress"]),
   checkToken: z.string().min(1).nullable(), checkExpiresAtUtc: utc.nullable(),
   channels: z.array(z.strictObject({ channelId: z.string().min(1), profileRevision: z.string().min(1),

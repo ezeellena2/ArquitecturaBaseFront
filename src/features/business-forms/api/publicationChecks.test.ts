@@ -9,7 +9,7 @@ import { openDraftSession } from "../draftSession";
 const definition = fixtureDefinition();
 const value = openDraftSession({ actorId: "actor", editorId: "check" }, definition).value;
 const body = { ...value, expectedRevision: definition.revision };
-const checked = { definitionId: definition.id, draftRevision: definition.revision, compatibility: "Blocked", canAccept: false,
+const checked = { definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: 1, compatibility: "Blocked", canAccept: false,
   acceptanceAvailability: "Unavailable", checkToken: null, checkExpiresAtUtc: null, channels: [], issues: [{ channelId: null, fieldId: definition.draft.fields[0]!.fieldId, choiceId: null,
     path: "draft.fields[0].help.en", code: "Forms.Publication.MissingTranslation", message: "Completá el inglés.", limit: null, culture: "en" }],
   diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [] } };
@@ -55,4 +55,14 @@ describe("publication checks", () => {
     await expect(checkFormPublication(definition.id, body)).rejects.toThrow();
     expect(calls).toBe(1);
   });
+});
+
+it("uses the server's next version number and rejects a missing or invalid number", async () => {
+  server.use(http.post("/api/forms/definitions/:id/publication-checks", () => HttpResponse.json({ ...checked, nextVersionNumber: 3 })));
+  expect((await checkFormPublication(definition.id, body)).nextVersionNumber).toBe(3);
+});
+
+it.each([undefined, null, 0, -1, 1.5])("rejects invalid nextVersionNumber %s", async nextVersionNumber => {
+  server.use(http.post("/api/forms/definitions/:id/publication-checks", () => HttpResponse.json({ ...checked, nextVersionNumber })));
+  await expect(checkFormPublication(definition.id, body)).rejects.toThrow("Unsupported form response.");
 });

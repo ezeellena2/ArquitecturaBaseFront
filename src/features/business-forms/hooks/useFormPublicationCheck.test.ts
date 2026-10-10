@@ -8,7 +8,7 @@ vi.mock("../api/forms", () => ({ checkFormPublication: vi.fn() }));
 const definition = fixtureDefinition();
 const body = { ...openDraftSession({ actorId: "a", editorId: "check" }, definition).value, expectedRevision: definition.revision };
 const scope = { actorId: "a", culture: "es" as const, permissions: ["formtemplates.read", "formtemplates.publish"] };
-const checked = { definitionId: definition.id, draftRevision: 1, compatibility: "LocallyValidated" as const, canAccept: false as const,
+const checked = { definitionId: definition.id, draftRevision: 1, nextVersionNumber: 1, compatibility: "LocallyValidated" as const, canAccept: false as const,
   acceptanceAvailability: "Unavailable" as const, checkToken: null, checkExpiresAtUtc: null, channels: [], issues: [], diff: { baseVersionId: null, added: [], changed: [], removed: [] } };
 beforeEach(() => { vi.mocked(checkFormPublication).mockReset(); });
 describe("owned publication check", () => {

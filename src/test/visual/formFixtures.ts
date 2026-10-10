@@ -1,3 +1,11 @@
+import publishedEsList from "../fixtures/forms-http/published/list-es.json" with { type: "json" };
+import publishedEnList from "../fixtures/forms-http/published/list-en.json" with { type: "json" };
+import publishedEsDetail from "../fixtures/forms-http/published/detail-es.json" with { type: "json" };
+import publishedEnDetail from "../fixtures/forms-http/published/detail-en.json" with { type: "json" };
+import failedEsDetail from "../fixtures/forms-http/failed/detail-es.json" with { type: "json" };
+import failedEnDetail from "../fixtures/forms-http/failed/detail-en.json" with { type: "json" };
+import failedEsStatus from "../fixtures/forms-http/failed/status-es.json" with { type: "json" };
+import failedEnStatus from "../fixtures/forms-http/failed/status-en.json" with { type: "json" };
 import { administrativeName } from "@/features/business-forms/editorModel";
 import type { DraftWriteBody, FormCulture, FormDefinitionSnapshot, CanonicalQuestion, FormDraftSaveResult } from "@/features/business-forms/model";
 
@@ -56,6 +64,14 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname;
     calls.push({ method: request.method, path });
+    if (scenario === "forms-publication-http-published" || scenario === "forms-publication-http-failed") {
+      const failed = scenario.endsWith("failed");
+      if (request.method !== "GET") return json({ code: "Forms.Draft.RevisionConflict" }, 409);
+      if (path.endsWith("/facets")) return json({ all: 1, published: failed ? 0 : 1, drafts: failed ? 1 : 0 });
+      if (path === "/api/forms/definitions") return json(culture === "es" ? publishedEsList : publishedEnList);
+      if (path.includes("/publications/")) return json(culture === "es" ? failedEsStatus : failedEnStatus);
+      return json(failed ? culture === "es" ? failedEsDetail : failedEnDetail : culture === "es" ? publishedEsDetail : publishedEnDetail);
+    }
     if (scenario === "forms-denied") return json({ code: "General.Forbidden" }, 403);
 
     if (request.method === "POST" && path.endsWith("/publication-checks")) {
@@ -64,7 +80,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       const input = await request.json() as DraftWriteBody;
       if (input.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
       const available = scenario.startsWith("forms-publication");
-      return json({ definitionId: definition.id, draftRevision: definition.revision, compatibility: "LocallyValidated",
+      return json({ definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: [...publications.values()].filter(p => p.definitionId === definition.id).length + 1, compatibility: "LocallyValidated",
         canAccept: available, acceptanceAvailability: available ? "Available" : "Unavailable", channels: [], issues: [],
         checkToken: available ? "fixture-publication-ticket" : null, checkExpiresAtUtc: available ? "2099-10-10T16:00:00Z" : null,
         diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [] } });
