@@ -64,6 +64,7 @@ enlace de ficha, sin cambios en el contrato o guardado productivos.
 | Ámbito nuevo | Responsabilidad |
 | --- | --- |
 | [src/features/artificial-intelligence](../src/features/artificial-intelligence/AGENTS.md) | Conexión, catálogo/prueba y editor guiado del negocio; asistente autorizado de consultas con historial privado y recuperación durable. Catálogo/Places sólo en el editor; claves fuera de caches/storage; asistente adapta estado confirmado y conserva UUID/body en aceptación incierta. |
+| [src/features/business-forms](../src/features/business-forms/AGENTS.md) | Modelo/baseline, cliente HTTP y guard de las seis rutas de borrador, hooks de lecturas por actor/permisos/cultura y editor en memoria. Intento congelado fuera de MutationCache, recuperación original y paths ligados al cuerpo. Router, menú, listado, editor bilingüe y preview A–E; revisión explícita por idioma y por identidad. Publicación e integración WhatsApp quedan pendientes. |
 
 Las páginas, API, componentes y utilidades internas de una feature siguen su guía de área. Los componentes individuales de UI siguen shared/ui; los idiomas siguen locales. Los documentos de diseño y las recetas siguen docs/AGENTS.md.
 

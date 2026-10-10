@@ -4,6 +4,8 @@ Cada área contiene páginas, componentes, API y errores propios. `auth` muestra
 
 `whatsapp` contiene el chat productivo de atención, con el diseño aprobado del laboratorio. `artificial-intelligence` configura/prueba la conexión compartida, mantiene información del negocio y aporta el asistente de consultas al Inicio compuesto desde app, independiente de settings y WhatsApp. Sugerencias de IA para WhatsApp, contactos y plantillas siguen pendientes.
 
+`business-forms` aporta las seis rutas de borrador, listado y editor bilingüe /formularios con los tableros A–E. Intento/baseline viven en memoria; lecturas usan QueryCache por actor/permisos/cultura. Su guía delimita recuperación, revisión explícita por idioma e identidad y resultados tardíos. Publicación, chat y respuestas pertenecen a los siguientes incrementos.
+
 ## Al modificar
 
 - Una feature nunca importa otra feature. Contratos, hooks o UI compartidos suben a `shared`.
