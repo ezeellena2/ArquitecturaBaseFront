@@ -20,6 +20,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   if (chatFormsFixture) Object.assign(globalThis,{chatFormsFixture});
   const formsScenario = !chatFormsScenario && (scenario?.startsWith("forms-") ?? false);
   const formsFixture = formsScenario ? createFormFixtureStore(language, scenario!) : undefined;
+  if (formsFixture) Object.assign(globalThis, { formsFixture });
   const assistantScenario = scenario?.startsWith("assistant-") ?? false;
   const assistantFixture = assistantScenario ? createAssistantVisualFixtures(language, scenario!) : undefined;
   const roleGroupsScenario = scenario === "role-groups";
@@ -87,7 +88,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const businessReceipts = new Map<string, BusinessChange>();
   let businessConflict = false;
   const chatContact: Chat = { id: "chat-ana", profileName: "Ana Martínez", phoneNumber: "+54 9 351 555-1234", mode: "Manual", modeRevision: 1,
-    lastInboundAtUtc: "2026-10-02T12:00:00Z", lastInboundSequence: 1, unreadCount: 1, preview: "¿Podemos coordinar el pedido para mañana?" };
+    lastInboundAtUtc: "2026-10-02T12:00:00Z", lastInboundSequence: 1, unreadCount: 1, preview: "¿Podemos coordinar el pedido para mañana?",
+    linkedAccount: null, formEligibility: { status: "NoLinkedAccount", recipientCulture: null, recipientContextRevision: null } };
   let chatMessages: ChatMessage[] = [
     { id: "chat-message-1", direction: "Inbound", kind: "Text", body: chatContact.preview, occurredAtUtc: "2026-10-02T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null },
     { id: "chat-message-2", direction: "Outbound", kind: "Text", body: "Hola Ana, sí. Decime qué horario te queda cómodo.", occurredAtUtc: "2026-10-02T12:02:00Z", inboundSequence: 0, operatorUserId: profile.id, status: "Delivered", errorCode: null },

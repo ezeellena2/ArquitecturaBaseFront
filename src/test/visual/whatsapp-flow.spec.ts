@@ -148,7 +148,8 @@ test("a read-only operator can open history but cannot compose or send", async (
   const input = await openChat(page);
   await expect(page.getByText("Hola, ¿tienen stock?", { exact: true }).last()).toBeVisible();
   await expect(input).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Enviar", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Enviar", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Enviar formulario", exact: true })).toHaveCount(0);
   expect(api.sends).toHaveLength(0);
 });
 
