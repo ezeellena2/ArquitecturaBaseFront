@@ -1,0 +1,75 @@
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
+import { FormField } from "@/shared/ui/FormField";
+import { CheckboxField } from "@/shared/ui/CheckboxField";
+import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { IconButton } from "@/shared/ui/IconButton";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { PencilIcon, ChevronDownIcon, ArrowUpIcon, TrashIcon } from "@/shared/ui/icons";
+import { localizedValue, missingQuestionTexts, moveItem, replaceQuestionType } from "../editorModel";
+import type { DraftQuestion, FormCulture } from "../model";
+import type { DraftFieldIssue } from "../validationPaths";
+
+const types: readonly DraftQuestion["type"][] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
+export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove }: {
+  question: DraftQuestion; position: number; total: number; culture: FormCulture; original: FormCulture; expanded: boolean; readOnly: boolean;
+  issues: readonly DraftFieldIssue[]; onChange: (question: DraftQuestion) => void; onExpand: (open: boolean) => void; onMove: (delta: number) => void; onRemove: () => void;
+}) {
+  const { t } = useTranslation("forms");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [confirmation, setConfirmation] = useState<{ type: DraftQuestion["type"] } | { option: string } | null>(null);
+  const label = localizedValue(question.label, culture, original) || t("question");
+  const reference = (text: Readonly<Record<string, string | null>> | null) => culture !== original && text?.[original] ? t("originalText", { language: t("cultures." + original), text: text[original] }) : undefined;
+  const languageIssues = issues.filter(issue => !/\.(es|en)$/.test(issue.path) || issue.path.endsWith("." + culture));
+  const fieldError = (name: string) => languageIssues.find(issue => !issue.choiceLocalId && new RegExp(`\\.${name}(\\.(es|en))?$`).test(issue.path))?.messages[0];
+  useEffect(() => { if (expanded) inputRef.current?.focus(); }, [expanded]);
+  function changeType(type: DraftQuestion["type"]) {
+    if (type === question.type) return;
+    if (question.fieldId) setConfirmation({ type });
+    else onChange(replaceQuestionType(question, type, crypto.randomUUID(), original));
+  }
+  return <div className="border-t border-[var(--color-border)] first:border-t-0">
+    <div className="flex flex-wrap items-center gap-2 px-4 py-2">
+      <span className="text-sm text-[var(--color-content-muted)]">{position}</span>
+      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t(`types.${question.type}`)} · {t(question.required ? "required" : "optional")}{missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p></div>
+      <div className="flex items-center gap-1">
+        <IconButton size="icon-sm" label={t("up", { name: label })} disabled={readOnly || position === 1} disabledLabel={t("position", { name: label, position, total })} onClick={() => onMove(-1)}><ArrowUpIcon className="size-4" /></IconButton>
+        <IconButton size="icon-sm" label={t("down", { name: label })} disabled={readOnly || position === total} disabledLabel={t("position", { name: label, position, total })} onClick={() => onMove(1)}><ChevronDownIcon className="size-4" /></IconButton>
+        <IconButton size="icon-sm" label={`${t("edit")} ${label}`} onClick={() => onExpand(!expanded)} aria-expanded={expanded}><PencilIcon className="size-4" /></IconButton>
+        {!readOnly ? <IconButton size="icon-sm" label={t("remove", { name: label })} onClick={onRemove}><TrashIcon className="size-4" /></IconButton> : null}
+      </div>
+    </div>
+    {expanded ? <div className="flex flex-col gap-4 bg-[var(--color-surface-muted)] p-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField label={t("question")} hint={reference(question.label)} error={fieldError("label")}><Input ref={inputRef} readOnly={readOnly} placeholder={t("missingText", { language: t("cultures." + culture) })} value={question.label[culture] ?? ""} onChange={e => onChange({ ...question, label: { ...question.label, [culture]: e.target.value } })} /></FormField>
+        <FormField label={t("type")} error={fieldError("type")} hint={question.type === "date" ? t("dateHint") : undefined}><NativeSelect disabled={readOnly} value={question.type} onChange={e => changeType(e.target.value as DraftQuestion["type"])}>{types.map(type => <option key={type} value={type}>{t(`types.${type}`)}</option>)}</NativeSelect></FormField>
+        <FormField label={t("help")} hint={reference(question.help) ?? t("optional")} error={fieldError("help")}><Textarea readOnly={readOnly} value={question.help?.[culture] ?? ""} onChange={e => onChange({ ...question, help: { ...question.help, [culture]: e.target.value || null } })} /></FormField>
+        <div className="flex flex-col gap-4">
+          <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly} onCheckedChange={checked => onChange({ ...question, required: checked })} />
+          {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><Input type="number" min={1} max={10000} readOnly={readOnly} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></FormField> : null}
+        </div>
+      </div>
+      {question.type === "choice" ? <div className="flex flex-col gap-3">
+        {fieldError("options") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{fieldError("options")}</p> : null}
+        {question.options.map((option, index) => <div key={option.localId} className="flex flex-wrap items-end gap-2">
+          <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={languageIssues.find(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))?.messages[0]}><Input readOnly={readOnly} placeholder={t("missingText", { language: t("cultures." + culture) })} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>
+          {!readOnly ? <div className="flex gap-1">
+            <IconButton size="icon-sm" label={t("up", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === 0} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} onClick={() => onChange({ ...question, options: moveItem(question.options, index, -1) })}><ArrowUpIcon className="size-4" /></IconButton>
+            <IconButton size="icon-sm" label={t("down", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === question.options.length - 1} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} onClick={() => onChange({ ...question, options: moveItem(question.options, index, 1) })}><ChevronDownIcon className="size-4" /></IconButton>
+            <IconButton size="icon-sm" label={t("remove", { name: t("option", { number: index + 1 }) })} onClick={() => { if (option.choiceId || Object.values(option.label).some(Boolean)) setConfirmation({ option: option.localId }); else onChange({ ...question, options: question.options.filter(o => o.localId !== option.localId) }); }}><TrashIcon className="size-4" /></IconButton>
+          </div> : null}
+        </div>)}
+        {!readOnly ? <Button type="button" variant="outline" disabled={question.options.length >= 50} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button> : null}
+      </div> : null}
+      <div className="flex justify-end"><Button type="button" variant="outline" onClick={() => onExpand(false)}>{t("done")}</Button></div>
+    </div> : null}
+    <ConfirmDialog open={confirmation !== null} onOpenChange={open => { if (!open) setConfirmation(null); }} title={t(confirmation && "type" in confirmation ? "changeTypeTitle" : "optionRemovedTitle")} description={t(confirmation && "type" in confirmation ? "changeTypeDescription" : "optionRemovedDescription")} confirmLabel={t("common:actions.confirm")} onConfirm={() => {
+      if (readOnly || !confirmation) return;
+      if ("type" in confirmation) onChange(replaceQuestionType(question, confirmation.type, crypto.randomUUID(), original));
+      else if (question.type === "choice") onChange({ ...question, options: question.options.filter(o => o.localId !== confirmation.option) });
+    }} />
+  </div>;
+}

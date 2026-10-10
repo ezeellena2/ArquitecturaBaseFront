@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
-import { branchOf, navigationLinks, parentLinkOf, withoutTrailingSlash } from "../navigation";
+import { branchOf, isFormsPath, navigationLinks, parentLinkOf, withoutTrailingSlash } from "../navigation";
 import { useCurrentBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 
 /// Pantallas que no están en el menú lateral pero igual tienen migas propias: al perfil se entra desde el
@@ -37,7 +37,7 @@ export function Breadcrumbs() {
   const leaf = useCurrentBreadcrumbLeaf();
   const activeLabelKey = pathname === "/" ? undefined : findActiveLabelKey(pathname);
   const parentLink = activeLabelKey ? undefined : parentLinkOf(pathname);
-  const branchLabelKey = activeLabelKey || parentLink ? branchOf(pathname)?.labelKey : undefined;
+  const branchLabelKey = activeLabelKey || parentLink ? (isFormsPath(pathname) ? "navigation.forms" : branchOf(pathname)?.labelKey) : undefined;
   // En una ruta del menú, la hoja se ignora: si quedó puesta, no le agrega un nivel a una pantalla que no
   // es hija de nadie.
   const currentLabel = activeLabelKey ? t(activeLabelKey) : leaf;

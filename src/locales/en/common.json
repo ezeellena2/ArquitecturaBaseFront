@@ -88,6 +88,8 @@
     "close": "Close notification"
   },
   "navigation": {
+    "forms": "Forms",
+    "designForms": "Design forms",
     "general": "General",
     "administration": "Administration",
     "dashboard": "Home",
@@ -108,6 +110,7 @@
   },
   "layout": {
     "sidebar": {
+      "closeForms": "Close the Forms panel",
       "navigation": "Main navigation",
       "collapse": "Collapse menu",
       "expand": "Expand menu",

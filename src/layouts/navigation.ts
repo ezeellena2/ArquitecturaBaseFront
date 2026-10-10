@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon } from "@/shared/ui/icons";
+import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon } from "@/shared/ui/icons";
 
 interface NavigationEntry {
   /// Clave del texto en el namespace common (navigation.*).
@@ -83,7 +83,14 @@ export function isWhatsAppPath(pathname: string): boolean {
   return linksOf(whatsapp.items).some(link => leadsTo(path, link));
 }
 
-const allItems: NavigationItem[] = [...navigation.flatMap((group) => group.items), ...administration.items, ...whatsapp.items];
+export const forms: NavigationPanel = {
+  labelKey: "navigation.forms", icon: FormIcon,
+  items: [{ labelKey: "navigation.designForms", to: "/formularios", icon: PencilIcon, permission: "formtemplates.read" }],
+};
+export function isFormsPath(pathname: string): boolean {
+  return linksOf(forms.items).some(link => leadsTo(withoutTrailingSlash(pathname), link));
+}
+const allItems: NavigationItem[] = [...navigation.flatMap((group) => group.items), ...administration.items, ...whatsapp.items, ...forms.items];
 
 /// Todos los enlaces del menú, sin los grupos. Lo usan las migas y cualquiera que busque una ruta: agrupar
 /// en el menú no anida las URLs, así que la ruta activa, o su padre, está siempre en esta lista plana.

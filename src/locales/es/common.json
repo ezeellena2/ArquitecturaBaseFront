@@ -88,6 +88,8 @@
     "close": "Cerrar aviso"
   },
   "navigation": {
+    "forms": "Formularios",
+    "designForms": "Diseñar formularios",
     "general": "General",
     "administration": "Administración",
     "dashboard": "Inicio",
@@ -108,6 +110,7 @@
   },
   "layout": {
     "sidebar": {
+      "closeForms": "Cerrar el panel Formularios",
       "navigation": "Navegación principal",
       "collapse": "Contraer menú",
       "expand": "Expandir menú",

@@ -38,6 +38,16 @@ export const routes: RouteObject[] = [
             ErrorBoundary: RouteErrorPage,
             children: [
               {
+                element: <ProtectedRoute permission="formtemplates.read" />,
+                children: [
+                  { path: "/formularios", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormsPage")).FormsPage }) },
+                  { element: <ProtectedRoute permission="formtemplates.manage" />, children: [
+                    { path: "/formularios/nuevo", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormEditorPage")).FormEditorPage }) },
+                  ] },
+                  { path: "/formularios/:formId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormEditorPage")).FormEditorPage }) },
+                ],
+              },
+              {
                 // Sin permiso: alcanza con tener sesión, que ya la exige el ProtectedRoute de arriba. Cada
                 // quien edita el suyo, y el backend no mira más que el token.
                 path: "/perfil",

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 // se consumen desde este módulo, para que una feature no arme otro set propio.
 export { ArrowLeft as PublicBackIcon, Mail as PublicMailIcon, MessageCircle as PublicWhatsAppIcon } from "lucide-react";
 export { FolderOpen as PublicInformationIcon, Users as PublicTeamIcon, ListChecks as PublicTrackingIcon } from "lucide-react";
+export { ClipboardList as FormIcon } from "lucide-react";
 
 interface IconProps {
   className?: string;
