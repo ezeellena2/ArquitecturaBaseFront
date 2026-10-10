@@ -93,6 +93,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   const host = useRef<HTMLDivElement>(null);
   const reviewReturnFocus = useRef<HTMLElement | null>(null);
   const saveButton = useRef<HTMLButtonElement>(null);
+  const addQuestionButton = useRef<HTMLButtonElement>(null);
+  const removalFocus = useRef<HTMLElement | null>(null);
   const active = useRef(true);
   const readCurrent = useRef(editor.readCurrent);
   useEffect(() => { readCurrent.current = editor.readCurrent; }, [editor.readCurrent]);
@@ -158,6 +160,15 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
     change({ ...value, draft: { ...value.draft, fields: value.draft.fields.map(q => q.localId === localId ? question : q) } });
     if (question.localId !== localId) setExpanded(question.localId);
   };
+  function removeQuestion(localId: string) {
+    if (readOnly) return;
+    const index = value!.draft.fields.findIndex(q => q.localId === localId);
+    const neighbor = value!.draft.fields[index + 1] ?? value!.draft.fields[index - 1];
+    const row = [...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === neighbor?.localId);
+    removalFocus.current = row?.querySelector<HTMLButtonElement>('[data-question-action="edit"]') ?? addQuestionButton.current;
+    change({ ...value!, draft: { ...value!.draft, fields: value!.draft.fields.filter(q => q.localId !== localId) } });
+    if (!removeId) requestAnimationFrame(() => removalFocus.current?.focus());
+  }
   return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline">{publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
     {!readOnly || dirty ? <Button type="button" variant="outline" disabled={frozen} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" disabled={!editor.canSave} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
@@ -180,9 +191,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
         </div><p className="text-xs text-[var(--color-content-muted)]">{t("translations")}</p></Surface>
         <Surface title={t("questions")}>
           {value.draft.fields.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("emptyQuestions")}</p> : null}
-          {value.draft.fields.map((q, index) => <QuestionEditor key={q.localId} question={q} position={index + 1} total={value.draft.fields.length} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalid === q.localId} readOnly={readOnly} issues={editor.issue?.fields?.filter(issue => issue.fieldLocalId === q.localId) ?? []} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, fields: moveItem(value.draft.fields, index, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else change({ ...value, draft: { ...value.draft, fields: value.draft.fields.filter(field => field.localId !== q.localId) } }); }} />)}
+          {value.draft.fields.map((q, index) => <QuestionEditor key={q.localId} question={q} position={index + 1} total={value.draft.fields.length} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalid === q.localId} readOnly={readOnly} issues={editor.issue?.fields?.filter(issue => issue.fieldLocalId === q.localId) ?? []} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, fields: moveItem(value.draft.fields, index, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }} />)}
           {errorFor("draft.fields") ? <p role="alert" className="p-4 text-sm text-[var(--color-danger)]">{errorFor("draft.fields")}</p> : null}
-          {!readOnly ? <div className="p-4"><Button type="button" variant="outline" disabled={value.draft.fields.length >= 40} onClick={() => { const q = newQuestion("shortText", value.draft.culture, crypto.randomUUID()); change({ ...value, draft: { ...value.draft, fields: [...value.draft.fields, q] } }); setExpanded(q.localId); }}>{t("addQuestion")}</Button></div> : null}
+          {!readOnly ? <div className="p-4"><Button ref={addQuestionButton} type="button" variant="outline" disabled={value.draft.fields.length >= 40} onClick={() => { const q = newQuestion("shortText", value.draft.culture, crypto.randomUUID()); change({ ...value, draft: { ...value.draft, fields: [...value.draft.fields, q] } }); setExpanded(q.localId); }}>{t("addQuestion")}</Button></div> : null}
         </Surface>
       </div>
       <FormPreview key={session.scope.editorId} value={value} culture={contentCulture} />
@@ -215,7 +226,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   <ConfirmDialog open={(discardOpen || guard.isBlocked) && !frozen && !publicationPending} onOpenChange={open => { setDiscardOpen(open); if (!open) guard.stay(); }} title={t("discardTitle")} description={t("discardDescription")} cancelLabel={t("stay")} confirmLabel={t("discard")} destructive onConfirm={leave} />
   {guard.isBlocked && publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("publication.unconfirmed")} description={t("publication.unconfirmedHint")} cancelLabel={t("stay")} confirmLabel={t("publication.consult")} onConfirm={() => { guard.stay(); void publication.consult(); }} /> : null}
   {guard.isBlocked && frozen && !publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("uncertain")} description={t("busyLeave")} cancelLabel={t("stay")} confirmLabel={t(session.phase === "Unconfirmed" ? "recover" : "review")} onConfirm={() => { guard.stay(); if (session.phase === "Unconfirmed") void operate(editor.recover); else if (reviewRequired) showReview(); }} /> : null}
-  <ConfirmDialog open={removeId !== null} onOpenChange={open => { if (!open) setRemoveId(null); }} title={t("removeTitle")} description={t("removeDescription")} confirmLabel={t("common:actions.confirm")} destructive onConfirm={() => { if (!readOnly) change({ ...value, draft: { ...value.draft, fields: value.draft.fields.filter(q => q.localId !== removeId) } }); }} />
+  <ConfirmDialog focusFallback={removalFocus} open={removeId !== null} onOpenChange={open => { if (!open) setRemoveId(null); }} title={t("removeTitle")} description={t("removeDescription")} confirmLabel={t("common:actions.confirm")} destructive onConfirm={() => { if (removeId) removeQuestion(removeId); }} />
   {editor.review ? <DraftReview key={editor.review.definition.revision} value={value} definition={editor.review.definition} culture={scope.culture} auditSummary={t("reviewAudit", { date: formatDateTimeInZone(editor.review.audit.lastChangedAtUtc, scope.culture, timeZoneId), author: editor.review.audit.lastChangedBy?.displayName ?? "—" })} open={reviewOpen} onCloseAutoFocus={event => { event.preventDefault(); const target = reviewReturnFocus.current; if (target?.isConnected && !target.matches(":disabled")) target.focus(); else (saveButton.current ?? host.current?.querySelector<HTMLInputElement>("input"))?.focus(); }} onOpenChange={setReviewOpen} onUseCurrent={editor.useCurrent} onResolve={editor.resolveReview} /> : null}
   </div>;
 }

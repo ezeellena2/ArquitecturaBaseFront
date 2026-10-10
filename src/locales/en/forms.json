@@ -206,5 +206,6 @@
     "listFailed": "Could not publish",
     "listPublishing": "Publishing",
     "previewNoPermission": "You no longer have permission to view this preview."
-  }
+  },
+  "viewQuestion": "View question {{name}}"
 }

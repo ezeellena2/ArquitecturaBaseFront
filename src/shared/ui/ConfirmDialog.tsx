@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "./button";
@@ -15,6 +16,7 @@ interface ConfirmDialogProps {
   destructive?: boolean;
   actionSize?: "default" | "touch";
   onConfirm: () => void;
+  focusFallback?: RefObject<HTMLElement | null>;
 }
 
 /// Diálogo de confirmación para acciones que no se pueden deshacer.
@@ -28,9 +30,10 @@ export function ConfirmDialog({
   destructive,
   actionSize = "default",
   onConfirm,
+  focusFallback,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
-  const restoreFocus = useRestoreFocusOnClose(open);
+  const restoreFocus = useRestoreFocusOnClose(open, focusFallback);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

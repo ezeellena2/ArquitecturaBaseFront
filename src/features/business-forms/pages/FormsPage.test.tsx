@@ -304,3 +304,15 @@ it.each([null,1])("shows Failed independently of previous active version %s",asy
  expect(screen.queryByText(/^No se pudo publicar · versión/)).not.toBeInTheDocument();
  if(activeVersionNumber)expect(screen.getByText("La versión 1 publicada sigue activa.")).toBeInTheDocument();
 });
+
+it("returns focus to a neighboring row after confirmed question removal", async () => {
+  setup();
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByLabelText("Nombre");
+  await userEvent.click(screen.getByRole("button", { name: "Quitar Cliente" }));
+  const dialog = await screen.findByRole("dialog");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Confirmar" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(screen.getByRole("button", { name: "Editar Contacto" })).toHaveFocus();
+});
+

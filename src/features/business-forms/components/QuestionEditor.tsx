@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -8,7 +8,7 @@ import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { IconButton } from "@/shared/ui/IconButton";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
-import { PencilIcon, ChevronDownIcon, ArrowUpIcon, TrashIcon } from "@/shared/ui/icons";
+import { PencilIcon, ChevronDownIcon, TrashIcon } from "@/shared/ui/icons";
 import { localizedValue, missingQuestionTexts, moveItem, replaceQuestionType } from "../editorModel";
 import type { DraftQuestion, FormCulture } from "../model";
 import type { DraftFieldIssue } from "../validationPaths";
@@ -20,25 +20,51 @@ export function QuestionEditor({ question, position, total, culture, original, e
 }) {
   const { t } = useTranslation("forms");
   const inputRef = useRef<HTMLInputElement>(null);
+  const editButton = useRef<HTMLButtonElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const pendingFocus = useRef<{ item: string; delta: number } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
   const [confirmation, setConfirmation] = useState<{ type: DraftQuestion["type"] } | { option: string } | null>(null);
   const label = localizedValue(question.label, culture, original) || t("question");
   const reference = (text: Readonly<Record<string, string | null>> | null) => culture !== original && text?.[original] ? t("originalText", { language: t("cultures." + original), text: text[original] }) : undefined;
   const languageIssues = issues.filter(issue => !/\.(es|en)$/.test(issue.path) || issue.path.endsWith("." + culture));
   const fieldError = (name: string) => languageIssues.find(issue => !issue.choiceLocalId && new RegExp(`\\.${name}(\\.(es|en))?$`).test(issue.path))?.messages[0];
   useEffect(() => { if (expanded) inputRef.current?.focus(); }, [expanded]);
+  useLayoutEffect(() => {
+    const pending = pendingFocus.current;
+    if (!pending) return;
+    pendingFocus.current = null;
+    const buttons = Array.from(rootRef.current?.querySelectorAll<HTMLButtonElement>("button[data-move-item]:not(:disabled)") ?? []);
+    const sameItem = buttons.filter(button => button.dataset.moveItem === pending.item);
+    (sameItem.find(button => button.dataset.moveDelta === String(pending.delta)) ?? sameItem[0])?.focus();
+  }, [position, question]);
+  function moveQuestion(delta: number) {
+    pendingFocus.current = { item: question.localId, delta };
+    setAnnouncement(t("position", { name: label, position: position + delta, total }));
+    onMove(delta);
+  }
+  function moveOption(index: number, delta: number) {
+    if (question.type !== "choice") return;
+    const option = question.options[index]!;
+    pendingFocus.current = { item: option.localId, delta };
+    setAnnouncement(t("position", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }), position: index + 1 + delta, total: question.options.length }));
+    onChange({ ...question, options: moveItem(question.options, index, delta) });
+  }
   function changeType(type: DraftQuestion["type"]) {
     if (type === question.type) return;
     if (question.fieldId) setConfirmation({ type });
     else onChange(replaceQuestionType(question, type, crypto.randomUUID(), original));
   }
-  return <div data-question-local-id={question.localId} className="border-t border-[var(--color-border)] first:border-t-0">
+  return <div ref={rootRef} data-question-local-id={question.localId} className="border-t border-[var(--color-border)] first:border-t-0">
     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
       <span className="text-sm text-[var(--color-content-muted)]">{position}</span>
       <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t(`types.${question.type}`)} · {t(question.required ? "required" : "optional")}{missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p></div>
       <div className="flex items-center gap-1">
-        <IconButton size="icon-sm" label={t("up", { name: label })} disabled={readOnly || position === 1} disabledLabel={t("position", { name: label, position, total })} onClick={() => onMove(-1)}><ArrowUpIcon className="size-4" /></IconButton>
-        <IconButton size="icon-sm" label={t("down", { name: label })} disabled={readOnly || position === total} disabledLabel={t("position", { name: label, position, total })} onClick={() => onMove(1)}><ChevronDownIcon className="size-4" /></IconButton>
-        <IconButton size="icon-sm" label={`${t("edit")} ${label}`} onClick={() => onExpand(!expanded)} aria-expanded={expanded}><PencilIcon className="size-4" /></IconButton>
+        {!readOnly ? <>
+        <IconButton size="icon-sm" label={t("up", { name: label })} disabled={readOnly || position === 1} disabledLabel={t("position", { name: label, position, total })} data-move-item={question.localId} data-move-delta={-1} onClick={() => moveQuestion(-1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
+        <IconButton size="icon-sm" label={t("down", { name: label })} disabled={readOnly || position === total} disabledLabel={t("position", { name: label, position, total })} data-move-item={question.localId} data-move-delta={1} onClick={() => moveQuestion(1)}><ChevronDownIcon className="size-4" /></IconButton>
+        </> : null}
+        <IconButton size="icon-sm" ref={editButton} data-question-action="edit" label={readOnly ? t("viewQuestion", { name: label }) : `${t("edit")} ${label}`} onClick={() => onExpand(!expanded)} aria-expanded={expanded}>{readOnly ? <ChevronDownIcon className="size-4" /> : <PencilIcon className="size-4" />}</IconButton>
         {!readOnly ? <IconButton size="icon-sm" label={t("remove", { name: label })} onClick={onRemove}><TrashIcon className="size-4" /></IconButton> : null}
       </div>
     </div>
@@ -57,15 +83,16 @@ export function QuestionEditor({ question, position, total, culture, original, e
         {question.options.map((option, index) => <div key={option.localId} className="flex flex-wrap items-end gap-2">
           <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={languageIssues.find(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))?.messages[0]}><Input data-choice-local-id={option.localId} readOnly={readOnly} placeholder={t("missingText", { language: t("cultures." + culture) })} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>
           {!readOnly ? <div className="flex gap-1">
-            <IconButton size="icon-sm" label={t("up", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === 0} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} onClick={() => onChange({ ...question, options: moveItem(question.options, index, -1) })}><ArrowUpIcon className="size-4" /></IconButton>
-            <IconButton size="icon-sm" label={t("down", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === question.options.length - 1} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} onClick={() => onChange({ ...question, options: moveItem(question.options, index, 1) })}><ChevronDownIcon className="size-4" /></IconButton>
+            <IconButton size="icon-sm" label={t("up", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === 0} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={-1} onClick={() => moveOption(index, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
+            <IconButton size="icon-sm" label={t("down", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === question.options.length - 1} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={1} onClick={() => moveOption(index, 1)}><ChevronDownIcon className="size-4" /></IconButton>
             <IconButton size="icon-sm" label={t("remove", { name: t("option", { number: index + 1 }) })} onClick={() => { if (option.choiceId || Object.values(option.label).some(Boolean)) setConfirmation({ option: option.localId }); else onChange({ ...question, options: question.options.filter(o => o.localId !== option.localId) }); }}><TrashIcon className="size-4" /></IconButton>
           </div> : null}
         </div>)}
         {!readOnly ? <Button type="button" variant="outline" disabled={question.options.length >= 50} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button> : null}
       </div> : null}
-      <div className="flex justify-end"><Button type="button" variant="outline" onClick={() => onExpand(false)}>{t("done")}</Button></div>
+      <div className="flex justify-end"><Button type="button" variant="outline" onClick={() => { onExpand(false); editButton.current?.focus(); }}>{t("done")}</Button></div>
     </div> : null}
+    <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</span>
     <ConfirmDialog open={confirmation !== null} onOpenChange={open => { if (!open) setConfirmation(null); }} title={t(confirmation && "type" in confirmation ? "changeTypeTitle" : "optionRemovedTitle")} description={t(confirmation && "type" in confirmation ? "changeTypeDescription" : "optionRemovedDescription")} confirmLabel={t("common:actions.confirm")} onConfirm={() => {
       if (readOnly || !confirmation) return;
       if ("type" in confirmation) onChange(replaceQuestionType(question, confirmation.type, crypto.randomUUID(), original));
