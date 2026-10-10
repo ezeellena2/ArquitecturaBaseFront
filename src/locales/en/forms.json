@@ -207,5 +207,7 @@
     "listPublishing": "Publishing",
     "previewNoPermission": "You no longer have permission to view this preview."
   },
-  "viewQuestion": "View question {{name}}"
+  "viewQuestion": "View question {{name}}",
+  "reviewNoSave": "Neither option saves. After choosing, review the marked changes and select “Save draft”.",
+  "reviewChangesToInspect": "Changes from the other revision to review"
 }

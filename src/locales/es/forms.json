@@ -207,5 +207,7 @@
     "listPublishing": "Publicando",
     "previewNoPermission": "Ya no tenés permiso para ver esta vista previa."
   },
-  "viewQuestion": "Ver pregunta {{name}}"
+  "viewQuestion": "Ver pregunta {{name}}",
+  "reviewNoSave": "Ninguna opción guarda. Después de elegir, revisás los cambios marcados y tocás «Guardar borrador».",
+  "reviewChangesToInspect": "Cambios de la otra revisión para revisar"
 }

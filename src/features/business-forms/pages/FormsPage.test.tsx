@@ -256,9 +256,8 @@ describe("Forms routes", () => {
     expect(within(review).getByRole("cell", { name: "Mis cambios" })).toBeInTheDocument();
     expect(screen.getByLabelText("Nombre")).toHaveValue("Mis cambios");
     await userEvent.click(within(review).getByRole("button", { name: "Conservar mis cambios" }));
-    expect(within(review).getByRole("button", { name: "Terminar la revisión" })).toBeDisabled();
-    for (const select of within(review).getAllByRole("combobox")) await userEvent.selectOptions(select, "mine");
-    await userEvent.click(within(review).getByRole("button", { name: "Terminar la revisión" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("Cambios de la otra revisión para revisar")).toBeInTheDocument();
     expect(screen.getByLabelText("Nombre")).toHaveValue("Mis cambios");
     expect(store.calls.filter(call => call.method === "PUT")).toHaveLength(1);
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));

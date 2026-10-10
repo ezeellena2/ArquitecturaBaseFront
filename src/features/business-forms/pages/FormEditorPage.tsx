@@ -27,7 +27,7 @@ import { PublicationProgress } from "../components/PublicationProgress";
 import { publicationLabelKey } from "../publicationPresentation";
 import { useFormPublication } from "../hooks/useFormPublication";
 import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
-import { DraftReview } from "../components/DraftReview";
+import { DraftReview, DraftReviewChanges } from "../components/DraftReview";
 import { emptyForm, missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
 import { useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
@@ -81,6 +81,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   const [removeId, setRemoveId] = useState<string | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [retainedReview, setRetainedReview] = useState<{ value: DraftEditorValue; definition: FormDefinitionSnapshot } | null>(null);
   const [publicationOpen, setPublicationOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   useEffect(() => {
@@ -139,6 +140,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   async function operate(action: () => Promise<FormDefinitionSnapshot | undefined>) {
     const saved = await action();
     if (!saved || !active.current) return;
+    setRetainedReview(null);
     notify({ id: `forms:saved:${scope.actorId}:${saved.id}`, kind: "success", message: t("saved", { name: saved.name[saved.draft.culture] }) });
     if (!("definition" in initial)) { guard.allowNextNavigation(); void navigate(`/formularios/${saved.id}`, { replace: true }); }
     return saved;
@@ -180,6 +182,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
     <PublicationProgress publication={publication} projection={projection} feedbackId={`forms:publication:${session.scope.editorId}`} onReplay={() => void publication.replay()} />
     {session.phase === "Unconfirmed" ? <Surface padded><p className="text-sm">{t(editor.issue?.kind === "forbidden" ? "noSave" : editor.issue?.code === "Forms.Draft.RequestConflict" ? "requestConflict" : editor.issue?.kind === "expired" ? "expired" : "uncertainHint")}</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning || editor.issue?.kind === "expired"} onClick={() => void operate(editor.recover)}>{t(editor.busy ? "recovering" : "recover")}</Button>{editor.issue?.kind === "missing" && scope.permissions.includes("formtemplates.manage") ? <Button type="button" variant="outline" disabled={editor.busy} onClick={() => void operate(editor.retry)}>{t("retrySame")}</Button> : null}</div></Surface> : null}
     {reviewRequired ? <Surface padded><p className="text-sm">{t("reviewPending")}</p><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning} onClick={showReview}>{t("review")}</Button></Surface> : null}
+    {retainedReview ? <Surface title={t("reviewChangesToInspect")} padded><p className="mb-3 text-sm">{t("reviewNoSave")}</p><DraftReviewChanges value={retainedReview.value} definition={retainedReview.definition} culture={scope.culture} /></Surface> : null}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-4">
 
@@ -227,6 +230,6 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   {guard.isBlocked && publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("publication.unconfirmed")} description={t("publication.unconfirmedHint")} cancelLabel={t("stay")} confirmLabel={t("publication.consult")} onConfirm={() => { guard.stay(); void publication.consult(); }} /> : null}
   {guard.isBlocked && frozen && !publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("uncertain")} description={t("busyLeave")} cancelLabel={t("stay")} confirmLabel={t(session.phase === "Unconfirmed" ? "recover" : "review")} onConfirm={() => { guard.stay(); if (session.phase === "Unconfirmed") void operate(editor.recover); else if (reviewRequired) showReview(); }} /> : null}
   <ConfirmDialog focusFallback={removalFocus} open={removeId !== null} onOpenChange={open => { if (!open) setRemoveId(null); }} title={t("removeTitle")} description={t("removeDescription")} confirmLabel={t("common:actions.confirm")} destructive onConfirm={() => { if (removeId) removeQuestion(removeId); }} />
-  {editor.review ? <DraftReview key={editor.review.definition.revision} value={value} definition={editor.review.definition} culture={scope.culture} auditSummary={t("reviewAudit", { date: formatDateTimeInZone(editor.review.audit.lastChangedAtUtc, scope.culture, timeZoneId), author: editor.review.audit.lastChangedBy?.displayName ?? "—" })} open={reviewOpen} onCloseAutoFocus={event => { event.preventDefault(); const target = reviewReturnFocus.current; if (target?.isConnected && !target.matches(":disabled")) target.focus(); else (saveButton.current ?? host.current?.querySelector<HTMLInputElement>("input"))?.focus(); }} onOpenChange={setReviewOpen} onUseCurrent={editor.useCurrent} onResolve={editor.resolveReview} /> : null}
+  {editor.review ? <DraftReview key={editor.review.definition.revision} value={value} definition={editor.review.definition} culture={scope.culture} auditSummary={t("reviewAudit", { date: formatDateTimeInZone(editor.review.audit.lastChangedAtUtc, scope.culture, timeZoneId), author: editor.review.audit.lastChangedBy?.displayName ?? "—" })} open={reviewOpen} onCloseAutoFocus={event => { event.preventDefault(); const target = reviewReturnFocus.current; if (target?.isConnected && !target.matches(":disabled")) target.focus(); else (saveButton.current ?? host.current?.querySelector<HTMLInputElement>("input"))?.focus(); }} onOpenChange={setReviewOpen} onUseCurrent={editor.useCurrent} onResolve={choices => { setRetainedReview({ value, definition: editor.review!.definition }); editor.resolveReview(choices); }} /> : null}
   </div>;
 }

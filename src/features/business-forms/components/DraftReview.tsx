@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/shared/ui/dialog";
 import { DataTable } from "@/shared/ui/DataTable";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Surface } from "@/shared/ui/Surface";
 import { createDraftReview, localizedValue, type DraftReviewRow } from "../editorModel";
 import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture, FormDefinitionSnapshot, LocalizedText } from "../model";
@@ -14,9 +12,21 @@ export function DraftReview({ value, definition, culture, auditSummary, open, on
   onOpenChange: (open: boolean) => void; onUseCurrent: () => void; onResolve: (choices: Readonly<Record<string, string>>) => void;
 }) {
   const { t } = useTranslation("forms");
-  const [deciding, setDeciding] = useState(false);
-  const [choices, setChoices] = useState<Record<string, string>>({});
   const restoreFocus = useRestoreFocusOnClose(open);
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-3xl" onCloseAutoFocus={onCloseAutoFocus ?? restoreFocus}><DialogHeader><DialogTitle>{t("reviewTitle")}</DialogTitle><DialogDescription>{t("reviewDescription")}</DialogDescription></DialogHeader>
+    {auditSummary ? <p className="text-sm text-[var(--color-content-muted)]">{auditSummary}</p> : null}
+    <DraftReviewChanges value={value} definition={definition} culture={culture} />
+    <p className="text-sm text-[var(--color-content-muted)]">{t("reviewNoSave")}</p>
+    <DialogFooter><Button type="button" variant="outline" onClick={() => { onUseCurrent(); onOpenChange(false); }}>{t("useCurrent")}</Button><Button type="button" onClick={() => {
+      const review = createDraftReview(value, definition);
+      onResolve(Object.fromEntries(review.rows.map(row => [row.id, row.canKeep ? "mine" : "current"])));
+      onOpenChange(false);
+    }}>{t("keepMine")}</Button></DialogFooter>
+  </DialogContent></Dialog>;
+}
+
+export function DraftReviewChanges({ value, definition, culture }: { value: DraftEditorValue; definition: FormDefinitionSnapshot; culture: FormCulture }) {
+  const { t } = useTranslation("forms");
   const review = createDraftReview(value, definition);
   const text = (map: LocalizedText) => Object.entries(map).map(([language, label]) => `${new Intl.DisplayNames([culture], { type: "language" }).of(language) ?? language}: ${label}`).join(" · ");
   const identity = (q: DraftQuestion) => q.fieldId ?? `new:${q.localId}`;
@@ -62,15 +72,10 @@ export function DraftReview({ value, definition, culture, auditSummary, open, on
     return t(row.kind === "submit" ? "submitLabel" : row.kind === "order" ? "order" : row.kind);
   }
   const rowTitle = (row: DraftReviewRow) => row.culture ? t("localizedChange", { name: title(row), language: t(`cultures.${row.culture}`) }) : title(row);
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-3xl" onCloseAutoFocus={onCloseAutoFocus ?? restoreFocus}><DialogHeader><DialogTitle>{t("reviewTitle")}</DialogTitle><DialogDescription>{t("reviewDescription")}</DialogDescription></DialogHeader>
-    {auditSummary ? <p className="text-sm text-[var(--color-content-muted)]">{auditSummary}</p> : null}
-    <Surface><DataTable rows={review.rows} rowKey={row => row.id} emptyTitle={t("draft")} columns={[
+  return <Surface><DataTable rows={review.rows} rowKey={row => row.id} emptyTitle={t("draft")} columns={[
       { id: "change", header: t("changes"), cell: row => <p className="break-words">{rowTitle(row)}</p> },
       { id: "current", header: t("current"), cell: row => <p className="whitespace-normal break-words">{summary(row, "current")}</p> },
       { id: "mine", header: t("mine"), cell: row => <div className="flex flex-col gap-2"><p className="whitespace-normal break-words">{summary(row, "mine")}</p>{!row.canKeep ? <p className="text-sm text-[var(--color-content-muted)]">{t(row.kind === "prefix" ? "prefixLocked" : "retired")}</p> : null}
-        {deciding ? <NativeSelect aria-label={`${t("choose")}: ${rowTitle(row)}`} value={choices[row.id] ?? ""} onChange={e => setChoices(previous => ({ ...previous, [row.id]: e.target.value }))}><option value="">{t("choose")}</option><option value="current">{t("current")}</option>{row.canKeep ? <option value="mine">{t("mine")}</option> : null}</NativeSelect> : null}</div> },
-    ]} /></Surface>
-    {deciding ? <p className="text-sm text-[var(--color-content-muted)]">{t("reviewPending")}</p> : null}
-    <DialogFooter><Button type="button" variant="outline" onClick={() => { onUseCurrent(); onOpenChange(false); }}>{t("useCurrent")}</Button>{deciding ? <Button type="button" disabled={review.rows.some(r => !choices[r.id])} onClick={() => { onResolve(choices); onOpenChange(false); }}>{t("applyReview")}</Button> : <Button type="button" onClick={() => setDeciding(true)}>{t("keepMine")}</Button>}</DialogFooter>
-  </DialogContent></Dialog>;
+      </div> },
+    ]} /></Surface>;
 }
