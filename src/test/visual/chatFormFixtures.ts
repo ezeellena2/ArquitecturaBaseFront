@@ -1,0 +1,27 @@
+import type {Chat,Thread,Outgoing} from "@/features/whatsapp/api/chat";
+import type {ChatFormOption} from "@/features/whatsapp/api/forms";
+import type {FormMessageRequest} from "@/features/whatsapp/lib/formSendSession";
+const guid=(n:number)=>"01990000-0000-7000-8000-"+String(n).padStart(12,"0");
+const json=(value:unknown,status=200)=>new Response(JSON.stringify(value),{status,headers:{"Content-Type":"application/json"}});
+export function createChatFormFixtures(language:"es"|"en",scenario:string){
+ const recipientCulture=scenario==="forms-chat-recipient-en"?"en":"es";
+ const contact:Chat={id:guid(600),profileName:"Juan Gómez",phoneNumber:"+54 9 351 555-1234",mode:"Manual",modeRevision:7,lastInboundAtUtc:new Date().toISOString(),lastInboundSequence:1,unreadCount:0,preview:language==="es"?"Hola, ya terminé la visita.":"Hello, I finished the visit.",linkedAccount:{userId:guid(601),displayName:"Juan Gómez",email:"juan@example.com",isActive:true},formEligibility:{status:"Eligible",recipientCulture,recipientContextRevision:"fixture-context-1"}};
+ if(scenario==="forms-chat-unlinked"){contact.linkedAccount=null;contact.formEligibility={status:"NoLinkedAccount",recipientCulture:null,recipientContextRevision:null};}
+ if(scenario==="forms-chat-no-email")contact.linkedAccount!.email=null;
+ const options:ChatFormOption[]=Array.from({length:9},(_,i)=>({definitionId:guid(620+i),versionId:guid(640+i),versionNumber:1,name:recipientCulture==="es"?i===0?"Registrar visita":"Formulario "+(i+1):i===0?"Register visit":"Form "+(i+1),questionCount:4,submitLabel:recipientCulture==="es"?"Confirmar visita":"Confirm visit"}));
+ const thread:Thread={contact,messages:[{id:guid(602),direction:"Inbound",kind:"Text",body:contact.preview,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"}],outgoing:[],beforeId:null,beforeAtUtc:null};
+ const attempts:FormMessageRequest[]=[];const calls:{method:string;path:string;search:string}[]=[];
+ const makeReceipt=(request:FormMessageRequest):Outgoing=>{const option=options.find(value=>value.versionId===request.versionId)!;return {id:guid(610),requestId:request.requestId,operatorUserId:"visual-test",body:request.message,requestedAtUtc:new Date().toISOString(),state:"Pending",waMessageId:null,kind:"Flow",form:{definitionId:option.definitionId,versionId:option.versionId,versionNumber:option.versionNumber,name:option.name,culture:recipientCulture}};};
+ if(scenario==="forms-chat-states")for(const [i,state] of (["Failed","Uncertain","Reviewed"] as const).entries()){const r=makeReceipt({requestId:guid(680+i),definitionId:options[i].definitionId,versionId:options[i].versionId,expectedModeRevision:7,expectedRecipientContextRevision:"fixture-context-1",message:language==="es"?"Completá este formulario.":"Please complete this form."});thread.outgoing.push({...r,id:guid(690+i),state});}
+ async function handle(request:Request){const url=new URL(request.url);const path=url.pathname;calls.push({method:request.method,path,search:url.search});
+ if(path==="/api/whatsapp/chats")return json({page:{items:[contact],page:1,pageSize:20,totalPages:1,totalCount:1},allCount:1,unreadCount:0});
+ if(path.endsWith("/read"))return new Response(null,{status:204});
+ if(request.method==="GET"&&path.endsWith("/messages"))return json(thread);
+ if(request.method==="GET"&&path.endsWith("/forms")){const search=(url.searchParams.get("search")??"").toLowerCase(),page=Number(url.searchParams.get("page")??1);const matching=options.filter(o=>o.name.toLowerCase().includes(search));return json({page:{items:matching.slice((page-1)*4,page*4),page,pageSize:4,totalCount:matching.length,totalPages:Math.ceil(matching.length/4),hasPrevious:page>1,hasNext:page*4<matching.length},recipientCulture:contact.formEligibility!.recipientCulture,recipientContextRevision:contact.formEligibility!.recipientContextRevision});}
+ if(request.method==="POST"&&path.endsWith("/form-messages")){const input=await request.json() as FormMessageRequest;attempts.push(input);if(scenario==="forms-chat-forbidden")return json({code:"General.Forbidden"},403);if(scenario==="forms-chat-conflict")return json({code:"WhatsApp.Flow.RecipientContextChanged"},409);if(scenario==="forms-chat-uncertain"&&attempts.length===1)throw new TypeError("Simulated lost HTTP response");const result=makeReceipt(input);thread.outgoing=[result];return json(result,202);}
+ if(request.method==="GET"&&path.includes("/outgoing/"))return json({code:"WhatsApp.Chat.OutgoingNotFound"},404);
+ if(request.method==="POST"&&path.endsWith("/review")){const requestId=path.split("/").at(-2)!;thread.outgoing=thread.outgoing.map(o=>o.requestId===requestId?{...o,state:"Reviewed"}:o);return new Response(null,{status:204});}
+ return json({code:"General.NotFound"},404);
+ }
+ return {handle,attempts,calls,contact};
+}

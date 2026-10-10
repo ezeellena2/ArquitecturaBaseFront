@@ -123,3 +123,83 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(preview.getByRole("option", { name: "Pérez Hnos. · Translation pending", exact: true })).toHaveCount(1);
   });
 }
+
+for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
+  test(`publication confirmation and progress ${language} at ${width}px`, async ({ page, baseURL }) => {
+    const es = language === "es";
+    const external: string[] = [];
+    const origin = new URL(baseURL!).origin;
+    page.on("request", request => { if (new URL(request.url()).origin !== origin) external.push(request.url()); });
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-progress&lang=${language}`);
+    const trigger = page.getByRole("button", { name: es ? "Publicar en WhatsApp" : "Publish on WhatsApp", exact: true });
+    await trigger.click();
+    const dialog = page.getByRole("dialog", { name: es ? "Publicar en WhatsApp" : "Publish on WhatsApp", exact: true });
+    const publish = dialog.getByRole("button", { name: es ? "Publicar" : "Publish", exact: true });
+    await expect(publish).toBeEnabled();
+    await dialog.press("Escape");
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await expect(publish).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: `test-results/forms-publication-confirm-${language}-${width}.png`, fullPage: true });
+    await publish.click();
+    await expect(page.getByRole("heading", { name: es ? "Publicando · versión 1" : "Publishing · version 1", exact: true })).toBeVisible();
+    await expect(page.locator("[data-sonner-toast][data-type=success]")).toContainText(es ? "Publicación aceptada · versión 1" : "Publication accepted · version 1");
+    await expect(page.getByRole("heading", { name: es ? "Publicado · versión 1" : "Published · version 1", exact: true })).toHaveCount(0);
+    const name = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true });
+    await name.fill(es ? "Mi borrador siguiente" : "My next draft");
+    await expect(page.getByRole("textbox", { name: es ? "Prefijo de numeración" : "Numbering prefix", exact: true })).toHaveAttribute("readonly", "");
+    const consult = page.getByRole("button", { name: es ? "Consultar publicación" : "Check publication", exact: true });
+    await consult.click();
+    await expect(page.getByText(es ? "Enviada a WhatsApp; esperando confirmación" : "Sent to WhatsApp; awaiting confirmation", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    const progress = await page.getByRole("region", { name: es ? "Publicando · versión 1" : "Publishing · version 1", exact: true }).boundingBox();
+    expect(progress!.x).toBeGreaterThanOrEqual(0);
+    expect(progress!.x + progress!.width).toBeLessThanOrEqual(width);
+    const action = await trigger.boundingBox();
+    expect(action!.x).toBeGreaterThanOrEqual(0);
+    expect(action!.x + action!.width).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: `test-results/forms-publication-progress-${language}-${width}.png`, fullPage: true });
+    await consult.click();
+    await expect(page.getByRole("heading", { name: es ? "Publicado · versión 1" : "Published · version 1", exact: true })).toBeVisible();
+    await expect(name).toHaveValue(es ? "Mi borrador siguiente" : "My next draft");
+    expect(external).toEqual([]);
+  });
+}
+
+test("uncertain publication keeps one UUID and replays only the same body after a 404 and wait", async ({ page }) => {
+  const attempts = () => page.evaluate(() => (window as typeof window & { fixturePublicationAttempts: string[] }).fixturePublicationAttempts);
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-uncertain&lang=es`);
+  await page.evaluate(() => {
+    const fixture = window as typeof window & { fixturePublicationAttempts: string[] };
+    fixture.fixturePublicationAttempts = [];
+    const originalFetch = window.fetch;
+    window.fetch = (input, options) => {
+      const request = new Request(input, options);
+      if (request.method === "POST" && new URL(request.url).pathname.endsWith("/publications")) void request.clone().text().then(body => fixture.fixturePublicationAttempts.push(body));
+      return originalFetch(input, options);
+    };
+  });
+  await page.getByRole("button", { name: "Publicar en WhatsApp", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Publicar en WhatsApp", exact: true });
+  await expect(dialog.getByRole("button", { name: "Publicar", exact: true })).toBeEnabled();
+  await dialog.getByRole("button", { name: "Publicar", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Publicación sin confirmar", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Repetir el mismo intento", exact: true })).toHaveCount(0);
+  await page.getByRole("textbox", { name: "Nombre", exact: true }).fill("Borrador posterior");
+  await page.getByRole("button", { name: "Consultar publicación", exact: true }).click();
+  const replay = page.getByRole("button", { name: "Repetir el mismo intento", exact: true });
+  await expect(replay).toBeDisabled();
+  expect(await attempts()).toHaveLength(1);
+  await page.screenshot({ path: "test-results/forms-publication-uncertain-es-320.png", fullPage: true });
+  await expect(replay).toBeEnabled({ timeout: 10000 });
+  await replay.click();
+  await expect(page.getByRole("heading", { name: "Publicando · versión 1", exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).toHaveValue("Borrador posterior");
+  const sent = await attempts();
+  expect(sent).toHaveLength(2);
+  expect(sent[1]).toBe(sent[0]);
+  await expect(page.getByRole("textbox", { name: "Prefijo de numeración", exact: true })).toHaveAttribute("readonly", "");
+});

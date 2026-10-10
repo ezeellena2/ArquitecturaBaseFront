@@ -17,3 +17,7 @@ Contiene el catálogo local, fixtures y las pruebas Playwright del sistema visua
 Referencia: [estándar aplicado](../../../docs/guides/estandar-visual.md#catálogo-y-revisión-con-navegador).
 
 `assistant-conversations.spec.ts` recorre panel real en es/en a 1440/390/320: listado de 24 filas en páginas de 20, drawer, borrador, selección, menús/Escape, cancelación de borrado y devolución del foco. El fetch ficticio instrumenta GET/escrituras en memoria para probar navegación sin generación. Reloj congelado sólo de tests; no acredita capacidad ni proveedor real.
+
+`formPublicationReads.spec.ts` recorre recarga Failed/listado/diagnóstico y P3 por idioma/vencimiento; `chatForms.spec.ts` recorre C1–C5 sobre Inbox/Thread/Composer/Timeline reales. Ambos cubren es/en y1440/390/320, teclado, foco, geometría y capturas. formFixtures/chatFormFixtures simulan estado durable y cola en memoria; el iframe oficial se intercepta con HTML ficticio identificado y nunca llama a Meta. Estas pruebas no acreditan sesiones, cola durable, entrega ni publicación reales.
+
+`formSharedControls.spec.ts` verifica RadioGroupField cards y MessageCard dentro de MessageBubble en el catálogo es/en a1440/390/320; las referencias del catálogo existente se conservan y se verifican sin actualizar capturas automáticamente.

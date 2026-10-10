@@ -43,7 +43,7 @@ vigente de la migración y los controles automáticos pendientes.
 | [`src/shared/hooks/`](../src/shared/hooks/AGENTS.md) | Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva y guardas de salida. |
 | [`src/shared/i18n/`](../src/shared/i18n/AGENTS.md) | Configura i18next, carga namespaces y aplica idioma, preferencia local y `lang` del documento. |
 | [`src/shared/lib/`](../src/shared/lib/AGENTS.md) | Contiene formato de fechas por zona, nombres de países, `cn` y derivación de apariencia con contraste. |
-| [`src/shared/ui/`](../src/shared/ui/AGENTS.md) | Reúne primitivas generadas por shadcn y componentes propios de formularios, tablas, diálogos, navegación y presentación. Delimita zonas con Surface/FilterBar y define el alternado común de filas. |
+| [`src/shared/ui/`](../src/shared/ui/AGENTS.md) | Reúne primitivas generadas por shadcn y componentes propios de formularios, tablas, diálogos, navegación y presentación. Delimita zonas con Surface/FilterBar y define el alternado común de filas. MessageCard/attachment y RadioGroupField cards son presentación; EmbeddedPreview no decide permisos ni caducidad. |
 | [`src/shared/ui/assistant/`](../src/shared/ui/assistant/AGENTS.md) | Primitivas assistant-ui con UI común; no conoce API/sesión/features. Hilo, compositor y mensajes confirmados aportados por la feature. |
 | [`src/test/`](../src/test/AGENTS.md) | `setup.ts` prepara Vitest/jsdom y MSW; `mocks` contiene servidor y contratos simulados; `utils` renderiza con providers y router de la app. |
 | [`src/test/architecture/`](../src/test/architecture/AGENTS.md) | Verifica con TypeScript independencia entre features y de shared, límites de uso del sistema visual y montaje único del Toaster. |
@@ -64,7 +64,7 @@ enlace de ficha, sin cambios en el contrato o guardado productivos.
 | Ámbito nuevo | Responsabilidad |
 | --- | --- |
 | [src/features/artificial-intelligence](../src/features/artificial-intelligence/AGENTS.md) | Conexión, catálogo/prueba y editor guiado del negocio; asistente autorizado de consultas con historial privado y recuperación durable. Catálogo/Places sólo en el editor; claves fuera de caches/storage; asistente adapta estado confirmado y conserva UUID/body en aceptación incierta. |
-| [src/features/business-forms](../src/features/business-forms/AGENTS.md) | Modelo/baseline, cliente HTTP y guard de las seis rutas de borrador, hooks de lecturas por actor/permisos/cultura y editor en memoria. Intento congelado fuera de MutationCache, recuperación original y paths ligados al cuerpo. Router, menú, listado, editor bilingüe y preview A–E; revisión explícita por idioma y por identidad. Publicación e integración WhatsApp quedan pendientes. |
+| [src/features/business-forms](../src/features/business-forms/AGENTS.md) | Modelo/baseline, cliente HTTP y guard de las seis rutas de borrador, hooks de lecturas por actor/permisos/cultura y editor en memoria. Intento congelado fuera de MutationCache, recuperación original y paths ligados al cuerpo. Router, menú, listado, editor bilingüe y preview A–E; revisión explícita por idioma y por identidad. P1 comprueba y P2 acepta/consulta el intento propio, con ticket/UUID/cuerpo privados y202 separado de Published; recarga GET desde proyección propia y listado con versión activa separada. P3 pide idioma explícito y URL efímera fuera de caché; proveedor real/piloto pendiente. |
 
 Las páginas, API, componentes y utilidades internas de una feature siguen su guía de área. Los componentes individuales de UI siguen shared/ui; los idiomas siguen locales. Los documentos de diseño y las recetas siguen docs/AGENTS.md.
 
@@ -73,3 +73,5 @@ No se crean pares en `bin`, `obj`, `node_modules`, `dist`, `artifacts`, archivos
 ## Mantenimiento
 
 Cuando agregues un área, adaptador o cambio de responsabilidad, actualizá su guía y este mapa en el mismo desarrollo. Seguí la [receta de instrucciones por carpeta](../../ArquitecturaBase/docs/guides/instrucciones-por-carpeta.md). La enumeración es un punto de entrada, no un inventario de cada método.
+
+WhatsApp delimita C1–C5 en su AGENTS.md: contratos de elegibilidad/form-messages, mensaje/UUID privado por chat, recuperación outgoing existente y metadata Flow explícita en Timeline. Backend3 y entrega real siguen pendientes; chatFormFixtures/formPublicationReads y los tests MSW/navegador acreditan sólo el consumo simulado.

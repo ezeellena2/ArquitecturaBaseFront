@@ -30,6 +30,24 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     const original = fixtureDefinition("es");
     definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: original.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : q.type === "choice" ? { ...q, options: q.options.map((o, index) => index === 0 ? { ...o, label: { ...o.label, en: "" } } : o) } : q) } });
   }
+  if (scenario.startsWith("forms-publication")) { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "longText" ? { ...q, help: { es: "Contá lo que pasó.", en: "Describe what happened." } } : q) } }); }
+  const publications = new Map<string, { definitionId: string; requestId: string; operationId: string; versionId: string; versionNumber: number; draftRevision: number; state: string; acceptedAtUtc: string; recoveryPath: string }>();
+  const publicationStates = new Map<string,string>();
+  const reloadFailed = scenario === "forms-publication-failed-reload";
+  const reloadReview = scenario === "forms-publication-uncertain-reload";
+  const officialPreview = scenario === "forms-publication-preview";
+  if (reloadFailed || reloadReview || officialPreview) {
+   const d=definitions.get(fixtureFormId)!; definitions.set(d.id,{...d,prefixLocked:true});
+   const requestId=guid(92);publications.set(requestId,{definitionId:d.id,requestId,operationId:guid(90),versionId:guid(91),versionNumber:1,draftRevision:1,state:"Accepted",acceptedAtUtc:audit.createdAtUtc,recoveryPath:"/api/forms/definitions/"+d.id+"/publications/"+requestId});
+   publicationStates.set(requestId,reloadFailed?"Failed":reloadReview?"Uncertain":"Published");
+  }
+  function overview(id:string) {
+   const operation=[...publications.values()].filter(p=>p.definitionId===id).at(-1);
+   const state=operation?publicationStates.get(operation.requestId)??operation.state:"Draft";
+   const activeVersion=operation&&state==="Published"?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision}:null;
+   return {activeVersion,currentOperation:operation?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision,state,stage:state==="Published"?"Complete":state==="Failed"?"Upload":"Accepted",requiresReview:state==="Uncertain",canRetry:false,requestId:operation.requestId,recoveryPath:operation.recoveryPath}:null,displayState:state};
+  }
+  let publicationMissing = false; let publicationReads = 0;
   const receipts = new Map<string, { body: string; kind: "Create" | "Update"; result: FormDraftSaveResult }>();
   let conflict = false; let missing = false; let serial = 100;
   const calls: { method: string; path: string }[] = [];
@@ -40,6 +58,48 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     calls.push({ method: request.method, path });
     if (scenario === "forms-denied") return json({ code: "General.Forbidden" }, 403);
 
+    if (request.method === "POST" && path.endsWith("/publication-checks")) {
+      const definition = definitions.get(path.split("/").at(-2)!);
+      if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
+      const input = await request.json() as DraftWriteBody;
+      if (input.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
+      const available = scenario.startsWith("forms-publication");
+      return json({ definitionId: definition.id, draftRevision: definition.revision, compatibility: "LocallyValidated",
+        canAccept: available, acceptanceAvailability: available ? "Available" : "Unavailable", channels: [], issues: [],
+        checkToken: available ? "fixture-publication-ticket" : null, checkExpiresAtUtc: available ? "2099-10-10T16:00:00Z" : null,
+        diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [] } });
+    }
+    if (request.method === "POST" && path.endsWith("/publications")) {
+      const definition = definitions.get(path.split("/").at(-2)!);
+      if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
+      const input = await request.json() as DraftWriteBody;
+      const prior = publications.get(input.requestId);
+      if (prior) return json(prior, 202);
+      const result = { definitionId: definition.id, requestId: input.requestId, operationId: guid(90), versionId: guid(91),
+        versionNumber: 1, draftRevision: definition.revision, state: "Accepted", acceptedAtUtc: audit.createdAtUtc,
+        recoveryPath: "/api/forms/definitions/" + definition.id + "/publications/" + input.requestId };
+      publications.set(input.requestId, result);
+      definitions.set(definition.id, { ...definition, prefixLocked: true });
+      if (scenario === "forms-publication-uncertain") return json({ code: "General.Unexpected", traceId: "publication-fixture" }, 500);
+      return json(result, 202);
+    }
+    if (request.method === "GET" && path.includes("/publications/")) {
+      const publication = publications.get(path.split("/").at(-1)!);
+      if (scenario === "forms-publication-uncertain" && !publicationMissing) { publicationMissing = true; return json({ code: "Forms.Publication.NotFound" }, 404); }
+      if (!publication) return json({ code: "Forms.Publication.NotFound" }, 404);
+      const { recoveryPath: _path, ...identity } = publication;
+      publicationReads++;
+      const state=scenario === "forms-publication-progress" ? publicationReads > 1 ? "Published" : "Publishing" : publicationStates.get(publication.requestId) ?? "Accepted";
+      publicationStates.set(publication.requestId,state);
+      return json({ ...identity, state,
+        stage: state === "Uncertain" ? "Validate" : scenario === "forms-publication-progress" ? publicationReads > 1 ? "Complete" : "Validate" : "Accepted",
+        updatedAtUtc: audit.createdAtUtc, nextCheckAtUtc: null, canRetry: false, requiresReview: state === "Uncertain", issues: reloadFailed ? Array.from({length:6},()=>({channelId:"WhatsApp",fieldId:null,choiceId:null,path:"channel",code:"WhatsApp.Flow.ValidationFailed",message:culture==="es"?"WhatsApp rechazó la validación del formulario.":"WhatsApp rejected the form validation.",limit:null,culture:"en"})) : [] });
+    }
+    if (request.method === "GET" && path.endsWith("/preview")) {
+     const selected=url.searchParams.get("culture");
+     if(!officialPreview || selected!=="es"&&selected!=="en")return json({code:"WhatsApp.Flow.PreviewUnavailable"},409);
+     return json({url:"https://www.facebook.com/whatsapp/flows/preview/fixture?culture="+selected,expiresAtUtc:new Date(Date.now()+6000).toISOString()});
+    }
     if (request.method === "GET" && path.startsWith("/api/forms/draft-changes/")) {
       if (scenario === "forms-expired") return json({ code: "Forms.Draft.ChangeExpired" }, 410);
       if (scenario === "forms-uncertain" && !missing) { missing = true; return json({ code: "Forms.Draft.ChangeNotFound" }, 404); }
@@ -49,22 +109,23 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     }
     if (request.method === "GET" && path === "/api/forms/definitions/facets") {
       const matches = [...definitions.values()].filter(d => administrativeName(d.name, culture).toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase()));
-      return json({ all: matches.length, published: 0, drafts: matches.length });
+      const published=matches.filter(d=>overview(d.id).activeVersion).length;
+      return json({ all: matches.length, published, drafts: matches.length-published });
     }
     if (request.method === "GET" && path === "/api/forms/definitions") {
       if (scenario === "forms-loading") return new Promise(() => {});
       if (scenario === "forms-error") return json({ code: "General.Unexpected", traceId: "forms-fixture" }, 500);
-      const values = [...definitions.values()].filter(d => url.searchParams.get("publicationFilter") !== "Published" && administrativeName(d.name, culture).toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase()));
+      const values = [...definitions.values()].filter(d => (url.searchParams.get("publicationFilter") === "Published" ? !!overview(d.id).activeVersion : url.searchParams.get("publicationFilter") === "Drafts" ? !overview(d.id).activeVersion : true) && administrativeName(d.name, culture).toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase()));
       const sort = url.searchParams.get("sort") ?? "name";
       values.sort((a, b) => (sort.includes("questionCount") ? a.draft.fields.length - b.draft.fields.length : administrativeName(a.name, culture).localeCompare(administrativeName(b.name, culture))) * (sort.startsWith("-") ? -1 : 1));
       const page = Number(url.searchParams.get("page") ?? 1); const pageSize = Number(url.searchParams.get("pageSize") ?? 20);
       return json({ items: values.slice((page - 1) * pageSize, page * pageSize).map(d => ({ id: d.id, name: d.name, prefix: d.prefix, questionCount: d.draft.fields.length,
-        activeVersionNumber: null, displayState: "Draft", lastChangedAtUtc: audit.lastChangedAtUtc, lastChangedBy: audit.lastChangedBy, canEdit: canSave })),
+        activeVersionNumber: overview(d.id).activeVersion?.versionNumber ?? null, displayState: overview(d.id).displayState, lastChangedAtUtc: audit.lastChangedAtUtc, lastChangedBy: audit.lastChangedBy, canEdit: canSave })),
         page, pageSize, totalCount: values.length, totalPages: Math.ceil(values.length / pageSize), hasPrevious: page > 1, hasNext: page * pageSize < values.length });
     }
     if (request.method === "GET") {
       const definition = definitions.get(path.split("/").at(-1)!);
-      return definition ? json({ definition: wireDefinition(definition), capabilities: { canSave }, audit }) : json({ code: "Forms.Definition.NotFound" }, 404);
+      return definition ? json({ definition: wireDefinition(definition), capabilities: { canSave, canPublish: true, canPreview: !!overview(definition.id).activeVersion }, publication: overview(definition.id), audit }) : json({ code: "Forms.Definition.NotFound" }, 404);
     }
     if (!canSave) return json({ code: "General.Forbidden" }, 403);
     const body = await request.json() as DraftWriteBody;

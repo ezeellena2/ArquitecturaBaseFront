@@ -1,3 +1,4 @@
+import { MessageCard } from "@/shared/ui/MessageCard";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/shared/ui/Page";
@@ -19,7 +20,7 @@ import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { IconButton } from "@/shared/ui/IconButton";
-import { PencilIcon } from "@/shared/ui/icons";
+import { FormIcon, PencilIcon } from "@/shared/ui/icons";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { MessageBubble, MessageDateDivider, type MessageDeliveryState } from "@/shared/ui/MessageBubble";
@@ -28,6 +29,7 @@ import { MessageHistory } from "@/shared/ui/MessageHistory";
 // Referencia local con componentes reales, no una segunda implementación visual.
 export function Catalog() {
   const { t, i18n } = useTranslation(["common", "whatsapp"]);
+  const formPieces = new URLSearchParams(location.search).get("scenario") === "form-controls";
   const [confirm, setConfirm] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [selection, setSelection] = useState<string[]>(["User"]);
@@ -87,6 +89,12 @@ export function Catalog() {
                 reviewed: t("whatsapp:status.Reviewed"), unknown: t("whatsapp:status.Unknown") })[state] }} />)}
         </MessageHistory>
       </Surface>
+      {formPieces ? <Surface title={english ? "Form controls" : "Controles de formularios"} padded>
+        <div className="flex flex-col gap-4">
+          <RadioGroupField label={english ? "Choose a card" : "Elegí una tarjeta"} variant="cards" value={choice} onValueChange={setChoice} options={[{value:"InviteOnly",label:english ? "First card" : "Primera tarjeta",description:english ? "A shared selectable row." : "Una fila seleccionable común."},{value:"Open",label:english ? "Second card" : "Segunda tarjeta",description:english ? "Keyboard keeps the same radio behavior." : "Conserva el teclado del control de opción."}]} />
+          <MessageBubble direction="outgoing" text={english ? "An attached card." : "Una tarjeta adjunta."} attachment={<MessageCard icon={<FormIcon className="size-4" />} title={english ? "Example attachment" : "Adjunto de ejemplo"} description={english ? "A title and description inside the message." : "Título y descripción dentro del mensaje."} />} timestamp="2026-10-02T12:00:00Z" timeLabel="9:00" dateLabel={english ? "Oct 2, 2026, 9:00 AM" : "2 oct 2026, 9:00"} delivery={{state:"pending",label:t("whatsapp:status.Pending")}} />
+        </div>
+      </Surface> : null}
       <Surface title={pieces.dialogs} padded>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => setFormOpen(true)}>{pieces.modal}</Button>

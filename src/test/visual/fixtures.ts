@@ -1,3 +1,4 @@
+import { createChatFormFixtures } from "./chatFormFixtures";
 import { createAssistantVisualFixtures } from "./assistantFixtures";
 import { createFormFixtureStore } from "./formFixtures";
 import { initialAppearance } from "@/shared/lib/appearance";
@@ -14,12 +15,15 @@ import { emptyBusinessDetails } from "@/features/artificial-intelligence/busines
 // Datos ficticios estables, con los tipos de los contratos reales.
 export function installVisualFixtures(language: "es" | "en", scenario: string | null) {
   const english = language === "en";
-  const formsScenario = scenario?.startsWith("forms-") ?? false;
+  const chatFormsScenario = scenario?.startsWith("forms-chat-") ?? false;
+  const chatFormsFixture = chatFormsScenario ? createChatFormFixtures(language, scenario!) : undefined;
+  if (chatFormsFixture) Object.assign(globalThis,{chatFormsFixture});
+  const formsScenario = !chatFormsScenario && (scenario?.startsWith("forms-") ?? false);
   const formsFixture = formsScenario ? createFormFixtureStore(language, scenario!) : undefined;
   const assistantScenario = scenario?.startsWith("assistant-") ?? false;
   const assistantFixture = assistantScenario ? createAssistantVisualFixtures(language, scenario!) : undefined;
   const roleGroupsScenario = scenario === "role-groups";
-  const chatScenario = scenario === "chat" || scenario === "chat-states" || scenario === "chat-history" || scenario === "chat-access" || scenario === "chat-legacy" || roleGroupsScenario;
+  const chatScenario = chatFormsScenario || scenario === "chat" || scenario === "chat-states" || scenario === "chat-history" || scenario === "chat-access" || scenario === "chat-legacy" || roleGroupsScenario;
   const aiScenario = scenario?.startsWith("ai-") ?? false;
   const businessScenario = (scenario?.startsWith("business-") ?? false) || roleGroupsScenario;
   const profile: CurrentUser = {
@@ -27,7 +31,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false,
     hasGoogleLogin: false, culture: language, timeZoneId: "America/Argentina/Buenos_Aires",
     lastLoginAtUtc: "2026-09-18T12:00:00Z", roles: ["Admin"],
-    permissions: [...(formsScenario && scenario !== "forms-denied" ? scenario === "forms-read" ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage"] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), "users.read", "users.manage", "roles.read", "roles.manage", "settings.manage", ...(chatScenario ? ["whatsapp.read", "whatsapp.send", "whatsapp.manage"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
+    permissions: [...(formsScenario && scenario !== "forms-denied" ? scenario === "forms-read" ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-publication") ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), "users.read", "users.manage", "roles.read", "roles.manage", "settings.manage", ...(chatScenario ? scenario === "forms-chat-read" ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.manage"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
       ...(businessScenario && scenario !== "business-denied" ? scenario === "business-read" ? ["ai.business.read"] : ["ai.business.read", "ai.business.manage"] : []),
       ...(scenario === "business-roles" || roleGroupsScenario ? ["ai.read", "ai.manage"] : [])],
   };
@@ -133,6 +137,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     const request = new Request(input instanceof Request ? input : new URL(String(input), location.origin), init);
     const requestUrl = new URL(request.url);
     const path = requestUrl.pathname;
+    if (chatFormsFixture && path.startsWith("/api/whatsapp/chats")) return chatFormsFixture.handle(request);
     if (formsFixture && path.startsWith("/api/forms/")) return formsFixture.handle(request);
     const assistantResponse = await assistantFixture?.(request);
     if (assistantResponse) return assistantResponse;

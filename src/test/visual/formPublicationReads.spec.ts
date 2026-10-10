@@ -1,0 +1,42 @@
+import {test,expect} from "@playwright/test";
+import {fixtureFormId} from "./formFixtures";
+for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
+ test(`uncertain publication shows one review warning ${lang} at ${width}px`,async({page})=>{
+ const es=lang==="es";await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-uncertain-reload&lang=${lang}`);
+ const panel=page.getByRole("region",{name:es?"Publicación sin confirmar":"Publication unconfirmed",exact:true});const hint=es?"Esta publicación necesita revisión. No inicies otra para intentar resolverla.":"This publication needs review. Do not start another one to try to resolve it.";
+ await expect(panel.getByText(hint,{exact:true})).toHaveCount(1);await expect(panel.getByRole("listitem").first()).toHaveText(es?"Aceptada":"Accepted");
+ const consult=panel.getByRole("button",{name:es?"Consultar publicación":"Check publication",exact:true});await expect(consult).toBeEnabled();await consult.click();await expect(panel.getByText(hint,{exact:true})).toHaveCount(1);
+ await expect(page.getByRole("button",{name:es?"Publicar en WhatsApp":"Publish on WhatsApp",exact:true})).toBeDisabled();await expect(panel.getByRole("button",{name:es?"Repetir el mismo intento":"Repeat the same attempt",exact:true})).toHaveCount(0);
+ await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:`test-results/forms-publication-review-${lang}-${width}.png`,fullPage:true});
+ });
+ test(`failed publication recovers translated diagnostics ${lang} at ${width}px`,async({page})=>{
+ const es=lang==="es";await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-failed-reload&lang=${lang}`);
+ const panel=page.getByRole("region",{name:es?"No se pudo publicar · versión 1":"Could not publish · version 1",exact:true});
+ await expect(panel.getByText(es?"WhatsApp rechazó la validación del formulario.":"WhatsApp rejected the form validation.",{exact:true})).toHaveCount(1);
+ await expect(panel.getByText(es?"Inglés":"English",{exact:true})).toBeVisible();
+ await expect(panel.getByText(es?"Pendiente de confirmación de WhatsApp":"Awaiting WhatsApp confirmation",{exact:true})).toHaveCount(0);
+ await expect(panel.getByRole("button",{name:es?"Consultar publicación":"Check publication",exact:true})).toBeEnabled();
+ await expect(page.getByRole("button",{name:es?"Publicar en WhatsApp":"Publish on WhatsApp",exact:true})).toBeEnabled();
+ await expect(page.getByRole("button",{name:es?"Repetir el mismo intento":"Repeat the same attempt",exact:true})).toHaveCount(0);
+ await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+ await page.screenshot({path:`test-results/forms-publication-failed-${lang}-${width}.png`,fullPage:true});
+ await page.getByRole("link",{name:es?"Diseñar formularios":"Design forms",exact:true}).last().click();
+ await expect(page.getByRole("table").getByText(es?"No se pudo publicar":"Could not publish",{exact:true})).toBeVisible();
+ });
+ test(`official preview explicit culture and expiry ${lang} at ${width}px`,async({page})=>{
+ const es=lang==="es";const cultures:string[]=[];
+ await page.route("https://www.facebook.com/whatsapp/flows/preview/fixture**",async route=>{const culture=new URL(route.request().url()).searchParams.get("culture")!;cultures.push(culture);await route.fulfill({contentType:"text/html",body:`<!doctype html><html lang="${culture}"><body><p>Simulated official preview</p><h1>${culture==="es"?"Registrar visita":"Register visit"}</h1><label>${culture==="es"?"Contacto":"Contact"}<input></label><button>${culture==="es"?"Confirmar visita":"Confirm visit"}</button></body></html>`});});
+ await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-preview&lang=${lang}`);
+ await page.getByRole("button",{name:/^Español/}).click();
+ const trigger=page.getByRole("button",{name:es?"Ver vista oficial":"View official preview",exact:true});await trigger.click();
+ const dialog=page.getByRole("dialog");await expect(dialog.locator("iframe")).toBeVisible();await expect.poll(()=>cultures.length).toBe(1);
+ await expect(page.frameLocator("iframe").getByRole("heading",{name:"Registrar visita",exact:true})).toBeVisible();
+ await dialog.getByRole("button",{name:es?"Inglés":"English",exact:true}).click();await expect(dialog.locator("iframe")).toHaveCount(0);expect(cultures).toEqual(["es"]);
+ await dialog.getByRole("button",{name:es?"Cargar vista":"Load preview",exact:true}).click();await expect(page.frameLocator("iframe").getByRole("heading",{name:"Register visit",exact:true})).toBeVisible();expect(cultures).toEqual(["es","en"]);
+ await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+ await page.screenshot({path:`test-results/forms-official-preview-${lang}-${width}.png`,fullPage:true});
+ await expect(dialog.locator("iframe")).toHaveCount(0,{timeout:8000});await expect(dialog.getByRole("link")).toHaveCount(0);expect(cultures).toEqual(["es","en"]);
+ await dialog.getByRole("button",{name:es?"Volver a pedir la vista":"Request a new preview",exact:true}).click();await expect(dialog.locator("iframe")).toBeVisible();await expect.poll(()=>cultures.length).toBe(3);
+ await dialog.press("Escape");await expect(trigger).toBeFocused();
+ });
+}
