@@ -22,6 +22,11 @@ import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { QuestionEditor } from "../components/QuestionEditor";
 import { FormPreview } from "../components/FormPreview";
+import { OfficialFormPreview } from "../components/OfficialFormPreview";
+import { PublicationProgress } from "../components/PublicationProgress";
+import { publicationLabelKey } from "../publicationPresentation";
+import { useFormPublication } from "../hooks/useFormPublication";
+import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
 import { DraftReview } from "../components/DraftReview";
 import { emptyForm, missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
 import { useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
@@ -46,16 +51,29 @@ export function FormEditorPage() {
   if (!user || formId && detail.isPending) return <Page title={t("new")}><Spinner /></Page>;
   if (!scope.permissions.includes("formtemplates.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
   if (formId && !detail.data) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
-  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} timeZoneId={user.timeZoneId} initial={detail.data ?? emptyForm(scope.culture)} />;
+  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} timeZoneId={user.timeZoneId} initial={detail.data ?? emptyForm(scope.culture)} onPublicationChanged={() => { void detail.refetch(); }} />;
 }
 
-function FormEditor({ scope, initial, timeZoneId }: { scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string }) {
+function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {
   const { t, i18n } = useTranslation("forms");
   useTranslation("forms", { lng: "en" });
   useTranslation("forms", { lng: "es" });
   const [contentCulture, setContentCulture] = useState<FormCulture>("definition" in initial ? initial.definition.draft.culture : initial.draft.culture);
   const navigate = useNavigate();
   const editor = useFormDraftEditor(scope, initial);
+  const publication = useFormPublication(scope);
+  const projection = "definition" in initial ? initial.publication : undefined;
+  const { resume } = publication;
+  useEffect(() => { if ("definition" in initial && initial.capabilities.canPublish) void resume(initial.definition.id, initial.publication); }, [initial, resume]);
+  const refreshedState = useRef<string | null>(null);
+  useEffect(() => { const state = publication.status; if (state && ["Published", "Failed"].includes(state.state) && refreshedState.current !== state.operationId + ":" + state.state) { refreshedState.current = state.operationId + ":" + state.state; onPublicationChanged(); } }, [publication.status, onPublicationChanged]);
+  const prefixLock = useRef(editor.lockPrefix);
+  const requireReview = useRef(editor.requireReview);
+  useEffect(() => { prefixLock.current = editor.lockPrefix; requireReview.current = editor.requireReview; }, [editor.lockPrefix, editor.requireReview]);
+  const publicationDefinitionId = publication.confirmed ? (publication.status ?? publication.receipt)?.definitionId : null;
+  useEffect(() => { if (publicationDefinitionId) prefixLock.current(publicationDefinitionId); }, [publicationDefinitionId]);
+  const { resetRejected } = publication;
+
   const cooldown = useCountdown(0);
   const { restart: restartCooldown } = cooldown;
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -63,6 +81,15 @@ function FormEditor({ scope, initial, timeZoneId }: { scope: FormReadScope; init
   const [removeId, setRemoveId] = useState<string | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [publicationOpen, setPublicationOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  useEffect(() => {
+    const error = publication.error;
+    if (error instanceof ApiError && ["Forms.Draft.RevisionConflict", "Forms.Publication.DraftMustBeSaved"].includes(error.code ?? "")) {
+      const frame = requestAnimationFrame(() => { setPublicationOpen(false); requireReview.current(error); resetRejected(); });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [publication.error, resetRejected]);
   const host = useRef<HTMLDivElement>(null);
   const reviewReturnFocus = useRef<HTMLElement | null>(null);
   const saveButton = useRef<HTMLButtonElement>(null);
@@ -74,7 +101,8 @@ function FormEditor({ scope, initial, timeZoneId }: { scope: FormReadScope; init
   const value = session?.value;
   const dirty = !!session && JSON.stringify(session.value) !== JSON.stringify(session.baseline);
   const frozen = !!session && session.phase !== "Editing";
-  const guard = useUnsavedChangesGuard(dirty || frozen);
+  const publicationPending = ["Accepting", "Unconfirmed"].includes(publication.phase);
+  const guard = useUnsavedChangesGuard(dirty || frozen || publicationPending);
   const reviewRequired = session?.phase === "ReviewRequired";
   const readOnly = !editor.canSave;
   const originalName = value?.name[value.draft.culture] ?? "";
@@ -111,6 +139,7 @@ function FormEditor({ scope, initial, timeZoneId }: { scope: FormReadScope; init
     if (!saved || !active.current) return;
     notify({ id: `forms:saved:${scope.actorId}:${saved.id}`, kind: "success", message: t("saved", { name: saved.name[saved.draft.culture] }) });
     if (!("definition" in initial)) { guard.allowNextNavigation(); void navigate(`/formularios/${saved.id}`, { replace: true }); }
+    return saved;
   }
   function showReview() {
     reviewReturnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -118,7 +147,10 @@ function FormEditor({ scope, initial, timeZoneId }: { scope: FormReadScope; init
   }
   if (!value || !session) return <ForbiddenPage />;
   const errorFor = (path: string) => editor.issue?.fields?.find(issue => issue.path === path || path !== "draft.fields" && issue.path.startsWith(`${path}.`))?.messages[0];
-  const prefixLocked = session.confirmed?.prefixLocked ?? false;
+  const prefixLocked = (session.confirmed?.prefixLocked ?? false) || ["Accepting", "Unconfirmed"].includes(publication.phase);
+  const publicationState = publication.status?.state ?? publication.receipt?.state ?? publication.aggregate?.state ?? projection?.currentOperation?.state ?? (projection?.activeVersion ? "Published" : undefined);
+  const publicationVersion = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
+  const publicationLabel = publication.phase === "Accepting" ? "publication.accepting" : publication.phase === "Unconfirmed" || publicationState === "Uncertain" ? "publication.unconfirmed" : publicationState ? publicationLabelKey(publicationState) : null;
   const firstInvalid = editor.issue?.fields?.find(issue => issue.fieldLocalId)?.fieldLocalId;
   const change = (next: DraftEditorValue) => { dismissNotification(feedbackId); editor.change(next); };
   const leave = () => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/formularios"); } };
@@ -126,11 +158,15 @@ function FormEditor({ scope, initial, timeZoneId }: { scope: FormReadScope; init
     change({ ...value, draft: { ...value.draft, fields: value.draft.fields.map(q => q.localId === localId ? question : q) } });
     if (question.localId !== localId) setExpanded(question.localId);
   };
-  return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline">{t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
+  return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline">{publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
     {!readOnly || dirty ? <Button type="button" variant="outline" disabled={frozen} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" disabled={!editor.canSave} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
+    {scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish) && session.confirmed ? <Button type="button" disabled={frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publication.resetRejected(); setPublicationOpen(true); }}>{t("publication.title")}</Button> : null}
+    {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
   </>}>
+    <div className="flex flex-col gap-4">
     {cooldown.isRunning ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("wait", { count: cooldown.seconds })}</p> : null}
+    <PublicationProgress publication={publication} projection={projection} feedbackId={`forms:publication:${session.scope.editorId}`} onReplay={() => void publication.replay()} />
     {session.phase === "Unconfirmed" ? <Surface padded><p className="text-sm">{t(editor.issue?.kind === "forbidden" ? "noSave" : editor.issue?.code === "Forms.Draft.RequestConflict" ? "requestConflict" : editor.issue?.kind === "expired" ? "expired" : "uncertainHint")}</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning || editor.issue?.kind === "expired"} onClick={() => void operate(editor.recover)}>{t(editor.busy ? "recovering" : "recover")}</Button>{editor.issue?.kind === "missing" && scope.permissions.includes("formtemplates.manage") ? <Button type="button" variant="outline" disabled={editor.busy} onClick={() => void operate(editor.retry)}>{t("retrySame")}</Button> : null}</div></Surface> : null}
     {reviewRequired ? <Surface padded><p className="text-sm">{t("reviewPending")}</p><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning} onClick={showReview}>{t("review")}</Button></Surface> : null}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -138,9 +174,9 @@ function FormEditor({ scope, initial, timeZoneId }: { scope: FormReadScope; init
 
         <Surface padded><div className="flex flex-col gap-3"><p className="text-sm font-medium">{t("contentLanguage")}</p><div className="flex flex-wrap gap-2"><SegmentedControl aria-label={t("contentLanguage")} options={(["es", "en"] as const).map(language => ({ key: language, pressed: contentCulture === language, onSelect: () => setContentCulture(language), label: <span>{i18n.getFixedT(language, "forms")("cultures." + language)}{language === value.draft.culture ? <span className="ml-1 text-xs">· {t("languageOriginal")}</span> : null}</span> }))} /></div><div className="flex flex-wrap gap-2">{(["es", "en"] as const).map(language => <Badge key={language} variant="outline">{t("cultures." + language)} · {t("languageMissing", { count: missingFormTexts(value, language) })}</Badge>)}</div><p className="text-xs text-[var(--color-content-muted)]">{t("sharedStructure")}</p></div></Surface>
         <Surface title={t("form")} padded><div className="grid gap-4 sm:grid-cols-2">
-          <FormField label={t("name")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: originalName }) : undefined} error={errorFor("name." + contentCulture)}><Input readOnly={readOnly} maxLength={120} placeholder={t("missingText", { language: t("cultures." + contentCulture) })} value={value.name[contentCulture] ?? ""} onChange={e => change({ ...value, name: { ...value.name, [contentCulture]: e.target.value }, prefix: prefixTouched || contentCulture !== value.draft.culture ? value.prefix : suggestedPrefix(e.target.value) })} /></FormField>
-          <FormField label={t("submitLabel")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: value.draft.submitLabel[value.draft.culture] }) : t("submitHint")} error={errorFor("draft.submitLabel." + contentCulture)}><Input readOnly={readOnly} placeholder={t("missingText", { language: t("cultures." + contentCulture) })} value={value.draft.submitLabel[contentCulture] ?? ""} onChange={e => change({ ...value, draft: { ...value.draft, submitLabel: { ...value.draft.submitLabel, [contentCulture]: e.target.value } } })} /></FormField>
-          <FormField label={t("prefix")} error={errorFor("prefix") ?? (editor.issue?.code === "Forms.Definition.PrefixTaken" ? t("prefixTaken") : undefined)} hint={prefixLocked ? t("prefixLocked") : contentCulture !== value.draft.culture ? t("prefixOriginal") : t("prefixHint", { prefix: value.prefix || "…" })}><Input readOnly={readOnly || prefixLocked || contentCulture !== value.draft.culture} value={value.prefix} onChange={e => { setPrefixTouched(true); change({ ...value, prefix: e.target.value }); }} /></FormField>
+          <FormField label={t("name")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: originalName }) : undefined} error={errorFor("name." + contentCulture)}><Input readOnly={readOnly} maxLength={120} placeholder={t("missingText", { language: t("cultures." + contentCulture) })} data-form-text="name" value={value.name[contentCulture] ?? ""} onChange={e => change({ ...value, name: { ...value.name, [contentCulture]: e.target.value }, prefix: prefixTouched || contentCulture !== value.draft.culture ? value.prefix : suggestedPrefix(e.target.value) })} /></FormField>
+          <FormField label={t("submitLabel")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: value.draft.submitLabel[value.draft.culture] }) : t("submitHint")} error={errorFor("draft.submitLabel." + contentCulture)}><Input readOnly={readOnly} placeholder={t("missingText", { language: t("cultures." + contentCulture) })} data-form-text="submitLabel" value={value.draft.submitLabel[contentCulture] ?? ""} onChange={e => change({ ...value, draft: { ...value.draft, submitLabel: { ...value.draft.submitLabel, [contentCulture]: e.target.value } } })} /></FormField>
+          <FormField label={t("prefix")} error={errorFor("prefix") ?? (editor.issue?.code === "Forms.Definition.PrefixTaken" ? t("prefixTaken") : undefined)} hint={publicationPending ? t("publication.prefixPending") : prefixLocked ? t("prefixLocked") : contentCulture !== value.draft.culture ? t("prefixOriginal") : t("prefixHint", { prefix: value.prefix || "…" })}><Input readOnly={readOnly || prefixLocked || contentCulture !== value.draft.culture} value={value.prefix} onChange={e => { setPrefixTouched(true); change({ ...value, prefix: e.target.value }); }} /></FormField>
         </div><p className="text-xs text-[var(--color-content-muted)]">{t("translations")}</p></Surface>
         <Surface title={t("questions")}>
           {value.draft.fields.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("emptyQuestions")}</p> : null}
@@ -151,10 +187,34 @@ function FormEditor({ scope, initial, timeZoneId }: { scope: FormReadScope; init
       </div>
       <FormPreview key={session.scope.editorId} value={value} culture={contentCulture} />
     </div>
+    </div>
   </Page>
 
-  <ConfirmDialog open={(discardOpen || guard.isBlocked) && !frozen} onOpenChange={open => { setDiscardOpen(open); if (!open) guard.stay(); }} title={t("discardTitle")} description={t("discardDescription")} cancelLabel={t("stay")} confirmLabel={t("discard")} destructive onConfirm={leave} />
-  {guard.isBlocked && frozen ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("uncertain")} description={t("busyLeave")} cancelLabel={t("stay")} confirmLabel={t(session.phase === "Unconfirmed" ? "recover" : "review")} onConfirm={() => { guard.stay(); if (session.phase === "Unconfirmed") void operate(editor.recover); else if (reviewRequired) showReview(); }} /> : null}
+  {previewOpen && "definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <OfficialFormPreview key={projection.activeVersion.versionId} definitionId={initial.definition.id} versionId={projection.activeVersion.versionId} versionNumber={projection.activeVersion.versionNumber} initialCulture={contentCulture} onClose={() => setPreviewOpen(false)} /> : null}
+  {publicationOpen && session.confirmed && scope.permissions.includes("formtemplates.publish") ? <PublicationCheckDialog key={session.confirmed.revision + ":" + [...scope.permissions].sort().join(",")} scope={scope} id={session.confirmed.id} revision={session.confirmed.revision} value={value} dirty={dirty} canSave={editor.canSave && !cooldown.isRunning} accepting={publication.busy} onAccept={(body, checked) => {
+    const acceptance = publication.accept(session.confirmed!.id, body, checked);
+    setPublicationOpen(false);
+    void acceptance.then(receipt => { if (receipt && active.current) notify({ id: `forms:publication-accepted:${scope.actorId}:${receipt.operationId}`, kind: "success", message: t("publication.accepted", { version: receipt.versionNumber }) }); });
+  }} onOpenChange={setPublicationOpen} onSave={() => {
+    setPublicationOpen(false);
+    void operate(editor.save).then(saved => { if (saved && active.current) setPublicationOpen(true); });
+  }} onConflict={error => { setPublicationOpen(false); editor.requireReview(error); }} onGoToIssue={issue => {
+    setPublicationOpen(false);
+    if (issue.culture) setContentCulture(issue.culture);
+    const question = value.draft.fields.find(q => q.fieldId === issue.fieldId);
+    if (question) setExpanded(question.localId);
+    requestAnimationFrame(() => {
+      if (!active.current) return;
+      if (!question) { host.current?.querySelector<HTMLInputElement>(issue.path.startsWith("name") ? '[data-form-text="name"]' : '[data-form-text="submitLabel"]')?.focus(); return; }
+      const container = [...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === question.localId);
+      const option = question.type === "choice" ? question.options.find(o => o.choiceId === issue.choiceId) : undefined;
+      const optionInput = option ? [...(container?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(element => element.dataset.choiceLocalId === option.localId) : undefined;
+      (optionInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]'))?.focus();
+    });
+  }} /> : null}
+  <ConfirmDialog open={(discardOpen || guard.isBlocked) && !frozen && !publicationPending} onOpenChange={open => { setDiscardOpen(open); if (!open) guard.stay(); }} title={t("discardTitle")} description={t("discardDescription")} cancelLabel={t("stay")} confirmLabel={t("discard")} destructive onConfirm={leave} />
+  {guard.isBlocked && publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("publication.unconfirmed")} description={t("publication.unconfirmedHint")} cancelLabel={t("stay")} confirmLabel={t("publication.consult")} onConfirm={() => { guard.stay(); void publication.consult(); }} /> : null}
+  {guard.isBlocked && frozen && !publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("uncertain")} description={t("busyLeave")} cancelLabel={t("stay")} confirmLabel={t(session.phase === "Unconfirmed" ? "recover" : "review")} onConfirm={() => { guard.stay(); if (session.phase === "Unconfirmed") void operate(editor.recover); else if (reviewRequired) showReview(); }} /> : null}
   <ConfirmDialog open={removeId !== null} onOpenChange={open => { if (!open) setRemoveId(null); }} title={t("removeTitle")} description={t("removeDescription")} confirmLabel={t("common:actions.confirm")} destructive onConfirm={() => { if (!readOnly) change({ ...value, draft: { ...value.draft, fields: value.draft.fields.filter(q => q.localId !== removeId) } }); }} />
   {editor.review ? <DraftReview key={editor.review.definition.revision} value={value} definition={editor.review.definition} culture={scope.culture} auditSummary={t("reviewAudit", { date: formatDateTimeInZone(editor.review.audit.lastChangedAtUtc, scope.culture, timeZoneId), author: editor.review.audit.lastChangedBy?.displayName ?? "—" })} open={reviewOpen} onCloseAutoFocus={event => { event.preventDefault(); const target = reviewReturnFocus.current; if (target?.isConnected && !target.matches(":disabled")) target.focus(); else (saveButton.current ?? host.current?.querySelector<HTMLInputElement>("input"))?.focus(); }} onOpenChange={setReviewOpen} onUseCurrent={editor.useCurrent} onResolve={editor.resolveReview} /> : null}
   </div>;

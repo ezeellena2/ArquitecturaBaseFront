@@ -53,7 +53,7 @@ export function Page({
           <h1 className="min-w-0 truncate text-2xl font-semibold tracking-normal text-[var(--color-content)] max-sm:whitespace-normal max-sm:break-words">{title}</h1>
           {status ? <span className="flex shrink-0 items-center gap-2 max-sm:basis-full">{status}</span> : null}
         </span>
-        {actions ? <span className="flex shrink-0 items-center gap-2 max-sm:ml-auto">{actions}</span> : null}
+        {actions ? <span className="flex shrink-0 items-center gap-2 max-sm:ml-auto max-sm:w-full max-sm:flex-wrap max-sm:justify-end">{actions}</span> : null}
       </header>
 
       <div className={viewport ? "flex min-h-0 flex-1 flex-col px-5 py-4" : "px-5 py-4"}>{children}</div>

@@ -1,0 +1,10 @@
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { expect, it, vi } from "vitest";
+import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import type { useFormPublication } from "../hooks/useFormPublication";
+import { PublicationProgress } from "./PublicationProgress";
+const reviewHint="Esta publicación necesita revisión. No inicies otra para intentar resolverla.";
+function session(state:"Uncertain"|"Publishing"):ReturnType<typeof useFormPublication>{return {phase:"Accepted",receipt:null,status:{requestId:"request",operationId:"operation",definitionId:"definition",versionId:"version",versionNumber:2,draftRevision:3,acceptedAtUtc:"2026-10-10T12:00:00Z",state,stage:"Validate",updatedAtUtc:"2026-10-10T12:00:00Z",nextCheckAtUtc:null,canRetry:false,requiresReview:true,issues:[]},error:null,busy:false,aggregate:null,canReplay:false,confirmed:true,accept:vi.fn(),consult:vi.fn(),replay:vi.fn(),resetRejected:vi.fn(),resume:vi.fn()};}
+it("shows one review warning for an uncertain confirmed publication and preserves consultation without replay",async()=>{const publication=session("Uncertain");const onReplay=vi.fn();renderWithProviders(<PublicationProgress publication={publication} feedbackId="uncertain-review" onReplay={onReplay} />);expect(screen.getAllByText(reviewHint)).toHaveLength(1);expect(screen.getByText("Aceptada")).toBeInTheDocument();expect(screen.getByText("Pendiente de confirmación de WhatsApp")).toBeInTheDocument();await userEvent.click(screen.getByRole("button",{name:"Consultar publicación"}));expect(publication.consult).toHaveBeenCalledOnce();expect(screen.queryByRole("button",{name:"Repetir el mismo pedido"})).not.toBeInTheDocument();expect(onReplay).not.toHaveBeenCalled();});
+it("retains the separate review warning when the main status describes another publication state",()=>{renderWithProviders(<PublicationProgress publication={session("Publishing")} feedbackId="publishing-review" onReplay={vi.fn()} />);expect(screen.getAllByText(reviewHint)).toHaveLength(1);});

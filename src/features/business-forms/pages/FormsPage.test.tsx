@@ -21,6 +21,136 @@ function setup(scenario = "", permissions = ["formtemplates.read", "formtemplate
 }
 beforeEach(() => { queryClient.clear(); vi.mocked(notify).mockClear(); });
 describe("Forms routes", () => {
+  it("closes confirmation as acceptance starts and shows progress instead of a misleading Cancel action", async () => {
+    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+    let release: () => void = () => {};
+    const pending = new Promise<void>(resolve => { release = resolve; });
+    server.use(http.post("/api/forms/definitions/:id/publications", async ({ request }) => { await pending; return store.handle(request); }));
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await screen.findByLabelText("Nombre");
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Aceptando publicación…" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
+    release();
+    await screen.findByRole("heading", { name: "Publicando · versión 1" });
+  });
+
+  it("routes a publication revision conflict to explicit draft review with one feedback owner", async () => {
+    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+    let accepts = 0;
+    server.use(http.post("/api/forms/definitions/:id/publications", () => {
+      accepts++;
+      const old = store.definitions.get(fixtureFormId)!;
+      store.definitions.set(fixtureFormId, { ...old, revision: 2, name: { ...old.name, es: "Otra persona guardó" } });
+      return Response.json({ code: "Forms.Draft.RevisionConflict", traceId: "publication-conflict" }, { status: 409 });
+    }));
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await screen.findByLabelText("Nombre");
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+    const review = await screen.findByRole("button", { name: "Revisar" });
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita");
+    expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeDisabled();
+    await userEvent.click(review);
+    const comparison = await screen.findByRole("dialog", { name: "Revisión del borrador" });
+    expect(within(comparison).getByText("Otra persona guardó", { exact: true })).toBeInTheDocument();
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita");
+    expect(accepts).toBe(1);
+    expect(vi.mocked(notify).mock.calls.filter(([message]) => message.description?.includes("publication-conflict"))).toHaveLength(1);
+  });
+
+  it("accepts a saved version with Publish and no Manage, while 202 remains pending", async () => {
+    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.publish"]);
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await screen.findByLabelText("Nombre");
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+    await screen.findByRole("heading", { name: "Publicando · versión 1" });
+    expect(screen.queryByText("Publicado · versión 1")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
+    expect(store.definitions.get(fixtureFormId)?.prefixLocked).toBe(true);
+    expect(store.definitions.get(fixtureFormId)?.revision).toBe(1);
+    expect(store.calls.filter(call => call.path.endsWith("/publications") && call.method === "POST")).toHaveLength(1);
+    expect(store.calls.filter(call => call.method === "PUT")).toHaveLength(0);
+  });
+  it("shows confirmed progression while preserving a newer unsaved draft", async () => {
+    const store = setup("forms-publication-progress", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await screen.findByLabelText("Nombre");
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+    await screen.findByRole("heading", { name: "Publicando · versión 1" });
+    await userEvent.type(screen.getByLabelText("Nombre"), " nuevo borrador");
+    await userEvent.click(screen.getByRole("button", { name: "Consultar publicación" }));
+    await screen.findByText("Enviada a WhatsApp; esperando confirmación");
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita nuevo borrador");
+    await userEvent.click(screen.getByRole("button", { name: "Consultar publicación" }));
+    await screen.findByRole("heading", { name: "Publicado · versión 1" });
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita nuevo borrador");
+    expect(screen.getByLabelText("Prefijo de numeración")).toHaveValue("VIS");
+    expect(store.definitions.get(fixtureFormId)?.revision).toBe(1);
+    expect(store.calls.filter(call => call.path.endsWith("/publications") && call.method === "POST")).toHaveLength(1);
+  });
+  it("checks the newly saved revision after an explicit Save without accepting automatically", async () => {
+    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await userEvent.type(await screen.findByLabelText("Nombre"), " editado");
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const first = await screen.findByRole("dialog", { name: "Primero guardá los cambios" });
+    await userEvent.click(within(first).getByRole("button", { name: "Guardar borrador" }));
+    const checked = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
+    await waitFor(() => expect(within(checked).getByRole("button", { name: "Publicar" })).toBeEnabled());
+    expect(store.definitions.get(fixtureFormId)?.revision).toBe(2);
+    expect(store.calls.filter(call => call.path.endsWith("/publication-checks"))).toHaveLength(1);
+    expect(store.calls.filter(call => call.path.endsWith("/publications"))).toHaveLength(0);
+    await userEvent.click(within(checked).getByRole("button", { name: "Cancelar" }));
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita editado");
+  });
+
+  it("checks publication with Read and Publish, without creating a write attempt or requiring Manage", async () => {
+    const store = setup("forms-read", ["formtemplates.read", "formtemplates.publish"]);
+    let checks = 0;
+    server.use(http.post("/api/forms/definitions/:id/publication-checks", () => {
+      checks++;
+      const current = store.definitions.get(fixtureFormId)!;
+      return Response.json({ definitionId: current.id, draftRevision: current.revision, compatibility: "Blocked", canAccept: false,
+        acceptanceAvailability: "Unavailable", checkToken: null, checkExpiresAtUtc: null, channels: [], issues: [{ channelId: null, fieldId: current.draft.fields[5]!.fieldId, choiceId: null,
+          path: "draft.fields[5].help.en", code: "Forms.Publication.MissingTranslation", message: "Completá la ayuda en inglés.", limit: null, culture: "en" }],
+        diff: { baseVersionId: null, added: current.draft.fields.map(q => q.fieldId), changed: [], removed: [] } });
+    }));
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await screen.findByLabelText("Nombre");
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
+    expect(await within(dialog).findByText("Completá la ayuda en inglés.")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Publicar" })).toBeDisabled();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Ir a la pregunta" }));
+    expect(screen.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Ayuda para el empleado")).toHaveValue("");
+    expect(checks).toBe(1);
+    expect(store.calls.filter(call => call.method === "PUT" || call.method === "POST")).toHaveLength(0);
+  });
+  it("requires a saved draft before checking and never saves merely by opening publication", async () => {
+    const store = setup("", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+    let checks = 0;
+    server.use(http.post("/api/forms/definitions/:id/publication-checks", () => { checks++; return Response.json({}); }));
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await userEvent.type(await screen.findByLabelText("Nombre"), " editado");
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const dialog = await screen.findByRole("dialog", { name: "Primero guardá los cambios" });
+    expect(within(dialog).getByRole("button", { name: "Guardar borrador" })).toBeEnabled();
+    expect(checks).toBe(0);
+    expect(store.calls.filter(call => call.method === "PUT" || call.method === "POST")).toHaveLength(0);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita editado");
+  });
+
   it("edits the selected content language without substituting original text or changing identities", async () => {
     const store = setup();
     const original = store.definitions.get(fixtureFormId)!;
@@ -164,4 +294,13 @@ describe("Forms routes", () => {
     expect(screen.queryByRole("button", { name: "Agregar pregunta" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Vista previa" })).toBeInTheDocument();
   });
+});
+
+it.each([null,1])("shows Failed independently of previous active version %s",async activeVersionNumber=>{
+ setup();
+ server.use(http.get("/api/forms/definitions",()=>Response.json({items:[{id:fixtureFormId,name:{es:"Visita",en:"Visit"},prefix:"VIS",questionCount:6,activeVersionNumber,displayState:"Failed",lastChangedAtUtc:"2026-10-10T12:00:00Z",lastChangedBy:null,canEdit:true}],page:1,pageSize:20,totalCount:1,totalPages:1,hasNext:false,hasPrevious:false})));
+ renderRouteWithProviders("/formularios");
+ await screen.findByText("No se pudo publicar",{exact:true});
+ expect(screen.queryByText(/^No se pudo publicar · versión/)).not.toBeInTheDocument();
+ if(activeVersionNumber)expect(screen.getByText("La versión 1 publicada sigue activa.")).toBeInTheDocument();
 });
