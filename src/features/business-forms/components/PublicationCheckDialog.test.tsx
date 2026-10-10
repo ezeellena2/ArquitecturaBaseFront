@@ -14,7 +14,7 @@ let result = checked;
 vi.mock("../hooks/useFormPublicationCheck", () => ({ useFormPublicationCheck: () => ({ result, busy: false, error: null, check: vi.fn() }) }));
 beforeEach(() => { result = { ...checked, issues: [] }; });
 async function mount() { await act(async () => { renderWithProviders(<PublicationCheckDialog scope={{ actorId: "actor", culture: "es", permissions: ["formtemplates.read", "formtemplates.publish"] }}
-  id={definition.id} revision={1} value={value} dirty={false} canSave accepting={false} savedAt="2026-10-10 15:20" prefixLocked baseVersionNumber={1}
+  id={definition.id} revision={1} value={value} dirty={false} canSave accepting={false} savedAt="2026-10-10 15:20" prefixLocked baseVersionId="previous" baseVersionNumber={1}
   onAccept={vi.fn()} onOpenChange={vi.fn()} onSave={vi.fn()} onConflict={vi.fn()} onGoToIssue={vi.fn()} />); }); }
 describe("Chosen publication board P1/E", () => {
   it("shows the checked next version, previous diff and saved draft without locking the prefix again", async () => {
@@ -27,6 +27,14 @@ describe("Chosen publication board P1/E", () => {
     expect(screen.getByText("Agregadas: Cliente")).toBeInTheDocument();
     expect(screen.getByText("Cambiadas: Contacto")).toBeInTheDocument();
     expect(screen.getByText("1 pregunta quitada")).toBeInTheDocument();
+  });
+  it("does not label a newer diff with the stale active version number", async () => {
+    result = { ...checked, diff: { ...checked.diff, baseVersionId: "newer-active" } };
+    await mount();
+    expect(screen.queryByRole("heading", { name: "Qué cambia respecto de la versión 1" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Qué cambia respecto de la versión publicada" })).toBeInTheDocument();
+    expect(screen.getByText("Agregadas: Cliente")).toBeInTheDocument();
+    expect(value.name).toEqual({ es: "Registrar visita", en: "Register visit" });
   });
   it("summarizes untranslated texts by language and identifies a channel issue as a channel", async () => {
     result = { ...checked, canAccept: false, issues: [

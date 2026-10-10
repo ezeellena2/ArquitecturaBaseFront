@@ -217,7 +217,8 @@
     "channelIssue": "El canal de publicación",
     "savedAt": "Se publica el borrador guardado el {{date}}.",
     "missingTexts_one": "Falta {{count}} texto en {{language}}.",
-    "missingTexts_other": "Faltan {{count}} textos en {{language}}."
+    "missingTexts_other": "Faltan {{count}} textos en {{language}}.",
+    "diffTitleUnknown": "Qué cambia respecto de la versión publicada"
   },
   "reviewNoSave": "Ninguna opción guarda. Después de elegir, revisás los cambios marcados y tocás «Guardar borrador».",
   "reviewChangesToInspect": "Cambios de la otra revisión para revisar",

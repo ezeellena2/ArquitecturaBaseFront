@@ -217,7 +217,8 @@
     "channelIssue": "The publication channel",
     "savedAt": "The draft saved on {{date}} will be published.",
     "missingTexts_one": "{{count}} text is missing in {{language}}.",
-    "missingTexts_other": "{{count}} texts are missing in {{language}}."
+    "missingTexts_other": "{{count}} texts are missing in {{language}}.",
+    "diffTitleUnknown": "What changes from the published version"
   },
   "reviewNoSave": "Neither option saves. After choosing, review the marked changes and select “Save draft”.",
   "reviewChangesToInspect": "Changes from the other revision to review",
