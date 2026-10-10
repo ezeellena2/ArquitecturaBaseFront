@@ -1,5 +1,11 @@
 # Formularios por WhatsApp — preparación del frontend, Etapa 1
 
+**Paso 1 A–E/D5 implementado, 2026-10-10.** Listado con facetas del servidor, alta/editor bilingüe, guardado/recuperación propios y revisión explícita por idioma/identidad. Nombre, preguntas, ayudas, opciones y botón usan mapas es/en: se guarda con secundario pendiente, sin autotraducción; el original siempre es obligatorio.
+
+El contenido del paso 1 separado de publicación pasó build, lint y 1110 pruebas unitarias (`npm run test -- --maxWorkers=2`), más 14 recorridos de navegador. La ejecución sin límite de procesos tuvo un timeout de 5 segundos en la prueba de dependencias; la suite completa con dos procesos conservó todas las assertions y tolerancias. La prueba SPA/API/DB real del coordinador conservó PRB1010 (01a12616-01df-7394-8947-a41c7481048c), sus tres revisiones y comprobantes protegidos; verificó ambos idiomas y relectura. Las fuentes vigentes son la arquitectura, la guía local business-forms y el contrato de borrador del backend. Publicación y chat pertenecen a los incrementos siguientes.
+
+## Preparación histórica
+
 Fecha: **2026-10-09**. Estado: **incremento 0 relevado; propuesta para revisión del coordinador**.
 No implementa UI, API, permisos, contratos ni tableros nuevos. La elección de variantes faltantes y la revisión
 del contrato preceden a su código. Este plan permanece abierto hasta incorporar esas decisiones y entregar
