@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
-import { errorFeedback } from "@/shared/api/errorFeedback";
+import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
@@ -51,7 +51,7 @@ export function FormsPage() {
     const error = list.error ?? facets.error;
     if (!error) { dismissNotification(feedbackId); return; }
     if (["cancelled", "session", "forbidden"].includes(errorFeedback(error).kind)) return;
-    notify({ id: feedbackId, kind: "error", message: t(list.data ? "refreshFailed" : "loadFailed") });
+    notify({ id: feedbackId, kind: "error", message: readErrorMessage(error, t) });
   }, [list.error, facets.error, list.data, feedbackId, t]);
   if (!user?.permissions.includes("formtemplates.read") || [list.error, facets.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   const clearFilters = () => update({ search: undefined, publicationFilter: undefined, page: undefined });

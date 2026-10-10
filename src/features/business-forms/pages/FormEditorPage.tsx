@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
-import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
+import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
@@ -45,10 +45,10 @@ export function FormEditorPage() {
   useEffect(() => {
     if (!detail.error) { dismissNotification(detailFeedbackId); return; }
     const feedback = errorFeedback(detail.error);
-    if (["cancelled", "session", "forbidden"].includes(feedback.kind)) return;
-    notify({ id: detailFeedbackId, kind: "error", message: t("detailFailed"), description: feedback.traceId ? t("common:errors.traceId", { traceId: feedback.traceId }) : undefined });
+    if (["cancelled", "session", "forbidden"].includes(feedback.kind) || detail.error instanceof ApiError && detail.error.status === 404) return;
+    notify({ id: detailFeedbackId, kind: "error", message: readErrorMessage(detail.error, t) });
   }, [detail.error, detailFeedbackId, t]);
-  if (!user || formId && detail.isPending) return <Page title={t("new")}><Spinner /></Page>;
+  if (!user || formId && detail.isPending) return <Page title={t(formId ? "title" : "new")}><Spinner /></Page>;
   if (!scope.permissions.includes("formtemplates.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
   if (formId && !detail.data) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
   return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} timeZoneId={user.timeZoneId} initial={detail.data ?? emptyForm(scope.culture)} onPublicationChanged={() => { void detail.refetch(); }} />;
@@ -170,7 +170,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
     if (!removeId) requestAnimationFrame(() => removalFocus.current?.focus());
   }
   return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline">{publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
-    {!readOnly || dirty ? <Button type="button" variant="outline" disabled={frozen} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button> : null}
+    {!readOnly || dirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" disabled={!editor.canSave} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
     {scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish) && session.confirmed ? <Button type="button" disabled={frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publication.resetRejected(); setPublicationOpen(true); }}>{t("publication.title")}</Button> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}

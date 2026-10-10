@@ -2,7 +2,7 @@ import { QueryCache, QueryClient } from "@tanstack/react-query";
 import i18n from "@/shared/i18n";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { ApiError } from "./ApiError";
-import { errorFeedback } from "./errorFeedback";
+import { errorFeedback, readErrorMessage } from "./errorFeedback";
 
 export function createQueryClient() {
   const cache = new QueryCache({
@@ -12,9 +12,8 @@ export function createQueryClient() {
         if (query.meta?.silent === true || query.meta?.errorOwner === "local") return;
         const feedback = errorFeedback(error);
         if (["session", "forbidden", "cancelled"].includes(feedback.kind)) return;
-        const serverFailure = error instanceof ApiError && error.status >= 500;
         notify({ id: 'query:' + query.queryHash, kind: "error",
-          message: feedback.network ? i18n.t("errors.network") : serverFailure ? i18n.t("errors.unexpected", { traceId: feedback.traceId ?? "?" }) : feedback.detail ?? i18n.t("states.error"),
+          message: readErrorMessage(error, i18n.t),
           action: feedback.network && query.getObserversCount() > 0 ? { label: i18n.t("actions.retry"), onClick: () => { if (query.getObserversCount() > 0) void query.fetch().catch(() => undefined); } } : undefined,
         });
       },

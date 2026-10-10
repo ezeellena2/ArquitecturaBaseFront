@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormCulture } from "../model";
 import { fetchFormDefinition, fetchFormDefinitions, fetchFormFacets, type FormListQuery } from "../api/forms";
 
@@ -23,11 +23,16 @@ export function useFormDefinitions(scope: FormReadScope, query: FormListQuery) {
   const root = [...formScopeKey(scope), "list"] as const;
   usePrivateQueryCleanup(root);
   const enabled = canReadForms(scope);
+  const owner = JSON.stringify(root);
+  const [lastLoaded, setLastLoaded] = useState<{ owner: string; data: Awaited<ReturnType<typeof fetchFormDefinitions>> } | null>(null);
   const list = useQuery({ queryKey: [...root, "page", query], queryFn: ({ signal }) => fetchFormDefinitions(query, signal), enabled,
+    placeholderData: (previous, previousQuery) => JSON.stringify(previousQuery?.queryKey.slice(0, root.length)) === owner ? keepPreviousData(previous) : undefined,
     gcTime: 0, meta: { errorOwner: "local" } });
-  const facets = useQuery({ queryKey: [...root, "facets", query], queryFn: ({ signal }) => fetchFormFacets(query, signal), enabled,
+  useEffect(() => { if (list.data && !list.isPlaceholderData) setLastLoaded({ owner, data: list.data }); }, [list.data, list.isPlaceholderData, owner]);
+  const facetQuery = { search: query.search };
+  const facets = useQuery({ queryKey: [...root, "facets", facetQuery], queryFn: ({ signal }) => fetchFormFacets(facetQuery, signal), enabled,
     gcTime: 0, meta: { errorOwner: "local" } });
-  return { list, facets };
+  return { list: { ...list, data: list.data ?? (lastLoaded?.owner === owner ? lastLoaded.data : undefined) }, facets };
 }
 export function useFormDefinition(scope: FormReadScope, id: string) {
   const key = formDetailKey(scope, id);

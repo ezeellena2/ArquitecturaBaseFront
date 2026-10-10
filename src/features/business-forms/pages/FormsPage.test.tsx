@@ -316,3 +316,66 @@ it("returns focus to a neighboring row after confirmed question removal", async 
   expect(screen.getByRole("button", { name: "Editar Contacto" })).toHaveFocus();
 });
 
+it("leaves a clean draft directly when Discard is chosen", async () => {
+  setup();
+  const { router } = renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByLabelText("Nombre");
+  await userEvent.click(screen.getByRole("button", { name: "Descartar" }));
+  await waitFor(() => expect(router.state.location.pathname).toBe("/formularios"));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+it("disables Discard while acceptance is pending and while its result is unconfirmed", async () => {
+  const store = setup("forms-publication-uncertain", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+  let release = () => {};
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.post("/api/forms/definitions/:id/publications", async ({ request }) => { await pending; return store.handle(request); }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByLabelText("Nombre");
+  await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+  const dialog = await screen.findByRole("dialog", { name: "Publicar en WhatsApp" });
+  await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar" }));
+  try { expect(screen.getByRole("button", { name: "Descartar" })).toBeDisabled(); } finally { release(); }
+  await screen.findByRole("heading", { name: "Publicación sin confirmar" });
+  expect(screen.getByRole("button", { name: "Descartar" })).toBeDisabled();
+});
+
+it("reports the common server cause and trace for a failed initial list", async () => {
+  setup();
+  server.use(http.get("/api/forms/definitions", () => Response.json({ traceId: "trace-list" }, { status: 500 })));
+  renderRouteWithProviders("/formularios");
+  await screen.findByRole("button", { name: "Reintentar" });
+  await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.message.includes("trace-list"))).toBe(true));
+  expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(1);
+});
+it("shows a missing form without an operational error toast", async () => {
+  setup();
+  server.use(http.get("/api/forms/definitions/:id", () => Response.json({ code: "Forms.Definition.NotFound", traceId: "missing-form" }, { status: 404 })));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByRole("button", { name: "Reintentar" });
+  expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
+});
+
+it("retains the table and sort focus through loading and failure without refetching unchanged facets", async () => {
+  const store = setup();
+  let reads = 0, release = () => {};
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/definitions", async ({ request }) => {
+    reads++;
+    if (reads === 1) return store.handle(request);
+    await pending;
+    return Response.json({ traceId: "sort-refresh" }, { status: 500 });
+  }));
+  renderRouteWithProviders("/formularios");
+  await screen.findByRole("table");
+  const sort = screen.getByRole("button", { name: "Formulario" });
+  await userEvent.click(sort);
+  await waitFor(() => expect(reads).toBe(2));
+  try {
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(sort).toHaveFocus();
+  } finally { release(); }
+  await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.message.includes("sort-refresh"))).toBe(true));
+  expect(screen.getByRole("link", { name: "Registrar visita" })).toBeInTheDocument();
+  expect(sort).toHaveFocus();
+  expect(store.calls.filter(call => call.path.endsWith("/facets"))).toHaveLength(1);
+});

@@ -20,3 +20,10 @@ export function operationalErrorMessage(error: unknown, t: (key: string, options
   if (feedback.kind === "uncertain") return t("common:errors.writeUncertain", { traceId: feedback.traceId ?? "?" });
   return feedback.detail ?? t("common:states.error");
 }
+
+export function readErrorMessage(error: unknown, t: (key: string, options?: Record<string, unknown>) => string): string {
+  const feedback = errorFeedback(error);
+  return feedback.network ? t("common:errors.network")
+    : error instanceof ApiError && error.status >= 500 ? t("common:errors.unexpected", { traceId: feedback.traceId ?? "?" })
+    : feedback.detail ?? t("common:states.error");
+}

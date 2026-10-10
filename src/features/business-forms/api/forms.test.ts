@@ -80,7 +80,7 @@ describe("form draft HTTP contract", () => {
     const query = { page: 3, pageSize: 50, search: "A&B", sort: "-lastChangedAtUtc" as const, publicationFilter: "Drafts" as const };
     expect(await fetchFormDefinitions(query)).toEqual(page);
     expect(await fetchFormFacets(query)).toEqual({ all: 110, published: 0, drafts: 110 });
-    expect(urls.map(url => Object.fromEntries(url.searchParams))).toEqual([query, query].map(q => ({ ...q, page: "3", pageSize: "50" })));
+    expect(urls.map(url => Object.fromEntries(url.searchParams))).toEqual([{ ...query, page: "3", pageSize: "50" }, { search: query.search }]);
   });
 
   it("recovers using the owned constructed path and keeps the original result revision", async () => {
