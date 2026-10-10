@@ -2,7 +2,7 @@ import { cloneElement, useId, type ReactElement, type ReactNode } from "react";
 import { Label } from "./label";
 
 interface FormFieldProps {
-  label: string;
+  label: ReactNode;
   /// Id del control. Si no se pasa, se genera uno y se le enchufa al hijo.
   htmlFor?: string;
   hint?: string;
