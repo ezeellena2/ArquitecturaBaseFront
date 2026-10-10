@@ -8,7 +8,11 @@ historia completa (diseñar, publicar, completar por WhatsApp, respuestas, aprob
 como referencia de pantallas, la maqueta aislada del plan de formularios del 2026-10-07/08, que queda como procedencia.
 Están dibujados a mano con Campo y Public Sans porque la biblioteca del lienzo sigue sin sincronizar. Capturas,
 decisiones, alcance de la Etapa 1, correspondencia con `shared/ui` y pendientes: [formularios-whatsapp.md](formularios-whatsapp.md).
-Sin implementación todavía.
+Sin implementación todavía. El 2026-10-10 se sumaron las variantes A–E del incremento 1 (listado, alta, prefijo,
+conflicto al guardar y textos en dos idiomas), las del incremento 2 (P1–P3, publicar), las del incremento 3 (C1–C5,
+mandar desde el chat) y las del incremento 4 (R1–R3, la respuesta en el chat), y el botón que abre un formulario en
+WhatsApp pasó a decir siempre «Abrir formulario». Ese día el lienzo se ordenó en una página por módulo, cada una con un
+índice navegable arriba (Play en el índice lleva a cada pantalla).
 
 ## Inicio: panel interno de conversaciones elegido — 2026-10-05
 
