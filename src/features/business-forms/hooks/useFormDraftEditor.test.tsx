@@ -45,8 +45,8 @@ describe("nonvisual form draft coordination", () => {
     const h = harness(); let writes = 0;
     const canonical = receipt("01990000-0000-7000-8000-000000000020", 2).definition;
     server.use(http.put(`/api/forms/definitions/${id}/draft`, () => { writes++; return HttpResponse.json({ code: "Forms.Draft.RevisionConflict" }, { status: 409 }); }),
-      http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: { ...canonical, name: { es: "Current name" } }, capabilities: { canSave: true }, audit })));
-    const { result } = renderHook(() => useFormDraftEditor(scope, readFormDetail({ definition: { ...canonical, revision: 1 }, capabilities: { canSave: true }, audit })), h);
+      http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: { ...canonical, name: { es: "Current name" } }, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })));
+    const { result } = renderHook(() => useFormDraftEditor(scope, readFormDetail({ definition: { ...canonical, revision: 1 }, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })), h);
     act(() => result.current.change({ ...result.current.session!.value, name: { es: "My name" } }));
     await act(() => result.current.save());
     await act(() => result.current.readCurrent());
@@ -194,7 +194,7 @@ describe("nonvisual form draft coordination", () => {
   });
 
   it("sends an existing definition with its confirmed revision and no canonical key", async () => {
-    const existing = readFormDetail({ definition: receipt("01990000-0000-7000-8000-000000000002").definition, capabilities: { canSave: true }, audit });
+    const existing = readFormDetail({ definition: receipt("01990000-0000-7000-8000-000000000002").definition, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit });
     let received: unknown;
     server.use(http.put(`/api/forms/definitions/${id}/draft`, async ({ request }) => {
       const body = await request.json() as { requestId: string }; received = body;
@@ -241,7 +241,7 @@ describe("nonvisual form draft coordination", () => {
   it("reads a newer revision for review without replacing the recovered baseline", async () => {
     server.use(http.post("/api/forms/definitions", () => HttpResponse.error()), http.get("/api/forms/draft-changes/:requestId", ({ params }) => {
       const requestId = String(params.requestId); return HttpResponse.json({ requestId, kind: "Create", status: "Committed", committedAtUtc: audit.createdAtUtc, currentRevision: 4, result: receipt(requestId) });
-    }), http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: { ...receipt("01990000-0000-7000-8000-000000000002", 4).definition, name: { es: "Later" } }, capabilities: { canSave: true }, audit })));
+    }), http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: { ...receipt("01990000-0000-7000-8000-000000000002", 4).definition, name: { es: "Later" } }, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })));
     const { result } = renderHook(() => useFormDraftEditor(scope, initial), harness());
     await act(() => result.current.save()); await act(() => result.current.recover()); await act(() => result.current.readCurrent());
     expect(result.current.review?.definition.name.es).toBe("Later");
@@ -297,7 +297,7 @@ describe("nonvisual form draft coordination", () => {
 describe("scoped form queries", () => {
   it("keeps the active read in QueryCache after StrictMode reconnects effects", async () => {
     const h = harness(); const response = receipt("01990000-0000-7000-8000-000000000002");
-    server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: response.definition, capabilities: { canSave: true }, audit })));
+    server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: response.definition, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })));
     const hook = renderHook(() => useFormDefinition(scope, id), { ...h, reactStrictMode: true });
     await waitFor(() => expect(hook.result.current.isSuccess).toBe(true));
     expect(h.client.getQueryCache().getAll()).toHaveLength(1);
@@ -321,7 +321,7 @@ describe("scoped form queries", () => {
 
   it("reads real detail and cleans it on editor unmount", async () => {
     const h = harness(); const response = receipt("01990000-0000-7000-8000-000000000002");
-    server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: response.definition, capabilities: { canSave: true }, audit })));
+    server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: response.definition, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })));
     const hook = renderHook(() => { const [definitionId] = useState(id); return useFormDefinition(scope, definitionId); }, h);
     await waitFor(() => expect(hook.result.current.isSuccess).toBe(true));
     expect(hook.result.current.data?.definition.draft.fields[0]).toMatchObject({ maxLength: 600 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   beginDraftSave, changeDraft, confirmDraftSave, discardDraft, markDraftSaveUnconfirmed,
-  openDraftSession, rejectDraftSave, startDraftSession,
+  openDraftSession, requestDraftReview, rejectDraftSave, startDraftSession,
 } from "./draftSession";
 import type { DraftEditorValue, FormDraftSaveResult, FormDefinitionSnapshot } from "./model";
 
@@ -45,6 +45,22 @@ const identity = { ...scope, requestId: "request-a" };
 const saving = () => beginDraftSave(startDraftSession(scope, initial), "request-a");
 
 describe("form draft session", () => {
+  it("requires an explicit review after a read conflict without changing the saved revision or values", () => {
+    const session = changeDraft(openDraftSession(scope, result().definition), { ...initial, name: { es: "Private changes" } });
+    const review = requestDraftReview(session);
+    expect(review.phase).toBe("ReviewRequired");
+    expect(review.value).toBe(session.value);
+    expect(review.baseline).toBe(session.baseline);
+    expect(review.confirmed?.revision).toBe(1);
+    expect(review.pending).toBeNull();
+    expect(beginDraftSave(review, "new-attempt")).toBe(review);
+  });
+  it("cannot release an uncertain attempt or turn a new form into an external read review", () => {
+    const uncertain = markDraftSaveUnconfirmed(saving(), identity);
+    expect(requestDraftReview(uncertain)).toBe(uncertain);
+    const fresh = startDraftSession(scope, initial);
+    expect(requestDraftReview(fresh)).toBe(fresh);
+  });
   it("creates one frozen complete attempt without assigning canonical identities", () => {
     const session = saving();
     expect(session.pending?.body).toEqual({ requestId: "request-a", ...initial });

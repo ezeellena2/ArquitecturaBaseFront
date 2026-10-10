@@ -58,3 +58,9 @@ export interface DraftWriteBody extends DraftEditorValue {
   readonly requestId: string;
   readonly expectedRevision?: number;
 }
+
+export interface FormPublicationWriteBody extends DraftEditorValue {
+  readonly requestId: string;
+  readonly expectedRevision: number;
+  readonly checkToken: string;
+}

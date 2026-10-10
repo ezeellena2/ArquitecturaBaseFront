@@ -151,3 +151,7 @@ export function confirmDraftSave(
   return { ...session, value: baseline, baseline, confirmed: snapshot(result.definition), identityMap: snapshot(result.identityMap),
     pending: null, currentRevision, phase: currentRevision > result.definition.revision ? "ReviewRequired" : "Editing" };
 }
+
+export function requestDraftReview(session: DraftSession): DraftSession {
+  return session.phase === "Editing" && session.confirmed !== null ? { ...session, phase: "ReviewRequired" } : session;
+}

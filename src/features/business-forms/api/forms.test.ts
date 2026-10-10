@@ -46,7 +46,7 @@ describe("form draft HTTP contract", () => {
 
   it("consumes the detail wrapper and preserves every translation and audit value", async () => {
     const audit = { createdAtUtc: "2026-10-09T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-09T12:00:00Z", lastChangedBy: null };
-    server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition, capabilities: { canSave: false }, audit })));
+    server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition, capabilities: { canSave: false, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })));
     const detail = await fetchFormDefinition(id);
     expect(detail.audit).toEqual(audit);
     expect(detail.capabilities.canSave).toBe(false);
@@ -56,7 +56,7 @@ describe("form draft HTTP contract", () => {
 
   it("recognizes nullable .NET configuration outside its applicable type", async () => {
     server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: { ...definition, draft: { ...definition.draft,
-      fields: [{ ...definition.draft.fields[0], type: "decimal", maxLength: null, options: null }] } }, capabilities: { canSave: true },
+      fields: [{ ...definition.draft.fields[0], type: "decimal", maxLength: null, options: null }] } }, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" },
       audit: { createdAtUtc: "2026-10-09T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-09T12:00:00Z", lastChangedBy: null } })));
     const field = (await fetchFormDefinition(id)).definition.draft.fields[0];
     expect(field.type).toBe("decimal");

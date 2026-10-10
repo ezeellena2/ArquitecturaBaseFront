@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
 import { createFormDraft, fetchFormDefinition, recoverFormDraft, updateFormDraft } from "../api/forms";
 import type { FormDetail } from "../api/response";
-import { beginDraftSave, changeDraft, confirmDraftSave, discardDraft, markDraftSaveUnconfirmed, openDraftSession, rejectDraftSave, startDraftSession, type DraftSession } from "../draftSession";
+import { beginDraftSave, changeDraft, confirmDraftSave, discardDraft, markDraftSaveUnconfirmed, openDraftSession, requestDraftReview, rejectDraftSave, startDraftSession, type DraftSession } from "../draftSession";
 import type { DraftEditorValue } from "../model";
 import { draftFieldIssues, type DraftFieldIssue } from "../validationPaths";
 import { canReadForms, formActorKey, formDetailKey, type FormReadScope } from "./useFormQueries";
@@ -174,6 +174,16 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
       manageDenied.current = !review.capabilities.canSave;
       if (!review.capabilities.canSave) setDeniedPermissions(permissionsStamp);
       setIssue(null); setReview(null);
+    },
+    lockPrefix: (id: string) => {
+      if (!alive() || current.current?.confirmed?.id !== id) return;
+      publish({ ...current.current, confirmed: { ...current.current.confirmed, prefixLocked: true } });
+      invalidate();
+    },
+    requireReview: (error: unknown) => {
+      if (!alive() || inFlight.current || !current.current?.confirmed || current.current.phase !== "Editing") return;
+      publish(requestDraftReview(current.current));
+      setIssue({ kind: "conflict", error, code: error instanceof ApiError ? error.code : undefined, traceId: error instanceof ApiError ? error.traceId : undefined });
     },
     save: () => write(false), retry: () => write(true), recover, readCurrent, cancel: () => inFlight.current?.abort(),
   };

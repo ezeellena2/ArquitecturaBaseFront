@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { PagedResult } from "@/shared/api/pagedResult";
-import type { CanonicalQuestion, FormDefinitionSnapshot, FormDraftSaveResult } from "../model";
+import type { DraftQuestion, CanonicalQuestion, FormDefinitionSnapshot, FormDraftSaveResult } from "../model";
 
 const guid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).refine(value => !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(value));
 const revision = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
@@ -30,7 +30,12 @@ const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string()
 });
 const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
 const audit = z.strictObject({ createdAtUtc: utc, modifiedAtUtc: utc.nullable(), lastChangedAtUtc: utc, lastChangedBy: author.nullable() });
-const detail = z.strictObject({ definition, capabilities: z.strictObject({ canSave: z.boolean() }), audit });
+const publicationState = z.enum(["Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]);
+const displayState = z.enum(["Draft", "Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]);
+const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision });
+const currentOperation = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, state: publicationState, stage: z.string().min(1), requiresReview: z.boolean(), canRetry: z.literal(false), requestId: guid.nullable(), recoveryPath: z.string().nullable() });
+const publicationProjection = z.strictObject({ activeVersion: activeVersion.nullable(), currentOperation: currentOperation.nullable(), displayState });
+const detail = z.strictObject({ definition, capabilities: z.strictObject({ canSave: z.boolean(), canPublish: z.boolean(), canPreview: z.boolean() }), audit, publication: publicationProjection });
 const commit = z.strictObject({ requestId: guid, definition,
   identityMap: z.strictObject({ fields: z.array(z.strictObject({ localId: z.string(), fieldId: guid, key: z.string(), replacesFieldId: guid.nullable() })),
     choices: z.array(z.strictObject({ fieldLocalId: z.string(), localId: z.string(), fieldId: guid, choiceId: guid })) }),
@@ -39,7 +44,7 @@ const commit = z.strictObject({ requestId: guid, definition,
 const recovered = z.strictObject({ requestId: guid, kind: z.enum(["Create", "Update"]), status: z.literal("Committed"), committedAtUtc: utc, currentRevision: revision, result: commit })
   .refine(value => value.requestId === value.result.requestId && value.currentRevision >= value.result.definition.revision);
 const row = z.strictObject({ id: guid, name: nameText, prefix: z.string(), questionCount: z.number().int().min(0), activeVersionNumber: revision.nullable(),
-  displayState: z.literal("Draft"), lastChangedAtUtc: utc, lastChangedBy: author.nullable(), canEdit: z.boolean() });
+  displayState, lastChangedAtUtc: utc, lastChangedBy: author.nullable(), canEdit: z.boolean() });
 const checkedRow = row.refine(value => Object.values(value.name).some(name => !!name.trim()));
 const page = z.strictObject({ items: z.array(checkedRow), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: z.number().int().min(0),
   totalPages: z.number().int().min(0), hasPrevious: z.boolean(), hasNext: z.boolean() });
@@ -68,10 +73,72 @@ function adaptDefinition(value: z.infer<typeof definition>): FormDefinitionSnaps
   }) } };
 }
 function adaptCommit(value: z.infer<typeof commit>): FormDraftSaveResult { return { ...value, definition: adaptDefinition(value.definition) }; }
-export function readFormDetail(value: unknown) { const data = read(detail, value); return { ...data, definition: adaptDefinition(data.definition) }; }
+export function readFormDetail(value: unknown) {
+  const data = read(detail, value);
+  const operation = data.publication.currentOperation;
+  if (operation && (operation.requestId === null ? operation.recoveryPath !== null : !data.capabilities.canPublish || operation.recoveryPath !== publicationPath(data.definition.id, operation.requestId))) throw new UnsupportedFormResponse();
+  if (data.capabilities.canPreview && !data.publication.activeVersion) throw new UnsupportedFormResponse();
+  return { ...data, definition: adaptDefinition(data.definition) };
+}
 export function readFormCommit(value: unknown): FormDraftSaveResult { return adaptCommit(read(commit, value)); }
 export function readFormRecovery(value: unknown) { const data = read(recovered, value); return { ...data, result: adaptCommit(data.result) }; }
 export const readFormPage = (value: unknown): PagedResult<z.infer<typeof row>> => read(page, value);
 export const readFormFacets = (value: unknown) => read(facets, value);
 export type FormDetail = ReturnType<typeof readFormDetail>;
+export type FormPublicationProjection = FormDetail["publication"];
 export type FormRecovery = ReturnType<typeof readFormRecovery>;
+
+const publicationCompatibility = z.enum(["Blocked", "LocallyValidated", "Unavailable"]);
+const publicationIssue = z.strictObject({ channelId: z.string().nullable(), fieldId: guid.nullable(), choiceId: guid.nullable(),
+  path: z.string(), code: z.string(), message: z.string(), limit: z.number().int().nullable(), culture: z.enum(["es", "en"]).nullable() });
+const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: revision, compatibility: publicationCompatibility,
+  canAccept: z.boolean(), acceptanceAvailability: z.enum(["Available", "Unavailable", "InProgress"]),
+  checkToken: z.string().min(1).nullable(), checkExpiresAtUtc: utc.nullable(),
+  channels: z.array(z.strictObject({ channelId: z.string().min(1), profileRevision: z.string().min(1),
+    compatibility: publicationCompatibility, externalEvidence: z.literal("Pending"), cultures: z.array(z.enum(["es", "en"])) })),
+  issues: z.array(publicationIssue),
+  diff: z.strictObject({ baseVersionId: guid.nullable(), added: z.array(guid), changed: z.array(guid), removed: z.array(guid) }),
+});
+export function readFormPublicationCheck(value: unknown, definitionId: string, expectedRevision: number, fields: readonly DraftQuestion[]) {
+  const checked = read(publicationCheck, value);
+  if (checked.issues.some(issue => {
+    if (!issue.fieldId) return issue.choiceId !== null;
+    const field = fields.find(item => item.fieldId?.toLowerCase() === issue.fieldId?.toLowerCase());
+    return !field || issue.choiceId !== null && (field.type !== "choice" || !field.options.some(option => option.choiceId?.toLowerCase() === issue.choiceId?.toLowerCase()));
+  })) throw new UnsupportedFormResponse();
+  const hasTicket = checked.checkToken !== null && checked.checkExpiresAtUtc !== null;
+  if (checked.canAccept ? !hasTicket || checked.compatibility !== "LocallyValidated" || checked.acceptanceAvailability !== "Available" || checked.issues.length !== 0 : checked.checkToken !== null || checked.checkExpiresAtUtc !== null) throw new UnsupportedFormResponse();
+  if (checked.definitionId.toLowerCase() !== definitionId.toLowerCase() || checked.draftRevision !== expectedRevision) throw new UnsupportedFormResponse();
+  return checked;
+}
+export type FormPublicationCheck = ReturnType<typeof readFormPublicationCheck>;
+
+export function publicationPath(definitionId: string, requestId: string): string {
+  return `/api/forms/definitions/${formId(definitionId)}/publications/${formId(requestId)}`;
+}
+const publicationIdentity = { requestId: guid, operationId: guid, definitionId: guid, versionId: guid,
+  versionNumber: revision, draftRevision: revision, acceptedAtUtc: utc };
+const publicationReceipt = z.strictObject({ ...publicationIdentity, state: z.literal("Accepted"), recoveryPath: z.string() });
+const publicationStatus = z.strictObject({ ...publicationIdentity,
+  state: z.enum(["Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]),
+  stage: z.string().min(1), updatedAtUtc: utc, nextCheckAtUtc: utc.nullable(), canRetry: z.boolean(), requiresReview: z.boolean(), issues: z.array(publicationIssue).nullable().optional() });
+function matchesPublication(value: { definitionId: string; requestId: string }, definitionId: string, requestId: string) {
+  return value.definitionId.toLowerCase() === definitionId.toLowerCase() && value.requestId.toLowerCase() === requestId.toLowerCase();
+}
+export function readFormPublicationReceipt(value: unknown, definitionId: string, requestId: string, expectedRevision: number) {
+  const checked = read(publicationReceipt, value);
+  if (!matchesPublication(checked, definitionId, requestId) || checked.draftRevision !== expectedRevision
+    || checked.recoveryPath !== publicationPath(definitionId, requestId)) throw new UnsupportedFormResponse();
+  return checked;
+}
+export function readFormPublicationStatus(value: unknown, definitionId: string, requestId: string) {
+  const checked = read(publicationStatus, value);
+  if (!matchesPublication(checked, definitionId, requestId)) throw new UnsupportedFormResponse();
+  return checked;
+}
+export type FormPublicationReceipt = ReturnType<typeof readFormPublicationReceipt>;
+export type FormPublicationStatus = ReturnType<typeof readFormPublicationStatus>;
+
+const officialPreview = z.strictObject({ url: z.string().url().refine(value => { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }), expiresAtUtc: utc });
+export class ExpiredFormPreview extends Error { constructor() { super("The form preview has expired."); this.name = "ExpiredFormPreview"; } }
+export function readFormPreview(value: unknown, now = Date.now()) { const checked = read(officialPreview, value); if (Date.parse(checked.expiresAtUtc) <= now) throw new ExpiredFormPreview(); return checked; }
