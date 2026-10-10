@@ -7,18 +7,19 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import type { FormPublicationProjection } from "../api/response";
+import type { FormPublicationProjection, FormPublicationCheck } from "../api/response";
 import { uniquePublicationIssues } from "../publicationPresentation";
 import type { useFormPublication } from "../hooks/useFormPublication";
 
-export function PublicationProgress({ publication, feedbackId, onReplay, projection }: {
+export function PublicationProgress({ publication, feedbackId, onReplay, projection, onGoToIssue, canLocateIssue }: {
   publication: ReturnType<typeof useFormPublication>; feedbackId: string; onReplay: () => void; projection?: FormPublicationProjection;
+  onGoToIssue?: (issue: FormPublicationCheck["issues"][number]) => void; canLocateIssue?: (issue: FormPublicationCheck["issues"][number]) => boolean;
 }) {
   const { t } = useTranslation("forms");
   const cooldown = useCountdown(0);
   const { restart } = cooldown;
   const state = publication.status?.state ?? publication.receipt?.state ?? publication.aggregate?.state ?? projection?.currentOperation?.state ?? (projection?.activeVersion ? "Published" : undefined);
-  const issues = uniquePublicationIssues(publication.status?.issues);
+  const issues = uniquePublicationIssues(publication.status?.issues ?? []);
   const version = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
   useEffect(() => () => dismissNotification(feedbackId), [feedbackId]);
   useEffect(() => {
@@ -52,7 +53,7 @@ export function PublicationProgress({ publication, feedbackId, onReplay, project
         <li className="text-[var(--color-content-muted)]">{t(state === "Preparing" ? "publication.stepPreparing" : state === "Publishing" ? "publication.stepSent" : state === "ActivationPending" ? "publication.stepActivating" : state === "Published" ? "publication.stepReady" : "publication.stepPending")}</li>
       </ol> : null}
       {requiresReview && hint !== "publication.reviewHint" ? <p className="text-sm">{t("publication.reviewHint")}</p> : null}
-      {issues.length ? <ul className="flex flex-col gap-2 text-sm">{issues.map((issue,index) => <li key={index}><p>{issue.message}</p>{issue.culture ? <p className="text-xs text-[var(--color-content-muted)]">{t("common:language." + issue.culture)}</p> : null}</li>)}</ul> : null}
+      {issues.length ? <ul className="flex flex-col gap-2 text-sm">{issues.map((issue,index) => <li key={index}><p>{issue.message}</p>{issue.culture ? <p className="text-xs text-[var(--color-content-muted)]">{t("common:language." + issue.culture)}</p> : null}{onGoToIssue && canLocateIssue?.(issue) ? <Button type="button" size="sm" variant="outline" onClick={() => onGoToIssue(issue)}>{t(issue.fieldId ? "publication.goToQuestion" : "publication.goToText")}</Button> : null}</li>)}</ul> : null}
       {projection?.activeVersion && state !== "Published" ? <p className="text-sm text-[var(--color-content-muted)]">{t("publication.previousActive", { version: projection.activeVersion.versionNumber })}</p> : null}
       {publication.error && publication.confirmed ? <p className="text-sm">{t("publication.statusFailed")}</p> : null}
       {!forbidden && ["Accepted", "Unconfirmed"].includes(publication.phase) ? <div className="flex flex-wrap gap-2">

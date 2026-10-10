@@ -1,3 +1,6 @@
+import realPublishedList from "@/test/fixtures/forms-http/published/list-es.json";
+import realFailedDetail from "@/test/fixtures/forms-http/failed/detail-es.json";
+import realFailedStatus from "@/test/fixtures/forms-http/failed/status-es.json";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http } from "msw";
@@ -377,4 +380,25 @@ it("retains the table and sort focus through loading and failure without refetch
   expect(screen.getByRole("link", { name: "Registrar visita" })).toBeInTheDocument();
   expect(sort).toHaveFocus();
   expect(store.calls.filter(call => call.path.endsWith("/facets"))).toHaveLength(1);
+});
+
+it("shows Published with its version from an actual backend list response", async () => {
+  setup();
+  server.use(http.get("/api/forms/definitions", () => Response.json(realPublishedList)));
+  renderRouteWithProviders("/formularios");
+  await screen.findByText("Publicado · versión 1", { exact: true });
+});
+it("marks the affected question and focuses the correct language from actual Failed HTTP diagnostics", async () => {
+  setup("", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+  const { definitionId, requestId } = realFailedStatus;
+  server.use(http.get("/api/forms/definitions/" + definitionId, () => Response.json(realFailedDetail)),
+    http.get("/api/forms/definitions/" + definitionId + "/publications/" + requestId, () => Response.json(realFailedStatus)));
+  renderRouteWithProviders("/formularios/" + definitionId);
+  await screen.findByRole("heading", { name: "No se pudo publicar · versión 1" });
+  await userEvent.click(await screen.findByRole("button", { name: "Ir a la pregunta" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true"));
+  const label = screen.getByLabelText("Pregunta");
+  expect(label).toHaveFocus();
+  expect(label).toHaveAttribute("aria-invalid", "true");
+  expect(document.getElementById(label.getAttribute("aria-describedby")!)).toHaveTextContent(realFailedStatus.issues[0]!.message);
 });

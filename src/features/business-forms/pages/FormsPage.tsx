@@ -58,7 +58,7 @@ export function FormsPage() {
   const columns: Column<Row>[] = [
     { id: "name", header: t("formColumn"), sortable: true, cell: row => <Link to={`/formularios/${row.id}`} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{administrativeName(row.name, scope.culture)}</Link> },
     { id: "questionCount", header: t("countColumn"), sortable: true, cell: row => row.questionCount },
-    { id: "displayState", header: t("stateColumn"), cell: row => <div><p>{t(publicationLabelKey(row.displayState, true))}</p>{row.activeVersionNumber !== null && row.displayState !== "Published" ? <p className="text-xs text-[var(--color-content-muted)]">{t("publication.previousActive", { version: row.activeVersionNumber })}</p> : null}</div> },
+    { id: "displayState", header: t("stateColumn"), cell: row => <div><p>{t(publicationLabelKey(row.displayState, true), { version: row.activeVersionNumber })}</p>{row.activeVersionNumber !== null && row.displayState !== "Published" ? <p className="text-xs text-[var(--color-content-muted)]">{t("publication.previousActive", { version: row.activeVersionNumber })}</p> : null}</div> },
     { id: "lastChangedAtUtc", header: t("changedColumn"), sortable: true, cell: row => `${formatDateInZone(row.lastChangedAtUtc, i18n.language, user?.timeZoneId)} · ${row.lastChangedBy?.displayName ?? "—"}` },
     { id: "actions", header: t("actionsColumn"), align: "right", cell: row => canManage && row.canEdit ? <RowActions actions={[{ label: t("edit"), accessibleName: `${t("edit")} ${administrativeName(row.name, scope.culture)}`, icon: PencilIcon, onSelect: () => { void navigate(`/formularios/${row.id}`); } }]} /> : null },
   ];

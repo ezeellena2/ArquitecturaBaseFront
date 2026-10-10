@@ -202,10 +202,11 @@
     "previewOpen": "Open in another tab",
     "previewRenew": "Request a new preview",
     "previewLoad": "Load preview",
-    "listPublished": "Published",
+    "listPublished": "Published · version {{version}}",
     "listFailed": "Could not publish",
     "listPublishing": "Publishing",
-    "previewNoPermission": "You no longer have permission to view this preview."
+    "previewNoPermission": "You no longer have permission to view this preview.",
+    "questionIssue": "Review this question · {{language}}"
   },
   "viewQuestion": "View question {{name}}",
   "reviewNoSave": "Neither option saves. After choosing, review the marked changes and select “Save draft”.",

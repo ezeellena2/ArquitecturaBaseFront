@@ -28,10 +28,11 @@ import { publicationLabelKey } from "../publicationPresentation";
 import { useFormPublication } from "../hooks/useFormPublication";
 import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
 import { DraftReview, DraftReviewChanges } from "../components/DraftReview";
+import { publicationFieldIssues } from "../validationPaths";
 import { emptyForm, missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
 import { useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
-import type { FormDetail } from "../api/response";
+import type { FormDetail, FormPublicationCheck } from "../api/response";
 import type { DraftEditorValue, FormCulture, FormDefinitionSnapshot } from "../model";
 
 export function FormEditorPage() {
@@ -150,7 +151,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
     void editor.readCurrent().then(success => { if (success && active.current) setReviewOpen(true); });
   }
   if (!value || !session) return <ForbiddenPage />;
-  const errorFor = (path: string) => editor.issue?.fields?.find(issue => issue.path === path || path !== "draft.fields" && issue.path.startsWith(`${path}.`))?.messages[0];
+  const visibleIssues = [...(editor.issue?.fields ?? []), ...publicationFieldIssues(value, publication.status?.issues ?? [])];
+  const errorFor = (path: string) => visibleIssues.find(issue => issue.path === path || path !== "draft.fields" && issue.path.startsWith(`${path}.`))?.messages[0];
   const prefixLocked = (session.confirmed?.prefixLocked ?? false) || ["Accepting", "Unconfirmed"].includes(publication.phase);
   const publicationState = publication.status?.state ?? publication.receipt?.state ?? publication.aggregate?.state ?? projection?.currentOperation?.state ?? (projection?.activeVersion ? "Published" : undefined);
   const publicationVersion = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
@@ -162,6 +164,20 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
     change({ ...value, draft: { ...value.draft, fields: value.draft.fields.map(q => q.localId === localId ? question : q) } });
     if (question.localId !== localId) setExpanded(question.localId);
   };
+  function goToPublicationIssue(issue: FormPublicationCheck["issues"][number]) {
+    setPublicationOpen(false);
+    if (issue.culture) setContentCulture(issue.culture);
+    const question = value!.draft.fields.find(q => q.fieldId === issue.fieldId);
+    if (question) setExpanded(question.localId);
+    requestAnimationFrame(() => {
+      if (!active.current) return;
+      if (!question) { host.current?.querySelector<HTMLInputElement>(issue.path.startsWith("name") ? '[data-form-text="name"]' : '[data-form-text="submitLabel"]')?.focus(); return; }
+      const container = [...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === question.localId);
+      const option = question.type === "choice" ? question.options.find(o => o.choiceId === issue.choiceId) : undefined;
+      const optionInput = option ? [...(container?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(element => element.dataset.choiceLocalId === option.localId) : undefined;
+      (optionInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]'))?.focus();
+    });
+  }
   function removeQuestion(localId: string) {
     if (readOnly) return;
     const index = value!.draft.fields.findIndex(q => q.localId === localId);
@@ -179,7 +195,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   </>}>
     <div className="flex flex-col gap-4">
     {cooldown.isRunning ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("wait", { count: cooldown.seconds })}</p> : null}
-    <PublicationProgress publication={publication} projection={projection} feedbackId={`forms:publication:${session.scope.editorId}`} onReplay={() => void publication.replay()} />
+    <PublicationProgress publication={publication} projection={projection} feedbackId={`forms:publication:${session.scope.editorId}`} onReplay={() => void publication.replay()} onGoToIssue={goToPublicationIssue} canLocateIssue={issue => publicationFieldIssues(value, [issue]).length > 0} />
     {session.phase === "Unconfirmed" ? <Surface padded><p className="text-sm">{t(editor.issue?.kind === "forbidden" ? "noSave" : editor.issue?.code === "Forms.Draft.RequestConflict" ? "requestConflict" : editor.issue?.kind === "expired" ? "expired" : "uncertainHint")}</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning || editor.issue?.kind === "expired"} onClick={() => void operate(editor.recover)}>{t(editor.busy ? "recovering" : "recover")}</Button>{editor.issue?.kind === "missing" && scope.permissions.includes("formtemplates.manage") ? <Button type="button" variant="outline" disabled={editor.busy} onClick={() => void operate(editor.retry)}>{t("retrySame")}</Button> : null}</div></Surface> : null}
     {reviewRequired ? <Surface padded><p className="text-sm">{t("reviewPending")}</p><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning} onClick={showReview}>{t("review")}</Button></Surface> : null}
     {retainedReview ? <Surface title={t("reviewChangesToInspect")} padded><p className="mb-3 text-sm">{t("reviewNoSave")}</p><DraftReviewChanges value={retainedReview.value} definition={retainedReview.definition} culture={scope.culture} /></Surface> : null}
@@ -194,7 +210,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
         </div><p className="text-xs text-[var(--color-content-muted)]">{t("translations")}</p></Surface>
         <Surface title={t("questions")}>
           {value.draft.fields.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("emptyQuestions")}</p> : null}
-          {value.draft.fields.map((q, index) => <QuestionEditor key={q.localId} question={q} position={index + 1} total={value.draft.fields.length} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalid === q.localId} readOnly={readOnly} issues={editor.issue?.fields?.filter(issue => issue.fieldLocalId === q.localId) ?? []} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, fields: moveItem(value.draft.fields, index, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }} />)}
+          {value.draft.fields.map((q, index) => <QuestionEditor key={q.localId} question={q} position={index + 1} total={value.draft.fields.length} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalid === q.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.fieldLocalId === q.localId)} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, fields: moveItem(value.draft.fields, index, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }} />)}
           {errorFor("draft.fields") ? <p role="alert" className="p-4 text-sm text-[var(--color-danger)]">{errorFor("draft.fields")}</p> : null}
           {!readOnly ? <div className="p-4"><Button ref={addQuestionButton} type="button" variant="outline" disabled={value.draft.fields.length >= 40} onClick={() => { const q = newQuestion("shortText", value.draft.culture, crypto.randomUUID()); change({ ...value, draft: { ...value.draft, fields: [...value.draft.fields, q] } }); setExpanded(q.localId); }}>{t("addQuestion")}</Button></div> : null}
         </Surface>
@@ -212,20 +228,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   }} onOpenChange={setPublicationOpen} onSave={() => {
     setPublicationOpen(false);
     void operate(editor.save).then(saved => { if (saved && active.current) setPublicationOpen(true); });
-  }} onConflict={error => { setPublicationOpen(false); editor.requireReview(error); }} onGoToIssue={issue => {
-    setPublicationOpen(false);
-    if (issue.culture) setContentCulture(issue.culture);
-    const question = value.draft.fields.find(q => q.fieldId === issue.fieldId);
-    if (question) setExpanded(question.localId);
-    requestAnimationFrame(() => {
-      if (!active.current) return;
-      if (!question) { host.current?.querySelector<HTMLInputElement>(issue.path.startsWith("name") ? '[data-form-text="name"]' : '[data-form-text="submitLabel"]')?.focus(); return; }
-      const container = [...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === question.localId);
-      const option = question.type === "choice" ? question.options.find(o => o.choiceId === issue.choiceId) : undefined;
-      const optionInput = option ? [...(container?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(element => element.dataset.choiceLocalId === option.localId) : undefined;
-      (optionInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]'))?.focus();
-    });
-  }} /> : null}
+  }} onConflict={error => { setPublicationOpen(false); editor.requireReview(error); }} onGoToIssue={goToPublicationIssue} /> : null}
   <ConfirmDialog open={(discardOpen || guard.isBlocked) && !frozen && !publicationPending} onOpenChange={open => { setDiscardOpen(open); if (!open) guard.stay(); }} title={t("discardTitle")} description={t("discardDescription")} cancelLabel={t("stay")} confirmLabel={t("discard")} destructive onConfirm={leave} />
   {guard.isBlocked && publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("publication.unconfirmed")} description={t("publication.unconfirmedHint")} cancelLabel={t("stay")} confirmLabel={t("publication.consult")} onConfirm={() => { guard.stay(); void publication.consult(); }} /> : null}
   {guard.isBlocked && frozen && !publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("uncertain")} description={t("busyLeave")} cancelLabel={t("stay")} confirmLabel={t(session.phase === "Unconfirmed" ? "recover" : "review")} onConfirm={() => { guard.stay(); if (session.phase === "Unconfirmed") void operate(editor.recover); else if (reviewRequired) showReview(); }} /> : null}

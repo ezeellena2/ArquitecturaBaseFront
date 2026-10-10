@@ -14,7 +14,7 @@ const receipt = { requestId, operationId: "01990000-0000-7000-8000-000000000091"
   versionId: "01990000-0000-7000-8000-000000000092", versionNumber: 1, draftRevision: 1, state: "Accepted",
   acceptedAtUtc: "2026-10-10T16:00:00Z", recoveryPath: path };
 const status = { ...receipt, recoveryPath: undefined, stage: "Accepted", updatedAtUtc: receipt.acceptedAtUtc,
-  nextCheckAtUtc: null, canRetry: false, requiresReview: false };
+  nextCheckAtUtc: null, canRetry: false, requiresReview: false, issues: [] };
 afterEach(resetHttpClient);
 describe("publication acceptance and own status", () => {
   it("posts the exact checked body and reads 202 as acceptance", async () => {

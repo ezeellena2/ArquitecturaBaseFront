@@ -1,0 +1,111 @@
+{
+  "producer": "ArquitecturaBase/tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormHttpContractFixturesTests.cs",
+  "command": "FORMS_HTTP_CONTRACT_OUTPUT=<output> dotnet test --project tests/ArquitecturaBase.Api.IntegrationTests/ArquitecturaBase.Api.IntegrationTests.csproj -c Debug -- --filter-method '*Http_contract_fixtures*'",
+  "source": "HTTP response bytes from ApiFactory, PostgreSQL, Redis and production workers; external Meta provider simulated; synthetic data only.",
+  "files": [
+    {
+      "path": "published/accepted-status.json",
+      "sha256": "dca896487d254cd672016c5eeb57264505c439e3d28af68552260bc705a5fb7e"
+    },
+    {
+      "path": "published/accepted.json",
+      "sha256": "cf7664ac2420b868d5c7ff9a94e7f93467898b487bf923c1775d6c1d3faa74db"
+    },
+    {
+      "path": "published/check-next-unavailable.json",
+      "sha256": "849d229a1e13e843521a9d3ee324a856e75693a6c77b89e3a88c1060c90dba1f"
+    },
+    {
+      "path": "published/check-unavailable.json",
+      "sha256": "3482932c02d26e103a7bbce1ff770a9fe0f300322345686ad35cc9b8e3069181"
+    },
+    {
+      "path": "published/created.json",
+      "sha256": "28e822085b7c7f73e19b404b021c63b7eeac85762f7f59a52e2a8ef133eb79a5"
+    },
+    {
+      "path": "published/detail-en.json",
+      "sha256": "7c27479f473fbf28aa1e718927e98466fd8844108eb01bea3424a4f03d72bb76"
+    },
+    {
+      "path": "published/detail-es.json",
+      "sha256": "7c27479f473fbf28aa1e718927e98466fd8844108eb01bea3424a4f03d72bb76"
+    },
+    {
+      "path": "published/draft-detail.json",
+      "sha256": "d717a2b13023e7be7c3ee53251bee59e3f479ff4032f656a3a9e52c8b773ed7f"
+    },
+    {
+      "path": "published/draft-list.json",
+      "sha256": "4b8e2ebd5920d87bc903cad65c0d03b2188e7b9641e33b94a33a1401fb84cac8"
+    },
+    {
+      "path": "published/list-en.json",
+      "sha256": "6f6ac983ce2ba893ecd35cd66c6aa063abdfaa7732425e3626f717be08b40fae"
+    },
+    {
+      "path": "published/list-es.json",
+      "sha256": "6f6ac983ce2ba893ecd35cd66c6aa063abdfaa7732425e3626f717be08b40fae"
+    },
+    {
+      "path": "published/status-en.json",
+      "sha256": "1f9800515688282acf0aca921e95802aca4de84a08acebd7000d5633e15f5bf0"
+    },
+    {
+      "path": "published/status-es.json",
+      "sha256": "1f9800515688282acf0aca921e95802aca4de84a08acebd7000d5633e15f5bf0"
+    },
+    {
+      "path": "failed/accepted-status.json",
+      "sha256": "d788d2536d76ccc0657dbfc6a03452e8225a58509771fcec8cbbea71049e64ef"
+    },
+    {
+      "path": "failed/accepted.json",
+      "sha256": "2cf51543c7bf0e87abad6d9eb02b8d8b80998821c325b8d9a115c2b61eb21861"
+    },
+    {
+      "path": "failed/check-next-unavailable.json",
+      "sha256": "a88d0d0c0d95b4a33c40dfcb2f728cd1ece2a170ba4c7c9050b300f1d1ceb49e"
+    },
+    {
+      "path": "failed/check-unavailable.json",
+      "sha256": "3e755b130b14b3a0ac685e267f94b241ed96dc85ec493995440473e2a6ff849e"
+    },
+    {
+      "path": "failed/created.json",
+      "sha256": "778b3797034c8fd6cbab350ca06fc2c468efe2a7df911e8d7e796d35fa1daf7a"
+    },
+    {
+      "path": "failed/detail-en.json",
+      "sha256": "36a69f2f8fc348db60d0ffa132e1ee47fea8fc6291406ce9036e65311b0a3313"
+    },
+    {
+      "path": "failed/detail-es.json",
+      "sha256": "36a69f2f8fc348db60d0ffa132e1ee47fea8fc6291406ce9036e65311b0a3313"
+    },
+    {
+      "path": "failed/draft-detail.json",
+      "sha256": "00f36a09ba7b3d894f2711d4c6fe10be2b82ee9828e77ce75dde22b627f936f1"
+    },
+    {
+      "path": "failed/draft-list.json",
+      "sha256": "748321a9a805ca30a6bfa0fd5e956bbe16af52dc659f41ef6418f602a2c61a89"
+    },
+    {
+      "path": "failed/list-en.json",
+      "sha256": "58860872520c23b871a80f2999de8d6f9dd5e809813dc00181c5b36677f64581"
+    },
+    {
+      "path": "failed/list-es.json",
+      "sha256": "58860872520c23b871a80f2999de8d6f9dd5e809813dc00181c5b36677f64581"
+    },
+    {
+      "path": "failed/status-en.json",
+      "sha256": "8026db557ae2ac8aac6591a25ee8a6ad38786323cb3d93527ff9bba2d1366211"
+    },
+    {
+      "path": "failed/status-es.json",
+      "sha256": "67b7a9afea0a6a86226de6c2ff43864650a075fb11204f8f132055c9c7a877ef"
+    }
+  ]
+}

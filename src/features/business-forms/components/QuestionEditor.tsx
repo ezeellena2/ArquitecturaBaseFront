@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -58,7 +59,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
   return <div ref={rootRef} data-question-local-id={question.localId} className="border-t border-[var(--color-border)] first:border-t-0">
     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
       <span className="text-sm text-[var(--color-content-muted)]">{position}</span>
-      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t(`types.${question.type}`)} · {t(question.required ? "required" : "optional")}{missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p></div>
+      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t(`types.${question.type}`)} · {t(question.required ? "required" : "optional")}{missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{t("publication.questionIssue", { language: t("cultures." + (issues[0]!.path.match(/\.(es|en)$/)?.[1] ?? culture)) })}</Badge> : null}</div>
       <div className="flex items-center gap-1">
         {!readOnly ? <>
         <IconButton size="icon-sm" label={t("up", { name: label })} disabled={readOnly || position === 1} disabledLabel={t("position", { name: label, position, total })} data-move-item={question.localId} data-move-delta={-1} onClick={() => moveQuestion(-1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>

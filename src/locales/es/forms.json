@@ -202,10 +202,11 @@
     "previewOpen": "Abrir en otra pestaña",
     "previewRenew": "Volver a pedir la vista",
     "previewLoad": "Cargar vista",
-    "listPublished": "Publicado",
+    "listPublished": "Publicado · versión {{version}}",
     "listFailed": "No se pudo publicar",
     "listPublishing": "Publicando",
-    "previewNoPermission": "Ya no tenés permiso para ver esta vista previa."
+    "previewNoPermission": "Ya no tenés permiso para ver esta vista previa.",
+    "questionIssue": "Revisá esta pregunta · {{language}}"
   },
   "viewQuestion": "Ver pregunta {{name}}",
   "reviewNoSave": "Ninguna opción guarda. Después de elegir, revisás los cambios marcados y tocás «Guardar borrador».",

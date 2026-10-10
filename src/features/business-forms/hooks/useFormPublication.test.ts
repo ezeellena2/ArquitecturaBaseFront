@@ -17,7 +17,7 @@ const checked = { definitionId: definition.id, draftRevision: 1, compatibility: 
 const identity = { definitionId: definition.id, requestId: "01990000-0000-7000-8000-000000000090", operationId: "01990000-0000-7000-8000-000000000091",
   versionId: "01990000-0000-7000-8000-000000000092", versionNumber: 1, draftRevision: 1, acceptedAtUtc: "2026-10-10T16:00:00Z" } as const;
 const receipt = { ...identity, state: "Accepted" as const, recoveryPath: `/api/forms/definitions/${definition.id}/publications/${identity.requestId}` };
-const status = { ...identity, state: "Publishing" as const, stage: "Validate", updatedAtUtc: identity.acceptedAtUtc, nextCheckAtUtc: null, canRetry: false, requiresReview: false };
+const status = { ...identity, state: "Publishing" as const, stage: "Validate", updatedAtUtc: identity.acceptedAtUtc, nextCheckAtUtc: null, canRetry: false, requiresReview: false, issues: [] };
 beforeEach(() => { vi.mocked(acceptFormPublication).mockReset(); vi.mocked(fetchFormPublication).mockReset(); vi.spyOn(crypto, "randomUUID").mockReturnValue(identity.requestId); });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 describe("owned publication attempt", () => {

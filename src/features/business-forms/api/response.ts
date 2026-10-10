@@ -121,7 +121,7 @@ const publicationIdentity = { requestId: guid, operationId: guid, definitionId: 
 const publicationReceipt = z.strictObject({ ...publicationIdentity, state: z.literal("Accepted"), recoveryPath: z.string() });
 const publicationStatus = z.strictObject({ ...publicationIdentity,
   state: z.enum(["Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]),
-  stage: z.string().min(1), updatedAtUtc: utc, nextCheckAtUtc: utc.nullable(), canRetry: z.boolean(), requiresReview: z.boolean(), issues: z.array(publicationIssue).nullable().optional() });
+  stage: z.string().min(1), updatedAtUtc: utc, nextCheckAtUtc: utc.nullable(), canRetry: z.boolean(), requiresReview: z.boolean(), issues: z.array(publicationIssue) });
 function matchesPublication(value: { definitionId: string; requestId: string }, definitionId: string, requestId: string) {
   return value.definitionId.toLowerCase() === definitionId.toLowerCase() && value.requestId.toLowerCase() === requestId.toLowerCase();
 }
