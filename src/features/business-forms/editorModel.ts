@@ -111,8 +111,9 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
   for (const row of review.rows.filter(r => r.kind === "fieldText")) {
     const parent = fields.get(row.parentId!); if (!parent) continue;
     const selected = (choices[row.id] === "mine" ? row.mine : row.current) as string | null;
-    const text = withText(parent[row.property!], row.culture!, row.property === "help" && !selected?.trim() ? null : selected);
-    fields.set(row.parentId!, row.property === "help" ? { ...parent, help: Object.keys(text).length ? text : null } : { ...parent, label: text });
+    fields.set(row.parentId!, row.property === "help"
+      ? { ...parent, help: { ...parent.help, [row.culture!]: selected?.trim() ? selected : null } }
+      : { ...parent, label: withText(parent.label, row.culture!, selected) });
   }
   for (const row of review.rows.filter(r => r.kind === "option")) {
     const parent = fields.get(row.parentId!); if (parent?.type !== "choice") continue;

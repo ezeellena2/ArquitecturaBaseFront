@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
+import { beginDraftSave, changeDraft, openDraftSession } from "../draftSession";
 import { configureHttpClient, resetHttpClient } from "@/shared/api/httpClient";
 import { createFormDraft, fetchFormDefinition, fetchFormDefinitions, fetchFormFacets, recoverFormDraft, updateFormDraft } from "./forms";
 
@@ -42,6 +43,27 @@ describe("form draft HTTP contract", () => {
     await updateFormDraft(id, { ...body, expectedRevision: 1 });
     expect(received).toEqual([body, { ...body, expectedRevision: 1 }]);
     expect(received[0]).not.toHaveProperty("expectedRevision");
+  });
+
+  it.each([{ es: null, en: "Details" }, { es: null, en: null }])("sends explicit help erasure and the saved submit label in a frozen update: %j", async help => {
+    const saved = { ...definition, draft: { ...definition.draft, format: 1 as const, culture: "es" as const,
+      submitLabel: { es: "Confirmar", en: "Confirm" },
+      fields: [{ ...definition.draft.fields[0]!, type: "longText" as const }] } };
+    let session = openDraftSession({ actorId: "actor", editorId: "editor" }, saved);
+    session = changeDraft(session, { ...session.value, draft: { ...session.value.draft,
+      fields: session.value.draft.fields.map(field => ({ ...field, help })) } });
+    const pending = beginDraftSave(session, requestId).pending!;
+    server.use(http.put(`/api/forms/definitions/${id}/draft`, async ({ request }) => {
+      expect(await request.json()).toEqual(pending.body);
+      expect(pending.body.draft.submitLabel).toEqual({ es: "Confirmar", en: "Confirm" });
+      expect(pending.body.draft.fields[0]!.help).toEqual(help);
+      expect(Object.isFrozen(pending.body.draft.fields[0]!.help)).toBe(true);
+      return HttpResponse.json({ ...commit, definition: { ...saved, revision: 2, draft: { ...saved.draft,
+        fields: [{ ...saved.draft.fields[0]!, help: help.en ? { en: help.en } : null }] } } });
+    }));
+    expect(pending.body.expectedRevision).toBe(1);
+    const updated = await updateFormDraft(id, { ...pending.body, expectedRevision: pending.body.expectedRevision! });
+    expect(updated.definition.draft.fields[0]!.help).toEqual(help.en ? { en: help.en } : null);
   });
 
   it("consumes the detail wrapper and preserves every translation and audit value", async () => {

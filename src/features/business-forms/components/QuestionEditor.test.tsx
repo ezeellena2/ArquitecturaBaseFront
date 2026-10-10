@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { QuestionEditor } from "./QuestionEditor";
 import { moveItem } from "../editorModel";
@@ -19,6 +19,16 @@ function Harness({ expandedInitially = false, readOnly = false }: { expandedInit
     onExpand={open => setExpanded(open ? question.localId : null)} onMove={delta => setQuestions(old => moveItem(old, index, delta))} onRemove={() => {}} />)}</>;
 }
 async function mount(props?: Parameters<typeof Harness>[0]) { await act(async () => { renderWithProviders(<Harness {...props} />); }); }
+it("clears original help explicitly while preserving the other language and field identity", async () => {
+  const question = { ...first, help: { es: "Detalle", en: "Details" } };
+  const onChange = vi.fn();
+  await act(async () => { renderWithProviders(<QuestionEditor question={question} position={1} total={1}
+    culture="es" original="es" expanded readOnly={false} issues={[]} onChange={onChange}
+    onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
+  await userEvent.clear(screen.getByLabelText("Ayuda para el empleado"));
+  expect(onChange).toHaveBeenLastCalledWith({ ...question, help: { es: null, en: "Details" } });
+});
+
 describe("Question movement", () => {
   it("announces the new position and keeps keyboard focus when a question reaches the boundary", async () => {
     await mount();

@@ -25,6 +25,17 @@ describe("explicit draft review", () => {
     expect(resolved?.name).toEqual({ es: "Nombre actualizado", en: "My translation" });
     expect(resolved?.draft.fields[0]!.label).toEqual({ es: "Pregunta actualizada", en: "My question" });
   });
+  it.each([{ es: null, en: "Details" }, { es: null, en: null }])("preserves explicit help erasure when keeping changes after a conflict: %j", help => {
+    const definition: FormDefinitionSnapshot = { ...current, draft: { ...current.draft,
+      fields: current.draft.fields.map(field => ({ ...field, help: { es: "Detalle", en: "Details" } })) } };
+    const saved = openDraftSession(scope, definition).value;
+    const mine = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(field => ({ ...field, help })) } };
+    const review = createDraftReview(mine, definition);
+    const resolved = resolveDraftReview(review, Object.fromEntries(review.rows.map(row => [row.id, "mine"])));
+    expect(resolved?.draft.fields.map(field => field.help)).toEqual([help, help]);
+    expect(resolved?.draft.submitLabel).toEqual({ es: "Enviar", en: "Send" });
+  });
+
   it("counts every missing required text and only counts help when help exists", () => {
     const saved = openDraftSession(scope, current).value;
     const value = { ...saved, name: { es: "Visita", en: "" }, draft: { ...saved.draft, submitLabel: { es: "Enviar", en: "Send" },
