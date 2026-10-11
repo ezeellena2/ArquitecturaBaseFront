@@ -22,7 +22,10 @@ for (const culture of ['es', 'en'] as const) describe('received forms in real pa
     server.use(
       http.get('/api/me', () => HttpResponse.json({ ...currentUser, permissions: ['whatsapp.read', 'formrecords.read'] })),
       http.get('/api/whatsapp/chats', () => HttpResponse.json({ page: { items: [thread.contact], page: 1, pageSize: 20, totalPages: 1, totalCount: 1 }, allCount: 1, unreadCount: 0 })),
-      http.get('/api/whatsapp/chats/:id/messages', () => new HttpResponse(whatsappFormsHttpBody(culture, threadName), { headers: { 'Content-Type': 'application/json' } })),
+      http.get('/api/whatsapp/chats/:id/messages', ({ request }) => {
+        const older = threadName === 'reply-latest-page' && new URL(request.url).searchParams.has('beforeId');
+        return new HttpResponse(whatsappFormsHttpBody(culture, older ? 'reply-older-page' : threadName), { headers: { 'Content-Type': 'application/json' } });
+      }),
       http.put('/api/whatsapp/chats/:id/read', () => new HttpResponse(null, { status: 204 })),
     );
     return thread;
@@ -70,6 +73,16 @@ for (const culture of ['es', 'en'] as const) describe('received forms in real pa
     expect(screen.queryByText('12.345.678.901.234.567.890,12345678')).not.toBeInTheDocument();
     await waitFor(() => expect(JSON.stringify(queryClient.getQueryCache().findAll({ queryKey: ['whatsapp-chat'] }).map(query => query.state.data))).not.toContain('Equipo de prueba'));
     expect(await saved()).toBeInTheDocument();
+  });
+  it('prepends the actual older page while preserving the pending response', async () => {
+    await open('reply-latest-page');
+    await screen.findByText('Llegó una respuesta de formulario. La estamos guardando…');
+    expect(screen.queryByText('Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Cargar mensajes anteriores' }));
+    expect(await screen.findByText('Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.')).toBeInTheDocument();
+    expect(screen.getByText('No pudimos guardar la respuesta del formulario. Podés escribirle o mandárselo de nuevo.')).toBeInTheDocument();
+    expect(screen.getByText('Llegó una respuesta de formulario. La estamos guardando…')).toBeInTheDocument();
+    expect(screen.queryByText(/Guardada como/)).not.toBeInTheDocument();
   });
   it('shows captured processing states with no invented saved status', async () => {
     await open('reply-all-states');

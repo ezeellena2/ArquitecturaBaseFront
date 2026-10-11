@@ -43,6 +43,27 @@ for (const culture of ['es', 'en'] as const) describe('actual received form HTTP
     expect(JSON.stringify(parsed)).not.toContain('Equipo de prueba');
     expect(JSON.stringify(parsed)).not.toContain('12345678901234567890.12345678');
   });
+  it('consumes an actual older page using the exact cursor returned by the latest page', async () => {
+    const latest = whatsappFormsHttpJson<Thread>(culture, 'reply-latest-page');
+    const older = whatsappFormsHttpJson<Thread>(culture, 'reply-older-page');
+    const cursors: Array<{ at: string | null; id: string | null }> = [];
+    server.use(http.get('/api/whatsapp/chats/:id/messages', ({ request }) => {
+      const query = new URL(request.url).searchParams;
+      const cursor = { at: query.get('beforeAtUtc'), id: query.get('beforeId') };
+      cursors.push(cursor);
+      return new HttpResponse(whatsappFormsHttpBody(culture, cursor.id ? 'reply-older-page' : 'reply-latest-page'), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }));
+    const first = await getThread(latest.contact.id);
+    const second = await getThread(latest.contact.id, { at: first.beforeAtUtc!, id: first.beforeId! });
+    expect(cursors).toEqual([{ at: null, id: null }, { at: latest.beforeAtUtc, id: latest.beforeId }]);
+    expect(first.messages.map(row => row.id)).toEqual(latest.messages.map(row => row.id));
+    expect(second.messages.map(row => row.id)).toEqual(older.messages.map(row => row.id));
+    expect(first.messages.some(row => second.messages.some(previous => previous.id === row.id))).toBe(false);
+    expect(buildTimeline([...second.messages, ...first.messages], []).filter(row => row.kind === 'FlowReply').map(row => row.formReply!.state).sort())
+      .toEqual(['Pending', 'Rejected', 'Unrecognized']);
+  });
   it('preserves all processing states without fabricated receipts', async () => {
     const { parsed } = await read('reply-all-states');
     const replies = parsed.messages.filter(row => row.kind === 'FlowReply').map(row => row.formReply!);
