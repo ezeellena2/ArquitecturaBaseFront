@@ -231,5 +231,19 @@
     "en": "English"
   },
   "questionLimit": "You can add up to {{count}} questions. Remove one to add another.",
-  "savingLeave": "We are saving the draft. Wait for the result before leaving."
+  "savingLeave": "We are saving the draft. Wait for the result before leaving.",
+  "catalogs": {
+    "new": "New catalog",
+    "origin": {
+      "label": "Where the options come from",
+      "fixedHint": "Where do the options come from? This cannot change later: use a new catalog for another source.",
+      "manual": "Write them manually",
+      "manualHint": "For lists maintained by a person: customers, job types and warehouses. Add, order and deactivate options here.",
+      "filters": "Use database options with filters",
+      "filtersHint": "Choose a catalog view (currently Users) and which rows to include. It updates automatically: a new user appears in the next send.",
+      "query": "Write a query",
+      "queryUnavailable": "Advanced queries are not available yet.",
+      "continue": "Continue"
+    }
+  }
 }

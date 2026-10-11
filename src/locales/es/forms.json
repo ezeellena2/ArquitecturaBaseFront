@@ -231,5 +231,19 @@
     "en": "inglés"
   },
   "questionLimit": "Podés agregar hasta {{count}} preguntas. Quitá una para agregar otra.",
-  "savingLeave": "Estamos guardando el borrador. Esperá el resultado antes de salir."
+  "savingLeave": "Estamos guardando el borrador. Esperá el resultado antes de salir.",
+  "catalogs": {
+    "new": "Nuevo catálogo",
+    "origin": {
+      "label": "De dónde salen las opciones",
+      "fixedHint": "¿De dónde salen las opciones? No se puede cambiar después: para otro origen, se arma otro catálogo.",
+      "manual": "Escribirlas a mano",
+      "manualHint": "Para listas que mantiene una persona: clientes, tipos de trabajo, depósitos. Se agregan, ordenan y dan de baja acá.",
+      "filters": "Tomarlas de la base, con filtros",
+      "filtersHint": "Elegís una vista de catálogo (por ahora, Usuarios) y qué filas entran. Se actualiza sola: un usuario nuevo aparece en el próximo envío.",
+      "query": "Escribir una consulta",
+      "queryUnavailable": "Las consultas avanzadas todavía no están disponibles.",
+      "continue": "Continuar"
+    }
+  }
 }
