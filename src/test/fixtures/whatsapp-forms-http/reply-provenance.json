@@ -1,0 +1,109 @@
+{
+  "producer": "Real_http_reply_cards_preserve_exact_values_and_hide_them_without_read_permission",
+  "source": "C:/Users/ezequ/source/repos/ArquitecturaBase/.test-artifacts/forms-step4/http",
+  "sourceRevision": "6ee5be28119b07f0c74d4acce918b2f3351914e8 + working test harness",
+  "producerResult": "2/2 tests passed, 0 skipped; Docker PostgreSQL/Redis",
+  "bytesUnchanged": true,
+  "scope": "Actual HTTP/session/queue/webhook/PostgreSQL; fictitious neutral form and record ports, no typed Business Forms persistence or Meta proof",
+  "pagination": "Pending corrected producer export; not included",
+  "captures": [
+    {
+      "culture": "es",
+      "name": "reply-all-states",
+      "status": 200,
+      "length": 5169,
+      "sha256": "c65ecc9868cadcc4313543ec3f4bfdb6d735b312bcf079c6c05c137befdee09e"
+    },
+    {
+      "culture": "es",
+      "name": "reply-completed",
+      "status": 200,
+      "length": 2809,
+      "sha256": "5082f45a34323fbad43661b67ba7a2e94fe88bd03669d250702cbce9e440a1e4"
+    },
+    {
+      "culture": "es",
+      "name": "reply-pending",
+      "status": 200,
+      "length": 1691,
+      "sha256": "749890b4ddd57ea24e32509be995057aa64abd27fd32043d8b6a8fae6112d750"
+    },
+    {
+      "culture": "es",
+      "name": "reply-rejected",
+      "status": 200,
+      "length": 3820,
+      "sha256": "f036f9769baf910260f8ca406fed059caaa7d100e1cd0de01866728321477663"
+    },
+    {
+      "culture": "es",
+      "name": "reply-reloaded",
+      "status": 200,
+      "length": 2809,
+      "sha256": "5082f45a34323fbad43661b67ba7a2e94fe88bd03669d250702cbce9e440a1e4"
+    },
+    {
+      "culture": "es",
+      "name": "reply-unrecognized",
+      "status": 200,
+      "length": 4238,
+      "sha256": "256a8bd39f9439e47fcc288c26a028a4c7e8647b4d67d7cc044bf1312a1d6af8"
+    },
+    {
+      "culture": "es",
+      "name": "reply-without-read",
+      "status": 200,
+      "length": 1750,
+      "sha256": "d01db2292a71bf5fcb36c71d3bd3922f566edb93dd08550fc60e1c47f15b237d"
+    },
+    {
+      "culture": "en",
+      "name": "reply-all-states",
+      "status": 200,
+      "length": 5149,
+      "sha256": "1835363881b7a91a64cc8bfb452ec409f1428421e591968a54e6ccb41b434429"
+    },
+    {
+      "culture": "en",
+      "name": "reply-completed",
+      "status": 200,
+      "length": 2795,
+      "sha256": "f485a843628ad7e4f89036e79a62427263177dbb76cb6a407b0b78121c6b240c"
+    },
+    {
+      "culture": "en",
+      "name": "reply-pending",
+      "status": 200,
+      "length": 1691,
+      "sha256": "ca089eab287ea864593dca24ec127fe8804b7c46fb6dd2854e22e0b3c5b7d36c"
+    },
+    {
+      "culture": "en",
+      "name": "reply-rejected",
+      "status": 200,
+      "length": 3800,
+      "sha256": "db4177a606a5e970f413d6a6f5036392fb032e47a75e8c8b24a9567f9bd8f71f"
+    },
+    {
+      "culture": "en",
+      "name": "reply-reloaded",
+      "status": 200,
+      "length": 2795,
+      "sha256": "f485a843628ad7e4f89036e79a62427263177dbb76cb6a407b0b78121c6b240c"
+    },
+    {
+      "culture": "en",
+      "name": "reply-unrecognized",
+      "status": 200,
+      "length": 4218,
+      "sha256": "14634c51ec2bbb201b68750dcf761e255b75b9c3f357f10f9aa65d75ffb40197"
+    },
+    {
+      "culture": "en",
+      "name": "reply-without-read",
+      "status": 200,
+      "length": 1744,
+      "sha256": "85fc802fa984f0df6bb36b72c9ee7ae406414e0b7e093410036dce55ad101c56"
+    }
+  ]
+}
