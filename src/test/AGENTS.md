@@ -6,7 +6,7 @@
 
 - Reutilizá `renderWithProviders` o `renderRouteWithProviders`; cada render aísla su QueryClient y no reintenta.
 - Simulá HTTP con MSW y conservá formas de respuestas del backend. Los handlers de un escenario se restauran.
-- fixtures/forms-http conserva bytes sintéticos de respuestas reales de ApiFactory con SHA256/procedencia. api/httpContract.test también lee FORMS_HTTP_CONTRACT_INPUT para validar una salida nueva del productor backend. No serializar DTOs a mano como prueba de contrato real; los dobles complementan comportamiento y no acreditan Meta.
+- fixtures/forms-http y fixtures/whatsapp-forms-http conservan bytes sintéticos de respuestas reales de ApiFactory con SHA256/procedencia. Los consumidores de contrato leen FORMS_HTTP_CONTRACT_INPUT y WHATSAPP_FORMS_HTTP_CONTRACT_INPUT, respectivamente, para validar una salida nueva del productor backend. Las páginas de WhatsApp sirven los cuerpos crudos, incluido el hilo previo al envío, sin fabricar tarjetas ni quitar operaciones. No serializar DTOs a mano como prueba de contrato real; los dobles complementan comportamiento y no acreditan Meta.
 - Consultá por rol, texto accesible y comportamiento. Para páginas lazy esperá `findBy` o `waitFor`.
 - Radix se abre por teclado en tests; revisá stubs de jsdom antes de cambiar producto para corregir una limitación del entorno.
 - Layout, scroll, sticky y foco ocluido necesitan navegador: una assertion de clases no demuestra geometría.
