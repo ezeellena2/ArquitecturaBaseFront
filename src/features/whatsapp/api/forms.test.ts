@@ -1,3 +1,4 @@
+import { whatsappFormsHttpJson } from '@/test/fixtures/whatsappFormsHttp';
 import { afterEach, describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
@@ -8,7 +9,7 @@ const definitionId = "019abcde-1000-7000-8000-000000000001";
 const versionId = "019abcde-1000-7000-8000-000000000002";
 const request = { requestId: "019abcde-1000-7000-8000-000000000003", definitionId, versionId,
   expectedModeRevision: 7, expectedRecipientContextRevision: "context", message: "Complete this form" };
-const option = { definitionId, versionId, versionNumber: 1, name: { es: "Visita", en: "Visit" },
+const option = { definitionId, versionId, versionNumber: 1, prefix: "VIS", name: { es: "Visita", en: "Visit" },
   questionCount: 2, submitLabel: { es: "Confirmar", en: "Confirm" } };
 const forms = { page: { items: [option], page: 1, pageSize: 4, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false }, recipientCulture: "en", recipientContextRevision: "context" };
 const receipt = { id: "019abcde-1000-7000-8000-000000000004", requestId: request.requestId, operatorUserId: "actor",
@@ -19,6 +20,20 @@ afterEach(resetHttpClient);
 describe("Chat forms DTO contract", () => {
   it("preserves the complete sealed text maps and recipient language", () => {
     expect(parseChatForms(forms)).toEqual(forms);
+  });
+  it("accepts the required sealed prefix from the final selection DTO without dropping it", () => {
+    const finalDto = { ...forms, page: { ...forms.page, items: [{ ...option, prefix: "PRB1010" }] } };
+    expect(parseChatForms(finalDto)).toEqual(finalDto);
+  });
+  it.each(["es", "en"] as const)("accepts the unchanged current producer HTTP selector in %s", culture => {
+    const captured = whatsappFormsHttpJson(culture, "choices");
+    expect(parseChatForms(captured)).toEqual(captured);
+  });
+  it.each([undefined, null, 12, "", "prb", "1PRB", "PRB-1", "ABCDEFGHIJKLM", "PRB\n"])("rejects a missing or invalid required prefix %#", invalid => {
+    expect(() => parseChatForms({ ...forms, page: { ...forms.page, items: [{ ...option, prefix: invalid }] } })).toThrow("Unsupported chat form response.");
+  });
+  it("rejects unknown option fields while accepting the declared prefix", () => {
+    expect(() => parseChatForms({ ...forms, page: { ...forms.page, items: [{ ...option, unknownField: "private-value" }] } })).toThrow("Unsupported chat form response.");
   });
   it("accepts an empty selector when recipient eligibility disappeared", () => {
     const unavailable = { ...forms, page: { ...forms.page, items: [], totalCount: 0, totalPages: 0 }, recipientCulture: null, recipientContextRevision: null };

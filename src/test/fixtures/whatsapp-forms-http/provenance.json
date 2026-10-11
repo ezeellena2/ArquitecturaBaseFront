@@ -1,248 +1,248 @@
 {
-  "source": "C:/Users/ezequ/AppData/Local/Temp/whatsapp-form-history-contracts-20261011",
+  "source": "C:/Users/ezequ/source/repos/ArquitecturaBase/.test-artifacts/forms-step5/send-http",
   "producer": "Http_flow_contracts_preserve_form_presentation_across_queue_and_history",
-  "sourceRevision": "a0fae41+working-step3+history-fix+valid-phone-fixture",
-  "transport": "Captured provider; PostgreSQL and Redis Testcontainers; actual HTTP bodies",
+  "sourceRevision": "803b41dfdf97475bbb6aba503419f1a75906b8ef",
+  "transport": "Current controller HTTP with sealed selection prefix; fictitious providers and neutral forms source; real PostgreSQL/Redis Testcontainers",
   "bytesUnchanged": true,
-  "remainingStep3": "CTA and sealed version still pending in other backend tests; this cohort validates history only",
   "captures": [
     {
       "culture": "es",
-      "name": "choices",
-      "status": 200,
-      "sha256": "C9F978E7A26B67DC702995A3F7A671CAA55A1C150C7AAFD87B800874F35FA6C2",
-      "length": 459
-    },
-    {
-      "culture": "es",
-      "name": "thread-before-send",
-      "status": 200,
-      "sha256": "7E34954D7AD32CE3D27C87D9178C00332FBDD3EE185CA11BF78A2B8B5D19F75A",
-      "length": 735
-    },
-    {
-      "culture": "es",
       "name": "choices-forbidden",
-      "status": 403,
-      "sha256": "CBFD26CF6F70683B15911F2BA7635F99E295E0598A90338DA151AE48A760DECF",
-      "length": 249
+      "length": 249,
+      "sha256": "f38ee4852addaa69605f67d9afc5d9cc8bf91b0c93507bece435224f2f085adf",
+      "status": 403
     },
     {
       "culture": "es",
-      "name": "send-context-changed",
-      "status": 409,
-      "sha256": "67D7859A0985FB9F4C110481522112F885C60B65414AF776331DFBF1AC5A200B",
-      "length": 272
-    },
-    {
-      "culture": "es",
-      "name": "send-version-unavailable",
-      "status": 409,
-      "sha256": "1853C18473B25D61AA6C4B948A9ACA8A2E294D30E19D4D91244B6985FF13AC16",
-      "length": 257
-    },
-    {
-      "culture": "es",
-      "name": "send-pending",
-      "status": 202,
-      "sha256": "4304445A9DB77A4C66450D445DD2B311184D806F1D9CDACA372FCC73E1C5177B",
-      "length": 584
-    },
-    {
-      "culture": "es",
-      "name": "outgoing-pending",
-      "status": 200,
-      "sha256": "CAC914425A42C78F140AF1BD9496789A1BB655E04CE979C0C7300F1ADB5DE65A",
-      "length": 588
-    },
-    {
-      "culture": "es",
-      "name": "thread-pending",
-      "status": 200,
-      "sha256": "28B36695A1B1123DBAACB3771399452EAAC26CF36AA1A39D8D445AB376E1BDD7",
-      "length": 1223
+      "name": "choices",
+      "length": 475,
+      "sha256": "af293ebb40c301cc78a286ce4955c1e3a609cf9b27656260a89c22393ab82508",
+      "status": 200
     },
     {
       "culture": "es",
       "name": "outgoing-accepted",
-      "status": 200,
-      "sha256": "698FF80E33527D1EE95E2F08735C61AB6D0BC74E2326CEE4228E3E1A9D2CA86A",
-      "length": 633
-    },
-    {
-      "culture": "es",
-      "name": "thread-accepted",
-      "status": 200,
-      "sha256": "6D43B355D5A9EEBD10E3C4FBEE49B3DA2D50E0E29D9E2704C00D39FBE8D10C61",
-      "length": 1255
-    },
-    {
-      "culture": "es",
-      "name": "thread-reloaded",
-      "status": 200,
-      "sha256": "6D43B355D5A9EEBD10E3C4FBEE49B3DA2D50E0E29D9E2704C00D39FBE8D10C61",
-      "length": 1255
-    },
-    {
-      "culture": "es",
-      "name": "send-before-uncertain",
-      "status": 202,
-      "sha256": "A509ECB2420961294AEED6E731B2C4D8B98B873128D905D858A716CE841546CB",
-      "length": 584
-    },
-    {
-      "culture": "es",
-      "name": "outgoing-uncertain",
-      "status": 200,
-      "sha256": "846CD6EC9BA1F4DC6386EADB635EE0FB8F6B852B0983DE2D17906B11A486806C",
-      "length": 590
-    },
-    {
-      "culture": "es",
-      "name": "thread-uncertain",
-      "status": 200,
-      "sha256": "CF40B65AD89FCEEB1ADD457B0476E282188C38FADFBF8C73577304F307B93615",
-      "length": 1225
-    },
-    {
-      "culture": "es",
-      "name": "send-before-failed",
-      "status": 202,
-      "sha256": "789E4BF68E1252E343D82AF21270A83345A827091302D78D85E767CBAFDF7716",
-      "length": 584
+      "length": 633,
+      "sha256": "326c72a33588fe8eeb2190d59695ea79286f8f2d14e80ddd4e35116ea58cdcfd",
+      "status": 200
     },
     {
       "culture": "es",
       "name": "outgoing-failed",
-      "status": 200,
-      "sha256": "B58B5093CF50FE270BD4D7532E86B08892878ABF203CC59DDB9D1872BB99648D",
-      "length": 587
+      "length": 587,
+      "sha256": "c17c4b1c077942cbff1b01310a06472bf22388404c647aa2c2706ff35c3db858",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "outgoing-pending",
+      "length": 588,
+      "sha256": "2150fc53aa55b1685184d03b9cd089b3fcbb223d6f805816f196d5b930b9e85b",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "outgoing-uncertain",
+      "length": 590,
+      "sha256": "888729991600557d324fce9e0bc4f8770e34fa3baa5557eadcde75b55439907a",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "send-before-failed",
+      "length": 584,
+      "sha256": "b8b50a8be1d34617230aefb6384051c50d3266ccac57fb1d0ec6fbe94b725a69",
+      "status": 202
+    },
+    {
+      "culture": "es",
+      "name": "send-before-uncertain",
+      "length": 584,
+      "sha256": "f96856c98249b3e67f6d94fb88a57fdcc2d4a9144072cd5059ed92798b91e9cd",
+      "status": 202
+    },
+    {
+      "culture": "es",
+      "name": "send-context-changed",
+      "length": 322,
+      "sha256": "e2035ae49529f5973ce42667d9db5f76af1e938d9453a79bb949cd47ee63bae3",
+      "status": 409
+    },
+    {
+      "culture": "es",
+      "name": "send-pending",
+      "length": 584,
+      "sha256": "e80082ac1df5a195a31dc824bbf4f7a25e0f85caccdca88948d63a8ceed7a906",
+      "status": 202
+    },
+    {
+      "culture": "es",
+      "name": "send-version-unavailable",
+      "length": 273,
+      "sha256": "12e47d0531a00cdae481092f36611e93832178fd1fc5327327185c444bccb236",
+      "status": 409
+    },
+    {
+      "culture": "es",
+      "name": "thread-accepted",
+      "length": 1299,
+      "sha256": "07c701d539108505ff1e289f2a5be5181a08a9283f1694a9c02cf20f58e2aca9",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "thread-before-send",
+      "length": 762,
+      "sha256": "ba2c791c80a3c82309e54f22546996b31c070efd444b68ece30eaf09ceda642a",
+      "status": 200
     },
     {
       "culture": "es",
       "name": "thread-failed",
-      "status": 200,
-      "sha256": "2F566D474608CB30030BD63F78D9E2D2ACF6D6F3D25FB6F61770D43A0D530C84",
-      "length": 1222
+      "length": 1249,
+      "sha256": "2c67c4ac42ec7591bc3d7bd34142da6b2e9f4f72840a2dc8252dc2ddbcfd017b",
+      "status": 200
     },
     {
-      "culture": "en",
-      "name": "choices",
-      "status": 200,
-      "sha256": "962EFA2A3403D2071B58A07F0B8CFFC780C807F00D22EC82927378BCA9356FC2",
-      "length": 459
+      "culture": "es",
+      "name": "thread-pending",
+      "length": 1250,
+      "sha256": "4463bdc78e8c86fda714e710ae46a8b45f618ad00c39f128028ad33f3c3f6813",
+      "status": 200
     },
     {
-      "culture": "en",
-      "name": "thread-before-send",
-      "status": 200,
-      "sha256": "AB58D0CC86D83E70C1ED0DC4179CFBB8986C620D22AD2DADE323E3A0EAFA3FFE",
-      "length": 735
+      "culture": "es",
+      "name": "thread-reloaded",
+      "length": 1299,
+      "sha256": "07c701d539108505ff1e289f2a5be5181a08a9283f1694a9c02cf20f58e2aca9",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "thread-uncertain",
+      "length": 1252,
+      "sha256": "7df10e6170490c3ab191770556bd90b79a0a73d12226f7edcb1bb352cd9bd846",
+      "status": 200
     },
     {
       "culture": "en",
       "name": "choices-forbidden",
-      "status": 403,
-      "sha256": "A40E4865D5A1FEEE09CE78B149D33AEB5F0C5AA5D8C1A9C90304D7F015DE9A71",
-      "length": 247
+      "length": 247,
+      "sha256": "e40edc77dcad5bd7881c253651871ff31e15481d8fd048a0f0be1c577d66a844",
+      "status": 403
     },
     {
       "culture": "en",
-      "name": "send-context-changed",
-      "status": 409,
-      "sha256": "1598CEE430C28DB61688445773CE058AD2330B55A50D2CA35BA3601423ECE4BF",
-      "length": 271
-    },
-    {
-      "culture": "en",
-      "name": "send-version-unavailable",
-      "status": 409,
-      "sha256": "E6EAD687117EA92916AAE377441A40B1AF7B91C5EA98CBA3EE8B4FCABA635478",
-      "length": 256
-    },
-    {
-      "culture": "en",
-      "name": "send-pending",
-      "status": 202,
-      "sha256": "E5805CC6CBB53B281D7BC45C53AB47138C6CDCF2C08A75BAF62BD42E79F69714",
-      "length": 577
-    },
-    {
-      "culture": "en",
-      "name": "outgoing-pending",
-      "status": 200,
-      "sha256": "FA479CE1AAEE1B4133CECCE838AF6CCDFD2BB978662BF8ACFB87EE03C750D6A6",
-      "length": 577
-    },
-    {
-      "culture": "en",
-      "name": "thread-pending",
-      "status": 200,
-      "sha256": "206EA89865B3D2A5563934F2420FF64CC4A02C6B773C55824ADBA5760CF5B717",
-      "length": 1212
+      "name": "choices",
+      "length": 475,
+      "sha256": "b05a2c412ed77d9cd5f8e23ec70b6b66646651d4376c9ae6aaed7098e87da91f",
+      "status": 200
     },
     {
       "culture": "en",
       "name": "outgoing-accepted",
-      "status": 200,
-      "sha256": "B720067A107CA8CEA79511AB4B8FBAE79B4F76DFE531A5ECC7F876B58D66B613",
-      "length": 622
-    },
-    {
-      "culture": "en",
-      "name": "thread-accepted",
-      "status": 200,
-      "sha256": "B0B49B1496F05ADDE8A3D51466CFA0D04816B464FFFC17ED3E5D454459D0D14D",
-      "length": 1233
-    },
-    {
-      "culture": "en",
-      "name": "thread-reloaded",
-      "status": 200,
-      "sha256": "B0B49B1496F05ADDE8A3D51466CFA0D04816B464FFFC17ED3E5D454459D0D14D",
-      "length": 1233
-    },
-    {
-      "culture": "en",
-      "name": "send-before-uncertain",
-      "status": 202,
-      "sha256": "74318D72FA92850B61F110051493A7E96894D1C6D133960CAE04556037BAFE3C",
-      "length": 577
-    },
-    {
-      "culture": "en",
-      "name": "outgoing-uncertain",
-      "status": 200,
-      "sha256": "31610F73B505B2CCA0419DD6F3937CF65D5F7A8B4954325E0CB5FADDAB40505C",
-      "length": 579
-    },
-    {
-      "culture": "en",
-      "name": "thread-uncertain",
-      "status": 200,
-      "sha256": "0E5C09269500BE120C476B671044A8A034C5938049F7317F3024E5645B29EA3D",
-      "length": 1214
-    },
-    {
-      "culture": "en",
-      "name": "send-before-failed",
-      "status": 202,
-      "sha256": "67A0109DF4C7BD18D1547C43044576711292540F58EAF9E7A146978AD9B3D01C",
-      "length": 577
+      "length": 622,
+      "sha256": "047721f060a821b66979a766b6d77b7749ca4e3da9d8fc0f136d2be9050dc0e4",
+      "status": 200
     },
     {
       "culture": "en",
       "name": "outgoing-failed",
-      "status": 200,
-      "sha256": "355E167966F9B517EA7206FEA10821C60A570DF12807A30D5C9FA340B28BB3D3",
-      "length": 576
+      "length": 576,
+      "sha256": "87256a3f5eeb7af644d98ecadf75084452935b611e08f2c22bd7b897637572c4",
+      "status": 200
+    },
+    {
+      "culture": "en",
+      "name": "outgoing-pending",
+      "length": 577,
+      "sha256": "e6d22970d7c67e83d3a71eeccba6a959ffe21d0fab40d8d2f10e5e8a8c1457fb",
+      "status": 200
+    },
+    {
+      "culture": "en",
+      "name": "outgoing-uncertain",
+      "length": 579,
+      "sha256": "1c286a0a9bef541e0aa7c3773b7f4c6bf2b7985f8db0d77e0f9daf1566de0197",
+      "status": 200
+    },
+    {
+      "culture": "en",
+      "name": "send-before-failed",
+      "length": 577,
+      "sha256": "386d1123231df0b00eda3f796a9fd39c4be64c76400acd1d1d13d0c05a0e8f69",
+      "status": 202
+    },
+    {
+      "culture": "en",
+      "name": "send-before-uncertain",
+      "length": 577,
+      "sha256": "a024098737ef0b089654589267dbb89bab124c7950d48fcda9d58b32c075376f",
+      "status": 202
+    },
+    {
+      "culture": "en",
+      "name": "send-context-changed",
+      "length": 307,
+      "sha256": "c0bd2f7331925af8c5ece78f3f25402bd81317f85edf4587b9bbce6dcf52758b",
+      "status": 409
+    },
+    {
+      "culture": "en",
+      "name": "send-pending",
+      "length": 577,
+      "sha256": "937addcdd620506c0f466af3b930d50e6481051995caf1448949fa937fb05bf7",
+      "status": 202
+    },
+    {
+      "culture": "en",
+      "name": "send-version-unavailable",
+      "length": 263,
+      "sha256": "27885da4c4ae21265773fca8333f482051575fd14b11ac9b2e1ee395381bf455",
+      "status": 409
+    },
+    {
+      "culture": "en",
+      "name": "thread-accepted",
+      "length": 1277,
+      "sha256": "0f2811593ea597e79365426e0967e6f353685cfd7f400139f2ad7f115b1eaef6",
+      "status": 200
+    },
+    {
+      "culture": "en",
+      "name": "thread-before-send",
+      "length": 762,
+      "sha256": "7b4698b053bc8278ec24eafa49f163bb7a1fa608b960f81df392f50fd7952573",
+      "status": 200
     },
     {
       "culture": "en",
       "name": "thread-failed",
-      "status": 200,
-      "sha256": "C22412B24A258DD8E17EB9CC78E2760A0483145B0E94FE2D315C270479591F24",
-      "length": 1211
+      "length": 1238,
+      "sha256": "539bff42903bd437a00eb9e75f5f0e7406411c9136de38e29e04bf3474f913bc",
+      "status": 200
+    },
+    {
+      "culture": "en",
+      "name": "thread-pending",
+      "length": 1239,
+      "sha256": "a81ef7b4206a9f686d312794190b43c3d707f79c26c3525696d7ecaae80201ba",
+      "status": 200
+    },
+    {
+      "culture": "en",
+      "name": "thread-reloaded",
+      "length": 1277,
+      "sha256": "0f2811593ea597e79365426e0967e6f353685cfd7f400139f2ad7f115b1eaef6",
+      "status": 200
+    },
+    {
+      "culture": "en",
+      "name": "thread-uncertain",
+      "length": 1241,
+      "sha256": "8db009ff2b214e94f89e8501460df5687feac3a5c75aef3a203fe90132b88e6b",
+      "status": 200
     }
-  ]
+  ],
+  "producerResult": "2/2 es/en passed, 0 skipped"
 }

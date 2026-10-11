@@ -9,7 +9,9 @@ export interface FormEligibility { status: "Eligible" | "NoLinkedAccount" | "Ina
 const culture = z.enum(["es", "en"]);
 const guid = z.string().uuid();
 const localizedText = z.record(z.string(), z.string().min(1)).refine(map => Object.keys(map).every(key => key === "es" || key === "en"));
-const optionSchema = z.object({ definitionId: guid, versionId: guid, versionNumber: z.number().int().positive(), name: localizedText, questionCount: z.number().int().nonnegative(), submitLabel: localizedText }).strict();
+// Assert actual end of input, matching the backend prefix validator without accepting a trailing newline.
+const prefix = z.string().regex(/^[A-Z][A-Z0-9]{0,11}(?![\s\S])/);
+const optionSchema = z.object({ definitionId: guid, versionId: guid, versionNumber: z.number().int().positive(), prefix, name: localizedText, questionCount: z.number().int().nonnegative(), submitLabel: localizedText }).strict();
 export type ChatFormOption = z.infer<typeof optionSchema>;
 const formsSchema = z.object({ page: z.object({ items: z.array(optionSchema), page: z.number().int().positive(), pageSize: z.number().int().positive(), totalCount: z.number().int().nonnegative(), totalPages: z.number().int().nonnegative(), hasPrevious: z.boolean(), hasNext: z.boolean() }).strict(), recipientCulture: culture.nullable(), recipientContextRevision: z.string().min(1).nullable() }).strict().refine(value => value.page.items.length === 0 || value.recipientCulture !== null && value.recipientContextRevision !== null && value.page.items.every(option => !!option.name[value.recipientCulture!] && !!option.submitLabel[value.recipientCulture!]));
 export type ChatForms = z.infer<typeof formsSchema>;
