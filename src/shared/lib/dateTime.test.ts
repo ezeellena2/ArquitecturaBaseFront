@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTimeInZone, formatTimeInZone, calendarDateInZone } from "./dateTime";
+import { formatDateTimeInZone, formatTimeInZone, calendarDateInZone, formatDateOnly } from "./dateTime";
 
 describe("formatDateTimeInZone", () => {
   it("shows a UTC instant in the profile's time zone", () => {
@@ -24,5 +24,20 @@ describe("calendar dates and message times", () => {
       expect(calendarDateInZone(utc, "America/New_York")).toBe("2026-11-01");
       expect(formatTimeInZone(utc, "en-US", "America/New_York")).toBe("1:30 AM");
     }
+  });
+});
+
+
+describe("formatDateOnly", () => {
+  it("keeps a calendar day independent of the profile time zone", () => {
+    expect(formatDateOnly("2026-10-08", "es")).toBe("8 oct 2026");
+    expect(formatDateOnly("2026-10-08", "en")).toBe("Oct 8, 2026");
+  });
+  it("preserves valid leap days and early calendar years", () => {
+    expect(formatDateOnly("2024-02-29", "es")).toBe("29 feb 2024");
+    expect(formatDateOnly("0001-01-01", "en")).toBe("Jan 1, 1");
+  });
+  it.each(["2026-02-29", "2026-04-31", "2026-13-01", "2026-00-01", "2026-10-00", "2026-10-08T00:00:00Z", "2026-1-8", "", "0000-01-01"])("rejects an invalid calendar day %s", value => {
+    expect(formatDateOnly(value, "es")).toBeNull();
   });
 });
