@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"The linked recipient or their eligibility changed.","traceId":"00-c36b8b42dc728ebcb7f63122570caafa-9ee8888891e99ca9-01","code":"WhatsApp.Flow.RecipientContextChanged"}
