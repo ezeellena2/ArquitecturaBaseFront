@@ -195,14 +195,14 @@ test("uncertain publication keeps one UUID and replays only the same body after 
   await page.getByRole("button", { name: "Consultar publicación", exact: true }).click();
   const replay = page.getByRole("button", { name: "Repetir el mismo intento", exact: true });
   await expect(replay).toBeDisabled();
-  expect(await attempts()).toHaveLength(1);
+  await expect.poll(attempts).toHaveLength(1);
   await page.screenshot({ path: "test-results/forms-publication-uncertain-es-320.png", fullPage: true });
   await expect(replay).toBeEnabled({ timeout: 10000 });
   await replay.click();
   await expect(page.getByRole("heading", { name: "Publicando · versión 1", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).toHaveValue("Borrador posterior");
+  await expect.poll(attempts).toHaveLength(2);
   const sent = await attempts();
-  expect(sent).toHaveLength(2);
   expect(sent[1]).toBe(sent[0]);
   await expect(page.getByRole("textbox", { name: "Prefijo de numeración", exact: true })).toHaveAttribute("readonly", "");
 });
