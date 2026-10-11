@@ -9,13 +9,13 @@ import { buildTimeline } from "../lib/timeline";
 import { ChatComposer, type ChatDraft } from "./ChatComposer";
 import { ChatTimeline } from "./ChatTimeline";
 
-export function ChatThread({ id, actor, timeZone, canSend, canManage, draft, updateDraft, onBack }: {
-  id: string; actor: string; timeZone?: string; canSend: boolean; canManage: boolean; draft: ChatDraft;
+export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canManage, draft, updateDraft, onBack }: {
+  id: string; actor: string; readPermissions: readonly string[]; timeZone?: string; canSend: boolean; canManage: boolean; draft: ChatDraft;
   updateDraft: (update: (current: ChatDraft) => ChatDraft) => void; onBack: () => void;
 }) {
-  const { t } = useTranslation("whatsapp");
+  const { t, i18n } = useTranslation("whatsapp");
   const [atBottom, setAtBottom] = useState(true);
-  const { latest, history, messages, read } = useChatThread(id, actor, atBottom);
+  const { latest, history, messages, read } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
   const { mode, setMode, review, setReview, changing, reviewing } = useChatThreadActions(id, latest.refetch);
   const items = useMemo(() => buildTimeline(messages, latest.data?.outgoing ?? []), [messages, latest.data?.outgoing]);
   const contact = latest.data?.contact;

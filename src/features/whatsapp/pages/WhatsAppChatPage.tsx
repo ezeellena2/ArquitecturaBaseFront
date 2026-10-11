@@ -11,10 +11,11 @@ import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { cn } from "@/shared/lib/utils";
 import { ApiError } from "@/shared/api/ApiError";
-import { chatKey, listChats } from "../api/chat";
+import { listChats } from "../api/chat";
 import { ChatThread } from "../components/ChatThread";
 import type { ChatDraft } from "../components/ChatComposer";
 import { useVisibleChat } from "../hooks/useChatThread";
+import { chatReadScopeKey, useChatReadCleanup } from "../hooks/useChatReadScope";
 import { previewText } from "../lib/messagePresentation";
 
 export function WhatsAppChatPage() {
@@ -23,8 +24,11 @@ export function WhatsAppChatPage() {
 }
 
 function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
-  const { t } = useTranslation("whatsapp");
-  const { has } = usePermissions();
+  const { t, i18n } = useTranslation("whatsapp");
+  const { has, permissions } = usePermissions();
+  const readScope = { actor, culture: i18n.resolvedLanguage ?? "es", permissions };
+  const listRoot = [...chatReadScopeKey(readScope), "list"] as const;
+  useChatReadCleanup(listRoot);
   const [selected, setSelected] = useState<string>();
   const [search, setSearch] = useState("");
   const [unread, setUnread] = useState(false);
@@ -32,7 +36,11 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
   const [drafts, setDrafts] = useState<Record<string, ChatDraft>>({});
   const guard = useUnsavedChangesGuard(Object.values(drafts).some(draft => Boolean(draft.body.trim()) || Boolean(draft.attempt) || Boolean(draft.form?.touched) || Boolean(draft.form?.attempt)));
   const visible = useVisibleChat();
-  const list = useQuery({ queryKey: [...chatKey, actor, "list", page, search, unread], queryFn: ({ signal }) => listChats(page, search, unread, signal),
+  const list = useQuery({ queryKey: [...listRoot, page, search, unread], enabled: has("whatsapp.read"), queryFn: async ({ signal }) => {
+      const result = await listChats(page, search, unread, signal);
+      signal.throwIfAborted();
+      return result;
+    },
     refetchInterval: query => query.state.error instanceof ApiError && query.state.error.status === 403 ? false : visible ? 5000 : false });
   return (
     <Page title={t("title")} status={list.isError ? <span className="text-xs text-[var(--color-content-muted)]">{t("stale")}</span> : undefined}
@@ -62,7 +70,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
             </div> : null}
           </div>
           <div className={cn("min-h-0 min-w-0", selected ? "" : "max-md:hidden")}>
-            {selected ? <ChatThread key={selected} id={selected} actor={actor} timeZone={timeZone} canSend={has("whatsapp.send")} canManage={has("whatsapp.manage")} draft={drafts[selected] ?? { body: "" }}
+            {selected ? <ChatThread key={selected} id={selected} actor={actor} readPermissions={permissions} timeZone={timeZone} canSend={has("whatsapp.send")} canManage={has("whatsapp.manage")} draft={drafts[selected] ?? { body: "" }}
               updateDraft={update => setDrafts(current => ({ ...current, [selected]: update(current[selected] ?? { body: "" }) }))} onBack={() => setSelected(undefined)} /> :
               <div className="flex h-full items-center justify-center p-8 text-center text-sm text-[var(--color-content-muted)]">{t("select")}</div>}
           </div>

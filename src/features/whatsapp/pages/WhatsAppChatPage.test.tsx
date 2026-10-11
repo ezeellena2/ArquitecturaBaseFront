@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
+import { currentUserQueryKey } from "@/auth/useCurrentUser";
 import { queryClient } from "@/shared/api/queryClient";
+import * as chatApi from "../api/chat";
 import type { Chat, Outgoing, Thread } from "../api/chat";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
@@ -152,4 +154,37 @@ describe("WhatsAppChatPage", () => {
     expect(requests).toEqual([]);
     expect(screen.getByText("Envío sin confirmar")).toBeInTheDocument();
   });
+});
+
+
+it("removes inbox and thread payloads on permission changes without discarding the private text draft", async () => {
+  contact.preview = "obsolete inbox marker";
+  thread.messages[0].body = "obsolete thread marker";
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "whatsapp.send", "formrecords.read"] })));
+  const input = await open();
+  fireEvent.change(input, { target: { value: "Private draft kept" } });
+  expect(JSON.stringify(queryClient.getQueryCache().getAll().map(q => q.state.data))).toContain("obsolete inbox marker");
+  contact.preview = "Allowed inbox"; thread.messages[0].body = "Allowed history";
+  act(() => { queryClient.setQueryData(currentUserQueryKey, { ...currentUser, permissions: ["whatsapp.read", "whatsapp.send"] }); });
+  await waitFor(() => expect(screen.queryByText("obsolete thread marker")).not.toBeInTheDocument());
+  await waitFor(() => expect(JSON.stringify(queryClient.getQueryCache().getAll().map(q => q.state.data))).not.toContain("obsolete"));
+  expect(await screen.findByLabelText("Respuesta al cliente")).toHaveValue("Private draft kept");
+  expect(await screen.findByText("Allowed history")).toBeInTheDocument();
+});
+
+
+it("cancels an in-flight inbox query and refuses its old result after form record permission is revoked", async () => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "formrecords.read"] })));
+  let resolve!: (value: Awaited<ReturnType<typeof chatApi.listChats>>) => void;
+  const safe = { page: { items: [{ ...contact, preview: "Authorized inbox" }], totalCount: 1, page: 1, pageSize: 20, totalPages: 1 }, allCount: 1, unreadCount: 0 };
+  const reads = vi.spyOn(chatApi, "listChats").mockImplementationOnce(() => new Promise(done => { resolve = done; })).mockResolvedValue(safe);
+  renderRouteWithProviders("/whatsapp/chat");
+  await waitFor(() => expect(reads).toHaveBeenCalledOnce());
+  const oldSignal = reads.mock.calls[0][3]!;
+  act(() => { queryClient.setQueryData(currentUserQueryKey, { ...currentUser, permissions: ["whatsapp.read"] }); });
+  await waitFor(() => expect(reads).toHaveBeenCalledTimes(2));
+  expect(oldSignal.aborted).toBe(true);
+  await act(async () => { resolve({ ...safe, page: { ...safe.page, items: [{ ...contact, preview: "revoked inbox marker" }] } }); });
+  expect(JSON.stringify(queryClient.getQueryCache().getAll().map(q => q.state.data))).not.toContain("revoked inbox marker");
+  expect(await screen.findByText("Authorized inbox")).toBeInTheDocument();
 });
