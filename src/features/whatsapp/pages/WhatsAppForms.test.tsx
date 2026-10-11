@@ -17,7 +17,7 @@ beforeEach(()=>{
  queryClient.clear();posts=[];options=[{definitionId,versionId,versionNumber:1,prefix:"VIS",name:{es:"Registrar visita",en:"Register visit"},questionCount:4,submitLabel:{es:"Confirmar visita",en:"Confirm visit"}}];
  contact={id:"chat-forms",profileName:"Juan",phoneNumber:"+54 9 351 555-1234",mode:"Manual",modeRevision:7,lastInboundAtUtc:new Date().toISOString(),lastInboundSequence:1,unreadCount:0,preview:"Hola",linkedAccount:{userId:"employee",displayName:"Juan Gómez",email:"juan@example.com",isActive:true},formEligibility:{status:"Eligible",recipientCulture:"es",recipientContextRevision:"opaque-1"}};
  thread={contact,messages:[],outgoing:[],beforeAtUtc:null,beforeId:null};
- server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["whatsapp.read","whatsapp.send"]})),http.get("/api/whatsapp/chats",()=>HttpResponse.json({page:{items:[contact],page:1,pageSize:20,totalPages:1,totalCount:1},allCount:1,unreadCount:0})),http.get("/api/whatsapp/chats/:id/messages",()=>HttpResponse.json(thread)),http.put("/api/whatsapp/chats/:id/read",()=>new HttpResponse(null,{status:204})),http.get("/api/whatsapp/chats/:id/forms",()=>HttpResponse.json({page:{items:options,page:1,pageSize:4,totalCount:options.length,totalPages:1,hasPrevious:false,hasNext:false},recipientCulture:contact.formEligibility?.recipientCulture,recipientContextRevision:contact.formEligibility?.recipientContextRevision})),http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{const body=await request.json() as FormMessageRequest;posts.push(body);const result=receipt(body);thread.outgoing=[result as Thread['outgoing'][number]];return HttpResponse.json(result,{status:202});}));
+ server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["whatsapp.read","whatsapp.send","users.read"]})),http.get("/api/whatsapp/chats",()=>HttpResponse.json({page:{items:[contact],page:1,pageSize:20,totalPages:1,totalCount:1},allCount:1,unreadCount:0})),http.get("/api/whatsapp/chats/:id/messages",()=>HttpResponse.json(thread)),http.put("/api/whatsapp/chats/:id/read",()=>new HttpResponse(null,{status:204})),http.get("/api/whatsapp/chats/:id/forms",()=>HttpResponse.json({page:{items:options,page:1,pageSize:4,totalCount:options.length,totalPages:1,hasPrevious:false,hasNext:false},recipientCulture:contact.formEligibility?.recipientCulture,recipientContextRevision:contact.formEligibility?.recipientContextRevision})),http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{const body=await request.json() as FormMessageRequest;posts.push(body);const result=receipt(body);thread.outgoing=[result as Thread['outgoing'][number]];return HttpResponse.json(result,{status:202});}));
 });
 afterEach(()=>{queryClient.clear();vi.restoreAllMocks();});
 async function openChat(){renderRouteWithProviders("/whatsapp/chat");await userEvent.click(await screen.findByRole("button",{name:"Juan"}));return screen.findByLabelText("Respuesta al cliente");}
@@ -93,4 +93,26 @@ it("reopens the existing closed form dialog after a confirmed missing receipt an
   await waitFor(() => expect(posts).toHaveLength(2));
   expect(posts[1]).toEqual(posts[0]);
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+
+it("preserves read-only history when linked account and eligibility are withheld as null", async () => {
+  contact.linkedAccount = null;
+  contact.formEligibility = null;
+  thread.messages.push({id:"019abcde-1000-7000-8000-000000000010",direction:"Inbound",kind:"Text",body:"Historial permitido",occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"});
+  server.use(http.get("/api/me", () => HttpResponse.json({...currentUser,permissions:["whatsapp.read"]})));
+  await openChat();
+  expect(screen.getByText("Historial permitido")).toBeInTheDocument();
+  expect(screen.queryByText("Número sin cuenta vinculada")).not.toBeInTheDocument();
+  expect(screen.queryByText(/Cuenta vinculada/)).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", {name:"Enviar formulario"})).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", {name:"Enviar"})).not.toBeInTheDocument();
+});
+it.each([null, "juan@example.com"])("shows the authorized display name without inferring email absence when users.read is missing (%s)", async email => {
+  contact.linkedAccount!.email = email;
+  server.use(http.get("/api/me", () => HttpResponse.json({...currentUser,permissions:["whatsapp.read","whatsapp.send"]})));
+  await openChat();
+  expect(screen.queryByText(/juan@example.com/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/sin correo/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Juan Gómez/)).toBeInTheDocument();
+  expect(screen.getByRole("button", {name:"Enviar formulario"})).toBeEnabled();
 });

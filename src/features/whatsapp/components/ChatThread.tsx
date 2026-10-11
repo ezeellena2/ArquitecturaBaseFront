@@ -21,13 +21,16 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canM
   const contact = latest.data?.contact;
   if (!contact) return <div className="p-5 text-sm text-[var(--color-content-muted)]">{t(latest.isError ? "loadFailed" : "loading")} {latest.isError ? <Button variant="outline" size="sm" onClick={() => void latest.refetch()}>{t("retry")}</Button> : null}</div>;
   const forbidden = latest.error instanceof ApiError && latest.error.status === 403;
+  const linkedAccount = canSend ? contact.linkedAccount : undefined;
+  const mayReadEmail = readPermissions.includes("users.read");
+  const visibleEmail = mayReadEmail ? linkedAccount?.email : null;
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border)] p-3">
         <div className="flex min-w-0 items-center gap-2">
           <div className="md:hidden"><Button variant="outline" size="sm" onClick={onBack}>{t("back")}</Button></div>
           <div className="min-w-0"><h2 className="truncate text-base font-semibold">{contact.profileName ?? contact.phoneNumber ?? t("unnamed")}</h2><p className="text-xs text-[var(--color-content-muted)]">{contact.phoneNumber ?? t("send.noPhone")}</p>
-            {contact.linkedAccount === null ? <p className="text-xs text-[var(--color-content-muted)]">{t("forms.unlinkedHeader")}</p> : contact.linkedAccount ? <p className="break-words text-xs text-[var(--color-content-muted)]">{t("forms.linkedHeader",{account:contact.linkedAccount.email??contact.linkedAccount.displayName})}{!contact.linkedAccount.email ? " · "+t("forms.noEmail") : ""}{!contact.linkedAccount.isActive ? " · "+t("forms.inactive") : ""}</p> : null}
+            {linkedAccount === null ? <p className="text-xs text-[var(--color-content-muted)]">{t("forms.unlinkedHeader")}</p> : linkedAccount ? <p className="break-words text-xs text-[var(--color-content-muted)]">{t("forms.linkedHeader",{account:visibleEmail??linkedAccount.displayName})}{mayReadEmail&&!linkedAccount.email ? " · "+t("forms.noEmail") : ""}{!linkedAccount.isActive ? " · "+t("forms.inactive") : ""}</p> : null}
           </div>
         </div>
         <div className="flex items-center gap-2">

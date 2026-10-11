@@ -7,7 +7,7 @@ export type MessagePurpose = "Unclassified" | "Business" | "Access";
 export type AccessEventKind = "SignInCode" | "VerifyPhoneCode" | "Invitation" | "AccessRequested" | "AccessInstructions";
 export type OutgoingState = "Pending" | "Sending" | "Accepted" | "Failed" | "Uncertain" | "Reviewed";
 export interface Chat {
-  linkedAccount?: LinkedAccount | null; formEligibility?: FormEligibility;
+  linkedAccount?: LinkedAccount | null; formEligibility?: FormEligibility | null;
   id: string; profileName: string | null; phoneNumber: string | null; mode: ChatMode; modeRevision: number;
   lastInboundAtUtc: string; lastInboundSequence: number; unreadCount: number; preview: string | null;
   previewPurpose?: MessagePurpose; previewAccessEventKind?: AccessEventKind | null;
