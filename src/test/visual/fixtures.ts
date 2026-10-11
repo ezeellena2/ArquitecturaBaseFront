@@ -1,3 +1,5 @@
+import budgetEsRaw from "../fixtures/forms-http/budget-http/es.json?raw";
+import budgetEnRaw from "../fixtures/forms-http/budget-http/en.json?raw";
 import { createChatFormFixtures } from "./chatFormFixtures";
 import { createAssistantVisualFixtures } from "./assistantFixtures";
 import { createFormFixtureStore } from "./formFixtures";
@@ -19,7 +21,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const chatFormsFixture = chatFormsScenario ? createChatFormFixtures(language, scenario!) : undefined;
   if (chatFormsFixture) Object.assign(globalThis,{chatFormsFixture});
   const formsScenario = !chatFormsScenario && (scenario?.startsWith("forms-") ?? false);
-  const formsFixture = formsScenario ? createFormFixtureStore(language, scenario!) : undefined;
+  const formsFixture = formsScenario ? createFormFixtureStore(language, scenario!, language === "es" ? budgetEsRaw : budgetEnRaw) : undefined;
   if (formsFixture) Object.assign(globalThis, { formsFixture });
   const assistantScenario = scenario?.startsWith("assistant-") ?? false;
   const assistantFixture = assistantScenario ? createAssistantVisualFixtures(language, scenario!) : undefined;

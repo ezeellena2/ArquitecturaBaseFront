@@ -1,6 +1,17 @@
 import {test,expect} from "@playwright/test";
-import {fixtureFormId} from "./formFixtures";
+import {fixtureFormId,responseBudgetDefinition} from "./formFixtures";
 for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
+ test(`A2 blocked publication locates the question with keyboard focus ${lang} at ${width}px`,async({page})=>{
+ const es=lang==="es";const definition=responseBudgetDefinition(lang);await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${definition.id}&scenario=forms-publication-budget-http&lang=${lang}`);
+ const trigger=page.getByRole("button",{name:es?"Publicar en WhatsApp":"Publish on WhatsApp",exact:true});await trigger.click();
+ const dialog=page.getByRole("dialog");await expect(dialog.getByRole("button",{name:es?"Publicar versión 1":"Publish version 1",exact:true})).toBeDisabled();
+ await dialog.getByRole("button",{name:es?"Cancelar":"Cancel",exact:true}).click();await expect(trigger).toBeFocused();await trigger.click();
+ await expect(dialog.getByRole("button",{name:es?"Publicar versión 1":"Publish version 1",exact:true})).toBeDisabled();await dialog.press("Escape");await expect(trigger).toBeFocused();await trigger.click();
+ const jump=dialog.getByRole("button",{name:es?"Ir a la pregunta":"Go to the question",exact:true}).first();await jump.click();await expect(dialog).toHaveCount(0);
+ const question=page.getByRole("textbox",{name:es?"Pregunta":"Question",exact:true});await expect(question).toHaveValue("Response 0");await expect(question).toBeFocused();
+ await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:`test-results/forms-budget-located-${lang}-${width}.png`,fullPage:true});
+ });
+
  test(`uncertain publication shows one review warning ${lang} at ${width}px`,async({page})=>{
  const es=lang==="es";await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-uncertain-reload&lang=${lang}`);
  const panel=page.getByRole("region",{name:es?"Publicación sin confirmar":"Publication unconfirmed",exact:true});const hint=es?"Esta publicación necesita revisión. No inicies otra para intentar resolverla.":"This publication needs review. Do not start another one to try to resolve it.";

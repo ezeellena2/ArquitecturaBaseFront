@@ -1,3 +1,5 @@
+import budgetEsCheck from "../fixtures/forms-http/budget-http/es.json" with { type: "json" };
+import budgetEnCheck from "../fixtures/forms-http/budget-http/en.json" with { type: "json" };
 import publishedEsList from "../fixtures/forms-http/published/list-es.json" with { type: "json" };
 import publishedEnList from "../fixtures/forms-http/published/list-en.json" with { type: "json" };
 import publishedEsDetail from "../fixtures/forms-http/published/detail-es.json" with { type: "json" };
@@ -25,13 +27,22 @@ export function fixtureDefinition(culture: FormCulture = "es", prefixLocked = fa
       { ...common(15, "Observaciones", "Notes"), type: "longText", maxLength: 2000, required: false, help: { [culture]: culture === "es" ? "Contá lo que pasó." : "Describe what happened." } },
     ] } };
 }
+const responseBudgetChecks = { es: budgetEsCheck, en: budgetEnCheck };
+// Only the check is raw controller output; the editor snapshot is a matching test double.
+export function responseBudgetDefinition(culture: FormCulture): FormDefinitionSnapshot {
+ const checked = responseBudgetChecks[culture];
+ return { ...fixtureDefinition(), id: checked.definitionId, revision: checked.draftRevision,
+  draft: { format: 1, culture: "es", submitLabel: { es: "Enviar", en: "Submit" }, fields: [...new Set(checked.issues.map(issue => issue.fieldId))].map((fieldId,index) => ({
+   fieldId, key: key(fieldId), type: "longText", required: true, maxLength: 10000, help: null, label: { es: "Respuesta "+index, en: "Response "+index },
+  })) } };
+}
 export function wireDefinition(definition: FormDefinitionSnapshot) {
   return { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map(q => ({ ...q,
     maxLength: "maxLength" in q ? q.maxLength : null, options: q.type === "choice" ? q.options : null,
   })) } };
 }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-export function createFormFixtureStore(culture: FormCulture = "es", scenario = "") {
+export function createFormFixtureStore(culture: FormCulture = "es", scenario = "", responseBudgetRaw?: string) {
   const definitions = new Map<string, FormDefinitionSnapshot>();
   if (scenario !== "forms-empty") definitions.set(fixtureFormId, fixtureDefinition(culture, scenario === "forms-prefix"));
   if (scenario === "forms-translations") {
@@ -39,6 +50,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: original.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : q.type === "choice" ? { ...q, options: q.options.map((o, index) => index === 0 ? { ...o, label: { ...o.label, en: "" } } : o) } : q) } });
   }
   if (scenario.startsWith("forms-publication")) { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "longText" ? { ...q, help: { es: "Contá lo que pasó.", en: "Describe what happened." } } : q) } }); }
+  if(scenario === "forms-publication-budget-http"){ const budget=responseBudgetDefinition(culture);definitions.clear();definitions.set(budget.id,budget); }
   const publications = new Map<string, { definitionId: string; requestId: string; operationId: string; versionId: string; versionNumber: number; draftRevision: number; state: string; acceptedAtUtc: string; recoveryPath: string }>();
   const publicationStates = new Map<string,string>();
   const reloadFailed = scenario === "forms-publication-failed-reload";
@@ -75,6 +87,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     if (scenario === "forms-denied") return json({ code: "General.Forbidden" }, 403);
 
     if (request.method === "POST" && path.endsWith("/publication-checks")) {
+      if(scenario === "forms-publication-budget-http"){if(!responseBudgetRaw)throw new Error("Missing raw response budget capture.");return new Response(responseBudgetRaw,{status:200,headers:{"Content-Type":"application/json"}});}
       const definition = definitions.get(path.split("/").at(-2)!);
       if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
       const input = await request.json() as DraftWriteBody;

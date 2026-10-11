@@ -106,6 +106,26 @@
     {
       "path": "failed/status-es.json",
       "sha256": "67b7a9afea0a6a86226de6c2ff43864650a075fb11204f8f132055c9c7a877ef"
+    },
+    {
+      "path": "budget-http/es.json",
+      "sha256": "cd4ee56e0bbd210ef1f3ed914fc6b982b3ea027baa0208de8a534653b36087c8",
+      "length": 31501,
+      "status": 200
+    },
+    {
+      "path": "budget-http/en.json",
+      "sha256": "a240b4b45ecc362ba19b834e5cc611b4546b8756510cbde8c801c8e75d86f31d",
+      "length": 28941,
+      "status": 200
     }
-  ]
+  ],
+  "budgetProducer": {
+    "test": "A_saved_form_exceeding_the_response_budget_returns_localized_field_issues_without_acceptance_ticket",
+    "source": "C:/Users/ezequ/source/repos/ArquitecturaBase/.test-artifacts/forms-step5/http-profile-r4/budget-http",
+    "sourceRevision": "48e05da659d6ba73df5967c9af1e31f1ebe07eb7",
+    "sourceState": "Committed r4 producer; raw captures confirmed byte-exact after final commit",
+    "bytesUnchanged": true,
+    "transport": "Actual HTTP200 check responses; PostgreSQL/Redis ApiFactory; Meta simulated; draft/detail and session doubles in frontend tests match captured field identities"
+  }
 }
