@@ -1,248 +1,342 @@
 {
-  "source": "C:/Users/ezequ/source/repos/ArquitecturaBase/.test-artifacts/forms-step5/send-http",
-  "producer": "Http_flow_contracts_preserve_form_presentation_across_queue_and_history",
-  "sourceRevision": "803b41dfdf97475bbb6aba503419f1a75906b8ef",
-  "transport": "Current controller HTTP with sealed selection prefix; fictitious providers and neutral forms source; real PostgreSQL/Redis Testcontainers",
+  "sourceRevision": "72ef72703b5aaf075b5af5e464583f981718d3c1",
+  "producerManifest": "C:/Users/ezequ/source/repos/ArquitecturaBase/.test-artifacts/forms-step5/http-final-manifest.json",
+  "producerManifestSha256": "384b208fac7934619317392c9d1ff791759a4e88262be2da1d014b064b43e06c",
   "bytesUnchanged": true,
+  "scope": "Actual controller HTTP with real PostgreSQL/Redis Testcontainers; fictitious Meta and neutral form/record ports; no typed Business Forms persistence or physical Meta proof",
+  "remainingBackendWork": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "M3"
+  ],
+  "source": "C:/Users/ezequ/source/repos/ArquitecturaBase/.test-artifacts/forms-step5",
+  "producer": [
+    "Http_flow_contracts_preserve_form_presentation_across_queue_and_history",
+    "M2 account/email privacy HTTP cases"
+  ],
+  "producerResult": "11/11 WhatsAppFormSendingTests; PostgreSQL/Redis real; Meta and neutral form/record ports simulated",
   "captures": [
     {
-      "culture": "es",
-      "name": "choices-forbidden",
-      "length": 249,
-      "sha256": "f38ee4852addaa69605f67d9afc5d9cc8bf91b0c93507bece435224f2f085adf",
-      "status": 403
+      "culture": "en",
+      "name": "thread-read-only",
+      "sourceGroup": "privacy-http",
+      "length": 454,
+      "sha256": "65259d4456311e6e5f731f917c3ef7c31b4b2fc7d82d9cada409eefc42154a5e",
+      "status": 200
     },
     {
-      "culture": "es",
-      "name": "choices",
-      "length": 475,
-      "sha256": "af293ebb40c301cc78a286ce4955c1e3a609cf9b27656260a89c22393ab82508",
+      "culture": "en",
+      "name": "thread-send-with-users-read",
+      "sourceGroup": "privacy-http",
+      "length": 743,
+      "sha256": "dd6e5aeddf084265079c1eda554b0f2a253c5325db0937d5ffd3c6985480b6bc",
+      "status": 200
+    },
+    {
+      "culture": "en",
+      "name": "thread-send-without-users-read",
+      "sourceGroup": "privacy-http",
+      "length": 691,
+      "sha256": "cdb95d192a018bb897ee7acc3d6279c07e091aa8eb40938a7dd9923d50a13be4",
       "status": 200
     },
     {
       "culture": "es",
-      "name": "outgoing-accepted",
-      "length": 633,
-      "sha256": "326c72a33588fe8eeb2190d59695ea79286f8f2d14e80ddd4e35116ea58cdcfd",
+      "name": "thread-read-only",
+      "sourceGroup": "privacy-http",
+      "length": 454,
+      "sha256": "4660fee2ef03b61e9d2efbea6044b8a81929187b8cf2de3f044b5cf5f4d1f3dc",
       "status": 200
     },
     {
       "culture": "es",
-      "name": "outgoing-failed",
-      "length": 587,
-      "sha256": "c17c4b1c077942cbff1b01310a06472bf22388404c647aa2c2706ff35c3db858",
+      "name": "thread-send-with-users-read",
+      "sourceGroup": "privacy-http",
+      "length": 743,
+      "sha256": "d4c30a52bd69a51deaf229bbc9537c190dcde10cae45d92eb9dd1b7e42d00116",
       "status": 200
     },
     {
       "culture": "es",
-      "name": "outgoing-pending",
-      "length": 588,
-      "sha256": "2150fc53aa55b1685184d03b9cd089b3fcbb223d6f805816f196d5b930b9e85b",
-      "status": 200
-    },
-    {
-      "culture": "es",
-      "name": "outgoing-uncertain",
-      "length": 590,
-      "sha256": "888729991600557d324fce9e0bc4f8770e34fa3baa5557eadcde75b55439907a",
-      "status": 200
-    },
-    {
-      "culture": "es",
-      "name": "send-before-failed",
-      "length": 584,
-      "sha256": "b8b50a8be1d34617230aefb6384051c50d3266ccac57fb1d0ec6fbe94b725a69",
-      "status": 202
-    },
-    {
-      "culture": "es",
-      "name": "send-before-uncertain",
-      "length": 584,
-      "sha256": "f96856c98249b3e67f6d94fb88a57fdcc2d4a9144072cd5059ed92798b91e9cd",
-      "status": 202
-    },
-    {
-      "culture": "es",
-      "name": "send-context-changed",
-      "length": 322,
-      "sha256": "e2035ae49529f5973ce42667d9db5f76af1e938d9453a79bb949cd47ee63bae3",
-      "status": 409
-    },
-    {
-      "culture": "es",
-      "name": "send-pending",
-      "length": 584,
-      "sha256": "e80082ac1df5a195a31dc824bbf4f7a25e0f85caccdca88948d63a8ceed7a906",
-      "status": 202
-    },
-    {
-      "culture": "es",
-      "name": "send-version-unavailable",
-      "length": 273,
-      "sha256": "12e47d0531a00cdae481092f36611e93832178fd1fc5327327185c444bccb236",
-      "status": 409
-    },
-    {
-      "culture": "es",
-      "name": "thread-accepted",
-      "length": 1299,
-      "sha256": "07c701d539108505ff1e289f2a5be5181a08a9283f1694a9c02cf20f58e2aca9",
-      "status": 200
-    },
-    {
-      "culture": "es",
-      "name": "thread-before-send",
-      "length": 762,
-      "sha256": "ba2c791c80a3c82309e54f22546996b31c070efd444b68ece30eaf09ceda642a",
-      "status": 200
-    },
-    {
-      "culture": "es",
-      "name": "thread-failed",
-      "length": 1249,
-      "sha256": "2c67c4ac42ec7591bc3d7bd34142da6b2e9f4f72840a2dc8252dc2ddbcfd017b",
-      "status": 200
-    },
-    {
-      "culture": "es",
-      "name": "thread-pending",
-      "length": 1250,
-      "sha256": "4463bdc78e8c86fda714e710ae46a8b45f618ad00c39f128028ad33f3c3f6813",
-      "status": 200
-    },
-    {
-      "culture": "es",
-      "name": "thread-reloaded",
-      "length": 1299,
-      "sha256": "07c701d539108505ff1e289f2a5be5181a08a9283f1694a9c02cf20f58e2aca9",
-      "status": 200
-    },
-    {
-      "culture": "es",
-      "name": "thread-uncertain",
-      "length": 1252,
-      "sha256": "7df10e6170490c3ab191770556bd90b79a0a73d12226f7edcb1bb352cd9bd846",
+      "name": "thread-send-without-users-read",
+      "sourceGroup": "privacy-http",
+      "length": 691,
+      "sha256": "052022e8320a334c401bed3d385b6354b29463bd124ac16d27f68373ec343d42",
       "status": 200
     },
     {
       "culture": "en",
       "name": "choices-forbidden",
+      "sourceGroup": "send-http",
       "length": 247,
-      "sha256": "e40edc77dcad5bd7881c253651871ff31e15481d8fd048a0f0be1c577d66a844",
+      "sha256": "737a9b726448921616c766582db10a8209fdf89b02942daa5df441f62b8438f8",
       "status": 403
     },
     {
       "culture": "en",
       "name": "choices",
+      "sourceGroup": "send-http",
       "length": 475,
-      "sha256": "b05a2c412ed77d9cd5f8e23ec70b6b66646651d4376c9ae6aaed7098e87da91f",
+      "sha256": "cb5367a3a51dd82f0e1ba5191678d462f9009c1c5c411d30f40ba5328fbbddec",
       "status": 200
     },
     {
       "culture": "en",
       "name": "outgoing-accepted",
+      "sourceGroup": "send-http",
       "length": 622,
-      "sha256": "047721f060a821b66979a766b6d77b7749ca4e3da9d8fc0f136d2be9050dc0e4",
+      "sha256": "b2c4b691fbbf31d234d38b6e286ca8dbfc0682217cd1dbff11edcd6b82fa5a02",
       "status": 200
     },
     {
       "culture": "en",
       "name": "outgoing-failed",
+      "sourceGroup": "send-http",
       "length": 576,
-      "sha256": "87256a3f5eeb7af644d98ecadf75084452935b611e08f2c22bd7b897637572c4",
+      "sha256": "522684937d9e488c77c81cbe74b3e6af7d88fd42e7a740396520b35aea95e4b4",
       "status": 200
     },
     {
       "culture": "en",
       "name": "outgoing-pending",
+      "sourceGroup": "send-http",
       "length": 577,
-      "sha256": "e6d22970d7c67e83d3a71eeccba6a959ffe21d0fab40d8d2f10e5e8a8c1457fb",
+      "sha256": "214fde45a14f5c5ad6889f06528e5ec5bb5aa99105c2e87a4151472b1842477c",
       "status": 200
     },
     {
       "culture": "en",
       "name": "outgoing-uncertain",
+      "sourceGroup": "send-http",
       "length": 579,
-      "sha256": "1c286a0a9bef541e0aa7c3773b7f4c6bf2b7985f8db0d77e0f9daf1566de0197",
+      "sha256": "0db18151e7a78f1c988969ccc296a5365d83e39056224a0645c6ae3aebe5f95a",
       "status": 200
     },
     {
       "culture": "en",
       "name": "send-before-failed",
+      "sourceGroup": "send-http",
       "length": 577,
-      "sha256": "386d1123231df0b00eda3f796a9fd39c4be64c76400acd1d1d13d0c05a0e8f69",
+      "sha256": "0e829632a124aab57f91c79bd6743f480057a6e6d1178fefed0e7befc1d81eef",
       "status": 202
     },
     {
       "culture": "en",
       "name": "send-before-uncertain",
+      "sourceGroup": "send-http",
       "length": 577,
-      "sha256": "a024098737ef0b089654589267dbb89bab124c7950d48fcda9d58b32c075376f",
+      "sha256": "91907548a032bf5bb54f1dd8f96268583bc6d1786d80c5eba81d0941ceadb9cd",
       "status": 202
     },
     {
       "culture": "en",
       "name": "send-context-changed",
+      "sourceGroup": "send-http",
       "length": 307,
-      "sha256": "c0bd2f7331925af8c5ece78f3f25402bd81317f85edf4587b9bbce6dcf52758b",
+      "sha256": "cdd00f75dc9623ecd0cd97afc99b0275b143c02e255fc20239441ef1c5494efb",
       "status": 409
     },
     {
       "culture": "en",
       "name": "send-pending",
+      "sourceGroup": "send-http",
       "length": 577,
-      "sha256": "937addcdd620506c0f466af3b930d50e6481051995caf1448949fa937fb05bf7",
+      "sha256": "4658a222aaeb9c43df6132147d05b576e83945b1771df785d41f07ad5e147f00",
       "status": 202
     },
     {
       "culture": "en",
       "name": "send-version-unavailable",
+      "sourceGroup": "send-http",
       "length": 263,
-      "sha256": "27885da4c4ae21265773fca8333f482051575fd14b11ac9b2e1ee395381bf455",
+      "sha256": "1406d3990dd27f3b1afd505afbc061c204c9bc4e60f64f238ffaa2a18d9b2a3e",
       "status": 409
     },
     {
       "culture": "en",
       "name": "thread-accepted",
-      "length": 1277,
-      "sha256": "0f2811593ea597e79365426e0967e6f353685cfd7f400139f2ad7f115b1eaef6",
+      "sourceGroup": "send-http",
+      "length": 1216,
+      "sha256": "c66fe67857870b15bbcb0359bf6e925117a6473285f1952258185991c47115fd",
       "status": 200
     },
     {
       "culture": "en",
       "name": "thread-before-send",
-      "length": 762,
-      "sha256": "7b4698b053bc8278ec24eafa49f163bb7a1fa608b960f81df392f50fd7952573",
+      "sourceGroup": "send-http",
+      "length": 701,
+      "sha256": "3549270c200edd26810c7f0423c4a61d9d9ac18d4fb7acc12d457af11ad58709",
       "status": 200
     },
     {
       "culture": "en",
       "name": "thread-failed",
-      "length": 1238,
-      "sha256": "539bff42903bd437a00eb9e75f5f0e7406411c9136de38e29e04bf3474f913bc",
+      "sourceGroup": "send-http",
+      "length": 1177,
+      "sha256": "df2b70d7ac440d1868b378dc1be7233d0dd6ce231eb98c5ca4b202e664b3ee86",
       "status": 200
     },
     {
       "culture": "en",
       "name": "thread-pending",
-      "length": 1239,
-      "sha256": "a81ef7b4206a9f686d312794190b43c3d707f79c26c3525696d7ecaae80201ba",
+      "sourceGroup": "send-http",
+      "length": 1178,
+      "sha256": "98dea8ff67120efc43ff2a11c86c534943d408bb38ec868a5bc62f478352b16a",
       "status": 200
     },
     {
       "culture": "en",
       "name": "thread-reloaded",
-      "length": 1277,
-      "sha256": "0f2811593ea597e79365426e0967e6f353685cfd7f400139f2ad7f115b1eaef6",
+      "sourceGroup": "send-http",
+      "length": 1216,
+      "sha256": "c66fe67857870b15bbcb0359bf6e925117a6473285f1952258185991c47115fd",
       "status": 200
     },
     {
       "culture": "en",
       "name": "thread-uncertain",
-      "length": 1241,
-      "sha256": "8db009ff2b214e94f89e8501460df5687feac3a5c75aef3a203fe90132b88e6b",
+      "sourceGroup": "send-http",
+      "length": 1180,
+      "sha256": "fbe2cbea87c8025e2069e46649909d57137e8aa42b226029fa88ecb89f5f4a9e",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "choices-forbidden",
+      "sourceGroup": "send-http",
+      "length": 249,
+      "sha256": "7369bddcd725a9d6a64f8274c50f59b8db6236f95e95e99cfb61dd7ff80677ff",
+      "status": 403
+    },
+    {
+      "culture": "es",
+      "name": "choices",
+      "sourceGroup": "send-http",
+      "length": 475,
+      "sha256": "8ac500096ed64d65ba69bbf5579758df02eed91d9891022016ddd81e9a0724c1",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "outgoing-accepted",
+      "sourceGroup": "send-http",
+      "length": 633,
+      "sha256": "bfdbcf8b2f97e697190a098e07770d3fe35bdca081ec99178c7e6b63ed37a051",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "outgoing-failed",
+      "sourceGroup": "send-http",
+      "length": 587,
+      "sha256": "9ed3db962a32267c80c13faa9415cb3328cff714ad8232a3ab2c71a63cb8190d",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "outgoing-pending",
+      "sourceGroup": "send-http",
+      "length": 588,
+      "sha256": "2c30b6d08738b8e6efdf550bac367e7adf4acfd4371f4bf58813dc1f501a0afd",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "outgoing-uncertain",
+      "sourceGroup": "send-http",
+      "length": 590,
+      "sha256": "88fd93ea4ef42ba61ec56ca8b3f932064b77e5235a4096676870fd388453d5e1",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "send-before-failed",
+      "sourceGroup": "send-http",
+      "length": 584,
+      "sha256": "51ad5b726c9a067f191c5cedd864a4a49175f4cb574d920a680cfcbb739ee995",
+      "status": 202
+    },
+    {
+      "culture": "es",
+      "name": "send-before-uncertain",
+      "sourceGroup": "send-http",
+      "length": 584,
+      "sha256": "37cde5f250e2beb73508afd6d8bcd8c3375e985689c0f79eb7a40078b9946a98",
+      "status": 202
+    },
+    {
+      "culture": "es",
+      "name": "send-context-changed",
+      "sourceGroup": "send-http",
+      "length": 322,
+      "sha256": "561b815dcfb04c615b81a851bec5b9473f0454c1472343d0dd7cdafef4a4ca7d",
+      "status": 409
+    },
+    {
+      "culture": "es",
+      "name": "send-pending",
+      "sourceGroup": "send-http",
+      "length": 584,
+      "sha256": "8ff1b4d294e74d35b6a06f0102d6dd1950c51ec8a104f73190d9bc60a9ae92a4",
+      "status": 202
+    },
+    {
+      "culture": "es",
+      "name": "send-version-unavailable",
+      "sourceGroup": "send-http",
+      "length": 273,
+      "sha256": "10b090e940ac88e52005d5b9ed8fcdbb823a5df8b1fa9790e841a1c3f4b4bab5",
+      "status": 409
+    },
+    {
+      "culture": "es",
+      "name": "thread-accepted",
+      "sourceGroup": "send-http",
+      "length": 1238,
+      "sha256": "6bb1fa4a8e298c616b9334c714e637a9e51d48758857c448688b148fbc724df0",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "thread-before-send",
+      "sourceGroup": "send-http",
+      "length": 701,
+      "sha256": "ffa5971e7f1cf0da77bdb6e80770124932d81ba975d7582d6d39a005fbce56de",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "thread-failed",
+      "sourceGroup": "send-http",
+      "length": 1188,
+      "sha256": "800d23c8b79fc5719a04f25e688a86d829ca36da23c0321cb2b6a140b36911c9",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "thread-pending",
+      "sourceGroup": "send-http",
+      "length": 1189,
+      "sha256": "3e9eda502a3536d0e868418daf0ec356afd5168d2f4d3eed98eb8476a1663b04",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "thread-reloaded",
+      "sourceGroup": "send-http",
+      "length": 1238,
+      "sha256": "6bb1fa4a8e298c616b9334c714e637a9e51d48758857c448688b148fbc724df0",
+      "status": 200
+    },
+    {
+      "culture": "es",
+      "name": "thread-uncertain",
+      "sourceGroup": "send-http",
+      "length": 1191,
+      "sha256": "af541e1c75261474f5430307608ba0d63cb27369a0f82cd8a7809f6f24e3733b",
       "status": 200
     }
-  ],
-  "producerResult": "2/2 es/en passed, 0 skipped"
+  ]
 }

@@ -7,7 +7,7 @@ import { currentUser } from '@/test/mocks/handlers';
 import { server } from '@/test/mocks/server';
 import { renderRouteWithProviders } from '@/test/utils/renderWithProviders';
 import { queryClient } from '@/shared/api/queryClient';
-import type { Thread } from '../api/chat';
+import type { Chats, Thread } from '../api/chat';
 
 vi.mock('react-oidc-context', async () => ({ ...(await vi.importActual<typeof import('react-oidc-context')>('react-oidc-context')),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: 't' } }) }));
@@ -91,5 +91,37 @@ for (const culture of ['es', 'en'] as const) describe('received forms in real pa
     expect(screen.getByText('No pudimos guardar la respuesta del formulario. Podés escribirle o mandárselo de nuevo.')).toBeInTheDocument();
     expect(screen.getByText('Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.')).toBeInTheDocument();
     expect(screen.getAllByText('Guardada como VIS-000024')).toHaveLength(1);
+  });
+  it.each(['reply-inbox-read', 'reply-inbox-without-read'])('uses the fixed server preview from actual inbox %s', async inboxName => {
+    const allowed = inboxName === 'reply-inbox-read';
+    const thread = install(allowed ? 'reply-completed' : 'reply-without-read');
+    const inbox = whatsappFormsHttpJson<Chats>(culture, inboxName);
+    const matching = inbox.page.items.filter(item => item.profileName === thread.contact.profileName);
+    const contactIndex = matching.findIndex(item => item.id === thread.contact.id);
+    const summary = culture === 'es' ? 'Respuesta del formulario' : 'Form response';
+    expect(contactIndex).toBeGreaterThanOrEqual(0);
+    expect(matching[contactIndex]!.preview).toBe(summary);
+    expect(thread.contact.preview).toBe(summary);
+    server.use(
+      http.get('/api/me', () => HttpResponse.json({ ...currentUser, permissions: allowed ? ['whatsapp.read', 'formrecords.read'] : ['whatsapp.read'] })),
+      http.get('/api/whatsapp/chats', () => new HttpResponse(whatsappFormsHttpBody(culture, inboxName), { headers: { 'Content-Type': 'application/json' } })),
+    );
+    renderRouteWithProviders('/whatsapp/chat');
+    const contacts = await screen.findAllByRole('button', { name: thread.contact.profileName! });
+    expect(contacts).toHaveLength(matching.length);
+    const target = contacts[contactIndex]!;
+    const row = target.parentElement!;
+    expect(within(row).getByText(summary, { exact: true })).toBeInTheDocument();
+    expect(row).not.toHaveTextContent('Equipo de prueba');
+    expect(row).not.toHaveTextContent('12345678901234567890.12345678');
+    expect(row).not.toHaveTextContent('Visita de prueba');
+    expect(row).not.toHaveTextContent('Test visit');
+    await userEvent.click(target);
+    await screen.findByLabelText('Respuesta al cliente');
+    const card = await saved();
+    if (!allowed) {
+      expect(within(card).getByText('No tenés permiso para ver las respuestas de este formulario.')).toBeInTheDocument();
+      expect(screen.queryByText('Equipo de prueba')).not.toBeInTheDocument();
+    }
   });
 });
