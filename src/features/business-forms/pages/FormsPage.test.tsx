@@ -136,6 +136,7 @@ describe("Forms routes", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Ir a la pregunta" }));
     expect(screen.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Ayuda para el empleado")).toHaveValue("");
+    await waitFor(() => expect(screen.getByLabelText("Ayuda para el empleado")).toHaveFocus());
     expect(checks).toBe(1);
     expect(store.calls.filter(call => call.method === "PUT" || call.method === "POST")).toHaveLength(0);
   });
