@@ -2,7 +2,11 @@ import { createServer } from "vite";
 
 const origin = "http://127.0.0.1:5178";
 const roots = [
+  "/@vite/client",
+  "/@vite/env",
   "/src/test/visual/preview.tsx",
+  "/src/test/visual/session.tsx",
+  "/src/main.tsx",
   "/src/features/artificial-intelligence/pages/BusinessInformationPage.tsx",
   "/src/features/business-forms/pages/FormEditorPage.tsx",
 ];
@@ -29,6 +33,13 @@ for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, async () => {
 
 try {
   await server.listen();
+  for (const entry of ["/src/test/visual/index.html", "/src/test/visual/session.html", "/index.html"]) {
+    const response = await fetch(new URL(entry, origin));
+    if (!response.ok || !response.headers.get("Content-Type")?.includes("text/html")) {
+      throw new Error("Visual HTML readiness failed: " + entry);
+    }
+    await response.arrayBuffer();
+  }
   const queue = [...roots];
   const visited = new Set();
   while (queue.length) {
@@ -37,11 +48,13 @@ try {
     visited.add(modulePath);
     const url = new URL(modulePath, origin);
     if (url.origin !== origin || url.pathname.startsWith("/api/")) throw new Error("Visual warmup requires a local module URL.");
-    const response = await fetch(url);
+    // Match a browser import: JSON must be transformed, not served as data.
+    const response = await fetch(url, { headers: { "Sec-Fetch-Dest": "script" } });
     if (!response.ok) throw new Error("Visual module readiness failed (" + response.status + "): " + url.pathname);
     if (response.headers.get("Content-Type")?.includes("text/html")) throw new Error("Visual module returned HTML: " + url.pathname);
     await response.arrayBuffer();
     const module = await server.environments.client.moduleGraph.getModuleByUrl(modulePath);
+    if (module && !module.transformResult) throw new Error("Visual module was not transformed: " + url.pathname);
     for (const dependency of module?.importedModules ?? []) {
       // Vite marks Tailwind watch files/globs as assets, not browser modules.
       if (dependency.type === "asset") continue;
