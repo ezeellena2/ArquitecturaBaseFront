@@ -2,7 +2,7 @@
 
 Fecha: **2026-10-08**, con las variantes de los cuatro incrementos de la Etapa 1 y el botón «Abrir formulario»
 agregados el **2026-10-10**.
-Estado: **diseño elegido por el usuario, sin implementar**.
+Estado al **2026-10-11**: **Etapa 1 cerrada; pendientes menores trasladados a Etapa 2**. A–E, P1–P3, C1–C5 y R1–R3 están integrados; las etapas siguientes conservan su carácter de diseño elegido. El [plan y pendientes rescatados](../../../ArquitecturaBase/docs/plans/2026-10-07-formularios-dinamicos-y-whatsapp-flows.md#pendientes-rescatados-al-retirar-las-revisiones) contiene los límites y hallazgos todavía abiertos.
 
 Origen: la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
@@ -14,6 +14,16 @@ su arquitectura, persistencia, contratos, seguridad y pruebas siguen valiendo. L
 y el orden de entrega salen de acá. La maqueta aislada del 2026-10-07 y 2026-10-08 del plan (pestañas Campos/Uso/Reglas/
 Tabla/Documento/Circuito/Versiones, selector de vista y estado de prueba, claves de campo a la vista) queda como
 procedencia reemplazada: no se promueve ni se usa como referencia de pantallas.
+
+## Cierre y comprobaciones de Etapa 1 (2026-10-11)
+
+A–E, P1–P3, C1–C5 y R1–R3 están integrados. La comprobación respeta el presupuesto HTTP del servidor y conserva el foco al localizar una pregunta. El chat distingue metadata oculta por permisos, muestra un resumen fijo sin valores privados en la bandeja/contacto y retira respuestas del DOM y la caché al perder lectura. Consultar un envío con 404 confirmado reabre el diálogo existente con el mismo UUID/cuerpo y repetición explícita.
+
+El coordinador confirmó publicación y vista oficial, entrega desde la SPA, respuesta de seis tipos, número guardado y recarga en el piloto real. El móvil aislado verificó lectura autorizada/denegada en español y recarga a 390/320 px, foco y ausencia de valores privados. Usa API/PostgreSQL/Redis reales con identidad, Meta y puertos neutrales de pruebas, con credenciales temporales eliminadas; no acredita por sí solo el sink/source tipado de BusinessForms ni el teléfono físico.
+
+Los pendientes de versión/idioma de respuesta, señal de purga, etiqueta de expansión, motivos de 409 y remonte del compositor están rescatados en el plan enlazado. El front conserva la escala decimal recibida y no reconstruye ceros omitidos. El teléfono físico respondió 100: 12,50/12.50 siguen sin calificar; la vista oficial aceptó punto y rechazó coma. Por decisión del usuario, estos pendientes menores de R3, la calificación del decimal físico y la intermitencia de Roles se trasladan a Etapa 2 sin bloquear el cierre. Las etapas siguientes siguen como diseño elegido.
+
+La verificación general del front pasó 1455/1455 pruebas en 136 archivos; lint, 48/48 pruebas de arquitectura y TypeScript quedaron sin diagnósticos. La última corrida visual sobre `856e641`, con tres workers y sin retries ni cambio de referencias, terminó **292/294**: fallaron las esperas iniciales del campo Nombre del editor en español a 390/320 px. No se declara la suite visual completa verde ni una causa probada. Estas dos esperas iniciales quedan como deuda del arnés junto con la intermitencia de Roles; el próximo corte deberá comprobar la preparación de Idiomas con un control negativo antes de modificar los tests. Se conserva el informe `a2-r4-front-visual-session-shell-final.json`, sus trazas y la revisión de las 32 capturas en `.test-artifacts/forms-step5/`; el servidor visual quedó apagado. Por instrucción del usuario se registra este resultado y no se inicia otra corrida completa.
 
 ## Cómo leer los tableros
 
@@ -105,6 +115,25 @@ se avisa al operador y se ofrece mandarlo de nuevo. La consulta avanzada necesit
 | [K5 · Con una consulta](evidence/formularios-whatsapp/cat-k5-consulta.png) | Consulta de lectura sobre vistas de catálogo, prueba con una persona de ejemplo, motivos de rechazo y cómo se arregla un catálogo que dejó de funcionar. |
 | [K6 · Elegir de un catálogo](evidence/formularios-whatsapp/cat-k6-pregunta.png) | El tipo de pregunta nuevo en el editor; catálogos que no se pueden usar, visibles pero no elegibles. |
 | [K7 · Al mandar y al responder](evidence/formularios-whatsapp/cat-k7-envio.png) | Opciones preparadas para cada persona al enviar, catálogo inválido, más de 200 o ninguna opción, lo que ve Juan, la referencia guardada y la opción dada de baja antes de responder. |
+
+Etapa 2B, fotos y documentos (sumada el 2026-10-11, dibujada en la versión 66 del lienzo). **Elegida el mismo día**,
+con miniaturas livianas en el chat, ninguna respuesta guardada a medias y hasta 10.000 respuestas por exportación. El
+recorrido guiado tiene su capítulo desde la versión 67.
+Preguntas «Foto» (cámara o galería, o solo cámara) y «Documento» (PDF, Excel, Word e imágenes; sin CSV porque Meta no lo
+admite), una por pantalla del Flow y hasta 10 archivos por respuesta. Los archivos se ven en la tarjeta del chat, la
+planilla y el PDF, con el mismo permiso que los valores. Detalle en el
+[plan, 12.2b](../../../ArquitecturaBase/docs/plans/2026-10-07-formularios-dinamicos-y-whatsapp-flows.md).
+
+| Captura | Qué define |
+| --- | --- |
+| [F1 · Fotos y documentos en el editor](evidence/formularios-whatsapp/arc-f1-editor.png) | Los tipos «Foto» y «Documento», de dónde sale la foto, mínimo y máximo, el contador de hasta 10 archivos por formulario y la vista previa con una pantalla por archivo. |
+| [F2 · En el celular de Juan](evidence/formularios-whatsapp/arc-f2-celular.png) | Solo cámara, con fotos adjuntas, el documento con el botón final y cámara o galería. |
+| [F3 · La respuesta llega con archivos](evidence/formularios-whatsapp/arc-f3-llega.png) | Bajando los archivos, guardada con miniaturas, sin permiso, archivo que no se pudo bajar, archivo que no es lo que dice y muchas fotos. |
+| [F4 · Ver y descargar](evidence/formularios-whatsapp/arc-f4-visor.png) | El visor en el diálogo común sobre el chat, descargar el original y documentos que siempre se descargan. |
+| [F5 · Límites y casos](evidence/formularios-whatsapp/arc-f5-casos.png) | Más de 10 archivos al publicar, cómo se arman las pantallas, tamaño y tipo que frena WhatsApp, reintentos, sin almacenamiento configurado, permiso perdido y cuánto duran. |
+
+La Etapa 3 suma [T5 · Exportar a Excel](evidence/formularios-whatsapp/pla-t5-exportar.png): con los filtros aplicados,
+todas las preguntas o solo las visibles, permiso propio, archivos como cantidad y nombres, y hasta 10.000 respuestas por vez.
 
 Etapa 3, planilla de respuestas (2026-10-10). **Propuesta para revisar**: los tableros 06 y 07 recortados a esta etapa,
 sin aprobación, PDF ni asistente. Cargar desde la web queda para después (decidido el 2026-10-10).
