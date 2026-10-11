@@ -12,7 +12,7 @@ Contiene el catálogo local, fixtures y las pruebas Playwright del sistema visua
 - Las comprobaciones de pedidos externos usan el origen de baseURL del proyecto, sin puertos fijos. Conservar la lista estricta de proveedores permitidos; una ejecución aislada no habilita llamadas adicionales.
 - `role-groups.spec.ts` comprueba el botón global de permisos en es/en a 1440/390/320, con Admin de sólo lectura, teclado y filtros. `business-place-proposal.spec.ts` verifica únicamente la propuesta `ubicacion-lugar`, incluidos recortes de botones y descarte; enlaces ficticios, sin abrir Google Maps ni guardar en la API.
 - Una diferencia se revisa; actualizar capturas requiere una decisión visual autorizada. No usar la actualización como reparación automática.
-- Playwright levanta Vite en 5178 y lo detiene al terminar. Diagnósticos en `test-results`, capturas de referencia en `screenshots`.
+- Playwright levanta Vite en 5178 mediante `server.mjs` y lo detiene al terminar. El servidor transforma el catálogo y las rutas afectadas antes de responder 200 en `/__visual_ready`, registrado antes del fallback HTML; rechaza HTTP fallido o HTML inesperado. Recorre imports de módulos y excluye las aristas asset de vigilancia de Tailwind. No ejecuta la SPA ni llama a la API durante esa preparación; no amplía tiempos de assertions ni actualiza snapshots. Diagnósticos en `test-results`, capturas de referencia en `screenshots`.
 
 Referencia: [estándar aplicado](../../../docs/guides/estandar-visual.md#catálogo-y-revisión-con-navegador).
 
