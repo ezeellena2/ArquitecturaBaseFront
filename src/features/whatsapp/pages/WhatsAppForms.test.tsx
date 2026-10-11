@@ -62,3 +62,35 @@ it("keeps a request-conflict attempt frozen until its owned operation is checked
   expect(reads).toBe(1);
   expect(posts).toHaveLength(1);
 });
+
+it("reopens the existing closed form dialog after a confirmed missing receipt and repeats only on request", async () => {
+  let reads = 0;
+  server.use(http.post("/api/whatsapp/chats/:id/form-messages", async ({request}) => {
+    const body = await request.json() as FormMessageRequest;
+    posts.push(body);
+    return posts.length === 1 ? HttpResponse.error() : HttpResponse.json(receipt(body), {status:202});
+  }), http.get("/api/whatsapp/chats/:id/outgoing/:requestId", () => {
+    reads++;
+    return new HttpResponse(null, {status:404});
+  }));
+  const dialog = await openForm();
+  fireEvent.change(within(dialog).getByRole("textbox", {name:"Mensaje que lo acompaña"}), {target:{value:" Pedido exacto congelado "}});
+  await userEvent.click(within(dialog).getByRole("button", {name:"Enviar formulario"}));
+  await within(dialog).findByRole("button", {name:"Consultar envío"});
+  await userEvent.click(within(dialog).getByRole("button", {name:"Cancelar"}));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", {name:"Enviar formulario"})).toBeDisabled();
+  expect(reads).toBe(0);
+  expect(posts).toHaveLength(1);
+  await userEvent.click(screen.getAllByRole("button", {name:"Consultar envío"})[0]);
+  const reopened = await screen.findByRole("dialog");
+  expect(reads).toBe(1);
+  const message = within(reopened).getByRole("textbox", {name:"Mensaje que lo acompaña"});
+  expect(message).toBeDisabled();
+  expect(message).toHaveValue(" Pedido exacto congelado ");
+  expect(posts).toHaveLength(1);
+  await userEvent.click(await within(reopened).findByRole("button", {name:"Repetir el mismo pedido"}));
+  await waitFor(() => expect(posts).toHaveLength(2));
+  expect(posts[1]).toEqual(posts[0]);
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});

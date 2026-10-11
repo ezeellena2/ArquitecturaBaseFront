@@ -113,7 +113,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     if (!request || pending.current || !permitted.current) return;
     pending.current=true;setChecking(true);
     try {confirmed(await recoverFormMessage(contact.id,request,actor));} catch(error) {
-      if (error instanceof ApiError&&error.status===404) {updateForm(value=>({...value,notStored:true}));if(active.current)notify({id:noticeId,kind:"info",message:t("send.notStored")});}
+      if (error instanceof ApiError&&error.status===404) {updateForm(value=>({...value,notStored:true}));if(active.current&&permitted.current){setOpen(true);notify({id:noticeId,kind:"info",message:t("send.notStored")});}}
       else {const feedback=errorFeedback(error);if(active.current&&feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);if(active.current&&feedback.kind!=="session")notify({id:noticeId,kind:"error",message:feedback.kind==="forbidden"?t("send.forbidden"):t("send.checkFailed"),action:["forbidden","wait"].includes(feedback.kind)?undefined:{label:t("send.check"),onClick:()=>void checkOutcome()}});if(feedback.kind==="forbidden"){setForbidden(true);client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id});}}
     } finally {pending.current=false;if(active.current)setChecking(false);}
   }
