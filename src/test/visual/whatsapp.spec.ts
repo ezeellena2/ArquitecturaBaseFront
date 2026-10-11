@@ -23,6 +23,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.setViewportSize({ width, height: 900 });
     await page.clock.install({ time: new Date("2026-10-02T12:10:00Z") });
     await page.goto(`/src/test/visual/index.html?screen=/whatsapp/chat&scenario=chat&lang=${language}`);
+    await page.getByRole("button", { name: language === "es" ? "Menú de Ana Pérez" : "Ana Pérez's menu", exact: true }).waitFor({ state: "visible" });
     await expect(page.getByRole("heading", { name: text.title })).toBeVisible();
     const menuToggle = page.getByRole("button", { name: language === "es" ? "Menú de navegación" : "Navigation menu", exact: true });
     if (width < 768) await menuToggle.click();

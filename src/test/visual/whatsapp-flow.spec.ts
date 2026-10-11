@@ -155,7 +155,10 @@ test("a read-only operator can open history but cannot compose or send", async (
 
 test("an operator without read permission never requests the chat", async ({ page, baseURL }) => {
   const api = await installApi(page, baseURL!, []);
-  await page.goto("/src/test/visual/session.html?screen=/whatsapp/chat");
+  await Promise.all([
+    page.waitForResponse(response => response.request().method() === "GET" && new URL(response.url()).pathname === "/api/me"),
+    page.goto("/src/test/visual/session.html?screen=/whatsapp/chat"),
+  ]);
   await expect(page).toHaveURL(/\/sin-permiso$/);
   expect(api.reads()).toBe(0);
   expect(api.sends).toHaveLength(0);
@@ -173,7 +176,10 @@ test("WhatsApp code login completes OIDC while the business conversation remains
   await expect(page).toHaveURL(/\/login\/codigo\?/);
   const boxes = page.getByRole("textbox");
   for (let index = 0; index < 6; index++) await boxes.nth(index).fill("1");
-  await page.getByRole("button", { name: /entrar|verificar/i }).click();
+  await Promise.all([
+    page.waitForResponse(response => response.request().method() === "POST" && new URL(response.url()).pathname === "/connect/token"),
+    page.getByRole("button", { name: /entrar|verificar/i }).click(),
+  ]);
   await expect(page).toHaveURL(`${baseURL}/`);
   await expect(page.getByRole("button", { name: "Menú de Operador reingresado", exact: true })).toBeVisible();
   expect(api.contact.mode).toBe("Manual");
