@@ -144,6 +144,26 @@
     "inactive": "inactive",
     "cardDescription": "Form · version {{version}} · “{{cta}}” button",
     "failed": "The form did not reach the recipient. You can send a new one using “Send form”.",
-    "waitingHint": "Wait {{seconds}} seconds before checking or sending again."
+    "waitingHint": "Wait {{seconds}} seconds before checking or sending again.",
+    "reply": {
+      "answers": "Form answers",
+      "missing": "No answer",
+      "yes": "Yes",
+      "no": "No",
+      "valuesUnavailable": "The answers could not be displayed.",
+      "showAll_one": "View the complete answer",
+      "showAll_other": "View all {{count}} answers",
+      "showLess": "Show less",
+      "label": "Form reply",
+      "pending": "A form reply arrived. We are saving it…",
+      "rejected": "We could not save the form reply. You can write to them or send it again.",
+      "unrecognized": "A form reply arrived that could not be matched to a send. It was not saved.",
+      "saved": "Saved as {{number}}",
+      "savedName": "Form reply {{name}}, saved as {{number}}",
+      "stateName": "Form reply {{name}}",
+      "noPermission": "You do not have permission to view this form’s answers.",
+      "revoked": "You no longer have permission to view these answers.",
+      "messageRemoved": "The WhatsApp message is no longer available. The reply remains saved."
+    }
   }
 }

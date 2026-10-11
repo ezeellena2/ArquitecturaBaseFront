@@ -32,5 +32,17 @@ export function useChatHistoryViewport(items: readonly TimelineItem[], atBottom:
         : node.scrollHeight - height;
     });
   }
-  return { viewport, onScroll, loadOlder };
+  function preserveViewport(change: () => void) {
+    const node = viewport.current;
+    const top = node?.getBoundingClientRect().top ?? 0;
+    const anchor = node ? Array.from(node.querySelectorAll("article")).find(message => message.getBoundingClientRect().bottom > top) : undefined;
+    const anchorTop = anchor?.getBoundingClientRect().top;
+    change();
+    if (!node || !anchor || anchorTop === undefined) return;
+    if (frame.current !== undefined) cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(() => {
+      if (node === viewport.current && anchor.isConnected) node.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
+    });
+  }
+  return { viewport, onScroll, loadOlder, preserveViewport };
 }

@@ -144,6 +144,26 @@
     "inactive": "inactiva",
     "cardDescription": "Formulario · versión {{version}} · botón «{{cta}}»",
     "failed": "El formulario no le llegó. Podés mandarlo de nuevo con «Enviar formulario».",
-    "waitingHint": "Esperá {{seconds}} segundos antes de volver a consultar o enviar."
+    "waitingHint": "Esperá {{seconds}} segundos antes de volver a consultar o enviar.",
+    "reply": {
+      "answers": "Respuestas del formulario",
+      "missing": "Sin respuesta",
+      "yes": "Sí",
+      "no": "No",
+      "valuesUnavailable": "No se pudieron mostrar las respuestas.",
+      "showAll_one": "Ver la respuesta completa",
+      "showAll_other": "Ver las {{count}} respuestas",
+      "showLess": "Mostrar menos",
+      "label": "Respuesta del formulario",
+      "pending": "Llegó una respuesta de formulario. La estamos guardando…",
+      "rejected": "No pudimos guardar la respuesta del formulario. Podés escribirle o mandárselo de nuevo.",
+      "unrecognized": "Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.",
+      "saved": "Guardada como {{number}}",
+      "savedName": "Respuesta del formulario {{name}}, guardada como {{number}}",
+      "stateName": "Respuesta del formulario {{name}}",
+      "noPermission": "No tenés permiso para ver las respuestas de este formulario.",
+      "revoked": "Ya no tenés permiso para ver estas respuestas.",
+      "messageRemoved": "El mensaje de WhatsApp ya no está disponible. La respuesta sigue guardada."
+    }
   }
 }
