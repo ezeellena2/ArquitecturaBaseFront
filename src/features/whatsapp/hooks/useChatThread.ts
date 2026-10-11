@@ -77,5 +77,5 @@ export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolea
   }, [enabled, visible, atBottom, latest.data, latest.isError, sequence, readThrough, read]);
   return { latest: { ...latest, data: enabled && latest.data ? allowed ? latest.data : withoutFormReplyValues(latest.data) : undefined, refetch: () => enabled ? latest.refetch() : Promise.resolve(undefined) },
     history: { ...history, data: enabled && history.data ? allowed ? history.data : { ...history.data, pages: history.data.pages.map(withoutFormReplyValues) } : undefined, fetchNextPage: () => enabled ? history.fetchNextPage() : Promise.resolve(undefined) },
-    messages: enabled ? messages : [], read, visible };
+    messages: enabled ? messages : [], read, visible, formValuesRevoked: gate.wasGranted && !allowed };
 }

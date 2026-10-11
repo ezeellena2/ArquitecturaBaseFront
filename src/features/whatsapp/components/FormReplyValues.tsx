@@ -2,14 +2,10 @@ import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
-import { formatFormReplyValue, type FormReplyDisplayValue } from "../lib/formReplyValue";
+import { formatFormReplyValue, type FormReplyDisplayRow } from "../lib/formReplyValue";
 
-// Authorized, localized presentation rows; these are not HTTP fields or a catalog lookup.
-export interface FormReplyDisplayRow {
-  readonly id: string;
-  readonly label: string;
-  readonly answer: FormReplyDisplayValue;
-}
+export type { FormReplyDisplayRow } from "../lib/formReplyValue";
+
 export function FormReplyValues({ rows, preserveViewport }: {
   rows: readonly FormReplyDisplayRow[];
   preserveViewport?: (change: () => void) => void;

@@ -1,4 +1,5 @@
 import { api } from "@/shared/api/httpClient";
+import { readThreadFormReplies, type FormReply } from "./formReplies";
 import type { ChatFormMetadata, FormEligibility, LinkedAccount } from "./forms";
 
 export type ChatMode = "Bot" | "Manual";
@@ -16,7 +17,7 @@ export interface ChatMessage {
   inboundSequence: number; operatorUserId: string | null; status: string | null; errorCode: number | null;
   purpose?: MessagePurpose; accessEventKind?: AccessEventKind | null;
   form?: ChatFormMetadata | null;
-  formReply?: unknown;
+  formReply?: FormReply | null;
 }
 export interface Outgoing {
   kind?: "Text" | "Flow"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
@@ -29,8 +30,8 @@ export const chatKey = ["whatsapp-chat"] as const;
 const base = "/api/whatsapp/chats";
 export const listChats = (page: number, search: string, unreadOnly: boolean, signal?: AbortSignal) =>
   api.get<Chats>(`${base}?${new URLSearchParams({ page: String(page), pageSize: "20", search, unreadOnly: String(unreadOnly) })}`, { signal });
-export const getThread = (id: string, cursor?: { at: string; id: string }, signal?: AbortSignal) =>
-  api.get<Thread>(`${base}/${id}/messages${cursor ? `?${new URLSearchParams({ beforeAtUtc: cursor.at, beforeId: cursor.id })}` : ""}`, { signal });
+export const getThread = async (id: string, cursor?: { at: string; id: string }, signal?: AbortSignal) =>
+  readThreadFormReplies(await api.get<Thread>(`${base}/${id}/messages${cursor ? `?${new URLSearchParams({ beforeAtUtc: cursor.at, beforeId: cursor.id })}` : ""}`, { signal }));
 export const markRead = (id: string, throughSequence: number) => api.put<void>(`${base}/${id}/read`, { throughSequence });
 export const changeMode = (id: string, mode: ChatMode, expectedRevision: number) => api.put<void>(`${base}/${id}/mode`, { mode, expectedRevision });
 export const sendText = (id: string, requestId: string, body: string) => api.post<Outgoing>(`${base}/${id}/messages`, { requestId, body });

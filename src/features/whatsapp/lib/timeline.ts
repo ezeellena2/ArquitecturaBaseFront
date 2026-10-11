@@ -1,4 +1,5 @@
 import { readFormMetadata, type ChatFormMetadata } from "../api/forms";
+import { toFormReplyPresentation, type FormReplyPresentation } from "./formReplyPresentation";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import type { MessageDeliveryState } from "@/shared/ui/MessageBubble";
 import type { AccessEventKind, ChatMessage, MessagePurpose, Outgoing } from "../api/chat";
@@ -21,6 +22,7 @@ interface TimelineContent {
   body: string | null;
   kind: string;
   form: ChatFormMetadata | null;
+  formReply: FormReplyPresentation | null;
   purpose: MessagePurpose;
   accessEventKind: AccessEventKind | null;
   author: "bot" | "operator" | undefined;
@@ -33,8 +35,9 @@ export type TimelineItem = TimelineContent & ({ source: "message" } | { source: 
 export function buildTimeline(messages: readonly ChatMessage[], outgoing: readonly Outgoing[]): TimelineItem[] {
   const items: TimelineItem[] = messages.map(message => ({
     source: "message", key: `message:${message.id}`, occurredAtUtc: message.occurredAtUtc,
-    direction: message.direction === "Outbound" ? "outgoing" : "incoming", body: message.purpose === "Access" ? null : message.body, kind: message.kind,
+    direction: message.direction === "Outbound" ? "outgoing" : "incoming", body: message.purpose === "Access" || message.kind === "FlowReply" ? null : message.body, kind: message.kind,
     form: message.kind === "Flow" && message.purpose !== "Access" ? readFormMetadata(message.form) : null,
+    formReply: message.kind === "FlowReply" && message.purpose !== "Access" ? toFormReplyPresentation(message.formReply ?? null) : null,
     purpose: message.purpose ?? "Unclassified", accessEventKind: message.accessEventKind ?? null,
     operatorUserId: message.operatorUserId,
     author: message.direction === "Outbound" ? message.operatorUserId ? "operator" : "bot" : undefined,
@@ -43,7 +46,7 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
   for (const operation of outgoing) items.push({
     source: "outgoing", operation, key: `outgoing:${operation.id}`, occurredAtUtc: operation.requestedAtUtc,
     direction: "outgoing", body: operation.body, kind: operation.kind ?? "Text", form: operation.kind === "Flow" ? readFormMetadata(operation.form) : null, author: "operator", operatorUserId: operation.operatorUserId,
-    purpose: "Business", accessEventKind: null,
+    purpose: "Business", accessEventKind: null, formReply: null,
     delivery: deliveryStatus(operation.state),
   });
   return items.sort((first, second) => Date.parse(first.occurredAtUtc) - Date.parse(second.occurredAtUtc) || first.key.localeCompare(second.key));

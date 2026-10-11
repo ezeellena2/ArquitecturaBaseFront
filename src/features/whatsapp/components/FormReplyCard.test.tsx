@@ -48,3 +48,9 @@ describe("form reply capture presentation", () => {
     expect(screen.getByRole("group", { name: "Form reply Register visit, saved as VIS-000001" })).toBeInTheDocument();
   });
 });
+
+it('keeps an invalid projection fallback free of saved or rejected claims', () => {
+  renderWithProviders(<FormReplyCard reply={{ state: 'Unavailable', name: null }} />);
+  expect(screen.getByText('No se pudieron mostrar las respuestas.')).toBeInTheDocument();
+  expect(screen.queryByText(/Guardada como|No se guardó/)).not.toBeInTheDocument();
+});

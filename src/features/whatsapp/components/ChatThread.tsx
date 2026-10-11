@@ -15,7 +15,7 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canM
 }) {
   const { t, i18n } = useTranslation("whatsapp");
   const [atBottom, setAtBottom] = useState(true);
-  const { latest, history, messages, read } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
+  const { latest, history, messages, read, formValuesRevoked } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
   const { mode, setMode, review, setReview, changing, reviewing } = useChatThreadActions(id, latest.refetch);
   const items = useMemo(() => buildTimeline(messages, latest.data?.outgoing ?? []), [messages, latest.data?.outgoing]);
   const contact = latest.data?.contact;
@@ -37,7 +37,7 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canM
         </div>
       </div>
       {latest.isError ? <div className="flex items-center justify-between gap-2 p-3 text-sm text-[var(--color-content-muted)]"><span>{t(forbidden ? "send.forbidden" : "stale")}</span><Button size="sm" variant="outline" onClick={() => void latest.refetch()}>{t("retry")}</Button></div> : null}
-      <ChatTimeline items={items} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
+      <ChatTimeline items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
         canReuse={!draft.attempt && !draft.form?.attempt && !draft.body} reviewing={reviewing.isPending} onReview={setReview}
         onReuse={body => updateDraft(value => ({ ...value, body, attempt: undefined }))} atBottom={atBottom} onAtBottomChange={setAtBottom}
         hasOlder={Boolean(history.data ? history.hasNextPage : latest.data?.beforeId)} loadingOlder={history.isFetchingNextPage}

@@ -82,3 +82,30 @@ describe("ChatTimeline", () => {
     expect(screen.queryByRole("button", { name: "Usar este texto en el borrador" })).not.toBeInTheDocument();
   });
 });
+
+const receivedReply: NonNullable<ChatMessage['formReply']> = { state: 'Completed', definitionId: 'definition-old', versionId: 'version-old', versionNumber: 1,
+  name: 'Historical English form', recordId: 'record-a', number: 'VIS-000001', values: [
+    { fieldId: 'bool', key: 'confirmed', type: 'boolean', label: 'Historical question', value: false },
+    { fieldId: 'zero', key: 'returned', type: 'decimal', label: 'Historical quantity', value: '0' },
+  ] };
+it('presents an authorized received form inside the common bubble without exposing or reusing its raw body', () => {
+  setup([{ ...message(null), direction: 'Inbound', kind: 'FlowReply', body: 'private raw reply', formReply: receivedReply }], []);
+  expect(screen.getByText('Guardada como VIS-000001')).toBeInTheDocument();
+  expect(screen.getByText('Historical English form')).toBeInTheDocument();
+  expect(screen.getByText('No')).toBeInTheDocument();
+  expect(screen.getByText('0')).toBeInTheDocument();
+  expect(screen.queryByText('private raw reply')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Usar este texto en el borrador' })).not.toBeInTheDocument();
+});
+it('keeps the received receipt readable without answer permission', () => {
+  setup([{ ...message(null), direction: 'Inbound', kind: 'FlowReply', formReply: { ...receivedReply, values: null } }], [], false);
+  expect(screen.getByText('Guardada como VIS-000001')).toBeInTheDocument();
+  expect(screen.getByText('No tenés permiso para ver las respuestas de este formulario.')).toBeInTheDocument();
+  expect(screen.queryByText('Historical question')).not.toBeInTheDocument();
+});
+it('uses a quiet metadata-free fallback for a received invalid projection without claiming saved or rejected', () => {
+  setup([{ ...message(null), direction: 'Inbound', kind: 'FlowReply', body: 'private raw reply', formReply: null }], []);
+  expect(screen.getByText('No se pudieron mostrar las respuestas.')).toBeInTheDocument();
+  expect(screen.queryByText('private raw reply')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Guardada como|No se guardó/)).not.toBeInTheDocument();
+});

@@ -88,8 +88,9 @@ it("cancels an in-flight value-bearing read on loss of formrecords.read while ke
 function replyThread(marker: string | null, allow: boolean, older = false, more = false): Thread {
   const base = thread('Safe chat text', older, more);
   const message = { ...base.messages[0], kind: 'FlowReply', body: null,
-    formReply: { state: 'Completed', name: 'Historical form', prefix: 'VIS', number: 1,
-      values: marker === null ? null : [{ fieldId: 'field-a', key: 'notes', type: 'longText', label: 'Historical notes', value: marker }] } };
+    formReply: { state: 'Completed', name: 'Historical form', definitionId: '01a120d4-1415-7ca1-a73d-cabbfa72e695',
+      versionId: '01a120d3-7f84-7471-ae4f-fa71986768f5', versionNumber: 1, recordId: '01a10cf6-23c4-7641-b084-a486091df430', number: 'VIS-000001',
+      values: marker === null ? null : [{ fieldId: '01a125cf-b2a7-70ee-b027-9a7e8e4c4031', key: 'notes', type: 'longText', label: 'Historical notes', value: marker }] } };
   return Object.assign(base, { canReadFormRecords: allow, messages: [message] });
 }
 it('honors authoritative server revocation across every cached page with unchanged actor and permissions', async () => {

@@ -36,3 +36,21 @@ for (const lang of ["es", "en"] as const) for (const width of [1440, 390, 320]) 
     await page.screenshot({ path: "test-results/form-replies-revoked-" + lang + "-" + width + ".png", fullPage: true });
   });
 }
+
+for (const lang of ['es', 'en']) {
+  test('complete saved form number fits at 320px in ' + lang, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto('/src/test/visual/index.html?screen=/form-replies&lang=' + lang);
+    await page.evaluate(() => document.fonts.ready);
+    const number = 'VISLONGNAME1-9223372036854775807';
+    const saved = page.getByText((lang === 'en' ? 'Saved as ' : 'Guardada como ') + number, { exact: true });
+    await saved.scrollIntoViewIfNeeded();
+    expect(await saved.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+    const savedBounds = (await saved.boundingBox())!;
+    const historyBounds = (await page.locator(".message-history").boundingBox())!;
+    expect(savedBounds.x).toBeGreaterThanOrEqual(historyBounds.x);
+    expect(savedBounds.x + savedBounds.width).toBeLessThanOrEqual(historyBounds.x + historyBounds.width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+    await saved.locator("..").screenshot({ path: "test-results/form-replies-full-number-" + lang + "-320.png" });
+  });
+}

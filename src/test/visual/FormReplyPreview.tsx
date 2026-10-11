@@ -35,6 +35,7 @@ export function FormReplyPreview() {
         {bubble("completed", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VIS-000001", values: allowed ? rows : null, valuesRevoked: !allowed }} preserveViewport={preserveViewport} />)}
         {bubble("long", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VIS-000002", values: allowed ? long : null, valuesRevoked: !allowed }} preserveViewport={preserveViewport} />)}
         {bubble("readonly", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VIS-000003", values: null }} />)}
+        {bubble("long-number", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VISLONGNAME1-9223372036854775807", values: null }} />)}
         {bubble("removed", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VIS-000004", values: allowed ? rows : null, messageRemoved: true }} />)}
         {Array.from({length: 15}, (_, n) => bubble("following"+n, <p>{en ? "Following message" : "Mensaje siguiente"} {n+1}</p>))}
       </MessageHistory>

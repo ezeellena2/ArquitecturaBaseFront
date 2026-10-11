@@ -17,3 +17,10 @@ export function formatFormReplyValue(answer: FormReplyDisplayValue, language: st
     default: return answer.value;
   }
 }
+
+// Authorized historical rows, independent of HTTP fields or a current catalog lookup.
+export interface FormReplyDisplayRow {
+  readonly id: string;
+  readonly label: string;
+  readonly answer: FormReplyDisplayValue;
+}
