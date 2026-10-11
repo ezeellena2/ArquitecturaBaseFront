@@ -66,6 +66,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
   it("selects the real sealed version and accepts its exact request without a text POST", async () => {
     vi.spyOn(crypto,"randomUUID").mockReturnValue(receipt.requestId as ReturnType<Crypto["randomUUID"]>);
     const dialog = await choose();
+    expect(within(dialog).getByText("Versión 1 · 1 pregunta",{exact:true})).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Respuesta al cliente"),{target:{value:"Borrador privado de texto"}});
     fireEvent.change(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"}),{target:{value:receipt.body}});
     await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));

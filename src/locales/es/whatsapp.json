@@ -111,7 +111,8 @@
     "listUnavailable": "La lista no está disponible.",
     "noResults": "No hay formularios con ese nombre.",
     "formLabel": "Formulario",
-    "optionDescription": "Versión {{version}} · {{count}} preguntas",
+    "optionDescription_one": "Versión {{version}} · {{count}} pregunta",
+    "optionDescription_other": "Versión {{version}} · {{count}} preguntas",
     "selected": "Elegido: {{name}} · versión {{version}}",
     "language": "Le llega en {{language}}, el idioma de su cuenta.",
     "culture": {

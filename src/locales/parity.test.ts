@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import i18n from "@/shared/i18n";
 
 // El equivalente de ResourceParityTests en el backend: una clave que existe en un idioma existe en el otro.
 // import.meta.glob toma los archivos que haya, así que cada namespace nuevo queda cubierto sin tocar este test.
@@ -39,4 +40,18 @@ describe("locales", () => {
   it.each(namespacesOf("es"))("has the same keys in both languages for %s", (namespace) => {
     expect(keysOf("en", namespace)).toEqual(keysOf("es", namespace));
   });
+});
+
+
+beforeAll(async () => { await i18n.loadLanguages(["es", "en"]); });
+
+it.each([
+  ["es", 0, "Versión 1 · 0 preguntas"],
+  ["es", 1, "Versión 1 · 1 pregunta"],
+  ["es", 2, "Versión 1 · 2 preguntas"],
+  ["en", 0, "Version 1 · 0 questions"],
+  ["en", 1, "Version 1 · 1 question"],
+  ["en", 2, "Version 1 · 2 questions"],
+] as const)("pluralizes the form selection description in %s for %i questions", (language, count, expected) => {
+  expect(i18n.getFixedT(language, "whatsapp")("forms.optionDescription", {version:1, count})).toBe(expected);
 });

@@ -111,7 +111,8 @@
     "listUnavailable": "The list is unavailable.",
     "noResults": "No forms match that name.",
     "formLabel": "Form",
-    "optionDescription": "Version {{version}} · {{count}} questions",
+    "optionDescription_one": "Version {{version}} · {{count}} question",
+    "optionDescription_other": "Version {{version}} · {{count}} questions",
     "selected": "Selected: {{name}} · version {{version}}",
     "language": "They receive it in {{language}}, the language of their account.",
     "culture": {
