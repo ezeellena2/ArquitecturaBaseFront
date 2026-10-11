@@ -41,7 +41,8 @@ Reglas adicionales:
 - [Inteligencia artificial](src/features/artificial-intelligence/AGENTS.md) configura/prueba la conexión compartida y edita Información del negocio con permisos propios, independiente de settings/WhatsApp. Metadatos y hechos confirmados en QueryCache; claves y borradores sólo en el editor activo, sin MutationCache, storage ni reintentos automáticos. Fuente funcional en [el backend](../ArquitecturaBase/docs/features/inteligencia-artificial.md).
 
 - Trabajá directo en `main`; no crear ramas ni hacer push sin pedido explícito. Commits chicos, en español, con conventional commits.
-- Antes de cerrar: `npm run build`, `npm run lint` y `npm run test`, los tres limpios. Si levantaste Aspire desde el backend, terminá con `aspire stop`.
+- En cada corte, `tsc`, `lint` y los tests de la feature afectada. Al cerrar un paso o un desarrollo: `npm run build`, `npm run lint` y `npm run test` completos y limpios, más el recorrido en el navegador y `npm run test:visual` si hubo cambios visuales ([ADR 0018 del backend](../ArquitecturaBase/docs/decisions/0018-robustez-proporcional-al-efecto.md)). Si levantaste Aspire desde el backend, terminá con `aspire stop`.
+- El contrato con el backend son sus DTO y los ejemplos de respuesta que exporta para el front: los datos de prueba se validan contra ellos, no contra un documento. Planes y evidencias se actualizan al cerrar cada paso, con un resumen corto.
 - Una feature nunca importa otra. Lo compartido va en `src/shared`; router y providers, en `src/app`; sesión y guards, en `src/auth`; caparazón, en `src/layouts`.
 - TypeScript estricto, textos de i18next en español e inglés, datos por TanStack Query y `shared/api/httpClient`. Los tokens viven en memoria.
 - Los permisos del front son para la experiencia; el servidor autoriza. Las decisiones visuales se implementan con tokens y UI comunes.
