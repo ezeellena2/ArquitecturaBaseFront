@@ -83,3 +83,96 @@ it("cancels an in-flight value-bearing read on loss of formrecords.read while ke
   expect(hook.result.current.messages.every(m => m.body === "Authorized chat text")).toBe(true);
   hook.unmount();
 });
+
+// Synthetic projection samples exercise cache authorization; they are not captured HTTP bodies.
+function replyThread(marker: string | null, allow: boolean, older = false, more = false): Thread {
+  const base = thread('Safe chat text', older, more);
+  const message = { ...base.messages[0], kind: 'FlowReply', body: null,
+    formReply: { state: 'Completed', name: 'Historical form', prefix: 'VIS', number: 1,
+      values: marker === null ? null : [{ fieldId: 'field-a', key: 'notes', type: 'longText', label: 'Historical notes', value: marker }] } };
+  return Object.assign(base, { canReadFormRecords: allow, messages: [message] });
+}
+it('honors authoritative server revocation across every cached page with unchanged actor and permissions', async () => {
+  const h = harness(); let revoked = false;
+  vi.spyOn(chatApi, 'getThread').mockImplementation(async (_id, cursor) => replyThread(revoked ? null : cursor ? cursor.id === 'latest' ? 'private middle answer' : 'private oldest answer' : 'private current answer', !revoked, Boolean(cursor), cursor?.id === 'latest'));
+  const hook = renderHook(() => useChatThread('chat-a', scope, false), h);
+  await waitFor(() => expect(JSON.stringify(hook.result.current.messages)).toContain('private current answer'));
+  await act(async () => { await hook.result.current.history.fetchNextPage(); });
+  await waitFor(() => expect(hook.result.current.history.data?.pages).toHaveLength(1));
+  await act(async () => { await hook.result.current.history.fetchNextPage(); });
+  await waitFor(() => expect(hook.result.current.history.data?.pages).toHaveLength(2));
+  const cacheObservedAfterRevocation: string[] = [];
+  const unsubscribe = h.client.getQueryCache().subscribe(event => {
+    const data = event.query.state.data as { canReadFormRecords?: boolean } | undefined;
+    if (data?.canReadFormRecords === false) cacheObservedAfterRevocation.push(JSON.stringify(h.client.getQueryCache().getAll().map(q => q.state.data)));
+  });
+  revoked = true;
+  await act(async () => { await hook.result.current.latest.refetch(); });
+  expect(cacheObservedAfterRevocation.length).toBeGreaterThan(0);
+  expect(cacheObservedAfterRevocation.every(data => !data.includes('private'))).toBe(true);
+  expect(JSON.stringify(hook.result.current.messages)).not.toContain('private');
+  expect(JSON.stringify(h.client.getQueryCache().getAll().map(q => q.state.data))).not.toContain('private');
+  expect(hook.result.current.history.data?.pages).toHaveLength(2);
+  expect(hook.result.current.messages).toHaveLength(3);
+  expect(JSON.stringify(hook.result.current.messages)).toContain('Historical form');
+  expect(scope.permissions).toContain('formrecords.read');
+  unsubscribe(); hook.unmount();
+});
+it('cancels late older values after authoritative false and never grants access from an older page', async () => {
+  const h = harness(); let resolveOlder!: (value: Thread) => void; let revoked = false;
+  const reads = vi.spyOn(chatApi, 'getThread').mockImplementation((_id, cursor) => cursor
+    ? cursor.id === 'latest' ? Promise.resolve(replyThread('private cached older answer', true, true, true)) : new Promise<Thread>(done => { resolveOlder = done; })
+    : Promise.resolve(replyThread(revoked ? null : 'private current answer', !revoked)));
+  const hook = renderHook(() => useChatThread('chat-a', scope, false), h);
+  await waitFor(() => expect(hook.result.current.messages).toHaveLength(1));
+  await act(async () => { await hook.result.current.history.fetchNextPage(); });
+  await waitFor(() => expect(hook.result.current.history.data?.pages).toHaveLength(1));
+  let pendingOlder!: Promise<unknown>;
+  act(() => { pendingOlder = hook.result.current.history.fetchNextPage(); });
+  await waitFor(() => expect(reads).toHaveBeenCalledTimes(3));
+  const olderSignal = reads.mock.calls[2][2]!;
+  revoked = true;
+  await act(async () => { await hook.result.current.latest.refetch(); });
+  expect(olderSignal.aborted).toBe(true);
+  expect(hook.result.current.history.data?.pages).toHaveLength(1);
+  await act(async () => { resolveOlder(replyThread('private late answer', true, true)); await pendingOlder; });
+  expect(JSON.stringify(hook.result.current.messages)).not.toContain('private');
+  expect(JSON.stringify(h.client.getQueryCache().getAll().map(q => q.state.data))).not.toContain('private');
+  expect(scope.permissions).toContain('formrecords.read');
+  hook.unmount();
+});
+
+it('keeps authoritative denial until a fresh latest read grants access, including an older false and stale latest true', async () => {
+  const h = harness(); let latestReads = 0; let resolveLatest!: (value: Thread) => void;
+  vi.spyOn(chatApi, 'getThread').mockImplementation((_id, cursor) => {
+    if (cursor) return Promise.resolve(replyThread(cursor.id === 'latest' ? null : 'private newer older answer', cursor.id !== 'latest', true, cursor.id === 'latest'));
+    latestReads++;
+    if (latestReads === 2) return new Promise<Thread>(done => { resolveLatest = done; });
+    return Promise.resolve(replyThread(latestReads === 1 ? 'private initial answer' : 'authorized fresh answer', true));
+  });
+  const hook = renderHook(() => useChatThread('chat-a', scope, false), h);
+  await waitFor(() => expect(JSON.stringify(hook.result.current.messages)).toContain('private initial answer'));
+  let pendingLatest!: Promise<unknown>;
+  act(() => { pendingLatest = hook.result.current.latest.refetch(); });
+  await waitFor(() => expect(latestReads).toBe(2));
+  await act(async () => { await hook.result.current.history.fetchNextPage(); });
+  expect(JSON.stringify(h.client.getQueryCache().getAll().map(q => q.state.data))).not.toContain('private');
+  await act(async () => { resolveLatest(replyThread('private stale latest answer', true)); await pendingLatest; });
+  expect(JSON.stringify(hook.result.current.messages)).not.toContain('private');
+  await act(async () => { await hook.result.current.history.fetchNextPage(); });
+  expect(JSON.stringify(h.client.getQueryCache().getAll().map(q => q.state.data))).not.toContain('private');
+  await act(async () => { await hook.result.current.latest.refetch(); });
+  await waitFor(() => expect(JSON.stringify(hook.result.current.messages)).toContain('authorized fresh answer'));
+  expect(JSON.stringify(hook.result.current.messages)).not.toContain('private');
+  expect(hook.result.current.history.data?.pages).toHaveLength(2);
+  hook.unmount();
+});
+it('requires both local permission and authoritative true before retaining values', async () => {
+  const h = harness(); vi.spyOn(chatApi, 'getThread').mockResolvedValue(replyThread('private denied answer', true));
+  const hook = renderHook(() => useChatThread('chat-a', { ...scope, permissions: ['whatsapp.read'] }, false), h);
+  await waitFor(() => expect(hook.result.current.messages).toHaveLength(1));
+  expect(JSON.stringify(hook.result.current.messages)).not.toContain('private');
+  expect(JSON.stringify(h.client.getQueryCache().getAll().map(q => q.state.data))).not.toContain('private');
+  expect(hook.result.current.latest.data?.canReadFormRecords).toBe(false);
+  hook.unmount();
+});

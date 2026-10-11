@@ -16,13 +16,14 @@ export interface ChatMessage {
   inboundSequence: number; operatorUserId: string | null; status: string | null; errorCode: number | null;
   purpose?: MessagePurpose; accessEventKind?: AccessEventKind | null;
   form?: ChatFormMetadata | null;
+  formReply?: unknown;
 }
 export interface Outgoing {
   kind?: "Text" | "Flow"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
   id: string; requestId: string; operatorUserId: string; body: string | null; requestedAtUtc: string;
   state: OutgoingState; waMessageId: string | null;
 }
-export interface Thread { contact: Chat; messages: ChatMessage[]; outgoing: Outgoing[]; beforeAtUtc: string | null; beforeId: string | null }
+export interface Thread { contact: Chat; messages: ChatMessage[]; outgoing: Outgoing[]; beforeAtUtc: string | null; beforeId: string | null; canReadFormRecords?: boolean }
 export interface Chats { page: { items: Chat[]; totalCount: number; page: number; pageSize: number; totalPages: number }; allCount: number; unreadCount: number }
 export const chatKey = ["whatsapp-chat"] as const;
 const base = "/api/whatsapp/chats";
