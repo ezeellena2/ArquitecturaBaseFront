@@ -46,7 +46,7 @@ describe("chat timeline", () => {
   });
 });
 
-const form = { definitionId: "019abcde-1000-7000-8000-000000000001", versionId: "019abcde-1000-7000-8000-000000000002", versionNumber: 1, name: "Visit form", culture: "en" as const };
+const form = { definitionId: "019abcde-1000-7000-8000-000000000001", versionId: "019abcde-1000-7000-8000-000000000002", versionNumber: 1, name: { es: "Formulario de visita", en: "Visit form" }, culture: "en" as const };
 describe("Flow timeline metadata", () => {
   it("keeps a Flow card on its outgoing operation and confirmed message without changing other kinds", () => {
     const flow = {...outgoing("flow","2026-10-10T12:00:00Z"),kind:"Flow" as const,form};

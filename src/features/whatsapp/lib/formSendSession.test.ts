@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { freezeFormMessage, recipientChanged, selectedVersionChanged } from "./formSendSession";
-const option = { definitionId: "a", versionId: "v1", versionNumber: 1, name: "Visit", questionCount: 2, submitLabel: "Confirm" };
+const option = { definitionId: "a", versionId: "v1", versionNumber: 1, name: { en: "Visit" }, questionCount: 2, submitLabel: { en: "Confirm" } };
 const draft = { message: " Original text ", selection: option, recipientCulture: "es" as const, recipientContextRevision: "opaque-1", modeRevision: 7 };
 describe("Form send intent", () => {
   it("freezes the complete intent and retains the operator text and opaque recipient revision", () => {

@@ -69,8 +69,8 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     setPage(1); setSearch(""); setOpen(true);
   }
   function choose(option: ChatFormOption) {
-    if (!forms.data || !mayReadOptions || form?.attempt) return;
-    updateForm(value=>({...value,selection:option,recipientCulture:forms.data!.recipientCulture,recipientContextRevision:forms.data!.recipientContextRevision,modeRevision:contact.modeRevision,blocked:undefined,touched:true}));
+    if (!forms.data?.recipientCulture || !forms.data.recipientContextRevision || !mayReadOptions || form?.attempt) return;
+    updateForm(value=>({...value,selection:option,recipientCulture:forms.data!.recipientCulture!,recipientContextRevision:forms.data!.recipientContextRevision!,modeRevision:contact.modeRevision,blocked:undefined,touched:true}));
     setSelectionError(undefined);
   }
   function confirmed(result: Outgoing) {
@@ -92,10 +92,10 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     updateForm(old=>({...old,attempt:request,notStored:false}));
     try { confirmed(await sendFormMessage(contact.id,request,actor)); } catch(error) {
       const feedback=errorFeedback(error,{writing:true,fields:["message"],conflictCodes});
-      if (feedback.kind === "uncertain") {
+      const code=error instanceof ApiError?error.code:undefined;
+      if (feedback.kind === "uncertain" || code === "WhatsApp.Chat.RequestConflict") {
         if (active.current) notify({id:noticeId,kind:"warning",message:t("forms.uncertain"),action:{label:t("send.check"),onClick:()=>void checkOutcome()}});
       } else {
-        const code=error instanceof ApiError?error.code:undefined;
         updateForm(old=>({...old,attempt:undefined,notStored:false,blocked:feedback.kind==="forbidden"?"forbidden":code==="WhatsApp.Flow.RecipientContextChanged"?"recipientChanged":code==="WhatsApp.Flow.FormUnavailable"?"formUnavailable":old.blocked}));
         if (active.current) {
           setFieldError(feedback.fields.message?.join(" "));

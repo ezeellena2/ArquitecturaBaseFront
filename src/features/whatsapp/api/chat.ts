@@ -18,7 +18,7 @@ export interface ChatMessage {
   form?: ChatFormMetadata | null;
 }
 export interface Outgoing {
-  kind?: "Text" | "Flow"; form?: ChatFormMetadata | null;
+  kind?: "Text" | "Flow"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
   id: string; requestId: string; operatorUserId: string; body: string | null; requestedAtUtc: string;
   state: OutgoingState; waMessageId: string | null;
 }
