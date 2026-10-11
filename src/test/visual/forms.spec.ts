@@ -175,6 +175,7 @@ test("uncertain publication keeps one UUID and replays only the same body after 
   const attempts = () => page.evaluate(() => (window as typeof window & { fixturePublicationAttempts: string[] }).fixturePublicationAttempts);
   await page.setViewportSize({ width: 320, height: 900 });
   await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-uncertain&lang=es`);
+  await page.getByRole("heading", { name: "Registrar visita", level: 1, exact: true }).waitFor({ state: "visible" });
   await page.evaluate(() => {
     const fixture = window as typeof window & { fixturePublicationAttempts: string[] };
     fixture.fixturePublicationAttempts = [];

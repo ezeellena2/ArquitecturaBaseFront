@@ -59,7 +59,11 @@ for (const screen of ["/", "/usuarios", "/configuracion"]) {
     await page.getByRole("button", { name: /código/i }).click();
     const boxes = page.getByRole("textbox");
     for (let index = 0; index < 6; index++) await boxes.nth(index).fill("1");
-    await page.getByRole("button", { name: /entrar|verificar/i }).click();
+    // El callback carga otro documento; preparar el canje sin esperar el destino que se verifica abajo.
+    await Promise.all([
+      page.waitForResponse(response => response.request().method() === "POST" && new URL(response.url()).pathname === "/connect/token"),
+      page.getByRole("button", { name: /entrar|verificar/i }).click(),
+    ]);
     await expect(page).toHaveURL(`${origin}/`);
     await expect(page.getByRole("heading", { name: "Inicio", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Menú de Member", exact: true })).toBeVisible();
