@@ -14,6 +14,8 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
 
  test(`uncertain publication shows one review warning ${lang} at ${width}px`,async({page})=>{
  const es=lang==="es";await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-uncertain-reload&lang=${lang}`);
+ // Preparación del editor independiente del estado de publicación y del aviso esperado.
+ await page.getByRole("heading",{name:es?"Registrar visita":"Register visit",level:1,exact:true}).waitFor({state:"visible"});
  const panel=page.getByRole("region",{name:es?"Publicación sin confirmar":"Publication unconfirmed",exact:true});const hint=es?"Esta publicación necesita revisión. No inicies otra para intentar resolverla.":"This publication needs review. Do not start another one to try to resolve it.";
  await expect(panel.getByText(hint,{exact:true})).toHaveCount(1);await expect(panel.getByRole("listitem").first()).toHaveText(es?"Aceptada":"Accepted");
  const consult=panel.getByRole("button",{name:es?"Consultar publicación":"Check publication",exact:true});await expect(consult).toBeEnabled();await consult.click();await expect(panel.getByText(hint,{exact:true})).toHaveCount(1);
