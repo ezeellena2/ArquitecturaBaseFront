@@ -365,6 +365,16 @@
     "stateFilter": "Status: {{state}}"
   },
   "catalogQuestion": {
-    "optionsAtSend": "Options are prepared when sending the form, for each person."
+    "optionsAtSend": "Options are prepared when sending the form, for each person.",
+    "catalog": "Catalog",
+    "selected": "Selected catalog",
+    "requiresRead": "You need permission to read catalogs and choose one.",
+    "hint": "The employee sees the text and detail of each option.",
+    "search": "Search catalogs",
+    "empty": "No catalogs match.",
+    "view": "View catalog",
+    "changeTitle": "Change the catalog?",
+    "changeDescription": "The saved question is replaced with a new one. Previous versions keep their catalog.",
+    "changeAction": "Change catalog"
   }
 }

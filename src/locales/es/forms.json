@@ -365,6 +365,16 @@
     "stateFilter": "Estado: {{state}}"
   },
   "catalogQuestion": {
-    "optionsAtSend": "Las opciones se preparan al mandar el formulario, para cada persona."
+    "optionsAtSend": "Las opciones se preparan al mandar el formulario, para cada persona.",
+    "catalog": "Catálogo",
+    "selected": "Catálogo seleccionado",
+    "requiresRead": "Necesitás permiso para leer catálogos y elegir uno.",
+    "hint": "El empleado ve el texto y el detalle de cada opción.",
+    "search": "Buscar catálogo",
+    "empty": "No hay catálogos que coincidan.",
+    "view": "Ver el catálogo",
+    "changeTitle": "¿Cambiar el catálogo?",
+    "changeDescription": "La pregunta guardada se reemplaza por una nueva. Las versiones anteriores conservan su catálogo.",
+    "changeAction": "Cambiar catálogo"
   }
 }
