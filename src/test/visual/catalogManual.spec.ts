@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { visualCatalogId } from "./catalogFixtures";
 
+// Separate journeys preserve all assertions and the default timeout without accumulating reloads.
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
   test("Manual catalog " + language + " " + width, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
@@ -41,6 +42,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(saved[1]!.items[0]!.itemId).toBeTruthy();
     expect(saved[1]!.items[0]).not.toHaveProperty("position");
     await page.screenshot({ path: info.outputPath("manual-saved.png"), fullPage: true });
+  });
+  test("Manual catalog movements " + language + " " + width, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    const english = language === "en";
+    const enter = async (screen: string, scenario = "catalogs-manage") => {
+      await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen, lang: language, scenario }));
+      await page.getByRole("heading", { name: screen === "/catalogos" ? english ? "Catalogs" : "Catálogos" : screen === "/catalogos/nuevo" ? english ? "New catalog" : "Nuevo catálogo" : english ? "Customers" : "Clientes", exact: true }).waitFor();
+      await page.evaluate(() => document.fonts.ready);
+    };
     await enter("/catalogos/" + visualCatalogId + "?pageSize=1");
     await page.getByRole("button", { name: english ? "Move Pérez down" : "Bajar Pérez", exact: true }).click();
     await page.getByRole("button", { name: english ? "Next page" : "Página siguiente", exact: true }).click();
@@ -57,6 +67,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByText("Ríos", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: english ? "Previous page" : "Página anterior", exact: true }).click();
     await expect(page.getByRole("button", { name: english ? "Move López up" : "Subir López", exact: true })).toBeDisabled();
+  });
+  test("Manual catalog conflict " + language + " " + width, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    const english = language === "en";
+    const enter = async (screen: string, scenario = "catalogs-manage") => {
+      await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen, lang: language, scenario }));
+      await page.getByRole("heading", { name: screen === "/catalogos" ? english ? "Catalogs" : "Catálogos" : screen === "/catalogos/nuevo" ? english ? "New catalog" : "Nuevo catálogo" : english ? "Customers" : "Clientes", exact: true }).waitFor();
+      await page.evaluate(() => document.fonts.ready);
+    };
     await enter("/catalogos/" + visualCatalogId, "catalogs-conflict");
     await page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true }).fill("Mi borrador");
     await page.getByRole("button", { name: english ? "Save" : "Guardar", exact: true }).click();
@@ -68,6 +87,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: info.outputPath("manual-conflict.png"), fullPage: true });
     await page.getByRole("button", { name: english ? "Use the current revision" : "Usar la revisión actual", exact: true }).click();
     await expect(page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true })).toHaveValue("Clientes actuales");
+  });
+  test("Manual catalog permissions " + language + " " + width, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    const english = language === "en";
+    const enter = async (screen: string, scenario = "catalogs-manage") => {
+      await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen, lang: language, scenario }));
+      await page.getByRole("heading", { name: screen === "/catalogos" ? english ? "Catalogs" : "Catálogos" : screen === "/catalogos/nuevo" ? english ? "New catalog" : "Nuevo catálogo" : english ? "Customers" : "Clientes", exact: true }).waitFor();
+      await page.evaluate(() => document.fonts.ready);
+    };
     await enter("/catalogos/" + visualCatalogId, "catalogs-read");
     await expect(page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true })).toHaveAttribute("readonly", "");
     await expect(page.getByRole("button", { name: english ? "Save" : "Guardar", exact: true })).toHaveCount(0);
