@@ -285,6 +285,29 @@
       "reactivateNamed": "Reactivate {{name}}",
       "empty": "No options yet.",
       "editing": "Editing {{name}}"
+    },
+    "filters": {
+      "title": "Where options come from: database with filters",
+      "view": "View",
+      "columns": "Columns: {{names}}.",
+      "textColumn": "Option text",
+      "noDetail": "No detail",
+      "conditions": "Which rows to include",
+      "if": "If",
+      "and": "And",
+      "comparison": "Comparison",
+      "value": "Value",
+      "conditionColumn": "Column for condition {{number}}",
+      "conditionComparison": "Comparison for condition {{number}}",
+      "conditionValue": "Value for condition {{number}}",
+      "remove": "Remove condition {{number}}",
+      "add": "Add condition",
+      "excludeRecipient": "Exclude the recipient",
+      "excludeRecipientHint": "The person receiving the form is not included in these options.",
+      "direction": "Direction",
+      "ascending": "A → Z",
+      "descending": "Z → A",
+      "order": "Order"
     }
   }
 }

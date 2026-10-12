@@ -10,6 +10,7 @@ import { AppLayout } from "@/layouts/AppLayout";
 import i18n from "@/shared/i18n";
 import { Catalog } from "./Catalog";
 import { FormReplyPreview } from "./FormReplyPreview";
+import { CatalogComponentsPreview } from "./CatalogComponentsPreview";
 import { installVisualFixtures } from "./fixtures";
 
 // Entrada exclusiva de desarrollo/pruebas, fuera de las entradas del build.
@@ -26,7 +27,7 @@ if ((screen !== "/" || parameters.get("scenario")?.startsWith("assistant-")) && 
   });
   await authConfig.userStore?.set(`user:${location.origin}:web`, user.toStorageString());
 }
-const router = createMemoryRouter([...routes, { Component: AppLayout, children: [{ path: "/catalogo", Component: Catalog }, { path: "/form-replies", Component: FormReplyPreview }] }], {
+const router = createMemoryRouter([...routes, { Component: AppLayout, children: [{ path: "/catalogo", Component: Catalog }, { path: "/form-replies", Component: FormReplyPreview }, { path: "/formularios/catalogos-preview", Component: CatalogComponentsPreview }] }], {
   initialEntries: [screen],
 });
 createRoot(document.getElementById("root")!).render(<AppProviders><RouterProvider router={router} /></AppProviders>);

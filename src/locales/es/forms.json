@@ -285,6 +285,29 @@
       "reactivateNamed": "Reactivar {{name}}",
       "empty": "Todavía no hay opciones.",
       "editing": "Editando {{name}}"
+    },
+    "filters": {
+      "title": "De dónde salen: la base, con filtros",
+      "view": "Vista",
+      "columns": "Columnas: {{names}}.",
+      "textColumn": "Texto de cada opción",
+      "noDetail": "Sin detalle",
+      "conditions": "Qué filas entran",
+      "if": "Si",
+      "and": "Y",
+      "comparison": "Comparación",
+      "value": "Valor",
+      "conditionColumn": "Columna de la condición {{number}}",
+      "conditionComparison": "Comparación de la condición {{number}}",
+      "conditionValue": "Valor de la condición {{number}}",
+      "remove": "Quitar condición {{number}}",
+      "add": "Agregar condición",
+      "excludeRecipient": "Sin incluir a quien lo recibe",
+      "excludeRecipientHint": "La persona que recibe el formulario no aparece entre estas opciones.",
+      "direction": "Dirección",
+      "ascending": "A → Z",
+      "descending": "Z → A",
+      "order": "Orden"
     }
   }
 }
