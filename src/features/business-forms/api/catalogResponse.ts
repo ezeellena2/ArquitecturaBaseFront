@@ -11,6 +11,9 @@ const catalog = z.strictObject({ id: guid, key: z.string(), name: requiredText(1
 const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: nullableText(200).refine(value => !!value.es?.trim()), detail: nullableText(500), position: z.number().int().min(1).max(10000), isActive: z.boolean() });
 const itemPage = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
   .refine(value => new Set(value.items.map(row => row.id.toLowerCase())).size === value.items.length);
+const listItem = z.strictObject({ id: guid, name: z.string().min(1), description: z.string().nullable(), origin: z.enum(["Manual", "Filters"]), optionsCount: count.nullable(), usageCount: count.nullable(), state: z.enum(["Active", "Inactive", "Unavailable"]), stateReason: z.string().nullable(), canEdit: z.boolean() });
+const catalogPage = z.strictObject({ items: z.array(listItem), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
+  .refine(value => new Set(value.items.map(row => row.id.toLowerCase())).size === value.items.length);
 const saved = z.strictObject({ catalog, itemIdentityMap: z.record(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/), guid) });
 
 export class UnsupportedCatalogResponse extends Error {
@@ -38,6 +41,8 @@ export function readCatalogSave(value: unknown, newLocalIds: readonly string[], 
     || newLocalIds.some(key => !map[key]) || new Set(Object.values(map).map(value => value.toLowerCase())).size !== newLocalIds.length) throw new UnsupportedCatalogResponse();
   return result;
 }
+export const readCatalogPage = (value: unknown): PagedResult<z.infer<typeof listItem>> => read(catalogPage, value);
+export type CatalogListItem = z.infer<typeof listItem>;
 export type CatalogDetail = z.infer<typeof catalog>;
 export type CatalogItem = z.infer<typeof item>;
 export type CatalogSave = z.infer<typeof saved>;

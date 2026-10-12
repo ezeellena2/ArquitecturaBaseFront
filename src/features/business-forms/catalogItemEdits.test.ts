@@ -18,7 +18,7 @@ describe("Manual catalog edits across partial pages", () => {
     const edited = { ...second, isActive: false };
     const added = { ...first, localId: "new-item", itemId: null, code: "C-003", position: 3 };
     state = stageCatalogItem(stageCatalogItem(state, edited), added);
-    expect(catalogItemChanges(state)).toEqual([edited, added]);
+    expect(catalogItemChanges(state)).toEqual([edited, { ...added, position: null }]);
     expect(catalogItemChanges(state).some(item => item.itemId === first.itemId)).toBe(false);
   });
   it("removes a restored value from the pending set without deactivating other items", () => {

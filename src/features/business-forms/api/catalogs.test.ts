@@ -10,7 +10,7 @@ const itemId = "01990000-0000-7000-8000-000000000021";
 const otherId = "01990000-0000-7000-8000-000000000022";
 const catalog = { id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Personas a visitar", en: "People to visit" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null };
 const item = { id: itemId, code: "C-001", text: { es: "Pérez Hnos.", en: null }, detail: { es: "Av. Colón 1234", en: null }, position: 1, isActive: false };
-const body = { name: catalog.name, description: catalog.description, items: [{ localId: "new-option", itemId: null, code: item.code, text: item.text, detail: item.detail, position: 1, isActive: false }] };
+const body = { name: catalog.name, description: catalog.description, items: [{ localId: "new-option", itemId: null, code: item.code, text: item.text, detail: item.detail, isActive: false }] };
 afterEach(resetHttpClient);
 
 describe("Manual catalog adapter against current DTO source", () => {
@@ -23,6 +23,7 @@ describe("Manual catalog adapter against current DTO source", () => {
     expect(saved.itemIdentityMap).toEqual({ "new-option": itemId });
     expect(received[0]).not.toHaveProperty("kind");
     expect(received[0]).not.toHaveProperty("requestId");
+    expect((received[0] as { items: unknown[] }).items[0]).not.toHaveProperty("position");
   });
   it("updates an existing identity and editable code with one expectedRevision body", async () => {
     const update = { ...body, expectedRevision: 1, items: [{ ...body.items[0]!, itemId, code: "C-099", isActive: true }] };

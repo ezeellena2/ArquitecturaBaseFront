@@ -241,7 +241,8 @@
       "manualHint": "For lists maintained by a person: customers, job types and warehouses. Add, order and deactivate options here.",
       "filters": "Use database options with filters",
       "filtersHint": "Choose a catalog view (currently Users) and which rows to include. It updates automatically: a new user appears in the next send.",
-      "continue": "Continue"
+      "continue": "Continue",
+      "comingSoon": "Coming soon."
     },
     "columns": {
       "name": "Catalog",
@@ -281,7 +282,14 @@
       "reactivate": "Reactivate",
       "reactivateNamed": "Reactivate {{name}}",
       "empty": "No options yet.",
-      "editing": "Editing {{name}}"
+      "editing": "Editing {{name}}",
+      "loadFailed": "We could not load the options.",
+      "search": "Search options",
+      "new": "New option",
+      "moveAfterSave": "{{action}}. Save the option before moving it.",
+      "movesPending_one": "1 pending move. It will apply when you save.",
+      "movesPending_other": "{{count}} pending moves. They will apply in this order when you save.",
+      "clearMoves": "Discard moves"
     },
     "filters": {
       "title": "Where options come from: database with filters",
@@ -311,6 +319,22 @@
       "description": "Description",
       "descriptionHint": "People read it to know when to use this catalog.",
       "languagesHint": "Complete the name and description in Spanish and English. English option text is optional."
-    }
+    },
+    "title": "Catalogs",
+    "saved": "Catalog saved.",
+    "notFound": "We could not find this catalog.",
+    "detailFailed": "We could not load the catalog.",
+    "review": {
+      "title": "Catalog review",
+      "required": "The catalog may have changed. Review the current version before saving again.",
+      "description": "Rereading preserves your draft. Using the current revision discards unsaved changes, including pending options.",
+      "mine": "Your draft",
+      "current": "The current revision",
+      "readFirst": "Reread to compare with the current revision.",
+      "reread": "Reread",
+      "adopt": "Use the current revision"
+    },
+    "search": "Search catalogs",
+    "loadFailed": "We could not load the catalogs."
   }
 }

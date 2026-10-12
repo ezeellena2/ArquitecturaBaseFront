@@ -241,7 +241,8 @@
       "manualHint": "Para listas que mantiene una persona: clientes, tipos de trabajo, depósitos. Se agregan, ordenan y dan de baja acá.",
       "filters": "Tomarlas de la base, con filtros",
       "filtersHint": "Elegís una vista de catálogo (por ahora, Usuarios) y qué filas entran. Se actualiza sola: un usuario nuevo aparece en el próximo envío.",
-      "continue": "Continuar"
+      "continue": "Continuar",
+      "comingSoon": "Disponible próximamente."
     },
     "columns": {
       "name": "Catálogo",
@@ -281,7 +282,14 @@
       "reactivate": "Reactivar",
       "reactivateNamed": "Reactivar {{name}}",
       "empty": "Todavía no hay opciones.",
-      "editing": "Editando {{name}}"
+      "editing": "Editando {{name}}",
+      "loadFailed": "No pudimos cargar las opciones.",
+      "search": "Buscar opción",
+      "new": "Nueva opción",
+      "moveAfterSave": "{{action}}. Guardá la opción para poder moverla.",
+      "movesPending_one": "1 movimiento pendiente. Se aplicará al guardar.",
+      "movesPending_other": "{{count}} movimientos pendientes. Se aplicarán en este orden al guardar.",
+      "clearMoves": "Descartar movimientos"
     },
     "filters": {
       "title": "De dónde salen: la base, con filtros",
@@ -311,6 +319,22 @@
       "description": "Descripción",
       "descriptionHint": "La leen las personas para saber cuándo usarlo.",
       "languagesHint": "Completá el nombre y la descripción en español e inglés. En las opciones, el inglés es opcional."
-    }
+    },
+    "title": "Catálogos",
+    "saved": "Catálogo guardado.",
+    "notFound": "No encontramos este catálogo.",
+    "detailFailed": "No pudimos cargar el catálogo.",
+    "review": {
+      "title": "Revisión del catálogo",
+      "required": "El catálogo puede haber cambiado. Revisá la versión actual antes de guardar de nuevo.",
+      "description": "Tu borrador se conserva al releer. Usar la revisión actual descarta los cambios sin guardar, incluidas las opciones pendientes.",
+      "mine": "Tu borrador",
+      "current": "La revisión actual",
+      "readFirst": "Releé para comparar con la revisión actual.",
+      "reread": "Releer",
+      "adopt": "Usar la revisión actual"
+    },
+    "search": "Buscar catálogo",
+    "loadFailed": "No pudimos cargar los catálogos."
   }
 }

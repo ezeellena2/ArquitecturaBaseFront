@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogDetail } from "./api/catalogResponse";
-import { catalogDraftBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem } from "./catalogDraft";
+import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove } from "./catalogDraft";
 
 const catalog: CatalogDetail = { id: "01990000-0000-7000-8000-000000000020", key: "01990000000070008000000000000020", kind: "Manual", name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, revision: 1, isActive: true, itemsCount: 3, usageCount: 0, unavailableReasonCode: null };
 const item = { id: "01990000-0000-7000-8000-000000000021", code: "C1", text: { es: "Cliente", en: null }, detail: { es: null, en: null }, position: 1, isActive: true };
@@ -40,5 +40,27 @@ describe("Catalog draft body by identity", () => {
     option.label.es = "Later";
     expect(body.items[0]!.text.es).toBe("Otro");
     expect(body.name).not.toBe(state.name);
+  });
+  it("does not serialize confirmed or provisional positions in item writes", () => {
+    const loaded = loadCatalogDraftItems(openCatalogDraft(catalog), [item]);
+    const changed = stageCatalogDraftItem(loaded, { ...Object.values(loaded.items.originals)[0]!, code: "C2", position: 999 });
+    const body = catalogDraftBody(changed);
+    expect(body.items[0]).not.toHaveProperty("position");
+    expect(Object.values(changed.items.changes)[0]!.position).toBe(1);
+    const added = stageCatalogDraftItem(openCatalogDraft(), { localId: "new", itemId: null, label: { es: "Nueva" }, detail: {}, code: "NEW", isActive: true, position: 999 });
+    expect(Object.values(added.items.changes)[0]!.position).toBeNull();
+    expect(catalogDraftBody(added).items[0]).not.toHaveProperty("position");
+  });
+  it("records multiple moves by persisted identity in order without inventing a new position", () => {
+    const loaded = loadCatalogDraftItems(openCatalogDraft(catalog), [item]);
+    const moved = stageCatalogDraftMove(stageCatalogDraftMove(loaded, item.id, "down"), item.id, "up");
+    expect(catalogDraftUpdateBody(moved)).toMatchObject({ expectedRevision: 1, items: [], moves: [{ itemId: item.id, direction: "down" }, { itemId: item.id, direction: "up" }] });
+    expect(Object.values(moved.items.originals)[0]!.position).toBe(1);
+    expect(openCatalogDraft({ ...catalog, revision: 2 }).moves).toEqual([]);
+  });
+  it("does not move unknown identities or unsaved local options", () => {
+    const empty = stageCatalogDraftItem(openCatalogDraft(catalog), { localId: "local-new", itemId: null, label: { es: "Nueva" }, detail: {}, code: "NEW", isActive: true, position: null });
+    expect(stageCatalogDraftMove(empty, "local-new", "up").moves).toEqual([]);
+    expect(stageCatalogDraftMove(empty, "01990000-0000-7000-8000-000000000099", "down").moves).toEqual([]);
   });
 });

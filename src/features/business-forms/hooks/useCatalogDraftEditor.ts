@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
+import type { CatalogItemMove } from "../api/catalogs";
 import { createManualCatalog, fetchCatalog, updateManualCatalog } from "../api/catalogs";
 import type { CatalogDetail, CatalogItem, CatalogSave } from "../api/catalogResponse";
-import { catalogDraftBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, type CatalogDraft } from "../catalogDraft";
+import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 
@@ -54,6 +55,14 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || !canManage || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => ({ ...value, error: null, draft: stageCatalogDraftItem(value.draft, item) }));
   }, [owned, canManage, isCurrentOwner]);
+  const changeMove = useCallback((itemId: string, direction: CatalogItemMove["direction"]) => {
+    if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
+    setState(value => ({ ...value, error: null, draft: stageCatalogDraftMove(value.draft, itemId, direction) }));
+  }, [owned, isCurrentOwner]);
+  const clearMoves = useCallback(() => {
+    if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
+    setState(value => ({ ...value, error: null, draft: { ...value.draft, moves: [] } }));
+  }, [owned, isCurrentOwner]);
   const loadItems = useCallback((items: readonly CatalogItem[], revision = state.draft.revision) => {
     if (!owned || !isCurrentOwner() || operation.current || stateRef.current.busy || stateRef.current.requiresReview || revision !== stateRef.current.draft.revision) return;
     setState(value => ({ ...value, draft: loadCatalogDraftItems(value.draft, items) }));
@@ -66,7 +75,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     setState(value => ({ ...value, busy: true, error: null, saved: null }));
     try {
       const saved = captured.id && captured.revision !== null
-        ? await updateManualCatalog(captured.id, { ...body, expectedRevision: captured.revision }, controller.signal)
+        ? await updateManualCatalog(captured.id, catalogDraftUpdateBody(captured), controller.signal)
         : await createManualCatalog(body, controller.signal);
       if (!accepts(owner, controller) || !permissionsRef.current.canManage) return;
       const next = fresh(owner, saved.catalog);
@@ -76,7 +85,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
       return saved;
     } catch (error) {
       if (!accepts(owner, controller)) return;
-      const review = error instanceof ApiError ? error.status === 409 || error.isNetworkError || error.status >= 500 : true;
+      const review = captured.id !== null && (error instanceof ApiError ? error.status === 409 || error.isNetworkError || error.status >= 500 : true);
       setState(value => ({ ...value, busy: false, error, requiresReview: review }));
     } finally {
       if (operation.current === controller) { operation.current = null; if (active.current && ownerRef.current === owner) setState(value => ({ ...value, busy: false })); }
@@ -100,8 +109,8 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   }, [owned, owner, isCurrentOwner]);
   const draft = owned ? state.draft : null;
   const dirty = !!draft && (JSON.stringify(draft.name) !== JSON.stringify(state.baseline.name)
-    || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description) || Object.keys(draft.items.changes).length > 0);
+    || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0);
   return { draft, dirty, busy: owned && state.busy, requiresReview: owned && state.requiresReview, current: owned ? state.current : null,
     saved: owned ? state.saved : null, error: owned ? state.error : null, canSave: owned && canManage && !state.busy && !state.requiresReview,
-    changeMetadata, changeItem, loadItems, save, readCurrent, adoptCurrent };
+    changeMetadata, changeItem, changeMove, clearMoves, loadItems, save, readCurrent, adoptCurrent };
 }

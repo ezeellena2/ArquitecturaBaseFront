@@ -6,7 +6,7 @@ export interface CatalogManualItemValue {
   readonly detail: Readonly<Record<string, string | null>>;
   readonly code: string;
   readonly isActive: boolean;
-  readonly position: number;
+  readonly position: number | null;
 }
 export interface CatalogItemEdits {
   readonly originals: Readonly<Record<string, CatalogManualItemValue>>;
@@ -36,9 +36,10 @@ export function stageCatalogItem(state: CatalogItemEdits, item: CatalogManualIte
   const key = identity(item);
   const original = state.originals[key];
   if (item.itemId !== null && !original) return state;
+  const confirmed = { ...item, position: original?.position ?? null };
   const changes = { ...state.changes };
-  if (original && sameValue(original, item)) delete changes[key];
-  else changes[key] = copy(item);
+  if (original && sameValue(original, confirmed)) delete changes[key];
+  else changes[key] = copy(confirmed);
   return { originals: state.originals, changes };
 }
 
