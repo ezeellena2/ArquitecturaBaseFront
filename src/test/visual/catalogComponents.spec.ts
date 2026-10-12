@@ -17,7 +17,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.keyboard.down("ArrowDown");
     await expect(dialog.getByRole("radio", { name: es ? "Tomarlas de la base, con filtros" : "Use database options with filters" })).toBeChecked();
     await page.keyboard.up("ArrowDown");
-    await expect(dialog.getByRole("radio", { name: es ? "Escribir una consulta" : "Write a query" })).toBeDisabled();
+    await expect(dialog.getByRole("radio", { name: es ? "Escribir una consulta" : "Write a query" })).toHaveCount(0);
     await dialog.screenshot({ path: "test-results/catalog-origin-" + language + "-" + width + ".png" });
     await page.keyboard.press("Escape");
     await expect(create).toBeFocused();

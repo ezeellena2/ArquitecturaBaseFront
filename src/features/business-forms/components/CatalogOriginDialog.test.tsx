@@ -37,7 +37,7 @@ describe("Chosen catalog origin board K2", () => {
       await user.keyboard("{/ArrowDown}");
       expect(filters).toHaveFocus();
       expect(onSelect).not.toHaveBeenCalled();
-      expect(screen.getByRole("radio", { name: language === "es" ? "Escribir una consulta" : "Write a query" })).toBeDisabled();
+      expect(screen.queryByRole("radio", { name: language === "es" ? "Escribir una consulta" : "Write a query" })).not.toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: language === "es" ? "Continuar" : "Continue" }));
       expect(onSelect).toHaveBeenCalledExactlyOnceWith("Filters");
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

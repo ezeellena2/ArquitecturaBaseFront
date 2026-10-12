@@ -24,7 +24,6 @@ export function CatalogOriginDialog({ onOpenChange, onSelect }: {
         options={[
           { value: "Manual", label: t("catalogs.origin.manual"), description: t("catalogs.origin.manualHint") },
           { value: "Filters", label: t("catalogs.origin.filters"), description: t("catalogs.origin.filtersHint") },
-          { value: "Query", label: t("catalogs.origin.query"), description: t("catalogs.origin.queryUnavailable"), disabled: true },
         ]} />
       <DialogFooter>
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common:actions.cancel")}</Button>

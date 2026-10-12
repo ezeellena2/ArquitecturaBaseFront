@@ -14,7 +14,7 @@ export interface CatalogListRow {
   id: string;
   name: string;
   description: string | null;
-  origin: "Manual" | "Filters" | "Query";
+  origin: "Manual" | "Filters";
   optionsCount: number | null;
   usageCount: number;
   state: "Active" | "Inactive" | "Unavailable";
@@ -44,7 +44,7 @@ export function CatalogListTable({ page, canManage, loading, error, onRetry, onP
       {row.description ? <p className="text-xs text-[var(--color-content-muted)]">{row.description}</p> : null}
     </div> },
     { id: "origin", header: t("catalogs.columns.origin"), cell: row => <div><p>{t("catalogs.source." + (row.origin === "Manual" ? "manual" : "database"))}</p>
-      {row.origin !== "Manual" ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.source." + (row.origin === "Filters" ? "filters" : "query"))}</p> : null}
+      {row.origin !== "Manual" ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.source.filters")}</p> : null}
     </div> },
     { id: "optionsCount", header: t("catalogs.columns.options"), cell: row => row.optionsCount ?? "—" },
     { id: "usageCount", header: t("catalogs.columns.usage"), cell: row => row.usageCount > 0
@@ -55,7 +55,7 @@ export function CatalogListTable({ page, canManage, loading, error, onRetry, onP
     </div> },
     { id: "actions", header: t("actionsColumn"), align: "right", cell: row => <RowActions actions={[{
       label: t("edit"), accessibleName: t("catalogs.editNamed", { name: row.name }), icon: PencilIcon,
-      hidden: !canManage || !row.canEdit || row.origin === "Query", onSelect: () => onEdit(row.id),
+      hidden: !canManage || !row.canEdit, onSelect: () => onEdit(row.id),
     }]} /> },
   ];
   return <Surface>

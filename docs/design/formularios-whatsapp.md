@@ -104,15 +104,15 @@ Etapa 2, catálogos (2026-10-10), sobre los
 [acuerdos §5](../../../ArquitecturaBase/docs/plans/formularios-modelo-demo/acuerdos-2026-10-08.md) y el plan §5.2. Decidido el
 mismo día: el inglés de las opciones de un catálogo es opcional (si falta, se usa el español); cambiar el catálogo de una
 pregunta publicada la convierte en pregunta nueva; si la opción elegida se dio de baja antes de responder, no se guarda,
-se avisa al operador y se ofrece mandarlo de nuevo. La consulta avanzada necesita un ADR antes de programarse.
+se avisa al operador y se ofrece mandarlo de nuevo. **Decisión del 2026-10-11:** Query/K5 se posterga hasta que una lista no pueda expresarse con Filters. El alta K2 muestra sólo Manual y Filters; no ofrece «con una consulta», tampoco deshabilitada. Las capturas K2/K5 se conservan como evidencia histórica del diseño anterior.
 
 | Captura | Qué define |
 | --- | --- |
 | [K1 · Catálogos](evidence/formularios-whatsapp/cat-k1-listado.png) | Entrada nueva en Formularios; listado con origen, opciones, qué formularios lo usan y estado (activo, no se puede usar con el motivo, dado de baja). |
-| [K2 · Nuevo catálogo](evidence/formularios-whatsapp/cat-k2-nuevo.png) | Elegir de dónde salen las opciones: escritas a mano, de la base con filtros o con una consulta avanzada. El origen no cambia después. |
+| [K2 · Nuevo catálogo](evidence/formularios-whatsapp/cat-k2-nuevo.png) | Elegir de dónde salen las opciones: escritas a mano o de la base con filtros. El origen no cambia después. La consulta visible en la captura histórica fue postergada el 2026-10-11 y no se muestra en el alta actual. |
 | [K3 · Escritas a mano](evidence/formularios-whatsapp/cat-k3-manual.png) | Texto, detalle y código por opción, orden, dar de baja sin borrar, formularios que lo usan y cómo lo ve el empleado. |
 | [K4 · De la base, con filtros](evidence/formularios-whatsapp/cat-k4-filtros.png) | Vista Usuarios, columnas de texto y detalle, condiciones, «sin incluir a quien lo recibe», orden y vista previa como si lo recibiera alguien. |
-| [K5 · Con una consulta](evidence/formularios-whatsapp/cat-k5-consulta.png) | Consulta de lectura sobre vistas de catálogo, prueba con una persona de ejemplo, motivos de rechazo y cómo se arregla un catálogo que dejó de funcionar. |
+| [K5 · Con una consulta](evidence/formularios-whatsapp/cat-k5-consulta.png) | **Postergada el 2026-10-11**, hasta que una lista no pueda expresarse con Filters. Captura histórica: consulta de lectura sobre vistas, prueba con una persona de ejemplo y recuperación de un catálogo inválido; no se implementa ni se ofrece en K2. |
 | [K6 · Elegir de un catálogo](evidence/formularios-whatsapp/cat-k6-pregunta.png) | El tipo de pregunta nuevo en el editor; catálogos que no se pueden usar, visibles pero no elegibles. |
 | [K7 · Al mandar y al responder](evidence/formularios-whatsapp/cat-k7-envio.png) | Opciones preparadas para cada persona al enviar, catálogo inválido, más de 200 o ninguna opción, lo que ve Juan, la referencia guardada y la opción dada de baja antes de responder. |
 

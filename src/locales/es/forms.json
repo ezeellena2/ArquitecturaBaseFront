@@ -241,8 +241,6 @@
       "manualHint": "Para listas que mantiene una persona: clientes, tipos de trabajo, depósitos. Se agregan, ordenan y dan de baja acá.",
       "filters": "Tomarlas de la base, con filtros",
       "filtersHint": "Elegís una vista de catálogo (por ahora, Usuarios) y qué filas entran. Se actualiza sola: un usuario nuevo aparece en el próximo envío.",
-      "query": "Escribir una consulta",
-      "queryUnavailable": "Las consultas avanzadas todavía no están disponibles.",
       "continue": "Continuar"
     },
     "columns": {
@@ -255,8 +253,7 @@
     "source": {
       "manual": "Escritas a mano",
       "database": "De la base",
-      "filters": "Usuarios, con filtros",
-      "query": "Consulta sobre Usuarios"
+      "filters": "Usuarios, con filtros"
     },
     "state": {
       "Active": "Activo",
