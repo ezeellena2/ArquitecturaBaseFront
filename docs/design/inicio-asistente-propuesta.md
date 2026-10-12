@@ -3,7 +3,7 @@
 2026-10-04. Pedido de estudiar el Inicio autenticado como chat que consulta el sistema.
 **assistant-ui elegido por el usuario; front productivo implementado y verificación automática local completada.**
 El piloto operativo continúa pendiente. La portada pública aprobada conserva su recorrido.
-El [plan técnico](../../../ArquitecturaBase/docs/plans/2026-10-04-inicio-asistente.md) fija las propuestas
+La [regla implementada](../../../ArquitecturaBase/docs/features/inteligencia-artificial.md) fija las propuestas
 de permisos, herramientas, datos, proveedores, recuperación, archivos y pruebas.
 
 ## Elección e integración implementada — 2026-10-04
@@ -120,7 +120,7 @@ existente. El tablero no promociona nuevas medidas o componentes al sistema visu
 El usuario pidió después **enmarcar la conversación**: se compone Surface con título Conversación,
 borde y banda del sistema alrededor de bienvenida/hilo/compositor. Historial y Nueva conversación
 permanecen en Page. Este cambio se aplica al tablero local; no introduce una nueva pieza visual.
-La [evaluación de bibliotecas](../../../ArquitecturaBase/docs/plans/2026-10-04-inicio-asistente.md#bibliotecas-de-chat-revisión-solicitada-el-2026-10-04)
+La evaluación de bibliotecas ([ADR 0017](../../../ArquitecturaBase/docs/decisions/0017-inicio-asistente-y-operaciones-durables.md))
 propone assistant-ui con primitivas y ExternalStoreRuntime, conservando nuestra biblioteca y .NET.
 
 ## Tablero local revisable

@@ -14,4 +14,4 @@ arquitectura y contrato visual. Usa AppLayout/Page y controles reales de shared/
 - No ofrecer selector de bibliotecas ni presentar las comparaciones archivadas como propuestas vigentes.
 
 Diseño: [propuesta](../../docs/design/inicio-asistente-propuesta.md).
-Arquitectura: [plan](../../../ArquitecturaBase/docs/plans/2026-10-04-inicio-asistente.md).
+Arquitectura: [inteligencia artificial](../../../ArquitecturaBase/docs/features/inteligencia-artificial.md).
