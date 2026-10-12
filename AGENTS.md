@@ -43,6 +43,7 @@ Reglas adicionales:
 - Trabajá directo en `main`; no crear ramas ni hacer push sin pedido explícito. Commits chicos, en español, con conventional commits.
 - En cada corte, `tsc`, `lint` y los tests de la feature afectada. Al cerrar un paso o un desarrollo: `npm run build`, `npm run lint` y `npm run test` completos y limpios, más el recorrido en el navegador y `npm run test:visual` si hubo cambios visuales ([ADR 0018 del backend](../ArquitecturaBase/docs/decisions/0018-robustez-proporcional-al-efecto.md)). Si levantaste Aspire desde el backend, terminá con `aspire stop`.
 - El contrato con el backend son sus DTO y los ejemplos de respuesta que exporta para el front: los datos de prueba se validan contra ellos, no contra un documento. Planes y evidencias se actualizan al cerrar cada paso, con un resumen corto.
+- Lo que el plan no fija se resuelve con la opción más simple que cumpla el plan y estas reglas, sin preguntar ni agregar mecanismos por las dudas. Un contrato del backend que todavía no se publicó se ajusta junto con él, sin capas de compatibilidad. No se protege contra datos o casos que no existen.
 - Una feature nunca importa otra. Lo compartido va en `src/shared`; router y providers, en `src/app`; sesión y guards, en `src/auth`; caparazón, en `src/layouts`.
 - TypeScript estricto, textos de i18next en español e inglés, datos por TanStack Query y `shared/api/httpClient`. Los tokens viven en memoria.
 - Los permisos del front son para la experiencia; el servidor autoriza. Las decisiones visuales se implementan con tokens y UI comunes.
