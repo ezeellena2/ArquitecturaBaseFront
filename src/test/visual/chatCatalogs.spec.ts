@@ -34,7 +34,7 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){const 
       await screenshot(page,`${state}-${lang}-${width}`,width);
     }
   });
-  test(`K7 historical reference permissions and explicit resend ${lang} ${width}px`,async({page})=>{
+  test(`K7 historical reference reload and permissions ${lang} ${width}px`,async({page})=>{
     await openChat(page,lang,"completed",width);
     await expect(page.getByRole("definition").filter({hasText:"Pérez Hnos."})).toBeVisible();
     await expect(page.getByText("Clientes",{exact:true})).toBeVisible();
@@ -44,6 +44,8 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){const 
     await openChat(page,lang,"no-values",width);await expect(page.getByRole("definition").filter({hasText:"Pérez Hnos."})).toHaveCount(0);
     await expect(page.getByText(text.forms.reply.saved.replace("{{number}}","VIS-000031"),{exact:true})).toBeVisible();
     await screenshot(page,`no-values-${lang}-${width}`,width);
+  });
+  test(`K7 rejection and explicit resend ${lang} ${width}px`,async({page})=>{
     await openChat(page,lang,"inactive",width);
     await expect(page.getByText(text.forms.reply.catalogInactive.replace("{{label}}","Cliente"),{exact:true})).toBeVisible();
     await expect(page.getByRole("definition").filter({hasText:"Pérez Hnos."})).toHaveCount(0);
