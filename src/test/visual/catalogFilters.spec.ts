@@ -72,15 +72,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("combobox", { name: label("Texto de cada opción", "Option text"), exact: true })).toBeDisabled(); await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toHaveCount(0);
     await expect(page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true })).toHaveCount(0);
     await geometry(); await page.screenshot({ path: info.outputPath("filters-read.png"), fullPage: true });
-    await enter("/catalogos/" + visualCatalogId, "catalogs-filters-unavailable");
-    await expect(page.getByRole("combobox", { name: label("Texto de cada opción", "Option text"), exact: true })).toBeEnabled(); await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeDisabled();
-    await expect(page.getByText(label("La vista Usuarios no está disponible.", "The Users view is unavailable."), { exact: true })).toBeVisible();
-    await geometry(); await page.screenshot({ path: info.outputPath("filters-unavailable.png"), fullPage: true });
-    await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { restoreSource: () => void } }).catalogsFixture.restoreSource());
-    await page.getByRole("button", { name: label("Reintentar", "Retry"), exact: true }).click();
-    await expect(page.getByText(label("La vista Usuarios no está disponible.", "The Users view is unavailable."), { exact: true })).toHaveCount(0);
-    await sample(); await page.getByRole("button", { name: label("Probar", "Test"), exact: true }).click();
-    await expect(page.getByText(seedPreview.items[0]!.text, { exact: true })).toBeVisible(); await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeEnabled();
-    await page.screenshot({ path: info.outputPath("filters-restored.png"), fullPage: true });
+    await enter("/catalogos/" + visualCatalogId, "catalogs-filters-missing-role");
+    const savedRole = page.getByRole("combobox", { name: label("Valor de la condición 1", "Value for condition 1"), exact: true });
+    await expect(savedRole).toHaveValue("01990000-0000-7000-8000-000000000699");
+    await expect(savedRole.getByRole("option", { name: label("Valor no disponible", "Unavailable value"), exact: true })).toBeAttached();
+    await expect(page.getByText("01990000-0000-7000-8000-000000000699", { exact: true })).toHaveCount(0);
+    await sample(); await expect(page.getByRole("button", { name: label("Probar", "Test"), exact: true })).toBeEnabled();
+    await savedRole.scrollIntoViewIfNeeded(); await geometry(); await page.screenshot({ path: info.outputPath("filters-missing-role.png"), fullPage: true });
+
   });
 }

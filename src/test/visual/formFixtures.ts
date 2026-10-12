@@ -45,6 +45,14 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 export function createFormFixtureStore(culture: FormCulture = "es", scenario = "", responseBudgetRaw?: string) {
   const definitions = new Map<string, FormDefinitionSnapshot>();
   if (scenario !== "forms-empty") definitions.set(fixtureFormId, fixtureDefinition(culture, scenario === "forms-prefix"));
+  if (scenario.startsWith("forms-catalog")) {
+    const definition = definitions.get(fixtureFormId)!;
+    definitions.set(fixtureFormId, { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map((field, index) => {
+      if (index !== 0 || field.type !== "choice" || field.source) return field;
+      const { options: _options, ...common } = field;
+      return { ...common, source: { catalog: "01990000-0000-7000-8000-000000000080" } };
+    }) } });
+  }
   if (scenario === "forms-translations") {
     const original = fixtureDefinition("es");
     definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: original.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : q.type === "choice" && !q.source ? { ...q, options: q.options.map((o, index) => index === 0 ? { ...o, label: { ...o.label, en: "" } } : o) } : q) } });
@@ -70,8 +78,9 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   let publicationMissing = false; let publicationReads = 0;
   const receipts = new Map<string, { body: string; kind: "Create" | "Update"; result: FormDraftSaveResult }>();
   let conflict = false; let missing = false; let serial = 100;
+  const writes: DraftWriteBody[] = [];
   const calls: { method: string; path: string }[] = [];
-  const canSave = scenario !== "forms-read";
+  const canSave = scenario !== "forms-read" && scenario !== "forms-catalog-read";
   function wireCommit(result: FormDraftSaveResult) { return { ...result, definition: wireDefinition(result.definition) }; }
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname;
@@ -158,6 +167,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     }
     if (!canSave) return json({ code: "General.Forbidden" }, 403);
     const body = await request.json() as DraftWriteBody;
+    writes.push(body);
     const previousReceipt = receipts.get(body.requestId);
     if (previousReceipt) return previousReceipt.body === JSON.stringify(body) ? json(wireCommit(previousReceipt.result)) : json({ code: "Forms.Draft.RequestConflict" }, 409);
     const previous = request.method === "PUT" ? definitions.get(path.split("/").at(-2)!) : undefined;
@@ -191,5 +201,5 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     if (scenario === "forms-uncertain" || scenario === "forms-expired") return json({ code: "General.Unexpected", traceId: "forms-fixture" }, 500);
     return json(wireCommit(result), previous ? 200 : 201);
   }
-  return { handle, definitions, calls };
+  return { handle, definitions, calls, writes };
 }
