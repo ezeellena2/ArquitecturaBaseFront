@@ -1,5 +1,5 @@
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
@@ -13,11 +13,14 @@ import { Pagination } from "@/shared/ui/Pagination";
 import type { Chat, Outgoing } from "../api/chat";
 import type { ChatDraft } from "./ChatComposer";
 import { useFormComposer } from "../hooks/useFormComposer";
+import { FormCatalogPreparation } from "./FormCatalogPreparation";
 import { formOptionKey } from "../lib/formSendSession";
 
-export function FormComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone }: { contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft; updateDraft: (update: (value: ChatDraft) => ChatDraft) => void; timeZone?: string }) {
+export function FormComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, openRequest = 0 }: { contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft; updateDraft: (update: (value: ChatDraft) => ChatDraft) => void; timeZone?: string; openRequest?: number }) {
   const { t, i18n } = useTranslation("whatsapp");
   const state = useFormComposer(contact,actor,canSend,outgoing,draft,updateDraft);
+  const openRequested = useEffectEvent(() => state.show());
+  useEffect(() => {if(openRequest>0)openRequested();},[openRequest]);
   const restoreFocus = useRestoreFocusOnClose(state.open);
   const message = useRef<HTMLTextAreaElement>(null);
   const list = useRef<HTMLDivElement>(null);
@@ -51,6 +54,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
           {state.forms.data ? <fieldset disabled={state.waiting}><Pagination {...state.forms.data.page} onPageChange={page=>{focusPage.current=true;state.setPage(page);}} /></fieldset> : null}
           <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+(form?.recipientCulture??"es"))})}</p>
         </div> : null}
+        {state.mayReadOptions&&!state.contextChanged&&selected?.hasCatalogQuestions&&!frozen ? <FormCatalogPreparation query={state.preparation} waiting={state.waiting} /> : null}
         <FormField label={t("forms.messageLabel")} error={state.fieldError} hint={state.mayReadOptions&&selected?t("forms.messageHelp",{cta,submitLabel:selected.submitLabel[form?.recipientCulture??"es"]}):t("forms.messageRequiredInfo")}>
           <Textarea ref={message} value={form?.message??""} disabled={frozen||state.sending} rows={3} onChange={event=>{const text=event.target.value;state.updateForm(value=>({...value,message:text,touched:true}));state.setFieldError(undefined);}} />
         </FormField>
@@ -61,7 +65,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         {state.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint",{seconds:state.waitSeconds})}</p> : null}
         <DialogFooter>
           <Button variant="outline" disabled={state.sending} onClick={()=>state.setOpen(false)}>{t("forms.cancel")}</Button>
-          {frozen&&!form?.notStored&&!state.sending ? <Button variant="outline" disabled={state.checking||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : <Button disabled={state.sending||state.checking||Boolean(state.blockedReason)||state.versionChanged||state.waiting||state.forms.isError||state.forms.isFetching||(!form?.notStored&&!selected)||form?.blocked==="formUnavailable"} onClick={()=>void state.submit()}>{t(state.sending?"forms.saving":form?.notStored?"send.retry":"forms.action")}</Button>}
+          {frozen&&!form?.notStored&&!state.sending ? <Button variant="outline" disabled={state.checking||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : <Button disabled={state.sending||state.checking||Boolean(state.blockedReason)||state.versionChanged||state.waiting||state.forms.isError||state.forms.isFetching||state.catalogBlocked||(!form?.notStored&&!selected)||form?.blocked==="formUnavailable"} onClick={()=>void state.submit()}>{t(state.sending?"forms.saving":form?.notStored?"send.retry":"forms.action")}</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

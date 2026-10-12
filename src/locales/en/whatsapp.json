@@ -163,7 +163,19 @@
       "stateName": "Form reply {{name}}",
       "noPermission": "You do not have permission to view this form’s answers.",
       "revoked": "You no longer have permission to view these answers.",
-      "messageRemoved": "The WhatsApp message is no longer available. The reply remains saved."
+      "messageRemoved": "The WhatsApp message is no longer available. The reply remains saved.",
+      "catalogInactive": "{{label}}: an option was deactivated. The response was not saved.",
+      "resend": "Send again"
+    },
+    "catalogs": {
+      "loading": "Preparing options for this person…",
+      "loadFailed": "The catalog options could not be loaded.",
+      "options_one": "{{label}}: {{count}} option",
+      "options_other": "{{label}}: {{count}} options",
+      "unavailable": "{{label}}: the catalog is unavailable. Notify its administrator.",
+      "tooLarge": "{{label}}: exceeds the 200 options supported by WhatsApp. Adjust the catalog before sending.",
+      "empty": "{{label}}: has no options and the question is required.",
+      "invalidOption": "{{label}}: an option exceeds WhatsApp limits. Adjust the text or detail without truncating data."
     }
   }
 }

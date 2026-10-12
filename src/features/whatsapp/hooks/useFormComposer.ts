@@ -1,11 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { chatKey, type Chat, type Outgoing } from "../api/chat";
-import { listChatForms, recoverFormMessage, sendFormMessage, type ChatFormOption } from "../api/forms";
+import { listChatForms, prepareChatForm, recoverFormMessage, sendFormMessage, type ChatFormOption } from "../api/forms";
 import type { ChatDraft } from "../components/ChatComposer";
 import { freezeFormMessage, recipientChanged, selectedVersionChanged, type FormSendDraft } from "../lib/formSendSession";
 import { formMessageIssue } from "../lib/formMessage";
@@ -13,7 +13,7 @@ import { replyDisabledReason } from "../lib/replyAvailability";
 
 const conflictCodes = ["WhatsApp.Flow.RecipientContextChanged", "WhatsApp.Flow.FormUnavailable", "WhatsApp.Chat.WindowClosed", "WhatsApp.Chat.ManualRequired", "WhatsApp.Chat.RevisionConflict", "WhatsApp.Chat.SendPending", "WhatsApp.Chat.RequestConflict"];
 export function useFormComposer(contact: Chat, actor: string, canSend: boolean, outgoing: Outgoing[], draft: ChatDraft, updateDraft: (update: (current: ChatDraft) => ChatDraft) => void) {
-  const { t } = useTranslation("whatsapp");
+  const { t, i18n } = useTranslation("whatsapp");
   const { ready: englishReady } = useTranslation("whatsapp", { lng: "en", useSuspense: false });
   const { ready: spanishReady } = useTranslation("whatsapp", { lng: "es", useSuspense: false });
   const client = useQueryClient();
@@ -43,11 +43,27 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
   const disabledReason = commonReason ?? (!(eligibility?.recipientCulture === "en" ? englishReady : spanishReady) ? "forms.loading" : undefined) ?? (draft.attempt ? "send.pending" : recipientReason);
   const forms = useQuery({ queryKey: [...chatKey, actor, "forms", contact.id, eligibility?.recipientContextRevision, eligibility?.recipientCulture, page, search],
     queryFn: async ({signal}) => { try { return await listChatForms(contact.id, page, search, signal); } catch(error) { const feedback = errorFeedback(error); if(feedback.kind === "wait") beginWait(feedback.retryAfterSeconds); throw error; } }, enabled: open && !denied && !changed && eligibility?.status === "Eligible", retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, meta: {errorOwner:"local"} });
+  const preparationKey = useMemo(()=>[...chatKey,actor,"forms",contact.id,"preparation",eligibility?.recipientContextRevision,
+    eligibility?.recipientCulture,form?.selection?.definitionId,form?.selection?.versionId,i18n.resolvedLanguage],
+    [actor,contact.id,eligibility?.recipientContextRevision,eligibility?.recipientCulture,form?.selection?.definitionId,form?.selection?.versionId,i18n.resolvedLanguage]);
+  const preparation = useQuery({queryKey:preparationKey,
+    queryFn:async({signal})=>{
+      try { return await prepareChatForm(contact.id,form!.selection!.definitionId,form!.selection!.versionId,signal); }
+      catch(error){const feedback=errorFeedback(error);if(feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);throw error;}
+    }, enabled:open&&!denied&&!changed&&form?.selection?.hasCatalogQuestions===true&&!form.attempt,
+    retry:false,refetchOnWindowFocus:false,refetchOnReconnect:false});
+  useEffect(()=>()=>{queueMicrotask(()=>{const query=client.getQueryCache().find({queryKey:preparationKey,exact:true});
+    if(query?.getObserversCount()===0){void client.cancelQueries({queryKey:preparationKey,exact:true});client.removeQueries({queryKey:preparationKey,exact:true});}});},[client,preparationKey]);
+  if(preparation.error instanceof ApiError&&preparation.error.status===403&&!forbidden)setForbidden(true);
+  const preparationChanged = Boolean(preparation.data&&(preparation.data.recipientContextRevision!==form?.recipientContextRevision
+    || preparation.data.culture!==form?.recipientCulture));
+  const catalogBlocked = Boolean(form?.selection?.hasCatalogQuestions&&!form.attempt
+    && (preparation.isPending||preparation.isFetching||preparation.isError||!preparation.data?.preparation.canSend||preparationChanged));
   const { error: formsError, refetch: refetchForms } = forms;
   if (formsError instanceof ApiError && formsError.status === 403 && !forbidden) setForbidden(true);
   const versionChanged = Boolean(form?.selection && forms.data && selectedVersionChanged(form.selection, forms.data.page.items));
   const queryContextChanged = Boolean(form && forms.data && recipientChanged(form, forms.data.recipientContextRevision, forms.data.recipientCulture));
-  const contextChanged = changed || queryContextChanged || form?.blocked === "recipientChanged";
+  const contextChanged = changed || preparationChanged || queryContextChanged || form?.blocked === "recipientChanged";
   const mayReadOptions = !denied && !(forms.error instanceof ApiError && forms.error.status === 403) && !changed && !queryContextChanged;
   const blockedReason = denied || form?.blocked === "forbidden" ? "send.forbidden" : contextChanged ? "forms.recipientChanged" : commonReason ?? (draft.attempt ? "send.pending" : recipientReason);
   useEffect(() => { current.current = draft; permitted.current = canSend; }, [draft,canSend]);
@@ -59,7 +75,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     if (feedback.kind === "forbidden") { client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id}); }
     if (feedback.kind !== "session" && feedback.kind !== "cancelled") notify({id:noticeId,kind:"error",message:feedback.detail ?? t("forms.loadFailed"),action:["forbidden","wait"].includes(feedback.kind)?undefined:{label:t("retry"),onClick:()=>{if(Date.now()>=waitDeadline.current)void refetchForms();}}});
   },[formsError,refetchForms,client,actor,contact.id,noticeId,t]);
-  useEffect(() => { if (!canSend) client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id}); }, [canSend,client,actor,contact.id]);
+  useEffect(() => { if (denied) client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id}); }, [denied,client,actor,contact.id]);
   const updateForm = (update: (value: FormSendDraft) => FormSendDraft) => updateDraft(value => value.form ? {...value,form:update(value.form)} : value);
   function show() {
     if (disabledReason || denied || form?.attempt || !eligibility?.recipientCulture || !eligibility.recipientContextRevision) return;
@@ -81,7 +97,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     void client.invalidateQueries({queryKey:chatKey});
   }
   async function submit() {
-    if (pending.current || !canSend || denied || disabledReason || contextChanged || versionChanged || Date.now() < waitDeadline.current) return;
+    if (pending.current || !canSend || denied || disabledReason || contextChanged || versionChanged || catalogBlocked || Date.now() < waitDeadline.current) return;
     const value = current.current.form;
     if (!value || (value.attempt && !value.notStored)) return;
     const issue = formMessageIssue(value.message);
@@ -117,5 +133,5 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
       else {const feedback=errorFeedback(error);if(active.current&&feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);if(active.current&&feedback.kind!=="session")notify({id:noticeId,kind:"error",message:feedback.kind==="forbidden"?t("send.forbidden"):t("send.checkFailed"),action:["forbidden","wait"].includes(feedback.kind)?undefined:{label:t("send.check"),onClick:()=>void checkOutcome()}});if(feedback.kind==="forbidden"){setForbidden(true);client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id});}}
     } finally {pending.current=false;if(active.current)setChecking(false);}
   }
-  return {open,setOpen,page,setPage,search,setSearch,forms,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied)void refetchForms();}, updateForm};
+  return {open,setOpen,page,setPage,search,setSearch,forms,preparation,catalogBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied)void refetchForms();}, updateForm};
 }

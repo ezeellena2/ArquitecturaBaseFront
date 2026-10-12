@@ -54,3 +54,14 @@ it('keeps an invalid projection fallback free of saved or rejected claims', () =
   expect(screen.getByText('No se pudieron mostrar las respuestas.')).toBeInTheDocument();
   expect(screen.queryByText(/Guardada como|No se guardó/)).not.toBeInTheDocument();
 });
+
+
+it("offers manual resend for an inactive catalog item without exposing selected values", async () => {
+  let resends = 0;
+  renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Registrar visita",rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}}
+    onResend={()=>{resends++;}} />);
+  expect(await screen.findByText("Cliente: una opción se dio de baja. No se guardó la respuesta.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button",{name:"Mandar de nuevo"}));
+  expect(resends).toBe(1);
+  expect(screen.queryByText(/Guardada como/)).not.toBeInTheDocument();
+});

@@ -3,7 +3,8 @@ import { formatExactDecimal } from "@/shared/lib/decimal";
 
 // Presentation input only, not a wire DTO. Choice text is the authorized historical label.
 export type FormReplyDisplayValue =
-  | { readonly type: "shortText" | "longText" | "choice"; readonly value: string | null }
+  | { readonly type: "shortText" | "longText"; readonly value: string | null }
+  | { readonly type: "choice"; readonly value: string | null; readonly catalogName?: string; readonly detail?: string | null }
   | { readonly type: "decimal" | "date"; readonly value: string | null }
   | { readonly type: "boolean"; readonly value: boolean | null };
 

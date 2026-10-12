@@ -163,7 +163,19 @@
       "stateName": "Respuesta del formulario {{name}}",
       "noPermission": "No tenés permiso para ver las respuestas de este formulario.",
       "revoked": "Ya no tenés permiso para ver estas respuestas.",
-      "messageRemoved": "El mensaje de WhatsApp ya no está disponible. La respuesta sigue guardada."
+      "messageRemoved": "El mensaje de WhatsApp ya no está disponible. La respuesta sigue guardada.",
+      "catalogInactive": "{{label}}: una opción se dio de baja. No se guardó la respuesta.",
+      "resend": "Mandar de nuevo"
+    },
+    "catalogs": {
+      "loading": "Preparando las opciones para esta persona…",
+      "loadFailed": "No pudimos cargar las opciones del catálogo.",
+      "options_one": "{{label}}: {{count}} opción",
+      "options_other": "{{label}}: {{count}} opciones",
+      "unavailable": "{{label}}: el catálogo no se puede usar. Avisale a quien lo administra.",
+      "tooLarge": "{{label}}: supera las 200 opciones que admite WhatsApp. Ajustá el catálogo antes de mandar.",
+      "empty": "{{label}}: no tiene opciones y la pregunta es obligatoria.",
+      "invalidOption": "{{label}}: una opción supera los límites de WhatsApp. Ajustá el texto o el detalle sin recortar datos."
     }
   }
 }

@@ -116,3 +116,74 @@ it.each([null, "juan@example.com"])("shows the authorized display name without i
   expect(screen.getByText(/Juan Gómez/)).toBeInTheDocument();
   expect(screen.getByRole("button", {name:"Enviar formulario"})).toBeEnabled();
 });
+
+
+it("prepares recipient catalogs and shows their counts before sending", async () => {
+  options[0] = {...options[0], hasCatalogQuestions: true};
+  let preparations = 0;
+  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => {
+    preparations++;
+    return HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:true,issues:[],catalogs:[{
+      fieldId:"019abcde-1000-7000-8000-000000000020",key:"field_019abcde100070008000000000000020",label:"Cliente",
+      catalogId:"019abcde-1000-7000-8000-000000000021",revision:3,kind:"Manual",catalogName:"Clientes",
+      options:[{id:"019abcde-1000-7000-8000-000000000022",text:"Pérez Hnos.",detail:"Av. Colón 1234"}],
+    }]}});
+  }));
+  const dialog = await openForm();
+  expect(await within(dialog).findByText("Cliente: 1 opción" )).toBeInTheDocument();
+  expect(preparations).toBe(1);
+  await userEvent.click(within(dialog).getByRole("button", {name:"Enviar formulario"}));
+  await waitFor(() => expect(posts).toHaveLength(1));
+  expect(posts[0]).not.toHaveProperty("catalogs");
+});
+
+it.each(["CatalogEmpty", "CatalogTooLarge", "CatalogUnavailable"])("blocks %s without losing either draft", async reason => {
+  options[0] = {...options[0], hasCatalogQuestions:true};
+  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => HttpResponse.json({
+    culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:false,catalogs:[],issues:[{
+      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record."+reason,
+    }]},
+  })));
+  const dialog = await openForm();
+  const message = within(dialog).getByRole("textbox", {name:"Mensaje que lo acompaña"});
+  fireEvent.change(message, {target:{value:"Mensaje intacto"}});
+  expect(await within(dialog).findByText(/Cliente:/)).toBeInTheDocument();
+  expect(within(dialog).getByRole("button", {name:"Enviar formulario"})).toBeDisabled();
+  expect(message).toHaveValue("Mensaje intacto");
+  expect(posts).toEqual([]);
+});
+
+it("opens a fresh manual form send after an inactive item notice without posting automatically", async () => {
+  thread.messages=[{id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
+    occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business",
+    formReply:{state:"Rejected",definitionId,versionId,versionNumber:1,name:"Registrar visita",recordId:null,number:null,values:null,
+      rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}}];
+  await openChat();
+  await userEvent.click(await screen.findByRole("button",{name:"Mandar de nuevo"}));
+  const dialog=await screen.findByRole("dialog");
+  expect(posts).toEqual([]);
+  await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+  await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));
+  await waitFor(()=>expect(posts).toHaveLength(1));
+  expect(posts[0]).not.toHaveProperty("flowToken");
+});
+
+it("retires prepared private options after an authoritative preparation denial", async () => {
+  options[0]={...options[0],hasCatalogQuestions:true};
+  let denied=false;
+  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>denied?
+    HttpResponse.json({code:"Http.Forbidden"},{status:403}):HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",
+      preparation:{canSend:true,issues:[],catalogs:[{fieldId:"019abcde-1000-7000-8000-000000000020",key:"field_019abcde100070008000000000000020",
+        label:"Cliente",catalogId:"019abcde-1000-7000-8000-000000000021",revision:1,kind:"Manual",catalogName:"Clientes",
+        options:[{id:"019abcde-1000-7000-8000-000000000022",text:"Private option marker",detail:null}]}]}})));
+  const dialog=await openForm();
+  await within(dialog).findByText("Cliente: 1 opción");
+  const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});
+  fireEvent.change(message,{target:{value:"Mensaje privado intacto"}});
+  denied=true;
+  await queryClient.invalidateQueries({queryKey:chatKey});
+  await waitFor(()=>expect(within(dialog).queryByRole("radio")).not.toBeInTheDocument());
+  await waitFor(()=>expect(JSON.stringify(queryClient.getQueryCache().getAll().map(query=>query.state.data))).not.toContain("Private option marker"));
+  expect(message).toHaveValue("Mensaje privado intacto");
+  expect(posts).toEqual([]);
+});

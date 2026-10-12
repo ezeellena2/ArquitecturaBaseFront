@@ -27,7 +27,8 @@ export function FormReplyValues({ rows, preserveViewport }: {
     <dl id={id} className="divide-y divide-[var(--color-border)]">
       {shown.map(row => <div key={row.id} className="grid min-w-0 grid-cols-1 gap-1 px-3 py-2 sm:grid-cols-2 sm:gap-3">
         <dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{row.label}</dt>
-        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.text}</dd>
+        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}
+          {row.answer.type==="choice"&&row.answer.detail ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.detail}</p> : null}</dd>
       </div>)}
     </dl>
     {mayFold ? <div className="px-3 py-2"><Button type="button" variant="outline" size="sm" aria-expanded={expanded} aria-controls={id} onClick={toggle}>

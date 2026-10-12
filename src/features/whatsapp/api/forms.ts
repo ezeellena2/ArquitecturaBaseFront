@@ -11,7 +11,7 @@ const guid = z.string().uuid();
 const localizedText = z.record(z.string(), z.string().min(1)).refine(map => Object.keys(map).every(key => key === "es" || key === "en"));
 // Assert actual end of input, matching the backend prefix validator without accepting a trailing newline.
 const prefix = z.string().regex(/^[A-Z][A-Z0-9]{0,11}(?![\s\S])/);
-const optionSchema = z.object({ definitionId: guid, versionId: guid, versionNumber: z.number().int().positive(), prefix, name: localizedText, questionCount: z.number().int().nonnegative(), submitLabel: localizedText }).strict();
+const optionSchema = z.object({ definitionId: guid, versionId: guid, versionNumber: z.number().int().positive(), prefix, name: localizedText, questionCount: z.number().int().nonnegative(), submitLabel: localizedText, hasCatalogQuestions: z.boolean().optional() }).strict();
 export type ChatFormOption = z.infer<typeof optionSchema>;
 const formsSchema = z.object({ page: z.object({ items: z.array(optionSchema), page: z.number().int().positive(), pageSize: z.number().int().positive(), totalCount: z.number().int().nonnegative(), totalPages: z.number().int().nonnegative(), hasPrevious: z.boolean(), hasNext: z.boolean() }).strict(), recipientCulture: culture.nullable(), recipientContextRevision: z.string().min(1).nullable() }).strict().refine(value => value.page.items.length === 0 || value.recipientCulture !== null && value.recipientContextRevision !== null && value.page.items.every(option => !!option.name[value.recipientCulture!] && !!option.submitLabel[value.recipientCulture!]));
 export type ChatForms = z.infer<typeof formsSchema>;
@@ -19,6 +19,20 @@ const formMetadataSchema = z.object({ definitionId: guid, versionId: guid, versi
 export type ChatFormMetadata = z.infer<typeof formMetadataSchema>;
 export function readFormMetadata(value: unknown): ChatFormMetadata | null { const parsed = formMetadataSchema.safeParse(value); return parsed.success ? parsed.data : null; }
 const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.string().min(1), body: z.string().nullable(), requestedAtUtc: z.string().datetime({offset:true}), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.literal("Flow"), form: formMetadataSchema, recoveryPath: z.string().nullable() }).strict();
+
+const catalogOptionSchema = z.strictObject({id:guid,text:z.string().min(1).max(30),detail:z.string().max(300).nullable()});
+const catalogOfferSchema = z.strictObject({fieldId:guid,key:z.string(),label:z.string().min(1),catalogId:guid,
+  revision:z.number().int().positive(),kind:z.enum(["Manual","Filters"]),catalogName:z.string().min(1),options:z.array(catalogOptionSchema).max(200)})
+  .refine(value=>value.key==="field_"+value.fieldId.replaceAll("-","") && new Set(value.options.map(option=>option.id)).size===value.options.length);
+const preparationSchema = z.strictObject({culture,recipientContextRevision:z.string().min(1),preparation:z.strictObject({
+  catalogs:z.array(catalogOfferSchema).max(40),issues:z.array(z.strictObject({fieldId:guid,label:z.string(),code:z.string().min(1)})).max(40),canSend:z.boolean(),
+})}).refine(value=>value.preparation.canSend===(value.preparation.issues.length===0)
+  && new Set(value.preparation.catalogs.map(offer=>offer.fieldId)).size===value.preparation.catalogs.length);
+export type ChatFormPreparation = z.infer<typeof preparationSchema>;
+export function parseChatFormPreparation(value: unknown): ChatFormPreparation { return read(preparationSchema,value); }
+export async function prepareChatForm(id:string,definitionId:string,versionId:string,signal?:AbortSignal) {
+  return parseChatFormPreparation(await api.get<unknown>(`${base}/${id}/forms/${definitionId}/versions/${versionId}/preparation`,{signal}));
+}
 
 export class UnsupportedChatFormResponse extends Error { constructor() { super("Unsupported chat form response."); this.name = "UnsupportedChatFormResponse"; } }
 function read<T>(schema: z.ZodType<T>, value: unknown): T { const result = schema.safeParse(value); if (!result.success) throw new UnsupportedChatFormResponse(); return result.data; }

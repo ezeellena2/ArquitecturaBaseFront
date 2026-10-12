@@ -72,3 +72,16 @@ describe('simulated form reply HTTP projection', () => {
     expect((await getThread(id)).messages[0].formReply).toEqual(reply);
   });
 });
+
+
+it("accepts catalog reference text and detail without looking up the current catalog", async () => {
+  const rows = [{fieldId:id,key:"person",type:"choice",label:"Persona",value:{choiceId:otherId,label:"Texto recibido",catalogId:id,catalogName:"Personas",detail:"Detalle recibido"}}];
+  install(completed(rows));
+  expect((await getThread(id)).messages[0].formReply).toEqual(completed(rows));
+});
+it("accepts a safe inactive-item notice without any answer values", async () => {
+  const reply = {state:"Rejected",definitionId:id,versionId:otherId,versionNumber:2,name:"Formulario",recordId:null,number:null,values:null,
+    rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"};
+  install(reply,false);
+  expect((await getThread(id)).messages[0].formReply).toEqual(reply);
+});

@@ -13,11 +13,11 @@ import { accessSummary } from "../lib/messagePresentation";
 import { useChatHistoryViewport } from "../hooks/useChatHistoryViewport";
 
 export function ChatTimeline({ items, actor, timeZone, canSend, canReuse, reviewing, onReview, onReuse,
-  atBottom, onAtBottomChange, hasOlder, loadingOlder, historyError, loadOlder, formValuesRevoked = false }: {
+  atBottom, onAtBottomChange, hasOlder, loadingOlder, historyError, loadOlder, formValuesRevoked = false, onResendForm }: {
   items: readonly TimelineItem[]; actor: string; timeZone?: string; canSend: boolean; canReuse: boolean;
   reviewing: boolean; onReview: (operation: Outgoing) => void; onReuse: (body: string) => void;
   atBottom: boolean; onAtBottomChange: (recent: boolean) => void;
-  hasOlder: boolean; loadingOlder: boolean; historyError: boolean; loadOlder: () => Promise<unknown>; formValuesRevoked?: boolean;
+  hasOlder: boolean; loadingOlder: boolean; historyError: boolean; loadOlder: () => Promise<unknown>; formValuesRevoked?: boolean; onResendForm?: () => void;
 }) {
   const { t, i18n } = useTranslation("whatsapp");
   useTranslation("whatsapp", { lng: "en", useSuspense: false });
@@ -32,7 +32,7 @@ export function ChatTimeline({ items, actor, timeZone, canSend, canReuse, review
       <MessageDateDivider date={group.date} label={formatDateInZone(group.items[0].occurredAtUtc, language, timeZone)} />
       {group.items.map(item => <MessageBubble key={item.key} direction={item.direction}
         text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.kind === "FlowReply" ? "" : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
-        attachment={item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : undefined}
+        attachment={item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : undefined}
         timestamp={item.occurredAtUtc} timeLabel={formatTimeInZone(item.occurredAtUtc, language, timeZone)}
         dateLabel={formatDateTimeInZone(item.occurredAtUtc, language, timeZone)}
         author={item.purpose === "Access" ? t("access.label") : item.author ? t(item.author === "bot" ? "author.bot" : item.operatorUserId === actor ? "author.you" : "author.operator") : undefined}

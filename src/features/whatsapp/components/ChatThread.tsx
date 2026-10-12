@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { ApiError } from "@/shared/api/ApiError";
 import { useChatThread } from "../hooks/useChatThread";
 import { useChatThreadActions } from "../hooks/useChatThreadActions";
+import { replyDisabledReason } from "../lib/replyAvailability";
 import { buildTimeline } from "../lib/timeline";
 import { ChatComposer, type ChatDraft } from "./ChatComposer";
 import { ChatTimeline } from "./ChatTimeline";
@@ -14,6 +15,9 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canM
   updateDraft: (update: (current: ChatDraft) => ChatDraft) => void; onBack: () => void;
 }) {
   const { t, i18n } = useTranslation("whatsapp");
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {const timer=window.setInterval(()=>setNow(Date.now()),1000);return()=>window.clearInterval(timer);},[]);
+  const [formOpenRequest, setFormOpenRequest] = useState(0);
   const [atBottom, setAtBottom] = useState(true);
   const { latest, history, messages, read, formValuesRevoked } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
   const { mode, setMode, review, setReview, changing, reviewing } = useChatThreadActions(id, latest.refetch);
@@ -40,14 +44,14 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canM
         </div>
       </div>
       {latest.isError ? <div className="flex items-center justify-between gap-2 p-3 text-sm text-[var(--color-content-muted)]"><span>{t(forbidden ? "send.forbidden" : "stale")}</span><Button size="sm" variant="outline" onClick={() => void latest.refetch()}>{t("retry")}</Button></div> : null}
-      <ChatTimeline items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
+      <ChatTimeline onResendForm={!replyDisabledReason(contact,canSend&&!latest.isError,latest.data?.outgoing??[],now)&&!draft.attempt&&!draft.form?.attempt ? ()=>setFormOpenRequest(value=>value+1) : undefined} items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
         canReuse={!draft.attempt && !draft.form?.attempt && !draft.body} reviewing={reviewing.isPending} onReview={setReview}
         onReuse={body => updateDraft(value => ({ ...value, body, attempt: undefined }))} atBottom={atBottom} onAtBottomChange={setAtBottom}
         hasOlder={Boolean(history.data ? history.hasNextPage : latest.data?.beforeId)} loadingOlder={history.isFetchingNextPage}
         historyError={history.isError} loadOlder={() => history.fetchNextPage()} />
       {!atBottom ? <div className="p-2 text-center"><Button size="sm" variant="outline" onClick={() => setAtBottom(true)}>{t("latest")}</Button></div> : null}
       {read.isError ? <div className="p-2 text-sm text-[var(--color-content-muted)]">{t("readFailed")} <Button size="sm" variant="outline" onClick={() => read.reset()}>{t("retry")}</Button></div> : null}
-      <ChatComposer contact={contact} actor={actor} canSend={canSend && !latest.isError} outgoing={latest.data?.outgoing ?? []} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
+      <ChatComposer formOpenRequest={formOpenRequest} contact={contact} actor={actor} canSend={canSend && !latest.isError} outgoing={latest.data?.outgoing ?? []} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
       <ConfirmDialog open={Boolean(mode)} onOpenChange={open => { if (!open) setMode(undefined); }} title={t("mode.take")}
         description={t("mode.manualDescription")} confirmLabel={t("confirm")} onConfirm={() => { if (mode) changing.mutate(mode); }} />
       <ConfirmDialog open={Boolean(review)} onOpenChange={open => { if (!open) setReview(undefined); }} title={t("review.title")} description={t("review.confirmDescription")}
