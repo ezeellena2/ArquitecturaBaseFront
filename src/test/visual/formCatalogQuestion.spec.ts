@@ -53,7 +53,19 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(catalog).toHaveValue(filtersId); await catalog.scrollIntoViewIfNeeded(); await geometry(); await page.screenshot({ path: info.outputPath("catalog-saved.png"), fullPage: true });
     const calls = await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { calls: { path: string }[] } }).catalogsFixture.calls);
     expect(calls.some(call => call.path.includes("catalog-previews") || call.path.endsWith("/items") || call.path.includes("catalog-filter-options"))).toBe(false);
-    await enter("forms-catalog-read");
+  });
+  test("Catalog question permissions " + language + " " + width, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 }); const english = language === "en";
+    const label = (es: string, en: string) => english ? en : es;
+    const enter = async (scenario = "forms-catalog") => {
+      await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/formularios/" + fixtureFormId, lang: language, scenario }));
+      await page.getByRole("heading", { name: label("Registrar visita", "Register visit"), exact: true }).waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      if (width < 768) { const menu = page.getByRole("button", { name: label("Menú de navegación", "Navigation menu"), exact: true }); if (await menu.getAttribute("aria-expanded") === "true") await menu.click(); await expect(menu).toHaveAttribute("aria-expanded", "false"); }
+      await page.getByRole("button", { name: scenario === "forms-catalog-read" ? label("Ver pregunta Cliente", "View question Customer") : label("Editar Cliente", "Edit Customer"), exact: true }).click();
+    };
+    const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await enter("forms-catalog-read"); const catalog = page.getByRole("combobox", { name: label("Catálogo", "Catalog"), exact: true });
     await expect(catalog).toBeDisabled(); await expect(page.getByRole("button", { name: label("Guardar borrador", "Save draft"), exact: true })).toHaveCount(0);
     await catalog.scrollIntoViewIfNeeded(); await geometry(); await page.screenshot({ path: info.outputPath("catalog-read.png"), fullPage: true });
     await enter("forms-catalog-no-read");
