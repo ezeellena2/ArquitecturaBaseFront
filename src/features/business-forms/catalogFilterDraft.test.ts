@@ -5,12 +5,12 @@ import { catalogFiltersBody, openCatalogFilters } from "./catalogFilterDraft";
 // The current .NET FormCatalogFilterDefinition uses string values; identities remain UI-only.
 const edited: CatalogFiltersEditorValue = { textColumn: "name", detailColumn: "role", conditions: [
   { localId: "active-row", column: "active", operator: "equals", value: "true" },
-  { localId: "role-row", column: "role", operator: "has", value: "Operario" },
+  { localId: "role-row", column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000601" },
 ], excludeRecipient: true, sortColumn: "name", sortDescending: false };
 describe("Filters catalog draft and current definition DTO", () => {
   it("maps only the definition fields, keeping role membership and excluding local identities or sample context", () => {
     const body = catalogFiltersBody(edited);
-    expect(body).toEqual({ textColumn: "name", detailColumn: "role", conditions: [{ column: "active", operator: "equals", value: "true" }, { column: "role", operator: "has", value: "Operario" }], excludeRecipient: true, sortColumn: "name", sortDescending: false });
+    expect(body).toEqual({ textColumn: "name", detailColumn: "role", conditions: [{ column: "active", operator: "equals", value: "true" }, { column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000601" }], excludeRecipient: true, sortColumn: "name", sortDescending: false });
     expect(JSON.stringify(body)).not.toContain("localId");
     expect(body).not.toHaveProperty("sampleUserId");
     expect(body).not.toHaveProperty("position");

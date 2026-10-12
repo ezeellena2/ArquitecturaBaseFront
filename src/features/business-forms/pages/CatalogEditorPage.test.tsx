@@ -182,9 +182,9 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
 const filtersDetail = { ...initial, kind: "Filters", filters: { textColumn: "name", detailColumn: "role", conditions: [], excludeRecipient: true, sortColumn: "name", sortDescending: false } };
 function filterSetup(permissions = ["formcatalogs.read", "formcatalogs.manage"]) {
   setup(permissions);
-  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(filtersDetail)), http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ source: "users", isAvailable: true, unavailableReasonCode: null, columns: [
+  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(filtersDetail)), http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ source: "users", columns: [
     { key: "name", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["contains", "equals"], choices: null },
-    { key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: "Operario", label: "Operario" }] },
+    { key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: "01990000-0000-7000-8000-000000000601", label: "Operario" }] },
     { key: "active", dataType: "boolean", canDisplay: true, canFilter: true, canSort: true, operators: ["equals"], choices: [{ key: "true", label: "Active" }, { key: "false", label: "Inactive" }] }
   ], sampleUsers: permissions.includes("formcatalogs.manage") ? { items: [{ id: itemId, name: "Ana" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false } : null })));
 }
@@ -198,7 +198,7 @@ describe("Filters editor connected to current DTOs", () => {
     expect(screen.getByRole("combobox", { name: "Comparación de la condición 1" })).toHaveValue("has"); expect(writes).toHaveLength(0);
     await selectSample(); await user.click(screen.getByRole("button", { name: "Probar" })); await screen.findByText("Beatriz");
     await user.click(screen.getByRole("button", { name: "Guardar" })); await waitFor(() => expect(writes).toHaveLength(1));
-    expect(previews).toHaveLength(2); expect(writes[0]).toMatchObject({ expectedRevision: 1, filters: { conditions: [{ column: "role", operator: "has", value: "Operario" }] } });
+    expect(previews).toHaveLength(2); expect(writes[0]).toMatchObject({ expectedRevision: 1, filters: { conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000601" }] } });
     expect(writes[0]).not.toHaveProperty("sampleUserId"); expect(writes[0]).not.toHaveProperty("items");
   });
   it("creates Filters from the new-catalog route and reloads the saved kind", async () => {
@@ -243,12 +243,17 @@ it("renders unchanged real K4 detail/options and the result of the captured prev
   await screen.findByText(preview.items[0]!.text, { exact: true }); expect(screen.getByText(preview.items[0]!.detail!, { exact: true })).toBeInTheDocument(); expect(received).toEqual([capturedPreviewRequest]);
 });
 
-it("keeps stored filters editable but blocks preview/save when the server marks the source unavailable", async () => {
-  filterSetup(); server.use(http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ source: "users", columns: [{ key: "name", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["contains", "equals"], choices: null }, { key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [] }], sampleUsers: null, isAvailable: false, unavailableReasonCode: "Forms.Catalog.SourceUnavailable" })));
+it("edits fixed Users filters without source availability flags", async () => {
+  filterSetup();
+  server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [{ id: itemId, text: "Beatriz", detail: null }], totalCount: 1, exceedsLimit: false })));
   await mount("/catalogos/" + id);
   expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeEnabled();
-  expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled(); expect(screen.getByRole("button", { name: "Probar" })).toBeDisabled();
-  expect(screen.getByText("La vista Usuarios no está disponible.", { exact: true })).toBeInTheDocument(); expect(screen.queryByText("Forms.Catalog.SourceUnavailable")).not.toBeInTheDocument();
+  expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toBeEnabled();
+  await selectSample();
+  expect(screen.getByRole("button", { name: "Probar" })).toBeEnabled();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Probar" }));
+  expect(await screen.findByText("Beatriz", { exact: true })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
 });
 
 it("keeps sample search focused and enabled while its next page is loading", async () => {

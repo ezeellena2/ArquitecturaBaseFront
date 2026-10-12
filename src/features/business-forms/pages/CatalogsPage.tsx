@@ -40,7 +40,7 @@ export function CatalogsPage() {
   const query: CatalogListQuery = { page: pagination.page, pageSize: pagination.pageSize, search: pagination.search, sort: sortFields.find(field => field === pagination.sort), kind, state };
   const list = useCatalogPage(scope, query);
   const hasFilters = !!query.search || kind !== undefined || state !== undefined;
-  const visiblePage = list.data ? { ...list.data, items: list.data.items.map(row => ({ ...row, stateReason: row.stateReason === "Forms.Catalog.SourceUnavailable" ? t("catalogs.filters.unavailable") : null })) } : undefined;
+  const visiblePage = list.data ? { ...list.data, items: list.data.items.map(row => ({ ...row, stateReason: row.state === "Unavailable" && row.stateReason ? t("catalogs.unavailableReason") : null })) } : undefined;
   const canManage = !!user?.permissions.includes("formcatalogs.manage");
   const feedbackId = `catalogs:list:${scope.actorId}:${scope.culture}`;
   useEffect(() => () => { dismissNotification(feedbackId); }, [feedbackId]);

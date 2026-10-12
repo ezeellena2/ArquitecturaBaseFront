@@ -336,9 +336,9 @@
       "exceedsLimit": "There are more than 200 options. Adjust the filters before saving.",
       "optionsFailed": "We could not load the columns and sample people.",
       "readOnlyPreview": "You need permission to manage catalogs to test this preview.",
-      "unavailable": "The Users view is unavailable.",
       "unavailableColumn": "Unavailable column",
-      "unavailableOperator": "Unavailable comparison"
+      "unavailableOperator": "Unavailable comparison",
+      "unavailableValue": "Unavailable value"
     },
     "metadata": {
       "title": "The catalog",
@@ -362,7 +362,8 @@
     },
     "search": "Search catalogs",
     "loadFailed": "We could not load the catalogs.",
-    "stateFilter": "Status: {{state}}"
+    "stateFilter": "Status: {{state}}",
+    "unavailableReason": "The catalog has an invalid configuration."
   },
   "catalogQuestion": {
     "optionsAtSend": "Options are prepared when sending the form, for each person.",

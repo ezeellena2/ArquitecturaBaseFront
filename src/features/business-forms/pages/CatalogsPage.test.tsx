@@ -44,7 +44,7 @@ describe("Catalog routes and navigation", () => {
 
 it("uses server origin counts for the whole query and resets the page when choosing an origin", async () => {
   // Synthetic current DTO projection, deliberately one row but 100 matching catalogs.
-  const page = { items: [{ id: "01990000-0000-7000-8000-000000000030", name: "Supervisores", description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.SourceUnavailable", canEdit: false }], page: 5, pageSize: 1, totalCount: 20, totalPages: 20, hasPrevious: true, hasNext: true, filterCounts: { byKind: { all: 100, manual: 80, filters: 20 } } };
+  const page = { items: [{ id: "01990000-0000-7000-8000-000000000030", name: "Supervisores", description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.ContentInvalid", canEdit: false }], page: 5, pageSize: 1, totalCount: 20, totalPages: 20, hasPrevious: true, hasNext: true, filterCounts: { byKind: { all: 100, manual: 80, filters: 20 } } };
   setup(["formcatalogs.read"]); const requests: URLSearchParams[] = [];
   server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json(page); }));
   let router!: ReturnType<typeof renderRouteWithProviders>["router"];
@@ -54,7 +54,7 @@ it("uses server origin counts for the whole query and resets the page when choos
   expect(new URLSearchParams(router.state.location.search).get("page")).toBeNull(); expect(new URLSearchParams(router.state.location.search).get("sort")).toBe("name");
   expect(screen.getByRole("button", { name: "Todos (100)" })).toBeInTheDocument(); expect(screen.getByRole("button", { name: "Escritas a mano (80)" })).toBeInTheDocument();
   await waitFor(() => expect(requests.some(request => request.get("kind") === "Filters" && request.get("page") === "1")).toBe(true));
-  expect(screen.queryByText("Forms.Catalog.SourceUnavailable", { exact: true })).not.toBeInTheDocument(); expect(screen.getByText("La vista Usuarios no está disponible.")).toBeInTheDocument();
+  expect(screen.queryByText("Forms.Catalog.ContentInvalid", { exact: true })).not.toBeInTheDocument(); expect(screen.getByText("El catálogo tiene una configuración no válida.")).toBeInTheDocument();
 });
 
 it("requests the Unavailable state from the server and preserves origin/search/sort", async () => {

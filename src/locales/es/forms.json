@@ -336,9 +336,9 @@
       "exceedsLimit": "Hay más de 200 opciones. Ajustá los filtros antes de guardar.",
       "optionsFailed": "No pudimos cargar las columnas y las personas de ejemplo.",
       "readOnlyPreview": "Necesitás permiso para administrar catálogos para probar esta vista.",
-      "unavailable": "La vista Usuarios no está disponible.",
       "unavailableColumn": "Columna no disponible",
-      "unavailableOperator": "Comparación no disponible"
+      "unavailableOperator": "Comparación no disponible",
+      "unavailableValue": "Valor no disponible"
     },
     "metadata": {
       "title": "El catálogo",
@@ -362,7 +362,8 @@
     },
     "search": "Buscar catálogo",
     "loadFailed": "No pudimos cargar los catálogos.",
-    "stateFilter": "Estado: {{state}}"
+    "stateFilter": "Estado: {{state}}",
+    "unavailableReason": "El catálogo tiene una configuración no válida."
   },
   "catalogQuestion": {
     "optionsAtSend": "Las opciones se preparan al mandar el formulario, para cada persona.",

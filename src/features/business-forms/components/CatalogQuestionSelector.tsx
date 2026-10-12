@@ -23,7 +23,7 @@ export function CatalogQuestionSelector({ scope, value, readOnly, error, onChang
   const detail = useCatalogDetail(scope, detailId, "global");
   const failure = list.error ?? detail.error;
   const canRead = !!scope.actorId && scope.permissions.includes("formcatalogs.read") && !(failure instanceof ApiError && failure.status === 403);
-  const reason = (state: string, code: string | null) => code === "Forms.Catalog.SourceUnavailable" ? t("catalogs.filters.unavailable") : t("catalogs.state." + state);
+  const reason = (state: string, code: string | null) => state === "Unavailable" && code ? t("catalogs.unavailableReason") : t("catalogs.state." + state);
   const label = (name: string, origin: string, count: number | null, state: string, code: string | null) => [name, t("catalogs.source." + (origin === "Manual" ? "manual" : "database")), count === null ? null : t("catalogs.filters.result", { count }), state === "Active" ? null : reason(state, code)].filter(Boolean).join(" · ");
   const selected = currentRow ?? detail.data;
   const selectedName = currentRow?.name ?? detail.data?.name[scope.culture] ?? t("catalogQuestion.selected");

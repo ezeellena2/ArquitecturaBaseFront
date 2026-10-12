@@ -41,7 +41,14 @@ describe("Filters catalog adapter with unchanged real HTTP bodies", () => {
   });
   it("consumes the permitted columns and sample page from the captured options request", async () => {
     server.use(http.get("/api/forms/catalog-filter-options", ({ request }) => { expect(Object.fromEntries(new URL(request.url).searchParams)).toEqual({ page: "1", pageSize: "20", sort: "name" }); return json(optionsRaw); }));
-    expect(await fetchCatalogFilterOptions({ page: 1, pageSize: 20, sort: "name" })).toEqual(JSON.parse(optionsRaw));
+    const options = await fetchCatalogFilterOptions({ page: 1, pageSize: 20, sort: "name" });
+    expect(options).toEqual(JSON.parse(optionsRaw));
+    expect(options).not.toHaveProperty("isAvailable"); expect(options).not.toHaveProperty("unavailableReasonCode");
+    const roles = options.columns.find(column => column.key === "role")!.choices!;
+    expect(roles.length).toBeGreaterThan(0);
+    for (const role of roles) { expect(role.key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i); expect(role.label.trim()).not.toBe(""); }
+    const savedRole = previewBody.filters.conditions.find(condition => condition.column === "role")!;
+    expect(roles.some(role => role.key === savedRole.value)).toBe(true);
   });
   it("previews as the explicitly captured sample person without saving the catalog", async () => {
     const sent: unknown[] = [];

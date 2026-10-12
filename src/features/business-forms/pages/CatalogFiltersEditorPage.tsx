@@ -76,7 +76,7 @@ export function CatalogFiltersEditorPage({ scope, initial }: { scope: CatalogRea
   if (!draft?.filters || [editor.error, options.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   const samples = options.data?.sampleUsers;
   return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={editor.dirty ? <span className="text-xs text-[var(--color-content-muted)]">{t("dirty")}</span> : undefined}
-    actions={canManage ? <><Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={!editor.canSave || !sample || !options.data?.isAvailable} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
+    actions={canManage ? <><Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={!editor.canSave || !sample} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
     {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><div><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("review")}</Button></div></Surface> : null}
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">
@@ -84,19 +84,18 @@ export function CatalogFiltersEditorPage({ scope, initial }: { scope: CatalogRea
         {options.isPending ? <Spinner /> : options.data ? <CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={canManage && !editor.requiresReview} busy={editor.busy} errors={fields} onChange={editor.changeFilters} /> : <EmptyState title={t("catalogs.filters.optionsFailed")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} />}
       </div>
       <Surface title={t("catalogs.filters.previewTitle")} padded>
-        {options.data && !options.data.isAvailable ? <EmptyState title={t("catalogs.filters.unavailable")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} /> : null}
         {canManage ? <>
           <FormField label={t("catalogs.filters.sample")} hint={t("catalogs.filters.sampleHint")} error={fields["sampleUserId"]?.join(" ")}>
-            <Autocomplete value={sampleName} disabled={editor.busy || editor.requiresReview || options.data?.isAvailable === false} options={samples?.items.map(person => ({ id: person.id, label: person.name })) ?? []}
+            <Autocomplete value={sampleName} disabled={editor.busy || editor.requiresReview} options={samples?.items.map(person => ({ id: person.id, label: person.name })) ?? []}
               onValueChange={value => { setSampleName(value); setSearch(value); setSample(null); setSamplePage(1); editor.clearPreview(); }}
               onSelect={id => { const person = samples?.items.find(person => person.id === id); if (person) { setSample(person); setSampleName(person.name); editor.clearPreview(); } }} />
           </FormField>
           {samples ? <Pagination {...samples} onPageChange={setSamplePage} /> : null}
-          <div><Button variant="outline" disabled={!sample || editor.busy || editor.requiresReview || !options.data?.isAvailable} onClick={() => { if (sample) void editor.preview(sample.id); }}>{t("catalogs.filters.test")}</Button></div>
-          {editor.busy ? <Spinner /> : options.data?.isAvailable && editor.previewResult && !editor.previewResult.exceedsLimit ? <>
+          <div><Button variant="outline" disabled={!sample || editor.busy || editor.requiresReview} onClick={() => { if (sample) void editor.preview(sample.id); }}>{t("catalogs.filters.test")}</Button></div>
+          {editor.busy ? <Spinner /> : editor.previewResult && !editor.previewResult.exceedsLimit ? <>
             {editor.previewResult.items.length ? <ul className="divide-y divide-[var(--color-border)]">{editor.previewResult.items.map(item => <li key={item.id} className="flex flex-col gap-1 py-3"><span className="break-words text-sm">{item.text}</span>{item.detail ? <span className="break-words text-xs text-[var(--color-content-muted)]">{item.detail}</span> : null}</li>)}</ul> : <p className="text-sm">{t("catalogs.filters.empty")}</p>}
             <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.filters.result", { count: editor.previewResult.totalCount })}</p>
-          </> : options.data?.isAvailable && !editor.previewResult ? <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.filters.chooseSample")}</p> : null}
+          </> : !editor.previewResult ? <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.filters.chooseSample")}</p> : null}
         </> : <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.filters.readOnlyPreview")}</p>}
       </Surface>
     </div>

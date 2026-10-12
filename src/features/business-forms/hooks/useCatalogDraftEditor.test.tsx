@@ -234,9 +234,3 @@ describe("Filters catalog editor", () => {
     expect(calls).toBe(1); expect(result.current.requiresReview).toBe(false); expect(result.current.canSave).toBe(true);
   });
 });
-
-it("does not turn a source-unavailable write into a revision adoption conflict", async () => {
-  server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json(previewResult)), http.put("/api/forms/catalogs/" + id + "/filters", () => HttpResponse.json({ code: "Forms.Catalog.SourceUnavailable" }, { status: 409 })));
-  const { result } = renderHook(() => useCatalogDraftEditor(scope, filterInitial), harness());
-  await act(() => result.current.save(itemId)); expect(result.current.error).toMatchObject({ code: "Forms.Catalog.SourceUnavailable" }); expect(result.current.requiresReview).toBe(false);
-});

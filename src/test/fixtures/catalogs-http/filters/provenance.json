@@ -1,93 +1,62 @@
 {
   "schemaVersion": 1,
   "artifactSet": "filters",
-  "generatedAtUtc": "2026-10-12T17:06:52.4456141Z",
+  "generatedAtUtc": "2026-10-12T22:02:57.9678654Z",
   "producer": {
     "project": "ArquitecturaBase.Api.IntegrationTests",
     "test": "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogFiltersEndpointsTests",
     "source": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
-    "sourceSha256": "6fe0eae7e2810ba636682ac4d6408f5bf9f6252e47663f052b6c3d3c48369d3b",
-    "sourceFiles": [
-      {
-        "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs",
-        "sha256": "2cc1bcc7c3977a753ca90d9efa515ea68c5851be34ae1bc785a18ee86b8d57e5"
-      },
-      {
-        "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
-        "sha256": "6fe0eae7e2810ba636682ac4d6408f5bf9f6252e47663f052b6c3d3c48369d3b"
-      },
-      {
-        "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
-        "sha256": "1372679088fdeb9424f1244d6ad5197a11a210feae7e43471a8bd7a8360f4f8f"
-      }
-    ],
-    "repositoryHead": "e284822a221168067d3956ceebe777a8ca8cf0ad",
-    "sourceState": "The focal run used test-only working-tree edits committed afterward as 8d9f2924b02467bbb9e855652f468f1533dcae5f."
+    "sourceSha256": "8ffa0a949c6526ad4f750dafc3378f3bf7eb44c37db6bb67310fb6e7aced0302",
+    "repositoryHead": "441d6b5bdaa6e086d584027a8ac07567ec21ea9f",
+    "sourceState": "The K4 fixed-select and RoleId producer was tested from the current working tree."
   },
   "runner": {
-    "command": "dotnet test --project tests/ArquitecturaBase.Api.IntegrationTests/ArquitecturaBase.Api.IntegrationTests.csproj -- --filter-class '*FormCatalogEndpointsTests' --filter-class '*FormCatalogFiltersEndpointsTests' --filter-class '*FormDraftEndpointsTests'",
+    "command": "dotnet test --project tests/ArquitecturaBase.Api.IntegrationTests/ArquitecturaBase.Api.IntegrationTests.csproj -- --filter-class ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogFiltersEndpointsTests",
     "environment": {
-      "FORMS_HTTP_CONTRACT_OUTPUT": "C:\\Users\\ezequ\\source\\repos\\ArquitecturaBase\\.test-artifacts\\forms-step7-final",
-      "FORMS_CATALOG_HTTP_CONTRACT_OUTPUT": "C:\\Users\\ezequ\\source\\repos\\ArquitecturaBase\\.test-artifacts\\forms-step7-final"
+      "FORMS_HTTP_CONTRACT_OUTPUT": "C:\\Users\\ezequ\\source\\repos\\ArquitecturaBase\\.test-artifacts\\forms-step8\\k4-filters-current"
     },
-    "focalRepositoryHead": "e284822a221168067d3956ceebe777a8ca8cf0ad",
-    "focalWorkingTreeTestChangesCommittedAfterRun": "8d9f2924b02467bbb9e855652f468f1533dcae5f",
-    "focalResult": "Resumen de la serie de pruebas: Correcta!;   total: 122;   error: 0;   correcto: 122;   omitido: 0",
-    "fullSuiteRepositoryHead": "e284822a221168067d3956ceebe777a8ca8cf0ad",
-    "fullSuiteResult": "Resumen de la serie de pruebas: Error!;   total: 2710;   error: 2;   correcto: 2708;   omitido: 0",
-    "fullSuiteExitCode": 2,
-    "fullSuiteFailures": [
-      "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormDraftEndpointsTests.Openapi_declares_draft_check_acceptance_and_status_operations_with_problem_schemas",
-      "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogFiltersEndpointsTests.Filter_options_and_preview_use_the_selected_sample_and_role_membership"
-    ],
+    "result": "Resumen de la serie de pruebas: Correcta!;   total: 1;   error: 0;   correcto: 1;   omitido: 0",
+    "exitCode": 0,
     "exportFiles": [
       {
-        "path": "create-request.json",
-        "length": 273,
-        "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.3629474Z"
-      },
-      {
-        "path": "created.json",
-        "length": 495,
-        "sha256": "705022c2f5747769b4fcafde5f1bb033de528f32b9c3bbab91156c5548884789",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.3801258Z"
-      },
-      {
-        "path": "detail.json",
-        "length": 466,
-        "sha256": "b78e6a2c0ea22ba9265b031dedd690a7d6718fad7af9868799cd15c5d046563a",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.3916945Z"
-      },
-      {
         "path": "options.json",
-        "length": 13415,
-        "sha256": "47f4cc39f800d052e633fca6c8e97dcde37b8763035a293ac7d38507d368d006",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.1756926Z"
+        "length": 1289,
+        "sha256": "3b4f5a8f9da6798ed1fed9f7e09c6e8a6eb27068875b472dc99c14055e6d1cb1"
       },
       {
         "path": "preview-request.json",
-        "length": 314,
-        "sha256": "61435742c2db5cb3385c56265c24f2830b47644295b4fe6186cb1d9b393439d1",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.1839900Z"
+        "length": 328,
+        "sha256": "07052df868da4cf11fce660dcb27f91b31eec8a58c16eb340d14bc299c7f15bd"
       },
       {
         "path": "preview.json",
         "length": 186,
-        "sha256": "f26d28ae028aefa1a8304ff8f521802906f46884079855a203f73940ab92c715",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.2078059Z"
+        "sha256": "a64d5ec57c4e8e9e628b82f0ef08f2d7fd70816403bc14d3bc58d1109c228bf8"
+      },
+      {
+        "path": "create-request.json",
+        "length": 273,
+        "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82"
+      },
+      {
+        "path": "created.json",
+        "length": 495,
+        "sha256": "e803b34d759e5fdc1c8649dfd965ee28d9e814bc7fee820470d94245202aea34"
+      },
+      {
+        "path": "detail.json",
+        "length": 466,
+        "sha256": "b623266f682f88a9912cb61478e0441a5efb7baee0a62eb89c7291cf7cc2304e"
       },
       {
         "path": "update-request.json",
         "length": 289,
-        "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.3932601Z"
+        "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c"
       },
       {
         "path": "updated.json",
         "length": 494,
-        "sha256": "f0f99519913eab06456c58253b0285f65d635a324cc764bc4d025c5a6edb6925",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.4331187Z"
+        "sha256": "68f268e2d339340e3cc4f5cbc2b4a0d96ca2728b42934877c7d1baf177adebb5"
       }
     ]
   }

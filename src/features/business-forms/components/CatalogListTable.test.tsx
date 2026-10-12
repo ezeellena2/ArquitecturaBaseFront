@@ -12,7 +12,7 @@ import { CatalogListTable, type CatalogListRow } from "./CatalogListTable";
 const rows: CatalogListRow[] = [
   { id: "manual", name: "Clientes", description: "A quiénes se visita", origin: "Manual", optionsCount: 46, usageCount: 3, state: "Active", stateReason: null, canEdit: true },
   { id: "filters", name: "Supervisores activos", description: null, origin: "Filters", optionsCount: 7, usageCount: 2, state: "Active", stateReason: null, canEdit: true },
-  { id: "invalid", name: "Responsables", description: null, origin: "Filters", optionsCount: null, usageCount: 1, state: "Unavailable", stateReason: "La vista Usuarios cambió", canEdit: true },
+  { id: "invalid", name: "Responsables", description: null, origin: "Filters", optionsCount: null, usageCount: 1, state: "Unavailable", stateReason: "El catálogo tiene una configuración no válida.", canEdit: true },
 ];
 const page = { items: rows, page: 2, pageSize: 3, totalCount: 7, totalPages: 3, hasPrevious: true, hasNext: true };
 afterEach(async () => { cleanup(); await act(async () => { await i18n.changeLanguage("es"); }); });
@@ -37,7 +37,7 @@ describe("Chosen catalog list board K1", () => {
       expect(onEdit).toHaveBeenCalledExactlyOnceWith("manual");
       await user.click(screen.getByRole("button", { name: language === "es" ? "Página siguiente" : "Next page" }));
       expect(onPageChange).toHaveBeenCalledExactlyOnceWith(3);
-      expect(screen.getByText("La vista Usuarios cambió")).toBeInTheDocument();
+      expect(screen.getByText("El catálogo tiene una configuración no válida.")).toBeInTheDocument();
       expect(screen.getByRole("row", { name: /Responsables/ })).toHaveTextContent("—");
     });
   }
