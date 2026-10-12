@@ -10,7 +10,7 @@ import { useCatalogDraftEditor } from "./useCatalogDraftEditor";
 
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
-const initial: CatalogDetail = { id, key: id.replaceAll("-", ""), kind: "Manual", revision: 1, name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null };
+const initial: CatalogDetail = { id, key: id.replaceAll("-", ""), kind: "Manual", revision: 1, name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
 const scope = { actorId: "actor-a", culture: "es" as const, permissions: ["formcatalogs.read", "formcatalogs.manage"] };
 function harness() {
   const client = createQueryClient();

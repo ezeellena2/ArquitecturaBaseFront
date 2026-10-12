@@ -4,7 +4,7 @@ import type { ManualCatalogBody, UpdateManualCatalogBody } from "@/features/busi
 // Browser-only simulated persistence. The real app/API harness qualifies database behavior separately.
 export const visualCatalogId = "01990000-0000-7000-8000-000000000080";
 export function createCatalogFixtureStore(culture: "es" | "en", scenario: string) {
-  let catalog: CatalogDetail = { id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null };
+  let catalog: CatalogDetail = { id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null, filters: null };
   let items: CatalogItem[] = ["Pérez", "López", "Ríos"].map((name, index) => ({ id: "01990000-0000-7000-8000-00000000008" + (index + 1), code: "C" + (index + 1), text: { es: name, en: null }, detail: { es: null, en: null }, position: index + 1, isActive: true }));
   let conflict = scenario === "catalogs-conflict";
   let identity = 100;

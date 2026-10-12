@@ -8,7 +8,7 @@ import { createManualCatalog, fetchCatalog, fetchCatalogItems, updateManualCatal
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
 const otherId = "01990000-0000-7000-8000-000000000022";
-const catalog = { id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Personas a visitar", en: "People to visit" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null };
+const catalog = { id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Personas a visitar", en: "People to visit" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
 const item = { id: itemId, code: "C-001", text: { es: "Pérez Hnos.", en: null }, detail: { es: "Av. Colón 1234", en: null }, position: 1, isActive: false };
 const body = { name: catalog.name, description: catalog.description, items: [{ localId: "new-option", itemId: null, code: item.code, text: item.text, detail: item.detail, isActive: false }] };
 afterEach(resetHttpClient);

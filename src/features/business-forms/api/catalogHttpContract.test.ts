@@ -21,9 +21,9 @@ import { createManualCatalog, fetchCatalog, fetchCatalogItems, fetchCatalogPage,
 
 const input = process.env.FORMS_CATALOG_HTTP_CONTRACT_INPUT;
 const body = (fallback: string, name: string): string => input ? readFileSync(resolve(input, "manual-bilingual", name), "utf8") : fallback;
-const createdRaw = body(createdRawFixture, "created.json");
-const updatedRaw = body(updatedRawFixture, "updated.json");
-const detailRaw = body(detailRawFixture, "detail.json");
+const createdRaw = createdRawFixture;
+const updatedRaw = updatedRawFixture;
+const detailRaw = detailRawFixture;
 const itemsRaw = body(itemsRawFixture, "items.json");
 const createRequestRaw = body(createRequestRawFixture, "create-request.request.json");
 const updateRequestRaw = body(updateRequestRawFixture, "update-request.request.json");
@@ -38,7 +38,7 @@ const id = created.catalog.id;
 const json = (body: string, status = 200) => new HttpResponse(body, { status, headers: { "content-type": "application/json" } });
 afterEach(resetHttpClient);
 
-describe("Consumer of unchanged catalog HTTP exports", () => {
+describe("Historical catalog HTTP exports and current contract rejection", () => {
   it("retains the unchanged producer provenance and exact exported bytes", () => {
     const directory = input ? resolve(input, "manual-bilingual") : resolve("src/test/fixtures/catalogs-http/manual");
     const provenance: typeof producerProvenance = input ? JSON.parse(readFileSync(resolve(directory, "provenance.json"), "utf8")) : producerProvenance;
@@ -50,24 +50,23 @@ describe("Consumer of unchanged catalog HTTP exports", () => {
     }
   });
 
-  it("reads real create/update identity maps, multilingual detail and item pages", async () => {
+  it("rejects historical detail and save bodies without the now-required filters field", async () => {
+    // These immutable pre-K4 exports no longer qualify the current detail/save contract.
+    // Positive real HTTP coverage resumes with the producer's K4 cohort at closure.
     const createBody = JSON.parse(createRequestRaw) as ManualCatalogBody;
     const updateBody = JSON.parse(updateRequestRaw) as ManualCatalogBody & { expectedRevision: number };
     const sent: unknown[] = [];
-    server.use(http.post("/api/forms/catalogs", async ({ request }) => { sent.push(await request.json()); return json(createdRaw, 201); }), http.put("/api/forms/catalogs/" + id, async ({ request }) => { sent.push(await request.json()); return json(updatedRaw); }), http.get("/api/forms/catalogs/" + id, () => json(detailRaw)), http.get("/api/forms/catalogs/" + id + "/items", () => json(itemsRaw)));
-    const first = await createManualCatalog(createBody);
-    const next = await updateManualCatalog(id, updateBody);
-    expect(first).toEqual(JSON.parse(createdRaw));
-    expect(next).toEqual(JSON.parse(updatedRaw));
-    expect(next.catalog.revision).toBe(2);
-    expect(first.catalog.usageCount).toBeNull();
-    expect(next.catalog.usageCount).toBeNull();
-    expect(createBody.items.some(item => "position" in item)).toBe(false);
-    expect(updateBody.items.some(item => "position" in item)).toBe(false);
+    server.use(http.post("/api/forms/catalogs", async ({ request }) => { sent.push(await request.json()); return json(createdRaw, 201); }), http.put("/api/forms/catalogs/" + id, async ({ request }) => { sent.push(await request.json()); return json(updatedRaw); }), http.get("/api/forms/catalogs/" + id, () => json(detailRaw)));
+    expect(JSON.parse(createdRaw).catalog).not.toHaveProperty("filters");
+    expect(JSON.parse(updatedRaw).catalog).not.toHaveProperty("filters");
+    expect(JSON.parse(detailRaw)).not.toHaveProperty("filters");
+    await expect(createManualCatalog(createBody)).rejects.toThrow("Unsupported catalog response.");
+    await expect(updateManualCatalog(id, updateBody)).rejects.toThrow("Unsupported catalog response.");
+    await expect(fetchCatalog(id)).rejects.toThrow("Unsupported catalog response.");
     expect(sent).toEqual([createBody, updateBody]);
-    const detail = await fetchCatalog(id);
-    expect(detail).toEqual(JSON.parse(detailRaw));
-    expect(detail.usageCount).toBeNull();
+  });
+  it("continues to consume the unchanged real item page", async () => {
+    server.use(http.get("/api/forms/catalogs/" + id + "/items", () => json(itemsRaw)));
     expect(await fetchCatalogItems(id, { page: 1, pageSize: 20 })).toEqual(JSON.parse(itemsRaw));
   });
   for (const [culture, raw] of [["es", listEsRaw], ["en", listEnRaw]] as const) it("preserves the real localized page 2 and hidden usage count in " + culture, async () => {

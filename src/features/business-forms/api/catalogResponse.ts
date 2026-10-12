@@ -6,7 +6,16 @@ const revision = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const nullableText = (limit: number) => z.record(z.string().refine((key): boolean => key === "es" || key === "en"), z.string().max(limit).nullable());
 const requiredText = (limit: number) => z.strictObject({ es: z.string().min(1).max(limit).refine(value => !!value.trim()), en: z.string().min(1).max(limit).refine(value => !!value.trim()) });
-const catalog = z.strictObject({ id: guid, key: z.string(), name: requiredText(120), description: requiredText(1000), kind: z.enum(["Manual", "Filters"]), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable() })
+const filters = z.strictObject({
+  textColumn: z.string(), detailColumn: z.string().nullable(),
+  conditions: z.array(z.strictObject({ column: z.string(), operator: z.string(), value: z.string() })),
+  excludeRecipient: z.boolean(), sortColumn: z.string(), sortDescending: z.boolean(),
+});
+const filterColumn = z.strictObject({ key: z.string(), dataType: z.string(), canDisplay: z.boolean(), canFilter: z.boolean(), canSort: z.boolean(), operators: z.array(z.string()), choices: z.array(z.strictObject({ key: z.string(), label: z.string() })).nullable() });
+const sampleUsers = z.strictObject({ items: z.array(z.strictObject({ id: guid, name: z.string() })), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() });
+const filterOptions = z.strictObject({ source: z.literal("users"), columns: z.array(filterColumn), sampleUsers: sampleUsers.nullable() });
+const filterPreview = z.strictObject({ items: z.array(z.strictObject({ id: guid, text: z.string(), detail: z.string().nullable() })), totalCount: count, exceedsLimit: z.boolean() });
+const catalog = z.strictObject({ id: guid, key: z.string(), name: requiredText(120), description: requiredText(1000), kind: z.enum(["Manual", "Filters"]), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable() })
   .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase());
 const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: nullableText(200).refine(value => !!value.es?.trim()), detail: nullableText(500), position: z.number().int().min(1).max(10000), isActive: z.boolean() });
 const itemPage = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
@@ -46,3 +55,8 @@ export type CatalogListItem = z.infer<typeof listItem>;
 export type CatalogDetail = z.infer<typeof catalog>;
 export type CatalogItem = z.infer<typeof item>;
 export type CatalogSave = z.infer<typeof saved>;
+
+export const readCatalogFilterOptions = (value: unknown) => read(filterOptions, value);
+export const readCatalogFilterPreview = (value: unknown) => read(filterPreview, value);
+export type CatalogFilterOptions = z.infer<typeof filterOptions>;
+export type CatalogFilterPreview = z.infer<typeof filterPreview>;
