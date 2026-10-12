@@ -1,0 +1,172 @@
+{
+  "command": "dotnet test --no-restore",
+  "captures": [
+    {
+      "name": "es/choices.json",
+      "length": 527,
+      "sha256": "03ae55cf00e3eeba657eeacfd18723ff1aa7c164fd37617e6b009e5a8c443bd0"
+    },
+    {
+      "name": "es/preparation.json",
+      "length": 502,
+      "sha256": "5ad45c7199cc544d5a53feb87905e0d77a759b044b222c9302274def8bebf77d"
+    },
+    {
+      "name": "es/reply-all-states.json",
+      "length": 5320,
+      "sha256": "a5687bdd123f30575d131887abb6cd6adff54d5045dae5ab5bed9eca38f8c4c6"
+    },
+    {
+      "name": "es/reply-completed.json",
+      "length": 2883,
+      "sha256": "8e6948f264723f6edb3be18817e639584a544094041d20a0644c2f73512c0661"
+    },
+    {
+      "name": "es/reply-inbox-read.json",
+      "length": 1489,
+      "sha256": "99eb9722df399cf64ba17b712ad87cd18a26057002fdfa9a1ee0d6f56363e182"
+    },
+    {
+      "name": "es/reply-inbox-without-read.json",
+      "length": 1489,
+      "sha256": "99eb9722df399cf64ba17b712ad87cd18a26057002fdfa9a1ee0d6f56363e182"
+    },
+    {
+      "name": "es/reply-latest-page.json",
+      "length": 1704,
+      "sha256": "81a5cb84767f0e9f6734f03e558719a7992b737ac5cdcaf13bf5fe700e5ff82b"
+    },
+    {
+      "name": "es/reply-older-page.json",
+      "length": 1761,
+      "sha256": "e25d0eef24cb73e7be68dd2432414893f32b7ae6fcc3ce2d536a6b908517e31f"
+    },
+    {
+      "name": "es/reply-pending.json",
+      "length": 1652,
+      "sha256": "c024497bfc4420c6afe9cb62f30fa579ad5b6c0ef5d0ea90ff5c1ee2ce7aa2e2"
+    },
+    {
+      "name": "es/reply-rejected.json",
+      "length": 3971,
+      "sha256": "3c705f2fd02a4f4a68c8ea50d74c0ca2143acfb203bd22dfa1df335de3ecfae1"
+    },
+    {
+      "name": "es/reply-reloaded.json",
+      "length": 2883,
+      "sha256": "8e6948f264723f6edb3be18817e639584a544094041d20a0644c2f73512c0661"
+    },
+    {
+      "name": "es/reply-unrecognized.json",
+      "length": 4389,
+      "sha256": "a16869b143ee4d1ab6516956df3f72178db1cb9935da9ccc7685c0ef5c3fb4f4"
+    },
+    {
+      "name": "es/reply-without-read.json",
+      "length": 1529,
+      "sha256": "9305b05c9480857e53f1ca34aeaf3179fc720a0fad14d730f1365f6048235bf0"
+    },
+    {
+      "name": "en/choices.json",
+      "length": 527,
+      "sha256": "d330639a6b626817baec5b0f250502bb5ef84b29723b4f655cb7c1a7a5c066b8"
+    },
+    {
+      "name": "en/preparation.json",
+      "length": 503,
+      "sha256": "4d1a13b494a8bec11a28eeef9ae485f6f9420d3d5047ec651a428a398254a2c9"
+    },
+    {
+      "name": "en/reply-all-states.json",
+      "length": 5290,
+      "sha256": "9537cce4979925964af8ebd343095fe5f66c1b6c0e5ce1d99e766f5abc902c83"
+    },
+    {
+      "name": "en/reply-completed.json",
+      "length": 2859,
+      "sha256": "1770340980380dbf20357b8c852d92933b91a0ea7a186dea74959bca10d1822c"
+    },
+    {
+      "name": "en/reply-inbox-read.json",
+      "length": 816,
+      "sha256": "6f597f70584ece166e0d35795b1d64f3ce877e405c8eb1912e329b3004a189a9"
+    },
+    {
+      "name": "en/reply-inbox-without-read.json",
+      "length": 816,
+      "sha256": "6f597f70584ece166e0d35795b1d64f3ce877e405c8eb1912e329b3004a189a9"
+    },
+    {
+      "name": "en/reply-latest-page.json",
+      "length": 1693,
+      "sha256": "1c58ebe2ac1ed6fcbf4fe50e298c7dac19a6d846b4ad12edf0f6b9e6129dbc78"
+    },
+    {
+      "name": "en/reply-older-page.json",
+      "length": 1744,
+      "sha256": "abe6260038b2898b55164114072b1691766144933b1f7128d433704e39bf2a18"
+    },
+    {
+      "name": "en/reply-pending.json",
+      "length": 1641,
+      "sha256": "68edeea1de989b1bf5faff27cfd796333c30ce50d614c294746957d41636b115"
+    },
+    {
+      "name": "en/reply-rejected.json",
+      "length": 3941,
+      "sha256": "ceaefc642cde470c0e679959d150c1170f4cb5c5c11b2ce11ab34f028fed4a00"
+    },
+    {
+      "name": "en/reply-reloaded.json",
+      "length": 2859,
+      "sha256": "1770340980380dbf20357b8c852d92933b91a0ea7a186dea74959bca10d1822c"
+    },
+    {
+      "name": "en/reply-unrecognized.json",
+      "length": 4359,
+      "sha256": "5b28effb0c19bb8290e2afbd20c1dd520c7dda2836a7e7327a14e213ea9a0d0a"
+    },
+    {
+      "name": "en/reply-without-read.json",
+      "length": 1512,
+      "sha256": "ee448ee653bddb8bc362cb920787cfdf529b029f2e878a96ee069bf1142aadd9"
+    }
+  ],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; captured Meta and neutral record fixture",
+  "repositoryHead": "efbc7e432cf88e58540866f494a1477bcecc91bc",
+  "sourceState": [
+    " M docs/architecture/mapa-de-instrucciones.md",
+    " M docs/features/formularios.md",
+    " M docs/plans/formularios/etapa-2-catalogos.md",
+    " M src/ArquitecturaBase.Application/Models/StructuredData/AGENTS.md",
+    " M src/ArquitecturaBase.Application/Modules/BusinessForms/AGENTS.md",
+    " M src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormCatalogFilterReader.cs",
+    " M src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormCatalogReader.cs",
+    " M src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormCatalogFilterModels.cs",
+    " M src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogFiltersService.cs",
+    " M src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogService.cs",
+    " M src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormPublicationGuard.cs",
+    " M src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/FormCatalogRequestValidators.cs",
+    " M src/ArquitecturaBase.Application/Modules/WhatsApp/AGENTS.md",
+    " M src/ArquitecturaBase.Application/Resources/Errors.en.resx",
+    " M src/ArquitecturaBase.Application/Resources/Errors.resx",
+    " M src/ArquitecturaBase.Domain/Modules/BusinessForms/AGENTS.md",
+    " M src/ArquitecturaBase.Domain/Modules/BusinessForms/FormCatalogErrors.cs",
+    " M src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/AGENTS.md",
+    " D src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/BusinessFormCatalogUserView.cs",
+    " D src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/BusinessFormCatalogUserViewConfiguration.cs",
+    " M src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormCatalogFilterReader.cs",
+    " M src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormCatalogReader.cs",
+    " M src/ArquitecturaBase.Infrastructure/Persistence/Migrations/ApplicationDbContextModelSnapshot.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationCheckTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
+    " D tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/BusinessFormsCatalogUsersView.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/BusinessFormsManualAppPreview.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/AGENTS.md",
+    " M tests/ArquitecturaBase.Application.UnitTests/Modules/WhatsApp/AGENTS.md",
+    "?? src/ArquitecturaBase.Infrastructure/Persistence/Migrations/20261012215448_DropBusinessFormCatalogUsersView.Designer.cs",
+    "?? src/ArquitecturaBase.Infrastructure/Persistence/Migrations/20261012215448_DropBusinessFormCatalogUsersView.cs"
+  ],
+  "producer": "Real_http_reply_cards_preserve_exact_values_and_hide_them_without_read_permission (catalog=true)"
+}

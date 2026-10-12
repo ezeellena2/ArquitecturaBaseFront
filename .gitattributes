@@ -2,3 +2,5 @@
 src/test/fixtures/catalogs-http/filters/** -text whitespace=cr-at-eol
 src/test/fixtures/catalogs-http/manual-current/** -text whitespace=cr-at-eol
 src/test/fixtures/catalogs-http/k6-source/** -text whitespace=cr-at-eol
+
+/src/test/fixtures/whatsapp-catalogs-http/** -text
