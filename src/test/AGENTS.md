@@ -22,3 +22,5 @@
 - [Compatibilidad y setup](setup.ts).
 - [Render con providers](utils/renderWithProviders.tsx).
 - [Contrato y cierre de mensajes](../../docs/guides/mensajes-y-estados.md#cuándo-se-puede-dar-por-unificada-una-pantalla).
+
+`fixtures/catalogs-http` conserva15 cuerpos HTTP nuevos de FormCatalogEndpointsTests y el manifiesto emitido por su runner, sin cambios en bytes ni hashes escritos a mano. `catalogHttpContract.test` verifica tamaños/SHA256 y puede consumir FORMS_CATALOG_HTTP_CONTRACT_INPUT. La full Vitest excluye .test-artifacts (probes temporales de QA) y usa maxWorkers:1: esa concurrencia pasó1542/1542 sin ampliar5000ms ni alterar assertions, después de diagnosticar el caso lazy de80impedimentos. No editar configuración/build durante un Vite visual activo; conservar fulls fallidas y verificaciones focales por separado.
