@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchCatalog, fetchCatalogItems, fetchCatalogPage, type CatalogItemsQuery, type CatalogListQuery } from "../api/catalogs";
+import { fetchCatalog, fetchCatalogItems, fetchCatalogPage, type CatalogItemsQuery, type CatalogListQuery, fetchCatalogFilterOptions, type CatalogFilterOptionsQuery } from "../api/catalogs";
 import type { CatalogReadScope } from "./useCatalogDraftEditor";
 
 export const catalogActorKey = (actorId: string | null) => ["form-catalogs", actorId] as const;
@@ -36,4 +36,10 @@ export function useCatalogPage(scope: CatalogReadScope, query: CatalogListQuery)
     gcTime: 0, meta: { errorOwner: "local" } });
   if (list.data && !list.isPlaceholderData && (lastLoaded?.owner !== owner || lastLoaded.data !== list.data)) setLastLoaded({ owner, data: list.data });
   return { ...list, data: list.data ?? (lastLoaded?.owner === owner ? lastLoaded.data : undefined) };
+}
+
+export function useCatalogFilterOptions(scope: CatalogReadScope, query: CatalogFilterOptionsQuery) {
+  const root = [...catalogScopeKey(scope), "filter-options"] as const;
+  usePrivateCleanup(root);
+  return useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogFilterOptions(query, signal), enabled: canRead(scope), gcTime: 0, meta: { errorOwner: "local" } });
 }

@@ -25,7 +25,7 @@ describe("Catalog routes and navigation", () => {
     let router!: ReturnType<typeof renderRouteWithProviders>["router"];
     await act(async () => { router = renderRouteWithProviders("/catalogos?pageSize=20").router; });
     const user = userEvent.setup(); await user.click(await screen.findByRole("button", { name: "Nuevo catálogo" }));
-    expect(screen.getByRole("radio", { name: "Tomarlas de la base, con filtros" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Tomarlas de la base, con filtros" })).toBeEnabled();
     expect(screen.queryByRole("radio", { name: "Escribir una consulta" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Continuar" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/nuevo"));

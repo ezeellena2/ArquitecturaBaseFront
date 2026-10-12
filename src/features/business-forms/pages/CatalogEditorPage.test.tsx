@@ -10,6 +10,11 @@ import { queryClient } from "@/shared/api/queryClient";
 import i18n from "@/shared/i18n";
 import { server } from "@/test/mocks/server";
 import { notify } from "@/shared/ui/notifications";
+import capturedOptionsRaw from "@/test/fixtures/catalogs-http/filters/options.json?raw";
+import capturedDetailRaw from "@/test/fixtures/catalogs-http/filters/detail.json?raw";
+import capturedPreviewRequest from "@/test/fixtures/catalogs-http/filters/preview-request.json";
+import capturedPreviewRaw from "@/test/fixtures/catalogs-http/filters/preview.json?raw";
+import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview } from "../api/catalogResponse";
 import { CatalogEditorPage } from "./CatalogEditorPage";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
@@ -172,4 +177,68 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.queryByText("unsaved", { exact: true })).not.toBeInTheDocument();
   });
 
+});
+
+const filtersDetail = { ...initial, kind: "Filters", filters: { textColumn: "name", detailColumn: "role", conditions: [], excludeRecipient: true, sortColumn: "name", sortDescending: false } };
+function filterSetup(permissions = ["formcatalogs.read", "formcatalogs.manage"]) {
+  setup(permissions);
+  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(filtersDetail)), http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ source: "users", columns: [
+    { key: "name", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["contains", "equals"], choices: null },
+    { key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: "Operario", label: "Operario" }] },
+    { key: "active", dataType: "boolean", canDisplay: true, canFilter: true, canSort: true, operators: ["equals"], choices: [{ key: "true", label: "Active" }, { key: "false", label: "Inactive" }] }
+  ], sampleUsers: permissions.includes("formcatalogs.manage") ? { items: [{ id: itemId, name: "Ana" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false } : null })));
+}
+async function selectSample() { const user = userEvent.setup(); await user.click(await screen.findByRole("combobox", { name: "Como si lo recibiera" })); await user.click(await screen.findByRole("option", { name: "Ana" })); }
+describe("Filters editor connected to current DTOs", () => {
+  it("edits conditions, previews explicitly and saves only configuration", async () => {
+    filterSetup(); const previews: unknown[] = []; const writes: unknown[] = [];
+    server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { previews.push(await request.json()); return HttpResponse.json({ items: [{ id, text: "Beatriz", detail: "Operario" }], totalCount: 1, exceedsLimit: false }); }), http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { const body = await request.json() as { filters: typeof filtersDetail.filters }; writes.push(body); return HttpResponse.json({ catalog: { ...filtersDetail, filters: body.filters, revision: 2 }, itemIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición 1" }), "role");
+    expect(screen.getByRole("combobox", { name: "Comparación de la condición 1" })).toHaveValue("has"); expect(writes).toHaveLength(0);
+    await selectSample(); await user.click(screen.getByRole("button", { name: "Probar" })); await screen.findByText("Beatriz");
+    await user.click(screen.getByRole("button", { name: "Guardar" })); await waitFor(() => expect(writes).toHaveLength(1));
+    expect(previews).toHaveLength(2); expect(writes[0]).toMatchObject({ expectedRevision: 1, filters: { conditions: [{ column: "role", operator: "has", value: "Operario" }] } });
+    expect(writes[0]).not.toHaveProperty("sampleUserId"); expect(writes[0]).not.toHaveProperty("items");
+  });
+  it("creates Filters from the new-catalog route and reloads the saved kind", async () => {
+    filterSetup(); const writes: unknown[] = [];
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })), http.post("/api/forms/catalogs/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: filtersDetail, itemIdentityMap: {} }, { status: 201 }); }));
+    const router = await mount("/catalogos/nuevo?kind=Filters"); const user = userEvent.setup();
+    await user.type(await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visitas"); await user.click(screen.getByRole("button", { name: "Inglés" })); await user.type(screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visits");
+    await selectSample(); await user.click(screen.getByRole("button", { name: "Guardar" })); await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
+    expect(writes).toHaveLength(1); expect(writes[0]).toMatchObject({ name: initial.name, description: initial.description }); expect(writes[0]).not.toHaveProperty("expectedRevision");
+    await screen.findByRole("button", { name: "Agregar condición" }); expect(screen.queryByRole("button", { name: "Agregar opción" })).not.toBeInTheDocument();
+  });
+  it("renders permitted configuration read-only without sample identities or preview writes", async () => {
+    filterSetup(["formcatalogs.read"]); await mount("/catalogos/" + id);
+    expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeDisabled(); expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
+    expect(screen.queryByRole("combobox", { name: "Como si lo recibiera" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Probar" })).not.toBeInTheDocument();
+  });
+  it("binds filter errors to the field and retains the conditions without a duplicate toast", async () => {
+    filterSetup(); server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ code: "Validation.Failed", errors: { "filters.conditions[0]": ["Revisá la condición."] } }, { status: 400 })));
+    await mount("/catalogos/" + id); const user = userEvent.setup(); await user.click(await screen.findByRole("button", { name: "Agregar condición" })); await selectSample(); await user.click(screen.getByRole("button", { name: "Probar" }));
+    const value = await screen.findByRole("textbox", { name: "Valor de la condición 1" }); await waitFor(() => expect(value).toHaveAccessibleDescription("Revisá la condición.")); expect(value).toHaveAttribute("aria-invalid", "true"); expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
+  });
+});
+
+it("renders unchanged real K4 detail/options and the result of the captured preview request", async () => {
+  setup(); const detail = readCatalog(JSON.parse(capturedDetailRaw)); const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)); const preview = readCatalogFilterPreview(JSON.parse(capturedPreviewRaw));
+  const person = options.sampleUsers!.items.find(person => person.id === capturedPreviewRequest.sampleUserId)!;
+  const json = (body: string) => new HttpResponse(body, { headers: { "content-type": "application/json" } });
+  const received: unknown[] = [];
+  server.use(http.get("/api/forms/catalogs/" + detail.id, () => json(capturedDetailRaw)), http.get("/api/forms/catalog-filter-options", () => json(capturedOptionsRaw)), http.post("/api/forms/catalog-previews", async ({ request }) => { received.push(await request.json()); return json(capturedPreviewRaw); }));
+  await mount("/catalogos/" + detail.id); const user = userEvent.setup();
+  expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveValue(detail.name.es);
+  await user.selectOptions(await screen.findByRole("combobox", { name: "Texto de cada opción" }), capturedPreviewRequest.filters.textColumn);
+  await user.selectOptions(screen.getByRole("combobox", { name: "Detalle" }), capturedPreviewRequest.filters.detailColumn ?? "");
+  for (const [index, condition] of capturedPreviewRequest.filters.conditions.entries()) {
+    await user.click(screen.getByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición " + (index + 1) }), condition.column);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Comparación de la condición " + (index + 1) }), condition.operator);
+    const label = "Valor de la condición " + (index + 1); const choice = screen.queryByRole("combobox", { name: label });
+    if (choice) await user.selectOptions(choice, condition.value); else await user.type(screen.getByRole("textbox", { name: label }), condition.value);
+  }
+  await user.click(screen.getByRole("combobox", { name: "Como si lo recibiera" })); await user.click(screen.getByRole("option", { name: person.name }));
+  await user.click(screen.getByRole("button", { name: "Probar" }));
+  await screen.findByText(preview.items[0]!.text, { exact: true }); expect(screen.getByText(preview.items[0]!.detail!, { exact: true })).toBeInTheDocument(); expect(received).toEqual([capturedPreviewRequest]);
 });

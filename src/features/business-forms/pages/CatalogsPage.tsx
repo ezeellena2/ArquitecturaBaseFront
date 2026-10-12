@@ -46,6 +46,6 @@ export function CatalogsPage() {
       sort={query.sort} onSortChange={pagination.toggleSort} hasFilters={!!query.search}
       emptyAction={query.search ? <Button type="button" variant="outline" onClick={() => pagination.setSearch("")}>{t("clearFilters")}</Button> : newAction}
       onEdit={id => { void navigate("/catalogos/" + id); }} onViewUsage={id => { void navigate("/catalogos/" + id); }} />
-    {choosingOrigin && canManage ? <CatalogOriginDialog filtersAvailable={false} onOpenChange={setChoosingOrigin} onSelect={() => { void navigate("/catalogos/nuevo"); }} /> : null}
+    {choosingOrigin && canManage ? <CatalogOriginDialog onOpenChange={setChoosingOrigin} onSelect={origin => { void navigate(origin === "Filters" ? "/catalogos/nuevo?kind=Filters" : "/catalogos/nuevo"); }} /> : null}
   </Page>;
 }

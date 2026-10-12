@@ -195,3 +195,42 @@ describe("Manual catalog editor ownership", () => {
     expect(result.current.draft!.name.es).toBe("Cambio actual");
   });
 });
+
+const filterInitial: CatalogDetail = { ...initial, kind: "Filters", filters: { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: true, sortColumn: "name", sortDescending: false } };
+const previewResult = { items: [{ id: itemId, text: "Ana", detail: null }], totalCount: 1, exceedsLimit: false };
+describe("Filters catalog editor", () => {
+  it("tests the chosen sample before saving configuration and clears the dirty baseline", async () => {
+    const events: string[] = []; const writes: unknown[] = []; const h = harness();
+    server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { events.push("preview"); expect(await request.json()).toMatchObject({ sampleUserId: itemId, filters: { conditions: [{ column: "role", operator: "has", value: "Operario" }] } }); return HttpResponse.json(previewResult); }), http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { events.push("save"); const body = await request.json() as { filters: CatalogDetail["filters"] }; writes.push(body); return HttpResponse.json({ catalog: { ...filterInitial, filters: body.filters, revision: 2 }, itemIdentityMap: {} }); }));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, filterInitial), h);
+    act(() => result.current.changeFilters({ ...result.current.draft!.filters!, conditions: [{ localId: "private-row", column: "role", operator: "has", value: "Operario" }] }));
+    expect(result.current.dirty).toBe(true);
+    await act(() => result.current.save(itemId));
+    expect(events).toEqual(["preview", "save"]);
+    expect(writes[0]).not.toHaveProperty("sampleUserId"); expect(writes[0]).not.toHaveProperty("items"); expect(JSON.stringify(writes)).not.toContain("private-row");
+    expect(result.current.draft!.revision).toBe(2); expect(result.current.dirty).toBe(false); expect(h.client.getMutationCache().getAll()).toEqual([]);
+  });
+  it("requires an explicit sample and does not save an oversized preview", async () => {
+    let previews = 0; let writes = 0;
+    server.use(http.post("/api/forms/catalog-previews", () => { previews++; return HttpResponse.json({ items: [], totalCount: 201, exceedsLimit: true }); }), http.put("/api/forms/catalogs/" + id + "/filters", () => { writes++; return HttpResponse.json({}); }));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, filterInitial), harness());
+    await act(() => result.current.save()); expect(previews).toBe(0);
+    await act(() => result.current.save(itemId)); expect(previews).toBe(1); expect(writes).toBe(0); expect(result.current.previewResult!.exceedsLimit).toBe(true); expect(result.current.requiresReview).toBe(false);
+  });
+  it("preserves filters on 409 and adopts a reread only after a decision", async () => {
+    let writes = 0;
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json(previewResult)), http.put("/api/forms/catalogs/" + id + "/filters", () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 }); }), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...filterInitial, revision: 2 })));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, filterInitial), harness());
+    act(() => result.current.changeFilters({ ...result.current.draft!.filters!, sortDescending: true }));
+    await act(() => result.current.save(itemId)); await act(() => result.current.readCurrent());
+    expect(result.current.draft!.filters!.sortDescending).toBe(true); expect(result.current.requiresReview).toBe(true); expect(writes).toBe(1);
+    act(() => result.current.adoptCurrent()); expect(result.current.draft!.filters!.sortDescending).toBe(false); expect(result.current.draft!.revision).toBe(2); expect(result.current.dirty).toBe(false);
+  });
+  it("does not preview without Manage and keeps a failed preview editable", async () => {
+    let calls = 0; server.use(http.post("/api/forms/catalog-previews", () => { calls++; return HttpResponse.json({}, { status: 500 }); }));
+    const { result, rerender } = renderHook(({ permissions }) => useCatalogDraftEditor({ ...scope, permissions }, filterInitial), { ...harness(), initialProps: { permissions: ["formcatalogs.read"] } });
+    await act(() => result.current.preview(itemId)); expect(calls).toBe(0);
+    rerender({ permissions: scope.permissions }); await act(() => result.current.save(itemId));
+    expect(calls).toBe(1); expect(result.current.requiresReview).toBe(false); expect(result.current.canSave).toBe(true);
+  });
+});

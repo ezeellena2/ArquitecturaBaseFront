@@ -71,3 +71,13 @@ describe("Chosen Users filters editor K4", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+it("keeps a retired column visible as unavailable instead of presenting a different selected column", async () => {
+  const value = { ...initial, textColumn: "retired", detailColumn: "retired", sortColumn: "retired", conditions: [{ localId: "retired-row", column: "retired", operator: "equals", value: "Old value" }] };
+  await act(async () => { renderWithProviders(<CatalogFiltersEditor view={{ key: "users", label: "Usuarios" }} columns={columns} value={value} canManage={false} onChange={() => {}} />); });
+  expect(screen.getByRole("combobox", { name: "Texto de cada opción" })).toHaveValue("retired");
+  expect(screen.getByRole("combobox", { name: "Detalle" })).toHaveValue("retired");
+  expect(screen.getByRole("combobox", { name: "Orden" })).toHaveValue("retired");
+  expect(screen.getByRole("combobox", { name: "Columna de la condición 1" })).toHaveValue("retired");
+  expect(screen.getAllByRole("option", { name: "Columna no disponible" })).toHaveLength(4);
+});

@@ -60,3 +60,11 @@ export const readCatalogFilterOptions = (value: unknown) => read(filterOptions, 
 export const readCatalogFilterPreview = (value: unknown) => read(filterPreview, value);
 export type CatalogFilterOptions = z.infer<typeof filterOptions>;
 export type CatalogFilterPreview = z.infer<typeof filterPreview>;
+
+export function readCatalogFiltersSave(value: unknown, id?: string, expectedRevision?: number) {
+  const result = read(saved, value);
+  if (result.catalog.kind !== "Filters" || result.catalog.filters === null || Object.keys(result.itemIdentityMap).length !== 0
+    || id && result.catalog.id.toLowerCase() !== id.toLowerCase()
+    || expectedRevision !== undefined && result.catalog.revision <= expectedRevision) throw new UnsupportedCatalogResponse();
+  return result;
+}

@@ -312,7 +312,36 @@
       "direction": "Dirección",
       "ascending": "A → Z",
       "descending": "Z → A",
-      "order": "Orden"
+      "order": "Orden",
+      "users": "Usuarios",
+      "columnLabels": {
+        "name": "Nombre",
+        "role": "Rol",
+        "active": "Activo"
+      },
+      "operatorLabels": {
+        "contains": "Contiene",
+        "equals": "Es",
+        "has": "Tiene el rol"
+      },
+      "booleanLabels": {
+        "true": "Activo",
+        "false": "Inactivo"
+      },
+      "previewTitle": "Vista previa",
+      "sample": "Como si lo recibiera",
+      "sampleHint": "Elegí una persona de ejemplo. Esta prueba no cambia su identidad ni sus permisos.",
+      "test": "Probar",
+      "chooseSample": "Elegí una persona para probar antes de guardar.",
+      "empty": "No hay opciones con estos filtros.",
+      "result_one": "{{count}} opción.",
+      "result_other": "{{count}} opciones.",
+      "exceedsLimit": "Hay más de 200 opciones. Ajustá los filtros antes de guardar.",
+      "optionsFailed": "No pudimos cargar las columnas y las personas de ejemplo.",
+      "readOnlyPreview": "Necesitás permiso para administrar catálogos para probar esta vista.",
+      "unavailable": "Este catálogo no se puede usar. Revisá sus filtros.",
+      "unavailableColumn": "Columna no disponible",
+      "unavailableOperator": "Comparación no disponible"
     },
     "metadata": {
       "title": "El catálogo",

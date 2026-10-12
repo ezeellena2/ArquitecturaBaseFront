@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
@@ -28,9 +28,12 @@ import { useCatalogDraftEditor, type CatalogReadScope } from "../hooks/useCatalo
 import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
 import type { FormCulture } from "../model";
 
+import { CatalogFiltersEditorPage } from "./CatalogFiltersEditorPage";
+
 export function CatalogEditorPage() {
   const { t, i18n } = useTranslation("forms");
   const { catalogId = "" } = useParams();
+  const [searchParams] = useSearchParams();
   const { data: user } = useCurrentUser();
   const scope: CatalogReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
   const detail = useCatalogDetail(scope, catalogId);
@@ -54,6 +57,7 @@ export function CatalogEditorPage() {
   if (catalogId && detail.isPending && !initial) return <Page title={t("catalogs.title")}><Spinner /></Page>;
   if (catalogId && !initial) return <Page title={t("catalogs.title")} backTo={{ to: "/catalogos", label: t("catalogs.title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "catalogs.notFound" : "catalogs.detailFailed")} action={<Button variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
   if (!catalogId && !scope.permissions.includes("formcatalogs.manage")) return <ForbiddenPage />;
+  if ((initial?.kind ?? searchParams.get("kind")) === "Filters") return <CatalogFiltersEditorPage key={detailOwner} scope={scope} initial={initial} />;
   return <ManualCatalogEditor key={JSON.stringify([scope.actorId, scope.culture, catalogId])} scope={scope} initial={initial} />;
 }
 
@@ -77,7 +81,7 @@ function ManualCatalogEditor({ scope, initial }: { scope: CatalogReadScope; init
   const loadItems = editor.loadItems;
   useEffect(() => { if (items.data) loadItems(items.data.items, draft?.revision ?? null); }, [items.data, loadItems, draft?.revision]);
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
-  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy);
+  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, ["kind"]);
   const canManage = scope.permissions.includes("formcatalogs.manage") && (initial?.kind ?? "Manual") === "Manual";
   const readOnly = !editor.canSave;
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};

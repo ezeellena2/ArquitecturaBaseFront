@@ -312,7 +312,36 @@
       "direction": "Direction",
       "ascending": "A → Z",
       "descending": "Z → A",
-      "order": "Order"
+      "order": "Order",
+      "users": "Users",
+      "columnLabels": {
+        "name": "Name",
+        "role": "Role",
+        "active": "Active"
+      },
+      "operatorLabels": {
+        "contains": "Contains",
+        "equals": "Is",
+        "has": "Has role"
+      },
+      "booleanLabels": {
+        "true": "Active",
+        "false": "Inactive"
+      },
+      "previewTitle": "Preview",
+      "sample": "As if received by",
+      "sampleHint": "Choose a sample person. This test does not change their identity or permissions.",
+      "test": "Test",
+      "chooseSample": "Choose a person to test before saving.",
+      "empty": "No options match these filters.",
+      "result_one": "{{count}} option.",
+      "result_other": "{{count}} options.",
+      "exceedsLimit": "There are more than 200 options. Adjust the filters before saving.",
+      "optionsFailed": "We could not load the columns and sample people.",
+      "readOnlyPreview": "You need permission to manage catalogs to test this preview.",
+      "unavailable": "This catalog cannot be used. Review its filters.",
+      "unavailableColumn": "Unavailable column",
+      "unavailableOperator": "Unavailable comparison"
     },
     "metadata": {
       "title": "The catalog",

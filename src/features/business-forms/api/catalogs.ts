@@ -1,5 +1,7 @@
 import { api } from "@/shared/api/httpClient";
-import { catalogId, readCatalog, readCatalogItems, readCatalogPage, readCatalogSave } from "./catalogResponse";
+import { catalogId, readCatalog, readCatalogItems, readCatalogPage, readCatalogSave, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogFiltersSave } from "./catalogResponse";
+
+import type { CatalogFiltersBody } from "../catalogFilterDraft";
 
 export interface CatalogManualItemBody {
   readonly localId: string;
@@ -44,3 +46,14 @@ export async function fetchCatalogPage(query: CatalogListQuery, signal?: AbortSi
   const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));
   return readCatalogPage(await api.get<unknown>(`/api/forms/catalogs?${params}`, { signal }));
 }
+
+export interface CatalogFilterOptionsQuery { readonly page: number; readonly pageSize: number; readonly search?: string; readonly sort?: "name" | "-name" }
+export interface FiltersCatalogBody { readonly name: Readonly<Record<"es" | "en", string>>; readonly description: Readonly<Record<"es" | "en", string>>; readonly filters: CatalogFiltersBody }
+export interface CatalogFilterPreviewBody { readonly sampleUserId: string; readonly filters: CatalogFiltersBody }
+export async function fetchCatalogFilterOptions(query: CatalogFilterOptionsQuery, signal?: AbortSignal) {
+  const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));
+  return readCatalogFilterOptions(await api.get<unknown>(`/api/forms/catalog-filter-options?${params}`, { signal }));
+}
+export const previewCatalogFilters = async (body: CatalogFilterPreviewBody, signal?: AbortSignal) => readCatalogFilterPreview(await api.post<unknown>("/api/forms/catalog-previews", body, { signal }));
+export const createFiltersCatalog = async (body: FiltersCatalogBody, signal?: AbortSignal) => readCatalogFiltersSave(await api.post<unknown>("/api/forms/catalogs/filters", body, { signal }));
+export const updateFiltersCatalog = async (id: string, body: FiltersCatalogBody & { readonly expectedRevision: number }, signal?: AbortSignal) => readCatalogFiltersSave(await api.put<unknown>(`/api/forms/catalogs/${catalogId(id)}/filters`, body, { signal }), id, body.expectedRevision);
