@@ -106,7 +106,7 @@ Sin módulo/permiso se conserva el Inicio base. El [contrato](../ArquitecturaBas
 y [registro de entrega](../ArquitecturaBase/docs/reviews/2026-10-04-inicio-asistente.md)
 distinguen automatización con handlers ficticios y piloto real pendiente.
 
-`npm run build` deja el sitio estático en `dist/`. En producción lo sirve la Api desde su `wwwroot` (un solo origen, sin CORS). **Hoy no hay nada que copie `dist/` a `wwwroot`:** ese paso todavía no existe y lo tiene que resolver el pipeline de despliegue. La [guía de despliegue](../ArquitecturaBase/docs/guides/despliegue.md#antes-que-nada-el-front-no-llega-a-la-imagen) explica el paso faltante; el [registro de pendientes](../ArquitecturaBase/docs/plans/verificacion-y-produccion.md) conserva su seguimiento.
+`npm run build` deja el sitio estático en `dist/`. En producción lo sirve la Api desde su `wwwroot` (un solo origen, sin CORS). **Hoy no hay nada que copie `dist/` a `wwwroot`:** ese paso todavía no existe y lo tiene que resolver el pipeline de despliegue. La [guía de despliegue](../ArquitecturaBase/docs/guides/despliegue.md#front-dentro-de-la-imagen) explica el paso faltante; el [registro de pendientes](../ArquitecturaBase/docs/plans/verificacion-y-produccion.md) conserva su seguimiento.
 
 ## Diseño y planes
 
