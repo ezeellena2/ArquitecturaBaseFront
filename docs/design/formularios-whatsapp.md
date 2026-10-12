@@ -25,6 +25,12 @@ Los pendientes de versión/idioma de respuesta, señal de purga, etiqueta de exp
 
 La verificación general del front pasó 1455/1455 pruebas en 136 archivos; lint, 48/48 pruebas de arquitectura y TypeScript quedaron sin diagnósticos. La última corrida visual sobre `856e641`, con tres workers y sin retries ni cambio de referencias, terminó **292/294**: fallaron las esperas iniciales del campo Nombre del editor en español a 390/320 px. No se declara la suite visual completa verde ni una causa probada. Estas dos esperas iniciales quedan como deuda del arnés junto con la intermitencia de Roles; el próximo corte deberá comprobar la preparación de Idiomas con un control negativo antes de modificar los tests. Se conserva el informe `a2-r4-front-visual-session-shell-final.json`, sus trazas y la revisión de las 32 capturas en `.test-artifacts/forms-step5/`; el servidor visual quedó apagado. Por instrucción del usuario se registra este resultado y no se inicia otra corrida completa.
 
+## Cierre de Manual K1–K3 (2026-10-12)
+
+El listado y alta de catálogos y el editor Manual están integrados en /catalogos: metadatos es/en, opciones con identidad estable, posiciones confirmadas y movimientos entre páginas en un Guardar;409 conserva el borrador y exige adopción explícita. El contador de uso permanece desconocido sin lectura de formularios. Filters/K4, K6/K7 y el piloto Meta siguen pendientes de Etapa2.
+
+El front pasó1542/1542 pruebas en149 archivos con1worker, build ylint48 de arquitectura limpios. La única completa visual terminó300/306; los6fallos pasaron6/6 en focal con configuración estable, sin modificar snapshots/assertions/productoIA. Manual pasó6/6 en es/en a1440/390/320, con30capturas revisadas. El recorrido separado SPA/API/PostgreSQL/Redis pasó9/9 y8capturas; los tokens se mantuvieron en memoria y el arnés se cerró. Se conservan las corridas rojas y la procedencia automática de15cuerpos HTTP; no se acredita Meta ni Etapa2 completa. El [resumen vigente](../../../ArquitecturaBase/docs/plans/formularios/etapa-2-catalogos.md) conserva el resto del alcance.
+
 ## Cómo leer los tableros
 
 - Están dibujados a mano con los tokens Campo y Public Sans de `src/index.css` (la biblioteca ArquitecturaBase UI del
