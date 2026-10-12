@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/shared/ui/dialog";
 import { DataTable } from "@/shared/ui/DataTable";
 import { Surface } from "@/shared/ui/Surface";
-import { createDraftReview, localizedValue, type DraftReviewRow } from "../editorModel";
+import { createDraftReview, localizedValue, questionEditorType, type DraftReviewRow } from "../editorModel";
 import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture, FormDefinitionSnapshot, LocalizedText } from "../model";
 
 export function DraftReview({ value, definition, culture, auditSummary, open, onCloseAutoFocus, onOpenChange, onUseCurrent, onResolve }: {
@@ -50,7 +50,7 @@ export function DraftReviewChanges({ value, definition, culture }: { value: Draf
     if ("type" in item) {
       const q = item as DraftQuestion;
       const help = q.help && Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => entry[1] !== null));
-      return [text(q.label), t(`types.${q.type}`), t(q.required ? "required" : "optional"), help ? `${t("help")}: ${text(help)}` : "",
+      return [text(q.label), t("types." + questionEditorType(q)), t(q.required ? "required" : "optional"), help ? `${t("help")}: ${text(help)}` : "",
         "maxLength" in q ? `${t("maxLength")}: ${q.maxLength ?? (q.type === "shortText" ? 80 : 600)}` : "",
         q.type === "choice" && !q.source && !review.rows.some(r => r.parentId === row.parentId && r.kind === "option") ? q.options.map(o => text(o.label)).join("; ") : ""].filter(Boolean).join(" · ");
     }
