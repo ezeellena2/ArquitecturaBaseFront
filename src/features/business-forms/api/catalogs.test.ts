@@ -62,4 +62,14 @@ describe("Manual catalog adapter against current DTO source", () => {
     await expect(updateManualCatalog(id, { ...body, expectedRevision: 1 })).rejects.toMatchObject({ status: 409, code: "Forms.Catalog.RevisionConflict" });
     expect(calls).toBe(1);
   });
+  it("preserves a hidden usage count as null in detail and write receipts", async () => {
+    const hidden = { ...catalog, usageCount: null };
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(hidden)),
+      http.post("/api/forms/catalogs", () => HttpResponse.json({ catalog: hidden, itemIdentityMap: { "new-option": itemId } }, { status: 201 })),
+      http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ catalog: { ...hidden, revision: 2 }, itemIdentityMap: {} })));
+    expect((await fetchCatalog(id)).usageCount).toBeNull();
+    expect((await createManualCatalog(body)).catalog.usageCount).toBeNull();
+    expect((await updateManualCatalog(id, { ...body, expectedRevision: 1, items: [] })).catalog.usageCount).toBeNull();
+  });
+
 });

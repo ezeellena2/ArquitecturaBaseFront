@@ -6,7 +6,7 @@ const revision = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const nullableText = (limit: number) => z.record(z.string().refine((key): boolean => key === "es" || key === "en"), z.string().max(limit).nullable());
 const requiredText = (limit: number) => z.strictObject({ es: z.string().min(1).max(limit).refine(value => !!value.trim()), en: z.string().min(1).max(limit).refine(value => !!value.trim()) });
-const catalog = z.strictObject({ id: guid, key: z.string(), name: requiredText(120), description: requiredText(1000), kind: z.enum(["Manual", "Filters"]), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count, unavailableReasonCode: z.string().nullable() })
+const catalog = z.strictObject({ id: guid, key: z.string(), name: requiredText(120), description: requiredText(1000), kind: z.enum(["Manual", "Filters"]), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable() })
   .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase());
 const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: nullableText(200).refine(value => !!value.es?.trim()), detail: nullableText(500), position: z.number().int().min(1).max(10000), isActive: z.boolean() });
 const itemPage = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
