@@ -27,7 +27,7 @@ P1 muestra nextVersionNumber positivo requerido del chequeo en título y acción
 
 Al mover una pregunta/opción, conservar el foco en una acción habilitada del mismo elemento y anunciar su posición. Listo devuelve foco a Editar; quitar devuelve foco a la fila/opción vecina o Agregar cuando no quedan elementos. Reutilizar ConfirmDialog.focusFallback y los controles comunes. Sólo lectura conserva «Ver pregunta» sin acciones de escritura.
 
-api/httpContract.test consume cuerpos HTTP sin modificar del productor FormHttpContractFixturesTests (ApiFactory/PostgreSQL/Redis, Meta simulado), con hashes en src/test/fixtures/forms-http/provenance.json. FORMS_HTTP_CONTRACT_INPUT permite verificar la cohorte recién producida sin copiarla. Acredita controller/serializer/guards y diagnósticos, no publicación ni entrega reales de Meta.
+api/httpContract.test consume cuerpos HTTP sin modificar del productor FormHttpContractFixturesTests (ApiFactory/PostgreSQL/Redis, Meta simulado). El hash de `provenance.json` lo actualiza el script de exportación; no se verifica ni se pasa a mano entre chats. FORMS_HTTP_CONTRACT_INPUT permite verificar la cohorte recién producida sin copiarla. Acredita controller/serializer/guards y diagnósticos, no publicación ni entrega reales de Meta.
 
 El presupuesto de respuesta se comprueba con cuerpos HTTP es/en exportados sin modificar. `FormPublicationBudgetHttp.test.tsx` verifica guard y ruta real; el navegador cubre ambos idiomas a1440/390/320, publicación bloqueada sin POST de aceptación y localización del diagnóstico sin escribir el borrador. El detalle y la sesión del escenario siguen siendo dobles explícitos.
 
