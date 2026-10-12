@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "artifactSet": "manual-bilingual",
+  "generatedAtUtc": "2026-10-12T12:32:52.1886731Z",
+  "producer": {
+    "project": "ArquitecturaBase.Api.IntegrationTests",
+    "test": "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogEndpointsTests",
+    "source": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs",
+    "sourceSha256": "f2547ee9e95480bccb2a1c7574f397fb04eea0ef3987f8f78f4a6cc1d2e98e74",
+    "repositoryHead": "d687e34c2f671f9a017df69d39626c2f34b3ed57"
+  },
+  "runner": {
+    "command": "dotnet test",
+    "environment": {
+      "FORMS_CATALOG_HTTP_CONTRACT_OUTPUT": ".test-artifacts/forms-step2/manual-close-20261012",
+      "FORMS_MANUAL_APP_PREVIEW_WEB_ROOT": "..\\ArquitecturaBaseFront\\dist",
+      "FORMS_MANUAL_APP_PREVIEW_STATE": ".test-artifacts/forms-step2/manual-close-20261012/app-preview/state.json"
+    },
+    "fullSuiteResult": "2705 passed, 1 failed, 0 skipped; duration 15m54s967ms; failure in BusinessFormsManualAppPreviewTests before the harness-order correction",
+    "exportFiles": [
+      {
+        "path": "conflict-en.json",
+        "length": 259,
+        "sha256": "8919b96a270a91ce2462639a49614264ab71ab488cfd02ac04a22d88cf632d23",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.8184817Z"
+      },
+      {
+        "path": "conflict-es.json",
+        "length": 267,
+        "sha256": "58618943da4fd9c3889f8afcb59c5429265a7666a250b6240cef20fa81bc3ee9",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.8038787Z"
+      },
+      {
+        "path": "conflict-request.request.json",
+        "length": 306,
+        "sha256": "c4be5a287e52640f84eb74b1f71112178eaac368808c4ae5b9b8a33c7e38a7bd",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.7913206Z"
+      },
+      {
+        "path": "create-duplicate-positions-request.request.json",
+        "length": 451,
+        "sha256": "1d9e620a42a2a09270e110ffa91f54a149ae2651e21a4f14245f499c738c3f25",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.6660420Z"
+      },
+      {
+        "path": "create-request.request.json",
+        "length": 430,
+        "sha256": "fd76ca19fd574108d1a45461fea9e652cc606f10eb4541a3011bcc69897422c6",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.7142718Z"
+      },
+      {
+        "path": "created.json",
+        "length": 443,
+        "sha256": "90fba2b8288a34f41f6cda10f2745af3c00b9f7c8294607b437a568adc50f21e",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.7316859Z"
+      },
+      {
+        "path": "detail.json",
+        "length": 318,
+        "sha256": "5b84c424eddd32ccbf16457db2e227e520631f2f97d24eb4a7e88b235d22fdba",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.7635443Z"
+      },
+      {
+        "path": "inactive-request.request.json",
+        "length": 260,
+        "sha256": "f2053f12129752a1c990160caa43b9f310fbad7a5b40a36cdbeb5bc275bdace0",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.6133025Z"
+      },
+      {
+        "path": "items.json",
+        "length": 626,
+        "sha256": "db6ec55c443e9610d64a15ba77edcfce45af95a140eb15a4b950c315fed999db",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.7718520Z"
+      },
+      {
+        "path": "list-en.json",
+        "length": 320,
+        "sha256": "2e6b867109b01b3ddc3b9fa6420fcb8b5b4d17d00df953a8947aafdd665dc4b4",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.1715634Z"
+      },
+      {
+        "path": "list-es.json",
+        "length": 329,
+        "sha256": "b08c00a43e914e6e9b9d477d202fec351cdf7bf8ff99a537b04cc368d94dc9da",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.2960548Z"
+      },
+      {
+        "path": "missing-revision-request.request.json",
+        "length": 229,
+        "sha256": "6b269a4b479323ca1528f5cae5bd48fe7dde6e58b083488e73a3134c0a9de87e",
+        "lastWriteTimeUtc": "2026-10-12T12:23:19.5455478Z"
+      },
+      {
+        "path": "queued-moves-request.request.json",
+        "length": 323,
+        "sha256": "c33b8e60c8956a50cbd12801040235322418dcb1be25103bd546c332c99ef6bd",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.4322283Z"
+      },
+      {
+        "path": "update-request.request.json",
+        "length": 492,
+        "sha256": "d6a91820817df03cf85b4de002c69bf0bc564c68ba96b275dd19a915bb5469da",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.7332244Z"
+      },
+      {
+        "path": "updated.json",
+        "length": 401,
+        "sha256": "2e0a6971e0ac5b804c49687cd6375955c9d7f725bfce2004e9776a7c7d9fab6e",
+        "lastWriteTimeUtc": "2026-10-12T12:23:20.7514929Z"
+      }
+    ]
+  }
+}
