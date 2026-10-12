@@ -4,7 +4,7 @@ import type { PagedResult } from "@/shared/api/pagedResult";
 const guid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).refine(value => !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(value));
 const revision = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
-const nullableText = (limit: number) => z.record(z.string().refine(key => key === "es" || key === "en"), z.string().max(limit).nullable());
+const nullableText = (limit: number) => z.record(z.string().refine((key): boolean => key === "es" || key === "en"), z.string().max(limit).nullable());
 const requiredText = (limit: number) => z.strictObject({ es: z.string().min(1).max(limit).refine(value => !!value.trim()), en: z.string().min(1).max(limit).refine(value => !!value.trim()) });
 const catalog = z.strictObject({ id: guid, key: z.string(), name: requiredText(120), description: requiredText(1000), kind: z.enum(["Manual", "Filters"]), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count, unavailableReasonCode: z.string().nullable() })
   .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase());

@@ -6,6 +6,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { CatalogListTable, type CatalogListRow } from "@/features/business-forms/components/CatalogListTable";
 import { CatalogOriginDialog, type EditableCatalogOrigin } from "@/features/business-forms/components/CatalogOriginDialog";
+import { CatalogMetadataFields } from "@/features/business-forms/components/CatalogMetadataFields";
 import { CatalogManualItemsEditor } from "@/features/business-forms/components/CatalogManualItemsEditor";
 import { CatalogFiltersEditor, type CatalogFilterColumn, type CatalogFiltersEditorValue } from "@/features/business-forms/components/CatalogFiltersEditor";
 import type { CatalogManualItemValue } from "@/features/business-forms/catalogItemEdits";
@@ -14,6 +15,8 @@ import type { CatalogManualItemValue } from "@/features/business-forms/catalogIt
 export function CatalogComponentsPreview() {
   const { t, i18n } = useTranslation("forms");
   const culture = i18n.language.startsWith("en") ? "en" : "es";
+  const [contentCulture, setContentCulture] = useState<"es" | "en">(culture);
+  const [metadata, setMetadata] = useState({ name: { es: "Clientes", en: "Customers" }, description: { es: "A quiénes se les entrega o se visita.", en: "People we deliver to or visit." } });
   const [screen, setScreen] = useState<"list" | EditableCatalogOrigin>("list");
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -38,9 +41,9 @@ export function CatalogComponentsPreview() {
       { key: "Filters", label: t("catalogs.source.filters"), pressed: screen === "Filters", onSelect: () => setScreen("Filters") },
     ]} /></div></Surface>
     {screen === "list" ? <CatalogListTable page={{ items: listRows, page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false }} hasFilters={false} canManage onEdit={() => setScreen("Manual")} onViewUsage={() => {}} onPageChange={() => {}} />
-      : screen === "Manual" ? <CatalogManualItemsEditor items={items} culture={culture} canManage expandedKey={expanded} onExpand={setExpanded}
+      : screen === "Manual" ? <div className="mt-4 flex flex-col gap-4"><CatalogMetadataFields {...metadata} culture={contentCulture} canManage onCultureChange={setContentCulture} onChange={change => setMetadata(previous => ({ ...previous, ...change }))} /><CatalogManualItemsEditor items={items} culture={contentCulture} canManage expandedKey={expanded} onExpand={setExpanded}
         onChange={item => setItems(current => current.map(row => row.localId === item.localId ? item : row))} onMove={() => {}}
-        onAdd={() => { const localId = crypto.randomUUID(); setItems(current => [...current, { localId, itemId: null, label: { es: "", en: "" }, detail: { es: null, en: null }, code: "", isActive: true, position: current.length + 1 }]); setExpanded(localId); }} />
+        onAdd={() => { const localId = crypto.randomUUID(); setItems(current => [...current, { localId, itemId: null, label: { es: "", en: "" }, detail: { es: null, en: null }, code: "", isActive: true, position: current.length + 1 }]); setExpanded(localId); }} /></div>
       : <CatalogFiltersEditor view={{ key: "users", label: culture === "es" ? "Usuarios" : "Users" }} columns={columns} value={filters} canManage onChange={setFilters} />}
     {open ? <CatalogOriginDialog onOpenChange={setOpen} onSelect={setScreen} /> : null}
   </Page>;

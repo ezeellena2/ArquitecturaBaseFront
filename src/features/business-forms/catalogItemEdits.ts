@@ -1,10 +1,8 @@
-import type { LocalizedText } from "./model";
-
 // Local editor values, not an HTTP write contract. Only loaded/touched identities are retained.
 export interface CatalogManualItemValue {
   readonly localId: string;
   readonly itemId: string | null;
-  readonly label: LocalizedText;
+  readonly label: Readonly<Record<string, string | null>>;
   readonly detail: Readonly<Record<string, string | null>>;
   readonly code: string;
   readonly isActive: boolean;

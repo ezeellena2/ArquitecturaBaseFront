@@ -305,6 +305,12 @@
       "ascending": "A → Z",
       "descending": "Z → A",
       "order": "Orden"
+    },
+    "metadata": {
+      "title": "El catálogo",
+      "description": "Descripción",
+      "descriptionHint": "La leen las personas para saber cuándo usarlo.",
+      "languagesHint": "Completá el nombre y la descripción en español e inglés. En las opciones, el inglés es opcional."
     }
   }
 }

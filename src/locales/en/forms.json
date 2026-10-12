@@ -305,6 +305,12 @@
       "ascending": "A → Z",
       "descending": "Z → A",
       "order": "Order"
+    },
+    "metadata": {
+      "title": "The catalog",
+      "description": "Description",
+      "descriptionHint": "People read it to know when to use this catalog.",
+      "languagesHint": "Complete the name and description in Spanish and English. English option text is optional."
     }
   }
 }

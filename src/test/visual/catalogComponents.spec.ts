@@ -23,6 +23,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(create).toBeFocused();
     await create.click();
     await page.getByRole("dialog").getByRole("button", { name: es ? "Continuar" : "Continue" }).click();
+    const catalogName = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true });
+    await expect(catalogName).toHaveValue(es ? "Clientes" : "Customers");
+    await catalogName.scrollIntoViewIfNeeded();
+    const metadataBox = await catalogName.boundingBox();
+    expect(metadataBox!.x).toBeGreaterThanOrEqual(0);
+    expect(metadataBox!.x + metadataBox!.width).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: "test-results/catalog-metadata-" + language + "-" + width + ".png" });
     await page.getByRole("button", { name: es ? "Editar Pérez Hnos." : "Edit Pérez Hnos.", exact: true }).click();
     const text = page.getByRole("textbox", { name: es ? "Texto" : "Text", exact: true });
     await expect(text).toBeFocused();
