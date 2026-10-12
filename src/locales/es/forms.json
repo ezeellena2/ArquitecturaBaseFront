@@ -244,6 +244,32 @@
       "query": "Escribir una consulta",
       "queryUnavailable": "Las consultas avanzadas todavía no están disponibles.",
       "continue": "Continuar"
-    }
+    },
+    "columns": {
+      "name": "Catálogo",
+      "origin": "De dónde salen",
+      "options": "Opciones",
+      "usage": "Lo usan",
+      "state": "Estado"
+    },
+    "source": {
+      "manual": "Escritas a mano",
+      "database": "De la base",
+      "filters": "Usuarios, con filtros",
+      "query": "Consulta sobre Usuarios"
+    },
+    "state": {
+      "Active": "Activo",
+      "Inactive": "Dado de baja",
+      "Unavailable": "No se puede usar"
+    },
+    "viewUsage": "Ver formularios que usan {{name}}",
+    "usage_one": "{{count}} formulario",
+    "usage_other": "{{count}} formularios",
+    "editNamed": "Editar {{name}}",
+    "emptyTitle": "Todavía no hay catálogos.",
+    "emptyDescription": "Creá el primero para compartir sus opciones entre formularios.",
+    "noMatches": "No encontramos catálogos con estos filtros.",
+    "noMatchesDescription": "Limpiá los filtros para ver los demás catálogos."
   }
 }

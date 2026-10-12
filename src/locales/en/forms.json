@@ -244,6 +244,32 @@
       "query": "Write a query",
       "queryUnavailable": "Advanced queries are not available yet.",
       "continue": "Continue"
-    }
+    },
+    "columns": {
+      "name": "Catalog",
+      "origin": "Where options come from",
+      "options": "Options",
+      "usage": "Used by",
+      "state": "Status"
+    },
+    "source": {
+      "manual": "Written manually",
+      "database": "From the database",
+      "filters": "Users with filters",
+      "query": "Query over Users"
+    },
+    "state": {
+      "Active": "Active",
+      "Inactive": "Inactive",
+      "Unavailable": "Cannot be used"
+    },
+    "viewUsage": "View forms using {{name}}",
+    "usage_one": "{{count}} form",
+    "usage_other": "{{count}} forms",
+    "editNamed": "Edit {{name}}",
+    "emptyTitle": "No catalogs yet.",
+    "emptyDescription": "Create the first catalog to share its options across forms.",
+    "noMatches": "No catalogs match these filters.",
+    "noMatchesDescription": "Clear the filters to see other catalogs."
   }
 }
