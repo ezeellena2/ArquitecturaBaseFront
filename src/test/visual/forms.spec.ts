@@ -83,6 +83,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const es = language === "es";
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-translations&lang=${language}`);
+    await page.getByRole("heading", { name: es ? "El formulario" : "The form", level: 2, exact: true }).waitFor({ state: "visible" });
     const name = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true });
     await expect(name).toHaveValue("Registrar visita");
     const english = page.getByRole("button", { name: /^English/ });
