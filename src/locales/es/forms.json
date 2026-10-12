@@ -270,6 +270,21 @@
     "emptyTitle": "Todavía no hay catálogos.",
     "emptyDescription": "Creá el primero para compartir sus opciones entre formularios.",
     "noMatches": "No encontramos catálogos con estos filtros.",
-    "noMatchesDescription": "Limpiá los filtros para ver los demás catálogos."
+    "noMatchesDescription": "Limpiá los filtros para ver los demás catálogos.",
+    "items": {
+      "title": "Opciones",
+      "text": "Texto",
+      "detail": "Detalle",
+      "code": "Código",
+      "textAndCode": "Texto y código",
+      "codeHint": "El código es para la empresa: no se muestra en WhatsApp.",
+      "englishHint": "Si no completás el texto en inglés, se usa el de español.",
+      "active": "Activa",
+      "activeHint": "Una opción dada de baja deja de ofrecerse en los envíos nuevos. Las respuestas que ya la eligieron siguen mostrándola.",
+      "reactivate": "Reactivar",
+      "reactivateNamed": "Reactivar {{name}}",
+      "empty": "Todavía no hay opciones.",
+      "editing": "Editando {{name}}"
+    }
   }
 }

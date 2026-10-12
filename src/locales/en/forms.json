@@ -270,6 +270,21 @@
     "emptyTitle": "No catalogs yet.",
     "emptyDescription": "Create the first catalog to share its options across forms.",
     "noMatches": "No catalogs match these filters.",
-    "noMatchesDescription": "Clear the filters to see other catalogs."
+    "noMatchesDescription": "Clear the filters to see other catalogs.",
+    "items": {
+      "title": "Options",
+      "text": "Text",
+      "detail": "Detail",
+      "code": "Code",
+      "textAndCode": "Text and code",
+      "codeHint": "The code is for the business: it is not shown in WhatsApp.",
+      "englishHint": "Leave the English text blank to use the Spanish text.",
+      "active": "Active",
+      "activeHint": "Inactive options are not offered in new sends. Existing answers retain the option they selected.",
+      "reactivate": "Reactivate",
+      "reactivateNamed": "Reactivate {{name}}",
+      "empty": "No options yet.",
+      "editing": "Editing {{name}}"
+    }
   }
 }
