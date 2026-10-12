@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon } from "@/shared/ui/icons";
+import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon } from "@/shared/ui/icons";
 
 interface NavigationEntry {
   /// Clave del texto en el namespace common (navigation.*).
@@ -85,7 +85,10 @@ export function isWhatsAppPath(pathname: string): boolean {
 
 export const forms: NavigationPanel = {
   labelKey: "navigation.forms", icon: FormIcon,
-  items: [{ labelKey: "navigation.designForms", to: "/formularios", icon: PencilIcon, permission: "formtemplates.read" }],
+  items: [
+    { labelKey: "navigation.designForms", to: "/formularios", icon: PencilIcon, permission: "formtemplates.read" },
+    { labelKey: "navigation.catalogs", to: "/catalogos", icon: PublicTrackingIcon, permission: "formcatalogs.read" },
+  ],
 };
 export function isFormsPath(pathname: string): boolean {
   return linksOf(forms.items).some(link => leadsTo(withoutTrailingSlash(pathname), link));

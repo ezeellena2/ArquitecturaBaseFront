@@ -7,7 +7,8 @@ import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 
 export type EditableCatalogOrigin = "Manual" | "Filters";
 
-export function CatalogOriginDialog({ onOpenChange, onSelect }: {
+export function CatalogOriginDialog({ onOpenChange, onSelect, filtersAvailable = true }: {
+  filtersAvailable?: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (origin: EditableCatalogOrigin) => void;
 }) {
@@ -20,10 +21,10 @@ export function CatalogOriginDialog({ onOpenChange, onSelect }: {
         <DialogTitle>{t("catalogs.new")}</DialogTitle>
         <DialogDescription>{t("catalogs.origin.fixedHint")}</DialogDescription>
       </DialogHeader>
-      <RadioGroupField label={t("catalogs.origin.label")} variant="cards" value={origin} onValueChange={value => { if (value === "Manual" || value === "Filters") setOrigin(value); }}
+      <RadioGroupField label={t("catalogs.origin.label")} variant="cards" value={origin} onValueChange={value => { if (value === "Manual" || (value === "Filters" && filtersAvailable)) setOrigin(value); }}
         options={[
           { value: "Manual", label: t("catalogs.origin.manual"), description: t("catalogs.origin.manualHint") },
-          { value: "Filters", label: t("catalogs.origin.filters"), description: t("catalogs.origin.filtersHint") },
+          { value: "Filters", label: t("catalogs.origin.filters"), description: t(filtersAvailable ? "catalogs.origin.filtersHint" : "catalogs.origin.comingSoon"), disabled: !filtersAvailable },
         ]} />
       <DialogFooter>
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common:actions.cancel")}</Button>

@@ -106,7 +106,8 @@
     "businessInformation": "Business information",
     "appearance": "Appearance",
     "whatsapp": "WhatsApp",
-    "whatsappChat": "Chat"
+    "whatsappChat": "Chat",
+    "catalogs": "Catalogs"
   },
   "layout": {
     "sidebar": {

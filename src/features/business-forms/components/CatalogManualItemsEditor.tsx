@@ -17,8 +17,9 @@ import { localizedValue } from "../editorModel";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 
-function ItemFields({ item, culture, readOnly, onChange, onDone }: {
+function ItemFields({ item, culture, readOnly, errors, onChange, onDone }: {
   item: CatalogManualItemValue; culture: FormCulture; readOnly: boolean;
+  errors?: Readonly<Record<string, readonly string[]>>;
   onChange: (item: CatalogManualItemValue) => void; onDone: () => void;
 }) {
   const { t } = useTranslation("forms");
@@ -26,13 +27,13 @@ function ItemFields({ item, culture, readOnly, onChange, onDone }: {
   useEffect(() => { textRef.current?.focus(); }, []);
   return <Surface padded>
     <div className="grid gap-4 sm:grid-cols-2">
-      <FormField label={t("catalogs.items.text")} required={culture === "es"} hint={culture === "en" ? t("catalogs.items.englishHint") : undefined}>
+      <FormField label={t("catalogs.items.text")} required={culture === "es"} error={errors?.["text." + culture]?.join(" ")} hint={culture === "en" ? t("catalogs.items.englishHint") : undefined}>
         <Input ref={textRef} maxLength={200} readOnly={readOnly} value={item.label[culture] ?? ""} onChange={event => onChange({ ...item, label: { ...item.label, [culture]: event.target.value } })} />
       </FormField>
-      <FormField label={t("catalogs.items.code")} required hint={t("catalogs.items.codeHint")}>
+      <FormField label={t("catalogs.items.code")} required error={errors?.code?.join(" ")} hint={t("catalogs.items.codeHint")}>
         <Input maxLength={80} readOnly={readOnly} value={item.code} onChange={event => onChange({ ...item, code: event.target.value })} />
       </FormField>
-      <FormField label={t("catalogs.items.detail")} hint={t("optional")}>
+      <FormField label={t("catalogs.items.detail")} error={errors?.["detail." + culture]?.join(" ")} hint={t("optional")}>
         <Textarea maxLength={500} readOnly={readOnly} value={item.detail[culture] ?? ""} onChange={event => onChange({ ...item, detail: { ...item.detail, [culture]: event.target.value || null } })} />
       </FormField>
       <CheckboxField label={t("catalogs.items.active")} description={t("catalogs.items.activeHint")} checked={item.isActive} disabled={readOnly} onCheckedChange={isActive => onChange({ ...item, isActive })} />
@@ -41,12 +42,14 @@ function ItemFields({ item, culture, readOnly, onChange, onDone }: {
   </Surface>;
 }
 
-export function CatalogManualItemsEditor({ items, culture, canManage, busy = false, hasPendingMoves = false, expandedKey, onExpand, onChange, onAdd, onMove, filters, pagination, onPageChange, onPageSizeChange }: {
+export function CatalogManualItemsEditor({ items, culture, canManage, busy = false, hasPendingMoves = false, errors, editingItems = [], expandedKey, onExpand, onChange, onAdd, onMove, filters, pagination, onPageChange, onPageSizeChange }: {
   items: readonly CatalogManualItemValue[];
   culture: FormCulture;
   canManage: boolean;
   busy?: boolean;
   hasPendingMoves?: boolean;
+  errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
+  editingItems?: readonly CatalogManualItemValue[];
   expandedKey: string | null;
   onExpand: (key: string | null) => void;
   onChange: (item: CatalogManualItemValue) => void;
@@ -67,7 +70,7 @@ export function CatalogManualItemsEditor({ items, culture, canManage, busy = fal
   }, [expandedKey]);
   const readOnly = !canManage || busy;
   const fieldsInsideTable = useMediaQuery("(min-width: 640px)");
-  const expandedItem = items.find(item => item.localId === expandedKey);
+  const expandedItem = items.find(item => item.localId === expandedKey) ?? editingItems.find(item => item.localId === expandedKey);
   return <Surface title={t("catalogs.items.title")} actions={canManage ? <Button ref={addRef} type="button" variant="outline" disabled={busy} onClick={onAdd}><PlusIcon className="size-4" />{t("addOption")}</Button> : undefined}>
     {filters}
     <Table><TableHeader><TableRow>
@@ -87,10 +90,10 @@ export function CatalogManualItemsEditor({ items, culture, canManage, busy = fal
             {item.isActive || expanded ? <IconButton ref={rememberAction} size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} aria-expanded={expanded} onClick={() => onExpand(expanded ? null : item.localId)}><PencilIcon className="size-4" /></IconButton>
               : <Button ref={rememberAction} type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
           </div> : null}</TableCell>
-        </TableRow>{expanded && fieldsInsideTable ? <TableRow><TableCell colSpan={5} className="whitespace-normal"><ItemFields item={item} culture={culture} readOnly={readOnly} onChange={onChange} onDone={() => onExpand(null)} /></TableCell></TableRow> : null}</Fragment>;
+        </TableRow>{expanded && fieldsInsideTable ? <TableRow><TableCell colSpan={5} className="whitespace-normal"><ItemFields item={item} errors={errors?.[item.localId]} culture={culture} readOnly={readOnly} onChange={onChange} onDone={() => onExpand(null)} /></TableCell></TableRow> : null}</Fragment>;
       })}
     </TableBody></Table>
-    {!fieldsInsideTable && expandedItem ? <div className="flex flex-col gap-3 p-4"><p className="text-sm font-medium">{t("catalogs.items.editing", { name: localizedValue(expandedItem.label, culture, "es") || t("option", { number: expandedItem.position }) })}</p><ItemFields item={expandedItem} culture={culture} readOnly={readOnly} onChange={onChange} onDone={() => onExpand(null)} /></div> : null}
+    {expandedItem && (!fieldsInsideTable || !items.some(item => item.localId === expandedItem.localId)) ? <div className="flex flex-col gap-3 p-4"><p className="text-sm font-medium">{t("catalogs.items.editing", { name: localizedValue(expandedItem.label, culture, "es") || t("option", { number: expandedItem.position }) })}</p><ItemFields item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} readOnly={readOnly} onChange={onChange} onDone={() => onExpand(null)} /></div> : null}
     {items.length === 0 ? <div className="p-4"><p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.items.empty")}</p></div> : null}
     {pagination && onPageChange ? <Pagination {...pagination} onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} /> : null}
   </Surface>;

@@ -38,6 +38,16 @@ export const routes: RouteObject[] = [
             ErrorBoundary: RouteErrorPage,
             children: [
               {
+                element: <ProtectedRoute permission="formcatalogs.read" />,
+                children: [
+                  { path: "/catalogos", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/CatalogsPage")).CatalogsPage }) },
+                  { element: <ProtectedRoute permission="formcatalogs.manage" />, children: [
+                    { path: "/catalogos/nuevo", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/CatalogEditorPage")).CatalogEditorPage }) },
+                  ] },
+                  { path: "/catalogos/:catalogId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/CatalogEditorPage")).CatalogEditorPage }) },
+                ],
+              },
+              {
                 element: <ProtectedRoute permission="formtemplates.read" />,
                 children: [
                   { path: "/formularios", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormsPage")).FormsPage }) },

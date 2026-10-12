@@ -1,0 +1,146 @@
+import { useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router";
+import { useCurrentUser } from "@/auth/useCurrentUser";
+import { ApiError } from "@/shared/api/ApiError";
+import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
+import { useSystemPresentation } from "@/shared/api/presentation";
+import { usePagination } from "@/shared/hooks/usePagination";
+import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { Button } from "@/shared/ui/button";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
+import { Page } from "@/shared/ui/Page";
+import { SearchInput } from "@/shared/ui/SearchInput";
+import { Spinner } from "@/shared/ui/Spinner";
+import { Surface } from "@/shared/ui/Surface";
+import { dismissNotification, notify } from "@/shared/ui/notifications";
+import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import type { CatalogDetail } from "../api/catalogResponse";
+import { catalogItemValue } from "../catalogDraft";
+import { catalogItemChanges, currentCatalogItem } from "../catalogItemEdits";
+import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor";
+import { CatalogMetadataFields } from "../components/CatalogMetadataFields";
+import { useCatalogDraftEditor, type CatalogReadScope } from "../hooks/useCatalogDraftEditor";
+import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
+import type { FormCulture } from "../model";
+
+export function CatalogEditorPage() {
+  const { t, i18n } = useTranslation("forms");
+  const { catalogId = "" } = useParams();
+  const { data: user } = useCurrentUser();
+  const scope: CatalogReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
+  const detail = useCatalogDetail(scope, catalogId);
+  const detailOwner = JSON.stringify([scope.actorId, scope.culture, catalogId]);
+  const canRead = scope.actorId !== null && scope.permissions.includes("formcatalogs.read");
+  const [mountedDetail, setMountedDetail] = useState<{ owner: string; detail: CatalogDetail } | null>(null);
+  // A permitted metadata refetch never replaces or unmounts the current draft. Losing Read drops the baseline.
+  if (!canRead && mountedDetail) setMountedDetail(null);
+  else if (canRead && detail.data && mountedDetail?.owner !== detailOwner) setMountedDetail({ owner: detailOwner, detail: detail.data });
+  else if (mountedDetail && mountedDetail.owner !== detailOwner) setMountedDetail(null);
+  const initial = canRead && mountedDetail?.owner === detailOwner ? mountedDetail.detail : detail.data;
+  const feedbackId = "catalogs:detail:" + useId();
+  useEffect(() => () => { dismissNotification(feedbackId); }, [feedbackId]);
+  useEffect(() => {
+    if (!detail.error) { dismissNotification(feedbackId); return; }
+    if (["cancelled", "session", "forbidden"].includes(errorFeedback(detail.error).kind) || detail.error instanceof ApiError && detail.error.status === 404) return;
+    notify({ id: feedbackId, kind: "error", message: readErrorMessage(detail.error, t) });
+  }, [detail.error, feedbackId, t]);
+  if (!user) return <Page title={t("catalogs.title")}><Spinner /></Page>;
+  if (!scope.permissions.includes("formcatalogs.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
+  if (catalogId && detail.isPending && !initial) return <Page title={t("catalogs.title")}><Spinner /></Page>;
+  if (catalogId && !initial) return <Page title={t("catalogs.title")} backTo={{ to: "/catalogos", label: t("catalogs.title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "catalogs.notFound" : "catalogs.detailFailed")} action={<Button variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
+  if (!catalogId && !scope.permissions.includes("formcatalogs.manage")) return <ForbiddenPage />;
+  return <ManualCatalogEditor key={JSON.stringify([scope.actorId, scope.culture, catalogId])} scope={scope} initial={initial} />;
+}
+
+function ManualCatalogEditor({ scope, initial }: { scope: CatalogReadScope; initial?: CatalogDetail }) {
+  const { t } = useTranslation("forms");
+  const navigate = useNavigate();
+  const editor = useCatalogDraftEditor(scope, initial);
+  const [culture, setCulture] = useState<FormCulture>("es");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [handledValidation, setHandledValidation] = useState<unknown>(null);
+  const active = useRef(true);
+  const feedbackId = "catalogs:editor:" + useId();
+  const presentation = useSystemPresentation();
+  const pagination = usePagination(presentation.data?.defaultPageSize, true);
+  const draft = editor.draft;
+  const pageSize = Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1 && pagination.pageSize <= 100 ? pagination.pageSize : 20;
+  const page = Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1;
+  const items = useCatalogItems(scope, draft?.id ?? "", draft?.revision ?? null, { page, pageSize, sort: "position", search: pagination.search });
+  const loadItems = editor.loadItems;
+  useEffect(() => { if (items.data) loadItems(items.data.items, draft?.revision ?? null); }, [items.data, loadItems, draft?.revision]);
+  useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
+  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy);
+  const canManage = scope.permissions.includes("formcatalogs.manage") && (initial?.kind ?? "Manual") === "Manual";
+  const readOnly = !editor.canSave;
+  const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
+  const changedItems = draft ? catalogItemChanges(draft.items) : [];
+  const itemErrors: Record<string, Record<string, readonly string[]>> = {};
+  const itemErrorPaths: string[] = [];
+  for (const [key, messages] of Object.entries(fields)) {
+    const match = /^items\[(\d+)\]\.(code|text\.(?:es|en)|detail\.(?:es|en))$/.exec(key);
+    const item = match ? changedItems[Number(match[1])] : undefined;
+    if (item && match) { (itemErrors[item.localId] ??= {})[match[2]!] = messages; itemErrorPaths.push(key); }
+  }
+  const itemErrorPathsStamp = JSON.stringify(itemErrorPaths);
+  const currentName = draft?.name[scope.culture] || t("catalogs.new");
+  useBreadcrumbLeaf(currentName);
+  useEffect(() => {
+    const error = editor.error ?? items.error;
+    if (!error) { dismissNotification(feedbackId); return; }
+    const feedback = errorFeedback(error, { writing: !!editor.error, fields: ["name.es", "name.en", "description.es", "description.en", ...JSON.parse(itemErrorPathsStamp) as string[]], conflictCodes: ["Forms.Catalog.RevisionConflict"] });
+    if (["cancelled", "session", "forbidden", "fields", "conflict"].includes(feedback.kind)) return;
+    notify({ id: feedbackId, kind: "error", message: editor.error ? operationalErrorMessage(error, t) : readErrorMessage(error, t) });
+  }, [editor.error, items.error, feedbackId, t, itemErrorPathsStamp]);
+  if (editor.error !== handledValidation) {
+    setHandledValidation(editor.error);
+    const keys = Object.keys(editor.error instanceof ApiError ? editor.error.errors ?? {} : {});
+    if (keys.some(key => key === "name.en" || key === "description.en")) setCulture("en");
+    else if (keys.some(key => key === "name.es" || key === "description.es")) setCulture("es");
+    const invalidItem = changedItems.find(item => itemErrors[item.localId]);
+    if (invalidItem) {
+      setExpanded(invalidItem.localId);
+      setCulture(Object.keys(itemErrors[invalidItem.localId]!).some(key => key.endsWith(".en")) ? "en" : "es");
+    }
+  }
+  const save = async () => {
+    if (!editor.canSave) return;
+    const saved = await editor.save();
+    if (!saved || !active.current) return;
+    setExpanded(null);
+    notify({ id: feedbackId, kind: "success", message: t("catalogs.saved") });
+    if (!initial) { guard.allowNextNavigation(); void navigate("/catalogos/" + saved.catalog.id, { replace: true }); }
+  };
+  const addItem = () => {
+    if (!editor.canSave || !draft) return;
+    const localId = crypto.randomUUID();
+    editor.changeItem({ localId, itemId: null, label: { es: "", en: null }, detail: { es: null, en: null }, code: "", isActive: true, position: null });
+    setExpanded(localId);
+  };
+  const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
+  const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
+  if (!draft || [editor.error, items.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
+  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={editor.dirty ? <span className="text-xs text-[var(--color-content-muted)]">{t("unsaved")}</span> : undefined}
+    actions={canManage ? <><Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
+    <div className="flex flex-col gap-4">
+      {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button></Surface> : null}
+      <CatalogMetadataFields name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} />
+      {draft.moves.length ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.items.movesPending", { count: draft.moves.length })}</p><Button variant="outline" disabled={readOnly} onClick={editor.clearMoves}>{t("catalogs.items.clearMoves")}</Button></div></Surface> : null}
+      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
+        filters={draft.id ? <div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={pagination.setSearch} /></div> : undefined}
+        pagination={items.data} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
+    </div>
+    <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("keepEditing")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
+    <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent onCloseAutoFocus={restoreReviewFocus} className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
+      <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.value ? <><p className="text-sm">{entry.value.name.es}</p><p className="text-sm">{entry.value.name.en}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.es}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.en}</p></> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</Surface>)}</div>
+      <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setExpanded(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
+    </DialogContent></Dialog>
+  </Page>;
+}

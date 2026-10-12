@@ -16,7 +16,7 @@ export interface CatalogListRow {
   description: string | null;
   origin: "Manual" | "Filters";
   optionsCount: number | null;
-  usageCount: number;
+  usageCount: number | null;
   state: "Active" | "Inactive" | "Unavailable";
   stateReason: string | null;
   canEdit: boolean;
@@ -47,7 +47,7 @@ export function CatalogListTable({ page, canManage, loading, error, onRetry, onP
       {row.origin !== "Manual" ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.source.filters")}</p> : null}
     </div> },
     { id: "optionsCount", header: t("catalogs.columns.options"), cell: row => row.optionsCount ?? "—" },
-    { id: "usageCount", header: t("catalogs.columns.usage"), cell: row => row.usageCount > 0
+    { id: "usageCount", header: t("catalogs.columns.usage"), cell: row => row.usageCount !== null && row.usageCount > 0
       ? <Button type="button" variant="link" aria-label={t("catalogs.viewUsage", { name: row.name })} onClick={() => onViewUsage(row.id)}>{t("catalogs.usage", { count: row.usageCount })}</Button> : "—" },
     { id: "state", header: t("catalogs.columns.state"), cell: row => <div>
       <p className={row.state === "Unavailable" ? "flex items-center gap-1 text-[var(--color-danger)]" : "flex items-center gap-1"}>{row.state === "Unavailable" ? <AlertTriangleIcon className="size-4 shrink-0" /> : <span aria-hidden="true" className={row.state === "Active" ? "inline-block size-2 shrink-0 rounded-full bg-[var(--color-success)]" : "inline-block size-2 shrink-0 rounded-full border border-[var(--color-content-muted)]"} />}{t("catalogs.state." + row.state)}</p>
