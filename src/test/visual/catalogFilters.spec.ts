@@ -1,0 +1,86 @@
+import { expect, test } from "@playwright/test";
+import seedOptions from "../fixtures/catalogs-http/filters/options.json" with { type: "json" };
+import seedDetail from "../fixtures/catalogs-http/filters/detail.json" with { type: "json" };
+import seedPreviewRequest from "../fixtures/catalogs-http/filters/preview-request.json" with { type: "json" };
+import seedPreview from "../fixtures/catalogs-http/filters/preview.json" with { type: "json" };
+import { visualCatalogId } from "./catalogFixtures";
+
+// Production routes and UI with the existing simulated HTTP/persistence fixture.
+// PostgreSQL/Redis, availability checks and SQL filtering are qualified by backend tests separately.
+for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
+  test("Filters catalog " + language + " " + width, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 }); const english = language === "en";
+    const label = (es: string, en: string) => english ? en : es;
+    const enter = async (screen: string, scenario = "catalogs-filters") => {
+      await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen, lang: language, scenario }));
+      await page.getByRole("heading", { name: screen === "/catalogos" ? label("Catálogos", "Catalogs") : seedDetail.name[language], exact: true }).waitFor();
+      await page.evaluate(() => document.fonts.ready);
+    };
+    const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    const sample = async () => { await page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).click(); await page.getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
+    await enter("/catalogos");
+    await expect(page.getByRole("button", { name: label("Todos (1)", "All (1)"), exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: label("De la base (1)", "From the database (1)"), exact: true })).toBeVisible();
+    await page.getByRole("button", { name: label("Nuevo catálogo", "New catalog"), exact: true }).click();
+    await page.getByRole("radio", { name: label("Tomarlas de la base, con filtros", "Use database options with filters"), exact: true }).click();
+    await page.getByRole("button", { name: label("Continuar", "Continue"), exact: true }).click();
+    await page.getByRole("heading", { name: label("Nuevo catálogo", "New catalog"), exact: true }).waitFor();
+    await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill("Responsables");
+    await page.getByRole("textbox", { name: label("Descripción", "Description"), exact: true }).fill("Personas disponibles");
+    await page.getByRole("button", { name: label("Inglés", "English"), exact: true }).click();
+    await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill("Assignees");
+    await page.getByRole("textbox", { name: label("Descripción", "Description"), exact: true }).fill("Available people");
+    await sample(); await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
+    await page.getByRole("heading", { name: label("Responsables", "Assignees"), exact: true }).waitFor();
+    await geometry(); await page.screenshot({ path: info.outputPath("filters-created.png"), fullPage: true });
+    const creation = await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: { method: string; body: object }[] } }).catalogsFixture.writes);
+    expect(creation).toHaveLength(1); expect(creation[0]!.method).toBe("POST"); expect(creation[0]!.body).not.toHaveProperty("sampleUserId"); expect(creation[0]!.body).not.toHaveProperty("items");
+    await enter("/catalogos/" + visualCatalogId);
+    await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeDisabled();
+    await page.getByRole("button", { name: label("Página siguiente", "Next page"), exact: true }).click();
+    await expect(page.getByText(label("Página 2 de 2", "Page 2 of 2"), { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: label("Página anterior", "Previous page"), exact: true }).click();
+    const sampleInput = page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
+    await sampleInput.fill("Persona de muestra 22"); await expect(page.getByRole("option", { name: "Persona de muestra 22", exact: true })).toBeVisible();
+    await sampleInput.fill(""); await sample(); await page.getByRole("button", { name: label("Probar", "Test"), exact: true }).click();
+    await expect(page.getByText(seedPreview.items[0]!.text, { exact: true })).toBeVisible();
+    await geometry(); await page.screenshot({ path: info.outputPath("filters-preview.png"), fullPage: true });
+    await page.getByRole("combobox", { name: label("Texto de cada opción", "Option text"), exact: true }).selectOption("active");
+    await page.getByRole("button", { name: label("Probar", "Test"), exact: true }).click();
+    const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
+    await expect(preview.getByText(label("Activo", "Active"), { exact: true })).toBeVisible();
+    await expect(preview.getByText("true", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
+    await expect(page.getByText(label("Catálogo guardado.", "Catalog saved."), { exact: true })).toBeVisible();
+    const updates = await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: { body: { expectedRevision?: number; filters: { conditions: object[] } } }[]; previews: object[] } }).catalogsFixture);
+    expect(updates.writes).toHaveLength(1); expect(updates.writes[0]!.body.expectedRevision).toBe(1); expect(updates.previews).toHaveLength(3);
+    for (const condition of updates.writes[0]!.body.filters.conditions) expect(condition).not.toHaveProperty("localId");
+    await enter("/catalogos/" + visualCatalogId, "catalogs-filters-conflict"); await sample();
+    await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill("Mi borrador");
+    await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click(); await page.getByRole("button", { name: label("Revisar", "Review"), exact: true }).click();
+    await page.getByRole("button", { name: label("Releer", "Reread"), exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: label("Revisión del catálogo", "Catalog review"), exact: true });
+    await expect(dialog.getByText("Mi borrador", { exact: true })).toBeVisible(); await expect(dialog.getByText("Personas actuales", { exact: true })).toBeVisible();
+    await page.screenshot({ path: info.outputPath("filters-conflict.png"), fullPage: true });
+    await dialog.getByRole("button", { name: label("Usar la revisión actual", "Use the current revision"), exact: true }).click();
+    await expect(page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true })).toHaveValue("Personas actuales");
+    await enter("/catalogos/" + visualCatalogId, "catalogs-filters-limit"); await sample(); await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
+    await expect(page.getByText(label("Hay más de 200 opciones. Ajustá los filtros antes de guardar.", "There are more than 200 options. Adjust the filters before saving."), { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: unknown[] } }).catalogsFixture.writes)).toHaveLength(0);
+    await page.screenshot({ path: info.outputPath("filters-limit.png"), fullPage: true });
+    await enter("/catalogos/" + visualCatalogId, "catalogs-filters-read");
+    await expect(page.getByRole("combobox", { name: label("Texto de cada opción", "Option text"), exact: true })).toBeDisabled(); await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toHaveCount(0);
+    await expect(page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true })).toHaveCount(0);
+    await geometry(); await page.screenshot({ path: info.outputPath("filters-read.png"), fullPage: true });
+    await enter("/catalogos/" + visualCatalogId, "catalogs-filters-unavailable");
+    await expect(page.getByRole("combobox", { name: label("Texto de cada opción", "Option text"), exact: true })).toBeEnabled(); await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeDisabled();
+    await expect(page.getByText(label("La vista Usuarios no está disponible.", "The Users view is unavailable."), { exact: true })).toBeVisible();
+    await geometry(); await page.screenshot({ path: info.outputPath("filters-unavailable.png"), fullPage: true });
+    await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { restoreSource: () => void } }).catalogsFixture.restoreSource());
+    await page.getByRole("button", { name: label("Reintentar", "Retry"), exact: true }).click();
+    await expect(page.getByText(label("La vista Usuarios no está disponible.", "The Users view is unavailable."), { exact: true })).toHaveCount(0);
+    await sample(); await page.getByRole("button", { name: label("Probar", "Test"), exact: true }).click();
+    await expect(page.getByText(seedPreview.items[0]!.text, { exact: true })).toBeVisible(); await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeEnabled();
+    await page.screenshot({ path: info.outputPath("filters-restored.png"), fullPage: true });
+  });
+}

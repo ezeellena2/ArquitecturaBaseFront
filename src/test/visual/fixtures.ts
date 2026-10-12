@@ -38,7 +38,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false,
     hasGoogleLogin: false, culture: language, timeZoneId: "America/Argentina/Buenos_Aires",
     lastLoginAtUtc: "2026-09-18T12:00:00Z", roles: ["Admin"],
-    permissions: [...(catalogsScenario && scenario !== "catalogs-denied" ? scenario === "catalogs-read" ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? scenario === "forms-read" ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-publication") ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), "users.read", "users.manage", "roles.read", "roles.manage", "settings.manage", ...(chatScenario ? scenario === "forms-chat-read" ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.manage"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
+    permissions: [...(catalogsScenario && scenario !== "catalogs-denied" ? (scenario === "catalogs-read" || scenario === "catalogs-filters-read") ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? scenario === "forms-read" ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-publication") ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), ...(catalogsScenario ? [] : ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"]), ...(chatScenario ? scenario === "forms-chat-read" ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.manage"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
       ...(businessScenario && scenario !== "business-denied" ? scenario === "business-read" ? ["ai.business.read"] : ["ai.business.read", "ai.business.manage"] : []),
       ...(scenario === "business-roles" || roleGroupsScenario ? ["ai.read", "ai.manage"] : [])],
   };
@@ -145,7 +145,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     const request = new Request(input instanceof Request ? input : new URL(String(input), location.origin), init);
     const requestUrl = new URL(request.url);
     const path = requestUrl.pathname;
-    if (catalogsFixture && path.startsWith("/api/forms/catalogs")) return catalogsFixture.handle(request);
+    if (catalogsFixture && (path.startsWith("/api/forms/catalogs") || path === "/api/forms/catalog-filter-options" || path === "/api/forms/catalog-previews")) return catalogsFixture.handle(request);
     if (chatFormsFixture && path.startsWith("/api/whatsapp/chats")) return chatFormsFixture.handle(request);
     if (formsFixture && path.startsWith("/api/forms/")) return formsFixture.handle(request);
     const assistantResponse = await assistantFixture?.(request);
