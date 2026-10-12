@@ -2,16 +2,16 @@
 
 Fecha: **2026-10-08**, con las variantes de los cuatro incrementos de la Etapa 1 y el botón «Abrir formulario»
 agregados el **2026-10-10**.
-Estado al **2026-10-11**: **Etapa 1 cerrada; pendientes menores trasladados a Etapa 2**. A–E, P1–P3, C1–C5 y R1–R3 están integrados; las etapas siguientes conservan su carácter de diseño elegido. El [plan y pendientes rescatados](../../../ArquitecturaBase/docs/plans/2026-10-07-formularios-dinamicos-y-whatsapp-flows.md#pendientes-rescatados-al-retirar-las-revisiones) contiene los límites y hallazgos todavía abiertos.
+Estado al **2026-10-11**: **Etapa 1 cerrada; pendientes menores trasladados a Etapa 2**. A–E, P1–P3, C1–C5 y R1–R3 están integrados; las etapas siguientes conservan su carácter de diseño elegido. Los pendientes abiertos están en el [resumen de la Etapa 2](../../../ArquitecturaBase/docs/plans/formularios/etapa-2-catalogos.md).
 
 Origen: la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
 y puede cambiar fuera de Git, este documento y sus capturas congelan lo elegido. El usuario pidió implementarlo
 **tal cual** y empezar de a poco, por el diseño del formulario y su conexión con el chat que ya existe (Etapa 1).
 
-Relación con el [plan técnico](../../../ArquitecturaBase/docs/plans/2026-10-07-formularios-dinamicos-y-whatsapp-flows.md):
-su arquitectura, persistencia, contratos, seguridad y pruebas siguen valiendo. Las pantallas, la navegación, los textos
-y el orden de entrega salen de acá. La maqueta aislada del 2026-10-07 y 2026-10-08 del plan (pestañas Campos/Uso/Reglas/
+Relación con los [resúmenes por etapa](../../../ArquitecturaBase/docs/plans/formularios/README.md):
+ahí están el alcance y las decisiones técnicas de cada etapa. Las pantallas, la navegación, los textos
+y el orden de entrega salen de acá. La maqueta aislada del 2026-10-07 y 2026-10-08 (pestañas Campos/Uso/Reglas/
 Tabla/Documento/Circuito/Versiones, selector de vista y estado de prueba, claves de campo a la vista) queda como
 procedencia reemplazada: no se promueve ni se usa como referencia de pantallas.
 
@@ -21,7 +21,7 @@ A–E, P1–P3, C1–C5 y R1–R3 están integrados. La comprobación respeta el
 
 El coordinador confirmó publicación y vista oficial, entrega desde la SPA, respuesta de seis tipos, número guardado y recarga en el piloto real. El móvil aislado verificó lectura autorizada/denegada en español y recarga a 390/320 px, foco y ausencia de valores privados. Usa API/PostgreSQL/Redis reales con identidad, Meta y puertos neutrales de pruebas, con credenciales temporales eliminadas; no acredita por sí solo el sink/source tipado de BusinessForms ni el teléfono físico.
 
-Los pendientes de versión/idioma de respuesta, señal de purga, etiqueta de expansión, motivos de 409 y remonte del compositor están rescatados en el plan enlazado. El front conserva la escala decimal recibida y no reconstruye ceros omitidos. El teléfono físico respondió 100: 12,50/12.50 siguen sin calificar; la vista oficial aceptó punto y rechazó coma. Por decisión del usuario, estos pendientes menores de R3, la calificación del decimal físico y la intermitencia de Roles se trasladan a Etapa 2 sin bloquear el cierre. Las etapas siguientes siguen como diseño elegido.
+Los pendientes de versión/idioma de respuesta, señal de purga, etiqueta de expansión, motivos de 409 y remonte del compositor están en el [resumen de la Etapa 2](../../../ArquitecturaBase/docs/plans/formularios/etapa-2-catalogos.md). El front conserva la escala decimal recibida y no reconstruye ceros omitidos. El teléfono físico respondió 100: 12,50/12.50 siguen sin calificar; la vista oficial aceptó punto y rechazó coma. Por decisión del usuario, estos pendientes menores de R3, la calificación del decimal físico y la intermitencia de Roles se trasladan a Etapa 2 sin bloquear el cierre. Las etapas siguientes siguen como diseño elegido.
 
 La verificación general del front pasó 1455/1455 pruebas en 136 archivos; lint, 48/48 pruebas de arquitectura y TypeScript quedaron sin diagnósticos. La última corrida visual sobre `856e641`, con tres workers y sin retries ni cambio de referencias, terminó **292/294**: fallaron las esperas iniciales del campo Nombre del editor en español a 390/320 px. No se declara la suite visual completa verde ni una causa probada. Estas dos esperas iniciales quedan como deuda del arnés junto con la intermitencia de Roles; el próximo corte deberá comprobar la preparación de Idiomas con un control negativo antes de modificar los tests. Se conserva el informe `a2-r4-front-visual-session-shell-final.json`, sus trazas y la revisión de las 32 capturas en `.test-artifacts/forms-step5/`; el servidor visual quedó apagado. Por instrucción del usuario se registra este resultado y no se inicia otra corrida completa.
 
@@ -57,8 +57,7 @@ La Etapa 1:
 | [La respuesta llega al chat](evidence/formularios-whatsapp/e1-3-chat-respuesta.png) | Formulario enviado y respuesta recibida en la línea del tiempo, y vista previa en la lista de chats. |
 | [En el celular de Juan](evidence/formularios-whatsapp/e1-4-celular.png) | Lo que ve el empleado en la Etapa 1, sin asistente. |
 
-Incremento 1 de la Etapa 1, crear y editar (2026-10-10). Son variantes de los tableros elegidos, con los textos de
-[la preparación del front](../plans/formularios-etapa-1-preparacion.md):
+Incremento 1 de la Etapa 1, crear y editar (2026-10-10). Son variantes de los tableros elegidos, con los textos de la preparación del front (retirada; Git la conserva):
 
 | Captura | Qué define |
 | --- | --- |
@@ -69,7 +68,7 @@ Incremento 1 de la Etapa 1, crear y editar (2026-10-10). Son variantes de los ta
 | [E · Textos en dos idiomas](evidence/formularios-whatsapp/e1-e-idiomas.png) | Español e inglés en el mismo editor: un idioma a la vez con el original debajo, lo que falta marcado en la fila, el campo y la vista previa. Se guarda incompleto; para publicar hacen falta los dos. |
 
 Incremento 2 de la Etapa 1, publicar en WhatsApp (2026-10-10). Variantes del tablero 04 y del editor e1-1, sobre el
-[contrato propuesto](../../../ArquitecturaBase/docs/plans/formularios-incremento-2-publicacion-contrato.md). Quedan a
+contrato de publicación de entonces (hoy en [formularios](../../../ArquitecturaBase/docs/features/formularios.md)). Quedan a
 definir las acciones de «Necesita revisión». Decidido el 2026-10-10: se publica solo lo guardado (D4) y en español e
 inglés, con las traducciones cargadas en el editor (D5, variante E).
 
@@ -101,7 +100,7 @@ Incremento 4 de la Etapa 1, la respuesta llega al chat (2026-10-10). Variantes d
 | [R3 · Cómo se muestran los valores](evidence/formularios-whatsapp/e4-r3-valores.png) | Los seis tipos sin perder nada («No», «0», «Sin respuesta», decimales exactos, fecha sin hora), opciones de su versión, respuesta larga plegada, mensaje de WhatsApp borrado y respuesta en inglés. |
 
 Etapa 2, catálogos (2026-10-10), sobre los
-[acuerdos §5](../../../ArquitecturaBase/docs/plans/formularios-modelo-demo/acuerdos-2026-10-08.md) y el plan §5.2. Decidido el
+[resumen de la Etapa 2](../../../ArquitecturaBase/docs/plans/formularios/etapa-2-catalogos.md). Decidido el
 mismo día: el inglés de las opciones de un catálogo es opcional (si falta, se usa el español); cambiar el catálogo de una
 pregunta publicada la convierte en pregunta nueva; si la opción elegida se dio de baja antes de responder, no se guarda,
 se avisa al operador y se ofrece mandarlo de nuevo. **Decisión del 2026-10-11:** Query/K5 se posterga hasta que una lista no pueda expresarse con Filters. El alta K2 muestra sólo Manual y Filters; no ofrece «con una consulta», tampoco deshabilitada. Las capturas K2/K5 se conservan como evidencia histórica del diseño anterior.
@@ -122,7 +121,7 @@ recorrido guiado tiene su capítulo desde la versión 67.
 Preguntas «Foto» (cámara o galería, o solo cámara) y «Documento» (PDF, Excel, Word e imágenes; sin CSV porque Meta no lo
 admite), una por pantalla del Flow y hasta 10 archivos por respuesta. Los archivos se ven en la tarjeta del chat, la
 planilla y el PDF, con el mismo permiso que los valores. Detalle en el
-[plan, 12.2b](../../../ArquitecturaBase/docs/plans/2026-10-07-formularios-dinamicos-y-whatsapp-flows.md).
+[resumen de la Etapa 2B](../../../ArquitecturaBase/docs/plans/formularios/etapa-2b-fotos-y-documentos.md).
 
 | Captura | Qué define |
 | --- | --- |
@@ -145,7 +144,7 @@ sin aprobación, PDF ni asistente. Cargar desde la web queda para después (deci
 | [T3 · Una respuesta](evidence/formularios-whatsapp/pla-t3-respuesta.png) | Lo que respondió con las preguntas de su versión, de dónde vino, historial y anterior/siguiente dentro de la planilla. |
 | [T4 · Estados y casos](evidence/formularios-whatsapp/pla-t4-estados.png) | Carga, sin respuestas, sin coincidencias, error, muchos formularios, sin permiso, respuesta que no está y pregunta que cambió de tipo. |
 
-Etapa 4, reglas, aprobación, PDF y avisos (2026-10-10), sobre los acuerdos §3 y el plan. Decidido el mismo día: después
+Etapa 4, reglas, aprobación, PDF y avisos (2026-10-10), sobre el [resumen de la Etapa 4](../../../ArquitecturaBase/docs/plans/formularios/etapa-4-reglas-aprobacion-pdf.md). Decidido el mismo día: después
 de «Pedir aprobación» no hay más acciones en la misma regla; una respuesta que espera aprobación sigue con las reglas con
 que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesitan plantillas de Meta.
 
@@ -158,7 +157,7 @@ que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesi
 | [G5 · Qué pasó después](evidence/formularios-whatsapp/reg-g5-historial.png) | Cada acción con su estado (esperando, en curso, hecho, no se pudo, sin confirmar, no aplica) y el PDF como copia fija. |
 | [G6 · Lo que recibe el empleado](evidence/formularios-whatsapp/reg-g6-celular.png) | Confirmación al recibir, aviso con el PDF al aprobar, motivo al rechazar, también en inglés. |
 
-Etapa 5, el asistente (2026-10-10), sobre los acuerdos §4 y §6. También son de esta etapa «Cuándo lo ofrece» (03),
+Etapa 5, el asistente (2026-10-10), sobre el [resumen de la Etapa 5](../../../ArquitecturaBase/docs/plans/formularios/etapa-5-asistente.md). También son de esta etapa «Cuándo lo ofrece» (03),
 el recorrido con asistente (05) y las sugerencias entre formularios (s1–s4). Decidido el mismo día: con un mensaje que no
 es un formulario, el asistente no contesta y la conversación queda para un operador; ofrece formularios hasta 2 veces por
 día en cada conversación; cambiar el modo pide el permiso nuevo «Configurar el asistente», que tiene Admin.
@@ -173,7 +172,7 @@ día en cada conversación; cambiar el modo pide el permiso nuevo «Configurar e
 
 Propuesta posterior, en revisión (Etapa del asistente): un formulario puede sugerir otro. No reemplaza a los
 tableros elegidos; el modelo y las reglas están en los
-[acuerdos del 2026-10-08](../../../ArquitecturaBase/docs/plans/formularios-modelo-demo/acuerdos-2026-10-08.md).
+[resúmenes por etapa](../../../ArquitecturaBase/docs/plans/formularios/README.md).
 
 | Captura | Qué define |
 | --- | --- |
@@ -186,7 +185,7 @@ tableros elegidos; el modelo y las reglas están en los
 
 1. **Navegación.** «Formularios» es una entrada propia del menú principal con su panel, como WhatsApp. Arriba,
    «Respuestas», con un enlace por formulario publicado que la persona puede ver. Abajo, separado, «Diseñar
-   formularios», solo con permiso de administrar. Hoy `src/layouts/navigation.ts` es estático: el plan define cómo el
+   formularios», solo con permiso de administrar. Hoy `src/layouts/navigation.ts` es estático: el resumen de la Etapa 3 define cómo el
    panel compone la parte fija con la lista que viene del backend.
 2. **Editor en una sola pantalla, sin pestañas.** A la izquierda, las superficies «El formulario», «Preguntas» y
    «Cuando llega una respuesta». A la derecha, la vista previa del celular, que refleja el borrador mientras se edita
@@ -269,7 +268,7 @@ Las respuestas de la Etapa 1 ya se guardan con su versión y su número: cuando 
   inglés del listado y el editor, y los estados del diálogo de envío. Se dibujan en el mismo lienzo cuando la etapa llegue a esa pantalla;
   mientras tanto valen los patrones de la plantilla de listados y el [contrato de mensajes](../guides/mensajes-y-estados.md).
 - **Vista oficial de Meta.** Sus estados están en P3; la CSP del iframe y el comportamiento real en el navegador se
-  prueban en el piloto, como dice el plan.
+  prueban en el piloto, como dice el resumen de su etapa.
 
 ## Correspondencia con `shared/ui`
 
