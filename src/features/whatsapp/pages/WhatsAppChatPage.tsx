@@ -46,8 +46,8 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
     <Page title={t("title")} status={list.isError ? <span className="text-xs text-[var(--color-content-muted)]">{t("stale")}</span> : undefined}
       actions={<Button variant="outline" size="sm" onClick={() => void list.refetch()}>{t("refreshAction")}</Button>}>
       <Surface>
-        <div className="grid h-[calc(100svh-10rem)] min-h-[30rem] grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
-          <div className={cn("flex min-h-0 flex-col border-r border-[var(--color-border)]", selected ? "max-md:hidden" : "")}>
+        <div className="grid h-[calc(100svh-10rem)] min-h-[30rem] grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)]">
+          <div className={cn("flex min-h-0 flex-col border-r border-[var(--color-border)]", selected ? "max-xl:hidden" : "")}>
             <div className="flex flex-col gap-3 border-b border-[var(--color-border)] p-3">
               <label htmlFor="chat-search" className="sr-only">{t("search")}</label>
               <Input id="chat-search" value={search} placeholder={t("search")} onChange={event => { setSearch(event.target.value); setPage(1); }} />
@@ -69,7 +69,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
               <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(value => value - 1)}>{t("previous")}</Button><span className="text-xs">{page} / {list.data.page.totalPages}</span><Button variant="outline" size="sm" disabled={page >= list.data.page.totalPages} onClick={() => setPage(value => value + 1)}>{t("next")}</Button>
             </div> : null}
           </div>
-          <div className={cn("min-h-0 min-w-0", selected ? "" : "max-md:hidden")}>
+          <div className={cn("min-h-0 min-w-0", selected ? "" : "max-xl:hidden")}>
             {selected ? <ChatThread key={selected} id={selected} actor={actor} readPermissions={permissions} timeZone={timeZone} canSend={has("whatsapp.send")} canManage={has("whatsapp.manage")} draft={drafts[selected] ?? { body: "" }}
               updateDraft={update => setDrafts(current => ({ ...current, [selected]: update(current[selected] ?? { body: "" }) }))} onBack={() => setSelected(undefined)} /> :
               <div className="flex h-full items-center justify-center p-8 text-center text-sm text-[var(--color-content-muted)]">{t("select")}</div>}
