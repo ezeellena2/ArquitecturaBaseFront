@@ -10,6 +10,7 @@ import type { FormCulture } from "../model";
 export interface CatalogReadScope { readonly actorId: string | null; readonly culture: FormCulture; readonly permissions: readonly string[] }
 interface EditorState {
   readonly owner: string;
+  readonly epoch: object;
   readonly draft: CatalogDraft;
   readonly baseline: Pick<CatalogDraft, "name" | "description">;
   readonly busy: boolean;
@@ -20,7 +21,7 @@ interface EditorState {
 }
 function fresh(owner: string, initial?: CatalogDetail): EditorState {
   const draft = openCatalogDraft(initial);
-  return { owner, draft, baseline: { name: draft.name, description: draft.description }, busy: false, requiresReview: false, current: null, saved: null, error: null };
+  return { owner, epoch: {}, draft, baseline: { name: draft.name, description: draft.description }, busy: false, requiresReview: false, current: null, saved: null, error: null };
 }
 export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: CatalogDetail) {
   const client = useQueryClient();
@@ -41,22 +42,24 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     return () => { active.current = false; operation.current?.abort(); operation.current = null; };
   }, [owner, canRead]);
   const owned = state.owner === owner && canRead;
-  const accepts = (capturedOwner: string, controller: AbortController) => active.current && ownerRef.current === capturedOwner
-    && permissionsRef.current.canRead && operation.current === controller && !controller.signal.aborted;
+  const isCurrentOwner = useCallback(() => active.current && ownerRef.current === owner && permissionsRef.current.canRead
+    && stateRef.current.epoch === state.epoch, [owner, state.epoch]);
+  const accepts = useCallback((capturedOwner: string, controller: AbortController) => isCurrentOwner() && ownerRef.current === capturedOwner
+    && operation.current === controller && !controller.signal.aborted, [isCurrentOwner]);
   const changeMetadata = useCallback((metadata: Partial<Pick<CatalogDraft, "name" | "description">>) => {
-    if (!owned || !canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
+    if (!owned || !isCurrentOwner() || !canManage || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => ({ ...value, error: null, draft: { ...value.draft, ...(metadata.name ? { name: { ...metadata.name } } : {}), ...(metadata.description ? { description: { ...metadata.description } } : {}) } }));
-  }, [owned, canManage]);
+  }, [owned, canManage, isCurrentOwner]);
   const changeItem = useCallback((item: CatalogManualItemValue) => {
-    if (!owned || !canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
+    if (!owned || !isCurrentOwner() || !canManage || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => ({ ...value, error: null, draft: stageCatalogDraftItem(value.draft, item) }));
-  }, [owned, canManage]);
+  }, [owned, canManage, isCurrentOwner]);
   const loadItems = useCallback((items: readonly CatalogItem[], revision = state.draft.revision) => {
-    if (!owned || operation.current || stateRef.current.busy || stateRef.current.requiresReview || revision !== stateRef.current.draft.revision) return;
+    if (!owned || !isCurrentOwner() || operation.current || stateRef.current.busy || stateRef.current.requiresReview || revision !== stateRef.current.draft.revision) return;
     setState(value => ({ ...value, draft: loadCatalogDraftItems(value.draft, items) }));
-  }, [owned, state.draft.revision]);
+  }, [owned, state.draft.revision, isCurrentOwner]);
   const save = useCallback(async () => {
-    if (!owned || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview) return;
+    if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview) return;
     const captured = stateRef.current.draft;
     const body = catalogDraftBody(captured);
     const controller = new AbortController(); operation.current = controller;
@@ -78,10 +81,10 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     } finally {
       if (operation.current === controller) { operation.current = null; if (active.current && ownerRef.current === owner) setState(value => ({ ...value, busy: false })); }
     }
-  }, [client, owned, owner, scope.actorId]);
+  }, [client, owned, owner, scope.actorId, isCurrentOwner, accepts]);
   const readCurrent = useCallback(async () => {
     const id = stateRef.current.draft.id;
-    if (!owned || !id || operation.current) return;
+    if (!owned || !isCurrentOwner() || !id || operation.current) return;
     const controller = new AbortController(); operation.current = controller;
     setState(value => ({ ...value, busy: true, error: null }));
     try {
@@ -90,11 +93,11 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     } catch (error) {
       if (accepts(owner, controller)) setState(value => ({ ...value, error, busy: false }));
     } finally { if (operation.current === controller) operation.current = null; }
-  }, [owned, owner]);
+  }, [owned, owner, isCurrentOwner, accepts]);
   const adoptCurrent = useCallback(() => {
-    if (!owned || operation.current || !stateRef.current.current) return;
+    if (!owned || !isCurrentOwner() || operation.current || !stateRef.current.current) return;
     setState(fresh(owner, stateRef.current.current));
-  }, [owned, owner]);
+  }, [owned, owner, isCurrentOwner]);
   const draft = owned ? state.draft : null;
   const dirty = !!draft && (JSON.stringify(draft.name) !== JSON.stringify(state.baseline.name)
     || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description) || Object.keys(draft.items.changes).length > 0);

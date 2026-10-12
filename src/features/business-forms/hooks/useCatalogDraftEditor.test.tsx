@@ -110,4 +110,88 @@ describe("Manual catalog editor ownership", () => {
     expect(result.current.saved!.catalog.revision).toBe(2);
     expect(calls).toBe(2);
   });
+  it.each(["catalog", "actor"] as const)("rejects old-owner metadata, item and page callbacks after changing %s at the same revision", transition => {
+    const nextId = "01990000-0000-7000-8000-000000000022";
+    const { result, rerender } = renderHook(({ catalog, actorId }) => useCatalogDraftEditor({ ...scope, actorId }, catalog), { ...harness(), initialProps: { catalog: initial, actorId: "actor-a" } });
+    const old = { loadItems: result.current.loadItems, changeMetadata: result.current.changeMetadata, changeItem: result.current.changeItem };
+    rerender({ catalog: transition === "catalog" ? { ...initial, id: nextId, key: nextId.replaceAll("-", ""), name: { es: "Otro", en: "Other" } } : initial, actorId: transition === "actor" ? "actor-b" : "actor-a" });
+    act(() => {
+      old.loadItems([{ id: itemId, code: "OLD-PRIVATE", text: { es: "Previous private row", en: null }, detail: {}, position: 1, isActive: true }], 1);
+      old.changeMetadata({ name: { es: "Previous private name", en: "Old owner" } });
+      old.changeItem({ localId: "old-new-item", itemId: null, label: { es: "Previous private option" }, detail: {}, position: 2, code: "OLD-NEW", isActive: true });
+    });
+    expect(result.current.draft!.name).toEqual(transition === "catalog" ? { es: "Otro", en: "Other" } : initial.name);
+    expect(result.current.draft!.items).toEqual({ originals: {}, changes: {} });
+    expect(result.current.dirty).toBe(false);
+  });
+  it.each(["catalog", "actor"] as const)("rejects an old save callback before sending a request after changing %s", async transition => {
+    let calls = 0; server.use(http.put("/api/forms/catalogs/:id", () => { calls++; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {} }); }));
+    const nextId = "01990000-0000-7000-8000-000000000022";
+    const { result, rerender } = renderHook(({ catalog, actorId }) => useCatalogDraftEditor({ ...scope, actorId }, catalog), { ...harness(), initialProps: { catalog: initial, actorId: "actor-a" } });
+    const oldSave = result.current.save;
+    rerender({ catalog: transition === "catalog" ? { ...initial, id: nextId, key: nextId.replaceAll("-", "") } : initial, actorId: transition === "actor" ? "actor-b" : "actor-a" });
+    await act(() => oldSave());
+    expect(calls).toBe(0);
+    expect(result.current.saved).toBeNull();
+  });
+  it("rejects stale edit callbacks after Manage is revoked without losing Read", () => {
+    const { result, rerender } = renderHook(({ permissions }) => useCatalogDraftEditor({ ...scope, permissions }, initial), { ...harness(), initialProps: { permissions: scope.permissions } });
+    const oldMetadata = result.current.changeMetadata; const oldItem = result.current.changeItem;
+    rerender({ permissions: ["formcatalogs.read"] });
+    act(() => { oldMetadata({ name: { es: "Forbidden edit", en: "Edit" } }); oldItem({ localId: "forbidden-option", itemId: null, label: { es: "No" }, detail: {}, code: "NO", position: 1, isActive: true }); });
+    expect(result.current.draft!.name).toEqual(initial.name);
+    expect(result.current.draft!.items.changes).toEqual({});
+    expect(result.current.canSave).toBe(false);
+  });
+  it.each(["catalog", "actor"] as const)("rejects a delayed item page from the previous %s even when both revisions are one", transition => {
+    const nextId = "01990000-0000-7000-8000-000000000022";
+    const { result, rerender } = renderHook(({ catalog, actorId }) => useCatalogDraftEditor({ ...scope, actorId }, catalog), { ...harness(), initialProps: { catalog: initial, actorId: "actor-a" } });
+    const oldLoadItems = result.current.loadItems;
+    rerender({ catalog: transition === "catalog" ? { ...initial, id: nextId, key: nextId.replaceAll("-", "") } : initial, actorId: transition === "actor" ? "actor-b" : "actor-a" });
+    act(() => oldLoadItems([{ id: itemId, code: "OLD", text: { es: "Private row A", en: null }, detail: {}, position: 1, isActive: true }], 1));
+    expect(result.current.draft!.items).toEqual({ originals: {}, changes: {} });
+  });
+  it("rejects callbacks from an earlier editor epoch when the original actor returns", async () => {
+    let calls = 0; server.use(http.put("/api/forms/catalogs/" + id, () => { calls++; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {} }); }));
+    const { result, rerender } = renderHook(({ actorId }) => useCatalogDraftEditor({ ...scope, actorId }, initial), { ...harness(), initialProps: { actorId: "actor-a" } });
+    const oldChange = result.current.changeMetadata; const oldSave = result.current.save;
+    rerender({ actorId: "actor-b" });
+    rerender({ actorId: "actor-a" });
+    act(() => oldChange({ name: { es: "Old editor private text", en: "Old epoch" } }));
+    await act(() => oldSave());
+    expect(result.current.draft!.name).toEqual(initial.name);
+    expect(calls).toBe(0);
+    act(() => result.current.changeMetadata({ name: { es: "Actor actual", en: "Current actor" } }));
+    expect(result.current.draft!.name.es).toBe("Actor actual");
+  });
+  it.each(["catalog", "actor"] as const)("rejects old reread and adoption callbacks after changing %s", async transition => {
+    let calls = 0; const nextId = "01990000-0000-7000-8000-000000000022";
+    server.use(http.get("/api/forms/catalogs/:id", ({ params }) => { calls++; const currentId = String(params.id); return HttpResponse.json({ ...initial, id: currentId, key: currentId.replaceAll("-", ""), revision: 2 }); }));
+    const { result, rerender } = renderHook(({ catalog, actorId }) => useCatalogDraftEditor({ ...scope, actorId }, catalog), { ...harness(), initialProps: { catalog: initial, actorId: "actor-a" } });
+    const oldRead = result.current.readCurrent; const oldAdopt = result.current.adoptCurrent;
+    rerender({ catalog: transition === "catalog" ? { ...initial, id: nextId, key: nextId.replaceAll("-", "") } : initial, actorId: transition === "actor" ? "actor-b" : "actor-a" });
+    await act(() => oldRead());
+    expect(calls).toBe(0);
+    act(() => result.current.changeMetadata({ name: { es: "Borrador actual", en: "Current draft" } }));
+    await act(() => result.current.readCurrent());
+    act(() => oldAdopt());
+    expect(result.current.draft!.name.es).toBe("Borrador actual");
+    expect(result.current.draft!.revision).toBe(1);
+    expect(result.current.current!.revision).toBe(2);
+    expect(calls).toBe(1);
+  });
+  it.each(["save", "adopt"] as const)("rejects old page callbacks after %s while the current callback loads canonical items", async decision => {
+    server.use(http.put("/api/forms/catalogs/" + id, () => decision === "adopt" ? HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 }) : HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {} })), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, revision: 2 })));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, initial), harness());
+    const oldLoadItems = result.current.loadItems;
+    await act(() => result.current.save());
+    if (decision === "adopt") { await act(() => result.current.readCurrent()); act(() => result.current.adoptCurrent()); }
+    const item = { id: itemId, code: "CANONICAL", text: { es: "Confirmed option", en: null }, detail: {}, position: 1, isActive: true };
+    act(() => oldLoadItems([{ ...item, code: "OLD" }], 2));
+    expect(result.current.draft!.items).toEqual({ originals: {}, changes: {} });
+    act(() => result.current.loadItems([item], 2));
+    expect(Object.values(result.current.draft!.items.originals)[0]!.code).toBe("CANONICAL");
+    act(() => result.current.changeMetadata({ name: { es: "Cambio actual", en: "Current change" } }));
+    expect(result.current.draft!.name.es).toBe("Cambio actual");
+  });
 });
