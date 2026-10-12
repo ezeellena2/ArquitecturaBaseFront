@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
 import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
-import listEs from "@/test/fixtures/catalogs-http/manual/list-es.json";
-import listEn from "@/test/fixtures/catalogs-http/manual/list-en.json";
+import listEs from "@/test/fixtures/catalogs-http/manual-current/list-es.json";
+import listEn from "@/test/fixtures/catalogs-http/manual-current/list-en.json";
 import { readCatalogPage } from "../api/catalogResponse";
 import { CatalogListTable, type CatalogListRow } from "./CatalogListTable";
 

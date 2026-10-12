@@ -40,7 +40,7 @@ export interface CatalogListQuery {
   readonly search?: string;
   readonly sort?: CatalogSortField | `-${CatalogSortField}`;
   readonly kind?: "Manual" | "Filters";
-  readonly isActive?: boolean;
+  readonly state?: "Active" | "Inactive" | "Unavailable";
 }
 export async function fetchCatalogPage(query: CatalogListQuery, signal?: AbortSignal) {
   const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));

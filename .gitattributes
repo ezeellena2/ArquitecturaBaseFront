@@ -1,0 +1,3 @@
+# Preserve exact HTTP producer bytes; CRLF is an intentional line ending.
+src/test/fixtures/catalogs-http/filters/** -text whitespace=cr-at-eol
+src/test/fixtures/catalogs-http/manual-current/** -text whitespace=cr-at-eol

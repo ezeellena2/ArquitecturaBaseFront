@@ -182,7 +182,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
 const filtersDetail = { ...initial, kind: "Filters", filters: { textColumn: "name", detailColumn: "role", conditions: [], excludeRecipient: true, sortColumn: "name", sortDescending: false } };
 function filterSetup(permissions = ["formcatalogs.read", "formcatalogs.manage"]) {
   setup(permissions);
-  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(filtersDetail)), http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ source: "users", columns: [
+  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(filtersDetail)), http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ source: "users", isAvailable: true, unavailableReasonCode: null, columns: [
     { key: "name", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["contains", "equals"], choices: null },
     { key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: "Operario", label: "Operario" }] },
     { key: "active", dataType: "boolean", canDisplay: true, canFilter: true, canSort: true, operators: ["equals"], choices: [{ key: "true", label: "Active" }, { key: "false", label: "Inactive" }] }
@@ -241,4 +241,27 @@ it("renders unchanged real K4 detail/options and the result of the captured prev
   await user.click(screen.getByRole("combobox", { name: "Como si lo recibiera" })); await user.click(screen.getByRole("option", { name: person.name }));
   await user.click(screen.getByRole("button", { name: "Probar" }));
   await screen.findByText(preview.items[0]!.text, { exact: true }); expect(screen.getByText(preview.items[0]!.detail!, { exact: true })).toBeInTheDocument(); expect(received).toEqual([capturedPreviewRequest]);
+});
+
+it("keeps stored filters editable but blocks preview/save when the server marks the source unavailable", async () => {
+  filterSetup(); server.use(http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ source: "users", columns: [{ key: "name", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["contains", "equals"], choices: null }, { key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [] }], sampleUsers: null, isAvailable: false, unavailableReasonCode: "Forms.Catalog.SourceUnavailable" })));
+  await mount("/catalogos/" + id);
+  expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled(); expect(screen.getByRole("button", { name: "Probar" })).toBeDisabled();
+  expect(screen.getByText("La vista Usuarios no está disponible.", { exact: true })).toBeInTheDocument(); expect(screen.queryByText("Forms.Catalog.SourceUnavailable")).not.toBeInTheDocument();
+});
+
+it("keeps sample search focused and enabled while its next page is loading", async () => {
+  filterSetup(); const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw));
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; }); let searches = 0;
+  server.use(http.get("/api/forms/catalog-filter-options", async ({ request }) => {
+    if (!new URL(request.url).searchParams.get("search")) return HttpResponse.json(options);
+    searches++; await gate;
+    return HttpResponse.json({ ...options, sampleUsers: { items: [{ id: itemId, name: "Persona buscada" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false } });
+  }));
+  await mount("/catalogos/" + id); const user = userEvent.setup(); const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  await waitFor(() => expect(input).toBeEnabled());
+  try { await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); }
+  finally { release(); }
+  expect(await screen.findByRole("option", { name: "Persona buscada" })).toBeInTheDocument();
 });

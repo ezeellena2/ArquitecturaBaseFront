@@ -324,10 +324,6 @@
         "equals": "Is",
         "has": "Has role"
       },
-      "booleanLabels": {
-        "true": "Active",
-        "false": "Inactive"
-      },
       "previewTitle": "Preview",
       "sample": "As if received by",
       "sampleHint": "Choose a sample person. This test does not change their identity or permissions.",
@@ -339,7 +335,7 @@
       "exceedsLimit": "There are more than 200 options. Adjust the filters before saving.",
       "optionsFailed": "We could not load the columns and sample people.",
       "readOnlyPreview": "You need permission to manage catalogs to test this preview.",
-      "unavailable": "This catalog cannot be used. Review its filters.",
+      "unavailable": "The Users view is unavailable.",
       "unavailableColumn": "Unavailable column",
       "unavailableOperator": "Unavailable comparison"
     },
@@ -364,6 +360,7 @@
       "adopt": "Use the current revision"
     },
     "search": "Search catalogs",
-    "loadFailed": "We could not load the catalogs."
+    "loadFailed": "We could not load the catalogs.",
+    "stateFilter": "Status: {{state}}"
   }
 }

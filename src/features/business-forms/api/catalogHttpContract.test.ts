@@ -19,19 +19,17 @@ import listEsRawFixture from "@/test/fixtures/catalogs-http/manual/list-es.json?
 import listEnRawFixture from "@/test/fixtures/catalogs-http/manual/list-en.json?raw";
 import { createManualCatalog, fetchCatalog, fetchCatalogItems, fetchCatalogPage, updateManualCatalog, type ManualCatalogBody } from "./catalogs";
 
-const input = process.env.FORMS_CATALOG_HTTP_CONTRACT_INPUT;
-const body = (fallback: string, name: string): string => input ? readFileSync(resolve(input, "manual-bilingual", name), "utf8") : fallback;
 const createdRaw = createdRawFixture;
 const updatedRaw = updatedRawFixture;
 const detailRaw = detailRawFixture;
-const itemsRaw = body(itemsRawFixture, "items.json");
-const createRequestRaw = body(createRequestRawFixture, "create-request.request.json");
-const updateRequestRaw = body(updateRequestRawFixture, "update-request.request.json");
-const conflictRequestRaw = body(conflictRequestRawFixture, "conflict-request.request.json");
-const conflictEsRaw = body(conflictEsRawFixture, "conflict-es.json");
-const conflictEnRaw = body(conflictEnRawFixture, "conflict-en.json");
-const listEsRaw = body(listEsRawFixture, "list-es.json");
-const listEnRaw = body(listEnRawFixture, "list-en.json");
+const itemsRaw = itemsRawFixture;
+const createRequestRaw = createRequestRawFixture;
+const updateRequestRaw = updateRequestRawFixture;
+const conflictRequestRaw = conflictRequestRawFixture;
+const conflictEsRaw = conflictEsRawFixture;
+const conflictEnRaw = conflictEnRawFixture;
+const listEsRaw = listEsRawFixture;
+const listEnRaw = listEnRawFixture;
 
 const created = JSON.parse(createdRaw) as { catalog: { id: string } };
 const id = created.catalog.id;
@@ -40,8 +38,8 @@ afterEach(resetHttpClient);
 
 describe("Historical catalog HTTP exports and current contract rejection", () => {
   it("retains the unchanged producer provenance and exact exported bytes", () => {
-    const directory = input ? resolve(input, "manual-bilingual") : resolve("src/test/fixtures/catalogs-http/manual");
-    const provenance: typeof producerProvenance = input ? JSON.parse(readFileSync(resolve(directory, "provenance.json"), "utf8")) : producerProvenance;
+    const directory = resolve("src/test/fixtures/catalogs-http/manual");
+    const provenance = producerProvenance;
     expect(provenance.producer.test).toBe("ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogEndpointsTests");
     for (const entry of provenance.runner.exportFiles) {
       const bytes = readFileSync(resolve(directory, entry.path));
@@ -52,7 +50,7 @@ describe("Historical catalog HTTP exports and current contract rejection", () =>
 
   it("rejects historical detail and save bodies without the now-required filters field", async () => {
     // These immutable pre-K4 exports no longer qualify the current detail/save contract.
-    // Positive real HTTP coverage resumes with the producer's K4 cohort at closure.
+    // catalogCurrentHttpContract.test covers the current producer cohort.
     const createBody = JSON.parse(createRequestRaw) as ManualCatalogBody;
     const updateBody = JSON.parse(updateRequestRaw) as ManualCatalogBody & { expectedRevision: number };
     const sent: unknown[] = [];
@@ -69,14 +67,11 @@ describe("Historical catalog HTTP exports and current contract rejection", () =>
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => json(itemsRaw)));
     expect(await fetchCatalogItems(id, { page: 1, pageSize: 20 })).toEqual(JSON.parse(itemsRaw));
   });
-  for (const [culture, raw] of [["es", listEsRaw], ["en", listEnRaw]] as const) it("preserves the real localized page 2 and hidden usage count in " + culture, async () => {
+  for (const [culture, raw] of [["es", listEsRaw], ["en", listEnRaw]] as const) it("rejects the historical localized page without the now-required origin facets in " + culture, async () => {
     configureHttpClient({ getLanguage: () => culture });
     server.use(http.get("/api/forms/catalogs", ({ request }) => { expect(request.headers.get("accept-language")).toBe(culture); const params = new URL(request.url).searchParams; expect(params.get("page")).toBe("2"); expect(params.get("pageSize")).toBe("1"); expect(params.get("sort")).toBe("name"); return json(raw); }));
-    const page = await fetchCatalogPage({ page: 2, pageSize: 1, sort: "name" });
-    expect(page).toEqual(JSON.parse(raw));
-    expect(page.totalCount).toBe(3);
-    expect(page.items[0]!.usageCount).toBeNull();
-    expect(page.items[0]!.canEdit).toBe(false);
+    expect(JSON.parse(raw)).not.toHaveProperty("filterCounts");
+    await expect(fetchCatalogPage({ page: 2, pageSize: 1, sort: "name" })).rejects.toThrow("Unsupported catalog response.");
   });
   for (const [culture, raw] of [["es", conflictEsRaw], ["en", conflictEnRaw]] as const) it("retains real translated 409 details and makes only one write in " + culture, async () => {
     configureHttpClient({ getLanguage: () => culture }); let calls = 0;

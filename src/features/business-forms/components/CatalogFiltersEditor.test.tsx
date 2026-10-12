@@ -81,3 +81,9 @@ it("keeps a retired column visible as unavailable instead of presenting a differ
   expect(screen.getByRole("combobox", { name: "Columna de la condición 1" })).toHaveValue("retired");
   expect(screen.getAllByRole("option", { name: "Columna no disponible" })).toHaveLength(4);
 });
+
+it("shows the stored role value when unavailable source metadata has no role choices", async () => {
+  const unavailableColumns = columns.map(column => column.key === "role" ? { ...column, choices: [] } : column);
+  await act(async () => { renderWithProviders(<CatalogFiltersEditor view={{ key: "users", label: "Usuarios" }} columns={unavailableColumns} value={initial} canManage={false} onChange={() => {}} />); });
+  expect(screen.getByRole("combobox", { name: "Valor de la condición 2" })).toHaveValue("supervisor"); expect(screen.getByRole("option", { name: "supervisor" })).toBeInTheDocument();
+});
