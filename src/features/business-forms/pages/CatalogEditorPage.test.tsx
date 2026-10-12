@@ -18,8 +18,8 @@ const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
 const initial = { id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null };
 const option = { id: itemId, code: "C1", text: { es: "Pérez", en: null }, detail: { es: null, en: null }, position: 1, isActive: true };
-function setup(permissions = ["formcatalogs.read", "formcatalogs.manage"]) {
-  server.use(http.get("/api/me", () => HttpResponse.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false, culture: "es", timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(initial)), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [option], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
+function setup(permissions = ["formcatalogs.read", "formcatalogs.manage"], culture: "es" | "en" = "es") {
+  server.use(http.get("/api/me", () => HttpResponse.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false, culture, timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(initial)), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [option], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
 }
 async function mount(path: string) {
   // The route tests cover production registration; this harness focuses on editor behavior.
@@ -161,6 +161,15 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(code).toHaveAccessibleDescription("Ingresá un código.");
     expect(screen.getByRole("textbox", { name: "Texto" })).toHaveAccessibleDescription("Ingresá el texto.");
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
+  });
+
+  it.each(["es", "en"] as const)("translates the pending draft status in %s", async culture => {
+    setup(undefined, culture); await i18n.changeLanguage(culture);
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    const name = await screen.findByRole("textbox", { name: culture === "es" ? "Nombre" : "Name" });
+    await user.clear(name); await user.type(name, "Borrador");
+    expect(screen.getByText(culture === "es" ? "Cambios sin guardar" : "Unsaved changes", { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText("unsaved", { exact: true })).not.toBeInTheDocument();
   });
 
 });

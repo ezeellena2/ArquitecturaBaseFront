@@ -40,12 +40,15 @@ export default defineConfig({
     },
   },
   test: {
+    // La full con workers por CPU excede el plazo del caso lazy con 80 diagnósticos; serial conserva los 5s.
+    maxWorkers: 1,
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/test/setup.ts",
     css: false,
     // Claude Code arma sus worktrees dentro de .claude/, así que ahí hay copias enteras del proyecto con sus
     // propios tests. Sin esta exclusión, "npm run test" corre también los de otra sesión y falla por eso.
-    exclude: [...configDefaults.exclude, ".claude/**", "src/test/visual/**"],
+    // Los probes y evidencias de QA son temporales; Playwright no se ejecuta desde Vitest.
+    exclude: [...configDefaults.exclude, ".claude/**", ".test-artifacts/**", "src/test/visual/**"],
   },
 });

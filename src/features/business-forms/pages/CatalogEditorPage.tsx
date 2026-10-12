@@ -127,7 +127,7 @@ function ManualCatalogEditor({ scope, initial }: { scope: CatalogReadScope; init
   const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
   if (!draft || [editor.error, items.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
-  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={editor.dirty ? <span className="text-xs text-[var(--color-content-muted)]">{t("unsaved")}</span> : undefined}
+  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={editor.dirty ? <span className="text-xs text-[var(--color-content-muted)]">{t("dirty")}</span> : undefined}
     actions={canManage ? <><Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
     <div className="flex flex-col gap-4">
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button></Surface> : null}
