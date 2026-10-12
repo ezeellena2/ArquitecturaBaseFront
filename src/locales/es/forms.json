@@ -106,7 +106,8 @@
     "decimal": "Número con decimales",
     "date": "Fecha",
     "boolean": "Sí o no",
-    "choice": "Elegir de una lista"
+    "choice": "Elegir de una lista",
+    "catalogChoice": "Elegir de un catálogo"
   },
   "reviewOption": "{{question}} · Opción: {{option}}",
   "reviewOptionOrder": "Orden de opciones de {{question}}",
@@ -362,5 +363,8 @@
     "search": "Buscar catálogo",
     "loadFailed": "No pudimos cargar los catálogos.",
     "stateFilter": "Estado: {{state}}"
+  },
+  "catalogQuestion": {
+    "optionsAtSend": "Las opciones se preparan al mandar el formulario, para cada persona."
   }
 }

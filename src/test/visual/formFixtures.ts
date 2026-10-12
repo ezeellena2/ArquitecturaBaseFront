@@ -38,7 +38,7 @@ export function responseBudgetDefinition(culture: FormCulture): FormDefinitionSn
 }
 export function wireDefinition(definition: FormDefinitionSnapshot) {
   return { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map(q => ({ ...q,
-    maxLength: "maxLength" in q ? q.maxLength : null, options: q.type === "choice" ? q.options : null,
+    maxLength: "maxLength" in q ? q.maxLength : null, options: q.type === "choice" && !q.source ? q.options : null,
   })) } };
 }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -47,7 +47,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   if (scenario !== "forms-empty") definitions.set(fixtureFormId, fixtureDefinition(culture, scenario === "forms-prefix"));
   if (scenario === "forms-translations") {
     const original = fixtureDefinition("es");
-    definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: original.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : q.type === "choice" ? { ...q, options: q.options.map((o, index) => index === 0 ? { ...o, label: { ...o.label, en: "" } } : o) } : q) } });
+    definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: original.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : q.type === "choice" && !q.source ? { ...q, options: q.options.map((o, index) => index === 0 ? { ...o, label: { ...o.label, en: "" } } : o) } : q) } });
   }
   if (scenario.startsWith("forms-publication")) { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "longText" ? { ...q, help: { es: "Contá lo que pasó.", en: "Describe what happened." } } : q) } }); }
   if(scenario === "forms-publication-budget-http"){ const budget=responseBudgetDefinition(culture);definitions.clear();definitions.set(budget.id,budget); }
@@ -177,7 +177,8 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     const canonical: CanonicalQuestion[] = body.draft.fields.map(q => {
       const fieldId = q.fieldId ?? guid(serial++); const common = { fieldId, key: key(fieldId), label: q.label, help: q.help && Object.values(q.help).some(text => !!text?.trim()) ? Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => !!entry[1]?.trim())) : null, required: q.required };
       fields.push({ localId: q.localId, fieldId, key: common.key, replacesFieldId: q.replacesFieldId });
-      if (q.type === "choice") return { ...common, type: q.type, options: q.options.map(o => {
+      if (q.type === "choice" && q.source) return { ...common, type: q.type, source: { ...q.source } };
+      if (q.type === "choice" && !q.source) return { ...common, type: q.type, options: q.options.map(o => {
         const choiceId = o.choiceId ?? guid(serial++); choices.push({ fieldLocalId: q.localId, localId: o.localId, fieldId, choiceId }); return { choiceId, label: o.label };
       }) };
       return q.type === "shortText" || q.type === "longText" ? { ...common, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600) } : { ...common, type: q.type };

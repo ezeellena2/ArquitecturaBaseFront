@@ -10,11 +10,11 @@ const nameText = text.refine(map => Object.values(map).every(value => value.leng
 const helpText = text.refine(map => Object.keys(map).length > 0 && Object.values(map).every(value => !!value.trim()));
 const choice = z.strictObject({ choiceId: guid, label: text });
 const field = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice"]),
-  label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullable(),
+  label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullish(), source: z.strictObject({ catalog: guid }).nullish(),
 }).superRefine((value, context) => {
   const textType = value.type === "shortText" || value.type === "longText";
   if ((textType ? value.maxLength === null : value.maxLength !== null)
-    || (value.type === "choice" ? value.options === null : value.options !== null)
+    || (value.type === "choice" ? value.source ? value.options != null : value.options == null : value.options !== null || value.source != null)
     || value.key !== `field_${value.fieldId.replaceAll("-", "").toLowerCase()}`) context.addIssue({ code: "custom", message: "Invalid configuration." });
 });
 const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,11}$/), prefixLocked: z.boolean(), revision,
@@ -64,10 +64,10 @@ export function recoveryPath(requestId: string): string { return `/api/forms/dra
 
 function adaptDefinition(value: z.infer<typeof definition>): FormDefinitionSnapshot {
   return { ...value, draft: { ...value.draft, fields: value.draft.fields.map((item): CanonicalQuestion => {
-    const { maxLength, options, ...common } = item;
+    const { maxLength, options, source, ...common } = item;
     switch (common.type) {
       case "shortText": case "longText": return { ...common, type: common.type, maxLength: maxLength! };
-      case "choice": return { ...common, type: common.type, options: options! };
+      case "choice": return source ? { ...common, type: common.type, source } : { ...common, type: common.type, options: options! };
       default: return { ...common, type: common.type };
     }
   }) } };
@@ -104,7 +104,7 @@ export function readFormPublicationCheck(value: unknown, definitionId: string, e
   if (checked.issues.some(issue => {
     if (!issue.fieldId) return issue.choiceId !== null;
     const field = fields.find(item => item.fieldId?.toLowerCase() === issue.fieldId?.toLowerCase());
-    return !field || issue.choiceId !== null && (field.type !== "choice" || !field.options.some(option => option.choiceId?.toLowerCase() === issue.choiceId?.toLowerCase()));
+    return !field || issue.choiceId !== null && (field.type !== "choice" || !field.options?.some(option => option.choiceId?.toLowerCase() === issue.choiceId?.toLowerCase()));
   })) throw new UnsupportedFormResponse();
   const hasTicket = checked.checkToken !== null && checked.checkExpiresAtUtc !== null;
   if (checked.canAccept ? !hasTicket || checked.compatibility !== "LocallyValidated" || checked.acceptanceAvailability !== "Available" || checked.issues.length !== 0 : checked.checkToken !== null || checked.checkExpiresAtUtc !== null) throw new UnsupportedFormResponse();

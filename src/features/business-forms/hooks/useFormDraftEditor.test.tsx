@@ -114,7 +114,7 @@ describe("nonvisual form draft coordination", () => {
 
   it("correlates identical option handles by their parent rather than response order", async () => {
     const value: DraftEditorValue = { ...initial, draft: { ...initial.draft, fields: ["q", "r"].map(localId => ({ ...initial.draft.fields[0]!, localId,
-      type: "choice", options: [{ localId: "option", choiceId: null, label: { es: "Sí", en: "Yes" } }] })) } };
+      type: "choice", source: null, options: [{ localId: "option", choiceId: null, label: { es: "Sí", en: "Yes" } }] })) } };
     server.use(http.post("/api/forms/definitions", async ({ request }) => {
       const { requestId } = await request.json() as { requestId: string };
       const result = receipt(requestId);

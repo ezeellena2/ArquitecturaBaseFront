@@ -48,3 +48,9 @@ El presupuesto de respuesta se comprueba con cuerpos HTTP es/en exportados sin m
 
 - El listado usa kind y state en la URL con los hooks comunes; state es Active/Inactive/Unavailable. filterCounts.byKind procede del servidor para search+state, ignorando sólo kind, sin contar filas de la página. El motivo seguro SourceUnavailable se presenta traducido.
 - isAvailable:false bloquea persona, preview y Guardar, pero permite ajustar filtros; Reintentar vuelve a leer la fuente. Una consulta pendiente de personas no deshabilita el Autocomplete ni pierde el foco. Perder Manage limpia la selección y oculta personas/preview mientras siga Read; actor/cultura/permiso delimitan lecturas y callbacks con el dueño existente.
+
+## Preguntas de catálogo (K6 en curso)
+
+- El tipo HTTP sigue choice: options para autoría manual o source:{catalog:Id}, mutuamente excluyentes; source ausente/null y options ausente/null siguen el DTO de su rama. El editor conserva la referencia, sin materializar opciones, revisión o filtros del catálogo. Guard/binding comparan la fuente confirmada con el intento congelado.
+- Cambiar fuente de un campo confirmado usa LocalId nuevo, FieldId:null y ReplacesFieldId anterior, conservando textos/ayuda/obligatoriedad. La revisión compara source además de tipo/configuración. Los errores draft.fields[n].source.catalog se ligan a la pregunta del cuerpo congelado. La preview muestra un NativeSelect vacío/deshabilitado y explica que las opciones se preparan al enviar.
+- Primer corte: modelo, identidad, revisión, guard y preview; selector/cableado y cohorte HTTP K6 pendientes. La evidencia final y el recorrido real SPA/API/PostgreSQL se califican al cerrar K6, sin K7/Meta.

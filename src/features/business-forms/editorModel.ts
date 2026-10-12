@@ -7,14 +7,21 @@ export const suggestedPrefix = (name: string) => (name.trim().split(/\s+/).at(-1
 export function emptyForm(culture: FormCulture): DraftEditorValue {
   return { name: { [culture]: "" }, prefix: "", draft: { format: 1, culture, submitLabel: { [culture]: culture === "es" ? "Enviar" : "Submit" }, fields: [] } };
 }
-export function newQuestion(type: DraftQuestion["type"], culture: FormCulture, localId: string): DraftQuestion {
+export type QuestionEditorType = DraftQuestion["type"] | "catalogChoice";
+export const questionEditorType = (question: DraftQuestion): QuestionEditorType => question.type === "choice" && question.source ? "catalogChoice" : question.type;
+export function newQuestion(type: QuestionEditorType, culture: FormCulture, localId: string): DraftQuestion {
   const common = { localId, fieldId: null, replacesFieldId: null, label: { [culture]: "" }, help: null, required: false };
   return type === "shortText" || type === "longText" ? { ...common, type, maxLength: type === "shortText" ? 80 : 600 }
+    : type === "catalogChoice" ? { ...common, type: "choice", source: { catalog: "" } }
     : type === "choice" ? { ...common, type, options: [{ localId: "first-option", choiceId: null, label: { [culture]: "" } }] } : { ...common, type };
 }
-export function replaceQuestionType(question: DraftQuestion, type: DraftQuestion["type"], localId: string, culture: FormCulture): DraftQuestion {
+export function replaceQuestionType(question: DraftQuestion, type: QuestionEditorType, localId: string, culture: FormCulture): DraftQuestion {
   return { ...newQuestion(type, culture, localId), label: question.label, help: question.help, required: question.required,
     replacesFieldId: question.fieldId ?? question.replacesFieldId };
+}
+export function changeQuestionCatalog(question: DraftQuestion, catalogId: string, localId: string): DraftQuestion {
+  if (question.type !== "choice" || !question.source || question.source.catalog === catalogId) return question;
+  return { ...question, source: { catalog: catalogId }, ...(question.fieldId ? { localId, fieldId: null, replacesFieldId: question.fieldId } : {}) };
 }
 export function moveItem<T>(items: readonly T[], index: number, delta: number): readonly T[] {
   const result = [...items]; const destination = index + delta;
@@ -22,7 +29,7 @@ export function moveItem<T>(items: readonly T[], index: number, delta: number): 
   [result[index], result[destination]] = [result[destination]!, result[index]!]; return result;
 }
 export function questionTexts(question: DraftQuestion) {
-  return [question.label, ...(question.type === "choice" ? question.options.map(o => o.label) : []),
+  return [question.label, ...(question.type === "choice" && !question.source ? question.options.map(o => o.label) : []),
     ...(question.help && Object.values(question.help).some(text => !!text?.trim()) ? [question.help] : [])];
 }
 export const missingQuestionTexts = (question: DraftQuestion, culture: FormCulture) => questionTexts(question).filter(map => !map[culture]?.trim()).length;
@@ -31,7 +38,7 @@ export const missingFormTexts = (value: DraftEditorValue, culture: FormCulture) 
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const fieldIdentity = (q: DraftQuestion) => q.fieldId ?? "new:" + q.localId;
 const choiceIdentity = (o: DraftChoice) => o.choiceId ?? "new:" + o.localId;
-const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, required: q.required, ...("maxLength" in q ? { maxLength: q.maxLength } : {}) });
+const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ?? null, required: q.required, ...("maxLength" in q ? { maxLength: q.maxLength } : {}) });
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;
@@ -68,7 +75,7 @@ export function createDraftReview(mine: DraftEditorValue, definition: FormDefini
     if (!local || !current) continue;
     localizedRows("label:" + id, "fieldText", local.label, current.label, { parentId: id, property: "label" });
     localizedRows("help:" + id, "fieldText", local.help, current.help, { parentId: id, property: "help" });
-    if (local.type !== "choice" || current.type !== "choice") continue;
+    if (local.type !== "choice" || local.source || current.type !== "choice" || current.source) continue;
     const localOptions = new Map(local.options.map(o => [choiceIdentity(o), o]));
     const liveOptions = new Map(current.options.map(o => [choiceIdentity(o), o]));
     for (const optionId of new Set([...localOptions.keys(), ...liveOptions.keys()])) {
@@ -104,7 +111,7 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
       else {
         const q = selected as DraftQuestion;
         const common = old ? { ...q, label: old.label, help: old.help } : q;
-        fields.set(id, common.type === "choice" && old?.type === "choice" ? { ...common, options: old.options } : common);
+        fields.set(id, common.type === "choice" && !common.source && old?.type === "choice" && !old.source ? { ...common, options: old.options } : common);
       }
     }
   }
@@ -116,7 +123,7 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
       : { ...parent, label: withText(parent.label, row.culture!, selected) });
   }
   for (const row of review.rows.filter(r => r.kind === "option")) {
-    const parent = fields.get(row.parentId!); if (parent?.type !== "choice") continue;
+    const parent = fields.get(row.parentId!); if (parent?.type !== "choice" || parent.source) continue;
     const options = new Map(parent.options.map(o => [choiceIdentity(o), o]));
     const selected = choices[row.id] === "mine" ? row.mine : row.current;
     if (row.culture) {
@@ -126,12 +133,12 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
     fields.set(row.parentId!, { ...parent, options: [...options.values()] });
   }
   for (const [id, parent] of fields) {
-    if (parent.type !== "choice") continue;
+    if (parent.type !== "choice" || parent.source) continue;
     const orderRow = review.rows.find(row => row.kind === "optionOrder" && row.parentId === id);
     const source = orderRow && choices[orderRow.id] === "mine" ? review.mine : review.current;
     const original = source.draft.fields.find(q => fieldIdentity(q) === id);
     const options = new Map(parent.options.map(o => [choiceIdentity(o), o]));
-    const order = original?.type === "choice" ? original.options.map(choiceIdentity) : [];
+    const order = original?.type === "choice" && !original.source ? original.options.map(choiceIdentity) : [];
     fields.set(id, { ...parent, options: [...new Set([...order, ...options.keys()])].flatMap(o => options.has(o) ? [options.get(o)!] : []) });
   }
   const order = choices.order === "mine" ? review.mine : review.current;

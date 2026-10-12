@@ -89,7 +89,7 @@ describe("form draft session", () => {
     expect(session.identityMap).toEqual(result().identityMap);
     expect(session.value.draft.fields.map(field => field.localId)).toEqual(["q-a", "q-b"]);
     expect(session.value.draft.fields.map(field => field.fieldId)).toEqual(["field-a", "field-b"]);
-    expect(session.value.draft.fields.flatMap(field => field.type === "choice" ? field.options.map(option => option.choiceId) : [])).toEqual(["choice-a", "choice-b"]);
+    expect(session.value.draft.fields.flatMap(field => field.type === "choice" && !field.source ? field.options.map(option => option.choiceId) : [])).toEqual(["choice-a", "choice-b"]);
     expect(session.baseline).toEqual(session.value);
     expect(session.value.draft.submitLabel.en).toBe("Submit request");
     expect(session.value.draft.fields[1].help?.en).toBe("Choose");
@@ -164,7 +164,7 @@ describe("form draft session", () => {
     expect(field?.localId).toBe("field-a");
     expect(field?.fieldId).toBe("field-a");
     expect(field).not.toHaveProperty("key");
-    expect(field?.type === "choice" && field.options[0].localId).toBe("choice-a");
+    expect(field?.type === "choice" && !field.source && field.options[0].localId).toBe("choice-a");
     expect(session.pending?.body.expectedRevision).toBe(1);
   });
 
@@ -225,4 +225,20 @@ describe("form draft session", () => {
     expect(beginDraftSave(session, "request-b")).toBe(session);
     expect(rejectDraftSave(started, { ...identity, editorId: "old-editor" }, "Validation")).toBe(started);
   });
+});
+
+// Synthetic K6 contract; raw producer examples qualify the HTTP boundary at closure.
+it("opens and confirms a catalog choice without materializing local options", () => {
+  const catalogId = "01990000-0000-7000-8000-000000000091";
+  const field = { fieldId: "field-catalog", key: "field_catalog", type: "choice", source: { catalog: catalogId }, label: { es: "Cliente" }, help: null, required: true };
+  const definition = { ...result().definition, draft: { ...initial.draft, fields: [field] } } as unknown as FormDefinitionSnapshot;
+  const opened = openDraftSession(scope, definition);
+  expect(opened.value.draft.fields[0]).toMatchObject({ type: "choice", source: { catalog: catalogId } });
+  expect(opened.value.draft.fields[0]).not.toHaveProperty("options");
+  const attempt = beginDraftSave(opened, identity.requestId);
+  const saved = { ...result(), definition: { ...definition, revision: 2 }, identityMap: { fields: [{ localId: "field-catalog", fieldId: "field-catalog", key: "field_catalog", replacesFieldId: null }], choices: [] } };
+  const confirmed = confirmDraftSave(attempt, identity, saved);
+  expect(confirmed.phase).toBe("Editing"); expect(confirmed.value.draft.fields[0]).toMatchObject({ source: { catalog: catalogId } });
+  const wrong = { ...saved, definition: { ...saved.definition, draft: { ...saved.definition.draft, fields: [{ ...field, source: { catalog: "01990000-0000-7000-8000-000000000092" } }] } } } as unknown as FormDraftSaveResult;
+  expect(confirmDraftSave(attempt, identity, wrong).phase).toBe("Unconfirmed");
 });

@@ -17,7 +17,7 @@ const definition: FormDefinitionSnapshot = {
 describe("Draft review presentation", () => {
   it("keeps allowed changes in one explicit action without extra decisions or saving", async () => {
     const saved = openDraftSession({ actorId: "actor", editorId: "editor" }, definition).value;
-    const value = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(q => q.type === "choice"
+    const value = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(q => q.type === "choice" && !q.source
       ? { ...q, options: [...q.options].reverse().map(o => o.choiceId === "north" ? { ...o, label: { es: "Norte actualizado" } } : o) } : q) } };
     const onResolve = vi.fn();
     await act(async () => { renderWithProviders(<DraftReview value={value} definition={definition} culture="es" open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={onResolve} />); });
@@ -46,11 +46,11 @@ it("retains local edits, marks remote additions and cannot revive a remotely rem
   const before = { ...definition, draft: { ...definition.draft, fields: [...definition.draft.fields,
     { fieldId: "notes", key: "notes", type: "longText" as const, label: { es: "Observaciones" }, help: { es: "Antes" }, required: false, maxLength: 600 }] } };
   const local = openDraftSession({ actorId: "actor", editorId: "editor" }, before).value;
-  const mine = { ...local, name: { es: "Mi visita" }, draft: { ...local.draft, fields: local.draft.fields.map(q => q.type === "choice"
+  const mine = { ...local, name: { es: "Mi visita" }, draft: { ...local.draft, fields: local.draft.fields.map(q => q.type === "choice" && !q.source
     ? { ...q, options: q.options.map(o => o.choiceId === "north" ? { ...o, label: { es: "Mi Norte" } } : o) }
     : { ...q, help: { es: "Mi ayuda" } }) } };
   const remote = { ...definition, revision: 3, draft: { ...definition.draft, fields: [
-    { ...definition.draft.fields[0]!, options: definition.draft.fields[0]!.type === "choice" ? definition.draft.fields[0]!.options.slice(0, 1) : [] },
+    ...definition.draft.fields.slice(0, 1).map(q => q.type === "choice" && !q.source ? { ...q, options: q.options.slice(0, 1) } : q),
     { fieldId: "date", key: "date", type: "date" as const, label: { es: "Fecha agregada por otra persona" }, help: null, required: true }] } };
   const onResolve = vi.fn();
   await act(async () => { renderWithProviders(<DraftReview value={mine} definition={remote} culture="es" open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={onResolve} />); });
@@ -63,6 +63,6 @@ it("retains local edits, marks remote additions and cannot revive a remotely rem
   expect(resolved.name.es).toBe("Mi visita");
   expect(resolved.draft.fields.some(q => q.fieldId === "notes")).toBe(false);
   const customer = resolved.draft.fields.find(q => q.fieldId === "customer")!;
-  expect(customer.type === "choice" && customer.options.map(o => o.choiceId)).toEqual(["north"]);
-  expect(customer.type === "choice" && customer.options[0]!.label.es).toBe("Mi Norte");
+  expect(customer.type === "choice" && !customer.source && customer.options.map(o => o.choiceId)).toEqual(["north"]);
+  expect(customer.type === "choice" && !customer.source && customer.options[0]!.label.es).toBe("Mi Norte");
 });

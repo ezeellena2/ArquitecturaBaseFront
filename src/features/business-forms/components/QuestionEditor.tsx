@@ -47,14 +47,14 @@ export function QuestionEditor({ question, position, total, culture, original, e
     onMove(delta);
   }
   function moveOption(index: number, delta: number) {
-    if (question.type !== "choice") return;
+    if (question.type !== "choice" || question.source) return;
     const option = question.options[index]!;
     pendingFocus.current = { item: option.localId, delta };
     setAnnouncement(t("position", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }), position: index + 1 + delta, total: question.options.length }));
     onChange({ ...question, options: moveItem(question.options, index, delta) });
   }
   function removeOption(localId: string) {
-    if (question.type !== "choice") return;
+    if (question.type !== "choice" || question.source) return;
     const index = question.options.findIndex(o => o.localId === localId);
     const neighbor = question.options[index + 1] ?? question.options[index - 1];
     optionRemovalFocus.current = [...(rootRef.current?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(input => input.dataset.choiceLocalId === neighbor?.localId) ?? addOptionButton.current;
@@ -89,7 +89,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
           {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><Input type="number" min={1} max={10000} readOnly={readOnly} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></FormField> : null}
         </div>
       </div>
-      {question.type === "choice" ? <div className="flex flex-col gap-3">
+      {question.type === "choice" && !question.source ? <div className="flex flex-col gap-3">
         {fieldError("options") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{fieldError("options")}</p> : null}
         {question.options.map((option, index) => <div key={option.localId} className="flex flex-wrap items-end gap-2">
           <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={languageIssues.find(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))?.messages[0]}><Input data-choice-local-id={option.localId} readOnly={readOnly} placeholder={t("missingText", { language: t("cultureNamesInText." + culture) })} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>

@@ -33,7 +33,7 @@ function snapshot<T>(value: T): T {
 function editorQuestion(field: CanonicalQuestion, localId: string, optionLocalId: (id: string) => string): DraftQuestion {
   const common = { localId, fieldId: field.fieldId, replacesFieldId: null, label: field.label, help: field.help, required: field.required };
   switch (field.type) {
-    case "choice": return { ...common, type: field.type, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
+    case "choice": return field.source ? { ...common, type: field.type, source: { ...field.source } } : { ...common, type: field.type, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
     case "shortText": case "longText": return { ...common, type: field.type, maxLength: field.maxLength };
     default: return { ...common, type: field.type };
   }
@@ -110,7 +110,8 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
       || (field.fieldId !== null && binding.fieldId !== field.fieldId)
       || (field.replacesFieldId !== null && binding.fieldId === field.replacesFieldId)) return null;
     const options = new Map<string, string>();
-    if (field.type === "choice" && saved.type === "choice") {
+    if (field.type === "choice" && saved.type === "choice" && field.source?.catalog !== saved.source?.catalog) return null;
+    if (field.type === "choice" && saved.type === "choice" && !field.source && !saved.source) {
       const savedOptions = new Map(saved.options.map(option => [option.choiceId, option]));
       if (savedOptions.size !== saved.options.length || field.options.length !== saved.options.length) return null;
       const localOptions = new Set<string>();

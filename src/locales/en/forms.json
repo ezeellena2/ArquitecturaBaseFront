@@ -106,7 +106,8 @@
     "decimal": "Number with decimals",
     "date": "Date",
     "boolean": "Yes or no",
-    "choice": "Choose from a list"
+    "choice": "Choose from a list",
+    "catalogChoice": "Choose from a catalog"
   },
   "reviewOption": "{{question}} · Option: {{option}}",
   "reviewOptionOrder": "Option order for {{question}}",
@@ -362,5 +363,8 @@
     "search": "Search catalogs",
     "loadFailed": "We could not load the catalogs.",
     "stateFilter": "Status: {{state}}"
+  },
+  "catalogQuestion": {
+    "optionsAtSend": "Options are prepared when sending the form, for each person."
   }
 }

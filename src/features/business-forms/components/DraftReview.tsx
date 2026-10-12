@@ -39,7 +39,7 @@ export function DraftReviewChanges({ value, definition, culture }: { value: Draf
       const source = side === "mine" ? value : review.current;
       const question = source.draft.fields.find(q => identity(q) === row.parentId);
       return item.map(id => {
-        if (row.kind === "optionOrder" && question?.type === "choice") {
+        if (row.kind === "optionOrder" && question?.type === "choice" && !question.source) {
           const option = question.options.find(o => (o.choiceId ?? `new:${o.localId}`) === id);
           return option ? localizedValue(option.label, culture, source.draft.culture) : t("removed");
         }
@@ -52,7 +52,7 @@ export function DraftReviewChanges({ value, definition, culture }: { value: Draf
       const help = q.help && Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => entry[1] !== null));
       return [text(q.label), t(`types.${q.type}`), t(q.required ? "required" : "optional"), help ? `${t("help")}: ${text(help)}` : "",
         "maxLength" in q ? `${t("maxLength")}: ${q.maxLength ?? (q.type === "shortText" ? 80 : 600)}` : "",
-        q.type === "choice" && !review.rows.some(r => r.parentId === row.parentId && r.kind === "option") ? q.options.map(o => text(o.label)).join("; ") : ""].filter(Boolean).join(" · ");
+        q.type === "choice" && !q.source && !review.rows.some(r => r.parentId === row.parentId && r.kind === "option") ? q.options.map(o => text(o.label)).join("; ") : ""].filter(Boolean).join(" · ");
     }
     if ("label" in item && typeof item.label === "object") return text(item.label as LocalizedText);
     return text(item as LocalizedText);
@@ -64,7 +64,7 @@ export function DraftReviewChanges({ value, definition, culture }: { value: Draf
       const questionLabel = question ? localizedValue(question.label, culture, value.draft.culture) : t("question");
       if (row.kind === "optionOrder") return t("reviewOptionOrder", { question: questionLabel });
       const item = (row.mine ?? row.current) as DraftChoice | string | null;
-      const option = question?.type === "choice" ? question.options.find(o => (o.choiceId ?? `new:${o.localId}`) === row.optionId) : undefined;
+      const option = question?.type === "choice" && !question.source ? question.options.find(o => (o.choiceId ?? `new:${o.localId}`) === row.optionId) : undefined;
       const optionLabel = option ? localizedValue(option.label, culture, value.draft.culture) : typeof item === "string" ? item : item ? localizedValue(item.label, culture, value.draft.culture) : "";
       return t("reviewOption", { question: questionLabel, option: optionLabel || t("translationPending") });
     }

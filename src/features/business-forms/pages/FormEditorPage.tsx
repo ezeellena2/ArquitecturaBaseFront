@@ -175,7 +175,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
       if (!active.current) return;
       if (!question) { host.current?.querySelector<HTMLInputElement>(issue.path.startsWith("name") ? '[data-form-text="name"]' : '[data-form-text="submitLabel"]')?.focus(); return; }
       const container = [...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === question.localId);
-      const option = question.type === "choice" ? question.options.find(o => o.choiceId === issue.choiceId) : undefined;
+      const option = question.type === "choice" && !question.source ? question.options.find(o => o.choiceId === issue.choiceId) : undefined;
       const optionInput = option ? [...(container?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(element => element.dataset.choiceLocalId === option.localId) : undefined;
       (optionInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]'))?.focus();
     });

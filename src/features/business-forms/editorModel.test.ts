@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedValue, newQuestion, missingFormTexts } from "./editorModel";
+import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedValue, newQuestion, missingFormTexts, changeQuestionCatalog } from "./editorModel";
 import { openDraftSession } from "./draftSession";
 import type { FormDefinitionSnapshot } from "./model";
 
@@ -39,7 +39,7 @@ describe("explicit draft review", () => {
   it("counts every missing required text and only counts help when help exists", () => {
     const saved = openDraftSession(scope, current).value;
     const value = { ...saved, name: { es: "Visita", en: "" }, draft: { ...saved.draft, submitLabel: { es: "Enviar", en: "Send" },
-      fields: saved.draft.fields.map(q => q.type === "choice" ? { ...q, label: { es: "Cliente", en: "Customer" }, options: q.options.map(o => ({ ...o, label: { es: "Norte" } })) }
+      fields: saved.draft.fields.map(q => q.type === "choice" && !q.source ? { ...q, label: { es: "Cliente", en: "Customer" }, options: q.options.map(o => ({ ...o, label: { es: "Norte" } })) }
         : { ...q, label: { es: "Notas", en: "Notes" }, help: { es: "Ayuda", en: null } }) } };
     expect(missingFormTexts(value, "en")).toBe(3);
     expect(missingFormTexts(value, "es")).toBe(0);
@@ -49,7 +49,7 @@ describe("explicit draft review", () => {
   it("creates valid option tokens in the original culture without deriving them from the parent token", () => {
     const question = newQuestion("choice", "en", "x".repeat(64));
     expect(question.type).toBe("choice");
-    if (question.type !== "choice") throw new Error("Expected choice");
+    if (question.type !== "choice" || question.source) throw new Error("Expected choice");
     expect(question.options[0]!.localId).toMatch(/^[A-Za-z0-9_-]{1,64}$/);
     expect(question.options[0]!.label).toEqual({ en: "" });
   });
@@ -59,7 +59,7 @@ describe("explicit draft review", () => {
       { fieldId: "b", key: "b", type: "choice", label: { es: "Depósito" }, help: null, required: false, options: [{ choiceId: "b-choice", label: { es: "Sur", en: "South" } }] },
     ] } };
     const saved = openDraftSession(scope, definition).value;
-    const mine = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(q => q.type === "choice" ? { ...q, options: q.options.map(o => ({ ...o, localId: "same-local", label: { ...o.label, en: "Changed" } })) } : q) } };
+    const mine = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(q => q.type === "choice" && !q.source ? { ...q, options: q.options.map(o => ({ ...o, localId: "same-local", label: { ...o.label, en: "Changed" } })) } : q) } };
     const review = createDraftReview(mine, definition);
     expect(review.rows).toHaveLength(2);
     expect(new Set(review.rows.map(r => r.id)).size).toBe(2);
@@ -84,7 +84,7 @@ describe("explicit draft review", () => {
     const saved = openDraftSession(scope, current).value;
     const mine = { ...saved, draft: { ...saved.draft, fields: [...saved.draft.fields,
       { localId: "retired", fieldId: "retired", replacesFieldId: null, type: "date" as const, label: { es: "Fecha" }, help: null, required: true },
-    ].map(q => q.type === "choice" ? { ...q, options: [...q.options, { localId: "old", choiceId: "retired-option", label: { es: "Sur" } }] } : q) } };
+    ].map(q => q.type === "choice" && !q.source ? { ...q, options: [...q.options, { localId: "old", choiceId: "retired-option", label: { es: "Sur" } }] } : q) } };
     const review = createDraftReview(mine, current);
     expect(review.rows.find(row => row.id === "field:retired")?.canKeep).toBe(false);
     expect(review.rows.find(row => row.kind === "option" && row.optionId === "retired-option")?.canKeep).toBe(false);
@@ -100,4 +100,12 @@ describe("explicit draft review", () => {
     expect(changed).not.toHaveProperty("maxLength");
     expect(localizedValue({ es: "Sin traducción" }, "en", "es")).toBe("Sin traducción");
   });
+});
+
+it("replaces a confirmed catalog field while preserving texts and keeps an unconfirmed selection local", () => {
+  const field = { localId: "saved", fieldId: "old-field", replacesFieldId: null, type: "choice", source: { catalog: "catalog-a" }, label: { es: "Cliente", en: "Customer" }, help: { es: "Elegí" }, required: true } as unknown as import("./model").DraftQuestion;
+  const replaced = changeQuestionCatalog(field, "catalog-b", "new-local");
+  expect(replaced).toEqual({ ...field, localId: "new-local", fieldId: null, replacesFieldId: "old-field", source: { catalog: "catalog-b" } });
+  expect(changeQuestionCatalog(field, "catalog-a", "unused")).toBe(field);
+  expect(changeQuestionCatalog(replaced, "catalog-c", "unused")).toEqual({ ...replaced, source: { catalog: "catalog-c" } });
 });
