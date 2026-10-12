@@ -18,21 +18,21 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){const 
   test(`K7 recipient options and sending blockers ${lang} ${width}px`,async({page})=>{
     await openChat(page,lang,"ready",width);
     const trigger=page.getByRole("button",{name:text.forms.action,exact:true});await trigger.click();
-    let dialog=page.getByRole("dialog");await dialog.getByRole("radio",{name:"Registrar visita",exact:true}).click();
+    const dialog=page.getByRole("dialog");await dialog.getByRole("radio",{name:"Registrar visita",exact:true}).click();
     const counts=lang==="es"?"Cliente: 2 opciones":"Cliente: 2 options";
     await expect(dialog.getByText(counts,{exact:true})).toBeVisible();
     await expect(dialog.getByRole("button",{name:text.forms.action,exact:true})).toBeEnabled();
     await screenshot(page,`prepared-${lang}-${width}`,width);
     await dialog.press("Escape");await expect(trigger).toBeFocused();expect(await attempts(page)).toBe(0);
-    for(const state of ["unavailable","large","empty"]){
+  });
+  for(const state of ["unavailable","large","empty"])test(`K7 ${state} catalog blocker ${lang} ${width}px`,async({page})=>{
       await openChat(page,lang,state,width);await page.getByRole("button",{name:text.forms.action,exact:true}).click();
-      dialog=page.getByRole("dialog");await dialog.getByRole("radio",{name:"Registrar visita",exact:true}).click();
+      const dialog=page.getByRole("dialog");await dialog.getByRole("radio",{name:"Registrar visita",exact:true}).click();
       const input=dialog.getByRole("textbox",{name:text.forms.messageLabel});await input.fill("Private draft retained");
       await expect(dialog.getByRole("alert")).toBeVisible();
       await expect(dialog.getByRole("button",{name:text.forms.action,exact:true})).toBeDisabled();
       await expect(input).toHaveValue("Private draft retained");expect(await attempts(page)).toBe(0);
       await screenshot(page,`${state}-${lang}-${width}`,width);
-    }
   });
   test(`K7 historical reference reload and permissions ${lang} ${width}px`,async({page})=>{
     await openChat(page,lang,"completed",width);
