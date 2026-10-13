@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { contrastRatio } from "../../shared/lib/appearance";
 
 test.beforeEach(async ({ page }) => {

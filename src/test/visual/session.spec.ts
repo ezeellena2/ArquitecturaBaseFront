@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { initialAppearance } from "../../shared/lib/appearance";
 
 for (const screen of ["/", "/usuarios", "/configuracion"]) {

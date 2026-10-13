@@ -1,4 +1,4 @@
-import {test,expect,type Page} from "@playwright/test";
+import {test,expect,type Page} from "./test";
 import es from "../../locales/es/whatsapp.json" with {type:"json"};
 import en from "../../locales/en/whatsapp.json" with {type:"json"};
 import type {createChatFormFixtures} from "./chatFormFixtures";

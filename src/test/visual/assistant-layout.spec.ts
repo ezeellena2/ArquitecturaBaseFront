@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { assistantFixtureConversationId } from "./assistantFixtures";
 
 for (const lang of ["es", "en"] as const) {

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./test";
 
 for (const width of [1440, 320]) {
   test(`an operational notice remains accessible above an open dialog at ${width}px`, async ({ page }) => {

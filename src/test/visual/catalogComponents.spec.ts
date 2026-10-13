@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
   test("catalog component composition " + language + " at " + width + "px", async ({ page }) => {

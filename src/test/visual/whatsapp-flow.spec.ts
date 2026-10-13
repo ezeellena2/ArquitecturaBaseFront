@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./test";
 import type { CurrentUser } from "../../auth/useCurrentUser";
 import type { Chat, ChatMessage, Outgoing, Thread } from "../../features/whatsapp/api/chat";
 import { initialAppearance } from "../../shared/lib/appearance";

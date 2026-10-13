@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { fixtureFormId } from "./formFixtures";
 import { visualCatalogId } from "./catalogFixtures";
 

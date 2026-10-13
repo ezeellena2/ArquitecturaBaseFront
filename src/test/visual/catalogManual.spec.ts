@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { visualCatalogId } from "./catalogFixtures";
 
 // Separate journeys preserve all assertions and the default timeout without accumulating reloads.
