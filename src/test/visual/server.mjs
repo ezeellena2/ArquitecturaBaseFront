@@ -1,73 +1,50 @@
-import { createServer } from "vite";
+import path from "node:path";
+import { build, preview } from "vite";
 
 const origin = "http://127.0.0.1:5178";
-const roots = [
-  "/@vite/client",
-  "/@vite/env",
-  "/src/test/visual/preview.tsx",
-  "/src/test/visual/session.tsx",
-  "/src/main.tsx",
-  "/src/features/artificial-intelligence/pages/BusinessInformationPage.tsx",
-  "/src/features/business-forms/pages/FormEditorPage.tsx",
-];
+const root = process.cwd();
+const outDir = path.resolve(root, ".test-artifacts/visual-app");
+if (!outDir.startsWith(root + path.sep)) throw new Error("Visual output must stay inside the workspace.");
+// Test entries stay outside the product build. Bundling avoids hundreds of ESM
+// requests per navigation and Windows ERR_NO_BUFFER_SPACE during complete runs.
+await build({
+  mode: "development",
+  define: { "process.env.NODE_ENV": JSON.stringify("development") },
+  build: { target: "esnext", outDir, emptyOutDir: true, sourcemap: false,
+    rollupOptions: { input: {
+      main: path.resolve(root, "index.html"), silentRenew: path.resolve(root, "silent-renew.html"),
+      visual: path.resolve(root, "src/test/visual/index.html"), session: path.resolve(root, "src/test/visual/session.html"),
+    } },
+  },
+});
 let ready = false;
-const server = await createServer({
-  server: { host: "127.0.0.1", port: 5178, strictPort: true },
-  plugins: [{
-    name: "visual-readiness",
-    configureServer(viteServer) {
-      // Register before Vite can serve the SPA fallback with status 200.
-      viteServer.middlewares.use((request, response, next) => {
-        if (new URL(request.url ?? "/", origin).pathname !== "/__visual_ready") return next();
-        response.statusCode = ready ? 200 : 503;
-        response.setHeader("Content-Type", "text/plain");
-        response.end(ready ? "ready" : "preparing");
-      });
-    },
-  }],
+const server = await preview({
+  configFile: false,
+  mode: "development", build: { outDir },
+  preview: { host: "127.0.0.1", port: 5178, strictPort: true, proxy: {} },
+  plugins: [{ name: "visual-readiness", configurePreviewServer(viteServer) {
+    viteServer.middlewares.use((request, response, next) => {
+      if (new URL(request.url ?? "/", origin).pathname !== "/__visual_ready") return next();
+      response.statusCode = ready ? 200 : 503;
+      response.setHeader("Content-Type", "text/plain");
+      response.end(ready ? "ready" : "preparing");
+    });
+  } }],
 });
+const close = () => new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()));
 for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, async () => {
-  await server.close();
-  process.exit(0);
+  await close(); process.exit(0);
 });
-
 try {
-  await server.listen();
   for (const entry of ["/src/test/visual/index.html", "/src/test/visual/session.html", "/index.html"]) {
     const response = await fetch(new URL(entry, origin));
-    if (!response.ok || !response.headers.get("Content-Type")?.includes("text/html")) {
+    if (!response.ok || !response.headers.get("Content-Type")?.includes("text/html"))
       throw new Error("Visual HTML readiness failed: " + entry);
-    }
     await response.arrayBuffer();
-  }
-  const queue = [...roots];
-  const visited = new Set();
-  while (queue.length) {
-    const modulePath = queue.shift();
-    if (visited.has(modulePath)) continue;
-    visited.add(modulePath);
-    const url = new URL(modulePath, origin);
-    if (url.origin !== origin || url.pathname.startsWith("/api/")) throw new Error("Visual warmup requires a local module URL.");
-    // Match a browser import: JSON must be transformed, not served as data.
-    const response = await fetch(url, { headers: { "Sec-Fetch-Dest": "script" } });
-    if (!response.ok) throw new Error("Visual module readiness failed (" + response.status + "): " + url.pathname);
-    if (response.headers.get("Content-Type")?.includes("text/html")) throw new Error("Visual module returned HTML: " + url.pathname);
-    await response.arrayBuffer();
-    const module = await server.environments.client.moduleGraph.getModuleByUrl(modulePath);
-    if (module && !module.transformResult) throw new Error("Visual module was not transformed: " + url.pathname);
-    for (const dependency of module?.importedModules ?? []) {
-      // Vite marks Tailwind watch files/globs as assets, not browser modules.
-      if (dependency.type === "asset") continue;
-      const dependencyUrl = dependency.id?.startsWith("\0")
-        ? "/@id/" + dependency.id.replaceAll("\0", "__x00__")
-        : dependency.url;
-      queue.push(dependencyUrl);
-    }
   }
   ready = true;
-  console.log("Visual catalogue modules ready: " + visited.size);
+  console.log("Visual test bundle ready.");
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Visual catalogue startup failed.");
-  await server.close();
-  process.exitCode = 1;
+  await close(); process.exitCode = 1;
 }

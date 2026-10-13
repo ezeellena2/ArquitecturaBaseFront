@@ -44,7 +44,7 @@ for (const lang of ["es", "en"] as const) {
   });
 
   test(`route import failure recovers WhatsApp ${lang}`, async ({ page }) => {
-    const module = "**/src/features/whatsapp/pages/WhatsAppChatPage.tsx";
+    const module = /\/(?:src\/features\/whatsapp\/pages\/WhatsAppChatPage\.tsx|assets\/WhatsAppChatPage-[^/]+\.js)(?:\?.*)?$/;
     await page.route(module, route => route.abort("failed"));
     await page.goto(`/src/test/visual/index.html?screen=/whatsapp/chat&scenario=chat&lang=${lang}`);
     await expect(page.getByRole("heading", { name: lang === "es" ? "No pudimos abrir esta pantalla" : "We could not open this page", exact: true })).toBeVisible();
