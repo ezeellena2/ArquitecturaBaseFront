@@ -15,7 +15,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeEnabled();
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
     await expect(page.getByText(label("Cambios sin guardar", "Unsaved changes"), { exact: true })).toHaveCount(0);
-    await expect(page.getByText(label("Dado de baja", "Inactive"), { exact: true })).toBeVisible();
+    await expect(page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) }).getByText(label("Dado de baja", "Inactive"), { exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath("catalog-inactive.png"), fullPage: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.getByRole("button", { name: label("Reactivar", "Reactivate"), exact: true }).click();
