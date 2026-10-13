@@ -387,3 +387,8 @@ Se compara antes de programar; el laboratorio se borra al decidir.
 | Paso de página | **Flechas** con nombre completo en `aria-label` |
 | Alta y edición de un rol | **Pantalla propia** |
 | Chat de Inicio | **assistant-ui** |
+
+
+## Pendiente de compilación CSS — 2026-10-12
+
+Al verificar el arnés compilado se comprobó que la optimización de Tailwind transforma el reinicio `translate: 0 0` del panel de conversaciones en `transform: translate(0)`, mientras las utilidades del diálogo conservan su traslación individual; el panel móvil queda desplazado. La misma transformación está en `dist`. K7 no cambia el build productivo ni ese diseño. Su corrección queda pendiente del sistema visual; el catálogo de pruebas conserva explícitamente los estilos de desarrollo elegidos, sin actualizar referencias para aceptar la diferencia.

@@ -81,3 +81,6 @@ El ámbito [BusinessForms](../src/features/business-forms/AGENTS.md) también co
 K6 amplía el mismo ámbito BusinessForms: choice con source.catalog o opciones manuales, guard/binding por identidad, reemplazo de fuente confirmado y paths de validación ligados al cuerpo. La preview no resuelve opciones. CatalogQuestionSelector compone los controles comunes y lecturas por actor/permisos/cultura, con selección inválida visible/deshabilitada y confirmación de cambio; contratos HTTP nuevos y recorrido real siguen pendientes del cierre K6; K7/Meta quedan fuera de este corte.
 
 K7 amplía WhatsApp dentro de su ámbito existente: preparación de catálogos por destinatario y referencias históricas en el chat, rechazo seguro y reenvío manual. El productor exporta cuerpos intactos a fixtures/whatsapp-catalogs-http; el consumidor valida DTOs y procedencia. chatCatalogs.spec usa las rutas/componentes reales con transporte simulado, sin Meta.
+
+
+Actualización K7, 2026-10-12: K6/K7 están implementados y verificados localmente; el resumen vigente de Etapa 2 conserva Meta real y los pendientes heredados. Las cohortes HTTP actuales se exportan desde el backend. El ámbito visual compila sólo sus entradas en artefactos ignorados, conserva CSS de desarrollo y sirve sin proxy a la API real; el build productivo no incorpora el laboratorio. Fuente: `src/test/visual/AGENTS.md`.

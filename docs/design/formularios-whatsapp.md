@@ -303,3 +303,10 @@ Las respuestas de la Etapa 1 ya se guardan con su versión y su número: cuando 
 | Íconos | `shared/ui/icons`; faltan el del formulario (portapapeles) y el de arrastre |
 
 Una pieza que no exista se sube a `shared/ui` con su prueba, no se dibuja local en la feature.
+
+
+## Cierre local de K7 (2026-10-12)
+
+El diálogo del chat prepara los catálogos para la cuenta vinculada: muestra conteos y bloquea catálogo no disponible, más de 200 opciones o lista obligatoria vacía, conservando el mensaje. La respuesta muestra texto, catálogo y detalle históricos; sin `formrecords.read` oculta los valores. La baja Manual nombra sólo la pregunta y no muestra registro ni número; «Mandar de nuevo» abre el compositor y requiere otra confirmación. El ancho intermedio mantiene legible la conversación y permite volver al listado.
+
+Verificación final: **1614/1614** unitarios, **7/7** consumidores de cuerpos HTTP exportados, build y lint/arquitectura **48/48**, visual completa **398/398** con tres workers y referencias intactas. Se revisaron capturas representativas de K7 en es/en a 1440/390/320 y 900 px. El navegador usa datos/transporte simulados; backend SQL y webhook se acreditan por separado. El arnés sirve una compilación aislada con estilos de desarrollo, sin proxy a la API real. Meta queda pendiente de realizarlo con el usuario; el alcance vigente está en el resumen de la etapa.
