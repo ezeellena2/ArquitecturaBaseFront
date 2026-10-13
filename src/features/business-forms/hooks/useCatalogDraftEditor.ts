@@ -105,7 +105,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
       return saved;
     } catch (error) {
       if (!accepts(owner, controller)) return;
-      const review = writing && captured.id !== null && (error instanceof ApiError ? error.code === "Forms.Catalog.RevisionConflict" || error.isNetworkError || error.status >= 500 : true);
+      const review = writing && captured.id !== null && error instanceof ApiError && error.status === 409;
       setState(value => ({ ...value, busy: false, error, requiresReview: review }));
     } finally {
       if (operation.current === controller) { operation.current = null; if (active.current && ownerRef.current === owner) setState(value => ({ ...value, busy: false })); }

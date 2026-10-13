@@ -78,16 +78,38 @@ describe("Manual catalog editor ownership", () => {
     expect(result.current.draft).toBeNull();
     expect(result.current.canSave).toBe(false);
   });
-  it("keeps the draft and requires reread after a possibly committed server failure", async () => {
-    let calls = 0;
-    server.use(http.put("/api/forms/catalogs/" + id, () => { calls++; return HttpResponse.json({}, { status: 500 }); }));
+  it.each(["network", "500", "503"])("keeps a draft retryable after %s and repeats the expected revision", async failure => {
+    const bodies: unknown[] = [];
+    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => {
+      bodies.push(await request.json());
+      return bodies.length === 1 ? failure === "network" ? HttpResponse.error() : HttpResponse.json({}, { status: Number(failure) })
+        : HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {} });
+    }));
     const { result } = renderHook(() => useCatalogDraftEditor(scope, initial), harness());
     act(() => result.current.changeMetadata({ name: { es: "Privado", en: "Private" } }));
     await act(() => result.current.save());
-    await act(() => result.current.save());
-    expect(calls).toBe(1);
     expect(result.current.draft!.name.es).toBe("Privado");
+    expect(result.current.requiresReview).toBe(false);
+    expect(result.current.canSave).toBe(true);
+    await act(() => result.current.save());
+    expect(bodies).toHaveLength(2);
+    expect(bodies[1]).toEqual(bodies[0]);
+    expect(bodies[0]).toMatchObject({ expectedRevision: 1 });
+    expect(result.current.saved!.catalog.revision).toBe(2);
+  });
+  it("requires review only when an explicit retry returns 409 after a lost save response", async () => {
+    let calls = 0;
+    server.use(http.put("/api/forms/catalogs/" + id, () => ++calls === 1 ? HttpResponse.error()
+      : HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, initial), harness());
+    act(() => result.current.changeMetadata({ name: { es: "Conservar", en: "Keep" } }));
+    await act(() => result.current.save());
+    expect(result.current.requiresReview).toBe(false);
+    await act(() => result.current.save());
     expect(result.current.requiresReview).toBe(true);
+    expect(result.current.draft!.name.es).toBe("Conservar");
+    await act(() => result.current.save());
+    expect(calls).toBe(2);
   });
   it("resets loaded originals and pending values when the catalog identity changes", () => {
     const nextId = "01990000-0000-7000-8000-000000000022";
