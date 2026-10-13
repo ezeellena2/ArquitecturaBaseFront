@@ -90,6 +90,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
     await screen.findByText("Pérez");
     expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Dar de baja" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Agregar opción" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Editar Pérez" })).not.toBeInTheDocument();
   });
@@ -285,3 +286,27 @@ it("keeps sample search focused and enabled while its next page is loading", asy
   expect(text).toHaveValue("active");
   expect(input).toHaveFocus();
  });
+
+it.each([false, true])("saves and reloads deactivation and reactivation for Filters=%s", async filters => {
+  if (filters) filterSetup(); else setup();
+  let detail = filters ? filtersDetail : initial; const bodies: unknown[] = [];
+  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(detail)),
+    http.put("/api/forms/catalogs/" + id + (filters ? "/filters" : ""), async ({ request }) => {
+      const body = await request.json() as { isActive: boolean; expectedRevision: number }; bodies.push(body);
+      detail = { ...detail, isActive: body.isActive, revision: body.expectedRevision + 1 };
+      return HttpResponse.json({ catalog: detail, itemIdentityMap: {} });
+    }), http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })));
+  await mount("/catalogos/" + id); const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Dar de baja" }));
+  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Dar de baja" }));
+  expect(bodies).toHaveLength(0);
+  await user.click(screen.getByRole("button", { name: "Guardar" }));
+  await waitFor(() => expect(detail.isActive).toBe(false));
+  cleanup(); queryClient.clear(); await mount("/catalogos/" + id);
+  await user.click(await screen.findByRole("button", { name: "Reactivar" }));
+  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Reactivar" }));
+  if (filters) await selectSample();
+  await user.click(screen.getByRole("button", { name: "Guardar" }));
+  await waitFor(() => expect(detail.isActive).toBe(true));
+  expect(bodies).toMatchObject([{ expectedRevision: 1, isActive: false }, { expectedRevision: 2, isActive: true }]);
+});

@@ -17,7 +17,7 @@ export interface ManualCatalogBody {
   readonly items: readonly CatalogManualItemBody[];
 }
 export interface CatalogItemMove { readonly itemId: string; readonly direction: "up" | "down" }
-export interface UpdateManualCatalogBody extends ManualCatalogBody { readonly expectedRevision: number; readonly moves?: readonly CatalogItemMove[] }
+export interface UpdateManualCatalogBody extends ManualCatalogBody { readonly expectedRevision: number; readonly isActive?: boolean; readonly moves?: readonly CatalogItemMove[] }
 export interface CatalogItemsQuery {
   readonly page: number;
   readonly pageSize: number;
@@ -56,4 +56,4 @@ export async function fetchCatalogFilterOptions(query: CatalogFilterOptionsQuery
 }
 export const previewCatalogFilters = async (body: CatalogFilterPreviewBody, signal?: AbortSignal) => readCatalogFilterPreview(await api.post<unknown>("/api/forms/catalog-previews", body, { signal }));
 export const createFiltersCatalog = async (body: FiltersCatalogBody, signal?: AbortSignal) => readCatalogFiltersSave(await api.post<unknown>("/api/forms/catalogs/filters", body, { signal }));
-export const updateFiltersCatalog = async (id: string, body: FiltersCatalogBody & { readonly expectedRevision: number }, signal?: AbortSignal) => readCatalogFiltersSave(await api.put<unknown>(`/api/forms/catalogs/${catalogId(id)}/filters`, body, { signal }), id, body.expectedRevision);
+export const updateFiltersCatalog = async (id: string, body: FiltersCatalogBody & { readonly expectedRevision: number; readonly isActive?: boolean }, signal?: AbortSignal) => readCatalogFiltersSave(await api.put<unknown>(`/api/forms/catalogs/${catalogId(id)}/filters`, body, { signal }), id, body.expectedRevision);

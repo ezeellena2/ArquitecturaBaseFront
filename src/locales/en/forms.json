@@ -234,6 +234,12 @@
   "questionLimit": "You can add up to {{count}} questions. Remove one to add another.",
   "savingLeave": "We are saving the draft. Wait for the result before leaving.",
   "catalogs": {
+    "lifecycle": {
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "deactivateHint": "When saved, this catalog will no longer be offered in new forms. Previous responses are preserved.",
+      "reactivateHint": "When saved, this catalog will become available for forms again."
+    },
     "new": "New catalog",
     "origin": {
       "label": "Where the options come from",

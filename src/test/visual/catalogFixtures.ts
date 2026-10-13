@@ -46,14 +46,14 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
         if (index >= 0 && target >= 0 && target < items.length) { const item = items.splice(index, 1)[0]!; items.splice(target, 0, item); }
       }
       items = items.map((item, index) => ({ ...item, position: index + 1 }));
-      catalog = { ...catalog, name: { ...body.name }, description: { ...body.description }, revision: request.method === "POST" ? 1 : catalog.revision + 1, itemsCount: items.length };
+      catalog = { ...catalog, name: { ...body.name }, description: { ...body.description }, isActive: "isActive" in body ? body.isActive ?? catalog.isActive : catalog.isActive, revision: request.method === "POST" ? 1 : catalog.revision + 1, itemsCount: items.length };
       return json({ catalog, itemIdentityMap }, request.method === "POST" ? 201 : 200);
     }
     reads.push(url.pathname + url.search);
     if (url.pathname.endsWith("/items")) return json(page(items.filter(item => !url.searchParams.get("search") || item.text.es?.toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())), url.searchParams));
     if (url.pathname === "/api/forms/catalogs") {
-      const matches = (!url.searchParams.get("search") || catalog.name[culture].toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === "Active");
-      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Manual") ? [{ id: catalog.id, name: catalog.name[culture], description: catalog.description[culture], origin: "Manual", optionsCount: items.length, usageCount: null, state: "Active", stateReason: null, canEdit: scenario !== "catalogs-read" }] : [];
+      const matches = (!url.searchParams.get("search") || catalog.name[culture].toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === (catalog.isActive ? "Active" : "Inactive"));
+      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Manual") ? [{ id: catalog.id, name: catalog.name[culture], description: catalog.description[culture], origin: "Manual", optionsCount: items.length, usageCount: null, state: catalog.isActive ? "Active" : "Inactive", stateReason: null, canEdit: scenario !== "catalogs-read" }] : [];
       return json({ ...page(rows, url.searchParams), filterCounts: { byKind: { all: matches ? 1 : 0, manual: matches ? 1 : 0, filters: 0 } } });
     }
     return json(catalog);
@@ -68,7 +68,7 @@ function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
   if (missingRole) catalog = { ...catalog, filters: { ...filterPreviewRequest.filters, conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000699" }] } };
   let conflict = scenario === "catalogs-filters-conflict";
   const people = [...filterOptions.sampleUsers.items, ...Array.from({ length: 22 }, (_, index) => ({ id: "01990000-0000-7000-8000-" + String(index + 200).padStart(12, "0"), name: "Persona de muestra " + String(index + 1).padStart(2, "0") }))];
-  const writes: { method: string; body: FiltersCatalogBody & { expectedRevision?: number } }[] = [];
+  const writes: { method: string; body: FiltersCatalogBody & { expectedRevision?: number; isActive?: boolean } }[] = [];
   const previews: CatalogFilterPreviewBody[] = []; const reads: string[] = [];
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
   const paged = <T,>(rows: readonly T[], params: URLSearchParams) => { const page = Number(params.get("page") ?? 1), pageSize = Number(params.get("pageSize") ?? 20), totalPages = Math.ceil(rows.length / pageSize); return { items: rows.slice((page - 1) * pageSize, page * pageSize), page, pageSize, totalCount: rows.length, totalPages, hasPrevious: page > 1, hasNext: page < totalPages }; };
@@ -91,16 +91,16 @@ function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
       return json({ items: rows, totalCount: rows.length, exceedsLimit: false });
     }
     if (request.method === "POST" || request.method === "PUT") {
-      const body = await request.json() as FiltersCatalogBody & { expectedRevision?: number }; writes.push({ method: request.method, body });
+      const body = await request.json() as FiltersCatalogBody & { expectedRevision?: number; isActive?: boolean }; writes.push({ method: request.method, body });
       if (readOnly) return json({ code: "Authorization.Forbidden" }, 403);
       if (request.method === "PUT" && conflict) { conflict = false; catalog = { ...catalog, revision: 2, name: { es: "Personas actuales", en: "Current people" } }; return json({ code: "Forms.Catalog.RevisionConflict" }, 409); }
       if (body.expectedRevision !== undefined && body.expectedRevision !== catalog.revision) return json({ code: "Forms.Catalog.RevisionConflict" }, 409);
-      catalog = { ...catalog, name: { ...body.name }, description: { ...body.description }, filters: { ...body.filters, conditions: body.filters.conditions.map(condition => ({ ...condition })) }, revision: request.method === "POST" ? 1 : catalog.revision + 1, unavailableReasonCode: null };
+      catalog = { ...catalog, name: { ...body.name }, description: { ...body.description }, filters: { ...body.filters, conditions: body.filters.conditions.map(condition => ({ ...condition })) }, isActive: body.isActive ?? catalog.isActive, revision: request.method === "POST" ? 1 : catalog.revision + 1, unavailableReasonCode: null };
       return json({ catalog, itemIdentityMap: {} }, request.method === "POST" ? 201 : 200);
     }
     reads.push(url.pathname + url.search);
     if (url.pathname === "/api/forms/catalogs") {
-      const state = "Active";
+      const state = catalog.isActive ? "Active" : "Inactive";
       const matches = (!url.searchParams.get("search") || catalog.name[culture].toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === state);
       const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Filters") ? [{ id: catalog.id, name: catalog.name[culture], description: catalog.description[culture], origin: "Filters", optionsCount: null, usageCount: null, state, stateReason: null, canEdit: !readOnly }] : [];
       return json({ ...paged(rows, url.searchParams), filterCounts: { byKind: { all: matches ? 1 : 0, manual: 0, filters: matches ? 1 : 0 } } });

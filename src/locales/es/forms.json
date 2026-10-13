@@ -234,6 +234,12 @@
   "questionLimit": "Podés agregar hasta {{count}} preguntas. Quitá una para agregar otra.",
   "savingLeave": "Estamos guardando el borrador. Esperá el resultado antes de salir.",
   "catalogs": {
+    "lifecycle": {
+      "deactivate": "Dar de baja",
+      "reactivate": "Reactivar",
+      "deactivateHint": "Al guardar, este catálogo dejará de ofrecerse en formularios nuevos. Las respuestas anteriores se conservan.",
+      "reactivateHint": "Al guardar, este catálogo volverá a estar disponible para los formularios."
+    },
     "new": "Nuevo catálogo",
     "origin": {
       "label": "De dónde salen las opciones",

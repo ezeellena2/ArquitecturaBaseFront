@@ -21,6 +21,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { CatalogDetail } from "../api/catalogResponse";
 import { openCatalogFilters } from "../catalogFilterDraft";
 import { CatalogFiltersEditor } from "../components/CatalogFiltersEditor";
+import { CatalogStateAction } from "../components/CatalogStateAction";
 import { CatalogMetadataFields } from "../components/CatalogMetadataFields";
 import { useCatalogDraftEditor, type CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogFilterOptions } from "../hooks/useCatalogQueries";
@@ -69,16 +70,16 @@ export function CatalogFiltersEditorPage({ scope, initial }: { scope: CatalogRea
     choices: column.choices ?? undefined })) ?? [];
   const view = { key: "users", label: t("catalogs.filters.users") };
   const save = async () => {
-    if (!sample || !editor.canSave) return;
-    const saved = await editor.save(sample.id);
+    if (!editor.canSave || (draft?.isActive && !sample)) return;
+    const saved = await editor.save(sample?.id);
     if (!saved || !active.current) return;
     notify({ id: feedbackId, kind: "success", message: t("catalogs.saved") });
     if (!initial) { guard.allowNextNavigation(); void navigate("/catalogos/" + saved.catalog.id, { replace: true }); }
   };
   if (!draft?.filters || [editor.error, options.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   const samples = options.data?.sampleUsers;
-  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={editor.dirty ? <span className="text-xs text-[var(--color-content-muted)]">{t("dirty")}</span> : undefined}
-    actions={canManage ? <><Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={!editor.canSave || !sample} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
+  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{t(draft.isActive ? "catalogs.states.Active" : "catalogs.states.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
+    actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={!editor.canSave || (draft.isActive && !sample)} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
     {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><div><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("review")}</Button></div></Surface> : null}
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">

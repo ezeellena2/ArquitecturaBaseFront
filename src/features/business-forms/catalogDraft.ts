@@ -6,6 +6,7 @@ import { openCatalogFilters } from "./catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "./components/CatalogFiltersEditor";
 
 export interface CatalogDraft {
+  readonly isActive: boolean;
   readonly kind: "Manual" | "Filters";
   readonly filters: CatalogFiltersEditorValue | null;
   readonly id: string | null;
@@ -17,7 +18,7 @@ export interface CatalogDraft {
 }
 export function openCatalogDraft(catalog?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual"): CatalogDraft {
   const origin = catalog?.kind ?? kind;
-  return { kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: catalog ? { ...catalog.name } : { es: "", en: "" }, description: catalog ? { ...catalog.description } : { es: "", en: "" }, items: newCatalogItemEdits(), moves: [] };
+  return { isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: catalog ? { ...catalog.name } : { es: "", en: "" }, description: catalog ? { ...catalog.description } : { es: "", en: "" }, items: newCatalogItemEdits(), moves: [] };
 }
 export function catalogItemValue(item: CatalogItem): CatalogManualItemValue {
   // A persisted UUID is also a valid local correlation key. UI identity prefixes never enter a body.
@@ -35,5 +36,5 @@ export function stageCatalogDraftMove(draft: CatalogDraft, itemId: string, direc
 }
 export function catalogDraftUpdateBody(draft: CatalogDraft): UpdateManualCatalogBody {
   if (!draft.id || draft.revision === null) throw new Error("An unsaved catalog cannot be updated.");
-  return { ...catalogDraftBody(draft), expectedRevision: draft.revision, ...(draft.moves.length ? { moves: draft.moves.map(move => ({ ...move })) } : {}) };
+  return { ...catalogDraftBody(draft), expectedRevision: draft.revision, isActive: draft.isActive, ...(draft.moves.length ? { moves: draft.moves.map(move => ({ ...move })) } : {}) };
 }

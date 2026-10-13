@@ -23,6 +23,7 @@ import type { CatalogDetail } from "../api/catalogResponse";
 import { catalogItemValue } from "../catalogDraft";
 import { catalogItemChanges, currentCatalogItem } from "../catalogItemEdits";
 import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor";
+import { CatalogStateAction } from "../components/CatalogStateAction";
 import { CatalogMetadataFields } from "../components/CatalogMetadataFields";
 import { useCatalogDraftEditor, type CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
@@ -131,8 +132,8 @@ function ManualCatalogEditor({ scope, initial }: { scope: CatalogReadScope; init
   const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
   if (!draft || [editor.error, items.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
-  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={editor.dirty ? <span className="text-xs text-[var(--color-content-muted)]">{t("dirty")}</span> : undefined}
-    actions={canManage ? <><Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
+  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{t(draft.isActive ? "catalogs.states.Active" : "catalogs.states.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
+    actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
     <div className="flex flex-col gap-4">
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button></Surface> : null}
       <CatalogMetadataFields name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} />
