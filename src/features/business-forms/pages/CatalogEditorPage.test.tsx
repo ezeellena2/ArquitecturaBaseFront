@@ -302,6 +302,7 @@ it.each([false, true])("saves and reloads deactivation and reactivation for Filt
   expect(bodies).toHaveLength(0);
   await user.click(screen.getByRole("button", { name: "Guardar" }));
   await waitFor(() => expect(detail.isActive).toBe(false));
+  expect(await screen.findByText("Dado de baja", { exact: true })).toBeInTheDocument();
   cleanup(); queryClient.clear(); await mount("/catalogos/" + id);
   await user.click(await screen.findByRole("button", { name: "Reactivar" }));
   await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Reactivar" }));
