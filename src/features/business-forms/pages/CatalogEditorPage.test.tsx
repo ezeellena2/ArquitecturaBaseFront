@@ -266,7 +266,22 @@ it("keeps sample search focused and enabled while its next page is loading", asy
   }));
   await mount("/catalogos/" + id); const user = userEvent.setup(); const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
   await waitFor(() => expect(input).toBeEnabled());
-  try { await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); }
+  try { await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); expect(screen.getByRole("combobox", { name: "Texto de cada opción" })).toBeInTheDocument(); expect(searches).toBe(1); }
   finally { release(); }
   expect(await screen.findByRole("option", { name: "Persona buscada" })).toBeInTheDocument();
 });
+
+ it("preserves the filters editor and its draft when sample search fails", async () => {
+  filterSetup();
+  server.use(http.get("/api/forms/catalog-filter-options", ({ request }) => new URL(request.url).searchParams.get("search")
+    ? HttpResponse.json({}, { status: 503 }) : HttpResponse.json(readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)))));
+  await mount("/catalogos/" + id); const user = userEvent.setup();
+  const text = await screen.findByRole("combobox", { name: "Texto de cada opción" });
+  await user.selectOptions(text, "active");
+  const input = screen.getByRole("combobox", { name: "Como si lo recibiera" });
+  await user.type(input, "Sin respuesta");
+  await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([message]) => message.kind === "error")).toBe(true));
+  expect(screen.getByRole("combobox", { name: "Texto de cada opción" })).toBe(text);
+  expect(text).toHaveValue("active");
+  expect(input).toHaveFocus();
+ });

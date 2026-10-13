@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { createQueryClient } from "@/shared/api/queryClient";
-import { useCatalogDetail, useCatalogItems } from "./useCatalogQueries";
+import { useCatalogDetail, useCatalogItems, useCatalogFilterOptions } from "./useCatalogQueries";
+
+import options from "@/test/fixtures/catalogs-http/filters/options.json";
 
 const id = "01990000-0000-7000-8000-000000000020";
 const detail = { id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
@@ -45,4 +47,15 @@ describe("Private catalog reads", () => {
     expect(result.current.data).toBeUndefined();
     expect(calls).toBe(0);
   });
+});
+
+it("retains filter metadata only within the same actor, culture and permissions", async () => {
+  server.use(http.get("/api/forms/catalog-filter-options", () => HttpResponse.json(options)));
+  const { result, rerender } = renderHook(({ actorId, permissions }) => useCatalogFilterOptions({ ...scope, actorId, permissions }, { page: 1, pageSize: 20 }),
+    { ...harness(), initialProps: { actorId: "actor-a", permissions: ["formcatalogs.read", "formcatalogs.manage"] } });
+  await waitFor(() => expect(result.current.data?.columns).toHaveLength(3));
+  rerender({ actorId: "actor-b", permissions: ["formcatalogs.read"] });
+  expect(result.current.data).toBeUndefined();
+  rerender({ actorId: "actor-b", permissions: [] });
+  expect(result.current.data).toBeUndefined();
 });

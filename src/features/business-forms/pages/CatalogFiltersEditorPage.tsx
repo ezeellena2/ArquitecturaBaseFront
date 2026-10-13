@@ -32,10 +32,12 @@ export function CatalogFiltersEditorPage({ scope, initial }: { scope: CatalogRea
   const [culture, setCulture] = useState<FormCulture>("es");
   const [sample, setSample] = useState<{ id: string; name: string } | null>(null);
   const [sampleName, setSampleName] = useState(""); const [search, setSearch] = useState(""); const [samplePage, setSamplePage] = useState(1);
+  const [settledSearch, setSettledSearch] = useState("");
+  useEffect(() => { const timer = setTimeout(() => { setSettledSearch(search); setSamplePage(1); }, 300); return () => clearTimeout(timer); }, [search]);
   const [previousManage, setPreviousManage] = useState(scope.permissions.includes("formcatalogs.manage"));
   const [handledValidation, setHandledValidation] = useState<unknown>(null);
   const [reviewOpen, setReviewOpen] = useState(false); const [discardOpen, setDiscardOpen] = useState(false);
-  const options = useCatalogFilterOptions(scope, { page: samplePage, pageSize: 20, sort: "name", search });
+  const options = useCatalogFilterOptions(scope, { page: samplePage, pageSize: 20, sort: "name", search: settledSearch });
   const canManage = scope.permissions.includes("formcatalogs.manage");
   const draft = editor.draft; const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
   const feedbackId = "catalogs:filters:" + useId(); const active = useRef(true);
@@ -81,15 +83,16 @@ export function CatalogFiltersEditorPage({ scope, initial }: { scope: CatalogRea
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">
         <CatalogMetadataFields name={draft.name} description={draft.description} culture={culture} onCultureChange={setCulture} canManage={canManage && !editor.requiresReview} busy={editor.busy} origin="Filters" errors={fields} onChange={editor.changeMetadata} />
-        {options.isPending ? <Spinner /> : options.data ? <CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={canManage && !editor.requiresReview} busy={editor.busy} errors={fields} onChange={editor.changeFilters} /> : <EmptyState title={t("catalogs.filters.optionsFailed")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} />}
+        {!options.data && options.isPending ? <Spinner /> : options.data ? <CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={canManage && !editor.requiresReview} busy={editor.busy} errors={fields} onChange={editor.changeFilters} /> : <EmptyState title={t("catalogs.filters.optionsFailed")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} />}
       </div>
       <Surface title={t("catalogs.filters.previewTitle")} padded>
         {canManage ? <>
           <FormField label={t("catalogs.filters.sample")} hint={t("catalogs.filters.sampleHint")} error={fields["sampleUserId"]?.join(" ")}>
-            <Autocomplete value={sampleName} disabled={editor.busy || editor.requiresReview} options={samples?.items.map(person => ({ id: person.id, label: person.name })) ?? []}
-              onValueChange={value => { setSampleName(value); setSearch(value); setSample(null); setSamplePage(1); editor.clearPreview(); }}
+            <Autocomplete value={sampleName} aria-busy={options.isFetching} disabled={editor.busy || editor.requiresReview} options={samples?.items.map(person => ({ id: person.id, label: person.name })) ?? []}
+              onValueChange={value => { setSampleName(value); setSearch(value); setSample(null); editor.clearPreview(); }}
               onSelect={id => { const person = samples?.items.find(person => person.id === id); if (person) { setSample(person); setSampleName(person.name); editor.clearPreview(); } }} />
           </FormField>
+          {options.error && options.data ? <div><Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button></div> : null}
           {samples ? <Pagination {...samples} onPageChange={setSamplePage} /> : null}
           <div><Button variant="outline" disabled={!sample || editor.busy || editor.requiresReview} onClick={() => { if (sample) void editor.preview(sample.id); }}>{t("catalogs.filters.test")}</Button></div>
           {editor.busy ? <Spinner /> : editor.previewResult && !editor.previewResult.exceedsLimit ? <>

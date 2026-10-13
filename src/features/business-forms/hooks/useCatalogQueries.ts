@@ -46,5 +46,11 @@ export function useCatalogPage(scope: CatalogReadScope, query: CatalogListQuery,
 export function useCatalogFilterOptions(scope: CatalogReadScope, query: CatalogFilterOptionsQuery) {
   const root = [...catalogScopeKey(scope), "filter-options"] as const;
   usePrivateCleanup(root);
-  return useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogFilterOptions(query, signal), enabled: canRead(scope), gcTime: 0, meta: { errorOwner: "local" } });
+  const owner = JSON.stringify(root);
+  const [lastLoaded, setLastLoaded] = useState<{ owner: string; data: Awaited<ReturnType<typeof fetchCatalogFilterOptions>> } | null>(null);
+  const options = useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogFilterOptions(query, signal), enabled: canRead(scope),
+    placeholderData: (previous, previousQuery) => JSON.stringify(previousQuery?.queryKey.slice(0, root.length)) === owner ? keepPreviousData(previous) : undefined,
+    gcTime: 0, meta: { errorOwner: "local" } });
+  if (options.data && !options.isPlaceholderData && (lastLoaded?.owner !== owner || lastLoaded.data !== options.data)) setLastLoaded({ owner, data: options.data });
+  return { ...options, data: options.data ?? (lastLoaded?.owner === owner ? lastLoaded.data : undefined) };
 }
