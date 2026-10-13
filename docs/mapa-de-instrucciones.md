@@ -84,3 +84,5 @@ K7 amplía WhatsApp dentro de su ámbito existente: preparación de catálogos p
 
 
 Actualización K7, 2026-10-12: K6/K7 están implementados y verificados localmente; el resumen vigente de Etapa 2 conserva Meta real y los pendientes heredados. Las cohortes HTTP actuales se exportan desde el backend. El ámbito visual compila sólo sus entradas en artefactos ignorados, conserva CSS de desarrollo y sirve sin proxy a la API real; el build productivo no incorpora el laboratorio. Fuente: `src/test/visual/AGENTS.md`.
+
+Actualización de catálogos, 2026-10-13: el ámbito `src/features/business-forms/AGENTS.md` incluye baja/reactivación en el Guardar común, revisión sólo por 409 y conservación de metadata/foco al buscar personas. `src/test/visual/AGENTS.md` cubre el nuevo recorrido `catalogReview.spec.ts`, con el mismo arnés y sin proveedores reales.
