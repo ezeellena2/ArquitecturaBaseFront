@@ -1,5 +1,7 @@
 import path from "node:path";
 import { build, preview } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 const origin = "http://127.0.0.1:5178";
 const root = process.cwd();
@@ -8,12 +10,15 @@ if (!outDir.startsWith(root + path.sep)) throw new Error("Visual output must sta
 // Test entries stay outside the product build. Bundling avoids hundreds of ESM
 // requests per navigation and Windows ERR_NO_BUFFER_SPACE during complete runs.
 await build({
+  configFile: false, plugins: [react(), tailwindcss({ optimize: false })],
+  resolve: { alias: { "@": path.resolve(root, "src") } },
   mode: "development",
   define: { "process.env.NODE_ENV": JSON.stringify("development") },
-  build: { target: "esnext", outDir, emptyOutDir: true, sourcemap: false,
+  build: { target: "esnext", outDir, emptyOutDir: true, sourcemap: false, cssMinify: false,
     rollupOptions: { input: {
       main: path.resolve(root, "index.html"), silentRenew: path.resolve(root, "silent-renew.html"),
       visual: path.resolve(root, "src/test/visual/index.html"), session: path.resolve(root, "src/test/visual/session.html"),
+      designLab: path.resolve(root, "design-lab/whatsapp-chat/index.html"),
     } },
   },
 });
