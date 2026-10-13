@@ -1,4 +1,4 @@
-import { test, expect } from "./test";
+import { test, expect } from "@playwright/test";
 
 for (const lang of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
   test(`internal assistant conversations ${lang} ${width}`, async ({ page }) => {

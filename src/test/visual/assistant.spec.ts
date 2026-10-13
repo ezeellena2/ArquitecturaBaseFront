@@ -1,4 +1,4 @@
-import { test, expect } from "./test";
+import { test, expect } from "@playwright/test";
 import { assistantFixtureConversationId } from "./assistantFixtures";
 type AssistantTestWindow = Window & {
   assistantTestState: { fail: boolean; reads: number; deletions: number };

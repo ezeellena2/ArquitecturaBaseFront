@@ -1,4 +1,4 @@
-import {test,expect} from "./test";
+import {test,expect} from "@playwright/test";
 import {fixtureFormId,responseBudgetDefinition} from "./formFixtures";
 for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  test(`A2 blocked publication locates the question with keyboard focus ${lang} at ${width}px`,async({page})=>{

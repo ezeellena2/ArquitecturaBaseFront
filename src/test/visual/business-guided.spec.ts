@@ -1,4 +1,4 @@
-import { expect, test } from "./test";
+import { expect, test } from "@playwright/test";
 for (const language of ["es","en"] as const) for (const width of [1440,390,320]) {
   test(`guided business editor ${language} at ${width}px saves location, hours and FAQ`,async({ page, baseURL }) => {
     if (!baseURL) throw new Error("A base URL is required for the visual suite.");

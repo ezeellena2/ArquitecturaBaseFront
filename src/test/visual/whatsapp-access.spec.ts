@@ -1,4 +1,4 @@
-import { expect, test } from "./test";
+import { expect, test } from "@playwright/test";
 
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
   test(`access events reuse the chat safely at ${width}px in ${language}`, async ({ page }) => {

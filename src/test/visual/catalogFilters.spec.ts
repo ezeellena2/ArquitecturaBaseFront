@@ -1,4 +1,4 @@
-import { expect, test } from "./test";
+import { expect, test } from "@playwright/test";
 import seedOptions from "../fixtures/catalogs-http/filters/options.json" with { type: "json" };
 import seedDetail from "../fixtures/catalogs-http/filters/detail.json" with { type: "json" };
 import seedPreviewRequest from "../fixtures/catalogs-http/filters/preview-request.json" with { type: "json" };

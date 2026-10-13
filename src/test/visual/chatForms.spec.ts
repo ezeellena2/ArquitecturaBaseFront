@@ -1,4 +1,4 @@
-import {test,expect,type Page} from "./test";
+import {test,expect,type Page} from "@playwright/test";
 import esWA from "../../locales/es/whatsapp.json" with { type: "json" };
 import enWA from "../../locales/en/whatsapp.json" with { type: "json" };
 import esCommon from "../../locales/es/common.json" with { type: "json" };

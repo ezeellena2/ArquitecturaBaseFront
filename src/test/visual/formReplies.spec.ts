@@ -1,4 +1,4 @@
-import { expect, test } from "./test";
+import { expect, test } from "@playwright/test";
 for (const lang of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
   test("R1 R2 R3 pure form replies " + lang + " at " + width + "px", async ({ page }) => {
     const en = lang === "en";

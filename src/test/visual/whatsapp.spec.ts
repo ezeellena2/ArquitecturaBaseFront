@@ -1,4 +1,4 @@
-import { expect, test } from "./test";
+import { expect, test } from "@playwright/test";
 
 for (const language of ["es", "en"] as const) {
   test(`the shared message catalog loads delivery labels in ${language} at 320px`, async ({ page }) => {
