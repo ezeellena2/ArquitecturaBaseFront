@@ -1,4 +1,7 @@
-import { act, screen, within } from "@testing-library/react";
+import {http,HttpResponse} from "msw";
+import {server} from "@/test/mocks/server";
+import catalogRaw from "@/test/fixtures/catalogs-http/manual-current/detail.json?raw";
+import { act, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -71,6 +74,9 @@ it("names catalog questions consistently when reviewing a source replacement", a
   const current: FormDefinitionSnapshot = { ...definition, draft: { ...definition.draft, fields: [{ fieldId: "catalog-field", key: "field_catalog", type: "choice", source: { catalog: "01990000-0000-7000-8000-000000000091" }, label: { es: "Cliente" }, help: null, required: true }] } };
   const opened = openDraftSession({ actorId: "actor", editorId: "editor" }, current).value;
   const mine = { ...opened, draft: { ...opened.draft, fields: [changeQuestionCatalog(opened.draft.fields[0]!, "01990000-0000-7000-8000-000000000092", "new-local")] } };
-  await act(async () => { renderWithProviders(<DraftReview value={mine} definition={current} culture="es" open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
+  const catalog=JSON.parse(catalogRaw) as {name:{es:string;en:string}};
+  server.use(http.get("/api/forms/catalogs/:id",({params})=>{ return HttpResponse.json({...catalog,id:params.id,key:String(params.id).replaceAll("-","")}); }));
+  await act(async () => { renderWithProviders(<DraftReview catalogScope={{actorId:"actor",culture:"es",permissions:["formcatalogs.read"]}} value={mine} definition={current} culture="es" open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
   expect(within(screen.getByRole("dialog")).queryAllByText(/Elegir de un catálogo/)).toHaveLength(2);
+  await waitFor(()=>expect(screen.getAllByText("· "+catalog.name.es)).toHaveLength(2));
 });
