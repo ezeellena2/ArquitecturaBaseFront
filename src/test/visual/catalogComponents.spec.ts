@@ -44,8 +44,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("button", { name: es ? "Editar Pérez Hnos." : "Edit Pérez Hnos.", exact: true })).toBeFocused();
     await page.getByRole("button", { name: es ? "Usuarios, con filtros" : "Users with filters", exact: true }).click();
     const column = page.getByRole("combobox", { name: es ? "Texto de cada opción" : "Option text", exact: true });
-    await column.selectOption("role");
-    await expect(column).toHaveValue("role");
+    await expect(column).toHaveValue("name");
+    await expect(column.locator("option")).toHaveCount(1);
+    const detail = page.getByRole("combobox", { name: es ? "Detalle" : "Detail", exact: true });
+    await detail.selectOption("active");
+    await expect(detail).toHaveValue("active");
     const exclude = page.getByRole("checkbox", { name: es ? "Sin incluir a quien lo recibe" : "Exclude the recipient" });
     await exclude.focus();
     await page.keyboard.press("Space");

@@ -285,12 +285,15 @@ it("keeps sample search focused and enabled while its next page is loading", asy
     ? HttpResponse.json({}, { status: 503 }) : HttpResponse.json(readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)))));
   await mount("/catalogos/" + id); const user = userEvent.setup();
   const text = await screen.findByRole("combobox", { name: "Texto de cada opción" });
-  await user.selectOptions(text, "active");
+  const detail = screen.getByRole("combobox", { name: "Detalle" });
+  await user.selectOptions(detail, "active");
   const input = screen.getByRole("combobox", { name: "Como si lo recibiera" });
   await user.type(input, "Sin respuesta");
   await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([message]) => message.kind === "error")).toBe(true));
   expect(screen.getByRole("combobox", { name: "Texto de cada opción" })).toBe(text);
-  expect(text).toHaveValue("active");
+  expect(text).toHaveValue("name");
+  expect(screen.getByRole("combobox", { name: "Detalle" })).toBe(detail);
+  expect(detail).toHaveValue("active");
   expect(input).toHaveFocus();
  });
 
