@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { act, cleanup, screen } from "@testing-library/react";
+import { act, cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
@@ -33,8 +33,9 @@ describe("Chosen Users filters editor K4", () => {
   it("offers only the supplied columns and preserves the selected recipient rule", async () => {
     const { user, onChange } = await mount();
     expect(screen.queryByRole("option", { name: /correo|contraseña/i })).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Texto de cada opción" }), "role");
-    expect(onChange.mock.lastCall?.[0]).toEqual({ ...initial, textColumn: "role" });
+    expect(within(screen.getByRole("combobox", { name: "Texto de cada opción" })).getAllByRole("option").map(option => option.getAttribute("value"))).toEqual(["name"]);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Detalle" }), "active");
+    expect(onChange.mock.lastCall?.[0]).toEqual({ ...initial, detailColumn: "active" });
     expect(screen.getByRole("checkbox", { name: "Sin incluir a quien lo recibe" })).toBeChecked();
   });
   it("changes one condition's value without replacing other identities or configuration", async () => {

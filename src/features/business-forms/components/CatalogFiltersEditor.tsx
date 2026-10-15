@@ -38,6 +38,7 @@ export function CatalogFiltersEditor({ view, columns, value, canManage, busy = f
   const { t } = useTranslation("forms");
   const disabled = !canManage || busy;
   const displayColumns = columns.filter(column => column.canDisplay !== false);
+  const textColumns = displayColumns.filter(column => column.key === "name");
   const filterColumns = columns.filter(column => column.canFilter !== false && column.operators.length > 0);
   const sortColumns = columns.filter(column => column.canSort !== false);
   const changeCondition = (localId: string, changes: Partial<CatalogFiltersEditorValue["conditions"][number]>) => onChange({ ...value, conditions: value.conditions.map(condition => condition.localId === localId ? { ...condition, ...changes } : condition) });
@@ -46,7 +47,7 @@ export function CatalogFiltersEditor({ view, columns, value, canManage, busy = f
       <FormField label={t("catalogs.filters.view")} hint={t("catalogs.filters.columns", { names: displayColumns.map(column => column.label).join(", ") })}>
         <NativeSelect value={view.key} disabled><option value={view.key}>{view.label}</option></NativeSelect>
       </FormField>
-      <FormField label={t("catalogs.filters.textColumn")} error={errors["filters.textColumn"]?.join(" ")}><NativeSelect disabled={disabled} value={value.textColumn} onChange={event => onChange({ ...value, textColumn: event.target.value })}>{!displayColumns.some(column => column.key === value.textColumn) ? <option value={value.textColumn}>{t("catalogs.filters.unavailableColumn")}</option> : null}{displayColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</NativeSelect></FormField>
+      <FormField label={t("catalogs.filters.textColumn")} error={errors["filters.textColumn"]?.join(" ")}><NativeSelect disabled={disabled} value={value.textColumn} onChange={event => onChange({ ...value, textColumn: event.target.value })}>{!textColumns.some(column => column.key === value.textColumn) ? <option value={value.textColumn}>{t("catalogs.filters.unavailableColumn")}</option> : null}{textColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</NativeSelect></FormField>
       <FormField label={t("catalogs.items.detail")} error={errors["filters.detailColumn"]?.join(" ")}><NativeSelect disabled={disabled} value={value.detailColumn ?? ""} onChange={event => onChange({ ...value, detailColumn: event.target.value || null })}><option value="">{t("catalogs.filters.noDetail")}</option>{value.detailColumn !== null && !displayColumns.some(column => column.key === value.detailColumn) ? <option value={value.detailColumn}>{t("catalogs.filters.unavailableColumn")}</option> : null}{displayColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</NativeSelect></FormField>
     </div>
     <div className="flex flex-col gap-3"><p className="text-sm font-medium">{t("catalogs.filters.conditions")}</p>
