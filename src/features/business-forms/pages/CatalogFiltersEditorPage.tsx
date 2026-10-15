@@ -57,7 +57,7 @@ export function CatalogFiltersEditorPage({ scope, initial }: { scope: CatalogRea
     if (!error) { dismissNotification(feedbackId); return; }
     const feedback = errorFeedback(error, { writing: !!editor.error, fields: JSON.parse(fieldPathsStamp) as string[], conflictCodes: ["Forms.Catalog.RevisionConflict"] });
     if (["cancelled", "session", "forbidden", "fields", "conflict"].includes(feedback.kind)) return;
-    notify({ id: feedbackId, kind: "error", message: editor.error ? operationalErrorMessage(error, t) : readErrorMessage(error, t) });
+    notify({ id: feedbackId, kind: "error", message: editor.error ? operationalErrorMessage(error, t, "save") : readErrorMessage(error, t) });
   }, [editor.error, options.error, fieldPathsStamp, feedbackId, t]);
   useEffect(() => { if (editor.previewResult?.exceedsLimit) notify({ id: feedbackId, kind: "warning", message: t("catalogs.filters.exceedsLimit") }); }, [editor.previewResult, feedbackId, t]);
   if (handledValidation !== editor.error) {

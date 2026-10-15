@@ -237,7 +237,7 @@
     "lifecycle": {
       "deactivate": "Dar de baja",
       "reactivate": "Reactivar",
-      "deactivateHint": "Al guardar, este catálogo dejará de ofrecerse en formularios nuevos. Las respuestas anteriores se conservan.",
+      "deactivateHint": "Al guardar, este catálogo no se podrá elegir en preguntas nuevas y tampoco se podrán mandar los formularios publicados que lo usan. Las respuestas anteriores se conservan.",
       "reactivateHint": "Al guardar, este catálogo volverá a estar disponible para los formularios."
     },
     "new": "Nuevo catálogo",

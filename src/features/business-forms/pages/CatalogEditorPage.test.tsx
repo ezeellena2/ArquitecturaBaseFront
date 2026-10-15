@@ -305,6 +305,7 @@ it.each([false, true])("saves and reloads deactivation and reactivation for Filt
     }), http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })));
   await mount("/catalogos/" + id); const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Dar de baja" }));
+  expect(within(screen.getByRole("dialog")).getByText(/tampoco se podrán mandar los formularios publicados/)).toBeInTheDocument();
   await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Dar de baja" }));
   expect(bodies).toHaveLength(0);
   await user.click(screen.getByRole("button", { name: "Guardar" }));
@@ -328,4 +329,18 @@ it("marks the complete unrepresentable person in the filter preview", async () =
   await userEvent.click(screen.getByRole("button", {name:"Probar"}));
   expect(await screen.findByText(longName)).toBeInTheDocument();
   expect(screen.getByText("No entra en WhatsApp: máximo 30 caracteres de texto y 300 de detalle.")).toBeInTheDocument();
+});
+
+it.each([false,true].flatMap(filters=>["network",500,503].map(failure=>({filters,failure}))))("offers explicit save after $failure for Filters=$filters", async ({filters,failure}) => {
+  if(filters)filterSetup();else setup();
+  const detail={...(filters?filtersDetail:initial),isActive:false}; let writes=0;
+  server.use(http.get("/api/forms/catalogs/"+id,()=>HttpResponse.json(detail)),
+    http.put("/api/forms/catalogs/"+id+(filters?"/filters":""),()=>++writes===1?(failure==="network"?HttpResponse.error():HttpResponse.json({traceId:"catalog-save"},{status:Number(failure)})):HttpResponse.json({catalog:{...detail,revision:2},itemIdentityMap:{}})));
+  await mount("/catalogos/"+id);
+  await userEvent.type(await screen.findByRole("textbox",{name:"Nombre"})," editado");
+  await userEvent.click(screen.getByRole("button",{name:"Guardar"}));
+  await waitFor(()=>expect(vi.mocked(notify).mock.calls.some(([notice])=>notice.kind==="error"&&notice.message.includes("Volvé a guardar."))).toBe(true));
+  expect(screen.queryByRole("button",{name:"Revisar"})).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button",{name:"Guardar"}));
+  await waitFor(()=>expect(writes).toBe(2));
 });

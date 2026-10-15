@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "./ApiError";
-import { errorFeedback } from "./errorFeedback";
+import { errorFeedback, operationalErrorMessage } from "./errorFeedback";
 
 describe("errorFeedback", () => {
   it("distinguishes cancellation, server waiting and public access errors", () => {
@@ -23,4 +23,11 @@ describe("errorFeedback", () => {
     expect(errorFeedback(new ApiError(403, {})).kind).toBe("forbidden");
     expect(errorFeedback(new ApiError(409, { code: "Settings.System.RevisionConflict" }), { conflictCodes: ["Settings.System.RevisionConflict"] }).kind).toBe("conflict");
   });
+});
+
+it("preserves the default review recovery and lets internal configuration retry explicitly",()=>{
+  const t=(key:string)=>key;
+  expect(operationalErrorMessage(ApiError.network(),t)).toBe("common:errors.writeUncertain");
+  expect(operationalErrorMessage(ApiError.network(),t,"save")).toBe("common:errors.saveRetry");
+  expect(operationalErrorMessage(new ApiError(503,{}),t,"save")).toBe("common:errors.saveRetry");
 });

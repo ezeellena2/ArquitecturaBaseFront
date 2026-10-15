@@ -237,7 +237,7 @@
     "lifecycle": {
       "deactivate": "Deactivate",
       "reactivate": "Reactivate",
-      "deactivateHint": "When saved, this catalog will no longer be offered in new forms. Previous responses are preserved.",
+      "deactivateHint": "When saved, this catalog cannot be chosen in new questions, and published forms using it cannot be sent. Previous responses are preserved.",
       "reactivateHint": "When saved, this catalog will become available for forms again."
     },
     "new": "New catalog",

@@ -15,9 +15,9 @@ export function errorFeedback(error: unknown, options: { writing?: boolean; publ
   return { kind, fields, detail: apiError?.detail, traceId: apiError?.traceId, retryAfterSeconds: apiError?.retryAfterSeconds, network: apiError?.isNetworkError ?? false };
 }
 
-export function operationalErrorMessage(error: unknown, t: (key: string, options?: Record<string, unknown>) => string): string {
+export function operationalErrorMessage(error: unknown, t: (key: string, options?: Record<string, unknown>) => string, recovery: "review" | "save" = "review"): string {
   const feedback = errorFeedback(error, { writing: true });
-  if (feedback.kind === "uncertain") return t("common:errors.writeUncertain", { traceId: feedback.traceId ?? "?" });
+  if (feedback.kind === "uncertain") return t(recovery === "save" ? "common:errors.saveRetry" : "common:errors.writeUncertain", { traceId: feedback.traceId ?? "?" });
   return feedback.detail ?? t("common:states.error");
 }
 

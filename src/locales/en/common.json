@@ -44,7 +44,8 @@
       "title": "We couldn't find this page",
       "description": "Check the address or go back to the dashboard."
     },
-    "writeUncertain": "We could not confirm the outcome. Check the current state before repeating the operation. Reference: {{traceId}}"
+    "writeUncertain": "We could not confirm the outcome. Check the current state before repeating the operation. Reference: {{traceId}}",
+    "saveRetry": "We could not confirm the save. Save again. Reference: {{traceId}}"
   },
   "language": {
     "label": "Language",

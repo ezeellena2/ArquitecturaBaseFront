@@ -102,7 +102,7 @@ function ManualCatalogEditor({ scope, initial }: { scope: CatalogReadScope; init
     if (!error) { dismissNotification(feedbackId); return; }
     const feedback = errorFeedback(error, { writing: !!editor.error, fields: ["name.es", "name.en", "description.es", "description.en", ...JSON.parse(itemErrorPathsStamp) as string[]], conflictCodes: ["Forms.Catalog.RevisionConflict"] });
     if (["cancelled", "session", "forbidden", "fields", "conflict"].includes(feedback.kind)) return;
-    notify({ id: feedbackId, kind: "error", message: editor.error ? operationalErrorMessage(error, t) : readErrorMessage(error, t) });
+    notify({ id: feedbackId, kind: "error", message: editor.error ? operationalErrorMessage(error, t, "save") : readErrorMessage(error, t) });
   }, [editor.error, items.error, feedbackId, t, itemErrorPathsStamp]);
   if (editor.error !== handledValidation) {
     setHandledValidation(editor.error);

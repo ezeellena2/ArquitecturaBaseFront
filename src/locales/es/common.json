@@ -44,7 +44,8 @@
       "title": "No encontramos esta página",
       "description": "Revisá la dirección o volvé al tablero."
     },
-    "writeUncertain": "No pudimos confirmar el resultado. Revisá el estado actual antes de repetir la operación. Referencia: {{traceId}}"
+    "writeUncertain": "No pudimos confirmar el resultado. Revisá el estado actual antes de repetir la operación. Referencia: {{traceId}}",
+    "saveRetry": "No pudimos confirmar el guardado. Volvé a guardar. Referencia: {{traceId}}"
   },
   "language": {
     "label": "Idioma",
