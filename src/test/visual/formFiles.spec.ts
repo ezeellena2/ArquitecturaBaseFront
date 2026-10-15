@@ -31,5 +31,14 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
   await expect(page.getByText(en?"Each photo or document question starts its own screen. Following questions can share it.":"Cada pregunta de foto o documento abre su propia pantalla. Las preguntas siguientes pueden compartirla.")).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   await page.screenshot({path:`test-results/form-files-editor-${lang}-${width}.png`,fullPage:true});
+  await page.getByRole("button",{name:en?"Edit Site photos":"Editar Fotos de la obra",exact:true}).click();
+  const maximum=page.getByRole("spinbutton",{name:en?"Maximum":"Máximo",exact:true});
+  const save=page.getByRole("button",{name:en?"Save draft":"Guardar borrador",exact:true});
+  await maximum.fill("");
+  await expect(maximum).toHaveValue("");await expect(maximum).toHaveAttribute("aria-invalid","true");await expect(save).toBeDisabled();
+  await maximum.fill("2.5");await expect(save).toBeDisabled();
+  await page.screenshot({path:`test-results/form-files-counts-invalid-${lang}-${width}.png`,fullPage:true});
+  await maximum.fill("4");await expect(maximum).not.toHaveAttribute("aria-invalid","true");await expect(save).toBeEnabled();
+
  });
 }
