@@ -1,4 +1,5 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { focusManager } from "@tanstack/react-query";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse,http } from "msw";
 import { beforeAll,afterEach,expect,it,vi } from "vitest";
@@ -21,6 +22,10 @@ it("downloads only thumbnails until opened and restores focus after arrows and E
  await waitFor(()=>expect(paths.length).toBe(2));expect(paths.every(p=>p.endsWith("/thumbnail"))).toBe(true);
  await userEvent.click(first);await screen.findByRole("dialog",{name:"Fotos"});
  await waitFor(()=>expect(paths.some(p=>p.endsWith("/content"))).toBe(true));
+ await screen.findByRole("img",{name:"private.png"});
+ expect(paths.filter(p=>p.endsWith("/thumbnail"))).toHaveLength(2);
+ await act(async()=>{focusManager.setFocused(false);focusManager.setFocused(true);});
+ expect(paths.filter(p=>p.endsWith("/thumbnail"))).toHaveLength(2);
  fireEvent.keyDown(screen.getByRole("dialog"),{key:"ArrowRight"});
  expect(await screen.findByText("Foto 2 de 2 · VIS-000001")).toBeInTheDocument();
  fireEvent.keyDown(screen.getByRole("dialog"),{key:"Escape"});
