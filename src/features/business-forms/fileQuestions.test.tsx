@@ -1,5 +1,6 @@
-import { act, screen, within } from "@testing-library/react";
-import { expect, it } from "vitest";
+import { formScreens } from "./fileQuestions";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import { expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { FormPreview } from "./components/FormPreview";
 import { QuestionEditor } from "./components/QuestionEditor";
@@ -31,4 +32,24 @@ it("previews one new screen for each file question and keeps following scalar qu
   await act(async () => { renderWithProviders(<FormPreview culture="es" value={{ name: { es: "Visita" }, prefix: "VIS", draft: { format: 1, culture: "es", submitLabel: { es: "Confirmar" }, fields } }} />); });
   expect(screen.getByText("Vista previa · pantalla 1 de 3")).toBeInTheDocument();
   expect(within(screen.getByRole("region", { name: "Vista previa" })).getByRole("button", { name: "Continuar" })).toBeEnabled();
+});
+
+it("partitions screens without mutating questions or inventing empty intermediate screens", () => {
+  const questions = Object.freeze([newQuestion("shortText", "es", "scalar"), newQuestion("photo", "es", "photo"),
+    newQuestion("document", "es", "document"), newQuestion("longText", "es", "notes")]);
+  const result = formScreens(questions);
+  expect(result.map(screen => screen.map(question => question.localId))).toEqual([["scalar"], ["photo"], ["document", "notes"]]);
+  expect(result.flat()).toEqual(questions);
+  expect(result[1]![0]).toBe(questions[1]);
+  expect(formScreens([])).toEqual([[]]);
+  expect(formScreens([questions[1]!, questions[2]!]).map(screen => screen.length)).toEqual([1, 1]);
+});
+it.each(["photo", "document"] as const)("enables %s when form-files is available and creates its settings", async type => {
+  const onChange = vi.fn();
+  await act(async () => { renderWithProviders(<QuestionEditor question={newQuestion("shortText", "es", "a")} position={1} total={1}
+    culture="es" original="es" expanded readOnly={false} issues={[]} onChange={onChange} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} filesAvailable />); });
+  expect(screen.getByRole("option", { name: "Foto" })).toBeEnabled();
+  expect(screen.getByRole("option", { name: "Documento" })).toBeEnabled();
+  fireEvent.change(screen.getByRole("combobox", { name: "Tipo de respuesta" }), { target: { value: type } });
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ type, files: expect.objectContaining({ minFiles: 0, maxFiles: 1 }) }));
 });

@@ -102,3 +102,30 @@ it.each([[5,"Ver 1 foto más"],[8,"Ver 4 fotos más"]])("pluralizes the extra-ph
  renderWithProviders(<FormReplyCard actor="actor" reply={{...reply,values:[{id,label:"Fotos",answer:{type:"photo",value:files}}]}}/>);
  expect(screen.getByRole("button",{name:String(label)})).toBeInTheDocument();
 });
+
+it("requests a document only on download and saves its verified name without rendering it inline", async () => {
+  const documentName = "José acta.pdf";
+  const bytes = new Uint8Array([37, 80, 68, 70]);
+  const requests: string[] = [];
+  Object.defineProperty(URL, "createObjectURL", { configurable: true, value: vi.fn(() => "blob:document") });
+  Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+    expect(this.download).toBe(documentName);
+    expect(this.href).toBe("blob:document");
+  });
+  server.use(http.get("/api/forms/records/:record/files/:file/content", ({ request }) => {
+    requests.push(request.url);
+    return new HttpResponse(bytes, { headers: { "content-type": "application/pdf" } });
+  }));
+  renderWithProviders(<FormReplyCard actor="actor" reply={{ ...reply, values: [{ id, label: "Documento", answer: {
+    type: "document", value: [{ ...photo, name: documentName, contentType: "application/pdf", hasThumbnail: false }],
+  } }] }} />);
+  expect(requests).toHaveLength(0);
+  await userEvent.click(screen.getByRole("button", { name: "Descargar" }));
+  await waitFor(() => expect(click).toHaveBeenCalledOnce());
+  expect(requests).toHaveLength(1);
+  const blob = vi.mocked(URL.createObjectURL).mock.calls[0]![0] as Blob;
+  expect(blob.size).toBe(bytes.byteLength);
+  expect(blob.type).toContain("application/pdf");
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
+});
