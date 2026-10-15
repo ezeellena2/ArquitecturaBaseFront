@@ -219,7 +219,7 @@ describe("Manual catalog editor ownership", () => {
 });
 
 const filterInitial: CatalogDetail = { ...initial, kind: "Filters", filters: { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: true, sortColumn: "name", sortDescending: false } };
-const previewResult = { items: [{ id: itemId, text: "Ana", detail: null }], totalCount: 1, exceedsLimit: false };
+const previewResult = { items: [{ id: itemId, text: "Ana", detail: null, canSend:true }], totalCount: 1, exceedsLimit: false };
 describe("Filters catalog editor", () => {
   it("tests the chosen sample before saving configuration and clears the dirty baseline", async () => {
     const events: string[] = []; const writes: unknown[] = []; const h = harness();

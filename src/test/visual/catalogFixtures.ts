@@ -86,6 +86,7 @@ function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
       if (readOnly) return json({ code: "Authorization.Forbidden" }, 403);
       if (scenario === "catalogs-filters-limit") return json({ items: [], totalCount: 201, exceedsLimit: true });
       if (missingRole) return json({ items: [], totalCount: 0, exceedsLimit: false });
+      if (scenario === "catalogs-filters-long") return json({items:[{id:visualCatalogId,text:"Long display name that exceeds WhatsApp limits",detail:null,canSend:false}],totalCount:1,exceedsLimit:false});
       const active = culture === "es" ? "Activo" : "Active";
       const rows = filterPreview.items.filter(item => !body.filters.excludeRecipient || item.id !== body.sampleUserId).map(item => ({ ...item, text: body.filters.textColumn === "active" ? active : item.text, detail: body.filters.detailColumn === "active" ? active : body.filters.detailColumn === null ? null : item.detail }));
       return json({ items: rows, totalCount: rows.length, exceedsLimit: false });

@@ -23,7 +23,7 @@ const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: t
     expect(readCatalogFilterOptions({ ...response, sampleUsers: null }).sampleUsers).toBeNull();
   });
   it("reads preview items and the explicit limit result", () => {
-    const response = { items: [{ id, text: "Ana Pérez", detail: null }], totalCount: 1, exceedsLimit: false };
+    const response = { items: [{ id, text: "Ana Pérez", detail: null, canSend:true }], totalCount: 1, exceedsLimit: false };
     expect(readCatalogFilterPreview(response)).toEqual(response);
     expect(readCatalogFilterPreview({ items: [], totalCount: 201, exceedsLimit: true })).toEqual({ items: [], totalCount: 201, exceedsLimit: true });
   });

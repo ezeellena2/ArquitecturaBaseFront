@@ -136,17 +136,22 @@ it("prepares recipient catalogs and shows their counts before sending", async ()
   expect(posts[0]).not.toHaveProperty("catalogs");
 });
 
-it.each(["CatalogEmpty", "CatalogTooLarge", "CatalogUnavailable"])("blocks %s without losing either draft", async reason => {
+it.each([
+  ["CatalogEmpty","Cliente: no tiene opciones y la pregunta es obligatoria."],
+  ["CatalogTooLarge","Cliente: supera las 200 opciones que admite WhatsApp. Ajustá el catálogo antes de mandar."],
+  ["CatalogUnavailable","Cliente: el catálogo no se puede usar. Avisale a quien lo administra."],
+  ["CatalogOptionInvalid","Cliente: 2 opciones de Clientes no entran en WhatsApp. Revisá sus textos y detalles."],
+])("blocks %s without losing either draft", async (reason, expected) => {
   options[0] = {...options[0], hasCatalogQuestions:true};
   server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => HttpResponse.json({
     culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:false,catalogs:[],issues:[{
-      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record."+reason,catalogName:null,invalidOptionCount:null,
+      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record."+reason,catalogName:"Clientes",invalidOptionCount:reason==="CatalogOptionInvalid"?2:null,
     }]},
   })));
   const dialog = await openForm();
   const message = within(dialog).getByRole("textbox", {name:"Mensaje que lo acompaña"});
   fireEvent.change(message, {target:{value:"Mensaje intacto"}});
-  expect(await within(dialog).findByText(/Cliente:/)).toBeInTheDocument();
+  expect(await within(dialog).findByText(expected)).toBeInTheDocument();
   expect(within(dialog).getByRole("button", {name:"Enviar formulario"})).toBeDisabled();
   expect(message).toHaveValue("Mensaje intacto");
   expect(posts).toEqual([]);

@@ -57,7 +57,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await sampleInput.fill(""); await sample(); await page.getByRole("button", { name: label("Probar", "Test"), exact: true }).click();
     await expect(page.getByText(seedPreview.items[0]!.text, { exact: true })).toBeVisible();
     await geometry(); await page.screenshot({ path: info.outputPath("filters-preview.png"), fullPage: true });
-    await page.getByRole("combobox", { name: label("Texto de cada opción", "Option text"), exact: true }).selectOption("active");
+    await page.getByRole("combobox", { name: label("Detalle", "Detail"), exact: true }).selectOption("active");
     await page.getByRole("button", { name: label("Probar", "Test"), exact: true }).click();
     const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
     await expect(preview.getByText(label("Activo", "Active"), { exact: true })).toBeVisible();
@@ -114,5 +114,22 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await sample(); await expect(page.getByRole("button", { name: label("Probar", "Test"), exact: true })).toBeEnabled();
     await savedRole.scrollIntoViewIfNeeded(); await geometry(); await page.screenshot({ path: info.outputPath("filters-missing-role.png"), fullPage: true });
 
+  });
+}
+
+for (const language of ["es","en"] as const) for (const width of [1440,390,320]) {
+  test(`Filters incompatible option stays complete ${language} ${width}`,async({page},info)=>{
+    await page.setViewportSize({width,height:900});
+    const es=language==="es";
+    await page.goto("/src/test/visual/index.html?"+new URLSearchParams({screen:"/catalogos/"+visualCatalogId,lang:language,scenario:"catalogs-filters-long"}));
+    await page.getByRole("combobox",{name:es?"Como si lo recibiera":"As if received by",exact:true}).click();
+    await page.getByRole("option",{name:seedOptions.sampleUsers.items.find(person=>person.id===seedPreviewRequest.sampleUserId)!.name,exact:true}).click();
+    await page.getByRole("button",{name:es?"Probar":"Test",exact:true}).click();
+    await expect(page.getByText("Long display name that exceeds WhatsApp limits",{exact:true})).toBeVisible();
+    const warning=page.getByText(es?"No entra en WhatsApp: máximo 30 caracteres de texto y 300 de detalle.":"Does not fit in WhatsApp: up to 30 characters of text and 300 of detail.",{exact:true});
+    await expect(warning).toBeVisible();
+    await warning.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await page.screenshot({path:info.outputPath("filters-unrepresentable.png"),fullPage:true});
   });
 }

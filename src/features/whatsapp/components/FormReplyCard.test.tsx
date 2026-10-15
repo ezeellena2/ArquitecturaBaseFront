@@ -65,3 +65,10 @@ it("offers manual resend for an inactive catalog item without exposing selected 
   expect(resends).toBe(1);
   expect(screen.queryByText(/Guardada como/)).not.toBeInTheDocument();
 });
+
+it.each(["Forms.Record.CatalogOptionInvalid","WhatsApp.Flow.CaptureFailed","Forms.Record.InvalidResponse","Unknown.Code"])("keeps a safe rejection message for %s",code=>{
+  renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Registrar visita",rejectionCode:code}} />);
+  expect(screen.getByText("No pudimos guardar la respuesta del formulario. Podés escribirle o mandárselo de nuevo.")).toBeInTheDocument();
+  expect(screen.queryByText(code)).not.toBeInTheDocument();
+  expect(screen.queryByRole("button",{name:"Mandar de nuevo"})).not.toBeInTheDocument();
+});
