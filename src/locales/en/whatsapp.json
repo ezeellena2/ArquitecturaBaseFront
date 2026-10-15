@@ -169,7 +169,11 @@
       "downloading": "We received the form. We are downloading the files from WhatsApp and saving the reply.",
       "retryingFiles": "We are trying to download the files again. No action is needed.",
       "filesUnavailable": "We could not download the files from WhatsApp. The reply was not saved. You can send the form again.",
-      "filesRejected": "A file does not meet the allowed type, size or content. The reply was not saved."
+      "filesRejected": "A file does not meet the allowed type, size or content. The reply was not saved.",
+      "receiving": "Receiving form",
+      "downloadingCount_one": "Received {{count}} file. Downloading it from WhatsApp and saving the response.",
+      "downloadingCount_other": "Received {{count}} files. Downloading them from WhatsApp and saving the response.",
+      "filesRejectedQuestion": "Could not save the file for “{{label}}”. The response was not saved."
     },
     "catalogs": {
       "loading": "Preparing options for this person…",

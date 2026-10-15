@@ -70,3 +70,20 @@ it("names a failed thumbnail accessibly without clipping an error sentence into 
  const unavailable=await screen.findByRole("button",{name:"Ver private.png · No se pudo cargar el archivo."});
  expect(unavailable.textContent).not.toContain("No se pudo");
 });
+
+it("shows the received date in the photo footer using the account time zone",async()=>{
+ server.use(http.get("/api/forms/records/:record/files/:file/:kind",()=>new HttpResponse(new Uint8Array([1]),{headers:{"content-type":"image/png"}})));
+ renderWithProviders(<FormReplyCard actor="actor" timeZone="America/Buenos_Aires" reply={{...reply,receivedAtUtc:"2026-10-15T12:00:00Z"}}/>);
+ await userEvent.click(await screen.findByRole("button",{name:"Ver private.png"}));
+ const expected=new Intl.DateTimeFormat("es",{dateStyle:"medium",timeStyle:"short",timeZone:"America/Buenos_Aires"}).format(new Date("2026-10-15T12:00:00Z"));
+ expect(await screen.findByText(expected)).toBeInTheDocument();
+});
+it("names the rejected question and counts received files without showing their values",()=>{
+ renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Content.InvalidType",rejectedQuestion:"Comprobante"}}/>);
+ expect(screen.getByText(/Comprobante/)).toBeInTheDocument();
+});
+it("shows an explicit receiving title and the file count when the session is still being identified",()=>{
+ renderWithProviders(<FormReplyCard reply={{state:"Downloading",name:null,fileCount:2}}/>);
+ expect(screen.getByText("Recibiendo formulario")).toBeInTheDocument();
+ expect(screen.getByText(/Recibimos 2 archivos/)).toBeInTheDocument();
+});

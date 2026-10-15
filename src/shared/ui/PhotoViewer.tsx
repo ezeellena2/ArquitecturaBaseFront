@@ -8,9 +8,9 @@ import { IconButton } from "./IconButton";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 
 // Presentation only: the authorized consumer owns content, loading and downloads.
-export function PhotoViewer({title,description,name,size,index,count,blob,loading,thumbnails,onIndex,onClose,onDownload,downloading,focusFallback}: {
+export function PhotoViewer({title,description,name,size,index,count,blob,loading,thumbnails,onIndex,onClose,onDownload,downloading,focusFallback,date}: {
  title:string;description:string;name:string;size:string;index:number;count:number;blob?:Blob;loading:boolean;thumbnails:ReactNode;
- onIndex:(index:number)=>void;onClose:()=>void;onDownload:()=>void;downloading?:boolean;focusFallback?:RefObject<HTMLElement|null>;
+ onIndex:(index:number)=>void;onClose:()=>void;onDownload:()=>void;downloading?:boolean;date?:string;focusFallback?:RefObject<HTMLElement|null>;
 }) {
  const {t}=useTranslation();const restoreFocus=useRestoreFocusOnClose(true,focusFallback);
  return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-5xl" onCloseAutoFocus={restoreFocus}
@@ -22,6 +22,6 @@ export function PhotoViewer({title,description,name,size,index,count,blob,loadin
    <div className="absolute inset-y-0 right-1 flex items-center"><IconButton variant="outline" label={t("files.next")} disabled={index===count-1} onClick={()=>onIndex(index+1)}><ChevronRightIcon className="size-5"/></IconButton></div>
   </div>
   <div className="flex justify-start gap-2 overflow-x-auto sm:justify-center border-b p-3">{thumbnails}</div>
-  <DialogFooter className="flex-col items-center gap-3 p-4 sm:flex-row"><div className="min-w-0 flex-1 text-sm"><p className="break-words">{name}</p><p className="text-xs text-[var(--color-content-muted)]">{size}</p></div><Button type="button" variant="outline" disabled={downloading||!blob} onClick={onDownload}>{t("files.download")}</Button></DialogFooter>
+  <DialogFooter className="flex-col items-center gap-3 p-4 sm:flex-row"><div className="min-w-0 flex-1 text-sm"><p className="break-words">{name}</p><p className="text-xs text-[var(--color-content-muted)]">{size}</p>{date?<p className="text-xs text-[var(--color-content-muted)]">{date}</p>:null}</div><Button type="button" variant="outline" disabled={downloading||!blob} onClick={onDownload}>{t("files.download")}</Button></DialogFooter>
  </DialogContent></Dialog>;
 }

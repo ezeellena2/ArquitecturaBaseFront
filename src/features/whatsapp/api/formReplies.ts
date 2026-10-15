@@ -27,16 +27,17 @@ const value = z.discriminatedUnion('type', [
     .refine(value=>(value.catalogId===undefined)===(value.catalogName===undefined) && (value.detail===undefined||value.catalogId!==undefined)).nullable() }),
 ]);
 const values = z.array(value).refine(rows => new Set(rows.map(row => row.fieldId)).size === rows.length && new Set(rows.map(row => row.key)).size === rows.length);
+const fileMetadata = { fileCount:z.number().int().nonnegative().optional(), receivedAtUtc:z.iso.datetime().optional() };
 const historical = { definitionId: guid, versionId: guid, versionNumber: z.number().int().positive().max(Number.MAX_SAFE_INTEGER), name: text };
 const optionalHistorical = { definitionId: guid.nullable(), versionId: guid.nullable(), versionNumber: historical.versionNumber.nullable(), name: text.nullable() };
 const noRecord = { recordId: z.null(), number: z.null(), values: z.null() };
 const schema = z.discriminatedUnion('state', [
-  z.strictObject({ state: z.literal('Completed'), ...historical, recordId: guid, number, values: values.nullable() }),
-  z.strictObject({ state: z.literal('Pending'), ...optionalHistorical, ...noRecord }),
-  z.strictObject({ state: z.literal('Downloading'), ...optionalHistorical, ...noRecord }),
-  z.strictObject({ state: z.literal('RetryingFiles'), ...optionalHistorical, ...noRecord }),
-  z.strictObject({ state: z.literal('Rejected'), ...optionalHistorical, ...noRecord, rejectionCode:text.optional(), rejectedQuestion:text.optional() }),
-  z.strictObject({ state: z.literal('Unrecognized'), definitionId: z.null(), versionId: z.null(), versionNumber: z.null(), name: z.null(), ...noRecord }),
+  z.strictObject({ state: z.literal('Completed'), ...historical, ...fileMetadata, recordId: guid, number, values: values.nullable() }),
+  z.strictObject({ state: z.literal('Pending'), ...optionalHistorical, ...fileMetadata, ...noRecord }),
+  z.strictObject({ state: z.literal('Downloading'), ...optionalHistorical, ...fileMetadata, ...noRecord }),
+  z.strictObject({ state: z.literal('RetryingFiles'), ...optionalHistorical, ...fileMetadata, ...noRecord }),
+  z.strictObject({ state: z.literal('Rejected'), ...optionalHistorical, ...fileMetadata, ...noRecord, rejectionCode:text.optional(), rejectedQuestion:text.optional() }),
+  z.strictObject({ state: z.literal('Unrecognized'), definitionId: z.null(), versionId: z.null(), versionNumber: z.null(), name: z.null(), ...fileMetadata, ...noRecord }),
 ]);
 export type FormReply = z.infer<typeof schema>;
 export type FormReplyValue = z.infer<typeof value>;
