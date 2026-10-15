@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
-import { errorFeedback } from "@/shared/api/errorFeedback";
+import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { chatKey, type Chat, type Outgoing } from "../api/chat";
 import { listChatForms, prepareChatForm, recoverFormMessage, sendFormMessage, type ChatFormOption } from "../api/forms";
@@ -51,7 +51,17 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
       try { return await prepareChatForm(contact.id,form!.selection!.definitionId,form!.selection!.versionId,signal); }
       catch(error){const feedback=errorFeedback(error);if(feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);throw error;}
     }, enabled:open&&!denied&&!changed&&form?.selection?.hasCatalogQuestions===true&&!form.attempt,
-    retry:false,refetchOnWindowFocus:false,refetchOnReconnect:false});
+    retry:false,refetchOnWindowFocus:false,refetchOnReconnect:false,meta:{errorOwner:"local"}});
+  const preparationNoticeId = "whatsapp:form-preparation:" + contact.id;
+  const preparationError = preparation.error;
+  useEffect(() => {
+    if (!preparationError) { dismissNotification(preparationNoticeId); return; }
+    const feedback = errorFeedback(preparationError);
+    if (["session","forbidden","cancelled"].includes(feedback.kind)
+      || preparationError instanceof ApiError && preparationError.status === 409) return;
+    notify({id:preparationNoticeId,kind:"error",message:readErrorMessage(preparationError,t)});
+  },[preparationError,preparationNoticeId,t]);
+  useEffect(() => () => dismissNotification(preparationNoticeId),[preparationNoticeId]);
   useEffect(()=>()=>{queueMicrotask(()=>{const query=client.getQueryCache().find({queryKey:preparationKey,exact:true});
     if(query?.getObserversCount()===0){void client.cancelQueries({queryKey:preparationKey,exact:true});client.removeQueries({queryKey:preparationKey,exact:true});}});},[client,preparationKey]);
   if(preparation.error instanceof ApiError&&preparation.error.status===403&&!forbidden)setForbidden(true);

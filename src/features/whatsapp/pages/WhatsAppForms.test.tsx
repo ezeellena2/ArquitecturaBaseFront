@@ -1,3 +1,4 @@
+import * as notifications from "@/shared/ui/notifications";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -193,5 +194,32 @@ it("explains how many options do not fit and names only their catalog", async ()
   })));
   const dialog = await openForm();
   expect(await within(dialog).findByText("Cliente: 2 opciones de Clientes no entran en WhatsApp. Revisá sus textos y detalles.")).toBeInTheDocument();
+  expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
+});
+
+it("owns preparation network errors locally and retries once without losing the message", async () => {
+  const notices = vi.spyOn(notifications,"notify").mockImplementation(()=>0);
+  options[0]={...options[0],hasCatalogQuestions:true}; let reads=0;
+  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>++reads===1?HttpResponse.error():HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",preparation:{catalogs:[{fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",count:1}],issues:[],canSend:true}})));
+  const dialog=await openForm();
+  await within(dialog).findByText("No pudimos cargar las opciones del catálogo.");
+  const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});
+  fireEvent.change(message,{target:{value:"Conservar borrador"}});
+  expect(notices).toHaveBeenCalledTimes(1);
+  expect(notices.mock.calls[0]![0].id).toBe("whatsapp:form-preparation:"+contact.id);
+  expect(within(dialog).getAllByRole("button",{name:"Reintentar"})).toHaveLength(1);
+  await userEvent.click(within(dialog).getByRole("button",{name:"Reintentar"}));
+  await within(dialog).findByText("Cliente: 1 opción");
+  expect(reads).toBe(2); expect(message).toHaveValue("Conservar borrador");
+  expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled();
+});
+it("presents preparation 409 as a blocked form rather than a failed read", async () => {
+  const notices=vi.spyOn(notifications,"notify").mockImplementation(()=>0);
+  options[0]={...options[0],hasCatalogQuestions:true};
+  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>HttpResponse.json({code:"WhatsApp.Flow.FormUnavailable"},{status:409})));
+  const dialog=await openForm();
+  await within(dialog).findByText("El formulario elegido ya no está disponible. Elegí otro.");
+  expect(within(dialog).queryByRole("button",{name:"Reintentar"})).not.toBeInTheDocument();
+  expect(notices).not.toHaveBeenCalled();
   expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
 });

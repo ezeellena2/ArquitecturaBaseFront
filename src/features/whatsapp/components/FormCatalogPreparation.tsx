@@ -1,3 +1,4 @@
+import { ApiError } from "@/shared/api/ApiError";
 import { useTranslation } from "react-i18next";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
@@ -11,6 +12,8 @@ const issueKeys: Readonly<Record<string,string>> = {
 export function FormCatalogPreparation({query,waiting}: {query:UseQueryResult<ChatFormPreparation>,waiting:boolean}) {
   const {t}=useTranslation("whatsapp");
   if(query.isPending) return <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.catalogs.loading")}</p>;
+  if(query.isError && query.error instanceof ApiError && query.error.status===409)
+    return <Banner tone="danger">{t(query.error.code==="WhatsApp.Flow.RecipientContextChanged"?"forms.recipientChanged":"forms.formUnavailable")}</Banner>;
   if(query.isError) return <div className="flex items-center justify-between gap-2"><p className="text-sm">{t("forms.catalogs.loadFailed")}</p>
     <Button type="button" variant="outline" size="sm" disabled={waiting||query.isFetching} onClick={()=>void query.refetch()}>{t("retry")}</Button></div>;
   return <div className="flex flex-col gap-2">
