@@ -19,6 +19,11 @@ import { CatalogEditorPage } from "./CatalogEditorPage";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
+// Whole-value configuration cases do not exercise character-by-character search behavior.
+async function pasteText(user: ReturnType<typeof userEvent.setup>, control: HTMLElement, text: string) {
+  await user.click(control);
+  await user.paste(text);
+}
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
 const initial = { id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null };
@@ -46,15 +51,15 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     setup(); const bodies: Record<string, unknown>[] = [];
     server.use(http.post("/api/forms/catalogs", async ({ request }) => { const body = await request.json() as Record<string, unknown>; bodies.push(body); const items = body.items as { localId: string }[]; return HttpResponse.json({ catalog: initial, itemIdentityMap: { [items[0]!.localId]: itemId } }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo"); const user = userEvent.setup();
-    await user.type(await screen.findByRole("textbox", { name: "Nombre" }), "Clientes");
-    await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes");
+    await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
     await user.click(screen.getByRole("button", { name: "Inglés" }));
-    await user.type(screen.getByRole("textbox", { name: "Nombre" }), "Customers");
-    await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visits");
+    await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), "Customers");
+    await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
     await user.click(screen.getByRole("button", { name: "Español" }));
     await user.click(screen.getByRole("button", { name: "Agregar opción" }));
-    await user.type(screen.getByRole("textbox", { name: "Texto" }), "Pérez");
-    await user.type(screen.getByRole("textbox", { name: "Código" }), "C1");
+    await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Pérez");
+    await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "C1");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
     await screen.findByRole("button", { name: "Editar Pérez" });
@@ -68,7 +73,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
-    const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await user.type(code, "C2");
+    const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await pasteText(user, code, "C2");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(bodies).toHaveLength(1));
     expect(bodies[0]).toMatchObject({ expectedRevision: 1, items: [{ itemId, code: "C2", text: { es: "Pérez", en: null } }] });
@@ -80,7 +85,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     setup(); let writes = 0;
     server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    const name = await screen.findByRole("textbox", { name: "Nombre" }); await user.clear(name); await user.type(name, "Mi catálogo");
+    const name = await screen.findByRole("textbox", { name: "Nombre" }); await user.clear(name); await pasteText(user, name, "Mi catálogo");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await user.click(await screen.findByRole("button", { name: "Revisar" }));
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, revision: 2, name: { es: "Catálogo actual", en: "Current catalog" } })));
@@ -103,7 +108,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   });
   it("keeps the draft read-only when Manage is revoked while Read remains", async () => {
     setup(); await mount("/catalogos/" + id); const user = userEvent.setup();
-    const name = await screen.findByRole("textbox", { name: "Nombre" }); await user.clear(name); await user.type(name, "Borrador conservado");
+    const name = await screen.findByRole("textbox", { name: "Nombre" }); await user.clear(name); await pasteText(user, name, "Borrador conservado");
     act(() => queryClient.setQueryData<CurrentUser>(["current-user"], previous => previous ? ({ ...previous, permissions: ["formcatalogs.read"] }) : previous));
     await waitFor(() => expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly"));
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Borrador conservado");
@@ -113,8 +118,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     setup(); let calls = 0;
     server.use(http.post("/api/forms/catalogs", async ({ request }) => { calls++; const body = await request.json() as { items: { localId: string }[] }; return calls === 1 ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json({ catalog: { ...initial, itemsCount: 0 }, itemIdentityMap: Object.fromEntries(body.items.map(item => [item.localId, itemId])) }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo"); const user = userEvent.setup();
-    await user.type(await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
-    await user.click(screen.getByRole("button", { name: "Inglés" })); await user.type(screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visits");
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
+    await user.click(screen.getByRole("button", { name: "Inglés" })); await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(calls).toBe(1));
     await waitFor(() => expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled());
@@ -180,7 +185,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     setup(undefined, culture); await i18n.changeLanguage(culture);
     await mount("/catalogos/" + id); const user = userEvent.setup();
     const name = await screen.findByRole("textbox", { name: culture === "es" ? "Nombre" : "Name" });
-    await user.clear(name); await user.type(name, "Borrador");
+    await user.clear(name); await pasteText(user, name, "Borrador");
     expect(screen.getByText(culture === "es" ? "Cambios sin guardar" : "Unsaved changes", { exact: true })).toBeInTheDocument();
     expect(screen.queryByText("unsaved", { exact: true })).not.toBeInTheDocument();
   });
@@ -213,7 +218,7 @@ describe("Filters editor connected to current DTOs", () => {
     filterSetup(); const writes: unknown[] = [];
     server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })), http.post("/api/forms/catalogs/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: filtersDetail, itemIdentityMap: {} }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo?kind=Filters"); const user = userEvent.setup();
-    await user.type(await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visitas"); await user.click(screen.getByRole("button", { name: "Inglés" })); await user.type(screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visits");
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas"); await user.click(screen.getByRole("button", { name: "Inglés" })); await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
     await selectSample(); await user.click(screen.getByRole("button", { name: "Guardar" })); await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
     expect(writes).toHaveLength(1); expect(writes[0]).toMatchObject({ name: initial.name, description: initial.description }); expect(writes[0]).not.toHaveProperty("expectedRevision");
     await screen.findByRole("button", { name: "Agregar condición" }); expect(screen.queryByRole("button", { name: "Agregar opción" })).not.toBeInTheDocument();
@@ -244,7 +249,7 @@ it("renders unchanged real K4 detail/options and the result of the captured prev
     await user.click(screen.getByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición " + (index + 1) }), condition.column);
     await user.selectOptions(screen.getByRole("combobox", { name: "Comparación de la condición " + (index + 1) }), condition.operator);
     const label = "Valor de la condición " + (index + 1); const choice = screen.queryByRole("combobox", { name: label });
-    if (choice) await user.selectOptions(choice, condition.value); else await user.type(screen.getByRole("textbox", { name: label }), condition.value);
+    if (choice) await user.selectOptions(choice, condition.value); else await pasteText(user, screen.getByRole("textbox", { name: label }), condition.value);
   }
   await user.click(screen.getByRole("combobox", { name: "Como si lo recibiera" })); await user.click(screen.getByRole("option", { name: person.name }));
   await user.click(screen.getByRole("button", { name: "Probar" }));
@@ -340,7 +345,7 @@ it.each([false,true].flatMap(filters=>["network",500,503].map(failure=>({filters
   server.use(http.get("/api/forms/catalogs/"+id,()=>HttpResponse.json(detail)),
     http.put("/api/forms/catalogs/"+id+(filters?"/filters":""),()=>++writes===1?(failure==="network"?HttpResponse.error():HttpResponse.json({traceId:"catalog-save"},{status:Number(failure)})):HttpResponse.json({catalog:{...detail,revision:2},itemIdentityMap:{}})));
   await mount("/catalogos/"+id);
-  await userEvent.type(await screen.findByRole("textbox",{name:"Nombre"})," editado");
+  await pasteText(userEvent.setup(), await screen.findByRole("textbox",{name:"Nombre"})," editado");
   await userEvent.click(screen.getByRole("button",{name:"Guardar"}));
   await waitFor(()=>expect(vi.mocked(notify).mock.calls.some(([notice])=>notice.kind==="error"&&notice.message.includes("Volvé a guardar."))).toBe(true));
   expect(screen.queryByRole("button",{name:"Revisar"})).not.toBeInTheDocument();

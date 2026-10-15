@@ -20,6 +20,12 @@ import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import type { AssistantTurn, AssistantSubmit } from "../api/assistant";
+// Draft recovery/navigation checks need a complete value; keyboard behavior has its own case below.
+async function pasteText(control: HTMLElement, text: string) {
+  const user = userEvent.setup();
+  await user.click(control);
+  await user.paste(text);
+}
 vi.mock("react-oidc-context", async () => ({
   ...(await vi.importActual<typeof import("react-oidc-context")>(
     "react-oidc-context",
@@ -170,7 +176,7 @@ describe("authenticated assistant", () => {
   it("keeps the draft and selection when a native row requests a canceled switch", async () => {
     const { router } = renderRouteWithProviders("/");
     const field = await screen.findByRole("textbox", { name: "Tu pregunta" });
-    await userEvent.type(field, "Borrador privado");
+    await pasteText(field, "Borrador privado");
     await userEvent.click(await screen.findByRole("button", { name: "Conversación" }));
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: "Seguir editando" }));
@@ -186,7 +192,7 @@ describe("authenticated assistant", () => {
     }));
     const { router } = renderRouteWithProviders("/");
     const field = await screen.findByRole("textbox", { name: "Tu pregunta" });
-    await userEvent.type(field, "Borrador de página");
+    await pasteText(field, "Borrador de página");
     await userEvent.click(await screen.findByRole("button", { name: "Página siguiente" }));
     await waitFor(() => expect(router.state.location.search).toContain("page=2"));
     expect(reads.every(url => url.searchParams.get("pageSize") === "20" && url.searchParams.get("sort") === "-lastActivityAtUtc")).toBe(true);
@@ -290,7 +296,7 @@ describe("authenticated assistant", () => {
       "/usuarios",
     );
     expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
-    await userEvent.type(
+    await pasteText(
       screen.getByRole("textbox", { name: "Tu pregunta" }),
       "Y los inactivos?",
     );
@@ -329,7 +335,7 @@ describe("authenticated assistant", () => {
     );
     renderRouteWithProviders("/");
     const field = await screen.findByRole("textbox", { name: "Tu pregunta" });
-    await userEvent.type(field, "Pregunta privada");
+    await pasteText(field, "Pregunta privada");
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
     await screen.findByText("Aceptación por confirmar");
     expect(field).toHaveValue("Pregunta privada");
@@ -412,7 +418,7 @@ describe("authenticated assistant", () => {
     });
     await screen.findByText("Hay tres usuarios activos.");
     const field = screen.getByRole("textbox", { name: "Tu pregunta" });
-    await userEvent.type(field, "Borrador privado");
+    await pasteText(field, "Borrador privado");
     await act(async () => {
       await router.navigate(-1);
     });
@@ -427,7 +433,7 @@ describe("authenticated assistant", () => {
   it("keeps a draft when new conversation is canceled", async () => {
     renderRouteWithProviders("/");
     const field = await screen.findByRole("textbox", { name: "Tu pregunta" });
-    await userEvent.type(field, "Borrador");
+    await pasteText(field, "Borrador");
     await userEvent.click(
       screen.getByRole("button", { name: "Nueva conversación" }),
     );
@@ -527,7 +533,7 @@ describe("authenticated assistant", () => {
     );
     renderRouteWithProviders("/");
     const field = await screen.findByRole("textbox", { name: "Tu pregunta" });
-    await userEvent.type(field, "Borrador de espera");
+    await pasteText(field, "Borrador de espera");
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
     await screen.findByText("Esperá 42 s para enviar otra consulta.");
     expect(field).toHaveValue("Borrador de espera");
