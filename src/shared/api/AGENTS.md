@@ -21,3 +21,5 @@
 - [Contrato de mensajes y estados](../../../docs/guides/mensajes-y-estados.md).
 
 QueryCache emite una vez por queryHash, conserva datos previos y retira acciones sin observadores. Red y errores desconocidos admiten como máximo dos reintentos; HTTP y cancelación no se reintentan. Una cancelación del transporte conserva AbortError.
+
+`operationalErrorMessage` conserva la recuperación por revisión para sus consumidores existentes; la configuración interna con revisión/409 puede elegir `save` para ofrecer otro guardado explícito (ADR 0018). Los catálogos Manual y Filters usan ese contexto; no cambia la recuperación de efectos externos.
