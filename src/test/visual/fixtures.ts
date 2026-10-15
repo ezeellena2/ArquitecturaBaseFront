@@ -142,10 +142,12 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   }
   const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
   const pageOf = (items: readonly unknown[]) => ({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: items.length ? 1 : 0, hasPrevious: false, hasNext: false });
+  const fileImage=async()=>{const canvas=new OffscreenCanvas(640,480);const context=canvas.getContext("2d")!;context.fillStyle="#dfe8d9";context.fillRect(0,0,640,480);context.fillStyle="#285943";context.fillRect(140,100,360,280);return canvas.convertToBlob({type:"image/jpeg",quality:0.8});};
   globalThis.fetch = async (input, init) => {
     const request = new Request(input instanceof Request ? input : new URL(String(input), location.origin), init);
     const requestUrl = new URL(request.url);
     const path = requestUrl.pathname;
+    if (scenario === "file-cards" && /^\/api\/forms\/records\//.test(path)) return new Response(await fileImage(),{headers:{"content-type":"image/jpeg"}});
     if (catalogsFixture && (path.startsWith("/api/forms/catalogs") || path === "/api/forms/catalog-filter-options" || path === "/api/forms/catalog-previews")) return catalogsFixture.handle(request);
     if (chatFormsFixture && path.startsWith("/api/whatsapp/chats")) return chatFormsFixture.handle(request);
     if (formsFixture && path.startsWith("/api/forms/")) return formsFixture.handle(request);
@@ -248,7 +250,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     }
     if (path === "/api/me") return json(profile);
     if (path === "/account/login-methods") return json({ registrationOpen: scenario !== "landing", google: true, whatsapp: true, whatsappCountries: ["AR", "UY"], whatsappNumber: "15551632662" });
-    if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: assistantScenario ? ["assistant"] : [] });
+    if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: scenario === "forms-files" ? ["forms","form-files"] : assistantScenario ? ["assistant"] : [] });
     if (path === "/api/settings") return json(settings);
     if (path === "/api/roles/paged") return json(pageOf(roles));
     if (path === "/api/roles") return json(roles);

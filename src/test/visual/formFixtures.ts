@@ -45,6 +45,14 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 export function createFormFixtureStore(culture: FormCulture = "es", scenario = "", responseBudgetRaw?: string) {
   const definitions = new Map<string, FormDefinitionSnapshot>();
   if (scenario !== "forms-empty") definitions.set(fixtureFormId, fixtureDefinition(culture, scenario === "forms-prefix"));
+  if (scenario === "forms-files") {
+    const original = definitions.get(fixtureFormId)!;
+    definitions.set(fixtureFormId,{...original,draft:{...original.draft,fields:[
+      {fieldId:guid(51),key:key(guid(51)),type:"photo",label:{es:"Fotos de la obra",en:"Site photos"},help:null,required:true,files:{minFiles:1,maxFiles:6,photoSource:"cameraOrGallery"}},
+      {fieldId:guid(52),key:key(guid(52)),type:"shortText",label:{es:"Observaciones",en:"Notes"},help:null,required:false,maxLength:80},
+      {fieldId:guid(53),key:key(guid(53)),type:"document",label:{es:"Remito firmado",en:"Signed delivery note"},help:null,required:false,files:{minFiles:0,maxFiles:1,photoSource:null}},
+    ]}});
+  }
   if (scenario.startsWith("forms-catalog")) {
     const definition = definitions.get(fixtureFormId)!;
     definitions.set(fixtureFormId, { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map((field, index) => {

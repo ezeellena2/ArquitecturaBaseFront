@@ -1,3 +1,4 @@
+import {FormFilesPreview} from "./FormFilesPreview";
 import "@fontsource-variable/public-sans";
 import "@/index.css";
 import { User } from "oidc-client-ts";
@@ -27,7 +28,7 @@ if ((screen !== "/" || parameters.get("scenario")?.startsWith("assistant-")) && 
   });
   await authConfig.userStore?.set(`user:${location.origin}:web`, user.toStorageString());
 }
-const router = createMemoryRouter([...routes, { Component: AppLayout, children: [{ path: "/catalogo", Component: Catalog }, { path: "/form-replies", Component: FormReplyPreview }, { path: "/formularios/catalogos-preview", Component: CatalogComponentsPreview }] }], {
+const router = createMemoryRouter([...routes, { Component: AppLayout, children: [{ path: "/catalogo", Component: Catalog }, { path: "/form-replies", Component: FormReplyPreview }, { path:"/form-files",Component:FormFilesPreview }, { path: "/formularios/catalogos-preview", Component: CatalogComponentsPreview }] }], {
   initialEntries: [screen],
 });
 createRoot(document.getElementById("root")!).render(<AppProviders><RouterProvider router={router} /></AppProviders>);
