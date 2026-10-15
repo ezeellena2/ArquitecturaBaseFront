@@ -223,3 +223,17 @@ it("presents preparation 409 as a blocked form rather than a failed read", async
   expect(notices).not.toHaveBeenCalled();
   expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
 });
+
+it.each(["NoLinkedAccount","InactiveAccount","NoEligibleForms","NoSend"])("hides resend when the form composer cannot open: %s", async reason => {
+  thread.messages=[{id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
+    occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business",
+    formReply:{state:"Rejected",definitionId,versionId,versionNumber:1,name:"Registrar visita",recordId:null,number:null,values:null,
+      rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}}];
+  if(reason==="NoSend") server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["whatsapp.read"]})));
+  else contact.formEligibility={...contact.formEligibility!,status:reason as "NoLinkedAccount"|"InactiveAccount"|"NoEligibleForms"};
+  if(reason==="NoLinkedAccount")contact.linkedAccount=null;
+  if(reason==="InactiveAccount")contact.linkedAccount!.isActive=false;
+  await openChat();
+  expect(screen.queryByRole("button",{name:"Mandar de nuevo"})).not.toBeInTheDocument();
+  expect(posts).toEqual([]);
+});

@@ -16,9 +16,10 @@ import { useFormComposer } from "../hooks/useFormComposer";
 import { FormCatalogPreparation } from "./FormCatalogPreparation";
 import { formOptionKey } from "../lib/formSendSession";
 
-export function FormComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, openRequest = 0 }: { contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft; updateDraft: (update: (value: ChatDraft) => ChatDraft) => void; timeZone?: string; openRequest?: number }) {
+export function FormComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, openRequest = 0, onAvailabilityChange }: { contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft; updateDraft: (update: (value: ChatDraft) => ChatDraft) => void; timeZone?: string; openRequest?: number; onAvailabilityChange?: (canOpen: boolean) => void }) {
   const { t, i18n } = useTranslation("whatsapp");
   const state = useFormComposer(contact,actor,canSend,outgoing,draft,updateDraft);
+  useEffect(() => { onAvailabilityChange?.(state.canOpen); },[onAvailabilityChange,state.canOpen]);
   const openRequested = useEffectEvent(() => state.show());
   useEffect(() => {if(openRequest>0)openRequested();},[openRequest]);
   const restoreFocus = useRestoreFocusOnClose(state.open);

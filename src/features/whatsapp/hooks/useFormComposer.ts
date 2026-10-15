@@ -87,8 +87,10 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
   },[formsError,refetchForms,client,actor,contact.id,noticeId,t]);
   useEffect(() => { if (denied) client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id}); }, [denied,client,actor,contact.id]);
   const updateForm = (update: (value: FormSendDraft) => FormSendDraft) => updateDraft(value => value.form ? {...value,form:update(value.form)} : value);
+  const canOpen = !disabledReason && !denied && !form?.attempt && !sending && !checking && now >= waitUntil
+    && !!eligibility?.recipientCulture && !!eligibility.recipientContextRevision;
   function show() {
-    if (disabledReason || denied || form?.attempt || !eligibility?.recipientCulture || !eligibility.recipientContextRevision) return;
+    if (!canOpen || !eligibility?.recipientCulture || !eligibility.recipientContextRevision) return;
     const culture = eligibility.recipientCulture;
     const revision = eligibility.recipientContextRevision;
     updateDraft(value => ({...value, form:value.form ? {...value.form,recipientCulture:culture,recipientContextRevision:revision,modeRevision:contact.modeRevision,blocked:recipientChanged(value.form,revision,culture)?"recipientChanged":value.form.blocked} : {message:t("forms.defaultMessage",{lng:culture}),recipientCulture:culture,recipientContextRevision:revision,modeRevision:contact.modeRevision}}));
@@ -143,5 +145,5 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
       else {const feedback=errorFeedback(error);if(active.current&&feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);if(active.current&&feedback.kind!=="session")notify({id:noticeId,kind:"error",message:feedback.kind==="forbidden"?t("send.forbidden"):t("send.checkFailed"),action:["forbidden","wait"].includes(feedback.kind)?undefined:{label:t("send.check"),onClick:()=>void checkOutcome()}});if(feedback.kind==="forbidden"){setForbidden(true);client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id});}}
     } finally {pending.current=false;if(active.current)setChecking(false);}
   }
-  return {open,setOpen,page,setPage,search,setSearch,forms,preparation,catalogBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied)void refetchForms();}, updateForm};
+  return {canOpen,open,setOpen,page,setPage,search,setSearch,forms,preparation,catalogBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied)void refetchForms();}, updateForm};
 }

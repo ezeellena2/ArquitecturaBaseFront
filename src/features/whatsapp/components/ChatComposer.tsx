@@ -17,9 +17,9 @@ export interface ChatDraft {
   attempt?: { requestId: string; body: string; checking: boolean; notStored: boolean };
 }
 
-export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, formOpenRequest = 0 }: {
+export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, formOpenRequest = 0, onFormAvailabilityChange }: {
   contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft;
-  updateDraft: (update: (current: ChatDraft) => ChatDraft) => void; timeZone?: string; formOpenRequest?: number;
+  updateDraft: (update: (current: ChatDraft) => ChatDraft) => void; timeZone?: string; formOpenRequest?: number; onFormAvailabilityChange?: (canOpen: boolean) => void;
 }) {
   const { t } = useTranslation("whatsapp");
   const client = useQueryClient();
@@ -97,7 +97,7 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
         onKeyDown={event => { if (event.ctrlKey && event.key === "Enter" && !disabledReason && !draft.attempt?.checking) { event.preventDefault(); submit(); } }} />
       {fieldError ? <p id="chat-reply-error" role="alert" className="mt-1 text-sm text-[var(--color-danger)]">{fieldError}</p> : null}
       <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
-        <FormComposer openRequest={formOpenRequest} contact={contact} actor={actor} canSend={canSend} outgoing={outgoing} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
+        <FormComposer onAvailabilityChange={onFormAvailabilityChange} openRequest={formOpenRequest} contact={contact} actor={actor} canSend={canSend} outgoing={outgoing} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
         {canSend ? <div className="ml-auto flex flex-wrap justify-end gap-2">
         {draft.attempt?.checking ? <Button variant="outline" size="sm" disabled={checking} onClick={() => void checkOutcome()}>{t("send.check")}</Button> :
           <Button size="sm" disabled={Boolean(disabledReason) || sending.isPending || !draft.body.trim()} onClick={submit}>{t(sending.isPending ? "send.sending" : draft.attempt?.notStored ? "send.retry" : "send.action")}</Button>}
