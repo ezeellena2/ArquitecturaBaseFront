@@ -1,5 +1,5 @@
 import {PrivateImage} from "./PrivateImage";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "./button";
@@ -8,11 +8,11 @@ import { IconButton } from "./IconButton";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 
 // Presentation only: the authorized consumer owns content, loading and downloads.
-export function PhotoViewer({title,description,name,size,index,count,blob,loading,thumbnails,onIndex,onClose,onDownload,downloading}: {
+export function PhotoViewer({title,description,name,size,index,count,blob,loading,thumbnails,onIndex,onClose,onDownload,downloading,focusFallback}: {
  title:string;description:string;name:string;size:string;index:number;count:number;blob?:Blob;loading:boolean;thumbnails:ReactNode;
- onIndex:(index:number)=>void;onClose:()=>void;onDownload:()=>void;downloading?:boolean;
+ onIndex:(index:number)=>void;onClose:()=>void;onDownload:()=>void;downloading?:boolean;focusFallback?:RefObject<HTMLElement|null>;
 }) {
- const {t}=useTranslation();const restoreFocus=useRestoreFocusOnClose();
+ const {t}=useTranslation();const restoreFocus=useRestoreFocusOnClose(true,focusFallback);
  return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-5xl" onCloseAutoFocus={restoreFocus}
   onKeyDown={event=>{if(event.key==="Escape"){event.preventDefault();onClose();}if(event.key==="ArrowLeft"&&index>0){event.preventDefault();onIndex(index-1);}if(event.key==="ArrowRight"&&index<count-1){event.preventDefault();onIndex(index+1);}}}>
   <DialogHeader className="border-b bg-[var(--color-surface-header)] px-5 py-4 pr-12"><DialogTitle>{title}</DialogTitle><DialogDescription>{t("files.photoPosition",{index:index+1,count})} · {description}</DialogDescription></DialogHeader>

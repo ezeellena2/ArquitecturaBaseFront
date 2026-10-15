@@ -15,6 +15,7 @@ export function FormReplyCard({ reply, preserveViewport, onResend, actor="" }: {
   const { t } = useTranslation("whatsapp");
   const [filePermissionLost,setFilePermissionLost]=useState(false);
   const loseFilePermission=useCallback(()=>setFilePermissionLost(true),[]);
+  const focusFallback=useRef<HTMLDivElement>(null);
   const fileRecordId=reply.state==="Completed"?reply.recordId:"";
   const fileErrorReported=useRef(false);
   const reportFileError=useCallback((error:unknown)=>{
@@ -28,10 +29,10 @@ export function FormReplyCard({ reply, preserveViewport, onResend, actor="" }: {
   const inactive = reply.state === "Rejected" && reply.rejectionCode === "Forms.Record.CatalogItemInactive";
   const fileRejection=reply.state==="Rejected"&&reply.rejectionCode?.startsWith("Files.Content.");
   const StateIcon = ["Pending","Downloading","RetryingFiles"].includes(reply.state) ? ClockIcon : reply.state === "Rejected" ? AlertTriangleIcon : InfoIcon;
-  return <div role="group" aria-label={label}>
+  return <div ref={focusFallback} tabIndex={-1} role="group" aria-label={label}>
     <MessageCard icon={<FormIcon className="size-4" />} title={name} description={t("forms.reply.label")}>
       {completed ? <>
-        {reply.values !== null && !filePermissionLost ? <FormReplyValues rows={reply.values} actor={actor} recordId={reply.recordId} number={reply.recordNumber} onForbidden={loseFilePermission} onFileError={reportFileError} preserveViewport={preserveViewport} /> : null}
+        {reply.values !== null && !filePermissionLost ? <FormReplyValues rows={reply.values} actor={actor} recordId={reply.recordId} number={reply.recordNumber} onForbidden={loseFilePermission} onFileError={reportFileError} focusFallback={focusFallback} preserveViewport={preserveViewport} /> : null}
         <p className="flex items-start gap-2 border-t border-[var(--color-border)] bg-[var(--color-success-50)] px-3 py-2 text-sm text-[var(--color-success-700)]"><CheckIcon className="mt-0.5 size-4 shrink-0" />{t("forms.reply.saved", { number: reply.recordNumber })}</p>
         {reply.values === null || filePermissionLost ? <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm"><InfoIcon className="mt-0.5 size-4 shrink-0" />{t(reply.valuesRevoked || filePermissionLost ? "forms.reply.revoked" : "forms.reply.noPermission")}</p> : null}
         {reply.messageRemoved ? <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm"><InfoIcon className="mt-0.5 size-4 shrink-0" />{t("forms.reply.messageRemoved")}</p> : null}

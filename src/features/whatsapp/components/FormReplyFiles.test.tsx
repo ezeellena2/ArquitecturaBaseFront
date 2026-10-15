@@ -44,6 +44,7 @@ it("removes names and closes the viewer when a content request loses permission"
  expect(screen.queryByRole("button",{name:/private.png/})).not.toBeInTheDocument();
  expect(screen.queryByText("private.png")).not.toBeInTheDocument();
  expect(screen.getByText("Guardada como VIS-000001")).toBeInTheDocument();
+ await waitFor(()=>expect(screen.getByRole("group",{name:"Respuesta del formulario Visita, guardada como VIS-000001"})).toHaveFocus());
 });
 it.each(["Downloading","RetryingFiles"] as const)("shows %s without file values or number",state=>{
  renderWithProviders(<FormReplyCard reply={{...reply,state}}/>);
@@ -59,6 +60,13 @@ it("reports several file failures once for the response through the local owner"
  const notify=vi.spyOn(notifications,"notify");
  server.use(http.get("/api/forms/records/:record/files/:file/:kind",()=>HttpResponse.json({title:"Not found",detail:"File unavailable",code:"Files.Content.NotFound",traceId:"test"},{status:404})));
  renderWithProviders(<FormReplyCard actor="actor" reply={reply}/>);
- await waitFor(()=>expect(screen.getAllByText("No se pudo cargar el archivo.")).toHaveLength(2));
+ await waitFor(()=>expect(screen.getAllByRole("button",{name:/Ver .* · No se pudo cargar el archivo\./})).toHaveLength(2));
  expect(notify).toHaveBeenCalledTimes(1);
+});
+
+it("names a failed thumbnail accessibly without clipping an error sentence into it",async()=>{
+ server.use(http.get("/api/forms/records/:record/files/:file/:kind",()=>HttpResponse.json({title:"Missing"},{status:404})));
+ renderWithProviders(<FormReplyCard actor="actor" reply={reply}/>);
+ const unavailable=await screen.findByRole("button",{name:"Ver private.png · No se pudo cargar el archivo."});
+ expect(unavailable.textContent).not.toContain("No se pudo");
 });
