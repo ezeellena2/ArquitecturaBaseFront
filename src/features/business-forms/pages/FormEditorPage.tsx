@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useSystemPresentation } from "@/shared/api/presentation";
-import { maximumFiles } from "../fileQuestions";
+import { maximumFiles, hasInvalidFileCounts } from "../fileQuestions";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
@@ -144,6 +144,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
       action: conflict ? { label: t("review"), onClick: () => { if (active.current) { reviewReturnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; void readCurrent.current().then(success => { if (success && active.current) setReviewOpen(true); }); } } } : undefined });
   }, [editor.issue, feedbackId, t, session?.phase, restartCooldown]);
   async function operate(action: () => Promise<FormDefinitionSnapshot | undefined>) {
+    if (action === editor.save && value && hasInvalidFileCounts(value.draft.fields)) return;
     const saved = await action();
     if (!saved || !active.current) return;
     setRetainedReview(null);
@@ -194,7 +195,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   }
   return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : dirty || frozen || publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
     {!readOnly || dirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
-    {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!editor.canSave} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
+    {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!editor.canSave || hasInvalidFileCounts(value.draft.fields)} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
     {scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish) && session.confirmed ? <Button type="button" disabled={frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publication.resetRejected(); setPublicationOpen(true); }}>{t("publication.title")}</Button> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
   </>}>

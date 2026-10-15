@@ -413,6 +413,7 @@
     "range": "Minimum {{minimum}} · up to {{maximum}}",
     "previousScreen": "Previous screen",
     "continue": "Continue",
-    "screenHint": "Each photo or document question starts its own screen. Following questions can share it."
+    "screenHint": "Each photo or document question starts its own screen. Following questions can share it.",
+    "invalidRange": "Use whole counts: minimum 0–10, maximum 1–10, and minimum no greater than maximum."
   }
 }

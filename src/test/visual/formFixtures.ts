@@ -8,6 +8,7 @@ import failedEsDetail from "../fixtures/forms-http/failed/detail-es.json" with {
 import failedEnDetail from "../fixtures/forms-http/failed/detail-en.json" with { type: "json" };
 import failedEsStatus from "../fixtures/forms-http/failed/status-es.json" with { type: "json" };
 import failedEnStatus from "../fixtures/forms-http/failed/status-en.json" with { type: "json" };
+import { validFileCounts } from "@/features/business-forms/fileQuestions";
 import { administrativeName } from "@/features/business-forms/editorModel";
 import type { DraftWriteBody, FormCulture, FormDefinitionSnapshot, CanonicalQuestion, FormDraftSaveResult } from "@/features/business-forms/model";
 
@@ -202,7 +203,10 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       if (q.type === "choice" && !q.source) return { ...common, type: q.type, options: q.options.map(o => {
         const choiceId = o.choiceId ?? guid(serial++); choices.push({ fieldLocalId: q.localId, localId: o.localId, fieldId, choiceId }); return { choiceId, label: o.label };
       }) };
-      if (q.type === "photo" || q.type === "document") return { ...common, type: q.type, files: { ...q.files } };
+      if (q.type === "photo" || q.type === "document") {
+        if (!validFileCounts(q.files)) throw new Error("Invalid file counts.");
+        return { ...common, type: q.type, files: { ...q.files } };
+      }
       return q.type === "shortText" || q.type === "longText" ? { ...common, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600) } : { ...common, type: q.type };
     });
     const definition: FormDefinitionSnapshot = { id: previous?.id ?? guid(serial++), name: Object.fromEntries(Object.entries(body.name).map(([language, text]) => [language, text.trim()])), prefix: body.prefix, prefixLocked: previous?.prefixLocked ?? false,
