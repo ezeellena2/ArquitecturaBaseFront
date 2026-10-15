@@ -238,3 +238,15 @@ describe("httpClient", () => {
     await expect(api.post("/api/users/1/invitation", { channel: "Email", consent: false })).resolves.toBeUndefined();
   });
 });
+
+it("reads private binary content through the same renewal and language pipeline", async () => {
+  resetHttpClient();
+  configureHttpClient({ getAccessToken: () => "expired", getLanguage: () => "es", renewSession: async () => "renewed" });
+  server.use(http.get("/api/files/test", ({request}) => request.headers.get("authorization") !== "Bearer renewed"
+    ? new HttpResponse(null, {status:401})
+    : new HttpResponse(new Uint8Array([1,2,3]), {headers:{"content-type":"image/png", "x-language":request.headers.get("accept-language")??""}})));
+  const blob = await api.blob("/api/files/test");
+  expect(blob.type).toBe("image/png");
+  expect(new Uint8Array(await blob.arrayBuffer())).toEqual(new Uint8Array([1,2,3]));
+  resetHttpClient();
+});

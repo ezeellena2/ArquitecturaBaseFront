@@ -1,3 +1,4 @@
+import { FormReplyFiles } from "./FormReplyFiles";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
@@ -6,8 +7,8 @@ import { formatFormReplyValue, type FormReplyDisplayRow } from "../lib/formReply
 
 export type { FormReplyDisplayRow } from "../lib/formReplyValue";
 
-export function FormReplyValues({ rows, preserveViewport }: {
-  rows: readonly FormReplyDisplayRow[];
+export function FormReplyValues({ rows, preserveViewport, actor="", recordId, number="", onForbidden=()=>undefined }: {
+  rows: readonly FormReplyDisplayRow[]; actor?:string; recordId?:string;number?:string;onForbidden?:()=>void;
   preserveViewport?: (change: () => void) => void;
 }) {
   const { t, i18n } = useTranslation("whatsapp");
@@ -27,7 +28,7 @@ export function FormReplyValues({ rows, preserveViewport }: {
     <dl id={id} className="divide-y divide-[var(--color-border)]">
       {shown.map(row => <div key={row.id} className="grid min-w-0 grid-cols-1 gap-1 px-3 py-2 sm:grid-cols-2 sm:gap-3">
         <dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{row.label}</dt>
-        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}
+        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} number={number} onForbidden={onForbidden}/> : t("forms.reply.valuesUnavailable") : row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}
           {row.answer.type==="choice"&&row.answer.detail ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.detail}</p> : null}</dd>
       </div>)}
     </dl>

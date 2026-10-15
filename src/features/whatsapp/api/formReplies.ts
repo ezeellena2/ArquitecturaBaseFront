@@ -12,7 +12,12 @@ const number = z.string().regex(/^[A-Z][A-Z0-9]{0,11}-\d{6,19}$/).refine(value =
 const field = { fieldId: guid, key: text, label: text };
 const decimal = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
 const date = z.string().refine(value => formatDateOnly(value, 'en') !== null);
+const file = z.strictObject({ fileId: guid, name: text.max(255), contentType: z.enum(["image/jpeg","image/png","application/pdf","application/msword","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]), size:z.number().int().positive().max(25*1024*1024), hasThumbnail:z.boolean() });
+const fileList = z.array(file).max(10).refine(files=>new Set(files.map(f=>f.fileId)).size===files.length);
+export type FormReplyFile = z.infer<typeof file>;
 const value = z.discriminatedUnion('type', [
+  z.strictObject({...field,type:z.literal("photo"),value:fileList.refine(files=>files.every(f=>f.hasThumbnail && (f.contentType==="image/jpeg"||f.contentType==="image/png")))}),
+  z.strictObject({...field,type:z.literal("document"),value:fileList.refine(files=>files.every(f=>!f.hasThumbnail))}),
   z.strictObject({ ...field, type: z.literal('shortText'), value: z.string().nullable() }),
   z.strictObject({ ...field, type: z.literal('longText'), value: z.string().nullable() }),
   z.strictObject({ ...field, type: z.literal('decimal'), value: decimal.nullable() }),
@@ -28,6 +33,8 @@ const noRecord = { recordId: z.null(), number: z.null(), values: z.null() };
 const schema = z.discriminatedUnion('state', [
   z.strictObject({ state: z.literal('Completed'), ...historical, recordId: guid, number, values: values.nullable() }),
   z.strictObject({ state: z.literal('Pending'), ...optionalHistorical, ...noRecord }),
+  z.strictObject({ state: z.literal('Downloading'), ...optionalHistorical, ...noRecord }),
+  z.strictObject({ state: z.literal('RetryingFiles'), ...optionalHistorical, ...noRecord }),
   z.strictObject({ state: z.literal('Rejected'), ...optionalHistorical, ...noRecord, rejectionCode:text.optional(), rejectedQuestion:text.optional() }),
   z.strictObject({ state: z.literal('Unrecognized'), definitionId: z.null(), versionId: z.null(), versionNumber: z.null(), name: z.null(), ...noRecord }),
 ]);

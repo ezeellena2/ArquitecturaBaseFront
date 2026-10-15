@@ -23,3 +23,5 @@
 QueryCache emite una vez por queryHash, conserva datos previos y retira acciones sin observadores. Red y errores desconocidos admiten como máximo dos reintentos; HTTP y cancelación no se reintentan. Una cancelación del transporte conserva AbortError.
 
 `operationalErrorMessage` conserva la recuperación por revisión para sus consumidores existentes; la configuración interna con revisión/409 puede elegir `save` para ofrecer otro guardado explícito (ADR 0018). Los catálogos Manual y Filters usan ese contexto; no cambia la recuperación de efectos externos.
+
+`api.blob` reutiliza token, idioma, renovación y errores del transporte; pide contenido privado con `cache: no-store`. Las rutas de archivo viven bajo la respuesta; no se siguen URLs del servidor ni se usa SAS.

@@ -165,7 +165,11 @@
       "revoked": "You no longer have permission to view these answers.",
       "messageRemoved": "The WhatsApp message is no longer available. The reply remains saved.",
       "catalogInactive": "{{label}}: an option was deactivated. The response was not saved.",
-      "resend": "Send again"
+      "resend": "Send again",
+      "downloading": "We received the form. We are downloading the files from WhatsApp and saving the reply.",
+      "retryingFiles": "We are trying to download the files again. No action is needed.",
+      "filesUnavailable": "We could not download the files from WhatsApp. The reply was not saved. You can send the form again.",
+      "filesRejected": "A file does not meet the allowed type, size or content. The reply was not saved."
     },
     "catalogs": {
       "loading": "Preparing options for this person…",

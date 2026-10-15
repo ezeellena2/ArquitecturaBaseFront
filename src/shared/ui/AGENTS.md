@@ -49,3 +49,5 @@ atribución (footer no seleccionable y visible en el desplegable), carga/vacío,
   contraste en grupos de acciones, hover y selección. Portales consumen el tema global.
 
 Sonner sólo se importa en notifications.ts y sonner.tsx; arquitectura verifica el límite sin excepciones de features. Dialog registra un host manual de capa superior para el único Toaster: conserva foco modal, posición y scroll del panel. Al regenerar ambos adaptadores, conservar esta integración y sus pruebas de navegador.
+
+`PhotoViewer` presenta el Dialog común, navegación por flechas/Escape y retorno del foco. `PhotoThumbnail` fija la variante de miniatura. `PrivateImage` mantiene su URL Blob sólo mientras existe el elemento y la revoca al cambiar/desmontar; ninguna pieza conoce una feature, credenciales o rutas.

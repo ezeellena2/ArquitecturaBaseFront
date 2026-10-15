@@ -19,7 +19,7 @@ describe('historical form reply timeline adapter', () => {
   it('maps the saved historical values without current catalog or culture lookup', () => {
     const result = buildTimeline([message(completed)], []);
     expect(result[0].body).toBeNull();
-    expect(presentation(message(completed))).toEqual({ state: 'Completed', name: 'Historical English form', recordNumber: 'VIS-000024', values: [
+    expect(presentation(message(completed))).toEqual({ state: 'Completed', name: 'Historical English form', recordNumber: 'VIS-000024', recordId:'record-a', values: [
       { id: 'old-choice', label: 'Historical client', answer: { type: 'choice', value: 'Retired English choice' } },
       { id: 'bool', label: 'Confirmed?', answer: { type: 'boolean', value: false } },
       { id: 'zero', label: 'Returned', answer: { type: 'decimal', value: '0' } },
@@ -28,7 +28,7 @@ describe('historical form reply timeline adapter', () => {
   });
   it('preserves a denied receipt and every digit beyond the minimum six without numeric conversion', () => {
     expect(presentation(message({ ...completed, number: 'VISLONGNAME1-9223372036854775807', values: null }))).toEqual({
-      state: 'Completed', name: 'Historical English form', recordNumber: 'VISLONGNAME1-9223372036854775807', values: null,
+      state: 'Completed', name: 'Historical English form', recordNumber: 'VISLONGNAME1-9223372036854775807', recordId:'record-a', values: null,
     });
   });
   it.each(['Pending', 'Rejected', 'Unrecognized'] as const)('maps %s without a saved number or invented values', state => {

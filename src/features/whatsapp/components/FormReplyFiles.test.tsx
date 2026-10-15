@@ -1,0 +1,50 @@
+import { fireEvent, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse,http } from "msw";
+import { beforeAll,afterEach,expect,it,vi } from "vitest";
+import i18n from "@/shared/i18n";
+import {server} from "@/test/mocks/server";
+import {renderWithProviders} from "@/test/utils/renderWithProviders";
+import {FormReplyCard,type FormReplyPresentation} from "./FormReplyCard";
+const id="01999abc-1234-7000-8000-000000000001";
+const photo={fileId:id,name:"private.png",contentType:"image/png",size:123,hasThumbnail:true};
+const reply:FormReplyPresentation={state:"Completed",name:"Visita",recordNumber:"VIS-000001",recordId:id,values:[{id,label:"Fotos",answer:{type:"photo",value:[photo,{...photo,fileId:"01999abc-1234-7000-8000-000000000002",name:"second.png"}]}}]};
+beforeAll(async()=>{await i18n.loadLanguages(["es","en"]);await i18n.changeLanguage("es");});
+afterEach(()=>{vi.restoreAllMocks();});
+it("downloads only thumbnails until opened and restores focus after arrows and Escape",async()=>{
+ Object.defineProperty(URL,"createObjectURL",{configurable:true,value:vi.fn(()=>"blob:test")});
+ Object.defineProperty(URL,"revokeObjectURL",{configurable:true,value:vi.fn()});
+ const paths:string[]=[];
+ server.use(http.get("/api/forms/records/:record/files/:file/:kind",({request})=>{paths.push(new URL(request.url).pathname);return new HttpResponse(new Uint8Array([1]),{headers:{"content-type":"image/png"}});}));
+ const ui=renderWithProviders(<FormReplyCard actor="actor" reply={reply}/>);
+ const first=await screen.findByRole("button",{name:"Ver private.png"});
+ await waitFor(()=>expect(paths.length).toBe(2));expect(paths.every(p=>p.endsWith("/thumbnail"))).toBe(true);
+ await userEvent.click(first);await screen.findByRole("dialog",{name:"Fotos"});
+ await waitFor(()=>expect(paths.some(p=>p.endsWith("/content"))).toBe(true));
+ fireEvent.keyDown(screen.getByRole("dialog"),{key:"ArrowRight"});
+ expect(await screen.findByText("Foto 2 de 2 · VIS-000001")).toBeInTheDocument();
+ fireEvent.keyDown(screen.getByRole("dialog"),{key:"Escape"});
+ await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ expect(first).toHaveFocus();
+ ui.unmount();await waitFor(()=>expect(URL.revokeObjectURL).toHaveBeenCalled());
+});
+it("removes names and closes the viewer when a content request loses permission",async()=>{
+ Object.defineProperty(URL,"createObjectURL",{configurable:true,value:vi.fn(()=>"blob:test")});
+ Object.defineProperty(URL,"revokeObjectURL",{configurable:true,value:vi.fn()});
+ server.use(http.get("/api/forms/records/:record/files/:file/:kind",({params})=>params.kind==="content"?new HttpResponse(null,{status:403}):new HttpResponse(new Uint8Array([1]),{headers:{"content-type":"image/jpeg"}})));
+ renderWithProviders(<FormReplyCard actor="actor" reply={reply}/>);
+ await userEvent.click(await screen.findByRole("button",{name:"Ver private.png"}));
+ await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ expect(screen.queryByRole("button",{name:/private.png/})).not.toBeInTheDocument();
+ expect(screen.queryByText("private.png")).not.toBeInTheDocument();
+ expect(screen.getByText("Guardada como VIS-000001")).toBeInTheDocument();
+});
+it.each(["Downloading","RetryingFiles"] as const)("shows %s without file values or number",state=>{
+ renderWithProviders(<FormReplyCard reply={{...reply,state}}/>);
+ expect(screen.queryByRole("button",{name:/private.png/})).not.toBeInTheDocument();
+ expect(screen.queryByText(/Guardada como/)).not.toBeInTheDocument();
+});
+it("offers a manual resend for an unavailable file without exposing file names",async()=>{
+ const resend=vi.fn();renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Content.Unavailable"}} onResend={resend}/>);
+ await userEvent.click(screen.getByRole("button",{name:"Mandar de nuevo"}));expect(resend).toHaveBeenCalledOnce();
+});

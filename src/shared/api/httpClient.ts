@@ -49,7 +49,7 @@ async function readProblem(response: Response): Promise<ProblemDetails> {
 
 async function send(path: string, init: RequestInit, token: string | undefined): Promise<Response> {
   const headers = new Headers(init.headers);
-  headers.set("accept", "application/json");
+  if (!headers.has("accept")) headers.set("accept", "application/json");
 
   if (token) {
     headers.set("authorization", `Bearer ${token}`);
@@ -68,7 +68,7 @@ async function send(path: string, init: RequestInit, token: string | undefined):
   return fetch(path, { ...init, headers });
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}, binary = false): Promise<T> {
   let token = options.getAccessToken?.();
   let response: Response;
 
@@ -101,6 +101,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(response.status, await readProblem(response));
   }
 
+  if (binary) {
+    try { return await response.blob() as T; }
+    catch (error) { if (init.signal?.aborted) throw error; throw ApiError.network(); }
+  }
+
   if (response.status === 204 || response.headers.get("content-length") === "0") {
     return undefined as T;
   }
@@ -113,6 +118,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  blob: (path: string, init?: RequestInit) => request<Blob>(path, { ...init, method: "GET", cache: "no-store", headers: { accept: "application/octet-stream", ...init?.headers } }, true),
   get: <T>(path: string, init?: RequestInit) => request<T>(path, { ...init, method: "GET" }),
   post: <T>(path: string, body?: unknown, init?: RequestInit) =>
     request<T>(path, { ...init, method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }),

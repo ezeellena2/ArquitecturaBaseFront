@@ -165,7 +165,11 @@
       "revoked": "Ya no tenés permiso para ver estas respuestas.",
       "messageRemoved": "El mensaje de WhatsApp ya no está disponible. La respuesta sigue guardada.",
       "catalogInactive": "{{label}}: una opción se dio de baja. No se guardó la respuesta.",
-      "resend": "Mandar de nuevo"
+      "resend": "Mandar de nuevo",
+      "downloading": "Recibimos el formulario. Estamos bajando los archivos de WhatsApp y guardando la respuesta.",
+      "retryingFiles": "Estamos intentando bajar los archivos de nuevo. No hace falta hacer nada.",
+      "filesUnavailable": "No pudimos bajar los archivos de WhatsApp. No se guardó la respuesta. Podés mandar el formulario de nuevo.",
+      "filesRejected": "Uno de los archivos no cumple el tipo, tamaño o contenido admitido. No se guardó la respuesta."
     },
     "catalogs": {
       "loading": "Preparando las opciones para esta persona…",

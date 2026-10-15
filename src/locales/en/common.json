@@ -135,5 +135,16 @@
     },
     "signingOut": "Signing you out…",
     "signOutError": "We could not sign you out. Try again."
+  },
+  "files": {
+    "download": "Download",
+    "openPhoto": "View {{name}}",
+    "morePhotos": "View {{count}} more photos",
+    "none": "No files",
+    "loading": "Loading…",
+    "unavailable": "The file could not be loaded.",
+    "photoPosition": "Photo {{index}} of {{count}}",
+    "previous": "Previous photo",
+    "next": "Next photo"
   }
 }
