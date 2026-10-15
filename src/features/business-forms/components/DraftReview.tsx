@@ -51,6 +51,7 @@ export function DraftReviewChanges({ value, definition, culture }: { value: Draf
       const q = item as DraftQuestion;
       const help = q.help && Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => entry[1] !== null));
       return [text(q.label), t("types." + questionEditorType(q)), t(q.required ? "required" : "optional"), help ? `${t("help")}: ${text(help)}` : "",
+        q.type === "photo" || q.type === "document" ? t("files.range", { minimum: q.files.minFiles, maximum: q.files.maxFiles }) + (q.type === "photo" ? " · " + t("files.sources." + q.files.photoSource) : "") : "",
         "maxLength" in q ? `${t("maxLength")}: ${q.maxLength ?? (q.type === "shortText" ? 80 : 600)}` : "",
         q.type === "choice" && !q.source && !review.rows.some(r => r.parentId === row.parentId && r.kind === "option") ? q.options.map(o => text(o.label)).join("; ") : ""].filter(Boolean).join(" · ");
     }

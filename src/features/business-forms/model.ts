@@ -1,12 +1,15 @@
 // Closed draft model. Authored options and source.catalog are mutually exclusive.
 export type FormCulture = "es" | "en";
 export type LocalizedText = Readonly<Record<string, string>>;
+export interface FormFileSettings { readonly minFiles: number; readonly maxFiles: number; readonly photoSource?: "cameraOrGallery" | "camera" | null }
+
 type QuestionContent<TOption, THelp, TMaxLength = number, TCatalog = string> = {
   readonly label: LocalizedText;
   readonly help: THelp;
   readonly required: boolean;
 } & (
   | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null }
+  | { readonly type: "photo" | "document"; readonly files: FormFileSettings; readonly source?: null }
   | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null }
   | { readonly type: "choice"; readonly options: readonly TOption[]; readonly source?: null }
   | { readonly type: "choice"; readonly source: { readonly catalog: TCatalog }; readonly options?: null }

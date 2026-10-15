@@ -34,6 +34,7 @@ function editorQuestion(field: CanonicalQuestion, localId: string, optionLocalId
   const common = { localId, fieldId: field.fieldId, replacesFieldId: null, label: field.label, help: field.help, required: field.required };
   switch (field.type) {
     case "choice": return field.source ? { ...common, type: field.type, source: { ...field.source } } : { ...common, type: field.type, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
+    case "photo": case "document": return { ...common, type: field.type, files: { ...field.files } };
     case "shortText": case "longText": return { ...common, type: field.type, maxLength: field.maxLength };
     default: return { ...common, type: field.type };
   }
@@ -109,6 +110,8 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
       || binding.replacesFieldId !== field.replacesFieldId
       || (field.fieldId !== null && binding.fieldId !== field.fieldId)
       || (field.replacesFieldId !== null && binding.fieldId === field.replacesFieldId)) return null;
+    if ((field.type === "photo" || field.type === "document") && (saved.type === "photo" || saved.type === "document")
+      && (field.files.minFiles !== saved.files.minFiles || field.files.maxFiles !== saved.files.maxFiles || (field.files.photoSource ?? null) !== (saved.files.photoSource ?? null))) return null;
     const options = new Map<string, string>();
     if (field.type === "choice" && saved.type === "choice" && field.source?.catalog !== saved.source?.catalog) return null;
     if (field.type === "choice" && saved.type === "choice" && !field.source && !saved.source) {

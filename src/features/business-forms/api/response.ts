@@ -9,9 +9,12 @@ const text = z.record(z.string().refine(value => value === "es" || value === "en
 const nameText = text.refine(map => Object.values(map).every(value => value.length <= 120 && value === value.trim()));
 const helpText = text.refine(map => Object.keys(map).length > 0 && Object.values(map).every(value => !!value.trim()));
 const choice = z.strictObject({ choiceId: guid, label: text });
-const field = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice"]),
+const field = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "photo", "document"]),
   label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullish(), source: z.strictObject({ catalog: guid }).nullish(),
+  files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullish() }).optional(),
 }).superRefine((value, context) => {
+  const fileType = value.type === "photo" || value.type === "document";
+  if (fileType ? !value.files || value.files.minFiles > value.files.maxFiles || value.required !== (value.files.minFiles > 0) || (value.type === "photo" ? !value.files.photoSource : value.files.photoSource != null) : value.files !== undefined) context.addIssue({ code: "custom", message: "Invalid file configuration." });
   const textType = value.type === "shortText" || value.type === "longText";
   if ((textType ? value.maxLength === null : value.maxLength !== null)
     || (value.type === "choice" ? value.source ? value.options != null : value.options == null : value.options !== null || value.source != null)
@@ -64,8 +67,9 @@ export function recoveryPath(requestId: string): string { return `/api/forms/dra
 
 function adaptDefinition(value: z.infer<typeof definition>): FormDefinitionSnapshot {
   return { ...value, draft: { ...value.draft, fields: value.draft.fields.map((item): CanonicalQuestion => {
-    const { maxLength, options, source, ...common } = item;
+    const { maxLength, options, source, files, ...common } = item;
     switch (common.type) {
+      case "photo": case "document": return { ...common, type: common.type, files: files! };
       case "shortText": case "longText": return { ...common, type: common.type, maxLength: maxLength! };
       case "choice": return source ? { ...common, type: common.type, source } : { ...common, type: common.type, options: options! };
       default: return { ...common, type: common.type };

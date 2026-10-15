@@ -9,5 +9,5 @@ it("shows a catalog question without resolving or offering options", async () =>
   await act(async () => { renderWithProviders(<FormPreview value={value} culture="es" />); });
   const question = screen.getByRole("combobox", { name: "Cliente" });
   expect(question).toBeDisabled(); expect(within(question).getAllByRole("option")).toHaveLength(1);
-  expect(screen.getByText("Las opciones se preparan al mandar el formulario, para cada persona.")).toBeInTheDocument();
+  expect(screen.getByText("Las opciones se preparan según quien lo recibe, al mandar el formulario.")).toBeInTheDocument();
 });

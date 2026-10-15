@@ -12,11 +12,13 @@ export const questionEditorType = (question: DraftQuestion): QuestionEditorType 
 export function newQuestion(type: QuestionEditorType, culture: FormCulture, localId: string): DraftQuestion {
   const common = { localId, fieldId: null, replacesFieldId: null, label: { [culture]: "" }, help: null, required: false };
   return type === "shortText" || type === "longText" ? { ...common, type, maxLength: type === "shortText" ? 80 : 600 }
+    : type === "photo" || type === "document" ? { ...common, type, files: { minFiles: 0, maxFiles: 1, ...(type === "photo" ? { photoSource: "cameraOrGallery" as const } : {}) } }
     : type === "catalogChoice" ? { ...common, type: "choice", source: { catalog: null } }
     : type === "choice" ? { ...common, type, options: [{ localId: "first-option", choiceId: null, label: { [culture]: "" } }] } : { ...common, type };
 }
 export function replaceQuestionType(question: DraftQuestion, type: QuestionEditorType, localId: string, culture: FormCulture): DraftQuestion {
-  return { ...newQuestion(type, culture, localId), label: question.label, help: question.help, required: question.required,
+  const next = newQuestion(type, culture, localId);
+  return { ...next, ...(next.type === "photo" || next.type === "document" ? { files: { ...next.files, minFiles: question.required ? 1 : 0 } } : {}), label: question.label, help: question.help, required: question.required,
     replacesFieldId: question.fieldId ?? question.replacesFieldId };
 }
 export function changeQuestionCatalog(question: DraftQuestion, catalogId: string, localId: string): DraftQuestion {
@@ -38,7 +40,7 @@ export const missingFormTexts = (value: DraftEditorValue, culture: FormCulture) 
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const fieldIdentity = (q: DraftQuestion) => q.fieldId ?? "new:" + q.localId;
 const choiceIdentity = (o: DraftChoice) => o.choiceId ?? "new:" + o.localId;
-const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ?? null, required: q.required, ...("maxLength" in q ? { maxLength: q.maxLength } : {}) });
+const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ?? null, required: q.required, ...(q.type === "photo" || q.type === "document" ? { files: q.files } : {}), ...("maxLength" in q ? { maxLength: q.maxLength } : {}) });
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;

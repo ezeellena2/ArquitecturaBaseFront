@@ -107,7 +107,9 @@
     "date": "Fecha",
     "boolean": "Sí o no",
     "choice": "Elegir de una lista",
-    "catalogChoice": "Elegir de un catálogo"
+    "catalogChoice": "Elegir de un catálogo",
+    "photo": "Foto",
+    "document": "Documento"
   },
   "reviewOption": "{{question}} · Opción: {{option}}",
   "reviewOptionOrder": "Orden de opciones de {{question}}",
@@ -373,16 +375,43 @@
     "unavailableReason": "El catálogo tiene una configuración no válida."
   },
   "catalogQuestion": {
-    "optionsAtSend": "Las opciones se preparan al mandar el formulario, para cada persona.",
+    "optionsAtSend": "Las opciones se preparan según quien lo recibe, al mandar el formulario.",
     "catalog": "Catálogo",
     "selected": "Catálogo seleccionado",
     "requiresRead": "Necesitás permiso para leer catálogos y elegir uno.",
     "hint": "El empleado ve el texto y el detalle de cada opción.",
     "search": "Buscar catálogo",
-    "empty": "No hay catálogos que coincidan.",
+    "empty": "Todavía no hay catálogos disponibles.",
     "view": "Ver el catálogo",
     "changeTitle": "¿Cambiar el catálogo?",
     "changeDescription": "La pregunta guardada se reemplaza por una nueva. Las versiones anteriores conservan su catálogo.",
     "changeAction": "Cambiar catálogo"
+  },
+  "files": {
+    "photoSource": "De dónde sale la foto",
+    "sources": {
+      "cameraOrGallery": "Cámara o galería",
+      "camera": "Solo cámara"
+    },
+    "sourceHelp": {
+      "cameraOrGallery": "Puede sacarla en el momento o elegir una que ya tiene.",
+      "camera": "La saca en el momento: sirve como evidencia de la visita."
+    },
+    "howManyPhotos": "Cuántas fotos",
+    "howManyDocuments": "Cuántos documentos",
+    "minimum": "Mínimo",
+    "maximum": "Máximo",
+    "minimumHint": "Con mínimo 1, la pregunta es obligatoria. Con 0, es opcional.",
+    "documentTypes": "PDF, Excel, Word o imágenes JPEG y PNG. Sin CSV.",
+    "budget": "Archivos: hasta {{total}} de 10",
+    "storageMissing": "Falta configurar dónde se guardan los archivos",
+    "previewScreen": "Vista previa · pantalla {{number}} de {{total}}",
+    "attachDocument": "Adjuntar documento",
+    "takePhoto": "Sacar foto",
+    "addPhotos": "Agregar fotos",
+    "range": "Mínimo {{minimum}} · hasta {{maximum}}",
+    "previousScreen": "Pantalla anterior",
+    "continue": "Continuar",
+    "screenHint": "Cada pregunta de foto o documento abre su propia pantalla. Las preguntas siguientes pueden compartirla."
   }
 }

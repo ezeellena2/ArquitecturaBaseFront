@@ -14,12 +14,14 @@ import { localizedValue, missingQuestionTexts, moveItem, replaceQuestionType, qu
 import type { DraftQuestion, FormCulture } from "../model";
 import type { DraftFieldIssue } from "../validationPaths";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
+import { CatalogQuestionName } from "./CatalogQuestionName";
+import { FileQuestionSettings } from "./FileQuestionSettings";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 
-const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice"];
-export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope }: {
+const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
+export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, filesAvailable = false }: {
   question: DraftQuestion; position: number; total: number; culture: FormCulture; original: FormCulture; expanded: boolean; readOnly: boolean;
-  catalogScope?: CatalogReadScope;
+  catalogScope?: CatalogReadScope; filesAvailable?: boolean;
   issues: readonly DraftFieldIssue[]; onChange: (question: DraftQuestion) => void; onExpand: (open: boolean) => void; onMove: (delta: number) => void; onRemove: () => void;
 }) {
   const { t } = useTranslation("forms");
@@ -72,7 +74,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
   return <div ref={rootRef} data-question-local-id={question.localId} className="border-t border-[var(--color-border)] first:border-t-0">
     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
       <span className="text-sm text-[var(--color-content-muted)]">{position}</span>
-      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t("types." + questionEditorType(question))} · {t(question.required ? "required" : "optional")}{missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{t("publication.questionIssue", { language: t("cultures." + (issues[0]!.path.match(/\.(es|en)$/)?.[1] ?? culture)) })}</Badge> : null}</div>
+      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t("types." + questionEditorType(question))}{question.type === "photo" || question.type === "document" ? " · " + t("files.range", { minimum: question.files.minFiles, maximum: question.files.maxFiles }) + (question.type === "photo" ? " · " + t("files.sources." + question.files.photoSource) : "") : ""}{!expanded && question.type === "choice" && question.source?.catalog && catalogScope ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog} /> : null} · {t(question.required ? "required" : "optional")}{missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{t("publication.questionIssue", { language: t("cultures." + (issues[0]!.path.match(/\.(es|en)$/)?.[1] ?? culture)) })}</Badge> : null}</div>
       <div className="flex items-center gap-1">
         {!readOnly ? <>
         <IconButton size="icon-sm" label={t("up", { name: label })} disabled={readOnly || position === 1} disabledLabel={t("position", { name: label, position, total })} data-move-item={question.localId} data-move-delta={-1} onClick={() => moveQuestion(-1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
@@ -85,13 +87,14 @@ export function QuestionEditor({ question, position, total, culture, original, e
     {expanded ? <div className="flex flex-col gap-4 bg-[var(--color-surface-muted)] p-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label={t("question")} hint={reference(question.label)} error={fieldError("label")}><Input data-question-control="label" ref={inputRef} readOnly={readOnly} placeholder={t("missingText", { language: t("cultureNamesInText." + culture) })} value={question.label[culture] ?? ""} onChange={e => onChange({ ...question, label: { ...question.label, [culture]: e.target.value } })} /></FormField>
-        <FormField label={t("type")} error={fieldError("type")} hint={question.type === "date" ? t("dateHint") : undefined}><NativeSelect disabled={readOnly} value={questionEditorType(question)} onChange={e => changeType(e.target.value as QuestionEditorType)}>{types.map(type => <option key={type} value={type} disabled={type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read")}>{t(`types.${type}`)}</option>)}</NativeSelect></FormField>
+        <FormField label={t("type")} error={fieldError("type")} hint={question.type === "date" ? t("dateHint") : undefined}><NativeSelect disabled={readOnly} value={questionEditorType(question)} onChange={e => changeType(e.target.value as QuestionEditorType)}>{types.map(type => <option key={type} value={type} disabled={type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read") || (type === "photo" || type === "document") && !filesAvailable}>{t(`types.${type}`)}{(type === "photo" || type === "document") && !filesAvailable ? " · " + t("files.storageMissing") : ""}</option>)}</NativeSelect></FormField>
         <FormField label={t("help")} hint={reference(question.help) ?? t("optional")} error={fieldError("help")}><Textarea data-question-control="help" readOnly={readOnly} value={question.help?.[culture] ?? ""} onChange={e => onChange({ ...question, help: { ...question.help, [culture]: e.target.value || null } })} /></FormField>
         <div className="flex flex-col gap-4">
-          <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly} onCheckedChange={checked => onChange({ ...question, required: checked })} />
+          {question.type !== "photo" && question.type !== "document" ? <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly} onCheckedChange={checked => onChange({ ...question, required: checked })} /> : null}
           {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><Input type="number" min={1} max={10000} readOnly={readOnly} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></FormField> : null}
         </div>
       </div>
+      {question.type === "photo" || question.type === "document" ? <FileQuestionSettings question={question} readOnly={readOnly} error={fieldError("files")} onChange={onChange} /> : null}
       {question.type === "choice" && question.source ? <CatalogQuestionSelector scope={catalogScope ?? { actorId: null, culture, permissions: [] }} value={question.source.catalog ?? ""} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onChange={catalogId => {
         if (catalogId === question.source?.catalog) return;
         if (question.fieldId) setConfirmation({ catalog: catalogId });

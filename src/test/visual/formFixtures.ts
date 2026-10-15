@@ -194,6 +194,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       if (q.type === "choice" && !q.source) return { ...common, type: q.type, options: q.options.map(o => {
         const choiceId = o.choiceId ?? guid(serial++); choices.push({ fieldLocalId: q.localId, localId: o.localId, fieldId, choiceId }); return { choiceId, label: o.label };
       }) };
+      if (q.type === "photo" || q.type === "document") return { ...common, type: q.type, files: { ...q.files } };
       return q.type === "shortText" || q.type === "longText" ? { ...common, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600) } : { ...common, type: q.type };
     });
     const definition: FormDefinitionSnapshot = { id: previous?.id ?? guid(serial++), name: Object.fromEntries(Object.entries(body.name).map(([language, text]) => [language, text.trim()])), prefix: body.prefix, prefixLocked: previous?.prefixLocked ?? false,
