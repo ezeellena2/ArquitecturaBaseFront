@@ -128,7 +128,8 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await expect(page.getByText("Long display name that exceeds WhatsApp limits",{exact:true})).toBeVisible();
     const warning=page.getByText(es?"No entra en WhatsApp: máximo 30 caracteres de texto y 300 de detalle.":"Does not fit in WhatsApp: up to 30 characters of text and 300 of detail.",{exact:true});
     await expect(warning).toBeVisible();
-    await warning.scrollIntoViewIfNeeded();
+    await warning.evaluate(element=>element.scrollIntoView({block:"center"}));
+    await expect(warning).toBeInViewport({ratio:1});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({path:info.outputPath("filters-unrepresentable.png"),fullPage:true});
   });
