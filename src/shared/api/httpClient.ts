@@ -118,11 +118,8 @@ async function request<T>(path: string, init: RequestInit = {}, binary = false):
 }
 
 export const api = {
-  blob: (path: string, init?: RequestInit) => {
-    const headers = new Headers(init?.headers);
-    headers.set("accept", "application/octet-stream");
-    return request<Blob>(path, { ...init, method: "GET", cache: "no-store", headers }, true);
-  },
+  blob: (path: string, init?: RequestInit) =>
+    request<Blob>(path, { ...init, method: "GET", cache: "no-store" }, true),
   get: <T>(path: string, init?: RequestInit) => request<T>(path, { ...init, method: "GET" }),
   post: <T>(path: string, body?: unknown, init?: RequestInit) =>
     request<T>(path, { ...init, method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }),

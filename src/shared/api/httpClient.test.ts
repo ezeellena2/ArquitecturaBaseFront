@@ -250,3 +250,12 @@ it("reads private binary content through the same renewal and language pipeline"
   expect(new Uint8Array(await blob.arrayBuffer())).toEqual(new Uint8Array([1,2,3]));
   resetHttpClient();
 });
+
+it.each([404,429])("binary reads preserve ProblemDetails for HTTP %s",async status=>{
+ server.use(http.get("/api/files/error",({request})=>request.headers.get("accept")==="application/octet-stream"
+  ? new HttpResponse("Plain status",{status,headers:{"content-type":"text/plain"}})
+  : HttpResponse.json({title:"Error",detail:"Safe detail",code:"Files.Content.NotFound",traceId:"trace-file",retryAfter:23},{status,headers:{"content-type":"application/problem+json"}})));
+ const result:unknown=await api.blob("/api/files/error").catch((error:unknown)=>error);
+ expect(result).toBeInstanceOf(ApiError);
+ expect(result).toMatchObject({status,traceId:"trace-file",detail:"Safe detail",...(status===429?{retryAfterSeconds:23}:{})});
+});
