@@ -1,3 +1,4 @@
+import * as notifications from "@/shared/ui/notifications";
 import { focusManager } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -52,4 +53,12 @@ it.each(["Downloading","RetryingFiles"] as const)("shows %s without file values 
 it("offers a manual resend for an unavailable file without exposing file names",async()=>{
  const resend=vi.fn();renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Content.Unavailable"}} onResend={resend}/>);
  await userEvent.click(screen.getByRole("button",{name:"Mandar de nuevo"}));expect(resend).toHaveBeenCalledOnce();
+});
+
+it("reports several file failures once for the response through the local owner",async()=>{
+ const notify=vi.spyOn(notifications,"notify");
+ server.use(http.get("/api/forms/records/:record/files/:file/:kind",()=>HttpResponse.json({title:"Not found",detail:"File unavailable",code:"Files.Content.NotFound",traceId:"test"},{status:404})));
+ renderWithProviders(<FormReplyCard actor="actor" reply={reply}/>);
+ await waitFor(()=>expect(screen.getAllByText("No se pudo cargar el archivo.")).toHaveLength(2));
+ expect(notify).toHaveBeenCalledTimes(1);
 });

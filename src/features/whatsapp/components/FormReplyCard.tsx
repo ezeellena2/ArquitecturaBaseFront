@@ -1,4 +1,6 @@
-import { useCallback, useState } from "react";
+import { readErrorMessage } from "@/shared/api/errorFeedback";
+import { notify } from "@/shared/ui/notifications";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { MessageCard } from "@/shared/ui/MessageCard";
@@ -13,6 +15,13 @@ export function FormReplyCard({ reply, preserveViewport, onResend, actor="" }: {
   const { t } = useTranslation("whatsapp");
   const [filePermissionLost,setFilePermissionLost]=useState(false);
   const loseFilePermission=useCallback(()=>setFilePermissionLost(true),[]);
+  const fileRecordId=reply.state==="Completed"?reply.recordId:"";
+  const fileErrorReported=useRef(false);
+  const reportFileError=useCallback((error:unknown)=>{
+    if(fileErrorReported.current)return;
+    fileErrorReported.current=true;
+    notify({id:"form-files:"+actor+":"+fileRecordId,kind:"error",message:readErrorMessage(error,t)});
+  },[actor,fileRecordId,t]);
   const name = reply.name ?? t("forms.formLabel");
   const completed = reply.state === "Completed";
   const label = completed ? t("forms.reply.savedName", { name, number: reply.recordNumber }) : t("forms.reply.stateName", { name });
@@ -22,7 +31,7 @@ export function FormReplyCard({ reply, preserveViewport, onResend, actor="" }: {
   return <div role="group" aria-label={label}>
     <MessageCard icon={<FormIcon className="size-4" />} title={name} description={t("forms.reply.label")}>
       {completed ? <>
-        {reply.values !== null && !filePermissionLost ? <FormReplyValues rows={reply.values} actor={actor} recordId={reply.recordId} number={reply.recordNumber} onForbidden={loseFilePermission} preserveViewport={preserveViewport} /> : null}
+        {reply.values !== null && !filePermissionLost ? <FormReplyValues rows={reply.values} actor={actor} recordId={reply.recordId} number={reply.recordNumber} onForbidden={loseFilePermission} onFileError={reportFileError} preserveViewport={preserveViewport} /> : null}
         <p className="flex items-start gap-2 border-t border-[var(--color-border)] bg-[var(--color-success-50)] px-3 py-2 text-sm text-[var(--color-success-700)]"><CheckIcon className="mt-0.5 size-4 shrink-0" />{t("forms.reply.saved", { number: reply.recordNumber })}</p>
         {reply.values === null || filePermissionLost ? <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm"><InfoIcon className="mt-0.5 size-4 shrink-0" />{t(reply.valuesRevoked || filePermissionLost ? "forms.reply.revoked" : "forms.reply.noPermission")}</p> : null}
         {reply.messageRemoved ? <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm"><InfoIcon className="mt-0.5 size-4 shrink-0" />{t("forms.reply.messageRemoved")}</p> : null}

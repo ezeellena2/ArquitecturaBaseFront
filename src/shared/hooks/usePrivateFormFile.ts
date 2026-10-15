@@ -5,12 +5,12 @@ import { ApiError } from "@/shared/api/ApiError";
 import { readFormFile } from "@/shared/api/formFiles";
 
 // Only mounted under an authorized record. Unmount cancels reads and discards private bytes.
-export function usePrivateFormFile(actor:string,recordId:string,fileId:string,thumbnail:boolean,onForbidden:()=>void) {
+export function usePrivateFormFile(actor:string,recordId:string,fileId:string,thumbnail:boolean,onForbidden:()=>void,onError:(error:unknown)=>void) {
   const {i18n}=useTranslation();
   const query=useQuery({queryKey:["form-files",actor,i18n.resolvedLanguage,recordId,fileId,thumbnail],
-    queryFn:({signal})=>readFormFile(recordId,fileId,thumbnail,signal),gcTime:0,staleTime:Infinity,refetchOnMount:false,refetchOnWindowFocus:false,refetchOnReconnect:false});
+    meta:{errorOwner:"local"},queryFn:({signal})=>readFormFile(recordId,fileId,thumbnail,signal),gcTime:0,staleTime:Infinity,refetchOnMount:false,refetchOnWindowFocus:false,refetchOnReconnect:false});
   const denied=query.error instanceof ApiError && (query.error.status===403||query.error.status===401);
-  useEffect(()=>{if(denied)onForbidden();},[denied,onForbidden]);
+  useEffect(()=>{if(denied)onForbidden();else if(query.error)onError(query.error);},[denied,query.error,onForbidden,onError]);
   return {...query,data:denied?undefined:query.data};
 }
 export function savePrivateBlob(blob:Blob,name:string) {

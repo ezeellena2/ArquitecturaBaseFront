@@ -17,7 +17,7 @@ export function PhotoViewer({title,description,name,size,index,count,blob,loadin
   onKeyDown={event=>{if(event.key==="Escape"){event.preventDefault();onClose();}if(event.key==="ArrowLeft"&&index>0){event.preventDefault();onIndex(index-1);}if(event.key==="ArrowRight"&&index<count-1){event.preventDefault();onIndex(index+1);}}}>
   <DialogHeader className="border-b bg-[var(--color-surface-header)] px-5 py-4 pr-12"><DialogTitle>{title}</DialogTitle><DialogDescription>{t("files.photoPosition",{index:index+1,count})} · {description}</DialogDescription></DialogHeader>
   <div className="relative flex min-h-48 items-center justify-center bg-[var(--color-sidebar)] px-12 py-4 sm:min-h-80">
-   {blob?<PrivateImage blob={blob} alt={name} className="max-h-[55svh] max-w-full object-contain"/>:<p role="status" className="text-sm text-[var(--color-sidebar-foreground)]">{t(loading?"files.loading":"files.unavailable")}</p>}
+   {blob?<PrivateImage blob={blob} alt={name} className="max-h-[55svh] max-w-full object-contain"/>:<p role={loading?"status":undefined} aria-hidden={!loading} className="text-sm text-[var(--color-sidebar-foreground)]">{t(loading?"files.loading":"files.unavailable")}</p>}
    <div className="absolute inset-y-0 left-1 flex items-center"><IconButton variant="outline" label={t("files.previous")} disabled={index===0} onClick={()=>onIndex(index-1)}><ChevronLeftIcon className="size-5"/></IconButton></div>
    <div className="absolute inset-y-0 right-1 flex items-center"><IconButton variant="outline" label={t("files.next")} disabled={index===count-1} onClick={()=>onIndex(index+1)}><ChevronRightIcon className="size-5"/></IconButton></div>
   </div>
