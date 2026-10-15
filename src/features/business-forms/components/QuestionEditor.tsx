@@ -92,7 +92,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
           {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><Input type="number" min={1} max={10000} readOnly={readOnly} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></FormField> : null}
         </div>
       </div>
-      {question.type === "choice" && question.source ? <CatalogQuestionSelector scope={catalogScope ?? { actorId: null, culture, permissions: [] }} value={question.source.catalog} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onChange={catalogId => {
+      {question.type === "choice" && question.source ? <CatalogQuestionSelector scope={catalogScope ?? { actorId: null, culture, permissions: [] }} value={question.source.catalog ?? ""} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onChange={catalogId => {
         if (catalogId === question.source?.catalog) return;
         if (question.fieldId) setConfirmation({ catalog: catalogId });
         else onChange(changeQuestionCatalog(question, catalogId, question.localId));

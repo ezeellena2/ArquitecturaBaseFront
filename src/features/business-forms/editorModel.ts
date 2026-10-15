@@ -12,7 +12,7 @@ export const questionEditorType = (question: DraftQuestion): QuestionEditorType 
 export function newQuestion(type: QuestionEditorType, culture: FormCulture, localId: string): DraftQuestion {
   const common = { localId, fieldId: null, replacesFieldId: null, label: { [culture]: "" }, help: null, required: false };
   return type === "shortText" || type === "longText" ? { ...common, type, maxLength: type === "shortText" ? 80 : 600 }
-    : type === "catalogChoice" ? { ...common, type: "choice", source: { catalog: "" } }
+    : type === "catalogChoice" ? { ...common, type: "choice", source: { catalog: null } }
     : type === "choice" ? { ...common, type, options: [{ localId: "first-option", choiceId: null, label: { [culture]: "" } }] } : { ...common, type };
 }
 export function replaceQuestionType(question: DraftQuestion, type: QuestionEditorType, localId: string, culture: FormCulture): DraftQuestion {

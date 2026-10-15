@@ -1,7 +1,7 @@
 // Closed draft model. Authored options and source.catalog are mutually exclusive.
 export type FormCulture = "es" | "en";
 export type LocalizedText = Readonly<Record<string, string>>;
-type QuestionContent<TOption, THelp, TMaxLength = number> = {
+type QuestionContent<TOption, THelp, TMaxLength = number, TCatalog = string> = {
   readonly label: LocalizedText;
   readonly help: THelp;
   readonly required: boolean;
@@ -9,11 +9,11 @@ type QuestionContent<TOption, THelp, TMaxLength = number> = {
   | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null }
   | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null }
   | { readonly type: "choice"; readonly options: readonly TOption[]; readonly source?: null }
-  | { readonly type: "choice"; readonly source: { readonly catalog: string }; readonly options?: null }
+  | { readonly type: "choice"; readonly source: { readonly catalog: TCatalog }; readonly options?: null }
 );
 export type DraftChoice = { readonly localId: string; readonly choiceId: string | null; readonly label: LocalizedText };
 export type CanonicalChoice = { readonly choiceId: string; readonly label: LocalizedText };
-export type DraftQuestion = QuestionContent<DraftChoice, Readonly<Record<string, string | null>> | null, number | null> & {
+export type DraftQuestion = QuestionContent<DraftChoice, Readonly<Record<string, string | null>> | null, number | null, string | null> & {
   readonly localId: string;
   readonly fieldId: string | null;
   readonly replacesFieldId: string | null;

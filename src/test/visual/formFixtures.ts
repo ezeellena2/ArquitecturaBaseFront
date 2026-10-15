@@ -187,7 +187,10 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     const canonical: CanonicalQuestion[] = body.draft.fields.map(q => {
       const fieldId = q.fieldId ?? guid(serial++); const common = { fieldId, key: key(fieldId), label: q.label, help: q.help && Object.values(q.help).some(text => !!text?.trim()) ? Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => !!entry[1]?.trim())) : null, required: q.required };
       fields.push({ localId: q.localId, fieldId, key: common.key, replacesFieldId: q.replacesFieldId });
-      if (q.type === "choice" && q.source) return { ...common, type: q.type, source: { ...q.source } };
+      if (q.type === "choice" && q.source) {
+        if (!q.source.catalog) throw new Error("The synthetic canonical response requires a selected catalog.");
+        return { ...common, type: q.type, source: { catalog: q.source.catalog } };
+      }
       if (q.type === "choice" && !q.source) return { ...common, type: q.type, options: q.options.map(o => {
         const choiceId = o.choiceId ?? guid(serial++); choices.push({ fieldLocalId: q.localId, localId: o.localId, fieldId, choiceId }); return { choiceId, label: o.label };
       }) };

@@ -456,3 +456,32 @@ it("offers only Stay when navigation is attempted during an unresolved save", as
     expect(within(dialog).queryByRole("button", { name: "Descartar" })).not.toBeInTheDocument();
   } finally { release(); }
 });
+
+it("creates a catalog question, reports its missing selection, then saves the selected catalog", async () => {
+  const store = setup("forms-empty", ["formtemplates.read","formtemplates.manage","formcatalogs.read"]);
+  const catalogId = "01990000-0000-7000-8000-000000000080";
+  const sent: unknown[] = [];
+  server.use(http.get("/api/forms/catalogs", () => Response.json({items:[{id:catalogId,name:"Clientes",description:null,origin:"Manual",optionsCount:1,usageCount:0,state:"Active",stateReason:null,canEdit:false}],page:1,pageSize:20,totalCount:1,totalPages:1,hasPrevious:false,hasNext:false,filterCounts:{byKind:{all:1,manual:1,filters:0}}})),
+    http.post("/api/forms/definitions", async ({request}) => {
+      const body = await request.clone().json() as {draft:{fields:{source:{catalog:string|null}}[]}}; sent.push(body);
+      if (sent.length===1) {
+        expect(body.draft.fields[0]!.source.catalog).toBeNull();
+        return Response.json({code:"Validation.Failed",errors:{"draft.fields[0].source.catalog":["Elegí un catálogo."]}},{status:400});
+      }
+      return store.handle(request);
+    }));
+  const {router} = renderRouteWithProviders("/formularios/nuevo");
+  await userEvent.type(await screen.findByLabelText("Nombre"),"Visita catálogo");
+  await userEvent.click(screen.getByRole("button",{name:"Agregar pregunta"}));
+  await userEvent.type(screen.getAllByRole("textbox",{name:"Pregunta"})[0]!,"Cliente");
+  await userEvent.selectOptions(screen.getByLabelText("Tipo de respuesta"),"catalogChoice");
+  await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));
+  expect(await screen.findByText("Elegí un catálogo.")).toBeInTheDocument();
+  const catalog = screen.getByRole("combobox",{name:"Catálogo"});
+  expect(catalog).toHaveAttribute("aria-invalid","true");
+  await screen.findByRole("option",{name:/Clientes ·/});
+  await userEvent.selectOptions(catalog,catalogId);
+  await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));
+  await waitFor(()=>expect(router.state.location.pathname).toMatch(/^\/formularios\/0199/));
+  expect(sent).toHaveLength(2);
+});
