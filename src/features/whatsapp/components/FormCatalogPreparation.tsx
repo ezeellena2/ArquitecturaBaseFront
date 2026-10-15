@@ -15,6 +15,6 @@ export function FormCatalogPreparation({query,waiting}: {query:UseQueryResult<Ch
     <Button type="button" variant="outline" size="sm" disabled={waiting||query.isFetching} onClick={()=>void query.refetch()}>{t("retry")}</Button></div>;
   return <div className="flex flex-col gap-2">
     {query.data.preparation.catalogs.map(offer=><Banner key={offer.fieldId}>{t("forms.catalogs.options",{label:offer.label,count:offer.count})}</Banner>)}
-    {query.data.preparation.issues.map(issue=><Banner key={issue.fieldId} tone="danger">{t("forms.catalogs."+(issueKeys[issue.code]??"unavailable"),{label:issue.label})}</Banner>)}
+    {query.data.preparation.issues.map(issue=><Banner key={issue.fieldId} tone="danger">{t("forms.catalogs."+(issueKeys[issue.code]??"unavailable"),{label:issue.label,catalog:issue.catalogName,count:issue.invalidOptionCount ?? undefined})}</Banner>)}
   </div>;
 }

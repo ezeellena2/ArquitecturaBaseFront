@@ -175,7 +175,8 @@
       "unavailable": "{{label}}: the catalog is unavailable. Notify its administrator.",
       "tooLarge": "{{label}}: exceeds the 200 options supported by WhatsApp. Adjust the catalog before sending.",
       "empty": "{{label}}: has no options and the question is required.",
-      "invalidOption": "{{label}}: an option exceeds WhatsApp limits. Adjust the text or detail without truncating data."
+      "invalidOption_one": "{{label}}: {{count}} option in {{catalog}} does not fit in WhatsApp. Review its text and detail.",
+      "invalidOption_other": "{{label}}: {{count}} options in {{catalog}} do not fit in WhatsApp. Review their text and details."
     }
   }
 }

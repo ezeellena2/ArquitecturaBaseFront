@@ -344,7 +344,8 @@
       "readOnlyPreview": "You need permission to manage catalogs to test this preview.",
       "unavailableColumn": "Unavailable column",
       "unavailableOperator": "Unavailable comparison",
-      "unavailableValue": "Unavailable value"
+      "unavailableValue": "Unavailable value",
+      "optionTooLong": "Does not fit in WhatsApp: up to 30 characters of text and 300 of detail."
     },
     "metadata": {
       "title": "The catalog",

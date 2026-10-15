@@ -22,7 +22,7 @@ const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.s
 
 const catalogOfferSchema = z.strictObject({fieldId:guid,label:z.string().min(1),count:z.number().int().min(0).max(200)});
 const preparationSchema = z.strictObject({culture,recipientContextRevision:z.string().min(1),preparation:z.strictObject({
-  catalogs:z.array(catalogOfferSchema).max(40),issues:z.array(z.strictObject({fieldId:guid,label:z.string(),code:z.string().min(1)})).max(40),canSend:z.boolean(),
+  catalogs:z.array(catalogOfferSchema).max(40),issues:z.array(z.strictObject({fieldId:guid,label:z.string(),code:z.string().min(1),catalogName:z.string().nullable(),invalidOptionCount:z.number().int().nonnegative().nullable()})).max(40),canSend:z.boolean(),
 })}).refine(value=>value.preparation.canSend===(value.preparation.issues.length===0)
   && new Set(value.preparation.catalogs.map(offer=>offer.fieldId)).size===value.preparation.catalogs.length);
 export type ChatFormPreparation = z.infer<typeof preparationSchema>;

@@ -344,7 +344,8 @@
       "readOnlyPreview": "Necesitás permiso para administrar catálogos para probar esta vista.",
       "unavailableColumn": "Columna no disponible",
       "unavailableOperator": "Comparación no disponible",
-      "unavailableValue": "Valor no disponible"
+      "unavailableValue": "Valor no disponible",
+      "optionTooLong": "No entra en WhatsApp: máximo 30 caracteres de texto y 300 de detalle."
     },
     "metadata": {
       "title": "El catálogo",

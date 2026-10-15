@@ -35,6 +35,13 @@ async function mount(path: string) {
 beforeEach(async () => { queryClient.clear(); vi.mocked(notify).mockClear(); await i18n.changeLanguage("es"); });
 afterEach(() => { cleanup(); queryClient.clear(); });
 describe("Manual catalog page with synthetic current DTO responses", () => {
+  it("limits option text and detail to the complete WhatsApp lengths", async () => {
+    setup(); await mount("/catalogos/" + id);
+    await userEvent.click(await screen.findByRole("button", {name:"Editar Pérez"}));
+    expect(screen.getByRole("textbox", {name:"Texto"})).toHaveAttribute("maxlength", "30");
+    expect(screen.getByRole("textbox", {name:"Detalle"})).toHaveAttribute("maxlength", "300");
+  });
+
   it("creates bilingual metadata and one item in a single request and reloads its canonical identity", async () => {
     setup(); const bodies: Record<string, unknown>[] = [];
     server.use(http.post("/api/forms/catalogs", async ({ request }) => { const body = await request.json() as Record<string, unknown>; bodies.push(body); const items = body.items as { localId: string }[]; return HttpResponse.json({ catalog: initial, itemIdentityMap: { [items[0]!.localId]: itemId } }, { status: 201 }); }));
@@ -193,7 +200,7 @@ async function selectSample() { const user = userEvent.setup(); await user.click
 describe("Filters editor connected to current DTOs", () => {
   it("edits conditions, previews explicitly and saves only configuration", async () => {
     filterSetup(); const previews: unknown[] = []; const writes: unknown[] = [];
-    server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { previews.push(await request.json()); return HttpResponse.json({ items: [{ id, text: "Beatriz", detail: "Operario" }], totalCount: 1, exceedsLimit: false }); }), http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { const body = await request.json() as { filters: typeof filtersDetail.filters }; writes.push(body); return HttpResponse.json({ catalog: { ...filtersDetail, filters: body.filters, revision: 2 }, itemIdentityMap: {} }); }));
+    server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { previews.push(await request.json()); return HttpResponse.json({ items: [{ id, text: "Beatriz", detail: "Operario", canSend:true }], totalCount: 1, exceedsLimit: false }); }), http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { const body = await request.json() as { filters: typeof filtersDetail.filters }; writes.push(body); return HttpResponse.json({ catalog: { ...filtersDetail, filters: body.filters, revision: 2 }, itemIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición 1" }), "role");
     expect(screen.getByRole("combobox", { name: "Comparación de la condición 1" })).toHaveValue("has"); expect(writes).toHaveLength(0);
@@ -246,7 +253,7 @@ it("renders unchanged real K4 detail/options and the result of the captured prev
 
 it("edits fixed Users filters without source availability flags", async () => {
   filterSetup();
-  server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [{ id: itemId, text: "Beatriz", detail: null }], totalCount: 1, exceedsLimit: false })));
+  server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [{ id: itemId, text: "Beatriz", detail: null, canSend:true }], totalCount: 1, exceedsLimit: false })));
   await mount("/catalogos/" + id);
   expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeEnabled();
   expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toBeEnabled();
@@ -310,4 +317,15 @@ it.each([false, true])("saves and reloads deactivation and reactivation for Filt
   await user.click(screen.getByRole("button", { name: "Guardar" }));
   await waitFor(() => expect(detail.isActive).toBe(true));
   expect(bodies).toMatchObject([{ expectedRevision: 1, isActive: false }, { expectedRevision: 2, isActive: true }]);
+});
+
+it("marks the complete unrepresentable person in the filter preview", async () => {
+  filterSetup(); const longName = "Una persona con nombre que supera treinta caracteres";
+  server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({items:[{id,text:longName,detail:null,canSend:false}],totalCount:1,exceedsLimit:false})));
+  await mount("/catalogos/" + id);
+  await userEvent.type(await screen.findByRole("combobox", {name:"Como si lo recibiera"}), "Ana");
+  await userEvent.click(await screen.findByRole("option", {name:"Ana"}));
+  await userEvent.click(screen.getByRole("button", {name:"Probar"}));
+  expect(await screen.findByText(longName)).toBeInTheDocument();
+  expect(screen.getByText("No entra en WhatsApp: máximo 30 caracteres de texto y 300 de detalle.")).toBeInTheDocument();
 });

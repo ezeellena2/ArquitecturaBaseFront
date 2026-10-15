@@ -28,13 +28,13 @@ function ItemFields({ item, culture, readOnly, errors, onChange, onDone }: {
   return <Surface padded>
     <div className="grid gap-4 sm:grid-cols-2">
       <FormField label={t("catalogs.items.text")} required={culture === "es"} error={errors?.["text." + culture]?.join(" ")} hint={culture === "en" ? t("catalogs.items.englishHint") : undefined}>
-        <Input ref={textRef} maxLength={200} readOnly={readOnly} value={item.label[culture] ?? ""} onChange={event => onChange({ ...item, label: { ...item.label, [culture]: event.target.value } })} />
+        <Input ref={textRef} maxLength={30} readOnly={readOnly} value={item.label[culture] ?? ""} onChange={event => onChange({ ...item, label: { ...item.label, [culture]: event.target.value } })} />
       </FormField>
       <FormField label={t("catalogs.items.code")} required error={errors?.code?.join(" ")} hint={t("catalogs.items.codeHint")}>
         <Input maxLength={80} readOnly={readOnly} value={item.code} onChange={event => onChange({ ...item, code: event.target.value })} />
       </FormField>
       <FormField label={t("catalogs.items.detail")} error={errors?.["detail." + culture]?.join(" ")} hint={t("optional")}>
-        <Textarea maxLength={500} readOnly={readOnly} value={item.detail[culture] ?? ""} onChange={event => onChange({ ...item, detail: { ...item.detail, [culture]: event.target.value || null } })} />
+        <Textarea maxLength={300} readOnly={readOnly} value={item.detail[culture] ?? ""} onChange={event => onChange({ ...item, detail: { ...item.detail, [culture]: event.target.value || null } })} />
       </FormField>
       <CheckboxField label={t("catalogs.items.active")} description={t("catalogs.items.activeHint")} checked={item.isActive} disabled={readOnly} onCheckedChange={isActive => onChange({ ...item, isActive })} />
     </div>

@@ -139,7 +139,7 @@ it.each(["CatalogEmpty", "CatalogTooLarge", "CatalogUnavailable"])("blocks %s wi
   options[0] = {...options[0], hasCatalogQuestions:true};
   server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => HttpResponse.json({
     culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:false,catalogs:[],issues:[{
-      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record."+reason,
+      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record."+reason,catalogName:null,invalidOptionCount:null,
     }]},
   })));
   const dialog = await openForm();
@@ -182,4 +182,16 @@ it("retires prepared private options after an authoritative preparation denial",
   await waitFor(()=>expect(JSON.stringify(queryClient.getQueryCache().getAll().map(query=>query.state.data))).not.toContain("Private option marker"));
   expect(message).toHaveValue("Mensaje privado intacto");
   expect(posts).toEqual([]);
+});
+
+it("explains how many options do not fit and names only their catalog", async () => {
+  options[0] = {...options[0],hasCatalogQuestions:true};
+  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => HttpResponse.json({
+    culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:false,catalogs:[],issues:[{
+      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record.CatalogOptionInvalid",catalogName:"Clientes",invalidOptionCount:2,
+    }]},
+  })));
+  const dialog = await openForm();
+  expect(await within(dialog).findByText("Cliente: 2 opciones de Clientes no entran en WhatsApp. Revisá sus textos y detalles.")).toBeInTheDocument();
+  expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
 });

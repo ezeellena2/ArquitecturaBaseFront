@@ -15,7 +15,7 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
  const offers=[{fieldId:guid(701),label:"Cliente",count:2},{fieldId:guid(710),label:"Supervisor",count:7}];
  const problem=scenario.endsWith("unavailable")?"CatalogUnavailable":scenario.endsWith("large")?"CatalogTooLarge":scenario.endsWith("empty")?"CatalogEmpty":undefined;
  const preparation={culture:recipientCulture,recipientContextRevision:"fixture-context-1",preparation:{catalogs:problem?[]:offers,
-   issues:problem?[{fieldId:guid(701),label:"Cliente",code:"Forms.Record."+problem}]:[],canSend:!problem}};
+   issues:problem?[{fieldId:guid(701),label:"Cliente",code:"Forms.Record."+problem,catalogName:null,invalidOptionCount:null}]:[],canSend:!problem}};
  const thread:Thread={contact,messages:[{id:guid(602),direction:"Inbound",kind:"Text",body:contact.preview,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"}],outgoing:[],beforeId:null,beforeAtUtc:null};
  if(catalogScenario&&["completed","no-values","inactive","inactive-read"].some(value=>scenario.endsWith(value))){
    const rejected=scenario.includes("inactive");
