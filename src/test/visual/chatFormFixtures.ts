@@ -12,10 +12,7 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
  const options:ChatFormOption[]=Array.from({length:9},(_,i)=>({definitionId:guid(620+i),versionId:guid(640+i),versionNumber:1,prefix:"VIS",name:{es:i===0?"Registrar visita":"Formulario "+(i+1),en:i===0?"Register visit":"Form "+(i+1)},questionCount:4,submitLabel:{es:"Confirmar visita",en:"Confirm visit"}}));
  const catalogScenario=scenario.startsWith("forms-chat-catalog");
  if(catalogScenario)options[0].hasCatalogQuestions=true;
- const offers=[{fieldId:guid(701),key:"field_"+guid(701).replaceAll("-",""),label:"Cliente",catalogId:guid(702),revision:2,kind:"Manual",catalogName:"Clientes",
-   options:[{id:guid(703),text:"Pérez Hnos.",detail:"Av. Colón 1234"},{id:guid(704),text:"Ferretería Sur",detail:"Ruta 9 km 4"}]},
-   {fieldId:guid(710),key:"field_"+guid(710).replaceAll("-",""),label:"Supervisor",catalogId:guid(711),revision:1,kind:"Filters",catalogName:"Supervisores",
-    options:Array.from({length:7},(_,i)=>({id:guid(720+i),text:"Persona "+(i+1),detail:null}))}];
+ const offers=[{fieldId:guid(701),label:"Cliente",count:2},{fieldId:guid(710),label:"Supervisor",count:7}];
  const problem=scenario.endsWith("unavailable")?"CatalogUnavailable":scenario.endsWith("large")?"CatalogTooLarge":scenario.endsWith("empty")?"CatalogEmpty":undefined;
  const preparation={culture:recipientCulture,recipientContextRevision:"fixture-context-1",preparation:{catalogs:problem?[]:offers,
    issues:problem?[{fieldId:guid(701),label:"Cliente",code:"Forms.Record."+problem}]:[],canSend:!problem}};

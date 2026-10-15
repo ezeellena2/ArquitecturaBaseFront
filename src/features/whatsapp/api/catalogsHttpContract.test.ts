@@ -17,7 +17,8 @@ for(const culture of ["es","en"])describe("captured catalog HTTP "+culture,()=>{
     expect(prepared.recipientContextRevision).toBe(choices.recipientContextRevision);
     expect(prepared.preparation.canSend).toBe(true);
     expect(choices.page.items.some(option=>option.hasCatalogQuestions)).toBe(true);
-    expect(prepared.preparation.catalogs[0].options[0]).toMatchObject({text:"Pérez Hnos.",detail:"Av. Colón 1234"});
+    expect(prepared.preparation.catalogs[0]).toMatchObject({count:1});
+    expect(Object.keys(prepared.preparation.catalogs[0]).sort()).toEqual(["count","fieldId","label"]);
   });
   it("preserves the historical reference after reload and hides it without record permission",async()=>{
     for(const name of ["reply-completed","reply-reloaded","reply-without-read"]){

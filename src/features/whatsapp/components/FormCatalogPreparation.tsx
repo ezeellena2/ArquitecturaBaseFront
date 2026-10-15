@@ -14,7 +14,7 @@ export function FormCatalogPreparation({query,waiting}: {query:UseQueryResult<Ch
   if(query.isError) return <div className="flex items-center justify-between gap-2"><p className="text-sm">{t("forms.catalogs.loadFailed")}</p>
     <Button type="button" variant="outline" size="sm" disabled={waiting||query.isFetching} onClick={()=>void query.refetch()}>{t("retry")}</Button></div>;
   return <div className="flex flex-col gap-2">
-    {query.data.preparation.catalogs.map(offer=><Banner key={offer.fieldId}>{t("forms.catalogs.options",{label:offer.label,count:offer.options.length})}</Banner>)}
+    {query.data.preparation.catalogs.map(offer=><Banner key={offer.fieldId}>{t("forms.catalogs.options",{label:offer.label,count:offer.count})}</Banner>)}
     {query.data.preparation.issues.map(issue=><Banner key={issue.fieldId} tone="danger">{t("forms.catalogs."+(issueKeys[issue.code]??"unavailable"),{label:issue.label})}</Banner>)}
   </div>;
 }

@@ -124,9 +124,7 @@ it("prepares recipient catalogs and shows their counts before sending", async ()
   server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => {
     preparations++;
     return HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:true,issues:[],catalogs:[{
-      fieldId:"019abcde-1000-7000-8000-000000000020",key:"field_019abcde100070008000000000000020",label:"Cliente",
-      catalogId:"019abcde-1000-7000-8000-000000000021",revision:3,kind:"Manual",catalogName:"Clientes",
-      options:[{id:"019abcde-1000-7000-8000-000000000022",text:"Pérez Hnos.",detail:"Av. Colón 1234"}],
+      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",count:1,
     }]}});
   }));
   const dialog = await openForm();
@@ -173,9 +171,7 @@ it("retires prepared private options after an authoritative preparation denial",
   let denied=false;
   server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>denied?
     HttpResponse.json({code:"Http.Forbidden"},{status:403}):HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",
-      preparation:{canSend:true,issues:[],catalogs:[{fieldId:"019abcde-1000-7000-8000-000000000020",key:"field_019abcde100070008000000000000020",
-        label:"Cliente",catalogId:"019abcde-1000-7000-8000-000000000021",revision:1,kind:"Manual",catalogName:"Clientes",
-        options:[{id:"019abcde-1000-7000-8000-000000000022",text:"Private option marker",detail:null}]}]}})));
+      preparation:{canSend:true,issues:[],catalogs:[{fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",count:1}]}})));
   const dialog=await openForm();
   await within(dialog).findByText("Cliente: 1 opción");
   const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});

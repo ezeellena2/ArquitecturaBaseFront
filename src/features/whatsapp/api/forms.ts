@@ -20,10 +20,7 @@ export type ChatFormMetadata = z.infer<typeof formMetadataSchema>;
 export function readFormMetadata(value: unknown): ChatFormMetadata | null { const parsed = formMetadataSchema.safeParse(value); return parsed.success ? parsed.data : null; }
 const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.string().min(1), body: z.string().nullable(), requestedAtUtc: z.string().datetime({offset:true}), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.literal("Flow"), form: formMetadataSchema, recoveryPath: z.string().nullable() }).strict();
 
-const catalogOptionSchema = z.strictObject({id:guid,text:z.string().min(1).max(30),detail:z.string().max(300).nullable()});
-const catalogOfferSchema = z.strictObject({fieldId:guid,key:z.string(),label:z.string().min(1),catalogId:guid,
-  revision:z.number().int().positive(),kind:z.enum(["Manual","Filters"]),catalogName:z.string().min(1),options:z.array(catalogOptionSchema).max(200)})
-  .refine(value=>value.key==="field_"+value.fieldId.replaceAll("-","") && new Set(value.options.map(option=>option.id)).size===value.options.length);
+const catalogOfferSchema = z.strictObject({fieldId:guid,label:z.string().min(1),count:z.number().int().min(0).max(200)});
 const preparationSchema = z.strictObject({culture,recipientContextRevision:z.string().min(1),preparation:z.strictObject({
   catalogs:z.array(catalogOfferSchema).max(40),issues:z.array(z.strictObject({fieldId:guid,label:z.string(),code:z.string().min(1)})).max(40),canSend:z.boolean(),
 })}).refine(value=>value.preparation.canSend===(value.preparation.issues.length===0)
