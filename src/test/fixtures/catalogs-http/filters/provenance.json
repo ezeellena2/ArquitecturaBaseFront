@@ -1,38 +1,27 @@
 {
+  "producer": {
+    "repositoryHead": "337a93a86a2bbc1116f884e3f9b8226ac8e56eeb",
+    "test": "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogFiltersEndpointsTests",
+    "sourceState": [
+      " M docs/architecture/mapa-de-instrucciones.md",
+      " M docs/features/formularios.md",
+      " M docs/features/whatsapp.md",
+      " M docs/plans/formularios/etapa-2-catalogos.md",
+      " M src/ArquitecturaBase.Application/Modules/WhatsApp/AGENTS.md",
+      " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/AGENTS.md",
+      " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/AGENTS.md"
+    ],
+    "source": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
+    "sourceSha256": "77f028bcb4dc764cf8187e6bb39f1d5cde4c235488b0891e673a9de5cb377fcb",
+    "project": "ArquitecturaBase.Api.IntegrationTests"
+  },
   "schemaVersion": 1,
   "artifactSet": "filters",
-  "generatedAtUtc": "2026-10-12T22:02:57.9678654Z",
-  "producer": {
-    "project": "ArquitecturaBase.Api.IntegrationTests",
-    "test": "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogFiltersEndpointsTests",
-    "source": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
-    "sourceSha256": "8ffa0a949c6526ad4f750dafc3378f3bf7eb44c37db6bb67310fb6e7aced0302",
-    "repositoryHead": "441d6b5bdaa6e086d584027a8ac07567ec21ea9f",
-    "sourceState": "The K4 fixed-select and RoleId producer was tested from the current working tree."
-  },
   "runner": {
-    "command": "dotnet test --project tests/ArquitecturaBase.Api.IntegrationTests/ArquitecturaBase.Api.IntegrationTests.csproj -- --filter-class ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogFiltersEndpointsTests",
     "environment": {
-      "FORMS_HTTP_CONTRACT_OUTPUT": "C:\\Users\\ezequ\\source\\repos\\ArquitecturaBase\\.test-artifacts\\forms-step8\\k4-filters-current"
+      "FORMS_HTTP_CONTRACT_OUTPUT": "C:\\Users\\ezequ\\source\\repos\\ArquitecturaBase\\.test-artifacts\\review-k6-k7-final\\forms-http"
     },
-    "result": "Resumen de la serie de pruebas: Correcta!;   total: 1;   error: 0;   correcto: 1;   omitido: 0",
-    "exitCode": 0,
     "exportFiles": [
-      {
-        "path": "options.json",
-        "length": 1289,
-        "sha256": "3b4f5a8f9da6798ed1fed9f7e09c6e8a6eb27068875b472dc99c14055e6d1cb1"
-      },
-      {
-        "path": "preview-request.json",
-        "length": 328,
-        "sha256": "07052df868da4cf11fce660dcb27f91b31eec8a58c16eb340d14bc299c7f15bd"
-      },
-      {
-        "path": "preview.json",
-        "length": 186,
-        "sha256": "a64d5ec57c4e8e9e628b82f0ef08f2d7fd70816403bc14d3bc58d1109c228bf8"
-      },
       {
         "path": "create-request.json",
         "length": 273,
@@ -41,12 +30,27 @@
       {
         "path": "created.json",
         "length": 495,
-        "sha256": "e803b34d759e5fdc1c8649dfd965ee28d9e814bc7fee820470d94245202aea34"
+        "sha256": "d2a9266c486191e9877ef653d980dbab399057c8e06be672aaa40e5095e5f645"
       },
       {
         "path": "detail.json",
         "length": 466,
-        "sha256": "b623266f682f88a9912cb61478e0441a5efb7baee0a62eb89c7291cf7cc2304e"
+        "sha256": "6646a19af76e05cb126f8cd94b100a646532e079571035409433aeac42c6ec43"
+      },
+      {
+        "path": "options.json",
+        "length": 28240,
+        "sha256": "cdf9bccc7bbfd6e2ae6e00e10beacb07783b2b85bafaa503eee267cd36cab9d1"
+      },
+      {
+        "path": "preview-request.json",
+        "length": 328,
+        "sha256": "07c53a2c150b5feacca441e767df4b37d1c500fd86f0fd671b50c6deb1fa2d2a"
+      },
+      {
+        "path": "preview.json",
+        "length": 201,
+        "sha256": "1e3504a20b406cc6b4abbe331a387649ffe6f3cb777e4ea8b88a55d1293cd5ab"
       },
       {
         "path": "update-request.json",
@@ -56,8 +60,11 @@
       {
         "path": "updated.json",
         "length": 494,
-        "sha256": "68f268e2d339340e3cc4f5cbc2b4a0d96ca2728b42934877c7d1baf177adebb5"
+        "sha256": "6af2dfd27d982c1e3fbe1d1c1b01d956c7eb16efd6f94d41f6efa90392985115"
       }
-    ]
-  }
+    ],
+    "exitCode": 0,
+    "command": "dotnet test --no-restore"
+  },
+  "generatedAtUtc": "2026-10-15T12:11:49.6363590Z"
 }
