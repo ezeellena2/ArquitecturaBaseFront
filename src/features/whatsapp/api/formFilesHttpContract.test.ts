@@ -15,8 +15,10 @@ it("consumes the exact real draft and reply HTTP bodies exported with PostgreSQL
   expect(reply?.state).toBe(state);
   if(reply?.state==="Completed"){
    expect(reply.values!==null).toBe(allowed);
-   if(allowed){expect(reply.values?.map(v=>v.type)).toEqual(["photo","document"]);expect(JSON.stringify(reply.values)).toContain("obra.jpg");}
+   if(allowed){expect(reply.values?.map(v=>v.type)).toEqual(["photo","document","photo"]);expect(JSON.stringify(reply.values)).toContain("obra.jpg");}
   }else expect(reply?.values).toBeNull();
+  expect(reply?.fileCount).toBe(2);expect(reply?.receivedAtUtc).toEqual(expect.any(String));
+  if(reply?.state==="Completed"&&allowed)expect(reply.values?.[2]?.value).toEqual([]);
   expect(body).not.toContain("storageKey");expect(body).not.toContain("responses/");
  }
 });

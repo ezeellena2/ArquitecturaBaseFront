@@ -5,5 +5,6 @@ import {readFormCommit} from "./response";
 it("reads the exact file draft saved by the real backend",()=>{
  const directory=resolve(process.env.FORM_FILES_HTTP_INPUT??"src/test/fixtures/form-files-http");
  const created=readFormCommit(JSON.parse(readFileSync(resolve(directory,"draft-created.json"),"utf8")) as unknown);
- expect(created.definition.draft.fields.map(f=>f.type)).toEqual(["photo","document"]);
+ expect(created.definition.draft.fields.map(f=>f.type)).toEqual(["photo","document","photo"]);
+ expect(created.definition.draft.fields[2]).toMatchObject({required:false,files:{minFiles:0,maxFiles:1}});
 });
