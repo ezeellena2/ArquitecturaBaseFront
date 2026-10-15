@@ -1,5 +1,5 @@
 import * as notifications from "@/shared/ui/notifications";
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { http, HttpResponse } from "msw";
 import { afterEach, expect, it, vi } from "vitest";
@@ -69,4 +69,12 @@ it("keeps the shared failure and recovery visible until its last selector leaves
   expect(reads).toBe(1); expect(onChange).not.toHaveBeenCalled();
   await act(async () => { rendered.unmount(); });
   expect(dismiss).toHaveBeenCalledWith(noticeId);
+});
+
+it("distinguishes an empty catalog list from a search with no matches",async()=>{
+ server.use(http.get("/api/forms/catalogs",()=>HttpResponse.json({...page,items:[],totalCount:0,totalPages:0,hasPrevious:false,hasNext:false})));
+ renderWithProviders(<MemoryRouter><CatalogQuestionSelector scope={scope} value="" readOnly={false} onChange={vi.fn()}/></MemoryRouter>);
+ await screen.findByRole("searchbox");
+ fireEvent.change(screen.getByRole("searchbox"),{target:{value:"inexistente"}});
+ expect(await screen.findByText("No hay catálogos que coincidan con la búsqueda.")).toBeInTheDocument();
 });

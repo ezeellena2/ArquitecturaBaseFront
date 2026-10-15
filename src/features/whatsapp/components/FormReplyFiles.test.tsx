@@ -87,3 +87,18 @@ it("shows an explicit receiving title and the file count when the session is sti
  expect(screen.getByText("Recibiendo formulario")).toBeInTheDocument();
  expect(screen.getByText(/Recibimos 2 archivos/)).toBeInTheDocument();
 });
+
+it("does not offer resending in the file failure text without sending permission",()=>{
+ renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Content.Unavailable"}}/>);
+ expect(screen.queryByText(/Podés mandar el formulario de nuevo/)).not.toBeInTheDocument();
+});
+it("uses kilobytes for a small document",()=>{
+ renderWithProviders(<FormReplyCard actor="actor" reply={{...reply,values:[{id,label:"PDF",answer:{type:"document",value:[{...photo,name:"acta.pdf",contentType:"application/pdf",hasThumbnail:false}]}}]}}/>);
+ expect(screen.getByText("1 KB")).toBeInTheDocument();
+});
+it.each([[5,"Ver 1 foto más"],[8,"Ver 4 fotos más"]])("pluralizes the extra-photo button for %s photos",(count,label)=>{
+ const files=Array.from({length:Number(count)},(_,index)=>({...photo,fileId:`01999abc-1234-7000-8000-${String(index+1).padStart(12,"0")}`}));
+ server.use(http.get("/api/forms/records/:record/files/:file/:kind",()=>new HttpResponse(new Uint8Array([1]),{headers:{"content-type":"image/png"}})));
+ renderWithProviders(<FormReplyCard actor="actor" reply={{...reply,values:[{id,label:"Fotos",answer:{type:"photo",value:files}}]}}/>);
+ expect(screen.getByRole("button",{name:String(label)})).toBeInTheDocument();
+});

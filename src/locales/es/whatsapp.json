@@ -168,12 +168,13 @@
       "resend": "Mandar de nuevo",
       "downloading": "Recibimos el formulario. Estamos bajando los archivos de WhatsApp y guardando la respuesta.",
       "retryingFiles": "Estamos intentando bajar los archivos de nuevo. No hace falta hacer nada.",
-      "filesUnavailable": "No pudimos bajar los archivos de WhatsApp. No se guardó la respuesta. Podés mandar el formulario de nuevo.",
+      "filesUnavailable": "No pudimos bajar los archivos de WhatsApp. No se guardó la respuesta.",
       "filesRejected": "Uno de los archivos no cumple el tipo, tamaño o contenido admitido. No se guardó la respuesta.",
       "receiving": "Recibiendo formulario",
       "downloadingCount_one": "Recibimos {{count}} archivo. Lo estamos bajando de WhatsApp y guardando la respuesta.",
       "downloadingCount_other": "Recibimos {{count}} archivos. Los estamos bajando de WhatsApp y guardando la respuesta.",
-      "filesRejectedQuestion": "No pudimos guardar el archivo de «{{label}}». No se guardó la respuesta."
+      "filesRejectedQuestion": "No pudimos guardar el archivo de «{{label}}». No se guardó la respuesta.",
+      "filesResendHint": "Podés mandar el formulario de nuevo."
     },
     "catalogs": {
       "loading": "Preparando las opciones para esta persona…",

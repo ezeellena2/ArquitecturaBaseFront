@@ -8,7 +8,7 @@ import { usePrivateFormFile, savePrivateBlob } from "@/shared/hooks/usePrivateFo
 import { Button } from "@/shared/ui/button";
 import { PhotoViewer } from "@/shared/ui/PhotoViewer";
 
-function fileSize(bytes:number,language:string) {return new Intl.NumberFormat(language,{maximumFractionDigits:1}).format(bytes/(1024*1024))+" MB";}
+function fileSize(bytes:number,language:string) {return bytes<1024*1024?new Intl.NumberFormat(language).format(Math.max(1,Math.ceil(bytes/1024)))+" KB":new Intl.NumberFormat(language,{maximumFractionDigits:1}).format(bytes/(1024*1024))+" MB";}
 function Thumbnail({actor,recordId,file,selected,onOpen,onForbidden,onError}:{actor:string;recordId:string;file:PrivateFormFile;selected?:boolean;onOpen:()=>void;onForbidden:()=>void;onError:(error:unknown)=>void}) {
  const {t}=useTranslation();const query=usePrivateFormFile(actor,recordId,file.fileId,true,onForbidden,onError);
  return <PhotoThumbnail label={t("files.openPhoto",{name:file.name})+(query.data?"":" · "+t(query.isPending?"files.loading":"files.unavailable"))} selected={selected} onClick={onOpen}>

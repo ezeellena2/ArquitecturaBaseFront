@@ -139,12 +139,13 @@
   "files": {
     "download": "Download",
     "openPhoto": "View {{name}}",
-    "morePhotos": "View {{count}} more photos",
     "none": "No files",
     "loading": "Loading…",
     "unavailable": "The file could not be loaded.",
     "photoPosition": "Photo {{index}} of {{count}}",
     "previous": "Previous photo",
-    "next": "Next photo"
+    "next": "Next photo",
+    "morePhotos_one": "View {{count}} more photo",
+    "morePhotos_other": "View {{count}} more photos"
   }
 }

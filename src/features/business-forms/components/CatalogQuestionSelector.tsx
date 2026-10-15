@@ -43,7 +43,7 @@ export function CatalogQuestionSelector({ scope, value, readOnly, error, onChang
     {canRead && list.isPending ? <Spinner /> : null}
     {canRead && failure ? <div><Button type="button" variant="outline" onClick={() => { void list.refetch(); if (detailId) void detail.refetch(); }}>{t("common:actions.retry")}</Button></div> : null}
     {canRead && list.data && !readOnly ? <Pagination {...list.data} onPageChange={setPage} /> : null}
-    {canRead && list.data && !rows.length && !failure ? <EmptyState embedded title={t("catalogQuestion.empty")} /> : null}
+    {canRead && list.data && !rows.length && !failure ? <EmptyState embedded title={t(search.trim()?"catalogQuestion.noResults":"catalogQuestion.empty")} /> : null}
     {canRead && selected ? <div><Button type="button" variant="link" asChild><Link to={"/catalogos/" + value}>{t("catalogQuestion.view")}</Link></Button></div> : null}
   </div>;
 }

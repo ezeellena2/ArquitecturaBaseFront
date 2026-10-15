@@ -385,7 +385,8 @@
     "view": "View catalog",
     "changeTitle": "Change the catalog?",
     "changeDescription": "The saved question is replaced with a new one. Previous versions keep their catalog.",
-    "changeAction": "Change catalog"
+    "changeAction": "Change catalog",
+    "noResults": "No catalogs match your search."
   },
   "files": {
     "photoSource": "Photo source",

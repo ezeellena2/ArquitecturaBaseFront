@@ -139,12 +139,13 @@
   "files": {
     "download": "Descargar",
     "openPhoto": "Ver {{name}}",
-    "morePhotos": "Ver {{count}} fotos más",
     "none": "Sin archivos",
     "loading": "Cargando…",
     "unavailable": "No se pudo cargar el archivo.",
     "photoPosition": "Foto {{index}} de {{count}}",
     "previous": "Foto anterior",
-    "next": "Foto siguiente"
+    "next": "Foto siguiente",
+    "morePhotos_one": "Ver {{count}} foto más",
+    "morePhotos_other": "Ver {{count}} fotos más"
   }
 }
