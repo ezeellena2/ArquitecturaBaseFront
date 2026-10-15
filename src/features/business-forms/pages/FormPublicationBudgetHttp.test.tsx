@@ -50,7 +50,7 @@ for (const culture of ["es", "en"] as const) describe("publication response budg
     expect(checked.issues[0]!.message).toContain(culture === "es" ? "La respuesta máxima posible" : "The largest possible form response");
   });
 
-  it("blocks publication and locates the captured question in its own content language", async () => {
+  async function openBlockedPublication() {
     await act(() => i18n.changeLanguage(culture));
     const checks: { body: unknown; language: string | null }[] = [];
     let publications = 0;
@@ -72,26 +72,41 @@ for (const culture of ["es", "en"] as const) describe("publication response budg
     await screen.findByLabelText(text.name);
     await userEvent.click(screen.getByRole("button", { name: text.publication.title }));
     const dialog = await screen.findByRole("dialog", { name: text.publication.versionTitle.replace("{{version}}", "1") });
-    expect(within(dialog).getAllByText(captured.issues[0]!.message, { exact: true })).toHaveLength(captured.issues.length);
-    const publish = within(dialog).getByRole("button", { name: text.publication.publishVersion.replace("{{version}}", "1") });
-    expect(publish).toBeDisabled();
-    await userEvent.click(publish);
-    expect(publications).toBe(0);
-    expect(checks).toHaveLength(1);
-    expect(checks[0]!.language).toBe(culture);
-    expect(checks[0]!.body).not.toHaveProperty("requestId");
-    const firstFieldId = definition.draft.fields[0]!.fieldId;
-    const issueIndex = captured.issues.findIndex(issue => issue.fieldId === firstFieldId && issue.culture !== culture);
-    expect(issueIndex).toBeGreaterThanOrEqual(0);
-    const jumps = within(dialog).getAllByRole("button", { name: text.publication.goToQuestion });
-    expect(jumps).toHaveLength(captured.issues.length);
-    await userEvent.click(jumps[issueIndex]!);
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    const question = screen.getByLabelText(text.question);
-    expect(question).toHaveValue(captured.issues[issueIndex]!.culture === "en" ? "Response 0" : "Respuesta 0");
-    await waitFor(() => expect(question).toHaveFocus());
-    expect(screen.getByLabelText(text.maxLength)).toHaveValue(10000);
-    expect(publications).toBe(0);
-    expect(writes).toBe(0);
+    return { dialog, checks, getPublications: () => publications, getWrites: () => writes };
+  }
+
+  describe("blocked publication page", () => {
+    let page: Awaited<ReturnType<typeof openBlockedPublication>>;
+    beforeEach(async () => { page = await openBlockedPublication(); });
+
+    it("blocks publication with every captured budget error and does not write", async () => {
+      const { dialog, checks, getPublications, getWrites } = page;
+      expect(within(dialog).getAllByText(captured.issues[0]!.message, { exact: true })).toHaveLength(captured.issues.length);
+      const publish = within(dialog).getByRole("button", { name: text.publication.publishVersion.replace("{{version}}", "1") });
+      expect(publish).toBeDisabled();
+      await userEvent.click(publish);
+      expect(getPublications()).toBe(0);
+      expect(checks).toHaveLength(1);
+      expect(checks[0]!.language).toBe(culture);
+      expect(checks[0]!.body).not.toHaveProperty("requestId");
+      expect(getWrites()).toBe(0);
+    });
+
+    it("locates a captured question in its own content language without publishing", async () => {
+      const { dialog, getPublications, getWrites } = page;
+      const firstFieldId = definition.draft.fields[0]!.fieldId;
+      const issueIndex = captured.issues.findIndex(issue => issue.fieldId === firstFieldId && issue.culture !== culture);
+      expect(issueIndex).toBeGreaterThanOrEqual(0);
+      const jumps = within(dialog).getAllByRole("button", { name: text.publication.goToQuestion });
+      expect(jumps).toHaveLength(captured.issues.length);
+      await userEvent.click(jumps[issueIndex]!);
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      const question = screen.getByLabelText(text.question);
+      expect(question).toHaveValue(captured.issues[issueIndex]!.culture === "en" ? "Response 0" : "Respuesta 0");
+      await waitFor(() => expect(question).toHaveFocus());
+      expect(screen.getByLabelText(text.maxLength)).toHaveValue(10000);
+      expect(getPublications()).toBe(0);
+      expect(getWrites()).toBe(0);
+    });
   });
 });

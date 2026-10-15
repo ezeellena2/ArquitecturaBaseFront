@@ -14,6 +14,12 @@ import { notify } from "@/shared/ui/notifications";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
+// These cases verify complete draft values; pasting avoids a full-page render for every character.
+async function pasteText(control: HTMLElement, text: string) {
+  const user = userEvent.setup();
+  await user.click(control);
+  await user.paste(text);
+}
 function setup(scenario = "", permissions = ["formtemplates.read", "formtemplates.manage"]) {
   const store = createFormFixtureStore("es", scenario);
   server.use(http.all("/api/forms/*", ({ request }) => store.handle(request)),
@@ -89,7 +95,7 @@ describe("Forms routes", () => {
     const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
     await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar versión 1" }));
     await screen.findByRole("heading", { name: "Publicando · versión 1" });
-    await userEvent.type(screen.getByLabelText("Nombre"), " nuevo borrador");
+    await pasteText(screen.getByLabelText("Nombre"), " nuevo borrador");
     await userEvent.click(screen.getByRole("button", { name: "Consultar publicación" }));
     await screen.findByText("Enviada a WhatsApp; esperando confirmación");
     expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita nuevo borrador");
@@ -103,7 +109,7 @@ describe("Forms routes", () => {
   it("checks the newly saved revision after an explicit Save without accepting automatically", async () => {
     const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
     renderRouteWithProviders("/formularios/" + fixtureFormId);
-    await userEvent.type(await screen.findByLabelText("Nombre"), " editado");
+    await pasteText(await screen.findByLabelText("Nombre"), " editado");
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
     const first = await screen.findByRole("dialog", { name: "Primero guardá los cambios" });
     await userEvent.click(within(first).getByRole("button", { name: "Guardar borrador" }));
@@ -145,7 +151,7 @@ describe("Forms routes", () => {
     let checks = 0;
     server.use(http.post("/api/forms/definitions/:id/publication-checks", () => { checks++; return Response.json({}); }));
     renderRouteWithProviders("/formularios/" + fixtureFormId);
-    await userEvent.type(await screen.findByLabelText("Nombre"), " editado");
+    await pasteText(await screen.findByLabelText("Nombre"), " editado");
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
     const dialog = await screen.findByRole("dialog", { name: "Primero guardá los cambios" });
     expect(within(dialog).getByRole("button", { name: "Guardar borrador" })).toBeEnabled();
@@ -169,7 +175,7 @@ describe("Forms routes", () => {
     expect(screen.getByText("Original (Español): Importe cobrado")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Vista previa" })).getByRole("radio", { name: "No" })).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Vista previa" })).getByRole("radio", { name: "Yes" })).toBeInTheDocument();
-    await userEvent.type(screen.getByLabelText("Nombre"), "Visit report");
+    await pasteText(screen.getByLabelText("Nombre"), "Visit report");
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
     await waitFor(() => expect(store.definitions.get(fixtureFormId)?.revision).toBe(2));
     const saved = store.definitions.get(fixtureFormId)!;
@@ -223,7 +229,7 @@ describe("Forms routes", () => {
     const { router } = renderRouteWithProviders("/formularios/nuevo");
     await screen.findByLabelText("Nombre");
     expect(store.calls.filter(call => call.method === "POST")).toHaveLength(0);
-    await userEvent.type(screen.getByLabelText("Nombre"), "Registrar entrega");
+    await pasteText(screen.getByLabelText("Nombre"), "Registrar entrega");
     expect(screen.getByLabelText("Prefijo de numeración")).toHaveValue("ENT");
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/formularios\/0199/));
@@ -253,7 +259,7 @@ describe("Forms routes", () => {
     const store = setup("forms-conflict");
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     await userEvent.clear(await screen.findByLabelText("Nombre"));
-    await userEvent.type(screen.getByLabelText("Nombre"), "Mis cambios");
+    await pasteText(screen.getByLabelText("Nombre"), "Mis cambios");
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
     await userEvent.click(await screen.findByRole("button", { name: "Revisar" }));
     const review = await screen.findByRole("dialog", { name: "Revisión del borrador" });
@@ -279,7 +285,7 @@ describe("Forms routes", () => {
   it("does not interpret a missing receipt as rollback and recovers without creating another form", async () => {
     const store = setup("forms-uncertain");
     renderRouteWithProviders("/formularios/nuevo");
-    await userEvent.type(await screen.findByLabelText("Nombre"), "Registrar entrega");
+    await pasteText(await screen.findByLabelText("Nombre"), "Registrar entrega");
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
     await userEvent.click(await screen.findByRole("button", { name: "Consultar guardado" }));
     const replay = await screen.findByRole("button", { name: "Repetir el mismo intento" });
@@ -424,7 +430,7 @@ it("preserves unsaved text and focus when a detail refresh fails", async () => {
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const name = await screen.findByLabelText("Nombre");
   await userEvent.clear(name);
-  await userEvent.type(name, "Mi cambio sin guardar");
+  await pasteText(name, "Mi cambio sin guardar");
   server.use(http.get("/api/forms/definitions/:id", () => Response.json({ traceId: "detail-refresh" }, { status: 500 })));
   await act(() => queryClient.invalidateQueries({ predicate: query => query.queryKey.includes("detail") }));
   await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.message.includes("detail-refresh"))).toBe(true));
@@ -446,7 +452,7 @@ it("offers only Stay when navigation is attempted during an unresolved save", as
   const pending = new Promise<void>(resolve => { release = resolve; });
   server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => { await pending; return store.handle(request); }));
   const { router } = renderRouteWithProviders("/formularios/" + fixtureFormId);
-  await userEvent.type(await screen.findByLabelText("Nombre"), " cambio");
+  await pasteText(await screen.findByLabelText("Nombre"), " cambio");
   await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
   await act(() => router.navigate("/formularios"));
   try {
@@ -471,9 +477,9 @@ it("creates a catalog question, reports its missing selection, then saves the se
       return store.handle(request);
     }));
   const {router} = renderRouteWithProviders("/formularios/nuevo");
-  await userEvent.type(await screen.findByLabelText("Nombre"),"Visita catálogo");
+  await pasteText(await screen.findByLabelText("Nombre"),"Visita catálogo");
   await userEvent.click(screen.getByRole("button",{name:"Agregar pregunta"}));
-  await userEvent.type(screen.getAllByRole("textbox",{name:"Pregunta"})[0]!,"Cliente");
+  await pasteText(screen.getAllByRole("textbox",{name:"Pregunta"})[0]!,"Cliente");
   await userEvent.selectOptions(screen.getByLabelText("Tipo de respuesta"),"catalogChoice");
   await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));
   expect(await screen.findByText("Elegí un catálogo.")).toBeInTheDocument();
