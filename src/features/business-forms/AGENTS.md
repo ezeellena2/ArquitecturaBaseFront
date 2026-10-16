@@ -77,3 +77,13 @@ El borrador distingue cantidad vacía (null) de cero. Mínimo/máximo deben ser 
 - Búsqueda, personas y condiciones viven sólo en memoria por actor/cultura/permisos y formulario, con POST de lectura. URL sólo para página/tamaño/orden/versiones/columnas. Planilla y detalle conservan ese contexto; salir de ese formulario lo limpia. Un 403 retira filas, valores, conteos y visor; un fallo recuperable conserva datos anteriores y reintento explícito.
 - Columnas por FieldId, orden actual y retiradas al final; detalle de su versión. Ausente, opcional vacía, 0 y false no se confunden. Archivos usan FormRecordFiles compartido; documentos se descargan desde el detalle. Anterior/siguiente conserva filtro y orden. El enlace al chat requiere whatsapp.read y sólo navega.
 - Exportación POST con filtros y selección de columnas; límite 10.000, descarga binaria común y cancelación al perder el alcance. El servidor autoriza y genera el XLSX. No capturar datos, generar archivos en el browser ni guardar filtros privados en storage.
+
+## Reglas (Etapa 4, G1)
+
+- `FormRulesSection` se monta en el mismo editor después de las preguntas, con `formrules.manage` y definición confirmada. Guarda sólo reglas mediante revisión propia; no guarda el borrador ni publica. Comparte únicamente el aviso de cambios pendientes con el guard de salida existente.
+- `api/rules` consume configuración e historial propios. `rules/options` entrega preguntas, roles y opciones de condición de catálogos bajo RulesManage, sin exigir lectura de roles, catálogos ni respuestas. Las claves privadas incluyen actor, cultura, permisos y formulario.
+- Reglas y acciones conservan UUID e identidad al editar; condiciones usan la gramática de la planilla. La aprobación va última y sólo al recibir; PDF sólo al aprobar. Adjuntar PDF a quien cargó requiere generarlo antes en esa regla.
+- El idioma original es obligatorio en los mensajes nuevos; el otro es opcional y no se rellena al guardar. Esta regla no modifica los requisitos de idiomas de las Etapas 1–3.
+- Un409 conserva los cambios, exige relectura y adopción explícita. El historial sólo muestra copias inmutables. Los errores operativos permiten otro Guardar con la misma revisión; no hay comprobantes ni replay durable para configuración interna.
+
+Al recibir403 se desmonta el editor de reglas completo y se abortan/retiran todas sus consultas; no alcanza con ocultar los textos. Una nueva revisión confirmada del formulario refresca las preguntas/opciones sin remontar el borrador de reglas ni adoptar otra revisión.

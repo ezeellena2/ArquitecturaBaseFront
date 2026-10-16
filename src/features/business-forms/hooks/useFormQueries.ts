@@ -9,7 +9,7 @@ export const formScopeKey = (scope: FormReadScope) => [...formActorKey(scope.act
 export const formDetailKey = (scope: FormReadScope, id: string) => [...formScopeKey(scope), "detail", id] as const;
 export const canReadForms = (scope: FormReadScope) => scope.actorId !== null && scope.permissions.includes("formtemplates.read");
 
-function usePrivateQueryCleanup(key: readonly unknown[]) {
+export function usePrivateQueryCleanup(key: readonly unknown[]) {
   const client = useQueryClient();
   // A serialized primitive key keeps cleanup stable across ordinary query renders.
   const stamp = JSON.stringify(key);

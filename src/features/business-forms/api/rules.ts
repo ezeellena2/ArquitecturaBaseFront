@@ -1,0 +1,29 @@
+import { z } from "zod";
+import { api } from "@/shared/api/httpClient";
+import { canonicalFormFieldSchema, formId } from "./response";
+import { ruleActionKinds, ruleEvents, type FormRule } from "../rules";
+const guid = z.string().uuid();
+const text = z.record(z.string().refine(value => value === "es" || value === "en"), z.string());
+const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
+const condition = z.strictObject({ fieldId: guid, operator: z.enum(["in", "contains", "equals", "gte", "lte", "answered", "unanswered", "notAsked"]), values: z.array(z.string()).nullish() });
+const action = z.strictObject({ id: guid, kind: z.enum(ruleActionKinds), roleId: guid.nullable(), text: text.nullable(), includePdf: z.boolean() });
+const rule = z.strictObject({ id: guid, event: z.enum(ruleEvents), conditions: z.array(condition), actions: z.array(action) });
+const ruleSet = z.strictObject({ id: guid.nullable(), definitionId: guid, revision: z.number().int().nonnegative(), originalCulture: z.enum(["es", "en"]), rules: z.array(rule), createdAtUtc: z.iso.datetime().nullable(), author: author.nullable() });
+const options = z.strictObject({ definitionId: guid, name: text, originalCulture: z.enum(["es", "en"]), questions: z.array(canonicalFormFieldSchema), conditionChoices: z.record(z.string().uuid(), z.array(z.strictObject({ id: guid, label: z.string() }))), roles: z.array(z.strictObject({ id: guid, name: z.string() })) });
+const ruleRevision = z.strictObject({ id: guid, revision: z.number().int().positive(), createdAtUtc: z.iso.datetime(), author: author.nullable(), hasApproval: z.boolean() });
+const history = z.strictObject({ items: z.array(ruleRevision), page: z.number().int().positive(), pageSize: z.number().int().positive(), totalCount: z.number().int().nonnegative(), totalPages: z.number().int().nonnegative(), hasPrevious: z.boolean(), hasNext: z.boolean() });
+function read<T>(schema: z.ZodType<T>, body: unknown): T {
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) throw new Error("Invalid form rules contract.");
+  return parsed.data;
+}
+export const readRuleSet = (body: unknown) => read(ruleSet, body);
+export const readRuleOptions = (body: unknown) => read(options, body);
+export type FormRuleSet = z.infer<typeof ruleSet>;
+export type FormRuleOptions = z.infer<typeof options>;
+const path = (id: string) => "/api/forms/definitions/" + formId(id) + "/rules";
+export const fetchFormRules = async (id: string, signal?: AbortSignal) => readRuleSet(await api.get<unknown>(path(id), { signal, cache: "no-store" }));
+export const fetchRuleOptions = async (id: string, signal?: AbortSignal) => readRuleOptions(await api.get<unknown>(path(id) + "/options", { signal, cache: "no-store" }));
+export const saveFormRules = async (id: string, body: { expectedRevision: number; rules: readonly FormRule[] }, signal?: AbortSignal) => readRuleSet(await api.post<unknown>(path(id), body, { signal }));
+export const fetchRuleHistory = async (id: string, page: number, signal?: AbortSignal) => read(history, await api.get<unknown>(path(id) + "/revisions?" + new URLSearchParams({ page: String(page), pageSize: "10" }), { signal, cache: "no-store" }));
+export const fetchRuleRevision = async (id: string, revision: number, signal?: AbortSignal) => readRuleSet(await api.get<unknown>(path(id) + "/revisions/" + revision, { signal, cache: "no-store" }));

@@ -491,3 +491,22 @@ it("creates a catalog question, reports its missing selection, then saves the se
   await waitFor(()=>expect(router.state.location.pathname).toMatch(/^\/formularios\/0199/));
   expect(sent).toHaveLength(2);
 });
+
+it("keeps rule changes under the editor's existing leave guard without changing the form draft", async () => {
+  const store = setup("", ["formtemplates.read", "formrules.manage"]);
+  const draftWrites = vi.fn();
+  server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ id: null, definitionId: fixtureFormId, revision: 0, originalCulture: "es", rules: [], createdAtUtc: null, author: null })),
+    http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: fixtureFormId, name: { es: "Registrar visita" }, originalCulture: "es", questions: [], conditionChoices: {}, roles: [] })),
+    http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [], page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })),
+    http.put("/api/forms/definitions/:id/draft", ({ request }) => { draftWrites(); return store.handle(request); }));
+  const { router } = renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByLabelText("Nombre");
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  expect(screen.getByLabelText("Nombre")).toHaveAttribute("readonly");
+  await act(async () => { await router.navigate("/perfil"); });
+  const dialog = await screen.findByRole("dialog");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Seguir editando" }));
+  expect(router.state.location.pathname).toBe("/formularios/" + fixtureFormId);
+  expect(screen.getByRole("button", { name: "Agregar acción" })).toBeInTheDocument();
+  expect(draftWrites).not.toHaveBeenCalled();
+});

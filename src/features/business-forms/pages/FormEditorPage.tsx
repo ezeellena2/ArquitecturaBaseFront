@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -39,6 +39,8 @@ import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
 import type { FormDetail, FormPublicationCheck } from "../api/response";
 import type { DraftEditorValue, FormCulture, FormDefinitionSnapshot } from "../model";
 
+const FormRulesSection = lazy(() => import("../components/FormRulesSection").then(module => ({ default: module.FormRulesSection })));
+
 export function FormEditorPage() {
   const { t, i18n } = useTranslation("forms");
   const { formId = "" } = useParams();
@@ -63,6 +65,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   const { t, i18n } = useTranslation("forms");
   useTranslation("forms", { lng: "en" });
   useTranslation("forms", { lng: "es" });
+  const [rulesDirty, setRulesDirty] = useState(false);
   const [contentCulture, setContentCulture] = useState<FormCulture>("definition" in initial ? initial.definition.draft.culture : initial.draft.culture);
   const navigate = useNavigate();
   const editor = useFormDraftEditor(scope, initial);
@@ -111,7 +114,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   const dirty = !!session && JSON.stringify(session.value) !== JSON.stringify(session.baseline);
   const frozen = !!session && session.phase !== "Editing";
   const publicationPending = ["Accepting", "Unconfirmed"].includes(publication.phase);
-  const guard = useUnsavedChangesGuard(dirty || frozen || publicationPending);
+  const guard = useUnsavedChangesGuard(dirty || rulesDirty || frozen || publicationPending);
   const reviewRequired = session?.phase === "ReviewRequired";
   const readOnly = !editor.canSave;
   const originalName = value?.name[value.draft.culture] ?? "";
@@ -194,7 +197,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
     if (!removeId) requestAnimationFrame(() => removalFocus.current?.focus());
   }
   return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : dirty || frozen || publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
-    {!readOnly || dirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
+    {!readOnly || dirty || rulesDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!editor.canSave || hasInvalidFileCounts(value.draft.fields)} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
     {scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish) && session.confirmed ? <Button type="button" disabled={frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publication.resetRejected(); setPublicationOpen(true); }}>{t("publication.title")}</Button> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
@@ -224,6 +227,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
       </div>
       <FormPreview key={session.scope.editorId} value={value} culture={contentCulture} />
     </div>
+    {session.confirmed && scope.permissions.includes("formrules.manage") ? <Suspense fallback={<Spinner />}><FormRulesSection definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} contentCulture={contentCulture} onDirtyChange={setRulesDirty} /></Suspense> : null}
     </div>
   </Page>
 

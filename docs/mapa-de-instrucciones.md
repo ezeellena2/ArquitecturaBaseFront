@@ -90,3 +90,5 @@ Actualización de catálogos, 2026-10-13: el ámbito `src/features/business-form
 Archivos privados: `shared/api` conserva el transporte binario; `shared/hooks` su alcance y cancelación; `shared/ui` miniaturas, imagen privada y visor; `features/whatsapp` la adaptación de las respuestas históricas (guías locales respectivas).
 
 Etapa 3 amplía BusinessForms con planilla/detalle/exportación y alcance privado de lecturas. App compone el panel mediante el contexto neutral layouts/formsNavigation y una lectura dinámica al abrirlo; ResponseWorkspaceLayout delimita los datos privados a las rutas de respuestas; shared/api agrega descarga POST, shared/hooks navegación atómica y shared/ui FormRecordFiles reutiliza F4. Sus guías locales y src/test/visual/AGENTS.md conservan los límites; la regla funcional está en formularios.md del backend.
+
+G1 amplía el mismo editor BusinessForms con reglas e historial de revisiones independientes. api/rules valida configuración y opciones de condición autorizadas por RulesManage; el guard de salida existente contempla ambos borradores. El idioma original obligatorio se aplica sólo a los mensajes nuevos de la Etapa4.
