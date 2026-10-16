@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Otra persona ya decidió esta tarea. Volvé a cargarla.","traceId":"00-e025a5f827c9e56240be7af3fd77454d-bad7471c4e895c67-01","code":"Forms.Approval.RevisionConflict"}

@@ -1,0 +1,123 @@
+{
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPdfHttpTests.cs",
+      "sha256": "bd205f3807888f0f682c74450bd586ee0f1a8cc2d12c731ff66b24fbc97a1d48"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPdfContractCapture.cs",
+      "sha256": "8839855d373aa18c9164ad5ec0cf0f0406a3332f28461df6a6574fb7ab1a15ee"
+    }
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "generatedAtUtc": "2026-10-16T21:01:32.8521120Z",
+  "captures": [
+    {
+      "length": 113,
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
+      "name": "default-es.http.json"
+    },
+    {
+      "length": 434,
+      "sha256": "8eb054ae52608f0b2eef4339405836b290262cf603b701cbbd09863618995cf7",
+      "name": "default-es.json"
+    },
+    {
+      "length": 113,
+      "sha256": "0f8f73cb726d462e5f9a15bd0d8036b3226eff91d528cafaffc83e5435040c5b",
+      "name": "design-en.http.json"
+    },
+    {
+      "length": 428,
+      "sha256": "21f0ce07e838478245edb18a948c4a7e325c1ed4be0f3ab31c9bebd24d56f5e2",
+      "name": "design-en.json"
+    },
+    {
+      "length": 113,
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
+      "name": "design-es.http.json"
+    },
+    {
+      "length": 428,
+      "sha256": "21f0ce07e838478245edb18a948c4a7e325c1ed4be0f3ab31c9bebd24d56f5e2",
+      "name": "design-es.json"
+    },
+    {
+      "length": 239,
+      "sha256": "38a8eaa1c57538e42f2be4ac74d29bd6e9a36b362afb7112346f5ee158ad2cd5",
+      "name": "document-es.http.json"
+    },
+    {
+      "length": 92714,
+      "sha256": "275d8b24b420b7609c12e21c6932f755308b2c71d1151d1f6e3f98f3d7d8172b",
+      "name": "document-es.pdf"
+    },
+    {
+      "length": 126,
+      "sha256": "649dd22ba8604d082006a51379393dac4a4edbd077ceb1087a2005ca0df11aeb",
+      "name": "document-mismatch-en.http.json"
+    },
+    {
+      "length": 233,
+      "sha256": "848caa60fb529050f7b2d64b4605f84b281aaa46b5a5654d15eca3318ef843bf",
+      "name": "document-mismatch-en.json"
+    },
+    {
+      "length": 113,
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
+      "name": "issued-es.http.json"
+    },
+    {
+      "length": 1299,
+      "sha256": "d5d68444ae467bac694a21fabbc171d6a3af81bc67ca12f81e7403f9fc2be04d",
+      "name": "issued-es.json"
+    },
+    {
+      "length": 97,
+      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557",
+      "name": "preview-en-fallback.http.json"
+    },
+    {
+      "length": 92669,
+      "sha256": "a6efa8a995252a5c8587b2fe460fdbbd0a3091472f76fae1fc6b9a93b5a2b6f4",
+      "name": "preview-en-fallback.pdf"
+    },
+    {
+      "length": 97,
+      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557",
+      "name": "preview-es.http.json"
+    },
+    {
+      "length": 92669,
+      "sha256": "a6efa8a995252a5c8587b2fe460fdbbd0a3091472f76fae1fc6b9a93b5a2b6f4",
+      "name": "preview-es.pdf"
+    },
+    {
+      "length": 126,
+      "sha256": "df56339c416f718077082192ac83ee75ab57a0ceae71a070c2dde1539fa6c336",
+      "name": "revision-conflict-es.http.json"
+    },
+    {
+      "length": 257,
+      "sha256": "41172eb8459bfd337de6a2fd25c02602eb63b67cc0b69155e5501af65964deae",
+      "name": "revision-conflict-es.json"
+    },
+    {
+      "length": 113,
+      "sha256": "f79512e1dc5cfd52944722535d3494161d30e73731264cccf471ac1d997f3252",
+      "name": "saved-es.http.json"
+    },
+    {
+      "length": 428,
+      "sha256": "21f0ce07e838478245edb18a948c4a7e325c1ed4be0f3ab31c9bebd24d56f5e2",
+      "name": "saved-es.json"
+    }
+  ],
+  "artifactSet": "pdf",
+  "repositoryHead": "98fa775ca51985cfcb3a6fa07481d49be912fa85",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "FormPdfHttpTests and FormPdfContractCapture",
+  "schemaVersion": 1,
+  "runId": "20261016-203953-d6165b4572ea4d019735be2c387de43f",
+  "sourceState": []
+}

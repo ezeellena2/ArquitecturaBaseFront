@@ -1,0 +1,87 @@
+{
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormWorkflowHttpTests.cs",
+      "sha256": "79907053639324d5416487aa7ded67fb0af36fb7abb39f642bbeae2ac22699f9"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPdfHttpTests.cs",
+      "sha256": "bd205f3807888f0f682c74450bd586ee0f1a8cc2d12c731ff66b24fbc97a1d48"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormWorkflowContractCapture.cs",
+      "sha256": "44848ef90915e3281eee2e0a2536534223dc4ec450bdf0c82ab05be432b2a9fb"
+    }
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "generatedAtUtc": "2026-10-16T21:01:32.8521120Z",
+  "captures": [
+    {
+      "length": 481,
+      "sha256": "7b631a4b178249dd300e9f259f3e351905d440932802fff3982c78be611e3082",
+      "name": "completed-en.json"
+    },
+    {
+      "length": 560,
+      "sha256": "532eebe8f6676ccc0324e6d81a7e176fad46d49705b0e65a4d8860139d3bf4dc",
+      "name": "consult-es.json"
+    },
+    {
+      "length": 249,
+      "sha256": "76338673b92bf64a5776de90dcd877f1dd5f84ddea70ed00a78c16eb79a2abfc",
+      "name": "control-forbidden-es.json"
+    },
+    {
+      "length": 563,
+      "sha256": "09002ce475393a036c18736706fab91ed18279810d9628c0b571cac8042acf7d",
+      "name": "failed-en.json"
+    },
+    {
+      "length": 588,
+      "sha256": "612b52100d8c42866ec0ed494519dd9a8cb46483c73ac326bc56b6d03870f1eb",
+      "name": "failed-es.json"
+    },
+    {
+      "length": 485,
+      "sha256": "b4ce044bb54d45591c2e4d88fa0c977d95188fbd07ed7aac4fe153b57931808f",
+      "name": "not-applicable-es.json"
+    },
+    {
+      "length": 1299,
+      "sha256": "d5d68444ae467bac694a21fabbc171d6a3af81bc67ca12f81e7403f9fc2be04d",
+      "name": "pdf-completed-es.json"
+    },
+    {
+      "length": 249,
+      "sha256": "f526044060eba5c72f86602a06ab063913308d6325b3bbea8521fbab27156d34",
+      "name": "read-forbidden-es.json"
+    },
+    {
+      "length": 461,
+      "sha256": "6f7a3cb0da1289baa94c87b42cd56ab160791b4f6b4193bb1f1518bbdab27dee",
+      "name": "retry-en.json"
+    },
+    {
+      "length": 572,
+      "sha256": "cb84b95b5e34eb3622a3dfc4d6b14911b4b43ad5fd6153aa8bcae886c4242143",
+      "name": "running-es.json"
+    },
+    {
+      "length": 572,
+      "sha256": "c62e02146e4db7a5b36e2f7e91611e5db80ddeaba4997489003f62b46d34a5ab",
+      "name": "uncertain-es.json"
+    },
+    {
+      "length": 461,
+      "sha256": "ad31b6096fd2574a9292fb7f3f331b5e001b2b5093b04c0486a2a504bbf5b857",
+      "name": "waiting-es.json"
+    }
+  ],
+  "artifactSet": "workflow",
+  "repositoryHead": "98fa775ca51985cfcb3a6fa07481d49be912fa85",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "FormWorkflowHttpTests and FormPdfHttpTests and FormWorkflowContractCapture",
+  "schemaVersion": 1,
+  "runId": "20261016-203953-d6165b4572ea4d019735be2c387de43f",
+  "sourceState": []
+}

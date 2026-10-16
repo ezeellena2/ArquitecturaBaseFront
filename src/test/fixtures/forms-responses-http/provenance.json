@@ -1,59 +1,91 @@
 {
-  "producer": "FormResponseHttpTests and WhatsAppFormFilesIntegrationTests",
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseHttpTests.cs",
+      "sha256": "aa4bf41417a51a59a99490c01725ca26ca7f2250a1a4df969423f53b3121475e"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseApprovalHttpTests.cs",
+      "sha256": "ba0528303e55836b48d24af1730d4424f220b23a2305860b96ddd447d65bf086"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
+      "sha256": "f5ae9bb816c3def679f8c4bb69b6d47bbb9c0348d7f08817a2c02119851060ab"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/ResponseContractCapture.cs",
+      "sha256": "d94b67669a391f7c21770a6e6e78435b357f46e837a8cd9d3863ea94e7f653c1"
+    }
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "generatedAtUtc": "2026-10-16T21:01:32.8521120Z",
   "captures": [
     {
-      "sha256": "8d2cc9a166f4bf48a382bf4cd86ba068de2819dffd11198068db069ea18fd694",
+      "length": 1546,
+      "sha256": "111f19272978b9ecd81ee6666ad1b403ec35f52991b0b3a6a36192dcce08d2a2",
+      "name": "approval-sheet-en.json"
+    },
+    {
+      "length": 1549,
+      "sha256": "2c7e807b96b45ef3e7d8e5a81733d963c270c3384d7702c8ed16f85bd172460b",
+      "name": "approval-sheet-es.json"
+    },
+    {
       "length": 180,
+      "sha256": "8d2cc9a166f4bf48a382bf4cd86ba068de2819dffd11198068db069ea18fd694",
       "name": "counts-es.json"
     },
     {
-      "sha256": "7129eccb98c7a7cccb4d7bfec922a43761eec29314b3a485b22a033569c5d748",
       "length": 1176,
+      "sha256": "3e38bba6c6c5dda9f3e89c0a39b9e95b86e640cef62eac1df63b3b94edec4226",
       "name": "detail-es.json"
     },
     {
-      "sha256": "55fcc6cd986e02482056b849be273e1489944fff9cbbb4679ef19d6206f772a0",
-      "length": 6812,
+      "length": 6810,
+      "sha256": "cd17b49e6ec67b97ce8816a147c6a0b82cb69d42f3b260da2d1f7742ae890e44",
       "name": "export.xlsx"
     },
     {
-      "sha256": "badd7e1dc9292b8a53e7f692200b69ec9b9b8f36e05911a4db8c020b1ba04b46",
       "length": 1745,
+      "sha256": "9d1a33055a15f44afc1a20923becd41d79fb0f54404bbd4af32751c528645bf2",
       "name": "files-detail-es.json"
     },
     {
-      "sha256": "fd7ac93b13216604046978d9d610ef879ed4de7b49b8f7d2172d06210fc4a6bb",
-      "length": 1557,
+      "length": 1596,
+      "sha256": "c19a3a107b6779ece809feba576040436dbb2b9bc07b7501cb03d44b4d72ea5d",
       "name": "files-sheet-es.json"
     },
     {
-      "sha256": "3edd3054ccad06415004a9dc398597a15709cb04d5d5cfccdbdc4cd62936aa7c",
-      "length": 2900,
+      "length": 2977,
+      "sha256": "f2dc14ad807443a3e5fd86a1fb8b3008707c25288543c6c81e86fae30b805adb",
       "name": "filtered-es.json"
     },
     {
-      "sha256": "75b2a60a956eca9ff16872f10b78ca1b6d57cf0eb40a1e4dc52912113e00ce50",
       "length": 210,
+      "sha256": "9afae1cb9a0c37641cff6e0a0e867d99a41d0144fd0069eaa72cbcf7c7231257",
       "name": "navigation-en.json"
     },
     {
-      "sha256": "7a96bbf2c4be8d0c2a6b106c3fd30a01de41447cccb1e2d487358c8b78f225fe",
       "length": 213,
+      "sha256": "0fafc7c60ce0a2dbae7575d2e8968a6c4b4f04d1762229b9e34b821d7921bc65",
       "name": "navigation-es.json"
     },
     {
-      "sha256": "d98baab498e78c5d492894d4e804609933f4999e6a6b2c46571b7fe33d4bc336",
-      "length": 14746,
+      "length": 15146,
+      "sha256": "9abbb5f6f30d29bfcb18fe6e43c40851379c911ecbb7206f153f3edb8dddf389",
       "name": "sheet-en.json"
     },
     {
-      "sha256": "d1816eb1963007cb1a4e4c4aeff7874a3979baf9897db4c98f43c620db3a865d",
-      "length": 14749,
+      "length": 15149,
+      "sha256": "e2ba83bdf852a6266cf70062edf498e0bdbe5332520905c934880fb6b3b0c263",
       "name": "sheet-es.json"
     }
   ],
-  "repositoryHead": "577d1c35476589295039065de0c7d6310830bab2",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "responses",
+  "repositoryHead": "98fa775ca51985cfcb3a6fa07481d49be912fa85",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "FormResponseHttpTests and FormResponseApprovalHttpTests and WhatsAppFormFilesIntegrationTests and ResponseContractCapture",
+  "schemaVersion": 1,
+  "runId": "20261016-203953-d6165b4572ea4d019735be2c387de43f",
   "sourceState": []
 }

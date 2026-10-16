@@ -1,0 +1,63 @@
+{
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs",
+      "sha256": "e29e258a95b293985ecbf096df6d39a982e623f79ce4314edd83e2fddb00800b"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs",
+      "sha256": "c55a895a22d4668305fccd40765fd6b8f564ab53f6b5e19db45f14c495266c13"
+    }
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "generatedAtUtc": "2026-10-16T21:01:32.8521120Z",
+  "captures": [
+    {
+      "length": 281,
+      "sha256": "6877f30092663bae417fd8255487bbea7ec05cd1fd9649a96bdac2eeba9a2667",
+      "name": "conflict-es.json"
+    },
+    {
+      "length": 146,
+      "sha256": "2d57cff75e1f8147341d2a41125141a2befdbb7e4c58d493be0594985703c678",
+      "name": "empty-es.json"
+    },
+    {
+      "length": 293,
+      "sha256": "3ab7ea7463f374d1149b80d3c8170b6c0d42016f1dd0e9a243f09880b9bdee21",
+      "name": "history-es.json"
+    },
+    {
+      "length": 13031,
+      "sha256": "9bf5c19304c2956e3d9e4dfdd187aeac61fd0f04ace8d9e6a1c16bc6b765ab4e",
+      "name": "options-en.json"
+    },
+    {
+      "length": 13031,
+      "sha256": "9bf5c19304c2956e3d9e4dfdd187aeac61fd0f04ace8d9e6a1c16bc6b765ab4e",
+      "name": "options-es.json"
+    },
+    {
+      "length": 505,
+      "sha256": "45bebbd50b615f710893689627783d92f7ad98eeb00dfae77c80d5eb56e3336b",
+      "name": "revision-es.json"
+    },
+    {
+      "length": 338,
+      "sha256": "dff293e550a0f0de5f997535cf74a4503378b1470e4764294ab78bad3f477a2a",
+      "name": "role-unavailable-es.json"
+    },
+    {
+      "length": 501,
+      "sha256": "bc7a9b0be52cbc3377f52026a89ce7619e92584ea5b4e5bf4d4c38d0bd1d7b43",
+      "name": "saved-es.json"
+    }
+  ],
+  "artifactSet": "rules",
+  "repositoryHead": "98fa775ca51985cfcb3a6fa07481d49be912fa85",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "FormRuleHttpTests and FormRuleContractCapture",
+  "schemaVersion": 1,
+  "runId": "20261016-203953-d6165b4572ea4d019735be2c387de43f",
+  "sourceState": []
+}

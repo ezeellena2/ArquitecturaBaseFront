@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"El diseño del PDF cambió. Volvé a cargarlo.","traceId":"00-4559ffad81027f783afd6a0fd73731fa-37adf045e8e0ed1e-01","code":"Forms.Pdf.RevisionConflict"}
