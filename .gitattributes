@@ -8,3 +8,10 @@ src/test/fixtures/catalogs-http/k6-source/** -text whitespace=cr-at-eol
 src/test/fixtures/form-files-http/** -text whitespace=cr-at-eol
 
 src/test/fixtures/forms-responses-http/** -text whitespace=cr-at-eol
+
+# Stage four HTTP cohorts and action notices remain byte-for-byte exports.
+src/test/fixtures/forms-rules-http/** -text whitespace=cr-at-eol
+src/test/fixtures/forms-workflow-http/** -text whitespace=cr-at-eol
+src/test/fixtures/forms-approvals-http/** -text whitespace=cr-at-eol
+src/test/fixtures/forms-pdf-http/** -text whitespace=cr-at-eol
+src/test/fixtures/whatsapp-form-actions-http/** -text whitespace=cr-at-eol
