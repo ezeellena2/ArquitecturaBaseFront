@@ -69,3 +69,11 @@ F1 archivos: Foto/Documento conservan `files` (mínimo/máximo/origen) al congel
 Cierre local F1: el contrato de archivos se valida también contra el cuerpo HTTP exportado de PostgreSQL/Azurite. Los snapshots de formularios anteriores conservan `files` omitido; no se inventan datos ni tamaños por pregunta. Los cambios de catálogo visibles en revisión conservan los nombres actuales de ambos lados. La verificación de almacenamiento/recepción pertenece al backend y el piloto nativo de cámara/PDF queda en el resumen de etapa.
 
 El borrador distingue cantidad vacía (null) de cero. Mínimo/máximo deben ser enteros acotados y coherentes; se marcan ambos controles y no se guarda mientras sean inválidos. Canonical conserva cantidades numéricas. Una búsqueda de catálogo sin coincidencias no se presenta como catálogo sin opciones.
+
+## Planilla, detalle y Excel (Etapa 3)
+
+- Rutas `/formularios/respuestas`, `/formularios/:formId/respuestas` y su detalle requieren formrecords.read; no dependen de TemplatesRead ni CatalogsRead. El panel obtiene publicados por HTTP paginado. Autoría conserva sus permisos existentes; exportar suma formrecords.export.
+- Cliente `api/responses` valida DTOs cerrados y las relaciones fila/columna/versión. Los cuerpos intactos del productor están en fixtures/forms-responses-http, con procedencia y SHA256 automáticos; las fixtures de comportamiento se identifican como sintéticas.
+- Búsqueda, personas y condiciones viven sólo en memoria por actor/cultura/permisos y formulario, con POST de lectura. URL sólo para página/tamaño/orden/versiones/columnas. Planilla y detalle conservan ese contexto; salir de ese formulario lo limpia. Un 403 retira filas, valores, conteos y visor; un fallo recuperable conserva datos anteriores y reintento explícito.
+- Columnas por FieldId, orden actual y retiradas al final; detalle de su versión. Ausente, opcional vacía, 0 y false no se confunden. Archivos usan FormRecordFiles compartido; documentos se descargan desde el detalle. Anterior/siguiente conserva filtro y orden. El enlace al chat requiere whatsapp.read y sólo navega.
+- Exportación POST con filtros y selección de columnas; límite 10.000, descarga binaria común y cancelación al perder el alcance. El servidor autoriza y genera el XLSX. No capturar datos, generar archivos en el browser ni guardar filtros privados en storage.

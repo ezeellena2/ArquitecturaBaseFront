@@ -18,3 +18,5 @@ Define layouts de acceso, inicio y aplicación autenticada, además de barra, me
 - [Navegación, scroll y accesibilidad](../../docs/architecture.md).
 - [Caparazón aprobado](../../docs/design/visual-baseline.md).
 - [Encabezado y cuerpo compartidos](../shared/ui/Page.tsx).
+
+Formularios compone «Respuestas» dinámicas con la navegación fija de diseño/catálogos. `formsNavigation` es neutral; `FormResponsesShell` en app aporta resultados HTTP y recuperación. «Ver todos» aparece si el backend informa más páginas; nunca fijar formularios por nombre o ID en navigation.ts.

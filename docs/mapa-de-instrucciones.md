@@ -88,3 +88,5 @@ Actualización K7, 2026-10-12: K6/K7 están implementados y verificados localmen
 Actualización de catálogos, 2026-10-13: el ámbito `src/features/business-forms/AGENTS.md` incluye baja/reactivación en el Guardar común, revisión sólo por 409 y conservación de metadata/foco al buscar personas. `src/test/visual/AGENTS.md` cubre el nuevo recorrido `catalogReview.spec.ts`, con el mismo arnés y sin proveedores reales.
 
 Archivos privados: `shared/api` conserva el transporte binario; `shared/hooks` su alcance y cancelación; `shared/ui` miniaturas, imagen privada y visor; `features/whatsapp` la adaptación de las respuestas históricas (guías locales respectivas).
+
+Etapa 3 amplía BusinessForms con planilla/detalle/exportación y alcance privado de lecturas. App compone el panel dinámico mediante FormResponsesShell y layouts/formsNavigation; shared/api agrega descarga POST, shared/hooks navegación atómica y shared/ui FormRecordFiles reutiliza F4. Sus guías locales y src/test/visual/AGENTS.md conservan los límites; la regla funcional está en formularios.md del backend.

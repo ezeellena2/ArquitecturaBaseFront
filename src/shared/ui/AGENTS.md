@@ -51,3 +51,5 @@ atribución (footer no seleccionable y visible en el desplegable), carga/vacío,
 Sonner sólo se importa en notifications.ts y sonner.tsx; arquitectura verifica el límite sin excepciones de features. Dialog registra un host manual de capa superior para el único Toaster: conserva foco modal, posición y scroll del panel. Al regenerar ambos adaptadores, conservar esta integración y sus pruebas de navegador.
 
 `PhotoViewer` presenta el Dialog común, navegación por flechas/Escape y retorno del foco. `PhotoThumbnail` fija la variante de miniatura. `PrivateImage` mantiene su URL Blob sólo mientras existe el elemento y la revoca al cambiar/desmontar; ninguna pieza conoce una feature, credenciales o rutas.
+
+`FormRecordFiles` compone miniaturas, visor y descargas privadas para chat y planilla/detalle. Recibe actor, respuesta, metadatos y callbacks de acceso; no importa features. Variante compacta: primera foto/cantidad; galería puede abarcar todas las fotos de la respuesta. `DialogContent` admite placement right para el panel de filtros, conservando foco, host de notificaciones y variante predeterminada.

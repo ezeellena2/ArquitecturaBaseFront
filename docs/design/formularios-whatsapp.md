@@ -148,7 +148,7 @@ planilla y el PDF, con el mismo permiso que los valores. Detalle en el
 La Etapa 3 suma [T5 · Exportar a Excel](evidence/formularios-whatsapp/pla-t5-exportar.png): con los filtros aplicados,
 todas las preguntas o solo las visibles, permiso propio, archivos como cantidad y nombres, y hasta 10.000 respuestas por vez.
 
-Etapa 3, planilla de respuestas (2026-10-10). **Propuesta para revisar**: los tableros 06 y 07 recortados a esta etapa,
+Etapa 3, planilla de respuestas (2026-10-10). **Diseño elegido**: los tableros 06 y 07 recortados a esta etapa,
 sin aprobación, PDF ni asistente. Cargar desde la web queda para después (decidido el 2026-10-10).
 
 | Captura | Qué define |
@@ -202,8 +202,7 @@ tableros elegidos; el modelo y las reglas están en los
 
 1. **Navegación.** «Formularios» es una entrada propia del menú principal con su panel, como WhatsApp. Arriba,
    «Respuestas», con un enlace por formulario publicado que la persona puede ver. Abajo, separado, «Diseñar
-   formularios», solo con permiso de administrar. Hoy `src/layouts/navigation.ts` es estático: el resumen de la Etapa 3 define cómo el
-   panel compone la parte fija con la lista que viene del backend.
+   formularios», solo con permiso de administrar. El panel de la Etapa 3 compone la parte fija con la lista paginada del backend mediante `FormResponsesShell` y el contexto neutral de layouts; no fija formularios en `navigation.ts`.
 2. **Editor en una sola pantalla, sin pestañas.** A la izquierda, las superficies «El formulario», «Preguntas» y
    «Cuando llega una respuesta». A la derecha, la vista previa del celular, que refleja el borrador mientras se edita
    y aclara que la vista oficial de WhatsApp aparece al publicar.
@@ -331,3 +330,11 @@ Validación final del review: front **1643/1643**, lint/arquitectura **48/48**, 
 Los tableros elegidos de la Etapa 2B ya tienen implementación: Foto/Documento con mínimo, máximo y origen; contador y pantallas de la vista previa; tarjeta bajando/reintentando/rechazada; respuesta con fotos y documentos; visor común y descarga privada. Los tipos se ven deshabilitados cuando falta almacenamiento. La pérdida de lectura cierra el visor y retira nombres y miniaturas. Documento siempre se descarga; el original de foto sólo se pide al abrir. Se conservan el diseño y las referencias elegidas.
 
 Verificación de cierre del front: build y lint limpios, arquitectura **48/48** y tests **1681/1681**. La corrida visual de implementación quedó **434/434**; en el piloto no hubo cambios de UI. Las doce variantes nuevas F1/F3/F4/F5 cubren es/en y 1440/390/320; los consumidores verifican cinco cuerpos HTTP exportados desde el backend. El navegador contra la API real comprobó crear el borrador bilingüe «Piloto 2B · Fotos y documentos», guardar, recargar, cambiar el máximo y guardar/recargar otra vez. Quedó una foto de cámara y un documento obligatorios, sin publicar todavía. Las pruebas visuales usan transporte simulado; persistencia y Blob real se acreditan con PostgreSQL/Azurite en el backend. El piloto conjunto de Meta y Azure real quedó verificado el 2026-10-15: cámara + PDF y foto opcional vacía, respuesta FOTO2B-000001 aparecida automáticamente dentro del minuto sin recarga, miniatura, visor y descargas íntegras; la recarga conserva el resultado. Evidencia y alcance en [el cierre de la Etapa 2B](../../../ArquitecturaBase/docs/features/formularios.md#cierre-de-la-etapa-2b--2026-10-15). Azurite quedó predeterminado y Aspire apagado.
+
+## Implementación de T1–T5 — 2026-10-16
+
+Planilla y detalle usan el diseño elegido, incluidos T1/T3 con archivos de la versión 71: primera miniatura/cantidad, visor F4, galería a todo el ancho y documentos descargables desde la respuesta. Se implementaron filtros privados, estados de lectura y diálogo de Excel; sin aprobación, PDF ni asistente. Los permisos de consulta y edición del diseñador conservan los de la Etapa 1; consultar respuestas usa formrecords.read y exportar agrega formrecords.export.
+
+El recorrido real abrió FOTO2B-000001 (Azure privado), foto y PDF; opcional vacía, catálogo histórico y navegación filtrada con PILK7-000003/000001, y recarga. El usuario confirmó que FOTO2B-20261016.xlsx abre en Excel sin reparación, con nombres de archivos y opcional vacía. Las capturas automáticas son transporte simulado y se verifican aparte de este recorrido real. La sincronización del código al lienzo externo no se presume.
+
+Etapa 3 cerrada: build/lint limpios, arquitectura **48/48**, tests **1703/1703** y visual completa **451/451**, sin cambios de referencias/tolerancias. Contratos HTTP y XLSX verificados con la exportación del backend **2896/2896**. Capturas revisadas en es/en, escritorio y 390/320 px, incluidos carga, error/reintento, cambio de tipo y galería. Reglas canónicas y límites en [formularios](../../../ArquitecturaBase/docs/features/formularios.md#planilla-detalle-y-excel--etapa-3). Aspire apagado.
