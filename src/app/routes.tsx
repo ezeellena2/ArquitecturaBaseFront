@@ -48,6 +48,10 @@ export const routes: RouteObject[] = [
                 ],
               },
               {
+                element: <ProtectedRoute permission="formrecords.read" />,
+                children: [{ path: "/formularios/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ResponseFormsPage")).ResponseFormsPage }) }],
+              },
+              {
                 element: <ProtectedRoute permission="formtemplates.read" />,
                 children: [
                   { path: "/formularios", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormsPage")).FormsPage }) },

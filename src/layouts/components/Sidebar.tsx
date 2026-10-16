@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useContext, useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router";
 import {
@@ -14,6 +14,8 @@ import {
   type NavigationItem,
   type NavigationLink,
 } from "../navigation";
+import { FormsResponseNavigationContext } from "../formsNavigation";
+import { FormIcon } from "@/shared/ui/icons";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
@@ -88,6 +90,7 @@ function NavBranch({
   icon: Icon,
   items,
   showIcon = true,
+  leading,
   controls,
   translate,
   onNavigate,
@@ -96,6 +99,7 @@ function NavBranch({
   icon: NavigationLink["icon"];
   items: NavigationItem[];
   showIcon?: boolean;
+  leading?: ReactNode;
   controls: BranchControls;
   translate: (key: string) => string;
   onNavigate?: () => void;
@@ -119,6 +123,7 @@ function NavBranch({
           className={cn("size-4 shrink-0 transition-transform", open ? "" : "-rotate-90")}
         />
       </button>
+      {open && leading ? leading : null}
       {open ? (
         // La guía arranca bajo el centro del ícono del padre; cuando no se muestra, arranca bajo su texto.
         <ul
@@ -364,11 +369,12 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const adminPending = isPending && administration.items.every(dependsOnPermissions);
   const showAdministration = adminItems.length > 0;
   const whatsappItems = visibleItems(whatsapp.items, canSee, false);
+  const responses = useContext(FormsResponseNavigationContext);
   const formsItems = visibleItems(forms.items, canSee, false);
   const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : administration;
   const selectedItems = openPanel === "forms" ? formsItems : openPanel === "whatsapp" ? whatsappItems : adminItems;
   const PanelIcon = selectedPanel.icon;
-  const panelVisible = selectedItems.length > 0 && openPanel !== undefined && !isMobile;
+  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && responses?.canRead) && openPanel !== undefined && !isMobile;
 
   return (
     <>
@@ -515,10 +521,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             );
           })}
 
-          {formsItems.length > 0 ? (
+          {formsItems.length > 0 || responses?.canRead ? (
             <div className="mt-2 border-t border-[var(--color-border)] pt-2">
               {isPending ? <Skeleton aria-hidden="true" className="h-9" /> : isMobile ? (
-                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
+                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<ResponseLinks onNavigate={onNavigate} />} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={forms.icon} label={t(forms.labelKey)} open={openPanel === "forms"} collapsed={iconsOnly} panelId={panelId}
                   onToggle={() => setOpenPanel(openPanel === "forms" ? undefined : "forms")} />
@@ -651,6 +657,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           </IconButton>
 
           <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
+            {openPanel === "forms" ? <ResponseLinks onNavigate={onNavigate} /> : null}
             <ul className="flex flex-col gap-1">
               <NavItems items={selectedItems} controls={controls} translate={t} onNavigate={onNavigate} pending={isPending} />
             </ul>
@@ -659,4 +666,15 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
       ) : null}
     </>
   );
+}
+
+function ResponseLinks({onNavigate}:{onNavigate?:()=>void}) {
+ const navigation=useContext(FormsResponseNavigationContext);const {t}=useTranslation();
+ if(!navigation?.canRead)return null;
+ return <div className="mb-3 border-b border-[var(--color-border)] pb-3">
+  <p className="px-2 py-2 text-xs font-medium uppercase tracking-wide text-[var(--color-content-muted)]">{t("navigation.responses")}</p>
+  {navigation.pending&&!navigation.items.length?<Skeleton className="h-9"/>:navigation.failed?<Button type="button" variant="ghost" onClick={navigation.retry}>{t("actions.retry")}</Button>:null}
+  <ul className="flex flex-col gap-1">{navigation.items.map(item=><li key={item.id}><NavItem item={{labelKey:"navigation.responses",icon:FormIcon,to:`/formularios/${item.id}/respuestas`,permission:"formrecords.read"}} label={item.name} collapsed={false} onNavigate={onNavigate}/></li>)}</ul>
+  {navigation.hasMore||!navigation.pending&&!navigation.failed&&navigation.items.length===0?<NavItem item={{labelKey:"navigation.allResponses",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:"formrecords.read"}} label={t("navigation.allResponses")} collapsed={false} onNavigate={onNavigate}/>:null}
+ </div>;
 }

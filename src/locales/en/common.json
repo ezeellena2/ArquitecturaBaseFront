@@ -108,7 +108,9 @@
     "appearance": "Appearance",
     "whatsapp": "WhatsApp",
     "whatsappChat": "Chat",
-    "catalogs": "Catalogs"
+    "catalogs": "Catalogs",
+    "responses": "Responses",
+    "allResponses": "View all"
   },
   "layout": {
     "sidebar": {

@@ -415,5 +415,12 @@
     "continue": "Continuar",
     "screenHint": "Cada pregunta de foto o documento abre su propia pantalla. Las preguntas siguientes pueden compartirla.",
     "invalidRange": "Usá cantidades enteras: mínimo de 0 a 10, máximo de 1 a 10 y mínimo no mayor al máximo."
+  },
+  "responses": {
+    "title": "Respuestas",
+    "searchForms": "Buscar formularios",
+    "version": "Versión",
+    "noForms": "Todavía no hay formularios publicados",
+    "noFormsHint": "Los formularios publicados van a aparecer acá."
   }
 }

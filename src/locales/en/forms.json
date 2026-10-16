@@ -415,5 +415,12 @@
     "continue": "Continue",
     "screenHint": "Each photo or document question starts its own screen. Following questions can share it.",
     "invalidRange": "Use whole counts: minimum 0–10, maximum 1–10, and minimum no greater than maximum."
+  },
+  "responses": {
+    "title": "Responses",
+    "searchForms": "Search forms",
+    "version": "Version",
+    "noForms": "No published forms yet",
+    "noFormsHint": "Published forms will appear here."
   }
 }

@@ -2,6 +2,7 @@ import { useAuth } from "react-oidc-context";
 import { Outlet, useLocation } from "react-router";
 import { Spinner } from "@/shared/ui/Spinner";
 import { AppLayout } from "./AppLayout";
+import { FormResponsesShell } from "@/app/FormResponsesShell";
 import { AuthLayout } from "./AuthLayout";
 import { WelcomePage } from "@/features/auth/pages/WelcomePage";
 import { useIsRecoveringSession } from "@/auth/sessionRecoveryStatus";
@@ -15,7 +16,7 @@ export function HomeLayout() {
   const { pathname } = useLocation();
   // Keep the sign-out transition mounted until /login is ready. Removing the OIDC user must not
   // expose ProtectedRoute, which would carry the previous account's private URL into the next login.
-  if (auth.isAuthenticated || isSigningOut) { return <AppLayout />; }
+  if (auth.isAuthenticated || isSigningOut) { return <FormResponsesShell><AppLayout /></FormResponsesShell>; }
   if (isRecovering || auth.isLoading) {
     return <div className="flex min-h-svh items-center justify-center"><Spinner /></div>;
   }
