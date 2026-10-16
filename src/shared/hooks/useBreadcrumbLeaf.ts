@@ -5,10 +5,12 @@ import { useEffect, useSyncExternalStore } from "react";
 /// module-level con useSyncExternalStore, como el de `signOutStatus`, en vez de un contexto: no suma un
 /// provider, y la pantalla que la escribe se sincroniza con algo externo, que es para lo que está un efecto.
 let leaf: string | undefined;
+let parentLabel: string | undefined;
 const listeners = new Set<() => void>();
 
-function setLeaf(next: string | undefined): void {
+function setLeaf(next: string | undefined, parent?: string): void {
   leaf = next;
+  parentLabel = parent;
 
   for (const listener of listeners) {
     listener();
@@ -27,15 +29,20 @@ function getSnapshot(): string | undefined {
 
 /// La pantalla hija pone su hoja y la borra al desmontarse: si quedara, la próxima pantalla hija mostraría
 /// la de la anterior hasta poner la suya. Sin `label`, las migas terminan en el enlace de la sección.
-export function useBreadcrumbLeaf(label?: string): void {
+export function useBreadcrumbLeaf(label?: string, parent?: string): void {
   useEffect(() => {
-    setLeaf(label);
+    setLeaf(label, parent);
 
     return () => setLeaf(undefined);
-  }, [label]);
+  }, [label, parent]);
 }
 
 /// La hoja que puso la pantalla, para las migas.
 export function useCurrentBreadcrumbLeaf(): string | undefined {
   return useSyncExternalStore(subscribe, getSnapshot);
+}
+
+/// El nombre confirmado de la sección padre cuando la pantalla lo conoce.
+export function useCurrentBreadcrumbParent(): string | undefined {
+  return useSyncExternalStore(subscribe, () => parentLabel);
 }

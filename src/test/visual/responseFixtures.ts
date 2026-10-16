@@ -1,6 +1,7 @@
 import {
   responseSheetFixture,
   responseDetailFixture,
+  responseWorkflowFixture,
   responseFormId,
 } from "../responseFixtures";
 import type {
@@ -308,6 +309,10 @@ export function createResponseVisualFixtures(
           ),
         };
         return json(result);
+      }
+      if (/\/records\/[^/]+\/workflow$/.test(path)) {
+        if (scenario === "responses-missing") return json({ code: "Forms.Record.NotFound" }, 404);
+        return json(responseWorkflowFixture(path.split("/").at(-2)!));
       }
       if (path.includes("/records/")) {
         if (scenario === "responses-missing")

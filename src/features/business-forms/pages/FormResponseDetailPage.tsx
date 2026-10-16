@@ -29,12 +29,15 @@ import {
 } from "../hooks/useResponseQueries";
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
+import { useResponseWorkflow } from "../hooks/useResponseWorkflow";
+import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
 import { ResponseValue } from "../components/ResponseValue";
 export function FormResponseDetailPage() {
   const { formId = "", recordId = "" } = useParams();
   const { t, i18n } = useTranslation("forms");
   const detail = useResponseDetail(recordId, formId);
   const route = useResponseRouteQuery(formId);
+  const workflow = useResponseWorkflow(formId, recordId);
   const sheet = useResponseSheet(formId, route.query, route.ready);
   const client = useQueryClient();
   const update = useQueryUpdate();
@@ -53,9 +56,9 @@ export function FormResponseDetailPage() {
     };
   }, []);
   useResponseFeedback(
-    detail.query.isPending ? null : detail.query.error ?? sheet.query.error ?? moveError,
+    detail.query.isPending ? null : detail.query.error ?? sheet.query.error ?? workflow.error ?? moveError,
     `responses:detail-page:${detail.scope.owner}:${formId}`,
-    detail.query.error ? detail.query.refetch : sheet.query.refetch,
+    detail.query.error ? detail.query.refetch : sheet.query.error ? sheet.query.refetch : workflow.error ? workflow.query.refetch : sheet.query.refetch,
   );
   const deny = useCallback(() => workspace?.deny(), [workspace]);
   const onFileError = useCallback(
@@ -68,7 +71,7 @@ export function FormResponseDetailPage() {
     [detail.scope.owner, recordId, t],
   );
   const data = detail.query.data;
-  useBreadcrumbLeaf(data?.number);
+  useBreadcrumbLeaf(data?.number, data?.name);
   const back = `/formularios/${formId}/respuestas?${route.params}`;
   const index =
     sheet.query.data?.records.items.findIndex(
@@ -293,19 +296,7 @@ export function FormResponseDetailPage() {
           </Button>
         ) : null}
       </Surface>
-      <Surface title={t("responses.history")} padded>
-        <ol className="flex flex-col gap-3">
-          {data.history.map((event) => (
-            <li key={event.kind} className="flex flex-wrap gap-2 text-sm">
-              <span>{date(event.atUtc)}</span>
-              <span>{t(`responses.history${event.kind}`)}</span>
-              {event.actor?.displayName ? (
-                <span>· {event.actor.displayName}</span>
-              ) : null}
-            </li>
-          ))}
-        </ol>
-      </Surface>
+      <ResponseWorkflowHistory workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} />
     </Page>
     </section>
   );

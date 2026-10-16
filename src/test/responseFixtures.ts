@@ -145,3 +145,7 @@ export function responseDetailFixture(
     ],
   };
 }
+
+export function responseWorkflowFixture(recordId = responseRecordId): import("@/features/business-forms/api/workflow").ResponseWorkflow {
+  return { recordId, recordState: "Received", ruleRevision: null, task: null, actions: [], documents: [] };
+}

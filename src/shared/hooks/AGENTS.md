@@ -28,3 +28,5 @@ Las lecturas privadas de archivo declaran dueño local del error; el consumidor 
 `useQueryUpdate` admite pathname junto con los cambios de query para una navegación atómica (anterior/siguiente del detalle). Conserva los parámetros ajenos; sin pathname mantiene el comportamiento compartido de filtros.
 
 `useElementVisibility` informa si un control está en el viewport; `once` conserva la habilitación para bytes ya cargados. Las facetas de respuestas usan visibilidad continua para pausar lecturas fuera de pantalla.
+
+`useBreadcrumbLeaf` permite además el nombre confirmado del padre: una pantalla de detalle puede nombrar su sección sin depender de la página parcial del menú. Ambos nombres se retiran juntos al desmontar.

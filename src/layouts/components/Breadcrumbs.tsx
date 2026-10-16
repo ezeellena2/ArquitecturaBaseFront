@@ -1,9 +1,7 @@
-import { useContext } from "react";
-import { FormsResponseNavigationContext } from "../formsNavigation";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { branchOf, isFormsPath, navigationLinks, parentLinkOf, withoutTrailingSlash } from "../navigation";
-import { useCurrentBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
+import { useCurrentBreadcrumbLeaf, useCurrentBreadcrumbParent } from "@/shared/hooks/useBreadcrumbLeaf";
 
 /// Pantallas que no están en el menú lateral pero igual tienen migas propias: al perfil se entra desde el
 /// menú del usuario. La clave del texto es la misma que usa ese menú, para que los dos digan lo mismo.
@@ -37,8 +35,9 @@ export function Breadcrumbs() {
   // Sin la barra del final, como la lee el router: `/roles/` es el listado.
   const pathname = withoutTrailingSlash(useLocation().pathname);
   const leaf = useCurrentBreadcrumbLeaf();
+  const parent = useCurrentBreadcrumbParent();
   const responsePath = /^\/formularios\/(?:respuestas$|([^/]+)\/respuestas(?:\/([^/]+))?$)/.exec(pathname);
-  if (responsePath) return <ResponseBreadcrumbs formId={responsePath[1]} detail={!!responsePath[2]} leaf={leaf} />;
+  if (responsePath) return <ResponseBreadcrumbs formId={responsePath[1]} detail={!!responsePath[2]} leaf={leaf} parent={parent} />;
   const activeLabelKey = pathname === "/" ? undefined : findActiveLabelKey(pathname);
   const parentLink = activeLabelKey ? undefined : parentLinkOf(pathname);
   const branchLabelKey = activeLabelKey || parentLink ? (isFormsPath(pathname) ? "navigation.forms" : branchOf(pathname)?.labelKey) : undefined;
@@ -94,7 +93,7 @@ export function Breadcrumbs() {
   );
 }
 
-function ResponseBreadcrumbs({formId,detail,leaf}:{formId?:string;detail:boolean;leaf?:string}) {
- const {t}=useTranslation();const navigation=useContext(FormsResponseNavigationContext);const name=navigation?.items.find(item=>item.id===formId)?.name;
+function ResponseBreadcrumbs({formId,detail,leaf,parent}:{formId?:string;detail:boolean;leaf?:string;parent?:string}) {
+ const {t}=useTranslation();const name=parent;
  return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm"><li><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator/><li><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.forms")}</Link></li><Separator/>{detail&&formId?<><li className="truncate"><Link to={`/formularios/${formId}/respuestas`} className={linkClassName}>{name??t("navigation.responses")}</Link></li><Separator/></>:null}<li aria-current="page" className="truncate font-medium">{leaf??t("navigation.responses")}</li></ol></nav>;
 }

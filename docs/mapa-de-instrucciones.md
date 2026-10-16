@@ -92,3 +92,5 @@ Archivos privados: `shared/api` conserva el transporte binario; `shared/hooks` s
 Etapa 3 amplía BusinessForms con planilla/detalle/exportación y alcance privado de lecturas. App compone el panel mediante el contexto neutral layouts/formsNavigation y una lectura dinámica al abrirlo; ResponseWorkspaceLayout delimita los datos privados a las rutas de respuestas; shared/api agrega descarga POST, shared/hooks navegación atómica y shared/ui FormRecordFiles reutiliza F4. Sus guías locales y src/test/visual/AGENTS.md conservan los límites; la regla funcional está en formularios.md del backend.
 
 G1 amplía el mismo editor BusinessForms con reglas e historial de revisiones independientes. api/rules valida configuración y opciones de condición autorizadas por RulesManage; el guard de salida existente contempla ambos borradores. El idioma original obligatorio se aplica sólo a los mensajes nuevos de la Etapa4.
+
+G5 agrega workflow privado en BusinessForms: historial y recuperación explícita sobre el mismo RunId, con capacidades del servidor y RulesManage. El detalle conserva el dueño único de avisos. El hook neutral de migas acepta el nombre confirmado del padre.

@@ -582,5 +582,23 @@
       "tooMany": "The limit has been reached.",
       "tooLong": "The message exceeds the allowed length."
     }
+  },
+  "workflow": {
+    "title": "What happened next",
+    "ruleRevision": "Rules from revision {{revision}}",
+    "consult": "Check status",
+    "working": "Checking…",
+    "consultFirst": "Delivery is unconfirmed. Check its status before retrying.",
+    "notApplicable": "The rule condition did not match.",
+    "retryHint": "Retry resumes only unfinished work: it never repeats confirmed actions or creates another PDF.",
+    "states": {
+      "Waiting": "Waiting",
+      "Running": "In progress",
+      "Completed": "Done",
+      "Failed": "Failed",
+      "Uncertain": "Unconfirmed",
+      "NotApplicable": "Not applicable"
+    },
+    "noManagePermission": "You no longer have permission to recover actions."
   }
 }

@@ -8,6 +8,7 @@ import { currentUser } from "@/test/mocks/handlers";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import {
   responseDetailFixture,
+  responseWorkflowFixture,
   responseFormId,
   responseRecordId,
   responseSheetFixture,
@@ -57,6 +58,7 @@ function setup(
     http.post("/api/forms/definitions/:id/records/search", () =>
       HttpResponse.json(responseSheetFixture()),
     ),
+    http.get("/api/forms/records/:id/workflow", ({ params }) => HttpResponse.json(responseWorkflowFixture(String(params.id)))),
     http.get("/api/forms/records/:id", ({ params }) =>
       HttpResponse.json(responseDetailFixture(String(params.id))),
     ),
@@ -127,6 +129,82 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 describe("response sheet", () => {
+  it("withdraws response values and workflow reasons when the follow-up read is forbidden", async () => {
+    setup(["formrecords.read", "formrules.manage"]);
+    const runId = crypto.randomUUID();
+    let revoked = false;
+    const privateReason = "private workflow reason";
+    server.use(http.get("/api/forms/records/:id/workflow", () => revoked ? HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }) : HttpResponse.json({ ...responseWorkflowFixture(), ruleRevision: 1, actions: [{ id: runId, ruleId: crypto.randomUUID(), kind: "NotifyAuthor", event: "Received", order: 1, state: "Uncertain", reasonCode: null, reason: privateReason, canConsult: true, canRetry: false, createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: null }] })),
+      http.post("/api/forms/records/:id/actions/:runId/consult", () => { revoked = true; return HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }); }));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    await screen.findByText(privateReason);
+    await userEvent.click(screen.getByRole("button", { name: "Consultar" }));
+    await screen.findByRole("heading", { name: /permiso/i });
+    expect(screen.queryByText("Texto completo para revisar")).not.toBeInTheDocument();
+    expect(screen.queryByText(privateReason)).not.toBeInTheDocument();
+    await waitFor(() => expect(queryClient.getQueryCache().getAll().some(query => JSON.stringify(query.state.data)?.includes(privateReason))).toBe(false));
+  });
+
+  it("preserves the readable response when workflow recovery permission is revoked", async () => {
+    setup(["formrecords.read", "formrules.manage"]);
+    const runId = crypto.randomUUID();
+    const payload = { ...responseWorkflowFixture(), ruleRevision: 1, actions: [{ id: runId, ruleId: crypto.randomUUID(), kind: "NotifyAuthor", event: "Received", order: 1, state: "Uncertain", reasonCode: null, reason: null, canConsult: true, canRetry: false, createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: null }] };
+    server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)),
+      http.post("/api/forms/records/:id/actions/:runId/consult", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    await userEvent.click(await screen.findByRole("button", { name: "Consultar" }));
+    await screen.findByText("Ya no tenés permiso para recuperar acciones.");
+    expect(screen.getByRole("heading", { name: "TEST-000002" })).toBeInTheDocument();
+    expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Consultar" })).not.toBeInTheDocument();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("consults an uncertain workflow action first and retries only the unconfirmed failure", async () => {
+    setup(["formrecords.read", "formrules.manage"]);
+    const runId = "0199a0c0-0000-7000-8000-000000000090";
+    let state = "Uncertain";
+    const consulted = vi.fn();
+    const retried = vi.fn();
+    const payload = () => ({ ...responseWorkflowFixture(), ruleRevision: 3, actions: [{ id: runId, ruleId: "0199a0c0-0000-7000-8000-000000000091", kind: "NotifyAuthor", event: "Approved", order: 1, state, reasonCode: state === "Completed" ? null : "Test.Delivery", reason: state === "Completed" ? null : "Revisá la entrega.", canConsult: state === "Uncertain", canRetry: state === "Failed", createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: state === "Completed" ? "2026-10-16T12:01:00Z" : null }] });
+    server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload())),
+      http.post("/api/forms/records/:id/actions/:runId/consult", () => { consulted(); state = "Failed"; return HttpResponse.json(payload()); }),
+      http.post("/api/forms/records/:id/actions/:runId/retry", () => { retried(); state = "Completed"; return HttpResponse.json(payload()); }));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    await screen.findByRole("heading", { name: "TEST-000002" });
+    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    expect(await history.findByText("Sin confirmar")).toBeInTheDocument();
+    expect(history.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+    await userEvent.click(history.getByRole("button", { name: "Consultar" }));
+    await history.findByText("No se pudo");
+    expect(consulted).toHaveBeenCalledTimes(1);
+    expect(retried).not.toHaveBeenCalled();
+    await userEvent.click(history.getByRole("button", { name: "Reintentar" }));
+    await history.findByText("Hecho");
+    expect(retried).toHaveBeenCalledTimes(1);
+    expect(history.queryByRole("button", { name: "Consultar" })).not.toBeInTheDocument();
+    expect(history.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+  });
+  it("shows action states without recovery controls to a reader without RulesManage", async () => {
+    setup(["formrecords.read"]);
+    server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json({ ...responseWorkflowFixture(), ruleRevision: 1, actions: [{ id: crypto.randomUUID(), ruleId: crypto.randomUUID(), kind: "NotifyAuthor", event: "Received", order: 1, state: "Uncertain", reasonCode: null, reason: null, canConsult: true, canRetry: true, createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: null }] })));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    await history.findByText("Sin confirmar");
+    expect(history.queryByRole("button", { name: "Consultar" })).not.toBeInTheDocument();
+    expect(history.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+  });
+
+  it("uses the confirmed detail name in breadcrumbs even when navigation has a different name", async () => {
+    setup();
+    server.use(http.get("/api/forms/navigation", () => HttpResponse.json({ items: [{ id: responseFormId, name: "Nombre del menú", prefix: "TEST", versionNumber: 2 }], page: 1, pageSize: 4, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    await screen.findByRole("heading", { name: "TEST-000002" });
+    const crumbs = within(screen.getByRole("navigation", { name: "Migas de pan" }));
+    expect(crumbs.getByRole("link", { name: "Formulario publicado" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas");
+    expect(crumbs.queryByText("Nombre del menú")).not.toBeInTheDocument();
+  });
+
   it("moves Next and Previous across response pages with the same order", async () => {
     setup();
     const rows = Array.from({ length: 21 }, (_, index) => ({ ...responseSheetFixture().records.items[0], id: "0199a0c0-0000-7000-8000-" + String(200 + index).padStart(12, "0"), number: "TEST-" + String(21 - index).padStart(6, "0") }));

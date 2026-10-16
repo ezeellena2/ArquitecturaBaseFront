@@ -87,3 +87,9 @@ El borrador distingue cantidad vacía (null) de cero. Mínimo/máximo deben ser 
 - Un409 conserva los cambios, exige relectura y adopción explícita. El historial sólo muestra copias inmutables. Los errores operativos permiten otro Guardar con la misma revisión; no hay comprobantes ni replay durable para configuración interna.
 
 Al recibir403 se desmonta el editor de reglas completo y se abortan/retiran todas sus consultas; no alcanza con ocultar los textos. Una nueva revisión confirmada del formulario refresca las preguntas/opciones sin remontar el borrador de reglas ni adoptar otra revisión.
+
+## Historial de acciones (Etapa 4, G5)
+
+- `useResponseWorkflow` consume el estado durable por respuesta con FormRecordsRead. Sólo vuelve a leer automáticamente mientras haya acciones Esperando/En curso. Consultar/Reintentar son POST explícitos sobre el mismo RunId; no crean operaciones ni UUID nuevos en el front.
+- El servidor entrega capacidades. El front además exige RulesManage y distingue Sin confirmar (Consultar) de No se pudo (Reintentar); jamás ofrece repetir Hecho/No aplica. Un403 de control quita recuperación y revalida por GET; sólo un403 de lectura retira valores y alcance privado.
+- El detalle conserva un solo dueño de avisos para valores, planilla, workflow y navegación. Las migas usan el nombre confirmado del detalle. Documentos del workflow son metadata; su contenido fijo se conecta con G2.

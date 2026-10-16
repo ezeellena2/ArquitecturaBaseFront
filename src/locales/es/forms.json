@@ -582,5 +582,23 @@
       "tooMany": "Se alcanzó el límite.",
       "tooLong": "El mensaje supera el límite permitido."
     }
+  },
+  "workflow": {
+    "title": "Qué pasó después",
+    "ruleRevision": "Reglas de la revisión {{revision}}",
+    "consult": "Consultar",
+    "working": "Consultando…",
+    "consultFirst": "No sabemos si salió. Consultá primero para confirmarlo antes de reintentar.",
+    "notApplicable": "La condición de la regla no se cumplió.",
+    "retryHint": "Reintentar retoma sólo lo que no salió: no repite lo confirmado ni arma otro PDF.",
+    "states": {
+      "Waiting": "Esperando",
+      "Running": "En curso",
+      "Completed": "Hecho",
+      "Failed": "No se pudo",
+      "Uncertain": "Sin confirmar",
+      "NotApplicable": "No aplica"
+    },
+    "noManagePermission": "Ya no tenés permiso para recuperar acciones."
   }
 }
