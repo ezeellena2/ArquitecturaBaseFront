@@ -493,8 +493,6 @@
     "moreOptions": "See more options",
     "remove": "Remove filter: {{name}}",
     "people": "People",
-    "selected_one": "{{count}} selected",
-    "selected_other": "{{count}} selected",
     "noOptions": "No matching options.",
     "photos": "Response photos",
     "sinceVersion": "(since v{{version}})",

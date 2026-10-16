@@ -493,8 +493,6 @@
     "moreOptions": "Ver más opciones",
     "remove": "Quitar filtro: {{name}}",
     "people": "Personas",
-    "selected_one": "{{count}} seleccionada",
-    "selected_other": "{{count}} seleccionadas",
     "noOptions": "No hay opciones que coincidan.",
     "photos": "Fotos de la respuesta",
     "sinceVersion": "(desde v{{version}})",
