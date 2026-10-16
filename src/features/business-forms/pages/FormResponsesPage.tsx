@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { readErrorMessage } from "@/shared/api/errorFeedback";
+import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Page } from "@/shared/ui/Page";
@@ -31,6 +32,8 @@ export function FormResponsesPage() {
   const { t, i18n } = useTranslation("forms");
   const route = useResponseRouteQuery(formId);
   const { query, scope } = useResponseSheet(formId, route.query, route.ready);
+  const exportCooldown = useCountdown(0);
+  const canExport = !!query.data && !query.isFetching && !query.isPending && !query.isPlaceholderData && !query.isError;
   const [panel, setPanel] = useState<"filters" | "export" | null>(null);
   const [initialField, setInitialField] = useState<string | undefined>();
   const workspace = useContext(ResponseWorkspaceContext);
@@ -151,7 +154,7 @@ export function FormResponsesPage() {
           <Button
             type="button"
             variant="outline"
-            disabled={!data}
+            disabled={!canExport}
             onClick={() => setPanel("export")}
           >
             {t("responses.export")}
@@ -308,6 +311,8 @@ export function FormResponsesPage() {
           prefix={data.prefix}
           filter={route.query}
           total={data.records.totalCount}
+          ready={canExport}
+          cooldown={exportCooldown}
           columns={data.columns}
           visible={visible}
           onForbidden={() => {

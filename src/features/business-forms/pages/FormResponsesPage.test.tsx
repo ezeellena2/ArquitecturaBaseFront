@@ -414,6 +414,38 @@ describe("response sheet", () => {
       ),
     );
   });
+  it("disables export while the visible total belongs to the previous filters", async () => {
+    setup();
+    let release: (() => void) | undefined;
+    const requested = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = await request.json() as { search?: string };
+      if (body.search) { requested(); await new Promise<void>(resolve => { release = resolve; }); }
+      return HttpResponse.json(responseSheetFixture());
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.type(screen.getByRole("searchbox", { name: "Buscar en textos largos" }), "new");
+    await waitFor(() => expect(requested).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: "Exportar a Excel" })).toBeDisabled();
+    await act(async () => release?.());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Exportar a Excel" })).toBeEnabled());
+  });
+  it("retains the export wait after closing and reopening the dialog", async () => {
+    setup();
+    server.use(http.post("/api/forms/definitions/:id/records/export", () => HttpResponse.json({ code: "Test.Wait", retryAfter: 60 }, { status: 429 })));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
+    let dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Exportar a Excel" }));
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toBeDisabled());
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
+    dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toBeDisabled();
+    expect(within(dialog).getByText(/Esperá .* segundos/)).toBeInTheDocument();
+  });
   it("closes a denied export and preserves the readable sheet", async () => {
     setup();
     server.use(http.post("/api/forms/definitions/:id/records/export", () => HttpResponse.json({ code: "Forms.Record.Forbidden" }, { status: 403 })));

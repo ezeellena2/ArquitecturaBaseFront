@@ -4,7 +4,7 @@ import { api } from "@/shared/api/httpClient";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
-import { useCountdown } from "@/shared/hooks/useCountdown";
+import type { useCountdown } from "@/shared/hooks/useCountdown";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import {
   Dialog,
@@ -23,6 +23,8 @@ export function ResponseExportDialog({
   prefix,
   filter,
   total,
+  ready,
+  cooldown,
   columns,
   visible,
   onClose,
@@ -33,6 +35,8 @@ export function ResponseExportDialog({
   prefix: string;
   filter: ResponseQuery;
   total: number;
+  ready: boolean;
+  cooldown: ReturnType<typeof useCountdown>;
   columns: readonly ResponseColumn[];
   visible: readonly ResponseColumn[];
   onClose: () => void;
@@ -42,7 +46,6 @@ export function ResponseExportDialog({
   const { t } = useTranslation("forms");
   const [selection, setSelection] = useState("all");
   const [pending, setPending] = useState(false);
-  const cooldown = useCountdown(0);
   const controller = useRef<AbortController | null>(null);
   const feedbackId = `responses:export:${formId}`;
   const restore = useRestoreFocusOnClose();
@@ -54,6 +57,7 @@ export function ResponseExportDialog({
     [feedbackId],
   );
   const download = async () => {
+    if (!ready || pending || cooldown.isRunning) return;
     const current = new AbortController();
     controller.current = current;
     setPending(true);
@@ -150,7 +154,7 @@ export function ResponseExportDialog({
           </Button>
           <Button
             type="button"
-            disabled={pending || total > 10000 || cooldown.seconds > 0}
+            disabled={!ready || pending || total > 10000 || cooldown.seconds > 0}
             onClick={() => {
               void download();
             }}
