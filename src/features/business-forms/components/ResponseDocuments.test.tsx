@@ -1,0 +1,14 @@
+import {screen,waitFor,within} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {http,HttpResponse} from "msw";
+import {beforeEach,expect,it,vi} from "vitest";
+import {renderWithProviders} from "@/test/utils/renderWithProviders";
+import {server} from "@/test/mocks/server";
+import {responseRecordId} from "@/test/responseFixtures";
+import {savePrivateBlob} from "@/shared/hooks/usePrivateFormFile";
+import {ResponseDocuments} from "./ResponseDocuments";
+vi.mock("@/shared/hooks/usePrivateFormFile",async()=>({...await vi.importActual<typeof import("@/shared/hooks/usePrivateFormFile")>("@/shared/hooks/usePrivateFormFile"),savePrivateBlob:vi.fn()}));
+const document={id:"0199a0c0-0000-7000-8000-000000000080",culture:"es" as const,name:"Visita aprobada.pdf",size:40,createdAtUtc:"2026-10-16T12:00:00Z"};
+beforeEach(()=>{vi.clearAllMocks();Object.defineProperty(URL,"createObjectURL",{configurable:true,value:vi.fn().mockReturnValue("blob:fixed-pdf")});Object.defineProperty(URL,"revokeObjectURL",{configurable:true,value:vi.fn()});});
+it("opens and downloads only the issued fixed document and revokes the preview URL",async()=>{const requests:string[]=[];server.use(http.get("/api/forms/records/:recordId/documents/:documentId/content",({request,params})=>{expect(params.recordId).toBe(responseRecordId);expect(params.documentId).toBe(document.id);requests.push(new URL(request.url).searchParams.get("download")!);return new HttpResponse(new Uint8Array([37,80,68,70]),{headers:{"content-type":"application/pdf","content-language":"es","content-disposition":"attachment; filename=\"Visita aprobada.pdf\""}});}));renderWithProviders(<ResponseDocuments recordId={responseRecordId} documents={[document]} onForbidden={vi.fn()}/>);await userEvent.click(screen.getByRole("button",{name:"Ver PDF"}));const dialog=await screen.findByRole("dialog");await waitFor(()=>expect(within(dialog).getByTitle("Vista previa del PDF")).toHaveAttribute("src","blob:fixed-pdf"));await userEvent.click(within(dialog).getAllByRole("button",{name:"Cerrar"})[0]);expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:fixed-pdf");await userEvent.click(screen.getByRole("button",{name:"Descargar"}));await waitFor(()=>expect(savePrivateBlob).toHaveBeenCalledWith(expect.anything(),"Visita aprobada.pdf"));expect(requests).toEqual(["false","true"]);});
+it("removes the issued document view when read permission is revoked",async()=>{const deny=vi.fn();server.use(http.get("/api/forms/records/:recordId/documents/:documentId/content",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));renderWithProviders(<ResponseDocuments recordId={responseRecordId} documents={[document]} onForbidden={deny}/>);await userEvent.click(screen.getByRole("button",{name:"Ver PDF"}));await waitFor(()=>expect(deny).toHaveBeenCalledOnce());expect(URL.createObjectURL).not.toHaveBeenCalled();});

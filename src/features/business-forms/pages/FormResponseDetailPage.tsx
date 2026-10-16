@@ -30,6 +30,7 @@ import {
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { useResponseWorkflow } from "../hooks/useResponseWorkflow";
+import { ResponseDocuments } from "../components/ResponseDocuments";
 import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
 import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
 import { ResponseValue } from "../components/ResponseValue";
@@ -301,6 +302,7 @@ export function FormResponseDetailPage() {
           </Button>
         ) : null}
       </Surface>
+      {workflow.query.data?.recordId === data.id ? <ResponseDocuments key={detail.scope.owner+":"+data.id} recordId={data.id} documents={workflow.query.data.documents} onForbidden={deny} timeZoneId={detail.scope.user?.timeZoneId}/> : null}
       <ResponseWorkflowHistory workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} />
     </Page>
     </section>

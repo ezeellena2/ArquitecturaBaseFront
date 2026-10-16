@@ -49,6 +49,7 @@ export const routes: RouteObject[] = [
                   { path: "/catalogos/:catalogId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/CatalogEditorPage")).CatalogEditorPage }) },
                 ],
               },
+              { element: <ProtectedRoute permission="formrules.manage" />, children: [{ path: "/formularios/:formId/pdf", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormPdfDesignPage")).FormPdfDesignPage }) }] },
               { element: <ProtectedRoute permission="formapprovals.decide" />, children: [{ path: "/formularios/por-aprobar", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ApprovalInboxPage")).ApprovalInboxPage }) }] },
               {
                 element: <ProtectedRoute permission="formrecords.read" />,
