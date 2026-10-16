@@ -261,6 +261,22 @@ describe("response sheet", () => {
       }),
     ).toBeInTheDocument();
   });
+  it("offers yes and no directly without a text search for a boolean question", async () => {
+    setup();
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Confirmado" }),
+    );
+    expect(
+      await within(dialog).findByRole("checkbox", { name: "No" }),
+    ).toBeEnabled();
+    expect(
+      within(dialog).queryByRole("searchbox", { name: "Buscar opciones" }),
+    ).not.toBeInTheDocument();
+  });
   it("withdraws all values and counts after a denied filter count", async () => {
     setup();
     server.use(

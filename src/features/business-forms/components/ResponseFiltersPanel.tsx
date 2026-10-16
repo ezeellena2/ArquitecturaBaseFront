@@ -244,6 +244,7 @@ export function ResponseFiltersPanel({
                       filter={draft}
                       dimension="choice"
                       fieldId={column.fieldId}
+                      searchable={column.type !== "boolean"}
                       selected={
                         draft.conditions?.find(
                           (condition) =>

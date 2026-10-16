@@ -16,6 +16,7 @@ export function ResponseFacetControl({
   dimension,
   fieldId,
   selected,
+  searchable = true,
   onChange,
 }: {
   formId: string;
@@ -23,6 +24,7 @@ export function ResponseFacetControl({
   dimension: string;
   fieldId?: string;
   selected: readonly string[];
+  searchable?: boolean;
   onChange: (ids: readonly string[]) => void;
 }) {
   const { t } = useTranslation("forms");
@@ -40,15 +42,17 @@ export function ResponseFacetControl({
     return <ForbiddenPage />;
   return (
     <div className="flex flex-col gap-3">
-      <SearchInput
-        maxLength={100}
-        label={t("responses.searchOptions")}
-        value={search}
-        onChange={(value) => {
-          setSearch(value);
-          setPage(1);
-        }}
-      />
+      {searchable ? (
+        <SearchInput
+          maxLength={100}
+          label={t("responses.searchOptions")}
+          value={search}
+          onChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+        />
+      ) : null}
       {query.isPending ? (
         <Spinner />
       ) : query.isError && !query.data ? (
