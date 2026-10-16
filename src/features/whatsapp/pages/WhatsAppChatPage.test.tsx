@@ -30,6 +30,13 @@ afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); })
 const open = async () => { renderRouteWithProviders("/whatsapp/chat"); await userEvent.click(await screen.findByRole("button", { name: "Ana" })); return screen.findByLabelText("Respuesta al cliente"); };
 
 describe("WhatsAppChatPage", () => {
+  it("opens a conversation linked from a form response without sending anything", async () => {
+    const id = "0199a0c0-0000-7000-8000-000000000061";
+    contact.id = id;
+    renderRouteWithProviders("/whatsapp/chat?conversacion=" + id);
+    expect(await screen.findByLabelText("Respuesta al cliente")).toHaveValue("");
+    expect(requests).toHaveLength(0);
+  });
   it("keeps manual attention without offering the retired login bot", async () => {
     await open();
     expect(screen.queryByRole("button", { name: "Activar bot" })).not.toBeInTheDocument();

@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router";
+import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -29,7 +31,10 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
   const readScope = { actor, culture: i18n.resolvedLanguage ?? "es", permissions };
   const listRoot = [...chatReadScopeKey(readScope), "list"] as const;
   useChatReadCleanup(listRoot);
-  const [selected, setSelected] = useState<string>();
+  const [params] = useSearchParams();
+  const updateQuery = useQueryUpdate();
+  const selected = params.get("conversacion") || undefined;
+  const setSelected = (id: string | undefined) => updateQuery({ conversacion: id }, { replace: false });
   const [search, setSearch] = useState("");
   const [unread, setUnread] = useState(false);
   const [page, setPage] = useState(1);
