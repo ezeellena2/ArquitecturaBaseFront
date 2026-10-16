@@ -184,8 +184,8 @@ por día en cada conversación; cambiar el modo pide el permiso nuevo «Configur
 | [H3 · Cambiar de modo](evidence/formularios-whatsapp/asi-h3-modos.png) | Confirmación para pasar a Asistente, tomar la atención a mitad de un envío, IA no disponible, chats existentes, marca en la lista y sin permiso. |
 | [H4 · Un catálogo que propone el asistente](evidence/formularios-whatsapp/asi-h4-catalogo.png) | Pedido por WhatsApp, propuesta para revisar en la web y aprobación por una persona. |
 | [H5 · Los límites del asistente](evidence/formularios-whatsapp/asi-h5-limites.png) | Pregunta si no está seguro, no contesta consultas ni charla, anota lo que no tiene formulario, no insiste, respeta las 24 horas y deja todo registrado en la respuesta (ajustado el 2026-10-16). |
-| [H6 · Audios en el chat](evidence/formularios-whatsapp/asi-h6-audios.png) | **Para elegir (2026-10-16).** El audio se baja y se pasa a texto; el operador lo escucha con su transcripción y el asistente lo lee como texto. Sin transcripción, queda para un operador; sigue la retención de los mensajes. |
-| [H7 · Formularios que faltan](evidence/formularios-whatsapp/asi-h7-faltan.png) | **Para elegir (2026-10-16).** Los pedidos agrupados por tema, con cuántos, de cuántas personas y cuándo, sin nombres ni mensajes; crear el formulario o descartar. |
+| [H6 · Audios en el chat](evidence/formularios-whatsapp/asi-h6-audios.png) | **Elegido el 2026-10-16.** El audio se baja y se pasa a texto; el operador lo escucha con su transcripción y el asistente lo lee como texto. Sin transcripción, queda para un operador; sigue la retención de los mensajes. |
+| [H7 · Formularios que faltan](evidence/formularios-whatsapp/asi-h7-faltan.png) | **Elegido el 2026-10-16.** Los pedidos agrupados por tema, con cuántos, de cuántas personas y cuándo, sin nombres ni mensajes; crear el formulario o descartar. |
 
 Propuesta posterior, en revisión (Etapa del asistente): un formulario puede sugerir otro. No reemplaza a los
 tableros elegidos; el modelo y las reglas están en los
