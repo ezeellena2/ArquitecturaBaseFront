@@ -372,6 +372,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const showAdministration = adminItems.length > 0;
   const whatsappItems = visibleItems(whatsapp.items, canSee, false);
   const responses = useContext(FormsResponseNavigationContext);
+  const activateResponses = responses?.setActive;
+  useEffect(() => { activateResponses?.(openPanel === "forms" && (!isMobile || mobileOpen)); }, [activateResponses, openPanel, isMobile, mobileOpen]);
   const formsItems = visibleItems(forms.items, canSee, false);
   const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : administration;
   const selectedItems = openPanel === "forms" ? formsItems : openPanel === "whatsapp" ? whatsappItems : adminItems;
@@ -677,6 +679,6 @@ function ResponseLinks({onNavigate}:{onNavigate?:()=>void}) {
   <p className="px-2 py-2 text-xs font-medium uppercase tracking-wide text-[var(--color-content-muted)]">{t("navigation.responses")}</p>
   {navigation.pending&&!navigation.items.length?<Skeleton className="h-9"/>:navigation.failed?<Button type="button" variant="ghost" onClick={navigation.retry}>{t("actions.retry")}</Button>:null}
   <ul className="flex flex-col gap-1">{navigation.items.map(item=><li key={item.id}><NavItem item={{labelKey:"navigation.responses",icon:FormIcon,to:`/formularios/${item.id}/respuestas`,permission:"formrecords.read"}} label={item.name} collapsed={false} onNavigate={onNavigate}/></li>)}</ul>
-  {navigation.hasMore||!navigation.pending&&!navigation.failed&&navigation.items.length===0?<NavItem item={{labelKey:"navigation.allResponses",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:"formrecords.read"}} label={t("navigation.allResponses")} collapsed={false} onNavigate={onNavigate}/>:null}
+  {navigation.hasMore||!navigation.pending&&!navigation.failed&&navigation.items.length===0?<NavItem item={{labelKey:"navigation.allResponses",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:"formrecords.read"}} label={navigation.totalCount > 0 ? t("navigation.allResponsesCount", { count: navigation.totalCount }) : t("navigation.allResponses")} collapsed={false} onNavigate={onNavigate}/>:null}
  </div>;
 }

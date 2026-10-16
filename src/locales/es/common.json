@@ -110,7 +110,8 @@
     "whatsappChat": "Chat",
     "catalogs": "Catálogos",
     "responses": "Respuestas",
-    "allResponses": "Ver todos"
+    "allResponses": "Ver todos",
+    "allResponsesCount": "Ver todos ({{count}})"
   },
   "layout": {
     "sidebar": {

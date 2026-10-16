@@ -7,6 +7,8 @@ import { LoginLinkPage } from "@/features/auth/pages/LoginLinkPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { HomeLayout } from "@/layouts/HomeLayout";
+import { AppLayout } from "@/layouts/AppLayout";
+import { FormResponsesShell } from "./FormResponsesShell";
 import { Spinner } from "@/shared/ui/Spinner";
 import { RouteErrorPage } from "./RouteErrorPage";
 
@@ -30,7 +32,7 @@ export const routes: RouteObject[] = [
     HydrateFallback: Spinner,
     children: [
       {
-        Component: HomeLayout,
+        element: <HomeLayout authenticatedShell={<FormResponsesShell><AppLayout /></FormResponsesShell>} />,
         children: [
           { path: "/", lazy: async () => ({ Component: (await import("@/app/AuthenticatedHome")).AuthenticatedHome }) },
           {
@@ -49,7 +51,7 @@ export const routes: RouteObject[] = [
               },
               {
                 element: <ProtectedRoute permission="formrecords.read" />,
-                children: [{ path: "/formularios/:formId/respuestas/:recordId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponseDetailPage")).FormResponseDetailPage }) }, { path: "/formularios/:formId/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponsesPage")).FormResponsesPage }) }, { path: "/formularios/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ResponseFormsPage")).ResponseFormsPage }) }],
+                children: [{ lazy: async () => ({ Component: (await import("@/features/business-forms/components/ResponseWorkspaceLayout")).ResponseWorkspaceLayout }), children: [{ path: "/formularios/:formId/respuestas/:recordId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponseDetailPage")).FormResponseDetailPage }) }, { path: "/formularios/:formId/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponsesPage")).FormResponsesPage }) }, { path: "/formularios/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ResponseFormsPage")).ResponseFormsPage }) }] }],
               },
               {
                 element: <ProtectedRoute permission="formtemplates.read" />,

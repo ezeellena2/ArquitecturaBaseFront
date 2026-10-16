@@ -44,7 +44,7 @@ describe("Sidebar", () => {
     renderRouteWithProviders("/");
     await userEvent.click(await screen.findByRole("button", {name:/^formularios$/i}));
     expect(await screen.findByRole("link",{name:"Entrega publicada"})).toHaveAttribute("href","/formularios/0199a0c0-0000-7000-8000-000000000001/respuestas");
-    expect(screen.getByRole("link",{name:"Ver todos"})).toHaveAttribute("href","/formularios/respuestas");
+    expect(screen.getByRole("link",{name:"Ver todos (9)"})).toHaveAttribute("href","/formularios/respuestas");
     expect(screen.queryByRole("link",{name:"Diseñar formularios"})).not.toBeInTheDocument();
   });
   // AppProviders usa el queryClient de la app (un singleton). Sin esto, la respuesta de /api/me de un test

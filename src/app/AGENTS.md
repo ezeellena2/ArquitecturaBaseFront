@@ -26,4 +26,4 @@ Monta providers, router y árbol de rutas. `routes.tsx` declara rutas y guards; 
 - `SystemTheme`, bajo QueryClientProvider, aplica la apariencia pública a documentElement.
   Abarca acceso público y portales; no guarda preferencias locales ni depende de una feature.
 
-`FormResponsesShell` compone el contexto de navegación y el alcance privado de respuestas alrededor de AppLayout, sin desmontar el caparazón entre rutas. La feature aporta lecturas autorizadas; layouts recibe un contexto neutral.
+`routes` compone `FormResponsesShell` alrededor de AppLayout, sin desmontar el caparazón entre rutas. El shell entrega un contexto neutral y carga la lectura de navegación con un import dinámico al abrir el panel o entrar a Formularios. `ResponseWorkspaceLayout` mantiene el alcance privado de filtros y archivos sólo entre las rutas de respuestas.

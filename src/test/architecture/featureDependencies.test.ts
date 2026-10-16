@@ -25,6 +25,10 @@ function featureDependencies(fileName: string, source: string): string[] {
       : value.startsWith(".") ? path.resolve(path.dirname(fileName), value) : undefined;
     if (!target) return;
     const dependency = path.relative(root, target).split(path.sep);
+    if (owner[0] === "layouts") {
+      if (dependency[0] === "app") violations.push(`${path.relative(root, fileName)} → ${value}`);
+      return;
+    }
     if (dependency[0] !== "features") return;
     if (owner[0] === "features" && owner[1] === dependency[1]) return;
     const line = ast.getLineAndCharacterOfPosition(specifier.getStart(ast)).line + 1;
@@ -75,8 +79,13 @@ describe("feature dependency boundaries", () => {
   });
 
   it("keeps production features independent and shared code free of feature dependencies", () => {
-    const violations = ["features", "shared"].flatMap(folder => sourceFiles(path.join(root, folder)))
+    const violations = ["features", "shared", "layouts"].flatMap(folder => sourceFiles(path.join(root, folder)))
       .flatMap(file => featureDependencies(file, readFileSync(file, "utf8")));
     expect(violations, violations.join("\n")).toEqual([]);
   });
+});
+
+it("keeps layout imports independent of app composition", () => {
+  expect(featureDependencies(path.join(root, "layouts/HomeLayout.tsx"), 'import { Shell } from "@/app/Shell";')).toHaveLength(1);
+  expect(featureDependencies(path.join(root, "layouts/HomeLayout.tsx"), 'import { Context } from "./formsNavigation";')).toEqual([]);
 });

@@ -2,6 +2,8 @@ import { createContext } from "react";
 export interface FormsResponseNavigation {
   canRead: boolean;
   items: readonly { id: string; name: string }[];
+  totalCount: number;
+  setActive?: (active: boolean) => void;
   hasMore: boolean;
   pending: boolean;
   failed: boolean;

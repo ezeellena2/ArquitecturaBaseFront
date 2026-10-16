@@ -211,6 +211,22 @@ describe("response sheet", () => {
     expect(router.state.location.search).toContain("columns=");
     expect(router.state.location.search).not.toContain("Observaciones");
   });
+  it("loads response navigation only when the forms panel opens and preserves the shell", async () => {
+    setup();
+    const requested = vi.fn();
+    server.use(http.get("/api/forms/navigation", () => { requested(); return HttpResponse.json({ items: [{ id: responseFormId, name: "Published form", prefix: "TEST", versionNumber: 2 }], page: 1, pageSize: 4, totalCount: 12, totalPages: 3, hasPrevious: false, hasNext: true }); }));
+    renderRouteWithProviders("/perfil");
+    await screen.findByRole("heading", { name: "Mi perfil" });
+    const shell = screen.getByRole("navigation", { name: "Navegación principal" });
+    const trigger = await screen.findByRole("button", { name: "Formularios" });
+    expect(requested).not.toHaveBeenCalled();
+    await userEvent.click(trigger);
+    await screen.findByRole("link", { name: "Published form" });
+    expect(screen.getByRole("link", { name: "Ver todos (12)" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("link", { name: "Published form" }));
+    await screen.findByRole("table");
+    expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBe(shell);
+  });
   it("reports one detail failure when detail and its sheet both fail", async () => {
     setup();
     server.use(http.get("/api/forms/records/:id", () => HttpResponse.json({ detail: "Failed", code: "Test.Failure" }, { status: 500 })), http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json({ detail: "Failed", code: "Test.Failure" }, { status: 500 })));
