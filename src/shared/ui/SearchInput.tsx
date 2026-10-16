@@ -8,11 +8,13 @@ export function SearchInput({
   onChange,
   delay = 300,
   label,
+  maxLength,
 }: {
   value: string;
   onChange: (value: string) => void;
   delay?: number;
   label?: string;
+  maxLength?: number;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(value);
@@ -37,6 +39,7 @@ export function SearchInput({
 
   return (
     <Input
+        maxLength={maxLength}
       type="search"
       value={draft}
       onChange={(event) => setDraft(event.target.value)}

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 /// Escribe en la query string. `undefined` y `""` borran el parámetro en vez de escribirlo vacío: un valor
 /// por omisión no va en la URL, así el enlace que se comparte dice solo lo que se eligió.
@@ -14,15 +14,15 @@ import { useSearchParams } from "react-router";
 /// Por eso todo lo que tiene que viajar junto va en **una sola** llamada: `setFilter` manda el filtro y el
 /// `page: undefined` en el mismo objeto, y `clear` manda todas las claves de una.
 export function useQueryUpdate() {
-  const [, setParams] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
 
   return useCallback(
     (
       changes: Record<string, string | undefined>,
-      options?: { replace?: boolean },
+      options?: { replace?: boolean; pathname?: string },
     ) => {
-      setParams(
-        (previous) => {
+      const apply = (previous: URLSearchParams) => {
           const next = new URLSearchParams(previous);
 
           for (const [key, value] of Object.entries(changes)) {
@@ -34,10 +34,13 @@ export function useQueryUpdate() {
           }
 
           return next;
-        },
-        { replace: options?.replace ?? true },
-      );
+      };
+      if (options?.pathname) {
+        void navigate({ pathname: options.pathname, search: apply(params).toString() }, { replace: options.replace ?? true });
+      } else {
+        setParams(apply, { replace: options?.replace ?? true });
+      }
     },
-    [setParams],
+    [setParams, navigate, params],
   );
 }

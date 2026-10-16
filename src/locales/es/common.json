@@ -148,6 +148,8 @@
     "previous": "Foto anterior",
     "next": "Foto siguiente",
     "morePhotos_one": "Ver {{count}} foto más",
-    "morePhotos_other": "Ver {{count}} fotos más"
+    "morePhotos_other": "Ver {{count}} fotos más",
+    "photoCount_one": "{{count}} foto",
+    "photoCount_other": "{{count}} fotos"
   }
 }

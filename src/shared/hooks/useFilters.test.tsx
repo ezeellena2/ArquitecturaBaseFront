@@ -2,6 +2,7 @@ import { renderHook, act } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter, useLocation } from "react-router";
 import { describe, expect, it } from "vitest";
+import { useQueryUpdate } from "./useQueryUpdate";
 import { useFilters } from "./useFilters";
 import { usePagination } from "./usePagination";
 
@@ -86,4 +87,11 @@ describe("useFilters", () => {
 
     expect(result.current.filters.active).toEqual(["isActive"]);
   });
+});
+
+it("navigates to a response while updating its page atomically and retaining safe query state",()=>{
+ const {result}=renderHook(()=>({update:useQueryUpdate(),location:useLocation()}),{wrapper:wrapperFor("/formularios/a/respuestas?pageSize=20&columns=a")});
+ act(()=>result.current.update({page:"2"},{pathname:"/formularios/a/respuestas/r",replace:false}));
+ expect(result.current.location.pathname).toBe("/formularios/a/respuestas/r");
+ expect(result.current.location.search).toContain("page=2");expect(result.current.location.search).toContain("columns=a");
 });

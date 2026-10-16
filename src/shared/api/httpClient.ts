@@ -68,7 +68,7 @@ async function send(path: string, init: RequestInit, token: string | undefined):
   return fetch(path, { ...init, headers });
 }
 
-async function request<T>(path: string, init: RequestInit = {}, binary = false): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}, binary: boolean | "download" = false): Promise<T> {
   let token = options.getAccessToken?.();
   let response: Response;
 
@@ -102,7 +102,18 @@ async function request<T>(path: string, init: RequestInit = {}, binary = false):
   }
 
   if (binary) {
-    try { return await response.blob() as T; }
+    try {
+      const blob = await response.blob();
+      if (binary === "download") {
+        const disposition = response.headers.get("content-disposition") ?? "";
+        const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1];
+        const plain = /filename="([^"]+)"/i.exec(disposition)?.[1];
+        let fileName = plain ?? null;
+        if (encoded) { try { fileName = decodeURIComponent(encoded); } catch { /* A malformed optional filename does not invalidate the content. */ } }
+        return {blob,fileName} as T;
+      }
+      return blob as T;
+    }
     catch (error) { if (init.signal?.aborted) throw error; throw ApiError.network(); }
   }
 
@@ -117,7 +128,14 @@ async function request<T>(path: string, init: RequestInit = {}, binary = false):
   return (text === "" ? undefined : JSON.parse(text)) as T;
 }
 
+export interface ApiDownload { blob: Blob; fileName: string | null }
+
 export const api = {
+  download: (path: string, body: unknown, init?: RequestInit) => {
+    const headers = new Headers(init?.headers);
+    headers.set("accept", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    return request<ApiDownload>(path, { ...init, method: "POST", body: JSON.stringify(body), cache: "no-store", headers }, "download");
+  },
   blob: (path: string, init?: RequestInit) =>
     request<Blob>(path, { ...init, method: "GET", cache: "no-store" }, true),
   get: <T>(path: string, init?: RequestInit) => request<T>(path, { ...init, method: "GET" }),

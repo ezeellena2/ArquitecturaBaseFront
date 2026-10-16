@@ -5,6 +5,18 @@ import { api, configureHttpClient, resetHttpClient } from "./httpClient";
 import { server } from "@/test/mocks/server";
 
 describe("httpClient", () => {
+  it("downloads a binary POST using the shared session and server filename with private filters only in the body",async()=>{
+    configureHttpClient({getAccessToken:()=>"binary-token",getLanguage:()=>"en"});
+    let captured:unknown;
+    server.use(http.post("/api/forms/test/export",async({request})=>{
+      expect(request.headers.get("authorization")).toBe("Bearer binary-token");
+      expect(request.headers.get("accept-language")).toBe("en");
+      expect(new URL(request.url).search).toBe("");captured=await request.json();
+      return new HttpResponse(new Uint8Array([80,75]),{headers:{"content-type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","content-disposition":"attachment; filename*=UTF-8''Respuestas.xlsx"}});
+    }));
+    const result=await api.download("/api/forms/test/export",{filter:{search:"private"}});
+    expect(captured).toEqual({filter:{search:"private"}});expect(result.fileName).toBe("Respuestas.xlsx");expect(result.blob.size).toBe(2);
+  });
   it("preserves cancellation without reporting a network failure", async () => {
     const controller = new AbortController();
     controller.abort();
