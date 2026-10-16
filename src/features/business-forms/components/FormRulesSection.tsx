@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
+import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
@@ -27,7 +28,7 @@ import { localizedValue, moveItem } from "../editorModel";
 import { newRule, newRuleAction, prepareRules, ruleActionKinds, ruleEvents, type FormRule, type RuleActionKind } from "../rules";
 import type { FormCulture } from "../model";
 import type { ResponseColumn, ResponseCondition } from "../responses";
-interface Props { definitionId: string; definitionRevision: number; scope: FormReadScope; contentCulture: FormCulture; onDirtyChange: (dirty: boolean) => void }
+interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; scope: FormReadScope; contentCulture: FormCulture; onDirtyChange: (dirty: boolean) => void }
 export function FormRulesSection(props: Props) {
   const { t } = useTranslation("forms");
   const owner = JSON.stringify([...formScopeKey(props.scope), props.definitionId]);
@@ -37,7 +38,7 @@ export function FormRulesSection(props: Props) {
   if (deniedOwner === owner) return <Surface title={t("rules.title")} padded><p>{t("rules.noPermission")}</p></Surface>;
   return <RulesEditor key={owner} {...props} onDenied={onDenied} />;
 }
-function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, onDirtyChange, onDenied }: Props & { onDenied: () => void }) {
+function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, timeZoneId, onDirtyChange, onDenied }: Props & { onDenied: () => void }) {
   const { t } = useTranslation("forms");
   const root = [...formScopeKey(scope), "rules", definitionId];
   usePrivateQueryCleanup(root);
@@ -53,6 +54,8 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
   const [needsReview, setNeedsReview] = useState(false);
   const [current, setCurrent] = useState<FormRuleSet | null>(null);
   const [revisionView, setRevisionView] = useState<FormRuleSet | null>(null);
+  const revisionTrigger = useRef<HTMLButtonElement | null>(null);
+  const restoreRevisionFocus = useRestoreFocusOnClose(revisionView !== null);
   const [historyPage, setHistoryPage] = useState(1);
   const history = useQuery({ queryKey: [...root, "history", historyPage], queryFn: ({ signal }) => fetchRuleHistory(definitionId, historyPage, signal), gcTime: 0, meta: { errorOwner: "local" } });
   useEffect(() => { if ([query.error, history.error].some(error => error instanceof ApiError && error.status === 403)) onDenied(); }, [query.error, history.error, onDenied]);
@@ -137,7 +140,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
       </section>)}
       <div className="p-4"><Button variant="outline" disabled={blocked || rules.length >= 20} onClick={() => { const rule = newRule(); change([...rules, rule]); setExpanded(rule.id); }}>{t("rules.addRule")}</Button></div>
     </Surface>
-    <Surface title={t("rules.history")} padded>{history.isPending ? <Spinner /> : history.error ? <EmptyState embedded title={readErrorMessage(history.error, t)} action={<Button variant="outline" onClick={() => void history.refetch()}>{t("common:actions.retry")}</Button>} /> : <><ol className="space-y-3">{history.data?.items.map(revision => <li key={revision.id} className="border-b border-[var(--color-border)] pb-3"><Button variant="link" disabled={blocked} onClick={() => void run(async signal => { const view = await fetchRuleRevision(definitionId, revision.revision, signal); if (active.current) setRevisionView(view); })}>{t("rules.revision", { revision: revision.revision })}</Button>{baseline.revision === revision.revision ? <Badge variant="outline">{t("rules.current")}</Badge> : null}<p className="text-xs">{formatDateTimeInZone(revision.createdAtUtc, scope.culture, undefined)} · {revision.author?.displayName ?? t("responses.unknownPerson")}</p></li>)}</ol>{history.data && history.data.totalPages > 1 ? <Pagination {...history.data} onPageChange={setHistoryPage} /> : null}<p className="text-xs text-[var(--color-content-muted)]">{t("rules.historyHint")}</p></>}</Surface>
-    <Dialog open={revisionView !== null} onOpenChange={open => { if (!open) setRevisionView(null); }}><DialogContent className="max-h-[90svh] overflow-y-auto"><DialogHeader><DialogTitle>{t("rules.revision", { revision: revisionView?.revision })}</DialogTitle></DialogHeader><ol className="space-y-4">{revisionView?.rules.map(rule => <li key={rule.id}>{summary(rule)}</li>)}</ol></DialogContent></Dialog>
+    <Surface title={t("rules.history")} padded>{history.isPending ? <Spinner /> : history.error ? <EmptyState embedded title={readErrorMessage(history.error, t)} action={<Button variant="outline" onClick={() => void history.refetch()}>{t("common:actions.retry")}</Button>} /> : <><ol className="space-y-3">{history.data?.items.map(revision => <li key={revision.id} className="border-b border-[var(--color-border)] pb-3"><Button variant="link" disabled={blocked} onClick={event => { revisionTrigger.current = event.currentTarget; void run(async signal => { const view = await fetchRuleRevision(definitionId, revision.revision, signal); if (active.current) setRevisionView(view); }); }}>{t("rules.revision", { revision: revision.revision })}</Button>{baseline.revision === revision.revision ? <Badge variant="outline">{t("rules.current")}</Badge> : null}<p className="text-xs">{formatDateTimeInZone(revision.createdAtUtc, scope.culture, timeZoneId)} · {revision.author?.displayName ?? t("responses.unknownPerson")}</p></li>)}</ol>{history.data && history.data.totalPages > 1 ? <Pagination {...history.data} onPageChange={setHistoryPage} /> : null}<p className="text-xs text-[var(--color-content-muted)]">{t("rules.historyHint")}</p></>}</Surface>
+    {revisionView ? <Dialog open onOpenChange={open => { if (!open) setRevisionView(null); }}><DialogContent onCloseAutoFocus={event => { const target = revisionTrigger.current; if (target?.isConnected && !target.disabled) { event.preventDefault(); target.focus(); } else restoreRevisionFocus(event); }} className="max-h-[90svh] overflow-y-auto"><DialogHeader><DialogTitle>{t("rules.revision", { revision: revisionView?.revision })}</DialogTitle></DialogHeader><ol className="space-y-4">{revisionView?.rules.map(rule => <li key={rule.id}>{summary(rule)}</li>)}</ol></DialogContent></Dialog> : null}
   </div>;
 }

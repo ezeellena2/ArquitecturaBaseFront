@@ -85,11 +85,14 @@ it("opens an immutable historical revision without adopting it", async () => {
     http.get("/api/forms/definitions/:id/rules/revisions/:revision", () => HttpResponse.json({ ...initial(), id: historyId, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", rules: [{ id: crypto.randomUUID(), event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Mensaje histórico" } }] }] })));
   const dirty = vi.fn();
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={dirty} />);
-  await userEvent.click(await screen.findByRole("button", { name: "Revisión 1" }));
+  const trigger = await screen.findByRole("button", { name: "Revisión 1" });
+  await userEvent.click(trigger);
   const dialog = await screen.findByRole("dialog", { name: "Revisión 1" });
   expect(within(dialog).getByText(/Mensaje histórico/)).toBeInTheDocument();
   expect(within(dialog).queryByRole("textbox")).not.toBeInTheDocument();
   expect(dirty).toHaveBeenLastCalledWith(false);
+  await userEvent.click(within(dialog).getByRole("button", { name: "Cerrar" }));
+  await waitFor(() => expect(trigger).toHaveFocus());
 });
 
 it("removes rule text, history, and editor state after the server revokes rule access", async () => {

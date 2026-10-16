@@ -227,7 +227,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
       </div>
       <FormPreview key={session.scope.editorId} value={value} culture={contentCulture} />
     </div>
-    {session.confirmed && scope.permissions.includes("formrules.manage") ? <Suspense fallback={<Spinner />}><FormRulesSection definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} contentCulture={contentCulture} onDirtyChange={setRulesDirty} /></Suspense> : null}
+    {session.confirmed && scope.permissions.includes("formrules.manage") ? <Suspense fallback={<Spinner />}><FormRulesSection timeZoneId={timeZoneId} definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} contentCulture={contentCulture} onDirtyChange={setRulesDirty} /></Suspense> : null}
     </div>
   </Page>
 
