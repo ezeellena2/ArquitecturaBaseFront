@@ -153,9 +153,9 @@ sin aprobación, PDF ni asistente. Cargar desde la web queda para después (deci
 
 | Captura | Qué define |
 | --- | --- |
-| [T1 · La planilla](evidence/formularios-whatsapp/pla-t1-planilla.png) | «Respuestas» en el panel, columnas fijas (número, recibida, cargó) y una por pregunta de todas las versiones; «—» si no existía y «Sin respuesta» si no se contestó. |
+| [T1 · La planilla](evidence/formularios-whatsapp/pla-t1-planilla.png) | «Respuestas» en el panel, columnas fijas (número, recibida, cargó) y una por pregunta de todas las versiones; «—» si no existía y «Sin respuesta» si no se contestó. Fotos: primera miniatura y cantidad, abre el visor de F4; documentos: tipo y cantidad. Con muchas preguntas se desplaza a lo ancho y «Columnas» oculta las que sobran (elegido el 2026-10-16). |
 | [T2 · Más filtros](evidence/formularios-whatsapp/pla-t2-filtros.png) | Un filtro por pregunta según su tipo, con conteos del servidor; versión del formulario; búsqueda privada fuera de la dirección. |
-| [T3 · Una respuesta](evidence/formularios-whatsapp/pla-t3-respuesta.png) | Lo que respondió con las preguntas de su versión, de dónde vino, historial y anterior/siguiente dentro de la planilla. |
+| [T3 · Una respuesta](evidence/formularios-whatsapp/pla-t3-respuesta.png) | Lo que respondió con las preguntas de su versión, de dónde vino, historial y anterior/siguiente dentro de la planilla. A todo el ancho, con galería de fotos que abre el visor y documentos con descarga (elegido el 2026-10-16). |
 | [T4 · Estados y casos](evidence/formularios-whatsapp/pla-t4-estados.png) | Carga, sin respuestas, sin coincidencias, error, muchos formularios, sin permiso, respuesta que no está y pregunta que cambió de tipo. |
 
 Etapa 4, reglas, aprobación, PDF y avisos (2026-10-10), sobre el [resumen de la Etapa 4](../../../ArquitecturaBase/docs/plans/formularios/etapa-4-reglas-aprobacion-pdf.md). Decidido el mismo día: después
@@ -172,9 +172,10 @@ que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesi
 | [G6 · Lo que recibe el empleado](evidence/formularios-whatsapp/reg-g6-celular.png) | Confirmación al recibir, aviso con el PDF al aprobar, motivo al rechazar, también en inglés. |
 
 Etapa 5, el asistente (2026-10-10), sobre el [resumen de la Etapa 5](../../../ArquitecturaBase/docs/plans/formularios/etapa-5-asistente.md). También son de esta etapa «Cuándo lo ofrece» (03),
-el recorrido con asistente (05) y las sugerencias entre formularios (s1–s4). Decidido el mismo día: con un mensaje que no
-es un formulario, el asistente no contesta y la conversación queda para un operador; ofrece formularios hasta 2 veces por
-día en cada conversación; cambiar el modo pide el permiso nuevo «Configurar el asistente», que tiene Admin.
+el recorrido con asistente (05) y las sugerencias entre formularios (s1–s4). Decidido el 2026-10-10 y el 2026-10-11: una
+consulta o una charla no se contesta y queda para un operador; si alguien quiere registrar algo y no hay un formulario que
+pueda completar, el asistente le avisa y anota el pedido sin nombrar formularios ajenos; ofrece formularios hasta 2 veces
+por día en cada conversación; cambiar el modo pide el permiso nuevo «Configurar el asistente», que tiene Admin.
 
 | Captura | Qué define |
 | --- | --- |
@@ -182,7 +183,9 @@ día en cada conversación; cambiar el modo pide el permiso nuevo «Configurar e
 | [H2 · En Atención manual, sugiere](evidence/formularios-whatsapp/asi-h2-sugerencia.png) | La sugerencia arriba del compositor y el diálogo de envío con los datos prellenados que se pueden destildar. |
 | [H3 · Cambiar de modo](evidence/formularios-whatsapp/asi-h3-modos.png) | Confirmación para pasar a Asistente, tomar la atención a mitad de un envío, IA no disponible, chats existentes, marca en la lista y sin permiso. |
 | [H4 · Un catálogo que propone el asistente](evidence/formularios-whatsapp/asi-h4-catalogo.png) | Pedido por WhatsApp, propuesta para revisar en la web y aprobación por una persona. |
-| [H5 · Los límites del asistente](evidence/formularios-whatsapp/asi-h5-limites.png) | Pregunta si no está seguro, no insiste, respeta permisos y 24 horas, y deja todo registrado en la respuesta. |
+| [H5 · Los límites del asistente](evidence/formularios-whatsapp/asi-h5-limites.png) | Pregunta si no está seguro, no contesta consultas ni charla, anota lo que no tiene formulario, no insiste, respeta las 24 horas y deja todo registrado en la respuesta (ajustado el 2026-10-16). |
+| [H6 · Audios en el chat](evidence/formularios-whatsapp/asi-h6-audios.png) | **Para elegir (2026-10-16).** El audio se baja y se pasa a texto; el operador lo escucha con su transcripción y el asistente lo lee como texto. Sin transcripción, queda para un operador; sigue la retención de los mensajes. |
+| [H7 · Formularios que faltan](evidence/formularios-whatsapp/asi-h7-faltan.png) | **Para elegir (2026-10-16).** Los pedidos agrupados por tema, con cuántos, de cuántas personas y cuándo, sin nombres ni mensajes; crear el formulario o descartar. |
 
 Propuesta posterior, en revisión (Etapa del asistente): un formulario puede sugerir otro. No reemplaza a los
 tableros elegidos; el modelo y las reglas están en los
