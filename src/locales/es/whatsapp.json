@@ -29,7 +29,8 @@
   "author": {
     "bot": "Bot",
     "you": "Vos",
-    "operator": "Operador"
+    "operator": "Operador",
+    "automatic": "Automático"
   },
   "mode": {
     "Bot": "Automatización sin configurar",
@@ -187,5 +188,10 @@
       "invalidOption_one": "{{label}}: {{count}} opción de {{catalog}} no entra en WhatsApp. Revisá su texto y detalle.",
       "invalidOption_other": "{{label}}: {{count}} opciones de {{catalog}} no entran en WhatsApp. Revisá sus textos y detalles."
     }
+  },
+  "formActions": {
+    "title": "Acción del formulario",
+    "document": "Documento",
+    "notice": "Aviso automático"
   }
 }

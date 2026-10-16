@@ -29,7 +29,8 @@
   "author": {
     "bot": "Bot",
     "you": "You",
-    "operator": "Operator"
+    "operator": "Operator",
+    "automatic": "Automatic"
   },
   "mode": {
     "Bot": "Automation not configured",
@@ -187,5 +188,10 @@
       "invalidOption_one": "{{label}}: {{count}} option in {{catalog}} does not fit in WhatsApp. Review its text and detail.",
       "invalidOption_other": "{{label}}: {{count}} options in {{catalog}} do not fit in WhatsApp. Review their text and details."
     }
+  },
+  "formActions": {
+    "title": "Form action",
+    "document": "Document",
+    "notice": "Automatic notice"
   }
 }

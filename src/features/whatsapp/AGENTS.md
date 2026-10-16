@@ -41,3 +41,9 @@ Review K6–K7: la preparación tiene dueño local del error y un único reinten
 F3–F5: el guard cerrado acepta foto/documento con metadatos históricos, sin URLs ni claves. Downloading/RetryingFiles nunca muestran valores ni número. La tarjeta monta miniaturas sólo con valores autorizados; originals al abrir y documentos al descargar, usando el transporte común. Revocar lectura cierra el visor y quita nombres/miniaturas; los rechazos de archivo ofrecen reenvío manual con las guardas del compositor.
 
 La tarjeta usa cantidad/fecha del DTO y pregunta rechazada; no inventa el nombre mientras llega la sesión. El visor muestra fecha en la zona de la cuenta y restaura el foco a la tarjeta si desaparece la miniatura al revocar. Un único aviso local por respuesta; el texto de reenvío sólo se muestra con la acción autorizada. KB para archivos pequeños y plural de +N.
+
+## Avisos del formulario (Etapa 4, G6)
+
+`origin:FormAction` conserva el origen explícito en historial y salidas pendientes; Text y Document se muestran como tarjeta «Acción del formulario» con autor «Automático». No se infiere por texto ni se atribuye a quien aprobó. Sin FormRecordsRead o ante revocación del servidor se retiran body/caption de mensajes, páginas anteriores y pendientes antes de publicar la proyección sin acceso; los textos de conversación normales permanecen. Se reutiliza el gate de lectura existente, sin otra caché.
+
+Estos avisos no ofrecen usar texto en el borrador ni revisar Uncertain desde el chat: su recuperación pertenece al workflow de la respuesta. La lista muestra el preview genérico del servidor. Los PDF privados se abren por el detalle autorizado; el chat no recibe claves ni URLs de almacenamiento.
