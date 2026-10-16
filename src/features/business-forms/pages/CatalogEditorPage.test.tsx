@@ -352,3 +352,18 @@ it.each([false,true].flatMap(filters=>["network",500,503].map(failure=>({filters
   await userEvent.click(screen.getByRole("button",{name:"Guardar"}));
   await waitFor(()=>expect(writes).toBe(2));
 });
+
+it("does not reset the sample page when its initial search is unchanged", async () => {
+  filterSetup();
+  const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw));
+  server.use(http.get("/api/forms/catalog-filter-options", ({request}) => {
+    const page = Number(new URL(request.url).searchParams.get("page") ?? 1);
+    return HttpResponse.json({...options,sampleUsers:{items:[{id:itemId,name:page===1 ? "Primera persona" : "Segunda persona"}],page,pageSize:20,totalCount:21,totalPages:2,hasPrevious:page>1,hasNext:page===1}});
+  }));
+  await mount("/catalogos/" + id);
+  await userEvent.click(await screen.findByRole("button", {name:"Página siguiente"}));
+  await screen.findByText("Página 2 de 2", {exact:true});
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
+  expect(screen.getByText("Página 2 de 2", {exact:true})).toBeInTheDocument();
+  expect(screen.getByRole("button", {name:"Página anterior"})).toBeEnabled();
+});

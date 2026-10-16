@@ -34,7 +34,7 @@ export function CatalogFiltersEditorPage({ scope, initial }: { scope: CatalogRea
   const [sample, setSample] = useState<{ id: string; name: string } | null>(null);
   const [sampleName, setSampleName] = useState(""); const [search, setSearch] = useState(""); const [samplePage, setSamplePage] = useState(1);
   const [settledSearch, setSettledSearch] = useState("");
-  useEffect(() => { const timer = setTimeout(() => { setSettledSearch(search); setSamplePage(1); }, 300); return () => clearTimeout(timer); }, [search]);
+  useEffect(() => { if (search === settledSearch) return; const timer = setTimeout(() => { setSettledSearch(search); setSamplePage(1); }, 300); return () => clearTimeout(timer); }, [search, settledSearch]);
   const [previousManage, setPreviousManage] = useState(scope.permissions.includes("formcatalogs.manage"));
   const [handledValidation, setHandledValidation] = useState<unknown>(null);
   const [reviewOpen, setReviewOpen] = useState(false); const [discardOpen, setDiscardOpen] = useState(false);
