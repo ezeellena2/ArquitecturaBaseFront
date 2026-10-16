@@ -64,3 +64,5 @@ describe("Flow timeline metadata", () => {
     expect(buildTimeline([access],[])[0].body).toBeNull();
   });
 });
+
+it("preserves automatic form action origin and document kind across pending and confirmed history",()=>{const confirmed={...message("automatic","2026-10-16T12:00:00Z","Delivered"),origin:"FormAction" as const,kind:"Document",body:"Visit approved"};const pending={...outgoing("automatic-pending","2026-10-16T12:01:00Z"),origin:"FormAction" as const,kind:"Document" as const,operatorUserId:null};expect(buildTimeline([confirmed],[pending]).map(item=>({origin:item.origin,kind:item.kind,author:item.author,operator:item.operatorUserId}))).toEqual([{origin:"FormAction",kind:"Document",author:"automatic",operator:null},{origin:"FormAction",kind:"Document",author:"automatic",operator:null}]);});

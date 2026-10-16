@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { formatDateOnly } from '@/shared/lib/dateTime';
+import { withoutFormReplyValues } from "../lib/threadPrivacy";
 import type { Thread } from './chat';
 
 // Matches the written WhatsAppFormReplyResponse DTO. Actual producer HTTP bodies are verified separately.
@@ -52,7 +53,8 @@ export function readFormReply(input: unknown, canReadValues: boolean): FormReply
 }
 export function readThreadFormReplies(thread: Thread): Thread {
   const allowed = thread.canReadFormRecords === true;
-  return { ...thread, canReadFormRecords: allowed, messages: thread.messages.map(message => {
+  const safeThread = allowed ? thread : withoutFormReplyValues(thread);
+  return { ...safeThread, canReadFormRecords: allowed, messages: safeThread.messages.map(message => {
     const { formReply: discarded, ...safe } = message;
     if (message.kind !== 'FlowReply') return safe;
     return { ...safe, body: null, formReply: message.direction === 'Inbound' && message.purpose !== 'Access' ? readFormReply(discarded, allowed) : null };

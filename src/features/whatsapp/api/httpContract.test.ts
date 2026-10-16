@@ -13,6 +13,7 @@ for (const culture of ["es", "en"] as const) describe("Actual WhatsApp form HTTP
   const thread = body(culture, "thread-pending") as Thread;
   const actor = pending.operatorUserId;
   function parse(name: string) {
+    if (!actor) throw new Error("A manually sent form must have an operator.");
     const captured = body(culture, name) as Outgoing;
     const contactId = captured.recoveryPath!.split("/")[4]!;
     return parseFormOutgoing(captured, { requestId: captured.requestId, definitionId: selected.definitionId,

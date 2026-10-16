@@ -3,6 +3,7 @@ import { readThreadFormReplies, type FormReply } from "./formReplies";
 import type { ChatFormMetadata, FormEligibility, LinkedAccount } from "./forms";
 
 export type ChatMode = "Bot" | "Manual";
+export type MessageOrigin = "Conversation" | "FormAction";
 export type MessagePurpose = "Unclassified" | "Business" | "Access";
 export type AccessEventKind = "SignInCode" | "VerifyPhoneCode" | "Invitation" | "AccessRequested" | "AccessInstructions";
 export type OutgoingState = "Pending" | "Sending" | "Accepted" | "Failed" | "Uncertain" | "Reviewed";
@@ -15,13 +16,14 @@ export interface Chat {
 export interface ChatMessage {
   id: string; direction: "Inbound" | "Outbound"; kind: string; body: string | null; occurredAtUtc: string;
   inboundSequence: number; operatorUserId: string | null; status: string | null; errorCode: number | null;
+  origin?: MessageOrigin;
   purpose?: MessagePurpose; accessEventKind?: AccessEventKind | null;
   form?: ChatFormMetadata | null;
   formReply?: FormReply | null;
 }
 export interface Outgoing {
-  kind?: "Text" | "Flow"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
-  id: string; requestId: string; operatorUserId: string; body: string | null; requestedAtUtc: string;
+  origin?: MessageOrigin; kind?: "Text" | "Flow" | "Document"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
+  id: string; requestId: string; operatorUserId: string | null; body: string | null; requestedAtUtc: string;
   state: OutgoingState; waMessageId: string | null;
 }
 export interface Thread { contact: Chat; messages: ChatMessage[]; outgoing: Outgoing[]; beforeAtUtc: string | null; beforeId: string | null; canReadFormRecords?: boolean }
