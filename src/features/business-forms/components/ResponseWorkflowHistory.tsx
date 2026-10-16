@@ -20,11 +20,11 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
       {data?.task?.decidedAtUtc ? <li className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-3 text-sm"><p><Badge variant="outline">{t("approvals.taskStates." + data.task.state)}</Badge> · {data.task.roleName}</p><p>{t("approvals.decisionBy", { name: data.task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(data.task.decidedAtUtc) })}</p>{data.task.reason ? <p className="whitespace-pre-wrap">{data.task.reason}</p> : null}</li> : null}
       {data?.actions.map(action => {
         const next = canManage ? workflowNextAction(action) : null;
-        return <li key={action.id} className="flex flex-wrap items-start gap-3 border-t border-[var(--color-border)] pt-3 text-sm">
+        return <li key={action.id} className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-3 text-sm sm:flex-row sm:items-start">
           <time className="text-xs text-[var(--color-content-muted)]" dateTime={action.completedAtUtc ?? action.updatedAtUtc}>{date(action.completedAtUtc ?? action.updatedAtUtc)}</time>
           <div className="min-w-0 flex-1 space-y-2"><p>{t("rules.actions." + action.kind)}</p><p className="text-xs text-[var(--color-content-muted)]">{t("rules.events." + action.event)}</p>{action.reason ? <p>{action.reason}</p> : null}{action.state === "Uncertain" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.consultFirst")}</p> : action.state === "NotApplicable" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.notApplicable")}</p> : null}
             {next ? <Button variant="outline" size="sm" disabled={workflow.busy || workflow.query.isFetching || workflow.cooldown.isRunning} onClick={() => void workflow.act(action.id)}>{t(workflow.busy ? "workflow.working" : next === "consult" ? "workflow.consult" : "common:actions.retry")}</Button> : null}
-          </div><Badge variant="outline">{t("workflow.states." + action.state)}</Badge>
+          </div><Badge variant="outline" className="self-start">{t("workflow.states." + action.state)}</Badge>
         </li>;
       })}
     </ol>

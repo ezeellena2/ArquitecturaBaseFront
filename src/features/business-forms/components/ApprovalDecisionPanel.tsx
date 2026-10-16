@@ -122,13 +122,14 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden }: {
   {task.cannotDecideReason === "OwnResponse" ? <p className="text-sm text-[var(--color-content-muted)]">{t("approvals.ownResponse")}</p> : null}
   {error ? <p role="status" className="text-sm">{error instanceof ApiError && error.status === 409 ? t("approvals.conflict") : readErrorMessage(error, t)}</p> : null}
   {cooldown.isRunning ? <p role="status">{t("wait", { count: cooldown.seconds })}</p> : null}
-  {reject ? <RejectDialog reason={reason} setReason={setReason} busy={busy} onClose={() => { if (!busy) {
+  {reject ? <RejectDialog number={task.number} reason={reason} setReason={setReason} busy={busy} onClose={() => { if (!busy) {
         setReject(false);
         setReason("");
     } }} onSubmit={() => void decide("Rejected")} disabled={cooldown.isRunning} fallback={summary} feedback={cooldown.isRunning ? t("wait", { count: cooldown.seconds }) : error ? readErrorMessage(error, t) : undefined}/> : null}
  </div>;
 }
-function RejectDialog({ reason, setReason, busy, onClose, onSubmit, disabled, fallback, feedback }: {
+function RejectDialog({ number, reason, setReason, busy, onClose, onSubmit, disabled, fallback, feedback }: {
+    number: string;
     reason: string;
     setReason: (value: string) => void;
     busy: boolean;
@@ -143,5 +144,5 @@ function RejectDialog({ reason, setReason, busy, onClose, onSubmit, disabled, fa
     return <Dialog open onOpenChange={open => { if (!open)
         onClose(); }}><DialogContent showCloseButton={!busy} onCloseAutoFocus={restore} onEscapeKeyDown={event => { if (busy)
         event.preventDefault(); }} onPointerDownOutside={event => { if (busy)
-        event.preventDefault(); }}><DialogTitle>{t("approvals.rejectTitle")}</DialogTitle><DialogDescription>{t("approvals.rejectHint")}</DialogDescription><FormField label={t("approvals.reason")} required hint={t("approvals.reasonCount", { count: reason.length })}><Textarea maxLength={500} value={reason} onChange={event => setReason(event.target.value)} disabled={busy} rows={4}/></FormField>{feedback ? <p role="status" className="text-sm">{feedback}</p> : null}<DialogFooter><Button variant="outline" onClick={onClose} disabled={busy}>{t("common:actions.cancel")}</Button><Button onClick={onSubmit} disabled={busy || disabled || !prepareApprovalDecision(1, "Rejected", reason)}>{t("approvals.reject")}</Button></DialogFooter></DialogContent></Dialog>;
+        event.preventDefault(); }}><DialogTitle>{t("approvals.rejectTitle", { number })}</DialogTitle><DialogDescription>{t("approvals.rejectHint")}</DialogDescription><FormField label={t("approvals.reason")} required hint={t("approvals.reasonCount", { count: reason.length })}><Textarea maxLength={500} value={reason} onChange={event => setReason(event.target.value)} disabled={busy} rows={4}/></FormField>{feedback ? <p role="status" className="text-sm">{feedback}</p> : null}<DialogFooter><Button variant="outline" onClick={onClose} disabled={busy}>{t("common:actions.cancel")}</Button><Button variant="destructive" onClick={onSubmit} disabled={busy || disabled || !prepareApprovalDecision(1, "Rejected", reason)}>{t("approvals.reject")}</Button></DialogFooter></DialogContent></Dialog>;
 }

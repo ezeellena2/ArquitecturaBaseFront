@@ -156,7 +156,7 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
   <ConfirmDialog open={discard || guard.isBlocked} onOpenChange={open => { if (!open) {
         setDiscard(false);
         guard.stay();
-    } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("keepEditing")} destructive onConfirm={() => { if (guard.isBlocked)
+    } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("stay")} destructive onConfirm={() => { if (guard.isBlocked)
         guard.leave();
     else {
         guard.allowNextNavigation();
