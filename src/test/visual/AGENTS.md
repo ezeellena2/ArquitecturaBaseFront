@@ -46,3 +46,5 @@ K7 (`chatCatalogs.spec`): oferta por destinatario, bloqueos independientes, mens
 `formApprovals.spec` cubre G3/G4 en es/en a1440/390/320: bandeja, propias deshabilitadas, decisión sin lectura de valores, rechazo/cancelación/foco y detalle autorizado. `approvalFixtures` es un doble explícito de la cola y sus decisiones; no acredita entrega real ni persistencia.
 
 `formPdf.spec` cubre G2 en es/en a1440/390/320: editor, foto opcional, guardado independiente, respaldo completo de preview y apertura/descarga/foco de copia fija. `pdfFixtures` contiene un PDF mínimo sintético para probar la UI; el renderer real se acredita con los PDF exportados del backend y su inspección.
+
+`formActionMessages.spec` cubre G6 en es/en a1440/390/320 con mensajes sintéticos FormAction: etiqueta Automático, documento, falta de acciones manuales y revocación de captions conservando tarjetas. La entrega al teléfono se acredita en la prueba real con Meta.

@@ -30,6 +30,11 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
          value:{choiceId:guid(703),label:"Pérez Hnos.",catalogId:guid(702),catalogName:"Clientes",detail:"Av. Colón 1234"}}]}});
  }
  if(scenario==="forms-chat-catalog-inactive-read"){contact.linkedAccount=null;contact.formEligibility=null;}
+ if(scenario.startsWith("forms-chat-actions")){
+  thread.canReadFormRecords=scenario!=="forms-chat-actions-no-values";contact.preview=language==="es"?"Acción del formulario":"Form action";
+  for(const [index,kind] of (["Text","Document"] as const).entries())thread.messages.push({id:guid(750+index),direction:"Outbound",origin:"FormAction",kind,body:language==="es"?(index?"Se aprobó VIS-000024. Acá tenés tu comprobante.":"Recibimos VIS-000024."):(index?"VIS-000024 was approved. Here is your receipt.":"We received VIS-000024."),occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:0,operatorUserId:null,status:"Delivered",errorCode:null,purpose:"Business"});
+  thread.outgoing.push(...(["Uncertain","Failed"] as const).map((state,index)=>({id:guid(760+index),requestId:guid(770+index),operatorUserId:null,origin:"FormAction" as const,kind:"Text" as const,body:language==="es"?"Aviso de VIS-000024.":"Notice for VIS-000024.",requestedAtUtc:contact.lastInboundAtUtc,state,waMessageId:null})));
+ }
  const attempts:FormMessageRequest[]=[];const calls:{method:string;path:string;search:string}[]=[];
  const makeReceipt=(request:FormMessageRequest):Outgoing=>{const option=options.find(value=>value.versionId===request.versionId)!;return {id:guid(610),requestId:request.requestId,operatorUserId:"visual-test",body:request.message.trim(),requestedAtUtc:new Date().toISOString(),state:"Pending",waMessageId:null,kind:"Flow",recoveryPath:"/api/whatsapp/chats/"+contact.id+"/outgoing/"+request.requestId,form:{definitionId:option.definitionId,versionId:option.versionId,versionNumber:option.versionNumber,name:option.name,culture:recipientCulture}};};
  if(scenario==="forms-chat-states")for(const [i,state] of (["Failed","Uncertain","Reviewed"] as const).entries()){const r=makeReceipt({requestId:guid(680+i),definitionId:options[i].definitionId,versionId:options[i].versionId,expectedModeRevision:7,expectedRecipientContextRevision:"fixture-context-1",message:language==="es"?"Completá este formulario.":"Please complete this form."});thread.outgoing.push({...r,id:guid(690+i),state});}
@@ -44,5 +49,5 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
  if(request.method==="POST"&&path.endsWith("/review")){const requestId=path.split("/").at(-2)!;thread.outgoing=thread.outgoing.map(o=>o.requestId===requestId?{...o,state:"Reviewed"}:o);return new Response(null,{status:204});}
  return json({code:"General.NotFound"},404);
  }
- return {handle,attempts,calls,contact};
+ return {handle,attempts,calls,contact,revokeValues:()=>{thread.canReadFormRecords=false;}};
 }
