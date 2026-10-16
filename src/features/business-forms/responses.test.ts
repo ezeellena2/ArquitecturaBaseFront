@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   normalizeResponseQuery,
+  responseFilterLabels,
   receivedDateBoundary,
   replaceResponseCondition,
   responseValueText,
@@ -109,4 +110,9 @@ describe("response filters", () => {
       original[1],
     ]);
   });
+});
+
+it("describes the applied values without exposing option IDs", () => {
+  const column: ResponseColumn = { fieldId: "choice", type: "choice", label: "Mode", options: [{ id: "private-choice", label: "Visit" }], introducedInVersion: 1 };
+  expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "choice", operator: "in", values: ["private-choice"] }], search: "Notes" }, [column], key => key)).toEqual([{ key: "choice", label: "Mode: Visit" }, { key: "search", label: "responses.search: Notes" }]);
 });

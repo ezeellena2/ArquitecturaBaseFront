@@ -414,6 +414,20 @@ describe("response sheet", () => {
       ),
     );
   });
+  it("closes a denied export and preserves the readable sheet", async () => {
+    setup();
+    server.use(http.post("/api/forms/definitions/:id/records/export", () => HttpResponse.json({ code: "Forms.Record.Forbidden" }, { status: 403 })));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Exportar a Excel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "TEST-000002" })).toBeInTheDocument();
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: "Ya no tenés permiso para exportar respuestas." }));
+  });
   it("does not request responses without read permission", async () => {
     setup([]);
     const requested = vi.fn();

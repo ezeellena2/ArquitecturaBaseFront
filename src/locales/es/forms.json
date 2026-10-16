@@ -498,6 +498,11 @@
     "noOptions": "No hay opciones que coincidan.",
     "photos": "Fotos de la respuesta",
     "sinceVersion": "(desde v{{version}})",
-    "loadFailed": "No pudimos cargar las respuestas."
+    "loadFailed": "No pudimos cargar las respuestas.",
+    "exportNoPermission": "Ya no tenés permiso para exportar respuestas.",
+    "unavailableForm": "No encontramos ese formulario o no está disponible",
+    "unavailableValue": "Valor no disponible",
+    "appliedFilters_one": "{{count}} filtro aplicado",
+    "appliedFilters_other": "{{count}} filtros aplicados"
   }
 }

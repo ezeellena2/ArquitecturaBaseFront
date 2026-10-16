@@ -20,7 +20,7 @@ import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { ResponseChoiceMenu } from "../components/ResponseChoiceMenu";
-import { replaceResponseCondition, visibleResponseColumns } from "../responses";
+import { replaceResponseCondition, responseFilterLabels, visibleResponseColumns } from "../responses";
 import type { ResponseRow } from "../api/responses";
 import { ResponseValue } from "../components/ResponseValue";
 import { ResponseColumnsMenu } from "../components/ResponseColumnsMenu";
@@ -130,6 +130,7 @@ export function FormResponsesPage() {
       ),
     })),
   ];
+  const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, scope.user?.timeZoneId, data?.versions);
   const firstChoice = data?.columns.find((column) => column.type === "choice");
   const sort = route.query.sort?.replace(
     "field",
@@ -242,70 +243,14 @@ export function FormResponsesPage() {
         </div>
         {hasFilters ? (
           <div className="mt-3 flex flex-wrap gap-2">
-            {[
-              ...new Set(
-                route.query.conditions?.map((condition) => condition.fieldId) ??
-                  [],
-              ),
-            ].map((fieldId) => {
-              const name =
-                data?.columns.find((column) => column.fieldId === fieldId)
-                  ?.label ?? "";
-              return (
-                <FilterChip
-                  key={fieldId}
-                  removeLabel={t("responses.remove", { name })}
-                  onRemove={() =>
-                    route.setFilter({
-                      ...route.query,
-                      conditions: route.query.conditions?.filter(
-                        (condition) => condition.fieldId !== fieldId,
-                      ),
-                    })
-                  }
-                >
-                  {name}
-                </FilterChip>
-              );
-            })}
-            {route.query.actorIds?.length ? (
-              <FilterChip
-                removeLabel={t("responses.remove", {
-                  name: t("responses.people"),
-                })}
-                onRemove={() =>
-                  route.setFilter({ ...route.query, actorIds: [] })
-                }
-              >
-                {t("responses.people")}
-              </FilterChip>
-            ) : null}
-            {route.query.versionIds?.length ? (
-              <FilterChip
-                removeLabel={t("responses.remove", {
-                  name: t("responses.version"),
-                })}
-                onRemove={() => route.setFilter(route.query, [])}
-              >
-                {t("responses.version")}
-              </FilterChip>
-            ) : null}
-            {route.query.receivedFromUtc || route.query.receivedToUtc ? (
-              <FilterChip
-                removeLabel={t("responses.remove", {
-                  name: t("responses.received"),
-                })}
-                onRemove={() =>
-                  route.setFilter({
-                    ...route.query,
-                    receivedFromUtc: undefined,
-                    receivedToUtc: undefined,
-                  })
-                }
-              >
-                {t("responses.received")}
-              </FilterChip>
-            ) : null}
+            {appliedFilters.map(filter => <FilterChip key={filter.key} removeLabel={t("responses.remove", { name: filter.label })} onRemove={() => {
+              if (filter.key === "version") route.setFilter(route.query, []);
+              else if (filter.key === "actor") route.setFilter({ ...route.query, actorIds: [] });
+              else if (filter.key === "received") route.setFilter({ ...route.query, receivedFromUtc: undefined, receivedToUtc: undefined });
+              else if (filter.key === "search") route.setFilter({ ...route.query, search: undefined });
+              else route.setFilter({ ...route.query, conditions: route.query.conditions?.filter(item => item.fieldId !== filter.key) });
+            }}>{filter.label}</FilterChip>)}
+
           </div>
         ) : null}
       </FilterBar>
@@ -316,8 +261,8 @@ export function FormResponsesPage() {
           rowKey={(row) => row.id}
           isLoading={query.isPending}
           hasData={!!data}
-          error={query.error ? t("responses.loadFailed") : undefined}
-          onRetry={() => {
+          error={query.error ? t(query.error instanceof ApiError && query.error.status === 404 ? "responses.unavailableForm" : "responses.loadFailed") : undefined}
+          onRetry={query.error instanceof ApiError && query.error.status === 404 ? undefined : () => {
             void query.refetch();
           }}
           sort={sort}
@@ -365,7 +310,11 @@ export function FormResponsesPage() {
           total={data.records.totalCount}
           columns={data.columns}
           visible={visible}
-          onForbidden={deny}
+          onForbidden={() => {
+            setPanel(null);
+            notify({ id: `responses:export-permission:${scope.owner}:${formId}`, kind: "error", message: t("responses.exportNoPermission") });
+          }}
+          filterLabels={appliedFilters.map(item => item.label)}
           onClose={() => setPanel(null)}
         />
       ) : null}

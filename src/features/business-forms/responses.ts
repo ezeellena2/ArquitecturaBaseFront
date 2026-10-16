@@ -126,3 +126,21 @@ export function replaceResponseCondition(
     ? [...others, { fieldId, operator, values }]
     : others;
 }
+
+export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: (key: string, options?: Record<string, unknown>) => string, zone = "UTC", versions: readonly { id: string; number: number }[] = []) {
+  const labels: { key: string; label: string }[] = [];
+  for (const fieldId of new Set(query.conditions?.map(item => item.fieldId) ?? [])) {
+    const column = columns.find(item => item.fieldId === fieldId);
+    const parts = query.conditions?.filter(item => item.fieldId === fieldId).map(item => {
+      const values = item.values?.map(value => column?.type === "choice" ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? t(value === "true" ? "responses.yes" : "responses.no") : value).join(", ");
+      const operator = ({ gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
+      return [operator ? t("responses." + operator) : "", values].filter(Boolean).join(" ");
+    });
+    labels.push({ key: fieldId, label: [column?.label, parts?.join(" · ")].filter(Boolean).join(": ") });
+  }
+  if (query.actorIds?.length) labels.push({ key: "actor", label: t("responses.people") + " · " + query.actorIds.length });
+  if (query.versionIds?.length) labels.push({ key: "version", label: t("responses.version") + " · " + query.versionIds.map(id => versions.find(item => item.id === id)?.number ?? "—").join(", ") });
+  if (query.receivedFromUtc || query.receivedToUtc) labels.push({ key: "received", label: t("responses.received") + " · " + [query.receivedFromUtc ? calendarDateInZone(query.receivedFromUtc, zone) : "…", query.receivedToUtc ? calendarDateInZone(new Date(Date.parse(query.receivedToUtc) - 1).toISOString(), zone) : "…"].join(" – ") });
+  if (query.search) labels.push({ key: "search", label: t("responses.search") + ": " + query.search });
+  return labels;
+}

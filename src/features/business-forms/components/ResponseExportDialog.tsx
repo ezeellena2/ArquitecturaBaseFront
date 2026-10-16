@@ -27,6 +27,7 @@ export function ResponseExportDialog({
   visible,
   onClose,
   onForbidden,
+  filterLabels,
 }: {
   formId: string;
   prefix: string;
@@ -36,6 +37,7 @@ export function ResponseExportDialog({
   visible: readonly ResponseColumn[];
   onClose: () => void;
   onForbidden: () => void;
+  filterLabels: readonly string[];
 }) {
   const { t } = useTranslation("forms");
   const [selection, setSelection] = useState("all");
@@ -97,12 +99,6 @@ export function ResponseExportDialog({
       if (!current.signal.aborted) setPending(false);
     }
   };
-  const filterCount =
-    (filter.conditions?.length ?? 0) +
-    (filter.actorIds?.length ? 1 : 0) +
-    (filter.versionIds?.length ? 1 : 0) +
-    (filter.search ? 1 : 0) +
-    (filter.receivedFromUtc || filter.receivedToUtc ? 1 : 0);
   return (
     <Dialog
       open
@@ -118,8 +114,10 @@ export function ResponseExportDialog({
           </DialogDescription>
         </DialogHeader>
         <p>
-          {t("responses.exportSummary", { count: total, filters: filterCount })}
+          {t("responses.count", { count: total })}
         </p>
+        <p>{t("responses.appliedFilters", { count: filterLabels.length })}</p>
+        {filterLabels.length ? <ul className="list-disc pl-5 text-sm">{filterLabels.map(label => <li key={label}>{label}</li>)}</ul> : null}
         <RadioGroupField
           label={t("responses.exportColumns")}
           value={selection}

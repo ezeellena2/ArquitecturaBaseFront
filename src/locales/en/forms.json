@@ -498,6 +498,11 @@
     "noOptions": "No matching options.",
     "photos": "Response photos",
     "sinceVersion": "(since v{{version}})",
-    "loadFailed": "We could not load the responses."
+    "loadFailed": "We could not load the responses.",
+    "exportNoPermission": "You no longer have permission to export responses.",
+    "unavailableForm": "This form was not found or is unavailable",
+    "unavailableValue": "Unavailable value",
+    "appliedFilters_one": "{{count}} applied filter",
+    "appliedFilters_other": "{{count}} applied filters"
   }
 }
