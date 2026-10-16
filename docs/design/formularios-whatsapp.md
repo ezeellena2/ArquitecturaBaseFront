@@ -2,7 +2,7 @@
 
 Fecha: **2026-10-08**, con las variantes de los cuatro incrementos de la Etapa 1 y el botón «Abrir formulario»
 agregados el **2026-10-10**.
-Estado al **2026-10-11**: **Etapa 1 cerrada; pendientes menores trasladados a Etapa 2**. A–E, P1–P3, C1–C5 y R1–R3 están integrados; las etapas siguientes conservan su carácter de diseño elegido. Los pendientes abiertos están en el [resumen de la Etapa 2](../../../ArquitecturaBase/docs/plans/formularios/etapa-2-catalogos.md).
+Estado al **2026-10-16**: **Etapas 1–3 cerradas; Etapa 4 en calificación**. G1–G6 tienen implementación; los cortes cerrados cuentan con verificaciones rápidas y el cierre conjunto sigue pendiente. Las notas fechadas de los cortes anteriores son históricas. Las reglas vigentes están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md); el avance actual, en el [resumen de la Etapa 4](../../../ArquitecturaBase/docs/plans/formularios/etapa-4-reglas-aprobacion-pdf.md).
 
 Origen: la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
@@ -160,12 +160,12 @@ sin aprobación, PDF ni asistente. Cargar desde la web queda para después (deci
 
 Etapa 4, reglas, aprobación, PDF y avisos (2026-10-10), sobre el [resumen de la Etapa 4](../../../ArquitecturaBase/docs/plans/formularios/etapa-4-reglas-aprobacion-pdf.md). Decidido el mismo día: después
 de «Pedir aprobación» no hay más acciones en la misma regla; una respuesta que espera aprobación sigue con las reglas con
-que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesitan plantillas de Meta.
+que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesitan plantillas de Meta. Los ajustes «Incluir las fotos» de G2 y «Reintentar» de G5 quedaron elegidos en la versión 75 del lienzo, el 2026-10-16.
 
 | Captura | Qué define |
 | --- | --- |
 | [G1 · Cuando llega una respuesta](evidence/formularios-whatsapp/reg-g1-reglas.png) | Reglas en palabras (cuándo, si, hacer en orden), una abierta para editar, Guardar reglas e historial de revisiones. |
-| [G2 · El diseño del PDF](evidence/formularios-whatsapp/reg-g2-pdf.png) | Comprobante simple: nombre en los dos idiomas, qué preguntas incluye, quién aprobó, texto al pie y vista previa. «Incluir las fotos»: marcada, van chicas debajo de su pregunta; sin marcar, dice cuántas hay; los documentos solo se nombran (elegido el 2026-10-16). |
+| [G2 · El diseño del PDF](evidence/formularios-whatsapp/reg-g2-pdf.png) | Comprobante simple: nombre obligatorio en el idioma original y traducción opcional, qué preguntas incluye, quién aprobó, texto al pie y vista previa. «Incluir las fotos»: marcada, van chicas debajo de su pregunta; sin marcar, dice cuántas hay; los documentos solo se nombran (elegido el 2026-10-16). |
 | [G3 · Por aprobar](evidence/formularios-whatsapp/reg-g3-por-aprobar.png) | La bandeja de quien decide, en el panel con su cantidad; ordenada de la más vieja a la más nueva. |
 | [G4 · Aprobar o rechazar](evidence/formularios-whatsapp/reg-g4-decidir.png) | El detalle con la decisión; rechazar pide motivo; otra persona decidió antes; no aprobar lo propio. |
 | [G5 · Qué pasó después](evidence/formularios-whatsapp/reg-g5-historial.png) | Cada acción con su estado (esperando, en curso, hecho, no se pudo, sin confirmar, no aplica) y el PDF como copia fija. «Reintentar» retoma solo lo que no salió; lo «Sin confirmar» se consulta primero (2026-10-16). |
@@ -224,8 +224,8 @@ tableros elegidos; el modelo y las reglas están en los
    búsqueda mira los textos largos; «—» indica que la pregunta no existía en la versión de esa respuesta. «Cargó»
    muestra la persona y el canal con ícono y texto accesible. «Estado» aparece solo si el formulario pide aprobación.
 8. **Una respuesta** se muestra con las preguntas de su versión, de dónde vino (número enmascarado y enlace a la
-   conversación), lo que propuso el asistente, el historial y la corrección como respuesta nueva. El PDF es una
-   vista previa hasta aprobar y una copia fija después.
+   conversación), lo que propuso el asistente, el historial y la corrección como respuesta nueva. La vista previa del diseño usa una respuesta de ejemplo;
+   el PDF de una respuesta se emite sólo al aprobar y queda como copia fija.
 9. **WhatsApp.** El asistente solo propone y la persona confirma. Si el mensaje es ambiguo pregunta; sin IA se elige
    de una lista; un número sin cuenta vinculada recibe orientación; fuera de 24 horas hace falta una plantilla de
    Meta. Los mensajes al empleado usan voseo y dicen el número de la respuesta.
@@ -269,13 +269,13 @@ Entra:
 - **Celular**, como e1-4: el empleado recibe el pedido con el botón «Abrir formulario», completa el formulario de
   WhatsApp y lo envía con el botón final. Si lo cierra sin enviar, no se guarda nada.
 
-Queda para etapas siguientes: la planilla de respuestas y su sección en el panel, Una respuesta, aprobación y PDF,
+Al cerrar la Etapa 1 quedaban para las siguientes: la planilla de respuestas y su sección en el panel, Una respuesta, aprobación y PDF,
 el asistente con IA, los catálogos y referencias (clientes), cargar desde la web, correcciones, mandar fuera de las
 24 horas con plantilla de Meta y las acciones como descontar stock.
 
 Las respuestas de la Etapa 1 ya se guardan con su versión y su número: cuando llegue la planilla, aparecen sin migrar.
 
-## Pendientes antes de programar cada pantalla
+## Decisiones y pendientes al cerrar la Etapa 1 (histórico)
 
 - **Numeración (decidida el 2026-10-08, dibujada el 2026-10-10).** Prefijo del formulario, como en los tableros
   (VIS-000001): se propone a partir del nombre, el administrador puede cambiarlo hasta que se acepta la primera
@@ -317,7 +317,7 @@ Verificación final: **1614/1614** unitarios, **7/7** consumidores de cuerpos HT
 
 K3 y K4 incorporan Dar de baja/Reactivar con la confirmación común: el cambio se prepara y se aplica con Guardar, bajo una única revisión. El estado se muestra en palabras junto al título; se conservan opciones y respuestas anteriores. Una baja Filters no requiere elegir persona ni preview. Buscar personas conserva el editor y el foco con espera de 300 ms; un fallo de lectura no retira los filtros. Guardar tras red/5xx permite reintento explícito; sólo 409 exige revisión.
 
-Front final: **1621/1621**, lint/arquitectura **48/48**, build limpio y visual completa **416/416**, sin modificar referencias ni timeouts. Treinta capturas nuevas de estado/búsqueda; revisión representativa en español/inglés, escritorio y móvil. Se conserva el aviso conocido NO_COLOR/FORCE_COLOR del runner. Las pantallas usan los componentes y la navegación elegidos; el transporte del navegador es simulado. El piloto real de catálogos con Meta sigue en [el resumen de la etapa](../../../ArquitecturaBase/docs/plans/formularios/etapa-2-catalogos.md).
+Front final: **1621/1621**, lint/arquitectura **48/48**, build limpio y visual completa **416/416**, sin modificar referencias ni timeouts. Treinta capturas nuevas de estado/búsqueda; revisión representativa en español/inglés, escritorio y móvil. Se conserva el aviso conocido NO_COLOR/FORCE_COLOR del runner. Las pantallas usan los componentes y la navegación elegidos; el transporte del navegador es simulado. El piloto real de catálogos con Meta, entonces pendiente, se completó el 2026-10-15; el estado vigente se registra abajo.
 
 ## Estado vigente de catálogos — 2026-10-15
 
@@ -338,3 +338,13 @@ Planilla y detalle usan el diseño elegido, incluidos T1/T3 con archivos de la v
 El recorrido real abrió FOTO2B-000001 (Azure privado), foto y PDF; opcional vacía, catálogo histórico y navegación filtrada con PILK7-000003/000001, y recarga. El usuario confirmó que FOTO2B-20261016.xlsx abre en Excel sin reparación, con nombres de archivos y opcional vacía. Las capturas automáticas son transporte simulado y se verifican aparte de este recorrido real. La sincronización del código al lienzo externo no se presume.
 
 Etapa 3 cerrada: build/lint limpios, arquitectura **48/48**, tests **1703/1703** y visual completa **451/451**, sin cambios de referencias/tolerancias. Contratos HTTP y XLSX verificados con la exportación del backend **2896/2896**. Capturas revisadas en es/en, escritorio y 390/320 px, incluidos carga, error/reintento, cambio de tipo y galería. Reglas canónicas y límites en [formularios](../../../ArquitecturaBase/docs/features/formularios.md#planilla-detalle-y-excel--etapa-3). Aspire apagado.
+
+## Implementación de G1–G6 — 2026-10-16
+
+Reglas, historial, bandeja de aprobación, decisión, diseño PDF y avisos conservan los tableros elegidos, incluidos los ajustes G2/G5 de la versión 75. Reglas y diseño guardan su revisión propia con adopción explícita ante409, sin publicar ni guardar preguntas. Sólo los textos nuevos de esta etapa exigen el idioma original; la alternativa es opcional. Las Etapas 1–3 conservan la publicación bilingüe. Si el idioma de quien recibe está incompleto en cualquier aviso de esa revisión de reglas o en su diseño PDF, los mensajes y las copias del evento salen enteros en el original.
+
+«Por aprobar» usa roles vigentes y no permite decidir lo propio. Sin lectura de respuestas abre sólo metadata y decisión; los valores y documentos requieren su permiso independiente. El historial distingue acciones esperando, en curso, hechas, fallidas, sin confirmar y no aplicables. Consultar/Reintentar usan la misma acción; lo incierto se consulta primero y lo confirmado no se repite.
+
+La vista previa del diseño usa ejemplos y no persiste. La respuesta aprobada ofrece su PDF fijo por API autorizada; cambiar el diseño no lo regenera. Los avisos de reglas aparecen en WhatsApp con autor automático y documento cuando corresponde; sin lectura de respuestas se retiran cuerpo y caption antes de la caché y la bandeja conserva un resumen genérico.
+
+Los cortes cerrados tienen build, TypeScript, lint y pruebas rápidas del área. Los consumidores de Rules/Workflow/Approvals/Pdf y FormAction, con bytes y SHA256 de seis cohortes de una sola corrida backend, están preparados; todavía no se ejecutó esa calificación conjunta ni la visual o el recorrido final en navegador. El [plan vigente](../../../ArquitecturaBase/docs/plans/formularios/etapa-4-reglas-aprobacion-pdf.md) conserva el avance. El [piloto de visita, aprobación y PDF al celular](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-de-aprobación-y-pdf) sigue pendiente con Meta y Azure reales; las pruebas técnicas no lo sustituyen.

@@ -7,7 +7,7 @@ Estado: **vigente**. Contrato visual versionado que comparten Codex y Claude. No
 - Procedencia: [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) (Artifact privado de Claude).
 - Biblioteca: [ArquitecturaBase UI](https://claude.ai/artifact/Ew763kqorVHSYeUqE8CZ7h) (Artifact privado, instalada en el lienzo).
 - Revisión registrada del Artifact: **2026-09-24** (veintiún tableros), más la página «Formularios por WhatsApp»
-  (2026-10-08/10). Reconciliación con el código: **2026-10-02**; no implica que el Artifact esté sincronizado.
+  (2026-10-08/10), con los ajustes G2/G5 elegidos en la versión 75 el 2026-10-16. Reconciliación general con el código: **2026-10-02**; las actualizaciones de formularios se registran en su [diseño](formularios-whatsapp.md) y no implican sincronización del Artifact.
 - Evidencia: [`src/test/visual/screenshots/`](../../src/test/visual/screenshots/), [`evidence/`](evidence/),
   [`docs/verification/`](../verification/) y `design-lab/history/`.
 
@@ -350,7 +350,7 @@ Sin elección; no se implementan sin ella.
 | WhatsApp · El enlace del chat | `/ingresar` (`Spinner` de 20 px; el tablero, 28) | Compatibilidad: ya no se emiten enlaces |
 | WhatsApp · Orientación y mensajes del sistema | backend | Panel 2 desactualizado: Meta aprobó la invitación como Marketing, con otro texto |
 | Plantilla · Listado | ejemplo `/usuarios` | Se duplica para cada listado |
-| Formularios por WhatsApp | `/formularios`, chat | [formularios-whatsapp.md](formularios-whatsapp.md) |
+| Formularios por WhatsApp | `/formularios`, respuestas, aprobación, diseño PDF y chat | [Diseño y estado de calificación](formularios-whatsapp.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
