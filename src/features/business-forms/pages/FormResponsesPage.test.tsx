@@ -127,6 +127,77 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 describe("response sheet", () => {
+  it("moves Next and Previous across response pages with the same order", async () => {
+    setup();
+    const rows = Array.from({ length: 21 }, (_, index) => ({ ...responseSheetFixture().records.items[0], id: "0199a0c0-0000-7000-8000-" + String(200 + index).padStart(12, "0"), number: "TEST-" + String(21 - index).padStart(6, "0") }));
+    const requested = vi.fn();
+    const fieldId = responseSheetFixture().columns[0].fieldId;
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = await request.json() as { page: number };
+      requested(body);
+      const page = body.page ?? 1;
+      const sheet = responseSheetFixture();
+      sheet.records = { items: rows.slice((page - 1) * 20, page * 20), page, pageSize: 20, totalCount: 21, totalPages: 2, hasPrevious: page > 1, hasNext: page < 2 };
+      return HttpResponse.json(sheet);
+    }), http.get("/api/forms/records/:id", ({ params }) => {
+      const row = rows.find(item => item.id === params.id)!;
+      return HttpResponse.json({ ...responseDetailFixture(), id: row.id, number: row.number });
+    }));
+    const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + rows[19].id + "?sort=field&sortFieldId=" + fieldId + "");
+    await screen.findByRole("heading", { name: "TEST-000002" });
+    await waitFor(() => expect(screen.getByText("20 de 21")).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    await screen.findByRole("heading", { name: "TEST-000001" });
+    await waitFor(() => expect(screen.getByText("21 de 21")).toBeInTheDocument());
+    expect(router.state.location.search).toContain("page=2");
+    expect(requested).toHaveBeenCalledWith(expect.objectContaining({ page: 2, sort: "field", sortFieldId: fieldId }));
+    expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Anterior" }));
+    await screen.findByRole("heading", { name: "TEST-000002" });
+    await waitFor(() => expect(screen.getByText("20 de 21")).toBeInTheDocument());
+    expect(router.state.location.search).not.toContain("page=2");
+    expect(requested).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, sort: "field", sortFieldId: fieldId }));
+  });
+  it("clears private response filters when leaving the workspace", async () => {
+    setup();
+    const requested = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { requested(await request.json()); return HttpResponse.json(responseSheetFixture()); }));
+    const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+    await screen.findByRole("table");
+    await userEvent.type(screen.getByRole("searchbox", { name: "Buscar en textos largos" }), "private visit");
+    await waitFor(() => expect(requested).toHaveBeenLastCalledWith(expect.objectContaining({ search: "private visit" })));
+    await act(async () => { await router.navigate("/perfil"); });
+    await screen.findByRole("heading", { name: "Mi perfil" });
+    await waitFor(() => expect(queryClient.getQueryCache().getAll().some(query => JSON.stringify(query.queryKey).includes("private visit"))).toBe(false));
+    requested.mockClear();
+    await act(async () => { await router.navigate("/formularios/" + responseFormId + "/respuestas"); });
+    await screen.findByRole("table");
+    expect(screen.getByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("");
+    expect(requested).toHaveBeenLastCalledWith(expect.not.objectContaining({ search: "private visit" }));
+  });
+  it("orders a question in both directions using only its identity in the URL", async () => {
+    setup();
+    const requested = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { requested(await request.json()); return HttpResponse.json(responseSheetFixture()); }));
+    const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+    await screen.findByRole("table");
+    const header = within(screen.getByRole("table")).getByRole("columnheader", { name: /Importe/ });
+    await userEvent.click(within(header).getByRole("button"));
+    await waitFor(() => expect(requested).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "field", sortFieldId: responseSheetFixture().columns[0].fieldId })));
+    expect(header).toHaveAttribute("aria-sort", "ascending");
+    expect(router.state.location.search).not.toContain("Importe");
+    await userEvent.click(within(header).getByRole("button"));
+    await waitFor(() => expect(requested).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "-field", sortFieldId: responseSheetFixture().columns[0].fieldId })));
+    expect(header).toHaveAttribute("aria-sort", "descending");
+  });
+  it("keeps response detail readable without offering conversation access when whatsapp.read is absent", async () => {
+    setup(["formrecords.read"]);
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    await screen.findByRole("heading", { name: "TEST-000002" });
+    expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Abrir conversación" })).not.toBeInTheDocument();
+  });
+
   it("shows zero, false, unanswered and a missing question without requiring template permission", async () => {
     setup();
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
