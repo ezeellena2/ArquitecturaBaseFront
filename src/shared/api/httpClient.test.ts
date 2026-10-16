@@ -5,6 +5,8 @@ import { api, configureHttpClient, resetHttpClient } from "./httpClient";
 import { server } from "@/test/mocks/server";
 
 describe("httpClient", () => {
+  it.each(['inline; filename="Vista.pdf"','inline; filename=Vista.pdf'])("reads PDF bytes, actual language and server filename %s",async(disposition)=>{configureHttpClient({getAccessToken:()=>"pdf-token",getLanguage:()=>"en"});server.use(http.post("/api/forms/test/preview",async({request})=>{expect(request.headers.get("authorization")).toBe("Bearer pdf-token");expect(request.headers.get("accept")).toBe("application/pdf");expect(await request.json()).toEqual({culture:"en"});return new HttpResponse(new Uint8Array([37,80,68,70]),{headers:{"content-type":"application/pdf","content-language":"es","content-disposition":disposition}});}));const result=await api.file("/api/forms/test/preview",{method:"POST",body:JSON.stringify({culture:"en"}),headers:{accept:"application/pdf"}});expect(result.blob.size).toBe(4);expect(result.contentLanguage).toBe("es");expect(result.fileName).toBe("Vista.pdf");});
+
   it("downloads a binary POST using the shared session and server filename with private filters only in the body",async()=>{
     configureHttpClient({getAccessToken:()=>"binary-token",getLanguage:()=>"en"});
     let captured:unknown;

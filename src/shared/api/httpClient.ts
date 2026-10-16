@@ -68,7 +68,7 @@ async function send(path: string, init: RequestInit, token: string | undefined):
   return fetch(path, { ...init, headers });
 }
 
-async function request<T>(path: string, init: RequestInit = {}, binary: boolean | "download" = false): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}, binary: boolean | "download" | "file" = false): Promise<T> {
   let token = options.getAccessToken?.();
   let response: Response;
 
@@ -104,13 +104,13 @@ async function request<T>(path: string, init: RequestInit = {}, binary: boolean 
   if (binary) {
     try {
       const blob = await response.blob();
-      if (binary === "download") {
+      if (binary === "download" || binary === "file") {
         const disposition = response.headers.get("content-disposition") ?? "";
         const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1];
-        const plain = /filename="([^"]+)"/i.exec(disposition)?.[1];
-        let fileName = plain ?? null;
+        const plain = /filename="([^"]+)"|filename=([^;]+)/i.exec(disposition);
+        let fileName = (plain?.[1] ?? plain?.[2])?.trim() ?? null;
         if (encoded) { try { fileName = decodeURIComponent(encoded); } catch { /* A malformed optional filename does not invalidate the content. */ } }
-        return {blob,fileName} as T;
+        return (binary === "file" ? { blob, fileName, contentLanguage: response.headers.get("content-language") } : { blob, fileName }) as T;
       }
       return blob as T;
     }
@@ -130,7 +130,10 @@ async function request<T>(path: string, init: RequestInit = {}, binary: boolean 
 
 export interface ApiDownload { blob: Blob; fileName: string | null }
 
+export interface ApiFile extends ApiDownload { contentLanguage: string | null }
+
 export const api = {
+  file: (path: string, init?: RequestInit) => request<ApiFile>(path, { ...init, method: init?.method ?? "GET", cache: "no-store" }, "file"),
   download: (path: string, body: unknown, init?: RequestInit) => {
     const headers = new Headers(init?.headers);
     headers.set("accept", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
