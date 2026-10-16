@@ -1,4 +1,4 @@
-import { fixtureDefinition } from "./formFixtures";
+import { fixtureDefinition, wireDefinition } from "./formFixtures";
 import { responseRecordId } from "../responseFixtures";
 import type { PdfDesign } from "@/features/business-forms/pdfDesign";
 export function samplePdf() {
@@ -43,7 +43,7 @@ export function createPdfVisualFixtures() {
                 return json(current);
             }
             if (path.endsWith("/rules/options"))
-                return json({ definitionId: definition.id, name: definition.name, originalCulture: "es", questions: definition.draft.fields, roles: [], conditionChoices: {} });
+                return json({ definitionId: definition.id, name: definition.name, originalCulture: "es", questions: wireDefinition(definition).draft.fields, roles: [], conditionChoices: {} });
             if (path.endsWith("/workflow"))
                 return json({ recordId: responseRecordId, recordState: "Approved", ruleRevision: 1, task: null, actions: [], documents: [this.document] });
             return null;

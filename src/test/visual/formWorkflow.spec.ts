@@ -22,6 +22,7 @@ for (const language of ["es", "en"] as const)
       });
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       await expect(history.getByRole("button", { name: en ? "Retry" : "Reintentar", exact: true })).toHaveCount(0);
+      await history.scrollIntoViewIfNeeded();
       await page.screenshot({ path: "test-results/workflow-unconfirmed-" + language + "-" + width + ".png", fullPage: true });
       await history.getByRole("button", { name: en ? "Check status" : "Consultar", exact: true }).focus();
       await page.keyboard.press("Enter");

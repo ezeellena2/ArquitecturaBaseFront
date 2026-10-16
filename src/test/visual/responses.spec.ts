@@ -164,7 +164,7 @@ test("sheet photo opens the shared viewer with every photo and restores focus", 
     `/src/test/visual/index.html?screen=${root}&scenario=responses-files&lang=es`,
   );
   const trigger = page
-    .getByRole("button", { name: "Ver entrega.jpg", exact: true })
+    .getByRole("button", { name: /^Ver entrega\.jpg(?: · .+)?$/ })
     .first();
   await trigger.click();
   const dialog = page.getByRole("dialog", {
