@@ -1,3 +1,4 @@
+import { createRuleVisualFixtures } from "./formRuleFixtures";
 import budgetEsCheck from "../fixtures/forms-http/budget-http/es.json" with { type: "json" };
 import budgetEnCheck from "../fixtures/forms-http/budget-http/en.json" with { type: "json" };
 import publishedEsList from "../fixtures/forms-http/published/list-es.json" with { type: "json" };
@@ -68,6 +69,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   }
   if (scenario.startsWith("forms-publication")) { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "longText" ? { ...q, help: { es: "Contá lo que pasó.", en: "Describe what happened." } } : q) } }); }
   if(scenario === "forms-publication-budget-http"){ const budget=responseBudgetDefinition(culture);definitions.clear();definitions.set(budget.id,budget); }
+  const ruleFixture = createRuleVisualFixtures(culture, () => definitions.get(fixtureFormId));
   const publications = new Map<string, { definitionId: string; requestId: string; operationId: string; versionId: string; versionNumber: number; draftRevision: number; state: string; acceptedAtUtc: string; recoveryPath: string }>();
   const publicationStates = new Map<string,string>();
   const reloadFailed = scenario === "forms-publication-failed-reload";
@@ -94,6 +96,8 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname;
     calls.push({ method: request.method, path });
+    const ruleResponse = await ruleFixture.handle(request);
+    if (ruleResponse) return ruleResponse;
     if (scenario === "forms-publication-http-published" || scenario === "forms-publication-http-failed") {
       const failed = scenario.endsWith("failed");
       if (request.method !== "GET") return json({ code: "Forms.Draft.RevisionConflict" }, 409);
@@ -217,5 +221,5 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     if (scenario === "forms-uncertain" || scenario === "forms-expired") return json({ code: "General.Unexpected", traceId: "forms-fixture" }, 500);
     return json(wireCommit(result), previous ? 200 : 201);
   }
-  return { handle, definitions, calls, writes };
+  return { handle, definitions, calls, writes, ruleWrites: ruleFixture.writes };
 }

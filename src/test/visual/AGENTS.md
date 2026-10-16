@@ -40,3 +40,5 @@ K7 (`chatCatalogs.spec`): oferta por destinatario, bloqueos independientes, mens
 `responses.spec.ts` recorre T1–T5 con rutas/componentes reales en es/en y 1440/390/320: planilla, columnas, filtros privados, detalle, exportación y galería F4. `responseFixtures` simula HTTP con datos tipados; no acredita PostgreSQL ni Azure. Los contratos HTTP reales y su procedencia se verifican en responseHttpContract.test; el recorrido sobre respuestas reales y Excel se registra en la fuente funcional del backend.
 
 `formWorkflow.spec.ts` recorre G5 en es/en y1440/390/320 con el store sintético de respuestas: Sin confirmar exige Consultar, luego puede reintentarse la falla y una acción confirmada no ofrece repetición. Instrumenta sólo POST de rutas sintéticas y usa teclado; no llama Meta ni acredita ejecución durable.
+
+`formRules.spec.ts` recorre G1 en es/en a1440/390/320: reglas en el editor real, guardado e historial independientes del borrador, idioma original y secundario opcional, revisión de sólo lectura y retorno del foco. formRuleFixtures es configuración en memoria identificada; no acredita persistencia ni ejecución del motor.
