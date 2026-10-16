@@ -44,3 +44,5 @@ K7 (`chatCatalogs.spec`): oferta por destinatario, bloqueos independientes, mens
 `formRules.spec.ts` recorre G1 en es/en a1440/390/320: reglas en el editor real, guardado e historial independientes del borrador, idioma original y secundario opcional, revisión de sólo lectura y retorno del foco. formRuleFixtures es configuración en memoria identificada; no acredita persistencia ni ejecución del motor.
 
 `formApprovals.spec` cubre G3/G4 en es/en a1440/390/320: bandeja, propias deshabilitadas, decisión sin lectura de valores, rechazo/cancelación/foco y detalle autorizado. `approvalFixtures` es un doble explícito de la cola y sus decisiones; no acredita entrega real ni persistencia.
+
+`formPdf.spec` cubre G2 en es/en a1440/390/320: editor, foto opcional, guardado independiente, respaldo completo de preview y apertura/descarga/foco de copia fija. `pdfFixtures` contiene un PDF mínimo sintético para probar la UI; el renderer real se acredita con los PDF exportados del backend y su inspección.
