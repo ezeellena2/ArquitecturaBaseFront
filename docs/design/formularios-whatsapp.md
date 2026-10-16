@@ -165,10 +165,10 @@ que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesi
 | Captura | Qué define |
 | --- | --- |
 | [G1 · Cuando llega una respuesta](evidence/formularios-whatsapp/reg-g1-reglas.png) | Reglas en palabras (cuándo, si, hacer en orden), una abierta para editar, Guardar reglas e historial de revisiones. |
-| [G2 · El diseño del PDF](evidence/formularios-whatsapp/reg-g2-pdf.png) | Comprobante simple: nombre en los dos idiomas, qué preguntas incluye, quién aprobó, texto al pie y vista previa. |
+| [G2 · El diseño del PDF](evidence/formularios-whatsapp/reg-g2-pdf.png) | Comprobante simple: nombre en los dos idiomas, qué preguntas incluye, quién aprobó, texto al pie y vista previa. «Incluir las fotos»: marcada, van chicas debajo de su pregunta; sin marcar, dice cuántas hay; los documentos solo se nombran (elegido el 2026-10-16). |
 | [G3 · Por aprobar](evidence/formularios-whatsapp/reg-g3-por-aprobar.png) | La bandeja de quien decide, en el panel con su cantidad; ordenada de la más vieja a la más nueva. |
 | [G4 · Aprobar o rechazar](evidence/formularios-whatsapp/reg-g4-decidir.png) | El detalle con la decisión; rechazar pide motivo; otra persona decidió antes; no aprobar lo propio. |
-| [G5 · Qué pasó después](evidence/formularios-whatsapp/reg-g5-historial.png) | Cada acción con su estado (esperando, en curso, hecho, no se pudo, sin confirmar, no aplica) y el PDF como copia fija. |
+| [G5 · Qué pasó después](evidence/formularios-whatsapp/reg-g5-historial.png) | Cada acción con su estado (esperando, en curso, hecho, no se pudo, sin confirmar, no aplica) y el PDF como copia fija. «Reintentar» retoma solo lo que no salió; lo «Sin confirmar» se consulta primero (2026-10-16). |
 | [G6 · Lo que recibe el empleado](evidence/formularios-whatsapp/reg-g6-celular.png) | Confirmación al recibir, aviso con el PDF al aprobar, motivo al rechazar, también en inglés. |
 
 Etapa 5, el asistente (2026-10-10), sobre el [resumen de la Etapa 5](../../../ArquitecturaBase/docs/plans/formularios/etapa-5-asistente.md). También son de esta etapa «Cuándo lo ofrece» (03),
