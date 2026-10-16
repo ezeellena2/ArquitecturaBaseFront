@@ -185,3 +185,79 @@ test("sheet photo opens the shared viewer with every photo and restores focus", 
   await dialog.press("Escape");
   await expect(trigger).toBeFocused();
 });
+
+for (const language of ["es", "en"] as const)
+  for (const width of [390, 320]) {
+    test(`response loading, error recovery and type change ${language} ${width}`, async ({
+      page,
+    }) => {
+      const en = language === "en";
+      await page.setViewportSize({ width, height: 900 });
+      const enter = (scenario: string) =>
+        page.goto(
+          `/src/test/visual/index.html?screen=${root}&scenario=${scenario}&lang=${language}`,
+        );
+      await enter("responses-loading");
+      await expect(
+        page
+          .getByRole("main")
+          .getByText(en ? "Loading…" : "Cargando…", { exact: true })
+          .first(),
+      ).toBeVisible();
+      await page.screenshot({
+        path: `test-results/responses-loading-${language}-${width}.png`,
+        fullPage: true,
+      });
+      await enter("responses-error");
+      await expect(
+        page
+          .getByRole("main")
+          .getByText(
+            en
+              ? "We could not load the responses."
+              : "No pudimos cargar las respuestas.",
+            { exact: true },
+          ),
+      ).toBeVisible();
+      await page
+        .getByRole("main")
+        .getByRole("button", {
+          name: en ? "Retry" : "Reintentar",
+          exact: true,
+        })
+        .click();
+      await expect(
+        page.getByRole("link", { name: "TEST-000002", exact: true }),
+      ).toBeVisible();
+      await enter("responses-type-change");
+      await expect(
+        page
+          .getByRole("table")
+          .getByText(en ? "Earlier text" : "Texto anterior", { exact: true }),
+      ).toBeVisible();
+      await page
+        .getByRole("button", { name: en ? "Columns" : "Columnas", exact: true })
+        .click();
+      const menu = page.getByRole("menu");
+      await expect(
+        menu.getByRole("menuitemcheckbox", {
+          name: en ? "Amount (since v2)" : "Importe (desde v2)",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        menu.getByRole("menuitemcheckbox", {
+          name: en ? "Amount" : "Importe",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await menu.press("Escape");
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width);
+      await page.screenshot({
+        path: `test-results/responses-type-change-${language}-${width}.png`,
+        fullPage: true,
+      });
+    });
+  }

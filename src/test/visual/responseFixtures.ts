@@ -85,6 +85,33 @@ export function createResponseVisualFixtures(
       },
     ),
   );
+  if (scenario === "responses-type-change") {
+    sheet.columns[0].introducedInVersion = 2;
+    sheet.columns.push({
+      fieldId: id(37),
+      type: "shortText",
+      label: sheet.columns[0].label,
+      introducedInVersion: 1,
+      options: [],
+    });
+    for (const row of sheet.records.items) {
+      if (row.versionNumber === 1) {
+        row.cells[0].state = "NotAsked";
+        row.cells[0].value = null;
+      }
+      row.cells.push({
+        fieldId: id(37),
+        type: "shortText",
+        state: row.versionNumber === 1 ? "Answered" : "NotAsked",
+        value:
+          row.versionNumber === 1
+            ? en
+              ? "Earlier text"
+              : "Texto anterior"
+            : null,
+      });
+    }
+  }
   const page = <T>(
     items: T[],
     number = 1,

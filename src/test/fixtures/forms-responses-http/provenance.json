@@ -1,0 +1,59 @@
+{
+  "producer": "FormResponseHttpTests and WhatsAppFormFilesIntegrationTests",
+  "captures": [
+    {
+      "sha256": "8d2cc9a166f4bf48a382bf4cd86ba068de2819dffd11198068db069ea18fd694",
+      "length": 180,
+      "name": "counts-es.json"
+    },
+    {
+      "sha256": "7129eccb98c7a7cccb4d7bfec922a43761eec29314b3a485b22a033569c5d748",
+      "length": 1176,
+      "name": "detail-es.json"
+    },
+    {
+      "sha256": "55fcc6cd986e02482056b849be273e1489944fff9cbbb4679ef19d6206f772a0",
+      "length": 6812,
+      "name": "export.xlsx"
+    },
+    {
+      "sha256": "badd7e1dc9292b8a53e7f692200b69ec9b9b8f36e05911a4db8c020b1ba04b46",
+      "length": 1745,
+      "name": "files-detail-es.json"
+    },
+    {
+      "sha256": "fd7ac93b13216604046978d9d610ef879ed4de7b49b8f7d2172d06210fc4a6bb",
+      "length": 1557,
+      "name": "files-sheet-es.json"
+    },
+    {
+      "sha256": "3edd3054ccad06415004a9dc398597a15709cb04d5d5cfccdbdc4cd62936aa7c",
+      "length": 2900,
+      "name": "filtered-es.json"
+    },
+    {
+      "sha256": "75b2a60a956eca9ff16872f10b78ca1b6d57cf0eb40a1e4dc52912113e00ce50",
+      "length": 210,
+      "name": "navigation-en.json"
+    },
+    {
+      "sha256": "7a96bbf2c4be8d0c2a6b106c3fd30a01de41447cccb1e2d487358c8b78f225fe",
+      "length": 213,
+      "name": "navigation-es.json"
+    },
+    {
+      "sha256": "d98baab498e78c5d492894d4e804609933f4999e6a6b2c46571b7fe33d4bc336",
+      "length": 14746,
+      "name": "sheet-en.json"
+    },
+    {
+      "sha256": "d1816eb1963007cb1a4e4c4aeff7874a3979baf9897db4c98f43c620db3a865d",
+      "length": 14749,
+      "name": "sheet-es.json"
+    }
+  ],
+  "repositoryHead": "577d1c35476589295039065de0c7d6310830bab2",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "sourceState": []
+}
