@@ -11,11 +11,70 @@ import { DataTable } from "@/shared/ui/DataTable";
 import { Pagination } from "@/shared/ui/Pagination";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
-export function ResponseFormsPage(){
- const {t}=useTranslation("forms");const presentation=useSystemPresentation();const pagination=usePagination(presentation.data?.defaultPageSize,true);
- const {query,scope}=useResponseNavigation(pagination.page,pagination.pageSize,pagination.search);
- if(!scope.allowed||query.error instanceof ApiError&&query.error.status===403)return <ForbiddenPage/>;
- return <Page title={t("responses.title")}><FilterBar><SearchInput label={t("responses.searchForms")} value={pagination.search??""} onChange={pagination.setSearch}/></FilterBar>
- <Surface><DataTable columns={[{id:"name",header:t("formColumn"),cell:row=><Link to={`/formularios/${row.id}/respuestas`} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link>},{id:"versionNumber",header:t("responses.version"),cell:row=>row.versionNumber}]} rows={query.data?.items??[]} rowKey={row=>row.id} isLoading={query.isPending} hasData={!!query.data} error={query.error?t("loadFailed"):undefined} onRetry={()=>{void query.refetch();}} emptyTitle={t(pagination.search?"noMatches":"responses.noForms")} emptyDescription={t("responses.noFormsHint")}/>
- {query.data?<Pagination {...query.data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/>:null}</Surface></Page>;
+export function ResponseFormsPage() {
+  const { t } = useTranslation("forms");
+  const presentation = useSystemPresentation();
+  const pagination = usePagination(presentation.data?.defaultPageSize, true);
+  const { query, scope } = useResponseNavigation(
+    pagination.page,
+    pagination.pageSize,
+    pagination.search,
+  );
+  if (
+    !scope.allowed ||
+    (query.error instanceof ApiError && query.error.status === 403)
+  )
+    return <ForbiddenPage />;
+  return (
+    <Page title={t("responses.title")}>
+      <FilterBar>
+        <SearchInput
+          maxLength={100}
+          label={t("responses.searchForms")}
+          value={pagination.search ?? ""}
+          onChange={pagination.setSearch}
+        />
+      </FilterBar>
+      <Surface>
+        <DataTable
+          columns={[
+            {
+              id: "name",
+              header: t("formColumn"),
+              cell: (row) => (
+                <Link
+                  to={`/formularios/${row.id}/respuestas`}
+                  className="font-medium text-[var(--color-brand-700)] underline"
+                >
+                  {row.name}
+                </Link>
+              ),
+            },
+            {
+              id: "versionNumber",
+              header: t("responses.version"),
+              cell: (row) => row.versionNumber,
+            },
+          ]}
+          rows={query.data?.items ?? []}
+          rowKey={(row) => row.id}
+          isLoading={query.isPending}
+          hasData={!!query.data}
+          error={query.error ? t("loadFailed") : undefined}
+          onRetry={() => {
+            void query.refetch();
+          }}
+          emptyTitle={t(pagination.search ? "noMatches" : "responses.noForms")}
+          emptyDescription={t("responses.noFormsHint")}
+        />
+        {query.data ? (
+          <Pagination
+            {...query.data}
+            onPageChange={pagination.setPage}
+            onPageSizeChange={pagination.setPageSize}
+          />
+        ) : null}
+      </Surface>
+    </Page>
+  );
 }
