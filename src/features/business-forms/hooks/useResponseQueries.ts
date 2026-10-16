@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import {
   keepPreviousData,
   useQuery,
@@ -173,6 +173,8 @@ export function useResponseFacet(
   fieldId: string | undefined,
   page: number,
   search: string,
+  enabled = true,
+  localFeedback = true,
 ) {
   const scope = useResponseScope();
   const { t } = useTranslation("forms");
@@ -180,13 +182,17 @@ export function useResponseFacet(
   const { restart } = cooldown;
   const [paused, setPaused] = useState(false);
   useCleanup(scope.owner);
+  const [retainedFilter, setRetainedFilter] = useState(filter);
+  if (filter && retainedFilter !== filter) setRetainedFilter(filter);
+  const currentFilter = filter ?? retainedFilter;
+  const facetFilter = currentFilter ? { ...currentFilter, actorIds: dimension === "actor" ? [] : currentFilter.actorIds, versionIds: dimension === "version" ? [] : currentFilter.versionIds, conditions: dimension === "choice" || dimension === "presence" ? currentFilter.conditions?.filter(item => item.fieldId !== fieldId) : currentFilter.conditions } : null;
   const query = useQuery({
     queryKey: [
       "form-responses",
       scope.owner,
       "facet",
       id,
-      filter,
+      facetFilter,
       dimension,
       fieldId,
       page,
@@ -194,14 +200,15 @@ export function useResponseFacet(
     ],
     queryFn: async ({ signal }) => {
       try {
-        return await fetchResponseFacet(id, filter!, dimension, fieldId, page, search, signal);
+        return await fetchResponseFacet(id, facetFilter!, dimension, fieldId, page, search, signal);
       } catch (error) {
         if (error instanceof ApiError && error.status === 429) setPaused(true);
         throw error;
       }
     },
-    enabled: scope.allowed && !!id && !!filter && !paused,
+    enabled: enabled && scope.allowed && !!id && !!filter && !paused,
     gcTime: 0,
+    staleTime: Infinity,
     meta: { errorOwner: "local" },
     placeholderData: (previous, previousQuery) =>
       previousQuery?.queryKey[1] === scope.owner &&
@@ -212,7 +219,7 @@ export function useResponseFacet(
         : undefined,
   });
   useResponseFeedback(
-    query.error instanceof ApiError && query.error.status === 429 ? null : query.error,
+    !localFeedback && !(query.error instanceof ApiError && query.error.status === 403) || query.error instanceof ApiError && query.error.status === 429 ? null : query.error,
     `responses:facet:${scope.owner}:${id}:${dimension}:${fieldId ?? ""}`,
     errorFeedback(query.error).network ? query.refetch : undefined,
   );
@@ -221,12 +228,26 @@ export function useResponseFacet(
     if (!(query.error instanceof ApiError) || query.error.status !== 429) return;
     const seconds = Math.min(86400, Math.max(1, query.error.retryAfterSeconds ?? 60));
     restart(seconds);
-    notify({ id: feedbackId, kind: "error", message: t("wait", { count: seconds }) });
-  }, [query.error, restart, t, feedbackId]);
+    if (localFeedback) notify({ id: feedbackId, kind: "error", message: t("wait", { count: seconds }) });
+  }, [query.error, restart, t, feedbackId, localFeedback]);
   useEffect(() => () => dismissNotification(feedbackId), [feedbackId]);
   return { ...query, cooldown, retry: () => {
     if (cooldown.isRunning) return;
     if (paused) setPaused(false);
     else void query.refetch();
   } };
+}
+
+export function useResponseCount(id: string, filter: ResponseQuery | null) {
+  const scope = useResponseScope();
+  const cooldown = useCountdown(0);
+  const [paused, setPaused] = useState(false);
+  const query = useQuery({ queryKey: ["form-responses", scope.owner, "count", id, filter], enabled: scope.allowed && !!filter && !paused,
+    queryFn: async ({ signal }) => { try { return (await fetchResponseSheet(id, { ...filter!, page: 1, pageSize: 1 }, signal)).records.totalCount; } catch (error) {
+      if (error instanceof ApiError && error.status === 429) { setPaused(true); cooldown.restart(error.retryAfterSeconds ?? 60); } throw error;
+    } }, gcTime: 0, meta: { errorOwner: "local" } });
+  const { refetch } = query;
+  const { isRunning } = cooldown;
+  const retry = useCallback(() => { if (isRunning) return; if (paused) setPaused(false); else void refetch(); }, [isRunning, paused, refetch]);
+  return { ...query, cooldown, retry };
 }

@@ -263,9 +263,25 @@ describe("response sheet", () => {
     await screen.findByRole("heading", { name: "TEST-000001" });
     expect(button).toHaveFocus();
   });
+  it("shows every filter section and applies the server count for the received date draft", async () => {
+    setup();
+    const captured = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { const body = await request.json() as { receivedFromUtc?: string }; captured(body); const sheet = responseSheetFixture(); if (body.receivedFromUtc) sheet.records.totalCount = 9; return HttpResponse.json(sheet); }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: "Importe" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Observaciones" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Cargó" })).toBeInTheDocument();
+    const input = within(dialog).getByLabelText("Recibida desde");
+    await userEvent.type(input, "2026-10-16");
+    await within(dialog).findByRole("button", { name: "Ver 9 respuestas" });
+    expect(captured).toHaveBeenCalledWith(expect.objectContaining({ receivedFromUtc: expect.stringContaining("2026-10-16"), pageSize: 1 }));
+  });
   it("counts only a settled valid decimal draft and applies that normalized value", async () => {
     setup();
-    const captured: { filter: { conditions?: { values: string[] }[] } }[] = [];
+    const captured: { dimension?: string; fieldId?: string; filter: { conditions?: { values: string[] }[] } }[] = [];
     server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => {
       captured.push(await request.json() as typeof captured[number]);
       return HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false });
@@ -279,23 +295,23 @@ describe("response sheet", () => {
     await screen.findByRole("table");
     await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(within(dialog).getByRole("button", { name: "Importe" }));
-    await waitFor(() => expect(captured).toHaveLength(1));
+    await waitFor(() => expect(captured.length).toBeGreaterThan(1));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 100)); });
+    const initialCount = captured.length;
     const input = within(dialog).getByRole("textbox", { name: "Desde" });
     await userEvent.type(input, "-");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
-    expect(captured).toHaveLength(1);
-    expect(within(dialog).getByRole("button", { name: "Aplicar filtros" })).toBeDisabled();
+    expect(captured).toHaveLength(initialCount);
+    expect(within(dialog).getByRole("button", { name: /Ver .* respuestas|Aplicar filtros/ })).toBeDisabled();
     await userEvent.clear(input);
     await userEvent.type(input, "12,");
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
-    expect(captured).toHaveLength(1);
+    expect(captured).toHaveLength(initialCount);
     await userEvent.type(input, "5");
-    expect(captured).toHaveLength(1);
-    await waitFor(() => expect(captured.at(-1)?.filter.conditions).toEqual([
-      expect.objectContaining({ operator: "gte", values: ["12.5"] }),
-    ]));
-    await userEvent.click(within(dialog).getByRole("button", { name: "Aplicar filtros" }));
+    expect(captured).toHaveLength(initialCount);
+    await waitFor(() => expect(captured.some(item => item.filter.conditions?.some(condition => condition.values?.includes("12.5")))).toBe(true));
+    expect(captured.filter(item => item.dimension === "presence" && item.fieldId === responseSheetFixture().columns[0].fieldId)).toHaveLength(1);
+    await userEvent.click(within(dialog).getByRole("button", { name: /Ver .* respuestas|Aplicar filtros/ }));
     await waitFor(() => expect(applied).toMatchObject({ conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })] }));
     expect(notify).not.toHaveBeenCalled();
   });
@@ -310,14 +326,14 @@ describe("response sheet", () => {
     await screen.findByRole("table");
     await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(within(dialog).getByRole("button", { name: "Cargó" }));
     await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
     expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
     if (status === 429) {
-      expect(within(dialog).getByRole("button", { name: "Reintentar" })).toBeDisabled();
-      expect(within(dialog).getByRole("status")).toHaveTextContent("60");
+      const actor = within(dialog).getByRole("region", { name: "Cargó" });
+      expect(within(actor).getByRole("button", { name: "Reintentar" })).toBeDisabled();
+      expect(within(actor).getByRole("status")).toHaveTextContent("60");
     } else expect(within(dialog).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
-    expect(requested).toHaveBeenCalledTimes(1);
+    expect(requested).toHaveBeenCalled();
   });
   it("names an account without a display name in the person filter", async () => {
     setup();
@@ -341,9 +357,6 @@ describe("response sheet", () => {
     await screen.findByRole("table");
     await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(
-      within(dialog).getByRole("button", { name: "Cargó" }),
-    );
     expect(
       await within(dialog).findByRole("checkbox", {
         name: "Persona sin información",
@@ -356,14 +369,11 @@ describe("response sheet", () => {
     await screen.findByRole("table");
     await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(
-      within(dialog).getByRole("button", { name: "Confirmado" }),
-    );
     expect(
       await within(dialog).findByRole("checkbox", { name: "No" }),
     ).toBeEnabled();
     expect(
-      within(dialog).queryByRole("searchbox", { name: "Buscar opciones" }),
+      within(within(dialog).getByRole("region", { name: "Confirmado" })).queryByRole("searchbox", { name: "Buscar opciones" }),
     ).not.toBeInTheDocument();
   });
   it("withdraws all values and counts after a denied filter count", async () => {
@@ -376,10 +386,6 @@ describe("response sheet", () => {
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
     await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
-    await userEvent.click(
-      within(dialog).getByRole("button", { name: "Cargó" }),
-    );
     await screen.findByRole("heading", { name: /permiso/i });
     expect(screen.queryByText("TEST-000002")).not.toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();

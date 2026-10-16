@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useElementVisibility } from "@/shared/hooks/useElementVisibility";
 import { useResponseFacet } from "../hooks/useResponseQueries";
 import type { ResponseQuery } from "../responses";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
@@ -17,6 +18,7 @@ export function ResponseFacetControl({
   fieldId,
   selected,
   searchable = true,
+  onReadError,
   onChange,
 }: {
   formId: string;
@@ -25,9 +27,11 @@ export function ResponseFacetControl({
   fieldId?: string;
   selected: readonly string[];
   searchable?: boolean;
+  onReadError?: (key: string, error: unknown) => void;
   onChange: (ids: readonly string[]) => void;
 }) {
   const { t } = useTranslation("forms");
+  const { ref: visibilityRef, visible } = useElementVisibility<HTMLDivElement>();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const query = useResponseFacet(
@@ -37,11 +41,14 @@ export function ResponseFacetControl({
     fieldId,
     page,
     search,
+    visible,
+    !onReadError,
   );
+  useEffect(() => { onReadError?.(`${dimension}:${fieldId ?? ""}`, query.error); }, [onReadError, dimension, fieldId, query.error]);
   if (query.error instanceof ApiError && query.error.status === 403)
     return <ForbiddenPage />;
   return (
-    <div className="flex flex-col gap-3">
+    <div ref={visibilityRef} className="flex flex-col gap-3">
       {searchable ? (
         <SearchInput
           maxLength={100}
@@ -115,16 +122,20 @@ export function ResponsePresenceControl({
   fieldId,
   value,
   onChange,
+  onReadError,
 }: {
   formId: string;
   filter: ResponseQuery | null;
   fieldId: string;
   value: string;
+  onReadError?: (key: string, error: unknown) => void;
   onChange: (value: string) => void;
 }) {
   const { t } = useTranslation("forms");
-  const query = useResponseFacet(formId, filter, "presence", fieldId, 1, "");
-  return <div className="flex flex-col gap-2">
+  const { ref: visibilityRef, visible } = useElementVisibility<HTMLDivElement>();
+  const query = useResponseFacet(formId, filter, "presence", fieldId, 1, "", visible, !onReadError);
+  useEffect(() => { onReadError?.(`presence:${fieldId}`, query.error); }, [onReadError, fieldId, query.error]);
+  return <div ref={visibilityRef} className="flex flex-col gap-2">
     {query.cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: query.cooldown.seconds })}</p> : null}
     {query.isError && query.error instanceof ApiError && (query.error.isNetworkError || query.error.status === 429) ? <Button type="button" variant="outline" disabled={query.cooldown.isRunning} onClick={() => query.retry()}>{t("common:actions.retry")}</Button> : null}
     {(

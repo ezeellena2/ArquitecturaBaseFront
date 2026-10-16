@@ -9,6 +9,7 @@ import {
   savePrivateBlob,
 } from "@/shared/hooks/usePrivateFormFile";
 import { Button } from "@/shared/ui/button";
+import { useElementVisibility } from "@/shared/hooks/useElementVisibility";
 import { PhotoViewer } from "@/shared/ui/PhotoViewer";
 
 function fileSize(bytes: number, language: string) {
@@ -38,16 +39,7 @@ function Thumbnail({
   onError: (error: unknown) => void;
 }) {
   const { t } = useTranslation();
-  const container = useRef<HTMLSpanElement>(null);
-  const [visible, setVisible] = useState(() => typeof IntersectionObserver === "undefined");
-  useEffect(() => {
-    if (visible || !container.current) return;
-    const observer = new IntersectionObserver(entries => {
-      if (entries.some(entry => entry.isIntersecting)) { setVisible(true); observer.disconnect(); }
-    });
-    observer.observe(container.current);
-    return () => observer.disconnect();
-  }, [visible]);
+  const { ref: container, visible } = useElementVisibility<HTMLSpanElement>(true);
   const query = usePrivateFormFile(
     actor,
     recordId,

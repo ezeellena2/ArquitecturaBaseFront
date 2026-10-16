@@ -504,6 +504,8 @@
     "unavailableValue": "Unavailable value",
     "appliedFilters_one": "{{count}} applied filter",
     "appliedFilters_other": "{{count}} applied filters",
-    "position": "{{position}} of {{count}}"
+    "position": "{{position}} of {{count}}",
+    "viewResponses_one": "View {{count}} response",
+    "viewResponses_other": "View {{count}} responses"
   }
 }

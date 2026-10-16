@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -20,6 +20,7 @@ import {
   type ResponseFilter,
   type ResponseQuery,
 } from "../responses";
+import { useResponseCount, useResponseFeedback, useResponseScope } from "../hooks/useResponseQueries";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import {
   ResponseFacetControl,
@@ -44,9 +45,10 @@ export function ResponseFiltersPanel({
 }) {
   const { t } = useTranslation("forms");
   const [draft, setDraft] = useState(query);
-  const [expanded, setExpanded] = useState<string | null>(
-    initialFieldId ?? null,
-  );
+  const scope = useResponseScope();
+  const [facetErrors, setFacetErrors] = useState<Record<string, unknown>>({});
+  const onReadError = useCallback((key: string, error: unknown) => setFacetErrors(previous => previous[key] === error ? previous : { ...previous, [key]: error }), []);
+  useEffect(() => { if (initialFieldId) document.getElementById(`response-filter-${initialFieldId}`)?.scrollIntoView({ block: "start" }); }, [initialFieldId]);
   const restore = useRestoreFocusOnClose();
   const [from, setFrom] = useState(
     query.receivedFromUtc
@@ -103,6 +105,8 @@ export function ResponseFiltersPanel({
     return () => window.clearTimeout(timer);
   }, [normalized]);
   const facetFilter = normalized === countFilter ? countFilter : null;
+  const count = useResponseCount(formId, facetFilter);
+  useResponseFeedback(count.isPending ? null : count.error ?? Object.values(facetErrors).find(Boolean), `responses:filters:${scope.owner}:${formId}`, count.retry);
   const apply = () => {
     if (!normalized) return;
     const { search, actorIds, receivedFromUtc, receivedToUtc, conditions } = normalized;
@@ -117,12 +121,12 @@ export function ResponseFiltersPanel({
         if (!open) onClose();
       }}
     >
-      <DialogContent placement="right" onCloseAutoFocus={restore}>
+      <DialogContent placement="right" className="overflow-hidden" onCloseAutoFocus={restore}>
         <DialogHeader>
           <DialogTitle>{t("responses.filters")}</DialogTitle>
           <DialogDescription>{t("responses.filterHint")}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField
               label={t("responses.receivedFrom")}
@@ -142,67 +146,19 @@ export function ResponseFiltersPanel({
               />
             </FormField>
           </div>
-          {[
-            { id: "actor", label: t("responses.actor") },
-            { id: "version", label: t("responses.version") },
-          ].map((section) => (
-            <div
-              key={section.id}
-              className="border-b border-[var(--color-border)] pb-3"
-            >
-              <Button
-                type="button"
-                variant="ghost"
-                aria-expanded={expanded === section.id}
-                onClick={() =>
-                  setExpanded(expanded === section.id ? null : section.id)
-                }
-              >
-                {section.label}
-              </Button>
-              {expanded === section.id ? (
-                <ResponseFacetControl
-                  formId={formId}
-                  filter={facetFilter}
-                  dimension={section.id}
-                  selected={
-                    section.id === "actor"
-                      ? (draft.actorIds ?? [])
-                      : (draft.versionIds ?? [])
-                  }
-                  onChange={(ids) =>
-                    setDraft((previous) => ({
-                      ...previous,
-                      [section.id === "actor" ? "actorIds" : "versionIds"]: ids,
-                    }))
-                  }
-                />
-              ) : null}
-            </div>
-          ))}
           {columns.map((column) => (
-            <div
+            <section
+              aria-label={column.label}
               key={column.fieldId}
               className="border-b border-[var(--color-border)] pb-3"
             >
-              <Button
-                type="button"
-                variant="ghost"
-                aria-expanded={expanded === column.fieldId}
-                onClick={() =>
-                  setExpanded(
-                    expanded === column.fieldId ? null : column.fieldId,
-                  )
-                }
-              >
-                {column.label}
-              </Button>
-              {expanded === column.fieldId ? (
+              <h3 id={`response-filter-${column.fieldId}`} className="text-sm font-medium">{column.label}</h3>
                 <div className="flex flex-col gap-3">
                   <FormField label={t("responses.answerState")}>
                     <ResponsePresenceControl
                       formId={formId}
                       filter={facetFilter}
+                  onReadError={onReadError}
                       fieldId={column.fieldId}
                       value={
                         (draft.conditions ?? []).find(
@@ -244,6 +200,7 @@ export function ResponseFiltersPanel({
                     <ResponseFacetControl
                       formId={formId}
                       filter={facetFilter}
+                  onReadError={onReadError}
                       dimension="choice"
                       fieldId={column.fieldId}
                       searchable={column.type !== "boolean"}
@@ -310,11 +267,41 @@ export function ResponseFiltersPanel({
                     </FormField>
                   ) : null}
                 </div>
-              ) : null}
-            </div>
+            </section>
+          ))}
+          {[
+            { id: "actor", label: t("responses.actor") },
+            { id: "version", label: t("responses.version") },
+          ].map((section) => (
+            <section
+              aria-label={section.label}
+              key={section.id}
+              className="border-b border-[var(--color-border)] pb-3"
+            >
+              <h3 className="text-sm font-medium">{section.label}</h3>
+                <ResponseFacetControl
+                  formId={formId}
+                  filter={facetFilter}
+                  onReadError={onReadError}
+                  dimension={section.id}
+                  selected={
+                    section.id === "actor"
+                      ? (draft.actorIds ?? [])
+                      : (draft.versionIds ?? [])
+                  }
+                  onChange={(ids) =>
+                    setDraft((previous) => ({
+                      ...previous,
+                      [section.id === "actor" ? "actorIds" : "versionIds"]: ids,
+                    }))
+                  }
+                />
+            </section>
           ))}
         </div>
-        <DialogFooter>
+        {count.cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: count.cooldown.seconds })}</p> : null}
+        {count.isError ? <Button type="button" variant="outline" disabled={count.cooldown.isRunning} onClick={count.retry}>{t("common:actions.retry")}</Button> : null}
+        <DialogFooter className="shrink-0">
           <Button
             type="button"
             variant="ghost"
@@ -339,10 +326,10 @@ export function ResponseFiltersPanel({
           </Button>
           <Button
             type="button"
-            disabled={invalidNumber || invalidRange}
+            disabled={invalidNumber || invalidRange || !facetFilter || count.isPending || count.isFetching || count.isError}
             onClick={apply}
           >
-            {t("responses.apply")}
+            {count.data === undefined ? t("responses.apply") : t("responses.viewResponses", { count: count.data })}
           </Button>
         </DialogFooter>
       </DialogContent>
