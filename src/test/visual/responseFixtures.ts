@@ -17,6 +17,7 @@ export function createResponseVisualFixtures(
 ) {
   const en = language === "en";
   const sheet = responseSheetFixture();
+  if(scenario === "responses-approval"){sheet.hasApproval=true;for(const row of sheet.records.items)row.state="PendingApproval";}
   sheet.name = en ? "Delivery report" : "Informe de entregas";
   const labels = en
     ? ["Amount", "Notes", "Confirmed", "Optional detail", "Method"]
