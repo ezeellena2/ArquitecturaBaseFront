@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { FormField } from "@/shared/ui/FormField";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import {
   receivedDateBoundary,
+  normalizeResponseQuery,
   replaceResponseCondition,
   type ResponseColumn,
   type ResponseFilter,
@@ -90,21 +91,22 @@ export function ResponseFiltersPanel({
         ),
   );
   const invalidRange = !!from && !!to && from > to;
+  const normalized = useMemo(() => invalidRange ? null : normalizeResponseQuery({
+    ...draft,
+    receivedFromUtc: receivedDateBoundary(from, zone),
+    receivedToUtc: receivedDateBoundary(to, zone, true),
+  }, columns), [draft, columns, from, to, zone, invalidRange]);
+  const [countFilter, setCountFilter] = useState(normalized);
+  useEffect(() => {
+    if (!normalized) return;
+    const timer = window.setTimeout(() => setCountFilter(normalized), 300);
+    return () => window.clearTimeout(timer);
+  }, [normalized]);
+  const facetFilter = normalized === countFilter ? countFilter : null;
   const apply = () => {
-    const filter: ResponseFilter = {
-      search: draft.search,
-      actorIds: draft.actorIds,
-      receivedFromUtc: receivedDateBoundary(from, zone),
-      receivedToUtc: receivedDateBoundary(to, zone, true),
-      conditions: draft.conditions?.map((item) => ({
-        ...item,
-        values:
-          columns.find((column) => column.fieldId === item.fieldId)?.type ===
-          "decimal"
-            ? item.values?.map((value) => value.replace(",", "."))
-            : item.values,
-      })),
-    };
+    if (!normalized) return;
+    const { search, actorIds, receivedFromUtc, receivedToUtc, conditions } = normalized;
+    const filter: ResponseFilter = { search, actorIds, receivedFromUtc, receivedToUtc, conditions };
     onApply(filter, draft.versionIds ?? []);
     onClose();
   };
@@ -161,7 +163,7 @@ export function ResponseFiltersPanel({
               {expanded === section.id ? (
                 <ResponseFacetControl
                   formId={formId}
-                  filter={draft}
+                  filter={facetFilter}
                   dimension={section.id}
                   selected={
                     section.id === "actor"
@@ -200,7 +202,7 @@ export function ResponseFiltersPanel({
                   <FormField label={t("responses.answerState")}>
                     <ResponsePresenceControl
                       formId={formId}
-                      filter={draft}
+                      filter={facetFilter}
                       fieldId={column.fieldId}
                       value={
                         (draft.conditions ?? []).find(
@@ -241,7 +243,7 @@ export function ResponseFiltersPanel({
                   {column.type === "choice" || column.type === "boolean" ? (
                     <ResponseFacetControl
                       formId={formId}
-                      filter={draft}
+                      filter={facetFilter}
                       dimension="choice"
                       fieldId={column.fieldId}
                       searchable={column.type !== "boolean"}

@@ -20,7 +20,7 @@ export function ResponseFacetControl({
   onChange,
 }: {
   formId: string;
-  filter: ResponseQuery;
+  filter: ResponseQuery | null;
   dimension: string;
   fieldId?: string;
   selected: readonly string[];
@@ -53,14 +53,16 @@ export function ResponseFacetControl({
           }}
         />
       ) : null}
-      {query.isPending ? (
+      {query.cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: query.cooldown.seconds })}</p> : null}
+      {query.isPending && filter ? (
         <Spinner />
-      ) : query.isError && !query.data ? (
+      ) : query.isError && !query.data && (query.error instanceof ApiError && (query.error.isNetworkError || query.error.status === 429)) ? (
         <Button
           type="button"
           variant="outline"
+          disabled={query.cooldown.isRunning}
           onClick={() => {
-            void query.refetch();
+            query.retry();
           }}
         >
           {t("common:actions.retry")}
@@ -115,18 +117,21 @@ export function ResponsePresenceControl({
   onChange,
 }: {
   formId: string;
-  filter: ResponseQuery;
+  filter: ResponseQuery | null;
   fieldId: string;
   value: string;
   onChange: (value: string) => void;
 }) {
   const { t } = useTranslation("forms");
   const query = useResponseFacet(formId, filter, "presence", fieldId, 1, "");
-  return (
+  return <div className="flex flex-col gap-2">
+    {query.cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: query.cooldown.seconds })}</p> : null}
+    {query.isError && query.error instanceof ApiError && (query.error.isNetworkError || query.error.status === 429) ? <Button type="button" variant="outline" disabled={query.cooldown.isRunning} onClick={() => query.retry()}>{t("common:actions.retry")}</Button> : null}
+    {(
     <NativeSelect
       aria-label={t("responses.answerState")}
       value={value}
-      disabled={query.isPending}
+      disabled={query.isPending || query.cooldown.isRunning}
       onChange={(event) => onChange(event.target.value)}
     >
       {["all", "answered", "unanswered", "notAsked"].map((id) => {
@@ -139,5 +144,6 @@ export function ResponsePresenceControl({
         );
       })}
     </NativeSelect>
-  );
+    )}
+  </div>;
 }

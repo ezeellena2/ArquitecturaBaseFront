@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -229,6 +229,62 @@ describe("response sheet", () => {
       await screen.findByRole("button", { name: "Siguiente" }),
     );
     await screen.findByRole("heading", { name: "TEST-000001" });
+  });
+  it("counts only a settled valid decimal draft and applies that normalized value", async () => {
+    setup();
+    const captured: { filter: { conditions?: { values: string[] }[] } }[] = [];
+    server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => {
+      captured.push(await request.json() as typeof captured[number]);
+      return HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false });
+    }));
+    let applied: unknown;
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      applied = await request.json();
+      return HttpResponse.json(responseSheetFixture());
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Importe" }));
+    await waitFor(() => expect(captured).toHaveLength(1));
+    const input = within(dialog).getByRole("textbox", { name: "Desde" });
+    await userEvent.type(input, "-");
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
+    expect(captured).toHaveLength(1);
+    expect(within(dialog).getByRole("button", { name: "Aplicar filtros" })).toBeDisabled();
+    await userEvent.clear(input);
+    await userEvent.type(input, "12,");
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
+    expect(captured).toHaveLength(1);
+    await userEvent.type(input, "5");
+    expect(captured).toHaveLength(1);
+    await waitFor(() => expect(captured.at(-1)?.filter.conditions).toEqual([
+      expect.objectContaining({ operator: "gte", values: ["12.5"] }),
+    ]));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Aplicar filtros" }));
+    await waitFor(() => expect(applied).toMatchObject({ conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })] }));
+    expect(notify).not.toHaveBeenCalled();
+  });
+  it.each([400, 429])("does not offer an immediate retry after a facet HTTP %s", async status => {
+    setup();
+    const requested = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", () => {
+      requested();
+      return HttpResponse.json({ detail: "Review the filter", code: "Test.Filter", retryAfter: 60 }, { status });
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cargó" }));
+    await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
+    if (status === 429) {
+      expect(within(dialog).getByRole("button", { name: "Reintentar" })).toBeDisabled();
+      expect(within(dialog).getByRole("status")).toHaveTextContent("60");
+    } else expect(within(dialog).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+    expect(requested).toHaveBeenCalledTimes(1);
   });
   it("names an account without a display name in the person filter", async () => {
     setup();

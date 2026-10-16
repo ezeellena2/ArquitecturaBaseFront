@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  normalizeResponseQuery,
   receivedDateBoundary,
   replaceResponseCondition,
   responseValueText,
@@ -63,6 +64,27 @@ describe("response presentation", () => {
 });
 
 describe("response filters", () => {
+  const columns: ResponseColumn[] = [
+    { fieldId: "number", type: "decimal", label: "Number", introducedInVersion: 1, options: [] },
+    { fieldId: "text", type: "longText", label: "Text", introducedInVersion: 1, options: [] },
+  ];
+  it("normalizes decimal commas and trims text before applying or counting", () => {
+    expect(normalizeResponseQuery({ page: 1, pageSize: 20, conditions: [
+      { fieldId: "number", operator: "gte", values: ["12,5"] },
+      { fieldId: "text", operator: "contains", values: ["  visit  "] },
+    ] }, columns)).toMatchObject({ conditions: [
+      { fieldId: "number", operator: "gte", values: ["12.5"] },
+      { fieldId: "text", operator: "contains", values: ["visit"] },
+    ] });
+    expect(normalizeResponseQuery({ page: 1, pageSize: 20, conditions: [
+      { fieldId: "text", operator: "contains", values: ["   "] },
+    ] }, columns)?.conditions).toEqual([]);
+  });
+  it.each(["12,", "-", "1.2.3"])("does not send an incomplete or invalid decimal %s", value => {
+    expect(normalizeResponseQuery({ page: 1, pageSize: 20, conditions: [
+      { fieldId: "number", operator: "gte", values: [value] },
+    ] }, columns)).toBeNull();
+  });
   it("converts received calendar dates in the account zone, including DST, into an exclusive upper boundary", () => {
     expect(
       receivedDateBoundary("2026-10-16", "America/Argentina/Buenos_Aires"),

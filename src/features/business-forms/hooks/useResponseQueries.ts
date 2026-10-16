@@ -9,6 +9,7 @@ import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
+import { useCountdown } from "@/shared/hooks/useCountdown";
 import {
   fetchResponseDetail,
   fetchResponseFacet,
@@ -181,13 +182,17 @@ export function useResponseDetail(id: string) {
 }
 export function useResponseFacet(
   id: string,
-  filter: ResponseQuery,
+  filter: ResponseQuery | null,
   dimension: string,
   fieldId: string | undefined,
   page: number,
   search: string,
 ) {
   const scope = useResponseScope();
+  const { t } = useTranslation("forms");
+  const cooldown = useCountdown(0);
+  const { restart } = cooldown;
+  const [paused, setPaused] = useState(false);
   useCleanup(scope.owner);
   const query = useQuery({
     queryKey: [
@@ -201,9 +206,15 @@ export function useResponseFacet(
       page,
       search,
     ],
-    queryFn: ({ signal }) =>
-      fetchResponseFacet(id, filter, dimension, fieldId, page, search, signal),
-    enabled: scope.allowed && !!id,
+    queryFn: async ({ signal }) => {
+      try {
+        return await fetchResponseFacet(id, filter!, dimension, fieldId, page, search, signal);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 429) setPaused(true);
+        throw error;
+      }
+    },
+    enabled: scope.allowed && !!id && !!filter && !paused,
     gcTime: 0,
     meta: { errorOwner: "local" },
     placeholderData: (previous, previousQuery) =>
@@ -215,9 +226,21 @@ export function useResponseFacet(
         : undefined,
   });
   useResponseFeedback(
-    query.error,
+    query.error instanceof ApiError && query.error.status === 429 ? null : query.error,
     `responses:facet:${scope.owner}:${id}:${dimension}:${fieldId ?? ""}`,
-    query.refetch,
+    errorFeedback(query.error).network ? query.refetch : undefined,
   );
-  return query;
+  const feedbackId = `responses:facet-wait:${scope.owner}:${id}:${dimension}:${fieldId ?? ""}`;
+  useEffect(() => {
+    if (!(query.error instanceof ApiError) || query.error.status !== 429) return;
+    const seconds = Math.min(86400, Math.max(1, query.error.retryAfterSeconds ?? 60));
+    restart(seconds);
+    notify({ id: feedbackId, kind: "error", message: t("wait", { count: seconds }) });
+  }, [query.error, restart, t, feedbackId]);
+  useEffect(() => () => dismissNotification(feedbackId), [feedbackId]);
+  return { ...query, cooldown, retry: () => {
+    if (cooldown.isRunning) return;
+    if (paused) setPaused(false);
+    else void query.refetch();
+  } };
 }

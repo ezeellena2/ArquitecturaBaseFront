@@ -50,6 +50,20 @@ export interface ResponseQuery extends ResponseFilter {
   sortFieldId?: string;
   versionIds?: readonly string[];
 }
+export function normalizeResponseQuery(
+  query: ResponseQuery,
+  columns: readonly ResponseColumn[],
+): ResponseQuery | null {
+  const conditions: ResponseCondition[] = [];
+  for (const condition of query.conditions ?? []) {
+    const type = columns.find(column => column.fieldId === condition.fieldId)?.type;
+    const values = condition.values?.map(value => value.trim());
+    if (type === "decimal" && values?.some(value => !/^[-+]?\d+([.,]\d+)?$/.test(value))) return null;
+    if (condition.operator === "contains" && values?.every(value => !value)) continue;
+    conditions.push({ ...condition, values: type === "decimal" ? values?.map(value => value.replace(",", ".")) : values ?? condition.values });
+  }
+  return { ...query, search: query.search?.trim() || undefined, conditions };
+}
 export function visibleResponseColumns(
   columns: readonly ResponseColumn[],
   selection: string | null,
