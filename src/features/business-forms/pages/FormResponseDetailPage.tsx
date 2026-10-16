@@ -33,7 +33,7 @@ import { ResponseValue } from "../components/ResponseValue";
 export function FormResponseDetailPage() {
   const { formId = "", recordId = "" } = useParams();
   const { t, i18n } = useTranslation("forms");
-  const detail = useResponseDetail(recordId);
+  const detail = useResponseDetail(recordId, formId);
   const route = useResponseRouteQuery(formId);
   const sheet = useResponseSheet(formId, route.query, route.ready);
   const client = useQueryClient();
@@ -82,7 +82,7 @@ export function FormResponseDetailPage() {
       !!sheet.query.data?.records.hasNext);
   const move = async (direction: number) => {
     const current = sheet.query.data;
-    if (!current || moving) return;
+    if (!current || moving || detail.query.isPlaceholderData) return;
     const expected = detail.scope.owner;
     const position = index + direction;
     let id: string | undefined = current.records.items[position]?.id;
@@ -179,6 +179,7 @@ export function FormResponseDetailPage() {
     .filter((value) => value.type === "photo")
     .flatMap((value) => (Array.isArray(value.value) ? value.value : []));
   return (
+    <section aria-label={t("responses.detail")} aria-busy={detail.query.isFetching}>
     <Page
       title={data.number}
       status={`${data.name} · ${t("responses.versionLabel", { version: data.versionNumber })}`}
@@ -234,7 +235,7 @@ export function FormResponseDetailPage() {
                         : "Answered",
                   }}
                   actor={detail.scope.user!.id}
-                  recordId={recordId}
+                  recordId={data.id}
                   number={data.number}
                   label={value.label}
                   detail
@@ -306,5 +307,6 @@ export function FormResponseDetailPage() {
         </ol>
       </Surface>
     </Page>
+    </section>
   );
 }

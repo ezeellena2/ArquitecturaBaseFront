@@ -243,6 +243,26 @@ describe("response sheet", () => {
     );
     await screen.findByRole("heading", { name: "TEST-000001" });
   });
+  it("keeps the previous detail and focused Next button while the next answer loads", async () => {
+    setup();
+    let release: (() => void) | undefined;
+    const requested = vi.fn();
+    server.use(http.get("/api/forms/records/:id", async ({ params }) => {
+      if (String(params.id) !== responseRecordId) { requested(); await new Promise<void>(resolve => { release = resolve; }); }
+      return HttpResponse.json(responseDetailFixture(String(params.id)));
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas/${responseRecordId}`);
+    await screen.findByRole("heading", { name: "TEST-000002" });
+    const button = screen.getByRole("button", { name: "Siguiente" });
+    await userEvent.click(button);
+    await waitFor(() => expect(requested).toHaveBeenCalled());
+    expect(screen.getByRole("heading", { name: "TEST-000002" })).toBeInTheDocument();
+    expect(button).toHaveFocus();
+    expect(screen.getByRole("region", { name: "Detalle de la respuesta" })).toHaveAttribute("aria-busy", "true");
+    await act(async () => release?.());
+    await screen.findByRole("heading", { name: "TEST-000001" });
+    expect(button).toHaveFocus();
+  });
   it("counts only a settled valid decimal draft and applies that normalized value", async () => {
     setup();
     const captured: { filter: { conditions?: { values: string[] }[] } }[] = [];

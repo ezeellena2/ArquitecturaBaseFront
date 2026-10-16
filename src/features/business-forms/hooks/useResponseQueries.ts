@@ -153,15 +153,16 @@ export function useResponseSheet(
     scope,
   };
 }
-export function useResponseDetail(id: string) {
+export function useResponseDetail(id: string, formId: string) {
   const scope = useResponseScope();
   useCleanup(scope.owner);
   const query = useQuery({
-    queryKey: ["form-responses", scope.owner, "record", id],
+    queryKey: ["form-responses", scope.owner, "record", formId, id],
     queryFn: ({ signal }) => fetchResponseDetail(id, signal),
     enabled: scope.allowed && !!id,
     gcTime: 0,
     meta: { errorOwner: "local" },
+    placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner && previousQuery.queryKey[3] === formId ? keepPreviousData(previous) : undefined,
   });
   return { query, scope };
 }
