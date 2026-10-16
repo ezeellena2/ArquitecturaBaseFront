@@ -11,11 +11,12 @@ export function FormResponsesShell({ children }: { children: ReactNode }) {
   const owner = [user?.id ?? "", i18n.language, [...(user?.permissions ?? [])].sort().join(",")].join(":");
   const { pathname } = useLocation();
   const canRead = !!user?.permissions.includes("formrecords.read");
+  const canApprove = !!user?.permissions.includes("formapprovals.decide");
   const [active, setActive] = useState(false);
   const [loaded, setLoaded] = useState<{ owner: string; value: FormsResponseNavigation } | null>(null);
-  const enabled = canRead && (isFormsPath(pathname) || active);
+  const enabled = (canRead || canApprove) && (isFormsPath(pathname) || active);
   const onState = useCallback((value: FormsResponseNavigation) => setLoaded({ owner, value }), [owner]);
-  const value: FormsResponseNavigation = loaded?.owner === owner && enabled ? loaded.value : { canRead, items: [], totalCount: 0, hasMore: false, pending: enabled, failed: false, retry: () => setActive(true) };
+  const value: FormsResponseNavigation = loaded?.owner === owner && enabled ? loaded.value : { canRead, canApprove, items: [], totalCount: 0, hasMore: false, pending: enabled, failed: false, retry: () => setActive(true) };
   return <FormsResponseNavigationContext.Provider value={{ ...value, setActive }}>
     <Suspense fallback={null}>{enabled ? <ResponseNavigation key={owner} onState={onState} /> : null}</Suspense>
     {children}

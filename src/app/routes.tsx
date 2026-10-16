@@ -49,6 +49,7 @@ export const routes: RouteObject[] = [
                   { path: "/catalogos/:catalogId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/CatalogEditorPage")).CatalogEditorPage }) },
                 ],
               },
+              { element: <ProtectedRoute permission="formapprovals.decide" />, children: [{ path: "/formularios/por-aprobar", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ApprovalInboxPage")).ApprovalInboxPage }) }] },
               {
                 element: <ProtectedRoute permission="formrecords.read" />,
                 children: [{ lazy: async () => ({ Component: (await import("@/features/business-forms/components/ResponseWorkspaceLayout")).ResponseWorkspaceLayout }), children: [{ path: "/formularios/:formId/respuestas/:recordId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponseDetailPage")).FormResponseDetailPage }) }, { path: "/formularios/:formId/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponsesPage")).FormResponsesPage }) }, { path: "/formularios/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ResponseFormsPage")).ResponseFormsPage }) }] }],

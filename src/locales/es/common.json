@@ -111,7 +111,8 @@
     "catalogs": "Catálogos",
     "responses": "Respuestas",
     "allResponses": "Ver todos",
-    "allResponsesCount": "Ver todos ({{count}})"
+    "allResponsesCount": "Ver todos ({{count}})",
+    "approvals": "Por aprobar"
   },
   "layout": {
     "sidebar": {

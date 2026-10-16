@@ -600,5 +600,43 @@
       "NotApplicable": "No aplica"
     },
     "noManagePermission": "Ya no tenés permiso para recuperar acciones."
+  },
+  "approvals": {
+    "title": "Por aprobar",
+    "scope": "Alcance",
+    "mine": "Para mí ({{count}})",
+    "all": "Todas abiertas ({{count}})",
+    "form": "Formulario",
+    "allForms": "Todos los formularios",
+    "waiting": "En espera",
+    "role": "Rol",
+    "empty": "No hay respuestas por aprobar",
+    "emptyHint": "Las respuestas que esperan aprobación aparecen acá, de la más vieja a la más nueva.",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "approved": "Respuesta aprobada.",
+    "rejected": "Respuesta rechazada.",
+    "rejectTitle": "Rechazar respuesta",
+    "rejectHint": "El motivo queda en el historial de la respuesta.",
+    "reason": "Motivo",
+    "reasonCount": "{{count}} / 500 caracteres",
+    "ownResponse": "No podés aprobar ni rechazar tu propia respuesta.",
+    "noPermission": "Ya no tenés permiso para decidir esta aprobación.",
+    "decisionBy": "{{name}} · {{date}}",
+    "conflict": "La aprobación cambió. Se actualizó con la decisión vigente.",
+    "taskStates": {
+      "Open": "Pendiente de aprobación",
+      "Approved": "Aprobada",
+      "Rejected": "Rechazada"
+    },
+    "states": {
+      "Received": "Recibida",
+      "PendingApproval": "Pendiente",
+      "Approved": "Aprobada",
+      "Rejected": "Rechazada"
+    },
+    "state": "Estado",
+    "allStates": "Todos los estados",
+    "back": "Volver a Por aprobar"
   }
 }

@@ -93,3 +93,10 @@ Al recibir403 se desmonta el editor de reglas completo y se abortan/retiran toda
 - `useResponseWorkflow` consume el estado durable por respuesta con FormRecordsRead. Sólo vuelve a leer automáticamente mientras haya acciones Esperando/En curso. Consultar/Reintentar son POST explícitos sobre el mismo RunId; no crean operaciones ni UUID nuevos en el front.
 - El servidor entrega capacidades. El front además exige RulesManage y distingue Sin confirmar (Consultar) de No se pudo (Reintentar); jamás ofrece repetir Hecho/No aplica. Un403 de control quita recuperación y revalida por GET; sólo un403 de lectura retira valores y alcance privado.
 - El detalle conserva un solo dueño de avisos para valores, planilla, workflow y navegación. Las migas usan el nombre confirmado del detalle. Documentos del workflow son metadata; su contenido fijo se conecta con G2.
+
+## Bandeja y decisiones (Etapa 4, G3–G4)
+
+- `/formularios/por-aprobar` requiere `formapprovals.decide` y el rol vigente. Para mí excluye las propias; Todas abiertas las incluye deshabilitadas. Lista, opciones y cantidades proceden del servidor y conservan el orden más viejo primero. El menú obtiene su cantidad al entrar en Formularios o abrir el panel.
+- Sin RecordsRead, el número abre un diálogo con metadata y decisión; nunca pide valores, archivos ni PDF. Con RecordsRead abre el detalle existente y conserva el regreso a la bandeja. El workflow entrega la decisión histórica a lectores sin Decide.
+- Aprobar es una acción; rechazar exige motivo de1–500 caracteres, recortado al enviar. El POST usa la revisión leída; un409 relee tarea/workflow y muestra la decisión vigente sin otra escritura. El motivo vive sólo en memoria.
+- Perder Decide o el rol retira metadata y controles de decisión, sin quitar lectura de respuestas. Actor/cultura/permisos separan consultas; desmontar cancela y retira sólo consultas privadas sin observadores. La planilla muestra Estado sólo cuando `hasApproval` lo indica; no agrega filtros de estado.

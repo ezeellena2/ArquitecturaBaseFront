@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
@@ -30,6 +30,7 @@ import {
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { useResponseWorkflow } from "../hooks/useResponseWorkflow";
+import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
 import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
 import { ResponseValue } from "../components/ResponseValue";
 export function FormResponseDetailPage() {
@@ -72,7 +73,10 @@ export function FormResponseDetailPage() {
   );
   const data = detail.query.data;
   useBreadcrumbLeaf(data?.number, data?.name);
-  const back = `/formularios/${formId}/respuestas?${route.params}`;
+  const location = useLocation();
+  const approvalReturn = (location.state as { approvalReturn?: unknown } | null)?.approvalReturn;
+  const fromApprovals = typeof approvalReturn === "string" && /^\/formularios\/por-aprobar(?:\?|$)/.test(approvalReturn);
+  const back = fromApprovals ? approvalReturn : `/formularios/${formId}/respuestas?${route.params}`;
   const index =
     sheet.query.data?.records.items.findIndex(
       (record) => record.id === recordId,
@@ -137,7 +141,7 @@ export function FormResponseDetailPage() {
     return (
       <Page
         title={t("responses.detail")}
-        backTo={{ to: back, label: t("responses.back") }}
+        backTo={{ to: back, label: t(fromApprovals ? "approvals.back" : "responses.back") }}
       >
         <Surface>
           <EmptyState
@@ -213,6 +217,7 @@ export function FormResponseDetailPage() {
         </div>
       }
     >
+      {workflow.query.data?.recordId === data.id && workflow.query.data.task?.state === "Open" ? <Surface title={t("approvals.title")} padded><ApprovalDecisionPanel taskId={workflow.query.data.task.id} onDecided={() => { void workflow.query.refetch(); void sheet.query.refetch(); }} /></Surface> : null}
       <Surface title={t("responses.answer")} padded>
         <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {data.values.map((value) => (

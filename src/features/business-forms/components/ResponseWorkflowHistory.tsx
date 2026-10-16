@@ -17,6 +17,7 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
   return <Surface title={t("workflow.title")} padded actions={data?.ruleRevision ? <span className="text-xs">{t("workflow.ruleRevision", { revision: data.ruleRevision })}</span> : undefined}>
     <ol className="flex flex-col gap-4">
       {record.history.map(event => <li key={event.kind} className="flex flex-wrap gap-2 text-sm"><time dateTime={event.atUtc}>{date(event.atUtc)}</time><span>{t("responses.history" + event.kind)}</span>{event.actor?.displayName ? <span>· {event.actor.displayName}</span> : null}</li>)}
+      {data?.task?.decidedAtUtc ? <li className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-3 text-sm"><p><Badge variant="outline">{t("approvals.taskStates." + data.task.state)}</Badge> · {data.task.roleName}</p><p>{t("approvals.decisionBy", { name: data.task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(data.task.decidedAtUtc) })}</p>{data.task.reason ? <p className="whitespace-pre-wrap">{data.task.reason}</p> : null}</li> : null}
       {data?.actions.map(action => {
         const next = canManage ? workflowNextAction(action) : null;
         return <li key={action.id} className="flex flex-wrap items-start gap-3 border-t border-[var(--color-border)] pt-3 text-sm">

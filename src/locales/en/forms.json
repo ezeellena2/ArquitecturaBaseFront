@@ -600,5 +600,43 @@
       "NotApplicable": "Not applicable"
     },
     "noManagePermission": "You no longer have permission to recover actions."
+  },
+  "approvals": {
+    "title": "To approve",
+    "scope": "Scope",
+    "mine": "For me ({{count}})",
+    "all": "All open ({{count}})",
+    "form": "Form",
+    "allForms": "All forms",
+    "waiting": "Waiting",
+    "role": "Role",
+    "empty": "No responses to approve",
+    "emptyHint": "Responses waiting for approval appear here, oldest first.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Response approved.",
+    "rejected": "Response rejected.",
+    "rejectTitle": "Reject response",
+    "rejectHint": "The reason is kept in the response history.",
+    "reason": "Reason",
+    "reasonCount": "{{count}} / 500 characters",
+    "ownResponse": "You cannot approve or reject your own response.",
+    "noPermission": "You no longer have permission to decide this approval.",
+    "decisionBy": "{{name}} · {{date}}",
+    "conflict": "The approval changed. It was refreshed with the current decision.",
+    "taskStates": {
+      "Open": "Pending approval",
+      "Approved": "Approved",
+      "Rejected": "Rejected"
+    },
+    "states": {
+      "Received": "Received",
+      "PendingApproval": "Pending",
+      "Approved": "Approved",
+      "Rejected": "Rejected"
+    },
+    "state": "State",
+    "allStates": "All states",
+    "back": "Back to To approve"
   }
 }

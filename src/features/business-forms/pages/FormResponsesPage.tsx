@@ -7,6 +7,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Page } from "@/shared/ui/Page";
+import { Badge } from "@/shared/ui/badge";
 import { Surface } from "@/shared/ui/Surface";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { Pagination } from "@/shared/ui/Pagination";
@@ -108,6 +109,7 @@ export function FormResponsesPage() {
         </span>
       ),
     },
+    ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant="outline">{t("approvals.states." + row.state)}</Badge> }] : []),
     ...visible.map((column) => ({
       id: column.fieldId,
       header:

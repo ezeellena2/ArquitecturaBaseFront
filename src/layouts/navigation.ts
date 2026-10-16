@@ -86,6 +86,7 @@ export function isWhatsAppPath(pathname: string): boolean {
 export const forms: NavigationPanel = {
   labelKey: "navigation.forms", icon: FormIcon,
   items: [
+    { labelKey: "navigation.approvals", to: "/formularios/por-aprobar", icon: PublicTrackingIcon, permission: "formapprovals.decide", exact: true },
     { labelKey: "navigation.designForms", to: "/formularios", icon: PencilIcon, permission: "formtemplates.read" },
     { labelKey: "navigation.catalogs", to: "/catalogos", icon: PublicTrackingIcon, permission: "formcatalogs.read" },
   ],
