@@ -75,6 +75,7 @@ const row = z.strictObject({
   submittedAtUtc: utc,
   actor: author,
   channel: z.string(),
+  state: z.enum(["Received", "PendingApproval", "Approved", "Rejected"]),
   cells: z.array(responseCellSchema),
 });
 function page<T extends z.ZodType>(item: T) {
@@ -94,6 +95,7 @@ export const responseSheetSchema = z
     name: z.string(),
     prefix: z.string(),
     activeVersionNumber: z.number().int().positive(),
+    hasApproval: z.boolean(),
     columns: z.array(column),
     versions: z.array(
       z.strictObject({ id: guid, number: z.number().int().positive() }),

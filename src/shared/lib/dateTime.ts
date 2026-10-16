@@ -35,3 +35,9 @@ export function formatDateOnly(value: string, language: string): string | null {
   if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== value) return null;
   return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeZone: "UTC" }).format(day);
 }
+
+export function formatRelativeTime(valueUtc: string, language: string, now = Date.now()): string {
+  const seconds = Math.min(0, Math.round((Date.parse(valueUtc) - now) / 1000));
+  const [unit, scale]: [Intl.RelativeTimeFormatUnit, number] = Math.abs(seconds) >= 86400 ? ["day",86400] : Math.abs(seconds) >= 3600 ? ["hour",3600] : Math.abs(seconds) >= 60 ? ["minute",60] : ["second",1];
+  return new Intl.RelativeTimeFormat(language, { numeric: "always" }).format(Math.round(seconds / scale), unit);
+}

@@ -56,6 +56,7 @@ export function responseSheetFixture(): ResponseSheet {
     submittedAtUtc: "2026-10-16T12:00:00Z",
     actor,
     channel: "phone",
+    state: "Received" as const,
     cells: columns.map((column) => ({
       fieldId: column.fieldId,
       type: column.type,
@@ -88,6 +89,7 @@ export function responseSheetFixture(): ResponseSheet {
     name: "Formulario publicado",
     prefix: "TEST",
     activeVersionNumber: 2,
+    hasApproval: false,
     columns,
     versions: [
       { id: id(14), number: 1 },

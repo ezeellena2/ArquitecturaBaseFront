@@ -116,3 +116,5 @@ it("describes the applied values without exposing option IDs", () => {
   const column: ResponseColumn = { fieldId: "choice", type: "choice", label: "Mode", options: [{ id: "private-choice", label: "Visit" }], introducedInVersion: 1 };
   expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "choice", operator: "in", values: ["private-choice"] }], search: "Notes" }, [column], key => key)).toEqual([{ key: "choice", label: "Mode: Visit" }, { key: "search", label: "responses.search: Notes" }]);
 });
+
+it("uses the supplied media type to label a document format", async()=>{ const {responseDocumentFormat}=await import("./responses");expect(responseDocumentFormat("application/pdf")).toBe("PDF");expect(responseDocumentFormat("text/plain")).toBe("TXT");expect(responseDocumentFormat("application/octet-stream")).toBeNull();});

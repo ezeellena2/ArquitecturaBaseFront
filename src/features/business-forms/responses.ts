@@ -144,3 +144,8 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
   if (query.search) labels.push({ key: "search", label: t("responses.search") + ": " + query.search });
   return labels;
 }
+
+export function responseDocumentFormat(contentType: string): string | null {
+  const formats: Record<string, string> = { "application/pdf": "PDF", "text/plain": "TXT", "application/msword": "DOC", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX", "application/vnd.ms-excel": "XLS", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX" };
+  return formats[contentType] ?? null;
+}
