@@ -176,10 +176,7 @@ describe("response sheet", () => {
       expect(notify).toHaveBeenCalledWith(
         expect.objectContaining({
           kind: "error",
-          action: expect.objectContaining({
-            label: "Reintentar",
-            onClick: expect.any(Function),
-          }),
+          action: undefined,
         }),
       ),
     );
@@ -214,6 +211,21 @@ describe("response sheet", () => {
     expect(router.state.location.search).toContain("columns=");
     expect(router.state.location.search).not.toContain("Observaciones");
   });
+  it("reports one detail failure when detail and its sheet both fail", async () => {
+    setup();
+    server.use(http.get("/api/forms/records/:id", () => HttpResponse.json({ detail: "Failed", code: "Test.Failure" }, { status: 500 })), http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json({ detail: "Failed", code: "Test.Failure" }, { status: 500 })));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas/${responseRecordId}`);
+    await screen.findByRole("heading", { name: "No pudimos cargar las respuestas." });
+    await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
+  });
+  it("keeps a navigation failure local to the forms panel on another screen", async () => {
+    setup();
+    server.use(http.get("/api/forms/navigation", () => HttpResponse.json({ code: "Test.Failure" }, { status: 500 })));
+    renderRouteWithProviders("/perfil");
+    await screen.findByRole("heading", { name: "Mi perfil" });
+    expect(notify).not.toHaveBeenCalled();
+  });
   it("opens the historical detail and moves within the same sheet", async () => {
     setup();
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
@@ -222,6 +234,7 @@ describe("response sheet", () => {
     );
     await screen.findByRole("heading", { name: "TEST-000002" });
     expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
+    expect(screen.getByText("1 de 2")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Abrir conversación" }),
     ).toHaveAttribute("href", expect.stringContaining("conversacion="));

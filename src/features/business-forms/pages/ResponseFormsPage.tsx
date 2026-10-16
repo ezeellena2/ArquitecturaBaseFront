@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useResponseNavigation } from "../hooks/useResponseQueries";
+import { useResponseFeedback, useResponseNavigation } from "../hooks/useResponseQueries";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { Page } from "@/shared/ui/Page";
@@ -20,6 +20,7 @@ export function ResponseFormsPage() {
     pagination.pageSize,
     pagination.search,
   );
+  useResponseFeedback(query.error, `responses:forms-page:${scope.owner}`, query.refetch);
   if (
     !scope.allowed ||
     (query.error instanceof ApiError && query.error.status === 403)

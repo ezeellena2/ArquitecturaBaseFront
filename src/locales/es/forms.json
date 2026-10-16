@@ -503,6 +503,7 @@
     "unavailableForm": "No encontramos ese formulario o no está disponible",
     "unavailableValue": "Valor no disponible",
     "appliedFilters_one": "{{count}} filtro aplicado",
-    "appliedFilters_other": "{{count}} filtros aplicados"
+    "appliedFilters_other": "{{count}} filtros aplicados",
+    "position": "{{position}} de {{count}}"
   }
 }

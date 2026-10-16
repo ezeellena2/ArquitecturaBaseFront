@@ -503,6 +503,7 @@
     "unavailableForm": "This form was not found or is unavailable",
     "unavailableValue": "Unavailable value",
     "appliedFilters_one": "{{count}} applied filter",
-    "appliedFilters_other": "{{count}} applied filters"
+    "appliedFilters_other": "{{count}} applied filters",
+    "position": "{{position}} of {{count}}"
   }
 }

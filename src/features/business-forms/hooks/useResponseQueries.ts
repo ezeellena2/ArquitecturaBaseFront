@@ -75,7 +75,7 @@ export function useResponseFeedback(
       id,
       kind: "error",
       message: readErrorMessage(error, t),
-      action: retry
+      action: retry && errorFeedback(error).network
         ? { label: t("common:actions.retry"), onClick: retry }
         : undefined,
     });
@@ -109,11 +109,6 @@ export function useResponseNavigation(page = 1, pageSize = 4, search = "") {
         ? keepPreviousData(previous)
         : undefined,
   });
-  useResponseFeedback(
-    query.error,
-    `responses:navigation:${scope.owner}`,
-    query.refetch,
-  );
   return { query, scope };
 }
 export function useResponseSheet(
@@ -148,11 +143,6 @@ export function useResponseSheet(
     last?.data !== query.data
   )
     setLast({ owner, data: query.data });
-  useResponseFeedback(
-    query.error,
-    `responses:sheet:${scope.owner}:${id}`,
-    query.refetch,
-  );
   return {
     query: {
       ...query,
@@ -173,11 +163,6 @@ export function useResponseDetail(id: string) {
     gcTime: 0,
     meta: { errorOwner: "local" },
   });
-  useResponseFeedback(
-    query.error,
-    `responses:detail:${scope.owner}:${id}`,
-    query.refetch,
-  );
   return { query, scope };
 }
 export function useResponseFacet(

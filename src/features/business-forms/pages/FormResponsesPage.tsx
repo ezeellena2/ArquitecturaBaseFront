@@ -16,7 +16,7 @@ import { Button } from "@/shared/ui/button";
 import { PublicWhatsAppIcon } from "@/shared/ui/icons";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { notify } from "@/shared/ui/notifications";
-import { useResponseSheet } from "../hooks/useResponseQueries";
+import { useResponseFeedback, useResponseSheet } from "../hooks/useResponseQueries";
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { FilterChip } from "@/shared/ui/FilterChip";
@@ -32,6 +32,7 @@ export function FormResponsesPage() {
   const { t, i18n } = useTranslation("forms");
   const route = useResponseRouteQuery(formId);
   const { query, scope } = useResponseSheet(formId, route.query, route.ready);
+  useResponseFeedback(query.error, `responses:sheet:${scope.owner}:${formId}`, query.refetch);
   const exportCooldown = useCountdown(0);
   const canExport = !!query.data && !query.isFetching && !query.isPending && !query.isPlaceholderData && !query.isError;
   const [panel, setPanel] = useState<"filters" | "export" | null>(null);

@@ -53,8 +53,9 @@ export function FormResponseDetailPage() {
     };
   }, []);
   useResponseFeedback(
-    moveError,
-    `responses:position:${detail.scope.owner}:${formId}`,
+    detail.query.isPending ? null : detail.query.error ?? sheet.query.error ?? moveError,
+    `responses:detail-page:${detail.scope.owner}:${formId}`,
+    detail.query.error ? detail.query.refetch : sheet.query.refetch,
   );
   const deny = useCallback(() => workspace?.deny(), [workspace]);
   const onFileError = useCallback(
@@ -183,7 +184,8 @@ export function FormResponseDetailPage() {
       status={`${data.name} · ${t("responses.versionLabel", { version: data.versionNumber })}`}
       backTo={{ to: back, label: t("responses.back") }}
       actions={
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {index >= 0 && sheet.query.data ? <span className="text-sm">{t("responses.position", { position: (sheet.query.data.records.page - 1) * sheet.query.data.records.pageSize + index + 1, count: sheet.query.data.records.totalCount })}</span> : null}
           <Button
             type="button"
             variant="outline"
