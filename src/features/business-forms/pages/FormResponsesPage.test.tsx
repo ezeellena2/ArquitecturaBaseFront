@@ -230,6 +230,37 @@ describe("response sheet", () => {
     );
     await screen.findByRole("heading", { name: "TEST-000001" });
   });
+  it("names an account without a display name in the person filter", async () => {
+    setup();
+    const sheet = responseSheetFixture();
+    server.use(
+      http.post("/api/forms/definitions/:id/records/filter-counts/search", () =>
+        HttpResponse.json({
+          items: [
+            { id: sheet.records.items[0].actor.userId, label: "", count: 2 },
+          ],
+          page: 1,
+          pageSize: 20,
+          totalCount: 1,
+          totalPages: 1,
+          hasPrevious: false,
+          hasNext: false,
+        }),
+      ),
+    );
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Cargó" }),
+    );
+    expect(
+      await within(dialog).findByRole("checkbox", {
+        name: "Persona sin información",
+      }),
+    ).toBeInTheDocument();
+  });
   it("withdraws all values and counts after a denied filter count", async () => {
     setup();
     server.use(

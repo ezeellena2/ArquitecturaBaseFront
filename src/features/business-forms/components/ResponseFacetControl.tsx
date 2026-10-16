@@ -75,7 +75,9 @@ export function ResponseFacetControl({
                       ? t("responses.no")
                       : dimension === "version"
                         ? t("responses.versionLabel", { version: option.label })
-                        : option.label
+                        : dimension === "actor" && !option.label
+                          ? t("responses.unknownPerson")
+                          : option.label
               }
               description={t("responses.count", { count: option.count })}
               checked={selected.includes(option.id)}

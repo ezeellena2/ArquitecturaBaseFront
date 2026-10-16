@@ -139,7 +139,10 @@ test("private search stays out of URL and shows no matches", async ({
     page.getByText("Ninguna respuesta coincide", { exact: true }),
   ).toBeVisible();
   expect(page.url()).not.toContain("privado");
-  await page.getByRole("button", { name: "Limpiar todo", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Limpiar todo", exact: true })
+    .first()
+    .click();
   await expect(
     page.getByRole("link", { name: "TEST-000002", exact: true }),
   ).toBeVisible();
