@@ -38,3 +38,5 @@ Este apartado reemplaza la descripción anterior de preparación por módulos. P
 K7 (`chatCatalogs.spec`): oferta por destinatario, bloqueos independientes, mensaje conservado/sin POST, histórico tras recargar, ocultación por permiso y rechazo sin valor/número con reenvío confirmado. Es/en a 1440/390/320 y legibilidad intermedia; fixture ficticia complementada por `whatsapp-catalogs-http` del productor real.
 
 `responses.spec.ts` recorre T1–T5 con rutas/componentes reales en es/en y 1440/390/320: planilla, columnas, filtros privados, detalle, exportación y galería F4. `responseFixtures` simula HTTP con datos tipados; no acredita PostgreSQL ni Azure. Los contratos HTTP reales y su procedencia se verifican en responseHttpContract.test; el recorrido sobre respuestas reales y Excel se registra en la fuente funcional del backend.
+
+`formWorkflow.spec.ts` recorre G5 en es/en y1440/390/320 con el store sintético de respuestas: Sin confirmar exige Consultar, luego puede reintentarse la falla y una acción confirmada no ofrece repetición. Instrumenta sólo POST de rutas sintéticas y usa teclado; no llama Meta ni acredita ejecución durable.

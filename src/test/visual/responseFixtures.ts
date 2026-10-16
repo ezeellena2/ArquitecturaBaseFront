@@ -184,6 +184,8 @@ export function createResponseVisualFixtures(
         }),
     );
   let failOnce = scenario === "responses-error";
+  let actionState: "Uncertain" | "Failed" | "Completed" = "Uncertain";
+  const workflow = (recordId: string) => ({ ...responseWorkflowFixture(recordId), ...(scenario === "responses-workflow" ? { recordState: "Approved", ruleRevision: 3, actions: [{ id: id(90), ruleId: id(91), kind: "NotifyAuthor", event: "Approved", order: 1, state: actionState, reasonCode: actionState === "Completed" ? null : "Test.Delivery", reason: actionState === "Completed" ? null : en ? "Delivery needs review." : "Revisá la entrega.", canConsult: actionState === "Uncertain", canRetry: actionState === "Failed", createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: actionState === "Completed" ? "2026-10-16T12:01:00Z" : null }] } : {}) });
   return {
     async handle(request: Request): Promise<Response> {
       const url = new URL(request.url);
@@ -310,9 +312,13 @@ export function createResponseVisualFixtures(
         };
         return json(result);
       }
+      if (scenario === "responses-workflow" && request.method === "POST" && /\/actions\/[^/]+\/(consult|retry)$/.test(path)) {
+        actionState = path.endsWith("/consult") ? "Failed" : "Completed";
+        return json(workflow(path.split("/").at(-4)!));
+      }
       if (/\/records\/[^/]+\/workflow$/.test(path)) {
         if (scenario === "responses-missing") return json({ code: "Forms.Record.NotFound" }, 404);
-        return json(responseWorkflowFixture(path.split("/").at(-2)!));
+        return json(workflow(path.split("/").at(-2)!));
       }
       if (path.includes("/records/")) {
         if (scenario === "responses-missing")
