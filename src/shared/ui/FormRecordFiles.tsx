@@ -38,6 +38,16 @@ function Thumbnail({
   onError: (error: unknown) => void;
 }) {
   const { t } = useTranslation();
+  const container = useRef<HTMLSpanElement>(null);
+  const [visible, setVisible] = useState(() => typeof IntersectionObserver === "undefined");
+  useEffect(() => {
+    if (visible || !container.current) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) { setVisible(true); observer.disconnect(); }
+    });
+    observer.observe(container.current);
+    return () => observer.disconnect();
+  }, [visible]);
   const query = usePrivateFormFile(
     actor,
     recordId,
@@ -45,8 +55,10 @@ function Thumbnail({
     true,
     onForbidden,
     onError,
+    visible,
   );
   return (
+    <span ref={container} className="inline-flex">
     <PhotoThumbnail
       label={
         t("files.openPhoto", { name: file.name }) +
@@ -73,6 +85,7 @@ function Thumbnail({
         </span>
       )}
     </PhotoThumbnail>
+    </span>
   );
 }
 function Original({

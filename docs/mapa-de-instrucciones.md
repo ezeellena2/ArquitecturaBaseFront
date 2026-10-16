@@ -40,7 +40,7 @@ vigente de la migración y los controles automáticos pendientes.
 | [`src/locales/`](../src/locales/AGENTS.md) | Los JSON de `es` y `en` comparten un namespace por módulo. |
 | [`src/shared/`](../src/shared/AGENTS.md) | Contiene cliente y contratos HTTP comunes, hooks, utilidades, i18n y sistema de UI. |
 | [`src/shared/api/`](../src/shared/api/AGENTS.md) | `httpClient` agrega token e idioma, coordina renovación y transforma ProblemDetails en `ApiError`. |
-| [`src/shared/hooks/`](../src/shared/hooks/AGENTS.md) | Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva y guardas de salida. |
+| [`src/shared/hooks/`](../src/shared/hooks/AGENTS.md) | Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva, guardas de salida y el ámbito privado que retiene miniaturas de respuestas. |
 | [`src/shared/i18n/`](../src/shared/i18n/AGENTS.md) | Configura i18next, carga namespaces y aplica idioma, preferencia local y `lang` del documento. |
 | [`src/shared/lib/`](../src/shared/lib/AGENTS.md) | Contiene formato de fechas por zona, nombres de países, `cn` y derivación de apariencia con contraste. |
 | [`src/shared/ui/`](../src/shared/ui/AGENTS.md) | Reúne primitivas generadas por shadcn y componentes propios de formularios, tablas, diálogos, navegación y presentación. Delimita zonas con Surface/FilterBar y define el alternado común de filas. MessageCard/attachment y RadioGroupField cards son presentación; EmbeddedPreview no decide permisos ni caducidad; Surface comparte acciones de encabezado, FormField etiquetas decoradas y ConfirmDialog foco alternativo. |

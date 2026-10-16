@@ -1,5 +1,6 @@
 import { useCallback, useState, type ReactNode } from "react";
 import { useLocation } from "react-router";
+import { PrivateFormFilesScopeProvider } from "@/shared/hooks/PrivateFormFilesScope";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import type { ResponseFilter } from "../responses";
 export function ResponseWorkspaceProvider({
@@ -32,6 +33,7 @@ export function ResponseWorkspaceProvider({
     [owner],
   );
   return (
+    <PrivateFormFilesScopeProvider scope={activeForm && !state.denied ? `${owner}:${activeForm}` : null}>
     <ResponseWorkspaceContext.Provider
       value={{
         denied: state.owner === owner && state.denied,
@@ -48,5 +50,6 @@ export function ResponseWorkspaceProvider({
     >
       {children}
     </ResponseWorkspaceContext.Provider>
+    </PrivateFormFilesScopeProvider>
   );
 }

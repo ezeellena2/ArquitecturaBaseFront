@@ -19,7 +19,9 @@ Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva y guardas
 - [Reloj controlado y ciclo del temporizador](useCountdown.test.tsx).
 - [Regresiones de acceso y verificación](../../test/useCountdownConsumers.test.tsx).
 
-`usePrivateFormFile` coordina bytes autorizados por actor, idioma, respuesta y archivo, con `gcTime: 0`, `staleTime: Infinity`, sin refetch automático y señal de cancelación. Sólo se monta bajo valores autorizados; 401/403 quitan la proyección. Las URLs Blob son locales al elemento `PrivateImage` y se revocan al desmontar o cambiar contenido.
+`usePrivateFormFile` coordina bytes autorizados por actor, idioma, respuesta y archivo, con `staleTime: Infinity`, sin refetch automático y señal de cancelación. Sólo se monta bajo valores autorizados; 401/403 quitan la proyección. Las URLs Blob son locales al elemento `PrivateImage` y se revocan al desmontar o cambiar contenido.
+
+`PrivateFormFilesScopeProvider` retiene sólo miniaturas del ámbito explícito de respuestas (actor, cultura, permisos y formulario); cancela y retira todas sus claves al salir o cambiar ese dueño. Sin ámbito, chat conserva `gcTime: 0`; originales y documentos nunca se retienen tras desmontar. `FormRecordFiles` habilita la miniatura al entrar en el viewport mediante IntersectionObserver.
 
 Las lecturas privadas de archivo declaran dueño local del error; el consumidor agrupa el aviso por respuesta. Montar el visor o volver a la pestaña no vuelve a bajar las miniaturas observadas.
 

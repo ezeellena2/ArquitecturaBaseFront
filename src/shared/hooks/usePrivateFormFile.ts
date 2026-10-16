@@ -1,14 +1,17 @@
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { readFormFile } from "@/shared/api/formFiles";
 
-// Only mounted under an authorized record. Unmount cancels reads and discards private bytes.
-export function usePrivateFormFile(actor:string,recordId:string,fileId:string,thumbnail:boolean,onForbidden:()=>void,onError:(error:unknown)=>void) {
+import { PrivateFormFilesScopeContext } from "./privateFormFilesScopeContext";
+
+// Only mounted under an authorized record; the response scope owns retained thumbnail bytes.
+export function usePrivateFormFile(actor:string,recordId:string,fileId:string,thumbnail:boolean,onForbidden:()=>void,onError:(error:unknown)=>void,enabled=true) {
   const {i18n}=useTranslation();
-  const query=useQuery({queryKey:["form-files",actor,i18n.resolvedLanguage,recordId,fileId,thumbnail],
-    meta:{errorOwner:"local"},queryFn:({signal})=>readFormFile(recordId,fileId,thumbnail,signal),gcTime:0,staleTime:Infinity,refetchOnMount:false,refetchOnWindowFocus:false,refetchOnReconnect:false});
+  const scope=useContext(PrivateFormFilesScopeContext);
+  const query=useQuery({queryKey:["form-files",scope ?? actor,actor,i18n.resolvedLanguage,recordId,fileId,thumbnail],
+    meta:{errorOwner:"local"},queryFn:({signal})=>readFormFile(recordId,fileId,thumbnail,signal),enabled,gcTime:scope && thumbnail ? Infinity : 0,staleTime:Infinity,refetchOnMount:false,refetchOnWindowFocus:false,refetchOnReconnect:false});
   const denied=query.error instanceof ApiError && (query.error.status===403||query.error.status===401);
   useEffect(()=>{if(denied)onForbidden();else if(query.error)onError(query.error);},[denied,query.error,onForbidden,onError]);
   return {...query,data:denied?undefined:query.data};
