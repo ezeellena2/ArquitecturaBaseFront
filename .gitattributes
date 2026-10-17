@@ -27,3 +27,6 @@ src/test/fixtures/forms-catalog-proposals-http/** -text whitespace=cr-at-eol
 
 # Historical assistance and confirmed response chains are raw backend bytes.
 src/test/fixtures/forms-suggestion-detail-http/** -text whitespace=cr-at-eol
+
+# Audio states are exported without rewriting producer bodies.
+src/test/fixtures/whatsapp-audio-http/** -text whitespace=cr-at-eol

@@ -14,6 +14,7 @@ const cohorts = {
   approvals: ["forms-approvals-http", "FORMS_APPROVALS_HTTP_CONTRACT_INPUT", "approvals"],
   pdf: ["forms-pdf-http", "FORMS_PDF_HTTP_CONTRACT_INPUT", "pdf"],
   whatsappActions: ["whatsapp-form-actions-http", "WHATSAPP_FORM_ACTIONS_HTTP_CONTRACT_INPUT", "whatsapp-actions"],
+  whatsappAudio: ["whatsapp-audio-http", "WHATSAPP_AUDIO_HTTP_CONTRACT_INPUT", "whatsapp-audio"],
   whatsappForms: ["whatsapp-forms-http", "WHATSAPP_FORMS_HTTP_CONTRACT_INPUT", "whatsapp-forms"],
 } as const;
 export type HttpCohort = keyof typeof cohorts;
