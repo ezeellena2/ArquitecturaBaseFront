@@ -7,6 +7,7 @@ import { z } from "zod";
 const cohorts = {
   responses: ["forms-responses-http", "FORMS_RESPONSES_HTTP_CONTRACT_INPUT", "responses"],
   rules: ["forms-rules-http", "FORMS_RULES_HTTP_CONTRACT_INPUT", "rules"],
+  missingRequests: ["forms-missing-requests-http", "FORMS_MISSING_REQUEST_HTTP_CONTRACT_INPUT", "missing-requests"],
   suggestions: ["forms-suggestions-http", "FORMS_SUGGESTIONS_HTTP_CONTRACT_INPUT", "suggestions"],
   suggestionDetails: ["forms-suggestion-detail-http", "FORMS_SUGGESTION_DETAILS_HTTP_CONTRACT_INPUT", "suggestion-details"],
   catalogProposals: ["forms-catalog-proposals-http", "FORMS_CATALOG_PROPOSALS_HTTP_CONTRACT_INPUT", "catalog-proposals"],
