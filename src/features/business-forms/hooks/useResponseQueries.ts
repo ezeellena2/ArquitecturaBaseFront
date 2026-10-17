@@ -233,5 +233,5 @@ export function useResponseCount(id: string, filter: ResponseQuery | null) {
   const { refetch } = query;
   const { isRunning } = cooldown;
   const retry = useCallback(() => { if (isRunning) return; if (paused) setPaused(false); else void refetch(); }, [isRunning, paused, refetch]);
-  return { ...query, cooldown, retry };
+  return { ...query, cooldown, retry, isCountPaused: paused };
 }

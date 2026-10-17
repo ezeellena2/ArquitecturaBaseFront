@@ -12,6 +12,8 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { FormField } from "@/shared/ui/FormField";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
+import { ApiError } from "@/shared/api/ApiError";
+import { errorFeedback } from "@/shared/api/errorFeedback";
 import {
   receivedDateBoundary,
   normalizeResponseQuery,
@@ -106,7 +108,9 @@ export function ResponseFiltersPanel({
   }, [normalized]);
   const facetFilter = normalized === countFilter ? countFilter : null;
   const count = useResponseCount(formId, facetFilter);
-  useResponseFeedback(count.isPending ? null : count.error ?? Object.values(facetErrors).find(Boolean), `responses:filters:${scope.owner}:${formId}`, count.retry);
+  const countFeedback = errorFeedback(count.error);
+  const canRetryCount = count.isCountPaused || countFeedback.network || count.error instanceof ApiError && (count.error.status === 429 || count.error.status >= 500);
+  useResponseFeedback(count.isPending ? null : count.error ?? Object.values(facetErrors).find(Boolean), `responses:filters:${scope.owner}:${formId}`, countFeedback.network ? count.retry : undefined);
   const apply = () => {
     if (!normalized) return;
     const { search, actorIds, receivedFromUtc, receivedToUtc, conditions } = normalized;
@@ -300,7 +304,7 @@ export function ResponseFiltersPanel({
           ))}
         </div>
         {count.cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: count.cooldown.seconds })}</p> : null}
-        {count.isError ? <Button type="button" variant="outline" disabled={count.cooldown.isRunning} onClick={count.retry}>{t("common:actions.retry")}</Button> : null}
+        {canRetryCount ? <Button type="button" variant="outline" disabled={count.cooldown.isRunning || !facetFilter || count.isFetching} onClick={count.retry}>{t("common:actions.retry")}</Button> : null}
         <DialogFooter className="shrink-0">
           <Button
             type="button"
@@ -326,10 +330,10 @@ export function ResponseFiltersPanel({
           </Button>
           <Button
             type="button"
-            disabled={invalidNumber || invalidRange || !facetFilter || count.isPending || count.isFetching || count.isError}
+            disabled={invalidNumber || invalidRange || !facetFilter}
             onClick={apply}
           >
-            {count.data === undefined ? t("responses.apply") : t("responses.viewResponses", { count: count.data })}
+            {count.data === undefined || count.isError || count.isFetching ? t("responses.apply") : t("responses.viewResponses", { count: count.data })}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -13,7 +13,7 @@ import {
   responseRecordId,
   responseSheetFixture,
 } from "@/test/responseFixtures";
-import { notify } from "@/shared/ui/notifications";
+import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { approvalTaskFixture, approvalTaskId } from "@/test/approvalFixtures";
 import type { ApprovalTask } from "../api/approvals";
 import type { ResponseAction, ResponseRecipient, ResponseWorkflow } from "../api/workflow";
@@ -808,6 +808,162 @@ describe("response sheet", () => {
     expect(captured.filter(item => item.dimension === "presence" && item.fieldId === responseSheetFixture().columns[0].fieldId)).toHaveLength(1);
     await userEvent.click(within(dialog).getByRole("button", { name: /Ver .* respuestas|Aplicar filtros/ }));
     await waitFor(() => expect(applied).toMatchObject({ conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })] }));
+    expect(notify).not.toHaveBeenCalled();
+  });
+  it.each([400, 404])("applies valid filters without offering a count retry after HTTP %s", async status => {
+    setup();
+    const counts = vi.fn();
+    const applied = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = await request.json() as { pageSize: number; conditions?: unknown[] };
+      if (body.pageSize === 1) {
+        counts(body);
+        return HttpResponse.json({ detail: "Count unavailable", code: "Test.Count" }, { status });
+      }
+      applied(body);
+      return HttpResponse.json(responseSheetFixture());
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Desde" }), "12,5");
+    await waitFor(() => expect(counts).toHaveBeenCalledWith(expect.objectContaining({
+      page: 1, pageSize: 1, conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })],
+    })));
+    await waitFor(() => expect(queryClient.getQueryCache().getAll().find(query => query.queryKey[2] === "count" && query.state.status === "error")).toBeDefined());
+    expect(within(dialog).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+    const apply = within(dialog).getByRole("button", { name: "Aplicar filtros" });
+    expect(apply).toBeEnabled();
+    await userEvent.click(apply);
+    await waitFor(() => expect(applied).toHaveBeenCalledWith(expect.objectContaining({
+      pageSize: 20, conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })],
+    })));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+  it.each(["network", "server"])("retains the filter draft and explicitly retries a %s count failure", async failure => {
+    setup();
+    let recovered = false;
+    const counts = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = await request.json() as { pageSize: number; conditions?: unknown[] };
+      if (body.pageSize === 1) {
+        counts(body);
+        if (!recovered && body.conditions?.length) return failure === "network" ? HttpResponse.error() : HttpResponse.json({ code: "Test.Count", traceId: "count-trace" }, { status: 503 });
+      }
+      return HttpResponse.json(responseSheetFixture());
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
+    const input = within(dialog).getByRole("textbox", { name: "Desde" });
+    await userEvent.type(input, "12,5");
+    // La lectura de red conserva los reintentos acotados del QueryClient real.
+    if (failure === "network") await waitFor(() => expect(counts.mock.calls.length).toBeGreaterThanOrEqual(3));
+    await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
+    expect(within(dialog).getByRole("button", { name: "Aplicar filtros" })).toBeEnabled();
+    expect(input).toHaveValue("12,5");
+    const countBeforeRetry = counts.mock.calls.length;
+    recovered = true;
+    await userEvent.click(within(dialog).getByRole("button", { name: "Reintentar" }));
+    await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
+    expect(counts).toHaveBeenCalledTimes(countBeforeRetry + 1);
+    expect(counts).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [expect.objectContaining({ values: ["12.5"] })] }));
+    expect(input).toHaveValue("12,5");
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+  it("keeps the count wait after dismissing its notice and retries only by click after expiry", async () => {
+    setup();
+    let recovered = false;
+    const counts = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = await request.json() as { pageSize: number };
+      if (body.pageSize === 1) {
+        counts(body);
+        if (!recovered) return HttpResponse.json({ code: "Test.Wait", detail: "Wait before counting", retryAfter: 1 }, { status: 429 });
+      }
+      return HttpResponse.json(responseSheetFixture());
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
+    const retry = within(dialog).getByRole("button", { name: "Reintentar" });
+    expect(retry).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Aplicar filtros" })).toBeEnabled();
+    expect(within(dialog).getByRole("status")).toHaveTextContent("1");
+    act(() => dismissNotification(vi.mocked(notify).mock.calls[0][0].id));
+    expect(retry).toBeDisabled();
+    expect(within(dialog).getByRole("status")).toHaveTextContent("1");
+    await waitFor(() => expect(retry).toBeEnabled());
+    expect(counts).toHaveBeenCalledTimes(1);
+    recovered = true;
+    await userEvent.click(retry);
+    await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
+    expect(counts).toHaveBeenCalledTimes(2);
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+  it.each(["apply", "retry"])("can %s an edited valid filter while the count remains paused by HTTP 429", async recovery => {
+    setup();
+    let recovered = false;
+    const counts = vi.fn();
+    const applied = vi.fn();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = await request.json() as { pageSize: number };
+      if (body.pageSize === 1) {
+        counts(body);
+        if (!recovered) return HttpResponse.json({ code: "Test.Wait", detail: "Wait before counting", retryAfter: recovery === "retry" ? 1 : 60 }, { status: 429 });
+      }
+      applied(body);
+      return HttpResponse.json(responseSheetFixture());
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Desde" }), "12,5");
+    const apply = within(dialog).getByRole("button", { name: "Aplicar filtros" });
+    expect(apply).toBeDisabled();
+    await waitFor(() => expect(apply).toBeEnabled());
+    if (recovery === "apply") expect(within(dialog).getByRole("status")).toHaveTextContent("60");
+    expect(counts).toHaveBeenCalledTimes(1);
+    if (recovery === "retry") {
+      const retry = within(dialog).getByRole("button", { name: "Reintentar" });
+      await waitFor(() => expect(retry).toBeEnabled());
+      expect(counts).toHaveBeenCalledTimes(1);
+      recovered = true;
+      await userEvent.click(retry);
+      await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
+      expect(counts).toHaveBeenCalledTimes(2);
+      expect(counts).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [expect.objectContaining({ values: ["12.5"] })] }));
+      return;
+    }
+    await userEvent.click(apply);
+    await waitFor(() => expect(applied).toHaveBeenCalledWith(expect.objectContaining({
+      pageSize: 20, conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })],
+    })));
+    expect(counts).toHaveBeenCalledTimes(1);
+  });
+  it("withdraws records and count recovery after the count read returns HTTP 403", async () => {
+    setup();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = await request.json() as { pageSize: number };
+      return body.pageSize === 1
+        ? HttpResponse.json({ code: "Forms.Record.Forbidden" }, { status: 403 })
+        : HttpResponse.json(responseSheetFixture());
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("table");
+    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    await screen.findByRole("heading", { name: /permiso/i });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+    expect(screen.queryByText("TEST-000002")).not.toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(notify).not.toHaveBeenCalled();
   });
   it.each([400, 429])("does not offer an immediate retry after a facet HTTP %s", async status => {
