@@ -42,3 +42,5 @@ forms-suggestion-detail-http suma detail-es/en de FormSuggestionCaptureIntegrati
 whatsapp-audio-http suma tres cuerpos de WhatsAppChatTests.Audio (WHATSAPP_AUDIO_HTTP_OUTPUT). audioHttpContract usa WHATSAPP_AUDIO_HTTP_CONTRACT_INPUT y verifica request Pending y páginas Pending/Completed sin reescribir bytes; se ejecuta sólo después del export final. Los dobles de comportamiento/audio son sintéticos explícitos y no acreditan reproducción real del proveedor.
 
 La familia missingRequests lee forms-missing-requests-http con FORMS_MISSING_REQUEST_HTTP_CONTRACT_INPUT; el productor real FormMissingRequestHttpTests exporta seis cuerpos agregados/es/en y sus límites403/409. No se fabrican muestras mientras la integración final está pendiente.
+
+La familia whatsappAssistant lee whatsapp-assistant-http con WHATSAPP_ASSISTANT_HTTP_CONTRACT_INPUT. WhatsAppAssistantHttpTests emite nueve cuerpos físicos: seis estados de sugerencia manual, recibo y los dos hilos con/sin RecordsRead. El consumidor conserva bytes y proyección privada; su ejecución espera el exportador final.
