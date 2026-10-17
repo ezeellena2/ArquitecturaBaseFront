@@ -16,7 +16,7 @@ async function installApi(page: Page, origin: string, permissions: string[], los
     id: "chat-ana", profileName: "Ana Martínez", phoneNumber: "+54 9 351 555-1234", mode: "Manual", modeRevision: 1,
     lastInboundAtUtc: now, lastInboundSequence: 1, unreadCount: 1, preview: "Hola, ¿tienen stock?", previewPurpose: "Business",
   };
-  const messages: ChatMessage[] = [{ quickReplies: null, assistant: null, origin: "Conversation" as const,
+  const messages: ChatMessage[] = [{ audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const,
     id: "incoming-1", direction: "Inbound", kind: "Text", body: contact.preview, occurredAtUtc: now,
     inboundSequence: 1, operatorUserId: null, status: null, errorCode: null, purpose: "Business",
   }];
@@ -91,7 +91,7 @@ async function installApi(page: Page, origin: string, permissions: string[], los
     sends, codeRequests, contact, reads: () => chatReads,
     deliver() {
       const operation = operations.shift()!;
-      messages.push({ quickReplies: null, assistant: null, origin: "Conversation" as const,
+      messages.push({ audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const,
         id: operation.id, direction: "Outbound", kind: "Text", body: operation.body, occurredAtUtc: now,
         inboundSequence: 0, operatorUserId: profile.id, status: "Delivered", errorCode: null, purpose: "Business",
       });

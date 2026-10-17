@@ -16,12 +16,12 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
  const problem=scenario.endsWith("unavailable")?"CatalogUnavailable":scenario.endsWith("large")?"CatalogTooLarge":scenario.endsWith("empty")?"CatalogEmpty":undefined;
  const preparation={culture:recipientCulture,recipientContextRevision:"fixture-context-1",preparation:{catalogs:problem?[]:offers,
    issues:problem?[{fieldId:guid(701),label:"Cliente",code:"Forms.Record."+problem,catalogName:null,invalidOptionCount:null}]:[],canSend:!problem}};
- const thread:Thread={ assistantSuggestion: null, assistantAvailability: { state: "notInstalled" },contact,messages:[{ quickReplies: null, assistant: null, origin: "Conversation" as const,id:guid(602),direction:"Inbound",kind:"Text",body:contact.preview,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"}],outgoing:[],beforeId:null,beforeAtUtc:null};
+ const thread:Thread={ assistantSuggestion: null, assistantAvailability: { state: "notInstalled" },contact,messages:[{ audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const,id:guid(602),direction:"Inbound",kind:"Text",body:contact.preview,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"}],outgoing:[],beforeId:null,beforeAtUtc:null};
  if(catalogScenario&&["completed","no-values","inactive","inactive-read"].some(value=>scenario.endsWith(value))){
    const rejected=scenario.includes("inactive");
    const deniedValues=scenario.endsWith("no-values");
    thread.canReadFormRecords=!deniedValues;
-   thread.messages.push({ quickReplies: null, assistant: null, origin: "Conversation" as const,id:guid(730),direction:"Inbound",kind:"FlowReply",body:null,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:2,
+   thread.messages.push({ audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const,id:guid(730),direction:"Inbound",kind:"FlowReply",body:null,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:2,
      operatorUserId:null,status:null,errorCode:null,purpose:"Business",formReply:rejected?
        {state:"Rejected",definitionId:options[0].definitionId,versionId:options[0].versionId,versionNumber:1,name:language==="es"?"Registrar visita":"Register visit",
         recordId:null,number:null,values:null,rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}:
@@ -32,7 +32,7 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
  if(scenario==="forms-chat-catalog-inactive-read"){contact.linkedAccount=null;contact.formEligibility=null;}
  if(scenario.startsWith("forms-chat-actions")){
   thread.canReadFormRecords=scenario!=="forms-chat-actions-no-values";contact.preview=language==="es"?"Acción del formulario":"Form action";
-  for(const [index,kind] of (["Text","Document"] as const).entries())thread.messages.push({ quickReplies: null, assistant: null,id:guid(750+index),direction:"Outbound",origin:"FormAction",kind,body:language==="es"?(index?"Se aprobó VIS-000024. Acá tenés tu comprobante.":"Recibimos VIS-000024."):(index?"VIS-000024 was approved. Here is your receipt.":"We received VIS-000024."),occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:0,operatorUserId:null,status:"Delivered",errorCode:null,purpose:"Business"});
+  for(const [index,kind] of (["Text","Document"] as const).entries())thread.messages.push({ audio: null, quickReplies: null, assistant: null,id:guid(750+index),direction:"Outbound",origin:"FormAction",kind,body:language==="es"?(index?"Se aprobó VIS-000024. Acá tenés tu comprobante.":"Recibimos VIS-000024."):(index?"VIS-000024 was approved. Here is your receipt.":"We received VIS-000024."),occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:0,operatorUserId:null,status:"Delivered",errorCode:null,purpose:"Business"});
   thread.outgoing.push(...(["Uncertain","Failed"] as const).map((state,index)=>({ quickReplies: null, assistant: null,id:guid(760+index),requestId:guid(770+index),operatorUserId:null,origin:"FormAction" as const,kind:"Text" as const,body:language==="es"?"Aviso de VIS-000024.":"Notice for VIS-000024.",requestedAtUtc:contact.lastInboundAtUtc,state,waMessageId:null})));
  }
  const attempts:FormMessageRequest[]=[];const calls:{method:string;path:string;search:string}[]=[];

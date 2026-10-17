@@ -41,7 +41,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const assistantScenario = scenario?.startsWith("assistant-") ?? false;
   const assistantFixture = assistantScenario ? createAssistantVisualFixtures(language, scenario!) : undefined;
   const roleGroupsScenario = scenario === "role-groups";
-  const chatScenario = chatFormsScenario || scenario === "chat" || scenario === "chat-states" || scenario === "chat-history" || scenario === "chat-access" || scenario === "chat-legacy" || roleGroupsScenario;
+  const chatScenario = chatFormsScenario || scenario === "chat" || scenario === "chat-states" || scenario === "chat-history" || scenario === "chat-audio" || scenario === "chat-access" || scenario === "chat-legacy" || roleGroupsScenario;
   const aiScenario = scenario?.startsWith("ai-") ?? false;
   const businessScenario = (scenario?.startsWith("business-") ?? false) || roleGroupsScenario;
   const profile: CurrentUser = {
@@ -108,9 +108,13 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     lastInboundAtUtc: "2026-10-02T12:00:00Z", lastInboundSequence: 1, unreadCount: 1, preview: "¿Podemos coordinar el pedido para mañana?",
     linkedAccount: null, formEligibility: { status: "NoLinkedAccount", recipientCulture: null, recipientContextRevision: null } };
   let chatMessages: ChatMessage[] = [
-    { quickReplies: null, assistant: null, origin: "Conversation" as const, id: "chat-message-1", direction: "Inbound", kind: "Text", body: chatContact.preview, occurredAtUtc: "2026-10-02T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null },
-    { quickReplies: null, assistant: null, origin: "Conversation" as const, id: "chat-message-2", direction: "Outbound", kind: "Text", body: "Hola Ana, sí. Decime qué horario te queda cómodo.", occurredAtUtc: "2026-10-02T12:02:00Z", inboundSequence: 0, operatorUserId: profile.id, status: "Delivered", errorCode: null },
+    { audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const, id: "chat-message-1", direction: "Inbound", kind: "Text", body: chatContact.preview, occurredAtUtc: "2026-10-02T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null },
+    { audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const, id: "chat-message-2", direction: "Outbound", kind: "Text", body: "Hola Ana, sí. Decime qué horario te queda cómodo.", occurredAtUtc: "2026-10-02T12:02:00Z", inboundSequence: 0, operatorUserId: profile.id, status: "Delivered", errorCode: null },
   ];
+  if (scenario === "chat-audio") {
+    chatContact.preview = english ? "Audio" : "Audio";
+    chatMessages = (["Pending", "Completed", "Failed", "Expired"] as const).map((state, index) => ({ ...chatMessages[0], id: "audio-" + index, kind: "Audio", inboundSequence: index + 1, audio: { state, canPlay: state !== "Expired" }, body: state === "Completed" ? english ? "I visited Pérez Brothers and collected 125,500." : "Recién salgo de Pérez Hnos. Me pagaron 125.500." : null, occurredAtUtc: "2026-10-02T12:0" + (index + 3) + ":00Z" }));
+  }
   const earlierMessages: ChatMessage[] = [];
   const chatOutgoing: Outgoing[] = [];
   if (scenario === "chat-access" || scenario === "chat-legacy") {
@@ -220,6 +224,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
       return json(ai);
     }
     if (chatScenario && path.startsWith("/api/whatsapp/chats")) {
+      if (scenario === "chat-audio" && path.endsWith("/audio-transcription") && request.method === "POST") return json({ state: "Pending", canPlay: true }, 202);
       if (request.method === "POST" && path.endsWith("/messages")) {
         const data = await request.json() as { requestId: string; body: string };
         const outgoing: Outgoing = { quickReplies: null, assistant: null, origin: "Conversation" as const, id: data.requestId, requestId: data.requestId, body: data.body, operatorUserId: profile.id,
@@ -236,7 +241,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
         const data = await request.json() as { mode: Chat["mode"] };
         chatContact.mode = data.mode;
         chatContact.modeRevision++;
-        return new Response(null, { status: 204 });
+        return json({ mode: chatContact.mode, modeRevision: chatContact.modeRevision, assistantSendInProgress: false });
       }
       if (request.method !== "GET") return new Response(null, { status: 204 });
       if (path === "/api/whatsapp/chats") return json({ page: pageOf([chatContact, { ...chatContact, id: "chat-luis", profileName: "Luis Pérez", preview: "Gracias por la información", unreadCount: 0 }]), allCount: 2, unreadCount: 1 });
