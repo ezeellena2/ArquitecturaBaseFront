@@ -112,7 +112,8 @@
     "responses": "Respuestas",
     "allResponses": "Ver todos",
     "allResponsesCount": "Ver todos ({{count}})",
-    "approvals": "Por aprobar"
+    "approvals": "Por aprobar",
+    "missingForms": "Formularios que faltan"
   },
   "layout": {
     "sidebar": {

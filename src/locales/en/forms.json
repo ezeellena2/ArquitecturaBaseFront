@@ -838,5 +838,33 @@
     "historyConditions_other": "{{count}} saved conditions",
     "historyMappings_one": "{{count}} mapped field",
     "historyMappings_other": "{{count}} mapped fields"
+  },
+  "missing": {
+    "title": "Missing forms",
+    "description": "What someone wanted to record through WhatsApp without a form they could complete. The assistant groups requests by topic; names and messages are not stored.",
+    "search": "Search by topic",
+    "filter": "Request state",
+    "pending": "Pending",
+    "discarded": "Discarded",
+    "topic": "Topic",
+    "requests": "Requests",
+    "people": "People",
+    "lastRequest": "Last request",
+    "create": "Create form",
+    "createFor": "Create form {{name}}",
+    "discard": "Discard",
+    "discardFor": "Discard {{name}}",
+    "discardTitle": "Discard request",
+    "discardDescription": "“{{name}}” will move to Discarded. A new request will bring it back to Pending.",
+    "discardedBy": "Discarded by {{name}} · {{date}}",
+    "discardedNotice": "Request discarded.",
+    "conflict": "The request changed. We refreshed the list; review it before discarding again.",
+    "loadFailed": "We could not load requests",
+    "totals_one": "{{count}} topic · {{requests}} requests",
+    "totals_other": "{{count}} topics · {{requests}} requests",
+    "empty": "No one has requested a form that does not exist",
+    "noPending": "No pending requests",
+    "noDiscarded": "No discarded requests",
+    "noMatches": "No topics match this search"
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { branchOf, isAdministrationPath, parentLinkOf } from "./navigation";
+import { branchOf, forms, isFormsPath, isAdministrationPath, parentLinkOf } from "./navigation";
 
 describe("parentLinkOf", () => {
   it("finds the menu link a child route hangs from", () => {
@@ -79,4 +79,10 @@ describe("isAdministrationPath", () => {
     expect(isAdministrationPath("/perfil")).toBe(false);
     expect(isAdministrationPath("/rolesviejos")).toBe(false);
   });
+});
+
+it("exposes missing requests with Manage independently of template Read", () => {
+ const entry=forms.items.find(item => "to" in item && item.to === "/formularios/faltantes");
+ expect(entry).toMatchObject({permission:"formtemplates.manage",exact:true});
+ expect(isFormsPath("/formularios/faltantes")).toBe(true);
 });

@@ -112,7 +112,8 @@
     "responses": "Responses",
     "allResponses": "View all",
     "allResponsesCount": "View all ({{count}})",
-    "approvals": "To approve"
+    "approvals": "To approve",
+    "missingForms": "Missing forms"
   },
   "layout": {
     "sidebar": {

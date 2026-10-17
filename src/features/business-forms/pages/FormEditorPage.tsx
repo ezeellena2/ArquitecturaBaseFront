@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { maximumFiles, hasInvalidFileCounts } from "../fileQuestions";
@@ -34,11 +34,13 @@ import { useFormPublication } from "../hooks/useFormPublication";
 import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
 import { DraftReview, DraftReviewChanges } from "../components/DraftReview";
 import { publicationFieldIssues } from "../validationPaths";
-import { emptyForm, missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
+import { missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
 import { useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
 import type { FormDetail, FormPublicationCheck } from "../api/response";
 import type { DraftEditorValue, FormCulture, FormDefinitionSnapshot } from "../model";
+
+import { missingFormInitial } from "../missingFormSeed";
 
 const FormSuggestionsSection = lazy(() => import("../components/FormSuggestionsSection").then(module => ({ default: module.FormSuggestionsSection })));
 const FormRulesSection = lazy(() => import("../components/FormRulesSection").then(module => ({ default: module.FormRulesSection })));
@@ -46,6 +48,7 @@ const FormRulesSection = lazy(() => import("../components/FormRulesSection").the
 export function FormEditorPage() {
   const { t, i18n } = useTranslation("forms");
   const { formId = "" } = useParams();
+  const navigationState = useLocation().state;
   const { data: user } = useCurrentUser();
   const scope: FormReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
   const detail = useFormDefinition(scope, formId);
@@ -60,7 +63,7 @@ export function FormEditorPage() {
   if (!user || formId && detail.isPending) return <Page title={t(formId ? "title" : "new")}><Spinner /></Page>;
   if (!scope.permissions.includes("formtemplates.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
   if (formId && !detail.data) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
-  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} timeZoneId={user.timeZoneId} initial={detail.data ?? emptyForm(scope.culture)} onPublicationChanged={() => { void detail.refetch(); }} />;
+  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} timeZoneId={user.timeZoneId} initial={detail.data ?? missingFormInitial(scope, formId, navigationState)} onPublicationChanged={() => { void detail.refetch(); }} />;
 }
 
 function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {

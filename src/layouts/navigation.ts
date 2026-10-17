@@ -89,6 +89,7 @@ export const forms: NavigationPanel = {
     { labelKey: "navigation.approvals", to: "/formularios/por-aprobar", icon: PublicTrackingIcon, permission: "formapprovals.decide", exact: true },
     { labelKey: "navigation.designForms", to: "/formularios", icon: PencilIcon, permission: "formtemplates.read" },
     { labelKey: "navigation.catalogs", to: "/catalogos", icon: PublicTrackingIcon, permission: "formcatalogs.read" },
+    { labelKey: "navigation.missingForms", to: "/formularios/faltantes", icon: FormIcon, permission: "formtemplates.manage", exact: true },
   ],
 };
 export function isFormsPath(pathname: string): boolean {

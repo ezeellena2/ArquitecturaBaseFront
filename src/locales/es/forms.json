@@ -838,5 +838,33 @@
     "historyConditions_other": "{{count}} condiciones guardadas",
     "historyMappings_one": "{{count}} dato mapeado",
     "historyMappings_other": "{{count}} datos mapeados"
+  },
+  "missing": {
+    "title": "Formularios que faltan",
+    "description": "Lo que alguien quiso registrar por WhatsApp y no tenía un formulario que pudiera completar. El asistente los agrupa por tema; no se guardan nombres ni mensajes.",
+    "search": "Buscar por tema",
+    "filter": "Estado del pedido",
+    "pending": "Pendientes",
+    "discarded": "Descartados",
+    "topic": "Tema",
+    "requests": "Pedidos",
+    "people": "Personas",
+    "lastRequest": "Último pedido",
+    "create": "Crear formulario",
+    "createFor": "Crear formulario {{name}}",
+    "discard": "Descartar",
+    "discardFor": "Descartar {{name}}",
+    "discardTitle": "Descartar pedido",
+    "discardDescription": "«{{name}}» pasará a Descartados. Si lo vuelven a pedir, aparecerá otra vez en Pendientes.",
+    "discardedBy": "Descartado por {{name}} · {{date}}",
+    "discardedNotice": "Pedido descartado.",
+    "conflict": "El pedido cambió. Releímos la lista; revisalo antes de volver a descartar.",
+    "loadFailed": "No pudimos cargar los pedidos",
+    "totals_one": "{{count}} tema · {{requests}} pedidos",
+    "totals_other": "{{count}} temas · {{requests}} pedidos",
+    "empty": "Nadie pidió formularios que no existen",
+    "noPending": "No hay pedidos pendientes",
+    "noDiscarded": "No hay pedidos descartados",
+    "noMatches": "No hay temas que coincidan con la búsqueda"
   }
 }
