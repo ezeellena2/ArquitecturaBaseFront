@@ -364,6 +364,8 @@ El recorrido contra SPA/API local verificó arranque/migraciones, bandeja vacía
 
 ## Implementación local de Etapa 5 — 2026-10-17
 
+La sugerencia configurada Always usa la misma tarjeta y confirmación: el puntero del servidor manda aun con IA apagada y Body nulo; su ProposalId null evita atribuirla al asistente. Sin puntero, sólo una fuente nueva completa puede iniciar interpretación con IA disponible. La pausa conserva la selección y el diálogo del puntero activo.
+
 OfferWhen se edita dentro de «El formulario» y usa el guardado, UUID y revisión del borrador existente. No integra el esquema publicado ni exige republicar. Las sugerencias s1–s3 guardan configuración e historial propios; muestran condiciones y mapeos por identidad y conservan el borrador ante errores o 409. Los textos nuevos requieren sólo el idioma original. La publicación y los catálogos comunes conservan su contrato bilingüe.
 
 H1–H3 y H5 conservan el chat elegido: Manual es el estado inicial; tomarlo requiere Send y activar Assistant requiere ConfigureAssistant. La disponibilidad y el posible envío iniciado vienen del servidor. El origen Assistant identifica al autor también en el historial, con operador nulo. En Manual, H2 muestra la sugerencia sobre el compositor y el diálogo C2 existente permite destildar datos; no permite editar valores propuestos ni remonta el borrador ordinario. Un resultado perdido se consulta por GET antes de repetir explícitamente. El historial muestra motivo, datos propuestos y títulos de opciones capturados; los detalles privados respetan RecordsRead y no se reconstruyen desde configuración actual. Interpretar no registra por sí solo una respuesta ni decide una aprobación.
