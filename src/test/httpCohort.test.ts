@@ -40,6 +40,7 @@ it.each([
   ["workflow", "FORMS_WORKFLOW_HTTP_CONTRACT_INPUT", "workflow", true],
   ["whatsappForms", "WHATSAPP_FORMS_HTTP_CONTRACT_INPUT", "whatsapp-forms", true],
   ["suggestions", "FORMS_SUGGESTIONS_HTTP_CONTRACT_INPUT", "suggestions", false],
+  ["suggestionDetails", "FORMS_SUGGESTION_DETAILS_HTTP_CONTRACT_INPUT", "suggestion-details", false],
   ["catalogProposals", "FORMS_CATALOG_PROPOSALS_HTTP_CONTRACT_INPUT", "catalog-proposals", false],
 ] as const)("qualifies synthetic %s files with exact bytes (nested=%s)", async (name, environment, artifactSet, nested) => {
   const directory = syntheticCohort(artifactSet, environment, nested);

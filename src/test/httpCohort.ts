@@ -8,6 +8,7 @@ const cohorts = {
   responses: ["forms-responses-http", "FORMS_RESPONSES_HTTP_CONTRACT_INPUT", "responses"],
   rules: ["forms-rules-http", "FORMS_RULES_HTTP_CONTRACT_INPUT", "rules"],
   suggestions: ["forms-suggestions-http", "FORMS_SUGGESTIONS_HTTP_CONTRACT_INPUT", "suggestions"],
+  suggestionDetails: ["forms-suggestion-detail-http", "FORMS_SUGGESTION_DETAILS_HTTP_CONTRACT_INPUT", "suggestion-details"],
   catalogProposals: ["forms-catalog-proposals-http", "FORMS_CATALOG_PROPOSALS_HTTP_CONTRACT_INPUT", "catalog-proposals"],
   workflow: ["forms-workflow-http", "FORMS_WORKFLOW_HTTP_CONTRACT_INPUT", "workflow"],
   approvals: ["forms-approvals-http", "FORMS_APPROVALS_HTTP_CONTRACT_INPUT", "approvals"],
