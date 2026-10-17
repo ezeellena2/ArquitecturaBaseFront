@@ -719,5 +719,23 @@
       "tooLong": "The text exceeds the maximum length."
     },
     "back": "Back"
+  },
+  "detail": {
+    "activity": "Activity",
+    "photos": "Photos",
+    "pdf": "PDF",
+    "events": {
+      "Received": "On receipt",
+      "Approved": "On approval",
+      "Rejected": "On rejection"
+    },
+    "actionsCompleted_one": "{{completed}} of {{count}} completed",
+    "actionsCompleted_other": "{{completed}} of {{count}} completed",
+    "approvalRequested": "Approval was requested from the {{role}} role",
+    "rowPdf": "View PDF for {{number}}",
+    "originManual": "Sent by {{name}}",
+    "originAssistant": "Sent by the assistant",
+    "keyboardHint": "↑ ↓ another response · Esc close",
+    "issues": "Some actions failed or messages remain unconfirmed."
   }
 }

@@ -719,5 +719,23 @@
       "tooLong": "El texto supera el máximo permitido."
     },
     "back": "Volver"
+  },
+  "detail": {
+    "activity": "Actividad",
+    "photos": "Fotos",
+    "pdf": "PDF",
+    "events": {
+      "Received": "Al recibirla",
+      "Approved": "Al aprobarla",
+      "Rejected": "Al rechazarla"
+    },
+    "actionsCompleted_one": "{{completed}} de {{count}} hecha",
+    "actionsCompleted_other": "{{completed}} de {{count}} hechas",
+    "approvalRequested": "Se pidió aprobación al rol {{role}}",
+    "rowPdf": "Ver PDF de {{number}}",
+    "originManual": "Se lo mandó {{name}}",
+    "originAssistant": "Se lo mandó el asistente",
+    "keyboardHint": "↑ ↓ otra respuesta · Esc cerrar",
+    "issues": "Hay fallas o envíos sin confirmar."
   }
 }

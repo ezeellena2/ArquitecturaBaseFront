@@ -11,7 +11,8 @@ import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import type { ResponseDetail } from "../api/responses";
 import type { useResponseWorkflow } from "../hooks/useResponseWorkflow";
-import { composeWorkflowHistory } from "../workflowHistory";
+import type { WorkflowHistoryEntry } from "../workflowHistory";
+import { composeWorkflowMoments } from "../workflowMoments";
 import { sameWorkflowReviewTarget, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { workflow: ReturnType<typeof useResponseWorkflow>; record: ResponseDetail; timeZoneId?: string }) {
   const { t, i18n } = useTranslation("forms");
@@ -28,9 +29,7 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
   const restoreFocus = useRestoreFocusOnClose(reviewOpen, reviewFocus);
   const disabled = workflow.busy || workflow.query.isFetching || workflow.cooldown.isRunning;
   const closeReview = () => { setReviewTarget(null); setWasSent(undefined); };
-  return <Surface title={t("workflow.title")} padded actions={data?.ruleRevision ? <span className="text-xs">{t("workflow.ruleRevision", { revision: data.ruleRevision })}</span> : undefined}>
-    <ol className="flex flex-col gap-4">
-      {composeWorkflowHistory(record, data).map(entry => {
+  const renderEntry = (entry: WorkflowHistoryEntry) => {
         if (entry.type === "record") {
           const event = entry.event;
           return <li key={entry.key} className="flex flex-wrap gap-2 text-sm"><time dateTime={entry.atUtc}>{date(entry.atUtc)}</time><span>{t("responses.history" + event.kind)}</span>{event.actor?.displayName ? <span>· {event.actor.displayName}</span> : null}</li>;
@@ -43,7 +42,7 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
         const next = canManage ? workflowNextAction(action) : null;
         return <li key={entry.key} tabIndex={-1} className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-3 text-sm sm:flex-row sm:items-start">
           <time className="text-xs text-[var(--color-content-muted)]" dateTime={entry.atUtc}>{date(entry.atUtc)}</time>
-          <div className="min-w-0 flex-1 space-y-2"><p>{t("rules.actions." + action.kind)}</p><p className="text-xs text-[var(--color-content-muted)]">{t("rules.events." + action.event)}</p>{action.reason ? <p>{action.reason}</p> : null}{action.state === "Uncertain" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.consultFirst")}</p> : action.state === "NotApplicable" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.notApplicable")}</p> : null}
+          <div className="min-w-0 flex-1 space-y-2"><p>{t("rules.actions." + action.kind)}</p>{action.reason ? <p>{action.reason}</p> : null}{action.state === "Uncertain" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.consultFirst")}</p> : action.state === "NotApplicable" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.notApplicable")}</p> : null}
             {action.recipients.length ? <ul className="space-y-3">{action.recipients.map(recipient => <li key={recipient.user.userId} tabIndex={-1} aria-label={t("workflow.recipient", { name: recipient.user.displayName ?? t("responses.unknownPerson") })} className="space-y-2 border-l border-[var(--color-border)] pl-3">
               <div className="flex flex-wrap items-center gap-2"><span>{recipient.user.displayName ?? t("responses.unknownPerson")}</span><Badge variant="outline">{t("workflow.recipientStates." + recipient.state)}</Badge></div>
               {recipient.reason ? <p>{recipient.reason}</p> : null}
@@ -54,6 +53,22 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
             </li>)}</ul> : null}
             {next ? <Button variant="outline" size="sm" disabled={disabled} onClick={() => void workflow.act(action.id)}>{t(workflow.busy ? "workflow.working" : next === "consult" ? "workflow.consult" : "common:actions.retry")}</Button> : null}
           </div><Badge variant="outline" className="self-start">{t("workflow.states." + action.state)}</Badge>
+        </li>;
+  };
+  return <Surface title={t("detail.activity")} padded actions={data?.ruleRevision ? <span className="text-xs">{t("workflow.ruleRevision", { revision: data.ruleRevision })}</span> : undefined}>
+    <ol className="flex flex-col gap-4">
+      {composeWorkflowMoments(record, data).map(moment => {
+        const title = moment.kind === "received" ? t("responses.received") : moment.kind === "effects"
+          ? t("detail.events." + moment.event) : t("approvals.taskStates.Open") + (moment.task.state === "Open" ? "" : " → " + t("approvals.taskStates." + moment.task.state));
+        const entries: WorkflowHistoryEntry[] = moment.kind === "received" ? moment.history.map(event => ({ type: "record", key: "record:" + event.kind + ":" + event.atUtc, atUtc: event.atUtc, event }))
+          : moment.kind === "effects" ? moment.actions.map(action => ({ type: "action", key: "action:" + action.id, atUtc: action.completedAtUtc ?? action.updatedAtUtc, action }))
+          : moment.task.state !== "Open" && moment.task.decidedAtUtc ? [{ type: "decision", key: "decision:" + moment.task.id, atUtc: moment.task.decidedAtUtc, task: moment.task }] : [];
+        return <li key={moment.key} aria-label={title} className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] pb-2 text-sm"><span className="font-semibold">{title}</span>{moment.kind === "effects" ? <span className="text-xs text-[var(--color-content-muted)]">{t("detail.actionsCompleted", { completed: moment.completedCount, count: moment.totalCount })}</span> : null}</div>
+          <ol className="space-y-3">
+            {moment.kind === "approval" ? <li className="flex flex-wrap gap-2 text-sm"><time dateTime={moment.task.requestedAtUtc}>{date(moment.task.requestedAtUtc)}</time><span>{t("detail.approvalRequested", { role: moment.task.roleName ?? t("rules.unavailableRole") })}</span></li> : null}
+            {entries.map(renderEntry)}
+          </ol>
         </li>;
       })}
     </ol>
