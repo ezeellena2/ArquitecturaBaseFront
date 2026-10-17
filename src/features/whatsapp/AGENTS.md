@@ -18,7 +18,7 @@ El laboratorio de burbujas se retiró al integrar la elección; no mantener dos 
 - Polling cada cinco segundos mientras la pestaña está visible, sin leyenda del intervalo ni del atajo.
   Ctrl+Enter sigue enviando y Enter agrega una línea. Historial paginado sin saltar al recibir;
   borradores por conversación y guarda de salida.
-- Textos es/en, UI compartida, fechas por zona del perfil. IA, contactos y plantillas se desarrollan después.
+- Textos es/en, UI compartida, fechas por zona del perfil. El asistente se limita a ofertas y sugerencias de formularios; contactos y plantillas se desarrollan después.
 - Purpose/evento vienen del servidor. Access usa resumen es/en y etiqueta de acceso en la burbuja aprobada, sin cuerpo, secreto ni recuperación a borrador. Sin metadata, Unclassified; no inferir por palabras. El acceso por código y las invitaciones no dependen del modo.
 - Fecha agrupada por día local, hora/estado fuera del cuerpo; formatos solo en shared/lib/dateTime.
 - Recuperar Failed de texto prepara el borrador, también desde un mensaje confirmado; nunca envía. Failed de Flow conserva su card y exige un envío nuevo explícito desde Enviar formulario; no se reutiliza como texto.
@@ -49,3 +49,13 @@ La tarjeta usa cantidad/fecha del DTO y pregunta rechazada; no inventa el nombre
 `origin:FormAction` conserva el origen explícito en historial y salidas pendientes; Text y Document se muestran como tarjeta «Acción del formulario» con autor «Automático». No se infiere por texto ni se atribuye a quien aprobó. Sin FormRecordsRead o ante revocación del servidor se retiran body/caption de mensajes, páginas anteriores y pendientes antes de publicar la proyección sin acceso; los textos de conversación normales permanecen. Se reutiliza el gate de lectura existente, sin otra caché.
 
 Estos avisos no ofrecen usar texto en el borrador ni revisar Uncertain desde el chat: su recuperación pertenece al workflow de la respuesta. La lista muestra el preview genérico del servidor. Los PDF privados se abren por el detalle autorizado; el chat no recibe claves ni URLs de almacenamiento.
+
+## Asistente y revisión manual (H1–H3, H5)
+
+El hilo consume assistantSuggestion nullable como puntero seguro; sólo Read+Send puede pedir y revisar una sugerencia Manual. POST assistant-suggestions conserva UUID/fuente/revisión y el servidor deduplica el pedido compartido. GET sólo consulta. El preview tiene dueño por actor, conversación, cultura, permisos, modo/fuente y contexto del destinatario; los textos propuestos quedan únicamente en el editor activo, fuera de QueryCache, MutationCache, URL y storage. El borrador ordinario sigue por conversación en la página. Cambiar la fuente reinicia sólo el preview; no remonta el editor ordinario ni pierde su foco o cursor.
+
+Revisar y enviar abre el diálogo C2 existente con formulario/versión fijos y casillas para destildar datos; no se editan valores ni se envían valores canónicos. Confirmar congela únicamente requestId e includedFieldIds. Una respuesta incierta o409 exige GET de la sugerencia antes de habilitar una repetición explícita del mismo intento. Sent recupera el recibo compartido original, también de otro operador; no se atribuye a quien consulta. No hay POST automático de envío. Pending se consulta mientras la pestaña es visible; un fallo pausa el sondeo y429 conserva Retry-After sin reanudar pedidos al vencer la espera.
+
+403 del preview retira sus datos y diálogo, sin revocar la lectura autorizada del chat. Message/Outgoing llevan assistant requerido nullable con razón y proposedFields de presentación capturados; Por qué lo mandó/lo sugirió no consulta configuración ni IA actual. Sin FormRecordsRead, el gate existente retira esa explicación de mensajes, pendientes y páginas anteriores antes de publicar el resultado, conservando Origin y el autor. El recibo manual ordinario sigue estricto Conversation con assistant:null; las sugerencias tienen su propio contrato compartido. formMetadata sólo comparte el decoder local de la metadata sellada, sin dependencias entre features.
+
+NoEligibleForms no impide analizar una conversación vinculada y activa para detectar un faltante; Eligible sigue siendo obligatorio para enviar un formulario. El historial de H5 conserva QuickReplies requerido nullable con títulos capturados; sólo Interactive/QuickReplies lo presentan, como lista de lectura sin tokens, IDs ni acciones del operador. Un GET del hilo403 confirma pérdida de WhatsAppRead y retira el scope completo; no equivale al403 local del preview.
