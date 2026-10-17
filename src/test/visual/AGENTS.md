@@ -51,3 +51,5 @@ K7 (`chatCatalogs.spec`): oferta por destinatario, bloqueos independientes, mens
 
 
 D2 adapta esas mismas matrices es/en a1440/390/320: responses recorre el panel sobre la planilla montada con Respuesta/Fotos/Actividad, visor y retorno de foco/filtro privado por teclado; formApprovals abre TaskURL y conserva Decide-only sin lecturas de respuestas/archivos, propias y estados pendiente/aprobada/rechazada. formWorkflow conserva Consultar→Reintentar desde Actividad; formPdf entra desde el marcador HasPdf al tabPDF, abre sólo copia fija y prueba descarga del mismo blob, sin emitirla. Sólo el escenario sintético responses-pdf fija HasPdf en la fila con el documento ya existente; no modifica la cohorte HTTP real. Estas escenas escriben evidencia en test-results, conservan las referencias existentes y no acreditan Meta/Azure/PostgreSQL.
+
+whatsapp-audio.spec prepara H6 real en es/en a1440/390/320 con estados sintéticos Pending/Completed/Failed/Expired: acciones de escucha privadas, transcripción debajo y vencimiento, sin cargar bytes ni llamar al proveedor. Sólo se ejecuta en el cierre visual conjunto; no acredita decodificación ni STT real.

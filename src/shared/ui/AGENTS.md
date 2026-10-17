@@ -57,3 +57,5 @@ Sonner sólo se importa en notifications.ts y sonner.tsx; arquitectura verifica 
 `Tabs`, `TabsList`, `TabsTrigger` y `TabsContent` comparten pestañas subrayadas con tokens del sistema sobre Radix. Conservan asociación entre pestaña/panel, selección controlada o inicial, foco y navegación por teclado; el consumidor aporta nombres, valores y contenido. No conocen rutas, permisos ni consultas. El catálogo las muestra con `?scenario=tabs`.
 
 `DataTable.selectedRowKey` marca una identidad con el estado visual y accesible de selección; `onRowClick` permite abrirla desde una celda sin controles. Las filas conservan su semántica de tabla y el enlace de número aporta la navegación por teclado. Controles internos, contenido editable, clics modificados y eventos ya prevenidos conservan su dueño; sin estas props el listado mantiene su comportamiento.
+
+PrivateAudio recibe sólo Blob, etiqueta y una intención explícita de reproducir. Presenta audio nativo con controles y crea una URL local durante su montaje; pausa, retira src y revoca al cambiar/desmontar. No conoce ruta, credenciales, proveedor ni transcripción; el dueño valida acceso y contenido.
