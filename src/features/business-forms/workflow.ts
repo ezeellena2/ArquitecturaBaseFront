@@ -4,3 +4,7 @@ export function workflowNextAction(action: { state: ActionState; canConsult: boo
   if (action.state === "Uncertain") return action.canConsult ? "consult" : null;
   return action.state === "Failed" && action.canRetry ? "retry" : null;
 }
+
+export function workflowCanReview(action: { state: ActionState; canReview: boolean }): boolean {
+  return action.state === "Uncertain" && action.canReview;
+}

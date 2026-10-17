@@ -303,7 +303,7 @@ export function FormResponseDetailPage() {
         ) : null}
       </Surface>
       {workflow.query.data?.recordId === data.id ? <ResponseDocuments key={detail.scope.owner+":"+data.id} recordId={data.id} documents={workflow.query.data.documents} onForbidden={deny} timeZoneId={detail.scope.user?.timeZoneId}/> : null}
-      <ResponseWorkflowHistory workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} />
+      <ResponseWorkflowHistory key={"workflow:"+detail.scope.owner+":"+data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} />
     </Page>
     </section>
   );

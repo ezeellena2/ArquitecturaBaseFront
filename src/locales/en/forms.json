@@ -586,7 +586,7 @@
     "ruleRevision": "Rules from revision {{revision}}",
     "consult": "Check status",
     "working": "Checking…",
-    "consultFirst": "Delivery is unconfirmed. Check its status before retrying.",
+    "consultFirst": "Delivery is unconfirmed. Check its status, then review the send if it is still unconfirmed.",
     "notApplicable": "The rule condition did not match.",
     "retryHint": "Retry resumes only unfinished work: it never repeats confirmed actions or creates another PDF.",
     "states": {
@@ -597,7 +597,21 @@
       "Uncertain": "Unconfirmed",
       "NotApplicable": "Not applicable"
     },
-    "noManagePermission": "You no longer have permission to recover actions."
+    "noManagePermission": "You no longer have permission to recover actions.",
+    "review": "Resolve send",
+    "reviewTitle": "Resolve the send",
+    "reviewDescription": "Check its status and verify the send before choosing. Your review lets the rule continue; it does not confirm WhatsApp delivery.",
+    "sent": "Sent",
+    "notSent": "Not sent",
+    "sentHint": "The rule continues without sending this notice again.",
+    "notSentHint": "The notice becomes available for an explicit retry.",
+    "confirmReview": "Confirm review",
+    "confirmSent": "Confirm it was sent",
+    "confirmNotSent": "Confirm it was not sent",
+    "reviewSent": "{{name}} marked it as sent.",
+    "reviewNotSent": "{{name}} marked it as not sent.",
+    "humanReviewHint": "Human review does not confirm WhatsApp delivery.",
+    "reviewCheckRequired": "Check the status to see whether your review was saved before confirming it again."
   },
   "approvals": {
     "title": "To approve",

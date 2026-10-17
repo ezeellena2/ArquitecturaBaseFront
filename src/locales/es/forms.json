@@ -586,7 +586,7 @@
     "ruleRevision": "Reglas de la revisión {{revision}}",
     "consult": "Consultar",
     "working": "Consultando…",
-    "consultFirst": "No sabemos si salió. Consultá primero para confirmarlo antes de reintentar.",
+    "consultFirst": "No sabemos si salió. Consultá el estado y, si sigue sin confirmar, revisá el envío.",
     "notApplicable": "La condición de la regla no se cumplió.",
     "retryHint": "Reintentar retoma sólo lo que no salió: no repite lo confirmado ni arma otro PDF.",
     "states": {
@@ -597,7 +597,21 @@
       "Uncertain": "Sin confirmar",
       "NotApplicable": "No aplica"
     },
-    "noManagePermission": "Ya no tenés permiso para recuperar acciones."
+    "noManagePermission": "Ya no tenés permiso para recuperar acciones.",
+    "review": "Resolver envío",
+    "reviewTitle": "Resolver el envío",
+    "reviewDescription": "Consultá el estado y comprobá el envío antes de elegir. Tu revisión permite continuar la regla; no confirma que WhatsApp lo entregó.",
+    "sent": "Salió",
+    "notSent": "No salió",
+    "sentHint": "La regla continúa sin volver a mandar este aviso.",
+    "notSentHint": "El aviso queda para reintentar de forma explícita.",
+    "confirmReview": "Confirmar revisión",
+    "confirmSent": "Confirmar que salió",
+    "confirmNotSent": "Confirmar que no salió",
+    "reviewSent": "{{name}} indicó que salió.",
+    "reviewNotSent": "{{name}} indicó que no salió.",
+    "humanReviewHint": "Revisión humana: no confirma la entrega de WhatsApp.",
+    "reviewCheckRequired": "Consultá el estado para saber si la revisión quedó guardada antes de volver a confirmarla."
   },
   "approvals": {
     "title": "Por aprobar",

@@ -186,7 +186,7 @@ export function createResponseVisualFixtures(
     );
   let failOnce = scenario === "responses-error";
   let actionState: "Uncertain" | "Failed" | "Completed" = "Uncertain";
-  const workflow = (recordId: string) => ({ ...responseWorkflowFixture(recordId), ...(scenario === "responses-workflow" ? { recordState: "Approved", ruleRevision: 3, actions: [{ id: id(90), ruleId: id(91), kind: "NotifyAuthor", event: "Approved", order: 1, state: actionState, reasonCode: actionState === "Completed" ? null : "Test.Delivery", reason: actionState === "Completed" ? null : en ? "Delivery needs review." : "Revisá la entrega.", canConsult: actionState === "Uncertain", canRetry: actionState === "Failed", createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: actionState === "Completed" ? "2026-10-16T12:01:00Z" : null }] } : {}) });
+  const workflow = (recordId: string) => ({ ...responseWorkflowFixture(recordId), ...(scenario === "responses-workflow" ? { recordState: "Approved", ruleRevision: 3, actions: [{ id: id(90), ruleId: id(91), kind: "NotifyAuthor", event: "Approved", order: 1, revision: 0, state: actionState, reasonCode: actionState === "Completed" ? null : "Test.Delivery", reason: actionState === "Completed" ? null : en ? "Delivery needs review." : "Revisá la entrega.", canConsult: actionState === "Uncertain", canRetry: actionState === "Failed", canReview: actionState === "Uncertain", review: null, createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: actionState === "Completed" ? "2026-10-16T12:01:00Z" : null }] } : {}) });
   return {
     async handle(request: Request): Promise<Response> {
       const url = new URL(request.url);

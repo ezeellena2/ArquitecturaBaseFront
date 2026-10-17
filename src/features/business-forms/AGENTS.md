@@ -92,6 +92,7 @@ Al recibir403 se desmonta el editor de reglas completo y se abortan/retiran toda
 
 - `useResponseWorkflow` consume el estado durable por respuesta con FormRecordsRead. Sólo vuelve a leer automáticamente mientras haya acciones Esperando/En curso. Consultar/Reintentar son POST explícitos sobre el mismo RunId; no crean operaciones ni UUID nuevos en el front.
 - El servidor entrega capacidades. El front además exige RulesManage y distingue Sin confirmar (Consultar) de No se pudo (Reintentar); jamás ofrece repetir Hecho/No aplica. Un403 de control quita recuperación y revalida por GET; sólo un403 de lectura retira valores y alcance privado.
+- Si el aviso sigue Sin confirmar, Resolver envío permite indicar Salió o No salió por POST explícito sobre el mismo RunId. Congelar la revisión de la ejecución al abrir y enviarla como expectedRevision. Tras red/5xx/409 consultar el workflow antes de permitir otro POST; una lectura fallida conserva elección y sólo permite Consultar. La evidencia guarda quién/cuándo revisó; nunca acredita entrega de Meta. Salió continúa sin reenviar; No salió habilita el reintento explícito de la falla. Cancelar vuelve al control y confirmar devuelve foco a la misma acción.
 - El detalle conserva un solo dueño de avisos para valores, planilla, workflow y navegación. Las migas usan el nombre confirmado del detalle. Documentos del workflow son metadata; su contenido fijo se abre o descarga por API autorizada mediante ResponseDocuments.
 
 ## Bandeja y decisiones (Etapa 4, G3–G4)
