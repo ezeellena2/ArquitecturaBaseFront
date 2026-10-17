@@ -108,3 +108,5 @@ H1–H3 amplía el mismo ámbito WhatsApp: api/assistant valida propuesta, punte
 H4 reutiliza el ámbito business-forms para revisión humana de catálogos: api/catalogResponse y catalogs fijan el contrato, useCatalogDraftEditor conserva el dueño y CatalogFiltersEditorPage compone K4. src/test/httpCohort y su guía de test cubren la cohorte forms-catalog-proposals-http sin adaptar sus bytes.
 
 H6 conserva el ámbito WhatsApp: api/audio y useChatAudioTranscription coordinan el POST idempotente Manual y los bytes privados; ChatAudio presenta estados/transcripción dentro de la burbuja. PrivateAudio es un elemento común sin rutas/credenciales, con URL Blob revocada al salir. Los contratos HTTP y el escenario visual se califican en el cierre conjunto.
+
+H7 pertenece a business-forms (consulta agregada, descarte y semilla del alta); app compone la ruta Manage y layouts su entrada fija. No incorpora un área ni un proveedor nuevos.

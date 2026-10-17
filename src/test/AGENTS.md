@@ -40,3 +40,5 @@ forms-catalog-proposals-http conserva las seis respuestas de FormCatalogProposal
 forms-suggestion-detail-http suma detail-es/en de FormSuggestionCaptureIntegrationTests (FORM_SUGGESTION_DETAILS_HTTP_OUTPUT). suggestionDetailHttpContract usa FORMS_SUGGESTION_DETAILS_HTTP_CONTRACT_INPUT y sólo se ejecuta después del export conjunto. assistance.suggestion conserva Always histórico aunque la configuración actual cambió; no completar cuerpos anteriores ni fabricar nodos de cadena.
 
 whatsapp-audio-http suma tres cuerpos de WhatsAppChatTests.Audio (WHATSAPP_AUDIO_HTTP_OUTPUT). audioHttpContract usa WHATSAPP_AUDIO_HTTP_CONTRACT_INPUT y verifica request Pending y páginas Pending/Completed sin reescribir bytes; se ejecuta sólo después del export final. Los dobles de comportamiento/audio son sintéticos explícitos y no acreditan reproducción real del proveedor.
+
+La familia missingRequests lee forms-missing-requests-http con FORMS_MISSING_REQUEST_HTTP_CONTRACT_INPUT; el productor real FormMissingRequestHttpTests exporta seis cuerpos agregados/es/en y sus límites403/409. No se fabrican muestras mientras la integración final está pendiente.
