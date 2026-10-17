@@ -37,7 +37,7 @@ it.each(["available", "notInstalled", "notConfigured", "paused", "modelNotQualif
 });
 
 it.each([undefined, "Unknown"])("rejects an unclassified message origin instead of falling back to Conversation: %s", async origin => {
-  const message = { quickReplies: null, assistant: null, id: "message", direction: "Inbound", kind: "Text", body: "Hola", occurredAtUtc: "2026-10-17T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null, origin };
+  const message = { audio: null, quickReplies: null, assistant: null, id: "message", direction: "Inbound", kind: "Text", body: "Hola", occurredAtUtc: "2026-10-17T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null, origin };
   server.use(http.get("/api/whatsapp/chats/chat-1/messages", () => HttpResponse.json({ ...thread, assistantAvailability: { state: "available" }, messages: [message] })));
   await expect(getThread("chat-1")).rejects.toThrow("Unsupported chat response.");
 });

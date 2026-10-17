@@ -99,7 +99,7 @@ it("reopens the existing closed form dialog after a confirmed missing receipt an
 it("preserves read-only history when linked account and eligibility are withheld as null", async () => {
   contact.linkedAccount = null;
   contact.formEligibility = null;
-  thread.messages.push({ quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000010",direction:"Inbound",kind:"Text",body:"Historial permitido",occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"});
+  thread.messages.push({ audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000010",direction:"Inbound",kind:"Text",body:"Historial permitido",occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"});
   server.use(http.get("/api/me", () => HttpResponse.json({...currentUser,permissions:["whatsapp.read"]})));
   await openChat();
   expect(screen.getByText("Historial permitido")).toBeInTheDocument();
@@ -158,7 +158,7 @@ it.each([
 });
 
 it("opens a fresh manual form send after an inactive item notice without posting automatically", async () => {
-  thread.messages=[{ quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
+  thread.messages=[{ audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
     occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business",
     formReply:{state:"Rejected",definitionId,versionId,versionNumber:1,name:"Registrar visita",recordId:null,number:null,values:null,
       rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}}];
@@ -230,7 +230,7 @@ it("presents preparation 409 as a blocked form rather than a failed read", async
 });
 
 it.each(["NoLinkedAccount","InactiveAccount","NoEligibleForms","NoSend"])("hides resend when the form composer cannot open: %s", async reason => {
-  thread.messages=[{ quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
+  thread.messages=[{ audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
     occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business",
     formReply:{state:"Rejected",definitionId,versionId,versionNumber:1,name:"Registrar visita",recordId:null,number:null,values:null,
       rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}}];

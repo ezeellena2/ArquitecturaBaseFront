@@ -4,7 +4,7 @@ import { server } from "@/test/mocks/server";
 import { resetHttpClient } from "@/shared/api/httpClient";
 import { getThread } from "./chat";
 afterEach(resetHttpClient);
-const message = { quickReplies: null, id: "019abcde-1000-7000-8000-000000000001", direction: "Outbound", kind: "Text", body: "Hola", occurredAtUtc: "2026-10-17T12:00:00Z", inboundSequence: 0, operatorUserId: null, status: "Sent", errorCode: null, origin: "Assistant", assistant: null };
+const message = { audio: null, quickReplies: null, id: "019abcde-1000-7000-8000-000000000001", direction: "Outbound", kind: "Text", body: "Hola", occurredAtUtc: "2026-10-17T12:00:00Z", inboundSequence: 0, operatorUserId: null, status: "Sent", errorCode: null, origin: "Assistant", assistant: null };
 const outgoing = { quickReplies: null, id: "019abcde-1000-7000-8000-000000000002", requestId: "019abcde-1000-7000-8000-000000000003", body: "Hola", requestedAtUtc: "2026-10-17T12:00:00Z", operatorUserId: null, waMessageId: null, state: "Pending", kind: "Text", origin: "Assistant", assistant: null };
 const thread = { assistantAvailability: { state: "available" }, assistantSuggestion: null, contact: { id: "chat-1", profileName: "Ana", phoneNumber: null, mode: "Manual", modeRevision: 2, lastInboundAtUtc: "2026-10-17T12:00:00Z", lastInboundSequence: 1, unreadCount: 1, preview: null }, messages: [message], outgoing: [outgoing], beforeAtUtc: null, beforeId: null, canReadFormRecords: false };
 it.each([

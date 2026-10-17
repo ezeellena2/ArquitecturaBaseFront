@@ -1,4 +1,5 @@
 import { readFormMetadata, type ChatFormMetadata } from "../api/formMetadata";
+import type { ChatAudio } from "../api/audio";
 import type { AssistantExplanation } from "../api/assistant";
 import { toFormReplyPresentation, type FormReplyPresentation } from "./formReplyPresentation";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
@@ -17,6 +18,7 @@ export function deliveryStatus(value: string | null) {
 }
 
 interface TimelineContent {
+  audio: ChatAudio | null;
   assistant: AssistantExplanation | null;
   quickReplies: string[] | null;
   key: string;
@@ -33,11 +35,13 @@ interface TimelineContent {
   operatorUserId: string | null;
   delivery: ReturnType<typeof deliveryStatus> | undefined;
 }
-export type TimelineItem = TimelineContent & ({ source: "message" } | { source: "outgoing"; operation: Outgoing });
+export type TimelineItem = TimelineContent & ({ source: "message"; messageId: string } | { source: "outgoing"; operation: Outgoing });
 
 // Queries own deduplication and persistence. This adapter preserves the API data and mixes both sources by time.
 export function buildTimeline(messages: readonly ChatMessage[], outgoing: readonly Outgoing[]): TimelineItem[] {
   const items: TimelineItem[] = messages.map(message => ({
+    audio: message.kind === "Audio" ? message.audio : null,
+    messageId: message.id,
     quickReplies: message.kind === "Interactive" && message.purpose !== "Access" ? message.quickReplies : null,
     assistant: message.purpose === "Access" ? null : message.assistant,
     source: "message", key: `message:${message.id}`, occurredAtUtc: message.occurredAtUtc,
@@ -51,6 +55,7 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     delivery: message.direction === "Outbound" ? deliveryStatus(message.status) : undefined,
   }));
   for (const operation of outgoing) items.push({
+    audio: null,
     quickReplies: operation.kind === "QuickReplies" ? operation.quickReplies : null,
     assistant: operation.assistant,
     source: "outgoing", operation, key: `outgoing:${operation.id}`, occurredAtUtc: operation.requestedAtUtc,

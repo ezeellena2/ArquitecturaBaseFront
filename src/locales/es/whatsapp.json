@@ -100,7 +100,8 @@
     "System": "aviso de WhatsApp",
     "Other": "de otro tipo",
     "Interactive": "interactivo",
-    "Template": "de plantilla"
+    "Template": "de plantilla",
+    "Audio": "audio"
   },
   "access": {
     "label": "Acceso al sistema",
@@ -217,5 +218,17 @@
     "whySuggested": "Por qué lo sugirió",
     "quickRepliesLabel": "Opciones de respuesta"
   },
-  "readForbidden": "Ya no tenés permiso para ver esta conversación."
+  "readForbidden": "Ya no tenés permiso para ver esta conversación.",
+  "audio": {
+    "listen": "Escuchar audio",
+    "loading": "Cargando audio…",
+    "received": "Audio recibido",
+    "transcription": "Transcripción",
+    "transcribing": "Pasando el audio a texto…",
+    "expired": "El audio y su transcripción ya no están disponibles.",
+    "unavailable": "El audio no está disponible.",
+    "failed": "No pudimos pasar este audio a texto. Escuchalo: el asistente no lo va a responder.",
+    "noTranscript": "No hay una transcripción disponible.",
+    "waiting": "Esperá {{seconds}} segundos para volver a escuchar."
+  }
 }

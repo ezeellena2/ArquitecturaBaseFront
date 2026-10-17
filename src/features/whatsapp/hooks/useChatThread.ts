@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ApiError } from "@/shared/api/ApiError";
 import { getThread, markRead, type Thread } from "../api/chat";
 import { mergeMessages } from "../lib/history";
@@ -86,7 +86,8 @@ export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolea
     if (!enabled || readDenied || !visible || !atBottom || !latest.data || latest.isError || read.isPending || read.isError || sequence <= readThrough) return;
     read.mutate(sequence, { onSuccess: () => setReadThrough(sequence) });
   }, [enabled, visible, atBottom, latest.data, latest.isError, sequence, readThrough, read, readDenied]);
-  return { latest: { ...latest, error: readDenied ? forbiddenRead : latest.error, isError: readDenied || latest.isError, data: enabled && !readDenied && latest.data ? allowed ? latest.data : withoutFormReplyValues(latest.data) : undefined, refetch: () => enabled && !readDenied ? latest.refetch() : Promise.resolve(undefined) },
+  const denyRead = useCallback(() => setDeniedScope(scopeStamp), [scopeStamp]);
+  return { denyRead, latest: { ...latest, error: readDenied ? forbiddenRead : latest.error, isError: readDenied || latest.isError, data: enabled && !readDenied && latest.data ? allowed ? latest.data : withoutFormReplyValues(latest.data) : undefined, refetch: () => enabled && !readDenied ? latest.refetch() : Promise.resolve(undefined) },
     history: { ...history, data: enabled && !readDenied && history.data ? allowed ? history.data : { ...history.data, pages: history.data.pages.map(withoutFormReplyValues) } : undefined, fetchNextPage: () => enabled && !readDenied ? history.fetchNextPage() : Promise.resolve(undefined) },
     messages: enabled && !readDenied ? messages : [], read, visible, formValuesRevoked: gate.wasGranted && !allowed };
 }

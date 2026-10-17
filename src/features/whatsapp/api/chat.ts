@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { chatAudioSchema, type ChatAudio } from "./audio";
 import { api } from "@/shared/api/httpClient";
 import { readThreadFormReplies, type FormReply } from "./formReplies";
 import type { ChatFormMetadata, FormEligibility, LinkedAccount } from "./forms";
@@ -19,6 +20,7 @@ export interface Chat {
   previewPurpose?: MessagePurpose; previewAccessEventKind?: AccessEventKind | null;
 }
 export interface ChatMessage {
+  audio: ChatAudio | null;
   id: string; direction: "Inbound" | "Outbound"; kind: string; body: string | null; occurredAtUtc: string;
   inboundSequence: number; operatorUserId: string | null; status: string | null; errorCode: number | null;
   origin: MessageOrigin; quickReplies: string[] | null; assistant: AssistantExplanation | null;
@@ -40,7 +42,7 @@ export const listChats = (page: number, search: string, unreadOnly: boolean, sig
 export const getThread = async (id: string, cursor?: { at: string; id: string }, signal?: AbortSignal) => {
   const thread = await api.get<Thread>(`${base}/${id}/messages${cursor ? `?${new URLSearchParams({ beforeAtUtc: cursor.at, beforeId: cursor.id })}` : ""}`, { signal });
   const availability = assistantAvailabilitySchema.safeParse(thread?.assistantAvailability);
-  if (!availability.success || !assistantSuggestionPointerSchema.nullable().safeParse(thread.assistantSuggestion).success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success || !assistantExplanationSchema.nullable().safeParse(row.assistant).success || !assistantQuickRepliesSchema.nullable().safeParse(row.quickReplies).success)) throw new Error("Unsupported chat response.");
+  if (thread?.messages?.some(row => !chatAudioSchema.nullable().safeParse(row.audio).success) || !availability.success || !assistantSuggestionPointerSchema.nullable().safeParse(thread.assistantSuggestion).success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success || !assistantExplanationSchema.nullable().safeParse(row.assistant).success || !assistantQuickRepliesSchema.nullable().safeParse(row.quickReplies).success)) throw new Error("Unsupported chat response.");
   return readThreadFormReplies({ ...thread, assistantAvailability: availability.data });
 };
 export const markRead = (id: string, throughSequence: number) => api.put<void>(`${base}/${id}/read`, { throughSequence });

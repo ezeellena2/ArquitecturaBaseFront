@@ -100,7 +100,8 @@
     "System": "WhatsApp notice",
     "Other": "other",
     "Interactive": "interactive",
-    "Template": "template"
+    "Template": "template",
+    "Audio": "audio"
   },
   "access": {
     "label": "System access",
@@ -217,5 +218,17 @@
     "whySuggested": "Why it suggested this",
     "quickRepliesLabel": "Reply options"
   },
-  "readForbidden": "You no longer have permission to view this conversation."
+  "readForbidden": "You no longer have permission to view this conversation.",
+  "audio": {
+    "listen": "Listen to audio",
+    "loading": "Loading audio…",
+    "received": "Received audio",
+    "transcription": "Transcription",
+    "transcribing": "Transcribing the audio…",
+    "expired": "The audio and its transcription are no longer available.",
+    "unavailable": "The audio is unavailable.",
+    "failed": "We could not transcribe this audio. Listen to it: the assistant will not respond.",
+    "noTranscript": "No transcription is available.",
+    "waiting": "Wait {{seconds}} seconds before listening again."
+  }
 }

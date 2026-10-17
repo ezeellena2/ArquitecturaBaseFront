@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { ApiError } from "@/shared/api/ApiError";
+import { useChatAudioTranscription } from "../hooks/useChatAudioTranscription";
 import { useChatThread } from "../hooks/useChatThread";
 import { useChatThreadActions } from "../hooks/useChatThreadActions";
 import { buildTimeline } from "../lib/timeline";
@@ -20,7 +21,9 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
   const [canOpenForm, setCanOpenForm] = useState(false);
   const [formOpenRequest, setFormOpenRequest] = useState(0);
   const [atBottom, setAtBottom] = useState(true);
-  const { latest, history, messages, read, formValuesRevoked } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
+  const { latest, history, messages, read, formValuesRevoked, denyRead } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
+  const readOwner = JSON.stringify([actor, id, i18n.resolvedLanguage, [...new Set(readPermissions)].sort()]);
+  useChatAudioTranscription({ owner: readOwner, contactId: id, enabled: readPermissions.includes("whatsapp.read") && latest.data?.contact.mode === "Manual" && !latest.isError, messages, onChanged: () => { void latest.refetch(); }, onForbidden: denyRead });
   const { mode, setMode, review, setReview, changing, reviewing } = useChatThreadActions(id, latest.refetch);
   const items = useMemo(() => buildTimeline(messages, latest.data?.outgoing ?? []), [messages, latest.data?.outgoing]);
   const contact = latest.data?.contact;
@@ -40,9 +43,10 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
   if (!contact) return <div className="p-5 text-sm text-[var(--color-content-muted)]">{t(readForbidden ? "readForbidden" : latest.isError ? "loadFailed" : "loading")} {latest.isError && !readForbidden ? <Button variant="outline" size="sm" onClick={() => void latest.refetch()}>{t("retry")}</Button> : null}</div>;
   const forbidden = latest.error instanceof ApiError && latest.error.status === 403;
   const linkedAccount = canSend ? contact.linkedAccount : undefined;
-  const source = [...messages].filter(message => message.direction === "Inbound" && message.kind === "Text" && message.purpose !== "Access").sort((a, b) => b.inboundSequence - a.inboundSequence)[0];
+  const latestSource = [...messages].filter(message => message.direction === "Inbound" && ["Text", "Audio"].includes(message.kind) && message.purpose !== "Access").sort((a, b) => b.inboundSequence - a.inboundSequence)[0];
+  const source = latestSource?.kind === "Text" || latestSource?.kind === "Audio" && latestSource.audio?.state === "Completed" && latestSource.body ? latestSource : undefined;
   const pointer = latest.data?.assistantSuggestion ?? null;
-  const sourceMessageId = source?.id ?? pointer?.sourceMessageId;
+  const sourceMessageId = source?.id ?? (latestSource ? undefined : pointer?.sourceMessageId);
   const assistantOwner = JSON.stringify([actor, id, i18n.resolvedLanguage, [...new Set(readPermissions)].sort(), contact.modeRevision, sourceMessageId, availability, contact.formEligibility?.recipientContextRevision]);
   const assistantContext = sourceMessageId ? { owner: assistantOwner, sourceMessageId, pointer: pointer?.sourceMessageId === sourceMessageId ? pointer : null, available: availability === "available" } : undefined;
   const mayReadEmail = readPermissions.includes("users.read");
@@ -64,7 +68,7 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
         </div>
       </div>
       {latest.isError ? <div className="flex items-center justify-between gap-2 p-3 text-sm text-[var(--color-content-muted)]"><span>{t(forbidden ? "send.forbidden" : "stale")}</span><Button size="sm" variant="outline" onClick={() => void latest.refetch()}>{t("retry")}</Button></div> : null}
-      <ChatTimeline onResendForm={canOpenForm&&canSend&&!latest.isError ? ()=>setFormOpenRequest(value=>value+1) : undefined} items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
+      <ChatTimeline contactId={id} readOwner={readOwner} onAudioForbidden={denyRead} onResendForm={canOpenForm&&canSend&&!latest.isError ? ()=>setFormOpenRequest(value=>value+1) : undefined} items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
         canReuse={!draft.attempt && !draft.form?.attempt && !draft.body} reviewing={reviewing.isPending} onReview={setReview}
         onReuse={body => updateDraft(value => ({ ...value, body, attempt: undefined }))} atBottom={atBottom} onAtBottomChange={setAtBottom}
         hasOlder={Boolean(history.data ? history.hasNextPage : latest.data?.beforeId)} loadingOlder={history.isFetchingNextPage}

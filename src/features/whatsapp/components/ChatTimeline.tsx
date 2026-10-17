@@ -6,14 +6,16 @@ import { MessageBubble, MessageDateDivider } from "@/shared/ui/MessageBubble";
 import { MessageCard } from "@/shared/ui/MessageCard";
 import { FormIcon } from "@/shared/ui/icons";
 import { MessageHistory } from "@/shared/ui/MessageHistory";
+import { ChatAudio } from "./ChatAudio";
 import { FormReplyCard } from "./FormReplyCard";
 import type { Outgoing } from "../api/chat";
 import { groupTimelineByDay, type TimelineItem } from "../lib/timeline";
 import { accessSummary } from "../lib/messagePresentation";
 import { useChatHistoryViewport } from "../hooks/useChatHistoryViewport";
 
-export function ChatTimeline({ items, actor, timeZone, canSend, canReuse, reviewing, onReview, onReuse,
+export function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, actor, timeZone, canSend, canReuse, reviewing, onReview, onReuse,
   atBottom, onAtBottomChange, hasOlder, loadingOlder, historyError, loadOlder, formValuesRevoked = false, onResendForm }: {
+  contactId: string; readOwner: string; onAudioForbidden: () => void;
   items: readonly TimelineItem[]; actor: string; timeZone?: string; canSend: boolean; canReuse: boolean;
   reviewing: boolean; onReview: (operation: Outgoing) => void; onReuse: (body: string) => void;
   atBottom: boolean; onAtBottomChange: (recent: boolean) => void;
@@ -31,8 +33,8 @@ export function ChatTimeline({ items, actor, timeZone, canSend, canReuse, review
     {groups.map(group => <div key={group.date}>
       <MessageDateDivider date={group.date} label={formatDateInZone(group.items[0].occurredAtUtc, language, timeZone)} />
       {group.items.map(item => <MessageBubble key={item.key} direction={item.direction}
-        text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.origin === "FormAction" ? formValuesRevoked ? "" : item.body ?? "" : item.kind === "FlowReply" ? "" : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
-        attachment={item.origin === "FormAction" ? <MessageCard icon={<FormIcon className="size-4" />} title={t("formActions.title")} description={t(item.kind === "Document" ? "formActions.document" : "formActions.notice")} /> : item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard actor={actor} timeZone={timeZone} onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : item.quickReplies ? <ul aria-label={t("assistant.quickRepliesLabel")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">{item.quickReplies.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}</ul> : undefined}
+        text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.origin === "FormAction" ? formValuesRevoked ? "" : item.body ?? "" : item.kind === "FlowReply" || item.kind === "Audio" ? "" : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
+        attachment={item.origin === "FormAction" ? <MessageCard icon={<FormIcon className="size-4" />} title={t("formActions.title")} description={t(item.kind === "Document" ? "formActions.document" : "formActions.notice")} /> : item.source === "message" && item.kind === "Audio" && item.audio && item.purpose !== "Access" ? <ChatAudio key={readOwner + ":" + item.messageId} owner={readOwner} contactId={contactId} messageId={item.messageId} audio={item.audio} body={item.body} onForbidden={onAudioForbidden} preserveViewport={preserveViewport}/> : item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard actor={actor} timeZone={timeZone} onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : item.quickReplies ? <ul aria-label={t("assistant.quickRepliesLabel")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">{item.quickReplies.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}</ul> : undefined}
         timestamp={item.occurredAtUtc} timeLabel={formatTimeInZone(item.occurredAtUtc, language, timeZone)}
         dateLabel={formatDateTimeInZone(item.occurredAtUtc, language, timeZone)}
         author={item.purpose === "Access" ? t("access.label") : item.author ? t(item.author === "automatic" ? "author.automatic" : item.author === "assistant" ? "author.assistant" : item.operatorUserId === actor ? "author.you" : "author.operator") : undefined}
