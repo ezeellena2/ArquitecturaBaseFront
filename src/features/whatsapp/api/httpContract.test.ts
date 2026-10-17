@@ -30,7 +30,7 @@ for (const culture of ["es", "en"] as const) describe("Actual WhatsApp form HTTP
   it("reads acceptance and every captured durable state using the same form identity", () => {
     for (const [name, state] of [["send-pending","Pending"],["outgoing-pending","Pending"],["outgoing-accepted","Accepted"],
       ["outgoing-uncertain","Uncertain"],["outgoing-failed","Failed"]]) {
-      expect(parse(name!)).toMatchObject({ kind:"Flow", state, form:{definitionId:selected.definitionId,
+      expect(parse(name!)).toMatchObject({ kind:"Flow", state, origin:"Conversation", form:{definitionId:selected.definitionId,
         versionId:selected.versionId, name:selected.name, culture} });
     }
   });

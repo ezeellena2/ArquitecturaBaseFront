@@ -13,11 +13,18 @@ const option = { definitionId, versionId, versionNumber: 1, prefix: "VIS", name:
   questionCount: 2, submitLabel: { es: "Confirmar", en: "Confirm" } };
 const forms = { page: { items: [option], page: 1, pageSize: 4, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false }, recipientCulture: "en", recipientContextRevision: "context" };
 const receipt = { id: "019abcde-1000-7000-8000-000000000004", requestId: request.requestId, operatorUserId: "actor",
-  body: request.message, requestedAtUtc: "2026-10-10T12:00:00Z", state: "Pending", waMessageId: null, kind: "Flow",
+  body: request.message, requestedAtUtc: "2026-10-10T12:00:00Z", state: "Pending", waMessageId: null, kind: "Flow", origin: "Conversation",
   form: { definitionId, versionId, versionNumber: 1, name: option.name, culture: "en" },
   recoveryPath: "/api/whatsapp/chats/" + contactId + "/outgoing/" + request.requestId };
 afterEach(resetHttpClient);
 describe("Chat forms DTO contract", () => {
+  it.each(["Pending", "Accepted"] as const)("accepts the declared Conversation origin on a %s manual receipt", state => {
+    const actual = { ...receipt, state, origin: "Conversation" };
+    expect(parseFormOutgoing(actual, request, "actor", contactId)).toEqual(actual);
+  });
+  it.each([undefined, null, "Manual", "FormAction", "Assistant"])("rejects a missing or non-manual receipt origin %#", origin => {
+    expect(() => parseFormOutgoing({ ...receipt, origin }, request, "actor", contactId)).toThrow("Unsupported chat form response.");
+  });
   it("preserves the complete sealed text maps and recipient language", () => {
     expect(parseChatForms(forms)).toEqual(forms);
   });
@@ -63,8 +70,8 @@ describe("Chat forms DTO contract", () => {
       calls.push("GET");
       return HttpResponse.json({...receipt, recoveryPath:null});
     }));
-    expect((await sendFormMessage(contactId, frozen, "actor")).state).toBe("Pending");
-    expect((await recoverFormMessage(contactId, frozen, "actor")).form?.name).toEqual(option.name);
+    expect(await sendFormMessage(contactId, frozen, "actor")).toMatchObject({ state: "Pending", origin: "Conversation" });
+    expect(await recoverFormMessage(contactId, frozen, "actor")).toMatchObject({ origin: "Conversation", form: { name: option.name } });
     expect(calls).toEqual(["POST", "GET"]);
     expect(frozen.message).toBe("  Complete this form  ");
   });

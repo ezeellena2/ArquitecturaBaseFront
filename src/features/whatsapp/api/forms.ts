@@ -18,7 +18,7 @@ export type ChatForms = z.infer<typeof formsSchema>;
 const formMetadataSchema = z.object({ definitionId: guid, versionId: guid, versionNumber: z.number().int().positive(), name: localizedText, culture }).strict().refine(value => !!value.name[value.culture]);
 export type ChatFormMetadata = z.infer<typeof formMetadataSchema>;
 export function readFormMetadata(value: unknown): ChatFormMetadata | null { const parsed = formMetadataSchema.safeParse(value); return parsed.success ? parsed.data : null; }
-const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.string().min(1), body: z.string().nullable(), requestedAtUtc: z.string().datetime({offset:true}), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.literal("Flow"), form: formMetadataSchema, recoveryPath: z.string().nullable() }).strict();
+const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.string().min(1), body: z.string().nullable(), requestedAtUtc: z.string().datetime({offset:true}), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.literal("Flow"), form: formMetadataSchema, recoveryPath: z.string().nullable(), origin: z.literal("Conversation") }).strict();
 
 const catalogOfferSchema = z.strictObject({fieldId:guid,label:z.string().min(1),count:z.number().int().min(0).max(200)});
 const preparationSchema = z.strictObject({culture,recipientContextRevision:z.string().min(1),preparation:z.strictObject({
