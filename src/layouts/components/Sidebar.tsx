@@ -52,18 +52,18 @@ function NavItem({
   onNavigate?: () => void;
 }) {
   const Icon = item.icon;
-  const responsePath = /^\/formularios\/(?:por-aprobar|respuestas|[^/]+\/respuestas)(?:\/|$)/.test(useLocation().pathname);
+  const otherFormsPage = /^\/formularios\/(?:por-aprobar|respuestas|faltantes|[^/]+\/respuestas)(?:\/|$)/.test(useLocation().pathname);
 
   const link = (
     <NavLink
       to={item.to}
       end={item.exact || item.to === "/"}
-      aria-current={item.to === "/formularios" && responsePath ? false : undefined}
+      aria-current={item.to === "/formularios" && otherFormsPage ? false : undefined}
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
           "relative flex min-h-[30px] items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm transition-colors",
-          isActive && !(item.to === "/formularios" && responsePath)
+          isActive && !(item.to === "/formularios" && otherFormsPage)
             ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
             : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
           collapsed ? "size-[30px] justify-center px-0" : "",

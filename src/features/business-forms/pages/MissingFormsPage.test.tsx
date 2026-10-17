@@ -38,6 +38,8 @@ it("keeps search/state on discard conflict, refreshes the server revision and ne
 it("opens a normal new form seeded by the actor-owned original topic name without resolving the topic",async()=>{
  setup(["formtemplates.manage","formtemplates.read"]);let posts=0;server.use(http.post("/api/forms/missing-requests/:id/discard",()=>{posts++;return HttpResponse.error();}));
  const {router}=renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
+ expect(screen.getByRole("link",{name:"Diseñar formularios"})).not.toHaveAttribute("aria-current","page");
+ expect(screen.getByRole("link",{name:"Formularios que faltan"})).toHaveAttribute("aria-current","page");
  await userEvent.click(screen.getByRole("link",{name:"Crear formulario Reclamos de clientes"}));
  expect(await screen.findByLabelText("Nombre")).toHaveValue(topic.name);expect(router.state.location.pathname).toBe("/formularios/nuevo");expect(router.state.location.search).toBe("");expect(posts).toBe(0);
  await userEvent.click(screen.getByRole("button",{name:/English/}));expect(screen.getByLabelText("Nombre")).toHaveValue("");
