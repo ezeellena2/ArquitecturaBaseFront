@@ -76,6 +76,7 @@ const row = z.strictObject({
   actor: author,
   channel: z.string(),
   state: z.enum(["Received", "PendingApproval", "Approved", "Rejected"]),
+  hasPdf: z.boolean(),
   cells: z.array(responseCellSchema),
 });
 function page<T extends z.ZodType>(item: T) {
@@ -144,6 +145,7 @@ export const responseFacetSchema = page(
 const origin = z.strictObject({
   sourceReceiptId: guid,
   channelId: z.string(),
+  senderKind: z.enum(["Manual", "Assistant"]),
   senderUserId: guid.nullable(),
   senderName: z.string().nullable(),
   sentAtUtc: utc,

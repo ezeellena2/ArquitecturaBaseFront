@@ -9,7 +9,7 @@ function action(id: string, overrides: Partial<ResponseAction> = {}): ResponseAc
   return { id, ruleId: "rule-a", kind: "NotifyAuthor", event: "Received", order: 0, revision: 1, state: "Completed", reasonCode: null, reason: null, canConsult: false, canRetry: false, recipients: [], createdAtUtc: time("00"), updatedAtUtc: time("08"), completedAtUtc: time("03"), ...overrides };
 }
 function decision(overrides: Partial<NonNullable<ResponseWorkflow["task"]>> = {}): NonNullable<ResponseWorkflow["task"]> {
-  return { id: "task", roleId: "supervision", roleName: "Supervision", revision: 2, state: "Approved", decidedAtUtc: time("02.500"), decidedBy: { userId: "approver", displayName: "Luz" }, reason: null, ...overrides };
+  return { id: "task", roleId: "supervision", roleName: "Supervision", requestedAtUtc: time("00"), revision: 2, state: "Approved", decidedAtUtc: time("02.500"), decidedBy: { userId: "approver", displayName: "Luz" }, reason: null, ...overrides };
 }
 function record(history: ResponseDetail["history"]): ResponseDetail {
   return { ...responseDetailFixture(), history };

@@ -7,7 +7,7 @@ export function createApprovalVisualFixtures(language:"es"|"en") {
  const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json"}});
  const rows=(url:URL)=>tasks.filter(task=>task.state==="Open"&&(url.searchParams.get("onlyMine")==="false"||task.canDecide));
  return {writes, async handle(request:Request):Promise<Response|null>{const url=new URL(request.url);const path=url.pathname;
-  if(path.endsWith("/workflow")){const task=tasks[0];return json({...responseWorkflowFixture(),recordState:task.state==="Open"?"PendingApproval":task.state,ruleRevision:1,task:{id:task.id,roleId:task.role.id,roleName:task.role.name,revision:task.revision,state:task.state,decidedAtUtc:task.decidedAtUtc,decidedBy:task.decidedBy,reason:task.reason}});}
+  if(path.endsWith("/workflow")){const task=tasks[0];return json({...responseWorkflowFixture(),recordState:task.state==="Open"?"PendingApproval":task.state,ruleRevision:1,task:{id:task.id,roleId:task.role.id,roleName:task.role.name, requestedAtUtc:"2026-10-16T12:00:00Z",revision:task.revision,state:task.state,decidedAtUtc:task.decidedAtUtc,decidedBy:task.decidedBy,reason:task.reason}});}
   if(!path.startsWith("/api/forms/approvals"))return null;
   if(path.endsWith("/count"))return json({count:rows(url).length});
   if(path.endsWith("/options"))return json({forms:rows(url).length?[{id:base.definitionId,name:base.formName}]:[]});

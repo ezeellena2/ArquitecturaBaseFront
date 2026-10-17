@@ -36,7 +36,9 @@ export interface ResponseCondition {
   operator: string;
   values?: readonly string[] | null;
 }
+export type ResponseState = "Received" | "PendingApproval" | "Approved" | "Rejected";
 export interface ResponseFilter {
+  state?: ResponseState | null;
   search?: string;
   actorIds?: readonly string[];
   receivedFromUtc?: string;
@@ -138,6 +140,7 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
     });
     labels.push({ key: fieldId, label: [column?.label, parts?.join(" · ")].filter(Boolean).join(": ") });
   }
+  if (query.state) labels.push({ key: "state", label: t("approvals.state") + ": " + t("approvals.states." + query.state) });
   if (query.actorIds?.length) labels.push({ key: "actor", label: t("responses.people") + " · " + query.actorIds.length });
   if (query.versionIds?.length) labels.push({ key: "version", label: t("responses.version") + " · " + query.versionIds.map(id => versions.find(item => item.id === id)?.number ?? "—").join(", ") });
   if (query.receivedFromUtc || query.receivedToUtc) labels.push({ key: "received", label: t("responses.received") + " · " + [query.receivedFromUtc ? calendarDateInZone(query.receivedFromUtc, zone) : "…", query.receivedToUtc ? calendarDateInZone(new Date(Date.parse(query.receivedToUtc) - 1).toISOString(), zone) : "…"].join(" – ") });

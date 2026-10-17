@@ -67,3 +67,9 @@ it("requires a nonnegative attempt revision for human review", () => {
   expect(readResponseWorkflow(body, recordId).actions[0]).toMatchObject({ revision: 0 });
   expect(() => readResponseWorkflow({ ...body, actions: [{ ...body.actions[0], revision: -1 }] }, recordId)).toThrow("Invalid response workflow contract.");
 });
+
+it("requires the actual approval request time rather than deriving it from an action", () => {
+  const body = { ...actionResponse(), task: { id: runId, roleId: runId, roleName: "Supervisión", requestedAtUtc: "2026-10-17T12:00:00Z", state: "Open", revision: 1, decidedAtUtc: null, decidedBy: null, reason: null } };
+  expect(readResponseWorkflow(body, recordId)).toEqual(body);
+  expect(() => readResponseWorkflow({ ...body, task: { ...body.task, requestedAtUtc: undefined } }, recordId)).toThrow("Invalid response workflow contract.");
+});

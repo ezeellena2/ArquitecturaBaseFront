@@ -118,3 +118,19 @@ it("describes the applied values without exposing option IDs", () => {
 });
 
 it("uses the supplied media type to label a document format", async()=>{ const {responseDocumentFormat}=await import("./responses");expect(responseDocumentFormat("application/pdf")).toBe("PDF");expect(responseDocumentFormat("text/plain")).toBe("TXT");expect(responseDocumentFormat("application/octet-stream")).toBeNull();});
+
+
+it.each(["Received", "PendingApproval", "Approved", "Rejected"] as const)("keeps the private %s state filter during normalization and describes it with static translations", state => {
+  const query = normalizeResponseQuery({ page: 1, pageSize: 20, state, search: "  visit  " }, []);
+  expect(query).toMatchObject({ state, search: "visit" });
+  expect(responseFilterLabels(query!, [], key => key)).toEqual([
+    { key: "state", label: "approvals.state: approvals.states." + state },
+    { key: "search", label: "responses.search: visit" },
+  ]);
+});
+it("treats null or absent response state as no applied state filter", () => {
+  const query = { page: 1, pageSize: 20, state: null };
+  expect(normalizeResponseQuery(query, [])?.state).toBeNull();
+  expect(responseFilterLabels(query, [], key => key)).toEqual([]);
+  expect(responseFilterLabels({ page: 1, pageSize: 20 }, [], key => key)).toEqual([]);
+});

@@ -57,6 +57,7 @@ export function responseSheetFixture(): ResponseSheet {
     actor,
     channel: "phone",
     state: "Received" as const,
+    hasPdf: false,
     cells: columns.map((column) => ({
       fieldId: column.fieldId,
       type: column.type,
@@ -124,6 +125,7 @@ export function responseDetailFixture(
     origin: {
       sourceReceiptId: recordId === responseRecordId ? id(60) : id(62),
       channelId: "phone",
+      senderKind: "Manual",
       senderUserId: actor.userId,
       senderName: actor.displayName,
       sentAtUtc: "2026-10-16T11:59:00Z",
