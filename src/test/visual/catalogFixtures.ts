@@ -4,15 +4,16 @@ import filterPreview from "../fixtures/catalogs-http/filters/preview.json" with 
 import filterPreviewRequest from "../fixtures/catalogs-http/filters/preview-request.json" with { type: "json" };
 import type { FiltersCatalogBody, CatalogFilterPreviewBody } from "@/features/business-forms/api/catalogs";
 import type { CatalogFilterOptions } from "@/features/business-forms/api/catalogResponse";
-import type { CatalogDetail, CatalogItem } from "@/features/business-forms/api/catalogResponse";
+import { readCatalog, type CatalogDetail, type CatalogItem } from "@/features/business-forms/api/catalogResponse";
 import type { ManualCatalogBody, UpdateManualCatalogBody } from "@/features/business-forms/api/catalogs";
+import { administrativeName } from "@/features/business-forms/editorModel";
 
 // Browser-only simulated persistence. The real app/API harness qualifies database behavior separately.
 export const visualCatalogId = "01990000-0000-7000-8000-000000000080";
 export function createCatalogFixtureStore(culture: "es" | "en", scenario: string) {
   if (scenario.startsWith("forms-catalog")) return createQuestionCatalogFixtureStore(culture);
   if (scenario.startsWith("catalogs-filters")) return createFiltersFixtureStore(culture, scenario);
-  let catalog: CatalogDetail = { id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null, filters: null };
+  let catalog: CatalogDetail = { proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null, filters: null };
   let items: CatalogItem[] = ["Pérez", "López", "Ríos"].map((name, index) => ({ id: "01990000-0000-7000-8000-00000000008" + (index + 1), code: "C" + (index + 1), text: { es: name, en: null }, detail: { es: null, en: null }, position: index + 1, isActive: true }));
   let conflict = scenario === "catalogs-conflict";
   let identity = 100;
@@ -52,8 +53,8 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
     reads.push(url.pathname + url.search);
     if (url.pathname.endsWith("/items")) return json(page(items.filter(item => !url.searchParams.get("search") || item.text.es?.toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())), url.searchParams));
     if (url.pathname === "/api/forms/catalogs") {
-      const matches = (!url.searchParams.get("search") || catalog.name[culture].toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === (catalog.isActive ? "Active" : "Inactive"));
-      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Manual") ? [{ id: catalog.id, name: catalog.name[culture], description: catalog.description[culture], origin: "Manual", optionsCount: items.length, usageCount: null, state: catalog.isActive ? "Active" : "Inactive", stateReason: null, canEdit: scenario !== "catalogs-read" }] : [];
+      const matches = (!url.searchParams.get("search") || administrativeName(catalog.name, culture).toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === (catalog.isActive ? "Active" : "Inactive"));
+      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Manual") ? [{ id: catalog.id, name: administrativeName(catalog.name, culture), description: administrativeName(catalog.description, culture), origin: "Manual", optionsCount: items.length, usageCount: null, state: catalog.isActive ? "Active" : "Inactive", stateReason: null, canEdit: scenario !== "catalogs-read" }] : [];
       return json({ ...page(rows, url.searchParams), filterCounts: { byKind: { all: matches ? 1 : 0, manual: matches ? 1 : 0, filters: 0 } } });
     }
     return json(catalog);
@@ -62,7 +63,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
 
 function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
   // Existing simulated server, using exported fictitious data as a seed. This is not an HTTP producer or database test.
-  let catalog: CatalogDetail = { ...filterDetail, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), kind: "Filters", filters: filterPreviewRequest.filters };
+  let catalog: CatalogDetail = { ...readCatalog(filterDetail), id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), kind: "Filters", filters: filterPreviewRequest.filters };
   const readOnly = scenario === "catalogs-filters-read";
   const missingRole = scenario === "catalogs-filters-missing-role";
   if (missingRole) catalog = { ...catalog, filters: { ...filterPreviewRequest.filters, conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000699" }] } };
@@ -102,8 +103,8 @@ function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
     reads.push(url.pathname + url.search);
     if (url.pathname === "/api/forms/catalogs") {
       const state = catalog.isActive ? "Active" : "Inactive";
-      const matches = (!url.searchParams.get("search") || catalog.name[culture].toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === state);
-      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Filters") ? [{ id: catalog.id, name: catalog.name[culture], description: catalog.description[culture], origin: "Filters", optionsCount: null, usageCount: null, state, stateReason: null, canEdit: !readOnly }] : [];
+      const matches = (!url.searchParams.get("search") || administrativeName(catalog.name, culture).toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === state);
+      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Filters") ? [{ id: catalog.id, name: administrativeName(catalog.name, culture), description: administrativeName(catalog.description, culture), origin: "Filters", optionsCount: null, usageCount: null, state, stateReason: null, canEdit: !readOnly }] : [];
       return json({ ...paged(rows, url.searchParams), filterCounts: { byKind: { all: matches ? 1 : 0, manual: 0, filters: matches ? 1 : 0 } } });
     }
     return json(catalog);
