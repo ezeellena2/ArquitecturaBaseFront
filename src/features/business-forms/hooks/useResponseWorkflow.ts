@@ -4,7 +4,7 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { continueResponseAction, fetchResponseWorkflow, reviewResponseAction } from "../api/workflow";
-import { workflowCanReview, workflowNextAction } from "../workflow";
+import { sameWorkflowReviewTarget, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 import { useResponseScope } from "./useResponseQueries";
 export function useResponseWorkflow(formId: string, recordId: string) {
   const scope = useResponseScope();
@@ -19,45 +19,47 @@ export function useResponseWorkflow(formId: string, recordId: string) {
   const [operation, setOperation] = useState<{ owner: string; busy: boolean; error: unknown } | null>(null);
   const liveOwner = useRef(owner);
   const controller = useRef<AbortController | null>(null);
-  const [reviewCheck, setReviewCheck] = useState<{ owner: string; runId: string; revision: number } | null>(null);
+  const [reviewCheck, setReviewCheck] = useState<{ owner: string; target: WorkflowReviewTarget } | null>(null);
   useLayoutEffect(() => { liveOwner.current = owner; }, [owner]);
   useEffect(() => () => { controller.current?.abort(); controller.current = null; }, [owner]);
   const cooldown = useCountdown(0);
   const busy = operation?.owner === owner && operation.busy;
   const controlsDenied = deniedManageOwner === owner;
   const canManage = !!scope.user?.permissions.includes("formrules.manage") && !controlsDenied;
-  const reconcileReview = async (runId: string, revision: number, request: AbortController, error: unknown): Promise<boolean> => {
+  const reconcileReview = async (target: WorkflowReviewTarget, request: AbortController, error: unknown): Promise<boolean> => {
     try {
       const result = await fetchResponseWorkflow(recordId, request.signal);
       if (liveOwner.current !== owner || request.signal.aborted) return false;
       client.setQueryData(key, result);
       setReviewCheck(null);
-      const current = result.actions.find(action => action.id === runId);
-      const changed = !current || current.revision !== revision || current.state !== "Uncertain";
+      const current = result.actions.find(action => action.id === target.runId);
+      const recipient = current?.recipients.find(item => item.user.userId === target.recipientUserId);
+      const changed = !current || current.revision !== target.expectedRevision || current.state !== "Uncertain" || !recipient || !workflowCanReview(recipient);
       setOperation({ owner, busy: false, error: changed && !(error instanceof ApiError && error.status === 409) ? null : error });
       return changed;
     } catch (readError) {
       if (liveOwner.current !== owner || request.signal.aborted || errorFeedback(readError).kind === "cancelled") return false;
-      setReviewCheck({ owner, runId, revision });
+      setReviewCheck({ owner, target });
       setOperation({ owner, busy: false, error: readError });
       if (readError instanceof ApiError && readError.status === 429) cooldown.restart(readError.retryAfterSeconds ?? 60);
       return false;
     }
   };
-  const execute = async (runId: string, review?: { wasSent: boolean; expectedRevision: number } | { checkOnly: true; expectedRevision: number }): Promise<boolean> => {
+  const execute = async (runId: string, review?: { target: WorkflowReviewTarget } & ({ wasSent: boolean } | { checkOnly: true })): Promise<boolean> => {
     const action = query.data?.actions.find(item => item.id === runId);
-    const method = action ? review ? workflowCanReview(action) && action.revision === review.expectedRevision ? "review" : null : workflowNextAction(action) : null;
+    const recipient = review ? action?.recipients.find(item => item.user.userId === review.target.recipientUserId) : undefined;
+    const method = action ? review ? recipient && workflowCanReview(recipient) && action.revision === review.target.expectedRevision ? "review" : null : workflowNextAction(action) : null;
     if (!scope.allowed || !canManage || !method || busy || controller.current || cooldown.isRunning || query.isFetching || query.isPlaceholderData) return false;
     const expected = owner;
     const request = new AbortController();
     controller.current = request;
     const check = reviewCheck;
-    const mustCheck = review && check?.owner === owner && check.runId === runId && check.revision === review.expectedRevision;
+    const mustCheck = review && check?.owner === owner && sameWorkflowReviewTarget(check.target, review.target);
     setOperation({ owner, busy: true, error: null });
     try {
-      if (review && ("checkOnly" in review || mustCheck)) return await reconcileReview(runId, review.expectedRevision, request, null);
+      if (review && ("checkOnly" in review || mustCheck)) return await reconcileReview(review.target, request, null);
       const result = method === "review" && review
-        ? await reviewResponseAction(recordId, runId, review.wasSent, review.expectedRevision, request.signal)
+        ? await reviewResponseAction(recordId, runId, { recipientUserId: review.target.recipientUserId, expectedRevision: review.target.expectedRevision, wasSent: review.wasSent }, request.signal)
         : await continueResponseAction(recordId, runId, method as "consult" | "retry", request.signal);
       if (liveOwner.current !== expected || request.signal.aborted) return false;
       client.setQueryData(key, result);
@@ -72,7 +74,7 @@ export function useResponseWorkflow(formId: string, recordId: string) {
         return false;
       }
       if (review && (errorFeedback(error, { writing: true }).kind === "uncertain" || error instanceof ApiError && error.status === 409))
-        return await reconcileReview(runId, review.expectedRevision, request, error);
+        return await reconcileReview(review.target, request, error);
       setOperation({ owner, busy: false, error });
       if (error instanceof ApiError && error.status === 429) cooldown.restart(error.retryAfterSeconds ?? 60);
       return false;
@@ -80,5 +82,5 @@ export function useResponseWorkflow(formId: string, recordId: string) {
       if (controller.current === request) controller.current = null;
     }
   };
-  return { query, scope, busy, cooldown, act: (runId: string) => execute(runId), review: (runId: string, wasSent: boolean, expectedRevision: number) => execute(runId, { wasSent, expectedRevision }), checkReview: (runId: string, expectedRevision: number) => execute(runId, { checkOnly: true, expectedRevision }), needsConsultReview: reviewCheck?.owner === owner ? reviewCheck.runId : null, canManage, controlsDenied, error: operation?.owner === owner ? operation.error ?? query.error : query.error };
+  return { query, scope, busy, cooldown, act: (runId: string) => execute(runId), review: (target: WorkflowReviewTarget, wasSent: boolean) => execute(target.runId, { target, wasSent }), checkReview: (target: WorkflowReviewTarget) => execute(target.runId, { target, checkOnly: true }), needsConsultReview: reviewCheck?.owner === owner ? reviewCheck.target : null, canManage, controlsDenied, error: operation?.owner === owner ? operation.error ?? query.error : query.error };
 }

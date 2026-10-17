@@ -611,7 +611,17 @@
     "reviewSent": "{{name}} marked it as sent.",
     "reviewNotSent": "{{name}} marked it as not sent.",
     "humanReviewHint": "Human review does not confirm WhatsApp delivery.",
-    "reviewCheckRequired": "Check the status to see whether your review was saved before confirming it again."
+    "reviewCheckRequired": "Check the status to see whether your review was saved before confirming it again.",
+    "recipient": "Recipient: {{name}}",
+    "notSentRoleHint": "This recipient is recorded as failed. The role notice is not retried.",
+    "recipientStates": {
+      "NotFound": "No send recorded",
+      "Pending": "To send",
+      "Sending": "Sending",
+      "Accepted": "Sent",
+      "Failed": "Could not send",
+      "Uncertain": "Send unconfirmed"
+    }
   },
   "approvals": {
     "title": "To approve",
