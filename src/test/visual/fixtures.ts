@@ -49,7 +49,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false,
     hasGoogleLogin: false, culture: language, timeZoneId: "America/Argentina/Buenos_Aires",
     lastLoginAtUtc: "2026-09-18T12:00:00Z", roles: ["Admin"],
-    permissions: [...(scenario === "forms-pdf" ? ["formrules.manage"] : []), ...(approvalsScenario ? ["formapprovals.decide"] : []), ...(responsesScenario && scenario !== "responses-denied" ? ["formrecords.read", "whatsapp.read", ...(scenario === "responses-workflow" ? ["formrules.manage"] : []), ...(scenario === "responses-read" ? [] : ["formrecords.export"])] : []), ...(catalogsScenario && scenario !== "catalogs-denied" && scenario !== "forms-catalog-no-read" ? (catalogQuestionsScenario || scenario === "catalogs-read" || scenario === "catalogs-filters-read") ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? (scenario === "forms-read" || scenario === "forms-catalog-read") ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-rules") ? ["formrules.manage"] : []), ...(scenario?.startsWith("forms-publication") ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), ...(catalogsScenario ? [] : ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"]), ...(chatScenario ? (scenario === "forms-chat-read" || scenario === "forms-chat-catalog-inactive-read") ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.manage"] : []), ...(scenario?.startsWith("forms-chat-actions") && scenario !== "forms-chat-actions-no-values" ? ["formrecords.read"] : []), ...(scenario?.startsWith("forms-chat-catalog") && scenario !== "forms-chat-catalog-no-values" ? ["formrecords.read"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
+    permissions: [...(scenario === "forms-pdf" ? ["formrules.manage"] : []), ...(approvalsScenario ? ["formapprovals.decide"] : []), ...(responsesScenario && scenario !== "responses-denied" ? ["formrecords.read", "whatsapp.read", ...(scenario === "responses-workflow" ? ["formrules.manage"] : []), ...(scenario === "responses-read" ? [] : ["formrecords.export"])] : []), ...(catalogsScenario && scenario !== "catalogs-denied" && scenario !== "forms-catalog-no-read" ? (catalogQuestionsScenario || scenario === "catalogs-read" || scenario === "catalogs-filters-read") ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? (scenario === "forms-read" || scenario === "forms-catalog-read") ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-rules") ? ["formrules.manage"] : []), ...(scenario?.startsWith("forms-publication") ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), ...(catalogsScenario ? [] : ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"]), ...(chatScenario ? (scenario === "forms-chat-read" || scenario === "forms-chat-catalog-inactive-read") ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] : []), ...(scenario?.startsWith("forms-chat-actions") && scenario !== "forms-chat-actions-no-values" ? ["formrecords.read"] : []), ...(scenario?.startsWith("forms-chat-catalog") && scenario !== "forms-chat-catalog-no-values" ? ["formrecords.read"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
       ...(businessScenario && scenario !== "business-denied" ? scenario === "business-read" ? ["ai.business.read"] : ["ai.business.read", "ai.business.manage"] : []),
       ...(scenario === "business-roles" || roleGroupsScenario ? ["ai.read", "ai.manage"] : [])],
   };
@@ -84,7 +84,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   if (roleGroupsScenario) permissions.push({ area: "whatsapp", name: "WhatsApp", permissions: [
     { code: "whatsapp.read", name: english ? "View chats" : "Ver chats", description: english ? "Read business conversations." : "Leer las conversaciones del negocio." },
     { code: "whatsapp.send", name: english ? "Reply to chats" : "Responder chats", description: english ? "Send manual replies." : "Enviar respuestas manuales." },
-    { code: "whatsapp.manage", name: english ? "Change service mode" : "Cambiar modo de atención", description: english ? "Manage the shared service mode." : "Administrar el modo de atención compartido." },
+    { code: "whatsapp.configureassistant", name: english ? "Configure the assistant" : "Configurar el asistente", description: english ? "Enable assistant attention for a conversation." : "Habilitar la atención del asistente en una conversación." },
   ] });
   if (businessScenario) permissions.push({ area: "ai", name: english ? "Artificial intelligence" : "Inteligencia artificial", permissions: [
     { code: "ai.read", name: english ? "View connection" : "Ver conexión", description: english ? "Read AI connection settings." : "Consultar la configuración de IA sin ver su clave." },
@@ -108,30 +108,28 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     lastInboundAtUtc: "2026-10-02T12:00:00Z", lastInboundSequence: 1, unreadCount: 1, preview: "¿Podemos coordinar el pedido para mañana?",
     linkedAccount: null, formEligibility: { status: "NoLinkedAccount", recipientCulture: null, recipientContextRevision: null } };
   let chatMessages: ChatMessage[] = [
-    { id: "chat-message-1", direction: "Inbound", kind: "Text", body: chatContact.preview, occurredAtUtc: "2026-10-02T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null },
-    { id: "chat-message-2", direction: "Outbound", kind: "Text", body: "Hola Ana, sí. Decime qué horario te queda cómodo.", occurredAtUtc: "2026-10-02T12:02:00Z", inboundSequence: 0, operatorUserId: profile.id, status: "Delivered", errorCode: null },
+    { origin: "Conversation" as const, id: "chat-message-1", direction: "Inbound", kind: "Text", body: chatContact.preview, occurredAtUtc: "2026-10-02T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null },
+    { origin: "Conversation" as const, id: "chat-message-2", direction: "Outbound", kind: "Text", body: "Hola Ana, sí. Decime qué horario te queda cómodo.", occurredAtUtc: "2026-10-02T12:02:00Z", inboundSequence: 0, operatorUserId: profile.id, status: "Delivered", errorCode: null },
   ];
   const earlierMessages: ChatMessage[] = [];
   const chatOutgoing: Outgoing[] = [];
   if (scenario === "chat-access" || scenario === "chat-legacy") {
-    if (scenario === "chat-legacy") chatContact.mode = "Bot";
+    if (scenario === "chat-legacy") chatContact.mode = "Manual";
     chatContact.previewPurpose = "Access";
     chatContact.previewAccessEventKind = "AccessInstructions";
     chatContact.preview = "legacy-secret-do-not-render";
-    for (const [index, accessEventKind] of (["Invitation", "AccessRequested", "AccessInstructions", "VerifyPhoneCode", "SignInCode"] as const).entries()) chatMessages.push({
-      ...chatMessages[1], id: `access-${index}`, purpose: "Access", accessEventKind, body: "123456 https://ejemplo.invalid/#t=secret",
+    for (const [index, accessEventKind] of (["Invitation", "AccessRequested", "AccessInstructions", "VerifyPhoneCode", "SignInCode"] as const).entries()) chatMessages.push({ ...chatMessages[1], id: `access-${index}`, purpose: "Access", accessEventKind, body: "123456 https://ejemplo.invalid/#t=secret",
       direction: accessEventKind === "AccessRequested" ? "Inbound" : "Outbound", operatorUserId: null,
       status: index === 0 ? "Read" : index === 4 ? "Failed" : null, occurredAtUtc: `2026-10-02T12:0${index + 3}:00Z`,
     });
   }
   if (scenario === "chat-states") {
     chatMessages.unshift({ ...chatMessages[0], id: "previous-day", body: english ? "Yesterday's question." : "La consulta de ayer.", occurredAtUtc: "2026-10-01T17:00:00Z", inboundSequence: 0 });
-    for (const [index, status] of ["Read", "Failed", null].entries()) chatMessages.push({
-      ...chatMessages[1], id: `status-${index}`, direction: "Outbound", inboundSequence: 0, status, operatorUserId: index === 0 ? null : profile.id,
+    for (const [index, status] of ["Read", "Failed", null].entries()) chatMessages.push({ ...chatMessages[1], id: `status-${index}`, direction: "Outbound", inboundSequence: 0, status, operatorUserId: index === 0 ? null : profile.id,
       body: english ? `Reply ${index + 1}` : `Respuesta ${index + 1}`, occurredAtUtc: `2026-10-02T12:0${index + 3}:00Z`,
     });
     chatMessages.push({ ...chatMessages[0], id: "long-text", body: "https://ejemplo.invalid/" + "a".repeat(180), occurredAtUtc: "2026-10-02T12:06:00Z" });
-    for (const [index, state] of (["Reviewed", "Failed", "Uncertain"] as const).entries()) chatOutgoing.push({
+    for (const [index, state] of (["Reviewed", "Failed", "Uncertain"] as const).entries()) chatOutgoing.push({ origin: "Conversation" as const,
       id: `outgoing-${index}`, requestId: `request-${index}`, operatorUserId: profile.id, state,
       body: english ? `Earlier request ${index + 1}` : `Pedido anterior ${index + 1}`, requestedAtUtc: `2026-10-02T12:0${index + 7}:00Z`, waMessageId: null,
     });
@@ -224,7 +222,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (chatScenario && path.startsWith("/api/whatsapp/chats")) {
       if (request.method === "POST" && path.endsWith("/messages")) {
         const data = await request.json() as { requestId: string; body: string };
-        const outgoing: Outgoing = { id: data.requestId, requestId: data.requestId, body: data.body, operatorUserId: profile.id,
+        const outgoing: Outgoing = { origin: "Conversation" as const, id: data.requestId, requestId: data.requestId, body: data.body, operatorUserId: profile.id,
           state: "Pending", waMessageId: null, requestedAtUtc: "2026-10-02T12:10:00Z" };
         chatOutgoing.push(outgoing);
         return json(outgoing, 202);
@@ -247,7 +245,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
         return outgoing ? json(outgoing) : json({ code: "Request.NotFound" }, 404);
       }
       const earlier = requestUrl.searchParams.has("beforeId");
-      return json({ contact: chatContact, messages: earlier ? earlierMessages : chatMessages, outgoing: chatOutgoing,
+      return json({ assistantAvailability: { state: "notInstalled" }, contact: chatContact, messages: earlier ? earlierMessages : chatMessages, outgoing: chatOutgoing,
         beforeAtUtc: scenario === "chat-history" && !earlier ? chatMessages[0].occurredAtUtc : null,
         beforeId: scenario === "chat-history" && !earlier ? chatMessages[0].id : null });
     }

@@ -29,7 +29,7 @@ test("legacy mode offers only manual attention and preserves the draft", async (
   await page.clock.install({ time: new Date("2026-10-02T12:10:00Z") });
   await page.goto("/src/test/visual/index.html?screen=/whatsapp/chat&scenario=chat-legacy");
   await page.getByRole("button", { name: "Ana Martínez", exact: true }).click();
-  await expect(page.getByText("Automatización sin configurar", { exact: true })).toBeVisible();
+  await expect(page.getByText("Atención manual", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Respuesta al cliente")).toBeDisabled();
   await expect(page).toHaveScreenshot("whatsapp-access-legacy-390.png", { fullPage: true });
   await page.getByRole("button", { name: "Tomar atención manual", exact: true }).click();

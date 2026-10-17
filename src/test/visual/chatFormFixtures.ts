@@ -16,12 +16,12 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
  const problem=scenario.endsWith("unavailable")?"CatalogUnavailable":scenario.endsWith("large")?"CatalogTooLarge":scenario.endsWith("empty")?"CatalogEmpty":undefined;
  const preparation={culture:recipientCulture,recipientContextRevision:"fixture-context-1",preparation:{catalogs:problem?[]:offers,
    issues:problem?[{fieldId:guid(701),label:"Cliente",code:"Forms.Record."+problem,catalogName:null,invalidOptionCount:null}]:[],canSend:!problem}};
- const thread:Thread={contact,messages:[{id:guid(602),direction:"Inbound",kind:"Text",body:contact.preview,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"}],outgoing:[],beforeId:null,beforeAtUtc:null};
+ const thread:Thread={ assistantAvailability: { state: "notInstalled" },contact,messages:[{ origin: "Conversation" as const,id:guid(602),direction:"Inbound",kind:"Text",body:contact.preview,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"}],outgoing:[],beforeId:null,beforeAtUtc:null};
  if(catalogScenario&&["completed","no-values","inactive","inactive-read"].some(value=>scenario.endsWith(value))){
    const rejected=scenario.includes("inactive");
    const deniedValues=scenario.endsWith("no-values");
    thread.canReadFormRecords=!deniedValues;
-   thread.messages.push({id:guid(730),direction:"Inbound",kind:"FlowReply",body:null,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:2,
+   thread.messages.push({ origin: "Conversation" as const,id:guid(730),direction:"Inbound",kind:"FlowReply",body:null,occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:2,
      operatorUserId:null,status:null,errorCode:null,purpose:"Business",formReply:rejected?
        {state:"Rejected",definitionId:options[0].definitionId,versionId:options[0].versionId,versionNumber:1,name:language==="es"?"Registrar visita":"Register visit",
         recordId:null,number:null,values:null,rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}:
