@@ -5,6 +5,12 @@ import { expect } from "vitest";
 import { HttpResponse } from "msw";
 import { z } from "zod";
 const cohorts = {
+  forms: ["forms-http","FORMS_HTTP_CONTRACT_INPUT","forms"],
+  manualCatalogs: ["catalogs-http/manual-current","FORMS_CATALOG_HTTP_CONTRACT_INPUT","manual-catalogs"],
+  catalogFilters: ["catalogs-http/filters","FORMS_CATALOG_FILTERS_HTTP_CONTRACT_INPUT","catalog-filters"],
+  catalogSource: ["catalogs-http/k6-source","FORMS_CATALOG_SOURCE_HTTP_CONTRACT_INPUT","catalog-source"],
+  formFiles: ["form-files-http","FORM_FILES_HTTP_INPUT","form-files"],
+  whatsappCatalogs: ["whatsapp-catalogs-http","WHATSAPP_CATALOG_HTTP_CONTRACT_INPUT","whatsapp-catalogs"],
   responses: ["forms-responses-http", "FORMS_RESPONSES_HTTP_CONTRACT_INPUT", "responses"],
   rules: ["forms-rules-http", "FORMS_RULES_HTTP_CONTRACT_INPUT", "rules"],
   missingRequests: ["forms-missing-requests-http", "FORMS_MISSING_REQUEST_HTTP_CONTRACT_INPUT", "missing-requests"],

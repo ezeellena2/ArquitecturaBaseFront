@@ -36,6 +36,12 @@ function syntheticCohort(artifactSet = "workflow", environment = "FORMS_WORKFLOW
 }
 
 it.each([
+  ["forms","FORMS_HTTP_CONTRACT_INPUT","forms",false],
+  ["manualCatalogs","FORMS_CATALOG_HTTP_CONTRACT_INPUT","manual-catalogs",false],
+  ["catalogFilters","FORMS_CATALOG_FILTERS_HTTP_CONTRACT_INPUT","catalog-filters",false],
+  ["catalogSource","FORMS_CATALOG_SOURCE_HTTP_CONTRACT_INPUT","catalog-source",false],
+  ["formFiles","FORM_FILES_HTTP_INPUT","form-files",false],
+  ["whatsappCatalogs","WHATSAPP_CATALOG_HTTP_CONTRACT_INPUT","whatsapp-catalogs",false],
   ["workflow", "FORMS_WORKFLOW_HTTP_CONTRACT_INPUT", "workflow", false],
   ["workflow", "FORMS_WORKFLOW_HTTP_CONTRACT_INPUT", "workflow", true],
   ["whatsappForms", "WHATSAPP_FORMS_HTTP_CONTRACT_INPUT", "whatsapp-forms", true],

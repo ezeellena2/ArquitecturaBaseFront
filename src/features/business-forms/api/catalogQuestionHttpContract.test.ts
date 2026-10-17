@@ -1,27 +1,19 @@
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { httpCohort } from "@/test/httpCohort";
 import { expect, it } from "vitest";
 import { openDraftSession } from "../draftSession";
 import { readFormCommit, readFormDetail, readFormPublicationCheck, readFormRecovery } from "./response";
 import { readCatalogPage, readCatalogSave } from "./catalogResponse";
 
 // Unchanged HTTP examples delivered by the backend export script.
-const directory = resolve("src/test/fixtures/catalogs-http/k6-source");
-const body = (name: string): unknown => JSON.parse(readFileSync(resolve(directory, name + ".json"), "utf8"));
+const cohort=httpCohort("catalogSource");
+const body=(name:string):unknown=>cohort.json(name+".json");
 const names = ["active-catalog-created", "active-catalog-list-usage", "catalog-choice-check-invalid", "catalog-choice-check-valid", "catalog-choice-create-receipt", "catalog-choice-created", "catalog-choice-detail", "catalog-choice-invalid-created", "catalog-choice-reloaded", "catalog-choice-update-receipt", "catalog-choice-updated"];
 const scope = { actorId: "contract-reader", editorId: "contract-editor" };
 
-it("verifies all eleven unchanged K6 producer exports", () => {
-  const provenance = JSON.parse(readFileSync(resolve(directory, "provenance.json"), "utf8")) as { artifactSet: string; producer: { source: string }; runner: { exportFiles: { path: string; length: number; sha256: string }[] } };
-  expect(provenance.artifactSet).toBe("k6-source");
-  expect(provenance.producer.source).toBe("tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationCheckTests.cs");
-  expect(provenance.runner.exportFiles.map(entry => entry.path).sort()).toEqual(names.map(name => name + ".json").sort());
-  for (const entry of provenance.runner.exportFiles) {
-    const bytes = readFileSync(resolve(directory, entry.path));
-    expect(bytes.length, entry.path).toBe(entry.length);
-    expect(createHash("sha256").update(bytes).digest("hex"), entry.path).toBe(entry.sha256);
-  }
+it("verifies all eleven exact K6 captures from the common run", () => {
+ const provenance=cohort.verify();
+ expect(provenance.sources.some(source=>source.path.endsWith("FormPublicationCheckTests.cs"))).toBe(true);
+ expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(names.map(name=>name+".json").sort());
 });
 
 it("keeps source-only choices and canonical identities across actual create and update receipts", () => {

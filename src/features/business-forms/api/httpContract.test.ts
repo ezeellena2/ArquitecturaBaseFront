@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { httpCohort } from "@/test/httpCohort";
 import acceptedFixture from "@/test/fixtures/forms-http/published/accepted.json";
 import acceptedStatusFixture from "@/test/fixtures/forms-http/published/accepted-status.json";
 import publishedStatusFixture from "@/test/fixtures/forms-http/published/status-es.json";
@@ -51,4 +52,11 @@ describe("Actual backend HTTP contract", () => {
     expect(() => readFormPublicationStatus(missing, accepted.definitionId, accepted.requestId)).toThrow("Unsupported form response.");
     expect(() => readFormPublicationStatus({ ...acceptedStatus, issues: null }, accepted.definitionId, accepted.requestId)).toThrow("Unsupported form response.");
   });
+});
+
+it("verifies all twenty-eight exact base form captures from the common final run", () => {
+ const provenance=httpCohort("forms").verify();
+ expect(provenance.sources.some(source=>source.path.endsWith("FormHttpContractFixturesTests.cs"))).toBe(true);
+ expect(provenance.sources.some(source=>source.path.endsWith("FormPublicationCheckTests.cs"))).toBe(true);
+ expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["published/accepted-status.json","published/accepted.json","published/check-next-unavailable.json","published/check-unavailable.json","published/created.json","published/detail-en.json","published/detail-es.json","published/draft-detail.json","published/draft-list.json","published/list-en.json","published/list-es.json","published/status-en.json","published/status-es.json","failed/accepted-status.json","failed/accepted.json","failed/check-next-unavailable.json","failed/check-unavailable.json","failed/created.json","failed/detail-en.json","failed/detail-es.json","failed/draft-detail.json","failed/draft-list.json","failed/list-en.json","failed/list-es.json","failed/status-en.json","failed/status-es.json","budget-http/es.json","budget-http/en.json"].sort());
 });

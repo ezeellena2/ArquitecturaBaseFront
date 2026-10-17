@@ -1,13 +1,11 @@
-import {readFileSync} from "node:fs";
-import {resolve} from "node:path";
-import {createHash} from "node:crypto";
+import {httpCohort} from "@/test/httpCohort";
 import {http,HttpResponse} from "msw";
 import {describe,it,expect} from "vitest";
 import {server} from "@/test/mocks/server";
 import {getThread,type Thread} from "./chat";
 import {parseChatForms,parseChatFormPreparation} from "./forms";
-const root=resolve("src/test/fixtures/whatsapp-catalogs-http");
-const raw=(culture:string,name:string)=>readFileSync(resolve(root,culture,name+".json"),"utf8");
+const cohort=httpCohort("whatsappCatalogs");
+const raw=(culture:string,name:string)=>cohort.bytes(culture+"/"+name+".json").toString("utf8");
 const json=(culture:string,name:string):unknown=>JSON.parse(raw(culture,name));
 for(const culture of ["es","en"])describe("captured catalog HTTP "+culture,()=>{
   it("reads the recipient preparation and the matching selection without invented fields",()=>{
@@ -41,8 +39,8 @@ for(const culture of ["es","en"])describe("captured catalog HTTP "+culture,()=>{
     expect(JSON.stringify(rejected)).not.toContain("Pérez Hnos.");
   });
 });
-it("keeps all exported HTTP bytes and their automatically generated provenance",()=>{
-  const provenance=JSON.parse(readFileSync(resolve(root,"provenance.json"),"utf8")) as {captures:{name:string;length:number;sha256:string}[]};
-  expect(provenance.captures.length).toBeGreaterThan(0);
-  for(const capture of provenance.captures){const bytes=readFileSync(resolve(root,capture.name));expect(bytes.length).toBe(capture.length);expect(createHash("sha256").update(bytes).digest("hex")).toBe(capture.sha256);}
+it("verifies all twenty-six exact catalog chat captures from the common run",()=>{
+ const provenance=cohort.verify();
+ expect(provenance.sources.some(source=>source.path.endsWith("WhatsAppFormReplyAppPreviewTests.cs"))).toBe(true);
+ expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["es/choices.json","es/preparation.json","es/reply-completed.json","es/reply-reloaded.json","es/reply-without-read.json","es/reply-rejected.json","es/reply-pending.json","es/reply-unrecognized.json","es/reply-inbox-read.json","es/reply-inbox-without-read.json","es/reply-latest-page.json","es/reply-older-page.json","es/reply-all-states.json","en/choices.json","en/preparation.json","en/reply-completed.json","en/reply-reloaded.json","en/reply-without-read.json","en/reply-rejected.json","en/reply-pending.json","en/reply-unrecognized.json","en/reply-inbox-read.json","en/reply-inbox-without-read.json","en/reply-latest-page.json","en/reply-older-page.json","en/reply-all-states.json"].sort());
 });
