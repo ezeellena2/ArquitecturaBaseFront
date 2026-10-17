@@ -2,7 +2,6 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import {
   keepPreviousData,
   useQuery,
-  useQueryClient,
 } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -17,6 +16,7 @@ import {
   fetchResponseSheet,
 } from "../api/responses";
 import { ResponseWorkspaceContext } from "./useResponseWorkspace";
+import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
 import type { ResponseQuery } from "../responses";
 export function useResponseScope() {
   const { data: user } = useCurrentUser();
@@ -36,22 +36,6 @@ export function useResponseScope() {
     ].join(":"),
     actor: allowed ? user!.id : null,
   };
-}
-function useCleanup(owner: string) {
-  const client = useQueryClient();
-  useEffect(
-    () => () => {
-      for (const query of client
-        .getQueryCache()
-        .findAll({ queryKey: ["form-responses", owner] })) {
-        if (query.getObserversCount() === 0) {
-          void client.cancelQueries({ queryKey: query.queryKey, exact: true });
-          client.removeQueries({ queryKey: query.queryKey, exact: true });
-        }
-      }
-    },
-    [client, owner],
-  );
 }
 export function useResponseFeedback(
   error: unknown,
@@ -89,7 +73,7 @@ export function useResponseFeedback(
 }
 export function useResponseNavigation(page = 1, pageSize = 4, search = "") {
   const scope = useResponseScope();
-  useCleanup(scope.owner);
+  useUnobservedQueryCleanup(["form-responses", scope.owner]);
   const query = useQuery({
     queryKey: [
       "form-responses",
@@ -117,7 +101,7 @@ export function useResponseSheet(
   enabled = true,
 ) {
   const scope = useResponseScope();
-  useCleanup(scope.owner);
+  useUnobservedQueryCleanup(["form-responses", scope.owner]);
   const owner = scope.owner + ":" + id;
   const [last, setLast] = useState<{
     owner: string;
@@ -155,7 +139,7 @@ export function useResponseSheet(
 }
 export function useResponseDetail(id: string, formId: string) {
   const scope = useResponseScope();
-  useCleanup(scope.owner);
+  useUnobservedQueryCleanup(["form-responses", scope.owner]);
   const query = useQuery({
     queryKey: ["form-responses", scope.owner, "record", formId, id],
     queryFn: ({ signal }) => fetchResponseDetail(id, signal),
@@ -181,7 +165,7 @@ export function useResponseFacet(
   const cooldown = useCountdown(0);
   const { restart } = cooldown;
   const [paused, setPaused] = useState(false);
-  useCleanup(scope.owner);
+  useUnobservedQueryCleanup(["form-responses", scope.owner]);
   const [retainedFilter, setRetainedFilter] = useState(filter);
   if (filter && retainedFilter !== filter) setRetainedFilter(filter);
   const currentFilter = filter ?? retainedFilter;

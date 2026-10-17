@@ -51,3 +51,31 @@ it.each([400, 401, 403, 404])("does not render cached task metadata in the first
   expect(visibleAtFirstCommit).toBe(false);
   expect(screen.queryByText(privateRole)).not.toBeInTheDocument();
 });
+
+it("keeps a live task query when one of two panels leaves and purges it after permission revocation", async () => {
+  const user = { ...currentUser, permissions: ["formapprovals.decide"] };
+  server.use(http.get("/api/me", () => HttpResponse.json(user)), http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(approvalTaskFixture())));
+  let client: ReturnType<typeof useQueryClient> | undefined;
+  const otherKey = ["form-approvals", "another-owner", "task", approvalTaskId];
+  function Host() {
+    const current = useQueryClient();
+    useLayoutEffect(() => { client = current; }, [current]);
+    const [first, setFirst] = useState(true);
+    return <><button type="button" onClick={() => setFirst(false)}>Cerrar primero</button>{first ? <ApprovalDecisionPanel taskId={approvalTaskId}/> : null}<ApprovalDecisionPanel taskId={approvalTaskId}/></>;
+  }
+  renderWithProviders(<Host/>);
+  await screen.findAllByText("Supervisión");
+  client!.setQueryData(otherKey, { private: "Other actor metadata" });
+  const taskQuery = () => client!.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-approvals" && query.queryKey[1] !== "another-owner" && query.queryKey[2] === "task" })[0];
+  const originalQuery = taskQuery();
+  expect(originalQuery?.getObserversCount()).toBe(2);
+  await userEvent.click(screen.getByRole("button", { name: "Cerrar primero" }));
+  await act(async () => { await Promise.resolve(); });
+  expect(taskQuery()).toBe(originalQuery);
+  expect(taskQuery()?.getObserversCount()).toBe(1);
+  expect(screen.getByText("Supervisión")).toBeInTheDocument();
+  await act(async () => { client!.setQueryData(currentUserQueryKey, { ...user, permissions: [] }); });
+  await waitFor(() => expect(screen.queryByText("Supervisión")).not.toBeInTheDocument());
+  await waitFor(() => expect(taskQuery()).toBeUndefined());
+  expect(client!.getQueryData(otherKey)).toEqual({ private: "Other actor metadata" });
+});

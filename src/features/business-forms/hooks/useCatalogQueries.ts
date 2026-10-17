@@ -1,39 +1,26 @@
-import { useEffect, useState } from "react";
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchCatalog, fetchCatalogItems, fetchCatalogPage, type CatalogItemsQuery, type CatalogListQuery, fetchCatalogFilterOptions, type CatalogFilterOptionsQuery } from "../api/catalogs";
 import type { CatalogReadScope } from "./useCatalogDraftEditor";
+import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
 
 export const catalogActorKey = (actorId: string | null) => ["form-catalogs", actorId] as const;
 export const catalogScopeKey = (scope: CatalogReadScope) => [...catalogActorKey(scope.actorId), [...new Set(scope.permissions)].sort().join(","), scope.culture] as const;
 const canRead = (scope: CatalogReadScope) => scope.actorId !== null && scope.permissions.includes("formcatalogs.read");
-function usePrivateCleanup(key: readonly unknown[]) {
-  const client = useQueryClient();
-  const stamp = JSON.stringify(key);
-  useEffect(() => () => {
-    const queryKey = JSON.parse(stamp) as readonly unknown[];
-    queueMicrotask(() => {
-      for (const query of client.getQueryCache().findAll({ queryKey })) {
-        if (query.getObserversCount() > 0) continue;
-        void client.cancelQueries({ queryKey: query.queryKey, exact: true });
-        client.removeQueries({ queryKey: query.queryKey, exact: true });
-      }
-    });
-  }, [client, stamp]);
-}
 export function useCatalogDetail(scope: CatalogReadScope, id: string, errorOwner: "local" | "global" = "local") {
   const key = [...catalogScopeKey(scope), "detail", id] as const;
-  usePrivateCleanup(key);
+  useUnobservedQueryCleanup(key);
   return useQuery({ queryKey: key, queryFn: ({ signal }) => fetchCatalog(id, signal), enabled: canRead(scope) && id !== "", staleTime: 0, gcTime: 0, meta: { errorOwner } });
 }
 export function useCatalogItems(scope: CatalogReadScope, id: string, revision: number | null, query: CatalogItemsQuery) {
   const root = [...catalogScopeKey(scope), "items", id, revision] as const;
-  usePrivateCleanup(root);
+  useUnobservedQueryCleanup(root);
   return useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogItems(id, query, signal), enabled: canRead(scope) && id !== "" && revision !== null, staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
 }
 
 export function useCatalogPage(scope: CatalogReadScope, query: CatalogListQuery, errorOwner: "local" | "global" = "local") {
   const root = [...catalogScopeKey(scope), "list"] as const;
-  usePrivateCleanup(root);
+  useUnobservedQueryCleanup(root);
   const owner = JSON.stringify(root);
   const [lastLoaded, setLastLoaded] = useState<{ owner: string; data: Awaited<ReturnType<typeof fetchCatalogPage>> } | null>(null);
   const list = useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogPage(query, signal), enabled: canRead(scope),
@@ -45,7 +32,7 @@ export function useCatalogPage(scope: CatalogReadScope, query: CatalogListQuery,
 
 export function useCatalogFilterOptions(scope: CatalogReadScope, query: CatalogFilterOptionsQuery) {
   const root = [...catalogScopeKey(scope), "filter-options"] as const;
-  usePrivateCleanup(root);
+  useUnobservedQueryCleanup(root);
   const owner = JSON.stringify(root);
   const [lastLoaded, setLastLoaded] = useState<{ owner: string; data: Awaited<ReturnType<typeof fetchCatalogFilterOptions>> } | null>(null);
   const options = useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogFilterOptions(query, signal), enabled: canRead(scope),

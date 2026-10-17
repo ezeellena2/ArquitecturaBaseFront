@@ -17,6 +17,7 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { decideApprovalTask, fetchApprovalTask } from "../api/approvals";
 import { prepareApprovalDecision, type ApprovalDecision } from "../approvals";
 import { approvalForbidden, useApprovalScope } from "../hooks/useApprovalQueries";
+import { useUnobservedQueryCleanup } from "../hooks/useUnobservedQueryCleanup";
 export function ApprovalDecisionPanel({ taskId, onDecided }: {
     taskId: string;
     onDecided?: () => void;
@@ -43,6 +44,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden }: {
     const pendingNotice = useRef(false);
     useEffect(() => () => { if (pendingNotice.current) dismissNotification(operationId); }, [operationId]);
     const key = useMemo(() => ["form-approvals", scope.owner, "task", taskId], [scope.owner, taskId]);
+    useUnobservedQueryCleanup(key);
     const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchApprovalTask(taskId, signal), gcTime: 0 });
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<unknown>(null);
@@ -54,7 +56,6 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden }: {
     const controller = useRef<AbortController | null>(null);
     const cooldown = useCountdown(0);
     useLayoutEffect(() => { live.current = true; return () => { live.current = false; controller.current?.abort(); }; }, []);
-    useEffect(() => () => { void client.cancelQueries({ queryKey: key, exact: true }); client.removeQueries({ queryKey: key, exact: true }); }, [client, key]);
     useEffect(() => { if (approvalForbidden(query.error))
         onForbidden(); }, [query.error, onForbidden]);
     const refresh = () => { void client.invalidateQueries({ queryKey: ["form-approvals", scope.owner], predicate: entry => entry.queryKey[2] !== "task" }); onDecided?.(); };

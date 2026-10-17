@@ -218,7 +218,7 @@ export function FormResponseDetailPage() {
         </div>
       }
     >
-      {workflow.query.data?.recordId === data.id && workflow.query.data.task?.state === "Open" ? <Surface title={t("approvals.title")} padded><ApprovalDecisionPanel taskId={workflow.query.data.task.id} onDecided={() => { void workflow.query.refetch(); void sheet.query.refetch(); }} /></Surface> : null}
+      {workflow.query.data?.recordId === data.id && workflow.query.data.task && detail.scope.user?.permissions.includes("formapprovals.decide") ? <Surface title={t("approvals.title")} padded><ApprovalDecisionPanel taskId={workflow.query.data.task.id} onDecided={() => { void workflow.query.refetch(); void sheet.query.refetch(); }} /></Surface> : null}
       <Surface title={t("responses.answer")} padded>
         <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {data.values.map((value) => (

@@ -14,6 +14,8 @@ import {
   responseSheetFixture,
 } from "@/test/responseFixtures";
 import { notify } from "@/shared/ui/notifications";
+import { approvalTaskFixture, approvalTaskId } from "@/test/approvalFixtures";
+import type { ApprovalTask } from "../api/approvals";
 import type { ResponseAction, ResponseRecipient, ResponseWorkflow } from "../api/workflow";
 vi.mock("react-oidc-context", async () => ({
   ...(await vi.importActual<typeof import("react-oidc-context")>(
@@ -131,6 +133,24 @@ function recipientFixture(overrides: Partial<ResponseRecipient> = {}): ResponseR
 }
 function roleWorkflow(runId: string, recipients: readonly ResponseRecipient[], state: ResponseAction["state"] = "Uncertain"): ResponseWorkflow {
   return { ...responseWorkflowFixture(), actions: [{ id: runId, ruleId: runId, kind: "NotifyRole", event: "Received", order: 0, revision: 3, state, reasonCode: null, reason: null, canConsult: state === "Uncertain", canRetry: false, recipients: [...recipients], createdAtUtc: "2026-10-17T12:00:00Z", updatedAtUtc: "2026-10-17T12:00:00Z", completedAtUtc: state === "Completed" ? "2026-10-17T13:00:00Z" : null }] };
+}
+function setupDetailDecision() {
+  setup(["formrecords.read", "formapprovals.decide"]);
+  const fixture: { task: ApprovalTask; workflowReads: number; writes: unknown[] } = { task: { ...approvalTaskFixture(), number: "TEST-000002" }, workflowReads: 0, writes: [] as unknown[] };
+  const complete = (decision: "Approved" | "Rejected", name = "Luz", reason: string | null = null) => {
+    fixture.task = { ...fixture.task, state: decision, revision: 2, canDecide: false, cannotDecideReason: "AlreadyDecided", decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: name }, reason };
+  };
+  const workflow = (): ResponseWorkflow => ({ ...responseWorkflowFixture(), recordState: fixture.task.state === "Open" ? "PendingApproval" : fixture.task.state, task: { id: fixture.task.id, roleId: fixture.task.role.id, roleName: fixture.task.role.name, revision: fixture.task.revision, state: fixture.task.state, decidedAtUtc: fixture.task.decidedAtUtc, decidedBy: fixture.task.decidedBy, reason: fixture.task.reason } });
+  server.use(http.get("/api/forms/approvals/count", () => HttpResponse.json({ count: 1 })),
+    http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(fixture.task)),
+    http.get("/api/forms/records/:id/workflow", () => { fixture.workflowReads++; return HttpResponse.json(workflow()); }),
+    http.post("/api/forms/approvals/:id/decisions", async ({ request }) => {
+      const body = await request.json() as { decision: "Approved" | "Rejected"; reason?: string };
+      fixture.writes.push(body); complete(body.decision, "Luz", body.reason ?? null);
+      const task = fixture.task;
+      return HttpResponse.json({ taskId: task.id, recordId: task.recordId, revision: task.revision, state: task.state, decidedAtUtc: task.decidedAtUtc, decidedBy: task.decidedBy, reason: task.reason });
+    }));
+  return { fixture, complete };
 }
 function uncertainWorkflow(runId: string): ResponseWorkflow {
   return { ...responseWorkflowFixture(), actions: [{ id: runId, ruleId: runId, kind: "NotifyAuthor", event: "Received", order: 0, revision: 0, state: "Uncertain", reasonCode: null, reason: null, canConsult: true, canRetry: false, recipients: [recipientFixture()], createdAtUtc: "2026-10-17T12:00:00Z", updatedAtUtc: "2026-10-17T12:00:00Z", completedAtUtc: null }] };
@@ -1013,5 +1033,67 @@ it("keeps one workflow read notification in the detail without repeating its cau
   expect(history.queryByText("No pudimos leer este seguimiento.")).not.toBeInTheDocument();
   expect(history.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
 });
+
+  it.each(["Approved", "Rejected"] as const)("keeps the same detail decision panel and focuses its confirmed %s result", async decision => {
+    const { fixture } = setupDetailDecision();
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const panel = await screen.findByRole("region", { name: "Por aprobar" });
+    const controls = within(panel);
+    await controls.findByRole("button", { name: "Aprobar" });
+    if (decision === "Rejected") {
+      await userEvent.click(controls.getByRole("button", { name: "Rechazar" }));
+      const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
+      await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Revisá la firma");
+      await userEvent.click(reject.getByRole("button", { name: "Rechazar" }));
+    } else await userEvent.click(controls.getByRole("button", { name: "Aprobar" }));
+    await waitFor(() => expect(fixture.workflowReads).toBe(2));
+    expect(panel).toBeInTheDocument();
+    expect(controls.getByText(decision === "Approved" ? "Aprobada" : "Rechazada")).toBeInTheDocument();
+    const summary = controls.getByText("Supervisión").closest("[tabindex='-1']");
+    await waitFor(() => expect(summary).toHaveFocus());
+    expect(controls.getByText(/Luz/)).toBeInTheDocument();
+    expect(controls.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+    expect(fixture.writes).toEqual([{ expectedRevision: 1, decision, ...(decision === "Rejected" ? { reason: "Revisá la firma" } : {}) }]);
+    expect(notify).toHaveBeenCalledOnce();
+    expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "success", message: decision === "Approved" ? "Respuesta aprobada." : "Respuesta rechazada." });
+  });
+  it("keeps a conflicting detail decision visible and focuses the authoritative result after one rejection attempt", async () => {
+    const { fixture, complete } = setupDetailDecision();
+    server.use(http.post("/api/forms/approvals/:id/decisions", async ({ request }) => { fixture.writes.push(await request.json()); complete("Rejected", "Rocío", "La visita ya fue evaluada."); return HttpResponse.json({ code: "Forms.Approval.RevisionConflict", detail: "Otra persona ya decidió." }, { status: 409 }); }));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const panel = await screen.findByRole("region", { name: "Por aprobar" });
+    await userEvent.click(await within(panel).findByRole("button", { name: "Rechazar" }));
+    const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
+    await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Mi motivo sin confirmar");
+    await userEvent.click(reject.getByRole("button", { name: "Rechazar" }));
+    await waitFor(() => expect(fixture.workflowReads).toBe(2));
+    expect(panel).toBeInTheDocument();
+    const result = within(panel);
+    expect(await result.findByText(/Rocío/)).toBeInTheDocument();
+    expect(result.getByText("La visita ya fue evaluada.")).toBeInTheDocument();
+    expect(result.getByText("La aprobación cambió. Se actualizó con la decisión vigente.")).toBeInTheDocument();
+    await waitFor(() => expect(result.getByText("Supervisión").closest("[tabindex='-1']")).toHaveFocus());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(fixture.writes).toEqual([{ expectedRevision: 1, decision: "Rejected", reason: "Mi motivo sin confirmar" }]);
+    expect(notify).toHaveBeenCalledOnce();
+    expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "Otra persona ya decidió." });
+  });
+  it("retains the detail rejection reason and its panel after a network failure without another POST", async () => {
+    const { fixture } = setupDetailDecision();
+    server.use(http.post("/api/forms/approvals/:id/decisions", async ({ request }) => { fixture.writes.push(await request.json()); return HttpResponse.error(); }));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const panel = await screen.findByRole("region", { name: "Por aprobar" });
+    await userEvent.click(await within(panel).findByRole("button", { name: "Rechazar" }));
+    const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
+    await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Mi motivo conservado");
+    await userEvent.click(reject.getByRole("button", { name: "Rechazar" }));
+    await waitFor(() => expect(notify).toHaveBeenCalledOnce());
+    expect(panel).toBeInTheDocument();
+    expect(reject.getByRole("textbox", { name: /Motivo/ })).toHaveValue("Mi motivo conservado");
+    expect(reject.getByRole("button", { name: "Rechazar" })).toBeEnabled();
+    expect(fixture.task.state).toBe("Open");
+    expect(fixture.writes).toEqual([{ expectedRevision: 1, decision: "Rejected", reason: "Mi motivo conservado" }]);
+    expect(screen.queryByText("Respuesta rechazada.")).not.toBeInTheDocument();
+  });
 
 });
