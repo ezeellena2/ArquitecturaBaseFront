@@ -198,8 +198,8 @@ por día en cada conversación; cambiar el modo pide el permiso nuevo «Configur
 | [H6 · Audios en el chat](evidence/formularios-whatsapp/asi-h6-audios.png) | **Elegido el 2026-10-16.** El audio se baja y se pasa a texto; el operador lo escucha con su transcripción y el asistente lo lee como texto. Sin transcripción, queda para un operador; sigue la retención de los mensajes. |
 | [H7 · Formularios que faltan](evidence/formularios-whatsapp/asi-h7-faltan.png) | **Elegido el 2026-10-16.** Los pedidos agrupados por tema, con cuántos, de cuántas personas y cuándo, sin nombres ni mensajes; crear el formulario o descartar. |
 
-Propuesta posterior, en revisión (Etapa del asistente): un formulario puede sugerir otro. No reemplaza a los
-tableros elegidos; el modelo y las reglas están en los
+Los tableros s1–s4 están elegidos para la Etapa 5: un formulario puede sugerir otro sin convertirlos en un circuito.
+El modelo y las reglas están en los
 [resúmenes por etapa](../../../ArquitecturaBase/docs/plans/formularios/README.md).
 
 | Captura | Qué define |
