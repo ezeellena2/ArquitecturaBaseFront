@@ -15,3 +15,6 @@ src/test/fixtures/forms-workflow-http/** -text whitespace=cr-at-eol
 src/test/fixtures/forms-approvals-http/** -text whitespace=cr-at-eol
 src/test/fixtures/forms-pdf-http/** -text whitespace=cr-at-eol
 src/test/fixtures/whatsapp-form-actions-http/** -text whitespace=cr-at-eol
+
+# Manual form receipts share the final export, including nested es/en captures.
+src/test/fixtures/whatsapp-forms-http/** -text whitespace=cr-at-eol

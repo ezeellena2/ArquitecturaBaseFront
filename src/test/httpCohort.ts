@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import { expect } from "vitest";
 import { HttpResponse } from "msw";
 import { z } from "zod";
@@ -11,6 +11,7 @@ const cohorts = {
   approvals: ["forms-approvals-http", "FORMS_APPROVALS_HTTP_CONTRACT_INPUT"],
   pdf: ["forms-pdf-http", "FORMS_PDF_HTTP_CONTRACT_INPUT"],
   whatsappActions: ["whatsapp-form-actions-http", "WHATSAPP_FORM_ACTIONS_HTTP_CONTRACT_INPUT"],
+  whatsappForms: ["whatsapp-forms-http", "WHATSAPP_FORMS_HTTP_CONTRACT_INPUT"],
 } as const;
 export type HttpCohort = keyof typeof cohorts;
 const sha256 = z.string().regex(/^[0-9a-f]{64}$/);
@@ -39,14 +40,16 @@ export function httpCohort(name: HttpCohort) {
     },
     verify() {
       const source = manifest.parse(json("provenance.json"));
-      expect(source.artifactSet).toBe(name === "whatsappActions" ? "whatsapp-actions" : name);
+      expect(source.artifactSet).toBe(name === "whatsappActions" ? "whatsapp-actions" : name === "whatsappForms" ? "whatsapp-forms" : name);
       expect(new Set(source.captures.map(capture => capture.name)).size).toBe(source.captures.length);
       for (const capture of source.captures) {
         const content = bytes(capture.name);
         expect(content.length, capture.name).toBe(capture.length);
         expect(createHash("sha256").update(content).digest("hex"), capture.name).toBe(capture.sha256);
       }
-      expect(readdirSync(directory).sort()).toEqual([...source.captures.map(capture => capture.name), "provenance.json"].sort());
+      const files = readdirSync(directory, { recursive: true, withFileTypes: true }).filter(entry => entry.isFile())
+        .map(entry => relative(directory, resolve(entry.parentPath, entry.name)).replaceAll("\\", "/"));
+      expect(files.sort()).toEqual([...source.captures.map(capture => capture.name), "provenance.json"].sort());
       return source;
     },
   };
