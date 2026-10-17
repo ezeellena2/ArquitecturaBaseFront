@@ -36,9 +36,15 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
     notify({ id: availabilityFeedbackId, kind: "warning", message: t(`mode.availability.${availability}`) });
     return () => { dismissNotification(availabilityFeedbackId); };
   }, [availability, availabilityFeedbackId, canConfigureAssistant, t]);
-  if (!contact) return <div className="p-5 text-sm text-[var(--color-content-muted)]">{t(latest.isError ? "loadFailed" : "loading")} {latest.isError ? <Button variant="outline" size="sm" onClick={() => void latest.refetch()}>{t("retry")}</Button> : null}</div>;
+  const readForbidden = latest.error instanceof ApiError && latest.error.status === 403;
+  if (!contact) return <div className="p-5 text-sm text-[var(--color-content-muted)]">{t(readForbidden ? "readForbidden" : latest.isError ? "loadFailed" : "loading")} {latest.isError && !readForbidden ? <Button variant="outline" size="sm" onClick={() => void latest.refetch()}>{t("retry")}</Button> : null}</div>;
   const forbidden = latest.error instanceof ApiError && latest.error.status === 403;
   const linkedAccount = canSend ? contact.linkedAccount : undefined;
+  const source = [...messages].filter(message => message.direction === "Inbound" && message.kind === "Text" && message.purpose !== "Access").sort((a, b) => b.inboundSequence - a.inboundSequence)[0];
+  const pointer = latest.data?.assistantSuggestion ?? null;
+  const sourceMessageId = source?.id ?? pointer?.sourceMessageId;
+  const assistantOwner = JSON.stringify([actor, id, i18n.resolvedLanguage, [...new Set(readPermissions)].sort(), contact.modeRevision, sourceMessageId, availability, contact.formEligibility?.recipientContextRevision]);
+  const assistantContext = sourceMessageId ? { owner: assistantOwner, sourceMessageId, pointer: pointer?.sourceMessageId === sourceMessageId ? pointer : null, available: availability === "available" } : undefined;
   const mayReadEmail = readPermissions.includes("users.read");
   const visibleEmail = mayReadEmail ? linkedAccount?.email : null;
   return (
@@ -65,7 +71,7 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
         historyError={history.isError} loadOlder={() => history.fetchNextPage()} />
       {!atBottom ? <div className="p-2 text-center"><Button size="sm" variant="outline" onClick={() => setAtBottom(true)}>{t("latest")}</Button></div> : null}
       {read.isError ? <div className="p-2 text-sm text-[var(--color-content-muted)]">{t("readFailed")} <Button size="sm" variant="outline" onClick={() => read.reset()}>{t("retry")}</Button></div> : null}
-      <ChatComposer onFormAvailabilityChange={setCanOpenForm} formOpenRequest={formOpenRequest} contact={contact} actor={actor} canSend={canSend && !latest.isError} outgoing={latest.data?.outgoing ?? []} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
+      <ChatComposer assistantContext={assistantContext} focusFallback={heading} onFormAvailabilityChange={setCanOpenForm} formOpenRequest={formOpenRequest} contact={contact} actor={actor} canSend={canSend && !latest.isError} outgoing={latest.data?.outgoing ?? []} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
       <ConfirmDialog focusFallback={heading} open={Boolean(mode)} onOpenChange={open => { if (!open) setMode(undefined); }} title={t(mode?.mode === "Assistant" ? "mode.enable" : "mode.take")}
         description={t(mode?.mode === "Assistant" ? "mode.assistantDescription" : "mode.manualDescription", { name: contact.profileName ?? contact.phoneNumber ?? t("unnamed") })} confirmLabel={t(mode?.mode === "Assistant" ? "mode.enableConfirm" : "confirm")} onConfirm={() => { if (mode && !forbidden && (mode.mode === "Manual" ? canSend : canEnableAssistant)) changing.mutate(mode); }} />
       <ConfirmDialog open={Boolean(review)} onOpenChange={open => { if (!open) setReview(undefined); }} title={t("review.title")} description={t("review.confirmDescription")}

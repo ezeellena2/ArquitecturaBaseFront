@@ -1,5 +1,7 @@
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { useEffect, useEffectEvent, useRef } from "react";
+import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
+import type { AssistantComposerState } from "../hooks/useAssistantSuggestion";
+import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { useTranslation } from "react-i18next";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
@@ -16,13 +18,15 @@ import { useFormComposer } from "../hooks/useFormComposer";
 import { FormCatalogPreparation } from "./FormCatalogPreparation";
 import { formOptionKey } from "../lib/formSendSession";
 
-export function FormComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, openRequest = 0, onAvailabilityChange }: { contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft; updateDraft: (update: (value: ChatDraft) => ChatDraft) => void; timeZone?: string; openRequest?: number; onAvailabilityChange?: (canOpen: boolean) => void }) {
+export function FormComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, openRequest = 0, onAvailabilityChange, assistant, focusFallback }: { assistant?: AssistantComposerState; focusFallback?: RefObject<HTMLElement | null>; contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft; updateDraft: (update: (value: ChatDraft) => ChatDraft) => void; timeZone?: string; openRequest?: number; onAvailabilityChange?: (canOpen: boolean) => void }) {
   const { t, i18n } = useTranslation("whatsapp");
   const state = useFormComposer(contact,actor,canSend,outgoing,draft,updateDraft);
-  useEffect(() => { onAvailabilityChange?.(state.canOpen); },[onAvailabilityChange,state.canOpen]);
-  const openRequested = useEffectEvent(() => state.show());
+  const assistantOpen = Boolean(assistant?.open);
+  const busy = assistantOpen ? Boolean(assistant?.busy) : state.sending;
+  useEffect(() => { onAvailabilityChange?.(state.canOpen && !assistant?.attempt && !assistantOpen); },[onAvailabilityChange,state.canOpen,assistant?.attempt,assistantOpen]);
+  const openRequested = useEffectEvent(() => { if (!assistantOpen && !assistant?.attempt) state.show(); });
   useEffect(() => {if(openRequest>0)openRequested();},[openRequest]);
-  const restoreFocus = useRestoreFocusOnClose(state.open);
+  const restoreFocus = useRestoreFocusOnClose(state.open || assistantOpen, focusFallback);
   const message = useRef<HTMLTextAreaElement>(null);
   const list = useRef<HTMLDivElement>(null);
   useEffect(()=>{if(state.fieldError)message.current?.focus();},[state.fieldError]);
@@ -40,13 +44,26 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   const cta = t("forms.openForm",{lng:form?.recipientCulture??"es"});
   return <>
     {canSend ? <div className="min-w-0">
-      <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={Boolean(state.disabledReason)||state.denied||frozen||state.sending} onClick={state.show}><FormIcon />{t("forms.action")}</Button>
+      <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={Boolean(state.disabledReason)||state.denied||frozen||state.sending||Boolean(assistant?.attempt)||assistantOpen} onClick={state.show}><FormIcon />{t("forms.action")}</Button>
       {frozen&&!state.open ? <Button variant="outline" size="sm" disabled={state.checking||state.sending||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : null}</div>
       {state.disabledReason&&state.disabledReason.startsWith("forms.") ? <p className="mt-2 text-xs text-[var(--color-content-muted)]">{t(state.disabledReason)}</p> : null}
     </div> : null}
-    <Dialog open={state.open} onOpenChange={open=>{if(!state.sending)state.setOpen(open);}}>
-      <DialogContent onCloseAutoFocus={restoreFocus} className="sm:max-w-[600px]" showCloseButton={!state.sending} onEscapeKeyDown={event=>{if(state.sending)event.preventDefault();}} onPointerDownOutside={event=>{if(state.sending)event.preventDefault();}}>
-        <DialogHeader><DialogTitle>{t("forms.title",{name})}</DialogTitle><DialogDescription>{t("forms.description")}</DialogDescription></DialogHeader>
+    <Dialog open={state.open || assistantOpen} onOpenChange={open=>{if(!busy){if(assistantOpen)assistant?.setOpen(open);else state.setOpen(open);}}}>
+      <DialogContent onCloseAutoFocus={restoreFocus} className="sm:max-w-[600px]" showCloseButton={!busy} onEscapeKeyDown={event=>{if(busy)event.preventDefault();}} onPointerDownOutside={event=>{if(busy)event.preventDefault();}}>
+        <DialogHeader><DialogTitle>{t("forms.title",{name})}</DialogTitle><DialogDescription>{t(assistantOpen ? "assistant.dialogDescription" : "forms.description")}</DialogDescription></DialogHeader>
+        {assistantOpen && assistant?.proposal ? <>
+          <p className="break-words text-sm font-medium">{t("assistant.version", { name: assistant.proposal.name, version: assistant.proposal.versionNumber })}</p>
+          {assistant.proposal.fields.length ? <fieldset disabled={assistant.busy || Boolean(assistant.attempt)}>
+            <legend className="mb-2 text-xs font-medium uppercase text-[var(--color-content-muted)]">{t("assistant.prefilledTitle")}</legend>
+            {assistant.proposal.fields.map(field => <CheckboxField key={field.fieldId} label={field.label} description={field.displayValue} checked={assistant.selected.includes(field.fieldId)} disabled={assistant.busy || Boolean(assistant.attempt)} onCheckedChange={checked => assistant.setSelected(current => checked ? [...current, field.fieldId] : current.filter(id => id !== field.fieldId))} />)}
+          </fieldset> : null}
+          <p className="text-sm text-[var(--color-content-muted)]">{t("assistant.prefilledHelp", { name })}</p>
+          {assistant.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint", { seconds: assistant.waitSeconds })}</p> : null}
+          <DialogFooter>
+            <Button variant="outline" disabled={assistant.busy} onClick={() => assistant.setOpen(false)}>{t("forms.cancel")}</Button>
+            {assistant.attempt && assistant.recovery === "consult" ? <Button variant="outline" disabled={assistant.busy || assistant.waiting} onClick={() => void assistant.consult()}>{t("send.check")}</Button> : <Button disabled={assistant.busy || assistant.waiting || Boolean(state.disabledReason) || Boolean(draft.attempt)} onClick={() => void assistant.send()}>{t(assistant.busy ? "forms.saving" : assistant.attempt ? "send.retry" : "forms.action")}</Button>}
+          </DialogFooter>
+        </> : <>
         {state.mayReadOptions ? <div className="flex flex-col gap-3" ref={list}>
           <fieldset disabled={state.waiting}><SearchInput value={state.search} onChange={value=>{state.setSearch(value);state.setPage(1);}} label={t("forms.search")} /></fieldset>
           {state.forms.isPending ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.loading")}</p> : state.forms.isError ? <div className="flex items-center justify-between gap-2"><p className="text-sm text-[var(--color-content-muted)]">{t("forms.listUnavailable")}</p><Button variant="outline" size="sm" disabled={state.waiting} onClick={state.retryForms}>{t("retry")}</Button></div> : <RadioGroupField label={t("forms.formLabel")} variant="cards" value={selected&&!state.contextChanged?formOptionKey(selected):undefined} onValueChange={key=>{const option=items.find(value=>formOptionKey(value)===key);if(option)state.choose(option);}} error={state.selectionError} options={items.map(option=>({value:formOptionKey(option),label:option.name[form?.recipientCulture??"es"]??"",description:t("forms.optionDescription",{version:option.versionNumber,count:option.questionCount}),disabled:frozen||state.sending||state.waiting||(form?.blocked==="formUnavailable"&&option.versionId===selected?.versionId)}))} />}
@@ -68,6 +85,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
           <Button variant="outline" disabled={state.sending} onClick={()=>state.setOpen(false)}>{t("forms.cancel")}</Button>
           {frozen&&!form?.notStored&&!state.sending ? <Button variant="outline" disabled={state.checking||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : <Button disabled={state.sending||state.checking||Boolean(state.blockedReason)||state.versionChanged||state.waiting||state.forms.isError||state.forms.isFetching||state.catalogBlocked||(!form?.notStored&&!selected)||form?.blocked==="formUnavailable"} onClick={()=>void state.submit()}>{t(state.sending?"forms.saving":form?.notStored?"send.retry":"forms.action")}</Button>}
         </DialogFooter>
+        </>}
       </DialogContent>
     </Dialog>
   </>;

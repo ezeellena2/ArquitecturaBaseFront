@@ -15,11 +15,11 @@ vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof im
 let contact: Chat;
 let thread: Thread;
 let requests: { requestId: string; body: string }[];
-const pending = (requestId: string, body: string): Outgoing => ({ origin: "Conversation" as const, id: "pending-1", requestId, body, state: "Pending", operatorUserId: currentUser.id, requestedAtUtc: "2026-10-02T12:00:00Z", waMessageId: null });
+const pending = (requestId: string, body: string): Outgoing => ({ quickReplies: null, assistant: null, origin: "Conversation" as const, id: "pending-1", requestId, body, state: "Pending", operatorUserId: currentUser.id, requestedAtUtc: "2026-10-02T12:00:00Z", waMessageId: null });
 beforeEach(() => {
   queryClient.clear(); requests = [];
   contact = { id: "chat-1", profileName: "Ana", phoneNumber: "+54 9 351 555-1234", mode: "Manual", modeRevision: 2, lastInboundAtUtc: new Date().toISOString(), lastInboundSequence: 1, unreadCount: 1, preview: "Hola" };
-  thread = { assistantAvailability: { state: "notInstalled" }, contact, messages: [{ origin: "Conversation" as const, id: "message-1", direction: "Inbound", body: "Hola", kind: "Text", occurredAtUtc: contact.lastInboundAtUtc, inboundSequence: 1, operatorUserId: null, status: null, errorCode: null }], outgoing: [], beforeAtUtc: null, beforeId: null };
+  thread = { assistantSuggestion: null, assistantAvailability: { state: "notInstalled" }, contact, messages: [{ quickReplies: null, assistant: null, origin: "Conversation" as const, id: "message-1", direction: "Inbound", body: "Hola", kind: "Text", occurredAtUtc: contact.lastInboundAtUtc, inboundSequence: 1, operatorUserId: null, status: null, errorCode: null }], outgoing: [], beforeAtUtc: null, beforeId: null };
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] })),
     http.get("/api/whatsapp/chats", () => HttpResponse.json({ page: { items: [contact, { ...contact, id: "chat-2", profileName: "Luis" }], totalCount: 2, page: 1, pageSize: 20, totalPages: 1 }, allCount: 2, unreadCount: 1 })),
     http.get("/api/whatsapp/chats/:id/messages", () => HttpResponse.json(thread)),

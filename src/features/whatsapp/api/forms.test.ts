@@ -12,7 +12,7 @@ const request = { requestId: "019abcde-1000-7000-8000-000000000003", definitionI
 const option = { definitionId, versionId, versionNumber: 1, prefix: "VIS", name: { es: "Visita", en: "Visit" },
   questionCount: 2, submitLabel: { es: "Confirmar", en: "Confirm" } };
 const forms = { page: { items: [option], page: 1, pageSize: 4, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false }, recipientCulture: "en", recipientContextRevision: "context" };
-const receipt = { id: "019abcde-1000-7000-8000-000000000004", requestId: request.requestId, operatorUserId: "actor",
+const receipt = { quickReplies: null, assistant: null, id: "019abcde-1000-7000-8000-000000000004", requestId: request.requestId, operatorUserId: "actor",
   body: request.message, requestedAtUtc: "2026-10-10T12:00:00Z", state: "Pending", waMessageId: null, kind: "Flow", origin: "Conversation",
   form: { definitionId, versionId, versionNumber: 1, name: option.name, culture: "en" },
   recoveryPath: "/api/whatsapp/chats/" + contactId + "/outgoing/" + request.requestId };

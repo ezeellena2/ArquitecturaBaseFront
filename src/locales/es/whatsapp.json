@@ -202,5 +202,20 @@
     "title": "Acción del formulario",
     "document": "Documento",
     "notice": "Aviso automático"
-  }
+  },
+  "assistant": {
+    "suggestionLabel": "Sugerencia del asistente",
+    "suggestion": "El asistente sugiere mandarle {{name}}",
+    "prefilledSummary": "Prellenado con: {{fields}}",
+    "discard": "No, gracias",
+    "review": "Revisar y enviar",
+    "dialogDescription": "Revisá los datos propuestos antes de mandar el formulario.",
+    "version": "{{name}} · versión {{version}}",
+    "prefilledTitle": "Datos que van prellenados",
+    "prefilledHelp": "{{name}} los ve cargados y los puede cambiar. Lo que destildes va vacío.",
+    "whySent": "Por qué lo mandó",
+    "whySuggested": "Por qué lo sugirió",
+    "quickRepliesLabel": "Opciones de respuesta"
+  },
+  "readForbidden": "Ya no tenés permiso para ver esta conversación."
 }

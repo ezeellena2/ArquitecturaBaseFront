@@ -1,4 +1,5 @@
-import { readFormMetadata, type ChatFormMetadata } from "../api/forms";
+import { readFormMetadata, type ChatFormMetadata } from "../api/formMetadata";
+import type { AssistantExplanation } from "../api/assistant";
 import { toFormReplyPresentation, type FormReplyPresentation } from "./formReplyPresentation";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import type { MessageDeliveryState } from "@/shared/ui/MessageBubble";
@@ -16,6 +17,8 @@ export function deliveryStatus(value: string | null) {
 }
 
 interface TimelineContent {
+  assistant: AssistantExplanation | null;
+  quickReplies: string[] | null;
   key: string;
   occurredAtUtc: string;
   direction: "incoming" | "outgoing";
@@ -35,6 +38,8 @@ export type TimelineItem = TimelineContent & ({ source: "message" } | { source: 
 // Queries own deduplication and persistence. This adapter preserves the API data and mixes both sources by time.
 export function buildTimeline(messages: readonly ChatMessage[], outgoing: readonly Outgoing[]): TimelineItem[] {
   const items: TimelineItem[] = messages.map(message => ({
+    quickReplies: message.kind === "Interactive" && message.purpose !== "Access" ? message.quickReplies : null,
+    assistant: message.purpose === "Access" ? null : message.assistant,
     source: "message", key: `message:${message.id}`, occurredAtUtc: message.occurredAtUtc,
     direction: message.direction === "Outbound" ? "outgoing" : "incoming", body: message.purpose === "Access" || message.kind === "FlowReply" ? null : message.body, kind: message.kind,
     form: message.kind === "Flow" && message.purpose !== "Access" ? readFormMetadata(message.form) : null,
@@ -46,6 +51,8 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     delivery: message.direction === "Outbound" ? deliveryStatus(message.status) : undefined,
   }));
   for (const operation of outgoing) items.push({
+    quickReplies: operation.kind === "QuickReplies" ? operation.quickReplies : null,
+    assistant: operation.assistant,
     source: "outgoing", operation, key: `outgoing:${operation.id}`, occurredAtUtc: operation.requestedAtUtc,
     direction: "outgoing", body: operation.body, kind: operation.kind ?? "Text", form: operation.kind === "Flow" ? readFormMetadata(operation.form) : null, author: operation.origin === "Assistant" ? "assistant" : operation.origin === "FormAction" || !operation.operatorUserId ? "automatic" : "operator", operatorUserId: operation.operatorUserId,
     origin: operation.origin, purpose: "Business", accessEventKind: null, formReply: null,

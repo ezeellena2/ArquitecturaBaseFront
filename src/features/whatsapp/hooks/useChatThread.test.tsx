@@ -2,6 +2,7 @@ import { StrictMode, type PropsWithChildren } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "@/shared/api/ApiError";
 import { createQueryClient } from "@/shared/api/queryClient";
 import * as chatApi from "../api/chat";
 import type { Thread } from "../api/chat";
@@ -9,9 +10,9 @@ import { useChatThread } from "./useChatThread";
 
 const scope = { actor: "operator-a", culture: "es", permissions: ["whatsapp.read", "formrecords.read"] };
 function thread(body: string, older = false, more = false): Thread {
-  return { assistantAvailability: { state: "notInstalled" }, contact: { id: "chat-a", profileName: "Recipient", phoneNumber: null, mode: "Manual", modeRevision: 1,
+  return { assistantSuggestion: null, assistantAvailability: { state: "notInstalled" }, contact: { id: "chat-a", profileName: "Recipient", phoneNumber: null, mode: "Manual", modeRevision: 1,
     lastInboundAtUtc: "2026-10-11T12:00:00Z", lastInboundSequence: 1, unreadCount: 0, preview: null },
-    messages: [{ origin: "Conversation" as const, id: older ? more ? "older-first" : "older-last" : "latest", direction: "Inbound", body, kind: "Text", occurredAtUtc: older ? "2026-10-10T12:00:00Z" : "2026-10-11T12:00:00Z",
+    messages: [{ quickReplies: null, assistant: null, origin: "Conversation" as const, id: older ? more ? "older-first" : "older-last" : "latest", direction: "Inbound", body, kind: "Text", occurredAtUtc: older ? "2026-10-10T12:00:00Z" : "2026-10-11T12:00:00Z",
       inboundSequence: 1, operatorUserId: null, status: null, errorCode: null }], outgoing: [],
     beforeAtUtc: older && !more ? null : "2026-10-11T12:00:00Z", beforeId: older ? more ? "older-first" : null : "latest" };
 }
@@ -178,4 +179,47 @@ it('requires both local permission and authoritative true before retaining value
   hook.unmount();
 });
 
-it("withdraws automatic form action bodies from every history page and pending operation on server revocation",async()=>{const h=harness();let revoked=false;const automatic=(older:boolean):Thread=>{const base=thread("safe conversation",older);return {...base,canReadFormRecords:!revoked,messages:[...base.messages,{...base.messages[0],id:older?"action-old":"action-new",direction:"Outbound",origin:"FormAction",kind:"Document",body:"private automatic receipt"}],outgoing:[{id:"action-pending",requestId:"action-pending",operatorUserId:null,origin:"FormAction",kind:"Text",body:"private automatic notice",requestedAtUtc:"2026-10-16T12:00:00Z",state:"Uncertain",waMessageId:null}]};};vi.spyOn(chatApi,"getThread").mockImplementation(async(_id,cursor)=>automatic(!!cursor));const hook=renderHook(()=>useChatThread("chat-a",scope,false),h);await waitFor(()=>expect(JSON.stringify(hook.result.current.messages)).toContain("private automatic receipt"));await act(async()=>{await hook.result.current.history.fetchNextPage();});revoked=true;await act(async()=>{await hook.result.current.latest.refetch();});expect(JSON.stringify(h.client.getQueryCache().getAll().map(query=>query.state.data))).not.toContain("private automatic");expect(hook.result.current.latest.data?.outgoing[0].body).toBeNull();expect(JSON.stringify(hook.result.current.messages)).toContain("safe conversation");hook.unmount();});
+it("withdraws automatic form action bodies from every history page and pending operation on server revocation",async()=>{const h=harness();let revoked=false;const automatic=(older:boolean):Thread=>{const base=thread("safe conversation",older);return {...base,canReadFormRecords:!revoked,messages:[...base.messages,{...base.messages[0],id:older?"action-old":"action-new",direction:"Outbound",origin:"FormAction",kind:"Document",body:"private automatic receipt"}],outgoing:[{ quickReplies: null, assistant: null,id:"action-pending",requestId:"action-pending",operatorUserId:null,origin:"FormAction",kind:"Text",body:"private automatic notice",requestedAtUtc:"2026-10-16T12:00:00Z",state:"Uncertain",waMessageId:null}]};};vi.spyOn(chatApi,"getThread").mockImplementation(async(_id,cursor)=>automatic(!!cursor));const hook=renderHook(()=>useChatThread("chat-a",scope,false),h);await waitFor(()=>expect(JSON.stringify(hook.result.current.messages)).toContain("private automatic receipt"));await act(async()=>{await hook.result.current.history.fetchNextPage();});revoked=true;await act(async()=>{await hook.result.current.latest.refetch();});expect(JSON.stringify(h.client.getQueryCache().getAll().map(query=>query.state.data))).not.toContain("private automatic");expect(hook.result.current.latest.data?.outgoing[0].body).toBeNull();expect(JSON.stringify(hook.result.current.messages)).toContain("safe conversation");hook.unmount();});
+
+it("withdraws the complete conversation scope after a thread GET confirms loss of WhatsAppRead", async () => {
+  const h = harness(); let forbidden = false;
+  const reads = vi.spyOn(chatApi, "getThread").mockImplementation(async (_id, cursor) => {
+    if (forbidden) throw new ApiError(403, {});
+    const value = thread(cursor ? "PRIVATE older chat" : "PRIVATE latest chat", Boolean(cursor));
+    return { ...value, canReadFormRecords: true };
+  });
+  const hook = renderHook(() => useChatThread("chat-a", scope, false), h);
+  await waitFor(() => expect(hook.result.current.messages).toHaveLength(1));
+  await act(async () => { await hook.result.current.history.fetchNextPage(); });
+  h.client.setQueryData(["other-private-owner"], { marker: "unrelated scope" });
+  forbidden = true;
+  await act(async () => { await hook.result.current.latest.refetch(); });
+  expect(hook.result.current.messages).toEqual([]);
+  expect(hook.result.current.latest.data).toBeUndefined();
+  expect(hook.result.current.history.data).toBeUndefined();
+  expect(hook.result.current.latest.error).toMatchObject({ status: 403 });
+  expect(JSON.stringify(h.client.getQueryCache().getAll().map(query => query.state.data))).not.toContain("PRIVATE");
+  expect(h.client.getQueryData(["other-private-owner"])).toEqual({ marker: "unrelated scope" });
+  const count = reads.mock.calls.length;
+  await act(async () => { await hook.result.current.latest.refetch(); await hook.result.current.history.fetchNextPage(); });
+  expect(reads).toHaveBeenCalledTimes(count);
+  hook.unmount();
+});
+it("cancels historical reads on thread GET403 and refuses a late private page without rollback", async () => {
+  const h = harness(); let forbidden = false; let resolve!: (value: Thread) => void;
+  vi.spyOn(chatApi, "getThread").mockImplementation(async (_id, cursor) => {
+    if (cursor) return new Promise<Thread>(done => { resolve = done; });
+    if (forbidden) throw new ApiError(403, {});
+    return { ...thread("PRIVATE latest chat"), canReadFormRecords: true };
+  });
+  const hook = renderHook(() => useChatThread("chat-a", scope, false), h);
+  await waitFor(() => expect(hook.result.current.messages).toHaveLength(1));
+  let loading!: Promise<unknown>;
+  await act(async () => { loading = hook.result.current.history.fetchNextPage(); });
+  forbidden = true;
+  await act(async () => { await hook.result.current.latest.refetch(); });
+  await act(async () => { resolve({ ...thread("PRIVATE late chat", true), canReadFormRecords: true }); await loading; });
+  expect(hook.result.current.messages).toEqual([]);
+  expect(JSON.stringify(h.client.getQueryCache().getAll().map(query => query.state.data))).not.toContain("PRIVATE");
+  hook.unmount();
+});

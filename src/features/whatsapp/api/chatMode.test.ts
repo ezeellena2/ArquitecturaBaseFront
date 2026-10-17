@@ -26,7 +26,7 @@ it("returns the observed mode revision and in-progress fact from the exact share
   expect(received).toEqual([{ mode: "Manual", expectedRevision: 2 }]);
 });
 
-const thread = { contact: { id: "chat-1", profileName: "Ana", phoneNumber: null, mode: "Manual", modeRevision: 2, lastInboundAtUtc: "2026-10-17T12:00:00Z", lastInboundSequence: 1, unreadCount: 1, preview: null }, messages: [], outgoing: [], beforeAtUtc: null, beforeId: null, canReadFormRecords: false };
+const thread = { assistantSuggestion: null, contact: { id: "chat-1", profileName: "Ana", phoneNumber: null, mode: "Manual", modeRevision: 2, lastInboundAtUtc: "2026-10-17T12:00:00Z", lastInboundSequence: 1, unreadCount: 1, preview: null }, messages: [], outgoing: [], beforeAtUtc: null, beforeId: null, canReadFormRecords: false };
 it.each([undefined, null, { state: "Available" }, { state: "available", model: "PRIVATE" }])("rejects an absent or unsupported assistant availability projection: %j", async assistantAvailability => {
   server.use(http.get("/api/whatsapp/chats/chat-1/messages", () => HttpResponse.json({ ...thread, assistantAvailability })));
   await expect(getThread("chat-1")).rejects.toThrow("Unsupported chat response.");
@@ -37,12 +37,12 @@ it.each(["available", "notInstalled", "notConfigured", "paused", "modelNotQualif
 });
 
 it.each([undefined, "Unknown"])("rejects an unclassified message origin instead of falling back to Conversation: %s", async origin => {
-  const message = { id: "message", direction: "Inbound", kind: "Text", body: "Hola", occurredAtUtc: "2026-10-17T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null, origin };
+  const message = { quickReplies: null, assistant: null, id: "message", direction: "Inbound", kind: "Text", body: "Hola", occurredAtUtc: "2026-10-17T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null, origin };
   server.use(http.get("/api/whatsapp/chats/chat-1/messages", () => HttpResponse.json({ ...thread, assistantAvailability: { state: "available" }, messages: [message] })));
   await expect(getThread("chat-1")).rejects.toThrow("Unsupported chat response.");
 });
 it.each([undefined, "Unknown"])("rejects an unclassified outgoing origin instead of offering manual recovery: %s", async origin => {
-  const operation = { id: "operation", requestId: "request", body: "Hola", requestedAtUtc: "2026-10-17T12:00:00Z", operatorUserId: "actor", waMessageId: null, state: "Failed", kind: "Text", origin };
+  const operation = { quickReplies: null, assistant: null, id: "operation", requestId: "request", body: "Hola", requestedAtUtc: "2026-10-17T12:00:00Z", operatorUserId: "actor", waMessageId: null, state: "Failed", kind: "Text", origin };
   server.use(http.get("/api/whatsapp/chats/chat-1/messages", () => HttpResponse.json({ ...thread, assistantAvailability: { state: "available" }, outgoing: [operation] })));
   await expect(getThread("chat-1")).rejects.toThrow("Unsupported chat response.");
 });

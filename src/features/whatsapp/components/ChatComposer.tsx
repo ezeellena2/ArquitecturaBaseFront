@@ -1,9 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
+import { FormIcon } from "@/shared/ui/icons";
+import { useAssistantSuggestion, type AssistantComposerContext } from "../hooks/useAssistantSuggestion";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
 import { chatKey, findOutgoing, sendText, type Chat, type Outgoing } from "../api/chat";
@@ -17,10 +19,12 @@ export interface ChatDraft {
   attempt?: { requestId: string; body: string; checking: boolean; notStored: boolean };
 }
 
-export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, formOpenRequest = 0, onFormAvailabilityChange }: {
+interface ChatComposerProps {
   contact: Chat; actor: string; canSend: boolean; outgoing: Outgoing[]; draft: ChatDraft;
   updateDraft: (update: (current: ChatDraft) => ChatDraft) => void; timeZone?: string; formOpenRequest?: number; onFormAvailabilityChange?: (canOpen: boolean) => void;
-}) {
+  assistantContext?: AssistantComposerContext; focusFallback?: RefObject<HTMLElement | null>;
+}
+export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateDraft, timeZone, formOpenRequest = 0, onFormAvailabilityChange, assistantContext, focusFallback }: ChatComposerProps) {
   const { t } = useTranslation("whatsapp");
   const client = useQueryClient();
   const [fieldError, setFieldError] = useState<string>();
@@ -86,9 +90,21 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
     sendingRef.current = true;
     sending.mutate({ requestId, body });
   }
-  const disabledReason = replyDisabledReason(contact, canSend, outgoing, now) ?? (draft.form?.attempt ? "send.pending" : undefined);
+  const canAnalyze = !replyDisabledReason(contact, canSend, [], now) && contact.linkedAccount?.isActive === true && !!contact.formEligibility?.recipientCulture;
+  const canReviewSuggestion = canSend && contact.mode === "Manual" && !!assistantContext?.available;
+  const canSendSuggestion = !replyDisabledReason(contact, canSend, outgoing, now) && contact.formEligibility?.status === "Eligible" && !draft.attempt && !draft.form?.attempt;
+  const assistant = useAssistantSuggestion(contact.id, contact.modeRevision, assistantContext, canReviewSuggestion, canAnalyze, canSendSuggestion);
+  const disabledReason = replyDisabledReason(contact, canSend, outgoing, now) ?? (draft.form?.attempt || assistant.attempt ? "send.pending" : undefined);
   return (
     <div className="border-t border-[var(--color-border)] p-3">
+      {assistant.proposal ? <section aria-label={t("assistant.suggestionLabel")} className="mb-2 flex flex-wrap items-start gap-2 rounded-[var(--radius-control)] border border-[var(--color-primary)] bg-[var(--color-surface-muted)] p-3">
+        <FormIcon className="size-4 shrink-0" />
+        <div className="min-w-0 flex-1"><p className="break-words text-sm font-medium">{t("assistant.suggestion", { name: assistant.proposal.name })}</p>
+          {assistant.proposal.fields.length ? <p className="mt-1 break-words text-sm text-[var(--color-content-muted)]">{t("assistant.prefilledSummary", { fields: assistant.proposal.fields.map(field => field.label + ": " + field.displayValue).join(" · ") })}</p> : null}
+        </div>
+        <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={assistant.busy || !!assistant.attempt || assistant.waiting} onClick={() => void assistant.discard()}>{t("assistant.discard")}</Button>
+          <Button size="sm" disabled={assistant.busy || assistant.waiting || !!draft.attempt || !!draft.form?.attempt} onClick={() => assistant.setOpen(true)}>{t("assistant.review")}</Button></div>
+      </section> : null}
       {disabledReason ? <p className="mb-2 text-sm text-[var(--color-content-muted)]">{t(disabledReason)}</p> : null}
       <label htmlFor="chat-reply" className="sr-only">{t("send.label")}</label>
       <Textarea id="chat-reply" value={draft.body} maxLength={4096} rows={3} aria-invalid={Boolean(fieldError)} aria-describedby={fieldError ? "chat-reply-error" : undefined}
@@ -97,7 +113,7 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
         onKeyDown={event => { if (event.ctrlKey && event.key === "Enter" && !disabledReason && !draft.attempt?.checking) { event.preventDefault(); submit(); } }} />
       {fieldError ? <p id="chat-reply-error" role="alert" className="mt-1 text-sm text-[var(--color-danger)]">{fieldError}</p> : null}
       <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
-        <FormComposer onAvailabilityChange={onFormAvailabilityChange} openRequest={formOpenRequest} contact={contact} actor={actor} canSend={canSend} outgoing={outgoing} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
+        <FormComposer assistant={assistant} focusFallback={focusFallback} onAvailabilityChange={onFormAvailabilityChange} openRequest={formOpenRequest} contact={contact} actor={actor} canSend={canSend} outgoing={outgoing} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
         {canSend ? <div className="ml-auto flex flex-wrap justify-end gap-2">
         {draft.attempt?.checking ? <Button variant="outline" size="sm" disabled={checking} onClick={() => void checkOutcome()}>{t("send.check")}</Button> :
           <Button size="sm" disabled={Boolean(disabledReason) || sending.isPending || !draft.body.trim()} onClick={submit}>{t(sending.isPending ? "send.sending" : draft.attempt?.notStored ? "send.retry" : "send.action")}</Button>}

@@ -13,11 +13,11 @@ import type { FormMessageRequest } from "../lib/formSendSession";
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
 const definitionId="019abcde-1000-7000-8000-000000000001",versionId="019abcde-1000-7000-8000-000000000002";
 let contact: Chat; let thread: Thread; let posts: FormMessageRequest[]; let options: ChatFormOption[];
-const receipt=(request:FormMessageRequest)=>({id:"019abcde-1000-7000-8000-000000000003",requestId:request.requestId,operatorUserId:currentUser.id,body:request.message.trim(),requestedAtUtc:"2026-10-10T12:00:00Z",state:"Pending",waMessageId:null,kind:"Flow",origin:"Conversation" as const,recoveryPath:"/api/whatsapp/chats/"+contact.id+"/outgoing/"+request.requestId,form:{definitionId,versionId,versionNumber:1,name:options[0].name,culture:contact.formEligibility?.recipientCulture}});
+const receipt=(request:FormMessageRequest)=>({ quickReplies: null, assistant: null,id:"019abcde-1000-7000-8000-000000000003",requestId:request.requestId,operatorUserId:currentUser.id,body:request.message.trim(),requestedAtUtc:"2026-10-10T12:00:00Z",state:"Pending",waMessageId:null,kind:"Flow",origin:"Conversation" as const,recoveryPath:"/api/whatsapp/chats/"+contact.id+"/outgoing/"+request.requestId,form:{definitionId,versionId,versionNumber:1,name:options[0].name,culture:contact.formEligibility?.recipientCulture}});
 beforeEach(()=>{
  queryClient.clear();posts=[];options=[{definitionId,versionId,versionNumber:1,prefix:"VIS",name:{es:"Registrar visita",en:"Register visit"},questionCount:4,submitLabel:{es:"Confirmar visita",en:"Confirm visit"}}];
  contact={id:"chat-forms",profileName:"Juan",phoneNumber:"+54 9 351 555-1234",mode:"Manual",modeRevision:7,lastInboundAtUtc:new Date().toISOString(),lastInboundSequence:1,unreadCount:0,preview:"Hola",linkedAccount:{userId:"employee",displayName:"Juan Gómez",email:"juan@example.com",isActive:true},formEligibility:{status:"Eligible",recipientCulture:"es",recipientContextRevision:"opaque-1"}};
- thread={ assistantAvailability: { state: "notInstalled" },contact,messages:[],outgoing:[],beforeAtUtc:null,beforeId:null};
+ thread={ assistantSuggestion: null, assistantAvailability: { state: "notInstalled" },contact,messages:[],outgoing:[],beforeAtUtc:null,beforeId:null};
  server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["whatsapp.read","whatsapp.send","users.read"]})),http.get("/api/whatsapp/chats",()=>HttpResponse.json({page:{items:[contact],page:1,pageSize:20,totalPages:1,totalCount:1},allCount:1,unreadCount:0})),http.get("/api/whatsapp/chats/:id/messages",()=>HttpResponse.json(thread)),http.put("/api/whatsapp/chats/:id/read",()=>new HttpResponse(null,{status:204})),http.get("/api/whatsapp/chats/:id/forms",()=>HttpResponse.json({page:{items:options,page:1,pageSize:4,totalCount:options.length,totalPages:1,hasPrevious:false,hasNext:false},recipientCulture:contact.formEligibility?.recipientCulture,recipientContextRevision:contact.formEligibility?.recipientContextRevision})),http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{const body=await request.json() as FormMessageRequest;posts.push(body);const result=receipt(body);thread.outgoing=[result as Thread['outgoing'][number]];return HttpResponse.json(result,{status:202});}));
 });
 afterEach(()=>{queryClient.clear();vi.restoreAllMocks();});
@@ -99,7 +99,7 @@ it("reopens the existing closed form dialog after a confirmed missing receipt an
 it("preserves read-only history when linked account and eligibility are withheld as null", async () => {
   contact.linkedAccount = null;
   contact.formEligibility = null;
-  thread.messages.push({ origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000010",direction:"Inbound",kind:"Text",body:"Historial permitido",occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"});
+  thread.messages.push({ quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000010",direction:"Inbound",kind:"Text",body:"Historial permitido",occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business"});
   server.use(http.get("/api/me", () => HttpResponse.json({...currentUser,permissions:["whatsapp.read"]})));
   await openChat();
   expect(screen.getByText("Historial permitido")).toBeInTheDocument();
@@ -158,7 +158,7 @@ it.each([
 });
 
 it("opens a fresh manual form send after an inactive item notice without posting automatically", async () => {
-  thread.messages=[{ origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
+  thread.messages=[{ quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
     occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business",
     formReply:{state:"Rejected",definitionId,versionId,versionNumber:1,name:"Registrar visita",recordId:null,number:null,values:null,
       rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}}];
@@ -230,7 +230,7 @@ it("presents preparation 409 as a blocked form rather than a failed read", async
 });
 
 it.each(["NoLinkedAccount","InactiveAccount","NoEligibleForms","NoSend"])("hides resend when the form composer cannot open: %s", async reason => {
-  thread.messages=[{ origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
+  thread.messages=[{ quickReplies: null, assistant: null, origin: "Conversation" as const,id:"019abcde-1000-7000-8000-000000000029",direction:"Inbound",kind:"FlowReply",body:null,
     occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:1,operatorUserId:null,status:null,errorCode:null,purpose:"Business",
     formReply:{state:"Rejected",definitionId,versionId,versionNumber:1,name:"Registrar visita",recordId:null,number:null,values:null,
       rejectionCode:"Forms.Record.CatalogItemInactive",rejectedQuestion:"Cliente"}}];

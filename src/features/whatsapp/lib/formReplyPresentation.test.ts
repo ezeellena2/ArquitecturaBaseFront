@@ -11,7 +11,7 @@ const completed: FormReply = { state: 'Completed', definitionId: 'historical-def
     { fieldId: 'none', key: 'optional', type: 'shortText', label: 'Optional', value: null },
   ] };
 function message(reply: FormReply, kind = 'FlowReply', purpose: ChatMessage['purpose'] = 'Business'): ChatMessage {
-  return { origin: "Conversation" as const, id: 'message-a', direction: 'Inbound', kind, body: 'Opaque source body', occurredAtUtc: '2026-10-11T12:00:00Z',
+  return { quickReplies: null, assistant: null, origin: "Conversation" as const, id: 'message-a', direction: 'Inbound', kind, body: 'Opaque source body', occurredAtUtc: '2026-10-11T12:00:00Z',
     inboundSequence: 1, operatorUserId: null, status: null, errorCode: null, purpose, formReply: reply };
 }
 const presentation = (input: ChatMessage) => (buildTimeline([input], [])[0] as unknown as { formReply: unknown }).formReply;

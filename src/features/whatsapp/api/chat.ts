@@ -2,6 +2,7 @@ import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
 import { readThreadFormReplies, type FormReply } from "./formReplies";
 import type { ChatFormMetadata, FormEligibility, LinkedAccount } from "./forms";
+import { assistantExplanationSchema, assistantSuggestionPointerSchema, assistantQuickRepliesSchema, type AssistantExplanation, type AssistantSuggestionPointer } from "./assistant";
 
 const assistantAvailabilitySchema = z.strictObject({ state: z.enum(["available", "notInstalled", "notConfigured", "paused", "modelNotQualified"]) });
 export type AssistantAvailability = z.infer<typeof assistantAvailabilitySchema>;
@@ -20,17 +21,17 @@ export interface Chat {
 export interface ChatMessage {
   id: string; direction: "Inbound" | "Outbound"; kind: string; body: string | null; occurredAtUtc: string;
   inboundSequence: number; operatorUserId: string | null; status: string | null; errorCode: number | null;
-  origin: MessageOrigin;
+  origin: MessageOrigin; quickReplies: string[] | null; assistant: AssistantExplanation | null;
   purpose?: MessagePurpose; accessEventKind?: AccessEventKind | null;
   form?: ChatFormMetadata | null;
   formReply?: FormReply | null;
 }
 export interface Outgoing {
-  origin: MessageOrigin; kind?: "Text" | "Flow" | "Document"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
+  assistant: AssistantExplanation | null; quickReplies: string[] | null; origin: MessageOrigin; kind?: "Text" | "Flow" | "Document" | "QuickReplies"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
   id: string; requestId: string; operatorUserId: string | null; body: string | null; requestedAtUtc: string;
   state: OutgoingState; waMessageId: string | null;
 }
-export interface Thread { assistantAvailability: AssistantAvailability; contact: Chat; messages: ChatMessage[]; outgoing: Outgoing[]; beforeAtUtc: string | null; beforeId: string | null; canReadFormRecords?: boolean }
+export interface Thread { assistantSuggestion: AssistantSuggestionPointer | null; assistantAvailability: AssistantAvailability; contact: Chat; messages: ChatMessage[]; outgoing: Outgoing[]; beforeAtUtc: string | null; beforeId: string | null; canReadFormRecords?: boolean }
 export interface Chats { page: { items: Chat[]; totalCount: number; page: number; pageSize: number; totalPages: number }; allCount: number; unreadCount: number }
 export const chatKey = ["whatsapp-chat"] as const;
 const base = "/api/whatsapp/chats";
@@ -39,7 +40,7 @@ export const listChats = (page: number, search: string, unreadOnly: boolean, sig
 export const getThread = async (id: string, cursor?: { at: string; id: string }, signal?: AbortSignal) => {
   const thread = await api.get<Thread>(`${base}/${id}/messages${cursor ? `?${new URLSearchParams({ beforeAtUtc: cursor.at, beforeId: cursor.id })}` : ""}`, { signal });
   const availability = assistantAvailabilitySchema.safeParse(thread?.assistantAvailability);
-  if (!availability.success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success)) throw new Error("Unsupported chat response.");
+  if (!availability.success || !assistantSuggestionPointerSchema.nullable().safeParse(thread.assistantSuggestion).success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success || !assistantExplanationSchema.nullable().safeParse(row.assistant).success || !assistantQuickRepliesSchema.nullable().safeParse(row.quickReplies).success)) throw new Error("Unsupported chat response.");
   return readThreadFormReplies({ ...thread, assistantAvailability: availability.data });
 };
 export const markRead = (id: string, throughSequence: number) => api.put<void>(`${base}/${id}/read`, { throughSequence });

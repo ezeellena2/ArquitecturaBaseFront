@@ -25,8 +25,10 @@ export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolea
   const visible = useVisibleChat();
   const root = [...chatReadScopeKey(scope), "conversation", id] as const;
   useChatReadCleanup(root);
-  const enabled = scope.permissions.includes("whatsapp.read");
   const scopeStamp = JSON.stringify(root);
+  const [deniedScope, setDeniedScope] = useState<string>();
+  const forbiddenRead = useMemo(() => new ApiError(403, {}), []);
+  const enabled = scope.permissions.includes("whatsapp.read") && deniedScope !== scopeStamp;
   const gate = useMemo(() => createFormReplyReadGate(scopeStamp), [scopeStamp]);
   // A server revocation changes this external snapshot synchronously, before the query observer's deferred notification.
   const allowed = useSyncExternalStore(gate.subscribe, gate.getSnapshot, () => false);
@@ -64,6 +66,15 @@ export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolea
       return receive(result, signal, "older", revision);
     },
     getNextPageParam: page => page.beforeAtUtc && page.beforeId ? { at: page.beforeAtUtc, id: page.beforeId } : undefined });
+  const forbidden = latest.error instanceof ApiError && latest.error.status === 403 || history.error instanceof ApiError && history.error.status === 403;
+  const readDenied = forbidden || deniedScope === scopeStamp;
+  if (forbidden && deniedScope !== scopeStamp) setDeniedScope(scopeStamp);
+  useEffect(() => {
+    if (!readDenied) return;
+    const queryKey: readonly unknown[] = JSON.parse(scopeStamp) as readonly unknown[];
+    void client.cancelQueries({ queryKey }, { revert: false });
+    client.removeQueries({ queryKey });
+  }, [client, scopeStamp, readDenied]);
   const messages = useMemo(() => mergeMessages([...(history.data?.pages.map(page => allowed ? page.messages : withoutFormReplyValues(page).messages) ?? []),
     latest.data ? allowed ? latest.data.messages : withoutFormReplyValues(latest.data).messages : []]),
     [history.data?.pages, latest.data, allowed]);
@@ -72,10 +83,10 @@ export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolea
   const sequence = latest.data?.messages.reduce((max, message) => Math.max(max, message.inboundSequence), 0) ?? 0;
   const [readThrough, setReadThrough] = useState(0);
   useEffect(() => {
-    if (!enabled || !visible || !atBottom || !latest.data || latest.isError || read.isPending || read.isError || sequence <= readThrough) return;
+    if (!enabled || readDenied || !visible || !atBottom || !latest.data || latest.isError || read.isPending || read.isError || sequence <= readThrough) return;
     read.mutate(sequence, { onSuccess: () => setReadThrough(sequence) });
-  }, [enabled, visible, atBottom, latest.data, latest.isError, sequence, readThrough, read]);
-  return { latest: { ...latest, data: enabled && latest.data ? allowed ? latest.data : withoutFormReplyValues(latest.data) : undefined, refetch: () => enabled ? latest.refetch() : Promise.resolve(undefined) },
-    history: { ...history, data: enabled && history.data ? allowed ? history.data : { ...history.data, pages: history.data.pages.map(withoutFormReplyValues) } : undefined, fetchNextPage: () => enabled ? history.fetchNextPage() : Promise.resolve(undefined) },
-    messages: enabled ? messages : [], read, visible, formValuesRevoked: gate.wasGranted && !allowed };
+  }, [enabled, visible, atBottom, latest.data, latest.isError, sequence, readThrough, read, readDenied]);
+  return { latest: { ...latest, error: readDenied ? forbiddenRead : latest.error, isError: readDenied || latest.isError, data: enabled && !readDenied && latest.data ? allowed ? latest.data : withoutFormReplyValues(latest.data) : undefined, refetch: () => enabled && !readDenied ? latest.refetch() : Promise.resolve(undefined) },
+    history: { ...history, data: enabled && !readDenied && history.data ? allowed ? history.data : { ...history.data, pages: history.data.pages.map(withoutFormReplyValues) } : undefined, fetchNextPage: () => enabled && !readDenied ? history.fetchNextPage() : Promise.resolve(undefined) },
+    messages: enabled && !readDenied ? messages : [], read, visible, formValuesRevoked: gate.wasGranted && !allowed };
 }

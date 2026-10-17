@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
 import { findOutgoing, type Outgoing } from "./chat";
+import { formMetadataSchema } from "./formMetadata";
+export { readFormMetadata, type ChatFormMetadata } from "./formMetadata";
 import type { FormMessageRequest } from "../lib/formSendSession";
 
 export type RecipientCulture = "es" | "en";
@@ -15,10 +17,7 @@ const optionSchema = z.object({ definitionId: guid, versionId: guid, versionNumb
 export type ChatFormOption = z.infer<typeof optionSchema>;
 const formsSchema = z.object({ page: z.object({ items: z.array(optionSchema), page: z.number().int().positive(), pageSize: z.number().int().positive(), totalCount: z.number().int().nonnegative(), totalPages: z.number().int().nonnegative(), hasPrevious: z.boolean(), hasNext: z.boolean() }).strict(), recipientCulture: culture.nullable(), recipientContextRevision: z.string().min(1).nullable() }).strict().refine(value => value.page.items.length === 0 || value.recipientCulture !== null && value.recipientContextRevision !== null && value.page.items.every(option => !!option.name[value.recipientCulture!] && !!option.submitLabel[value.recipientCulture!]));
 export type ChatForms = z.infer<typeof formsSchema>;
-const formMetadataSchema = z.object({ definitionId: guid, versionId: guid, versionNumber: z.number().int().positive(), name: localizedText, culture }).strict().refine(value => !!value.name[value.culture]);
-export type ChatFormMetadata = z.infer<typeof formMetadataSchema>;
-export function readFormMetadata(value: unknown): ChatFormMetadata | null { const parsed = formMetadataSchema.safeParse(value); return parsed.success ? parsed.data : null; }
-const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.string().min(1), body: z.string().nullable(), requestedAtUtc: z.string().datetime({offset:true}), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.literal("Flow"), form: formMetadataSchema, recoveryPath: z.string().nullable(), origin: z.literal("Conversation") }).strict();
+const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.string().min(1), body: z.string().nullable(), requestedAtUtc: z.string().datetime({offset:true}), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.literal("Flow"), quickReplies: z.null(), form: formMetadataSchema, recoveryPath: z.string().nullable(), origin: z.literal("Conversation"), assistant: z.null() }).strict();
 
 const catalogOfferSchema = z.strictObject({fieldId:guid,label:z.string().min(1),count:z.number().int().min(0).max(200)});
 const preparationSchema = z.strictObject({culture,recipientContextRevision:z.string().min(1),preparation:z.strictObject({

@@ -202,5 +202,20 @@
     "title": "Form action",
     "document": "Document",
     "notice": "Automatic notice"
-  }
+  },
+  "assistant": {
+    "suggestionLabel": "Assistant suggestion",
+    "suggestion": "The assistant suggests sending {{name}}",
+    "prefilledSummary": "Prefilled with: {{fields}}",
+    "discard": "No, thanks",
+    "review": "Review and send",
+    "dialogDescription": "Review the proposed data before sending the form.",
+    "version": "{{name}} · version {{version}}",
+    "prefilledTitle": "Prefilled data",
+    "prefilledHelp": "{{name}} can see and change these values. Anything you uncheck is left blank.",
+    "whySent": "Why it sent this",
+    "whySuggested": "Why it suggested this",
+    "quickRepliesLabel": "Reply options"
+  },
+  "readForbidden": "You no longer have permission to view this conversation."
 }

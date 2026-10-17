@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { ChatMessage, Outgoing } from "../api/chat";
 import { buildTimeline, groupTimelineByDay, deliveryStatus } from "./timeline";
 
-const message = (id: string, occurredAtUtc: string, status: string | null = null): ChatMessage => ({ origin: "Conversation" as const,
+const message = (id: string, occurredAtUtc: string, status: string | null = null): ChatMessage => ({ quickReplies: null, assistant: null, origin: "Conversation" as const,
   id, occurredAtUtc, status, direction: "Outbound", kind: "Text", body: id,
   inboundSequence: 0, operatorUserId: null, errorCode: null,
 });
-const outgoing = (id: string, requestedAtUtc: string): Outgoing => ({ origin: "Conversation" as const,
+const outgoing = (id: string, requestedAtUtc: string): Outgoing => ({ quickReplies: null, assistant: null, origin: "Conversation" as const,
   id, requestedAtUtc, requestId: id, body: id, state: "Pending", operatorUserId: "operator", waMessageId: null,
 });
 
