@@ -5,9 +5,11 @@ import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import type { ResponseFilter } from "../responses";
 export function ResponseWorkspaceProvider({
   owner,
+  formId,
   children,
 }: {
   owner: string;
+  formId?: string;
   children: ReactNode;
 }) {
   const [state, setState] = useState<{
@@ -16,8 +18,9 @@ export function ResponseWorkspaceProvider({
     filter: ResponseFilter;
     denied: boolean;
   }>({ owner, formId: "", filter: {}, denied: false });
-  const activeForm = /^\/formularios\/([^/]+)\/respuestas(?:\/|$)/.exec(
-    useLocation().pathname,
+  const location = useLocation();
+  const activeForm = formId ?? /^\/formularios\/([^/]+)\/respuestas(?:\/|$)/.exec(
+    location.pathname,
   )?.[1];
   if (state.formId && state.formId !== activeForm)
     setState({ ...state, formId: "", filter: {} });

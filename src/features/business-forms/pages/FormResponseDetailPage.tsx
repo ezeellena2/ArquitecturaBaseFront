@@ -1,316 +1,77 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { Link, useLocation, useParams } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useContext, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { readErrorMessage } from "@/shared/api/errorFeedback";
-import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
-import { formatDateTimeInZone } from "@/shared/lib/dateTime";
-import { Page } from "@/shared/ui/Page";
-import { Surface } from "@/shared/ui/Surface";
+import { formatDateTimeInZone, formatRelativeTime } from "@/shared/lib/dateTime";
+import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Spinner } from "@/shared/ui/Spinner";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
+import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/Tabs";
 import { notify } from "@/shared/ui/notifications";
-import { fetchResponseSheet } from "../api/responses";
-import {
-  useResponseDetail,
-  useResponseFeedback,
-  useResponseSheet,
-} from "../hooks/useResponseQueries";
-import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
+import { useResponseDetail, useResponseFeedback } from "../hooks/useResponseQueries";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
+import { useResponseDocumentDownloads } from "../hooks/useResponseDocumentDownloads";
 import { useResponseWorkflow } from "../hooks/useResponseWorkflow";
-import { ResponseDocuments } from "../components/ResponseDocuments";
+import { ResponseDocuments, ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
 import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
 import { ResponseValue } from "../components/ResponseValue";
-export function FormResponseDetailPage() {
-  const { formId = "", recordId = "" } = useParams();
+import { ResponsePanelFrame, type ResponsePanelNavigation } from "../components/ResponsePanelFrame";
+import { composeWorkflowMoments } from "../workflowMoments";
+export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden }: {
+  formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void;
+}) {
   const { t, i18n } = useTranslation("forms");
   const detail = useResponseDetail(recordId, formId);
-  const route = useResponseRouteQuery(formId);
   const workflow = useResponseWorkflow(formId, recordId);
-  const sheet = useResponseSheet(formId, route.query, route.ready);
-  const client = useQueryClient();
-  const update = useQueryUpdate();
   const workspace = useContext(ResponseWorkspaceContext);
-  const [moving, setMoving] = useState(false);
+  const [params] = useSearchParams();
+  const update = useQueryUpdate();
   const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
-  const [moveError, setMoveError] = useState<unknown>(null);
-  const live = useRef(true);
-  const owner = useRef(detail.scope.owner);
-  useLayoutEffect(() => {
-    owner.current = detail.scope.owner;
-  }, [detail.scope.owner]);
-  useEffect(() => {
-    live.current = true;
-    return () => {
-      live.current = false;
-    };
-  }, []);
-  useResponseFeedback(
-    detail.query.isPending ? null : detail.query.error ?? sheet.query.error ?? workflow.error ?? moveError,
-    `responses:detail-page:${detail.scope.owner}:${formId}`,
-    detail.query.error ? detail.query.refetch : sheet.query.error ? sheet.query.refetch : workflow.error ? workflow.query.refetch : sheet.query.refetch,
-  );
+  useResponseFeedback(detail.query.isPending ? null : detail.query.error ?? workflow.error ?? navigation.error,
+    "responses:detail-page:" + detail.scope.owner + ":" + formId,
+    detail.query.error ? detail.query.refetch : workflow.error ? workflow.query.refetch : navigation.onRetry);
   const deny = useCallback(() => workspace?.deny(), [workspace]);
-  const onFileError = useCallback(
-    (error: unknown) =>
-      notify({
-        id: `responses:files:${detail.scope.owner}:${recordId}`,
-        kind: "error",
-        message: readErrorMessage(error, t),
-      }),
-    [detail.scope.owner, recordId, t],
-  );
+  const onFileError = useCallback((error: unknown) => notify({ id: "responses:files:" + detail.scope.owner + ":" + recordId, kind: "error", message: readErrorMessage(error, t) }), [detail.scope.owner, recordId, t]);
   const data = detail.query.data;
-  useBreadcrumbLeaf(data?.number, data?.name);
-  const location = useLocation();
-  const approvalReturn = (location.state as { approvalReturn?: unknown } | null)?.approvalReturn;
-  const fromApprovals = typeof approvalReturn === "string" && /^\/formularios\/por-aprobar(?:\?|$)/.test(approvalReturn);
-  const back = fromApprovals ? approvalReturn : `/formularios/${formId}/respuestas?${route.params}`;
-  const backLabel = t(fromApprovals ? "approvals.back" : "responses.back");
-  const index =
-    sheet.query.data?.records.items.findIndex(
-      (record) => record.id === recordId,
-    ) ?? -1;
-  const previous =
-    index > 0 || (index === 0 && !!sheet.query.data?.records.hasPrevious);
-  const next =
-    index >= 0 &&
-    (index < (sheet.query.data?.records.items.length ?? 0) - 1 ||
-      !!sheet.query.data?.records.hasNext);
-  const move = async (direction: number) => {
-    const current = sheet.query.data;
-    if (!current || moving || detail.query.isPlaceholderData) return;
-    const expected = detail.scope.owner;
-    const position = index + direction;
-    let id: string | undefined = current.records.items[position]?.id;
-    let page = current.records.page;
-    setMoveError(null);
-    setMoving(true);
-    try {
-      if (!id) {
-        page += direction;
-        const filter = { ...route.query, page };
-        const result = await client.fetchQuery({
-          queryKey: ["form-responses", expected, "sheet", formId, filter],
-          queryFn: ({ signal }) => fetchResponseSheet(formId, filter, signal),
-          gcTime: 0,
-          meta: { errorOwner: "local" },
-        });
-        id =
-          direction < 0
-            ? result.records.items.at(-1)?.id
-            : result.records.items[0]?.id;
-      }
-      if (id && live.current && owner.current === expected)
-        update(
-          { page: page === 1 ? undefined : String(page) },
-          {
-            pathname: `/formularios/${formId}/respuestas/${id}`,
-            replace: false,
-          },
-        );
-    } catch (error) {
-      if (live.current && owner.current === expected) setMoveError(error);
-    } finally {
-      if (live.current) setMoving(false);
-    }
-  };
-  if (
-    !detail.scope.allowed ||
-    (detail.query.error instanceof ApiError &&
-      detail.query.error.status === 403)
-  )
-    return <ForbiddenPage />;
-  if (detail.query.isPending)
-    return (
-      <Page title={t("responses.detail")}>
-        <Spinner />
-      </Page>
-    );
-  if (!data)
-    return (
-      <Page
-        title={t("responses.detail")}
-        backTo={{ to: back, label: backLabel }}
-      >
-        <Surface>
-          <EmptyState
-            embedded
-            title={t(
-              detail.query.error instanceof ApiError &&
-                detail.query.error.status === 404
-                ? "responses.unavailable"
-                : "responses.loadFailed",
-            )}
-            action={
-              detail.query.error instanceof ApiError &&
-              detail.query.error.status === 404 ? (
-                <Button asChild variant="outline">
-                  <Link to={back}>{backLabel}</Link>
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    void detail.query.refetch();
-                  }}
-                >
-                  {t("common:actions.retry")}
-                </Button>
-              )
-            }
-          />
-        </Surface>
-      </Page>
-    );
-  if (data.definitionId !== formId)
-    return (
-      <Page title={t("responses.detail")}>
-        <EmptyState title={t("responses.unavailable")} />
-      </Page>
-    );
-  const date = (utc: string) =>
-    formatDateTimeInZone(utc, i18n.language, detail.scope.user?.timeZoneId);
-  const photos = data.values
-    .filter((value) => value.type === "photo")
-    .flatMap((value) => (Array.isArray(value.value) ? value.value : []));
-  const currentWorkflow = workflow.query.data?.recordId === data.id ? workflow.query.data : undefined;
-  const decisionTask = detail.scope.user?.permissions.includes("formapprovals.decide") ? currentWorkflow?.task : undefined;
-  return (
-    <section aria-label={t("responses.detail")} aria-busy={detail.query.isFetching}>
-    <Page
-      title={data.number}
-      status={<>{currentWorkflow ? <Badge variant="outline">{t("approvals.states." + currentWorkflow.recordState)}</Badge> : null}<span>{data.name} · {t("responses.versionLabel", { version: data.versionNumber })}</span></>}
-      backTo={{ to: back, label: backLabel }}
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
-          {decisionTask ? <div ref={setDecisionActions}/> : null}
-          {index >= 0 && sheet.query.data ? <span className="text-sm">{t("responses.position", { position: (sheet.query.data.records.page - 1) * sheet.query.data.records.pageSize + index + 1, count: sheet.query.data.records.totalCount })}</span> : null}
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!previous || moving}
-            onClick={() => {
-              void move(-1);
-            }}
-          >
-            {t("responses.previous")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!next || moving}
-            onClick={() => {
-              void move(1);
-            }}
-          >
-            {t("responses.next")}
-          </Button>
-        </div>
-      }
-    >
-      {decisionTask ? <Surface title={t("approvals.title")} padded><ApprovalDecisionPanel taskId={decisionTask.id} actionsTarget={decisionActions} onDecided={() => { void workflow.query.refetch(); void sheet.query.refetch(); }} /></Surface> : null}
-      <Surface title={t("responses.answer")} padded>
-        <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          {data.values.map((value) => (
-            <div
-              key={value.fieldId}
-              className={
-                value.type === "photo" || value.type === "document"
-                  ? "min-w-0 sm:col-span-2"
-                  : "min-w-0"
-              }
-            >
-              <dt className="mb-2 text-sm font-medium text-[var(--color-content-muted)]">
-                {value.label}
-              </dt>
-              <dd className="text-sm">
-                <ResponseValue
-                  cell={{
-                    ...value,
-                    state:
-                      value.value === null ||
-                      (Array.isArray(value.value) && value.value.length === 0)
-                        ? "Unanswered"
-                        : "Answered",
-                  }}
-                  actor={detail.scope.user!.id}
-                  recordId={data.id}
-                  number={data.number}
-                  label={value.label}
-                  detail
-                  viewerFiles={photos}
-                  onForbidden={deny}
-                  onError={onFileError}
-                  detailLink=""
-                />
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </Surface>
-      <Surface title={t("responses.origin")} padded>
-        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <dt>{t("responses.actor")}</dt>
-            <dd>{data.actor.displayName ?? t("responses.unknownPerson")}</dd>
-          </div>
-          <div>
-            <dt>{t("responses.channel")}</dt>
-            <dd>
-              {t(
-                data.channel === "phone"
-                  ? "responses.whatsapp"
-                  : "responses.unknownChannel",
-              )}
-              {data.origin?.maskedAddress
-                ? ` · ${data.origin.maskedAddress}`
-                : ""}
-            </dd>
-          </div>
-          <div>
-            <dt>{t("responses.received")}</dt>
-            <dd>{date(data.submittedAtUtc)}</dd>
-          </div>
-          {data.origin ? (
-            <div>
-              <dt>{t("responses.sentBy")}</dt>
-              <dd>
-                {data.origin.senderName ?? t("responses.unknownPerson")} ·{" "}
-                {date(data.origin.sentAtUtc)}
-              </dd>
-            </div>
-          ) : null}
-        </dl>
-        {data.origin?.conversationId &&
-        detail.scope.user?.permissions.includes("whatsapp.read") ? (
-          <Button variant="link" asChild>
-            <Link
-              to={`/whatsapp/chat?conversacion=${data.origin.conversationId}`}
-            >
-              {t("responses.openChat")}
-            </Link>
-          </Button>
-        ) : null}
-      </Surface>
-      {workflow.query.data?.recordId === data.id ? <ResponseDocuments key={detail.scope.owner+":"+data.id} owner={detail.scope.owner} recordId={data.id} documents={workflow.query.data.documents} onForbidden={deny} timeZoneId={detail.scope.user?.timeZoneId}/> : null}
-      <ResponseWorkflowHistory key={"workflow:"+detail.scope.owner+":"+data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} />
-    </Page>
-    </section>
-  );
+  const downloads = useResponseDocumentDownloads(detail.scope.owner, recordId, deny, detail.query.isPlaceholderData || data?.id !== recordId);
+  if (!detail.scope.allowed || detail.query.error instanceof ApiError && detail.query.error.status === 403) return <ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><ForbiddenPage/></ResponsePanelFrame>;
+  if (!data || data.definitionId !== formId) return <ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(detail.query.error instanceof ApiError && detail.query.error.status === 404 ? "responses.unavailable" : "responses.loadFailed")} action={<Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame>;
+  const loadingTarget = detail.query.isPlaceholderData || data.id !== recordId;
+  const current = workflow.query.data?.recordId === data.id ? workflow.query.data : undefined;
+  const date = (utc: string) => formatDateTimeInZone(utc, i18n.language, detail.scope.user?.timeZoneId);
+  const photos = data.values.filter(value => value.type === "photo").flatMap(value => Array.isArray(value.value) ? value.value : []);
+  const moments = composeWorkflowMoments(data, current);
+  const canDecide = detail.scope.user?.permissions.includes("formapprovals.decide");
+  const tab = ["answer", "photos", "activity"].includes(params.get("tab") ?? "") ? params.get("tab")! : params.get("tab") === "pdf" && current?.documents.length ? "pdf" : "answer";
+  const refresh = () => { void workflow.query.refetch(); onDecided?.(); };
+  return <ResponsePanelFrame title={data.number} loading={detail.query.isFetching} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={current ? <Badge variant="outline">{t("approvals.states." + current.recordState)}</Badge> : null} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
+    {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="link" size="inline" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
+    {current?.documents.length ? <ResponseDocumentDownloads documents={current.documents} downloads={downloads}/> : null}
+  </>}>
+    <div className={canDecide && current?.task?.state === "Open" ? "max-sm:pb-20" : undefined}>
+    <ol className="mb-4 space-y-3 border-b border-[var(--color-border)] pb-4">
+      {moments.map(moment => <li key={moment.key} className="relative border-l-2 border-[var(--color-border)] pl-3">
+        {moment.kind === "received" ? <><h3 className="font-semibold">{t("responses.received")}</h3><p className="text-sm">{data.actor.displayName ?? t("responses.unknownPerson")} · {date(moment.atUtc)}</p>{moment.origin ? <p className="text-xs text-[var(--color-content-muted)]">{t(moment.origin.senderKind === "Assistant" ? "detail.originAssistant" : "detail.originManual", { name: moment.origin.senderName ?? t("responses.unknownPerson") })}</p> : null}</> : moment.kind === "effects" ? <><h3 className="font-semibold">{t("detail.events." + moment.event)}</h3><Button variant="link" size="inline" onClick={() => update({ tab: "activity" })}>{t("detail.actionsCompleted", { completed: moment.completedCount, count: moment.totalCount })}</Button>{moment.actions.some(action => action.state === "Failed" || action.state === "Uncertain" || action.recipients.some(recipient => recipient.state === "Failed" || recipient.state === "Uncertain")) ? <p className="text-xs text-[var(--color-content-muted)]">{t("detail.issues")}</p> : null}</> : <>
+          <h3 className="font-semibold">{t("approvals.taskStates." + moment.task.state)}</h3>
+          {moment.task.state === "Open" ? <p className="text-xs text-[var(--color-content-muted)]"><ActionTooltip label={date(moment.task.requestedAtUtc)}><time dateTime={moment.task.requestedAtUtc} tabIndex={0}>{formatRelativeTime(moment.task.requestedAtUtc, i18n.language)}</time></ActionTooltip></p> : null}
+          {canDecide ? <><ApprovalDecisionPanel taskId={moment.task.id} disabled={loadingTarget} onForbidden={onDecisionForbidden} actionsTarget={decisionActions} onDecided={refresh}/><div ref={setDecisionActions} className={moment.task.state === "Open" ? "mt-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/></> : <><p className="text-sm">{moment.task.roleName ?? t("responses.unknownPerson")}</p>{moment.task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: moment.task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(moment.task.decidedAtUtc) })}</p> : null}{moment.task.reason ? <p className="text-sm whitespace-pre-wrap">{moment.task.reason}</p> : null}</>}
+        </>}
+      </li>)}
+    </ol>
+    <Tabs value={tab} onValueChange={value => update({ tab: value === "answer" ? undefined : value })}>
+      <TabsList aria-label={t("responses.detail")}><TabsTrigger value="answer">{t("responses.answer")}</TabsTrigger><TabsTrigger value="photos">{t("detail.photos")} ({photos.length})</TabsTrigger><TabsTrigger value="activity">{t("detail.activity")}</TabsTrigger>{current?.documents.length ? <TabsTrigger value="pdf">{t("detail.pdf")}</TabsTrigger> : null}</TabsList>
+      <TabsContent value="answer"><dl className="divide-y divide-[var(--color-border)]">{data.values.map(value => <div key={value.fieldId} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 py-3"><dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{value.label}</dt><dd className="min-w-0 text-sm"><ResponseValue cell={{ ...value, state: value.value === null || Array.isArray(value.value) && value.value.length === 0 ? "Unanswered" : "Answered" }} actor={detail.scope.user!.id} recordId={data.id} number={data.number} label={value.label} detail viewerFiles={photos} onForbidden={deny} onError={onFileError} detailLink=""/></dd></div>)}</dl></TabsContent>
+      <TabsContent value="photos">{photos.length ? <FormRecordFiles actor={detail.scope.user!.id} recordId={data.id} files={photos} photo label={t("responses.photos")} number={data.number} thumbnailLimit={photos.length} viewerFiles={photos} onForbidden={deny} onError={onFileError}/> : <p className="text-sm text-[var(--color-content-muted)]">{t("responses.unanswered")}</p>}</TabsContent>
+      <TabsContent value="activity" forceMount hidden={tab !== "activity"}><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId}/></TabsContent>
+      {current?.documents.length ? <TabsContent value="pdf"><ResponseDocuments downloads={downloads} owner={detail.scope.owner} recordId={data.id} documents={current.documents} onForbidden={deny} timeZoneId={detail.scope.user?.timeZoneId}/></TabsContent> : null}
+    </Tabs>
+    </div>
+  </ResponsePanelFrame>;
 }

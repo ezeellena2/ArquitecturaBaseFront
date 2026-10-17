@@ -140,7 +140,7 @@ function setupDetailDecision() {
   const complete = (decision: "Approved" | "Rejected", name = "Luz", reason: string | null = null) => {
     fixture.task = { ...fixture.task, state: decision, revision: 2, canDecide: false, cannotDecideReason: "AlreadyDecided", decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: name }, reason };
   };
-  const workflow = (): ResponseWorkflow => ({ ...responseWorkflowFixture(), recordState: fixture.task.state === "Open" ? "PendingApproval" : fixture.task.state, task: { id: fixture.task.id, roleId: fixture.task.role.id, roleName: fixture.task.role.name, revision: fixture.task.revision, state: fixture.task.state, decidedAtUtc: fixture.task.decidedAtUtc, decidedBy: fixture.task.decidedBy, reason: fixture.task.reason } });
+  const workflow = (): ResponseWorkflow => ({ ...responseWorkflowFixture(), recordState: fixture.task.state === "Open" ? "PendingApproval" : fixture.task.state, task: { id: fixture.task.id, roleId: fixture.task.role.id, roleName: fixture.task.role.name, requestedAtUtc: fixture.task.requestedAtUtc, revision: fixture.task.revision, state: fixture.task.state, decidedAtUtc: fixture.task.decidedAtUtc, decidedBy: fixture.task.decidedBy, reason: fixture.task.reason } });
   server.use(http.get("/api/forms/approvals/count", () => HttpResponse.json({ count: 1 })),
     http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(fixture.task)),
     http.get("/api/forms/records/:id/workflow", () => { fixture.workflowReads++; return HttpResponse.json(workflow()); }),
@@ -155,14 +155,27 @@ function setupDetailDecision() {
 function uncertainWorkflow(runId: string): ResponseWorkflow {
   return { ...responseWorkflowFixture(), actions: [{ id: runId, ruleId: runId, kind: "NotifyAuthor", event: "Received", order: 0, revision: 0, state: "Uncertain", reasonCode: null, reason: null, canConsult: true, canRetry: false, recipients: [recipientFixture()], createdAtUtc: "2026-10-17T12:00:00Z", updatedAtUtc: "2026-10-17T12:00:00Z", completedAtUtc: null }] };
 }
+
+async function openResponseTab(name: "Respuesta" | "Actividad" | "PDF") {
+  const panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+  await userEvent.click(await panel.findByRole("tab", { name }));
+  return within(await panel.findByRole("tabpanel", { name }));
+}
+async function openResponseActivity() {
+  const tab = await openResponseTab("Actividad");
+  return within(tab.getByRole("region", { name: "Actividad" }));
+}
+
 beforeEach(() => {
   queryClient.clear();
   vi.clearAllMocks();
 });
 describe("response sheet", () => {
-  it("shows response states only when the form has approval rules",async()=>{setup();const payload=responseSheetFixture();payload.hasApproval=true;payload.records.items[0].state="PendingApproval";server.use(http.post("/api/forms/definitions/:id/records/search",()=>HttpResponse.json(payload)));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");await screen.findByRole("columnheader",{name:"Estado"});expect(screen.getByText("Por aprobar")).toBeInTheDocument();});
-  it("keeps response values readable when approval permission is revoked",async()=>{setup(["formrecords.read","formapprovals.decide"]);const taskId=crypto.randomUUID();server.use(http.get("/api/forms/approvals/count",()=>HttpResponse.json({count:1})),http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"PendingApproval",task:{id:taskId,roleId:taskId,roleName:"Supervisión",revision:1,state:"Open",decidedAtUtc:null,decidedBy:null,reason:null}})),http.get("/api/forms/approvals/:id",()=>HttpResponse.json({id:taskId,definitionId:responseFormId,recordId:responseRecordId,number:"TEST-000002",formName:"Visita",author:{userId:taskId,displayName:"Ana"},role:{id:taskId,name:"Supervisión"},requestedAtUtc:"2026-10-16T12:00:00Z",revision:1,state:"Open",canDecide:true,cannotDecideReason:null,decidedAtUtc:null,decidedBy:null,reason:null})),http.post("/api/forms/approvals/:id/decisions",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);await userEvent.click(await screen.findByRole("button",{name:"Aprobar"}));await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();});
-  it("shows the historic decision to a reader without approval permission",async()=>{setup(["formrecords.read"]);const taskId=crypto.randomUUID();let metadataReads=0;server.use(http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"Rejected",task:{id:taskId,roleId:taskId,roleName:"Supervisión histórica",revision:2,state:"Rejected",decidedAtUtc:"2026-10-16T13:00:00Z",decidedBy:{userId:taskId,displayName:"Luz"},reason:"Falta la firma"}})),http.get("/api/forms/approvals/:id",()=>{metadataReads++;return HttpResponse.json({});}));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);await screen.findByText("Falta la firma");expect(screen.getByText(/Luz/)).toBeInTheDocument();expect(metadataReads).toBe(0);expect(screen.queryByRole("button",{name:"Aprobar"})).not.toBeInTheDocument();});
+  it("shows response states only when the form has approval rules",async()=>{setup();const payload=responseSheetFixture();payload.hasApproval=true;payload.records.items[0].state="PendingApproval";server.use(http.post("/api/forms/definitions/:id/records/search",()=>HttpResponse.json(payload)));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");await screen.findByRole("columnheader",{name:"Estado"});expect(within(screen.getByRole("table")).getByText("Por aprobar")).toBeInTheDocument();});
+  it("keeps response values readable when approval permission is revoked",async()=>{setup(["formrecords.read","formapprovals.decide"]);const taskId=crypto.randomUUID();server.use(http.get("/api/forms/approvals/count",()=>HttpResponse.json({count:1})),http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"PendingApproval",task:{id:taskId,roleId:taskId,roleName:"Supervisión", requestedAtUtc:"2026-10-16T12:00:00Z",revision:1,state:"Open",decidedAtUtc:null,decidedBy:null,reason:null}})),http.get("/api/forms/approvals/:id",()=>HttpResponse.json({id:taskId,definitionId:responseFormId,recordId:responseRecordId,number:"TEST-000002",formName:"Visita",author:{userId:taskId,displayName:"Ana"},role:{id:taskId,name:"Supervisión"},requestedAtUtc:"2026-10-16T12:00:00Z",revision:1,state:"Open",canDecide:true,cannotDecideReason:null,decidedAtUtc:null,decidedBy:null,reason:null})),http.post("/api/forms/approvals/:id/decisions",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));await userEvent.click(await screen.findByRole("button",{name:"Aprobar"}));await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();});
+  it("shows the historic decision to a reader without approval permission",async()=>{setup(["formrecords.read"]);const taskId=crypto.randomUUID();let metadataReads=0;server.use(http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"Rejected",task:{id:taskId,roleId:taskId,roleName:"Supervisión histórica", requestedAtUtc:"2026-10-16T12:00:00Z",revision:2,state:"Rejected",decidedAtUtc:"2026-10-16T13:00:00Z",decidedBy:{userId:taskId,displayName:"Luz"},reason:"Falta la firma"}})),http.get("/api/forms/approvals/:id",()=>{metadataReads++;return HttpResponse.json({});}));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));await within((await responseView.findByRole("heading", { name: "Rechazada", level: 3 })).closest("li")!).findByText("Falta la firma");expect(within(responseView.getByRole("heading", { name: "Rechazada", level: 3 }).closest("li")!).getByText(/Luz/)).toBeInTheDocument();expect(metadataReads).toBe(0);expect(screen.queryByRole("button",{name:"Aprobar"})).not.toBeInTheDocument();});
 
   it("withdraws response values and workflow reasons when the follow-up read is forbidden", async () => {
     setup(["formrecords.read", "formrules.manage"]);
@@ -172,8 +185,9 @@ describe("response sheet", () => {
     server.use(http.get("/api/forms/records/:id/workflow", () => revoked ? HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }) : HttpResponse.json({ ...responseWorkflowFixture(), ruleRevision: 1, actions: [{ id: runId, ruleId: crypto.randomUUID(), kind: "NotifyAuthor", event: "Received", order: 1, revision: 0, state: "Uncertain", reasonCode: null, reason: privateReason, canConsult: true, canRetry: false, recipients: [recipientFixture()], createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: null }] })),
       http.post("/api/forms/records/:id/actions/:runId/consult", () => { revoked = true; return HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await screen.findByText(privateReason);
-    await userEvent.click(screen.getByRole("button", { name: "Consultar" }));
+    const activity = await openResponseActivity();
+    await activity.findByText(privateReason);
+    await userEvent.click(activity.getByRole("button", { name: "Consultar" }));
     await screen.findByRole("heading", { name: /permiso/i });
     expect(screen.queryByText("Texto completo para revisar")).not.toBeInTheDocument();
     expect(screen.queryByText(privateReason)).not.toBeInTheDocument();
@@ -187,11 +201,14 @@ describe("response sheet", () => {
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)),
       http.post("/api/forms/records/:id/actions/:runId/consult", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await userEvent.click(await screen.findByRole("button", { name: "Consultar" }));
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Consultar" }));
     await screen.findByText("Ya no tenés permiso para recuperar acciones.");
     expect(screen.getByRole("heading", { name: "TEST-000002" })).toBeInTheDocument();
-    expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Consultar" })).not.toBeInTheDocument();
+    expect(activity.queryByRole("button", { name: "Consultar" })).not.toBeInTheDocument();
+    await openResponseTab("Respuesta");
+    expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();
     expect(notify).not.toHaveBeenCalled();
   });
 
@@ -201,13 +218,14 @@ describe("response sheet", () => {
     let state: "Uncertain" | "Failed" | "Completed" = "Uncertain";
     const consulted = vi.fn();
     const retried = vi.fn();
-    const payload = () => ({ ...responseWorkflowFixture(), ruleRevision: 3, actions: [{ id: runId, ruleId: "0199a0c0-0000-7000-8000-000000000091", kind: "NotifyAuthor", event: "Approved", order: 1, revision: 0, state, reasonCode: state === "Completed" ? null : "Test.Delivery", reason: state === "Completed" ? null : "Revisá la entrega.", canConsult: state === "Uncertain", canRetry: state === "Failed", recipients: [recipientFixture({ state: state === "Completed" ? "Accepted" : state, canReview: state === "Uncertain" })], createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: state === "Completed" ? "2026-10-16T12:01:00Z" : null }] });
+    const payload = () => ({ ...responseWorkflowFixture(), recordState: "Approved", ruleRevision: 3, actions: [{ id: runId, ruleId: "0199a0c0-0000-7000-8000-000000000091", kind: "NotifyAuthor", event: "Approved", order: 1, revision: 0, state, reasonCode: state === "Completed" ? null : "Test.Delivery", reason: state === "Completed" ? null : "Revisá la entrega.", canConsult: state === "Uncertain", canRetry: state === "Failed", recipients: [recipientFixture({ state: state === "Completed" ? "Accepted" : state, canReview: state === "Uncertain" })], createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: state === "Completed" ? "2026-10-16T12:01:00Z" : null }] });
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload())),
       http.post("/api/forms/records/:id/actions/:runId/consult", () => { consulted(); state = "Failed"; return HttpResponse.json(payload()); }),
       http.post("/api/forms/records/:id/actions/:runId/retry", () => { retried(); state = "Completed"; return HttpResponse.json(payload()); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const activity = await openResponseActivity();
     await screen.findByRole("heading", { name: "TEST-000002" });
-    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    const history = activity;
     expect(await history.findByText("Sin confirmar")).toBeInTheDocument();
     expect(history.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     await userEvent.click(history.getByRole("button", { name: "Consultar" }));
@@ -224,7 +242,8 @@ describe("response sheet", () => {
     setup(["formrecords.read"]);
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json({ ...responseWorkflowFixture(), ruleRevision: 1, actions: [{ id: crypto.randomUUID(), ruleId: crypto.randomUUID(), kind: "NotifyAuthor", event: "Received", order: 1, revision: 0, state: "Uncertain", reasonCode: null, reason: null, canConsult: true, canRetry: true, recipients: [recipientFixture()], createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: null }] })));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    const activity = await openResponseActivity();
+    const history = activity;
     await history.findByText("Sin confirmar");
     expect(history.queryByRole("button", { name: "Consultar" })).not.toBeInTheDocument();
     expect(history.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
@@ -248,7 +267,8 @@ describe("response sheet", () => {
         return HttpResponse.json(payload(), { status: 202 });
       }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    const activity = await openResponseActivity();
+    const history = activity;
     await userEvent.click(await history.findByRole("button", { name: "Consultar" }));
     expect(history.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     await userEvent.click(history.getByRole("button", { name: "Resolver envío" }));
@@ -272,7 +292,8 @@ describe("response sheet", () => {
     const writes = vi.fn();
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json({ ...uncertainWorkflow(runId), actions: [{ ...uncertainWorkflow(runId).actions[0], canRetry: true }] })), http.post("/api/forms/records/:id/actions/:runId/review", () => { writes(); return HttpResponse.json({}); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const resolve = await screen.findByRole("button", { name: "Resolver envío" });
+    const activity = await openResponseActivity();
+    const resolve = await activity.findByRole("button", { name: "Resolver envío" });
     await userEvent.click(resolve);
     const dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "No salió" }));
@@ -289,7 +310,9 @@ describe("response sheet", () => {
     const writes = vi.fn();
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(uncertainWorkflow(runId))), http.post("/api/forms/records/:id/actions/:runId/review", () => { writes(); return HttpResponse.error(); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await userEvent.click(await screen.findByRole("button", { name: "Resolver envío" }));
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
@@ -297,21 +320,26 @@ describe("response sheet", () => {
     expect(dialog.getByRole("radio", { name: "Salió" })).toBeChecked();
     expect(writes).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
-    expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
+    await userEvent.click(dialog.getByRole("button", { name: "Cancelar" }));
+    await openResponseTab("Respuesta");
+    expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();
   });
   it("removes human review controls after a forbidden operation without hiding readable response values", async () => {
     setup(["formrecords.read", "formrules.manage"]);
     const runId = crypto.randomUUID();
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(uncertainWorkflow(runId))), http.post("/api/forms/records/:id/actions/:runId/review", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await userEvent.click(await screen.findByRole("button", { name: "Resolver envío" }));
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "No salió" }));
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que no salió" }));
     await screen.findByText("Ya no tenés permiso para recuperar acciones.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Resolver envío" })).not.toBeInTheDocument();
-    expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
+    await openResponseTab("Respuesta");
+    expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();
     expect(notify).not.toHaveBeenCalled();
   });
 
@@ -328,7 +356,8 @@ describe("response sheet", () => {
         return HttpResponse.json({ ...uncertainWorkflow(runId), actions: [{ ...uncertainWorkflow(runId).actions[0], state: "Waiting", canConsult: false, recipients: [recipientFixture({ state: "Accepted", canReview: false, review: { wasSent: true, reviewedAtUtc: "2026-10-17T13:00:00Z", reviewedBy: { userId: currentUser.id, displayName: "Old response reviewer" } } })] }] }, { status: 202 });
       }));
     const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await userEvent.click(await screen.findByRole("button", { name: "Resolver envío" }));
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
@@ -340,7 +369,7 @@ describe("response sheet", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(notify).not.toHaveBeenCalled();
     await act(async () => { await router.navigate("/formularios/" + responseFormId + "/respuestas/" + responseRecordId); });
-    await screen.findByRole("button", { name: "Resolver envío" });
+    await (await openResponseActivity()).findByRole("button", { name: "Resolver envío" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -357,7 +386,8 @@ describe("response sheet", () => {
         return failure === "network" ? HttpResponse.error() : HttpResponse.json({ code: failure === "conflict" ? "Forms.Action.StateConflict" : "Server.Error", detail: "La acción cambió." }, { status: failure === "conflict" ? 409 : 503 });
       }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await userEvent.click(await screen.findByRole("button", { name: "Resolver envío" }));
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
@@ -378,7 +408,8 @@ describe("response sheet", () => {
     server.use(http.get("/api/forms/records/:id/workflow", () => { reads++; return reads === 2 ? failure === "network" ? HttpResponse.error() : HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 1 }, { status: 429 }) : HttpResponse.json(uncertainWorkflow(runId)); }),
       http.post("/api/forms/records/:id/actions/:runId/review", async ({ request }) => { posts.push(await request.json()); return HttpResponse.error(); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await userEvent.click(await screen.findByRole("button", { name: "Resolver envío" }));
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "No salió" }));
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que no salió" }));
@@ -399,16 +430,19 @@ describe("response sheet", () => {
     const runId = crypto.randomUUID();
     const privateReason = "Private recovery reason";
     const privateDocument = "Private recovery.pdf";
-    const payload: ResponseWorkflow = { ...uncertainWorkflow(runId), actions: [{ ...uncertainWorkflow(runId).actions[0], reason: privateReason }], documents: [{ id: crypto.randomUUID(), name: privateDocument, culture: "es", size: 123, createdAtUtc: "2026-10-17T12:00:00Z" }] };
+    const payload: ResponseWorkflow = { ...uncertainWorkflow(runId), recordState: "Approved", actions: [{ ...uncertainWorkflow(runId).actions[0], reason: privateReason }], documents: [{ id: crypto.randomUUID(), name: privateDocument, culture: "es", size: 123, createdAtUtc: "2026-10-17T12:00:00Z" }] };
     let denied = false;
     let reads = 0;
     let writes = 0;
     server.use(http.get("/api/forms/records/:id/workflow", () => { reads++; return denied ? HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }) : HttpResponse.json(payload); }),
       http.post("/api/forms/records/:id/actions/:runId/review", () => { denied = true; writes++; return HttpResponse.error(); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await screen.findByText(privateDocument);
-    expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
-    await userEvent.click(await screen.findByRole("button", { name: "Resolver envío" }));
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    await responseView.findByText("Texto completo para revisar");
+    await openResponseTab("PDF");
+    await responseView.findByText(privateDocument);
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
@@ -431,7 +465,8 @@ describe("response sheet", () => {
     server.use(http.get("/api/forms/records/:id/workflow", () => { reads++; return reads === 2 ? HttpResponse.error() : HttpResponse.json(uncertainWorkflow(runId)); }),
       http.post("/api/forms/records/:id/actions/:runId/review", () => { writes++; return HttpResponse.error(); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const open = await screen.findByRole("button", { name: "Resolver envío" });
+    const activity = await openResponseActivity();
+    const open = await activity.findByRole("button", { name: "Resolver envío" });
     await userEvent.click(open);
     let dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
@@ -455,7 +490,8 @@ describe("response sheet", () => {
     const payload = roleWorkflow(runId, [accepted, failed], "Completed");
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    const activity = await openResponseActivity();
+    const history = activity;
     await history.findByText("Pedro no tiene WhatsApp.");
     expect(history.getByText("Juan")).toBeInTheDocument();
     expect(history.getByText("Pedro")).toBeInTheDocument();
@@ -470,7 +506,8 @@ describe("response sheet", () => {
     const payload = roleWorkflow(crypto.randomUUID(), [failed], "Completed");
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    const activity = await openResponseActivity();
+    const history = activity;
     await history.findByText("No hay un canal disponible para avisarle.");
     expect(history.getByText("Juan")).toBeInTheDocument();
     expect(history.getByText("Hecho")).toBeInTheDocument();
@@ -493,7 +530,8 @@ describe("response sheet", () => {
         return HttpResponse.json(payload, { status: 202 });
       }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await userEvent.click(await screen.findByRole("button", { name: "Resolver envío" }));
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     expect(dialog.getByText("Destinatario: Pedro")).toBeInTheDocument();
     await userEvent.click(dialog.getByRole("radio", { name: wasSent ? "Salió" : "No salió" }));
@@ -515,7 +553,8 @@ describe("response sheet", () => {
     server.use(http.get("/api/forms/records/:id/workflow", () => { reads++; return HttpResponse.json(payload); }),
       http.post("/api/forms/records/:id/actions/:runId/review", async ({ request }) => { posts.push(await request.json()); payload = roleWorkflow(runId, [recipientFixture({ state: "Accepted", canReview: false }), target]); return HttpResponse.error(); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    await userEvent.click(await screen.findByRole("button", { name: "Resolver envío" }));
+    const activity = await openResponseActivity();
+    await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     await userEvent.click(dialog.getByRole("radio", { name: "No salió" }));
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que no salió" }));
@@ -531,7 +570,7 @@ describe("response sheet", () => {
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
     await screen.findByRole("heading", { name: "TEST-000002" });
     const crumbs = within(screen.getByRole("navigation", { name: "Migas de pan" }));
-    expect(crumbs.getByRole("link", { name: "Formulario publicado" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas");
+    expect(crumbs.getByText("Formulario publicado")).toHaveAttribute("aria-current", "page");
     expect(crumbs.queryByText("Nombre del menú")).not.toBeInTheDocument();
   });
 
@@ -552,15 +591,16 @@ describe("response sheet", () => {
       return HttpResponse.json({ ...responseDetailFixture(), id: row.id, number: row.number });
     }));
     const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + rows[19].id + "?sort=field&sortFieldId=" + fieldId + "");
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
     await screen.findByRole("heading", { name: "TEST-000002" });
     await waitFor(() => expect(screen.getByText("20 de 21")).toBeInTheDocument());
-    await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    await userEvent.click(responseView.getByRole("button", { name: "Siguiente" }));
     await screen.findByRole("heading", { name: "TEST-000001" });
     await waitFor(() => expect(screen.getByText("21 de 21")).toBeInTheDocument());
     expect(router.state.location.search).toContain("page=2");
     expect(requested).toHaveBeenCalledWith(expect.objectContaining({ page: 2, sort: "field", sortFieldId: fieldId }));
-    expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled();
-    await userEvent.click(screen.getByRole("button", { name: "Anterior" }));
+    expect(responseView.getByRole("button", { name: "Siguiente" })).toBeDisabled();
+    await userEvent.click(responseView.getByRole("button", { name: "Anterior" }));
     await screen.findByRole("heading", { name: "TEST-000002" });
     await waitFor(() => expect(screen.getByText("20 de 21")).toBeInTheDocument());
     expect(router.state.location.search).not.toContain("page=2");
@@ -601,8 +641,9 @@ describe("response sheet", () => {
   it("keeps response detail readable without offering conversation access when whatsapp.read is absent", async () => {
     setup(["formrecords.read"]);
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
     await screen.findByRole("heading", { name: "TEST-000002" });
-    expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
+    expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Abrir conversación" })).not.toBeInTheDocument();
   });
 
@@ -710,7 +751,8 @@ describe("response sheet", () => {
     setup();
     server.use(http.get("/api/forms/records/:id", () => HttpResponse.json({ detail: "Failed", code: "Test.Failure" }, { status: 500 })), http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json({ detail: "Failed", code: "Test.Failure" }, { status: 500 })));
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas/${responseRecordId}`);
-    await screen.findByRole("heading", { name: "No pudimos cargar las respuestas." });
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    await responseView.findByRole("heading", { name: "No pudimos cargar las respuestas." });
     await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
     expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
   });
@@ -723,23 +765,24 @@ describe("response sheet", () => {
   });
   it("opens the historical detail and moves within the same sheet", async () => {
     setup();
-    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    const { router } = renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await userEvent.click(
       await screen.findByRole("link", { name: "TEST-000002" }),
     );
     await screen.findByRole("heading", { name: "TEST-000002" });
-    expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();
     expect(screen.getByText("1 de 2")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Abrir conversación" }),
+      responseView.getByRole("link", { name: "Abrir conversación" }),
     ).toHaveAttribute("href", expect.stringContaining("conversacion="));
     await userEvent.click(
-      await screen.findByRole("button", { name: "Siguiente" }),
+      await responseView.findByRole("button", { name: "Siguiente" }),
     );
     await screen.findByRole("heading", { name: "TEST-000001" });
-    const back = screen.getByRole("link", { name: "Volver a la planilla" });
-    expect(back).toHaveAttribute("href", `/formularios/${responseFormId}/respuestas?pageSize=20`);
+    const back = within(screen.getByRole("region", { name: "Detalle de la respuesta" })).getByRole("button", { name: "Cerrar" });
     await userEvent.click(back);
+    expect(router.state.location.pathname + router.state.location.search).toBe(`/formularios/${responseFormId}/respuestas?pageSize=20`);
     await screen.findByRole("table");
   });
   it("keeps the previous detail and focused Next button while the next answer loads", async () => {
@@ -751,8 +794,9 @@ describe("response sheet", () => {
       return HttpResponse.json(responseDetailFixture(String(params.id)));
     }));
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas/${responseRecordId}`);
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
     await screen.findByRole("heading", { name: "TEST-000002" });
-    const button = screen.getByRole("button", { name: "Siguiente" });
+    const button = responseView.getByRole("button", { name: "Siguiente" });
     await userEvent.click(button);
     await waitFor(() => expect(requested).toHaveBeenCalled());
     expect(screen.getByRole("heading", { name: "TEST-000002" })).toBeInTheDocument();
@@ -760,7 +804,8 @@ describe("response sheet", () => {
     expect(screen.getByRole("region", { name: "Detalle de la respuesta" })).toHaveAttribute("aria-busy", "true");
     await act(async () => release?.());
     await screen.findByRole("heading", { name: "TEST-000001" });
-    expect(button).toHaveFocus();
+    expect(button).toBeDisabled();
+    expect(screen.getByRole("region", { name: "Detalle de la respuesta" })).toHaveFocus();
   });
   it("shows every filter section and applies the server count for the received date draft", async () => {
     setup();
@@ -1187,9 +1232,10 @@ it("keeps one workflow read notification in the detail without repeating its cau
   setup(["formrecords.read", "formrules.manage"]);
   server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json({ code: "Test.Workflow", detail: "No pudimos leer este seguimiento." }, { status: 400 })));
   renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const activity = await openResponseActivity();
   await waitFor(() => expect(notify).toHaveBeenCalledOnce());
   expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "No pudimos leer este seguimiento." });
-  const history = within(screen.getByRole("region", { name: "Qué pasó después" }));
+  const history = activity;
   expect(history.queryByText("No pudimos leer este seguimiento.")).not.toBeInTheDocument();
   expect(history.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
 });
@@ -1197,9 +1243,11 @@ it("keeps one workflow read notification in the detail without repeating its cau
   it.each(["Approved", "Rejected"] as const)("keeps the same detail decision panel and focuses its confirmed %s result", async decision => {
     const { fixture } = setupDetailDecision();
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const panel = await screen.findByRole("region", { name: "Por aprobar" });
-    const controls = within(panel);
-    const actions = within(screen.getByRole("heading", { name: "TEST-000002", level: 1 }).closest("header")!);
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+    const summaryElement = (await responseView.findByText("Supervisión")).closest("[tabindex='-1']")!;
+    const controls = within(summaryElement as HTMLElement);
+    const actions = within(panel);
     await actions.findByRole("button", { name: "Aprobar" });
     if (decision === "Rejected") {
       await userEvent.click(actions.getByRole("button", { name: "Rechazar" }));
@@ -1222,14 +1270,15 @@ it("keeps one workflow read notification in the detail without repeating its cau
     const { fixture, complete } = setupDetailDecision();
     server.use(http.post("/api/forms/approvals/:id/decisions", async ({ request }) => { fixture.writes.push(await request.json()); complete("Rejected", "Rocío", "La visita ya fue evaluada."); return HttpResponse.json({ code: "Forms.Approval.RevisionConflict", detail: "Otra persona ya decidió." }, { status: 409 }); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const panel = await screen.findByRole("region", { name: "Por aprobar" });
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
     await userEvent.click(await screen.findByRole("button", { name: "Rechazar" }));
     const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
     await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Mi motivo sin confirmar");
     await userEvent.click(reject.getByRole("button", { name: "Rechazar" }));
     await waitFor(() => expect(fixture.workflowReads).toBe(2));
     expect(panel).toBeInTheDocument();
-    const result = within(panel);
+    const result = within((await responseView.findByText("Supervisión")).closest("[tabindex='-1']")! as HTMLElement);
     expect(await result.findByText(/Rocío/)).toBeInTheDocument();
     expect(result.getByText("La visita ya fue evaluada.")).toBeInTheDocument();
     expect(result.getByText("La aprobación cambió. Se actualizó con la decisión vigente.")).toBeInTheDocument();
@@ -1243,7 +1292,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
     const { fixture } = setupDetailDecision();
     server.use(http.post("/api/forms/approvals/:id/decisions", async ({ request }) => { fixture.writes.push(await request.json()); return HttpResponse.error(); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const panel = await screen.findByRole("region", { name: "Por aprobar" });
+    const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
     await userEvent.click(await screen.findByRole("button", { name: "Rechazar" }));
     const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
     await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Mi motivo conservado");
@@ -1257,35 +1306,36 @@ it("keeps one workflow read notification in the detail without repeating its cau
     expect(screen.queryByText("Respuesta rechazada.")).not.toBeInTheDocument();
   });
 
-  it("moves one decision owner to the single detail header and preserves the resolved status", async () => {
+  it("keeps one decision owner in its approval moment and preserves the resolved status", async () => {
     const { fixture } = setupDetailDecision();
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const title = await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
-    const header = within(title.closest("header")!);
-    expect(await header.findByText("Por aprobar")).toBeInTheDocument();
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    const title = await screen.findByRole("heading", { name: "TEST-000002", level: 2 });
+    const header = within((await responseView.findByText("Supervisión")).closest("li")!);
+    expect(await header.findByRole("heading", { name: "Por aprobar", level: 3 })).toBeInTheDocument();
     await header.findByRole("button", { name: "Aprobar" });
     expect(screen.getAllByRole("button", { name: "Aprobar" })).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: "Rechazar" })).toHaveLength(1);
-    const panel = screen.getByRole("region", { name: "Por aprobar" });
-    expect(within(panel).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+    const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+    expect(within(title.closest("header")!).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
     await userEvent.click(header.getByRole("button", { name: "Aprobar" }));
-    await header.findByText("Aprobada");
+    await within(responseView.getByText("Supervisión").closest("[tabindex='-1']")! as HTMLElement).findByText("Aprobada");
     expect(header.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
     await waitFor(() => expect(within(panel).getByText("Supervisión").closest("[tabindex='-1']")).toHaveFocus());
     expect(fixture.writes).toEqual([{ expectedRevision: 1, decision: "Approved" }]);
   });
-  it("keeps an own decision disabled in the header with its reason in the existing panel", async () => {
+  it("keeps an own decision disabled in its approval moment with its reason in the existing panel", async () => {
     const { fixture } = setupDetailDecision();
     fixture.task = { ...fixture.task, canDecide: false, cannotDecideReason: "OwnResponse" };
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const title = await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
-    const header = within(title.closest("header")!);
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+    const header = within((await responseView.findByText("Supervisión")).closest("li")!);
     expect(await header.findByRole("button", { name: "Aprobar" })).toBeDisabled();
     expect(header.getByRole("button", { name: "Rechazar" })).toBeDisabled();
     expect(screen.getByText("No podés aprobar ni rechazar tu propia respuesta.")).toBeInTheDocument();
     expect(fixture.writes).toEqual([]);
   });
-  it("orders observed workflow history by UTC rather than grouping records, decisions and actions", async () => {
+  it("groups observed workflow moments with UTC ordered record events and one approval request", async () => {
     setup(["formrecords.read"]);
     const detail = responseDetailFixture();
     detail.history = [
@@ -1294,13 +1344,18 @@ it("keeps one workflow read notification in the detail without repeating its cau
       { kind: "Submitted", atUtc: "2026-10-16T12:00:00Z", actor: detail.actor },
     ];
     const makeAction = (kind: ResponseAction["kind"], atUtc: string): ResponseAction => ({ id: crypto.randomUUID(), ruleId: approvalTaskId, kind, event: kind === "GeneratePdf" ? "Approved" : "Received", order: 0, revision: 0, state: "Completed", reasonCode: null, reason: null, canConsult: false, canRetry: false, recipients: [], createdAtUtc: atUtc, updatedAtUtc: atUtc, completedAtUtc: atUtc });
-    const payload: ResponseWorkflow = { ...responseWorkflowFixture(), recordState: "Approved", task: { id: approvalTaskId, roleId: approvalTaskId, roleName: "Supervisión", revision: 2, state: "Approved", decidedAtUtc: "2026-10-16T12:04:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" }, reason: null }, actions: [makeAction("GeneratePdf", "2026-10-16T12:05:00Z"), makeAction("NotifyAuthor", "2026-10-16T12:01:00Z"), makeAction("RequestApproval", "2026-10-16T12:03:00Z")] };
+    const payload: ResponseWorkflow = { ...responseWorkflowFixture(), recordState: "Approved", task: { id: approvalTaskId, roleId: approvalTaskId, roleName: "Supervisión", requestedAtUtc:"2026-10-16T12:03:00Z", revision: 2, state: "Approved", decidedAtUtc: "2026-10-16T12:04:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" }, reason: null }, actions: [makeAction("GeneratePdf", "2026-10-16T12:05:00Z"), makeAction("NotifyAuthor", "2026-10-16T12:01:00Z"), makeAction("RequestApproval", "2026-10-16T12:03:00Z")] };
     server.use(http.get("/api/forms/records/:id", () => HttpResponse.json(detail)), http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    const activity = await openResponseActivity();
+    const history = activity;
     await history.findByText("Armar el PDF");
-    const list = history.getByRole("list");
-    expect(Array.from(list.children).map(row => row.querySelector("time")?.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:02:00Z", "2026-10-16T12:03:00Z", "2026-10-16T12:04:00Z", "2026-10-16T12:05:00Z"]);
+    const moments = history.getAllByRole("list")[0];
+    expect(Array.from(moments.children).map(row => row.getAttribute("aria-label"))).toEqual(["Recibida", "Al recibirla", "Por aprobar → Aprobada", "Al aprobarla"]);
+    const received = within(history.getByRole("listitem", { name: "Recibida" }));
+    expect(received.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:02:00Z"]);
+    expect(history.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:02:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:03:00Z", "2026-10-16T12:04:00Z", "2026-10-16T12:05:00Z"]);
+    expect(history.getAllByText("Se pidió aprobación al rol Supervisión")).toHaveLength(1);
     expect(history.getAllByText("Armar el PDF")).toHaveLength(1);
   });
   it("shows provider receipts separately from human resolution without inventing delivery", async () => {
@@ -1310,16 +1365,17 @@ it("keeps one workflow read notification in the detail without repeating its cau
     const payload = roleWorkflow(approvalTaskId, [recipientFixture({ state: "Accepted", canReview: false, deliveredAtUtc, readAtUtc }), recipientFixture({ user: { userId: approvalTaskId, displayName: "Ana" }, state: "Accepted", canReview: false, review: { wasSent: true, reviewedAtUtc: "2026-10-17T12:03:00Z", reviewedBy: { userId: currentUser.id, displayName: "Luz" } } })], "Completed");
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const provider = within(await screen.findByRole("listitem", { name: "Destinatario: Juan" }));
+    const activity = await openResponseActivity();
+    const provider = within(await activity.findByRole("listitem", { name: "Destinatario: Juan" }));
     expect(provider.getByText("Entregado")).toBeInTheDocument();
     expect(provider.getByText("Leído")).toBeInTheDocument();
     expect(provider.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual([deliveredAtUtc, readAtUtc]);
-    const human = within(screen.getByRole("listitem", { name: "Destinatario: Ana" }));
+    const human = within(activity.getByRole("listitem", { name: "Destinatario: Ana" }));
     expect(human.getByText("Luz indicó que salió.")).toBeInTheDocument();
     expect(human.queryByText("Entregado")).not.toBeInTheDocument();
     expect(human.queryByText("Leído")).not.toBeInTheDocument();
     expect(human.getByText("Revisión humana: no confirma la entrega de WhatsApp.")).toBeInTheDocument();
-    expect(screen.getByText("Hecho")).toBeInTheDocument();
+    expect(activity.getByText("Hecho")).toBeInTheDocument();
   });
 
 });

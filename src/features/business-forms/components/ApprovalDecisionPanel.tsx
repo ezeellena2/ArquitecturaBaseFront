@@ -19,8 +19,10 @@ import { decideApprovalTask, fetchApprovalTask } from "../api/approvals";
 import { prepareApprovalDecision, type ApprovalDecision } from "../approvals";
 import { approvalForbidden, useApprovalScope } from "../hooks/useApprovalQueries";
 import { useUnobservedQueryCleanup } from "../hooks/useUnobservedQueryCleanup";
-export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget }: {
+export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget, disabled = false, onForbidden }: {
     taskId: string;
+    disabled?: boolean;
+    onForbidden?: () => void;
     onDecided?: () => void;
     actionsTarget?: HTMLElement | null;
 }) {
@@ -32,11 +34,12 @@ export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget }: {
         return null;
     if (denied === owner)
         return <p role="status">{t("approvals.noPermission")}</p>;
-    return <DecisionEditor key={owner} taskId={taskId} scope={scope} onDecided={onDecided} actionsTarget={actionsTarget} onForbidden={() => setDenied(owner)}/>;
+    return <DecisionEditor key={owner} taskId={taskId} scope={scope} onDecided={onDecided} actionsTarget={actionsTarget} disabled={disabled} onForbidden={() => { setDenied(owner); onForbidden?.(); }}/>;
 }
-function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget }: {
+function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, disabled }: {
     taskId: string;
     scope: ReturnType<typeof useApprovalScope>;
+    disabled: boolean;
     onDecided?: () => void;
     onForbidden: () => void;
     actionsTarget?: HTMLElement | null;
@@ -64,7 +67,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget }
     const refresh = () => { void client.invalidateQueries({ queryKey: ["form-approvals", scope.owner], predicate: entry => entry.queryKey[2] !== "task" }); onDecided?.(); };
     const decide = async (decision: ApprovalDecision) => {
         const task = query.data;
-        if (!task?.canDecide || busy || query.isFetching || cooldown.isRunning)
+        if (!task?.canDecide || disabled || busy || query.isFetching || cooldown.isRunning)
             return;
         const body = prepareApprovalDecision(task.revision, decision, reason);
         if (!body)
@@ -127,7 +130,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget }
     const transientReadFailure = errorFeedback(query.error).network || query.error instanceof ApiError && (query.error.status >= 500 || query.error.status === 429);
     if (!task || query.error && !transientReadFailure)
         return <EmptyState embedded title={t("common:states.loadFailed")} action={!approvalForbidden(query.error) ? <Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button> : undefined}/>;
-    const controls = task.state === "Open" ? <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button><Button disabled={!task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => void decide("Approved")}>{t("approvals.approve")}</Button></div> : null;
+    const controls = task.state === "Open" ? <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button><Button disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => void decide("Approved")}>{t("approvals.approve")}</Button></div> : null;
     return <div ref={summary} tabIndex={-1} className="space-y-3 outline-none">
   <div className="flex flex-wrap items-center gap-3"><Badge variant="outline">{t("approvals.taskStates." + task.state)}</Badge><span className="text-sm">{task.role.name}</span></div>
   {task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(task.decidedAtUtc, i18n.language, scope.user?.timeZoneId) })}</p> : null}
@@ -139,7 +142,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget }
   {reject ? <RejectDialog number={task.number} reason={reason} setReason={value => { setReason(value); setError(null); }} fieldError={error instanceof ApiError ? error.errors?.reason?.[0] : undefined} busy={busy} onClose={() => { if (!busy) {
         setReject(false);
         setReason("");
-    } }} onSubmit={() => void decide("Rejected")} disabled={cooldown.isRunning} fallback={summary} feedback={cooldown.isRunning ? t("wait", { count: cooldown.seconds }) : undefined}/> : null}
+    } }} onSubmit={() => void decide("Rejected")} disabled={disabled || cooldown.isRunning} fallback={summary} feedback={cooldown.isRunning ? t("wait", { count: cooldown.seconds }) : undefined}/> : null}
  </div>;
 }
 function RejectDialog({ number, reason, setReason, busy, onClose, onSubmit, disabled, fallback, feedback, fieldError }: {

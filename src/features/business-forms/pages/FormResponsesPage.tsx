@@ -1,5 +1,11 @@
-import { useCallback, useContext, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, useMatch, useNavigate, useParams } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
+import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { DocumentIcon } from "@/shared/ui/icons";
+import { fetchResponseSheet } from "../api/responses";
+import { FormResponseDetailPage } from "./FormResponseDetailPage";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { readErrorMessage } from "@/shared/api/errorFeedback";
@@ -33,7 +39,29 @@ export function FormResponsesPage() {
   const { t, i18n } = useTranslation("forms");
   const route = useResponseRouteQuery(formId);
   const { query, scope } = useResponseSheet(formId, route.query, route.ready);
-  useResponseFeedback(query.error, `responses:sheet:${scope.owner}:${formId}`, query.refetch);
+  const recordId = useMatch("/formularios/:formId/respuestas/:recordId")?.params.recordId;
+  const navigate = useNavigate();
+  const update = useQueryUpdate();
+  const client = useQueryClient();
+  const container = useRef<HTMLDivElement | null>(null);
+  const lastRecord = useRef<string | undefined>(recordId);
+  const live = useRef(true);
+  const contextKey = JSON.stringify([scope.owner, formId, recordId, route.query]);
+  const owner = useRef(contextKey);
+  const moveDirection = useRef(1);
+  const [motion, setMotion] = useState<{ key: string; busy: boolean; error: unknown }>({ key: contextKey, busy: false, error: null });
+  if (motion.key !== contextKey) setMotion({ key: contextKey, busy: false, error: null });
+  const moving = motion.key === contextKey && motion.busy;
+  const moveError = motion.key === contextKey ? motion.error : null;
+  const setMoving = (busy: boolean) => setMotion(previous => ({ key: contextKey, busy, error: previous.key === contextKey ? previous.error : null }));
+  const setMoveError = (error: unknown) => setMotion(previous => ({ key: contextKey, busy: previous.key === contextKey && previous.busy, error }));
+  useLayoutEffect(() => { owner.current = contextKey; }, [contextKey]);
+  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
+  useLayoutEffect(() => {
+    if (recordId) lastRecord.current = recordId;
+    else if (lastRecord.current) { (container.current?.querySelector<HTMLElement>('[data-response-id="' + lastRecord.current + '"]') ?? container.current)?.focus(); lastRecord.current = undefined; }
+  }, [recordId]);
+  useResponseFeedback(recordId && !(query.error instanceof ApiError && query.error.status === 403) ? null : query.error, `responses:sheet:${scope.owner}:${formId}`, query.refetch);
   const exportCooldown = useCountdown(0);
   const canExport = !!query.data && !query.isFetching && !query.isPending && !query.isPlaceholderData && !query.isError;
   const [panel, setPanel] = useState<"filters" | "export" | null>(null);
@@ -53,12 +81,34 @@ export function FormResponsesPage() {
   const data = query.data;
   const visible = visibleResponseColumns(data?.columns ?? [], route.selection);
   const hasFilters =
+    !!route.query.state ||
     !!route.query.search ||
     !!route.query.conditions?.length ||
     !!route.query.actorIds?.length ||
     !!route.query.versionIds?.length ||
     !!route.query.receivedFromUtc ||
     !!route.query.receivedToUtc;
+  const index = query.data?.records.items.findIndex(row => row.id === recordId) ?? -1;
+  const move = async (direction: number) => {
+    const current = query.data;
+    if (!current || moving || query.isPlaceholderData || index < 0) return;
+    const expected = scope.owner;
+    const expectedContext = contextKey;
+    let id: string | undefined = current.records.items[index + direction]?.id;
+    let page = current.records.page;
+    moveDirection.current = direction;
+    setMoving(true); setMoveError(null);
+    try {
+      if (!id) {
+        page += direction;
+        const filter = { ...route.query, page };
+        const result = await client.fetchQuery({ queryKey: ["form-responses", expected, "sheet", formId, filter], queryFn: ({ signal }) => fetchResponseSheet(formId, filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
+        id = direction < 0 ? result.records.items.at(-1)?.id : result.records.items[0]?.id;
+      }
+      if (id && live.current && owner.current === expectedContext) update({ page: page === 1 ? undefined : String(page) }, { pathname: "/formularios/" + formId + "/respuestas/" + id, replace: false });
+    } catch (error) { if (live.current && owner.current === expectedContext) setMoveError(error); }
+    finally { if (live.current && owner.current === expectedContext) setMoving(false); }
+  };
   if (
     !scope.allowed ||
     (query.error instanceof ApiError && query.error.status === 403)
@@ -73,6 +123,7 @@ export function FormResponsesPage() {
       sortable: true,
       cell: (row) => (
         <Link
+          data-response-id={row.id}
           to={recordPath(row.id)}
           className="font-medium text-[var(--color-brand-700)] underline"
         >
@@ -110,6 +161,7 @@ export function FormResponsesPage() {
       ),
     },
     ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant="outline">{t("approvals.states." + row.state)}</Badge> }] : []),
+    ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <Button variant="ghost" size="icon" aria-label={t("detail.rowPdf", { number: row.number })} onClick={() => update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false })}><DocumentIcon className="size-4"/></Button> : null }] : []),
     ...visible.map((column) => ({
       id: column.fieldId,
       header:
@@ -143,7 +195,8 @@ export function FormResponsesPage() {
     route.query.sortFieldId ?? "field",
   );
   return (
-    <Page
+    <div ref={container} tabIndex={-1} className="relative h-full min-h-0 outline-none">
+    <div className="h-full overflow-y-auto"><Page
       title={data?.name ?? t("responses.title")}
       status={
         data
@@ -183,6 +236,7 @@ export function FormResponsesPage() {
               />
             </div>
           ) : null}
+          {data?.hasApproval ? <NativeSelect aria-label={t("approvals.state")} value={route.query.state ?? ""} onChange={event => route.setFilter({ ...route.query, state: (event.target.value || undefined) as typeof route.query.state })}><option value="">{t("approvals.allStates")}</option>{(["Received", "PendingApproval", "Approved", "Rejected"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}</NativeSelect> : null}
           {firstChoice ? (
             <ResponseChoiceMenu
               formId={formId}
@@ -251,6 +305,7 @@ export function FormResponsesPage() {
           <div className="mt-3 flex flex-wrap gap-2">
             {appliedFilters.map(filter => <FilterChip key={filter.key} removeLabel={t("responses.remove", { name: filter.label })} onRemove={() => {
               if (filter.key === "version") route.setFilter(route.query, []);
+              else if (filter.key === "state") route.setFilter({ ...route.query, state: undefined });
               else if (filter.key === "actor") route.setFilter({ ...route.query, actorIds: [] });
               else if (filter.key === "received") route.setFilter({ ...route.query, receivedFromUtc: undefined, receivedToUtc: undefined });
               else if (filter.key === "search") route.setFilter({ ...route.query, search: undefined });
@@ -265,6 +320,8 @@ export function FormResponsesPage() {
           columns={columns}
           rows={data?.records.items ?? []}
           rowKey={(row) => row.id}
+          selectedRowKey={recordId}
+          onRowClick={row => navigate(recordPath(row.id))}
           isLoading={query.isPending}
           hasData={!!data}
           error={query.error ? t(query.error instanceof ApiError && query.error.status === 404 ? "responses.unavailableForm" : "responses.loadFailed") : undefined}
@@ -326,6 +383,8 @@ export function FormResponsesPage() {
           onClose={() => setPanel(null)}
         />
       ) : null}
-    </Page>
+    </Page></div>
+    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: moving, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? moveError, onRetry: moveError ? () => { void move(moveDirection.current); } : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
+    </div>
   );
 }

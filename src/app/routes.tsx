@@ -50,10 +50,10 @@ export const routes: RouteObject[] = [
                 ],
               },
               { element: <ProtectedRoute permission="formrules.manage" />, children: [{ path: "/formularios/:formId/pdf", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormPdfDesignPage")).FormPdfDesignPage }) }] },
-              { element: <ProtectedRoute permission="formapprovals.decide" />, children: [{ path: "/formularios/por-aprobar", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ApprovalInboxPage")).ApprovalInboxPage }) }] },
+              { element: <ProtectedRoute permission="formapprovals.decide" />, children: [{ path: "/formularios/por-aprobar", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ApprovalInboxPage")).ApprovalInboxPage }), children: [{ path: ":taskId", element: null }] }] },
               {
                 element: <ProtectedRoute permission="formrecords.read" />,
-                children: [{ lazy: async () => ({ Component: (await import("@/features/business-forms/components/ResponseWorkspaceLayout")).ResponseWorkspaceLayout }), children: [{ path: "/formularios/:formId/respuestas/:recordId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponseDetailPage")).FormResponseDetailPage }) }, { path: "/formularios/:formId/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponsesPage")).FormResponsesPage }) }, { path: "/formularios/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ResponseFormsPage")).ResponseFormsPage }) }] }],
+                children: [{ lazy: async () => ({ Component: (await import("@/features/business-forms/components/ResponseWorkspaceLayout")).ResponseWorkspaceLayout }), children: [{ path: "/formularios/:formId/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponsesPage")).FormResponsesPage }), children: [{ path: ":recordId", element: null }] }, { path: "/formularios/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ResponseFormsPage")).ResponseFormsPage }) }] }],
               },
               {
                 element: <ProtectedRoute permission="formtemplates.read" />,
