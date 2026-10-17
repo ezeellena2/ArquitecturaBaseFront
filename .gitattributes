@@ -21,3 +21,6 @@ src/test/fixtures/whatsapp-forms-http/** -text whitespace=cr-at-eol
 
 # Suggestion configuration joins the same final backend export.
 src/test/fixtures/forms-suggestions-http/** -text whitespace=cr-at-eol
+
+# Human approval of assistant catalog proposals shares the final export.
+src/test/fixtures/forms-catalog-proposals-http/** -text whitespace=cr-at-eol

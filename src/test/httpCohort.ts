@@ -5,14 +5,15 @@ import { expect } from "vitest";
 import { HttpResponse } from "msw";
 import { z } from "zod";
 const cohorts = {
-  responses: ["forms-responses-http", "FORMS_RESPONSES_HTTP_CONTRACT_INPUT"],
-  rules: ["forms-rules-http", "FORMS_RULES_HTTP_CONTRACT_INPUT"],
-  suggestions: ["forms-suggestions-http", "FORMS_SUGGESTIONS_HTTP_CONTRACT_INPUT"],
-  workflow: ["forms-workflow-http", "FORMS_WORKFLOW_HTTP_CONTRACT_INPUT"],
-  approvals: ["forms-approvals-http", "FORMS_APPROVALS_HTTP_CONTRACT_INPUT"],
-  pdf: ["forms-pdf-http", "FORMS_PDF_HTTP_CONTRACT_INPUT"],
-  whatsappActions: ["whatsapp-form-actions-http", "WHATSAPP_FORM_ACTIONS_HTTP_CONTRACT_INPUT"],
-  whatsappForms: ["whatsapp-forms-http", "WHATSAPP_FORMS_HTTP_CONTRACT_INPUT"],
+  responses: ["forms-responses-http", "FORMS_RESPONSES_HTTP_CONTRACT_INPUT", "responses"],
+  rules: ["forms-rules-http", "FORMS_RULES_HTTP_CONTRACT_INPUT", "rules"],
+  suggestions: ["forms-suggestions-http", "FORMS_SUGGESTIONS_HTTP_CONTRACT_INPUT", "suggestions"],
+  catalogProposals: ["forms-catalog-proposals-http", "FORMS_CATALOG_PROPOSALS_HTTP_CONTRACT_INPUT", "catalog-proposals"],
+  workflow: ["forms-workflow-http", "FORMS_WORKFLOW_HTTP_CONTRACT_INPUT", "workflow"],
+  approvals: ["forms-approvals-http", "FORMS_APPROVALS_HTTP_CONTRACT_INPUT", "approvals"],
+  pdf: ["forms-pdf-http", "FORMS_PDF_HTTP_CONTRACT_INPUT", "pdf"],
+  whatsappActions: ["whatsapp-form-actions-http", "WHATSAPP_FORM_ACTIONS_HTTP_CONTRACT_INPUT", "whatsapp-actions"],
+  whatsappForms: ["whatsapp-forms-http", "WHATSAPP_FORMS_HTTP_CONTRACT_INPUT", "whatsapp-forms"],
 } as const;
 export type HttpCohort = keyof typeof cohorts;
 const sha256 = z.string().regex(/^[0-9a-f]{64}$/);
@@ -24,7 +25,7 @@ const manifest = z.strictObject({
 });
 const metadata = z.strictObject({ status: z.number().int().min(100).max(599), contentType: z.string().nullable(), contentLanguage: z.array(z.string()), contentDisposition: z.string().nullable() });
 export function httpCohort(name: HttpCohort) {
-  const [folder, environment] = cohorts[name];
+  const [folder, environment, artifactSet] = cohorts[name];
   const directory = resolve(process.env[environment] ?? resolve("src/test/fixtures", folder));
   const bytes = (file: string) => readFileSync(resolve(directory, file));
   const json = (file: string): unknown => JSON.parse(bytes(file).toString("utf8"));
@@ -41,7 +42,7 @@ export function httpCohort(name: HttpCohort) {
     },
     verify() {
       const source = manifest.parse(json("provenance.json"));
-      expect(source.artifactSet).toBe(name === "whatsappActions" ? "whatsapp-actions" : name === "whatsappForms" ? "whatsapp-forms" : name);
+      expect(source.artifactSet).toBe(artifactSet);
       expect(new Set(source.captures.map(capture => capture.name)).size).toBe(source.captures.length);
       for (const capture of source.captures) {
         const content = bytes(capture.name);
