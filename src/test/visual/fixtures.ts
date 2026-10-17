@@ -7,6 +7,7 @@ import budgetEnRaw from "../fixtures/forms-http/budget-http/en.json?raw";
 import { createChatFormFixtures } from "./chatFormFixtures";
 import { createAssistantVisualFixtures } from "./assistantFixtures";
 import { createFormFixtureStore } from "./formFixtures";
+import { createMissingRequestVisualFixtures } from "./missingRequestFixtures";
 import { initialAppearance } from "@/shared/lib/appearance";
 import type { CurrentUser } from "@/auth/useCurrentUser";
 import type { UserDetail, UserFilterCounts, UserListItem } from "@/features/users/api/users";
@@ -36,6 +37,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const chatFormsFixture = chatFormsScenario ? createChatFormFixtures(language, scenario!) : undefined;
   if (chatFormsFixture) Object.assign(globalThis,{chatFormsFixture});
   const formsScenario = !chatFormsScenario && (scenario?.startsWith("forms-") ?? false);
+  const missingRequestFixture=scenario?.startsWith("forms-missing")?createMissingRequestVisualFixtures(language):undefined;
   const formsFixture = formsScenario ? createFormFixtureStore(language, scenario!, language === "es" ? budgetEsRaw : budgetEnRaw) : undefined;
   if (formsFixture) Object.assign(globalThis, { formsFixture });
   const assistantScenario = scenario?.startsWith("assistant-") ?? false;
@@ -49,7 +51,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false,
     hasGoogleLogin: false, culture: language, timeZoneId: "America/Argentina/Buenos_Aires",
     lastLoginAtUtc: "2026-09-18T12:00:00Z", roles: ["Admin"],
-    permissions: [...(scenario === "forms-pdf" ? ["formrules.manage"] : []), ...(approvalsScenario ? ["formapprovals.decide"] : []), ...(responsesScenario && scenario !== "responses-denied" ? ["formrecords.read", "whatsapp.read", ...(scenario === "responses-workflow" ? ["formrules.manage"] : []), ...(scenario === "responses-read" ? [] : ["formrecords.export"])] : []), ...(catalogsScenario && scenario !== "catalogs-denied" && scenario !== "forms-catalog-no-read" ? (catalogQuestionsScenario || scenario === "catalogs-read" || scenario === "catalogs-filters-read") ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? (scenario === "forms-read" || scenario === "forms-catalog-read") ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-rules") ? ["formrules.manage"] : []), ...(scenario?.startsWith("forms-publication") ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), ...(catalogsScenario ? [] : ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"]), ...(chatScenario ? (scenario === "forms-chat-read" || scenario === "forms-chat-catalog-inactive-read") ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] : []), ...(scenario?.startsWith("forms-chat-actions") && scenario !== "forms-chat-actions-no-values" ? ["formrecords.read"] : []), ...(scenario?.startsWith("forms-chat-catalog") && scenario !== "forms-chat-catalog-no-values" ? ["formrecords.read"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
+    permissions: [...(missingRequestFixture ? ["formcatalogs.read"] : []), ...(scenario === "forms-pdf" ? ["formrules.manage"] : []), ...(approvalsScenario ? ["formapprovals.decide"] : []), ...(responsesScenario && scenario !== "responses-denied" ? ["formrecords.read", "whatsapp.read", ...(scenario === "responses-workflow" ? ["formrules.manage"] : []), ...(scenario === "responses-read" ? [] : ["formrecords.export"])] : []), ...(catalogsScenario && scenario !== "catalogs-denied" && scenario !== "forms-catalog-no-read" ? (catalogQuestionsScenario || scenario === "catalogs-read" || scenario === "catalogs-filters-read") ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? (scenario === "forms-read" || scenario === "forms-catalog-read") ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-rules") ? ["formrules.manage"] : []), ...(scenario?.startsWith("forms-publication") ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), ...(catalogsScenario ? [] : ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"]), ...(chatScenario ? (scenario === "forms-chat-read" || scenario === "forms-chat-catalog-inactive-read") ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] : []), ...(scenario?.startsWith("forms-chat-actions") && scenario !== "forms-chat-actions-no-values" ? ["formrecords.read"] : []), ...(scenario?.startsWith("forms-chat-catalog") && scenario !== "forms-chat-catalog-no-values" ? ["formrecords.read"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
       ...(businessScenario && scenario !== "business-denied" ? scenario === "business-read" ? ["ai.business.read"] : ["ai.business.read", "ai.business.manage"] : []),
       ...(scenario === "business-roles" || roleGroupsScenario ? ["ai.read", "ai.manage"] : [])],
   };
@@ -167,6 +169,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (scenario === "file-cards" && /^\/api\/forms\/records\//.test(path)) return new Response(await fileImage(),{headers:{"content-type":"image/jpeg"}});
     if (catalogsFixture && (path.startsWith("/api/forms/catalogs") || path === "/api/forms/catalog-filter-options" || path === "/api/forms/catalog-previews")) return catalogsFixture.handle(request);
     if (chatFormsFixture && path.startsWith("/api/whatsapp/chats")) return chatFormsFixture.handle(request);
+    const missingResponse=await missingRequestFixture?.(request);if(missingResponse)return missingResponse;
     if (formsFixture && path.startsWith("/api/forms/")) return formsFixture.handle(request);
     const assistantResponse = await assistantFixture?.(request);
     if (assistantResponse) return assistantResponse;
