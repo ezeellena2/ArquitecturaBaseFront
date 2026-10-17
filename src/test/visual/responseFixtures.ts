@@ -19,7 +19,7 @@ export function createResponseVisualFixtures(
   const sheet = responseSheetFixture();
   if (scenario === "responses-pdf") sheet.records.items[0].hasPdf = true;
   if(scenario === "responses-approval"){sheet.hasApproval=true;for(const row of sheet.records.items)row.state="PendingApproval";}
-  sheet.name = en ? "Delivery report" : "Informe de entregas";
+  sheet.name = scenario === "responses-assisted" ? en ? "Invoice" : "Factura" : en ? "Delivery report" : "Informe de entregas";
   const labels = en
     ? ["Amount", "Notes", "Confirmed", "Optional detail", "Method"]
     : [
@@ -343,6 +343,25 @@ export function createResponseVisualFixtures(
               value: cell.value,
             })),
         };
+        if (scenario === "responses-assisted") {
+          // Explicit synthetic confirmed records; not an offer, model output or backend HTTP export.
+          const sourceName = en ? "Delivery" : "Entrega";
+          const mapped = detail.values.find(value => value.type === "longText")!;
+          mapped.value = en ? "ENT-000014 (corrected)" : "ENT-000014 (corregido)";
+          detail.assistance = {
+            senderKind: "Manual", operator: { userId: id(20), displayName: "Ana Operadora" },
+            reason: en ? "Continue the confirmed delivery with its invoice." : "Continuar la entrega confirmada con su factura.",
+            suggestion: { originRecordId: id(150), suggestionId: id(152), mode: "Always" },
+            values: [{ proposed: { fieldId: mapped.fieldId, key: mapped.key, type: "longText", label: mapped.label, value: "ENT-000014" },
+              included: true, changed: true, mapped: true }],
+          };
+          detail.chain = [
+            { id: id(150), definitionId: id(151), number: "ENT-000014", name: sourceName,
+              submittedAtUtc: "2026-10-16T11:00:00Z", originRecordId: null },
+            { id: recordId, definitionId: responseFormId, number: detail.number, name: detail.name,
+              submittedAtUtc: detail.submittedAtUtc, originRecordId: id(150) },
+          ];
+        }
         return json(detail);
       }
       return json({ code: "NotFound" }, 404);
