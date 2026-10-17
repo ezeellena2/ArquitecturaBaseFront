@@ -173,12 +173,14 @@ que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesi
 | [G6 · Lo que recibe el empleado](evidence/formularios-whatsapp/reg-g6-celular.png) | Confirmación al recibir, aviso con el PDF al aprobar, motivo al rechazar, también en inglés. |
 
 Rediseño del detalle de una respuesta (2026-10-17, versión 79 del lienzo): cuatro conceptos, D1–D4, para T3, G4 y G5,
-que hoy suman todo en una sola columna. **Elegido D2**, que reemplaza ese detalle; la decisión está en el
+que reunían el detalle en una sola columna. **Elegido D2**, que reemplaza ese detalle; la decisión está en el
 [resumen de la Etapa 5](../../../ArquitecturaBase/docs/plans/formularios/etapa-5-asistente.md).
 
 | Captura | Qué define |
 | --- | --- |
 | [D2 · Panel lateral sobre la planilla](evidence/formularios-whatsapp/det-d2-panel.png) | **Elegido el 2026-10-17.** Tocar una fila abre la respuesta al costado, sin salir de la planilla; ↑ ↓ (también las flechas del teclado) pasan de respuesta y Escape cierra. Arriba, el estado y los momentos uno por renglón, armados con las reglas que tenía el formulario al llegar la respuesta: Recibida con su origen, Por aprobar → Aprobada o Rechazada y lo que pasó al recibirla, aprobarla o rechazarla, con el resumen de sus acciones; lo que no aplica no se muestra. Mientras espera, Aprobar y Rechazar van en el renglón «Por aprobar». Pestañas Respuesta («pregunta · valor» con las fotos), Fotos, Actividad (las acciones por momento, con Consultar o Reintentar) y PDF (cuando hay copia), más Abrir conversación y Descargar ▾. En el celular ocupa la pantalla, con ↑ ↓ arriba y la decisión fija abajo. |
+
+D2 está implementado sobre esos tableros: el panel conserva el listado y su orden; los momentos proceden de acciones ya capturadas, no de reglas actuales. El selector Estado y la marca PDF de la planilla usan el contrato del servidor; la decisión sin lectura de respuestas conserva sólo metadata. Los cortes rápidos y sus límites se registran con el desarrollo; la calificación conjunta de navegador/visual y los consumidores HTTP renovados siguen pendientes del cierre.
 
 Etapa 5, el asistente (2026-10-10), sobre el [resumen de la Etapa 5](../../../ArquitecturaBase/docs/plans/formularios/etapa-5-asistente.md). También son de esta etapa «Cuándo lo ofrece» (03),
 el recorrido con asistente (05) y las sugerencias entre formularios (s1–s4). Decidido el 2026-10-10 y el 2026-10-11: una

@@ -74,15 +74,19 @@ for (const language of ["es", "en"] as const)
         fullPage: true,
       });
       await page.keyboard.press("Escape");
+      const privateSearch = page.getByRole("searchbox", { name: en ? "Search long text answers" : "Buscar en textos largos" });
+      await privateSearch.fill("completo");
+      await expect(privateSearch).toHaveValue("completo");
       await page
         .getByRole("link", { name: "TEST-000002", exact: true })
         .click();
       await expect(
         page.getByRole("heading", { name: "TEST-000002", exact: true }),
       ).toBeVisible();
-      await expect(
-        page.getByText("comprobante.pdf", { exact: true }),
-      ).toBeVisible();
+      const panel = page.getByRole("region", { name: en ? "Response detail" : "Detalle de la respuesta", exact: true });
+      await expect(table).toBeAttached();
+      await expect(panel.getByRole("tab", { name: en ? "Response" : "Respuesta", exact: true })).toHaveAttribute("aria-selected", "true");
+      await expect(panel.getByText("comprobante.pdf", { exact: true })).toBeVisible();
       await page.screenshot({
         path: `test-results/responses-t3-${language}-${width}.png`,
         fullPage: true,
@@ -90,12 +94,41 @@ for (const language of ["es", "en"] as const)
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
-      await page
-        .getByRole("button", { name: en ? "Next" : "Siguiente", exact: true })
-        .click();
+      await panel.getByRole("tab", { name: en ? "Photos (2)" : "Fotos (2)", exact: true }).click();
+      const photosTab = panel.getByRole("tabpanel", { name: en ? "Photos (2)" : "Fotos (2)", exact: true });
+      const thumbnail = photosTab.getByRole("button", { name: /entrega\.jpg/ }).first();
+      await expect(thumbnail).toBeVisible();
+      await page.screenshot({ path: "test-results/responses-d2-photos-" + language + "-" + width + ".png", fullPage: true });
+      await thumbnail.click();
+      const viewer = page.getByRole("dialog", { name: en ? "Response photos" : "Fotos de la respuesta", exact: true });
+      await expect(viewer.getByRole("img", { name: "entrega.jpg", exact: true })).toBeVisible();
+      await viewer.press("Escape");
+      await expect(thumbnail).toBeFocused();
+      await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
+      await expect(panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true })).toBeVisible();
+      await page.screenshot({ path: "test-results/responses-d2-activity-" + language + "-" + width + ".png", fullPage: true });
+      const next = panel.getByRole("button", { name: en ? "Next" : "Siguiente", exact: true });
+      await next.focus();
+      await page.keyboard.press("Enter");
       await expect(
         page.getByRole("heading", { name: "TEST-000001", exact: true }),
       ).toBeVisible();
+      await expect(next).toBeFocused();
+      await panel.focus();
+      await page.keyboard.press("ArrowUp");
+      await expect(panel.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
+      await panel.getByRole("tab", { name: en ? "Response" : "Respuesta", exact: true }).focus();
+      await page.keyboard.press("ArrowDown");
+      await expect(panel.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
+      await panel.focus();
+      await page.keyboard.press("Escape");
+      await expect(panel).toHaveCount(0);
+      const returned = page.getByRole("link", { name: "TEST-000002", exact: true });
+      await expect(returned).toBeFocused();
+      await expect(table).toBeAttached();
+      await expect(privateSearch).toHaveValue("completo");
+      expect(await returned.getAttribute("href")).not.toContain("completo");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     });
   }
 for (const [scenario, text] of [

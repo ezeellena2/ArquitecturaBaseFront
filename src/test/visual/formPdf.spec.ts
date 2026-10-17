@@ -1,16 +1,102 @@
 import { expect, test } from "@playwright/test";
 import { fixtureFormId } from "./formFixtures";
-import { responseFormId, responseRecordId } from "../responseFixtures";
-for (const language of ["es", "en"] as const)
-    for (const width of [1440, 390, 320]) {
-        test("PDF design preview and independent save " + language + " at " + width, async ({ page }) => { const en = language === "en"; await page.setViewportSize({ width, height: 900 }); await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "/pdf&scenario=forms-pdf&lang=" + language); await expect(page.getByRole("textbox", { name: en ? "PDF name" : "Nombre del PDF", exact: true })).toBeVisible(); await page.getByRole("button", { name: "English", exact: true }).click(); await page.getByRole("button", { name: en ? "Preview" : "Vista previa", exact: true }).click(); await expect(page.getByText(en ? /The preview uses all content in Spanish/ : /usa todo el contenido en Español/)).toBeVisible(); await expect(page.locator('iframe[title="' + (en ? 'PDF preview' : 'Vista previa del PDF') + '"]')).toHaveAttribute("src", /^blob:/); const photos = page.getByRole("checkbox", { name: en ? "Include photos" : "Incluir las fotos", exact: true }); await photos.focus(); await page.keyboard.press("Space"); await expect(photos).not.toBeChecked(); await page.getByRole("button", { name: en ? "Save design" : "Guardar diseño", exact: true }).click(); await expect(page.getByText(en ? /Revision 1/ : /Revisión 1/)).toBeVisible(); expect(await page.evaluate(() => (globalThis as unknown as {
-            pdfsFixture: {
-                writes: Array<{
-                    design: {
-                        includePhotos: boolean;
-                    };
-                }>;
-            };
-        }).pdfsFixture.writes.map(item => item.design.includePhotos))).toEqual([false]); expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width); await page.screenshot({ path: "test-results/pdf-design-" + language + "-" + width + ".png", fullPage: true }); });
-        test("issued PDF fixed copy " + language + " at " + width, async ({ page }) => { const en = language === "en"; await page.setViewportSize({ width, height: 900 }); await page.goto("/src/test/visual/index.html?screen=/formularios/" + responseFormId + "/respuestas/" + responseRecordId + "&scenario=responses-pdf&lang=" + language); await page.getByRole("button", { name: en ? "View PDF" : "Ver PDF", exact: true }).click(); const dialog = page.getByRole("dialog"); await expect(dialog.getByRole("heading", { name: en ? "Fixed copy" : "Copia fija", exact: true })).toBeVisible(); await expect(dialog.locator("iframe")).toHaveAttribute("src", /^blob:/); expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width); await page.screenshot({ path: "test-results/pdf-fixed-" + language + "-" + width + ".png", fullPage: true }); await dialog.getByRole("button", { name: en ? "Close" : "Cerrar", exact: true }).first().click(); await expect(page.getByRole("button", { name: en ? "View PDF" : "Ver PDF", exact: true })).toBeFocused(); const download = page.waitForEvent("download"); await page.getByRole("region", { name: en ? "Response PDF" : "PDF de la respuesta", exact: true }).getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).click(); expect((await download).suggestedFilename()).toBe("Visita-VIS-000024.pdf"); });
-    }
+import { responseFormId } from "../responseFixtures";
+for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
+  test("PDF design preview and independent save " + language + " at " + width, async ({ page }) => {
+    const en = language === "en";
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "/pdf&scenario=forms-pdf&lang=" + language);
+    await expect(page.getByRole("textbox", { name: en ? "PDF name" : "Nombre del PDF", exact: true })).toBeVisible();
+    await page.evaluate(() => {
+      const revoke = URL.revokeObjectURL.bind(URL);
+      const revoked: string[] = [];
+      Object.assign(window, { pdfRevokedUrls: revoked });
+      URL.revokeObjectURL = url => { revoked.push(url); revoke(url); };
+    });
+    await page.getByRole("button", { name: "English", exact: true }).click();
+    const preview = page.getByRole("region", { name: en ? "Preview" : "Vista previa", exact: true });
+    await preview.getByRole("button", { name: en ? "Preview" : "Vista previa", exact: true }).click();
+    await expect(preview.getByText(en ? /The preview uses all content in Spanish/ : /usa todo el contenido en Español/)).toBeVisible();
+    const frame = preview.locator("iframe");
+    await expect(frame).toHaveAttribute("src", /^blob:/);
+    await expect(frame).not.toHaveAttribute("sandbox");
+    const firstUrl = await frame.getAttribute("src");
+    const alternative = preview.getByRole("link", { name: en ? "Download" : "Descargar", exact: true });
+    await expect(alternative).toHaveAttribute("href", firstUrl!);
+    const exampleDownload = page.waitForEvent("download");
+    await alternative.click();
+    expect((await exampleDownload).suggestedFilename()).toBe("example.pdf");
+    const photos = page.getByRole("checkbox", { name: en ? "Include photos" : "Incluir las fotos", exact: true });
+    await photos.focus();
+    await page.keyboard.press("Space");
+    await expect(photos).not.toBeChecked();
+    await expect(frame).toHaveCount(0);
+    expect(await page.evaluate(() => (window as unknown as { pdfRevokedUrls: string[] }).pdfRevokedUrls)).toContain(firstUrl);
+    await page.getByRole("button", { name: en ? "Save design" : "Guardar diseño", exact: true }).click();
+    await expect(page.getByText(en ? /Revision 1/ : /Revisión 1/)).toBeVisible();
+    expect(await page.evaluate(() => (globalThis as unknown as { pdfsFixture: { writes: Array<{ design: { includePhotos: boolean } }> } }).pdfsFixture.writes.map(item => item.design.includePhotos))).toEqual([false]);
+    await preview.getByRole("button", { name: en ? "Preview" : "Vista previa", exact: true }).click();
+    await expect(frame).toHaveAttribute("src", /^blob:/);
+    await expect(frame).not.toHaveAttribute("sandbox");
+    const savedUrl = await frame.getAttribute("src");
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: "test-results/pdf-design-" + language + "-" + width + ".png", fullPage: true });
+    await page.getByRole("button", { name: "Español", exact: true }).click();
+    await expect(frame).toHaveCount(0);
+    await expect(preview.getByRole("link", { name: en ? "Download" : "Descargar", exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => (window as unknown as { pdfRevokedUrls: string[] }).pdfRevokedUrls)).toContain(savedUrl);
+  });
+  test("issued PDF fixed copy " + language + " at " + width, async ({ page }) => {
+    const en = language === "en";
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/src/test/visual/index.html?screen=/formularios/" + responseFormId + "/respuestas&scenario=responses-pdf&lang=" + language);
+    const marker = page.getByRole("button", { name: en ? "View PDF for TEST-000002" : "Ver PDF de TEST-000002", exact: true });
+    await expect(marker).toBeVisible();
+    await page.evaluate(() => {
+      const original = window.fetch;
+      const reads: string[] = [];
+      const revoked: string[] = [];
+      const revoke = URL.revokeObjectURL.bind(URL);
+      Object.assign(window, { fixedPdfReads: reads, fixedPdfRevokedUrls: revoked });
+      URL.revokeObjectURL = url => { revoked.push(url); revoke(url); };
+      window.fetch = (input, init) => {
+        const request = input instanceof Request ? input : new Request(new URL(String(input), location.href), init);
+        const url = new URL(request.url);
+        if (url.pathname.includes("/documents/")) reads.push(url.searchParams.get("download")!);
+        return original(input, init);
+      };
+    });
+    await marker.click();
+    const panel = page.getByRole("region", { name: en ? "Response detail" : "Detalle de la respuesta", exact: true });
+    await expect(panel.getByRole("tab", { name: "PDF", exact: true })).toHaveAttribute("aria-selected", "true");
+    const documents = panel.getByRole("region", { name: en ? "Response PDF" : "PDF de la respuesta", exact: true });
+    await expect(documents.getByText("Visita-VIS-000024.pdf", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual([]);
+    await page.screenshot({ path: "test-results/pdf-panel-" + language + "-" + width + ".png", fullPage: true });
+    const view = documents.getByRole("button", { name: en ? "View PDF" : "Ver PDF", exact: true });
+    await view.click();
+    const dialog = page.getByRole("dialog", { name: en ? "Fixed copy" : "Copia fija", exact: true });
+    await expect(dialog.getByRole("heading", { name: en ? "Fixed copy" : "Copia fija", exact: true })).toBeVisible();
+    const frame = dialog.locator("iframe");
+    await expect(frame).toHaveAttribute("src", /^blob:/);
+    await expect(frame).not.toHaveAttribute("sandbox");
+    const fixedUrl = await frame.getAttribute("src");
+    const alternative = dialog.getByRole("link", { name: en ? "Download" : "Descargar", exact: true });
+    await expect(alternative).toHaveAttribute("href", fixedUrl!);
+    const fallbackDownload = page.waitForEvent("download");
+    await alternative.click();
+    expect((await fallbackDownload).suggestedFilename()).toBe("Visita-VIS-000024.pdf");
+    expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false"]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: "test-results/pdf-fixed-" + language + "-" + width + ".png", fullPage: true });
+    await dialog.getByRole("button", { name: en ? "Close" : "Cerrar", exact: true }).first().click();
+    await expect(view).toBeFocused();
+    expect(await page.evaluate(() => (window as unknown as { fixedPdfRevokedUrls: string[] }).fixedPdfRevokedUrls)).toContain(fixedUrl);
+    const download = page.waitForEvent("download");
+    await documents.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).click();
+    expect((await download).suggestedFilename()).toBe("Visita-VIS-000024.pdf");
+    expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false", "true"]);
+    expect(await page.evaluate(() => (globalThis as unknown as { pdfsFixture: { writes: unknown[] } }).pdfsFixture.writes)).toEqual([]);
+  });
+}

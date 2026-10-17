@@ -1,12 +1,87 @@
-import {expect,test} from "@playwright/test";
-import {responseFormId,responseRecordId} from "../responseFixtures";
-for(const language of ["es","en"] as const)for(const width of [1440,390,320]){
- test("approval inbox and metadata decision "+language+" at "+width,async({page})=>{
-  const en=language==="en";await page.setViewportSize({width,height:900});await page.goto("/src/test/visual/index.html?screen=/formularios/por-aprobar&scenario=approvals-metadata&lang="+language);
-  await expect(page.getByRole("heading",{name:en?"To approve":"Por aprobar",exact:true})).toBeVisible();await expect(page.getByRole("button",{name:"VIS-00001",exact:true})).toBeVisible();
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:"test-results/approvals-inbox-"+language+"-"+width+".png",fullPage:true});
-  await page.getByRole("button",{name:en?"All open (3)":"Todas abiertas (3)"}).click();await page.getByRole("button",{name:"VIS-00003",exact:true}).click();let dialog=page.getByRole("dialog");await expect(dialog.getByRole("button",{name:en?"Approve":"Aprobar",exact:true})).toBeDisabled();await dialog.getByRole("button",{name:en?"Close":"Cerrar",exact:true}).last().click();
-  await page.getByRole("button",{name:"VIS-00001",exact:true}).click();dialog=page.getByRole("dialog");await dialog.getByRole("button",{name:en?"Reject":"Rechazar",exact:true}).click();const rejection=page.getByRole("dialog",{name:en?"Reject VIS-00001":"Rechazar VIS-00001"});await expect(rejection.getByRole("button",{name:en?"Reject":"Rechazar",exact:true})).toBeDisabled();await rejection.getByRole("textbox").fill(en?"Please check the signature":"Revisá la firma");await expect(rejection.getByRole("button",{name:en?"Reject":"Rechazar",exact:true})).toBeEnabled();await page.screenshot({path:"test-results/approvals-reject-"+language+"-"+width+".png",fullPage:true});await rejection.getByRole("button",{name:en?"Cancel":"Cancelar",exact:true}).click();await expect(dialog.getByRole("button",{name:en?"Reject":"Rechazar",exact:true})).toBeFocused();await dialog.getByRole("button",{name:en?"Approve":"Aprobar",exact:true}).click();await expect(dialog.getByText(en?"Approved":"Aprobada",{exact:true})).toBeVisible();expect(await page.evaluate(()=>(globalThis as unknown as {approvalsFixture:{writes:unknown[]}}).approvalsFixture.writes)).toEqual([{expectedRevision:1,decision:"Approved"}]);
- });
- test("decision from readable response "+language+" at "+width,async({page})=>{const en=language==="en";await page.setViewportSize({width,height:900});await page.goto("/src/test/visual/index.html?screen=/formularios/"+responseFormId+"/respuestas/"+responseRecordId+"&scenario=responses-approval&lang="+language);await expect(page.getByRole("heading",{name:"TEST-000002",exact:true})).toBeVisible();await page.getByRole("button",{name:en?"Approve":"Aprobar",exact:true}).click();await expect(page.getByText(en?"Alex Smith":"Alex Pérez",{exact:false})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:"test-results/approvals-detail-"+language+"-"+width+".png",fullPage:true});});
+import { expect, test } from "@playwright/test";
+import { approvalTaskId } from "../approvalFixtures";
+import { responseFormId, responseRecordId } from "../responseFixtures";
+for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
+  test("approval inbox and metadata decision " + language + " at " + width, async ({ page }) => {
+    const en = language === "en";
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/src/test/visual/index.html?screen=/formularios/por-aprobar&scenario=approvals-metadata&lang=" + language);
+    await expect(page.getByRole("heading", { name: en ? "To approve" : "Por aprobar", exact: true })).toBeVisible();
+    const first = page.getByRole("link", { name: "VIS-00001", exact: true });
+    await expect(first).toBeVisible();
+    await expect(first).toHaveAttribute("href", new RegExp("^/formularios/por-aprobar/" + approvalTaskId + "(?:\\?|$)"));
+    await page.evaluate(() => {
+      const original = window.fetch;
+      const reads: string[] = [];
+      Object.assign(window, { metadataRecordReads: reads });
+      window.fetch = (input, init) => {
+        const request = input instanceof Request ? input : new Request(new URL(String(input), location.href), init);
+        if (/\/api\/forms\/(?:records\/|definitions\/[^/]+\/records)/.test(new URL(request.url).pathname)) reads.push(request.url);
+        return original(input, init);
+      };
+    });
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: "test-results/approvals-inbox-" + language + "-" + width + ".png", fullPage: true });
+    await page.getByRole("button", { name: en ? "All open (3)" : "Todas abiertas (3)" }).click();
+    const own = page.getByRole("link", { name: "VIS-00003", exact: true });
+    await own.click();
+    let panel = page.getByRole("region", { name: en ? "Response detail" : "Detalle de la respuesta", exact: true });
+    await expect(panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true })).toBeDisabled();
+    await expect(panel.getByText(en ? "You cannot approve or reject your own response." : "No podés aprobar ni rechazar tu propia respuesta.", { exact: true })).toBeVisible();
+    await panel.getByRole("button", { name: en ? "Close" : "Cerrar", exact: true }).click();
+    await expect(own).toBeFocused();
+    await first.click();
+    panel = page.getByRole("region", { name: en ? "Response detail" : "Detalle de la respuesta", exact: true });
+    await expect(panel.getByText(en ? "To approve" : "Por aprobar", { exact: true })).toBeVisible();
+    await expect(panel.getByRole("tab")).toHaveCount(0);
+    await page.screenshot({ path: "test-results/approvals-pending-" + language + "-" + width + ".png", fullPage: true });
+    const reject = panel.getByRole("button", { name: en ? "Reject" : "Rechazar", exact: true });
+    await reject.click();
+    const rejection = page.getByRole("dialog", { name: en ? "Reject VIS-00001" : "Rechazar VIS-00001", exact: true });
+    await expect(rejection.getByRole("button", { name: en ? "Reject" : "Rechazar", exact: true })).toBeDisabled();
+    await rejection.getByRole("textbox").fill(en ? "Please check the signature" : "Revisá la firma");
+    await expect(rejection.getByRole("button", { name: en ? "Reject" : "Rechazar", exact: true })).toBeEnabled();
+    await page.screenshot({ path: "test-results/approvals-reject-" + language + "-" + width + ".png", fullPage: true });
+    await rejection.getByRole("button", { name: en ? "Cancel" : "Cancelar", exact: true }).click();
+    await expect(reject).toBeFocused();
+    await panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true }).click();
+    await expect(panel.getByText(en ? "Approved" : "Aprobada", { exact: true })).toBeVisible();
+    await expect(panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true })).toHaveCount(0);
+    await expect(panel.locator('[tabindex="-1"]').filter({ has: panel.getByText(en ? "Supervision" : "Supervisión", { exact: true }) }).last()).toBeFocused();
+    await page.screenshot({ path: "test-results/approvals-approved-" + language + "-" + width + ".png", fullPage: true });
+    await expect(first).toHaveCount(0);
+    await panel.getByRole("button", { name: en ? "Close" : "Cerrar", exact: true }).click();
+    const second = page.getByRole("link", { name: "VIS-00002", exact: true });
+    await expect(second).toBeFocused();
+    await second.click();
+    panel = page.getByRole("region", { name: en ? "Response detail" : "Detalle de la respuesta", exact: true });
+    await panel.getByRole("button", { name: en ? "Reject" : "Rechazar", exact: true }).click();
+    const secondRejection = page.getByRole("dialog", { name: en ? "Reject VIS-00002" : "Rechazar VIS-00002", exact: true });
+    const reason = en ? "Please complete the receipt" : "Completá el remito";
+    await secondRejection.getByRole("textbox").fill(reason);
+    await secondRejection.getByRole("button", { name: en ? "Reject" : "Rechazar", exact: true }).click();
+    await expect(secondRejection).toHaveCount(0);
+    await expect(panel.getByText(en ? "Rejected" : "Rechazada", { exact: true })).toBeVisible();
+    await expect(panel.getByText(reason, { exact: true })).toBeVisible();
+    await page.screenshot({ path: "test-results/approvals-rejected-" + language + "-" + width + ".png", fullPage: true });
+    expect(await page.evaluate(() => (window as unknown as { metadataRecordReads: string[] }).metadataRecordReads)).toEqual([]);
+    expect(await page.evaluate(() => (globalThis as unknown as { approvalsFixture: { writes: unknown[] } }).approvalsFixture.writes)).toEqual([{ expectedRevision: 1, decision: "Approved" }, { expectedRevision: 1, decision: "Rejected", reason }]);
+  });
+  test("decision from readable response " + language + " at " + width, async ({ page }) => {
+    const en = language === "en";
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/src/test/visual/index.html?screen=/formularios/" + responseFormId + "/respuestas/" + responseRecordId + "&scenario=responses-approval&lang=" + language);
+    const panel = page.getByRole("region", { name: en ? "Response detail" : "Detalle de la respuesta", exact: true });
+    await expect(panel.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
+    await expect(page.getByRole("table")).toBeAttached();
+    await expect(panel.locator("header").getByText(en ? "To approve" : "Por aprobar", { exact: true })).toBeVisible();
+    await page.screenshot({ path: "test-results/approvals-detail-pending-" + language + "-" + width + ".png", fullPage: true });
+    await panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true }).click();
+    await expect(panel.getByText(en ? "Alex Smith" : "Alex Pérez", { exact: false }).first()).toBeVisible();
+    await expect(panel.locator("header").getByText(en ? "Approved" : "Aprobada", { exact: true })).toBeVisible();
+    await expect(panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: "test-results/approvals-detail-" + language + "-" + width + ".png", fullPage: true });
+  });
 }

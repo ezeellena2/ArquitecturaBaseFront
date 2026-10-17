@@ -27,3 +27,5 @@ Monta providers, router y árbol de rutas. `routes.tsx` declara rutas y guards; 
   Abarca acceso público y portales; no guarda preferencias locales ni depende de una feature.
 
 `routes` compone `FormResponsesShell` alrededor de AppLayout, sin desmontar el caparazón entre rutas. El shell entrega un contexto neutral y carga la lectura de navegación con un import dinámico al abrir el panel o entrar a Formularios. `ResponseWorkspaceLayout` mantiene el alcance privado de filtros y archivos sólo entre las rutas de respuestas.
+
+D2 anida `:recordId` bajo la planilla y `:taskId` bajo Por aprobar para conservar el listado montado. Cada página compone un único panel; la bandeja activa ResponseWorkspaceProvider con formId explícito sólo si existe RecordsRead. No hay contexto de navegación global ni acceso a valores por el permiso de decidir.
