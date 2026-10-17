@@ -367,3 +367,5 @@ H2 está conectado en el front al contrato de sugerencias de WhatsApp: aviso sob
 ## Revisión humana H4 — implementación local de Etapa 5
 
 La propuesta se revisa en K4, con etiqueta y evidencia de quién la pidió por WhatsApp, sus límites y quién la resolvió. Aprobar y activar envía la edición y la persona de ejemplo en un solo comando; descartar conserva la propuesta original sin activarla. El historial propuesto requiere sólo el idioma original y muestra el nombre original si falta el idioma de la interfaz; los catálogos comunes conservan su regla bilingüe. Actor, permisos, 409 y respuesta tardía mantienen los límites del editor existente. Las pruebas rápidas usan dobles explícitos; los seis cuerpos reales, visuales, navegador y proveedor quedan para el cierre conjunto.
+
+La presentación s4 usa la pestaña Respuesta del panel D2 elegido: datos propuestos plegables, marcas de mapeo/corrección y cadena de respuestas confirmadas. El modo, motivo y operador pertenecen a la captura histórica; no se reconstruyen con sugerencias vigentes ni agregan eventos de apertura/aceptación. Su calificación HTTP exportada y recorrido visual se realizan en el cierre conjunto.
