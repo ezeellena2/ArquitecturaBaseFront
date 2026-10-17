@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
@@ -11,25 +11,25 @@ const options = [
   { value: "User", label: "User" },
 ];
 
-function Harness({ initial = [] }: { initial?: string[] }) {
+function Harness({ initial = [], disabled = false }: { initial?: string[]; disabled?: boolean }) {
   const [value, setValue] = useState(initial);
 
   return (
     <FormField label="Roles">
-      <MultiSelect options={options} value={value} onChange={setValue} placeholder="Sin roles" />
+      <MultiSelect options={options} value={value} onChange={setValue} placeholder="Sin roles" disabled={disabled} />
     </FormField>
   );
 }
 
 describe("MultiSelect", () => {
-  it("shows the placeholder while nothing is picked", () => {
-    renderWithProviders(<Harness />);
+  it("shows the placeholder while nothing is picked", async () => {
+    await act(async () => { renderWithProviders(<Harness />); });
 
     expect(screen.getByRole("button", { name: "Roles" })).toHaveTextContent("Sin roles");
   });
 
-  it("shows the picked options separated by commas", () => {
-    renderWithProviders(<Harness initial={["Admin", "User"]} />);
+  it("shows the picked options separated by commas", async () => {
+    await act(async () => { renderWithProviders(<Harness initial={["Admin", "User"]} />); });
 
     expect(screen.getByRole("button", { name: "Roles" })).toHaveTextContent("Admin, User");
   });
@@ -64,4 +64,39 @@ describe("MultiSelect", () => {
 
     expect(screen.getByRole("button", { name: "Roles" })).toHaveTextContent("Sin roles");
   });
+
+  it("does not open or accept keyboard activation while disabled", async () => {
+    renderWithProviders(<Harness disabled />);
+    const user = userEvent.setup();
+    const trigger = screen.getByRole("button", { name: "Roles" });
+
+    await user.click(trigger);
+    await act(async () => { trigger.focus(); });
+    await user.keyboard("{Enter}");
+
+    expect(trigger).toBeDisabled();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(trigger).toHaveTextContent("Sin roles");
+  });
+
+  it("cannot change the selection when an open control becomes disabled", async () => {
+    const view = renderWithProviders(<Harness initial={["Admin"]} />);
+    const user = userEvent.setup();
+    await act(async () => { screen.getByRole("button", { name: "Roles" }).focus(); });
+    await user.keyboard("{Enter}");
+    const option = await screen.findByRole("menuitemcheckbox", { name: /user/i });
+    await act(async () => { option.focus(); });
+
+    await act(async () => { view.rerender(<Harness initial={["Admin"]} disabled />); });
+    await user.keyboard("{Enter}");
+    expect(option).toHaveAttribute("aria-checked", "false");
+    await user.keyboard(" ");
+
+    expect(option).toHaveAttribute("aria-disabled", "true");
+    expect(option).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("menuitemcheckbox", { name: /admin/i })).toHaveAttribute("aria-checked", "true");
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("button", { name: "Roles" })).toHaveTextContent("Admin");
+  });
+
 });

@@ -16,7 +16,17 @@ export function createRuleVisualFixtures(culture: FormCulture, definition: () =>
       const form = definition();
       if (!form) return json({ code: "Forms.Definition.NotFound" }, 404);
       if (path.endsWith("/rules/options")) return json({ definitionId: form.id, name: form.name, originalCulture: form.draft.culture, questions: form.draft.fields.map(field => ({ ...field, maxLength: "maxLength" in field ? field.maxLength : null, options: field.type === "choice" && !field.source ? field.options : null })), conditionChoices: {}, roles: [{ id: author.userId, name: "Supervisor" }] });
-      if (path.endsWith("/rules/revisions")) return json({ items: [...revisions].reverse().map(value => ({ id: value.id, revision: value.revision, createdAtUtc: value.createdAtUtc, author: value.author, hasApproval: value.rules.some(rule => rule.actions.some(action => action.kind === "RequestApproval")) })), page: 1, pageSize: 10, totalCount: revisions.length, totalPages: revisions.length ? 1 : 0, hasPrevious: false, hasNext: false });
+      if (path.endsWith("/rules/revisions")) return json({ items: revisions.map((value, index) => {
+        const previous = revisions[index - 1]?.rules ?? [];
+        const previousById = new Map(previous.map(rule => [rule.id, rule]));
+        const currentById = new Map(value.rules.map(rule => [rule.id, rule]));
+        return { id: value.id, revision: value.revision, createdAtUtc: value.createdAtUtc, author: value.author, hasApproval: value.rules.some(rule => rule.actions.some(action => action.kind === "RequestApproval")), changes: {
+          addedRules: value.rules.filter(rule => !previousById.has(rule.id)).length,
+          updatedRules: value.rules.filter(rule => previousById.has(rule.id) && JSON.stringify(rule) !== JSON.stringify(previousById.get(rule.id))).length,
+          removedRules: previous.filter(rule => !currentById.has(rule.id)).length,
+          orderChanged: JSON.stringify(previous.filter(rule => currentById.has(rule.id)).map(rule => rule.id)) !== JSON.stringify(value.rules.filter(rule => previousById.has(rule.id)).map(rule => rule.id)),
+        } };
+      }).reverse(), page: 1, pageSize: 10, totalCount: revisions.length, totalPages: revisions.length ? 1 : 0, hasPrevious: false, hasNext: false });
       if (path.includes("/rules/revisions/")) {
         const revision = revisions.find(value => value.revision === Number(path.split("/").at(-1)));
         return revision ? json(revision) : json({ code: "Forms.Rules.RevisionNotFound" }, 404);

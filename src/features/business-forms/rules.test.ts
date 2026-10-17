@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newRule, newRuleAction, prepareRules, ruleFieldErrors } from "./rules";
+import { newRule, newRuleAction, clearUnavailablePdfAttachments, prepareRules, ruleFieldErrors } from "./rules";
 import type { ResponseColumn } from "./responses";
 const original = "es";
 const column: ResponseColumn = { fieldId: "0199a0c0-0000-7000-8000-000000000030", type: "decimal", label: "Importe", introducedInVersion: 1, options: [] };
@@ -63,4 +63,14 @@ it("keeps every message when both index notations name the same field", () => {
   const rule = { ...newRule(), actions: [{ ...newRuleAction("RequestApproval"), roleId: crypto.randomUUID() }] };
   const result = ruleFieldErrors({ "rules[0].actions[0].roleId": ["Primer motivo."], "rules.0.actions.0.roleId": ["Segundo motivo."] }, [rule], "es", "es");
   expect(result.errors["rules.0.actions.0.roleId"]).toEqual(["Primer motivo.", "Segundo motivo."]);
+});
+
+it("preserves a selected PDF only while a prior generator still applies without mutating the source", () => {
+  const firstPdf = newRuleAction("GeneratePdf"); const secondPdf = newRuleAction("GeneratePdf"); const notice = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aviso" } };
+  const rule = { ...newRule(), event: "Approved" as const, actions: [firstPdf, secondPdf, notice] };
+  const withoutOne = { ...rule, actions: [secondPdf, notice] };
+  expect(clearUnavailablePdfAttachments(withoutOne)).toEqual(withoutOne);
+  expect(clearUnavailablePdfAttachments({ ...rule, actions: [notice, firstPdf] }).actions[0]).toEqual({ ...notice, includePdf: false });
+  expect(clearUnavailablePdfAttachments({ ...rule, event: "Rejected" }).actions[2].includePdf).toBe(false);
+  expect(rule.actions[2].includePdf).toBe(true);
 });

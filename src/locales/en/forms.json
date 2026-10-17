@@ -579,7 +579,21 @@
       "pdfBeforeAttachment": "Add Generate PDF before attaching it.",
       "tooMany": "The limit has been reached.",
       "tooLong": "The message exceeds the allowed length."
-    }
+    },
+    "saveUnchanged": "There are no changes to save.",
+    "saveInvalid": "Check the marked fields before saving.",
+    "saveConflict": "Reload and choose what to keep before saving.",
+    "saveBusy": "Wait for the current operation to finish.",
+    "chooseValues": "Choose values",
+    "keepMineHint": "You can keep your whole draft. Saving it will replace the rules in revision {{revision}}.",
+    "historyAdded_one": "{{count}} rule added",
+    "historyAdded_other": "{{count}} rules added",
+    "historyUpdated_one": "{{count}} rule updated",
+    "historyUpdated_other": "{{count}} rules updated",
+    "historyRemoved_one": "{{count}} rule removed",
+    "historyRemoved_other": "{{count}} rules removed",
+    "historyOrderChanged": "Order changed",
+    "historyUnchanged": "No changes"
   },
   "workflow": {
     "title": "What happened next",

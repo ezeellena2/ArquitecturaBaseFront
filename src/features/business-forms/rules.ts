@@ -9,6 +9,9 @@ export interface FormRule { readonly id: string; readonly event: RuleEvent; read
 export interface RuleIssue { readonly path: string; readonly key: string }
 export const newRule = (): FormRule => ({ id: crypto.randomUUID(), event: "Received", conditions: [], actions: [] });
 export const newRuleAction = (kind: RuleActionKind): RuleAction => ({ id: crypto.randomUUID(), kind, roleId: null, text: kind === "NotifyAuthor" || kind === "NotifyRole" ? { es: "", en: "" } : null, includePdf: false });
+export function clearUnavailablePdfAttachments(rule: FormRule): FormRule {
+  return { ...rule, actions: rule.actions.map((action, index) => ({ ...action, includePdf: action.includePdf && rule.event === "Approved" && action.kind === "NotifyAuthor" && rule.actions.slice(0, index).some(previous => previous.kind === "GeneratePdf") })) };
+}
 export function prepareRules(rules: readonly FormRule[], original: FormCulture, columns: readonly ResponseColumn[]) {
   const issues: RuleIssue[] = [];
   const prepared = rules.map((rule, index): FormRule => {

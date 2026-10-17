@@ -10,7 +10,8 @@ const action = z.strictObject({ id: guid, kind: z.enum(ruleActionKinds), roleId:
 const rule = z.strictObject({ id: guid, event: z.enum(ruleEvents), conditions: z.array(condition), actions: z.array(action) });
 const ruleSet = z.strictObject({ id: guid.nullable(), definitionId: guid, revision: z.number().int().nonnegative(), originalCulture: z.enum(["es", "en"]), rules: z.array(rule), createdAtUtc: z.iso.datetime().nullable(), author: author.nullable() });
 const options = z.strictObject({ definitionId: guid, name: text, originalCulture: z.enum(["es", "en"]), questions: z.array(canonicalFormFieldSchema), conditionChoices: z.record(z.string().uuid(), z.array(z.strictObject({ id: guid, label: z.string() }))), roles: z.array(z.strictObject({ id: guid, name: z.string() })) });
-const ruleRevision = z.strictObject({ id: guid, revision: z.number().int().positive(), createdAtUtc: z.iso.datetime(), author: author.nullable(), hasApproval: z.boolean() });
+const ruleChanges = z.strictObject({ addedRules: z.number().int().nonnegative(), updatedRules: z.number().int().nonnegative(), removedRules: z.number().int().nonnegative(), orderChanged: z.boolean() });
+const ruleRevision = z.strictObject({ id: guid, revision: z.number().int().positive(), createdAtUtc: z.iso.datetime(), author: author.nullable(), hasApproval: z.boolean(), changes: ruleChanges });
 const history = z.strictObject({ items: z.array(ruleRevision), page: z.number().int().positive(), pageSize: z.number().int().positive(), totalCount: z.number().int().nonnegative(), totalPages: z.number().int().nonnegative(), hasPrevious: z.boolean(), hasNext: z.boolean() });
 function read<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);

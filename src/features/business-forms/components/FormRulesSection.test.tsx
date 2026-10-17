@@ -1,5 +1,6 @@
 import { notify, dismissNotification } from "@/shared/ui/notifications";
 import { useEffect } from "react";
+import { MemoryRouter } from "react-router";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -10,7 +11,7 @@ import { server } from "@/test/mocks/server";
 import { httpCohort } from "@/test/httpCohort";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { FormRulesSection } from "./FormRulesSection";
-import { newRuleAction } from "../rules";
+import { newRuleAction, type FormRule } from "../rules";
 const id = "0199a0c0-0000-7000-8000-000000000010";
 const actor = "0199a0c0-0000-7000-8000-000000000020";
 const initial = () => ({ id: null, definitionId: id, revision: 0, originalCulture: "es", rules: [], createdAtUtc: null, author: null });
@@ -72,18 +73,30 @@ it("edits catalog choice conditions from rule metadata without catalog or respon
   const fieldId = "0199a0c0-0000-7000-8000-000000000030";
   const choiceId = "0199a0c0-0000-7000-8000-000000000040";
   server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "choice", label: { es: "Cliente" }, help: null, required: true, maxLength: null, options: null, source: { catalog: actor } }], conditionChoices: { [fieldId]: [{ id: choiceId, label: "Cliente elegido" }] }, roles: [] })));
+  const writes = vi.fn();
+  server.use(http.post("/api/forms/definitions/:id/rules", async ({ request }) => { const body = await request.json() as {rules: FormRule[]}; writes(body); return HttpResponse.json({...initial(), id:actor, revision:1, rules:body.rules, createdAtUtc:"2026-10-17T12:00:00Z"}); }));
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "in");
-  expect(screen.getByRole("option", { name: "Cliente elegido" })).toHaveValue(choiceId);
-  await userEvent.selectOptions(screen.getByRole("listbox", { name: "Valor" }), choiceId);
-  expect(screen.getByRole("option", { name: "Cliente elegido" })).toHaveProperty("selected", true);
+  const picker = screen.getByRole("button", { name: "Valor" });
+  picker.focus();
+  await userEvent.keyboard("{Enter}");
+  const choice = await screen.findByRole("menuitemcheckbox", { name: "Cliente elegido" });
+  await userEvent.click(choice);
+  expect(choice).toHaveAttribute("aria-checked", "true");
+  await userEvent.keyboard("{Escape}");
+  expect(picker).toHaveTextContent("Cliente elegido");
+  await userEvent.click(screen.getByRole("button", {name:"Agregar acción"}));
+  await userEvent.type(screen.getByRole("textbox", {name:"Mensaje"}), "Aviso");
+  await userEvent.click(screen.getByRole("button", {name:"Guardar reglas"}));
+  await waitFor(()=>expect(writes).toHaveBeenCalledOnce());
+  expect(writes).toHaveBeenCalledWith(expect.objectContaining({rules:[expect.objectContaining({conditions:[{fieldId, operator:"in", values:[choiceId]}]})]}));
 });
 it("opens an immutable historical revision without adopting it", async () => {
   setup();
   const historyId = crypto.randomUUID();
-  server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: historyId, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", author: { userId: actor, displayName: "Ana" }, hasApproval: false }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+  server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: historyId, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", author: { userId: actor, displayName: "Ana" }, hasApproval: false, changes: { addedRules: 1, updatedRules: 0, removedRules: 0, orderChanged: false } }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
     http.get("/api/forms/definitions/:id/rules/revisions/:revision", () => HttpResponse.json({ ...initial(), id: historyId, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", rules: [{ id: crypto.randomUUID(), event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Mensaje histórico" } }] }] })));
   const dirty = vi.fn();
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={dirty} />);
@@ -189,4 +202,158 @@ it("binds the unchanged exported role validation to its rule and focuses the mar
   expect(dirty).toHaveBeenLastCalledWith(true);
   expect(writes).toHaveBeenCalledWith(expect.objectContaining({ expectedRevision: 1, rules: [expect.objectContaining({ id: firstRuleId }), expect.objectContaining({ id: secondRuleId, actions: [expect.objectContaining({ text: { es: "Mensaje guardado propio" } })] })] }));
   expect(notify).not.toHaveBeenCalled();
+});
+
+function storedRule(message = "Mensaje guardado"): FormRule {
+  return { id: crypto.randomUUID(), event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: message } }] };
+}
+function serveRules(rules: readonly FormRule[], revision = 1) {
+  server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ ...initial(), id: actor, revision, rules, createdAtUtc: "2026-10-17T12:00:00Z" })));
+}
+it("explains unchanged and invalid rules beside the disabled save control", async () => {
+  setup();
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  const save = await screen.findByRole("button", { name: "Guardar reglas" });
+  expect(save).toBeDisabled();
+  expect(save).toHaveAccessibleDescription("No hay cambios para guardar.");
+  expect(screen.getByText("No hay cambios para guardar.")).toBeVisible();
+  await userEvent.click(screen.getByRole("button", { name: "Agregar regla" }));
+  expect(save).toBeDisabled();
+  expect(save).toHaveAccessibleDescription("Revisá los datos marcados antes de guardar.");
+});
+it("keeps the whole own rules draft after rereading a conflict and saves it explicitly over the current revision", async () => {
+  setup();
+  const mine = storedRule();
+  const theirs = storedRule("Reglas de otra persona");
+  let revision = 1;
+  const writes: unknown[] = [];
+  server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ ...initial(), id: actor, revision, rules: revision === 1 ? [mine] : [theirs], createdAtUtc: "2026-10-17T12:00:00Z" })),
+    http.post("/api/forms/definitions/:id/rules", async ({ request }) => {
+      const body = await request.json() as { rules: FormRule[] }; writes.push(body);
+      if (writes.length === 1) { revision = 2; return HttpResponse.json({ code: "Forms.Rules.RevisionConflict" }, { status: 409 }); }
+      return HttpResponse.json({ ...initial(), id: actor, revision: 3, rules: body.rules, createdAtUtc: "2026-10-17T13:00:00Z" });
+    }));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Releer reglas" }));
+  const keep = await screen.findByRole("button", { name: "Conservar mis cambios" });
+  expect(screen.getByRole("button", {name:"Guardar reglas"})).toHaveAccessibleDescription("Releé y elegí qué conservar antes de guardar.");
+  expect(screen.getByText(/reemplazará las reglas de la revisión 2/)).toBeVisible();
+  await userEvent.click(keep);
+  expect(screen.getByRole("textbox", { name: "Mensaje" })).toHaveValue("Mensaje guardado propio");
+  expect(writes).toHaveLength(1);
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await waitFor(() => expect(writes).toHaveLength(2));
+  expect(writes[1]).toEqual({ expectedRevision: 2, rules: [{ ...mine, actions: [{ ...mine.actions[0], text: { es: "Mensaje guardado propio" } }] }] });
+  expect(screen.queryByText("Reglas de otra persona")).not.toBeInTheDocument();
+});
+it("returns focus from Done to the same rule and from removal to its surviving neighbor", async () => {
+  setup(); serveRules([storedRule("Primera"), storedRule("Segunda")]);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  const edit = await screen.findByRole("button", { name: "Editar regla 1" });
+  const neighbor = screen.getByRole("button", { name: "Editar regla 2" });
+  await userEvent.click(edit);
+  await userEvent.click(screen.getByRole("button", { name: "Listo" }));
+  await waitFor(() => expect(edit).toHaveFocus());
+  await userEvent.click(screen.getByRole("button", { name: "Quitar regla 1" }));
+  await waitFor(() => expect(neighbor).toHaveFocus());
+  await userEvent.click(screen.getByRole("button", { name: "Quitar regla 1" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Agregar regla" })).toHaveFocus());
+});
+it("keeps focus on a moved action identity and announces its new position", async () => {
+  setup(); const first = storedRule(); const rule = { ...first, actions: [...first.actions, { ...newRuleAction("NotifyAuthor"), text: { es: "Segundo aviso" } }] }; serveRules([rule]);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  await userEvent.click(screen.getByRole("button", { name: "Bajar acción 1" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Subir acción 2" })).toHaveFocus());
+  expect(screen.getByRole("status")).toHaveTextContent("Acción 2: posición 2 de 2");
+  expect(screen.getAllByRole("textbox", { name: "Mensaje" }).map(input => (input as HTMLTextAreaElement).value)).toEqual(["Segundo aviso", "Mensaje guardado"]);
+});
+it("summarizes saved rule conditions with their shared readable values and operators", async () => {
+  setup(); const fieldId = crypto.randomUUID(); const choiceId = crypto.randomUUID(); const rule = { ...storedRule(), conditions: [{ fieldId, operator: "in", values: [choiceId] }] };
+  serveRules([rule]);
+  server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "choice", label: { es: "Cliente" }, help: null, required: true, maxLength: null, options: null, source: { catalog: actor } }], conditionChoices: { [fieldId]: [{ id: choiceId, label: "Cliente elegido" }] }, roles: [] })));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  expect(await screen.findByText("Si: Cliente: Cliente elegido")).toBeVisible();
+});
+it("shows rule history change counts and order without loading each revision", async () => {
+  setup(); let details = 0;
+  server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: actor, revision: 2, createdAtUtc: "2026-10-17T12:00:00Z", author: null, hasApproval: false, changes: { addedRules: 1, updatedRules: 2, removedRules: 1, orderChanged: true } }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+    http.get("/api/forms/definitions/:id/rules/revisions/:revision", () => { details++; return HttpResponse.json(initial()); }));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  await screen.findByRole("button", { name: "Revisión 2" });
+  expect(screen.getByText(/1 regla agregada/)).toBeVisible(); expect(screen.getByText(/2 reglas actualizadas/)).toBeVisible(); expect(screen.getByText(/1 regla quitada/)).toBeVisible(); expect(screen.getByText(/Cambió el orden/)).toBeVisible();
+  expect(details).toBe(0);
+});
+
+it("clears an attached PDF when changing the event and saves the remaining notice without that attachment", async () => {
+  setup(); const notice = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aviso" } }; const rule: FormRule = { id: actor, event: "Approved", conditions: [], actions: [newRuleAction("GeneratePdf"), notice] }; serveRules([rule]);
+  const writes = vi.fn(); server.use(http.post("/api/forms/definitions/:id/rules", async ({request}) => { const body = await request.json() as {rules:FormRule[]}; writes(body); return HttpResponse.json({...initial(),id:actor,revision:2,rules:body.rules,createdAtUtc:"2026-10-17T12:00:00Z"}); }));
+  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/></MemoryRouter>);
+  await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
+  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeChecked();
+  await userEvent.selectOptions(screen.getByRole("combobox",{name:"Cuándo"}),"Rejected");
+  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).not.toBeChecked();
+  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeDisabled();
+  await userEvent.click(screen.getByRole("button",{name:"Quitar acción 1"}));
+  await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));
+  await waitFor(()=>expect(writes).toHaveBeenCalledOnce());
+  expect(writes).toHaveBeenCalledWith({expectedRevision:1,rules:[{...rule,event:"Rejected",actions:[{...notice,includePdf:false}]}]});
+});
+it("returns focus from action removal to a neighbor and then to Add action", async () => {
+  setup();const first=storedRule();const rule={...first,actions:[...first.actions,{...newRuleAction("NotifyAuthor"),text:{es:"Segundo aviso"}}]};serveRules([rule]);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
+  const next=screen.getByRole("combobox",{name:"Acción 2"});
+  await userEvent.click(screen.getByRole("button",{name:"Quitar acción 1"}));
+  await waitFor(()=>expect(next).toHaveFocus());
+  await userEvent.click(screen.getByRole("button",{name:"Quitar acción 1"}));
+  await waitFor(()=>expect(screen.getByRole("button",{name:"Agregar acción"})).toHaveFocus());
+});
+
+it("focuses the next remaining condition and then Add condition after removing the last one", async () => {
+  setup();const first=crypto.randomUUID();const second=crypto.randomUUID();const rule={...storedRule(),conditions:[{fieldId:first,operator:"answered",values:[]},{fieldId:second,operator:"answered",values:[]}]};serveRules([rule]);
+  server.use(http.get("/api/forms/definitions/:id/rules/options",()=>HttpResponse.json({definitionId:id,name:{es:"Visita"},originalCulture:"es",questions:[first,second].map((fieldId,index)=>({fieldId,key:"field_"+fieldId.replaceAll("-",""),type:"decimal",label:{es:index===0?"Primera pregunta":"Segunda pregunta"},help:null,required:false,maxLength:null,options:null})),conditionChoices:{},roles:[]})));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
+  await userEvent.click(screen.getByRole("button",{name:"Quitar condición 1"}));
+  const remaining=screen.getByRole("combobox",{name:"Pregunta"});expect(remaining).toHaveValue(second);
+  await waitFor(()=>expect(remaining).toHaveFocus());
+  await userEvent.click(screen.getByRole("button",{name:"Quitar condición 1"}));
+  await waitFor(()=>expect(screen.getByRole("button",{name:"Agregar condición"})).toHaveFocus());
+});
+it.each(["remove","move"] as const)("clears orphaned PDF attachments when their generator changes: %s", async kind => {
+  setup();const notice={...newRuleAction("NotifyAuthor"),includePdf:true,text:{es:"Aviso"}};const pdf=newRuleAction("GeneratePdf");const rule:FormRule={...storedRule(),event:"Approved",actions:[pdf,notice]};serveRules([rule]);
+  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/></MemoryRouter>);
+  await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
+  await userEvent.click(screen.getByRole("button",{name:kind==="remove"?"Quitar acción 1":"Bajar acción 1"}));
+  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).not.toBeChecked();
+  expect(screen.getByRole("button",{name:"Guardar reglas"})).toBeEnabled();
+});
+it("requires a new reread after a second conflict instead of reusing the previous current revision", async () => {
+  setup();const mine=storedRule();let revision=1;const writes:unknown[]=[];
+  server.use(http.get("/api/forms/definitions/:id/rules",()=>HttpResponse.json({...initial(),id:actor,revision,rules:revision===1?[mine]:[storedRule("Actual")],createdAtUtc:"2026-10-17T12:00:00Z"})),http.post("/api/forms/definitions/:id/rules",async({request})=>{writes.push(await request.json());revision++;return HttpResponse.json({code:"Forms.Rules.RevisionConflict"},{status:409});}));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));await userEvent.type(screen.getByRole("textbox",{name:"Mensaje"})," propio");
+  await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));await userEvent.click(await screen.findByRole("button",{name:"Releer reglas"}));await userEvent.click(await screen.findByRole("button",{name:"Conservar mis cambios"}));
+  await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));await screen.findByRole("button",{name:"Releer reglas"});
+  expect(screen.queryByRole("button",{name:"Conservar mis cambios"})).not.toBeInTheDocument();expect(screen.queryByRole("button",{name:"Usar la revisión actual"})).not.toBeInTheDocument();
+  expect(screen.getByRole("textbox",{name:"Mensaje"})).toHaveValue("Mensaje guardado propio");
+  await userEvent.click(screen.getByRole("button",{name:"Releer reglas"}));await screen.findByText(/reemplazará las reglas de la revisión 3/);
+  expect(writes).toEqual([{expectedRevision:1,rules:[{...mine,actions:[{...mine.actions[0],text:{es:"Mensaje guardado propio"}}]}]},{expectedRevision:2,rules:[{...mine,actions:[{...mine.actions[0],text:{es:"Mensaje guardado propio"}}]}]}]);
+});
+
+it("explains an in-flight save and its server cooldown once without discarding the draft", async () => {
+  setup();serveRules([storedRule()]);let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});
+  server.use(http.post("/api/forms/definitions/:id/rules",async()=>{await pending;return HttpResponse.json({code:"RateLimit.Exceeded",detail:"Esperá antes de volver a guardar.",retryAfter:60},{status:429});}));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));await userEvent.type(screen.getByRole("textbox",{name:"Mensaje"})," propio");
+  await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));
+  expect(screen.getByRole("button",{name:"Guardando reglas…"})).toHaveAccessibleDescription("Esperá a que termine la operación.");
+  await act(async()=>{release();});const save=await screen.findByRole("button",{name:"Guardar reglas"});
+  expect(save).toBeDisabled();expect(save).toHaveAccessibleDescription(/Esperá [0-9]+ segundos para volver a intentar./);
+  expect(screen.getAllByText(/Esperá [0-9]+ segundos para volver a intentar./)).toHaveLength(1);
+  expect(screen.getByRole("textbox",{name:"Mensaje"})).toHaveValue("Mensaje guardado propio");
 });

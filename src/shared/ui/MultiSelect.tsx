@@ -17,6 +17,7 @@ interface MultiSelectProps {
   /// Lo que dice el control mientras no hay nada elegido.
   placeholder: string;
   id?: string;
+  disabled?: boolean;
   "aria-invalid"?: ComponentProps<"button">["aria-invalid"];
   "aria-describedby"?: string;
 }
@@ -33,6 +34,7 @@ export function MultiSelect({
   onChange,
   placeholder,
   id,
+  disabled = false,
   "aria-invalid": ariaInvalid,
   "aria-describedby": ariaDescribedBy,
 }: MultiSelectProps): ReactNode {
@@ -47,6 +49,7 @@ export function MultiSelect({
     <DropdownMenu>
       <DropdownMenuTrigger
         id={id}
+        disabled={disabled}
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedBy}
         className={cn(
@@ -66,6 +69,7 @@ export function MultiSelect({
           <DropdownMenuCheckboxItem
             key={option.value}
             checked={value.includes(option.value)}
+            disabled={disabled}
             onCheckedChange={(checked) => toggle(option.value, checked)}
             onSelect={(event) => event.preventDefault()}
             className="items-start"
