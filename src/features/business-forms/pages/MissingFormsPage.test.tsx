@@ -88,8 +88,14 @@ it("recovers a throttled refresh explicitly while retaining the previously loade
  setup();let calls=0;let now=100;const clock=vi.spyOn(performance,"now").mockImplementation(()=>now);
  server.use(http.get("/api/forms/missing-requests",()=>{calls++;return calls===2?HttpResponse.json({detail:"Esperá para consultar.",retryAfter:2},{status:429}):HttpResponse.json(page());}));
  renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
+ await userEvent.type(screen.getByRole("searchbox",{name:"Buscar por tema"}),"materiales");
  await act(async()=>{await queryClient.invalidateQueries({queryKey:["form-missing-requests"]});});
  const retry=await screen.findByRole("button",{name:"Reintentar"});expect(retry).toBeDisabled();expect(screen.getByText(topic.name)).toBeInTheDocument();
+ expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Descartados (0)"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Último pedido"})).toBeDisabled();
+ expect(screen.getByRole("combobox",{name:"Filas por página"})).toBeDisabled();
+ await act(async()=>{await new Promise(resolve=>setTimeout(resolve,350));});expect(calls).toBe(2);
  await act(async()=>{now+=3000;document.dispatchEvent(new Event("visibilitychange"));});await waitFor(()=>expect(retry).toBeEnabled());expect(calls).toBe(2);clock.mockRestore();
  await userEvent.click(retry);await waitFor(()=>expect(calls).toBe(3));
 });
