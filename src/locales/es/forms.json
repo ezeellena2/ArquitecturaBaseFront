@@ -757,7 +757,22 @@
     "originManual": "Se lo mandó {{name}}",
     "originAssistant": "Se lo mandó el asistente",
     "keyboardHint": "↑ ↓ otra respuesta · Esc cerrar",
-    "issues": "Hay fallas o envíos sin confirmar."
+    "issues": "Hay fallas o envíos sin confirmar.",
+    "assistance": {
+      "origin": "Cómo empezó",
+      "preparedBy": "Lo preparó",
+      "preparedByAssistant": "Lo preparó el asistente",
+      "always": "Preguntar siempre · Sin IA",
+      "showProposed": "Ver datos propuestos",
+      "hideProposed": "Ocultar datos propuestos",
+      "proposed": "Datos propuestos",
+      "excluded": "No incluido",
+      "changed": "Corregido al completar",
+      "included": "Incluido",
+      "chain": "Cadena de respuestas",
+      "from": "De {{name}}",
+      "mapped": "De la respuesta de origen"
+    }
   },
   "suggestions": {
     "title": "Qué sugerir después",

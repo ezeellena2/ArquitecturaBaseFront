@@ -152,6 +152,12 @@ const origin = z.strictObject({
   conversationId: guid.nullable(),
   maskedAddress: z.string().nullable(),
 });
+const historicalValue = z.strictObject({ fieldId: guid, key: z.string(), type, label: z.string(), value });
+const assistance = z.strictObject({
+ senderKind: z.enum(["Manual", "Assistant"]), operator: author.nullable(), reason: z.string().nullable(),
+ values: z.array(z.strictObject({ proposed: historicalValue, included: z.boolean(), changed: z.boolean(), mapped: z.boolean() })),
+ suggestion: z.strictObject({ originRecordId: guid, suggestionId: guid, mode: z.enum(["Always", "Assistant"]) }).nullable(),
+});
 export const responseDetailSchema = z.strictObject({
   id: guid,
   definitionId: guid,
@@ -163,15 +169,9 @@ export const responseDetailSchema = z.strictObject({
   actor: author,
   channel: z.string(),
   origin: origin.nullable(),
-  values: z.array(
-    z.strictObject({
-      fieldId: guid,
-      key: z.string(),
-      type,
-      label: z.string(),
-      value,
-    }),
-  ),
+  assistance: assistance.nullable(),
+  chain: z.array(z.strictObject({ id: guid, definitionId: guid, originRecordId: guid.nullable(), number: z.string(), name: z.string(), submittedAtUtc: utc })),
+  values: z.array(historicalValue),
   history: z.array(
     z.strictObject({
       kind: z.enum(["Sent", "Submitted", "Saved"]),

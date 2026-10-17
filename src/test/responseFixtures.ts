@@ -132,6 +132,8 @@ export function responseDetailFixture(
       conversationId: id(61),
       maskedAddress: "+54 •••• 0069",
     },
+    assistance: null,
+    chain: [],
     values: row.cells
       .filter((cell) => cell.state !== "NotAsked")
       .map((cell) => ({

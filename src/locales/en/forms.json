@@ -757,7 +757,22 @@
     "originManual": "Sent by {{name}}",
     "originAssistant": "Sent by the assistant",
     "keyboardHint": "↑ ↓ another response · Esc close",
-    "issues": "Some actions failed or messages remain unconfirmed."
+    "issues": "Some actions failed or messages remain unconfirmed.",
+    "assistance": {
+      "origin": "How it started",
+      "preparedBy": "Prepared by",
+      "preparedByAssistant": "Prepared by the assistant",
+      "always": "Always ask · No AI",
+      "showProposed": "View proposed data",
+      "hideProposed": "Hide proposed data",
+      "proposed": "Proposed data",
+      "excluded": "Not included",
+      "changed": "Corrected when completing",
+      "included": "Included",
+      "chain": "Response chain",
+      "from": "From {{name}}",
+      "mapped": "From the source response"
+    }
   },
   "suggestions": {
     "title": "What to suggest next",
