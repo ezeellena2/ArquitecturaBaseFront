@@ -375,7 +375,25 @@
     "search": "Search catalogs",
     "loadFailed": "We could not load the catalogs.",
     "stateFilter": "Status: {{state}}",
-    "unavailableReason": "The catalog has an invalid configuration."
+    "unavailableReason": "The catalog has an invalid configuration.",
+    "proposal": {
+      "title": "Assistant proposal",
+      "approve": "Approve and activate",
+      "discard": "Discard proposal",
+      "discardTitle": "Discard this proposal?",
+      "discardHint": "It will stay inactive and cannot be used in forms. The requester and original proposal are retained.",
+      "discarded": "Proposal discarded.",
+      "pendingHint": "It is not used until someone approves it.",
+      "requested": "Requested by {{name}} via WhatsApp on {{date}}.",
+      "decided": "Resolved by {{name}} on {{date}}.",
+      "unsupportedColumn": "Could not filter by “{{criterion}}”: that field does not exist in the Users view.",
+      "languagesHint": "The original ({{language}}) is required; the other language is optional.",
+      "states": {
+        "Pending": "Assistant proposal",
+        "Approved": "Proposal approved",
+        "Discarded": "Proposal discarded"
+      }
+    }
   },
   "catalogQuestion": {
     "optionsAtSend": "Options are prepared for the recipient when sending the form.",

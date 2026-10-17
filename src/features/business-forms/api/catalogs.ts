@@ -1,5 +1,5 @@
 import { api } from "@/shared/api/httpClient";
-import { catalogId, readCatalog, readCatalogItems, readCatalogPage, readCatalogSave, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogFiltersSave } from "./catalogResponse";
+import { catalogId, readCatalog, readCatalogItems, readCatalogPage, readCatalogSave, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogFiltersSave, UnsupportedCatalogResponse } from "./catalogResponse";
 
 import type { CatalogFiltersBody } from "../catalogFilterDraft";
 
@@ -57,3 +57,18 @@ export async function fetchCatalogFilterOptions(query: CatalogFilterOptionsQuery
 export const previewCatalogFilters = async (body: CatalogFilterPreviewBody, signal?: AbortSignal) => readCatalogFilterPreview(await api.post<unknown>("/api/forms/catalog-previews", body, { signal }));
 export const createFiltersCatalog = async (body: FiltersCatalogBody, signal?: AbortSignal) => readCatalogFiltersSave(await api.post<unknown>("/api/forms/catalogs/filters", body, { signal }));
 export const updateFiltersCatalog = async (id: string, body: FiltersCatalogBody & { readonly expectedRevision: number; readonly isActive?: boolean }, signal?: AbortSignal) => readCatalogFiltersSave(await api.put<unknown>(`/api/forms/catalogs/${catalogId(id)}/filters`, body, { signal }), id, body.expectedRevision);
+
+export interface ApproveCatalogProposalBody {
+  readonly expectedRevision: number; readonly name: Readonly<Record<string, string>>;
+  readonly description: Readonly<Record<string, string>>; readonly filters: CatalogFiltersBody; readonly sampleUserId: string;
+}
+export async function approveCatalogProposal(id: string, body: ApproveCatalogProposalBody, signal?: AbortSignal) {
+  const saved = readCatalogFiltersSave(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/proposal/approve", body, { signal }), id, body.expectedRevision);
+  if (saved.catalog.revision !== body.expectedRevision + 1 || saved.catalog.proposal?.state !== "Approved") throw new UnsupportedCatalogResponse();
+  return saved;
+}
+export async function discardCatalogProposal(id: string, expectedRevision: number, signal?: AbortSignal) {
+  const discarded = readCatalog(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/proposal/discard", { expectedRevision }, { signal }), id);
+  if (discarded.revision !== expectedRevision + 1 || discarded.proposal?.state !== "Discarded") throw new UnsupportedCatalogResponse();
+  return discarded;
+}

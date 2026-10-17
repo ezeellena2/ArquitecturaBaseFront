@@ -10,7 +10,7 @@ import { useCatalogDetail, useCatalogItems, useCatalogFilterOptions } from "./us
 import options from "@/test/fixtures/catalogs-http/filters/options.json";
 
 const id = "01990000-0000-7000-8000-000000000020";
-const detail = { id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
+const detail = { proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
 const scope = { actorId: "actor-a", culture: "es" as const, permissions: ["formcatalogs.read"] };
 function harness() {
   const client = createQueryClient(); client.setDefaultOptions({ queries: { retry: false } });

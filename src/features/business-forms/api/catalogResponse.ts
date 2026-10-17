@@ -11,11 +11,21 @@ const filters = z.strictObject({
   conditions: z.array(z.strictObject({ column: z.string(), operator: z.string(), value: z.string() })),
   excludeRecipient: z.boolean(), sortColumn: z.string(), sortDescending: z.boolean(),
 });
+const textMap = (limit: number) => z.strictObject({ es: z.string().min(1).max(limit).refine(value => !!value.trim()).optional(), en: z.string().min(1).max(limit).refine(value => !!value.trim()).optional() });
+const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
+const instant = z.string().datetime({ offset: true });
+const proposal = z.strictObject({
+  state: z.enum(["Pending", "Approved", "Discarded"]), originalCulture: z.enum(["es", "en"]),
+  requestedBy: author, requestedAtUtc: instant, decidedBy: author.nullable(), decidedAtUtc: instant.nullable(),
+  provenance: z.strictObject({ modelProfileId: z.string().min(1), modelProfileVersion: revision, instructionsId: z.string().min(1), instructionsVersion: revision, occurredAtUtc: instant, channelId: z.literal("whatsapp-assistant") }),
+  originalProposal: z.strictObject({ metadataReadOrdinal: revision, name: z.string().min(1).max(120), description: z.string().min(1).max(1000), filters, limitations: z.array(z.strictObject({ code: z.literal("UnsupportedColumn"), criterion: z.string().min(1).max(80) })).max(5) }),
+}).refine(value => value.state === "Pending" ? value.decidedBy === null && value.decidedAtUtc === null : value.decidedBy !== null && value.decidedAtUtc !== null);
 const filterColumn = z.strictObject({ key: z.string(), dataType: z.string(), canDisplay: z.boolean(), canFilter: z.boolean(), canSort: z.boolean(), operators: z.array(z.string()), choices: z.array(z.strictObject({ key: z.string(), label: z.string() })).nullable() });
 const sampleUsers = z.strictObject({ items: z.array(z.strictObject({ id: guid, name: z.string() })), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() });
 const filterOptions = z.strictObject({ source: z.literal("users"), columns: z.array(filterColumn), sampleUsers: sampleUsers.nullable() });
 const filterPreview = z.strictObject({ items: z.array(z.strictObject({ id: guid, text: z.string(), detail: z.string().nullable(), canSend: z.boolean() })), totalCount: count, exceedsLimit: z.boolean() });
-const catalog = z.strictObject({ id: guid, key: z.string(), name: requiredText(120), description: requiredText(1000), kind: z.enum(["Manual", "Filters"]), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable() })
+const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), kind: z.enum(["Manual", "Filters"]), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable() })
+  .refine(value => value.proposal ? value.kind === "Filters" && value.filters !== null && !!value.name[value.proposal.originalCulture]?.trim() && !!value.description[value.proposal.originalCulture]?.trim() && (value.proposal.state === "Approved" || !value.isActive) : requiredText(120).safeParse(value.name).success && requiredText(1000).safeParse(value.description).success)
   .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase());
 const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: nullableText(200).refine(value => !!value.es?.trim()), detail: nullableText(500), position: z.number().int().min(1).max(10000), isActive: z.boolean() });
 const itemPage = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })

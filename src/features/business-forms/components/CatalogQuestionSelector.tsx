@@ -1,3 +1,4 @@
+import { administrativeName } from "../editorModel";
 import { useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -26,8 +27,8 @@ export function CatalogQuestionSelector({ scope, value, readOnly, error, onChang
   const reason = (state: string, code: string | null) => state === "Unavailable" && code ? t("catalogs.unavailableReason") : t("catalogs.state." + state);
   const label = (name: string, origin: string, count: number | null, state: string, code: string | null) => [name, t("catalogs.source." + (origin === "Manual" ? "manual" : "database")), count === null ? null : t("catalogs.filters.result", { count }), state === "Active" ? null : reason(state, code)].filter(Boolean).join(" · ");
   const selected = currentRow ?? detail.data;
-  const selectedName = currentRow?.name ?? detail.data?.name[scope.culture] ?? t("catalogQuestion.selected");
-  const selectedDescription = currentRow?.description ?? detail.data?.description[scope.culture];
+  const selectedName = currentRow?.name ?? (detail.data ? administrativeName(detail.data.name, scope.culture) : t("catalogQuestion.selected"));
+  const selectedDescription = currentRow?.description ?? (detail.data ? administrativeName(detail.data.description, scope.culture) : undefined);
   const detailState = detail.data?.unavailableReasonCode ? "Unavailable" : detail.data?.isActive ? "Active" : "Inactive";
   return <div className="flex flex-col gap-3">
     <FormField label={t("catalogQuestion.catalog")} required error={error} hint={!canRead ? t("catalogQuestion.requiresRead") : selectedDescription ?? t("catalogQuestion.hint")}>

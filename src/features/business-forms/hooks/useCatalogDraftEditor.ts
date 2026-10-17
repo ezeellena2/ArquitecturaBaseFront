@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
 import type { CatalogItemMove } from "../api/catalogs";
-import { createManualCatalog, fetchCatalog, updateManualCatalog, createFiltersCatalog, updateFiltersCatalog, previewCatalogFilters } from "../api/catalogs";
+import { createManualCatalog, fetchCatalog, updateManualCatalog, createFiltersCatalog, updateFiltersCatalog, previewCatalogFilters, approveCatalogProposal, discardCatalogProposal } from "../api/catalogs";
 import type { CatalogDetail, CatalogItem, CatalogSave, CatalogFilterPreview } from "../api/catalogResponse";
 import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
@@ -78,19 +78,23 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   const save = useCallback(async (sampleUserId?: string) => {
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview) return;
     const captured = stateRef.current.draft;
-    if (captured.filters && captured.isActive && !sampleUserId) return;
+    const pendingProposal = captured.proposal?.state === "Pending";
+    if (captured.filters && (captured.isActive || pendingProposal) && !sampleUserId) return;
     let writing = false;
     const controller = new AbortController(); operation.current = controller;
     setState(value => ({ ...value, busy: true, error: null, saved: null }));
     try {
-      if (captured.filters && captured.isActive) {
+      if (captured.filters && captured.isActive && !pendingProposal) {
         const previewResult = await previewCatalogFilters({ sampleUserId: sampleUserId!, filters: catalogFiltersBody(captured.filters) }, controller.signal);
         if (!accepts(owner, controller) || !permissionsRef.current.canManage) return;
         setState(value => ({ ...value, previewResult }));
         if (previewResult.exceedsLimit) return;
       }
       writing = true;
-      const saved = captured.filters
+      const filledTexts = (texts: Readonly<Record<"es" | "en", string>>) => Object.fromEntries(Object.entries(texts).filter(([, text]) => !!text.trim()));
+      const saved = pendingProposal && captured.filters && captured.id && captured.revision !== null
+        ? await approveCatalogProposal(captured.id, { expectedRevision: captured.revision, name: filledTexts(captured.name), description: filledTexts(captured.description), filters: catalogFiltersBody(captured.filters), sampleUserId: sampleUserId! }, controller.signal)
+        : captured.filters
         ? captured.id && captured.revision !== null
           ? await updateFiltersCatalog(captured.id, { name: captured.name, description: captured.description, filters: catalogFiltersBody(captured.filters), expectedRevision: captured.revision, isActive: captured.isActive }, controller.signal)
           : await createFiltersCatalog({ name: captured.name, description: captured.description, filters: catalogFiltersBody(captured.filters) }, controller.signal)
@@ -106,9 +110,27 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     } catch (error) {
       if (!accepts(owner, controller)) return;
       const review = writing && captured.id !== null && error instanceof ApiError && error.status === 409;
-      setState(value => ({ ...value, busy: false, error, requiresReview: review }));
+      setState(value => ({ ...value, busy: false, error, requiresReview: review, ...(review ? { current: null } : {}) }));
     } finally {
       if (operation.current === controller) { operation.current = null; if (active.current && ownerRef.current === owner) setState(value => ({ ...value, busy: false })); }
+    }
+  }, [client, owned, owner, scope.actorId, isCurrentOwner, accepts]);
+  const discardProposal = useCallback(async () => {
+    const captured = stateRef.current.draft;
+    if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview
+      || captured.proposal?.state !== "Pending" || !captured.id || captured.revision === null) return;
+    const controller = new AbortController(); operation.current = controller;
+    setState(value => ({ ...value, busy: true, error: null, saved: null }));
+    try {
+      const discarded = await discardCatalogProposal(captured.id, captured.revision, controller.signal);
+      if (!accepts(owner, controller) || !permissionsRef.current.canManage) return;
+      setState(fresh(owner, discarded));
+      void client.invalidateQueries({ queryKey: ["form-catalogs", scope.actorId] });
+      return discarded;
+    } catch (error) {
+      if (accepts(owner, controller)) setState(value => ({ ...value, busy: false, error, current: null, requiresReview: error instanceof ApiError && error.status === 409 }));
+    } finally {
+      if (operation.current === controller) { operation.current = null; if (isCurrentOwner()) setState(value => ({ ...value, busy: false })); }
     }
   }, [client, owned, owner, scope.actorId, isCurrentOwner, accepts]);
   const clearPreview = useCallback(() => {
@@ -147,5 +169,5 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0);
   return { draft, dirty, busy: owned && state.busy, requiresReview: owned && state.requiresReview, current: owned ? state.current : null,
     saved: owned ? state.saved : null, previewResult: owned && canManage ? state.previewResult : null, error: owned ? state.error : null, canSave: owned && canManage && !state.busy && !state.requiresReview,
-    changeMetadata, changeFilters, clearPreview, preview, changeItem, changeMove, clearMoves, loadItems, save, readCurrent, adoptCurrent };
+    changeMetadata, changeFilters, clearPreview, preview, changeItem, changeMove, clearMoves, loadItems, save, discardProposal, readCurrent, adoptCurrent };
 }

@@ -4,7 +4,7 @@ import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview, readCa
 // Synthetic responses from the current .NET DTOs; real K4 exports qualify the contract at closure.
 const id = "01990000-0000-7000-8000-000000000020";
 const filters = { textColumn: "name", detailColumn: null, conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000601" }], excludeRecipient: true, sortColumn: "name", sortDescending: false };
-const catalog = { id, key: id.replaceAll("-", ""), name: { es: "Responsables", en: "Assignees" }, description: { es: "Personas disponibles", en: "Available people" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null };
+const catalog = { proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Responsables", en: "Assignees" }, description: { es: "Personas disponibles", en: "Available people" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null };
 const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: "01990000-0000-7000-8000-000000000601", label: "Operario" }] }];
 
  describe("Current catalog response DTO", () => {

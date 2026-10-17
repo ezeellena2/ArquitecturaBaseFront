@@ -58,7 +58,7 @@ export function CatalogEditorPage() {
   if (catalogId && detail.isPending && !initial) return <Page title={t("catalogs.title")}><Spinner /></Page>;
   if (catalogId && !initial) return <Page title={t("catalogs.title")} backTo={{ to: "/catalogos", label: t("catalogs.title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "catalogs.notFound" : "catalogs.detailFailed")} action={<Button variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
   if (!catalogId && !scope.permissions.includes("formcatalogs.manage")) return <ForbiddenPage />;
-  if ((initial?.kind ?? searchParams.get("kind")) === "Filters") return <CatalogFiltersEditorPage key={detailOwner} scope={scope} initial={initial} />;
+  if ((initial?.kind ?? searchParams.get("kind")) === "Filters") return <CatalogFiltersEditorPage key={detailOwner} scope={scope} initial={initial} timeZoneId={user.timeZoneId} />;
   return <ManualCatalogEditor key={JSON.stringify([scope.actorId, scope.culture, catalogId])} scope={scope} initial={initial} />;
 }
 

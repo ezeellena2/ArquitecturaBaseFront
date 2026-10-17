@@ -6,6 +6,7 @@ import { openCatalogFilters } from "./catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "./components/CatalogFiltersEditor";
 
 export interface CatalogDraft {
+  readonly proposal: CatalogDetail["proposal"];
   readonly isActive: boolean;
   readonly kind: "Manual" | "Filters";
   readonly filters: CatalogFiltersEditorValue | null;
@@ -18,7 +19,7 @@ export interface CatalogDraft {
 }
 export function openCatalogDraft(catalog?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual"): CatalogDraft {
   const origin = catalog?.kind ?? kind;
-  return { isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: catalog ? { ...catalog.name } : { es: "", en: "" }, description: catalog ? { ...catalog.description } : { es: "", en: "" }, items: newCatalogItemEdits(), moves: [] };
+  return { proposal: catalog?.proposal ?? null, isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: { es: catalog?.name.es ?? "", en: catalog?.name.en ?? "" }, description: { es: catalog?.description.es ?? "", en: catalog?.description.en ?? "" }, items: newCatalogItemEdits(), moves: [] };
 }
 export function catalogItemValue(item: CatalogItem): CatalogManualItemValue {
   // A persisted UUID is also a valid local correlation key. UI identity prefixes never enter a body.

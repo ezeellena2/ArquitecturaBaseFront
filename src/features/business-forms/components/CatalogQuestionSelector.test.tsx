@@ -6,6 +6,8 @@ import { afterEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { server } from "@/test/mocks/server";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
+import { CatalogQuestionName } from "./CatalogQuestionName";
+import { proposalCatalog, proposalActorId } from "@/test/mocks/catalogProposal";
 
 afterEach(() => vi.restoreAllMocks());
 const id = "01990000-0000-7000-8000-000000000091";
@@ -77,4 +79,14 @@ it("distinguishes an empty catalog list from a search with no matches",async()=>
  await screen.findByRole("searchbox");
  fireEvent.change(screen.getByRole("searchbox"),{target:{value:"inexistente"}});
  expect(await screen.findByText("No hay catálogos que coincidan con la búsqueda.")).toBeInTheDocument();
+});
+
+it("uses the original name and description of an approved monolingual catalog outside the current page", async () => {
+ const value = proposalCatalog();
+ const approved = { ...value, isActive: true, revision: 2, proposal: { ...value.proposal, state: "Approved", decidedBy: { userId: proposalActorId, displayName: "Ana" }, decidedAtUtc: "2026-10-17T13:00:00Z" } };
+ server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ ...page, items: [], totalCount: 0, totalPages: 0 })), http.get("/api/forms/catalogs/" + value.id, () => HttpResponse.json(approved)));
+ await act(async () => { renderWithProviders(<MemoryRouter><CatalogQuestionSelector scope={{ ...scope, culture: "en" }} value={value.id} readOnly onChange={() => {}} /><CatalogQuestionName id={value.id} scope={{ ...scope, culture: "en" }} /></MemoryRouter>); });
+ await screen.findByRole("option", { name: /Supervisores activos/ });
+ expect(screen.getByText("· Supervisores activos")).toBeInTheDocument();
+ expect(screen.getByRole("combobox", { name: "Catálogo" })).toHaveAccessibleDescription("Supervisores disponibles");
 });

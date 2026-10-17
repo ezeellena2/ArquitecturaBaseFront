@@ -1,0 +1,11 @@
+// Synthetic scenario matching the current H4 DTOs; never a captured producer response.
+export const proposalCatalogId = "01990000-0000-7000-8000-000000000020";
+export const proposalActorId = "01990000-0000-7000-8000-000000000021";
+export const proposalFilters = { textColumn: "name", detailColumn: "role", conditions: [{ column: "active", operator: "eq", value: "true" }], excludeRecipient: false, sortColumn: "name", sortDescending: false };
+export const proposalEvidence = { state: "Pending", originalCulture: "es", requestedBy: { userId: proposalActorId, displayName: "Ana Pérez" }, requestedAtUtc: "2026-10-17T12:12:00Z", decidedBy: null as { userId: string; displayName: string | null } | null, decidedAtUtc: null as string | null, provenance: { modelProfileId: "catalog-profile", modelProfileVersion: 1, instructionsId: "catalog-instructions", instructionsVersion: 2, occurredAtUtc: "2026-10-17T12:12:00Z", channelId: "whatsapp-assistant" }, originalProposal: { metadataReadOrdinal: 1, name: "Supervisores activos", description: "Supervisores disponibles", filters: proposalFilters, limitations: [{ code: "UnsupportedColumn", criterion: "zona norte" }] } };
+export function proposalCatalog() { return { id: proposalCatalogId, key: proposalCatalogId.replaceAll("-", ""), name: { es: "Supervisores activos" }, description: { es: "Supervisores disponibles" }, kind: "Filters", revision: 1, isActive: false, itemsCount: 0, usageCount: null, unavailableReasonCode: null, filters: structuredClone(proposalFilters), proposal: structuredClone(proposalEvidence) }; }
+export const proposalOptions = { source: "users", columns: [
+ { key: "name", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["eq"], choices: null },
+ { key: "active", dataType: "boolean", canDisplay: true, canFilter: true, canSort: true, operators: ["eq"], choices: [{ key: "true", label: "Sí" }, { key: "false", label: "No" }] },
+ { key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: proposalActorId, label: "Supervisor" }] }
+ ], sampleUsers: { items: [{ id: proposalActorId, name: "Ana Pérez" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false } };
