@@ -25,7 +25,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormRules, fetchRuleHistory, fetchRuleOptions, fetchRuleRevision, saveFormRules, type FormRuleSet } from "../api/rules";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
 import { localizedValue, moveItem } from "../editorModel";
-import { newRule, newRuleAction, prepareRules, ruleActionKinds, ruleEvents, type FormRule, type RuleActionKind } from "../rules";
+import { newRule, newRuleAction, prepareRules, ruleFieldErrors, ruleActionKinds, ruleEvents, type FormRule, type RuleActionKind } from "../rules";
 import type { FormCulture } from "../model";
 import type { ResponseColumn, ResponseCondition } from "../responses";
 interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; scope: FormReadScope; contentCulture: FormCulture; onDirtyChange: (dirty: boolean) => void }
@@ -64,6 +64,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
   useEffect(() => { if ([query.error, history.error].some(error => error instanceof ApiError && error.status === 403)) onDenied(); }, [query.error, history.error, onDenied]);
   const cooldown = useCountdown(0);
   const active = useRef(true);
+  const host = useRef<HTMLDivElement | null>(null);
   const operation = useRef<AbortController | null>(null);
   useEffect(() => { active.current = true; return () => { active.current = false; operation.current?.abort(); onDirtyChange(false); }; }, [onDirtyChange]);
   if (query.data && baseline === null) { setBaseline(query.data.current); setRules(query.data.current.rules); }
@@ -83,13 +84,15 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
     setBusy(true); setError(null); dismissNotification(notificationRoot + ":" + kind); pendingNotices.current.delete(kind);
     try { await action(controller.signal); } catch (failure) {
       if (!active.current || errorFeedback(failure).kind === "cancelled") return;
-      if (kind === "save") setError(failure);
+      const validation = kind === "save" ? ruleFieldErrors(failure instanceof ApiError ? failure.errors ?? {} : {}, rules ?? [], contentCulture, options?.originalCulture ?? "es") : null;
+      const normalizedFailure = validation && failure instanceof ApiError && failure.errors ? new ApiError(failure.status, { ...failure.problem, errors: validation.errors }, failure.isNetworkError) : failure;
+      if (kind === "save") setError(normalizedFailure);
       if (kind === "save" && failure instanceof ApiError && failure.status === 409) setNeedsReview(true);
-      const fields = kind === "save" ? (rules ?? []).flatMap((rule, index) => ["rules." + index + ".conditions", "rules." + index + ".actions", ...rule.actions.flatMap((action, position) => {
-        const path = "rules." + index + ".actions." + position;
-        return [path, ...(action.kind === "RequestApproval" || action.kind === "NotifyRole" ? [path + ".roleId"] : []), ...(action.text ? [path + ".text." + contentCulture, path + ".text." + options?.originalCulture] : []), ...(action.kind === "NotifyAuthor" ? [path + ".includePdf"] : [])];
-      })]) : [];
-      if (!["cancelled", "session", "forbidden", "fields"].includes(errorFeedback(failure, { fields }).kind)) { pendingNotices.current.add(kind); notify({ id: notificationRoot + ":" + kind, kind: "error", message: kind === "save" ? operationalErrorMessage(failure, t, "save") : readErrorMessage(failure, t) }); }
+      if (validation?.firstRuleId) {
+        setExpanded(validation.firstRuleId);
+        requestAnimationFrame(() => { if (active.current && !controller.signal.aborted) host.current?.querySelector<HTMLElement>('[data-rule-id="' + validation.firstRuleId + '"] [aria-invalid="true"]')?.focus(); });
+      }
+      if (!["cancelled", "session", "forbidden", "fields"].includes(errorFeedback(normalizedFailure, { fields: validation?.fields }).kind)) { pendingNotices.current.add(kind); notify({ id: notificationRoot + ":" + kind, kind: "error", message: kind === "save" ? operationalErrorMessage(normalizedFailure, t, "save") : readErrorMessage(normalizedFailure, t) }); }
       if (failure instanceof ApiError && failure.status === 403) onDenied();
       if (failure instanceof ApiError && failure.status === 429) cooldown.restart(failure.retryAfterSeconds ?? 60);
     } finally { if (active.current) setBusy(false); }
@@ -101,7 +104,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
   if (query.isPending || !baseline || rules === null || !options) return <Surface title={t("rules.title")} padded>{query.isPending ? <Spinner /> : <EmptyState embedded title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Surface>;
   const label = (fieldId: string) => columns.find(column => column.fieldId === fieldId)?.label ?? t("rules.missingQuestion");
   const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {rule.conditions.map(condition => label(condition.fieldId)).join(", ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, contentCulture, options.originalCulture) : ""}</li>)}</ol></>;
-  return <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+  return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
     <Surface title={t("rules.title")} actions={<>{dirty ? <Badge variant="outline">{t("dirty")}</Badge> : <span className="text-xs">{t("rules.revision", { revision: baseline.revision })}</span>}<Button disabled={blocked || !dirty || prepared.issues.length > 0 || conflict} onClick={() => void run("save", async signal => {
       const saved = await saveFormRules(definitionId, { expectedRevision: baseline.revision, rules: prepared.rules }, signal);
       if (!active.current) return;
@@ -113,7 +116,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
       {conflict ? <div className="space-y-2 border-b border-[var(--color-border)] p-4"><p role="alert">{t("rules.conflict")}</p>{conflict ? <><Button variant="outline" disabled={blocked} onClick={() => void run("reread", async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t("rules.reread")}</Button>{current ? <Button variant="outline" disabled={blocked} onClick={() => { setBaseline(current); setRules(current.rules); setExpanded(null); setCurrent(null); setNeedsReview(false); setError(null); pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save"); }}>{t("rules.useCurrent")}</Button> : null}</> : null}</div> : null}
       {cooldown.isRunning ? <p role="status" className="p-4 text-sm">{t("wait", { count: cooldown.seconds })}</p> : null}
       {rules.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("rules.empty")}</p> : null}
-      {rules.map((rule, index) => <section key={rule.id} aria-label={t("rules.rule", { number: index + 1 })} className="border-b border-[var(--color-border)] p-4">
+      {rules.map((rule, index) => <section key={rule.id} data-rule-id={rule.id} aria-label={t("rules.rule", { number: index + 1 })} className="border-b border-[var(--color-border)] p-4">
         <div className="flex items-start justify-between gap-3"><span className="text-xs text-[var(--color-content-muted)]">{index + 1}</span><div className="min-w-0 flex-1">{expanded !== rule.id ? summary(rule) : null}</div><div className="flex shrink-0">
           <IconButton label={t("rules.editRule", { number: index + 1 })} disabled={blocked} onClick={() => setExpanded(expanded === rule.id ? null : rule.id)} aria-expanded={expanded === rule.id}><PencilIcon className="size-4" /></IconButton>
           <IconButton label={t("rules.removeRule", { number: index + 1 })} disabled={blocked} onClick={() => change(rules.filter(item => item.id !== rule.id))}><TrashIcon className="size-4" /></IconButton>

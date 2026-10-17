@@ -7,6 +7,7 @@ import { http, HttpResponse } from "msw";
 import { beforeEach, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { server } from "@/test/mocks/server";
+import { httpCohort } from "@/test/httpCohort";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { FormRulesSection } from "./FormRulesSection";
 import { newRuleAction } from "../rules";
@@ -159,4 +160,33 @@ it.each(["rules", "rules/revisions"])("uses the common notification owner for fa
   expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "La lectura de reglas falló." });
   expect(screen.queryByText("La lectura de reglas falló.")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+});
+
+it("binds the unchanged exported role validation to its rule and focuses the marked field", async () => {
+  setup();
+  const cohort = httpCohort("rules");
+  cohort.verify();
+  const firstRuleId = crypto.randomUUID();
+  const secondRuleId = crypto.randomUUID();
+  const rules = [{ id: firstRuleId, event: "Received", conditions: [], actions: [{ ...newRuleAction("RequestApproval"), roleId: actor }] }, { id: secondRuleId, event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Mensaje guardado" } }] }];
+  const writes = vi.fn();
+  server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ ...initial(), id: crypto.randomUUID(), revision: 1, rules, createdAtUtc: "2026-10-16T12:00:00Z" })),
+    http.post("/api/forms/definitions/:id/rules", async ({ request }) => { writes(await request.json()); return cohort.response("role-unavailable-es.json", 400, { "content-type": "application/problem+json" }); }));
+  const dirty = vi.fn();
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={dirty}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 2" }));
+  await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  const first = within(screen.getByRole("region", { name: "Regla 1" }));
+  const role = await first.findByRole("combobox", { name: "Rol" });
+  expect(role).toHaveAttribute("aria-invalid", "true");
+  expect(first.getByRole("alert")).toHaveTextContent("El rol elegido ya no está disponible.");
+  expect(role).toHaveAccessibleDescription("El rol elegido ya no está disponible.");
+  await waitFor(() => expect(role).toHaveFocus());
+  expect(screen.getByRole("button", { name: "Editar regla 1" })).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByRole("button", { name: "Editar regla 2" })).toHaveAttribute("aria-expanded", "false");
+  expect(within(screen.getByRole("region", { name: "Regla 2" })).getByText(/Mensaje guardado propio/)).toBeInTheDocument();
+  expect(dirty).toHaveBeenLastCalledWith(true);
+  expect(writes).toHaveBeenCalledWith(expect.objectContaining({ expectedRevision: 1, rules: [expect.objectContaining({ id: firstRuleId }), expect.objectContaining({ id: secondRuleId, actions: [expect.objectContaining({ text: { es: "Mensaje guardado propio" } })] })] }));
+  expect(notify).not.toHaveBeenCalled();
 });

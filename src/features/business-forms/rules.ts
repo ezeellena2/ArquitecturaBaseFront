@@ -34,3 +34,18 @@ export function prepareRules(rules: readonly FormRule[], original: FormCulture, 
   });
   return { rules: prepared, issues };
 }
+
+export function ruleFieldErrors(source: Readonly<Record<string, readonly string[]>>, rules: readonly FormRule[], culture: FormCulture, original: FormCulture) {
+  const errors: Record<string, string[]> = {};
+  for (const [key, messages] of Object.entries(source)) {
+    const path = /^rules(?:\[|\.)/.test(key) ? key.replace(/\[(\d+)\]/g, ".$1") : key;
+    errors[path] = [...(errors[path] ?? []), ...messages];
+  }
+  const fields = rules.flatMap((rule, index) => ["rules." + index + ".conditions", "rules." + index + ".actions", ...rule.actions.flatMap((action, position) => {
+    const path = "rules." + index + ".actions." + position;
+    return [path, ...(action.kind === "RequestApproval" || action.kind === "NotifyRole" ? [path + ".roleId"] : []), ...(action.text ? [path + ".text." + culture, path + ".text." + original] : []), ...(action.kind === "NotifyAuthor" ? [path + ".includePdf"] : [])];
+  })]);
+  const first = Object.keys(errors).find(path => errors[path].length > 0 && fields.includes(path));
+  const index = first ? /^rules\.(\d+)\./.exec(first)?.[1] : undefined;
+  return { errors, fields, firstRuleId: index === undefined ? null : rules[Number(index)]?.id ?? null };
+}

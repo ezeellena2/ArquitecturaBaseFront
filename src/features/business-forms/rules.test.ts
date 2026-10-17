@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newRule, newRuleAction, prepareRules } from "./rules";
+import { newRule, newRuleAction, prepareRules, ruleFieldErrors } from "./rules";
 import type { ResponseColumn } from "./responses";
 const original = "es";
 const column: ResponseColumn = { fieldId: "0199a0c0-0000-7000-8000-000000000030", type: "decimal", label: "Importe", introducedInVersion: 1, options: [] };
@@ -39,4 +39,28 @@ it("rejects blank conditions and limits caption text without changing it", () =>
   expect(result.issues).toContainEqual({ path: "rules.0.conditions", key: "invalidConditions" });
   expect(result.issues).toContainEqual({ path: "rules.0.actions.1.text.es", key: "tooLong" });
   expect(result.rules[0].actions[1].text?.es).toHaveLength(1025);
+});
+
+it("normalizes numeric bracket indexes and binds the first known rule error to its identity", () => {
+  const first = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Recibimos." } }] };
+  const second = { ...newRule(), actions: [{ ...newRuleAction("RequestApproval"), roleId: crypto.randomUUID() }] };
+  const source = { "rules[1].actions[0].roleId": ["Elegí otro rol."], "rules.0.actions.0.text.es": ["Revisá este mensaje."] };
+  const result = ruleFieldErrors(source, [first, second], "es", "es");
+  expect(result.errors).toEqual({ "rules.1.actions.0.roleId": ["Elegí otro rol."], "rules.0.actions.0.text.es": ["Revisá este mensaje."] });
+  expect(result.firstRuleId).toBe(second.id);
+  expect(result.fields).toContain("rules.1.actions.0.roleId");
+  expect(source).toHaveProperty("rules[1].actions[0].roleId");
+});
+it.each(["rules[5].actions[0].roleId", "rules[0].actions[2].roleId", "rules[0].unknown", "rules[0].actions[0].roleId"])("preserves unbound validation %s without targeting a different rule", path => {
+  const rule = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Recibimos." } }] };
+  const result = ruleFieldErrors({ [path]: ["Revisá la configuración."] }, [rule], "es", "es");
+  expect(result.firstRuleId).toBeNull();
+  const normalized = path.replace(/\[(\d+)\]/g, ".$1");
+  expect(result.errors[normalized]).toEqual(["Revisá la configuración."]);
+  expect(result.fields).not.toContain(normalized);
+});
+it("keeps every message when both index notations name the same field", () => {
+  const rule = { ...newRule(), actions: [{ ...newRuleAction("RequestApproval"), roleId: crypto.randomUUID() }] };
+  const result = ruleFieldErrors({ "rules[0].actions[0].roleId": ["Primer motivo."], "rules.0.actions.0.roleId": ["Segundo motivo."] }, [rule], "es", "es");
+  expect(result.errors["rules.0.actions.0.roleId"]).toEqual(["Primer motivo.", "Segundo motivo."]);
 });
