@@ -17,6 +17,7 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
 import { Page } from "@/shared/ui/Page";
 import { LockIcon } from "@/shared/ui/icons";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -123,7 +124,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   useEffect(() => {
     if (!editor.issue) { dismissNotification(feedbackId); return; }
     const issue = editor.issue;
-    const visiblePaths = issue.fields?.filter(field => /^(name(?:\.(es|en))?|prefix|draft\.fields|draft\.submitLabel(?:\.(es|en))?)$/.test(field.path)
+    const visiblePaths = issue.fields?.filter(field => /^(name(?:\.(es|en))?|prefix|offerWhen|draft\.fields|draft\.submitLabel(?:\.(es|en))?)$/.test(field.path)
       || /\.(label|help)(?:\.(es|en))?$/.test(field.path) || /\.(type|required|maxLength|options)$/.test(field.path)).map(field => field.path) ?? [];
     const feedback = errorFeedback(issue.error, { writing: session?.phase === "Unconfirmed", fields: visiblePaths });
     if (issue.kind === "validation" && visiblePaths.length) {
@@ -216,6 +217,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
           <FormField label={t("name")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: originalName }) : undefined} error={errorFor("name." + contentCulture)}><Input readOnly={readOnly} maxLength={120} placeholder={t("missingText", { language: t("cultureNamesInText." + contentCulture) })} data-form-text="name" value={value.name[contentCulture] ?? ""} onChange={e => change({ ...value, name: { ...value.name, [contentCulture]: e.target.value }, prefix: prefixTouched || contentCulture !== value.draft.culture ? value.prefix : suggestedPrefix(e.target.value) })} /></FormField>
           <FormField label={t("submitLabel")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: value.draft.submitLabel[value.draft.culture] }) : t("submitHint")} error={errorFor("draft.submitLabel." + contentCulture)}><Input readOnly={readOnly} placeholder={t("missingText", { language: t("cultureNamesInText." + contentCulture) })} data-form-text="submitLabel" value={value.draft.submitLabel[contentCulture] ?? ""} onChange={e => change({ ...value, draft: { ...value.draft, submitLabel: { ...value.draft.submitLabel, [contentCulture]: e.target.value } } })} /></FormField>
           <FormField label={<span className="inline-flex items-center gap-1">{t("prefix")}{prefixLocked || contentCulture !== value.draft.culture ? <LockIcon className="size-3.5" /> : null}</span>} error={errorFor("prefix") ?? (editor.issue?.code === "Forms.Definition.PrefixTaken" ? t("prefixTaken") : undefined)} hint={publicationPending ? t("publication.prefixPending") : prefixLocked ? t("prefixLocked") : contentCulture !== value.draft.culture ? t("prefixOriginal") : t("prefixHint", { prefix: value.prefix || "…" })}><Input readOnly={readOnly || prefixLocked || contentCulture !== value.draft.culture} value={value.prefix} onChange={e => { setPrefixTouched(true); change({ ...value, prefix: e.target.value }); }} /></FormField>
+          <div className="sm:col-span-2"><FormField label={t("offerWhen")} hint={t("offerWhenHint")} error={errorFor("offerWhen")}><Textarea readOnly={readOnly} maxLength={1000} value={value.offerWhen ?? ""} onChange={event => change({ ...value, offerWhen: event.target.value || null })} /></FormField></div>
         </div><p className="text-xs text-[var(--color-content-muted)]">{t("translations")}</p></Surface>
         <Surface title={t("questions")} actions={<>{maximumFiles(value.draft.fields) > 0 ? <span className="text-xs text-[var(--color-content-muted)]">{t("files.budget", { total: maximumFiles(value.draft.fields) })}</span> : null}<span className="text-xs text-[var(--color-content-muted)]">{t("publication.questions", { count: value.draft.fields.length })}</span>{!readOnly ? <Button ref={addQuestionButton} type="button" variant="outline" disabled={value.draft.fields.length >= 40} onClick={() => { const q = newQuestion("shortText", value.draft.culture, crypto.randomUUID()); change({ ...value, draft: { ...value.draft, fields: [...value.draft.fields, q] } }); setExpanded(q.localId); }}>{t("addQuestion")}</Button> : null}</>}>
           {value.draft.fields.length === 0 ? <EmptyState embedded title={t("emptyQuestions")} /> : null}

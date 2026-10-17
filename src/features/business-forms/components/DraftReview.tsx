@@ -35,7 +35,7 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
   const parent = (row: DraftReviewRow) => [...value.draft.fields, ...review.current.draft.fields].find(q => identity(q) === row.parentId);
   function summary(row: DraftReviewRow, side: "mine" | "current") {
     const item = row[side];
-    if (item === null) return t(row.culture ? "translationPending" : "removed");
+    if (item === null) return t(row.kind === "offerWhen" ? "offerWhenEmpty" : row.culture ? "translationPending" : "removed");
     if (typeof item === "string") return item || t("translationPending");
     if (Array.isArray(item)) {
       const source = side === "mine" ? value : review.current;

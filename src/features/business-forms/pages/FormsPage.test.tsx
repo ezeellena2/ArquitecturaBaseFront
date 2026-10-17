@@ -299,6 +299,7 @@ describe("Forms routes", () => {
     setup("forms-read", ["formtemplates.read"]);
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     expect(await screen.findByLabelText("Nombre")).toHaveAttribute("readonly");
+    expect(screen.getByRole("textbox", { name: "Cuándo lo ofrece el asistente" })).toHaveAttribute("readonly");
     expect(screen.queryByRole("button", { name: "Guardar borrador" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Agregar pregunta" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Vista previa" })).toBeInTheDocument();
@@ -509,4 +510,59 @@ it("keeps rule changes under the editor's existing leave guard without changing 
   expect(router.state.location.pathname).toBe("/formularios/" + fixtureFormId);
   expect(screen.getByRole("button", { name: "Agregar acción" })).toBeInTheDocument();
   expect(draftWrites).not.toHaveBeenCalled();
+});
+
+it("saves one monolingual offer instruction without changing content language or publishing", async () => {
+  const store = setup();
+  const writes: Record<string, unknown>[] = [];
+  server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => {
+    writes.push(await request.clone().json() as Record<string, unknown>); return store.handle(request);
+  }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  const offer = await screen.findByRole("textbox", { name: "Cuándo lo ofrece el asistente" });
+  await pasteText(offer, "Cuando visita a un cliente");
+  await userEvent.click(screen.getByRole("button", { name: /^English/ }));
+  expect(offer).toHaveValue("Cuando visita a un cliente");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  await waitFor(() => expect(writes).toHaveLength(1));
+  expect(writes[0]).toMatchObject({ offerWhen: "Cuando visita a un cliente", expectedRevision: 1 });
+  expect(writes[0].draft).not.toHaveProperty("offerWhen");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeEnabled());
+  expect(offer).toHaveValue("Cuando visita a un cliente");
+  expect(queryClient.getMutationCache().getAll().some(mutation => JSON.stringify(mutation.state.variables).includes("Cuando visita"))).toBe(false);
+});
+
+it("preserves the offer instruction through 409 review and saves only with the reread revision", async () => {
+  const store = setup("forms-conflict");
+  const writes: { expectedRevision: number; offerWhen: string | null }[] = [];
+  server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => { writes.push(await request.clone().json() as (typeof writes)[number]); return store.handle(request); }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await pasteText(await screen.findByRole("textbox", { name: "Cuándo lo ofrece el asistente" }), "Cuando visita a un cliente");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Revisar" }));
+  const review = await screen.findByRole("dialog", { name: "Revisión del borrador" });
+  expect(within(review).getByRole("cell", { name: "Cuando visita a un cliente" })).toBeInTheDocument();
+  expect(within(review).getByRole("cell", { name: "No lo ofrece el asistente" })).toBeInTheDocument();
+  await userEvent.click(within(review).getByRole("button", { name: "Conservar mis cambios" }));
+  expect(writes).toHaveLength(1);
+  expect(screen.getByRole("textbox", { name: "Cuándo lo ofrece el asistente" })).toHaveValue("Cuando visita a un cliente");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  await waitFor(() => expect(store.definitions.get(fixtureFormId)?.revision).toBe(3));
+  expect(writes.map(write => write.expectedRevision)).toEqual([1, 2]);
+  expect(store.definitions.get(fixtureFormId)?.offerWhen).toBe("Cuando visita a un cliente");
+});
+
+it("keeps offer validation at its monolingual field, with focus and without a duplicate toast", async () => {
+  setup();
+  server.use(http.put("/api/forms/definitions/:id/draft", () => HttpResponse.json({ code: "Validation.Failed", errors: { offerWhen: ["Usá hasta 1000 caracteres."] } }, { status: 400 })));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  const offer = await screen.findByRole("textbox", { name: "Cuándo lo ofrece el asistente" });
+  await pasteText(offer, "Texto que se conserva");
+  expect(offer).toHaveAttribute("maxlength", "1000");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  expect(await screen.findByText("Usá hasta 1000 caracteres.")).toBeInTheDocument();
+  await waitFor(() => expect(offer).toHaveFocus());
+  expect(offer).toHaveValue("Texto que se conserva");
+  expect(offer).toHaveAttribute("aria-invalid", "true");
+  expect(vi.mocked(notify)).not.toHaveBeenCalled();
 });
