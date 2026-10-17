@@ -31,3 +31,4 @@ src/test/fixtures/forms-suggestion-detail-http/** -text whitespace=cr-at-eol
 # Audio states are exported without rewriting producer bodies.
 src/test/fixtures/whatsapp-audio-http/** -text whitespace=cr-at-eol
 src/test/fixtures/forms-missing-requests-http/** -text
+src/test/fixtures/whatsapp-assistant-http/** -text
