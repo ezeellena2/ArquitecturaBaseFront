@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
-import { readErrorMessage } from "@/shared/api/errorFeedback";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -49,7 +48,7 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
       })}
     </ol>
     {workflow.query.isPending || !data && !workflow.query.isError ? <Spinner /> : null}
-    {workflow.query.error ? <div className="space-y-2 text-sm"><p role="status">{readErrorMessage(workflow.query.error, t)}</p>{!(workflow.query.error instanceof ApiError && workflow.query.error.status === 404) ? <Button variant="outline" disabled={workflow.query.isFetching} onClick={() => void workflow.query.refetch()}>{t("common:actions.retry")}</Button> : null}</div> : null}
+    {workflow.query.error ? <div className="space-y-2 text-sm"><p role="status">{t("common:states.loadFailed")}</p>{!(workflow.query.error instanceof ApiError && workflow.query.error.status === 404) ? <Button variant="outline" disabled={workflow.query.isFetching} onClick={() => void workflow.query.refetch()}>{t("common:actions.retry")}</Button> : null}</div> : null}
     {workflow.controlsDenied ? <p role="status" className="text-sm">{t("workflow.noManagePermission")}</p> : null}
     {workflow.cooldown.isRunning && !reviewOpen ? <p role="status" className="text-sm">{t("wait", { count: workflow.cooldown.seconds })}</p> : null}
     <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.retryHint")}</p>

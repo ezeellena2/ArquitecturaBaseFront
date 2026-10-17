@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useSystemPresentation } from "@/shared/api/presentation";
-import { readErrorMessage } from "@/shared/api/errorFeedback";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
@@ -45,7 +44,7 @@ function ApprovalInbox({ onForbidden }: {
     const canRead = scope.user?.permissions.includes("formrecords.read");
     return <Page title={t("approvals.title")}>
   <FilterBar><SegmentedControl aria-label={t("approvals.scope")} options={[{ key: "mine", label: t("approvals.mine", { count: mine ?? 0 }), pressed: onlyMine, onSelect: () => update({ view: undefined, page: undefined }) }, { key: "all", label: t("approvals.all", { count: all ?? 0 }), pressed: !onlyMine, onSelect: () => update({ view: "all", page: undefined }) }]}/><NativeSelect ref={fallback} aria-label={t("approvals.form")} value={definitionId ?? ""} onChange={event => update({ definitionId: event.target.value || undefined, page: undefined })}><option value="">{t("approvals.allForms")}</option>{options.data?.forms.map(form => <option key={form.id} value={form.id}>{form.name}</option>)}</NativeSelect></FilterBar>
-  {options.error || otherCount.error ? <div role="status" className="flex flex-wrap items-center gap-2 text-sm"><span>{readErrorMessage(options.error ?? otherCount.error, t)}</span><Button variant="outline" onClick={() => { void options.refetch(); void otherCount.refetch(); }}>{t("common:actions.retry")}</Button></div> : null}
+  {options.error || otherCount.error ? <Button variant="outline" onClick={() => { if (options.error) void options.refetch(); if (otherCount.error) void otherCount.refetch(); }}>{t("common:actions.retry")}</Button> : null}
   <Surface><DataTable columns={[
             { id: "number", header: t("responses.number"), cell: row => canRead ? <Link className="font-medium text-[var(--color-brand-700)] underline" to={"/formularios/" + row.definitionId + "/respuestas/" + row.recordId} state={{ approvalReturn: "/formularios/por-aprobar?" + params.toString() }}>{row.number}</Link> : <Button variant="link" size="inline" onClick={() => setSelected(row)}>{row.number}</Button> },
             { id: "form", header: t("formColumn"), cell: row => row.formName },

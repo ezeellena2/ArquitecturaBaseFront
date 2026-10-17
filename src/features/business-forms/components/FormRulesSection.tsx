@@ -21,7 +21,7 @@ import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import { ChevronDownIcon, PencilIcon, TrashIcon } from "@/shared/ui/icons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
-import { notify } from "@/shared/ui/notifications";
+import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormRules, fetchRuleHistory, fetchRuleOptions, fetchRuleRevision, saveFormRules, type FormRuleSet } from "../api/rules";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
 import { localizedValue, moveItem } from "../editorModel";
@@ -41,11 +41,14 @@ export function FormRulesSection(props: Props) {
 function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, timeZoneId, onDirtyChange, onDenied }: Props & { onDenied: () => void }) {
   const { t } = useTranslation("forms");
   const root = [...formScopeKey(scope), "rules", definitionId];
+  const notificationRoot = "forms:rules:" + JSON.stringify(root);
+  const pendingNotices = useRef(new Set<string>());
+  useEffect(() => () => { for (const operation of pendingNotices.current) dismissNotification(notificationRoot + ":" + operation); }, [notificationRoot]);
   usePrivateQueryCleanup(root);
   const query = useQuery({ queryKey: [...root, "editor", definitionRevision], queryFn: async ({ signal }) => {
     const [current, options] = await Promise.all([fetchFormRules(definitionId, signal), fetchRuleOptions(definitionId, signal)]);
     return { current, options };
-  }, placeholderData: previous => previous, gcTime: 0, meta: { errorOwner: "local" } });
+  }, placeholderData: previous => previous, gcTime: 0 });
   const [baseline, setBaseline] = useState<FormRuleSet | null>(null);
   const [rules, setRules] = useState<readonly FormRule[] | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -57,7 +60,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
   const revisionTrigger = useRef<HTMLButtonElement | null>(null);
   const restoreRevisionFocus = useRestoreFocusOnClose(revisionView !== null);
   const [historyPage, setHistoryPage] = useState(1);
-  const history = useQuery({ queryKey: [...root, "history", historyPage], queryFn: ({ signal }) => fetchRuleHistory(definitionId, historyPage, signal), gcTime: 0, meta: { errorOwner: "local" } });
+  const history = useQuery({ queryKey: [...root, "history", historyPage], queryFn: ({ signal }) => fetchRuleHistory(definitionId, historyPage, signal), gcTime: 0 });
   useEffect(() => { if ([query.error, history.error].some(error => error instanceof ApiError && error.status === 403)) onDenied(); }, [query.error, history.error, onDenied]);
   const cooldown = useCountdown(0);
   const active = useRef(true);
@@ -73,15 +76,20 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
   const blocked = busy || cooldown.isRunning;
   const change = (next: readonly FormRule[]) => { if (!blocked) { setRules(next); setError(null); } };
   const changeRule = (index: number, rule: FormRule) => change((rules ?? []).map((item, position) => position === index ? rule : item));
-  const run = async (action: (signal: AbortSignal) => Promise<void>) => {
+  const run = async (kind: "save" | "reread" | "revision", action: (signal: AbortSignal) => Promise<void>) => {
     if (blocked) return;
     const controller = new AbortController();
     operation.current = controller;
-    setBusy(true); setError(null);
+    setBusy(true); setError(null); dismissNotification(notificationRoot + ":" + kind); pendingNotices.current.delete(kind);
     try { await action(controller.signal); } catch (failure) {
       if (!active.current || errorFeedback(failure).kind === "cancelled") return;
-      setError(failure);
-      if (failure instanceof ApiError && failure.status === 409) setNeedsReview(true);
+      if (kind === "save") setError(failure);
+      if (kind === "save" && failure instanceof ApiError && failure.status === 409) setNeedsReview(true);
+      const fields = kind === "save" ? (rules ?? []).flatMap((rule, index) => ["rules." + index + ".conditions", "rules." + index + ".actions", ...rule.actions.flatMap((action, position) => {
+        const path = "rules." + index + ".actions." + position;
+        return [path, ...(action.kind === "RequestApproval" || action.kind === "NotifyRole" ? [path + ".roleId"] : []), ...(action.text ? [path + ".text." + contentCulture, path + ".text." + options?.originalCulture] : []), ...(action.kind === "NotifyAuthor" ? [path + ".includePdf"] : [])];
+      })]) : [];
+      if (!["cancelled", "session", "forbidden", "fields"].includes(errorFeedback(failure, { fields }).kind)) { pendingNotices.current.add(kind); notify({ id: notificationRoot + ":" + kind, kind: "error", message: kind === "save" ? operationalErrorMessage(failure, t, "save") : readErrorMessage(failure, t) }); }
       if (failure instanceof ApiError && failure.status === 403) onDenied();
       if (failure instanceof ApiError && failure.status === 429) cooldown.restart(failure.retryAfterSeconds ?? 60);
     } finally { if (active.current) setBusy(false); }
@@ -90,19 +98,19 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
     const local = prepared.issues.find(issue => issue.path === path);
     return (error instanceof ApiError ? error.errors?.[path]?.[0] : undefined) ?? (local ? t("rules.errors." + local.key) : undefined);
   };
-  if (query.isPending || !baseline || rules === null || !options) return <Surface title={t("rules.title")} padded>{query.isPending ? <Spinner /> : <EmptyState embedded title={readErrorMessage(query.error, t)} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Surface>;
+  if (query.isPending || !baseline || rules === null || !options) return <Surface title={t("rules.title")} padded>{query.isPending ? <Spinner /> : <EmptyState embedded title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Surface>;
   const label = (fieldId: string) => columns.find(column => column.fieldId === fieldId)?.label ?? t("rules.missingQuestion");
   const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {rule.conditions.map(condition => label(condition.fieldId)).join(", ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, contentCulture, options.originalCulture) : ""}</li>)}</ol></>;
   return <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-    <Surface title={t("rules.title")} actions={<>{dirty ? <Badge variant="outline">{t("dirty")}</Badge> : <span className="text-xs">{t("rules.revision", { revision: baseline.revision })}</span>}<Button disabled={blocked || !dirty || prepared.issues.length > 0 || conflict} onClick={() => void run(async signal => {
+    <Surface title={t("rules.title")} actions={<>{dirty ? <Badge variant="outline">{t("dirty")}</Badge> : <span className="text-xs">{t("rules.revision", { revision: baseline.revision })}</span>}<Button disabled={blocked || !dirty || prepared.issues.length > 0 || conflict} onClick={() => void run("save", async signal => {
       const saved = await saveFormRules(definitionId, { expectedRevision: baseline.revision, rules: prepared.rules }, signal);
       if (!active.current) return;
       setBaseline(saved); setRules(saved.rules); setCurrent(null);
       void history.refetch();
-      notify({ id: "forms:rules-saved:" + definitionId, kind: "success", message: t("rules.saved") });
+      notify({ id: notificationRoot + ":save", kind: "success", message: t("rules.saved") });
     })}>{t(busy ? "rules.saving" : "rules.save")}</Button></>}>
       <p className="border-b border-[var(--color-border)] p-4 text-sm">{t("rules.independent")}</p>
-      {error || conflict ? <div className="space-y-2 border-b border-[var(--color-border)] p-4"><p role="alert">{conflict ? (error instanceof ApiError ? error.detail : null) ?? t("rules.conflict") : operationalErrorMessage(error, t, "save")}</p>{conflict ? <><Button variant="outline" disabled={blocked} onClick={() => void run(async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t("rules.reread")}</Button>{current ? <Button variant="outline" disabled={blocked} onClick={() => { setBaseline(current); setRules(current.rules); setExpanded(null); setCurrent(null); setNeedsReview(false); setError(null); }}>{t("rules.useCurrent")}</Button> : null}</> : null}</div> : null}
+      {conflict ? <div className="space-y-2 border-b border-[var(--color-border)] p-4"><p role="alert">{t("rules.conflict")}</p>{conflict ? <><Button variant="outline" disabled={blocked} onClick={() => void run("reread", async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t("rules.reread")}</Button>{current ? <Button variant="outline" disabled={blocked} onClick={() => { setBaseline(current); setRules(current.rules); setExpanded(null); setCurrent(null); setNeedsReview(false); setError(null); pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save"); }}>{t("rules.useCurrent")}</Button> : null}</> : null}</div> : null}
       {cooldown.isRunning ? <p role="status" className="p-4 text-sm">{t("wait", { count: cooldown.seconds })}</p> : null}
       {rules.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("rules.empty")}</p> : null}
       {rules.map((rule, index) => <section key={rule.id} aria-label={t("rules.rule", { number: index + 1 })} className="border-b border-[var(--color-border)] p-4">
@@ -140,7 +148,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
       </section>)}
       <div className="p-4"><Button variant="outline" disabled={blocked || rules.length >= 20} onClick={() => { const rule = newRule(); change([...rules, rule]); setExpanded(rule.id); }}>{t("rules.addRule")}</Button></div>
     </Surface>
-    <Surface title={t("rules.history")} padded>{history.isPending ? <Spinner /> : history.error ? <EmptyState embedded title={readErrorMessage(history.error, t)} action={<Button variant="outline" onClick={() => void history.refetch()}>{t("common:actions.retry")}</Button>} /> : <><ol className="space-y-3">{history.data?.items.map(revision => <li key={revision.id} className="border-b border-[var(--color-border)] pb-3"><Button variant="link" disabled={blocked} onClick={event => { revisionTrigger.current = event.currentTarget; void run(async signal => { const view = await fetchRuleRevision(definitionId, revision.revision, signal); if (active.current) setRevisionView(view); }); }}>{t("rules.revision", { revision: revision.revision })}</Button>{baseline.revision === revision.revision ? <Badge variant="outline">{t("rules.current")}</Badge> : null}<p className="text-xs">{formatDateTimeInZone(revision.createdAtUtc, scope.culture, timeZoneId)} · {revision.author?.displayName ?? t("responses.unknownPerson")}</p></li>)}</ol>{history.data && history.data.totalPages > 1 ? <Pagination {...history.data} onPageChange={setHistoryPage} /> : null}<p className="text-xs text-[var(--color-content-muted)]">{t("rules.historyHint")}</p></>}</Surface>
+    <Surface title={t("rules.history")} padded>{history.isPending ? <Spinner /> : history.error && !history.data ? <EmptyState embedded title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void history.refetch()}>{t("common:actions.retry")}</Button>} /> : <><ol className="space-y-3">{history.data?.items.map(revision => <li key={revision.id} className="border-b border-[var(--color-border)] pb-3"><Button variant="link" disabled={blocked} onClick={event => { revisionTrigger.current = event.currentTarget; void run("revision", async signal => { const view = await fetchRuleRevision(definitionId, revision.revision, signal); if (active.current) setRevisionView(view); }); }}>{t("rules.revision", { revision: revision.revision })}</Button>{baseline.revision === revision.revision ? <Badge variant="outline">{t("rules.current")}</Badge> : null}<p className="text-xs">{formatDateTimeInZone(revision.createdAtUtc, scope.culture, timeZoneId)} · {revision.author?.displayName ?? t("responses.unknownPerson")}</p></li>)}</ol>{history.data && history.data.totalPages > 1 ? <Pagination {...history.data} onPageChange={setHistoryPage} /> : null}<p className="text-xs text-[var(--color-content-muted)]">{t("rules.historyHint")}</p></>}</Surface>
     {revisionView ? <Dialog open onOpenChange={open => { if (!open) setRevisionView(null); }}><DialogContent onCloseAutoFocus={event => { const target = revisionTrigger.current; if (target?.isConnected && !target.disabled) { event.preventDefault(); target.focus(); } else restoreRevisionFocus(event); }} className="max-h-[90svh] overflow-y-auto"><DialogHeader><DialogTitle>{t("rules.revision", { revision: revisionView?.revision })}</DialogTitle></DialogHeader><ol className="space-y-4">{revisionView?.rules.map(rule => <li key={rule.id}>{summary(rule)}</li>)}</ol></DialogContent></Dialog> : null}
   </div>;
 }

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
-import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
+import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
@@ -20,7 +20,8 @@ import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Spinner } from "@/shared/ui/Spinner";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
-import { notify } from "@/shared/ui/notifications";
+import { dismissNotification, notify } from "@/shared/ui/notifications";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
 import { fetchPdfDesign, savePdfDesign, previewPdfDesign, type FormPdfDesign } from "../api/pdf";
 import { fetchRuleOptions } from "../api/rules";
@@ -49,8 +50,11 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
     const { t, i18n } = useTranslation("forms");
     const navigate = useNavigate();
     const root = [...formScopeKey(scope), "pdf-design", definitionId];
+    const notificationRoot = "forms:pdf-design:" + JSON.stringify(root);
+    const pendingNotices = useRef(new Set<string>());
+    useEffect(() => () => { for (const operation of pendingNotices.current) dismissNotification(notificationRoot + ":" + operation); }, [notificationRoot]);
     usePrivateQueryCleanup(root);
-    const query = useQuery({ queryKey: root, queryFn: async ({ signal }) => { const [current, options] = await Promise.all([fetchPdfDesign(definitionId, signal), fetchRuleOptions(definitionId, signal)]); return { current, options }; }, gcTime: 0, meta: { errorOwner: "local" } });
+    const query = useQuery({ queryKey: root, queryFn: async ({ signal }) => { const [current, options] = await Promise.all([fetchPdfDesign(definitionId, signal), fetchRuleOptions(definitionId, signal)]); return { current, options }; }, gcTime: 0 });
     const [baseline, setBaseline] = useState<FormPdfDesign | null>(null);
     const [draft, setDraft] = useState<PdfDesign | null>(null);
     const [error, setError] = useState<unknown>(null);
@@ -82,14 +86,14 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
     const change = (next: PdfDesign) => { setDraft(next); setPreview(null); setError(null); };
     const save = async () => { if (!draft || !baseline || busy || review || cooldown.isRunning)
         return; const prepared = preparePdfDesign(draft, baseline.originalCulture); setValidation(true); if (!prepared.design)
-        return; const controller = new AbortController(); request.current = controller; setBusy(true); setError(null); try {
+        return; const controller = new AbortController(); request.current = controller; setBusy(true); setError(null); dismissNotification(notificationRoot + ":save"); pendingNotices.current.delete("save"); try {
         const result = await savePdfDesign(definitionId, baseline.revision, prepared.design, controller.signal);
         if (!active.current || controller.signal.aborted)
             return;
         setBaseline(result);
         setDraft(result.design);
         setValidation(false);
-        notify({ id: "forms:pdf-design:" + definitionId, kind: "success", message: t("pdf.saved") });
+        notify({ id: notificationRoot + ":save", kind: "success", message: t("pdf.saved") });
     }
     catch (failure) {
         if (!active.current || controller.signal.aborted || errorFeedback(failure).kind === "cancelled")
@@ -103,13 +107,15 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
         if (failure instanceof ApiError && failure.status === 429)
             cooldown.restart(failure.retryAfterSeconds ?? 60);
         setError(failure);
+        const fields = ["name.es", "name.en", "footer.es", "footer.en"].map(path => "design." + path);
+        if (!["cancelled", "session", "forbidden", "fields"].includes(errorFeedback(failure, { fields }).kind)) { pendingNotices.current.add("save"); notify({ id: notificationRoot + ":save", kind: "error", message: operationalErrorMessage(failure, t, "save") }); }
     }
     finally {
         if (active.current)
             setBusy(false);
     } };
     const reread = async () => { if (busy)
-        return; const controller = new AbortController(); request.current = controller; setBusy(true); try {
+        return; const controller = new AbortController(); request.current = controller; setBusy(true); dismissNotification(notificationRoot + ":reread"); pendingNotices.current.delete("reread"); try {
         const value = await fetchPdfDesign(definitionId, controller.signal);
         if (active.current && !controller.signal.aborted)
             setCurrent(value);
@@ -118,8 +124,10 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
         if (active.current && !controller.signal.aborted) {
             if (failure instanceof ApiError && failure.status === 403)
                 onDenied();
-            else
-                setError(failure);
+            else if (!["cancelled", "session"].includes(errorFeedback(failure).kind)) {
+                pendingNotices.current.add("reread"); notify({ id: notificationRoot + ":reread", kind: "error", message: readErrorMessage(failure, t) });
+                if (failure instanceof ApiError && failure.status === 429) cooldown.restart(failure.retryAfterSeconds ?? 60);
+            }
         }
     }
     finally {
@@ -127,7 +135,7 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
             setBusy(false);
     } };
     if (query.isPending || !baseline || !draft)
-        return <Page title={t("pdf.title")}>{query.error ? <div role="status"><p>{readErrorMessage(query.error, t)}</p><Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button></div> : <Spinner />}</Page>;
+        return <Page title={t("pdf.title")}>{query.error ? <EmptyState title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>}/> : <Spinner />}</Page>;
     const original = baseline.originalCulture;
     const other: FormCulture = original === "es" ? "en" : "es";
     const options = query.data!.options;
@@ -139,7 +147,7 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
         setDiscard(true);
     else
         void navigate(back); }}>{t("discard")}</Button>}>
-  {review ? <Surface title={t("pdf.conflict")} padded><p>{t("pdf.conflictHint")}</p><div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => void reread()}>{t("pdf.reread")}</Button>{current ? <Button disabled={busy} onClick={() => { setBaseline(current); setDraft(current.design); setReview(false); setCurrent(null); setError(null); setValidation(false); setPreview(null); }}>{t("pdf.useCurrent")}</Button> : null}</div></Surface> : null}
+  {review ? <Surface title={t("pdf.conflict")} padded><p>{t("pdf.conflictHint")}</p><div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => void reread()}>{t("pdf.reread")}</Button>{current ? <Button disabled={busy} onClick={() => { setBaseline(current); setDraft(current.design); setReview(false); setCurrent(null); setError(null); setValidation(false); setPreview(null); pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save"); }}>{t("pdf.useCurrent")}</Button> : null}</div></Surface> : null}
   <div className="grid items-start gap-4 xl:grid-cols-[3fr_2fr]">
    <Surface title={t("pdf.receipt")} padded actions={<Button disabled={blocked || cooldown.isRunning || !dirty && baseline.revision > 0} onClick={() => void save()}>{t("pdf.save")}</Button>}>
     <div className="space-y-5"><div className="grid gap-4 sm:grid-cols-2"><FormField label={t("pdf.name")} required error={fieldError("name." + original)}><Input maxLength={160} value={draft.name[original] ?? ""} disabled={blocked} onChange={event => change({ ...draft, name: { ...draft.name, [original]: event.target.value } })}/></FormField><FormField label={t("pdf.translation", { language: t("cultures." + other) })} hint={t("pdf.optionalTranslation")} error={fieldError("name." + other)}><Input maxLength={160} value={draft.name[other] ?? ""} disabled={blocked} onChange={event => change({ ...draft, name: { ...draft.name, [other]: event.target.value } })}/></FormField></div>
@@ -147,11 +155,11 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
     <CheckboxField label={t("pdf.includePhotos")} description={t("pdf.photosHint")} checked={draft.includePhotos} disabled={blocked} onCheckedChange={checked => change({ ...draft, includePhotos: checked })}/>
     <CheckboxField label={t("pdf.includeApproval")} description={t("pdf.approvalHint")} checked={draft.includeApproval} disabled={blocked} onCheckedChange={checked => change({ ...draft, includeApproval: checked })}/>
     <div className="grid gap-4 sm:grid-cols-2"><FormField label={t("pdf.footer")} hint={t("pdf.footerHint")} error={fieldError("footer." + original)}><Textarea maxLength={1000} rows={3} disabled={blocked} value={draft.footer?.[original] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [original]: event.target.value } })}/></FormField><FormField label={t("pdf.footerTranslation", { language: t("cultures." + other) })} hint={t("pdf.optionalTranslation")} error={fieldError("footer." + other)}><Textarea maxLength={1000} rows={3} disabled={blocked} value={draft.footer?.[other] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [other]: event.target.value } })}/></FormField></div>
-    {error && !review ? <p role="status" className="text-sm">{readErrorMessage(error, t)}</p> : null}{cooldown.isRunning ? <p role="status">{t("wait", { count: cooldown.seconds })}</p> : null}
+    {cooldown.isRunning ? <p role="status">{t("wait", { count: cooldown.seconds })}</p> : null}
     <p className="text-xs text-[var(--color-content-muted)]">{baseline.revision ? t("pdf.revision", { revision: baseline.revision, date: baseline.createdAtUtc ? formatDateTimeInZone(baseline.createdAtUtc, i18n.language, timeZoneId) : "" }) : t("pdf.noRevision")}</p><p className="text-xs text-[var(--color-content-muted)]">{t("pdf.fixedHint")}</p>
    </div></Surface>
    <Surface title={t("pdf.preview")} padded actions={<SegmentedControl aria-label={t("pdf.previewLanguage")} options={(["es", "en"] as const).map(value => ({ key: value, label: value === "es" ? "Español" : "English", pressed: culture === value, onSelect: () => { setCulture(value); setPreview(null); } }))}/>}><div className="space-y-4"><Button variant="outline" disabled={blocked || !prepared.design} onClick={() => { if (prepared.design)
-        setPreview({ design: prepared.design, culture }); }}>{t("pdf.preview")}</Button>{preview ? <FormPdfPreview load={loadPreview} onForbidden={onDenied} requestedCulture={preview.culture} example/> : <p className="text-sm text-[var(--color-content-muted)]">{t("pdf.previewHint")}</p>}</div></Surface>
+        setPreview({ design: prepared.design, culture }); }}>{t("pdf.preview")}</Button>{preview ? <FormPdfPreview operationId={notificationRoot + ":preview"} load={loadPreview} onForbidden={onDenied} requestedCulture={preview.culture} example/> : <p className="text-sm text-[var(--color-content-muted)]">{t("pdf.previewHint")}</p>}</div></Surface>
   </div>
   <ConfirmDialog open={discard || guard.isBlocked} onOpenChange={open => { if (!open) {
         setDiscard(false);

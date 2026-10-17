@@ -1002,4 +1002,16 @@ describe("response sheet", () => {
     });
     expect(notify).not.toHaveBeenCalled();
   });
+
+it("keeps one workflow read notification in the detail without repeating its cause in history", async () => {
+  setup(["formrecords.read", "formrules.manage"]);
+  server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json({ code: "Test.Workflow", detail: "No pudimos leer este seguimiento." }, { status: 400 })));
+  renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+  await waitFor(() => expect(notify).toHaveBeenCalledOnce());
+  expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "No pudimos leer este seguimiento." });
+  const history = within(screen.getByRole("region", { name: "Qué pasó después" }));
+  expect(history.queryByText("No pudimos leer este seguimiento.")).not.toBeInTheDocument();
+  expect(history.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+});
+
 });

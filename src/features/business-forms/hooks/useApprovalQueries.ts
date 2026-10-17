@@ -19,13 +19,13 @@ export function useApprovalScope() {
 }
 export function useApprovalCount(onlyMine = true, definitionId?: string) {
     const scope = useApprovalScope();
-    const query = useQuery({ queryKey: ["form-approvals", scope.owner, "count", onlyMine, definitionId], queryFn: ({ signal }) => fetchApprovalCount({ onlyMine, definitionId }, signal), enabled: scope.allowed, gcTime: 0, meta: { errorOwner: "local" } });
+    const query = useQuery({ queryKey: ["form-approvals", scope.owner, "count", onlyMine, definitionId], queryFn: ({ signal }) => fetchApprovalCount({ onlyMine, definitionId }, signal), enabled: scope.allowed, gcTime: 0 });
     return { scope, query };
 }
 export function useApprovalInbox(filter: ApprovalQuery, enabled = true) {
     const scope = useApprovalScope();
-    const query = useQuery({ queryKey: ["form-approvals", scope.owner, "list", filter], queryFn: ({ signal }) => fetchApprovalTasks(filter, signal), enabled: scope.allowed && enabled, gcTime: 0, meta: { errorOwner: "local" }, placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner ? keepPreviousData(previous) : undefined });
-    const options = useQuery({ queryKey: ["form-approvals", scope.owner, "options", filter.onlyMine], queryFn: ({ signal }) => fetchApprovalOptions(filter.onlyMine, signal), enabled: scope.allowed, gcTime: 0, meta: { errorOwner: "local" } });
+    const query = useQuery({ queryKey: ["form-approvals", scope.owner, "list", filter], queryFn: ({ signal }) => fetchApprovalTasks(filter, signal), enabled: scope.allowed && enabled, gcTime: 0, placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner ? keepPreviousData(previous) : undefined });
+    const options = useQuery({ queryKey: ["form-approvals", scope.owner, "options", filter.onlyMine], queryFn: ({ signal }) => fetchApprovalOptions(filter.onlyMine, signal), enabled: scope.allowed, gcTime: 0 });
     const otherCount = useApprovalCount(!filter.onlyMine, filter.definitionId);
     return { scope, query, options, otherCount: otherCount.query };
 }

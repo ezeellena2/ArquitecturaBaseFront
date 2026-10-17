@@ -302,7 +302,7 @@ export function FormResponseDetailPage() {
           </Button>
         ) : null}
       </Surface>
-      {workflow.query.data?.recordId === data.id ? <ResponseDocuments key={detail.scope.owner+":"+data.id} recordId={data.id} documents={workflow.query.data.documents} onForbidden={deny} timeZoneId={detail.scope.user?.timeZoneId}/> : null}
+      {workflow.query.data?.recordId === data.id ? <ResponseDocuments key={detail.scope.owner+":"+data.id} owner={detail.scope.owner} recordId={data.id} documents={workflow.query.data.documents} onForbidden={deny} timeZoneId={detail.scope.user?.timeZoneId}/> : null}
       <ResponseWorkflowHistory key={"workflow:"+detail.scope.owner+":"+data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} />
     </Page>
     </section>

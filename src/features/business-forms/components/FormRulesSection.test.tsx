@@ -1,3 +1,4 @@
+import { notify, dismissNotification } from "@/shared/ui/notifications";
 import { useEffect } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { act, screen, waitFor, within } from "@testing-library/react";
@@ -18,7 +19,7 @@ function setup() {
     http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita", en: "Visit" }, originalCulture: "es", questions: [], conditionChoices: {}, roles: [{ id: actor, name: "Supervisor" }] })),
     http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [], page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })));
 }
-beforeEach(() => { queryClient.clear(); });
+beforeEach(() => { vi.clearAllMocks(); queryClient.clear(); });
 it("saves rules independently using only the original language and records the new revision", async () => {
   setup();
   const saved = vi.fn();
@@ -47,7 +48,7 @@ it("retains edits on a revision conflict and adopts the reread revision only exp
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "NotifyAuthor");
   await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), "Mi borrador");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
-  await screen.findByText("Cambió la revisión.");
+  await screen.findByRole("button", { name: "Releer reglas" });
   server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ ...initial(), id: crypto.randomUUID(), revision: 2, rules: [{ id: crypto.randomUUID(), event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Revisión actual" } }] }], createdAtUtc: "2026-10-16T12:00:00Z", author: null })));
   await userEvent.click(screen.getByRole("button", { name: "Releer reglas" }));
   await screen.findByRole("button", { name: "Usar la revisión actual" });
@@ -129,4 +130,33 @@ it("refreshes saved question options while preserving unsaved rules after the dr
   expect(dirty).toHaveBeenLastCalledWith(true);
   await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
   expect(screen.getByRole("option", { name: "Pregunta guardada" })).toBeInTheDocument();
+});
+
+vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn(), dismissNotification: vi.fn() }));
+
+it("notifies one rules save failure while retaining the editable draft", async () => {
+  setup();
+  server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Test.Save", detail: "No pudimos guardar estas reglas." }, { status: 400 })));
+  const view = renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
+  await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), "Mi regla conservada");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await waitFor(() => expect(notify).toHaveBeenCalledOnce());
+  const notice = vi.mocked(notify).mock.calls[0][0];
+  expect(notice).toMatchObject({ kind: "error", message: "No pudimos guardar estas reglas." });
+  expect(screen.queryByText(notice.message)).not.toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: "Mensaje" })).toHaveValue("Mi regla conservada");
+  expect(screen.getByRole("button", { name: "Guardar reglas" })).toBeEnabled();
+  view.unmount();
+  expect(dismissNotification).toHaveBeenCalledWith(notice.id);
+});
+it.each(["rules", "rules/revisions"])("uses the common notification owner for failed %s reads", async path => {
+  setup();
+  server.use(http.get("/api/forms/definitions/:id/" + path, () => HttpResponse.json({ code: "Test.Read", detail: "La lectura de reglas falló." }, { status: 400 })));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()} />);
+  await waitFor(() => expect(notify).toHaveBeenCalledOnce());
+  expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "La lectura de reglas falló." });
+  expect(screen.queryByText("La lectura de reglas falló.")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
 });
