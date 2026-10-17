@@ -304,7 +304,10 @@ para conservar contraste; success, warning y danger no cambian. Recorridos: `src
 ### Formularios por WhatsApp
 
 Los tableros elegidos de la página «Formularios por WhatsApp» (historia completa, Etapa 1 y variantes A–E, P1–P3, C1–C5,
-R1–R3) reemplazan la maqueta aislada del plan. El botón que abre un formulario dice siempre «Abrir formulario».
+R1–R3), los ajustes G2/G5 de la versión 75 y D2 de la versión 79 reemplazan la maqueta aislada del plan. D2 reemplaza
+el detalle vertical de T3/G4/G5; H1–H7 y s1–s4 conservan los tableros elegidos del asistente. El botón que abre un
+formulario dice siempre «Abrir formulario». La implementación y su calificación son estados separados; las escenas
+nuevas preparadas no acreditan todavía una corrida visual ni el recorrido real.
 Capturas, decisiones, alcance, piezas y estado: [formularios-whatsapp.md](formularios-whatsapp.md).
 
 ### Inicio: composición assistant-ui corregida — 2026-10-04

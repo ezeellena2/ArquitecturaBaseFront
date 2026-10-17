@@ -194,16 +194,23 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
 
 ## Áreas con guía propia
 
-- **WhatsApp** ([guía](../src/features/whatsapp/AGENTS.md)): `useChatThread` (lectura), `useChatThreadActions` y
-  `useChatHistoryViewport`; `lib/timeline` ordena por instante e identidad y `lib/messagePresentation` localiza resumen y
-  preview seguros. Bot es «Automatización sin configurar». `ChatComposer` consulta el `requestId` de un envío perdido desde
-  el editor o la notificación, sin consultas simultáneas.
+- **WhatsApp** ([guía](../src/features/whatsapp/AGENTS.md)): `useChatThread` posee la lectura y su retiro privado; acciones,
+  viewport e interpretación Manual conservan dueños separados sin importar otra feature. El modo y el origen Assistant
+  son explícitos; tomar Manual exige Send y activar Assistant exige ConfigureAssistant. El historial muestra motivo,
+  datos propuestos y títulos capturados sin reconstruir autoría ni sugerencias actuales; esos datos respetan RecordsRead.
+  El preview Manual vive sólo en el editor y envía IDs de campos seleccionados. Consultar un resultado perdido usa GET
+  compartido antes de repetir explícitamente. Audio conserva su tipo, bytes privados a pedido y transcripción vigente;
+  abrir el hilo en Manual solicita sólo los Pending visibles, sin repetir un POST incierto.
 - **IA** ([guía](../src/features/artificial-intelligence/AGENTS.md)): `/configuracion/ia` (`ai.read`, `ai.manage`) y
   `/configuracion/negocio` (`ai.business.read`/`manage`), sin depender de settings ni WhatsApp. Plegar o paginar el panel
   de Inicio no llama al modelo.
 - **Formularios** ([guía](../src/features/business-forms/AGENTS.md), [diseño](design/formularios-whatsapp.md),
   [contrato](../../ArquitecturaBase/docs/features/formularios.md)): `/formularios` implementa A–E y P1–P3; WhatsApp,
-  C1–C5 y R1–R3, sin importar `business-forms`. Las claves de R1–R3 particionan actor, cultura y permisos y cada dueño
-  limpia todas sus páginas; no se infiere purga de `Body:null` en FlowReply. Fixtures HTTP sin modificar en
-  `src/test/fixtures/forms-http` y `whatsapp-forms-http`; `FORMS_HTTP_CONTRACT_INPUT` y
-  `WHATSAPP_FORMS_HTTP_CONTRACT_INPUT` repiten el guard con capturas nuevas.
+  C1–C5 y R1–R3, sin importar `business-forms`. D2 conserva planilla/bandeja, URL, orden y un único dueño de decisión;
+  Respuesta, Fotos, Actividad y PDF consumen hechos capturados. La aprobación sin RecordsRead conserva sólo metadata.
+  Reglas, diseño PDF y sugerencias tienen guardado/revisión propios; OfferWhen usa el borrador existente sin publicarse.
+  Los catálogos propuestos se revisan en el editor normal con original obligatorio; los catálogos y la publicación comunes
+  conservan su contrato de idiomas. Los faltantes agregados requieren Manage; crear conserva Read+Manage y sólo siembra
+  el nombre en un alta nueva. Actor, cultura y permisos particionan consultas y limpiezas; un 403 retira el alcance que leyó.
+  Los consumidores HTTP sirven bytes exportados sin modificarlos; `src/test/httpCohort` reúne las familias y sus variables
+  de entrada. La calificación de esos cuerpos y del navegador se registra separada de los dobles y del piloto real.
