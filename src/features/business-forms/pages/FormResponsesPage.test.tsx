@@ -737,6 +737,10 @@ describe("response sheet", () => {
       await screen.findByRole("button", { name: "Siguiente" }),
     );
     await screen.findByRole("heading", { name: "TEST-000001" });
+    const back = screen.getByRole("link", { name: "Volver a la planilla" });
+    expect(back).toHaveAttribute("href", `/formularios/${responseFormId}/respuestas?pageSize=20`);
+    await userEvent.click(back);
+    await screen.findByRole("table");
   });
   it("keeps the previous detail and focused Next button while the next answer loads", async () => {
     setup();

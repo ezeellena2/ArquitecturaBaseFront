@@ -8,6 +8,7 @@ import {currentUser} from "@/test/mocks/handlers";
 import {renderRouteWithProviders} from "@/test/utils/renderWithProviders";
 import {queryClient} from "@/shared/api/queryClient";
 import {approvalTaskFixture,approvalTaskId} from "@/test/approvalFixtures";
+import { responseDetailFixture, responseSheetFixture, responseWorkflowFixture, responseFormId, responseRecordId } from "@/test/responseFixtures";
 vi.mock("react-oidc-context",async()=>({...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),useAuth:()=>({isAuthenticated:true,isLoading:false,user:{access_token:"test"}})}));
 beforeEach(()=>{vi.clearAllMocks();queryClient.clear();});
 function setup(permissions=["formapprovals.decide"]) {
@@ -71,6 +72,33 @@ it.each(["list", "options", "otherCount"])("notifies a failed inbox %s read thro
   await waitFor(() => expect(notify).toHaveBeenCalledOnce());
   expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "Falló esta lectura de aprobaciones." });
   expect(screen.queryByText("Falló esta lectura de aprobaciones.")).not.toBeInTheDocument();
+  if (operation === "list") expect(screen.getByRole("heading", { name: "No pudimos cargar las aprobaciones." })).toBeInTheDocument();
+});
+it.each(["available", "missing"])("returns from an %s response to the original approval inbox filters", async state => {
+  setup(["formapprovals.decide", "formrecords.read"]);
+  const task = approvalTaskFixture();
+  const origin = `/formularios/por-aprobar?view=all&definitionId=${responseFormId}&page=2&pageSize=20`;
+  server.use(
+    http.get("/api/forms/navigation", () => HttpResponse.json({ items: [], page: 1, pageSize: 4, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })),
+    http.get("/api/forms/approvals", () => HttpResponse.json({ items: [task], page: 2, pageSize: 20, totalCount: 21, totalPages: 2, hasPrevious: true, hasNext: false })),
+    http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(responseSheetFixture())),
+    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(responseWorkflowFixture())),
+    http.get("/api/forms/records/:id", () => state === "missing"
+      ? HttpResponse.json({ code: "Forms.Record.NotFound" }, { status: 404 })
+      : HttpResponse.json({ ...responseDetailFixture(), number: task.number })),
+  );
+  const { router } = renderRouteWithProviders(origin);
+  await userEvent.click(await screen.findByRole("link", { name: task.number }));
+  await waitFor(() => expect(router.state.location.pathname).toBe(`/formularios/${responseFormId}/respuestas/${responseRecordId}`));
+  await screen.findByRole("heading", { name: state === "missing" ? "No encontramos esa respuesta o no está disponible" : task.number });
+  const links = screen.getAllByRole("link", { name: "Volver a Por aprobar" });
+  expect(links).toHaveLength(state === "missing" ? 2 : 1);
+  for (const link of links) expect(link).toHaveAttribute("href", origin);
+  await userEvent.click(links.at(-1)!);
+  await waitFor(() => expect(router.state.location.pathname + router.state.location.search).toBe(origin));
+  await screen.findByRole("heading", { name: "Por aprobar" });
+  expect(screen.getByRole("button", { name: /Todas abiertas/ })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("combobox", { name: "Formulario" })).toHaveValue(responseFormId);
 });
 it("notifies a failed task metadata read without repeating the cause in the decision panel", async () => {
   setup();

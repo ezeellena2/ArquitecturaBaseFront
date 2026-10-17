@@ -80,6 +80,7 @@ export function FormResponseDetailPage() {
   const approvalReturn = (location.state as { approvalReturn?: unknown } | null)?.approvalReturn;
   const fromApprovals = typeof approvalReturn === "string" && /^\/formularios\/por-aprobar(?:\?|$)/.test(approvalReturn);
   const back = fromApprovals ? approvalReturn : `/formularios/${formId}/respuestas?${route.params}`;
+  const backLabel = t(fromApprovals ? "approvals.back" : "responses.back");
   const index =
     sheet.query.data?.records.items.findIndex(
       (record) => record.id === recordId,
@@ -144,7 +145,7 @@ export function FormResponseDetailPage() {
     return (
       <Page
         title={t("responses.detail")}
-        backTo={{ to: back, label: t(fromApprovals ? "approvals.back" : "responses.back") }}
+        backTo={{ to: back, label: backLabel }}
       >
         <Surface>
           <EmptyState
@@ -159,7 +160,7 @@ export function FormResponseDetailPage() {
               detail.query.error instanceof ApiError &&
               detail.query.error.status === 404 ? (
                 <Button asChild variant="outline">
-                  <Link to={back}>{t("responses.back")}</Link>
+                  <Link to={back}>{backLabel}</Link>
                 </Button>
               ) : (
                 <Button
@@ -195,7 +196,7 @@ export function FormResponseDetailPage() {
     <Page
       title={data.number}
       status={<>{currentWorkflow ? <Badge variant="outline">{t("approvals.states." + currentWorkflow.recordState)}</Badge> : null}<span>{data.name} · {t("responses.versionLabel", { version: data.versionNumber })}</span></>}
-      backTo={{ to: back, label: t("responses.back") }}
+      backTo={{ to: back, label: backLabel }}
       actions={
         <div className="flex flex-wrap items-center gap-2">
           {decisionTask ? <div ref={setDecisionActions}/> : null}

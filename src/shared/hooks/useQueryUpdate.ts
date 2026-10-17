@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 
 /// Escribe en la query string. `undefined` y `""` borran el parámetro en vez de escribirlo vacío: un valor
 /// por omisión no va en la URL, así el enlace que se comparte dice solo lo que se eligió.
@@ -16,6 +16,7 @@ import { useNavigate, useSearchParams } from "react-router";
 export function useQueryUpdate() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const { state } = useLocation();
 
   return useCallback(
     (
@@ -36,11 +37,11 @@ export function useQueryUpdate() {
           return next;
       };
       if (options?.pathname) {
-        void navigate({ pathname: options.pathname, search: apply(params).toString() }, { replace: options.replace ?? true });
+        void navigate({ pathname: options.pathname, search: apply(params).toString() }, { replace: options.replace ?? true, state });
       } else {
-        setParams(apply, { replace: options?.replace ?? true });
+        setParams(apply, { replace: options?.replace ?? true, state });
       }
     },
-    [setParams, navigate, params],
+    [setParams, navigate, params, state],
   );
 }

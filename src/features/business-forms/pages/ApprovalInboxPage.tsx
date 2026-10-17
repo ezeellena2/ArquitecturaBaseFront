@@ -52,7 +52,7 @@ function ApprovalInbox({ onForbidden }: {
             { id: "received", header: t("responses.received"), cell: row => <time dateTime={row.requestedAtUtc}>{formatDateTimeInZone(row.requestedAtUtc, i18n.language, scope.user?.timeZoneId)}</time> },
             { id: "waiting", header: t("approvals.waiting"), cell: row => formatRelativeTime(row.requestedAtUtc, i18n.language) },
             { id: "role", header: t("approvals.role"), cell: row => <div>{row.role.name}{row.cannotDecideReason === "OwnResponse" ? <p className="text-xs text-[var(--color-content-muted)]">{t("approvals.ownResponse")}</p> : null}</div> }
-        ]} rows={query.data?.items ?? []} rowKey={row => row.id} isLoading={query.isPending} hasData={!!query.data} error={query.error ? t("loadFailed") : undefined} onRetry={() => void query.refetch()} emptyTitle={t("approvals.empty")} emptyDescription={t("approvals.emptyHint")}/>{query.data ? <Pagination {...query.data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/> : null}</Surface>
+        ]} rows={query.data?.items ?? []} rowKey={row => row.id} isLoading={query.isPending} hasData={!!query.data} error={query.error ? t("approvals.loadFailed") : undefined} onRetry={() => void query.refetch()} emptyTitle={t("approvals.empty")} emptyDescription={t("approvals.emptyHint")}/>{query.data ? <Pagination {...query.data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/> : null}</Surface>
   {selected ? <ApprovalMetadataDialog key={selected.id} task={selected} fallback={fallback} onClose={() => setSelected(null)}/> : null}
  </Page>;
 }

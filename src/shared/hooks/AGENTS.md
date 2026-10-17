@@ -25,7 +25,7 @@ Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva y guardas
 
 Las lecturas privadas de archivo declaran dueño local del error; el consumidor agrupa el aviso por respuesta. Montar el visor o volver a la pestaña no vuelve a bajar las miniaturas observadas.
 
-`useQueryUpdate` admite pathname junto con los cambios de query para una navegación atómica (anterior/siguiente del detalle). Conserva los parámetros ajenos; sin pathname mantiene el comportamiento compartido de filtros.
+`useQueryUpdate` admite pathname junto con los cambios de query para una navegación atómica (anterior/siguiente del detalle). Conserva los parámetros ajenos; sin pathname mantiene el comportamiento compartido de filtros. En ambas variantes conserva el state opaco de la entrada actual: fijar paginado o avanzar entre respuestas no pierde el contexto de regreso. No serializa ese estado en la URL.
 
 `useElementVisibility` informa si un control está en el viewport; `once` conserva la habilitación para bytes ya cargados. Las facetas de respuestas usan visibilidad continua para pausar lecturas fuera de pantalla.
 

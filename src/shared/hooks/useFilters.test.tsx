@@ -95,3 +95,17 @@ it("navigates to a response while updating its page atomically and retaining saf
  expect(result.current.location.pathname).toBe("/formularios/a/respuestas/r");
  expect(result.current.location.search).toContain("page=2");expect(result.current.location.search).toContain("columns=a");
 });
+
+it("preserves return context while fixing page size and navigating between response identities", () => {
+  const state = { approvalReturn: "/formularios/por-aprobar?view=all" };
+  function Wrapper({ children }: { children: ReactNode }) {
+    return <MemoryRouter initialEntries={[{ pathname: "/formularios/a/respuestas/r1", state }]}>{children}</MemoryRouter>;
+  }
+  const { result } = renderHook(() => ({ pagination: usePagination(20, true), update: useQueryUpdate(), location: useLocation() }), { wrapper: Wrapper });
+  expect(result.current.location.search).toBe("?pageSize=20");
+  expect(result.current.location.state).toEqual(state);
+  act(() => result.current.update({ page: "2" }, { pathname: "/formularios/a/respuestas/r2", replace: false }));
+  expect(result.current.location.pathname).toBe("/formularios/a/respuestas/r2");
+  expect(result.current.location.search).toBe("?pageSize=20&page=2");
+  expect(result.current.location.state).toEqual(state);
+});

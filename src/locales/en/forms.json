@@ -116,8 +116,8 @@
   "unmappedValidation": "A value that this editor cannot correct could not be saved.",
   "requestConflict": "This identifier belongs to another attempt. Check the save; your request remains blocked.",
   "reviewAudit": "Last change: {{date}} · {{author}}",
-  "wait_one": "Wait {{count}} second before checking.",
-  "wait_other": "Wait {{count}} seconds before checking.",
+  "wait_one": "Wait {{count}} second before trying again.",
+  "wait_other": "Wait {{count}} seconds before trying again.",
   "cultures": {
     "es": "Spanish",
     "en": "English"
@@ -641,6 +641,7 @@
   },
   "approvals": {
     "title": "To approve",
+    "loadFailed": "We couldn't load the approvals.",
     "scope": "Scope",
     "mine": "For me ({{count}})",
     "all": "All open ({{count}})",

@@ -116,8 +116,8 @@
   "unmappedValidation": "No pudimos guardar un dato que este editor no puede corregir.",
   "requestConflict": "El identificador corresponde a otro intento. Consultá el guardado; tu pedido sigue bloqueado.",
   "reviewAudit": "Último cambio: {{date}} · {{author}}",
-  "wait_one": "Esperá {{count}} segundo antes de consultar.",
-  "wait_other": "Esperá {{count}} segundos antes de consultar.",
+  "wait_one": "Esperá {{count}} segundo para volver a intentar.",
+  "wait_other": "Esperá {{count}} segundos para volver a intentar.",
   "cultures": {
     "es": "Español",
     "en": "Inglés"
@@ -641,6 +641,7 @@
   },
   "approvals": {
     "title": "Por aprobar",
+    "loadFailed": "No pudimos cargar las aprobaciones.",
     "scope": "Alcance",
     "mine": "Para mí ({{count}})",
     "all": "Todas abiertas ({{count}})",

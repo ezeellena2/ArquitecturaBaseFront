@@ -35,6 +35,6 @@ it("notifies one document download wait and preserves its visible cooldown", asy
   await waitFor(() => expect(notify).toHaveBeenCalledOnce());
   expect(screen.queryByText("Esperá para descargar esta copia.")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Descargar" })).toBeDisabled();
-  expect(screen.getByRole("status")).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(/^Esperá \d+ segundos para volver a intentar\.$/);
   expect(savePrivateBlob).not.toHaveBeenCalled();
 });
