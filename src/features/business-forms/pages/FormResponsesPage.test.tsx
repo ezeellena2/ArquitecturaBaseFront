@@ -160,7 +160,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 describe("response sheet", () => {
-  it("shows response states only when the form has approval rules",async()=>{setup();const payload=responseSheetFixture();payload.hasApproval=true;payload.records.items[0].state="PendingApproval";server.use(http.post("/api/forms/definitions/:id/records/search",()=>HttpResponse.json(payload)));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");await screen.findByRole("columnheader",{name:"Estado"});expect(screen.getByText("Pendiente")).toBeInTheDocument();});
+  it("shows response states only when the form has approval rules",async()=>{setup();const payload=responseSheetFixture();payload.hasApproval=true;payload.records.items[0].state="PendingApproval";server.use(http.post("/api/forms/definitions/:id/records/search",()=>HttpResponse.json(payload)));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");await screen.findByRole("columnheader",{name:"Estado"});expect(screen.getByText("Por aprobar")).toBeInTheDocument();});
   it("keeps response values readable when approval permission is revoked",async()=>{setup(["formrecords.read","formapprovals.decide"]);const taskId=crypto.randomUUID();server.use(http.get("/api/forms/approvals/count",()=>HttpResponse.json({count:1})),http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"PendingApproval",task:{id:taskId,roleId:taskId,roleName:"Supervisión",revision:1,state:"Open",decidedAtUtc:null,decidedBy:null,reason:null}})),http.get("/api/forms/approvals/:id",()=>HttpResponse.json({id:taskId,definitionId:responseFormId,recordId:responseRecordId,number:"TEST-000002",formName:"Visita",author:{userId:taskId,displayName:"Ana"},role:{id:taskId,name:"Supervisión"},requestedAtUtc:"2026-10-16T12:00:00Z",revision:1,state:"Open",canDecide:true,cannotDecideReason:null,decidedAtUtc:null,decidedBy:null,reason:null})),http.post("/api/forms/approvals/:id/decisions",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);await userEvent.click(await screen.findByRole("button",{name:"Aprobar"}));await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");expect(screen.getByText("Texto completo para revisar")).toBeInTheDocument();});
   it("shows the historic decision to a reader without approval permission",async()=>{setup(["formrecords.read"]);const taskId=crypto.randomUUID();let metadataReads=0;server.use(http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"Rejected",task:{id:taskId,roleId:taskId,roleName:"Supervisión histórica",revision:2,state:"Rejected",decidedAtUtc:"2026-10-16T13:00:00Z",decidedBy:{userId:taskId,displayName:"Luz"},reason:"Falta la firma"}})),http.get("/api/forms/approvals/:id",()=>{metadataReads++;return HttpResponse.json({});}));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);await screen.findByText("Falta la firma");expect(screen.getByText(/Luz/)).toBeInTheDocument();expect(metadataReads).toBe(0);expect(screen.queryByRole("button",{name:"Aprobar"})).not.toBeInTheDocument();});
 
@@ -1039,13 +1039,14 @@ it("keeps one workflow read notification in the detail without repeating its cau
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
     const panel = await screen.findByRole("region", { name: "Por aprobar" });
     const controls = within(panel);
-    await controls.findByRole("button", { name: "Aprobar" });
+    const actions = within(screen.getByRole("heading", { name: "TEST-000002", level: 1 }).closest("header")!);
+    await actions.findByRole("button", { name: "Aprobar" });
     if (decision === "Rejected") {
-      await userEvent.click(controls.getByRole("button", { name: "Rechazar" }));
+      await userEvent.click(actions.getByRole("button", { name: "Rechazar" }));
       const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
       await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Revisá la firma");
       await userEvent.click(reject.getByRole("button", { name: "Rechazar" }));
-    } else await userEvent.click(controls.getByRole("button", { name: "Aprobar" }));
+    } else await userEvent.click(actions.getByRole("button", { name: "Aprobar" }));
     await waitFor(() => expect(fixture.workflowReads).toBe(2));
     expect(panel).toBeInTheDocument();
     expect(controls.getByText(decision === "Approved" ? "Aprobada" : "Rechazada")).toBeInTheDocument();
@@ -1062,7 +1063,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
     server.use(http.post("/api/forms/approvals/:id/decisions", async ({ request }) => { fixture.writes.push(await request.json()); complete("Rejected", "Rocío", "La visita ya fue evaluada."); return HttpResponse.json({ code: "Forms.Approval.RevisionConflict", detail: "Otra persona ya decidió." }, { status: 409 }); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
     const panel = await screen.findByRole("region", { name: "Por aprobar" });
-    await userEvent.click(await within(panel).findByRole("button", { name: "Rechazar" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Rechazar" }));
     const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
     await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Mi motivo sin confirmar");
     await userEvent.click(reject.getByRole("button", { name: "Rechazar" }));
@@ -1083,7 +1084,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
     server.use(http.post("/api/forms/approvals/:id/decisions", async ({ request }) => { fixture.writes.push(await request.json()); return HttpResponse.error(); }));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
     const panel = await screen.findByRole("region", { name: "Por aprobar" });
-    await userEvent.click(await within(panel).findByRole("button", { name: "Rechazar" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Rechazar" }));
     const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
     await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Mi motivo conservado");
     await userEvent.click(reject.getByRole("button", { name: "Rechazar" }));
@@ -1094,6 +1095,71 @@ it("keeps one workflow read notification in the detail without repeating its cau
     expect(fixture.task.state).toBe("Open");
     expect(fixture.writes).toEqual([{ expectedRevision: 1, decision: "Rejected", reason: "Mi motivo conservado" }]);
     expect(screen.queryByText("Respuesta rechazada.")).not.toBeInTheDocument();
+  });
+
+  it("moves one decision owner to the single detail header and preserves the resolved status", async () => {
+    const { fixture } = setupDetailDecision();
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const title = await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+    const header = within(title.closest("header")!);
+    expect(await header.findByText("Por aprobar")).toBeInTheDocument();
+    await header.findByRole("button", { name: "Aprobar" });
+    expect(screen.getAllByRole("button", { name: "Aprobar" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Rechazar" })).toHaveLength(1);
+    const panel = screen.getByRole("region", { name: "Por aprobar" });
+    expect(within(panel).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+    await userEvent.click(header.getByRole("button", { name: "Aprobar" }));
+    await header.findByText("Aprobada");
+    expect(header.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+    await waitFor(() => expect(within(panel).getByText("Supervisión").closest("[tabindex='-1']")).toHaveFocus());
+    expect(fixture.writes).toEqual([{ expectedRevision: 1, decision: "Approved" }]);
+  });
+  it("keeps an own decision disabled in the header with its reason in the existing panel", async () => {
+    const { fixture } = setupDetailDecision();
+    fixture.task = { ...fixture.task, canDecide: false, cannotDecideReason: "OwnResponse" };
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const title = await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+    const header = within(title.closest("header")!);
+    expect(await header.findByRole("button", { name: "Aprobar" })).toBeDisabled();
+    expect(header.getByRole("button", { name: "Rechazar" })).toBeDisabled();
+    expect(screen.getByText("No podés aprobar ni rechazar tu propia respuesta.")).toBeInTheDocument();
+    expect(fixture.writes).toEqual([]);
+  });
+  it("orders observed workflow history by UTC rather than grouping records, decisions and actions", async () => {
+    setup(["formrecords.read"]);
+    const detail = responseDetailFixture();
+    detail.history = [
+      { kind: "Saved", atUtc: "2026-10-16T12:02:00Z", actor: null },
+      { kind: "Sent", atUtc: "2026-10-16T11:59:00Z", actor: detail.actor },
+      { kind: "Submitted", atUtc: "2026-10-16T12:00:00Z", actor: detail.actor },
+    ];
+    const makeAction = (kind: ResponseAction["kind"], atUtc: string): ResponseAction => ({ id: crypto.randomUUID(), ruleId: approvalTaskId, kind, event: kind === "GeneratePdf" ? "Approved" : "Received", order: 0, revision: 0, state: "Completed", reasonCode: null, reason: null, canConsult: false, canRetry: false, recipients: [], createdAtUtc: atUtc, updatedAtUtc: atUtc, completedAtUtc: atUtc });
+    const payload: ResponseWorkflow = { ...responseWorkflowFixture(), recordState: "Approved", task: { id: approvalTaskId, roleId: approvalTaskId, roleName: "Supervisión", revision: 2, state: "Approved", decidedAtUtc: "2026-10-16T12:04:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" }, reason: null }, actions: [makeAction("GeneratePdf", "2026-10-16T12:05:00Z"), makeAction("NotifyAuthor", "2026-10-16T12:01:00Z"), makeAction("RequestApproval", "2026-10-16T12:03:00Z")] };
+    server.use(http.get("/api/forms/records/:id", () => HttpResponse.json(detail)), http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const history = within(await screen.findByRole("region", { name: "Qué pasó después" }));
+    await history.findByText("Armar el PDF");
+    const list = history.getByRole("list");
+    expect(Array.from(list.children).map(row => row.querySelector("time")?.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:02:00Z", "2026-10-16T12:03:00Z", "2026-10-16T12:04:00Z", "2026-10-16T12:05:00Z"]);
+    expect(history.getAllByText("Armar el PDF")).toHaveLength(1);
+  });
+  it("shows provider receipts separately from human resolution without inventing delivery", async () => {
+    setup(["formrecords.read"]);
+    const deliveredAtUtc = "2026-10-17T12:05:00Z";
+    const readAtUtc = "2026-10-17T12:08:00Z";
+    const payload = roleWorkflow(approvalTaskId, [recipientFixture({ state: "Accepted", canReview: false, deliveredAtUtc, readAtUtc }), recipientFixture({ user: { userId: approvalTaskId, displayName: "Ana" }, state: "Accepted", canReview: false, review: { wasSent: true, reviewedAtUtc: "2026-10-17T12:03:00Z", reviewedBy: { userId: currentUser.id, displayName: "Luz" } } })], "Completed");
+    server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const provider = within(await screen.findByRole("listitem", { name: "Destinatario: Juan" }));
+    expect(provider.getByText("Entregado")).toBeInTheDocument();
+    expect(provider.getByText("Leído")).toBeInTheDocument();
+    expect(provider.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual([deliveredAtUtc, readAtUtc]);
+    const human = within(screen.getByRole("listitem", { name: "Destinatario: Ana" }));
+    expect(human.getByText("Luz indicó que salió.")).toBeInTheDocument();
+    expect(human.queryByText("Entregado")).not.toBeInTheDocument();
+    expect(human.queryByText("Leído")).not.toBeInTheDocument();
+    expect(human.getByText("Revisión humana: no confirma la entrega de WhatsApp.")).toBeInTheDocument();
+    expect(screen.getByText("Hecho")).toBeInTheDocument();
   });
 
 });

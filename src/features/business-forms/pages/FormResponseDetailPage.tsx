@@ -17,6 +17,7 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Page } from "@/shared/ui/Page";
 import { Surface } from "@/shared/ui/Surface";
 import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import { Spinner } from "@/shared/ui/Spinner";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -45,6 +46,7 @@ export function FormResponseDetailPage() {
   const update = useQueryUpdate();
   const workspace = useContext(ResponseWorkspaceContext);
   const [moving, setMoving] = useState(false);
+  const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
   const [moveError, setMoveError] = useState<unknown>(null);
   const live = useRef(true);
   const owner = useRef(detail.scope.owner);
@@ -186,14 +188,17 @@ export function FormResponseDetailPage() {
   const photos = data.values
     .filter((value) => value.type === "photo")
     .flatMap((value) => (Array.isArray(value.value) ? value.value : []));
+  const currentWorkflow = workflow.query.data?.recordId === data.id ? workflow.query.data : undefined;
+  const decisionTask = detail.scope.user?.permissions.includes("formapprovals.decide") ? currentWorkflow?.task : undefined;
   return (
     <section aria-label={t("responses.detail")} aria-busy={detail.query.isFetching}>
     <Page
       title={data.number}
-      status={`${data.name} · ${t("responses.versionLabel", { version: data.versionNumber })}`}
+      status={<>{currentWorkflow ? <Badge variant="outline">{t("approvals.states." + currentWorkflow.recordState)}</Badge> : null}<span>{data.name} · {t("responses.versionLabel", { version: data.versionNumber })}</span></>}
       backTo={{ to: back, label: t("responses.back") }}
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {decisionTask ? <div ref={setDecisionActions}/> : null}
           {index >= 0 && sheet.query.data ? <span className="text-sm">{t("responses.position", { position: (sheet.query.data.records.page - 1) * sheet.query.data.records.pageSize + index + 1, count: sheet.query.data.records.totalCount })}</span> : null}
           <Button
             type="button"
@@ -218,7 +223,7 @@ export function FormResponseDetailPage() {
         </div>
       }
     >
-      {workflow.query.data?.recordId === data.id && workflow.query.data.task && detail.scope.user?.permissions.includes("formapprovals.decide") ? <Surface title={t("approvals.title")} padded><ApprovalDecisionPanel taskId={workflow.query.data.task.id} onDecided={() => { void workflow.query.refetch(); void sheet.query.refetch(); }} /></Surface> : null}
+      {decisionTask ? <Surface title={t("approvals.title")} padded><ApprovalDecisionPanel taskId={decisionTask.id} actionsTarget={decisionActions} onDecided={() => { void workflow.query.refetch(); void sheet.query.refetch(); }} /></Surface> : null}
       <Surface title={t("responses.answer")} padded>
         <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {data.values.map((value) => (

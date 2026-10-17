@@ -11,6 +11,7 @@ import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import type { ResponseDetail } from "../api/responses";
 import type { useResponseWorkflow } from "../hooks/useResponseWorkflow";
+import { composeWorkflowHistory } from "../workflowHistory";
 import { sameWorkflowReviewTarget, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { workflow: ReturnType<typeof useResponseWorkflow>; record: ResponseDetail; timeZoneId?: string }) {
   const { t, i18n } = useTranslation("forms");
@@ -29,16 +30,25 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
   const closeReview = () => { setReviewTarget(null); setWasSent(undefined); };
   return <Surface title={t("workflow.title")} padded actions={data?.ruleRevision ? <span className="text-xs">{t("workflow.ruleRevision", { revision: data.ruleRevision })}</span> : undefined}>
     <ol className="flex flex-col gap-4">
-      {record.history.map(event => <li key={event.kind} className="flex flex-wrap gap-2 text-sm"><time dateTime={event.atUtc}>{date(event.atUtc)}</time><span>{t("responses.history" + event.kind)}</span>{event.actor?.displayName ? <span>· {event.actor.displayName}</span> : null}</li>)}
-      {data?.task?.decidedAtUtc ? <li className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-3 text-sm"><p><Badge variant="outline">{t("approvals.taskStates." + data.task.state)}</Badge> · {data.task.roleName}</p><p>{t("approvals.decisionBy", { name: data.task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(data.task.decidedAtUtc) })}</p>{data.task.reason ? <p className="whitespace-pre-wrap">{data.task.reason}</p> : null}</li> : null}
-      {data?.actions.map(action => {
+      {composeWorkflowHistory(record, data).map(entry => {
+        if (entry.type === "record") {
+          const event = entry.event;
+          return <li key={entry.key} className="flex flex-wrap gap-2 text-sm"><time dateTime={entry.atUtc}>{date(entry.atUtc)}</time><span>{t("responses.history" + event.kind)}</span>{event.actor?.displayName ? <span>· {event.actor.displayName}</span> : null}</li>;
+        }
+        if (entry.type === "decision") {
+          const task = entry.task;
+          return <li key={entry.key} className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-3 text-sm"><p><Badge variant="outline">{t("approvals.taskStates." + task.state)}</Badge> · {task.roleName}</p><p><time dateTime={entry.atUtc}>{t("approvals.decisionBy", { name: task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(entry.atUtc) })}</time></p>{task.reason ? <p className="whitespace-pre-wrap">{task.reason}</p> : null}</li>;
+        }
+        const action = entry.action;
         const next = canManage ? workflowNextAction(action) : null;
-        return <li key={action.id} tabIndex={-1} className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-3 text-sm sm:flex-row sm:items-start">
-          <time className="text-xs text-[var(--color-content-muted)]" dateTime={action.completedAtUtc ?? action.updatedAtUtc}>{date(action.completedAtUtc ?? action.updatedAtUtc)}</time>
+        return <li key={entry.key} tabIndex={-1} className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-3 text-sm sm:flex-row sm:items-start">
+          <time className="text-xs text-[var(--color-content-muted)]" dateTime={entry.atUtc}>{date(entry.atUtc)}</time>
           <div className="min-w-0 flex-1 space-y-2"><p>{t("rules.actions." + action.kind)}</p><p className="text-xs text-[var(--color-content-muted)]">{t("rules.events." + action.event)}</p>{action.reason ? <p>{action.reason}</p> : null}{action.state === "Uncertain" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.consultFirst")}</p> : action.state === "NotApplicable" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.notApplicable")}</p> : null}
             {action.recipients.length ? <ul className="space-y-3">{action.recipients.map(recipient => <li key={recipient.user.userId} tabIndex={-1} aria-label={t("workflow.recipient", { name: recipient.user.displayName ?? t("responses.unknownPerson") })} className="space-y-2 border-l border-[var(--color-border)] pl-3">
               <div className="flex flex-wrap items-center gap-2"><span>{recipient.user.displayName ?? t("responses.unknownPerson")}</span><Badge variant="outline">{t("workflow.recipientStates." + recipient.state)}</Badge></div>
               {recipient.reason ? <p>{recipient.reason}</p> : null}
+              {recipient.deliveredAtUtc ? <p className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-content-muted)]"><Badge variant="outline">{t("workflow.delivered")}</Badge><time dateTime={recipient.deliveredAtUtc}>{date(recipient.deliveredAtUtc)}</time></p> : null}
+              {recipient.readAtUtc ? <p className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-content-muted)]"><Badge variant="outline">{t("workflow.read")}</Badge><time dateTime={recipient.readAtUtc}>{date(recipient.readAtUtc)}</time></p> : null}
               {recipient.review ? <div className="space-y-1 text-xs text-[var(--color-content-muted)]"><p>{t(recipient.review.wasSent ? "workflow.reviewSent" : "workflow.reviewNotSent", { name: recipient.review.reviewedBy.displayName ?? t("responses.unknownPerson") })}</p><time dateTime={recipient.review.reviewedAtUtc}>{date(recipient.review.reviewedAtUtc)}</time><p>{t("workflow.humanReviewHint")}</p></div> : null}
               {canManage && workflowCanReview(recipient) ? <Button variant="outline" size="sm" disabled={disabled} onClick={event => { reviewFocus.current = event.currentTarget.closest("li"); setWasSent(undefined); setReviewTarget({ runId: action.id, recipientUserId: recipient.user.userId, expectedRevision: action.revision }); }}>{t("workflow.review")}</Button> : null}
             </li>)}</ul> : null}

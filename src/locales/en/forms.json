@@ -614,6 +614,8 @@
     "reviewCheckRequired": "Check the status to see whether your review was saved before confirming it again.",
     "recipient": "Recipient: {{name}}",
     "notSentRoleHint": "This recipient is recorded as failed. The role notice is not retried.",
+    "delivered": "Delivered",
+    "read": "Read",
     "recipientStates": {
       "NotFound": "No send recorded",
       "Pending": "To send",
@@ -647,13 +649,13 @@
     "decisionBy": "{{name}} · {{date}}",
     "conflict": "The approval changed. It was refreshed with the current decision.",
     "taskStates": {
-      "Open": "Pending approval",
+      "Open": "To approve",
       "Approved": "Approved",
       "Rejected": "Rejected"
     },
     "states": {
       "Received": "Received",
-      "PendingApproval": "Pending",
+      "PendingApproval": "To approve",
       "Approved": "Approved",
       "Rejected": "Rejected"
     },

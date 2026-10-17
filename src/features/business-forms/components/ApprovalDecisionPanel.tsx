@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
@@ -18,9 +19,10 @@ import { decideApprovalTask, fetchApprovalTask } from "../api/approvals";
 import { prepareApprovalDecision, type ApprovalDecision } from "../approvals";
 import { approvalForbidden, useApprovalScope } from "../hooks/useApprovalQueries";
 import { useUnobservedQueryCleanup } from "../hooks/useUnobservedQueryCleanup";
-export function ApprovalDecisionPanel({ taskId, onDecided }: {
+export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget }: {
     taskId: string;
     onDecided?: () => void;
+    actionsTarget?: HTMLElement | null;
 }) {
     const scope = useApprovalScope();
     const { t } = useTranslation("forms");
@@ -30,13 +32,14 @@ export function ApprovalDecisionPanel({ taskId, onDecided }: {
         return null;
     if (denied === owner)
         return <p role="status">{t("approvals.noPermission")}</p>;
-    return <DecisionEditor key={owner} taskId={taskId} scope={scope} onDecided={onDecided} onForbidden={() => setDenied(owner)}/>;
+    return <DecisionEditor key={owner} taskId={taskId} scope={scope} onDecided={onDecided} actionsTarget={actionsTarget} onForbidden={() => setDenied(owner)}/>;
 }
-function DecisionEditor({ taskId, scope, onDecided, onForbidden }: {
+function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget }: {
     taskId: string;
     scope: ReturnType<typeof useApprovalScope>;
     onDecided?: () => void;
     onForbidden: () => void;
+    actionsTarget?: HTMLElement | null;
 }) {
     const { t, i18n } = useTranslation("forms");
     const client = useQueryClient();
@@ -124,11 +127,12 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden }: {
     const transientReadFailure = errorFeedback(query.error).network || query.error instanceof ApiError && (query.error.status >= 500 || query.error.status === 429);
     if (!task || query.error && !transientReadFailure)
         return <EmptyState embedded title={t("common:states.loadFailed")} action={!approvalForbidden(query.error) ? <Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button> : undefined}/>;
+    const controls = task.state === "Open" ? <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button><Button disabled={!task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => void decide("Approved")}>{t("approvals.approve")}</Button></div> : null;
     return <div ref={summary} tabIndex={-1} className="space-y-3 outline-none">
   <div className="flex flex-wrap items-center gap-3"><Badge variant="outline">{t("approvals.taskStates." + task.state)}</Badge><span className="text-sm">{task.role.name}</span></div>
   {task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(task.decidedAtUtc, i18n.language, scope.user?.timeZoneId) })}</p> : null}
   {task.reason ? <p className="text-sm whitespace-pre-wrap">{task.reason}</p> : null}
-  {task.state === "Open" ? <div className="flex flex-wrap gap-2"><Button disabled={!task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => void decide("Approved")}>{t("approvals.approve")}</Button><Button variant="outline" disabled={!task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button></div> : null}
+  {actionsTarget === undefined ? controls : actionsTarget ? createPortal(controls, actionsTarget) : null}
   {task.cannotDecideReason === "OwnResponse" ? <p className="text-sm text-[var(--color-content-muted)]">{t("approvals.ownResponse")}</p> : null}
   {error instanceof ApiError && error.status === 409 ? <p role="status" className="text-sm">{t("approvals.conflict")}</p> : null}
   {cooldown.isRunning ? <p role="status">{t("wait", { count: cooldown.seconds })}</p> : null}
