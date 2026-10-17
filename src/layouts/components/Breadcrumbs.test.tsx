@@ -1,5 +1,8 @@
 import { screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
+import { http, HttpResponse } from "msw";
+import { server } from "@/test/mocks/server";
+import { currentUser } from "@/test/mocks/handlers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { renderRouteWithProviders, renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -20,8 +23,8 @@ async function breadcrumbs() {
 
 /// Una pantalla hija de mentira: lo único que hace es poner (o no) el último nivel de las migas, como lo va a
 /// hacer la del rol.
-function ChildScreen({ leaf }: { leaf?: string }) {
-  useBreadcrumbLeaf(leaf);
+function ChildScreen({ leaf, parent }: { leaf?: string; parent?: string }) {
+  useBreadcrumbLeaf(leaf, parent);
 
   return null;
 }
@@ -118,4 +121,23 @@ describe("Breadcrumbs", () => {
       expect(within(items[2]).queryByRole("link")).not.toBeInTheDocument();
     });
   });
+});
+
+it.each([true, false])("uses the confirmed PDF parent and links it only with template read: %s", async canRead => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: canRead ? ["formrules.manage", "formtemplates.read"] : ["formrules.manage"] })));
+  renderWithProviders(<MemoryRouter initialEntries={["/formularios/form-id/pdf"]}>
+    <Breadcrumbs/><ChildScreen leaf="Diseño del PDF" parent="Visita confirmada"/>
+  </MemoryRouter>);
+  const items = await breadcrumbs();
+  expect(items.map(item => item.textContent)).toEqual(["Inicio", "Visita confirmada", "Diseño del PDF"]);
+  expect(items[2]).toHaveAttribute("aria-current", "page");
+  if (canRead) expect(await within(items[1]).findByRole("link", { name: "Visita confirmada" })).toHaveAttribute("href", "/formularios/form-id");
+  else expect(within(items[1]).queryByRole("link")).not.toBeInTheDocument();
+});
+
+it("keeps the PDF route current before its confirmed labels arrive", async () => {
+  renderWithProviders(<MemoryRouter initialEntries={["/formularios/form-id/pdf"]}><Breadcrumbs/></MemoryRouter>);
+  const items = await breadcrumbs();
+  expect(items.map(item => item.textContent)).toEqual(["Inicio", "Diseño del PDF"]);
+  expect(items[1]).toHaveAttribute("aria-current", "page");
 });

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useCurrentUser } from "@/auth/useCurrentUser";
 import { Link, useLocation } from "react-router";
 import { branchOf, isFormsPath, navigationLinks, parentLinkOf, withoutTrailingSlash } from "../navigation";
 import { useCurrentBreadcrumbLeaf, useCurrentBreadcrumbParent } from "@/shared/hooks/useBreadcrumbLeaf";
@@ -36,6 +37,8 @@ export function Breadcrumbs() {
   const pathname = withoutTrailingSlash(useLocation().pathname);
   const leaf = useCurrentBreadcrumbLeaf();
   const parent = useCurrentBreadcrumbParent();
+  const pdfPath = /^\/formularios\/([^/]+)\/pdf$/.exec(pathname);
+  if (pdfPath) return <PdfBreadcrumbs formId={pdfPath[1]} leaf={leaf} parent={parent} />;
   const responsePath = /^\/formularios\/(?:respuestas$|([^/]+)\/respuestas(?:\/([^/]+))?$)/.exec(pathname);
   if (responsePath) return <ResponseBreadcrumbs formId={responsePath[1]} detail={!!responsePath[2]} leaf={leaf} parent={parent} />;
   const activeLabelKey = pathname === "/" ? undefined : findActiveLabelKey(pathname);
@@ -96,4 +99,17 @@ export function Breadcrumbs() {
 function ResponseBreadcrumbs({formId,detail,leaf,parent}:{formId?:string;detail:boolean;leaf?:string;parent?:string}) {
  const {t}=useTranslation();const name=parent;
  return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm"><li><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator/><li><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.forms")}</Link></li><Separator/>{detail&&formId?<><li className="truncate"><Link to={`/formularios/${formId}/respuestas`} className={linkClassName}>{name??t("navigation.responses")}</Link></li><Separator/></>:null}<li aria-current="page" className="truncate font-medium">{leaf??t("navigation.responses")}</li></ol></nav>;
+}
+
+function PdfBreadcrumbs({ formId, leaf, parent }: { formId: string; leaf?: string; parent?: string }) {
+  const { t } = useTranslation(["common", "forms"]);
+  const { data: user } = useCurrentUser();
+  const canReadTemplate = user?.permissions.includes("formtemplates.read");
+  return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0">
+    <ol className="flex min-w-0 items-center gap-1.5 truncate text-sm">
+      <li><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li>
+      {parent ? <><Separator/><li className="truncate">{canReadTemplate ? <Link to={"/formularios/" + formId} className={linkClassName}>{parent}</Link> : parent}</li></> : null}
+      <Separator/><li aria-current="page" className="truncate font-medium text-[var(--color-content)]">{leaf ?? t("forms:pdf.title")}</li>
+    </ol>
+  </nav>;
 }

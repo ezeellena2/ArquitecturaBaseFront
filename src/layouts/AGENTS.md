@@ -22,3 +22,5 @@ Define layouts de acceso, inicio y aplicación autenticada, además de barra, me
 Formularios compone «Respuestas» dinámicas con la navegación fija de diseño/catálogos. `formsNavigation` es neutral; layouts informa si el panel está abierto y app aporta resultados HTTP y recuperación. Layouts no importa composición de app. «Ver todos» aparece si el backend informa más páginas; nunca fijar formularios por nombre o ID en navigation.ts.
 
 Las migas de respuesta leen número y nombre del padre aportados por el detalle mediante el hook neutral; el listado paginado de navegación no es fuente del nombre confirmado.
+
+Las migas del diseño PDF usan el nombre confirmado que aporta su pantalla: Inicio / formulario / Diseño del PDF. El formulario enlaza al editor sólo con formtemplates.read; RulesManage por sí solo conserva el nombre como texto.
