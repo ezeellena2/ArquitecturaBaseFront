@@ -1,0 +1,27 @@
+import { z } from "zod";
+import { api } from "@/shared/api/httpClient";
+import { canonicalFormFieldSchema,formId } from "./response";
+import type { FormSuggestionInput } from "../suggestions";
+const guid=z.string().uuid();
+const revision=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+const author=z.strictObject({userId:guid,displayName:z.string().nullable()});
+const text=z.record(z.string().refine(value=>value==="es"||value==="en"),z.string());
+const condition=z.strictObject({fieldId:guid,operator:z.enum(["in","contains","equals","gte","lte","answered","unanswered","notAsked"]),values:z.array(z.string()).nullable()});
+const mapping=z.strictObject({source:z.strictObject({kind:z.enum(["Field","RecordNumber"]),fieldId:guid.nullable()}),destinationFieldId:guid});
+const suggestion=z.strictObject({id:guid,destinationDefinitionId:guid,destinationVersionId:guid,mode:z.enum(["Assistant","Always"]),when:z.string().max(1000).nullable(),isActive:z.boolean(),conditions:z.array(condition).max(10),mappings:z.array(mapping).max(40)});
+const set=z.strictObject({id:guid.nullable(),definitionId:guid,sourceVersionId:guid.nullable(),revision,suggestions:z.array(suggestion).max(20),createdAtUtc:z.iso.datetime().nullable(),author:author.nullable()});
+const form=z.strictObject({definitionId:guid,versionId:guid,name:text,originalCulture:z.enum(["es","en"]),questions:z.array(canonicalFormFieldSchema)});
+const options=z.strictObject({source:form,destinations:z.array(form),conditionChoices:z.record(guid,z.array(z.strictObject({id:guid,label:z.string()})))});
+const changes=z.strictObject({addedSuggestions:z.number().int().nonnegative(),updatedSuggestions:z.number().int().nonnegative(),removedSuggestions:z.number().int().nonnegative(),orderChanged:z.boolean()});
+const history=z.strictObject({items:z.array(z.strictObject({id:guid,revision:revision.refine(value=>value>0),createdAtUtc:z.iso.datetime(),author:author.nullable(),changes})),page:z.number().int().positive(),pageSize:z.number().int().positive(),totalCount:z.number().int().nonnegative(),totalPages:z.number().int().nonnegative(),hasPrevious:z.boolean(),hasNext:z.boolean()});
+function read<T>(schema:z.ZodType<T>,body:unknown):T { const parsed=schema.safeParse(body);if(!parsed.success)throw new Error("Invalid form suggestions contract.");return parsed.data; }
+export const readSuggestionSet=(body:unknown)=>read(set,body);
+export const readSuggestionOptions=(body:unknown)=>read(options,body);
+export type FormSuggestionSet=z.infer<typeof set>;
+export type FormSuggestionOptions=z.infer<typeof options>;
+const path=(id:string)=>"/api/forms/definitions/"+formId(id)+"/suggestions";
+export const fetchFormSuggestions=async(id:string,signal?:AbortSignal)=>readSuggestionSet(await api.get<unknown>(path(id),{signal,cache:"no-store"}));
+export const fetchSuggestionOptions=async(id:string,signal?:AbortSignal)=>readSuggestionOptions(await api.get<unknown>(path(id)+"/options",{signal,cache:"no-store"}));
+export const saveFormSuggestions=async(id:string,body:{expectedRevision:number;suggestions:readonly FormSuggestionInput[]},signal?:AbortSignal)=>readSuggestionSet(await api.post<unknown>(path(id),body,{signal}));
+export const fetchSuggestionHistory=async(id:string,page:number,signal?:AbortSignal)=>read(history,await api.get<unknown>(path(id)+"/revisions?"+new URLSearchParams({page:String(page),pageSize:"10"}),{signal,cache:"no-store"}));
+export const fetchSuggestionRevision=async(id:string,revision:number,signal?:AbortSignal)=>readSuggestionSet(await api.get<unknown>(path(id)+"/revisions/"+revision,{signal,cache:"no-store"}));
