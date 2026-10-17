@@ -7,6 +7,7 @@ import { z } from "zod";
 const cohorts = {
   responses: ["forms-responses-http", "FORMS_RESPONSES_HTTP_CONTRACT_INPUT"],
   rules: ["forms-rules-http", "FORMS_RULES_HTTP_CONTRACT_INPUT"],
+  suggestions: ["forms-suggestions-http", "FORMS_SUGGESTIONS_HTTP_CONTRACT_INPUT"],
   workflow: ["forms-workflow-http", "FORMS_WORKFLOW_HTTP_CONTRACT_INPUT"],
   approvals: ["forms-approvals-http", "FORMS_APPROVALS_HTTP_CONTRACT_INPUT"],
   pdf: ["forms-pdf-http", "FORMS_PDF_HTTP_CONTRACT_INPUT"],
