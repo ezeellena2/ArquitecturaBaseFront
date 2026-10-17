@@ -21,7 +21,7 @@ describe("publication acceptance and own status", () => {
     let received: unknown;
     server.use(http.post("/api/forms/definitions/:id/publications", async ({ request }) => { received = await request.json(); return HttpResponse.json(receipt, { status: 202 }); }));
     expect(await acceptFormPublication(definition.id, body)).toEqual(receipt);
-    expect(received).toEqual(body);
+    expect(received).toEqual({ name: body.name, prefix: body.prefix, draft: body.draft, expectedRevision: body.expectedRevision, requestId: body.requestId, checkToken: body.checkToken });
   });
   it("constructs its own status path and reads publishing without calling POST", async () => {
     server.use(http.get(path, () => HttpResponse.json({ ...status, state: "Publishing", stage: "Validate" })));
@@ -49,4 +49,13 @@ it("reads translated rejection issues from own status without exposing technical
  const issues = [{channelId:"WhatsApp",fieldId:null,choiceId:null,path:"channel",code:"WhatsApp.Flow.ValidationFailed",message:"WhatsApp rechazó la validación del formulario.",limit:null,culture:"en"}];
  server.use(http.get(path,()=>HttpResponse.json({...status,state:"Failed",issues})));
  expect((await fetchFormPublication(definition.id,requestId)).issues).toEqual(issues);
+});
+
+it("excludes the live offer instruction from the closed publication acceptance body", async () => {
+  let received: unknown;
+  server.use(http.post("/api/forms/definitions/:id/publications", async ({ request }) => { received = await request.json(); return HttpResponse.json(receipt, { status: 202 }); }));
+  const editorBody = { ...body, offerWhen: "Cuando visita a un cliente" };
+  await acceptFormPublication(definition.id, editorBody);
+  expect(received).not.toHaveProperty("offerWhen");
+  expect(received).toMatchObject({ requestId: body.requestId, expectedRevision: body.expectedRevision, checkToken: body.checkToken });
 });

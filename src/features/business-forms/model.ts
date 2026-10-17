@@ -34,11 +34,13 @@ export interface FormDraft<TQuestion> {
   readonly fields: readonly TQuestion[];
 }
 export interface DraftEditorValue {
+  readonly offerWhen: string | null;
   readonly name: LocalizedText;
   readonly prefix: string;
   readonly draft: FormDraft<DraftQuestion>;
 }
 export interface FormDefinitionSnapshot {
+  readonly offerWhen: string | null;
   readonly id: string;
   readonly name: LocalizedText;
   readonly prefix: string;
@@ -65,7 +67,8 @@ export interface DraftWriteBody extends DraftEditorValue {
   readonly expectedRevision?: number;
 }
 
-export interface FormPublicationWriteBody extends DraftEditorValue {
+export type FormPublicationValue = Omit<DraftEditorValue, "offerWhen">;
+export interface FormPublicationWriteBody extends FormPublicationValue {
   readonly requestId: string;
   readonly expectedRevision: number;
   readonly checkToken: string;

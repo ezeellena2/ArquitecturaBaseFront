@@ -19,7 +19,7 @@ const key = (id: string) => "field_" + id.replaceAll("-", "");
 const audit = { createdAtUtc: "2026-10-10T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-10T12:00:00Z", lastChangedBy: { userId: guid(2), displayName: "Ana Pérez" } };
 export function fixtureDefinition(culture: FormCulture = "es", prefixLocked = false): FormDefinitionSnapshot {
   const common = (n: number, es: string, en: string) => ({ fieldId: guid(n), key: key(guid(n)), label: { es, en }, help: null, required: true });
-  return { id: fixtureFormId, name: { es: "Registrar visita", en: "Register visit" }, prefix: "VIS", prefixLocked, revision: 1,
+  return { offerWhen: null, id: fixtureFormId, name: { es: "Registrar visita", en: "Register visit" }, prefix: "VIS", prefixLocked, revision: 1,
     draft: { format: 1, culture, submitLabel: { es: "Confirmar visita", en: "Confirm visit" }, fields: [
       { ...common(10, "Cliente", "Customer"), type: "choice", options: [{ choiceId: guid(20), label: { es: "Pérez Hnos.", en: "Pérez Hnos." } }, { choiceId: guid(21), label: { es: "Distribuidora Norte", en: "North distributor" } }] },
       { ...common(11, "Contacto", "Contact"), type: "shortText", maxLength: 80 },
@@ -213,7 +213,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       }
       return q.type === "shortText" || q.type === "longText" ? { ...common, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600) } : { ...common, type: q.type };
     });
-    const definition: FormDefinitionSnapshot = { id: previous?.id ?? guid(serial++), name: Object.fromEntries(Object.entries(body.name).map(([language, text]) => [language, text.trim()])), prefix: body.prefix, prefixLocked: previous?.prefixLocked ?? false,
+    const definition: FormDefinitionSnapshot = { offerWhen: body.offerWhen?.trim() || null, id: previous?.id ?? guid(serial++), name: Object.fromEntries(Object.entries(body.name).map(([language, text]) => [language, text.trim()])), prefix: body.prefix, prefixLocked: previous?.prefixLocked ?? false,
       revision: (previous?.revision ?? 0) + 1, draft: { ...body.draft, fields: canonical } };
     definitions.set(definition.id, definition);
     const result: FormDraftSaveResult = { requestId: body.requestId, definition, identityMap: { fields, choices }, recovery: { path: "/api/forms/draft-changes/" + body.requestId, resultExpiresAtUtc: "2026-11-09T12:00:00Z" } };

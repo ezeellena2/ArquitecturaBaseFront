@@ -20,7 +20,7 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
     || (value.type === "choice" ? value.source ? value.options != null : value.options == null : value.options !== null || value.source != null)
     || value.key !== `field_${value.fieldId.replaceAll("-", "").toLowerCase()}`) context.addIssue({ code: "custom", message: "Invalid configuration." });
 });
-const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,11}$/), prefixLocked: z.boolean(), revision,
+const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,11}$/), prefixLocked: z.boolean(), revision, offerWhen: z.string().min(1).max(1000).refine(value => value === value.trim()).nullable(),
   draft: z.strictObject({ format: z.literal(1), culture: z.enum(["es", "en"]), submitLabel: text, fields: z.array(canonicalFormFieldSchema).max(40) }),
 }).superRefine((value, context) => {
   const { culture, fields, submitLabel } = value.draft;

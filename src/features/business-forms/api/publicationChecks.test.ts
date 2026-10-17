@@ -21,7 +21,7 @@ describe("publication checks", () => {
       received = await request.json(); return HttpResponse.json(checked);
     }));
     const result = await checkFormPublication(definition.id, body);
-    expect(received).toEqual(body);
+    expect(received).toEqual({ name: body.name, prefix: body.prefix, draft: body.draft, expectedRevision: body.expectedRevision });
     expect(received).not.toHaveProperty("requestId");
     expect(result.issues[0]).toMatchObject({ fieldId: definition.draft.fields[0]!.fieldId, culture: "en" });
     expect(result.canAccept).toBe(false);
@@ -65,4 +65,12 @@ it("uses the server's next version number and rejects a missing or invalid numbe
 it.each([undefined, null, 0, -1, 1.5])("rejects invalid nextVersionNumber %s", async nextVersionNumber => {
   server.use(http.post("/api/forms/definitions/:id/publication-checks", () => HttpResponse.json({ ...checked, nextVersionNumber })));
   await expect(checkFormPublication(definition.id, body)).rejects.toThrow("Unsupported form response.");
+});
+
+it("excludes the live offer instruction from the closed publication check body", async () => {
+  let received: unknown;
+  server.use(http.post("/api/forms/definitions/:id/publication-checks", async ({ request }) => { received = await request.json(); return HttpResponse.json(checked); }));
+  await checkFormPublication(definition.id, { ...body, offerWhen: "Cuando visita a un cliente" });
+  expect(received).not.toHaveProperty("offerWhen");
+  expect(received).toMatchObject({ name: body.name, prefix: body.prefix, draft: body.draft, expectedRevision: body.expectedRevision });
 });

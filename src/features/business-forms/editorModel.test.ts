@@ -3,7 +3,7 @@ import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedVa
 import { openDraftSession } from "./draftSession";
 import type { FormDefinitionSnapshot } from "./model";
 
-const current: FormDefinitionSnapshot = { id: "form", name: { es: "Visita" }, prefix: "VIS", prefixLocked: true, revision: 3,
+const current: FormDefinitionSnapshot = { offerWhen: null, id: "form", name: { es: "Visita" }, prefix: "VIS", prefixLocked: true, revision: 3,
   draft: { format: 1, culture: "es", submitLabel: { es: "Enviar", en: "Send" }, fields: [
     { fieldId: "second", key: "second", type: "longText", label: { es: "Observaciones" }, help: null, required: false, maxLength: 300 },
     { fieldId: "first", key: "first", type: "choice", label: { es: "Cliente" }, help: null, required: true,
@@ -108,4 +108,14 @@ it("replaces a confirmed catalog field while preserving texts and keeps an uncon
   expect(replaced).toEqual({ ...field, localId: "new-local", fieldId: null, replacesFieldId: "old-field", source: { catalog: "catalog-b" } });
   expect(changeQuestionCatalog(field, "catalog-a", "unused")).toBe(field);
   expect(changeQuestionCatalog(replaced, "catalog-c", "unused")).toEqual({ ...replaced, source: { catalog: "catalog-c" } });
+});
+
+it("rebases one monolingual offer instruction explicitly without creating translation changes", () => {
+  const definition = { ...current, offerWhen: "Cuando entrega un pedido" };
+  const mine = { ...openDraftSession(scope, definition).value, offerWhen: "Cuando visita a un cliente" };
+  const review = createDraftReview(mine, definition);
+  expect(review.rows).toEqual([{ id: "offerWhen", kind: "offerWhen", mine: mine.offerWhen, current: definition.offerWhen, canKeep: true }]);
+  expect(resolveDraftReview(review, { offerWhen: "mine" })).toHaveProperty("offerWhen", mine.offerWhen);
+  expect(resolveDraftReview(review, { offerWhen: "current" })).toHaveProperty("offerWhen", definition.offerWhen);
+  expect(resolveDraftReview(review, {})).toBeNull();
 });

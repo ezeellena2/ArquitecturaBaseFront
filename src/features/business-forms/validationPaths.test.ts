@@ -17,6 +17,6 @@ describe("fixed publication diagnostics", () => {
 });
 
 it("keeps catalog validation attached to its frozen question identity", () => {
-  const value = { name: { es: "Visita" }, prefix: "VIS", requestId: "request", draft: { format: 1, culture: "es", submitLabel: { es: "Enviar" }, fields: [{ localId: "catalog-question", fieldId: null, replacesFieldId: null, type: "choice", source: { catalog: "catalog" }, label: { es: "Cliente" }, help: null, required: true }] } } as unknown as import("./model").DraftWriteBody;
+  const value = { offerWhen: null, name: { es: "Visita" }, prefix: "VIS", requestId: "request", draft: { format: 1, culture: "es", submitLabel: { es: "Enviar" }, fields: [{ localId: "catalog-question", fieldId: null, replacesFieldId: null, type: "choice", source: { catalog: "catalog" }, label: { es: "Cliente" }, help: null, required: true }] } } as unknown as import("./model").DraftWriteBody;
   expect(draftFieldIssues(value, { "draft.fields[0].source.catalog": ["Revisá el catálogo."] })).toEqual([{ path: "draft.fields[0].source.catalog", fieldLocalId: "catalog-question", messages: ["Revisá el catálogo."] }]);
 });

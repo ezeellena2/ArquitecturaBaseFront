@@ -17,13 +17,13 @@ const secondId = "01990000-0000-7000-8000-000000000004";
 const choiceId = "01990000-0000-7000-8000-000000000005";
 const secondChoiceId = "01990000-0000-7000-8000-000000000006";
 const audit = { createdAtUtc: "2026-10-09T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-09T12:00:00Z", lastChangedBy: null };
-const initial: DraftEditorValue = { name: { es: "Encuesta" }, prefix: "ENC", draft: { format: 1, culture: "es", submitLabel: { es: "Enviar", en: "Submit" }, fields: [
+const initial: DraftEditorValue = { offerWhen: null, name: { es: "Encuesta" }, prefix: "ENC", draft: { format: 1, culture: "es", submitLabel: { es: "Enviar", en: "Submit" }, fields: [
   { localId: "q", fieldId: null, replacesFieldId: null, type: "longText", label: { es: "Opinión", en: "Opinion" }, help: { es: null, en: "Details" }, required: false, maxLength: null },
 ] } };
 const scope: FormReadScope = { actorId: "actor-a", culture: "es", permissions: ["formtemplates.read", "formtemplates.manage"] };
 const key = (value: string) => `field_${value.replaceAll("-", "")}`;
 function receipt(requestId: string, revision = 1) {
-  return { requestId, definition: { id, name: { es: "Encuesta" }, prefix: "ENC", prefixLocked: false, revision,
+  return { requestId, definition: { offerWhen: null, id, name: { es: "Encuesta" }, prefix: "ENC", prefixLocked: false, revision,
     draft: { ...initial.draft, fields: [{ fieldId, key: key(fieldId), type: "longText" as const, label: initial.draft.fields[0]!.label,
       help: { en: "Details" }, required: false, maxLength: 600, options: null }] } },
     identityMap: { fields: [{ localId: "q", fieldId, key: key(fieldId), replacesFieldId: null }], choices: [] },

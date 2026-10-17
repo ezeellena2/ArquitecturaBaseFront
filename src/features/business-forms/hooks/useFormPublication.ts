@@ -59,7 +59,7 @@ export function useFormPublication(scope: FormReadScope) {
     if (!owns || flight.current || !(current.current.phase === "Idle" || current.current.phase === "Accepted" && ["Published", "Failed"].includes(current.current.status?.state ?? ""))
       || !checked.canAccept || !checked.checkToken || !checked.checkExpiresAtUtc || Date.parse(checked.checkExpiresAtUtc) <= Date.now()
       || checked.definitionId.toLowerCase() !== id.toLowerCase() || checked.draftRevision !== body.expectedRevision) return;
-    const attempt = { definitionId: id, body: structuredClone({ ...body, requestId: crypto.randomUUID(), checkToken: checked.checkToken }) };
+    const attempt = { definitionId: id, body: structuredClone({ name: body.name, prefix: body.prefix, draft: body.draft, expectedRevision: body.expectedRevision, requestId: crypto.randomUUID(), checkToken: checked.checkToken }) };
     return write(attempt);
   }, [owns, write]);
   const consult = useCallback(async () => {

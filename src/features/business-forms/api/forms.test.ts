@@ -9,13 +9,13 @@ const id = "01990000-0000-7000-8000-000000000001";
 const requestId = "01990000-0000-7000-8000-000000000002";
 const fieldId = "01990000-0000-7000-8000-000000000003";
 const key = `field_${fieldId.replaceAll("-", "")}`;
-const definition = { id, name: { es: "Encuesta" }, prefix: "ENC", prefixLocked: false, revision: 1,
+const definition = { offerWhen: null, id, name: { es: "Encuesta" }, prefix: "ENC", prefixLocked: false, revision: 1,
   draft: { format: 1, culture: "es", submitLabel: { es: "Enviar", en: "Submit" }, fields: [
     { fieldId, key, type: "longText", label: { es: "Opinión", en: "Opinion" }, help: { es: "Detalle", en: "Details" }, required: false, maxLength: 2000, options: null },
   ] } };
 const commit = { requestId, definition, identityMap: { fields: [{ localId: "q", fieldId, key, replacesFieldId: null }], choices: [] },
   recovery: { path: `/api/forms/draft-changes/${requestId}`, resultExpiresAtUtc: "2026-11-08T12:00:00Z" } };
-const body = { requestId, name: { es: "Encuesta" }, prefix: "ENC", draft: { format: 1 as const, culture: "es" as const,
+const body = { offerWhen: null, requestId, name: { es: "Encuesta" }, prefix: "ENC", draft: { format: 1 as const, culture: "es" as const,
   submitLabel: { es: "Enviar", en: "Submit" }, fields: [{ localId: "q", fieldId: null, replacesFieldId: null, type: "longText" as const,
     label: { es: "Opinión", en: "Opinion" }, help: { es: "Detalle", en: "Details" }, required: false, maxLength: 2000 }] } };
 afterEach(resetHttpClient);
@@ -129,4 +129,18 @@ describe("form draft HTTP contract", () => {
     server.use(http.post("/api/forms/definitions", () => HttpResponse.json({ ...commit, definition: broken })));
     await expect(createFormDraft(body)).rejects.toThrow("Unsupported form response.");
   });
+});
+
+it.each([null, "Cuando visita a un cliente"])("preserves the canonical monolingual offer instruction in detail and recovery: %j", async offerWhen => {
+  const changed = { ...definition, offerWhen };
+  const audit = { createdAtUtc: "2026-10-09T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-09T12:00:00Z", lastChangedBy: null };
+  server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: changed, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })),
+    http.get(`/api/forms/draft-changes/${requestId}`, () => HttpResponse.json({ requestId, kind: "Create", status: "Committed", committedAtUtc: "2026-10-09T12:00:00Z", currentRevision: 1, result: { ...commit, definition: changed } })));
+  expect((await fetchFormDefinition(id)).definition).toHaveProperty("offerWhen", offerWhen);
+  expect((await recoverFormDraft(requestId)).result.definition).toHaveProperty("offerWhen", offerWhen);
+});
+
+it.each([undefined, { es: "PRIVATE" }, "", " not normalized ", "x".repeat(1001)])("rejects a missing or noncanonical offer instruction without exposing its content: %j", async offerWhen => {
+  server.use(http.post("/api/forms/definitions", () => HttpResponse.json({ ...commit, definition: { ...definition, offerWhen } }, { status: 201 })));
+  await expect(createFormDraft(body)).rejects.toThrow("Unsupported form response.");
 });

@@ -6,7 +6,7 @@ import {
 import type { DraftEditorValue, FormDraftSaveResult, FormDefinitionSnapshot } from "./model";
 
 const scope = { actorId: "actor-a", editorId: "editor-a" };
-const initial: DraftEditorValue = {
+const initial: DraftEditorValue = { offerWhen: null,
   name: { es: "Pedido" }, prefix: "PED", draft: {
     format: 1, culture: "es", submitLabel: { es: "Enviar pedido", en: "Submit request" },
     fields: [
@@ -19,7 +19,7 @@ const initial: DraftEditorValue = {
 };
 function result(requestId = "request-a", revision = 1): FormDraftSaveResult {
   return {
-    requestId, definition: {
+    requestId, definition: { offerWhen: null,
       id: "definition-a", name: { es: "Pedido" }, prefix: "PED", prefixLocked: false, revision,
       draft: { ...initial.draft, fields: [
         { fieldId: "field-a", key: "field_1", type: "choice", label: { es: "Turno", en: "Shift" }, help: null, required: true,
@@ -241,4 +241,22 @@ it("opens and confirms a catalog choice without materializing local options", ()
   expect(confirmed.phase).toBe("Editing"); expect(confirmed.value.draft.fields[0]).toMatchObject({ source: { catalog: catalogId } });
   const wrong = { ...saved, definition: { ...saved.definition, draft: { ...saved.definition.draft, fields: [{ ...field, source: { catalog: "01990000-0000-7000-8000-000000000092" } }] } } } as unknown as FormDraftSaveResult;
   expect(confirmDraftSave(attempt, identity, wrong).phase).toBe("Unconfirmed");
+});
+
+it("keeps the monolingual offer instruction through opening, frozen save and canonical recovery", () => {
+  const definition = { ...result().definition, offerWhen: "Cuando visitó a un cliente" };
+  const opened = openDraftSession(scope, definition);
+  expect(opened.value).toHaveProperty("offerWhen", definition.offerWhen);
+  const local = changeDraft(opened, { ...opened.value, offerWhen: "  Cuando entrega un pedido  " });
+  const saving = beginDraftSave(local, "request-offer");
+  expect(saving.pending?.body).toHaveProperty("offerWhen", "  Cuando entrega un pedido  ");
+  const received = { ...result("request-offer", 2), definition: { ...definition, revision: 2, offerWhen: "Cuando entrega un pedido" }, identityMap: {
+    fields: definition.draft.fields.map(field => ({ localId: field.fieldId, fieldId: field.fieldId, key: field.key, replacesFieldId: null })),
+    choices: definition.draft.fields.flatMap(field => field.type === "choice" && !field.source ? field.options.map(option => ({ fieldLocalId: field.fieldId, localId: option.choiceId, fieldId: field.fieldId, choiceId: option.choiceId })) : []),
+  } };
+  const recovered = confirmDraftSave(markDraftSaveUnconfirmed(saving, { ...scope, requestId: "request-offer" }), { ...scope, requestId: "request-offer" }, received, 3);
+  expect(recovered.value).toHaveProperty("offerWhen", received.definition.offerWhen);
+  expect(recovered.baseline).toHaveProperty("offerWhen", received.definition.offerWhen);
+  expect(recovered.phase).toBe("ReviewRequired");
+  expect(recovered.confirmed?.revision).toBe(2);
 });

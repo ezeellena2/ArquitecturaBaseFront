@@ -46,7 +46,7 @@ export function startDraftSession(scope: DraftEditorScope, value: DraftEditorVal
 }
 
 export function openDraftSession(scope: DraftEditorScope, definition: FormDefinitionSnapshot): DraftSession {
-  const value: DraftEditorValue = { name: definition.name, prefix: definition.prefix,
+  const value: DraftEditorValue = { name: definition.name, prefix: definition.prefix, offerWhen: definition.offerWhen,
     draft: { ...definition.draft, fields: definition.draft.fields.map(field => editorQuestion(field, field.fieldId, id => id)) } };
   return { ...startDraftSession(scope, value), confirmed: snapshot(definition), currentRevision: definition.revision };
 }
@@ -131,7 +131,7 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
     handles.set(saved.fieldId, { localId: field.localId, options });
   }
   if (choiceCount !== choiceMap.size) return null;
-  return { name: result.definition.name, prefix: result.definition.prefix, draft: {
+  return { name: result.definition.name, prefix: result.definition.prefix, offerWhen: result.definition.offerWhen, draft: {
     ...result.definition.draft, fields: canonical.map(field => {
       const handle = handles.get(field.fieldId)!;
       return editorQuestion(field, handle.localId, id => handle.options.get(id)!);

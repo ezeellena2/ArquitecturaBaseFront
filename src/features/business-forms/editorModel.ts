@@ -5,7 +5,7 @@ export const localizedValue = (text: LocalizedText | Readonly<Record<string, str
 export const administrativeName = (name: LocalizedText, culture: FormCulture) => name[culture]?.trim() ? name[culture]! : name[culture === "es" ? "en" : "es"] ?? "";
 export const suggestedPrefix = (name: string) => (name.trim().split(/\s+/).at(-1) ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
 export function emptyForm(culture: FormCulture): DraftEditorValue {
-  return { name: { [culture]: "" }, prefix: "", draft: { format: 1, culture, submitLabel: { [culture]: culture === "es" ? "Enviar" : "Submit" }, fields: [] } };
+  return { name: { [culture]: "" }, prefix: "", offerWhen: null, draft: { format: 1, culture, submitLabel: { [culture]: culture === "es" ? "Enviar" : "Submit" }, fields: [] } };
 }
 export type QuestionEditorType = DraftQuestion["type"] | "catalogChoice";
 export const questionEditorType = (question: DraftQuestion): QuestionEditorType => question.type === "choice" && question.source ? "catalogChoice" : question.type;
@@ -44,7 +44,7 @@ const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;
-  readonly kind: "name" | "prefix" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder";
+  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder";
   readonly parentId?: string;
   readonly optionId?: string;
   readonly culture?: FormCulture;
@@ -66,6 +66,7 @@ export function createDraftReview(mine: DraftEditorValue, definition: FormDefini
   localizedRows("name", "name", mine.name, saved.name);
   localizedRows("submit", "submit", mine.draft.submitLabel, saved.draft.submitLabel);
   if (mine.prefix !== saved.prefix) rows.push({ id: "prefix", kind: "prefix", mine: mine.prefix, current: saved.prefix, canKeep: !definition.prefixLocked });
+  if (mine.offerWhen !== saved.offerWhen) rows.push({ id: "offerWhen", kind: "offerWhen", mine: mine.offerWhen, current: saved.offerWhen, canKeep: true });
   const theirs = new Map(saved.draft.fields.map(q => [fieldIdentity(q), q]));
   const ours = new Map(mine.draft.fields.map(q => [fieldIdentity(q), q]));
   for (const id of new Set([...theirs.keys(), ...ours.keys()])) {
@@ -106,6 +107,7 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
     const selected = choices[row.id] === "mine" ? row.mine : row.current;
     if (row.kind === "name") result = { ...result, name: withText(result.name, row.culture!, selected as string | null) };
     if (row.kind === "prefix") result = { ...result, prefix: selected as string };
+    if (row.kind === "offerWhen") result = { ...result, offerWhen: selected as string | null };
     if (row.kind === "submit") result.draft = { ...result.draft, submitLabel: withText(result.draft.submitLabel, row.culture!, selected as string | null) };
     if (row.kind === "field") {
       const id = row.parentId!; const old = fields.get(id);

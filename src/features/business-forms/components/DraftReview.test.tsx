@@ -10,7 +10,7 @@ import { createDraftReview, resolveDraftReview, changeQuestionCatalog } from "..
 import { openDraftSession } from "../draftSession";
 import type { FormDefinitionSnapshot } from "../model";
 
-const definition: FormDefinitionSnapshot = {
+const definition: FormDefinitionSnapshot = { offerWhen: null,
   id: "form", name: { es: "Visita" }, prefix: "VIS", prefixLocked: true, revision: 2,
   draft: { format: 1, culture: "es", submitLabel: { es: "Enviar" }, fields: [
     { fieldId: "customer", key: "customer", type: "choice", label: { es: "Cliente" }, help: null, required: true,
