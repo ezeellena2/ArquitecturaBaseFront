@@ -53,6 +53,7 @@ La historia completa, en el orden en que se lee el lienzo:
 
 | Captura | Qué define |
 | --- | --- |
+| [Recorrido guiado](evidence/formularios-whatsapp/00-recorrido.png) | **Elegido el 2026-10-17** (versión 78 del lienzo). Una visita de punta a punta en ocho capítulos: armar el formulario y sus catálogos, publicar, mandar, responder con fotos o un audio, el asistente, reglas con aprobación y PDF, la planilla con Excel y los formularios que faltan. Cada paso dice su etapa y qué hacen la persona, el sistema y la IA. Resume tableros elegidos; no define pantallas. |
 | [La idea en una mirada](evidence/formularios-whatsapp/01-idea.png) | Los cinco pasos (armar, publicar, completar en WhatsApp, quedar guardado, aprobar y PDF) y las cuatro reglas que no cambian. |
 | [Diseñar formularios](evidence/formularios-whatsapp/02-disenar-listado.png) | Navegación «Formularios» y listado de formularios con su estado en WhatsApp dicho en palabras. |
 | [Editar un formulario](evidence/formularios-whatsapp/03-editor.png) | Editor de una sola pantalla con vista previa del celular, preguntas editadas en el lugar y «Cuando llega una respuesta». |
@@ -131,7 +132,7 @@ se avisa al operador y se ofrece mandarlo de nuevo. **Decisión del 2026-10-11:*
 
 Etapa 2B, fotos y documentos (sumada el 2026-10-11, dibujada en la versión 66 del lienzo). **Elegida el mismo día**,
 con miniaturas livianas en el chat, ninguna respuesta guardada a medias y hasta 10.000 respuestas por exportación. El
-recorrido guiado tiene su capítulo desde la versión 67.
+recorrido guiado la incluye desde la versión 67; desde la 78, dentro del recorrido de punta a punta.
 Preguntas «Foto» (cámara o galería, o solo cámara) y «Documento» (PDF, Excel, Word e imágenes; sin CSV porque Meta no lo
 admite), una por pantalla del Flow y hasta 10 archivos por respuesta. Los archivos se ven en la tarjeta del chat, la
 planilla y el PDF, con el mismo permiso que los valores. Detalle en el
