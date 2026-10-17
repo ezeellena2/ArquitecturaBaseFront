@@ -35,13 +35,13 @@ export function ChatTimeline({ items, actor, timeZone, canSend, canReuse, review
         attachment={item.origin === "FormAction" ? <MessageCard icon={<FormIcon className="size-4" />} title={t("formActions.title")} description={t(item.kind === "Document" ? "formActions.document" : "formActions.notice")} /> : item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard actor={actor} timeZone={timeZone} onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : undefined}
         timestamp={item.occurredAtUtc} timeLabel={formatTimeInZone(item.occurredAtUtc, language, timeZone)}
         dateLabel={formatDateTimeInZone(item.occurredAtUtc, language, timeZone)}
-        author={item.purpose === "Access" ? t("access.label") : item.author ? t(item.author === "automatic" ? "author.automatic" : item.author === "bot" ? "author.bot" : item.operatorUserId === actor ? "author.you" : "author.operator") : undefined}
+        author={item.purpose === "Access" ? t("access.label") : item.author ? t(item.author === "automatic" ? "author.automatic" : item.author === "assistant" ? "author.assistant" : item.operatorUserId === actor ? "author.you" : "author.operator") : undefined}
         delivery={item.delivery ? { state: item.delivery.state, label: t(`status.${item.delivery.code}`) } : undefined}>
-        {item.origin !== "FormAction" && item.source === "outgoing" && item.operation.state === "Uncertain" ? <>
+        {item.origin === "Conversation" && item.source === "outgoing" && item.operation.state === "Uncertain" ? <>
           <p>{t("review.description")}</p>
           {canSend && item.operation.operatorUserId === actor ? <Button variant="outline" size="sm" disabled={reviewing} onClick={() => onReview(item.operation)}>{t("review.action")}</Button> : null}
         </> : null}
-        {item.origin !== "FormAction" && item.delivery?.code === "Failed" && item.kind !== "Flow" && item.body && canSend ?
+        {item.origin === "Conversation" && item.delivery?.code === "Failed" && item.kind !== "Flow" && item.body && canSend ?
           <Button variant="muted-link" size="inline" disabled={!canReuse} onClick={() => onReuse(item.body!)}>{t("reuse")}</Button> : null}
         {item.delivery?.code === "Failed" && item.kind === "Flow" ? <p>{t("forms.failed")}</p> : null}
       </MessageBubble>)}

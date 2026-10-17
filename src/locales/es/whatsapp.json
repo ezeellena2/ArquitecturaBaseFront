@@ -27,15 +27,24 @@
   "actionFailed": "No se pudo completar la acción.",
   "reuse": "Usar este texto en el borrador",
   "author": {
-    "bot": "Bot",
+    "assistant": "Asistente",
     "you": "Vos",
     "operator": "Operador",
     "automatic": "Automático"
   },
   "mode": {
-    "Bot": "Automatización sin configurar",
+    "Assistant": "Asistente",
     "Manual": "Atención manual",
+    "enable": "Pasar a modo Asistente",
+    "enableConfirm": "Pasar a Asistente",
+    "assistantDescription": "El asistente va a atender la conversación con {{name}}: reconoce pedidos y le manda formularios prellenados. Nunca guarda una respuesta solo. Podés tomar la atención manual cuando quieras.",
+    "availability": {
+      "notConfigured": "El asistente no está disponible: falta configurar la conexión de IA.",
+      "paused": "El asistente está pausado.",
+      "modelNotQualified": "El asistente no está disponible: falta verificar el modelo."
+    },
     "take": "Tomar atención manual",
+    "manualSendInProgress": "Tomaste la atención manual. El asistente estaba mandando un formulario: ese envío termina y queda en la conversación. Desde ahora escribís vos.",
     "manualDescription": "Vas a habilitar las respuestas manuales en esta conversación. Los códigos de acceso solicitados desde la web siguen funcionando.",
     "uncertain": "No se pudo confirmar el cambio. Actualizá el chat y revisá el modo antes de volver a intentarlo."
   },
@@ -53,7 +62,7 @@
     "failed": "No se pudo guardar la respuesta.",
     "forbidden": "Ya no tenés permiso para esta acción.",
     "readOnly": "Tenés permiso para ver el chat. Para contestar necesitás el permiso de responder.",
-    "botMode": "Tomá la atención manual para contestar.",
+    "assistantMode": "Tomá la atención manual para contestar.",
     "windowClosed": "Pasaron 24 horas desde el último mensaje del cliente. El envío de plantillas se agregará después.",
     "noPhone": "WhatsApp no informó un número al que podamos responder.",
     "pending": "Hay un envío pendiente o sin confirmar en esta conversación."

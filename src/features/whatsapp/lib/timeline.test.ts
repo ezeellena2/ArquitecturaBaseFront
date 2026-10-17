@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { ChatMessage, Outgoing } from "../api/chat";
 import { buildTimeline, groupTimelineByDay, deliveryStatus } from "./timeline";
 
-const message = (id: string, occurredAtUtc: string, status: string | null = null): ChatMessage => ({
+const message = (id: string, occurredAtUtc: string, status: string | null = null): ChatMessage => ({ origin: "Conversation" as const,
   id, occurredAtUtc, status, direction: "Outbound", kind: "Text", body: id,
   inboundSequence: 0, operatorUserId: null, errorCode: null,
 });
-const outgoing = (id: string, requestedAtUtc: string): Outgoing => ({
+const outgoing = (id: string, requestedAtUtc: string): Outgoing => ({ origin: "Conversation" as const,
   id, requestedAtUtc, requestId: id, body: id, state: "Pending", operatorUserId: "operator", waMessageId: null,
 });
 
@@ -25,13 +25,13 @@ describe("chat timeline", () => {
     ]);
     expect(groupTimelineByDay(items, "UTC")).toHaveLength(1);
   });
-  it("keeps bot, operator, missing content and recovery information from the real contracts", () => {
+  it("keeps system, operator, missing content and recovery information from the real contracts", () => {
     const human = { ...message("human", "2026-10-02T12:00:00Z", "Delivered"), operatorUserId: "operator", body: null };
     const failed = { ...outgoing("failed", "2026-10-02T12:01:00Z"), state: "Failed" as const };
     const items = buildTimeline([human, message("bot", "2026-10-02T12:02:00Z")], [failed]);
     expect(items[0]).toMatchObject({ author: "operator", body: null, delivery: { code: "Delivered", state: "delivered" } });
     expect(items[1]).toMatchObject({ source: "outgoing", operation: failed, delivery: { code: "Failed", state: "failed" } });
-    expect(items[2].author).toBe("bot");
+    expect(items[2].author).toBe("automatic");
   });
   it.each([
     ["Pending", "pending"], ["Sending", "pending"], ["Accepted", "sent"], ["Sent", "sent"],
@@ -66,3 +66,15 @@ describe("Flow timeline metadata", () => {
 });
 
 it("preserves automatic form action origin and document kind across pending and confirmed history",()=>{const confirmed={...message("automatic","2026-10-16T12:00:00Z","Delivered"),origin:"FormAction" as const,kind:"Document",body:"Visit approved"};const pending={...outgoing("automatic-pending","2026-10-16T12:01:00Z"),origin:"FormAction" as const,kind:"Document" as const,operatorUserId:null};expect(buildTimeline([confirmed],[pending]).map(item=>({origin:item.origin,kind:item.kind,author:item.author,operator:item.operatorUserId}))).toEqual([{origin:"FormAction",kind:"Document",author:"automatic",operator:null},{origin:"FormAction",kind:"Document",author:"automatic",operator:null}]);});
+
+it("attributes Assistant explicitly across pending and confirmed messages without an operator", () => {
+  const confirmed = { ...message("assistant-sent", "2026-10-17T12:01:00Z", "Accepted"), origin: "Assistant" as const };
+  const pending = { ...outgoing("assistant-pending", "2026-10-17T12:00:00Z"), origin: "Assistant" as const, operatorUserId: null };
+  expect(buildTimeline([confirmed], [pending]).map(item => ({ origin: item.origin, author: item.author, operatorUserId: item.operatorUserId }))).toEqual([
+    { origin: "Assistant", author: "assistant", operatorUserId: null },
+    { origin: "Assistant", author: "assistant", operatorUserId: null },
+  ]);
+});
+it("does not infer Assistant from a system message without a human operator", () => {
+  expect(buildTimeline([{ ...message("system", "2026-10-17T12:00:00Z"), origin: "Conversation" }], [])[0].author).toBe("automatic");
+});

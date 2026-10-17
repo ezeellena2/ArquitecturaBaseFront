@@ -26,7 +26,7 @@ interface TimelineContent {
   origin: MessageOrigin;
   purpose: MessagePurpose;
   accessEventKind: AccessEventKind | null;
-  author: "bot" | "operator" | "automatic" | undefined;
+  author: "assistant" | "operator" | "automatic" | undefined;
   operatorUserId: string | null;
   delivery: ReturnType<typeof deliveryStatus> | undefined;
 }
@@ -39,16 +39,16 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     direction: message.direction === "Outbound" ? "outgoing" : "incoming", body: message.purpose === "Access" || message.kind === "FlowReply" ? null : message.body, kind: message.kind,
     form: message.kind === "Flow" && message.purpose !== "Access" ? readFormMetadata(message.form) : null,
     formReply: message.kind === "FlowReply" && message.purpose !== "Access" ? toFormReplyPresentation(message.formReply ?? null) : null,
-    origin: message.origin ?? "Conversation",
+    origin: message.origin,
     purpose: message.purpose ?? "Unclassified", accessEventKind: message.accessEventKind ?? null,
     operatorUserId: message.operatorUserId,
-    author: message.direction === "Outbound" ? message.origin === "FormAction" ? "automatic" : message.operatorUserId ? "operator" : "bot" : undefined,
+    author: message.direction === "Outbound" ? message.origin === "Assistant" ? "assistant" : message.origin === "FormAction" || !message.operatorUserId ? "automatic" : "operator" : undefined,
     delivery: message.direction === "Outbound" ? deliveryStatus(message.status) : undefined,
   }));
   for (const operation of outgoing) items.push({
     source: "outgoing", operation, key: `outgoing:${operation.id}`, occurredAtUtc: operation.requestedAtUtc,
-    direction: "outgoing", body: operation.body, kind: operation.kind ?? "Text", form: operation.kind === "Flow" ? readFormMetadata(operation.form) : null, author: operation.origin === "FormAction" ? "automatic" : "operator", operatorUserId: operation.operatorUserId,
-    origin: operation.origin ?? "Conversation", purpose: "Business", accessEventKind: null, formReply: null,
+    direction: "outgoing", body: operation.body, kind: operation.kind ?? "Text", form: operation.kind === "Flow" ? readFormMetadata(operation.form) : null, author: operation.origin === "Assistant" ? "assistant" : operation.origin === "FormAction" || !operation.operatorUserId ? "automatic" : "operator", operatorUserId: operation.operatorUserId,
+    origin: operation.origin, purpose: "Business", accessEventKind: null, formReply: null,
     delivery: deliveryStatus(operation.state),
   });
   return items.sort((first, second) => Date.parse(first.occurredAtUtc) - Date.parse(second.occurredAtUtc) || first.key.localeCompare(second.key));

@@ -9,9 +9,9 @@ import { useChatThread } from "./useChatThread";
 
 const scope = { actor: "operator-a", culture: "es", permissions: ["whatsapp.read", "formrecords.read"] };
 function thread(body: string, older = false, more = false): Thread {
-  return { contact: { id: "chat-a", profileName: "Recipient", phoneNumber: null, mode: "Manual", modeRevision: 1,
+  return { assistantAvailability: { state: "notInstalled" }, contact: { id: "chat-a", profileName: "Recipient", phoneNumber: null, mode: "Manual", modeRevision: 1,
     lastInboundAtUtc: "2026-10-11T12:00:00Z", lastInboundSequence: 1, unreadCount: 0, preview: null },
-    messages: [{ id: older ? more ? "older-first" : "older-last" : "latest", direction: "Inbound", body, kind: "Text", occurredAtUtc: older ? "2026-10-10T12:00:00Z" : "2026-10-11T12:00:00Z",
+    messages: [{ origin: "Conversation" as const, id: older ? more ? "older-first" : "older-last" : "latest", direction: "Inbound", body, kind: "Text", occurredAtUtc: older ? "2026-10-10T12:00:00Z" : "2026-10-11T12:00:00Z",
       inboundSequence: 1, operatorUserId: null, status: null, errorCode: null }], outgoing: [],
     beforeAtUtc: older && !more ? null : "2026-10-11T12:00:00Z", beforeId: older ? more ? "older-first" : null : "latest" };
 }

@@ -6,11 +6,11 @@ import type { ChatMessage, Outgoing } from "../api/chat";
 import { buildTimeline } from "../lib/timeline";
 import { ChatTimeline } from "./ChatTimeline";
 
-const operation = (state: Outgoing["state"], operatorUserId = "me"): Outgoing => ({
+const operation = (state: Outgoing["state"], operatorUserId = "me"): Outgoing => ({ origin: "Conversation" as const,
   id: "operation", requestId: "request", state, operatorUserId, body: "Texto para recuperar",
   requestedAtUtc: "2026-10-02T12:00:00Z", waMessageId: null,
 });
-const message = (status: string | null): ChatMessage => ({
+const message = (status: string | null): ChatMessage => ({ origin: "Conversation" as const,
   id: "message", status, body: "Mensaje del historial", direction: "Outbound", kind: "Text",
   occurredAtUtc: "2026-10-02T02:00:00Z", inboundSequence: 0, operatorUserId: null, errorCode: null,
 });
@@ -37,11 +37,11 @@ describe("ChatTimeline", () => {
     setup([Object.assign(message(null), { purpose: "Business", body: "Quiero entrar, mi código es un producto" })], []);
     expect(screen.getByText("Quiero entrar, mi código es un producto")).toBeInTheDocument();
   });
-  it("shows localized dates and times with honest delivery and bot authorship", () => {
+  it("shows localized dates and times with honest delivery and automatic authorship", () => {
     setup([message(null)], [operation("Reviewed")]);
     const items = screen.getAllByRole("article", { name: "Mensaje saliente" });
     expect(within(items[0]).getByText("Estado no informado")).toBeInTheDocument();
-    expect(within(items[0]).getByText("Bot ·")).toBeInTheDocument();
+    expect(within(items[0]).getByText("Automático ·")).toBeInTheDocument();
     expect(within(items[0]).getByLabelText("1 oct 2026, 23:00")).toHaveTextContent("23:00");
     expect(screen.getByText("1 oct 2026")).toBeInTheDocument();
     expect(screen.getByText("2 oct 2026")).toBeInTheDocument();
@@ -112,3 +112,13 @@ it('uses a quiet metadata-free fallback for a received invalid projection withou
 
 it("labels automatic form actions and never reuses or manually reviews them in chat",()=>{setup([{...message("Failed"),origin:"FormAction",kind:"Document",body:"PDF sent after approval"}],[{...operation("Uncertain"),origin:"FormAction",operatorUserId:null}]);expect(screen.getAllByText("Acción del formulario")).toHaveLength(2);expect(screen.getAllByText("Automático ·")).toHaveLength(2);expect(screen.getByText("PDF sent after approval")).toBeInTheDocument();expect(screen.queryByRole("button",{name:"Usar este texto en el borrador"})).not.toBeInTheDocument();expect(screen.queryByRole("button",{name:"Ya revisé el WhatsApp"})).not.toBeInTheDocument();});
 it("withdraws automatic captions immediately when form values are revoked",()=>{renderWithProviders(<ChatTimeline items={buildTimeline([{...message("Delivered"),origin:"FormAction",kind:"Document",body:"private receipt caption"}],[])} actor="me" canSend={false} canReuse={false} reviewing={false} onReview={vi.fn()} onReuse={vi.fn()} atBottom onAtBottomChange={vi.fn()} hasOlder={false} loadingOlder={false} historyError={false} loadOlder={vi.fn()} formValuesRevoked/>);expect(screen.getByText("Acción del formulario")).toBeInTheDocument();expect(screen.queryByText("private receipt caption")).not.toBeInTheDocument();});
+
+it("shows Assistant author and keeps its automatic uncertainty and failure out of manual controls", () => {
+  const failed = { ...message("Failed"), origin: "Assistant" as const, body: "Pregunta del asistente" };
+  const uncertain = { ...operation("Uncertain"), origin: "Assistant" as const, operatorUserId: null };
+  const { onReview, onReuse } = setup([failed], [uncertain]);
+  expect(screen.getAllByText("Asistente ·")).toHaveLength(2);
+  expect(screen.queryByRole("button", { name: "Usar este texto en el borrador" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Ya revisé el WhatsApp" })).not.toBeInTheDocument();
+  expect(onReview).not.toHaveBeenCalled(); expect(onReuse).not.toHaveBeenCalled();
+});

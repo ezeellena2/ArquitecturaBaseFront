@@ -15,12 +15,12 @@ vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof im
 let contact: Chat;
 let thread: Thread;
 let requests: { requestId: string; body: string }[];
-const pending = (requestId: string, body: string): Outgoing => ({ id: "pending-1", requestId, body, state: "Pending", operatorUserId: currentUser.id, requestedAtUtc: "2026-10-02T12:00:00Z", waMessageId: null });
+const pending = (requestId: string, body: string): Outgoing => ({ origin: "Conversation" as const, id: "pending-1", requestId, body, state: "Pending", operatorUserId: currentUser.id, requestedAtUtc: "2026-10-02T12:00:00Z", waMessageId: null });
 beforeEach(() => {
   queryClient.clear(); requests = [];
   contact = { id: "chat-1", profileName: "Ana", phoneNumber: "+54 9 351 555-1234", mode: "Manual", modeRevision: 2, lastInboundAtUtc: new Date().toISOString(), lastInboundSequence: 1, unreadCount: 1, preview: "Hola" };
-  thread = { contact, messages: [{ id: "message-1", direction: "Inbound", body: "Hola", kind: "Text", occurredAtUtc: contact.lastInboundAtUtc, inboundSequence: 1, operatorUserId: null, status: null, errorCode: null }], outgoing: [], beforeAtUtc: null, beforeId: null };
-  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "whatsapp.send", "whatsapp.manage"] })),
+  thread = { assistantAvailability: { state: "notInstalled" }, contact, messages: [{ origin: "Conversation" as const, id: "message-1", direction: "Inbound", body: "Hola", kind: "Text", occurredAtUtc: contact.lastInboundAtUtc, inboundSequence: 1, operatorUserId: null, status: null, errorCode: null }], outgoing: [], beforeAtUtc: null, beforeId: null };
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] })),
     http.get("/api/whatsapp/chats", () => HttpResponse.json({ page: { items: [contact, { ...contact, id: "chat-2", profileName: "Luis" }], totalCount: 2, page: 1, pageSize: 20, totalPages: 1 }, allCount: 2, unreadCount: 1 })),
     http.get("/api/whatsapp/chats/:id/messages", () => HttpResponse.json(thread)),
     http.put("/api/whatsapp/chats/:id/read", () => new HttpResponse(null, { status: 204 })),
@@ -100,9 +100,9 @@ describe("WhatsAppChatPage", () => {
     expect(requests[1]).toEqual(requests[0]);
   });
   it("requires confirmation and sends the current revision when taking manual attention", async () => {
-    contact.mode = "Bot";
+    contact.mode = "Assistant";
     const changes: unknown[] = [];
-    server.use(http.put("/api/whatsapp/chats/:id/mode", async ({ request }) => { changes.push(await request.json()); contact.mode = "Manual"; contact.modeRevision++; return new HttpResponse(null, { status: 204 }); }));
+    server.use(http.put("/api/whatsapp/chats/:id/mode", async ({ request }) => { changes.push(await request.json()); contact.mode = "Manual"; contact.modeRevision++; return HttpResponse.json({ mode: contact.mode, modeRevision: contact.modeRevision, assistantSendInProgress: false }); }));
     const input = await open(); expect(input).toBeDisabled();
     await userEvent.click(screen.getByRole("button", { name: "Tomar atención manual" }));
     expect(changes).toEqual([]);
@@ -194,4 +194,85 @@ it("cancels an in-flight inbox query and refuses its old result after form recor
   await act(async () => { resolve({ ...safe, page: { ...safe.page, items: [{ ...contact, preview: "revoked inbox marker" }] } }); });
   expect(JSON.stringify(queryClient.getQueryCache().getAll().map(q => q.state.data))).not.toContain("revoked inbox marker");
   expect(await screen.findByText("Authorized inbox")).toBeInTheDocument();
+});
+
+it("takes manual attention with Send alone and reports only the observed assistant send in progress", async () => {
+  contact.mode = "Assistant";
+  contact.lastInboundAtUtc = "2020-01-01T00:00:00Z";
+  thread.outgoing = [{ ...pending("assistant-pending", "Ya empezó"), origin: "Assistant", operatorUserId: null, state: "Sending" }];
+  const changes: unknown[] = [];
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "whatsapp.send"] })),
+    http.put("/api/whatsapp/chats/:id/mode", async ({ request }) => {
+      changes.push(await request.json()); contact.mode = "Manual"; contact.modeRevision++;
+      return HttpResponse.json({ mode: contact.mode, modeRevision: contact.modeRevision, assistantSendInProgress: true });
+    }));
+  await open();
+  const take = screen.getByRole("button", { name: "Tomar atención manual" });
+  expect(take).toBeEnabled();
+  await userEvent.click(take);
+  expect(changes).toEqual([]);
+  await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+  await waitFor(() => expect(changes).toEqual([{ mode: "Manual", expectedRevision: 2 }]));
+  expect(await screen.findByText(/El asistente estaba mandando un formulario/)).toBeInTheDocument();
+});
+
+it("retires the manual mode confirmation immediately when Send is revoked", async () => {
+  contact.mode = "Assistant";
+  const change = vi.fn(() => HttpResponse.json({ mode: "Manual", modeRevision: 3, assistantSendInProgress: false }));
+  server.use(http.put("/api/whatsapp/chats/:id/mode", change));
+  await open();
+  await userEvent.click(screen.getByRole("button", { name: "Tomar atención manual" }));
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+  act(() => queryClient.setQueryData(currentUserQueryKey, { ...currentUser, permissions: ["whatsapp.read", "whatsapp.configureassistant"] }));
+  await screen.findByText("Tenés permiso para ver el chat. Para contestar necesitás el permiso de responder.");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Tomar atención manual" })).not.toBeInTheDocument();
+  expect(change).not.toHaveBeenCalled();
+});
+it("cancels taking manual attention without changing the mode and returns focus to its trigger", async () => {
+  contact.mode = "Assistant";
+  const change = vi.fn(); server.use(http.put("/api/whatsapp/chats/:id/mode", change));
+  await open();
+  const take = screen.getByRole("button", { name: "Tomar atención manual" });
+  await userEvent.click(take);
+  await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+  expect(change).not.toHaveBeenCalled();
+  await waitFor(() => expect(take).toHaveFocus());
+});
+
+it("enables Assistant with ConfigureAssistant alone after explicit confirmation and sends no message", async () => {
+  thread.assistantAvailability = { state: "available" };
+  const changes: unknown[] = [];
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "whatsapp.configureassistant"] })),
+    http.put("/api/whatsapp/chats/:id/mode", async ({ request }) => {
+      changes.push(await request.json()); contact.mode = "Assistant"; contact.modeRevision++;
+      return HttpResponse.json({ mode: contact.mode, modeRevision: contact.modeRevision, assistantSendInProgress: false });
+    }));
+  await open();
+  expect(screen.queryByRole("button", { name: "Enviar" })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Pasar a modo Asistente" }));
+  const dialog = screen.getByRole("dialog", { name: "Pasar a modo Asistente" });
+  expect(changes).toEqual([]); expect(requests).toEqual([]);
+  await userEvent.click(within(dialog).getByRole("button", { name: "Pasar a Asistente" }));
+  await waitFor(() => expect(changes).toEqual([{ mode: "Assistant", expectedRevision: 2 }]));
+  expect(screen.queryByRole("button", { name: "Tomar atención manual" })).not.toBeInTheDocument();
+  expect(requests).toEqual([]);
+});
+it.each(["notInstalled", "notConfigured", "paused", "modelNotQualified"] as const)("does not offer Assistant when its real availability is %s", async state => {
+  thread.assistantAvailability = { state };
+  await open();
+  expect(screen.queryByRole("button", { name: "Pasar a modo Asistente" })).not.toBeInTheDocument();
+  expect(requests).toEqual([]);
+});
+
+it("keeps keyboard focus in the conversation after the mode trigger disappears on success", async () => {
+  contact.mode = "Assistant";
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "whatsapp.send"] })),
+    http.put("/api/whatsapp/chats/:id/mode", () => { contact.mode = "Manual"; contact.modeRevision++; return HttpResponse.json({ mode: contact.mode, modeRevision: contact.modeRevision, assistantSendInProgress: false }); }));
+  await open();
+  const take = screen.getByRole("button", { name: "Tomar atención manual" });
+  await userEvent.click(take);
+  await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+  await waitFor(() => expect(take).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole("heading", { name: "Ana" })).toHaveFocus());
 });

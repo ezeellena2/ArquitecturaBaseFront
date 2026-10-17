@@ -7,6 +7,7 @@ import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { Page } from "@/shared/ui/Page";
 import { Surface } from "@/shared/ui/Surface";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -64,7 +65,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
               {list.isError ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
               {list.data?.page.items.map(chat => <div key={chat.id} className={cn("border-b border-[var(--color-border)] p-2", selected === chat.id ? "bg-[var(--color-surface-muted)]" : "")}>
                 <Button variant="ghost" className="w-full justify-start text-left" aria-label={chat.profileName ?? chat.phoneNumber ?? t("unnamed")} aria-pressed={selected === chat.id} onClick={() => setSelected(chat.id)}>
-                  <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.unreadCount ? <span className="text-xs">{chat.unreadCount}</span> : null}</span>
+                  <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="min-w-0 flex-1 truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.mode === "Assistant" ? <Badge variant="outline">{t("mode.Assistant")}</Badge> : null}{chat.unreadCount ? <span className="text-xs">{chat.unreadCount}</span> : null}</span>
                 </Button>
                 <p className="truncate px-2 text-xs text-[var(--color-content-muted)]">{drafts[chat.id]?.body ? t("draft") : previewText(t, chat.previewPurpose, chat.previewAccessEventKind, chat.preview)}</p>
               </div>)}
@@ -75,7 +76,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
             </div> : null}
           </div>
           <div className={cn("min-h-0 min-w-0", selected ? "" : "max-xl:hidden")}>
-            {selected ? <ChatThread key={selected} id={selected} actor={actor} readPermissions={permissions} timeZone={timeZone} canSend={has("whatsapp.send")} canManage={has("whatsapp.manage")} draft={drafts[selected] ?? { body: "" }}
+            {selected ? <ChatThread key={selected} id={selected} actor={actor} readPermissions={permissions} timeZone={timeZone} canSend={has("whatsapp.send")} canConfigureAssistant={has("whatsapp.configureassistant")} draft={drafts[selected] ?? { body: "" }}
               updateDraft={update => setDrafts(current => ({ ...current, [selected]: update(current[selected] ?? { body: "" }) }))} onBack={() => setSelected(undefined)} /> :
               <div className="flex h-full items-center justify-center p-8 text-center text-sm text-[var(--color-content-muted)]">{t("select")}</div>}
           </div>

@@ -27,15 +27,24 @@
   "actionFailed": "Could not complete the action.",
   "reuse": "Use this text in the draft",
   "author": {
-    "bot": "Bot",
+    "assistant": "Assistant",
     "you": "You",
     "operator": "Operator",
     "automatic": "Automatic"
   },
   "mode": {
-    "Bot": "Automation not configured",
+    "Assistant": "Assistant",
     "Manual": "Manual attention",
+    "enable": "Switch to Assistant mode",
+    "enableConfirm": "Switch to Assistant",
+    "assistantDescription": "The assistant will attend the conversation with {{name}}: it recognizes requests and sends prefilled forms. It never saves a response on its own. You can take manual attention whenever you want.",
+    "availability": {
+      "notConfigured": "The assistant is unavailable: the AI connection needs to be configured.",
+      "paused": "The assistant is paused.",
+      "modelNotQualified": "The assistant is unavailable: the model needs to be verified."
+    },
     "take": "Take manual attention",
+    "manualSendInProgress": "You took manual attention. The assistant was sending a form: that send will finish and remain in the conversation. From now on, you reply.",
     "manualDescription": "Manual replies will be enabled in this conversation. Access codes requested from the website will keep working.",
     "uncertain": "Could not confirm the change. Refresh the chat and check its mode before trying again."
   },
@@ -53,7 +62,7 @@
     "failed": "Could not save the reply.",
     "forbidden": "You no longer have permission for this action.",
     "readOnly": "You can view the chat. Replying requires the send permission.",
-    "botMode": "Take manual attention to reply.",
+    "assistantMode": "Take manual attention to reply.",
     "windowClosed": "More than 24 hours have passed since the customer’s last message. Template sending will be added later.",
     "noPhone": "WhatsApp did not provide a phone number we can reply to.",
     "pending": "This conversation has a pending or unconfirmed delivery request."

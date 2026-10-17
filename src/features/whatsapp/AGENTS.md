@@ -3,6 +3,8 @@
 Promueve el chat aprobado en `design-lab/whatsapp-chat`; no importa el prototipo.
 API exclusiva en `api`, coordinación en hooks, componentes y página separados.
 
+El origen Assistant es explícito en pendientes y confirmados, con operador nulo y autor Asistente; no se deduce del modo actual ni de un operador ausente. Conversation y FormAction conservan sus autores y controles. Los mensajes Assistant no ofrecen recuperación o revisión manual desde el hilo.
+
 La presentación del historial está en `ChatTimeline`: el adaptador puro `lib/timeline`
 ordena mensajes/operaciones y conserva su origen; los estados desconocidos no se convierten
 en Sent. Usa MessageHistory/MessageBubble/MessageDateDivider, tokens globales e íconos comunes.
@@ -10,8 +12,8 @@ en Sent. Usa MessageHistory/MessageBubble/MessageDateDivider, tokens globales e 
 El laboratorio de burbujas se retiró al integrar la elección; no mantener dos implementaciones.
 
 - Una instalación comparte un WhatsApp. No hay claves ni configuración por operador.
-- Permisos `whatsapp.read`, `whatsapp.send`, `whatsapp.manage`; el backend decide.
-- Lectura por operador, modo compartido y revisión por versión. Manual es el default y habilita al operador. Bot se conserva como automatización sin configurar; la UI solo permite tomar Manual. Un envío iniciado puede terminar.
+- Permisos `whatsapp.read`, `whatsapp.send`, `whatsapp.configureassistant`; el backend decide.
+- Lectura por operador, modo compartido y revisión por versión. Manual es el default y habilita al operador; Assistant es una elección explícita con ConfigureAssistant y disponibilidad confirmada por el servidor. Tomar Manual requiere Send, sin Manage ni ConfigureAssistant; no lo bloquean la ventana de24h ni una salida incierta. Bot y Manage están retirados, sin alias. PUT de modo conserva expectedRevision y consume200 mode/modeRevision/assistantSendInProgress; el aviso de un envío iniciado sólo se muestra por ese hecho observado. Un envío iniciado puede terminar.
 - Un envío conserva su requestId y texto ante una respuesta incierta. No se reenvía automáticamente. 202 significa en cola, no entregado.
 - Polling cada cinco segundos mientras la pestaña está visible, sin leyenda del intervalo ni del atajo.
   Ctrl+Enter sigue enviando y Enter agrega una línea. Historial paginado sin saltar al recibir;
