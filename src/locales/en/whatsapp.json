@@ -216,7 +216,9 @@
     "prefilledHelp": "{{name}} can see and change these values. Anything you uncheck is left blank.",
     "whySent": "Why it sent this",
     "whySuggested": "Why it suggested this",
-    "quickRepliesLabel": "Reply options"
+    "quickRepliesLabel": "Reply options",
+    "configuredSuggestionLabel": "Form suggestion",
+    "configuredSuggestion": "You can send {{name}}"
   },
   "readForbidden": "You no longer have permission to view this conversation.",
   "audio": {

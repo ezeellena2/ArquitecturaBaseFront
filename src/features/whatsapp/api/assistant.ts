@@ -13,7 +13,7 @@ const state = z.enum(["Pending", "Ready", "NoReply", "Blocked", "Discarded", "Se
 export type AssistantRequestState = z.infer<typeof state>;
 export const assistantSuggestionPointerSchema = z.strictObject({ requestId: guid, sourceMessageId: guid, state });
 export type AssistantSuggestionPointer = z.infer<typeof assistantSuggestionPointerSchema>;
-const proposal = z.strictObject({ proposalId: guid, definitionId: guid, versionId: guid, versionNumber: z.number().int().positive().max(Number.MAX_SAFE_INTEGER), name: z.string(), culture: z.enum(["es", "en"]), reason: z.string(), fields });
+const proposal = z.strictObject({ proposalId: guid.nullable(), definitionId: guid, versionId: guid, versionNumber: z.number().int().positive().max(Number.MAX_SAFE_INTEGER), name: z.string(), culture: z.enum(["es", "en"]), reason: z.string(), fields });
 export type AssistantProposal = z.infer<typeof proposal>;
 const outgoing = z.strictObject({ id: guid, requestId: guid, operatorUserId: guid, body: z.string().nullable(), requestedAtUtc: z.string().datetime({ offset: true }), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.literal("Flow"), quickReplies: z.null(), origin: z.literal("Conversation"), form: formMetadataSchema, recoveryPath: z.string().nullable(), assistant: assistantExplanationSchema.nullable() });
 const suggestion = assistantSuggestionPointerSchema.extend({ proposal: proposal.nullable(), outgoing: outgoing.nullable() }).refine(value => value.state === "Ready" ? value.proposal !== null && value.outgoing === null : value.state === "Sent" ? value.proposal === null && value.outgoing !== null : value.proposal === null && value.outgoing === null);

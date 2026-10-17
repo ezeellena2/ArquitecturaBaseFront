@@ -43,11 +43,11 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
   if (!contact) return <div className="p-5 text-sm text-[var(--color-content-muted)]">{t(readForbidden ? "readForbidden" : latest.isError ? "loadFailed" : "loading")} {latest.isError && !readForbidden ? <Button variant="outline" size="sm" onClick={() => void latest.refetch()}>{t("retry")}</Button> : null}</div>;
   const forbidden = latest.error instanceof ApiError && latest.error.status === 403;
   const linkedAccount = canSend ? contact.linkedAccount : undefined;
-  const latestSource = [...messages].filter(message => message.direction === "Inbound" && ["Text", "Audio"].includes(message.kind) && message.purpose !== "Access").sort((a, b) => b.inboundSequence - a.inboundSequence)[0];
-  const source = latestSource?.kind === "Text" || latestSource?.kind === "Audio" && latestSource.audio?.state === "Completed" && latestSource.body ? latestSource : undefined;
+  const latestSource = [...messages].filter(message => message.direction === "Inbound" && ["Text", "Audio", "FlowReply"].includes(message.kind) && message.purpose !== "Access").sort((a, b) => b.inboundSequence - a.inboundSequence)[0];
+  const source = latestSource?.kind === "Text" || latestSource?.kind === "Audio" && latestSource.audio?.state === "Completed" && latestSource.body || latestSource?.kind === "FlowReply" && latestSource.formReply?.state === "Completed" ? latestSource : undefined;
   const pointer = latest.data?.assistantSuggestion ?? null;
-  const sourceMessageId = source?.id ?? (latestSource ? undefined : pointer?.sourceMessageId);
-  const assistantOwner = JSON.stringify([actor, id, i18n.resolvedLanguage, [...new Set(readPermissions)].sort(), contact.modeRevision, sourceMessageId, availability, contact.formEligibility?.recipientContextRevision]);
+  const sourceMessageId = pointer?.sourceMessageId ?? source?.id;
+  const assistantOwner = JSON.stringify([actor, id, i18n.resolvedLanguage, [...new Set(readPermissions)].sort(), contact.modeRevision, sourceMessageId, contact.formEligibility?.recipientContextRevision]);
   const assistantContext = sourceMessageId ? { owner: assistantOwner, sourceMessageId, pointer: pointer?.sourceMessageId === sourceMessageId ? pointer : null, available: availability === "available" } : undefined;
   const mayReadEmail = readPermissions.includes("users.read");
   const visibleEmail = mayReadEmail ? linkedAccount?.email : null;

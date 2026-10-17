@@ -51,3 +51,9 @@ it("uses only the owned request, read, discard and send routes with closed reque
   expect(await sendAssistantSuggestion(contact, requestId, { requestId: outgoing.requestId, includedFieldIds: [fieldId] })).toEqual(outgoing);
   expect(received).toEqual([{ requestId, sourceMessageId, expectedModeRevision: 7 }, "", { requestId: outgoing.requestId, includedFieldIds: [fieldId] }]);
 });
+
+it("accepts a configured suggestion without inventing an AI proposal identity and still requires the field", () => {
+  const configured = { ...ready, proposal: { ...proposal, proposalId: null } };
+  expect(parseAssistantSuggestion(configured, contact)).toEqual(configured);
+  expect(() => parseAssistantSuggestion({ ...ready, proposal: { ...proposal, proposalId: undefined } }, contact)).toThrow();
+});

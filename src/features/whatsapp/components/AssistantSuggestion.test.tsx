@@ -8,6 +8,9 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { server } from "@/test/mocks/server";
 import { ChatThread } from "./ChatThread";
+import type { AssistantSuggestionPointer } from "../api/assistant";
+import type { AssistantAvailability } from "../api/chat";
+import type { FormReply } from "../api/formReplies";
 import type { ChatDraft } from "./ChatComposer";
 const chatId = "019abcde-1000-7000-8000-000000000010";
 const sourceMessageId = "019abcde-1000-7000-8000-000000000004";
@@ -17,6 +20,14 @@ const proposal = { proposalId: "019abcde-1000-7000-8000-000000000007", definitio
 const ready = { requestId: suggestionId, sourceMessageId, state: "Ready", proposal, outgoing: null };
 let testClient: QueryClient;
 let incomingSourceMessageId: string;
+let availability: AssistantAvailability["state"];
+let currentPointer: AssistantSuggestionPointer | null;
+let sourceReply: FormReply | undefined;
+const capturedSourceId = "019abcde-1000-7000-8000-000000000014";
+function capturedReply(state: "Completed" | "Pending" | "Rejected" = "Completed"): FormReply {
+ const metadata = { definitionId: proposal.definitionId, versionId: proposal.versionId, versionNumber: 2, name: "Entrega registrada" };
+ return state === "Completed" ? { ...metadata, state, recordId: "019abcde-1000-7000-8000-000000000015", number: "VIS-000001", values: [] } : { ...metadata, state, recordId: null, number: null, values: null };
+}
 let eligibilityStatus: "Eligible" | "NoEligibleForms";
 let body: typeof ready; let requests: unknown[]; let sends: { requestId: string; includedFieldIds: string[] }[]; let discarded: number;
 function receipt(requestId: string) { return { quickReplies: null, id: "019abcde-1000-7000-8000-000000000008", requestId, operatorUserId: "019abcde-1000-7000-8000-000000000009", body: "Completá el formulario", requestedAtUtc: new Date().toISOString(), state: "Pending", waMessageId: null, kind: "Flow", origin: "Conversation", assistant: { reason: proposal.reason, proposedFields: fields }, recoveryPath: null, form: { definitionId: proposal.definitionId, versionId: proposal.versionId, versionNumber: 2, name: { es: proposal.name, en: "Register visit" }, culture: "es" } }; }
@@ -26,8 +37,8 @@ function Harness({ actor = "operator", permissions = ["whatsapp.read", "whatsapp
  const [draft, setDraft] = useState<ChatDraft>({ body: "Borrador que se conserva" });
  return <ChatThread id={id} actor={actor} readPermissions={permissions} canSend={permissions.includes("whatsapp.send")} canConfigureAssistant={false} draft={draft} updateDraft={setDraft} onBack={() => {}} />;
 }
-beforeEach(() => { incomingSourceMessageId = sourceMessageId; eligibilityStatus = "Eligible"; body = structuredClone(ready); requests = []; sends = []; discarded = 0;
- server.use(http.get("/api/whatsapp/chats/:id/messages", () => HttpResponse.json({ assistantAvailability: { state: "available" }, assistantSuggestion: null, contact: { id: chatId, profileName: "Juan", phoneNumber: "+54 9 351 555-1234", mode: "Manual", modeRevision: 7, lastInboundAtUtc: new Date().toISOString(), lastInboundSequence: 1, unreadCount: 0, preview: "Hola", linkedAccount: { userId: "recipient", displayName: "Juan", email: null, isActive: true }, formEligibility: { status: eligibilityStatus, recipientCulture: "es", recipientContextRevision: "context" } }, messages: [{ audio: null, quickReplies: null, id: incomingSourceMessageId, direction: "Inbound", kind: "Text", body: "Quiero registrar una visita", occurredAtUtc: new Date().toISOString(), inboundSequence: incomingSourceMessageId === sourceMessageId ? 1 : 2, operatorUserId: null, status: null, errorCode: null, origin: "Conversation", assistant: null }], outgoing: [], beforeAtUtc: null, beforeId: null, canReadFormRecords: true })), http.put("/api/whatsapp/chats/:id/read", () => new HttpResponse(null, { status: 204 })), http.post("/api/whatsapp/chats/:id/assistant-suggestions", async ({ request }) => { requests.push(await request.json()); return HttpResponse.json(body, { status: 202 }); }), http.get("/api/whatsapp/chats/:id/assistant-suggestions/:requestId", () => HttpResponse.json(body)), http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/discard", () => { discarded++; return HttpResponse.json({ ...ready, state: "Discarded", proposal: null }); }), http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/send", async ({ request }) => { const send = await request.json() as { requestId: string; includedFieldIds: string[] }; sends.push(send); return HttpResponse.json(receipt(send.requestId), { status: 202 }); }));
+beforeEach(() => { availability = "available"; currentPointer = null; sourceReply = undefined; incomingSourceMessageId = sourceMessageId; eligibilityStatus = "Eligible"; body = structuredClone(ready); requests = []; sends = []; discarded = 0;
+ server.use(http.get("/api/whatsapp/chats/:id/messages", () => HttpResponse.json({ assistantAvailability: { state: availability }, assistantSuggestion: currentPointer, contact: { id: chatId, profileName: "Juan", phoneNumber: "+54 9 351 555-1234", mode: "Manual", modeRevision: 7, lastInboundAtUtc: new Date().toISOString(), lastInboundSequence: 1, unreadCount: 0, preview: "Hola", linkedAccount: { userId: "recipient", displayName: "Juan", email: null, isActive: true }, formEligibility: { status: eligibilityStatus, recipientCulture: "es", recipientContextRevision: "context" } }, messages: [{ audio: null, quickReplies: null, id: incomingSourceMessageId, direction: "Inbound", kind: "Text", body: "Quiero registrar una visita", occurredAtUtc: new Date().toISOString(), inboundSequence: incomingSourceMessageId === sourceMessageId ? 1 : 2, operatorUserId: null, status: null, errorCode: null, origin: "Conversation", assistant: null }, ...(sourceReply ? [{ audio: null, quickReplies: null, id: capturedSourceId, direction: "Inbound", kind: "FlowReply", body: null, occurredAtUtc: new Date().toISOString(), inboundSequence: 3, operatorUserId: null, status: null, errorCode: null, origin: "Conversation", assistant: null, formReply: sourceReply }] : [])], outgoing: [], beforeAtUtc: null, beforeId: null, canReadFormRecords: true })), http.put("/api/whatsapp/chats/:id/read", () => new HttpResponse(null, { status: 204 })), http.post("/api/whatsapp/chats/:id/assistant-suggestions", async ({ request }) => { requests.push(await request.json()); return HttpResponse.json(body, { status: 202 }); }), http.get("/api/whatsapp/chats/:id/assistant-suggestions/:requestId", () => HttpResponse.json(body)), http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/discard", () => { discarded++; return HttpResponse.json({ ...ready, state: "Discarded", proposal: null }); }), http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/send", async ({ request }) => { const send = await request.json() as { requestId: string; includedFieldIds: string[] }; sends.push(send); return HttpResponse.json(receipt(send.requestId), { status: 202 }); }));
 });
 afterEach(() => vi.restoreAllMocks());
 async function openSuggestion() { renderWithProviders(<Harness />); const action = await screen.findByRole("button", { name: "Revisar y enviar" }); await userEvent.click(action); return { dialog: await screen.findByRole("dialog"), action }; }
@@ -118,4 +129,62 @@ it("keeps the ordinary editor node, caret and draft when a newer inbound source 
  expect(screen.getByLabelText("Respuesta al cliente")).toBe(input);
  expect(input).toHaveFocus(); expect(input).toHaveValue("Respuesta en edición");
  expect(input.selectionStart).toBe(5);
+});
+
+it.each(["notInstalled", "paused"] as const)("consults an authoritative configured pointer with %s AI without attributing its source to the assistant", async state => {
+ availability = state; sourceReply = capturedReply();
+ currentPointer = { requestId: suggestionId, sourceMessageId: capturedSourceId, state: "Ready" };
+ let consulted = 0;
+ server.use(http.get("/api/whatsapp/chats/:id/assistant-suggestions/:requestId", () => {
+  consulted++; return HttpResponse.json({ ...ready, sourceMessageId: capturedSourceId, proposal: { ...proposal, proposalId: null } });
+ }));
+ renderWithProviders(<Harness />);
+ const card = await screen.findByRole("region", { name: "Sugerencia de formulario" });
+ expect(consulted).toBe(1); expect(requests).toEqual([]);
+ expect(within(card).getByText("Podés mandarle Registrar visita")).toBeInTheDocument();
+ expect(screen.queryByText(/El asistente sugiere/)).not.toBeInTheDocument();
+ await userEvent.click(within(card).getByRole("button", { name: "Revisar y enviar" }));
+ const dialog = await screen.findByRole("dialog");
+ await userEvent.click(within(dialog).getByRole("checkbox", { name: "Fecha" }));
+ await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+ await waitFor(() => expect(sends).toHaveLength(1));
+ expect(sends[0].includedFieldIds).toEqual([fields[0].fieldId]);
+ expect(requests).toEqual([]);
+ expect(await screen.findByLabelText("Respuesta al cliente")).toHaveValue("Borrador que se conserva");
+});
+it("requests interpretation from the latest captured FlowReply without reading its body or reusing earlier text", async () => {
+ sourceReply = capturedReply(); body = { ...ready, sourceMessageId: capturedSourceId };
+ renderWithProviders(<Harness />);
+ await waitFor(() => expect(requests).toHaveLength(1));
+ expect(requests[0]).toMatchObject({ sourceMessageId: capturedSourceId, expectedModeRevision: 7 });
+ expect(await screen.findByRole("button", { name: "Revisar y enviar" })).toBeInTheDocument();
+});
+it.each(["Pending", "Rejected"] as const)("does not reuse earlier text behind a latest captured %s reply", async state => {
+ sourceReply = capturedReply(state);
+ renderWithProviders(<Harness />);
+ await screen.findByText("Quiero registrar una visita");
+ await userEvent.click(screen.getByLabelText("Respuesta al cliente"));
+ expect(requests).toEqual([]);
+});
+it("does not start a new captured interpretation when AI is unavailable and no pointer exists", async () => {
+ availability = "notInstalled"; sourceReply = capturedReply();
+ renderWithProviders(<Harness />);
+ await screen.findByText("Quiero registrar una visita");
+ await userEvent.click(screen.getByLabelText("Respuesta al cliente"));
+ expect(requests).toEqual([]);
+ expect(screen.queryByRole("button", { name: "Revisar y enviar" })).not.toBeInTheDocument();
+});
+
+it("preserves the active pointer selection and dialog when AI becomes unavailable", async () => {
+ currentPointer = { requestId: suggestionId, sourceMessageId, state: "Ready" };
+ const { dialog } = await openSuggestion();
+ await userEvent.click(within(dialog).getByRole("checkbox", { name: "Fecha" }));
+ availability = "paused";
+ await act(async () => { await testClient.invalidateQueries({ queryKey: chatKey }); });
+ expect(screen.getByRole("dialog")).toBe(dialog);
+ expect(within(dialog).getByRole("checkbox", { name: "Fecha" })).not.toBeChecked();
+ expect(requests).toEqual([]);
+ await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+ await waitFor(() => expect(sends).toHaveLength(1));
+ expect(sends[0].includedFieldIds).toEqual([fields[0].fieldId]);
 });

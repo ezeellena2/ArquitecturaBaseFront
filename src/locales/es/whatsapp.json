@@ -216,7 +216,9 @@
     "prefilledHelp": "{{name}} los ve cargados y los puede cambiar. Lo que destildes va vacío.",
     "whySent": "Por qué lo mandó",
     "whySuggested": "Por qué lo sugirió",
-    "quickRepliesLabel": "Opciones de respuesta"
+    "quickRepliesLabel": "Opciones de respuesta",
+    "configuredSuggestionLabel": "Sugerencia de formulario",
+    "configuredSuggestion": "Podés mandarle {{name}}"
   },
   "readForbidden": "Ya no tenés permiso para ver esta conversación.",
   "audio": {
