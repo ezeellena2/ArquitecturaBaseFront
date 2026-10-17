@@ -19,6 +19,9 @@ interface DataTableProps<TRow> {
   columns: Column<TRow>[];
   rows: readonly TRow[];
   rowKey: (row: TRow) => string;
+  selectedRowKey?: string;
+  /// Clic en una celda sin controles; los enlaces conservan la navegación por teclado.
+  onRowClick?: (row: TRow) => void;
   isLoading?: boolean;
   /// Includes a successfully loaded empty list; refresh failures preserve its state.
   hasData?: boolean;
@@ -54,6 +57,8 @@ export function DataTable<TRow>({
   columns,
   rows,
   rowKey,
+  selectedRowKey,
+  onRowClick,
   isLoading,
   hasData = rows.length > 0,
   error,
@@ -122,18 +127,32 @@ export function DataTable<TRow>({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.map((row) => (
-          // La densidad la define TableRow para todos los listados.
-          // El borde a media opacidad es el del tablero: a opacidad plena la tabla se lee como una grilla
-          // y las líneas compiten con los datos.
-          <TableRow key={rowKey(row)}>
-            {columns.map((column) => (
-              <TableCell key={column.id} className={cn("px-4", column.align === "right" ? "text-right" : undefined)}>
-                {column.cell(row)}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
+        {rows.map((row) => {
+          const key = rowKey(row);
+          const selected = selectedRowKey === undefined ? undefined : key === selectedRowKey;
+          return (
+            // La densidad la define TableRow para todos los listados.
+            // El borde a media opacidad es el del tablero: a opacidad plena la tabla se lee como una grilla
+            // y las líneas compiten con los datos.
+            <TableRow
+              key={key}
+              data-state={selected ? "selected" : undefined}
+              aria-selected={selected}
+              className={onRowClick ? "cursor-pointer" : undefined}
+              onClick={onRowClick ? event => {
+                if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+                if (event.target instanceof Element && event.target.closest("a, button, input, select, textarea, [role='button'], [role='checkbox'], [role='combobox'], [role='menuitem'], [contenteditable]:not([contenteditable='false'])")) return;
+                onRowClick(row);
+              } : undefined}
+            >
+              {columns.map((column) => (
+                <TableCell key={column.id} className={cn("px-4", column.align === "right" ? "text-right" : undefined)}>
+                  {column.cell(row)}
+                </TableCell>
+              ))}
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

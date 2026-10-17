@@ -19,6 +19,7 @@ import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { IconButton } from "@/shared/ui/IconButton";
 import { FormIcon, PencilIcon } from "@/shared/ui/icons";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -30,6 +31,7 @@ import { MessageHistory } from "@/shared/ui/MessageHistory";
 export function Catalog() {
   const { t, i18n } = useTranslation(["common", "whatsapp"]);
   const formPieces = new URLSearchParams(location.search).get("scenario") === "form-controls";
+  const tabPieces = new URLSearchParams(location.search).get("scenario") === "tabs";
   const [confirm, setConfirm] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [selection, setSelection] = useState<string[]>(["User"]);
@@ -94,6 +96,20 @@ export function Catalog() {
           <RadioGroupField label={english ? "Choose a card" : "Elegí una tarjeta"} variant="cards" value={choice} onValueChange={setChoice} options={[{value:"InviteOnly",label:english ? "First card" : "Primera tarjeta",description:english ? "A shared selectable row." : "Una fila seleccionable común."},{value:"Open",label:english ? "Second card" : "Segunda tarjeta",description:english ? "Keyboard keeps the same radio behavior." : "Conserva el teclado del control de opción."}]} />
           <MessageBubble direction="outgoing" text={english ? "An attached card." : "Una tarjeta adjunta."} attachment={<MessageCard icon={<FormIcon className="size-4" />} title={english ? "Example attachment" : "Adjunto de ejemplo"} description={english ? "A title and description inside the message." : "Título y descripción dentro del mensaje."} />} timestamp="2026-10-02T12:00:00Z" timeLabel="9:00" dateLabel={english ? "Oct 2, 2026, 9:00 AM" : "2 oct 2026, 9:00"} delivery={{state:"pending",label:t("whatsapp:status.Pending")}} />
         </div>
+      </Surface> : null}
+      {tabPieces ? <Surface title={english ? "Content tabs" : "Pestañas de contenido"} padded>
+        <Tabs defaultValue="response">
+          <TabsList aria-label={english ? "Response content" : "Contenido de la respuesta"}>
+            <TabsTrigger value="response">{english ? "Response" : "Respuesta"}</TabsTrigger>
+            <TabsTrigger value="photos">{english ? "Photos" : "Fotos"}<span aria-hidden="true">3</span></TabsTrigger>
+            <TabsTrigger value="activity">{english ? "Activity" : "Actividad"}</TabsTrigger>
+            <TabsTrigger value="pdf">PDF</TabsTrigger>
+          </TabsList>
+          <TabsContent value="response">{english ? "The selected response appears here." : "Acá se muestra la respuesta elegida."}</TabsContent>
+          <TabsContent value="photos">{english ? "Response photos appear here." : "Acá se muestran las fotos de la respuesta."}</TabsContent>
+          <TabsContent value="activity">{english ? "Observed activity appears here." : "Acá se muestra la actividad observada."}</TabsContent>
+          <TabsContent value="pdf"><Button type="button" variant="outline">{english ? "Open PDF" : "Abrir PDF"}</Button></TabsContent>
+        </Tabs>
       </Surface> : null}
       <Surface title={pieces.dialogs} padded>
         <div className="flex flex-wrap items-center gap-2">
