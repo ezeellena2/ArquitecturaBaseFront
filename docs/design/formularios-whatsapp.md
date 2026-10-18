@@ -80,12 +80,12 @@ Incremento 1 de la Etapa 1, crear y editar (2026-10-10). Son variantes de los ta
 | [B · Nuevo formulario](evidence/formularios-whatsapp/e1-b-alta.png) | El editor e1-1 vacío: nada existe hasta «Guardar borrador», prefijo sugerido, pregunta nueva abierta en el lugar, Subir y Bajar, qué pasa al guardar (Guardando…, Guardado, No se guardó, Sin confirmar) y qué pide confirmación. |
 | [C · El prefijo de numeración](evidence/formularios-whatsapp/e1-c-prefijo.png) | Sugerido, editado, ocupado, fijo al publicar, fijo aunque la publicación falló y fijado mientras se editaba. |
 | [D · Otra persona guardó antes](evidence/formularios-whatsapp/e1-d-conflicto.png) | Aviso con «Revisar», comparación «Guardado actualmente» y «Mis cambios» por pregunta y opción, «Usar borrador actual» o «Conservar mis cambios», sin combinar nada solo. |
-| [E · Textos en dos idiomas](evidence/formularios-whatsapp/e1-e-idiomas.png) | Español e inglés en el mismo editor: un idioma a la vez con el original debajo, lo que falta marcado en la fila, el campo y la vista previa. Se guarda incompleto; para publicar hacen falta los dos. |
+| [E · Textos en dos idiomas](evidence/formularios-whatsapp/e1-e-idiomas.png) | Español e inglés en el mismo editor: un idioma a la vez con el original debajo, lo que falta marcado en la fila, el campo y la vista previa. Se guarda incompleto; para publicar hacen falta los dos. Su regla de idioma la reemplaza I1 (2026-10-18). |
 
 Incremento 2 de la Etapa 1, publicar en WhatsApp (2026-10-10). Variantes del tablero 04 y del editor e1-1, sobre el
 contrato de publicación de entonces (hoy en [formularios](../../../ArquitecturaBase/docs/features/formularios.md)). Quedan a
 definir las acciones de «Necesita revisión». Decidido el 2026-10-10: se publica solo lo guardado (D4) y en español e
-inglés, con las traducciones cargadas en el editor (D5, variante E).
+inglés, con las traducciones cargadas en el editor (D5, variante E). Desde el 2026-10-18, I2 e I3 reemplazan esa exigencia de idioma.
 
 | Captura | Qué define |
 | --- | --- |
@@ -209,6 +209,17 @@ El modelo y las reglas están en los
 | [En el celular](evidence/formularios-whatsapp/s3-sugerir-celular.png) | Entrega que termina en factura, y los casos «Juan no lo abre», sin IA, nada que sugerir y sin permiso. |
 | [La cadena en la web](evidence/formularios-whatsapp/s4-sugerir-cadena.png) | La respuesta recuerda de dónde vino, qué sugerencia la ofreció y por qué. |
 
+El idioma de los formularios (2026-10-18, versión 85 del lienzo), sobre la decisión del 2026-10-16 en los
+[resúmenes por etapa](../../../ArquitecturaBase/docs/plans/formularios/README.md#después-de-la-etapa-5): solo el idioma
+original es obligatorio para guardar y publicar, y si la traducción no está completa, todo sale entero en el original, sin
+mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre los dos idiomas. Todavía no están programados.
+
+| Captura | Qué define |
+| --- | --- |
+| [I1 · El editor con la traducción opcional](evidence/formularios-whatsapp/idi-i1-editor.png) | «Textos en» con el original obligatorio y el inglés opcional. Lo que falta se cuenta como «3 sin traducir», en gris, y cada texto dice «Sin traducir», sin alerta. La vista previa muestra lo que recibe una cuenta en inglés: entero en español mientras falte algo y entero en inglés al completarlo, nunca mezclado. |
+| [I2 · Publicar con la traducción incompleta](evidence/formularios-whatsapp/idi-i2-publicar.png) | La comprobación no frena por una traducción que falta: dice «En WhatsApp, en español» y avisa «El inglés no se publica», con lo que le falta y «Completar el inglés». A Meta van solo los idiomas completos; sumar el inglés después es la versión siguiente. |
+| [I3 · Los idiomas al publicar](evidence/formularios-whatsapp/idi-i3-idiomas.png) | La confirmación con la traducción incompleta o completa, y una versión nueva que suma el inglés o lo pierde, con aviso. |
+
 ## Decisiones de diseño
 
 1. **Navegación.** «Formularios» es una entrada propia del menú principal con su panel, como WhatsApp. Arriba,
@@ -246,7 +257,9 @@ El modelo y las reglas están en los
     no quiere simplemente no se abre.
 11. **Dos idiomas (2026-10-10).** Cada texto que ve el empleado (nombre, preguntas, ayudas, opciones y botón final) se
     escribe en español y en inglés. Se puede guardar con traducciones pendientes; para publicar hacen falta los dos.
-    Cada empleado recibe el formulario, el mensaje y «Abrir formulario» en el idioma de su cuenta.
+    Cada empleado recibe el formulario, el mensaje y «Abrir formulario» en el idioma de su cuenta. **Ajuste elegido el
+    2026-10-18, por programar (I1–I3):** solo el original es obligatorio para guardar y publicar; si la traducción no está
+    completa, todo sale entero en el original.
 
 ## Etapa 1: el formulario y el chat de hoy
 
