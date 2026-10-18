@@ -363,7 +363,7 @@ export function FormResponsesPage() {
         />
       ) : null}
     </Page></div>
-    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
+    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ selectionId: recordId, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
     </div>
   );
 }

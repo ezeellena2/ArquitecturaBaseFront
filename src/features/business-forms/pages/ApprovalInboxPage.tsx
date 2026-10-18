@@ -65,7 +65,7 @@ function ApprovalInbox({ onForbidden }: {
     });
     const moving = motion.busy || selected.isPlaceholderData;
     const moveError = motion.error;
-    const navigation = { previous: index > 0 || index === 0 && !!query.data?.hasPrevious, next: index >= 0 && (index < ids.length - 1 || !!query.data?.hasNext), busy: moving, onMove: (direction: number) => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/por-aprobar", replace: false }), error: moveError, onRetry: motion.retry };
+    const navigation = { selectionId: taskId, previous: index > 0 || index === 0 && !!query.data?.hasPrevious, next: index >= 0 && (index < ids.length - 1 || !!query.data?.hasNext), busy: moving, onMove: (direction: number) => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/por-aprobar", replace: false }), error: moveError, onRetry: motion.retry };
     const changeList = (changes: Record<string, string | undefined>) => { setContext(null); motion.clearError(); update({ ...changes, tab: undefined }, { pathname: "/formularios/por-aprobar" }); };
     const fallback = useRef<HTMLSelectElement | null>(null);
     const forbidden = approvalForbidden(query.error) || approvalForbidden(options.error);

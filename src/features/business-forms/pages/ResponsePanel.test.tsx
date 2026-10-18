@@ -156,7 +156,7 @@ it.each(["sheet", "inbox"])("shows unavailable for a confirmed response belongin
 it.each(["sheet", "inbox"])("pushes opening %s and replaces arrow navigation in browser history", async source => {
   setup(["formrecords.read", "formapprovals.decide"], true);
   const origin = source === "sheet" ? path : "/formularios/por-aprobar";
-  const { router } = renderRouteWithProviders(origin);
+  const { router } = renderRouteWithProviders(origin + "?pageSize=20");
   await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   expect(router.state.historyAction).toBe("PUSH");
@@ -165,6 +165,42 @@ it.each(["sheet", "inbox"])("pushes opening %s and replaces arrow navigation in 
   expect(router.state.historyAction).toBe("REPLACE");
   await act(async () => { await router.navigate(-1); });
   expect(router.state.location.pathname).toBe(origin);
+});
+it.each(["sheet", "inbox"])("returns keyboard focus to the %s panel after clicking another row", async source => {
+  setup(["formrecords.read", "formapprovals.decide"], true);
+  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
+  const { router } = renderRouteWithProviders(origin);
+  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  await userEvent.click(screen.getByRole("link", { name: "TEST-000001" }));
+  await within(panel).findByRole("heading", { name: "TEST-000001" });
+  expect(panel).toHaveFocus();
+  await userEvent.keyboard("{ArrowUp}");
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(router.state.location.pathname).toBe(origin));
+  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000002" })).toHaveFocus());
+});
+it.each(["sheet", "inbox"])("lets Escape close the %s panel immediately after selecting a delayed response", async source => {
+  setup(["formrecords.read", "formapprovals.decide"], true);
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let requested = false;
+  server.use(http.get("/api/forms/records/" + responseSecondId, async () => { requested = true; await gate; return HttpResponse.json(responseDetailFixture(responseSecondId)); }));
+  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
+  const { router } = renderRouteWithProviders(origin);
+  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  await userEvent.click(screen.getByRole("link", { name: "TEST-000001" }));
+  await waitFor(() => expect(requested).toBe(true));
+  expect(panel).toHaveFocus();
+  await userEvent.keyboard("{Escape}");
+  expect(router.state.location.pathname).toBe(origin);
+  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000001" })).toHaveFocus());
+  await act(async () => release?.());
+  expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument();
 });
 it("keeps a metadata-only approval panel after deciding without reading values, workflow or PDF", async () => {
   const { reads } = setup(["formapprovals.decide"], true); const { router } = renderRouteWithProviders("/formularios/por-aprobar?view=all&pageSize=20");

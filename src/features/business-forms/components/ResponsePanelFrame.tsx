@@ -5,7 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import { IconButton } from "@/shared/ui/IconButton";
 export interface ResponsePanelNavigation {
-  previous: boolean; next: boolean; busy?: boolean; position?: number; count?: number;
+  previous: boolean; next: boolean; busy?: boolean; position?: number; count?: number; selectionId?: string;
   onMove: (direction: number) => void; onClose: () => void;
   error?: unknown; onRetry?: () => unknown;
 }
@@ -17,7 +17,7 @@ export function ResponsePanelFrame({ title, status, subtitle, navigation, childr
   const previous = useRef<HTMLButtonElement | null>(null);
   const next = useRef<HTMLButtonElement | null>(null);
   const navigationFocus = useRef<"previous" | "next" | null>(null);
-  useLayoutEffect(() => { panel.current?.focus(); }, []);
+  useLayoutEffect(() => { if (!panel.current?.contains(document.activeElement)) panel.current?.focus(); }, [navigation.selectionId]);
   useLayoutEffect(() => {
     if (loading) return;
     const active = document.activeElement;
