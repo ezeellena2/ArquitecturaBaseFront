@@ -37,7 +37,7 @@ export function ResponsePanelFrame({ title, status, subtitle, navigation, childr
       {subtitle ? <p className="mt-1 text-sm text-[var(--color-content-muted)]">{subtitle}</p> : null}
       {actions ? <div className="mt-2 flex flex-wrap items-center gap-3">{actions}</div> : null}
     </header>
-    <div className="min-h-0 flex-1 overflow-y-auto p-4">{navigation.error && navigation.onRetry ? <div className="mb-3"><Button variant="outline" onClick={() => { navigation.onRetry?.(); }}>{t("common:actions.retry")}</Button></div> : null}{children}</div>
+    <div className="min-h-0 flex-1 overflow-y-auto p-4">{navigation.error && navigation.onRetry ? <div className="mb-3 space-y-2"><p className="text-sm">{t("responses.loadFailed")}</p><Button variant="outline" onClick={() => { navigation.onRetry?.(); }}>{t("common:actions.retry")}</Button></div> : null}{children}</div>
     <p className="shrink-0 border-t border-[var(--color-border)] px-4 py-2 text-xs text-[var(--color-content-muted)] max-sm:hidden">{navigation.position !== undefined && navigation.count !== undefined ? <><span>{t("responses.position", { position: navigation.position, count: navigation.count })}</span><span aria-hidden="true"> · </span></> : null}<span>{t("detail.keyboardHint")}</span></p>
   </section>;
 }

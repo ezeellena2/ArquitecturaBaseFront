@@ -6,13 +6,13 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { continueResponseAction, fetchResponseWorkflow, reviewResponseAction } from "../api/workflow";
 import { sameWorkflowReviewTarget, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 import { useResponseScope } from "./useResponseQueries";
-export function useResponseWorkflow(formId: string, recordId: string) {
+export function useResponseWorkflow(formId: string, recordId: string, retainPreviousForm = false) {
   const scope = useResponseScope();
   const client = useQueryClient();
   const key = ["form-responses", scope.owner, "workflow", formId, recordId];
   const owner = JSON.stringify(key);
   const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchResponseWorkflow(recordId, signal), enabled: scope.allowed && !!recordId,
-    placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner && previousQuery.queryKey[3] === formId ? keepPreviousData(previous) : undefined,
+    placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner && (retainPreviousForm || previousQuery.queryKey[3] === formId) ? keepPreviousData(previous) : undefined,
     refetchInterval: current => current.state.data?.actions.some(action => action.state === "Waiting" || action.state === "Running") ? 2000 : false,
     gcTime: 0, meta: { errorOwner: "local" } });
   const [deniedManageOwner, setDeniedManageOwner] = useState<string | null>(null);

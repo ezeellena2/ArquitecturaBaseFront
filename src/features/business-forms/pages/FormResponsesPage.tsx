@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useContext, useLayoutEffect, useRef, useState } from "react";
 import { Link, useMatch, useNavigate, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
@@ -23,6 +23,8 @@ import { Button } from "@/shared/ui/button";
 import { PublicWhatsAppIcon } from "@/shared/ui/icons";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { notify } from "@/shared/ui/notifications";
+import { useResponsePanelNavigation } from "../hooks/useResponsePanelNavigation";
+import { IconButton } from "@/shared/ui/IconButton";
 import { useResponseFeedback, useResponseSheet } from "../hooks/useResponseQueries";
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
@@ -45,18 +47,7 @@ export function FormResponsesPage() {
   const client = useQueryClient();
   const container = useRef<HTMLDivElement | null>(null);
   const lastRecord = useRef<string | undefined>(recordId);
-  const live = useRef(true);
   const contextKey = JSON.stringify([scope.owner, formId, recordId, route.query]);
-  const owner = useRef(contextKey);
-  const moveDirection = useRef(1);
-  const [motion, setMotion] = useState<{ key: string; busy: boolean; error: unknown }>({ key: contextKey, busy: false, error: null });
-  if (motion.key !== contextKey) setMotion({ key: contextKey, busy: false, error: null });
-  const moving = motion.key === contextKey && motion.busy;
-  const moveError = motion.key === contextKey ? motion.error : null;
-  const setMoving = (busy: boolean) => setMotion(previous => ({ key: contextKey, busy, error: previous.key === contextKey ? previous.error : null }));
-  const setMoveError = (error: unknown) => setMotion(previous => ({ key: contextKey, busy: previous.key === contextKey && previous.busy, error }));
-  useLayoutEffect(() => { owner.current = contextKey; }, [contextKey]);
-  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
   useLayoutEffect(() => {
     if (recordId) lastRecord.current = recordId;
     else if (lastRecord.current) { (container.current?.querySelector<HTMLElement>('[data-response-id="' + lastRecord.current + '"]') ?? container.current)?.focus(); lastRecord.current = undefined; }
@@ -89,26 +80,14 @@ export function FormResponsesPage() {
     !!route.query.receivedFromUtc ||
     !!route.query.receivedToUtc;
   const index = query.data?.records.items.findIndex(row => row.id === recordId) ?? -1;
-  const move = async (direction: number) => {
-    const current = query.data;
-    if (!current || moving || query.isPlaceholderData || index < 0) return;
-    const expected = scope.owner;
-    const expectedContext = contextKey;
-    let id: string | undefined = current.records.items[index + direction]?.id;
-    let page = current.records.page;
-    moveDirection.current = direction;
-    setMoving(true); setMoveError(null);
-    try {
-      if (!id) {
-        page += direction;
-        const filter = { ...route.query, page };
-        const result = await client.fetchQuery({ queryKey: ["form-responses", expected, "sheet", formId, filter], queryFn: ({ signal }) => fetchResponseSheet(formId, filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
-        id = direction < 0 ? result.records.items.at(-1)?.id : result.records.items[0]?.id;
-      }
-      if (id && live.current && owner.current === expectedContext) update({ page: page === 1 ? undefined : String(page) }, { pathname: "/formularios/" + formId + "/respuestas/" + id, replace: false });
-    } catch (error) { if (live.current && owner.current === expectedContext) setMoveError(error); }
-    finally { if (live.current && owner.current === expectedContext) setMoving(false); }
-  };
+  const motion = useResponsePanelNavigation({ contextKey, ids: data?.records.items.map(row => row.id) ?? [], index, page: data?.records.page ?? route.query.page ?? 1, disabled: !data || query.isPlaceholderData,
+    loadPage: async page => {
+      const filter = { ...route.query, page };
+      const result = await client.fetchQuery({ queryKey: ["form-responses", scope.owner, "sheet", formId, filter], queryFn: ({ signal }) => fetchResponseSheet(formId, filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
+      return result.records.items.map(row => row.id);
+    },
+    onNavigate: (id, page) => update({ page: page === 1 ? undefined : String(page) }, { pathname: "/formularios/" + formId + "/respuestas/" + id, replace: true }),
+  });
   if (
     !scope.allowed ||
     (query.error instanceof ApiError && query.error.status === 403)
@@ -161,7 +140,7 @@ export function FormResponsesPage() {
       ),
     },
     ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant="outline">{t("approvals.states." + row.state)}</Badge> }] : []),
-    ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <Button variant="ghost" size="icon" aria-label={t("detail.rowPdf", { number: row.number })} onClick={() => update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false })}><DocumentIcon className="size-4"/></Button> : null }] : []),
+    ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false })}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...visible.map((column) => ({
       id: column.fieldId,
       header:
@@ -384,7 +363,7 @@ export function FormResponsesPage() {
         />
       ) : null}
     </Page></div>
-    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: moving, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? moveError, onRetry: moveError ? () => { void move(moveDirection.current); } : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
+    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
     </div>
   );
 }

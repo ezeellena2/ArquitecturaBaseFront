@@ -1,8 +1,9 @@
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { readErrorMessage } from "@/shared/api/errorFeedback";
+import { PrivateFormFilesScopeProvider } from "@/shared/hooks/PrivateFormFilesScope";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { formatDateTimeInZone, formatRelativeTime } from "@/shared/lib/dateTime";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
@@ -25,12 +26,15 @@ import { ResponseValue } from "../components/ResponseValue";
 import { ResponseAssistance, ResponseAssistanceBadges } from "../components/ResponseAssistance";
 import { ResponsePanelFrame, type ResponsePanelNavigation } from "../components/ResponsePanelFrame";
 import { composeWorkflowMoments } from "../workflowMoments";
-export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden }: {
-  formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void;
+function ResponsePanelFilesScope({ enabled, scope, children }: { enabled: boolean; scope: string | null; children: ReactNode }) {
+  return enabled ? <PrivateFormFilesScopeProvider scope={scope}>{children}</PrivateFormFilesScopeProvider> : children;
+}
+export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden, retainPreviousForm = false }: {
+  formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; retainPreviousForm?: boolean;
 }) {
   const { t, i18n } = useTranslation("forms");
-  const detail = useResponseDetail(recordId, formId);
-  const workflow = useResponseWorkflow(formId, recordId);
+  const detail = useResponseDetail(recordId, formId, retainPreviousForm);
+  const workflow = useResponseWorkflow(formId, recordId, retainPreviousForm);
   const workspace = useContext(ResponseWorkspaceContext);
   const [params] = useSearchParams();
   const update = useQueryUpdate();
@@ -41,18 +45,27 @@ export function FormResponseDetailPage({ formId, recordId, navigation, onDecided
   const deny = useCallback(() => workspace?.deny(), [workspace]);
   const onFileError = useCallback((error: unknown) => notify({ id: "responses:files:" + detail.scope.owner + ":" + recordId, kind: "error", message: readErrorMessage(error, t) }), [detail.scope.owner, recordId, t]);
   const data = detail.query.data;
-  const downloads = useResponseDocumentDownloads(detail.scope.owner, recordId, deny, detail.query.isPlaceholderData || data?.id !== recordId);
-  if (!detail.scope.allowed || detail.query.error instanceof ApiError && detail.query.error.status === 403) return <ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><ForbiddenPage/></ResponsePanelFrame>;
-  if (!data || data.definitionId !== formId) return <ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(detail.query.error instanceof ApiError && detail.query.error.status === 404 ? "responses.unavailable" : "responses.loadFailed")} action={<Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame>;
-  const loadingTarget = detail.query.isPlaceholderData || data.id !== recordId;
-  const current = workflow.query.data?.recordId === data.id ? workflow.query.data : undefined;
+  const [presentedWorkflow, setPresentedWorkflow] = useState<{ owner: string; data: NonNullable<typeof workflow.query.data> } | null>(null);
+  if (presentedWorkflow && (!detail.scope.allowed || presentedWorkflow.owner !== detail.scope.owner)) setPresentedWorkflow(null);
+  if (detail.scope.allowed && workflow.query.data?.recordId === data?.id && workflow.query.data && presentedWorkflow?.data !== workflow.query.data) setPresentedWorkflow({ owner: detail.scope.owner, data: workflow.query.data });
+  const current = workflow.query.data?.recordId === data?.id ? workflow.query.data : presentedWorkflow?.owner === detail.scope.owner && presentedWorkflow.data.recordId === data?.id ? presentedWorkflow.data : undefined;
+  const hasPhotos = data?.values.some(value => value.type === "photo") ?? false;
+  const invalidTab = data?.id === recordId && data.definitionId === formId && !detail.query.isPlaceholderData &&
+    (params.get("tab") === "photos" && !hasPhotos || params.get("tab") === "pdf" && current?.recordId === recordId && !current.documents.length);
+  useEffect(() => { if (invalidTab) update({ tab: undefined }); }, [invalidTab, update]);
+  const downloads = useResponseDocumentDownloads(detail.scope.owner, recordId, deny, navigation.busy || detail.query.isPlaceholderData || data?.id !== recordId);
+  const unavailable = !!data && !detail.query.isPlaceholderData && data.definitionId !== formId || detail.query.error instanceof ApiError && detail.query.error.status === 404;
+  const fileScope = detail.scope.allowed && data && !unavailable ? detail.scope.owner + ":" + data.definitionId : null;
+  if (!detail.scope.allowed || detail.query.error instanceof ApiError && detail.query.error.status === 403) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={null}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><ForbiddenPage/></ResponsePanelFrame></ResponsePanelFilesScope>;
+  if (!data || unavailable) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame></ResponsePanelFilesScope>;
+  const loadingTarget = navigation.busy || detail.query.isPlaceholderData || data.id !== recordId;
   const date = (utc: string) => formatDateTimeInZone(utc, i18n.language, detail.scope.user?.timeZoneId);
   const photos = data.values.filter(value => value.type === "photo").flatMap(value => Array.isArray(value.value) ? value.value : []);
   const moments = composeWorkflowMoments(data, current);
   const canDecide = detail.scope.user?.permissions.includes("formapprovals.decide");
-  const tab = ["answer", "photos", "activity"].includes(params.get("tab") ?? "") ? params.get("tab")! : params.get("tab") === "pdf" && current?.documents.length ? "pdf" : "answer";
+  const tab = ["answer", "activity", ...(hasPhotos ? ["photos"] : [])].includes(params.get("tab") ?? "") ? params.get("tab")! : params.get("tab") === "pdf" && current?.documents.length ? "pdf" : "answer";
   const refresh = () => { void workflow.query.refetch(); onDecided?.(); };
-  return <ResponsePanelFrame title={data.number} loading={detail.query.isFetching} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={current ? <Badge variant="outline">{t("approvals.states." + current.recordState)}</Badge> : null} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
+  return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={navigation.busy || detail.query.isFetching} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={current ? <Badge variant="outline">{t("approvals.states." + current.recordState)}</Badge> : null} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="link" size="inline" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
     {current?.documents.length ? <ResponseDocumentDownloads documents={current.documents} downloads={downloads}/> : null}
   </>}>
@@ -67,12 +80,12 @@ export function FormResponseDetailPage({ formId, recordId, navigation, onDecided
       </li>)}
     </ol>
     <Tabs value={tab} onValueChange={value => update({ tab: value === "answer" ? undefined : value })}>
-      <TabsList aria-label={t("responses.detail")}><TabsTrigger value="answer">{t("responses.answer")}</TabsTrigger><TabsTrigger value="photos">{t("detail.photos")} ({photos.length})</TabsTrigger><TabsTrigger value="activity">{t("detail.activity")}</TabsTrigger>{current?.documents.length ? <TabsTrigger value="pdf">{t("detail.pdf")}</TabsTrigger> : null}</TabsList>
+      <TabsList aria-label={t("responses.detail")}><TabsTrigger value="answer">{t("responses.answer")}</TabsTrigger>{hasPhotos ? <TabsTrigger value="photos">{t("detail.photos")} ({photos.length})</TabsTrigger> : null}<TabsTrigger value="activity">{t("detail.activity")}</TabsTrigger>{current?.documents.length ? <TabsTrigger value="pdf">{t("detail.pdf")}</TabsTrigger> : null}</TabsList>
       <TabsContent value="answer"><dl className="divide-y divide-[var(--color-border)]">{data.values.map(value => <div key={value.fieldId} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 py-3"><dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{value.label}</dt><dd className="min-w-0 text-sm"><ResponseValue cell={{ ...value, state: value.value === null || Array.isArray(value.value) && value.value.length === 0 ? "Unanswered" : "Answered" }} actor={detail.scope.user!.id} recordId={data.id} number={data.number} label={value.label} detail viewerFiles={photos} onForbidden={deny} onError={onFileError} detailLink=""/><ResponseAssistanceBadges record={data} fieldId={value.fieldId}/></dd></div>)}</dl><ResponseAssistance key={data.id} record={data} actor={detail.scope.user!.id} busy={loadingTarget} onForbidden={deny} onError={onFileError}/></TabsContent>
       <TabsContent value="photos">{photos.length ? <FormRecordFiles actor={detail.scope.user!.id} recordId={data.id} files={photos} photo label={t("responses.photos")} number={data.number} thumbnailLimit={photos.length} viewerFiles={photos} onForbidden={deny} onError={onFileError}/> : <p className="text-sm text-[var(--color-content-muted)]">{t("responses.unanswered")}</p>}</TabsContent>
       <TabsContent value="activity" forceMount hidden={tab !== "activity"}><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId}/></TabsContent>
       {current?.documents.length ? <TabsContent value="pdf"><ResponseDocuments downloads={downloads} owner={detail.scope.owner} recordId={data.id} documents={current.documents} onForbidden={deny} timeZoneId={detail.scope.user?.timeZoneId}/></TabsContent> : null}
     </Tabs>
     </div>
-  </ResponsePanelFrame>;
+  </ResponsePanelFrame></ResponsePanelFilesScope>;
 }

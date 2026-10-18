@@ -137,7 +137,7 @@ export function useResponseSheet(
     scope,
   };
 }
-export function useResponseDetail(id: string, formId: string) {
+export function useResponseDetail(id: string, formId: string, retainPreviousForm = false) {
   const scope = useResponseScope();
   useUnobservedQueryCleanup(["form-responses", scope.owner]);
   const query = useQuery({
@@ -146,7 +146,7 @@ export function useResponseDetail(id: string, formId: string) {
     enabled: scope.allowed && !!id,
     gcTime: 0,
     meta: { errorOwner: "local" },
-    placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner && previousQuery.queryKey[3] === formId ? keepPreviousData(previous) : undefined,
+    placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner && (retainPreviousForm || previousQuery.queryKey[3] === formId) ? keepPreviousData(previous) : undefined,
   });
   return { query, scope };
 }
