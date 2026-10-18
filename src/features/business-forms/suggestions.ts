@@ -4,14 +4,15 @@ export type SuggestionMode = "Assistant" | "Always";
 export interface SuggestionMapping { readonly source: { readonly kind: "Field" | "RecordNumber"; readonly fieldId: string | null }; readonly destinationFieldId: string }
 export interface FormSuggestion { readonly id: string; readonly destinationDefinitionId: string; readonly destinationVersionId: string | null; readonly mode: SuggestionMode; readonly when: string | null; readonly isActive: boolean; readonly conditions: readonly ResponseCondition[]; readonly mappings: readonly SuggestionMapping[] }
 export type FormSuggestionInput = Omit<FormSuggestion, "destinationVersionId">;
-export interface SuggestionQuestion { readonly fieldId:string; readonly type:CanonicalQuestion["type"]; readonly label:LocalizedText; readonly options?:readonly CanonicalChoice[]|null }
+export interface SuggestionQuestion { readonly fieldId:string; readonly type:CanonicalQuestion["type"]; readonly label:LocalizedText; readonly options?:readonly CanonicalChoice[]|null; readonly source?: { readonly catalog: string } | null }
 export interface PublishedSuggestionForm { readonly definitionId: string; readonly versionId: string; readonly name: Readonly<Record<string, string>>; readonly originalCulture: "es" | "en"; readonly questions: readonly SuggestionQuestion[] }
 export interface SuggestionIssue { readonly path: string; readonly key: string }
 export const newSuggestion = (): FormSuggestion => ({ id: crypto.randomUUID(), destinationDefinitionId: "", destinationVersionId: null, mode: "Assistant", when: null, isActive: true, conditions: [], mappings: [] });
 export function mappingTargets(source: SuggestionMapping["source"], questions: readonly SuggestionQuestion[], destination: readonly SuggestionQuestion[]): readonly SuggestionQuestion[] {
   if(source.kind==="RecordNumber") return destination.filter(field=>field.type==="shortText"||field.type==="longText");
   const field=questions.find(field=>field.fieldId===source.fieldId);
-  return !field||field.type==="photo"||field.type==="document"?[]:destination.filter(target=>target.type===field.type);
+  return !field||field.type==="photo"||field.type==="document"?[]:destination.filter(target=>target.type===field.type
+    && (field.type!=="choice" || field.source?.catalog != null && target.source?.catalog===field.source.catalog));
 }
 export function prepareSuggestions(suggestions: readonly FormSuggestion[], source: PublishedSuggestionForm, destinations: readonly PublishedSuggestionForm[], columns: readonly ResponseColumn[]) {
   const issues: SuggestionIssue[]=[];
@@ -28,9 +29,11 @@ export function prepareSuggestions(suggestions: readonly FormSuggestion[], sourc
     if(suggestion.mappings.length>40)issues.push({path:path+".mappings",key:"tooMany"});
     const targets=new Set<string>();
     suggestion.mappings.forEach((mapping,position)=>{
-      const mappingPath=path+".mappings."+position+".destinationFieldId";
-      if(!mappingTargets(mapping.source,source.questions,destination?.questions??[]).some(field=>field.fieldId===mapping.destinationFieldId))issues.push({path:mappingPath,key:"incompatible"});
-      if(targets.has(mapping.destinationFieldId))issues.push({path:mappingPath,key:"duplicateTarget"});
+      const mappingPath=path+".mappings."+position;
+      const origin=mapping.source.kind==="Field"?source.questions.find(field=>field.fieldId===mapping.source.fieldId):undefined;
+      const target=destination?.questions.find(field=>field.fieldId===mapping.destinationFieldId);
+      if(!mappingTargets(mapping.source,source.questions,destination?.questions??[]).some(field=>field.fieldId===mapping.destinationFieldId))issues.push({path:mappingPath+(origin?.type==="choice"&&target?.type==="choice"?".source":".destinationFieldId"),key:"incompatible"});
+      if(targets.has(mapping.destinationFieldId))issues.push({path:mappingPath+".destinationFieldId",key:"duplicateTarget"});
       targets.add(mapping.destinationFieldId);
     });
     return {id:suggestion.id,destinationDefinitionId:suggestion.destinationDefinitionId,mode:suggestion.mode,when,isActive:suggestion.isActive,conditions:normalized?.conditions??suggestion.conditions,mappings:suggestion.mappings};
