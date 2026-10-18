@@ -77,13 +77,14 @@ for (const language of ["es", "en"] as const)
       const privateSearch = page.getByRole("searchbox", { name: en ? "Search long text answers" : "Buscar en textos largos" });
       await privateSearch.fill("completo");
       await expect(privateSearch).toHaveValue("completo");
+      await expect(page.getByText((en ? "Search long text answers" : "Buscar en textos largos") + ": completo", { exact: true })).toBeVisible();
       await page
         .getByRole("link", { name: "TEST-000002", exact: true })
         .click();
       await expect(
         page.getByRole("heading", { name: "TEST-000002", exact: true }),
       ).toBeVisible();
-      const panel = page.getByRole("region", { name: en ? "Response detail" : "Detalle de la respuesta", exact: true });
+      const panel = page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
       await expect(table).toBeAttached();
       await expect(panel.getByRole("tab", { name: en ? "Response" : "Respuesta", exact: true })).toHaveAttribute("aria-selected", "true");
       await expect(panel.getByText("comprobante.pdf", { exact: true })).toBeVisible();
@@ -113,7 +114,8 @@ for (const language of ["es", "en"] as const)
       await expect(
         page.getByRole("heading", { name: "TEST-000001", exact: true }),
       ).toBeVisible();
-      await expect(next).toBeFocused();
+      await expect(next).toBeDisabled();
+      await expect(panel).toBeFocused();
       await panel.focus();
       await page.keyboard.press("ArrowUp");
       await expect(panel.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();

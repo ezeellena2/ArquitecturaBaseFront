@@ -7,13 +7,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.setViewportSize({ width, height: 900 });
     await page.clock.install({ time: new Date("2026-10-17T14:00:00Z") });
     await page.goto(`/src/test/visual/index.html?screen=/formularios/${responseFormId}/respuestas/${responseRecordId}&scenario=responses-assisted&lang=${language}`);
-    const panel = page.getByRole("region", { name: en ? "Response detail" : "Detalle de la respuesta", exact: true });
+    const panel = page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
     await expect(panel.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
     await expect(page.getByRole("table")).toBeAttached();
     await expect(panel.getByText(en ? "From Delivery" : "De Entrega", { exact: true })).toBeVisible();
     await expect(panel.getByText(en ? "Corrected when completing" : "Corregido al completar", { exact: true })).toBeVisible();
-    await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
     const origin = panel.getByRole("region", { name: en ? "How it started" : "Cómo empezó", exact: true });
+    await expect(origin).toBeVisible();
     await origin.scrollIntoViewIfNeeded();
     await expect(origin.getByText("Ana Operadora", { exact: true })).toBeVisible();
     await expect(origin.getByText(en ? "Always ask · No AI" : "Preguntar siempre · Sin IA", { exact: true })).toBeVisible();
