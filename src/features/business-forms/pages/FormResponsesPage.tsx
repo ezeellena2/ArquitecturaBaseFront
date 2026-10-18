@@ -1,6 +1,7 @@
 import { useCallback, useContext, useLayoutEffect, useRef, useState } from "react";
 import { Link, useMatch, useNavigate, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { DocumentIcon } from "@/shared/ui/icons";
@@ -41,6 +42,7 @@ export function FormResponsesPage() {
   const { t, i18n } = useTranslation("forms");
   const route = useResponseRouteQuery(formId);
   const { query, scope } = useResponseSheet(formId, route.query, route.ready);
+  const mobile = useMediaQuery("(width < 640px)");
   const recordId = useMatch("/formularios/:formId/respuestas/:recordId")?.params.recordId;
   const navigate = useNavigate();
   const update = useQueryUpdate();
@@ -84,7 +86,7 @@ export function FormResponsesPage() {
     loadPage: async page => {
       const filter = { ...route.query, page };
       const result = await client.fetchQuery({ queryKey: ["form-responses", scope.owner, "sheet", formId, filter], queryFn: ({ signal }) => fetchResponseSheet(formId, filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
-      return result.records.items.map(row => row.id);
+      return { ids: result.records.items.map(row => row.id), totalCount: result.records.totalCount };
     },
     onNavigate: (id, page) => update({ page: page === 1 ? undefined : String(page) }, { pathname: "/formularios/" + formId + "/respuestas/" + id, replace: true }),
   });
@@ -175,7 +177,7 @@ export function FormResponsesPage() {
   );
   return (
     <div ref={container} tabIndex={-1} className="relative h-full min-h-0 outline-none">
-    <div className="h-full overflow-y-auto"><Page
+    <div inert={mobile && !!recordId} className="h-full overflow-y-auto"><Page
       title={data?.name ?? t("responses.title")}
       status={
         data

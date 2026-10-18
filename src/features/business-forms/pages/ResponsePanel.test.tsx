@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
@@ -10,6 +10,7 @@ import { responseDetailFixture, responseSheetFixture, responseWorkflowFixture, r
 import { approvalTaskFixture } from "@/test/approvalFixtures";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 beforeEach(() => { queryClient.clear(); vi.clearAllMocks(); });
+afterEach(() => vi.restoreAllMocks());
 function setup(permissions = ["formrecords.read", "formrules.manage"], approval = false, pdf = false) {
   const reads = { values: 0, workflow: 0, files: 0, decisions: 0, searches: [] as Record<string, unknown>[] };
   const tasks = [approvalTaskFixture(), { ...approvalTaskFixture(), id: "0199a0c0-0000-7000-8000-000000000071", recordId: responseSecondId, number: "TEST-000001" }];
@@ -42,6 +43,55 @@ function setup(permissions = ["formrecords.read", "formrules.manage"], approval 
   return { reads, tasks, sheet };
 }
 const path = `/formularios/${responseFormId}/respuestas`;
+it.each(["sheet", "inbox"])("contains mobile focus and preserves navigation in the %s panel", async source => {
+  const listeners = new Set<(event: MediaQueryListEvent) => void>();
+  vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: (_type: string, listener: unknown) => { if (query === "(width < 640px)") listeners.add(listener as (event: MediaQueryListEvent) => void); }, removeEventListener: (_type: string, listener: unknown) => { listeners.delete(listener as (event: MediaQueryListEvent) => void); }, dispatchEvent: vi.fn() }));
+  setup(["formrecords.read", "formapprovals.decide", "formrecords.export"], true);
+  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
+  const { router } = renderRouteWithProviders(origin + "?pageSize=20");
+  const table = await screen.findByRole("table");
+  const row = screen.getByRole("link", { name: "TEST-000002" });
+  await userEvent.click(row);
+  const panel = await screen.findByRole("dialog", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  expect(panel).toHaveAttribute("aria-modal", "true");
+  expect(table.closest("[inert]")).not.toBeNull();
+  expect(within(panel).getByText("1 de 2")).toBeInTheDocument();
+  await act(async () => row.focus());
+  await waitFor(() => expect(panel.contains(document.activeElement)).toBe(true));
+  for (let index = 0; index < 15; index++) { await userEvent.tab(); expect(panel.contains(document.activeElement)).toBe(true); }
+  await userEvent.click(await within(panel).findByRole("button", { name: "Rechazar" }));
+  await screen.findByRole("dialog", { name: "Rechazar TEST-000002" });
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Rechazar TEST-000002" })).not.toBeInTheDocument());
+  expect(panel).toBeInTheDocument();
+  await act(async () => panel.focus());
+  await userEvent.keyboard("{ArrowDown}");
+  await within(panel).findByRole("heading", { name: "TEST-000001" });
+  expect(within(panel).getByText("2 de 2")).toBeInTheDocument();
+  await act(async () => { for (const listener of listeners) listener({ matches: false } as MediaQueryListEvent); });
+  const desktop = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  expect(desktop).toHaveFocus();
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(router.state.location.pathname).toBe(origin));
+  expect(table.closest("[inert]")).toBeNull();
+  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000001" })).toHaveFocus());
+});
+it("keeps the inbox total confirmed with the navigation context after a decision", async () => {
+  const { tasks } = setup(["formapprovals.decide"], true);
+  server.use(http.get("/api/forms/approvals", () => {
+    const open = tasks.filter(task => task.state === "Open");
+    return HttpResponse.json({ items: open.slice(0, 1), page: 1, pageSize: 1, totalCount: open.length, totalPages: open.length, hasPrevious: false, hasNext: open.length > 1 });
+  }));
+  renderRouteWithProviders("/formularios/por-aprobar?pageSize=1");
+  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  expect(within(panel).getByText("1 de 2")).toBeInTheDocument();
+  await userEvent.click(await within(panel).findByRole("button", { name: "Aprobar" }));
+  await within(panel).findByText(/Luz/);
+  await waitFor(() => expect(screen.queryByRole("link", { name: "TEST-000002" })).not.toBeInTheDocument());
+  expect(within(panel).getByText("1 de 2")).toBeInTheDocument();
+});
 it("keeps the mounted sheet and private filter when a response opens and closes by URL", async () => {
   const { reads } = setup(); const { router } = renderRouteWithProviders(path);
   const table = await screen.findByRole("table");

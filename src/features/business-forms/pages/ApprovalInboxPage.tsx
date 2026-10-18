@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { usePagination } from "@/shared/hooks/usePagination";
+import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { formatDateTimeInZone, formatRelativeTime } from "@/shared/lib/dateTime";
 import { Page } from "@/shared/ui/Page";
@@ -36,13 +37,15 @@ function ApprovalInbox({ onForbidden }: {
     const onlyMine = params.get("view") !== "all";
     const definitionId = params.get("definitionId") ?? undefined;
     const { scope, query, options, otherCount } = useApprovalInbox({ page: pagination.page, pageSize: pagination.pageSize, onlyMine, definitionId }, pagination.ready);
+    const mobile = useMediaQuery("(width < 640px)");
     const taskId = useMatch("/formularios/por-aprobar/:taskId")?.params.taskId;
     const client = useQueryClient();
     const [deniedTask, setDeniedTask] = useState<string | undefined>();
     const [readableTarget, setReadableTarget] = useState<{ taskId: string; definitionId: string; recordId: string } | null>(null);
     const key = useMemo(() => taskId === deniedTask && taskId ? ["form-approvals", scope.owner, "unavailable-task"] : ["form-approvals", scope.owner, "task", taskId], [scope.owner, taskId, deniedTask]);
     const selected = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchApprovalTask(taskId!, signal), enabled: scope.allowed && !!taskId && taskId !== deniedTask, gcTime: 0, placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner && previousQuery.queryKey[2] === "task" && taskId !== deniedTask ? previous : undefined });
-    const [context, setContext] = useState<{ ids: string[]; page: number } | null>(null);
+    const [context, setContext] = useState<{ ids: string[]; page: number; totalCount: number } | null>(null);
+    if (!context && taskId && query.data?.items.some(task => task.id === taskId)) setContext({ ids: query.data.items.map(task => task.id), page: query.data.page, totalCount: query.data.totalCount });
     const contextKey = [scope.owner, taskId, onlyMine, definitionId, pagination.page, pagination.pageSize].join(":");
     const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
     const table = useRef<HTMLDivElement | null>(null);
@@ -51,21 +54,21 @@ function ApprovalInbox({ onForbidden }: {
     const ids = context?.ids ?? query.data?.items.map(task => task.id) ?? [];
     const index = taskId ? ids.indexOf(taskId) : -1;
     const open = (task: ApprovalTask) => {
-      setContext({ ids: query.data?.items.map(item => item.id) ?? [], page: pagination.page });
+      setContext({ ids: query.data?.items.map(item => item.id) ?? [], page: pagination.page, totalCount: query.data?.totalCount ?? 0 });
       update({ tab: undefined }, { pathname: "/formularios/por-aprobar/" + task.id, replace: false });
     };
     const motion = useResponsePanelNavigation({ contextKey, ids, index, page: context?.page ?? pagination.page, disabled: !query.data || selected.isPlaceholderData,
       loadPage: async page => {
         const filter = { page, pageSize: pagination.pageSize, onlyMine, definitionId };
         const result = await client.fetchQuery({ queryKey: ["form-approvals", scope.owner, "list", filter], queryFn: ({ signal }) => fetchApprovalTasks(filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
-        return result.items.map(task => task.id);
+        return { ids: result.items.map(task => task.id), totalCount: result.totalCount };
       },
-      onPage: (ids, page) => setContext({ ids, page }),
+      onPage: (ids, page, totalCount) => setContext({ ids, page, totalCount }),
       onNavigate: (id, page) => update({ page: page === 1 ? undefined : String(page) }, { pathname: "/formularios/por-aprobar/" + id, replace: true }),
     });
     const moving = motion.busy || selected.isPlaceholderData;
     const moveError = motion.error;
-    const navigation = { selectionId: taskId, previous: index > 0 || index === 0 && !!query.data?.hasPrevious, next: index >= 0 && (index < ids.length - 1 || !!query.data?.hasNext), busy: moving, onMove: (direction: number) => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/por-aprobar", replace: false }), error: moveError, onRetry: motion.retry };
+    const navigation = { selectionId: taskId, position: index >= 0 ? ((context?.page ?? pagination.page) - 1) * pagination.pageSize + index + 1 : undefined, count: context?.totalCount ?? query.data?.totalCount, previous: index > 0 || index === 0 && !!query.data?.hasPrevious, next: index >= 0 && (index < ids.length - 1 || !!query.data?.hasNext), busy: moving, onMove: (direction: number) => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/por-aprobar", replace: false }), error: moveError, onRetry: motion.retry };
     const changeList = (changes: Record<string, string | undefined>) => { setContext(null); motion.clearError(); update({ ...changes, tab: undefined }, { pathname: "/formularios/por-aprobar" }); };
     const fallback = useRef<HTMLSelectElement | null>(null);
     const forbidden = approvalForbidden(query.error) || approvalForbidden(options.error);
@@ -80,11 +83,11 @@ function ApprovalInbox({ onForbidden }: {
     useResponseFeedback(canRead ? null : moveError, "approvals:move:" + scope.owner, navigation.onRetry);
     const target = selected.data ?? (readableTarget?.taskId === taskId ? readableTarget : undefined);
     if (forbidden) return <ForbiddenPage />;
-    return <div ref={table} className="relative h-full min-h-0"><div className="h-full overflow-y-auto"><Page title={t("approvals.title")}>
+    return <div ref={table} className="relative h-full min-h-0"><div inert={mobile && !!taskId} className="h-full overflow-y-auto"><Page title={t("approvals.title")}>
   <FilterBar><SegmentedControl aria-label={t("approvals.scope")} options={[{ key: "mine", label: t("approvals.mine", { count: mine ?? 0 }), pressed: onlyMine, onSelect: () => changeList({ view: undefined, page: undefined }) }, { key: "all", label: t("approvals.all", { count: all ?? 0 }), pressed: !onlyMine, onSelect: () => changeList({ view: "all", page: undefined }) }]}/><NativeSelect ref={fallback} aria-label={t("approvals.form")} value={definitionId ?? ""} onChange={event => changeList({ definitionId: event.target.value || undefined, page: undefined })}><option value="">{t("approvals.allForms")}</option>{options.data?.forms.map(form => <option key={form.id} value={form.id}>{form.name}</option>)}</NativeSelect></FilterBar>
   {options.error || otherCount.error ? <Button variant="outline" onClick={() => { if (options.error) void options.refetch(); if (otherCount.error) void otherCount.refetch(); }}>{t("common:actions.retry")}</Button> : null}
   <Surface><DataTable columns={[
-            { id: "number", header: t("responses.number"), cell: row => <Link data-task-id={row.id} className="font-medium text-[var(--color-brand-700)] underline" to={"/formularios/por-aprobar/" + row.id + "?" + params.toString()} onClick={() => setContext({ ids: query.data?.items.map(item => item.id) ?? [], page: pagination.page })}>{row.number}</Link> },
+            { id: "number", header: t("responses.number"), cell: row => <Link data-task-id={row.id} className="font-medium text-[var(--color-brand-700)] underline" to={"/formularios/por-aprobar/" + row.id + "?" + params.toString()} onClick={() => setContext({ ids: query.data?.items.map(item => item.id) ?? [], page: pagination.page, totalCount: query.data?.totalCount ?? 0 })}>{row.number}</Link> },
             { id: "form", header: t("formColumn"), cell: row => row.formName },
             { id: "author", header: t("responses.actor"), cell: row => row.author.displayName ?? t("responses.unknownPerson") },
             { id: "received", header: t("responses.received"), cell: row => <time dateTime={row.requestedAtUtc}>{formatDateTimeInZone(row.requestedAtUtc, i18n.language, scope.user?.timeZoneId)}</time> },

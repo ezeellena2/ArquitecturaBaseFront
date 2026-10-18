@@ -6,9 +6,9 @@ export function useResponsePanelNavigation({ contextKey, ids, index, page, disab
   index: number;
   page: number;
   disabled: boolean;
-  loadPage: (page: number) => Promise<string[]>;
+  loadPage: (page: number) => Promise<{ ids: string[]; totalCount: number }>;
   onNavigate: (id: string, page: number) => void;
-  onPage?: (ids: string[], page: number) => void;
+  onPage?: (ids: string[], page: number, totalCount: number) => void;
 }) {
   const current = useRef(contextKey);
   const live = useRef(true);
@@ -32,9 +32,10 @@ export function useResponsePanelNavigation({ contextKey, ids, index, page, disab
       let nextPage = page;
       if (!id) {
         nextPage += step;
-        const nextIds = await loadPage(nextPage);
+        const result = await loadPage(nextPage);
+        const nextIds = result.ids;
         id = step < 0 ? nextIds.at(-1) : nextIds[0];
-        if (isCurrent()) onPage?.(nextIds, nextPage);
+        if (isCurrent()) onPage?.(nextIds, nextPage, result.totalCount);
       }
       if (id && isCurrent()) onNavigate(id, nextPage);
     } catch (failure) {
