@@ -15,15 +15,17 @@ import { Textarea } from "@/shared/ui/textarea";
 import { Spinner } from "@/shared/ui/Spinner";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { decideApprovalTask, fetchApprovalTask } from "../api/approvals";
-import { prepareApprovalDecision, type ApprovalDecision } from "../approvals";
+import { decideApprovalTask, fetchApprovalTask, type ApprovalTask } from "../api/approvals";
+import { approvalStateVariant, prepareApprovalDecision, type ApprovalDecision } from "../approvals";
 import { approvalForbidden, useApprovalScope } from "../hooks/useApprovalQueries";
 import { useUnobservedQueryCleanup } from "../hooks/useUnobservedQueryCleanup";
-export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget, disabled = false, onForbidden }: {
+export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget, disabled = false, onForbidden, embedded = false, statusId }: {
     taskId: string;
+    embedded?: boolean;
+    statusId?: string;
     disabled?: boolean;
     onForbidden?: () => void;
-    onDecided?: () => void;
+    onDecided?: (task?: ApprovalTask) => void;
     actionsTarget?: HTMLElement | null;
 }) {
     const scope = useApprovalScope();
@@ -34,13 +36,15 @@ export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget, disabl
         return null;
     if (denied === owner)
         return <p role="status">{t("approvals.noPermission")}</p>;
-    return <DecisionEditor key={owner} taskId={taskId} scope={scope} onDecided={onDecided} actionsTarget={actionsTarget} disabled={disabled} onForbidden={() => { setDenied(owner); onForbidden?.(); }}/>;
+    return <DecisionEditor key={owner} taskId={taskId} scope={scope} embedded={embedded} statusId={statusId} onDecided={onDecided} actionsTarget={actionsTarget} disabled={disabled} onForbidden={() => { setDenied(owner); onForbidden?.(); }}/>;
 }
-function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, disabled }: {
+function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, disabled, embedded, statusId }: {
     taskId: string;
     scope: ReturnType<typeof useApprovalScope>;
     disabled: boolean;
-    onDecided?: () => void;
+    embedded: boolean;
+    statusId?: string;
+    onDecided?: (task?: ApprovalTask) => void;
     onForbidden: () => void;
     actionsTarget?: HTMLElement | null;
 }) {
@@ -64,7 +68,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     useLayoutEffect(() => { live.current = true; return () => { live.current = false; controller.current?.abort(); }; }, []);
     useEffect(() => { if (approvalForbidden(query.error))
         onForbidden(); }, [query.error, onForbidden]);
-    const refresh = () => { void client.invalidateQueries({ queryKey: ["form-approvals", scope.owner], predicate: entry => entry.queryKey[2] !== "task" }); onDecided?.(); };
+    const refresh = (task?: ApprovalTask) => { void client.invalidateQueries({ queryKey: ["form-approvals", scope.owner], predicate: entry => entry.queryKey[2] !== "task" }); onDecided?.(task); };
     const decide = async (decision: ApprovalDecision) => {
         const task = query.data;
         if (!task?.canDecide || disabled || busy || query.isFetching || cooldown.isRunning)
@@ -83,10 +87,11 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
             if (!live.current || request.signal.aborted)
                 return;
             focusDecision.current = true;
-            client.setQueryData(key, { ...task, state: result.state, revision: result.revision, decidedAtUtc: result.decidedAtUtc, decidedBy: result.decidedBy, reason: result.reason, canDecide: false, cannotDecideReason: "AlreadyDecided" });
+            const confirmed: ApprovalTask = { ...task, state: result.state, revision: result.revision, decidedAtUtc: result.decidedAtUtc, decidedBy: result.decidedBy, reason: result.reason, canDecide: false, cannotDecideReason: "AlreadyDecided" };
+            client.setQueryData(key, confirmed);
             setReject(false);
             setReason("");
-            refresh();
+            refresh(confirmed);
             notify({ id: operationId, kind: "success", message: t(decision === "Approved" ? "approvals.approved" : "approvals.rejected") });
         }
         catch (failure) {
@@ -100,12 +105,12 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
             if (!["cancelled", "session", "forbidden", "fields"].includes(errorFeedback(failure, { fields: decision === "Rejected" ? ["reason"] : [] }).kind)) { pendingNotice.current = true; notify({ id: operationId, kind: "error", message: readErrorMessage(failure, t) }); }
             if (failure instanceof ApiError && failure.status === 409) {
                 focusDecision.current = true;
-                await query.refetch();
+                const reread = await query.refetch();
                 if (!live.current)
                     return;
                 setReject(false);
                 setReason("");
-                refresh();
+                refresh(reread.data);
                 setError(failure);
             }
             else {
@@ -131,8 +136,8 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     if (!task || query.error && !transientReadFailure)
         return <EmptyState embedded title={t("common:states.loadFailed")} action={!approvalForbidden(query.error) ? <Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button> : undefined}/>;
     const controls = task.state === "Open" ? <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button><Button disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => void decide("Approved")}>{t("approvals.approve")}</Button></div> : null;
-    return <div ref={summary} tabIndex={-1} className="space-y-3 outline-none">
-  <div className="flex flex-wrap items-center gap-3"><Badge variant="outline">{t("approvals.taskStates." + task.state)}</Badge><span className="text-sm">{task.role.name}</span></div>
+    return <div ref={summary} aria-labelledby={statusId} tabIndex={-1} className="space-y-3 outline-none">
+  <div className="flex flex-wrap items-center gap-3">{embedded ? null : <Badge variant={approvalStateVariant(task.state)}>{t("approvals.taskStates." + task.state)}</Badge>}<span className="text-sm">{task.role.name}</span></div>
   {task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(task.decidedAtUtc, i18n.language, scope.user?.timeZoneId) })}</p> : null}
   {task.reason ? <p className="text-sm whitespace-pre-wrap">{task.reason}</p> : null}
   {actionsTarget === undefined ? controls : actionsTarget ? createPortal(controls, actionsTarget) : null}

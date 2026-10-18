@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import type { ResponseAction, ResponseWorkflow } from "./api/workflow";
 import { responseDetailFixture, responseWorkflowFixture } from "@/test/responseFixtures";
-import { composeWorkflowMoments } from "./workflowMoments";
+import { composeWorkflowMoments, workflowMomentState } from "./workflowMoments";
 
 const time = (seconds: string) => "2026-10-17T12:00:" + seconds + "Z";
 const record = () => responseDetailFixture();
@@ -11,6 +11,19 @@ function action(id: string, overrides: Partial<ResponseAction> = {}): ResponseAc
 function task(overrides: Partial<NonNullable<ResponseWorkflow["task"]>> = {}): NonNullable<ResponseWorkflow["task"]> {
   return { id: "approval", roleId: "role", roleName: "Supervisor", requestedAtUtc: time("03"), revision: 1, state: "Open", decidedAtUtc: null, decidedBy: null, reason: null, ...overrides };
 }
+
+it.each([ ["Open", "pending"], ["Approved", "completed"], ["Rejected", "rejected"] ] as const)("presents the observed approval %s as %s", (state, expected) => {
+  expect(workflowMomentState({ kind: "approval", key: "approval", task: task({ state }) })).toBe(expected);
+});
+it.each([ ["Waiting", "pending"], ["Running", "pending"], ["Failed", "failed"], ["Uncertain", "uncertain"], ["Completed", "completed"] ] as const)("presents observed action %s as %s", (state, expected) => {
+  const actions = [action("effect", { state })];
+  expect(workflowMomentState({ kind: "effects", key: "effects", event: "Received", actions, completedCount: 0, totalCount: 1 })).toBe(expected);
+});
+it.each([ ["Failed", "failed"], ["Uncertain", "uncertain"], ["Pending", "pending"], ["Sending", "pending"], ["Accepted", "completed"] ] as const)("keeps recipient %s visible when its role action completed", (state, expected) => {
+  const recipient: ResponseAction["recipients"][number] = { user: { userId: "recipient", displayName: "Ana" }, channelId: null, state, reasonCode: null, reason: null, canReview: false, deliveredAtUtc: null, readAtUtc: null, review: null };
+  const actions = [action("role", { recipients: [recipient] })];
+  expect(workflowMomentState({ kind: "effects", key: "effects", event: "Received", actions, completedCount: 1, totalCount: 1 })).toBe(expected);
+});
 
 it("shows the observed receipt and origin without inventing effects or approval", () => {
   const response = record();

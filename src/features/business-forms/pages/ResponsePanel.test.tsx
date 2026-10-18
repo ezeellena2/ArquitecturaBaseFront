@@ -392,6 +392,9 @@ it("shows observed recipient failures in the summary even when the role run comp
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("button", { name: "1 de 1 hecha" });
   expect(within(panel).getByText("Hay fallas o envíos sin confirmar.")).toBeVisible();
+  const moment = within(panel).getByRole("button", { name: "1 de 1 hecha" }).closest("li")!;
+  expect(moment).toHaveAttribute("data-moment-state", "failed");
+  expect(moment.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
   expect(within(panel).getByRole("tab", { name: "Respuesta" })).toHaveAttribute("aria-selected", "true");
 });
 
@@ -459,6 +462,7 @@ it("withdraws denied task metadata in the inbox while preserving independently r
   await panel.findByText("Ya no tenés permiso para decidir esta aprobación.");
   expect(panel.getByText("Texto completo para revisar")).toBeVisible();
   expect(panel.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+  expect(panel.getByRole("heading", { name: "Por aprobar", level: 3 })).toBeInTheDocument();
   expect(reads.values).toBeGreaterThan(0);
   await waitFor(() => expect(queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-approvals" && query.queryKey[2] === "task" })).toHaveLength(0));
 });

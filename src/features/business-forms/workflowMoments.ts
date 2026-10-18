@@ -9,6 +9,16 @@ export type WorkflowMoment =
   | { kind: "effects"; key: string; event: RuleEvent; actions: ResponseAction[]; completedCount: number; totalCount: number }
   | { kind: "approval"; key: string; task: ApprovalTask };
 
+export type WorkflowMomentState = "completed" | "pending" | "failed" | "uncertain" | "rejected";
+export function workflowMomentState(moment: WorkflowMoment): WorkflowMomentState {
+  if (moment.kind === "received") return "completed";
+  if (moment.kind === "approval") return moment.task.state === "Open" ? "pending" : moment.task.state === "Rejected" ? "rejected" : "completed";
+  const states = moment.actions.flatMap(action => [action.state, ...action.recipients.map(recipient => recipient.state)]);
+  if (states.includes("Failed")) return "failed";
+  if (states.includes("Uncertain")) return "uncertain";
+  return states.some(state => state === "Waiting" || state === "Running" || state === "Pending" || state === "Sending") ? "pending" : "completed";
+}
+
 export function composeWorkflowMoments(record: ResponseDetail, workflow?: ResponseWorkflow): WorkflowMoment[] {
   const observed = workflow?.recordId === record.id ? workflow : undefined;
   const history = composeWorkflowHistory(record, observed);

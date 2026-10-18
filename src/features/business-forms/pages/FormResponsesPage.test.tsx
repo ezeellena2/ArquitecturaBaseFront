@@ -1257,9 +1257,10 @@ it("keeps one workflow read notification in the detail without repeating its cau
     } else await userEvent.click(actions.getByRole("button", { name: "Aprobar" }));
     await waitFor(() => expect(fixture.workflowReads).toBe(2));
     expect(panel).toBeInTheDocument();
-    expect(controls.getByText(decision === "Approved" ? "Aprobada" : "Rechazada")).toBeInTheDocument();
+    expect(within(summaryElement.closest("li")!).getByRole("heading", { name: decision === "Approved" ? "Aprobada" : "Rechazada", level: 3 })).toBeInTheDocument();
     const summary = controls.getByText("Supervisión").closest("[tabindex='-1']");
     await waitFor(() => expect(summary).toHaveFocus());
+    expect(summary).toHaveAccessibleName(decision === "Approved" ? "Aprobada" : "Rechazada");
     expect(controls.getByText(/Luz/)).toBeInTheDocument();
     expect(controls.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
     expect(fixture.writes).toEqual([{ expectedRevision: 1, decision, ...(decision === "Rejected" ? { reason: "Revisá la firma" } : {}) }]);
@@ -1314,15 +1315,68 @@ it("keeps one workflow read notification in the detail without repeating its cau
     const header = within((await responseView.findByText("Supervisión")).closest("li")!);
     expect(await header.findByRole("heading", { name: "Por aprobar", level: 3 })).toBeInTheDocument();
     await header.findByRole("button", { name: "Aprobar" });
+    expect(header.getAllByText("Por aprobar")).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: "Aprobar" })).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: "Rechazar" })).toHaveLength(1);
     const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
     expect(within(title.closest("header")!).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
     await userEvent.click(header.getByRole("button", { name: "Aprobar" }));
-    await within(responseView.getByText("Supervisión").closest("[tabindex='-1']")! as HTMLElement).findByText("Aprobada");
+    await header.findByRole("heading", { name: "Aprobada", level: 3 });
     expect(header.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
     await waitFor(() => expect(within(panel).getByText("Supervisión").closest("[tabindex='-1']")).toHaveFocus());
     expect(fixture.writes).toEqual([{ expectedRevision: 1, decision: "Approved" }]);
+  });
+  it("keeps the confirmed moment and header status when the workflow refresh fails after approval", async () => {
+    setupDetailDecision();
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+    const approve = await within(panel).findByRole("button", { name: "Aprobar" });
+    const moment = within(panel).getByText("Supervisión").closest("li")!;
+    expect(moment).toHaveAttribute("data-moment-state", "pending");
+    const previous = structuredClone(queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-responses" && query.queryKey[2] === "workflow" })[0].state.data) as ResponseWorkflow;
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let reads = 0;
+    server.use(http.get("/api/forms/records/:id/workflow", async () => {
+      reads++;
+      if (reads === 1) { await gate; return HttpResponse.json(previous); }
+      return HttpResponse.json({ code: "General.Unexpected", traceId: "moment-refresh" }, { status: 500 });
+    }));
+    await act(async () => { void queryClient.invalidateQueries({ predicate: query => query.queryKey[0] === "form-responses" && query.queryKey[2] === "workflow" }); });
+    await waitFor(() => expect(reads).toBe(1));
+    await userEvent.click(approve);
+    await within(moment).findByRole("heading", { name: "Aprobada", level: 3 });
+    await waitFor(() => expect(reads).toBe(2));
+    await act(async () => release?.());
+    await waitFor(() => expect(moment).toHaveAttribute("data-moment-state", "completed"));
+    const title = within(panel).getByRole("heading", { name: "TEST-000002" });
+    expect(within(title.closest("header")!).getByText("Aprobada")).toHaveAttribute("data-variant", "success");
+    expect(within(moment).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+    expect(within(moment).getByText(/Luz/)).toBeInTheDocument();
+    expect(within(panel).queryByRole("heading", { name: "Al aprobarla" })).not.toBeInTheDocument();
+  });
+  it("does not revive a private workflow or refresh after closing during decision observation", async () => {
+    const { fixture } = setupDetailDecision();
+    const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    const approve = await screen.findByRole("button", { name: "Aprobar" });
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let observing = false;
+    const original = queryClient.cancelQueries.bind(queryClient);
+    const cancellation = vi.spyOn(queryClient, "cancelQueries").mockImplementation((filters, options) => {
+      if (filters?.exact && filters.queryKey?.[2] === "workflow") { observing = true; return gate.then(() => original(filters, options)); }
+      return original(filters, options);
+    });
+    try {
+      await userEvent.click(approve);
+      await waitFor(() => expect(observing).toBe(true));
+      await userEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+      await waitFor(() => expect(router.state.location.pathname).toBe("/formularios/" + responseFormId + "/respuestas"));
+      await waitFor(() => expect(queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-responses" && query.queryKey[2] === "workflow" })).toHaveLength(0));
+      await act(async () => release?.());
+      expect(queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-responses" && query.queryKey[2] === "workflow" })).toHaveLength(0);
+      expect(fixture.workflowReads).toBe(1);
+    } finally { cancellation.mockRestore(); release?.(); }
   });
   it("keeps an own decision disabled in its approval moment with its reason in the existing panel", async () => {
     const { fixture } = setupDetailDecision();

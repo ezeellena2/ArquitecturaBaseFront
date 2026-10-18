@@ -8,6 +8,9 @@ import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { formatDateTimeInZone, formatRelativeTime } from "@/shared/lib/dateTime";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import { Button } from "@/shared/ui/button";
+import { AlertTriangleIcon, BanIcon, CheckIcon, ClockIcon } from "@/shared/ui/icons";
+import type { ApprovalTask } from "../api/approvals";
+import { approvalStateVariant } from "../approvals";
 import { Badge } from "@/shared/ui/badge";
 import { Spinner } from "@/shared/ui/Spinner";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -25,7 +28,7 @@ import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
 import { ResponseValue } from "../components/ResponseValue";
 import { ResponseAssistance, ResponseAssistanceBadges } from "../components/ResponseAssistance";
 import { ResponsePanelFrame, type ResponsePanelNavigation } from "../components/ResponsePanelFrame";
-import { composeWorkflowMoments } from "../workflowMoments";
+import { composeWorkflowMoments, workflowMomentState } from "../workflowMoments";
 function ResponsePanelFilesScope({ enabled, scope, children }: { enabled: boolean; scope: string | null; children: ReactNode }) {
   return enabled ? <PrivateFormFilesScopeProvider scope={scope}>{children}</PrivateFormFilesScopeProvider> : children;
 }
@@ -64,20 +67,25 @@ export function FormResponseDetailPage({ formId, recordId, navigation, onDecided
   const moments = composeWorkflowMoments(data, current);
   const canDecide = detail.scope.user?.permissions.includes("formapprovals.decide");
   const tab = ["answer", "activity", ...(hasPhotos ? ["photos"] : [])].includes(params.get("tab") ?? "") ? params.get("tab")! : params.get("tab") === "pdf" && current?.documents.length ? "pdf" : "answer";
-  const refresh = () => { void workflow.query.refetch(); onDecided?.(); };
-  return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={navigation.busy || detail.query.isFetching} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={current ? <Badge variant="outline">{t("approvals.states." + current.recordState)}</Badge> : null} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
+  const refresh = async (task?: ApprovalTask) => { if (task && !await workflow.observeApproval(task)) return; void workflow.query.refetch(); onDecided?.(); };
+  return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={navigation.busy || detail.query.isFetching} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : null} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="link" size="inline" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
     {current?.documents.length ? <ResponseDocumentDownloads documents={current.documents} downloads={downloads}/> : null}
   </>}>
     <div className={canDecide && current?.task?.state === "Open" ? "max-sm:pb-20" : undefined}>
     <ol className="mb-4 space-y-3 border-b border-[var(--color-border)] pb-4">
-      {moments.map(moment => <li key={moment.key} className="relative border-l-2 border-[var(--color-border)] pl-3">
+      {moments.map(moment => {
+        const state = workflowMomentState(moment);
+        const Icon = state === "pending" ? ClockIcon : state === "failed" || state === "rejected" ? BanIcon : state === "uncertain" ? AlertTriangleIcon : CheckIcon;
+        const iconTone = state === "completed" ? "text-[var(--color-success-700)]" : state === "failed" || state === "rejected" ? "text-[var(--color-danger-700)]" : "text-[var(--color-warning-700)]";
+        return <li key={moment.key} data-moment-state={state} className={"relative border-l-2 py-1 pl-7 " + (state === "pending" ? "border-[var(--color-warning)] bg-[var(--color-warning-50)]" : "border-[var(--color-border)]")}>
+        <Icon className={"absolute top-1.5 left-1 size-4 " + iconTone}/>
         {moment.kind === "received" ? <><h3 className="font-semibold">{t("responses.received")}</h3><p className="text-sm">{data.actor.displayName ?? t("responses.unknownPerson")} · {date(moment.atUtc)}</p>{moment.origin ? <p className="text-xs text-[var(--color-content-muted)]">{t(moment.origin.senderKind === "Assistant" ? "detail.originAssistant" : "detail.originManual", { name: moment.origin.senderName ?? t("responses.unknownPerson") })}</p> : null}</> : moment.kind === "effects" ? <><h3 className="font-semibold">{t("detail.events." + moment.event)}</h3><Button variant="link" size="inline" onClick={() => update({ tab: "activity" })}>{t("detail.actionsCompleted", { completed: moment.completedCount, count: moment.totalCount })}</Button>{moment.actions.some(action => action.state === "Failed" || action.state === "Uncertain" || action.recipients.some(recipient => recipient.state === "Failed" || recipient.state === "Uncertain")) ? <p className="text-xs text-[var(--color-content-muted)]">{t("detail.issues")}</p> : null}</> : <>
-          <h3 className="font-semibold">{t("approvals.taskStates." + moment.task.state)}</h3>
+          <h3 id={"approval-moment-" + moment.task.id} className="font-semibold">{t("approvals.taskStates." + moment.task.state)}</h3>
           {moment.task.state === "Open" ? <p className="text-xs text-[var(--color-content-muted)]"><ActionTooltip label={date(moment.task.requestedAtUtc)}><time dateTime={moment.task.requestedAtUtc} tabIndex={0}>{formatRelativeTime(moment.task.requestedAtUtc, i18n.language)}</time></ActionTooltip></p> : null}
-          {canDecide ? <><ApprovalDecisionPanel taskId={moment.task.id} disabled={loadingTarget} onForbidden={onDecisionForbidden} actionsTarget={decisionActions} onDecided={refresh}/><div ref={setDecisionActions} className={moment.task.state === "Open" ? "mt-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/></> : <><p className="text-sm">{moment.task.roleName ?? t("responses.unknownPerson")}</p>{moment.task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: moment.task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(moment.task.decidedAtUtc) })}</p> : null}{moment.task.reason ? <p className="text-sm whitespace-pre-wrap">{moment.task.reason}</p> : null}</>}
+          {canDecide ? <><ApprovalDecisionPanel embedded statusId={"approval-moment-" + moment.task.id} taskId={moment.task.id} disabled={loadingTarget} onForbidden={onDecisionForbidden} actionsTarget={decisionActions} onDecided={refresh}/><div ref={setDecisionActions} className={moment.task.state === "Open" ? "mt-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/></> : <><p className="text-sm">{moment.task.roleName ?? t("responses.unknownPerson")}</p>{moment.task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: moment.task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(moment.task.decidedAtUtc) })}</p> : null}{moment.task.reason ? <p className="text-sm whitespace-pre-wrap">{moment.task.reason}</p> : null}</>}
         </>}
-      </li>)}
+      </li>; })}
     </ol>
     <Tabs value={tab} onValueChange={value => update({ tab: value === "answer" ? undefined : value })}>
       <TabsList aria-label={t("responses.detail")}><TabsTrigger value="answer">{t("responses.answer")}</TabsTrigger>{hasPhotos ? <TabsTrigger value="photos">{t("detail.photos")} ({photos.length})</TabsTrigger> : null}<TabsTrigger value="activity">{t("detail.activity")}</TabsTrigger>{current?.documents.length ? <TabsTrigger value="pdf">{t("detail.pdf")}</TabsTrigger> : null}</TabsList>

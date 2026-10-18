@@ -3,7 +3,8 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
-import { continueResponseAction, fetchResponseWorkflow, reviewResponseAction } from "../api/workflow";
+import type { ApprovalTask } from "../api/approvals";
+import { continueResponseAction, fetchResponseWorkflow, reviewResponseAction, type ResponseWorkflow } from "../api/workflow";
 import { sameWorkflowReviewTarget, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 import { useResponseScope } from "./useResponseQueries";
 export function useResponseWorkflow(formId: string, recordId: string, retainPreviousForm = false) {
@@ -17,15 +18,28 @@ export function useResponseWorkflow(formId: string, recordId: string, retainPrev
     gcTime: 0, meta: { errorOwner: "local" } });
   const [deniedManageOwner, setDeniedManageOwner] = useState<string | null>(null);
   const [operation, setOperation] = useState<{ owner: string; busy: boolean; error: unknown } | null>(null);
-  const liveOwner = useRef(owner);
+  const liveOwner = useRef<string | undefined>(owner);
   const controller = useRef<AbortController | null>(null);
   const [reviewCheck, setReviewCheck] = useState<{ owner: string; target: WorkflowReviewTarget } | null>(null);
-  useLayoutEffect(() => { liveOwner.current = owner; }, [owner]);
+  useLayoutEffect(() => { liveOwner.current = owner; return () => { if (liveOwner.current === owner) liveOwner.current = undefined; }; }, [owner]);
   useEffect(() => () => { controller.current?.abort(); controller.current = null; }, [owner]);
   const cooldown = useCountdown(0);
   const busy = operation?.owner === owner && operation.busy;
   const controlsDenied = deniedManageOwner === owner;
   const canManage = !!scope.user?.permissions.includes("formrules.manage") && !controlsDenied;
+  const observeApproval = async (task: ApprovalTask) => {
+    if (!scope.allowed || task.definitionId !== formId || task.recordId !== recordId || liveOwner.current !== owner) return false;
+    await client.cancelQueries({ queryKey: key, exact: true });
+    if (liveOwner.current !== owner) return false;
+    let observed = false;
+    client.setQueryData<ResponseWorkflow>(key, current => {
+      if (!current || current.recordId !== recordId || current.task?.id !== task.id || current.task.revision > task.revision) return current;
+      observed = true;
+      return { ...current, recordState: task.state === "Open" ? "PendingApproval" : task.state,
+        task: { ...current.task, revision: task.revision, state: task.state, decidedAtUtc: task.decidedAtUtc, decidedBy: task.decidedBy, reason: task.reason } };
+    });
+    return observed;
+  };
   const reconcileReview = async (target: WorkflowReviewTarget, request: AbortController, error: unknown): Promise<boolean> => {
     try {
       const result = await fetchResponseWorkflow(recordId, request.signal);
@@ -82,5 +96,5 @@ export function useResponseWorkflow(formId: string, recordId: string, retainPrev
       if (controller.current === request) controller.current = null;
     }
   };
-  return { query, scope, busy, cooldown, act: (runId: string) => execute(runId), review: (target: WorkflowReviewTarget, wasSent: boolean) => execute(target.runId, { target, wasSent }), checkReview: (target: WorkflowReviewTarget) => execute(target.runId, { target, checkOnly: true }), needsConsultReview: reviewCheck?.owner === owner ? reviewCheck.target : null, canManage, controlsDenied, error: operation?.owner === owner ? operation.error ?? query.error : query.error };
+  return { query, scope, busy, observeApproval, cooldown, act: (runId: string) => execute(runId), review: (target: WorkflowReviewTarget, wasSent: boolean) => execute(target.runId, { target, wasSent }), checkReview: (target: WorkflowReviewTarget) => execute(target.runId, { target, checkOnly: true }), needsConsultReview: reviewCheck?.owner === owner ? reviewCheck.target : null, canManage, controlsDenied, error: operation?.owner === owner ? operation.error ?? query.error : query.error };
 }

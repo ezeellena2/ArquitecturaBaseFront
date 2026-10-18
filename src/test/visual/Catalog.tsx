@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/shared/ui/Page";
 import { Surface } from "@/shared/ui/Surface";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { FormField } from "@/shared/ui/FormField";
@@ -42,8 +43,8 @@ export function Catalog() {
   const restoreFocus = useRestoreFocusOnClose(formOpen);
   const english = i18n.language === "en";
   const text = english
-    ? { title: "UI catalog", actions: "Actions", controls: "Fields", tables: "Table", states: "States", name: "Name", hint: "Use a name people can recognize.", invalid: "Enter a name.", status: "Status", empty: "No records yet", problem: "Content is unavailable", notice: "Changes saved", chip: "Active", remove: "Remove status filter" }
-    : { title: "Catálogo de UI", actions: "Acciones", controls: "Campos", tables: "Tabla", states: "Estados", name: "Nombre", hint: "Usá un nombre que las personas reconozcan.", invalid: "Ingresá un nombre.", status: "Estado", empty: "Todavía no hay registros", problem: "No pudimos cargar el contenido", notice: "Guardamos los cambios", chip: "Activos", remove: "Quitar filtro de estado" };
+    ? { title: "UI catalog", actions: "Actions", controls: "Fields", tables: "Table", states: "States", name: "Name", hint: "Use a name people can recognize.", invalid: "Enter a name.", status: "Status", empty: "No records yet", problem: "Content is unavailable", notice: "Changes saved", chip: "Active", remove: "Remove status filter", badgeSuccess: "Success", badgeWarning: "Attention", badgeDanger: "Problem" }
+    : { title: "Catálogo de UI", actions: "Acciones", controls: "Campos", tables: "Tabla", states: "Estados", name: "Nombre", hint: "Usá un nombre que las personas reconozcan.", invalid: "Ingresá un nombre.", status: "Estado", empty: "Todavía no hay registros", problem: "No pudimos cargar el contenido", notice: "Guardamos los cambios", chip: "Activos", remove: "Quitar filtro de estado", badgeSuccess: "Éxito", badgeWarning: "Atención", badgeDanger: "Problema" };
   const columns = [{ id: "name", header: text.name, cell: (row: { id: string; name: string }) => row.name }];
   const pieces = english
     ? { description: "Description", role: "Role", roles: "Roles", choose: "Choose roles", registration: "Account registration", invited: "Invitation only", open: "Open registration", checkbox: "Send an invitation", disabled: "Unavailable action", reason: "This example is read-only.", edit: "Edit example", modal: "Open form", modalTitle: "Example form", modalDescription: "A short form using the shared dialog.", search: "Search by name", status: "Filter by status", all: "All", active: "Active", filters: "Filters", selection: "Selection", dialogs: "Dialogs and tooltips" }
@@ -55,6 +56,7 @@ export function Catalog() {
           <Button>{t("actions.save")}</Button><Button variant="outline">{t("actions.cancel")}</Button>
           <Button variant="ghost">{t("actions.close")}</Button><Button variant="destructive" onClick={() => setConfirm(true)}>{t("users:actions.delete")}</Button>
           <Button disabled>{t("actions.save")}</Button>
+          <Badge variant="success">{text.badgeSuccess}</Badge><Badge variant="warning">{text.badgeWarning}</Badge><Badge variant="danger">{text.badgeDanger}</Badge>
         </div>
       </Surface>
       <Surface title={text.controls} padded>
