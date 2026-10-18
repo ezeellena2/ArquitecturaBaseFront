@@ -283,9 +283,10 @@ para conservar contraste; success, warning y danger no cambian. Recorridos: `src
 ### Chat de WhatsApp
 
 - `/whatsapp/chat`: panel con la geometría de Administración, bandeja y conversación en `Surface`, historial y compositor.
-  En móvil alterna bandeja y conversación, con «Chats» para volver. Confirma tomar Manual desde un contacto en Bot y revisar
-  envíos inciertos; no ofrece activar un bot. Sin leyendas de atajo ni de intervalo (Ctrl+Enter envía, Enter agrega
-  línea, polling de 5 s).
+  En móvil alterna bandeja y conversación, con «Chats» para volver. Tomar Atención manual requiere Send; activar
+  Asistente exige ConfigureAssistant y disponibilidad confirmada. Un envío iniciado puede terminar al tomar Manual.
+  Los envíos inciertos se consultan antes de resolverlos. Sin leyendas de atajo ni de intervalo (Ctrl+Enter envía,
+  Enter agrega línea, polling de 5 s).
 - La línea que separa WhatsApp de Inicio aparece solo si hay un ítem de WhatsApp visible.
 - `src/test/visual/whatsapp.spec.ts`; no se actualizan capturas para ocultar diferencias. Reglas:
   [WhatsApp](../../../ArquitecturaBase/docs/features/whatsapp.md#chat-de-atención--2026-10-02).
@@ -297,7 +298,9 @@ para conservar contraste; success, warning y danger no cambian. Recorridos: `src
 - Tokens `message-*`: fondo `#F0ECE4`, recibidos blancos, salientes `#D9EFCD`, contenido `#203227`, metadatos `#526258`,
   lectura `#126A85`. Fallo e incertidumbre usan roles semánticos. Son independientes de los cuatro colores editables.
 - Cola, aceptación, entrega, lectura, fallo, incertidumbre y revisión llevan ícono y texto; lo desconocido no se
-  muestra como aceptado. Bot, Vos y Operador salen de la autoría de la API. Historial: [premisas](../guides/premisas-de-desarrollo.md#historial-de-mensajes-2026-10-02).
+  muestra como aceptado. Origin Assistant presenta Asistente y FormAction presenta Automático; Vos y Operador
+  conservan al operador real. El modo actual no reconstruye la autoría histórica. Historial:
+  [premisas](../guides/premisas-de-desarrollo.md#historial-de-mensajes-2026-10-02).
 - Eventos de acceso: misma burbuja, etiqueta «Acceso al sistema», resumen localizado, hora y estado reales; sin código,
   enlace secreto ni recuperación a borrador. Business conserva su texto. Capturas `whatsapp-access-*.png`.
 
@@ -306,8 +309,8 @@ para conservar contraste; success, warning y danger no cambian. Recorridos: `src
 Los tableros elegidos de la página «Formularios por WhatsApp» (historia completa, Etapa 1 y variantes A–E, P1–P3, C1–C5,
 R1–R3), los ajustes G2/G5 de la versión 75 y D2 de la versión 79 reemplazan la maqueta aislada del plan. D2 reemplaza
 el detalle vertical de T3/G4/G5; H1–H7 y s1–s4 conservan los tableros elegidos del asistente. El botón que abre un
-formulario dice siempre «Abrir formulario». La implementación y su calificación son estados separados; las escenas
-nuevas preparadas no acreditan todavía una corrida visual ni el recorrido real.
+formulario dice siempre «Abrir formulario». La [calificación local del cierre](../../../ArquitecturaBase/docs/features/formularios.md#cierre-local-de-la-etapa-5-y-del-review-de-la-etapa-4)
+separa integración, contratos, visuales y navegador de la calificación del proveedor y del piloto físico con Meta.
 Capturas, decisiones, alcance, piezas y estado: [formularios-whatsapp.md](formularios-whatsapp.md).
 
 ### Inicio: composición assistant-ui corregida — 2026-10-04
