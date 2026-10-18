@@ -61,6 +61,25 @@ it("keeps the mounted sheet and private filter when a response opens and closes 
   expect(screen.getByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("private visit");
   await waitFor(() => expect(row).toHaveFocus());
 });
+it("closes from the focused Activity tab on Escape and restores the same filtered row", async () => {
+  const { reads } = setup(); const { router } = renderRouteWithProviders(path);
+  await screen.findByRole("table");
+  await userEvent.type(screen.getByRole("searchbox", { name: "Buscar en textos largos" }), "private tab visit");
+  await waitFor(() => expect(reads.searches.at(-1)).toMatchObject({ search: "private tab visit" }));
+  const row = screen.getByRole("link", { name: "TEST-000002" });
+  await userEvent.click(row);
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  const activity = within(panel).getByRole("tab", { name: "Actividad" });
+  await userEvent.click(activity);
+  expect(activity).toHaveFocus();
+  expect(activity).toHaveAttribute("aria-selected", "true");
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(router.state.location.pathname).toBe(path));
+  expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument();
+  expect(screen.getByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("private tab visit");
+  await waitFor(() => expect(row).toHaveFocus());
+});
+
 it("opens a directly linked panel and navigates by arrows without intercepting tab controls or composition", async () => {
   setup(); const { router } = renderRouteWithProviders(path + "/" + responseRecordId + "?columns=none&sort=actor&pageSize=20");
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });

@@ -26,8 +26,9 @@ export function ResponsePanelFrame({ title, status, subtitle, navigation, childr
   return <section ref={panel} aria-busy={loading} aria-label={t("responses.detail")} tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex w-[min(520px,100%)] flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl outline-none max-sm:fixed max-sm:inset-0 max-sm:z-40 max-sm:w-full" onFocusCapture={event => { navigationFocus.current = event.target === previous.current ? "previous" : event.target === next.current ? "next" : null; }} onKeyDown={event => {
     if (event.defaultPrevented || event.nativeEvent.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest('input,textarea,select,[contenteditable="true"],[role="combobox"],[role="listbox"],[role="menu"],[role="tablist"],[role="dialog"]')) return;
+    if (target?.closest('input,textarea,select,[contenteditable="true"],[role="combobox"],[role="listbox"],[role="menu"],[role="dialog"]')) return;
     if (event.key === "Escape") { event.preventDefault(); navigation.onClose(); }
+    if ((event.key === "ArrowUp" || event.key === "ArrowDown") && target?.closest('[role="tablist"]')) return;
     if (event.key === "ArrowUp" && navigation.previous && !navigation.busy) { event.preventDefault(); navigation.onMove(-1); }
     if (event.key === "ArrowDown" && navigation.next && !navigation.busy) { event.preventDefault(); navigation.onMove(1); }
   }}>
