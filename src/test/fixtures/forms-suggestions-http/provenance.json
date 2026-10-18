@@ -1,0 +1,63 @@
+{
+  "sourceState": [],
+  "artifactSet": "suggestions",
+  "generatedAtUtc": "2026-10-18T14:31:29.3623142Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "sha256": "5b194a0b704e9512f0f310b3a7f3a799ae624486cb54e2e7eaf537be6cfb8847",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs"
+    },
+    {
+      "sha256": "f625255f15dd0bd5bb149c6b60e6f2a5a4ee72672b75b53dfd81ece1961dae03",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs"
+    }
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "sha256": "3b157e4bf28ac78690eae4759c51648da33a3a637a200bac1d3629d53718b4bd",
+      "length": 276,
+      "name": "conflict-es.json"
+    },
+    {
+      "sha256": "59a97a27a80deb84ccd7b2e2d718d069c99524dc41e8044c36e0344835b7a886",
+      "length": 152,
+      "name": "empty-es.json"
+    },
+    {
+      "sha256": "edd5c93184b27d69846878421b9d34642b16ce984414bd2fddcfc9670bac7427",
+      "length": 373,
+      "name": "history-es.json"
+    },
+    {
+      "sha256": "0a29883ee8f3e862d280d681c122d5e445fe24ed6888bbdd7c883b86b194892f",
+      "length": 3876,
+      "name": "options-en.json"
+    },
+    {
+      "sha256": "0a29883ee8f3e862d280d681c122d5e445fe24ed6888bbdd7c883b86b194892f",
+      "length": 3876,
+      "name": "options-es.json"
+    },
+    {
+      "sha256": "426f2a9d55445b4ea77c6eaf8bafa273249c040835a6c8e93190f3be2348e1a5",
+      "length": 680,
+      "name": "revision-es.json"
+    },
+    {
+      "sha256": "426f2a9d55445b4ea77c6eaf8bafa273249c040835a6c8e93190f3be2348e1a5",
+      "length": 680,
+      "name": "saved-es.json"
+    },
+    {
+      "sha256": "35a0a57d679c829773553217f0e7c128d525528648115dfec788b7e403aa668b",
+      "length": 285,
+      "name": "source-unpublished-es.json"
+    }
+  ],
+  "repositoryHead": "59c03587ffaaf4fa393bc32af470c18adf7e376b",
+  "runId": "20261018-140832-09e9bc3e4aa44ffcaabfeb59a1f3c02a",
+  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture"
+}

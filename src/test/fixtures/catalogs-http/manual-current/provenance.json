@@ -1,136 +1,94 @@
 {
+  "sourceState": [],
+  "artifactSet": "manual-catalogs",
+  "generatedAtUtc": "2026-10-18T14:31:29.3623142Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "schemaVersion": 1,
-  "artifactSet": "manual-current",
-  "generatedAtUtc": "2026-10-12T17:06:52.4101317Z",
-  "producer": {
-    "project": "ArquitecturaBase.Api.IntegrationTests",
-    "test": "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogEndpointsTests",
-    "source": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs",
-    "sourceSha256": "2cc1bcc7c3977a753ca90d9efa515ea68c5851be34ae1bc785a18ee86b8d57e5",
-    "sourceFiles": [
-      {
-        "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs",
-        "sha256": "2cc1bcc7c3977a753ca90d9efa515ea68c5851be34ae1bc785a18ee86b8d57e5"
-      },
-      {
-        "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
-        "sha256": "6fe0eae7e2810ba636682ac4d6408f5bf9f6252e47663f052b6c3d3c48369d3b"
-      },
-      {
-        "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
-        "sha256": "1372679088fdeb9424f1244d6ad5197a11a210feae7e43471a8bd7a8360f4f8f"
-      }
-    ],
-    "repositoryHead": "e284822a221168067d3956ceebe777a8ca8cf0ad",
-    "sourceState": "The focal run used test-only working-tree edits committed afterward as 8d9f2924b02467bbb9e855652f468f1533dcae5f."
-  },
-  "runner": {
-    "command": "dotnet test --project tests/ArquitecturaBase.Api.IntegrationTests/ArquitecturaBase.Api.IntegrationTests.csproj -- --filter-class '*FormCatalogEndpointsTests' --filter-class '*FormCatalogFiltersEndpointsTests' --filter-class '*FormDraftEndpointsTests'",
-    "environment": {
-      "FORMS_HTTP_CONTRACT_OUTPUT": "C:\\Users\\ezequ\\source\\repos\\ArquitecturaBase\\.test-artifacts\\forms-step7-final",
-      "FORMS_CATALOG_HTTP_CONTRACT_OUTPUT": "C:\\Users\\ezequ\\source\\repos\\ArquitecturaBase\\.test-artifacts\\forms-step7-final"
+  "sources": [
+    {
+      "sha256": "5138231678e29d7d501c15f5bbd63b19f4ab3508ed9b789f30e3382e20a881c5",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs"
+    }
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "sha256": "fd128e79d98645137842476200e3c73cc774d70eb85ef8b209735081f4cf751f",
+      "length": 259,
+      "name": "conflict-en.json"
     },
-    "focalRepositoryHead": "e284822a221168067d3956ceebe777a8ca8cf0ad",
-    "focalWorkingTreeTestChangesCommittedAfterRun": "8d9f2924b02467bbb9e855652f468f1533dcae5f",
-    "focalResult": "Resumen de la serie de pruebas: Correcta!;   total: 122;   error: 0;   correcto: 122;   omitido: 0",
-    "fullSuiteRepositoryHead": "e284822a221168067d3956ceebe777a8ca8cf0ad",
-    "fullSuiteResult": "Resumen de la serie de pruebas: Error!;   total: 2710;   error: 2;   correcto: 2708;   omitido: 0",
-    "fullSuiteExitCode": 2,
-    "fullSuiteFailures": [
-      "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormDraftEndpointsTests.Openapi_declares_draft_check_acceptance_and_status_operations_with_problem_schemas",
-      "ArquitecturaBase.Api.IntegrationTests.Modules.BusinessForms.FormCatalogFiltersEndpointsTests.Filter_options_and_preview_use_the_selected_sample_and_role_membership"
-    ],
-    "exportFiles": [
-      {
-        "path": "conflict-en.json",
-        "length": 259,
-        "sha256": "2a1c17fc5f596cdde4269c023db669f4bafe95bce20f73e6be5cd18209db73e8",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.8024055Z"
-      },
-      {
-        "path": "conflict-es.json",
-        "length": 267,
-        "sha256": "0878de77b4d7392d602e4311f2c52aab6779b971b67ec7d8662e77af916c465d",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.7876455Z"
-      },
-      {
-        "path": "conflict-request.request.json",
-        "length": 306,
-        "sha256": "03fe63f4d1b887e0dcfa1317e07866a75719d8628d35e6653da2661d945c222b",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.7735164Z"
-      },
-      {
-        "path": "create-duplicate-positions-request.request.json",
-        "length": 451,
-        "sha256": "a9cb0e3d753c86f6a33ff74c1f557820a6eb5cd7fb3a2ff35d1043fe1bd6cedb",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.6326782Z"
-      },
-      {
-        "path": "create-request.request.json",
-        "length": 430,
-        "sha256": "fd76ca19fd574108d1a45461fea9e652cc606f10eb4541a3011bcc69897422c6",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.6826331Z"
-      },
-      {
-        "path": "created.json",
-        "length": 458,
-        "sha256": "8a3175464e0065214e00694ce71a66f939b42cb3418a7d56b079a932be320213",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.7034403Z"
-      },
-      {
-        "path": "detail.json",
-        "length": 333,
-        "sha256": "78dbce19d333fb97f447f4b395005cc9321f969cb452d620255519c4770bcfe7",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.7405553Z"
-      },
-      {
-        "path": "inactive-request.request.json",
-        "length": 260,
-        "sha256": "f2053f12129752a1c990160caa43b9f310fbad7a5b40a36cdbeb5bc275bdace0",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.5672276Z"
-      },
-      {
-        "path": "items.json",
-        "length": 626,
-        "sha256": "7a817635957864db15e221f37483b6adf14bc839e53be5410575a992e371b05a",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.7488509Z"
-      },
-      {
-        "path": "list-en.json",
-        "length": 379,
-        "sha256": "0efd552aad8b28bd265ae1fb0e1111ac16f8f3a90cb235b8641ef186d7b355e5",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.0260176Z"
-      },
-      {
-        "path": "list-es.json",
-        "length": 388,
-        "sha256": "71860f87833bebf069ed750602dc2cac0bf97cbd8acbe1f7bf270134e61557a6",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.1495884Z"
-      },
-      {
-        "path": "missing-revision-request.request.json",
-        "length": 229,
-        "sha256": "6b269a4b479323ca1528f5cae5bd48fe7dde6e58b083488e73a3134c0a9de87e",
-        "lastWriteTimeUtc": "2026-10-12T16:46:37.5116685Z"
-      },
-      {
-        "path": "queued-moves-request.request.json",
-        "length": 323,
-        "sha256": "dbc8562c9eebf33b1b27a7446b506c268ff9ecd5bde876fc7c38e6a6eaeedb76",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.2737237Z"
-      },
-      {
-        "path": "update-request.request.json",
-        "length": 492,
-        "sha256": "79a897724321f57efdc1ab562f2636fe4a2515e5dfcc1f557b13e245524bc0a2",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.7046352Z"
-      },
-      {
-        "path": "updated.json",
-        "length": 416,
-        "sha256": "8b4f541a05f25478bd9d2863c23802fcee800568379a4cb6437bd6a587bea2bc",
-        "lastWriteTimeUtc": "2026-10-12T16:46:38.7249578Z"
-      }
-    ]
-  }
+    {
+      "sha256": "70b5f3e9ec8c0d40643ab2e154d342465d31ec239ce4a286d954c97e7b7f61bd",
+      "length": 267,
+      "name": "conflict-es.json"
+    },
+    {
+      "sha256": "a84cc731a66b13dd17e6f2904c82421762ea6d57b3ff6dc56c23073f67754f8e",
+      "length": 306,
+      "name": "conflict-request.request.json"
+    },
+    {
+      "sha256": "d0eaef03af1c545840b5647d23759e9bd3aaf48401ef7a592963da868982fcd3",
+      "length": 451,
+      "name": "create-duplicate-positions-request.request.json"
+    },
+    {
+      "sha256": "fd76ca19fd574108d1a45461fea9e652cc606f10eb4541a3011bcc69897422c6",
+      "length": 430,
+      "name": "create-request.request.json"
+    },
+    {
+      "sha256": "98b69e28b66d78b842abf476fa791eb64faaf860e8f8f5b68317141fc5c86aba",
+      "length": 474,
+      "name": "created.json"
+    },
+    {
+      "sha256": "95da5a112bd512ba494970f64b369ff60909af79ecb53a72f2fcebe4abd45cba",
+      "length": 349,
+      "name": "detail.json"
+    },
+    {
+      "sha256": "f2053f12129752a1c990160caa43b9f310fbad7a5b40a36cdbeb5bc275bdace0",
+      "length": 260,
+      "name": "inactive-request.request.json"
+    },
+    {
+      "sha256": "7b704910d8996903f63c4acaf4a33106b57b102c4a36478c48c6f3cd8f005903",
+      "length": 626,
+      "name": "items.json"
+    },
+    {
+      "sha256": "e52edcb316ef7f375b0ace6dbb9c6429c7c6ad5fa59d3f66c30009fc53f9b4e2",
+      "length": 379,
+      "name": "list-en.json"
+    },
+    {
+      "sha256": "7acf4c799e2f28b251f017eaae587091619ff6ca23a0f6684d67db75d832c9c4",
+      "length": 388,
+      "name": "list-es.json"
+    },
+    {
+      "sha256": "6b269a4b479323ca1528f5cae5bd48fe7dde6e58b083488e73a3134c0a9de87e",
+      "length": 229,
+      "name": "missing-revision-request.request.json"
+    },
+    {
+      "sha256": "7a794137d5d68c52bc6c650a651e0edff05f022a89594c024e015cf31d99e4f9",
+      "length": 323,
+      "name": "queued-moves-request.request.json"
+    },
+    {
+      "sha256": "fe67c4493ba896c233ccdb01dc97b7fc513331dfdf137f885bfd722ad98bd530",
+      "length": 492,
+      "name": "update-request.request.json"
+    },
+    {
+      "sha256": "8858f5b0baec3e0e0283a4b51718b35aba6a7d4df20e492b548f62abdd65fa0d",
+      "length": 432,
+      "name": "updated.json"
+    }
+  ],
+  "repositoryHead": "59c03587ffaaf4fa393bc32af470c18adf7e376b",
+  "runId": "20261018-140832-09e9bc3e4aa44ffcaabfeb59a1f3c02a",
+  "producer": "FormCatalogEndpointsTests"
 }

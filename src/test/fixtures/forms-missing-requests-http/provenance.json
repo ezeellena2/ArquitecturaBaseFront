@@ -1,0 +1,57 @@
+{
+  "sourceState": [],
+  "artifactSet": "missing-requests",
+  "generatedAtUtc": "2026-10-18T14:31:29.3623142Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "sha256": "b30fcdd100f063781f50299341630e5aa82fba3585d4818ea3c51159ca1d5bdf",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs"
+    },
+    {
+      "sha256": "1497766e6604262dfe2678d031082cfdf10a25964e0bf34ccf1f1998c3c886d3",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestScenario.cs"
+    },
+    {
+      "sha256": "a8e3f9ee5e3b43894da1ea36e5cdae275c94b977b9c9ef18d013d5f42f38a84f",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestContractCapture.cs"
+    }
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "sha256": "cc469da59b10bec508f8a36f50f2524a719eed753d169b0df7f0d1d5a38fe639",
+      "length": 275,
+      "name": "conflict.json"
+    },
+    {
+      "sha256": "4d9b570f6bf34a7238619fd95f16fc8d6d4beb471d7e0709650261cc0f90af26",
+      "length": 571,
+      "name": "discarded-en.json"
+    },
+    {
+      "sha256": "7b186746c3fad77db67f1591469a0c20aac6e0409cac65499396218d8bd5b231",
+      "length": 577,
+      "name": "discarded-es.json"
+    },
+    {
+      "sha256": "ffed2e6cbb2a189aade0e7ca9e2ae3a70cf61e73dc757c7dfca749ea33d4322b",
+      "length": 249,
+      "name": "forbidden.json"
+    },
+    {
+      "sha256": "ea68dc557d9a800b79a26b10831951f80c78ac1b25d5b9851d04694a091958ec",
+      "length": 461,
+      "name": "pending-en.json"
+    },
+    {
+      "sha256": "1eca48e32766763fc324b006e446304e92732e95d8108b388491910652d23c63",
+      "length": 467,
+      "name": "pending-es.json"
+    }
+  ],
+  "repositoryHead": "59c03587ffaaf4fa393bc32af470c18adf7e376b",
+  "runId": "20261018-140832-09e9bc3e4aa44ffcaabfeb59a1f3c02a",
+  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture"
+}

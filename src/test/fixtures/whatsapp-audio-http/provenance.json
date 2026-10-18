@@ -1,0 +1,38 @@
+{
+  "sourceState": [],
+  "artifactSet": "whatsapp-audio",
+  "generatedAtUtc": "2026-10-18T14:31:29.3623142Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "sha256": "5ff0433486bbd04a79649c9349115f687b6369f900c4ded6897bcb91e6837528",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs"
+    },
+    {
+      "sha256": "c65bb2dc8f403bb0e4ce66b75aeb3f5a3558eef6d2b5b7bf1ba17f02e1a47348",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs"
+    }
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "sha256": "d3ead3dbb79a8eb09e2f2236360cea1d97e7ffb1c504bf53a3dcfc0915bff259",
+      "length": 35,
+      "name": "audio-request.json"
+    },
+    {
+      "sha256": "59b831d37567b3bfa2977fea28dc280fb704f37c5d29ce011be04279f491dc3d",
+      "length": 957,
+      "name": "audio-thread-completed.json"
+    },
+    {
+      "sha256": "d718760e1df2f40d9d0404fadc210e73840109451ce8eb2a5251a745b5565121",
+      "length": 915,
+      "name": "audio-thread-pending.json"
+    }
+  ],
+  "repositoryHead": "59c03587ffaaf4fa393bc32af470c18adf7e376b",
+  "runId": "20261018-140832-09e9bc3e4aa44ffcaabfeb59a1f3c02a",
+  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture"
+}
