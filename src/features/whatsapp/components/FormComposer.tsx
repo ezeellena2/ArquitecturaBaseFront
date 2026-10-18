@@ -51,6 +51,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
     <Dialog open={state.open || assistantOpen} onOpenChange={open=>{if(!busy){if(assistantOpen)assistant?.setOpen(open);else state.setOpen(open);}}}>
       <DialogContent onCloseAutoFocus={restoreFocus} className="sm:max-w-[600px]" showCloseButton={!busy} onEscapeKeyDown={event=>{if(busy)event.preventDefault();}} onPointerDownOutside={event=>{if(busy)event.preventDefault();}}>
         <DialogHeader><DialogTitle>{t("forms.title",{name})}</DialogTitle><DialogDescription>{t(assistantOpen ? "assistant.dialogDescription" : "forms.description")}</DialogDescription></DialogHeader>
+        {contact.mode === "Manual" ? <p className="text-sm text-[var(--color-content-muted)]">{t("mode.manualContinues")}</p> : null}
         {assistantOpen && assistant?.proposal ? <>
           <p className="break-words text-sm font-medium">{t("assistant.version", { name: assistant.proposal.name, version: assistant.proposal.versionNumber })}</p>
           {assistant.proposal.fields.length ? <fieldset disabled={assistant.busy || Boolean(assistant.attempt)}>

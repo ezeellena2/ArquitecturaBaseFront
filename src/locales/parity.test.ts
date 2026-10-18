@@ -55,3 +55,12 @@ it.each([
 ] as const)("pluralizes the form selection description in %s for %i questions", (language, count, expected) => {
   expect(i18n.getFixedT(language, "whatsapp")("forms.optionDescription", {version:1, count})).toBe(expected);
 });
+
+it.each([
+  ["es", 1, "Esperá 1 segundo para volver a escuchar."],
+  ["es", 2, "Esperá 2 segundos para volver a escuchar."],
+  ["en", 1, "Wait 1 second before listening again."],
+  ["en", 2, "Wait 2 seconds before listening again."],
+] as const)("pluralizes the audio playback wait in %s for %i seconds", (language, count, expected) => {
+  expect(i18n.getFixedT(language, "whatsapp")("audio.waiting", { count })).toBe(expected);
+});

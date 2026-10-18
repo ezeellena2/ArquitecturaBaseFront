@@ -38,7 +38,7 @@ export function ChatAudio({ owner, contactId, messageId, audio, body, onForbidde
  const blob = audio.canPlay && playback?.scope === scope ? playback.blob : undefined;
  return <section className="min-w-0 space-y-2" aria-label={t("kind.Audio")}>
   {blob ? <PrivateAudio blob={blob} label={t("audio.received")} playOnLoad/> : audio.canPlay ? <Button size="sm" variant="outline" disabled={loading || cooldown.isRunning} onClick={() => void listen()}>{t(loading ? "audio.loading" : "audio.listen")}</Button> : null}
-  {cooldown.isRunning ? <p className="text-xs text-[var(--color-content-muted)]">{t("audio.waiting", { seconds: cooldown.seconds })}</p> : null}
+  {cooldown.isRunning ? <p className="text-xs text-[var(--color-content-muted)]">{t("audio.waiting", { count: cooldown.seconds })}</p> : null}
   {audio.state === "Completed" && body !== null ? <div className="border-t border-[var(--color-border)] pt-2"><p className="text-xs font-medium text-[var(--color-content-muted)]">{t("audio.transcription")}</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{body}</p></div> : <p className="text-sm text-[var(--color-content-muted)]">{t(audio.state === "Pending" || audio.state === "Transcribing" ? "audio.transcribing" : audio.state === "Expired" ? "audio.expired" : audio.state === "Unavailable" && !audio.canPlay ? "audio.unavailable" : audio.canPlay ? "audio.failed" : "audio.noTranscript")}</p>}
  </section>;
 }

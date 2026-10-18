@@ -45,8 +45,10 @@
     },
     "take": "Tomar atención manual",
     "manualSendInProgress": "Tomaste la atención manual. El asistente estaba mandando un formulario: ese envío termina y queda en la conversación. Desde ahora escribís vos.",
-    "manualDescription": "Vas a habilitar las respuestas manuales en esta conversación. Los códigos de acceso solicitados desde la web siguen funcionando.",
-    "uncertain": "No se pudo confirmar el cambio. Actualizá el chat y revisá el modo antes de volver a intentarlo."
+    "manualDescription": "Vas a tomar la atención manual de la conversación con {{name}}. El asistente deja de responder. Si ya empezó un envío, ese envío termina y queda en la conversación.",
+    "uncertain": "No se pudo confirmar el cambio. Actualizá el chat y revisá el modo antes de volver a intentarlo.",
+    "assistantControlDescription": "El asistente atiende esta conversación. Para escribirle vos, tomá la atención manual.",
+    "manualContinues": "La conversación sigue en atención manual."
   },
   "send": {
     "label": "Respuesta al cliente",
@@ -231,6 +233,7 @@
     "unavailable": "El audio no está disponible.",
     "failed": "No pudimos pasar este audio a texto. Escuchalo: el asistente no lo va a responder.",
     "noTranscript": "No hay una transcripción disponible.",
-    "waiting": "Esperá {{seconds}} segundos para volver a escuchar."
+    "waiting_one": "Esperá {{count}} segundo para volver a escuchar.",
+    "waiting_other": "Esperá {{count}} segundos para volver a escuchar."
   }
 }

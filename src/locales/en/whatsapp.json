@@ -45,8 +45,10 @@
     },
     "take": "Take manual attention",
     "manualSendInProgress": "You took manual attention. The assistant was sending a form: that send will finish and remain in the conversation. From now on, you reply.",
-    "manualDescription": "Manual replies will be enabled in this conversation. Access codes requested from the website will keep working.",
-    "uncertain": "Could not confirm the change. Refresh the chat and check its mode before trying again."
+    "manualDescription": "You will take manual attention for the conversation with {{name}}. The assistant stops replying. Any send already in progress will finish and remain in the conversation.",
+    "uncertain": "Could not confirm the change. Refresh the chat and check its mode before trying again.",
+    "assistantControlDescription": "The assistant is handling this conversation. To reply yourself, take manual attention.",
+    "manualContinues": "The conversation stays in manual attention."
   },
   "send": {
     "label": "Reply to customer",
@@ -231,6 +233,7 @@
     "unavailable": "The audio is unavailable.",
     "failed": "We could not transcribe this audio. Listen to it: the assistant will not respond.",
     "noTranscript": "No transcription is available.",
-    "waiting": "Wait {{seconds}} seconds before listening again."
+    "waiting_one": "Wait {{count}} second before listening again.",
+    "waiting_other": "Wait {{count}} seconds before listening again."
   }
 }

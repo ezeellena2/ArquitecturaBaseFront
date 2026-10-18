@@ -27,7 +27,33 @@ beforeEach(() => {
     http.post("/api/whatsapp/chats/:id/messages", async ({ request }) => { const body = await request.json() as typeof requests[number]; requests.push(body); thread.outgoing = [pending(body.requestId, body.body)]; return HttpResponse.json(thread.outgoing[0], { status: 202 }); }));
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
-const open = async () => { renderRouteWithProviders("/whatsapp/chat"); await userEvent.click(await screen.findByRole("button", { name: "Ana" })); return screen.findByLabelText("Respuesta al cliente"); };
+const open = async () => { renderRouteWithProviders("/whatsapp/chat"); await userEvent.click(await screen.findByRole("button", { name: "Ana" })); return contact.mode === "Assistant" ? screen.findByRole("region", { name: "Asistente" }) : screen.findByLabelText("Respuesta al cliente"); };
+
+it("replaces the visible composer with the primary manual attention control in Assistant mode", async () => {
+  contact.mode = "Assistant";
+  renderRouteWithProviders("/whatsapp/chat");
+  await userEvent.click(await screen.findByRole("button", { name: "Ana" }));
+  const controls = await screen.findByRole("region", { name: "Asistente" });
+  expect(within(controls).getByText("El asistente atiende esta conversación. Para escribirle vos, tomá la atención manual.")).toBeVisible();
+  expect(within(controls).getByRole("button", { name: "Tomar atención manual" })).toHaveAttribute("data-variant", "default");
+  expect(screen.queryByRole("textbox", { name: "Respuesta al cliente" })).not.toBeInTheDocument();
+  expect(within(screen.getByRole("heading", { name: "Ana" }).closest("header")!).getByText("Asistente", { selector: '[data-slot="badge"]' })).toBeInTheDocument();
+});
+
+it("keeps assistant unavailability inline across refresh and reopening without repeating notifications", async () => {
+  const warnings = vi.spyOn(toast, "warning");
+  thread.assistantAvailability = { state: "paused" };
+  await open();
+  const reason = await screen.findByText("El asistente está pausado.");
+  expect(reason.closest('[role="status"]')).not.toBeNull();
+  expect(screen.getByText("La conversación sigue en atención manual.")).toBeVisible();
+  await act(async () => { await queryClient.invalidateQueries({ queryKey: chatApi.chatKey }); });
+  await userEvent.click(screen.getByRole("button", { name: "Luis" }));
+  await userEvent.click(screen.getByRole("button", { name: "Ana" }));
+  await screen.findByRole("textbox", { name: "Respuesta al cliente" });
+  expect(screen.getAllByText("El asistente está pausado.")).toHaveLength(1);
+  expect(warnings).not.toHaveBeenCalled();
+});
 
 describe("WhatsAppChatPage", () => {
   it("opens a conversation linked from a form response without sending anything", async () => {
@@ -103,12 +129,12 @@ describe("WhatsAppChatPage", () => {
     contact.mode = "Assistant";
     const changes: unknown[] = [];
     server.use(http.put("/api/whatsapp/chats/:id/mode", async ({ request }) => { changes.push(await request.json()); contact.mode = "Manual"; contact.modeRevision++; return HttpResponse.json({ mode: contact.mode, modeRevision: contact.modeRevision, assistantSendInProgress: false }); }));
-    const input = await open(); expect(input).toBeDisabled();
+    await open(); expect(screen.queryByRole("textbox", { name: "Respuesta al cliente" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Tomar atención manual" }));
     expect(changes).toEqual([]);
-    await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Tomar atención manual" }));
     await waitFor(() => expect(changes).toEqual([{ mode: "Manual", expectedRevision: 2 }]));
-    await waitFor(() => expect(input).toBeEnabled());
+    expect(await screen.findByRole("textbox", { name: "Respuesta al cliente" })).toBeEnabled();
   });
   it("denies the route before reading messages when the read permission is missing", async () => {
     const list = vi.fn(() => HttpResponse.json({}));
@@ -211,7 +237,7 @@ it("takes manual attention with Send alone and reports only the observed assista
   expect(take).toBeEnabled();
   await userEvent.click(take);
   expect(changes).toEqual([]);
-  await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+  await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Tomar atención manual" }));
   await waitFor(() => expect(changes).toEqual([{ mode: "Manual", expectedRevision: 2 }]));
   expect(await screen.findByText(/El asistente estaba mandando un formulario/)).toBeInTheDocument();
 });
@@ -224,7 +250,7 @@ it("retires the manual mode confirmation immediately when Send is revoked", asyn
   await userEvent.click(screen.getByRole("button", { name: "Tomar atención manual" }));
   expect(screen.getByRole("dialog")).toBeInTheDocument();
   act(() => queryClient.setQueryData(currentUserQueryKey, { ...currentUser, permissions: ["whatsapp.read", "whatsapp.configureassistant"] }));
-  await screen.findByText("Tenés permiso para ver el chat. Para contestar necesitás el permiso de responder.");
+  await within(await screen.findByRole("region", { name: "Asistente" })).findByText("Tenés permiso para ver el chat. Para contestar necesitás el permiso de responder.");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Tomar atención manual" })).not.toBeInTheDocument();
   expect(change).not.toHaveBeenCalled();
@@ -272,7 +298,7 @@ it("keeps keyboard focus in the conversation after the mode trigger disappears o
   await open();
   const take = screen.getByRole("button", { name: "Tomar atención manual" });
   await userEvent.click(take);
-  await userEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+  await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Tomar atención manual" }));
   await waitFor(() => expect(take).not.toBeInTheDocument());
   await waitFor(() => expect(screen.getByRole("heading", { name: "Ana" })).toHaveFocus());
 });
