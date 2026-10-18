@@ -686,5 +686,5 @@ function ResponseLinks({onNavigate}:{onNavigate?:()=>void}) {
 function ApprovalLink({onNavigate}:{onNavigate?:()=>void}) {
  const navigation=useContext(FormsResponseNavigationContext);const {t}=useTranslation();
  if(!navigation?.canApprove)return null;
- return <div className="mb-2"><NavItem item={{labelKey:"navigation.approvals",icon:FormIcon,to:"/formularios/por-aprobar",exact:true}} label={t("navigation.approvals")+(navigation.approvalCount===undefined?"":" ("+navigation.approvalCount+")")} collapsed={false} onNavigate={onNavigate}/>{navigation.approvalsPending?<Skeleton className="h-4"/>:navigation.approvalsFailed?<Button variant="ghost" size="sm" onClick={navigation.retryApprovals}>{t("actions.retry")}</Button>:null}</div>;
+ return <div className="mb-2"><NavItem item={{labelKey:"navigation.approvals",icon:FormIcon,to:"/formularios/por-aprobar"}} label={t("navigation.approvals")+(navigation.approvalCount===undefined?"":" ("+navigation.approvalCount+")")} collapsed={false} onNavigate={onNavigate}/>{navigation.approvalsPending?<Skeleton className="h-4"/>:navigation.approvalsFailed?<Button variant="ghost" size="sm" onClick={navigation.retryApprovals}>{t("actions.retry")}</Button>:null}</div>;
 }

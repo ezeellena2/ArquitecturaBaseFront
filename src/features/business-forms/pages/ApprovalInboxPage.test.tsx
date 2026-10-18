@@ -29,6 +29,16 @@ it("refreshes a competing decision without sending a second write",async()=>{set
 it("retains own tasks in All while disabling both decisions",async()=>{setup();server.use(http.get("/api/forms/approvals/"+approvalTaskId,()=>HttpResponse.json({...approvalTaskFixture(),canDecide:false,cannotDecideReason:"OwnResponse"})));renderRouteWithProviders("/formularios/por-aprobar?view=all");await userEvent.click(await screen.findByRole("link",{name:"VIS-00001"}));expect(await screen.findByText("No podés aprobar ni rechazar tu propia respuesta.")).toBeInTheDocument();expect(screen.getByRole("button",{name:"Aprobar"})).toBeDisabled();expect(screen.getByRole("button",{name:"Rechazar"})).toBeDisabled();});
 it("withdraws metadata after decision permission is revoked",async()=>{setup();server.use(http.post("/api/forms/approvals/:id/decisions",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));renderRouteWithProviders("/formularios/por-aprobar");await userEvent.click(await screen.findByRole("link",{name:"VIS-00001"}));await userEvent.click(screen.getByRole("button",{name:"Aprobar"}));await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");expect(within(screen.getByRole("region", { name: "Detalle de la respuesta" })).queryByText("Supervisión")).not.toBeInTheDocument();await waitFor(()=>expect(queryClient.getQueryCache().findAll({predicate:query=>query.queryKey[0]==="form-approvals"&&query.queryKey[2]==="task"})).toHaveLength(0));});
 it("loads the approval navigation count only when the Forms panel opens",async()=>{setup();let counts=0;server.use(http.get("/api/forms/approvals/count",()=>{counts++;return HttpResponse.json({count:3});}));renderRouteWithProviders("/perfil");await screen.findByRole("heading",{name:"Mi perfil"});expect(counts).toBe(0);await userEvent.click(await screen.findByRole("button",{name:"Formularios"}));await screen.findByRole("link",{name:"Por aprobar (3)"});expect(screen.queryByText("Respuestas")).not.toBeInTheDocument();expect(counts).toBe(1);});
+it("keeps inbox breadcrumbs and its menu active when a task panel is opened directly", async () => {
+  setup(["formapprovals.decide", "formtemplates.read"]);
+  renderRouteWithProviders("/formularios/por-aprobar/" + approvalTaskId);
+  await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  const breadcrumbs = within(screen.getByRole("navigation", { name: "Migas de pan" }));
+  expect(breadcrumbs.getByRole("link", { name: "Por aprobar" })).toHaveAttribute("href", "/formularios/por-aprobar");
+  expect(breadcrumbs.queryByText("Diseñar formularios")).not.toBeInTheDocument();
+  expect(await screen.findByRole("link", { name: "Por aprobar (1)" })).toHaveAttribute("aria-current", "page");
+  expect(screen.getByRole("link", { name: "Diseñar formularios" })).not.toHaveAttribute("aria-current", "page");
+});
 
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn(), dismissNotification: vi.fn() }));
 
