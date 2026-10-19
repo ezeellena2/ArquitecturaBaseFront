@@ -6,6 +6,8 @@ import { ApiError } from "@/shared/api/ApiError";
 import { parseChatForms, parseFormOutgoing, parseChatFormPreparation } from "./forms";
 import type { Outgoing, Thread } from "./chat";
 import { buildTimeline } from "../lib/timeline";
+import { formOptionName } from "../lib/formSendSession";
+import { httpCohort } from "@/test/httpCohort";
 for (const culture of ["es", "en"] as const) describe("Actual WhatsApp form HTTP contract " + culture, () => {
   const choices = parseChatForms(body(culture, "choices"));
   const selected = choices.page.items[0]!;
@@ -73,4 +75,41 @@ for (const culture of ["es", "en"] as const) describe("Actual WhatsApp form HTTP
         versionId:selected.versionId,name:selected.name,culture}});
     }
   });
+});
+
+const originalPresentationCaptures = ["original-only", "empty-secondary"] as const;
+it("qualifies the full WhatsApp form cohort including eight original-language HTTP captures", () => {
+  const manifest = httpCohort("whatsappForms").verify();
+  expect(manifest.captures).toHaveLength(74);
+  expect(manifest.captures.map(capture => capture.name)).toEqual(expect.arrayContaining(
+    originalPresentationCaptures.flatMap(sample => ["choices", "preparation", "receipt", "history"].map(part => "en/" + sample + "-" + part + ".json")),
+  ));
+});
+it.each(originalPresentationCaptures)("consumes real %s maps from an English account through preparation, receipt and history", sample => {
+  const choices = parseChatForms(body("en", sample + "-choices"));
+  expect(choices.page.items).toHaveLength(1);
+  expect(choices.recipientCulture).toBe("en");
+  const selected = choices.page.items[0]!;
+  const expectedName = sample === "empty-secondary" ? { es: "Formulario original", en: "" } : { es: "Formulario original" };
+  const expectedSubmit = sample === "empty-secondary" ? { es: "Enviar formulario", en: "" } : { es: "Enviar formulario" };
+  expect(selected.name).toStrictEqual(expectedName);
+  expect(selected.submitLabel).toStrictEqual(expectedSubmit);
+  expect(formOptionName(selected, "en")).toBe("Formulario original");
+  const preparation = parseChatFormPreparation(body("en", sample + "-preparation"));
+  expect(preparation).toMatchObject({ culture: "es", recipientContextRevision: choices.recipientContextRevision, preparation: { canSend: true, catalogs: [], issues: [] } });
+  const captured = body<Outgoing>("en", sample + "-receipt");
+  const history = body<Thread>("en", sample + "-history");
+  if (!captured.operatorUserId || typeof captured.recoveryPath !== "string") throw new Error("A manually sent form must have its operator and recovery path.");
+  const contactId = captured.recoveryPath.split("/")[4]!;
+  expect(contactId).toBe(history.contact.id);
+  const receipt = parseFormOutgoing(captured, {
+    requestId: captured.requestId, definitionId: selected.definitionId, versionId: selected.versionId,
+    expectedModeRevision: history.contact.modeRevision, expectedRecipientContextRevision: choices.recipientContextRevision!, message: null,
+  }, captured.operatorUserId, contactId);
+  expect(receipt).toMatchObject({ body: "Completá este formulario.", kind: "Flow", origin: "Conversation", form: { culture: "es", definitionId: selected.definitionId, versionId: selected.versionId } });
+  expect(receipt.form?.name).toStrictEqual(expectedName);
+  const flows = buildTimeline(history.messages, history.outgoing).filter(item => item.kind === "Flow");
+  expect(flows).toHaveLength(1);
+  expect(flows[0]).toMatchObject({ source: "message", kind: "Flow", form: { culture: "es", definitionId: selected.definitionId, versionId: selected.versionId } });
+  expect(flows[0]!.form?.name).toStrictEqual(expectedName);
 });
