@@ -306,3 +306,11 @@ for (const original of ["es", "en"] as const) for (const secondaryText of [undef
     expect(contact.formEligibility!.recipientCulture).toBe(secondary);
   });
 }
+
+it("does not repeat the Manual attention explanation inside an ordinary form dialog", async () => {
+ thread.assistantAvailability = { state: "available" };
+ const dialog = await openForm();
+ expect(within(dialog).queryByText("La conversación sigue en atención manual.")).not.toBeInTheDocument();
+ expect(screen.queryByText("La conversación sigue en atención manual.")).not.toBeInTheDocument();
+ expect(posts).toEqual([]);
+});

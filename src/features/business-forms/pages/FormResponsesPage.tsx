@@ -49,6 +49,7 @@ export function FormResponsesPage() {
   const update = useQueryUpdate();
   const client = useQueryClient();
   const container = useRef<HTMLDivElement | null>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
   const lastRecord = useRef<string | undefined>(recordId);
   const contextKey = JSON.stringify([scope.owner, formId, recordId, route.query]);
   useLayoutEffect(() => {
@@ -107,6 +108,7 @@ export function FormResponsesPage() {
         <Link
           data-response-id={row.id}
           to={recordPath(row.id)}
+          onClick={event => { if (row.id === recordId && !event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) setFocusRequest(value => value + 1); }}
           className="font-medium text-[var(--color-brand-700)] underline"
         >
           {row.number}
@@ -303,7 +305,7 @@ export function FormResponsesPage() {
           rows={data?.records.items ?? []}
           rowKey={(row) => row.id}
           selectedRowKey={recordId}
-          onRowClick={row => navigate(recordPath(row.id))}
+          onRowClick={row => { if (row.id === recordId) setFocusRequest(value => value + 1); navigate(recordPath(row.id)); }}
           isLoading={query.isPending}
           hasData={!!data}
           error={query.error ? t(query.error instanceof ApiError && query.error.status === 404 ? "responses.unavailableForm" : "responses.loadFailed") : undefined}
@@ -366,7 +368,7 @@ export function FormResponsesPage() {
         />
       ) : null}
     </Page></div>
-    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ selectionId: recordId, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
+    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
     </div>
   );
 }

@@ -49,11 +49,13 @@ function ApprovalInbox({ onForbidden }: {
     const contextKey = [scope.owner, taskId, onlyMine, definitionId, pagination.page, pagination.pageSize].join(":");
     const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
     const table = useRef<HTMLDivElement | null>(null);
+    const [focusRequest, setFocusRequest] = useState(0);
     const lastTask = useRef(taskId);
     useLayoutEffect(() => { if (taskId) lastTask.current = taskId; else if (lastTask.current) { (table.current?.querySelector<HTMLElement>('[data-task-id="' + lastTask.current + '"]') ?? table.current?.querySelector<HTMLElement>("[data-task-id]") ?? fallback.current)?.focus(); lastTask.current = undefined; } }, [taskId]);
     const ids = context?.ids ?? query.data?.items.map(task => task.id) ?? [];
     const index = taskId ? ids.indexOf(taskId) : -1;
     const open = (task: ApprovalTask) => {
+      if (task.id === taskId) setFocusRequest(value => value + 1);
       setContext({ ids: query.data?.items.map(item => item.id) ?? [], page: pagination.page, totalCount: query.data?.totalCount ?? 0 });
       update({ tab: undefined }, { pathname: "/formularios/por-aprobar/" + task.id, replace: false });
     };
@@ -68,7 +70,7 @@ function ApprovalInbox({ onForbidden }: {
     });
     const moving = motion.busy || selected.isPlaceholderData;
     const moveError = motion.error;
-    const navigation = { selectionId: taskId, position: index >= 0 ? ((context?.page ?? pagination.page) - 1) * pagination.pageSize + index + 1 : undefined, count: context?.totalCount ?? query.data?.totalCount, previous: index > 0 || index === 0 && !!query.data?.hasPrevious, next: index >= 0 && (index < ids.length - 1 || !!query.data?.hasNext), busy: moving, onMove: (direction: number) => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/por-aprobar", replace: false }), error: moveError, onRetry: motion.retry };
+    const navigation = { selectionId: taskId, focusRequest, position: index >= 0 ? ((context?.page ?? pagination.page) - 1) * pagination.pageSize + index + 1 : undefined, count: context?.totalCount ?? query.data?.totalCount, previous: index > 0 || index === 0 && !!query.data?.hasPrevious, next: index >= 0 && (index < ids.length - 1 || !!query.data?.hasNext), busy: moving, onMove: (direction: number) => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/por-aprobar", replace: false }), error: moveError, onRetry: motion.retry };
     const changeList = (changes: Record<string, string | undefined>) => { setContext(null); motion.clearError(); update({ ...changes, tab: undefined }, { pathname: "/formularios/por-aprobar" }); };
     const fallback = useRef<HTMLSelectElement | null>(null);
     const forbidden = approvalForbidden(query.error) || approvalForbidden(options.error);
@@ -87,7 +89,7 @@ function ApprovalInbox({ onForbidden }: {
   <FilterBar><SegmentedControl aria-label={t("approvals.scope")} options={[{ key: "mine", label: t("approvals.mine", { count: mine ?? 0 }), pressed: onlyMine, onSelect: () => changeList({ view: undefined, page: undefined }) }, { key: "all", label: t("approvals.all", { count: all ?? 0 }), pressed: !onlyMine, onSelect: () => changeList({ view: "all", page: undefined }) }]}/><NativeSelect ref={fallback} aria-label={t("approvals.form")} value={definitionId ?? ""} onChange={event => changeList({ definitionId: event.target.value || undefined, page: undefined })}><option value="">{t("approvals.allForms")}</option>{options.data?.forms.map(form => <option key={form.id} value={form.id}>{form.name}</option>)}</NativeSelect></FilterBar>
   {options.error || otherCount.error ? <Button variant="outline" onClick={() => { if (options.error) void options.refetch(); if (otherCount.error) void otherCount.refetch(); }}>{t("common:actions.retry")}</Button> : null}
   <Surface><DataTable columns={[
-            { id: "number", header: t("responses.number"), cell: row => <Link data-task-id={row.id} className="font-medium text-[var(--color-brand-700)] underline" to={"/formularios/por-aprobar/" + row.id + "?" + params.toString()} onClick={() => setContext({ ids: query.data?.items.map(item => item.id) ?? [], page: pagination.page, totalCount: query.data?.totalCount ?? 0 })}>{row.number}</Link> },
+            { id: "number", header: t("responses.number"), cell: row => <Link data-task-id={row.id} className="font-medium text-[var(--color-brand-700)] underline" to={"/formularios/por-aprobar/" + row.id + "?" + params.toString()} onClick={event => { if (row.id === taskId && !event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) setFocusRequest(value => value + 1); setContext({ ids: query.data?.items.map(item => item.id) ?? [], page: pagination.page, totalCount: query.data?.totalCount ?? 0 }); }}>{row.number}</Link> },
             { id: "form", header: t("formColumn"), cell: row => row.formName },
             { id: "author", header: t("responses.actor"), cell: row => row.author.displayName ?? t("responses.unknownPerson") },
             { id: "received", header: t("responses.received"), cell: row => <time dateTime={row.requestedAtUtc}>{formatDateTimeInZone(row.requestedAtUtc, i18n.language, scope.user?.timeZoneId)}</time> },

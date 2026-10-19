@@ -232,6 +232,43 @@ it.each(["sheet", "inbox"])("returns keyboard focus to the %s panel after clicki
   await waitFor(() => expect(router.state.location.pathname).toBe(origin));
   await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000002" })).toHaveFocus());
 });
+it.each([
+  ["sheet", "link"], ["sheet", "cell"],
+  ["inbox", "link"], ["inbox", "cell"],
+] as const)("returns focus to the same %s panel after reselecting its %s", async (source, control) => {
+  setup(["formrecords.read", "formapprovals.decide"], true);
+  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
+  const { router } = renderRouteWithProviders(origin);
+  const link = await screen.findByRole("link", { name: "TEST-000002" });
+  await userEvent.click(link);
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  if (control === "link") await userEvent.click(link);
+  else {
+    await act(async () => link.focus());
+    await userEvent.click(within(link.closest("tr")!).getByText("Ana"));
+  }
+  expect(screen.getByRole("region", { name: "Detalle de la respuesta" })).toBe(panel);
+  expect(panel).toHaveFocus();
+  await userEvent.keyboard("{ArrowDown}");
+  await within(panel).findByRole("heading", { name: "TEST-000001" });
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(router.state.location.pathname).toBe(origin));
+  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000001" })).toHaveFocus());
+});
+it("keeps focus on an external sort control while the response panel remains open", async () => {
+  setup();
+  const { router } = renderRouteWithProviders(path);
+  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  const sort = within(screen.getByRole("table")).getByRole("button", { name: "Cargó" });
+  await userEvent.click(sort);
+  await waitFor(() => expect(router.state.location.search).toContain("sort=actor"));
+  expect(router.state.location.pathname).toBe(path + "/" + responseRecordId);
+  expect(screen.getByRole("region", { name: "Detalle de la respuesta" })).toBe(panel);
+  expect(sort).toHaveFocus();
+});
 it.each(["sheet", "inbox"])("lets Escape close the %s panel immediately after selecting a delayed response", async source => {
   setup(["formrecords.read", "formapprovals.decide"], true);
   let release: (() => void) | undefined;

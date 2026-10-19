@@ -55,6 +55,14 @@ it("keeps assistant unavailability inline across refresh and reopening without r
   expect(warnings).not.toHaveBeenCalled();
 });
 
+it("does not describe Manual continuity while an unavailable Assistant owns the conversation", async () => {
+  contact.mode = "Assistant";
+  thread.assistantAvailability = { state: "paused" };
+  await open();
+  expect(screen.getByText("El asistente está pausado.")).toBeVisible();
+  expect(screen.queryByText("La conversación sigue en atención manual.")).not.toBeInTheDocument();
+});
+
 describe("WhatsAppChatPage", () => {
   it("opens a conversation linked from a form response without sending anything", async () => {
     const id = "0199a0c0-0000-7000-8000-000000000061";
