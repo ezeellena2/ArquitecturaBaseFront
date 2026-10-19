@@ -205,12 +205,13 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   `/configuracion/negocio` (`ai.business.read`/`manage`), sin depender de settings ni WhatsApp. Plegar o paginar el panel
   de Inicio no llama al modelo.
 - **Formularios** ([guía](../src/features/business-forms/AGENTS.md), [diseño](design/formularios-whatsapp.md),
-  [contrato](../../ArquitecturaBase/docs/features/formularios.md)): `/formularios` implementa A–E y P1–P3; WhatsApp,
+  [contrato](../../ArquitecturaBase/docs/features/formularios.md)): `/formularios` implementa A–E y P1–P3, con I1–I3 como reemplazo de E/P1 para idiomas; WhatsApp,
   C1–C5 y R1–R3, sin importar `business-forms`. D2 conserva planilla/bandeja, URL, orden y un único dueño de decisión;
   Respuesta, Fotos, Actividad y PDF consumen hechos capturados. La aprobación sin RecordsRead conserva sólo metadata.
   Reglas, diseño PDF y sugerencias tienen guardado/revisión propios; OfferWhen usa el borrador existente sin publicarse.
-  Los catálogos propuestos se revisan en el editor normal con original obligatorio; los catálogos y la publicación comunes
-  conservan su contrato de idiomas. Los faltantes agregados requieren Manage; crear conserva Read+Manage y sólo siembra
+  La publicación requiere el original completo y admite traducción secundaria opcional; la preview y el envío usan
+  una cultura para el formulario entero, según la [regla funcional](../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19). Los catálogos propuestos se revisan con original obligatorio; los catálogos comunes
+  conservan su contrato bilingüe. Los faltantes agregados requieren Manage; crear conserva Read+Manage y sólo siembra
   el nombre en un alta nueva. Actor, cultura y permisos particionan consultas y limpiezas; un 403 retira el alcance que leyó.
   Los consumidores HTTP sirven bytes exportados sin modificarlos; `src/test/httpCohort` reúne las familias y sus variables
   de entrada. La calificación de esos cuerpos y del navegador se registra separada de los dobles y del piloto real.
