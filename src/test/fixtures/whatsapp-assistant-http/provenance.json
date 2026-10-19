@@ -1,103 +1,103 @@
 {
-  "sourceState": [],
-  "artifactSet": "whatsapp-assistant",
-  "generatedAtUtc": "2026-10-18T14:31:29.3623142Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "schemaVersion": 1,
-  "sources": [
-    {
-      "sha256": "316f64b2ece8c40f97a01b1adcc597e6e1ca92df9d4f66caae96bc7cb6541947",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.cs"
-    },
-    {
-      "sha256": "338883b32ac5a168460677cd66f74d20fd8de3ce83713a2df2e2337ec3bccac6",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.Suggestions.cs"
-    },
-    {
-      "sha256": "1c4fab161f5b2802e4c2a8b449d0738affae4560445196ec6173338e2eb98040",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs"
-    },
-    {
-      "sha256": "84bf4b52317021d162349493604868dcbb40e29b3825f5d26d923aadc7e8ce29",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantContractCapture.cs"
-    },
-    {
-      "sha256": "497f09af48d8b3e5c58add081f32912b7dae6d285b1eb1b18953489ef735f4e2",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantOperationsDouble.cs"
-    },
-    {
-      "sha256": "011fcf56b8613b429285c70d74ef52eab1f3faa00c3071588e9e913421de90cd",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantCaptureFixture.cs"
-    },
-    {
-      "sha256": "ff9215084389880a65c163602e2059e65ec76276650b1433dd9fa938671f84bb",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredRecordPort.cs"
-    }
-  ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "captures": [
     {
-      "sha256": "3bf493650eb9f363841cd827ccfa7d19becb9f24f48f207c1e8ceffa8fda9300",
-      "length": 765,
-      "name": "always-send-receipt.json"
+      "sha256": "0a4cf208a9820f94f8adba3007006ad6e701e3a3a9e3204624bac1e64200ca58",
+      "name": "always-send-receipt.json",
+      "length": 764
     },
     {
-      "sha256": "da4075b7f7b8b0f6c15bc15473df0d9ac3d6c4e9b29c49a6b0e0b5bc207cbfb8",
-      "length": 764,
-      "name": "send-receipt.json"
+      "sha256": "90226b4e0fcc64672feccce74b0a98a7f208b994e9b6cc2e6c9220eb24afe212",
+      "name": "send-receipt.json",
+      "length": 763
     },
     {
-      "sha256": "02f628b4cdcdf83691b570e774f88b0d198a54514cc3c043691bcd66d50806ee",
-      "length": 507,
-      "name": "suggestion-always-ready.json"
+      "sha256": "cc01e014f907e3ebb5ce04ddb966c969a45e69b0a7f486950670d8ca52c38769",
+      "name": "suggestion-always-ready.json",
+      "length": 507
     },
     {
-      "sha256": "3004aec651dbbd24f0d2ca2cd0a5862c25c863677ad2e59e4583bd755219f724",
-      "length": 159,
-      "name": "suggestion-blocked.json"
+      "sha256": "b52dc6119c0e819c6a5fccf97c56b5ce0423c3dc29ff9c3e1dcd848aa65e4d96",
+      "name": "suggestion-blocked.json",
+      "length": 159
     },
     {
-      "sha256": "57cb915b7b59927deb809a89ca69576574cfaccf6a615f11f1cb4af2dffed2bd",
-      "length": 161,
-      "name": "suggestion-discarded.json"
+      "sha256": "e56d07a680b47c2969a27c27d99dd527b091944745d9e8e466838b95495f19f8",
+      "name": "suggestion-discarded.json",
+      "length": 161
     },
     {
-      "sha256": "0ed36d057fbe925336ad77288a9727ac9a26b8befc0bc954e7cc7e5b3ad25111",
-      "length": 159,
-      "name": "suggestion-no-reply.json"
+      "sha256": "1e8e0c49b7e7dd642f34a000fdcd97aff145442912ea98212fc3f0b6ee9333a7",
+      "name": "suggestion-no-reply.json",
+      "length": 159
     },
     {
-      "sha256": "b5b0719a11971179c572046f5b2855b7eb739034e7a1c720a41213b3404568dd",
-      "length": 159,
-      "name": "suggestion-pending.json"
+      "sha256": "5461f741ab14b12d3a223129efa220396218e6664748a59de6a8e98afd5d8d1b",
+      "name": "suggestion-pending.json",
+      "length": 159
     },
     {
-      "sha256": "4b0c988f98e6aee3e9bf88b8613315a43e42025a7d16d672405cd606528c767b",
-      "length": 550,
-      "name": "suggestion-ready.json"
+      "sha256": "bd574584d6a24758717c47082fa5f7a310b43dffd87c82316ac689d2df000934",
+      "name": "suggestion-ready.json",
+      "length": 550
     },
     {
-      "sha256": "8d2188873b47389373c7e0ab8f1363c02226948013e45106f4d22a0a4fc08dc5",
-      "length": 928,
-      "name": "suggestion-sent.json"
+      "sha256": "d34e577b5097010a7b76dc2578a7940fa93271cb69e3fe2cde6e4b553ec4bd7a",
+      "name": "suggestion-sent.json",
+      "length": 927
     },
     {
-      "sha256": "dfc0b39775043cf44201d254f265fd92778ff61263fc54a39f9639ef5c3822ea",
-      "length": 2672,
-      "name": "thread-always-ready.json"
+      "sha256": "7a0d6c074615bffbf1348ee0ef8f04dd5412b1a7d80b22b7e6ed8eccd865e76f",
+      "name": "thread-always-ready.json",
+      "length": 2669
     },
     {
-      "sha256": "7612256cf05c54e1e3da1fcb7d1f6e5e39d5fdb10220b70b562abc8beadadce3",
-      "length": 1958,
-      "name": "thread-restricted.json"
+      "sha256": "61d96e1f31bc688940c595b73ae2bb25f589ca520de79c6e4e79f4224047fcd3",
+      "name": "thread-restricted.json",
+      "length": 1955
     },
     {
-      "sha256": "26737f4f7aa7bebd48a998c335b7baaf50054116c25bd3cb396c2b6d540b041e",
-      "length": 2142,
-      "name": "thread.json"
+      "sha256": "bebb2529b1541e88f7e1cdbd4689bc4bc2f9671ac9fafa6e0a3d7d2914e42bb3",
+      "name": "thread.json",
+      "length": 2139
     }
   ],
-  "repositoryHead": "59c03587ffaaf4fa393bc32af470c18adf7e376b",
-  "runId": "20261018-140832-09e9bc3e4aa44ffcaabfeb59a1f3c02a",
-  "producer": "WhatsAppAssistantHttpTests and WhatsAppAssistantHttpTests.Suggestions and WhatsAppAssistantScenario and WhatsAppAssistantContractCapture and WhatsAppAssistantOperationsDouble and WhatsAppAssistantCaptureFixture and CapturingStructuredRecordPort"
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.cs",
+      "sha256": "316f64b2ece8c40f97a01b1adcc597e6e1ca92df9d4f66caae96bc7cb6541947"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.Suggestions.cs",
+      "sha256": "a76fa5ec1da3b15d12030ebdab76686d1976e8f2e1b9913696424f32a1b2a358"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+      "sha256": "1c4fab161f5b2802e4c2a8b449d0738affae4560445196ec6173338e2eb98040"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantContractCapture.cs",
+      "sha256": "84bf4b52317021d162349493604868dcbb40e29b3825f5d26d923aadc7e8ce29"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantOperationsDouble.cs",
+      "sha256": "86517d67df24c0691c54645df0109d09312673b1c1549c8acce8b5bceeeb9b87"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantCaptureFixture.cs",
+      "sha256": "011fcf56b8613b429285c70d74ef52eab1f3faa00c3071588e9e913421de90cd"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredRecordPort.cs",
+      "sha256": "ff9215084389880a65c163602e2059e65ec76276650b1433dd9fa938671f84bb"
+    }
+  ],
+  "generatedAtUtc": "2026-10-19T11:50:45.8815799Z",
+  "repositoryHead": "e3a7432b575dfafbc9ced969ed8a010ff3394db4",
+  "schemaVersion": 1,
+  "sourceState": [],
+  "producer": "WhatsAppAssistantHttpTests and WhatsAppAssistantHttpTests.Suggestions and WhatsAppAssistantScenario and WhatsAppAssistantContractCapture and WhatsAppAssistantOperationsDouble and WhatsAppAssistantCaptureFixture and CapturingStructuredRecordPort",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "whatsapp-assistant",
+  "runId": "20261019-112021-b94ec0bcd0494ec9802d597e40ba68a2",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }
