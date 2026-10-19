@@ -2,7 +2,7 @@
 
 Fecha: **2026-10-08**, con las variantes de los cuatro incrementos de la Etapa 1 y el botón «Abrir formulario»
 agregados el **2026-10-10**.
-Estado al **2026-10-18**: **Etapas 1–5, los 18 arreglos del review de Etapa 4 y D2 verificados localmente**. El [cierre canónico](../../../ArquitecturaBase/docs/features/formularios.md#cierre-local-de-la-etapa-5-y-del-review-de-la-etapa-4) reúne integración, contratos exportados, suite completa, navegador y visual actuales. El piloto físico de aprobación/PDF en español con foto se completó el 2026-10-17; sus casos restantes y el piloto de IA/audio conservan su alcance separado. Las notas fechadas de cortes anteriores son históricas; las reglas vigentes están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md).
+Estado al **2026-10-19**: **Etapas 1–5, los 18 arreglos del review de Etapa 4, D2 e idioma original/traducción opcional (I1–I3) verificados localmente**. El [cierre canónico](../../../ArquitecturaBase/docs/features/formularios.md#verificación-local-de-idioma-original-y-traducción-opcional--2026-10-19) reúne integración, contratos exportados, suite completa, navegador y visual actuales. El piloto físico de aprobación/PDF en español con foto se completó el 2026-10-17; sus casos restantes y el piloto de IA/audio conservan su alcance separado. Las notas fechadas de cortes anteriores son históricas; las reglas vigentes están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md).
 
 Origen: la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
@@ -212,7 +212,7 @@ El modelo y las reglas están en los
 El idioma de los formularios (2026-10-18, versión 85 del lienzo), implementado según la
 [regla funcional vigente](../../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19): solo el idioma
 original es obligatorio para guardar y publicar, y si la traducción no está completa, todo sale entero en el original, sin
-mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre los dos idiomas. I1–I3 están integrados en el front: autoría con traducción opcional y marcas neutras, vista previa entera en una cultura, comprobación por idioma, cambios entre versiones y vista oficial limitada a los publicados. Navegador, visuales y contratos HTTP renovados se verifican al cierre conjunto.
+mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre los dos idiomas. I1–I3 están integrados en el front: autoría con traducción opcional y marcas neutras, vista previa entera en una cultura, comprobación por idioma, cambios entre versiones y vista oficial limitada a los publicados. El [cierre local](#cierre-local-de-idioma-original-y-traducción-opcional--2026-10-19) registra navegador, visuales y contratos HTTP renovados.
 
 | Captura | Qué define |
 | --- | --- |
@@ -398,3 +398,37 @@ H7 usa temas y conteos agregados del servidor, con Pendientes/Descartados e hist
 El cierre local verificó lógica, permisos, recuperación, conservación de borradores y guards: 2.245/2.245 tests en 227 archivos, build sin errores ni advertencias y lint con 49/49 checks de arquitectura. La visual normal quedó 511/511 escenas en la pasada normal definitiva; se inspeccionaron las 36 capturas nuevas de H6/H7/s4 en es/en a 1440/390/320 contra los tableros elegidos. Las 126 referencias anteriores conservan sus SHA: 125 siguen comparándose y la de Bot se preserva como evidencia histórica de un estado retirado. La migración a Manual tiene una referencia nueva, inspeccionada contra H1, sin reemplazar aquella. Las comparaciones vigentes mantienen su tolerancia. El diseño vigente mantiene D2, G2/G5 versión 75, H1–H7 y s1–s4.
 
 Los consumidores usan 19 cohortes, 295 capturas —64 de WhatsApp— y 53 fuentes, con bytes y SHA idénticos al front. El recorrido AppPreview con ingreso normal por correo/código, PostgreSQL/Azurite y Meta/IA controlados acreditó Chrome e IAB: ingreso normal con código, D2 en planilla y Por aprobar, filtros/foco/URL/flechas/Escape, decisión con otra cuenta, PDF fijo con foto abierto y descargado, vista previa con respaldo completo al original, revisión manual, continuación Siempre, catálogo aprobado, tablero de pedidos faltantes y audio con permiso de lectura; móvil de 390×844; los hosts quedaron detenidos. El [cierre canónico](../../../ArquitecturaBase/docs/features/formularios.md#cierre-local-de-la-etapa-5-y-del-review-de-la-etapa-4) conserva resultados, procedencia y límites; la [calificación OpenAI](../../../ArquitecturaBase/docs/guides/configurar-ia.md#evidencia-para-habilitar-perfiles) es independiente del [piloto físico del asistente y audios](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-del-asistente-y-audios). En ese cierre se conservó la regla bilingüe de preguntas y catálogos de las Etapas 1–3. [I1–I3](#decisiones-de-diseño) sustituyen después el requisito de publicación del formulario; los catálogos comunes conservan su contrato bilingüe.
+
+## Cierre local de idioma original y traducción opcional — 2026-10-19
+
+I1–I3 conservan el original obligatorio, el secundario opcional y sus marcas neutras. La preview elige una cultura
+para todo el formulario; la publicación informa los idiomas completos y los cambios de una versión a otra. El selector
+común permite envolver sus etiquetas sólo en I1, manteniendo visible el conteo en móvil. Las culturas de la vista oficial
+y del aviso de publicación proceden de las copias confirmadas del servidor. La
+[regla funcional](../../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19) fija también la cultura preparada de envío y el respaldo individual de cada ítem de catálogo.
+
+Verificación final del front: **2355/2355 tests en 228 archivos**, build y TypeScript limpios, lint con **49/49** checks
+de arquitectura y visual completa normal **527/527**, sin fallos ni omitidos. Los tests de consumo de contratos HTTP quedaron **79/79 en 21 archivos** y validaron el export conjunto: **19 cohortes, 318 capturas y 54 fuentes**, con tamaños, bytes y SHA256 coincidentes
+con la corrida backend de fuente `59b52772`. Forms conserva 46 cuerpos, incluidos 18 de original→ambos→original
+para es/en; Workflow/PDF incluyen el recorrido inglés con un ítem en su original. Las **127 referencias visuales**
+conservaron sus hashes; no se cambiaron tolerancias. El servidor visual terminó solo y liberó 5178. El aviso heredado
+`NO_COLOR`/`FORCE_COLOR` se conserva en el log de la ejecución.
+
+Se revisaron **40 capturas I1–I3**: 24 de I1 en es/en a 1440/390/320 y 16 de I2/I3 en es/en a 390/320.
+Las capturas de página conservan el desplazamiento del main; las de preview y las comprobaciones DOM completan
+la lectura de contenido y geometría. El navegador contra la API local comprobó v1 sólo español→v2 ambos idiomas→v3
+sólo español, preview entera en español e inglés, CTA Completar con foco en Nombre y Cancelar sin cambios.
+La matriz DOM es/en a 390/320 confirmó selector, contador y diálogos dentro del ancho disponible. Las doce imágenes
+del recorrido se conservan como evidencia local; entre ellas:
+
+| Evidencia | Alcance |
+| --- | --- |
+| [I1, autoría en UI español a 320](evidence/formularios-whatsapp/idioma-20261019-i1-es-320.jpg) | Original obligatorio, inglés opcional y contador 3 visible. |
+| [I1, UI inglés y preview español a 390](evidence/formularios-whatsapp/idioma-20261019-i1-preview-en-390.jpg) | Traducción incompleta: el teléfono usa español entero. |
+| [I1, traducción completa con UI español a 320](evidence/formularios-whatsapp/idioma-20261019-i1-complete-es-320.jpg) | El teléfono pasa entero a inglés. |
+| [I2, sólo español a 390](evidence/formularios-whatsapp/idioma-20261019-i2-es-390.jpg) | Faltantes secundarios informativos y publicación disponible. |
+| [I3, suma inglés con UI inglés a 320](evidence/formularios-whatsapp/idioma-20261019-i3-add-en-320.jpg) | Confirmación de la versión 2 que suma inglés. |
+| [I3, pierde inglés con UI español a 390](evidence/formularios-whatsapp/idioma-20261019-i3-remove-es-390.jpg) | Confirmación de la versión 3 que pierde inglés, con aviso. |
+
+El proveedor Meta del recorrido local fue simulado. El
+[piloto físico de idioma original y traducción opcional](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-idioma-original-y-traducción-opcional) conserva su criterio de cierre separado.
