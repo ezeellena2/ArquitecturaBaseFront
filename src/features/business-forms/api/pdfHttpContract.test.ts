@@ -28,3 +28,22 @@ it("uses actual PDF response headers and bytes through preview and fixed-documen
   server.use(http.get("/api/forms/records/" + otherRecord + "/documents/" + document.id + "/content", () => cohort.capturedResponse("document-mismatch-en.json", "document-mismatch-en.http.json")));
   await expect(fetchResponseDocument(otherRecord, document.id, true)).rejects.toMatchObject({ status: 404 });
 });
+
+// The bytes and HTTP metadata arrive in the joint export, never as fabricated defaults.
+it("downloads the English fixed PDF when only a catalog item falls back to its original text", async () => {
+  const cohort = httpCohort("pdf");
+  const body = httpCohort("workflow").json("e2e-catalog-original-item-en.json");
+  const recordId = z.object({ recordId: z.string().uuid() }).parse(body).recordId;
+  const workflow = readResponseWorkflow(body, recordId);
+  const document = workflow.documents.find(item => item.culture === "en")!;
+  expect(document).toBeDefined();
+  const sample = "e2e-catalog-original-item-en";
+  server.use(http.get("/api/forms/records/" + recordId + "/documents/" + document.id + "/content", () => cohort.capturedResponse(sample + ".pdf", sample + ".http.json")));
+  const downloaded = await fetchResponseDocument(recordId, document.id, true);
+  expect(downloaded.contentLanguage).toBe("en");
+  expect(downloaded.blob.type).toBe("application/pdf");
+  expect(downloaded.fileName).toBe(document.name);
+  expect(downloaded.blob.size).toBe(document.size);
+  expect(downloaded.blob.size).toBe(cohort.bytes(sample + ".pdf").length);
+  expect(createHash("sha256").update(new Uint8Array(await downloaded.blob.arrayBuffer())).digest("hex")).toBe(createHash("sha256").update(cohort.bytes(sample + ".pdf")).digest("hex"));
+});

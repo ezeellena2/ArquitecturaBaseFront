@@ -24,3 +24,22 @@ it("consults and retries the captured execution identities through the real adap
   server.use(http.post("/api/forms/records/" + failedId + "/actions/" + failed.actions[0].id + "/retry", () => cohort.response("retry-en.json", 202)));
   expect(await continueResponseAction(failedId, failed.actions[0].id, "retry")).toEqual(cohort.json("retry-en.json"));
 });
+
+// The joint export supplies this new body; notice text is asserted by its backend producer.
+it("keeps completed notices and English PDF metadata when a catalog item uses its original text", async () => {
+  const cohort = httpCohort("workflow");
+  const body = cohort.json("e2e-catalog-original-item-en.json");
+  const recordId = identity.parse(body).recordId;
+  const workflow = readResponseWorkflow(body, recordId);
+  expect(workflow.recordState).toBe("Approved");
+  expect(workflow.task?.state).toBe("Approved");
+  expect(workflow.actions).toHaveLength(4);
+  expect(workflow.actions.every(action => action.state === "Completed")).toBe(true);
+  const recipients = workflow.actions.flatMap(action => action.recipients);
+  expect(recipients).toHaveLength(2);
+  expect(recipients.every(recipient => recipient.state === "Accepted")).toBe(true);
+  expect(workflow.documents.map(document => document.culture).sort()).toEqual(["en", "es"]);
+  expect(workflow.documents.find(document => document.culture === "en")?.name).toMatch(/^Final receipt-.+\.pdf$/);
+  server.use(http.get("/api/forms/records/" + recordId + "/workflow", () => cohort.response("e2e-catalog-original-item-en.json")));
+  expect(await fetchResponseWorkflow(recordId)).toEqual(workflow);
+});
