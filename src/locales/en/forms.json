@@ -876,11 +876,14 @@
     "discardedNotice": "Request discarded.",
     "conflict": "The request changed. We refreshed the list; review it before discarding again.",
     "loadFailed": "We could not load requests",
-    "totals_one": "{{count}} topic · {{requests}} requests",
-    "totals_other": "{{count}} topics · {{requests}} requests",
     "empty": "No one has requested a form that does not exist",
     "noPending": "No pending requests",
     "noDiscarded": "No discarded requests",
-    "noMatches": "No topics match this search"
+    "noMatches": "No topics match this search",
+    "totals": "{{topics}} · {{requests}}",
+    "topicCount_one": "{{count}} topic",
+    "topicCount_other": "{{count}} topics",
+    "requestCount_one": "{{count}} request",
+    "requestCount_other": "{{count}} requests"
   }
 }

@@ -1,3 +1,4 @@
+import i18n from "@/shared/i18n";
 import {act,screen,waitFor,within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {http,HttpResponse} from "msw";
@@ -12,9 +13,9 @@ vi.mock("@/shared/ui/notifications",async()=>({...await vi.importActual<typeof i
 const id="11111111-1111-4111-8111-111111111111";
 const topic={id,revision:2,name:"Reclamos de clientes",description:"Dejar asentado qué pasó y qué pide.",originalCulture:"es",requestCount:5,personCount:3,lastRequestedAtUtc:"2026-10-17T12:00:00Z",state:"Pending",discardedBy:null,discardedAtUtc:null};
 const page=(items:unknown[]=[topic],extra:Record<string,unknown>={})=>({items,page:1,pageSize:20,totalCount:items.length,totalRequests:5,stateCounts:{pending:1,discarded:0},totalPages:items.length?1:0,hasPrevious:false,hasNext:false,...extra});
-function setup(permissions=["formtemplates.manage"]){
- const store=createFormFixtureStore("es","");
- server.use(http.all("/api/forms/definitions*",({request})=>store.handle(request)),http.get("/api/forms/missing-requests",()=>HttpResponse.json(page())),http.get("/api/me",()=>HttpResponse.json({id:"actor",displayName:"Ana",email:"ana@example.com",emailConfirmed:true,phoneNumber:null,formattedPhoneNumber:null,maskedPhoneNumber:null,phoneNumberConfirmed:false,hasGoogleLogin:false,culture:"es",timeZoneId:"America/Argentina/Buenos_Aires",lastLoginAtUtc:null,roles:[],permissions})));
+function setup(permissions=["formtemplates.manage"],culture: "es"|"en" = "es"){
+ const store=createFormFixtureStore(culture,"");
+ server.use(http.all("/api/forms/definitions*",({request})=>store.handle(request)),http.get("/api/forms/missing-requests",()=>HttpResponse.json(page())),http.get("/api/me",()=>HttpResponse.json({id:"actor",displayName:"Ana",email:"ana@example.com",emailConfirmed:true,phoneNumber:null,formattedPhoneNumber:null,maskedPhoneNumber:null,phoneNumberConfirmed:false,hasGoogleLogin:false,culture,timeZoneId:"America/Argentina/Buenos_Aires",lastLoginAtUtc:null,roles:[],permissions})));
  return store;
 }
 beforeEach(()=>{queryClient.clear();vi.mocked(notify).mockClear();});
@@ -98,4 +99,21 @@ it("recovers a throttled refresh explicitly while retaining the previously loade
  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,350));});expect(calls).toBe(2);
  await act(async()=>{now+=3000;document.dispatchEvent(new Event("visibilitychange"));});await waitFor(()=>expect(retry).toBeEnabled());expect(calls).toBe(2);clock.mockRestore();
  await userEvent.click(retry);await waitFor(()=>expect(calls).toBe(3));
+});
+
+it.each([
+ ["es",0,0,"0 temas · 0 pedidos"],
+ ["es",1,1,"1 tema · 1 pedido"],
+ ["es",1,2,"1 tema · 2 pedidos"],
+ ["es",2,2,"2 temas · 2 pedidos"],
+ ["en",0,0,"0 topics · 0 requests"],
+ ["en",1,1,"1 topic · 1 request"],
+ ["en",1,2,"1 topic · 2 requests"],
+ ["en",2,2,"2 topics · 2 requests"],
+] as const)("pluralizes topic and request totals independently in %s for %i topics and %i requests",async(language,topics,requests,expected)=>{
+ await i18n.changeLanguage(language);setup(["formtemplates.manage"],language);
+ const items=Array.from({length:topics},(_,index)=>({...topic,id:id.slice(0,-1)+(index+1),name:topic.name+" "+index,requestCount:requests/topics,personCount:1}));
+ server.use(http.get("/api/forms/missing-requests",()=>HttpResponse.json(page(items,{totalCount:topics,totalRequests:requests,stateCounts:{pending:topics,discarded:0}}))));
+ renderRouteWithProviders("/formularios/faltantes");
+ expect(await screen.findByText(expected)).toBeInTheDocument();
 });

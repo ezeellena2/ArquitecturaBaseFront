@@ -876,11 +876,14 @@
     "discardedNotice": "Pedido descartado.",
     "conflict": "El pedido cambió. Releímos la lista; revisalo antes de volver a descartar.",
     "loadFailed": "No pudimos cargar los pedidos",
-    "totals_one": "{{count}} tema · {{requests}} pedidos",
-    "totals_other": "{{count}} temas · {{requests}} pedidos",
     "empty": "Nadie pidió formularios que no existen",
     "noPending": "No hay pedidos pendientes",
     "noDiscarded": "No hay pedidos descartados",
-    "noMatches": "No hay temas que coincidan con la búsqueda"
+    "noMatches": "No hay temas que coincidan con la búsqueda",
+    "totals": "{{topics}} · {{requests}}",
+    "topicCount_one": "{{count}} tema",
+    "topicCount_other": "{{count}} temas",
+    "requestCount_one": "{{count}} pedido",
+    "requestCount_other": "{{count}} pedidos"
   }
 }
