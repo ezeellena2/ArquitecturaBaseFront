@@ -52,9 +52,9 @@ vigente de la migración y los controles automáticos pendientes.
 ## Carpetas cubiertas por su ámbito padre
 
 El [laboratorio de Inicio](../design-lab/home-assistant/AGENTS.md) conserva la procedencia del chat;
-el [panel interno de conversaciones archivado](../design-lab/history/home-assistant-conversations-2026-10-05/AGENTS.md) conserva la propuesta elegida y promovida el 2026-10-05. La implementación vive en la feature IA y shared/ui/assistant. `chosen` conserva el formulario
+el [panel interno de conversaciones archivado](../design-lab/history/home-assistant-conversations-2026-10-05/AGENTS.md) conserva la propuesta elegida y promovida el 2026-10-05. La implementación vive en la feature IA y shared/ui/assistant. [`chosen`](../design-lab/home-assistant/chosen/AGENTS.md) conserva el formulario
 rechazado y no acredita aprobación visual;
-el comparador cerrado y sus fuentes/evidencia se preservan en `design-lab/history/home-assistant-comparison-2026-10-04`.
+el comparador cerrado y sus fuentes/evidencia se preservan en [`design-lab/history/home-assistant-comparison-2026-10-04`](../design-lab/history/home-assistant-comparison-2026-10-04/AGENTS.md).
 Ese archivo histórico no es una entrada activa ni depende del bundle productivo.
 
 El laboratorio de WhatsApp también conserva la propuesta pendiente
