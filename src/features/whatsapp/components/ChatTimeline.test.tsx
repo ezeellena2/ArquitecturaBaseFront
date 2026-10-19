@@ -139,3 +139,14 @@ it("shows captured quick-reply choices as read-only history rather than operator
  expect(within(choices).getAllByRole("listitem").map(item => item.textContent)).toEqual(["Visita", "Entrega"]);
  expect(within(choices).queryByRole("button")).not.toBeInTheDocument();
 });
+
+for (const original of ["es", "en"] as const) for (const secondaryText of [undefined, ""]) {
+  it("keeps original " + original + " form cards in pending and confirmed history with " + (secondaryText === undefined ? "absent" : "empty") + " secondary", async () => {
+    const secondary = original === "es" ? "en" : "es";
+    const name = { [original]: original === "es" ? "Visita histórica" : "Historical visit", ...(secondaryText === undefined ? {} : { [secondary]: secondaryText }) };
+    const form = { definitionId: "019abcde-1000-7000-8000-000000000001", versionId: "019abcde-1000-7000-8000-000000000002", versionNumber: 1, name, culture: original };
+    await setup([{ ...message("Sent"), kind: "Flow", form }], [{ ...operation("Pending"), kind: "Flow", form }]);
+    expect(screen.getAllByText(name[original])).toHaveLength(2);
+    expect(screen.getAllByText(original === "es" ? /Abrir formulario/ : /Open form/)).toHaveLength(2);
+  });
+}

@@ -279,3 +279,30 @@ it("blocks a plain form after preparation fails and retries without losing the e
  await userEvent.click(within(dialog).getByRole("button",{name:"Reintentar"})); await waitFor(()=>expect(within(dialog).getByRole("radio",{name:"Registrar visita"})).toHaveAttribute("aria-checked","true"));
  expect(message).toHaveValue("Texto conservado"); expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled(); expect(reads).toBe(2); expect(posts).toEqual([]);
 });
+
+for (const original of ["es", "en"] as const) for (const secondaryText of [undefined, ""]) {
+  it("selects and sends " + original + " original to the other account culture with " + (secondaryText === undefined ? "absent" : "empty") + " secondary", async () => {
+    const secondary = original === "es" ? "en" : "es";
+    const name = original === "es" ? "Registrar visita" : "Register visit";
+    const submitLabel = original === "es" ? "Confirmar visita" : "Confirm visit";
+    contact.formEligibility!.recipientCulture = secondary;
+    options[0] = { ...options[0], name: { [original]: name, ...(secondaryText === undefined ? {} : { [secondary]: secondaryText }) }, submitLabel: { [original]: submitLabel, ...(secondaryText === undefined ? {} : { [secondary]: secondaryText }) } };
+    server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => HttpResponse.json({ culture: original, recipientContextRevision: "opaque-1", preparation: { canSend: true, catalogs: [], issues: [] } })),
+      http.post("/api/whatsapp/chats/:id/form-messages", async ({ request }) => { const body = await request.json() as FormMessageRequest; posts.push(body); const result = receipt(body, original); thread.outgoing = [result as Thread['outgoing'][number]]; return HttpResponse.json(result, { status: 202 }); }));
+    await openChat();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar formulario" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(await within(dialog).findByRole("radio", { name }));
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeEnabled());
+    expect(within(dialog).getByText(/^Es lo que lee arriba del botón/)).toHaveTextContent(submitLabel);
+    expect(within(dialog).getByRole("textbox", { name: "Mensaje que lo acompaña" })).toHaveValue(original === "es" ? "Completá este formulario." : "Complete this form.");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(posts).toHaveLength(1);
+    expect(posts[0]).toMatchObject({ definitionId, versionId, message: null, expectedRecipientContextRevision: "opaque-1" });
+    expect(screen.getByText(name)).toBeInTheDocument();
+    await act(async () => { await queryClient.invalidateQueries({ queryKey: chatKey }); });
+    expect(screen.getByText(name)).toBeInTheDocument();
+    expect(contact.formEligibility!.recipientCulture).toBe(secondary);
+  });
+}

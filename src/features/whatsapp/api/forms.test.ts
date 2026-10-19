@@ -79,9 +79,7 @@ describe("Chat forms DTO contract", () => {
     server.use(http.post("/api/whatsapp/chats/" + contactId + "/form-messages", () => HttpResponse.json({...receipt,recoveryPath:null}, {status:202})));
     await expect(sendFormMessage(contactId, request, "actor")).rejects.toThrow("Unsupported chat form response.");
   });
-  it("rejects fallback to another culture or unknown transport metadata", () => {
-    expect(() => parseChatForms({ ...forms, page: { ...forms.page, items: [{ ...option, name: { es: "Visita" } }] } })).toThrow();
-    expect(readFormMetadata({ ...receipt.form, name: { es: "Visita" } })).toBeNull();
+  it("rejects unknown transport metadata without exposing it", () => {
     let error: unknown;
     try { parseChatForms({ ...forms, flowToken: "private-token" }); } catch (caught) { error = caught; }
     expect(String(error)).not.toContain("flowToken");
@@ -100,4 +98,37 @@ it("accepts the server resolved default opening without sending the preview as a
  expect(parseFormOutgoing(receipt, {...request,message:null}, "actor", contactId)).toEqual(receipt);
  expect(()=>parseFormOutgoing({...receipt,body:null}, {...request,message:null}, "actor", contactId)).toThrow();
  expect(()=>parseFormOutgoing({...receipt,body:" "}, {...request,message:null}, "actor", contactId)).toThrow();
+});
+
+for (const original of ["es", "en"] as const) for (const secondaryText of [undefined, ""]) {
+  const secondary = original === "es" ? "en" : "es";
+  const name = { [original]: original === "es" ? "Visita" : "Visit", ...(secondaryText === undefined ? {} : { [secondary]: secondaryText }) };
+  const submitLabel = { [original]: original === "es" ? "Confirmar" : "Confirm", ...(secondaryText === undefined ? {} : { [secondary]: secondaryText }) };
+  const scenario = original + " original with " + (secondaryText === undefined ? "absent" : "empty") + " secondary";
+  it("accepts a selector for the other recipient culture with " + scenario, () => {
+    const actual = { ...forms, recipientCulture: secondary, page: { ...forms.page, items: [{ ...option, name, submitLabel }] } };
+    expect(parseChatForms(actual)).toEqual(actual);
+  });
+  it("preserves a receipt and historical metadata with " + scenario, () => {
+    const actual = { ...receipt, form: { ...receipt.form, name, culture: original } };
+    expect(parseFormOutgoing(actual, request, "actor", contactId)).toEqual(actual);
+    expect(readFormMetadata(actual.form)).toEqual(actual.form);
+  });
+}
+it.each([{}, { es: "", en: " " }, { es: "Visita", fr: "Visite" }])("rejects a selector without a supported nonblank name %#", name => {
+  expect(() => parseChatForms({ ...forms, page: { ...forms.page, items: [{ ...option, name }] } })).toThrow("Unsupported chat form response.");
+});
+it.each([{}, { es: "", en: " " }, { es: "Confirmar", fr: "Confirmer" }])("rejects a selector without a supported nonblank submit label %#", submitLabel => {
+  expect(() => parseChatForms({ ...forms, page: { ...forms.page, items: [{ ...option, submitLabel }] } })).toThrow("Unsupported chat form response.");
+});
+it.each([undefined, "", " "])("rejects an absent or blank effective receipt name %# instead of falling back", effective => {
+  const name = { es: "Visita", ...(effective === undefined ? {} : { en: effective }) };
+  const actual = { ...receipt, form: { ...receipt.form, name, culture: "en" } };
+  expect(() => parseFormOutgoing(actual, request, "actor", contactId)).toThrow("Unsupported chat form response.");
+  expect(readFormMetadata(actual.form)).toBeNull();
+});
+it("rejects unsupported historical metadata keys and cultures", () => {
+  expect(readFormMetadata({ ...receipt.form, name: { es: "Visita", en: "Visit", fr: "Visite" } })).toBeNull();
+  expect(readFormMetadata({ ...receipt.form, culture: "fr" })).toBeNull();
+  expect(readFormMetadata({ ...receipt.form, unknown: "private" })).toBeNull();
 });

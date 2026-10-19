@@ -10,3 +10,7 @@ export function freezeFormMessage(draft: FormSendDraft, requestId: string): Read
 export function recipientChanged(draft: FormSendDraft, revision: string | null | undefined, culture: RecipientCulture | null | undefined) { return draft.recipientContextRevision !== revision || draft.recipientCulture !== culture; }
 export function selectedVersionChanged(selection: ChatFormOption, page: readonly ChatFormOption[]) { return page.some(option => option.definitionId === selection.definitionId && option.versionId !== selection.versionId); }
 export function formOptionKey(option: ChatFormOption) { return option.definitionId + ":" + option.versionId; }
+
+export function formOptionName(option: ChatFormOption, culture: RecipientCulture): string {
+  return option.name[culture]?.trim() ? option.name[culture]! : option.name[culture === "es" ? "en" : "es"]!;
+}
