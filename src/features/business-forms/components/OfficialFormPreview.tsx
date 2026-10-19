@@ -14,10 +14,13 @@ import { ExpiredFormPreview, type readFormPreview } from "../api/response";
 import type { FormCulture } from "../model";
 
 // The expiring official URL stays in this dialog. It never enters QueryCache or storage.
-export function OfficialFormPreview({ definitionId, versionId, versionNumber, initialCulture, onClose }: { definitionId: string; versionId: string; versionNumber: number; initialCulture: FormCulture; onClose: () => void }) {
+export function OfficialFormPreview({ definitionId, versionId, versionNumber, initialCulture, cultures, onClose }: { cultures: readonly FormCulture[]; definitionId: string; versionId: string; versionNumber: number; initialCulture: FormCulture; onClose: () => void }) {
   const { t } = useTranslation("forms");
   const restoreFocus = useRestoreFocusOnClose(true);
-  const [culture,setCulture] = useState(initialCulture);
+  const startingCulture = cultures.includes(initialCulture) ? initialCulture : cultures[0]!;
+  const [selectedCulture,setCulture] = useState(startingCulture);
+  const culture = cultures.includes(selectedCulture) ? selectedCulture : startingCulture;
+  const culturesKey = cultures.join(":");
   const [preview,setPreview] = useState<ReturnType<typeof readFormPreview> | null>(null);
   const [busy,setBusy] = useState(false);
   const [expired,setExpired] = useState(false);
@@ -45,17 +48,17 @@ export function OfficialFormPreview({ definitionId, versionId, versionNumber, in
       if (!["cancelled","session"].includes(feedback.kind)) notify({id:noticeId,kind:hasExpired?"warning":"error",message:hasExpired?t("publication.previewExpired"):feedback.detail??t("publication.previewFailed"),description:feedback.traceId?t("common:errors.traceId",{traceId:feedback.traceId}):undefined});
     } finally {if (flight.current===controller){flight.current=null;if(active.current)setBusy(false);}}
   }, [denied,waitUntil,definitionId,versionId,noticeId,t]);
-  const loadCurrent = useRef(load);
+  const loadCurrent = useRef(() => load(culture));
   const generation = useRef(0);
-  useEffect(() => { loadCurrent.current = load; }, [load]);
-  useEffect(()=>{active.current=true;const epoch=++generation.current;queueMicrotask(()=>{if(active.current&&generation.current===epoch)void loadCurrent.current(initialCulture);});return()=>{active.current=false;flight.current?.abort();dismissNotification(noticeId);};},[definitionId,versionId,initialCulture,noticeId]);
+  useEffect(() => { loadCurrent.current = () => load(culture); }, [load,culture]);
+  useEffect(()=>{active.current=true;const epoch=++generation.current;queueMicrotask(()=>{if(active.current&&generation.current===epoch)void loadCurrent.current();});return()=>{active.current=false;flight.current?.abort();dismissNotification(noticeId);};},[definitionId,versionId,startingCulture,culturesKey,noticeId]);
   useEffect(()=>{const timer=window.setInterval(()=>setNow(Date.now()),1000);return()=>window.clearInterval(timer);},[]);
   if (preview && Date.parse(preview.expiresAtUtc)<=now) {setPreview(null);setExpired(true);}
   const live = preview && Date.parse(preview.expiresAtUtc)>now ? preview : null;
   return <Dialog open onOpenChange={open=>{if(!open)onClose();}}>
     <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={restoreFocus}>
       <DialogHeader><DialogTitle>{t("publication.previewTitle",{version:versionNumber})}</DialogTitle><DialogDescription>{t("publication.previewDescription")}</DialogDescription></DialogHeader>
-      <SegmentedControl aria-label={t("contentLanguage")} options={(["es","en"] as const).map(value=>({key:value,label:t("common:language."+value),pressed:culture===value,onSelect:()=>{if(value!==culture){flight.current?.abort();flight.current=null;setBusy(false);setCulture(value);setPreview(null);setExpired(false);setFailed(false);dismissNotification(noticeId);}}}))} />
+      <SegmentedControl aria-label={t("contentLanguage")} options={cultures.map(value=>({key:value,label:t("common:language."+value),pressed:culture===value,onSelect:()=>{if(value!==culture){flight.current?.abort();flight.current=null;setBusy(false);setCulture(value);setPreview(null);setExpired(false);setFailed(false);dismissNotification(noticeId);}}}))} />
       {busy ? <div role="status" className="flex min-h-60 items-center justify-center gap-2"><Spinner /><p>{t("publication.previewLoading")}</p></div> : live ? <EmbeddedPreview url={live.url} title={t("publication.previewFrame")} /> : <p className="min-h-32 text-sm text-[var(--color-content-muted)]">{t(denied?"publication.previewNoPermission":expired?"publication.previewExpired":failed?"publication.previewUnavailable":"publication.previewChoose")}</p>}
       {live ? <p className="text-xs text-[var(--color-content-muted)]">{t("publication.previewFallback")}</p> : null}
       <DialogFooter><Button variant="outline" onClick={onClose}>{t("common:actions.close")}</Button>

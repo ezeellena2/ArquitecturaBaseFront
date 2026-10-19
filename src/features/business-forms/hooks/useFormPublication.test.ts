@@ -13,11 +13,11 @@ const body = { ...openDraftSession({ actorId: "a", editorId: "p" }, definition).
 const scope = { actorId: "a", culture: "es" as const, permissions: ["formtemplates.read", "formtemplates.publish"] };
 const checked = { definitionId: definition.id, draftRevision: 1, nextVersionNumber: 1, compatibility: "LocallyValidated" as const,
   canAccept: true, acceptanceAvailability: "Available" as const, checkToken: "private-ticket", checkExpiresAtUtc: "2099-10-10T16:00:00Z",
-  channels: [], issues: [], diff: { baseVersionId: null, added: [], changed: [], removed: [] } };
+  cultures: [{ culture: "es" as const, isOriginal: true, isComplete: true, missing: [] }, { culture: "en" as const, isOriginal: false, isComplete: true, missing: [] }], channels: [], issues: [], diff: { baseVersionId: null, added: [], changed: [], removed: [], addedCultures: [], removedCultures: [] } };
 const identity = { definitionId: definition.id, requestId: "01990000-0000-7000-8000-000000000090", operationId: "01990000-0000-7000-8000-000000000091",
   versionId: "01990000-0000-7000-8000-000000000092", versionNumber: 1, draftRevision: 1, acceptedAtUtc: "2026-10-10T16:00:00Z" } as const;
 const receipt = { ...identity, state: "Accepted" as const, recoveryPath: `/api/forms/definitions/${definition.id}/publications/${identity.requestId}` };
-const status = { ...identity, state: "Publishing" as const, stage: "Validate", updatedAtUtc: identity.acceptedAtUtc, nextCheckAtUtc: null, canRetry: false, requiresReview: false, issues: [] };
+const status = { ...identity, state: "Publishing" as const, stage: "Validate", updatedAtUtc: identity.acceptedAtUtc, nextCheckAtUtc: null, canRetry: false, requiresReview: false, issues: [], cultures: ["es" as const, "en" as const] };
 beforeEach(() => { vi.mocked(acceptFormPublication).mockReset(); vi.mocked(fetchFormPublication).mockReset(); vi.spyOn(crypto, "randomUUID").mockReturnValue(identity.requestId); });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 describe("owned publication attempt", () => {
@@ -194,4 +194,15 @@ describe("publication recovery lifecycle", () => {
   expect(result.current.canReplay).toBe(false);
   expect(acceptFormPublication).not.toHaveBeenCalled();
  });
+});
+
+it("retains local ownership when GET confirms a publication after the POST response was lost", async () => {
+  vi.mocked(acceptFormPublication).mockRejectedValue(ApiError.network());
+  vi.mocked(fetchFormPublication).mockResolvedValue({ ...status, state: "Published", cultures: ["es"] });
+  const { result } = renderHook(() => useFormPublication(scope));
+  await act(() => result.current.accept(definition.id, body, checked));
+  await act(() => result.current.consult());
+  expect(result.current.startedHere).toBe(true);
+  expect(result.current.receipt).toBeNull();
+  expect(result.current.status).toMatchObject({ state: "Published", cultures: ["es"] });
 });

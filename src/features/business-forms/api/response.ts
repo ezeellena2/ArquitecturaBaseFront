@@ -35,7 +35,7 @@ const author = z.strictObject({ userId: guid, displayName: z.string().nullable()
 const audit = z.strictObject({ createdAtUtc: utc, modifiedAtUtc: utc.nullable(), lastChangedAtUtc: utc, lastChangedBy: author.nullable() });
 const publicationState = z.enum(["Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]);
 const displayState = z.enum(["Draft", "Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]);
-const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision });
+const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, cultures: z.array(z.enum(["es", "en"])).min(1) });
 const currentOperation = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, state: publicationState, stage: z.string().min(1), requiresReview: z.boolean(), canRetry: z.literal(false), requestId: guid.nullable(), recoveryPath: z.string().nullable() });
 const publicationProjection = z.strictObject({ activeVersion: activeVersion.nullable(), currentOperation: currentOperation.nullable(), displayState });
 const detail = z.strictObject({ definition, capabilities: z.strictObject({ canSave: z.boolean(), canPublish: z.boolean(), canPreview: z.boolean() }), audit, publication: publicationProjection });
@@ -100,12 +100,14 @@ const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: rev
   checkToken: z.string().min(1).nullable(), checkExpiresAtUtc: utc.nullable(),
   channels: z.array(z.strictObject({ channelId: z.string().min(1), profileRevision: z.string().min(1),
     compatibility: publicationCompatibility, externalEvidence: z.literal("Pending"), cultures: z.array(z.enum(["es", "en"])) })),
+  cultures: z.array(z.strictObject({ culture: z.enum(["es", "en"]), isOriginal: z.boolean(), isComplete: z.boolean(), missing: z.array(publicationIssue) })),
   issues: z.array(publicationIssue),
-  diff: z.strictObject({ baseVersionId: guid.nullable(), added: z.array(guid), changed: z.array(guid), removed: z.array(guid) }),
+  diff: z.strictObject({ baseVersionId: guid.nullable(), added: z.array(guid), changed: z.array(guid), removed: z.array(guid),
+    addedCultures: z.array(z.enum(["es", "en"])), removedCultures: z.array(z.enum(["es", "en"])) }),
 });
 export function readFormPublicationCheck(value: unknown, definitionId: string, expectedRevision: number, fields: readonly DraftQuestion[]) {
   const checked = read(publicationCheck, value);
-  if (checked.issues.some(issue => {
+  if ([...checked.issues, ...checked.cultures.flatMap(culture => culture.missing)].some(issue => {
     if (!issue.fieldId) return issue.choiceId !== null;
     const field = fields.find(item => item.fieldId?.toLowerCase() === issue.fieldId?.toLowerCase());
     return !field || issue.choiceId !== null && (field.type !== "choice" || !field.options?.some(option => option.choiceId?.toLowerCase() === issue.choiceId?.toLowerCase()));
@@ -125,7 +127,7 @@ const publicationIdentity = { requestId: guid, operationId: guid, definitionId: 
 const publicationReceipt = z.strictObject({ ...publicationIdentity, state: z.literal("Accepted"), recoveryPath: z.string() });
 const publicationStatus = z.strictObject({ ...publicationIdentity,
   state: z.enum(["Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]),
-  stage: z.string().min(1), updatedAtUtc: utc, nextCheckAtUtc: utc.nullable(), canRetry: z.boolean(), requiresReview: z.boolean(), issues: z.array(publicationIssue) });
+  stage: z.string().min(1), updatedAtUtc: utc, nextCheckAtUtc: utc.nullable(), canRetry: z.boolean(), requiresReview: z.boolean(), issues: z.array(publicationIssue), cultures: z.array(z.enum(["es", "en"])) });
 function matchesPublication(value: { definitionId: string; requestId: string }, definitionId: string, requestId: string) {
   return value.definitionId.toLowerCase() === definitionId.toLowerCase() && value.requestId.toLowerCase() === requestId.toLowerCase();
 }

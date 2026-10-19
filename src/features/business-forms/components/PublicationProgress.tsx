@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
@@ -19,9 +19,18 @@ export function PublicationProgress({ publication, feedbackId, onReplay, project
   const cooldown = useCountdown(0);
   const { restart } = cooldown;
   const state = publication.status?.state ?? publication.receipt?.state ?? publication.aggregate?.state ?? projection?.currentOperation?.state ?? (projection?.activeVersion ? "Published" : undefined);
+  const announced = useRef(new Set<string>());
+  const publishedCultures = publication.status?.state === "Published" ? publication.status.cultures : projection?.activeVersion?.cultures ?? [];
+  const languages = publishedCultures.map(culture => t("cultureNamesInText." + culture)).join(t("publication.languageJoin"));
   const issues = uniquePublicationIssues(publication.status?.issues ?? []);
   const version = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
   useEffect(() => () => dismissNotification(feedbackId), [feedbackId]);
+  useEffect(() => {
+    const status = publication.status;
+    if (status?.state !== "Published" || !publication.startedHere || announced.current.has(status.operationId)) return;
+    announced.current.add(status.operationId);
+    notify({ id: feedbackId + ":published:" + status.operationId, kind: "success", message: t("publication.publishedLanguages", { version: status.versionNumber, languages }) });
+  }, [publication.status, publication.startedHere, feedbackId, languages, t]);
   useEffect(() => {
     if (publication.error instanceof ApiError && ["Forms.Draft.RevisionConflict", "Forms.Publication.DraftMustBeSaved"].includes(publication.error.code ?? "")) return;
     if (!publication.error) { dismissNotification(feedbackId); return; }
@@ -47,7 +56,7 @@ export function PublicationProgress({ publication, feedbackId, onReplay, project
   const requiresReview = publication.status?.requiresReview ?? publication.aggregate?.requiresReview ?? projection?.currentOperation?.requiresReview;
   return <Surface title={t(title, { version })} padded>
     <div className="flex flex-col gap-3">
-      <p role="status" className="text-sm">{t(hint, { version })}</p>
+      <p role="status" className="text-sm">{t(state === "Published" && publishedCultures.length ? "publication.publishedLanguages" : hint, { version, languages })}</p>
       {publication.confirmed && state !== "Failed" ? <ol className="flex flex-col gap-1 text-sm">
         <li>{t("publication.stepAccepted")}</li>
         <li className="text-[var(--color-content-muted)]">{t(state === "Preparing" ? "publication.stepPreparing" : state === "Publishing" ? "publication.stepSent" : state === "ActivationPending" ? "publication.stepActivating" : state === "Published" ? "publication.stepReady" : "publication.stepPending")}</li>

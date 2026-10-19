@@ -212,7 +212,7 @@ El modelo y las reglas están en los
 El idioma de los formularios (2026-10-18, versión 85 del lienzo), sobre la decisión del 2026-10-16 en los
 [resúmenes por etapa](../../../ArquitecturaBase/docs/plans/formularios/README.md#después-de-la-etapa-5): solo el idioma
 original es obligatorio para guardar y publicar, y si la traducción no está completa, todo sale entero en el original, sin
-mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre los dos idiomas. Todavía no están programados.
+mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre los dos idiomas. I2–I3 están integrados en el front con comprobación por idioma, traducción opcional, cambios de idiomas entre versiones y vista oficial limitada a los publicados; navegador, visuales y contratos HTTP renovados se verifican al cierre conjunto. I1 sigue pendiente de implementación.
 
 | Captura | Qué define |
 | --- | --- |

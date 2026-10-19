@@ -122,29 +122,36 @@ describe("Forms routes", () => {
     expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita editado");
   });
 
-  it("checks publication with Read and Publish, without creating a write attempt or requiring Manage", async () => {
-    const store = setup("forms-read", ["formtemplates.read", "formtemplates.publish"]);
-    let checks = 0;
-    server.use(http.post("/api/forms/definitions/:id/publication-checks", () => {
-      checks++;
-      const current = store.definitions.get(fixtureFormId)!;
-      return Response.json({ definitionId: current.id, draftRevision: current.revision, nextVersionNumber: 1, compatibility: "Blocked", canAccept: false,
-        acceptanceAvailability: "Unavailable", checkToken: null, checkExpiresAtUtc: null, channels: [], issues: [{ channelId: null, fieldId: current.draft.fields[5]!.fieldId, choiceId: null,
-          path: "draft.fields[5].help.en", code: "Forms.Publication.MissingTranslation", message: "Completá la ayuda en inglés.", limit: null, culture: "en" }],
-        diff: { baseVersionId: null, added: current.draft.fields.map(q => q.fieldId), changed: [], removed: [] } });
-    }));
+  it("allows the original with Read and Publish without offering translation editing", async () => {
+    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.publish"]);
+    const current = store.definitions.get(fixtureFormId)!;
+    store.definitions.set(current.id, { ...current, draft: { ...current.draft, fields: current.draft.fields.map(field => field.type === "longText" ? { ...field, help: { es: "Contá lo que pasó." } } : field) } });
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     await screen.findByLabelText("Nombre");
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
     const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
-    expect(await within(dialog).findByText("Completá la ayuda en inglés.")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Publicar versión 1" })).toBeDisabled();
-    await userEvent.click(within(dialog).getByRole("button", { name: "Ir a la pregunta" }));
+    expect(await within(dialog).findByText("El inglés no se publica.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Observaciones · la ayuda")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Publicar versión 1" })).toBeEnabled();
+    expect(within(dialog).queryByRole("button", { name: "Completar el inglés" })).not.toBeInTheDocument();
+    expect(store.calls.filter(call => call.path.endsWith("/publication-checks"))).toHaveLength(1);
+    expect(store.writes).toHaveLength(0);
+  });
+  it("returns from optional translation completion to its exact control without changing the draft", async () => {
+    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.publish", "formtemplates.manage"]);
+    const current = store.definitions.get(fixtureFormId)!;
+    store.definitions.set(current.id, { ...current, draft: { ...current.draft, fields: current.draft.fields.map(field => field.type === "longText" ? { ...field, help: { es: "Contá lo que pasó." } } : field) } });
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await screen.findByLabelText("Nombre");
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Completar el inglés" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByLabelText("Ayuda para el empleado")).toHaveValue("");
     await waitFor(() => expect(screen.getByLabelText("Ayuda para el empleado")).toHaveFocus());
-    expect(checks).toBe(1);
-    expect(store.calls.filter(call => call.method === "PUT" || call.method === "POST")).toHaveLength(0);
+    expect(screen.getByLabelText("Ayuda para el empleado")).toHaveValue("");
+    expect(store.writes).toHaveLength(0);
+    expect(store.definitions.get(current.id)?.revision).toBe(current.revision);
   });
   it("requires a saved draft before checking and never saves merely by opening publication", async () => {
     const store = setup("", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);

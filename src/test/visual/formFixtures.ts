@@ -10,6 +10,7 @@ import failedEnDetail from "../fixtures/forms-http/failed/detail-en.json" with {
 import failedEsStatus from "../fixtures/forms-http/failed/status-es.json" with { type: "json" };
 import failedEnStatus from "../fixtures/forms-http/failed/status-en.json" with { type: "json" };
 import { validFileCounts } from "@/features/business-forms/fileQuestions";
+import type { FormPublicationCheck } from "@/features/business-forms/api/response";
 import { administrativeName } from "@/features/business-forms/editorModel";
 import type { DraftWriteBody, FormCulture, FormDefinitionSnapshot, CanonicalQuestion, FormDraftSaveResult } from "@/features/business-forms/model";
 
@@ -43,6 +44,23 @@ export function wireDefinition(definition: FormDefinitionSnapshot) {
     maxLength: "maxLength" in q ? q.maxLength : null, options: q.type === "choice" && !q.source ? q.options : null,
   })) } };
 }
+// Synthetic language reports exercise the consumer; real HTTP bodies remain unchanged.
+function fixturePublicationCultures(definition: FormDefinitionSnapshot): FormPublicationCheck["cultures"] {
+  return (["es", "en"] as const).map(culture => {
+    const missing: FormPublicationCheck["issues"] = [];
+    const visit = (path: string, text: Readonly<Record<string, string | null>>, fieldId: string | null = null, choiceId: string | null = null) => {
+      if (!text[culture]?.trim()) missing.push({ channelId: null, fieldId, choiceId, path: path + "." + culture, code: "Forms.Publication.MissingTranslation", message: "Synthetic untranslated text.", limit: null, culture });
+    };
+    visit("name", definition.name); visit("draft.submitLabel", definition.draft.submitLabel);
+    definition.draft.fields.forEach((field, index) => {
+      const path = "draft.fields[" + index + "]";
+      visit(path + ".label", field.label, field.fieldId);
+      if (field.help && Object.values(field.help).some(value => !!value?.trim())) visit(path + ".help", field.help, field.fieldId);
+      if (field.type === "choice" && !field.source) field.options.forEach((option, position) => visit(path + ".options[" + position + "].label", option.label, field.fieldId, option.choiceId));
+    });
+    return { culture, isOriginal: culture === definition.draft.culture, isComplete: missing.length === 0, missing };
+  });
+}
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 export function createFormFixtureStore(culture: FormCulture = "es", scenario = "", responseBudgetRaw?: string) {
   const definitions = new Map<string, FormDefinitionSnapshot>();
@@ -72,18 +90,20 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   const ruleFixture = createRuleVisualFixtures(culture, () => definitions.get(fixtureFormId));
   const publications = new Map<string, { definitionId: string; requestId: string; operationId: string; versionId: string; versionNumber: number; draftRevision: number; state: string; acceptedAtUtc: string; recoveryPath: string }>();
   const publicationStates = new Map<string,string>();
+  const publicationCultures = new Map<string, FormCulture[]>();
   const reloadFailed = scenario === "forms-publication-failed-reload";
   const reloadReview = scenario === "forms-publication-uncertain-reload";
   const officialPreview = scenario === "forms-publication-preview";
   if (reloadFailed || reloadReview || officialPreview) {
    const d=definitions.get(fixtureFormId)!; definitions.set(d.id,{...d,prefixLocked:true});
    const requestId=guid(92);publications.set(requestId,{definitionId:d.id,requestId,operationId:guid(90),versionId:guid(91),versionNumber:1,draftRevision:1,state:"Accepted",acceptedAtUtc:audit.createdAtUtc,recoveryPath:"/api/forms/definitions/"+d.id+"/publications/"+requestId});
+   publicationCultures.set(requestId, fixturePublicationCultures(d).filter(item => item.isComplete).map(item => item.culture));
    publicationStates.set(requestId,reloadFailed?"Failed":reloadReview?"Uncertain":"Published");
   }
   function overview(id:string) {
    const operation=[...publications.values()].filter(p=>p.definitionId===id).at(-1);
    const state=operation?publicationStates.get(operation.requestId)??operation.state:"Draft";
-   const activeVersion=operation&&state==="Published"?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision}:null;
+   const activeVersion=operation&&state==="Published"?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision,cultures:publicationCultures.get(operation.requestId)!}:null;
    return {activeVersion,currentOperation:operation?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision,state,stage:state==="Published"?"Complete":state==="Failed"?"Upload":"Accepted",requiresReview:state==="Uncertain",canRetry:false,requestId:operation.requestId,recoveryPath:operation.recoveryPath}:null,displayState:state};
   }
   let publicationMissing = false; let publicationReads = 0;
@@ -115,10 +135,12 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       const input = await request.json() as DraftWriteBody;
       if (input.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
       const available = scenario.startsWith("forms-publication");
+      const cultures = fixturePublicationCultures(definition);
+      const complete = cultures.filter(item => item.isComplete).map(item => item.culture);
       return json({ definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: [...publications.values()].filter(p => p.definitionId === definition.id).length + 1, compatibility: "LocallyValidated",
-        canAccept: available, acceptanceAvailability: available ? "Available" : "Unavailable", channels: [], issues: [],
+        canAccept: available, acceptanceAvailability: available ? "Available" : "Unavailable", cultures, channels: [{ channelId: "phone", profileRevision: "fixture-v1", compatibility: "LocallyValidated", externalEvidence: "Pending", cultures: complete }], issues: [],
         checkToken: available ? "fixture-publication-ticket" : null, checkExpiresAtUtc: available ? "2099-10-10T16:00:00Z" : null,
-        diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [] } });
+        diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [], addedCultures: complete, removedCultures: [] } });
     }
     if (request.method === "POST" && path.endsWith("/publications")) {
       const definition = definitions.get(path.split("/").at(-2)!);
@@ -130,6 +152,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
         versionNumber: 1, draftRevision: definition.revision, state: "Accepted", acceptedAtUtc: audit.createdAtUtc,
         recoveryPath: "/api/forms/definitions/" + definition.id + "/publications/" + input.requestId };
       publications.set(input.requestId, result);
+      publicationCultures.set(input.requestId, fixturePublicationCultures(definition).filter(item => item.isComplete).map(item => item.culture));
       definitions.set(definition.id, { ...definition, prefixLocked: true });
       if (scenario === "forms-publication-uncertain") return json({ code: "General.Unexpected", traceId: "publication-fixture" }, 500);
       return json(result, 202);
@@ -142,7 +165,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       publicationReads++;
       const state=scenario === "forms-publication-progress" ? publicationReads > 1 ? "Published" : "Publishing" : publicationStates.get(publication.requestId) ?? "Accepted";
       publicationStates.set(publication.requestId,state);
-      return json({ ...identity, state,
+      return json({ ...identity, state, cultures: publicationCultures.get(publication.requestId)!,
         stage: state === "Uncertain" ? "Validate" : scenario === "forms-publication-progress" ? publicationReads > 1 ? "Complete" : "Validate" : "Accepted",
         updatedAtUtc: audit.createdAtUtc, nextCheckAtUtc: null, canRetry: false, requiresReview: state === "Uncertain", issues: reloadFailed ? Array.from({length:6},()=>({channelId:"WhatsApp",fieldId:null,choiceId:null,path:"channel",code:"WhatsApp.Flow.ValidationFailed",message:culture==="es"?"WhatsApp rechazó la validación del formulario.":"WhatsApp rejected the form validation.",limit:null,culture:"en"})) : [] });
     }

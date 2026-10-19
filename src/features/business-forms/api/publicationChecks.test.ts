@@ -11,8 +11,8 @@ const value = openDraftSession({ actorId: "actor", editorId: "check" }, definiti
 const body = { ...value, expectedRevision: definition.revision };
 const checked = { definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: 1, compatibility: "Blocked", canAccept: false,
   acceptanceAvailability: "Unavailable", checkToken: null, checkExpiresAtUtc: null, channels: [], issues: [{ channelId: null, fieldId: definition.draft.fields[0]!.fieldId, choiceId: null,
-    path: "draft.fields[0].help.en", code: "Forms.Publication.MissingTranslation", message: "Completá el inglés.", limit: null, culture: "en" }],
-  diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [] } };
+    path: "draft.fields[0].help.es", code: "Forms.Publication.MissingTranslation", message: "Completá el original.", limit: null, culture: "es" }],
+  cultures: [{ culture: "es" as const, isOriginal: true, isComplete: false, missing: [] }, { culture: "en" as const, isOriginal: false, isComplete: true, missing: [] }], diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [], addedCultures: [], removedCultures: [] } };
 afterEach(resetHttpClient);
 describe("publication checks", () => {
   it("checks only the saved localized body without a draft UUID or external effects", async () => {
@@ -23,7 +23,7 @@ describe("publication checks", () => {
     const result = await checkFormPublication(definition.id, body);
     expect(received).toEqual({ name: body.name, prefix: body.prefix, draft: body.draft, expectedRevision: body.expectedRevision });
     expect(received).not.toHaveProperty("requestId");
-    expect(result.issues[0]).toMatchObject({ fieldId: definition.draft.fields[0]!.fieldId, culture: "en" });
+    expect(result.issues[0]).toMatchObject({ fieldId: definition.draft.fields[0]!.fieldId, culture: "es" });
     expect(result.canAccept).toBe(false);
   });
   it.each([{ draftRevision: 2 }, { definitionId: "01990000-0000-7000-8000-000000000099" },
@@ -73,4 +73,23 @@ it("excludes the live offer instruction from the closed publication check body",
   await checkFormPublication(definition.id, { ...body, offerWhen: "Cuando visita a un cliente" });
   expect(received).not.toHaveProperty("offerWhen");
   expect(received).toMatchObject({ name: body.name, prefix: body.prefix, draft: body.draft, expectedRevision: body.expectedRevision });
+});
+
+it("allows an incomplete secondary culture while preserving its missing texts outside blocking issues", async () => {
+  const missing = checked.issues.map(issue => ({ ...issue, path: "draft.fields[0].help.en", culture: "en" }));
+  const cultures = [{ culture: "es", isOriginal: true, isComplete: true, missing: [] }, { culture: "en", isOriginal: false, isComplete: false, missing }];
+  const diff = { ...checked.diff, addedCultures: ["es"], removedCultures: [] };
+  server.use(http.post("/api/forms/definitions/:id/publication-checks", () => HttpResponse.json({ ...checked, cultures, diff,
+    compatibility: "LocallyValidated", canAccept: true, acceptanceAvailability: "Available", issues: [], checkToken: "private-ticket", checkExpiresAtUtc: "2099-10-10T16:00:00Z",
+    channels: [{ channelId: "WhatsApp", profileRevision: "1", compatibility: "LocallyValidated", externalEvidence: "Pending", cultures: ["es"] }] })));
+  expect(await checkFormPublication(definition.id, body)).toMatchObject({ canAccept: true, issues: [], cultures, diff });
+});
+
+it.each([{ cultures: undefined }, { diff: { ...checked.diff, addedCultures: undefined } }, { diff: { ...checked.diff, removedCultures: undefined } }])("rejects a check without the required language report or diff", async change => {
+  server.use(http.post("/api/forms/definitions/:id/publication-checks", () => HttpResponse.json({ ...checked, ...change })));
+  await expect(checkFormPublication(definition.id, body)).rejects.toThrow("Unsupported form response.");
+});
+it("rejects optional missing texts that belong to another snapshot", async () => {
+  server.use(http.post("/api/forms/definitions/:id/publication-checks", () => HttpResponse.json({ ...checked, cultures: [{ culture: "en", isOriginal: false, isComplete: false, missing: [{ ...checked.issues[0]!, fieldId: "01990000-0000-7000-8000-000000000099" }] }] })));
+  await expect(checkFormPublication(definition.id, body)).rejects.toThrow("Unsupported form response.");
 });

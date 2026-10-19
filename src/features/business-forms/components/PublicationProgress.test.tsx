@@ -1,10 +1,41 @@
+import { notify } from "@/shared/ui/notifications";
 import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { useFormPublication } from "../hooks/useFormPublication";
 import { PublicationProgress } from "./PublicationProgress";
+vi.mock("@/shared/ui/notifications", () => ({ notify: vi.fn(), dismissNotification: vi.fn() }));
 const reviewHint="Esta publicación necesita revisión. No inicies otra para intentar resolverla.";
-function session(state:"Uncertain"|"Publishing"):ReturnType<typeof useFormPublication>{return {phase:"Accepted",receipt:null,status:{requestId:"request",operationId:"operation",definitionId:"definition",versionId:"version",versionNumber:2,draftRevision:3,acceptedAtUtc:"2026-10-10T12:00:00Z",state,stage:"Validate",updatedAtUtc:"2026-10-10T12:00:00Z",nextCheckAtUtc:null,canRetry:false,requiresReview:true,issues:[]},error:null,busy:false,aggregate:null,canReplay:false,confirmed:true,accept:vi.fn(),consult:vi.fn(),replay:vi.fn(),resetRejected:vi.fn(),resume:vi.fn()};}
+function session(state:"Uncertain"|"Publishing"):ReturnType<typeof useFormPublication>{return {phase:"Accepted",receipt:null,status:{requestId:"request",operationId:"operation",definitionId:"definition",versionId:"version",versionNumber:2,draftRevision:3,acceptedAtUtc:"2026-10-10T12:00:00Z",state,stage:"Validate",updatedAtUtc:"2026-10-10T12:00:00Z",nextCheckAtUtc:null,canRetry:false,requiresReview:true,issues:[],cultures:["es","en"]},error:null,busy:false,aggregate:null,canReplay:false,confirmed:true,startedHere:false,accept:vi.fn(),consult:vi.fn(),replay:vi.fn(),resetRejected:vi.fn(),resume:vi.fn()};}
 it("shows one review warning for an uncertain confirmed publication and preserves consultation without replay",async()=>{const publication=session("Uncertain");const onReplay=vi.fn();await act(async()=>{renderWithProviders(<PublicationProgress publication={publication} feedbackId="uncertain-review" onReplay={onReplay} />);});expect(screen.getAllByText(reviewHint)).toHaveLength(1);expect(screen.getByText("Aceptada")).toBeInTheDocument();expect(screen.getByText("Pendiente de confirmación de WhatsApp")).toBeInTheDocument();await userEvent.click(screen.getByRole("button",{name:"Consultar publicación"}));expect(publication.consult).toHaveBeenCalledOnce();expect(screen.queryByRole("button",{name:"Repetir el mismo pedido"})).not.toBeInTheDocument();expect(onReplay).not.toHaveBeenCalled();});
 it("retains the separate review warning when the main status describes another publication state",async()=>{await act(async()=>{renderWithProviders(<PublicationProgress publication={session("Publishing")} feedbackId="publishing-review" onReplay={vi.fn()} />);});expect(screen.getAllByText(reviewHint)).toHaveLength(1);});
+
+it("announces a newly published operation once with its captured languages", async () => {
+  const original = session("Publishing");
+  const status = { ...original.status!, state: "Published" as const, requiresReview: false, cultures: ["es" as const] };
+  const receipt = { ...status, state: "Accepted" as const, recoveryPath: "/api/forms/definitions/definition/publications/request" };
+  const publication = { ...original, status, receipt, startedHere: true };
+  const view = renderWithProviders(<PublicationProgress publication={publication} feedbackId="published-language" onReplay={vi.fn()} />);
+  await act(async () => {});
+  expect(screen.getByRole("status")).toHaveTextContent("Publicamos la versión 2, en español.");
+  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Publicamos la versión 2, en español." }));
+  vi.mocked(notify).mockClear();
+  view.rerender(<PublicationProgress publication={{ ...publication }} feedbackId="published-language" onReplay={vi.fn()} />);
+  expect(notify).not.toHaveBeenCalled();
+});
+it("does not announce an existing published version while opening the editor", async () => {
+  vi.mocked(notify).mockClear();
+  const original = session("Publishing");
+  renderWithProviders(<PublicationProgress publication={{ ...original, status: { ...original.status!, state: "Published", requiresReview: false } }} feedbackId="existing-published" onReplay={vi.fn()} />);
+  await act(async () => {});
+  expect(notify).not.toHaveBeenCalled();
+});
+
+it("announces a local publication confirmed by GET after the acceptance response was lost", async () => {
+  vi.mocked(notify).mockClear();
+  const original = session("Publishing");
+  renderWithProviders(<PublicationProgress publication={{ ...original, startedHere: true, receipt: null, status: { ...original.status!, state: "Published", requiresReview: false, cultures: ["en"] } }} feedbackId="recovered-publication" onReplay={vi.fn()} />);
+  await act(async () => {});
+  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Publicamos la versión 2, en inglés." }));
+});

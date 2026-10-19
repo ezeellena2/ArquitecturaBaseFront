@@ -115,5 +115,5 @@ export function useFormPublication(scope: FormReadScope) {
   }, [owns, session.phase, session.busy, session.error, session.status?.state, session.status?.nextCheckAtUtc, session.receipt?.state, consult]);
   const visible = owns ? session : empty();
   return { phase: visible.phase, receipt: visible.receipt, status: visible.status, error: visible.error, busy: visible.busy,
-    aggregate: visible.reference, canReplay: visible.canReplay, confirmed: visible.receipt !== null || visible.status !== null || visible.reference !== null, accept, consult, replay, resetRejected, resume };
+    aggregate: visible.reference, startedHere: visible.attempt !== null, canReplay: visible.canReplay, confirmed: visible.receipt !== null || visible.status !== null || visible.reference !== null, accept, consult, replay, resetRejected, resume };
 }
