@@ -28,7 +28,10 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     const incomplete = state === "original" || state === "remove";
     await expect(dialog.getByText(incomplete ? es ? "En WhatsApp, en español" : "On WhatsApp, in Spanish" : es ? "En WhatsApp, en español y en inglés" : "On WhatsApp, in Spanish and English", { exact: true })).toBeVisible();
     if (incomplete) {
-      await expect(dialog.getByText(es ? "El inglés no se publica." : "English is not published.", { exact: true })).toBeVisible();
+      if (state === "original") await expect(dialog.getByText(es ? "El inglés no se publica." : "English is not published.", { exact: true })).toBeVisible();
+      else await expect(dialog.getByText(es ? "El inglés no se publica." : "English is not published.", { exact: true })).toHaveCount(0);
+      await expect(dialog.getByRole("status")).toHaveCount(1);
+      await expect(dialog.getByRole("status").getByRole("listitem")).toHaveCount(3);
       await expect(dialog.getByRole("button", { name: es ? "Completar el inglés" : "Complete English", exact: true })).toBeEnabled();
     }
     if (state === "add") await expect(dialog.getByText(es ? "Se suma el inglés." : "English is added.", { exact: true })).toBeVisible();

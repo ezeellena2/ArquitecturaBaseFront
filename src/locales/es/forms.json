@@ -228,6 +228,8 @@
     "cultureNotPublished": "El {{language}} no se publica.",
     "optionalMissing_one": "Le falta {{count}} texto. Podés publicar igual y sumarlo en otra versión.",
     "optionalMissing_other": "Le faltan {{count}} textos. Podés publicar igual y sumarlo en otra versión.",
+    "moreMissing_one": "y {{count}} más",
+    "moreMissing_other": "y {{count}} más",
     "completeCulture": "Completar el {{language}}",
     "missingQuestion": "{{name}} · la pregunta",
     "missingHelp": "{{name}} · la ayuda",

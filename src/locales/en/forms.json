@@ -228,6 +228,8 @@
     "cultureNotPublished": "{{language}} is not published.",
     "optionalMissing_one": "{{count}} text is untranslated. You can publish now and add it in another version.",
     "optionalMissing_other": "{{count}} texts are untranslated. You can publish now and add it in another version.",
+    "moreMissing_one": "and {{count}} more",
+    "moreMissing_other": "and {{count}} more",
     "completeCulture": "Complete {{language}}",
     "missingQuestion": "{{name}} · question",
     "missingHelp": "{{name}} · help",
