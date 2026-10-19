@@ -2,17 +2,18 @@ import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, expect, it, vi } from "vitest";
+import i18n from "@/shared/i18n";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { ChatAudio } from "../api/audio";
 import { buildTimeline } from "../lib/timeline";
 import { ChatTimeline } from "./ChatTimeline";
 const base = { audio: null, id: "audio-1", direction: "Inbound" as const, kind: "Audio", body: null as string | null, occurredAtUtc: "2026-10-17T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null, origin: "Conversation" as const, assistant: null, quickReplies: null };
-function view(state: ChatAudio["state"] = "Pending", canPlay = true, body: string | null = null, owner = "actor-a", denied = vi.fn()) {
- const message = { ...base, audio: { state, canPlay }, body };
+function view(state: ChatAudio["state"] = "Pending", canPlay = true, body: string | null = null, owner = "actor-a", denied = vi.fn(), reasonCode?: "tooLarge" | null) {
+ const message = { ...base, audio: { state, canPlay, ...(reasonCode === undefined ? {} : { reasonCode }) }, body };
  return <ChatTimeline items={buildTimeline([message], [])} contactId="chat-1" readOwner={owner} onAudioForbidden={denied} actor="actor-a" canSend={false} canReuse={false} reviewing={false} onReview={vi.fn()} onReuse={vi.fn()} atBottom onAtBottomChange={vi.fn()} hasOlder={false} loadingOlder={false} historyError={false} loadOlder={vi.fn()}/>;
 }
-afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+afterEach(async () => { vi.unstubAllGlobals(); vi.restoreAllMocks(); await act(async () => { await i18n.changeLanguage("es"); }); });
 it("lets a read-only operator listen while transcription is pending without loading bytes on render", async () => {
  let reads = 0; server.use(http.get("/api/whatsapp/chats/chat-1/messages/audio-1/audio", () => { reads++; return new HttpResponse("OggS", { headers: { "content-type": "audio/ogg" } }); }));
  renderWithProviders(view());
@@ -71,3 +72,24 @@ it("keeps a stored audio playable when transcription is unavailable", async () =
  expect(screen.getByRole("button", { name: "Escuchar audio" })).toBeEnabled();
  expect(screen.getByText("No pudimos pasar este audio a texto. Escuchalo: el asistente no lo va a responder.")).toBeVisible();
 });
+
+for (const language of ["es", "en"] as const) {
+  it("explains an oversized transcript in " + language + " while retaining authorized listening and retiring expired text", async () => {
+    await act(async () => { await i18n.changeLanguage(language); });
+    const text = language === "es" ? "El audio es demasiado grande para pasarlo a texto." : "The audio is too large to transcribe.";
+    const listen = language === "es" ? "Escuchar audio" : "Listen to audio";
+    let rendered!: ReturnType<typeof renderWithProviders>;
+    await act(async () => { rendered = renderWithProviders(view("Unavailable", true, null, "actor-a", vi.fn(), "tooLarge")); });
+    expect(screen.getByText(text)).toBeVisible();
+    expect(screen.getByRole("button", { name: listen })).toBeEnabled();
+    expect(screen.queryByText(/tooLarge|Files\.Content/)).not.toBeInTheDocument();
+    rendered.rerender(view("Unavailable", false, null, "actor-a", vi.fn(), "tooLarge"));
+    expect(screen.getByText(text)).toBeVisible();
+    expect(screen.queryByRole("button", { name: listen })).not.toBeInTheDocument();
+    rendered.rerender(view("Expired", false, "PRIVATE expired transcript", "actor-a", vi.fn(), "tooLarge"));
+    expect(screen.queryByText(text)).not.toBeInTheDocument();
+    expect(screen.queryByText("PRIVATE expired transcript")).not.toBeInTheDocument();
+    expect(screen.getByText(language === "es" ? "El audio y su transcripción ya no están disponibles." : "The audio and its transcription are no longer available.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: listen })).not.toBeInTheDocument();
+  });
+}

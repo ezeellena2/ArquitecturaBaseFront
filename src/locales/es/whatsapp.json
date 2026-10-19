@@ -234,6 +234,7 @@
     "expired": "El audio y su transcripción ya no están disponibles.",
     "unavailable": "El audio no está disponible.",
     "failed": "No pudimos pasar este audio a texto. Escuchalo: el asistente no lo va a responder.",
+    "tooLarge": "El audio es demasiado grande para pasarlo a texto.",
     "noTranscript": "No hay una transcripción disponible.",
     "waiting_one": "Esperá {{count}} segundo para volver a escuchar.",
     "waiting_other": "Esperá {{count}} segundos para volver a escuchar."

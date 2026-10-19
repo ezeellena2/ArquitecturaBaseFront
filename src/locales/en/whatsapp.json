@@ -234,6 +234,7 @@
     "expired": "The audio and its transcription are no longer available.",
     "unavailable": "The audio is unavailable.",
     "failed": "We could not transcribe this audio. Listen to it: the assistant will not respond.",
+    "tooLarge": "The audio is too large to transcribe.",
     "noTranscript": "No transcription is available.",
     "waiting_one": "Wait {{count}} second before listening again.",
     "waiting_other": "Wait {{count}} seconds before listening again."

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
-export const chatAudioSchema = z.strictObject({ state: z.enum(["Pending", "Transcribing", "Completed", "Failed", "Uncertain", "Unavailable", "Expired"]), canPlay: z.boolean() });
+export const chatAudioSchema = z.strictObject({ state: z.enum(["Pending", "Transcribing", "Completed", "Failed", "Uncertain", "Unavailable", "Expired"]), canPlay: z.boolean(), reasonCode: z.literal("tooLarge").nullable().optional() });
 export type ChatAudio = z.infer<typeof chatAudioSchema>;
 const path = (contactId: string, messageId: string) => "/api/whatsapp/chats/" + encodeURIComponent(contactId) + "/messages/" + encodeURIComponent(messageId);
 export async function requestAudioTranscription(contactId: string, messageId: string, signal: AbortSignal) {
