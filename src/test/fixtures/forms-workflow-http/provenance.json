@@ -1,166 +1,4 @@
 {
-  "captures": [
-    {
-      "sha256": "c03fe9c5ca5d785dab9d070064ca643681b2a39e2fa74f2fe473c256f7933683",
-      "name": "approval-approved-d2-es.json",
-      "length": 1197
-    },
-    {
-      "sha256": "bf26fb701c0f0ec131bef17ec8233459abf2c9a8dc12d9546409a5de19ec0872",
-      "name": "approval-failed-without-task-d2-es.json",
-      "length": 574
-    },
-    {
-      "sha256": "5d618a939f67be6b94e81390370b66d123642bc253747bde4500e039681dfa27",
-      "name": "approval-pending-d2-approved-es.json",
-      "length": 760
-    },
-    {
-      "sha256": "08c7ebe4057c0c0b1e8bfbb7dc34294bb2a6702668c1545cc672dfc59132710d",
-      "name": "approval-pending-d2-rejected-es.json",
-      "length": 760
-    },
-    {
-      "sha256": "8217091716f69d2a0c39fa17eee432a7afb6d1c3a0ec86abfa55064bc21a4a65",
-      "name": "approval-rejected-d2-es.json",
-      "length": 1216
-    },
-    {
-      "sha256": "25cc7ccdc71f416c481f15b0eb22e23bd821bcad8c19df4b50e9a87d467c0e13",
-      "name": "completed-en.json",
-      "length": 772
-    },
-    {
-      "sha256": "c98dfabfefe5973c39c631d530c21abdb74e5c9cfb1411beecdfd4f9ad60b2e8",
-      "name": "consult-es.json",
-      "length": 852
-    },
-    {
-      "sha256": "d556e7460872a15b13c9f9f2e96d1cd87c8a5471d10cb04f83b1a628a057a27e",
-      "name": "control-forbidden-es.json",
-      "length": 249
-    },
-    {
-      "sha256": "8b70c84cb057dfd38998d109de7ae604c249d68064f684c84e04e86771f4be44",
-      "name": "e2e-approved-notice-fallback-es.json",
-      "length": 2589
-    },
-    {
-      "sha256": "64d852614ca3d95718159dbf214263f5061d702d0c1977f73137cd1570c5e254",
-      "name": "e2e-catalog-fallback-es.json",
-      "length": 2589
-    },
-    {
-      "sha256": "363e1611ce52b2a8c7e3983ee2ee87c6ade5cce6b97c97c46054bb0b60fa1924",
-      "name": "e2e-english-en.json",
-      "length": 2745
-    },
-    {
-      "sha256": "f4207c1677b8f19ef647b7e82e7ed29d14951ed1c3af950786a7bf8a817a7691",
-      "name": "e2e-footer-fallback-es.json",
-      "length": 2589
-    },
-    {
-      "sha256": "980cb16bab813127eb1da213021e5e4dc8e67d1da13d456b82bf62195846afbb",
-      "name": "failed-en.json",
-      "length": 852
-    },
-    {
-      "sha256": "8e78856ed5d1b0c53d597ff21fcb33ab564799cdd8ec099b92f0d60f2d580dee",
-      "name": "failed-es.json",
-      "length": 877
-    },
-    {
-      "sha256": "e39a84364e8f85eee2ba1bc4fa3cd1c141d453caa7b3080b6ce5734293adcbdd",
-      "name": "not-applicable-es.json",
-      "length": 514
-    },
-    {
-      "sha256": "9eb198ce1c1d57a9cf641eb546104bdba6d68c4bdb53a02146938e7865118020",
-      "name": "pdf-completed-es.json",
-      "length": 1397
-    },
-    {
-      "sha256": "9236187c9680381c0c74ac81d499c960cd78c90bfbd0630062048aff78192010",
-      "name": "read-forbidden-es.json",
-      "length": 249
-    },
-    {
-      "sha256": "0c2f747df2f614a4e320f9ac4372a9876708e5fcba6275791f66c4294b739021",
-      "name": "retry-en.json",
-      "length": 750
-    },
-    {
-      "sha256": "b7fe5bc28f023f256b693ca4d3bf0ea7be8e4de3ed9161aaf880a4de2b68cfdf",
-      "name": "review-completed-es.json",
-      "length": 905
-    },
-    {
-      "sha256": "9025a0cfb440fa6b55ef8f6449d0066a8facb78bd37dce56d3a52253965eb0fd",
-      "name": "review-failed-es.json",
-      "length": 1096
-    },
-    {
-      "sha256": "5fba7c0463a6706991ece20c24c35d85d104cc5fe70025062badc32d21a55578",
-      "name": "review-not-sent-es.json",
-      "length": 986
-    },
-    {
-      "sha256": "2b55658d1d739eea4906fc9b2e7d8cfa34e95a4b21656181e10f51b3b587c700",
-      "name": "review-sent-es.json",
-      "length": 985
-    },
-    {
-      "sha256": "db411266b1818b690976fc5786579c309a288d6ed77d790e6dad5b1f59b1910e",
-      "name": "role-completed-en.json",
-      "length": 1384
-    },
-    {
-      "sha256": "13b49f9c4f6097da644c3efaa6f5d5f7ccdc454b495ff8524acf0b4bdc6ebfc9",
-      "name": "role-completed-es.json",
-      "length": 1396
-    },
-    {
-      "sha256": "5977472e49abaffd2c37520ab5f18f8118295931d386f682db46e95e6843a662",
-      "name": "role-delivered-read-en.json",
-      "length": 940
-    },
-    {
-      "sha256": "5977472e49abaffd2c37520ab5f18f8118295931d386f682db46e95e6843a662",
-      "name": "role-delivered-read-es.json",
-      "length": 940
-    },
-    {
-      "sha256": "57cd1b7c55e4c1a3a37001e4e9961f54035e4e4b367aedb85f1f01b90bdb9534",
-      "name": "role-late-accepted-read-only-en.json",
-      "length": 922
-    },
-    {
-      "sha256": "57cd1b7c55e4c1a3a37001e4e9961f54035e4e4b367aedb85f1f01b90bdb9534",
-      "name": "role-late-accepted-read-only-es.json",
-      "length": 922
-    },
-    {
-      "sha256": "ae09f7712493d424e7c2cd9c669b8e0ca88eed70edc765561e42c3e03209d562",
-      "name": "role-uncertain-es.json",
-      "length": 1125
-    },
-    {
-      "sha256": "23e268781d0d0cf343b24a3174d4b51a3819f7bccc44f2f4da5b26fb614eacaa",
-      "name": "running-es.json",
-      "length": 861
-    },
-    {
-      "sha256": "e78a17e2d969114e04cab493f227ea5bae25630d1151a6d6647a937e882ea41a",
-      "name": "uncertain-es.json",
-      "length": 864
-    },
-    {
-      "sha256": "972143bc5c3b54ecdf6cc86d281aacf79491f3518b920303982a7a6208a7bf1a",
-      "name": "waiting-es.json",
-      "length": 490
-    }
-  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormWorkflowHttpTests.cs",
@@ -180,11 +18,11 @@
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormWorkflowEndToEndHttpTests.cs",
-      "sha256": "459f8aea1867680e3a85a099a556816b96d2aa2c636fa92e1d7031f875951385"
+      "sha256": "c0468d675e6206186201072e90056999a31cacbd377bcd863ebe4cffaf7b5c3d"
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseHttpTests.cs",
-      "sha256": "441c6f97de55d4902228a253329197cfeb661ef7c6812e965727b75f213e2257"
+      "sha256": "6f1224ac237187b6d7fb1f6b7027ed709c75c30b3277c6621ee2600e450fc6f3"
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRecordCaptureIntegrationTests.cs",
@@ -211,13 +49,175 @@
       "sha256": "44848ef90915e3281eee2e0a2536534223dc4ec450bdf0c82ab05be432b2a9fb"
     }
   ],
-  "generatedAtUtc": "2026-10-19T11:50:45.8815799Z",
-  "repositoryHead": "e3a7432b575dfafbc9ced969ed8a010ff3394db4",
-  "schemaVersion": 1,
+  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
   "sourceState": [],
+  "captures": [
+    {
+      "length": 1197,
+      "name": "approval-approved-d2-es.json",
+      "sha256": "a037617d0925617f6fa7b455dffbcfc75b433ea1d9d9e534e64c739fdeb4fc79"
+    },
+    {
+      "length": 574,
+      "name": "approval-failed-without-task-d2-es.json",
+      "sha256": "1311480560f8e1b07433dd42a99ad5020dbe5489bfe9e6a1b7ae4d1183ab1e41"
+    },
+    {
+      "length": 760,
+      "name": "approval-pending-d2-approved-es.json",
+      "sha256": "5aae630d4ea9282c0350923a7d62b113dbaf5717405b655dbe697773f112e114"
+    },
+    {
+      "length": 760,
+      "name": "approval-pending-d2-rejected-es.json",
+      "sha256": "2711d1cb0eb459ffbb45313cb3ff2eb08644eebde65437d88ceb256a06b8c8d0"
+    },
+    {
+      "length": 1216,
+      "name": "approval-rejected-d2-es.json",
+      "sha256": "b7286f7093c6717cbf24c37f9d089f9dc7c253e1093902df31fd3e957a905a26"
+    },
+    {
+      "length": 772,
+      "name": "completed-en.json",
+      "sha256": "38ff02235a4f29a098b185eac79570c56a12f479a8a4f9fc4e475d57173fce2c"
+    },
+    {
+      "length": 852,
+      "name": "consult-es.json",
+      "sha256": "e10463be2da1a29c0bf032a2c2b596a5ca49b5ad42c5ecaa6fffb82fea05a7a3"
+    },
+    {
+      "length": 249,
+      "name": "control-forbidden-es.json",
+      "sha256": "a82c63dc5c345b556e6d1b232224bbf36afe9401938990afce9681b5b42d61c3"
+    },
+    {
+      "length": 2589,
+      "name": "e2e-approved-notice-fallback-es.json",
+      "sha256": "3ccb8f8ca6dbd9782e00e003283054558386d48916fb69d36fcaa9b70c316d32"
+    },
+    {
+      "length": 2745,
+      "name": "e2e-catalog-original-item-en.json",
+      "sha256": "be553a8ecf53c2d76c0fe82a86477b38f3dbfc4e72ff8b8da0a4839b9a038782"
+    },
+    {
+      "length": 2745,
+      "name": "e2e-english-en.json",
+      "sha256": "0f251c78324e13641346ab45b32539b969d135026612e3da82fa46b5c8a74d94"
+    },
+    {
+      "length": 2589,
+      "name": "e2e-footer-fallback-es.json",
+      "sha256": "e2f77bd29e9a1810df2f2beb42942c88935c9f3292e3b4cb22f8b6724bdd0677"
+    },
+    {
+      "length": 852,
+      "name": "failed-en.json",
+      "sha256": "3457955706613eeabf1b20d65d7474b69df0c5669379e6b880f6f2f9d30dd7b7"
+    },
+    {
+      "length": 877,
+      "name": "failed-es.json",
+      "sha256": "1165acd54a3061df956f98028ab7402f474de323fa604eb7724882de2811b493"
+    },
+    {
+      "length": 514,
+      "name": "not-applicable-es.json",
+      "sha256": "040c2f41a2a087d6cae9b2218bd3ea44a1d14eb88e53991ee3374940275856f1"
+    },
+    {
+      "length": 1397,
+      "name": "pdf-completed-es.json",
+      "sha256": "a6d8d54532f4be371e0e8f0e0f938331fe4e11fee51a887f97efcd72d797b220"
+    },
+    {
+      "length": 249,
+      "name": "read-forbidden-es.json",
+      "sha256": "aad5316fe30542c55d3e18c0a9816b57f787d4f904c9ec5da67166c344f00081"
+    },
+    {
+      "length": 750,
+      "name": "retry-en.json",
+      "sha256": "3a7b8e2a63a0113095b64e5692cf786e748fc3421e4dc70949232a37c03aae7d"
+    },
+    {
+      "length": 905,
+      "name": "review-completed-es.json",
+      "sha256": "915f26b4f2e0c11d7ac6f31e70901342ce192540f663c10cf875a3995e42f147"
+    },
+    {
+      "length": 1096,
+      "name": "review-failed-es.json",
+      "sha256": "4190096f1d60cccbba5dea3e02611359ed6c5832fcadfc6c1bbfa04e1f09a2b5"
+    },
+    {
+      "length": 986,
+      "name": "review-not-sent-es.json",
+      "sha256": "b78326b46126e9476183a6023923da0bdbac1f61196566fb04ced5debb6dc03e"
+    },
+    {
+      "length": 985,
+      "name": "review-sent-es.json",
+      "sha256": "d9b2b22282608bf9bf2636daf000d22b1dbdef0f256b3556bfc6e4314527f4f7"
+    },
+    {
+      "length": 1384,
+      "name": "role-completed-en.json",
+      "sha256": "acb50a27472071fad86a9a622dae18c11ce561439bc25871f2faa804a7306ed0"
+    },
+    {
+      "length": 1396,
+      "name": "role-completed-es.json",
+      "sha256": "9db34d2fa865db585b4d28857136d00d5b596b7b3bf9bd751d5d564265d4fb2a"
+    },
+    {
+      "length": 940,
+      "name": "role-delivered-read-en.json",
+      "sha256": "f6dd162e9e375776d9bcbeed0ea292766293a3efe04baa48868c4fe223eea02e"
+    },
+    {
+      "length": 940,
+      "name": "role-delivered-read-es.json",
+      "sha256": "f6dd162e9e375776d9bcbeed0ea292766293a3efe04baa48868c4fe223eea02e"
+    },
+    {
+      "length": 922,
+      "name": "role-late-accepted-read-only-en.json",
+      "sha256": "d25c89d0164705da5097d3de2d318d82192c54b7fc67d1639580bc10f826ea68"
+    },
+    {
+      "length": 922,
+      "name": "role-late-accepted-read-only-es.json",
+      "sha256": "d25c89d0164705da5097d3de2d318d82192c54b7fc67d1639580bc10f826ea68"
+    },
+    {
+      "length": 1125,
+      "name": "role-uncertain-es.json",
+      "sha256": "51e1447c97e9c659b9e89bb84129d68cc193aa1d520701a89237e1b30c744d28"
+    },
+    {
+      "length": 861,
+      "name": "running-es.json",
+      "sha256": "2bcc45d26f848441cb29ba674073c820db557e6ac3c068fc25ac7decb68ff57a"
+    },
+    {
+      "length": 864,
+      "name": "uncertain-es.json",
+      "sha256": "f5fda5057d1b506270dc30cfce21a76fccfdab2a88fef414279cb7373305e871"
+    },
+    {
+      "length": 490,
+      "name": "waiting-es.json",
+      "sha256": "41d43133e79d76693c795b3627e81ca7d9c3e55fb4970970bb25a58055955fa7"
+    }
+  ],
+  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
   "producer": "FormWorkflowHttpTests and FormDetailMomentsHttpTests and FormApprovalHttpTests and FormPdfHttpTests and FormWorkflowEndToEndHttpTests and FormResponseHttpTests and FormRecordCaptureIntegrationTests and FormActionRecoveryIntegrationTests and FormDraftDurabilityTests and FormPdfRendererFixture and CapturingFormActionChannel and FormWorkflowContractCapture",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "artifactSet": "workflow",
-  "runId": "20261019-112021-b94ec0bcd0494ec9802d597e40ba68a2",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

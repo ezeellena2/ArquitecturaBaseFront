@@ -1,59 +1,59 @@
 {
-  "captures": [
-    {
-      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
-      "name": "create-request.json",
-      "length": 273
-    },
-    {
-      "sha256": "468bf189f3b16a07ac226d9b24f38128b71dac41f7a6845602a773ca6276d7f5",
-      "name": "created.json",
-      "length": 511
-    },
-    {
-      "sha256": "a9b2c83318bafa0c2a3dc65ae0a699d1d6bda15c1eb74f9c2cf85b71591c7abd",
-      "name": "detail.json",
-      "length": 482
-    },
-    {
-      "sha256": "f4a164030a1a84da79f68fbd05d34bcc16b7e9ee7d850f7271317e682c5d0f74",
-      "name": "options.json",
-      "length": 41285
-    },
-    {
-      "sha256": "f0b028472c632059a3c96b4f9bddafc0e96117f8e3209655af6ff7d57246f430",
-      "name": "preview-request.json",
-      "length": 328
-    },
-    {
-      "sha256": "7e9448fcc5a5ded7de518e3c59e1066bef6c5d68207c628eec0066d71ef2f723",
-      "name": "preview.json",
-      "length": 201
-    },
-    {
-      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
-      "name": "update-request.json",
-      "length": 289
-    },
-    {
-      "sha256": "d3b662857bbebfd09faeb4e56c8dbfaded6432faaeec17ecfa65af66ab88ba9a",
-      "name": "updated.json",
-      "length": 510
-    }
-  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
       "sha256": "77f028bcb4dc764cf8187e6bb39f1d5cde4c235488b0891e673a9de5cb377fcb"
     }
   ],
-  "generatedAtUtc": "2026-10-19T11:50:45.8815799Z",
-  "repositoryHead": "e3a7432b575dfafbc9ced969ed8a010ff3394db4",
-  "schemaVersion": 1,
+  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
   "sourceState": [],
+  "captures": [
+    {
+      "length": 273,
+      "name": "create-request.json",
+      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82"
+    },
+    {
+      "length": 511,
+      "name": "created.json",
+      "sha256": "bb161ccb150e0bf196ba1e01d067b3d26529672999f7c01ac0d634031d7341ee"
+    },
+    {
+      "length": 482,
+      "name": "detail.json",
+      "sha256": "4677ce4fe4149c62e9f9f386acea0e1c84690a647f978a2e13eff8dec633b6a6"
+    },
+    {
+      "length": 40436,
+      "name": "options.json",
+      "sha256": "c9fa31005d92a6851dd06f41bff091ebe1a34a46d19aa5827670ca524a769832"
+    },
+    {
+      "length": 328,
+      "name": "preview-request.json",
+      "sha256": "34a2e3996744b01a3b611582faf12eb0e9ed9bf7b681cf4a2e52131388f842c1"
+    },
+    {
+      "length": 201,
+      "name": "preview.json",
+      "sha256": "558f0ef06dabcbcb7ce1a6a3919a72cf4859318c99d3ef09000bd39349f3c9ba"
+    },
+    {
+      "length": 289,
+      "name": "update-request.json",
+      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c"
+    },
+    {
+      "length": 510,
+      "name": "updated.json",
+      "sha256": "d5de1b32f4635e95f80e08451c52022afaa81e0fbdf761d0ce8bcd91d4e5ca69"
+    }
+  ],
+  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
   "producer": "FormCatalogFiltersEndpointsTests",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "artifactSet": "catalog-filters",
-  "runId": "20261019-112021-b94ec0bcd0494ec9802d597e40ba68a2",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

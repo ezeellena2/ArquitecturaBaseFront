@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"El catálogo cambió. Recargalo e intentá de nuevo.","traceId":"00-e723f86b844f8ae6a10a33f875c7d68d-fad471ea60276289-01","code":"Forms.Catalog.RevisionConflict"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"El catálogo cambió. Recargalo e intentá de nuevo.","traceId":"00-7b5dc93993e663f1fe2166fab24718a1-c669b9fe0bf079f2-01","code":"Forms.Catalog.RevisionConflict"}

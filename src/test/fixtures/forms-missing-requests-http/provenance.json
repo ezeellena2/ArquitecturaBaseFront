@@ -1,36 +1,4 @@
 {
-  "captures": [
-    {
-      "sha256": "074e6dd9a0d39e6bcd6159c914f1d5623930e0aada316c3f05d6ac0998d7962d",
-      "name": "conflict.json",
-      "length": 275
-    },
-    {
-      "sha256": "6e39aa2f0b2c3c6a66f318b5e1cbbc04db073254595b81643dc96d06acf644a9",
-      "name": "discarded-en.json",
-      "length": 570
-    },
-    {
-      "sha256": "02219eb7cdc81a2b162d1b5be261353582eb3f515640d8060b810f54b962f037",
-      "name": "discarded-es.json",
-      "length": 576
-    },
-    {
-      "sha256": "924226c2fe4f11c62d4e200da815306f55bac8836bc8d8a0f20d5c36c8ee6f9c",
-      "name": "forbidden.json",
-      "length": 249
-    },
-    {
-      "sha256": "aee54c459f08a459016e165a570743e8dc44cb4c8b3745fbca084d04fee6e259",
-      "name": "pending-en.json",
-      "length": 461
-    },
-    {
-      "sha256": "4df77fbd07004ba1805aa3044c412b07bcdd058e543583aeb833316f14a4413a",
-      "name": "pending-es.json",
-      "length": 467
-    }
-  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs",
@@ -45,13 +13,45 @@
       "sha256": "a8e3f9ee5e3b43894da1ea36e5cdae275c94b977b9c9ef18d013d5f42f38a84f"
     }
   ],
-  "generatedAtUtc": "2026-10-19T11:50:45.8815799Z",
-  "repositoryHead": "e3a7432b575dfafbc9ced969ed8a010ff3394db4",
-  "schemaVersion": 1,
+  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
   "sourceState": [],
+  "captures": [
+    {
+      "length": 275,
+      "name": "conflict.json",
+      "sha256": "0f8f4db9c69b1849b984f02dfd950f160d6ad669d56ce0248b4d93f2cc372d4b"
+    },
+    {
+      "length": 571,
+      "name": "discarded-en.json",
+      "sha256": "cd6e7f16818ec0ac7a2a31da67111dc1ae83ba6d0fee9ecadbb0caa058b0436a"
+    },
+    {
+      "length": 577,
+      "name": "discarded-es.json",
+      "sha256": "5f907f647cb9b85fac338730a6a97edce42f3c1da49461e5f6038f4b498f0864"
+    },
+    {
+      "length": 249,
+      "name": "forbidden.json",
+      "sha256": "15517d1e5495923f88576b9da948671647ec4b852f2a521840dee98148d816ca"
+    },
+    {
+      "length": 461,
+      "name": "pending-en.json",
+      "sha256": "2bc3d2a21d69b9700593160161e5d4764f8e4924ad97158b0e03d2b352ba5dba"
+    },
+    {
+      "length": 467,
+      "name": "pending-es.json",
+      "sha256": "fd00e7327583ffbf88f159db7e5044ccd77753000a1787c1b032d379652d224f"
+    }
+  ],
+  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
   "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "artifactSet": "missing-requests",
-  "runId": "20261019-112021-b94ec0bcd0494ec9802d597e40ba68a2",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

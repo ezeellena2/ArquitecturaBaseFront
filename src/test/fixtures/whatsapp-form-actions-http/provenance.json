@@ -1,21 +1,4 @@
 {
-  "captures": [
-    {
-      "sha256": "c4d6c04a5000fd5efb5c57c9305b7c0b4a81813021f1c1d58df5aef8beebf78d",
-      "name": "chats-form-actions.json",
-      "length": 492
-    },
-    {
-      "sha256": "418c75dc1ca874510bf9eee220d09087cfbaf6bb4e2128f359daf6c3026daaa7",
-      "name": "thread-form-actions-restricted.json",
-      "length": 1601
-    },
-    {
-      "sha256": "3dfc58d95d007b9ed1276d4b908773ce8956e2edbe13ccd8f0598925433b66d9",
-      "name": "thread-form-actions.json",
-      "length": 1759
-    }
-  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
@@ -30,13 +13,30 @@
       "sha256": "6aeafef0e7c7edf49a05170c057312550d46b2958a44f1dd1556a440c6031e6b"
     }
   ],
-  "generatedAtUtc": "2026-10-19T11:50:45.8815799Z",
-  "repositoryHead": "e3a7432b575dfafbc9ced969ed8a010ff3394db4",
-  "schemaVersion": 1,
+  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
   "sourceState": [],
+  "captures": [
+    {
+      "length": 492,
+      "name": "chats-form-actions.json",
+      "sha256": "b3bd059412d03f9a4e4659f4dd4c4a9869e6e5834ad4a1fdfcdd038fcf13b93a"
+    },
+    {
+      "length": 1602,
+      "name": "thread-form-actions-restricted.json",
+      "sha256": "58e793834c8df6110259b9f1371643c085f1d6b52a5b3e2ea9a3db1bc6962455"
+    },
+    {
+      "length": 1760,
+      "name": "thread-form-actions.json",
+      "sha256": "85de91b8e26e92cebd1298c7365f92e634e5bfc7c67f42c689546931fc1ca836"
+    }
+  ],
+  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
   "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "artifactSet": "whatsapp-actions",
-  "runId": "20261019-112021-b94ec0bcd0494ec9802d597e40ba68a2",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }
