@@ -11,7 +11,7 @@ interface BannerProps {
   /// `danger` es un error que hay que corregir: un `alert`, como cualquier error de formulario (fundamento visual,
   /// "Avisos y estados").
   tone?: Tone;
-  /// Lo que se puede hacer al respecto ("Agregar correo"). Va a la derecha, sin partirse.
+  /// Lo que se puede hacer al respecto ("Agregar correo"). Va a la derecha si cabe; debajo si el texto necesita espacio.
   action?: ReactNode;
   children: ReactNode;
 }
@@ -50,7 +50,7 @@ export function Banner({ tone = "info", action, children }: BannerProps) {
     >
       {/* El ícono va con el primer renglón del texto, no con el centro del bloque: un texto de dos renglones no lo
           deja flotando entre los dos. */}
-      <div className="flex min-w-0 flex-1 items-start gap-2.5">
+      <div className="flex min-w-0 basis-56 grow items-start gap-2.5">
         <Icon className={cn("mt-0.5 size-[18px] shrink-0", iconClass)} />
         <p className="min-w-0 text-sm leading-normal text-[var(--color-content)]">{children}</p>
       </div>

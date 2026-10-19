@@ -37,6 +37,19 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     if (state === "add") await expect(dialog.getByText(es ? "Se suma el inglés." : "English is added.", { exact: true })).toBeVisible();
     if (state === "remove") await expect(dialog.getByText(es ? "El inglés deja de publicarse." : "English will no longer be published.", { exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
+    if (incomplete) {
+      const notice = dialog.getByRole("status");
+      const copy = notice.locator("p");
+      const action = notice.getByRole("button", { name: es ? "Completar el inglés" : "Complete English", exact: true });
+      const noticeBounds = (await notice.boundingBox())!;
+      const copyBounds = (await copy.boundingBox())!;
+      const actionBounds = (await action.boundingBox())!;
+      expect(copyBounds.width).toBeGreaterThanOrEqual(noticeBounds.width * 0.6);
+      expect(actionBounds.y).toBeGreaterThanOrEqual(copyBounds.y + copyBounds.height);
+      expect(actionBounds.x).toBeGreaterThanOrEqual(noticeBounds.x);
+      expect(actionBounds.x + actionBounds.width).toBeLessThanOrEqual(noticeBounds.x + noticeBounds.width);
+      expect(await copy.evaluate(node => node.scrollWidth)).toBeLessThanOrEqual(await copy.evaluate(node => node.clientWidth));
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     const bounds = await dialog.boundingBox(); expect(bounds!.x).toBeGreaterThanOrEqual(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
     await page.screenshot({ path: "test-results/form-languages-" + state + "-" + language + "-" + width + ".png", fullPage: true });
