@@ -93,6 +93,24 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(name).toHaveValue("Register visit");
     await expect(page.getByRole("textbox", { name: es ? "Prefijo de numeración" : "Numbering prefix", exact: true })).toHaveAttribute("readonly", "");
     await expect(english).toContainText(es ? "opcional · 3 sin traducir" : "optional · 3 untranslated");
+    const languageBounds = await page.getByRole("group", { name: es ? "Textos en" : "Content language", exact: true }).evaluate(group => {
+      const bounds = group.getBoundingClientRect();
+      const container = group.parentElement!.getBoundingClientRect();
+      return { left: bounds.left, right: bounds.right, containerLeft: container.left, containerRight: container.right, options: [...group.querySelectorAll("button")].map(button => {
+        const option = button.getBoundingClientRect();
+        return { clientWidth: button.clientWidth, scrollWidth: button.scrollWidth, clientHeight: button.clientHeight, scrollHeight: button.scrollHeight, left: option.left, right: option.right, texts: [...button.querySelectorAll("span")].flatMap(span => [...span.getClientRects()].map(rect => ({ left: rect.left, right: rect.right }))) };
+      }) };
+    });
+    expect(languageBounds.left).toBeGreaterThanOrEqual(languageBounds.containerLeft);
+    expect(languageBounds.right).toBeLessThanOrEqual(languageBounds.containerRight);
+    for (const option of languageBounds.options) {
+      expect(option.scrollWidth).toBeLessThanOrEqual(option.clientWidth);
+      expect(option.scrollHeight).toBeLessThanOrEqual(option.clientHeight);
+      for (const text of option.texts) {
+        expect(text.left).toBeGreaterThanOrEqual(option.left);
+        expect(text.right).toBeLessThanOrEqual(option.right);
+      }
+    }
     await page.getByRole("button", { name: es ? "Editar Importe cobrado" : "Edit Importe cobrado", exact: true }).click();
     const question = page.getByRole("textbox", { name: es ? "Pregunta" : "Question", exact: true }).first();
     await expect(question).toHaveValue("");

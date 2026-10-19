@@ -18,6 +18,7 @@ Reúne primitivas generadas por shadcn y componentes propios de formularios, tab
   WhatsApp; el consumidor adapta sus datos. Toda fecha se formatea antes de pasarse a la pieza.
   MessageBubble admite un attachment dentro del cuerpo y conserva revisión/recuperación después de los metadatos; MessageCard presenta título, descripción e ícono sin contratos de una feature. RadioGroupField ofrece filas simples o cards con el mismo control accesible. EmbeddedPreview sólo presenta un iframe con título accesible y referrerPolicy; conserva sandbox por defecto para una vista externa. La variante kind=pdf retira sandbox para el visor PDF nativo y recibe sólo una URL blob privada creada desde bytes PDF validados; el consumidor valida URL, permisos, idioma y vencimiento.
 - Un cambio visual se contrasta con la biblioteca y el contrato aprobado. Las decisiones nuevas pasan por tablero y elección antes de implementarse.
+- SegmentedControl conserva su variante compacta predeterminada; wrapLabels permite etiquetas en varias líneas y alto mínimo dentro del ancho disponible. I1 lo usa para mostrar completo el conteo de traducciones en móvil, sin CSS de la feature.
 - Tests consultan por rol y texto; los de i18n y tema evitan regresiones de componentes generados.
 - El único Toaster se monta en AppProviders y fija la política común. No promover un FormError
   general ni usar Banner para resultados operativos. Comprobar avisos desde Dialog con teclado,
