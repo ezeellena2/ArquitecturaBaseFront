@@ -15,6 +15,7 @@ import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Page } from "@/shared/ui/Page";
 import { Badge } from "@/shared/ui/badge";
+import { approvalStateVariant } from "../approvals";
 import { Surface } from "@/shared/ui/Surface";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { Pagination } from "@/shared/ui/Pagination";
@@ -141,7 +142,7 @@ export function FormResponsesPage() {
         </span>
       ),
     },
-    ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant="outline">{t("approvals.states." + row.state)}</Badge> }] : []),
+    ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
     ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false })}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...visible.map((column) => ({
       id: column.fieldId,
