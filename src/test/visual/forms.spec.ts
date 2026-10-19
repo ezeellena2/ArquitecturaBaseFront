@@ -92,7 +92,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(english).toHaveAttribute("aria-pressed", "true");
     await expect(name).toHaveValue("Register visit");
     await expect(page.getByRole("textbox", { name: es ? "Prefijo de numeración" : "Numbering prefix", exact: true })).toHaveAttribute("readonly", "");
-    await expect(english).toContainText(es ? "opcional · 3 sin traducir" : "optional · 3 untranslated");
+    await expect(english).toContainText(es ? "English · 3 sin traducir" : "English · 3 untranslated");
     const languageBounds = await page.getByRole("group", { name: es ? "Textos en" : "Content language", exact: true }).evaluate(group => {
       const bounds = group.getBoundingClientRect();
       const container = group.parentElement!.getBoundingClientRect();
@@ -120,7 +120,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(preview.getByRole("radio", { name: "Sí", exact: true })).toHaveCount(1);
     await expect(preview.getByRole("radio", { name: "Yes", exact: true })).toHaveCount(0);
     await expect(preview.getByRole("textbox", { name: "Importe cobrado", exact: true })).toHaveCount(1);
-    await expect(preview.getByText(es ? "Le llega en español: le faltan 3 textos en inglés." : "It arrives in Spanish: 3 texts are untranslated in English.", { exact: true })).toBeVisible();
+    await expect(preview.getByText(es ? "Se muestra en español: faltan 3 textos en inglés." : "Shown in Spanish: 3 texts are untranslated in English.", { exact: true })).toBeVisible();
     await question.fill("Collected amount");
     await name.fill("Visit record");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
@@ -145,7 +145,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("textbox", { name: es ? "Opción 1" : "Option 1", exact: true }).fill("Perez brothers");
     await page.getByRole("button", { name: es ? "Editar Notes" : "Edit Notes", exact: true }).click();
     await page.getByRole("textbox", { name: es ? "Ayuda para el empleado" : "Help for the employee", exact: true }).fill("Tell us what happened.");
-    await expect(english).toContainText(es ? "opcional · completo" : "optional · complete");
+    await expect(english).toContainText(es ? "English · completo" : "English · complete");
     await expect(preview.getByRole("radio", { name: "Yes", exact: true })).toHaveCount(1);
     await expect(preview.getByRole("radio", { name: "Sí", exact: true })).toHaveCount(0);
     await expect(preview.getByRole("textbox", { name: "Collected amount", exact: true })).toHaveCount(1);

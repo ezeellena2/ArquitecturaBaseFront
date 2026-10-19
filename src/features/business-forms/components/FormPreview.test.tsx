@@ -98,3 +98,22 @@ it("keeps original placeholders when authored text contains only whitespace", as
   expect(within(preview).getByRole("textbox", { name: "Pregunta" })).toBeInTheDocument();
   expect(within(preview).getByRole("button", { name: "Texto del botón final" })).toBeInTheDocument();
 });
+
+for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as const) {
+  it("describes only the illustrative preview in " + ui + " for " + original + " original", async () => {
+    await i18n.changeLanguage(ui);
+    const secondary = original === "es" ? "en" : "es";
+    const complete = completePreview(original);
+    const partial = untranslated(complete, secondary, "name");
+    const languages = ui === "es" ? { es: "español", en: "inglés" } : { es: "Spanish", en: "English" };
+    let view!: ReturnType<typeof renderWithProviders>;
+    await act(async () => { view = renderWithProviders(<FormPreview value={partial} culture={secondary} />); });
+    const preview = screen.getByRole("region", { name: ui === "es" ? "Vista previa" : "Preview" });
+    expect(within(preview).getByRole("heading", { name: ui === "es" ? "Vista previa para una cuenta en " + languages[secondary] : "Preview for an account using " + languages[secondary] })).toBeInTheDocument();
+    expect(within(preview).getByText(ui === "es" ? "Se muestra en " + languages[original] + ": falta 1 texto en " + languages[secondary] + "." : "Shown in " + languages[original] + ": 1 text is untranslated in " + languages[secondary] + ".")).toBeInTheDocument();
+    expect(within(preview).getByText(ui === "es" ? "La vista previa usa un solo idioma." : "This preview uses one language.")).toBeInTheDocument();
+    expect(within(preview).queryByText(/le llega|It arrives|What an account.*receives/i)).not.toBeInTheDocument();
+    await act(async () => { view.rerender(<FormPreview value={complete} culture={secondary} />); });
+    expect(within(preview).getByText(ui === "es" ? "Vista previa en " + languages[secondary] + "." : "Preview in " + languages[secondary] + ".")).toBeInTheDocument();
+  });
+}

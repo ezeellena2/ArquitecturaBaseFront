@@ -177,8 +177,8 @@ describe("Forms routes", () => {
     await userEvent.click(screen.getByRole("button", { name: /^English/ }));
     expect(screen.getByLabelText("Nombre")).toHaveValue("");
     expect(screen.getByLabelText("Nombre")).toHaveAttribute("placeholder", "Sin traducir");
-    expect(screen.getByRole("button", { name: /^Español.*original.*obligatorio/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^English.*opcional.*sin traducir/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Español · original" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "English · 3 sin traducir" })).toBeInTheDocument();
     expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
     await userEvent.click(screen.getByRole("button", { name: "Editar Importe cobrado" }));
     expect(screen.getByLabelText("Pregunta")).toHaveValue("");
@@ -576,4 +576,15 @@ it("keeps offer validation at its monolingual field, with focus and without a du
   expect(offer).toHaveValue("Texto que se conserva");
   expect(offer).toHaveAttribute("aria-invalid", "true");
   expect(vi.mocked(notify)).not.toHaveBeenCalled();
+});
+
+it("uses the chosen I1 labels when English is the original and Spanish is untranslated", async () => {
+  const store = setup();
+  const original = store.definitions.get(fixtureFormId)!;
+  store.definitions.set(fixtureFormId, { ...original, name: { ...original.name, es: "" }, draft: { ...original.draft, culture: "en" } });
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByLabelText("Nombre");
+  expect(screen.getByRole("button", { name: "English · original" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Español · 1 sin traducir" })).toBeInTheDocument();
+  expect(screen.getByText("El original (inglés) es obligatorio; el otro idioma es opcional. Mientras le falte algo, el formulario sale entero en el original.")).toBeInTheDocument();
 });

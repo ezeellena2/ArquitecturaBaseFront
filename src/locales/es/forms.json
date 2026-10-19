@@ -126,15 +126,15 @@
     "en": "Inglés"
   },
   "contentLanguage": "Textos en",
-  "languageOriginal": "original · obligatorio",
+  "languageOriginal": "original",
   "prefixOriginal": "El prefijo es compartido. Editalo desde el idioma original.",
   "originalText": "Original ({{language}}): {{text}}",
   "missingText": "Sin traducir",
   "translationPending": "Sin traducir",
   "localizedChange": "{{name}} · {{language}}",
   "reviewFieldText": "{{question}} · {{field}}",
-  "previewContentLanguage": "Le llega entero en {{language}}.",
-  "previewMissingHint": "El formulario llega entero en un mismo idioma.",
+  "previewContentLanguage": "Vista previa en {{language}}.",
+  "previewMissingHint": "La vista previa usa un solo idioma.",
   "languageMissing_one": "{{count}} sin traducir",
   "languageMissing_other": "{{count}} sin traducir",
   "publication": {
@@ -883,10 +883,9 @@
     "requestCount_one": "{{count}} pedido",
     "requestCount_other": "{{count}} pedidos"
   },
-  "languageOptional": "opcional",
   "languageComplete": "completo",
   "contentLanguageHint": "El original ({{language}}) es obligatorio; el otro idioma es opcional. Mientras le falte algo, el formulario sale entero en el original.",
-  "previewForAccount": "Así le llega a una cuenta en {{language}}",
-  "previewFallback_one": "Le llega en {{actual}}: le falta {{count}} texto en {{requested}}.",
-  "previewFallback_other": "Le llega en {{actual}}: le faltan {{count}} textos en {{requested}}."
+  "previewForAccount": "Vista previa para una cuenta en {{language}}",
+  "previewFallback_one": "Se muestra en {{actual}}: falta {{count}} texto en {{requested}}.",
+  "previewFallback_other": "Se muestra en {{actual}}: faltan {{count}} textos en {{requested}}."
 }

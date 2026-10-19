@@ -126,15 +126,15 @@
     "en": "English"
   },
   "contentLanguage": "Content language",
-  "languageOriginal": "original · required",
+  "languageOriginal": "original",
   "prefixOriginal": "The prefix is shared. Edit it in the original language.",
   "originalText": "Original ({{language}}): {{text}}",
   "missingText": "Untranslated",
   "translationPending": "Untranslated",
   "localizedChange": "{{name}} · {{language}}",
   "reviewFieldText": "{{question}} · {{field}}",
-  "previewContentLanguage": "It arrives entirely in {{language}}.",
-  "previewMissingHint": "The entire form uses one language.",
+  "previewContentLanguage": "Preview in {{language}}.",
+  "previewMissingHint": "This preview uses one language.",
   "languageMissing_one": "{{count}} untranslated",
   "languageMissing_other": "{{count}} untranslated",
   "publication": {
@@ -883,10 +883,9 @@
     "requestCount_one": "{{count}} request",
     "requestCount_other": "{{count}} requests"
   },
-  "languageOptional": "optional",
   "languageComplete": "complete",
   "contentLanguageHint": "The original ({{language}}) is required; the other language is optional. While any text is untranslated, the entire form uses the original language.",
-  "previewForAccount": "What an account in {{language}} receives",
-  "previewFallback_one": "It arrives in {{actual}}: {{count}} text is untranslated in {{requested}}.",
-  "previewFallback_other": "It arrives in {{actual}}: {{count}} texts are untranslated in {{requested}}."
+  "previewForAccount": "Preview for an account using {{language}}",
+  "previewFallback_one": "Shown in {{actual}}: {{count}} text is untranslated in {{requested}}.",
+  "previewFallback_other": "Shown in {{actual}}: {{count}} texts are untranslated in {{requested}}."
 }
