@@ -41,7 +41,8 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   const deadline = new Date(Date.parse(contact.lastInboundAtUtc)+24*60*60*1000).toISOString();
   const language = i18n.resolvedLanguage ?? "es";
   const name = contact.profileName ?? contact.linkedAccount?.displayName ?? t("unnamed");
-  const cta = t("forms.openForm",{lng:form?.recipientCulture??"es"});
+  const presentationCulture = state.presentationCulture;
+  const cta = presentationCulture && state.presentationReady ? t("forms.openForm",{lng:presentationCulture}) : undefined;
   return <>
     {canSend ? <div className="min-w-0">
       <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={Boolean(state.disabledReason)||state.denied||frozen||state.sending||Boolean(assistant?.attempt)||assistantOpen} onClick={state.show}><FormIcon />{t("forms.action")}</Button>
@@ -54,6 +55,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         {contact.mode === "Manual" ? <p className="text-sm text-[var(--color-content-muted)]">{t("mode.manualContinues")}</p> : null}
         {assistantOpen && assistant?.proposal ? <>
           <p className="break-words text-sm font-medium">{t("assistant.version", { name: assistant.proposal.name, version: assistant.proposal.versionNumber })}</p>
+          <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+assistant.proposal.culture)})}</p>
           {assistant.proposal.fields.length ? <fieldset disabled={assistant.busy || Boolean(assistant.attempt)}>
             <legend className="mb-2 text-xs font-medium uppercase text-[var(--color-content-muted)]">{t("assistant.prefilledTitle")}</legend>
             {assistant.proposal.fields.map(field => <CheckboxField key={field.fieldId} label={field.label} description={field.displayValue} checked={assistant.selected.includes(field.fieldId)} disabled={assistant.busy || Boolean(assistant.attempt)} onCheckedChange={checked => assistant.setSelected(current => checked ? [...current, field.fieldId] : current.filter(id => id !== field.fieldId))} />)}
@@ -67,15 +69,15 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         </> : <>
         {state.mayReadOptions ? <div className="flex flex-col gap-3" ref={list}>
           <fieldset disabled={state.waiting}><SearchInput value={state.search} onChange={value=>{state.setSearch(value);state.setPage(1);}} label={t("forms.search")} /></fieldset>
-          {state.forms.isPending ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.loading")}</p> : state.forms.isError ? <div className="flex items-center justify-between gap-2"><p className="text-sm text-[var(--color-content-muted)]">{t("forms.listUnavailable")}</p><Button variant="outline" size="sm" disabled={state.waiting} onClick={state.retryForms}>{t("retry")}</Button></div> : <RadioGroupField label={t("forms.formLabel")} variant="cards" value={selected&&!state.contextChanged?formOptionKey(selected):undefined} onValueChange={key=>{const option=items.find(value=>formOptionKey(value)===key);if(option)state.choose(option);}} error={state.selectionError} options={items.map(option=>({value:formOptionKey(option),label:option.name[form?.recipientCulture??"es"]??"",description:t("forms.optionDescription",{version:option.versionNumber,count:option.questionCount}),disabled:frozen||state.sending||state.waiting||(form?.blocked==="formUnavailable"&&option.versionId===selected?.versionId)}))} />}
+          {state.forms.isPending ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.loading")}</p> : state.forms.isError ? <div className="flex items-center justify-between gap-2"><p className="text-sm text-[var(--color-content-muted)]">{t("forms.listUnavailable")}</p><Button variant="outline" size="sm" disabled={state.waiting} onClick={state.retryForms}>{t("retry")}</Button></div> : <RadioGroupField label={t("forms.formLabel")} variant="cards" value={selected&&!state.contextChanged?formOptionKey(selected):undefined} onValueChange={key=>{const option=items.find(value=>formOptionKey(value)===key);if(option)state.choose(option);}} error={state.selectionError} options={items.map(option=>({value:formOptionKey(option),label:option.name[selected&&formOptionKey(option)===formOptionKey(selected)&&presentationCulture?presentationCulture:form?.recipientCulture??"es"]??"",description:t("forms.optionDescription",{version:option.versionNumber,count:option.questionCount}),disabled:frozen||state.sending||state.waiting||(form?.blocked==="formUnavailable"&&option.versionId===selected?.versionId)}))} />}
           {!state.forms.isPending&&!state.forms.isError&&!items.length ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.noResults")}</p> : null}
-          {offPage&&selected&&!state.contextChanged ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.selected",{name:selected.name[form?.recipientCulture??"es"],version:selected.versionNumber})}</p> : null}
+          {offPage&&selected&&!state.contextChanged ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.selected",{name:selected.name[presentationCulture??form?.recipientCulture??"es"],version:selected.versionNumber})}</p> : null}
           {state.forms.data ? <fieldset disabled={state.waiting}><Pagination {...state.forms.data.page} onPageChange={page=>{focusPage.current=true;state.setPage(page);}} /></fieldset> : null}
-          <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+(form?.recipientCulture??"es"))})}</p>
+          {presentationCulture ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+presentationCulture)})}</p> : null}
         </div> : null}
-        {state.mayReadOptions&&!state.contextChanged&&selected?.hasCatalogQuestions&&!frozen ? <FormCatalogPreparation query={state.preparation} waiting={state.waiting} /> : null}
-        <FormField label={t("forms.messageLabel")} error={state.fieldError} hint={state.mayReadOptions&&selected?t("forms.messageHelp",{cta,submitLabel:selected.submitLabel[form?.recipientCulture??"es"]}):t("forms.messageRequiredInfo")}>
-          <Textarea ref={message} value={form?.message??""} disabled={frozen||state.sending} rows={3} onChange={event=>{const text=event.target.value;state.updateForm(value=>({...value,message:text,touched:true}));state.setFieldError(undefined);}} />
+        {state.mayReadOptions&&!state.contextChanged&&selected&&!frozen ? !state.presentationReady && state.preparation.isSuccess ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.preparing")}</p> : <FormCatalogPreparation hasCatalogQuestions={selected.hasCatalogQuestions===true} query={state.preparation} waiting={state.waiting} /> : null}
+        <FormField label={t("forms.messageLabel")} error={state.fieldError} hint={state.mayReadOptions&&selected&&presentationCulture&&state.presentationReady?t("forms.messageHelp",{cta,submitLabel:selected.submitLabel[presentationCulture]}):t("forms.messageRequiredInfo")}>
+          <Textarea ref={message} value={form?.message??""} disabled={frozen||state.sending} rows={3} onChange={event=>{const text=event.target.value;state.updateForm(value=>({...value,message:text,messageEdited:true,touched:true}));state.setFieldError(undefined);}} />
         </FormField>
         <p className="text-right text-xs text-[var(--color-content-muted)]">{form?.message.length??0} / 1024</p>
         {!state.contextChanged&&!state.denied ? <p className="text-xs text-[var(--color-content-muted)]">{t("forms.deadline",{deadline:formatDateTimeInZone(deadline,language,timeZone)})}</p> : null}
@@ -84,7 +86,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         {state.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint",{seconds:state.waitSeconds})}</p> : null}
         <DialogFooter>
           <Button variant="outline" disabled={state.sending} onClick={()=>state.setOpen(false)}>{t("forms.cancel")}</Button>
-          {frozen&&!form?.notStored&&!state.sending ? <Button variant="outline" disabled={state.checking||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : <Button disabled={state.sending||state.checking||Boolean(state.blockedReason)||state.versionChanged||state.waiting||state.forms.isError||state.forms.isFetching||state.catalogBlocked||(!form?.notStored&&!selected)||form?.blocked==="formUnavailable"} onClick={()=>void state.submit()}>{t(state.sending?"forms.saving":form?.notStored?"send.retry":"forms.action")}</Button>}
+          {frozen&&!form?.notStored&&!state.sending ? <Button variant="outline" disabled={state.checking||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : <Button disabled={state.sending||state.checking||Boolean(state.blockedReason)||state.versionChanged||state.waiting||state.forms.isError||state.forms.isFetching||state.preparationBlocked||(!form?.notStored&&!selected)||form?.blocked==="formUnavailable"} onClick={()=>void state.submit()}>{t(state.sending?"forms.saving":form?.notStored?"send.retry":"forms.action")}</Button>}
         </DialogFooter>
         </>}
       </DialogContent>

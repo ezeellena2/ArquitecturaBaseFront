@@ -95,3 +95,9 @@ describe("Chat forms DTO contract", () => {
     expect(String(error)).toBe("UnsupportedChatFormResponse: Unsupported chat form response.");
   });
 });
+
+it("accepts the server resolved default opening without sending the preview as authority", () => {
+ expect(parseFormOutgoing(receipt, {...request,message:null}, "actor", contactId)).toEqual(receipt);
+ expect(()=>parseFormOutgoing({...receipt,body:null}, {...request,message:null}, "actor", contactId)).toThrow();
+ expect(()=>parseFormOutgoing({...receipt,body:" "}, {...request,message:null}, "actor", contactId)).toThrow();
+});

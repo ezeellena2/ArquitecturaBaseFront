@@ -50,7 +50,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     queryFn:async({signal})=>{
       try { return await prepareChatForm(contact.id,form!.selection!.definitionId,form!.selection!.versionId,signal); }
       catch(error){const feedback=errorFeedback(error);if(feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);throw error;}
-    }, enabled:open&&!denied&&!changed&&form?.selection?.hasCatalogQuestions===true&&!form.attempt,
+    }, enabled:open&&!denied&&!changed&&!!form?.selection&&!form.attempt,
     retry:false,refetchOnWindowFocus:false,refetchOnReconnect:false,meta:{errorOwner:"local"}});
   const preparationNoticeId = "whatsapp:form-preparation:" + contact.id;
   const preparationError = preparation.error;
@@ -65,10 +65,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
   useEffect(()=>()=>{queueMicrotask(()=>{const query=client.getQueryCache().find({queryKey:preparationKey,exact:true});
     if(query?.getObserversCount()===0){void client.cancelQueries({queryKey:preparationKey,exact:true});client.removeQueries({queryKey:preparationKey,exact:true});}});},[client,preparationKey]);
   if(preparation.error instanceof ApiError&&preparation.error.status===403&&!forbidden)setForbidden(true);
-  const preparationChanged = Boolean(preparation.data&&(preparation.data.recipientContextRevision!==form?.recipientContextRevision
-    || preparation.data.culture!==form?.recipientCulture));
-  const catalogBlocked = Boolean(form?.selection?.hasCatalogQuestions&&!form.attempt
-    && (preparation.isPending||preparation.isFetching||preparation.isError||!preparation.data?.preparation.canSend||preparationChanged));
+  const preparationChanged = Boolean(preparation.data&&(preparation.data.recipientContextRevision!==form?.recipientContextRevision));
   const { error: formsError, refetch: refetchForms } = forms;
   if (formsError instanceof ApiError && formsError.status === 403 && !forbidden) setForbidden(true);
   const versionChanged = Boolean(form?.selection && forms.data && selectedVersionChanged(form.selection, forms.data.page.items));
@@ -87,6 +84,23 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
   },[formsError,refetchForms,client,actor,contact.id,noticeId,t]);
   useEffect(() => { if (denied) client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id}); }, [denied,client,actor,contact.id]);
   const updateForm = (update: (value: FormSendDraft) => FormSendDraft) => updateDraft(value => value.form ? {...value,form:update(value.form)} : value);
+  const presentationCulture = !contextChanged && preparation.data ? preparation.data.culture : undefined;
+  const presentationReady = Boolean(presentationCulture && (presentationCulture === "en" ? englishReady : spanishReady));
+  const preparationBlocked = Boolean(form?.selection&&!form.attempt
+    && (preparation.isPending||preparation.isFetching||preparation.isError||!preparation.data?.preparation.canSend||preparationChanged||!presentationReady));
+  useEffect(() => {
+    if (!open || !presentationCulture || !presentationReady || preparation.isFetching || preparation.isError || !form?.selection || form.attempt) return;
+    const selectedKey = form.selection.definitionId + ":" + form.selection.versionId;
+    const revision = form.recipientContextRevision;
+    const text = t("forms.defaultMessage", { lng: presentationCulture });
+    if (form.messageEdited || form.message === text) return;
+    updateDraft(value => {
+      const currentForm = value.form;
+      if (!currentForm?.selection || currentForm.selection.definitionId + ":" + currentForm.selection.versionId !== selectedKey
+        || currentForm.recipientContextRevision !== revision || currentForm.messageEdited || currentForm.attempt || currentForm.message === text) return value;
+      return { ...value, form: { ...currentForm, message: text } };
+    });
+  }, [open,presentationCulture,presentationReady,preparation.isFetching,preparation.isError,form?.selection,form?.recipientContextRevision,form?.attempt,form?.message,form?.messageEdited,t,updateDraft]);
   const canOpen = !disabledReason && !denied && !form?.attempt && !sending && !checking && now >= waitUntil
     && !!eligibility?.recipientCulture && !!eligibility.recipientContextRevision;
   function show() {
@@ -109,7 +123,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     void client.invalidateQueries({queryKey:chatKey});
   }
   async function submit() {
-    if (pending.current || !canSend || denied || disabledReason || contextChanged || versionChanged || catalogBlocked || Date.now() < waitDeadline.current) return;
+    if (pending.current || !canSend || denied || disabledReason || contextChanged || versionChanged || preparationBlocked || Date.now() < waitDeadline.current) return;
     const value = current.current.form;
     if (!value || (value.attempt && !value.notStored)) return;
     const issue = formMessageIssue(value.message);
@@ -145,5 +159,5 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
       else {const feedback=errorFeedback(error);if(active.current&&feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);if(active.current&&feedback.kind!=="session")notify({id:noticeId,kind:"error",message:feedback.kind==="forbidden"?t("send.forbidden"):t("send.checkFailed"),action:["forbidden","wait"].includes(feedback.kind)?undefined:{label:t("send.check"),onClick:()=>void checkOutcome()}});if(feedback.kind==="forbidden"){setForbidden(true);client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id});}}
     } finally {pending.current=false;if(active.current)setChecking(false);}
   }
-  return {canOpen,open,setOpen,page,setPage,search,setSearch,forms,preparation,catalogBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied)void refetchForms();}, updateForm};
+  return {presentationCulture,presentationReady,canOpen,open,setOpen,page,setPage,search,setSearch,forms,preparation,preparationBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied)void refetchForms();}, updateForm};
 }

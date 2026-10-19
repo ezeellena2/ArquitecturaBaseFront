@@ -35,7 +35,8 @@ function read<T>(schema: z.ZodType<T>, value: unknown): T { const result = schem
 export function parseChatForms(value: unknown): ChatForms { return read(formsSchema,value); }
 export function parseFormOutgoing(value: unknown, request: FormMessageRequest, actor: string, contactId: string): Outgoing {
   const receipt = read(outgoingSchema,value);
-  if (receipt.requestId !== request.requestId || receipt.operatorUserId !== actor || receipt.form.definitionId !== request.definitionId || receipt.form.versionId !== request.versionId || receipt.body !== request.message.trim()) throw new UnsupportedChatFormResponse();
+  const messageMatches = request.message === null ? typeof receipt.body === "string" && receipt.body.trim().length > 0 : receipt.body === request.message.trim();
+  if (receipt.requestId !== request.requestId || receipt.operatorUserId !== actor || receipt.form.definitionId !== request.definitionId || receipt.form.versionId !== request.versionId || !messageMatches) throw new UnsupportedChatFormResponse();
   if (receipt.recoveryPath !== null && receipt.recoveryPath !== `${base}/${contactId}/outgoing/${request.requestId}`) throw new UnsupportedChatFormResponse();
   return receipt;
 }

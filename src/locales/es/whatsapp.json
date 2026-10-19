@@ -127,7 +127,7 @@
     "optionDescription_one": "Versión {{version}} · {{count}} pregunta",
     "optionDescription_other": "Versión {{version}} · {{count}} preguntas",
     "selected": "Elegido: {{name}} · versión {{version}}",
-    "language": "Le llega en {{language}}, el idioma de su cuenta.",
+    "language": "Le llega en {{language}}.",
     "culture": {
       "es": "español",
       "en": "inglés"
@@ -135,7 +135,7 @@
     "messageLabel": "Mensaje que lo acompaña",
     "messageHelp": "Es lo que lee arriba del botón «{{cta}}». El botón final del formulario es otro: «{{submitLabel}}».",
     "messageRequiredInfo": "El mensaje es obligatorio: WhatsApp no manda el botón solo.",
-    "defaultMessage": "Completá este formulario, por favor.",
+    "defaultMessage": "Completá este formulario.",
     "openForm": "Abrir formulario",
     "required": "Escribí el mensaje que acompaña al formulario.",
     "tooLong": "Puede tener hasta 1024 caracteres.",
@@ -199,7 +199,9 @@
       "empty": "{{label}}: no tiene opciones y la pregunta es obligatoria.",
       "invalidOption_one": "{{label}}: {{count}} opción de {{catalog}} no entra en WhatsApp. Revisá su texto y detalle.",
       "invalidOption_other": "{{label}}: {{count}} opciones de {{catalog}} no entran en WhatsApp. Revisá sus textos y detalles."
-    }
+    },
+    "preparing": "Preparando el formulario…",
+    "preparationFailed": "No pudimos preparar el formulario."
   },
   "formActions": {
     "title": "Acción del formulario",

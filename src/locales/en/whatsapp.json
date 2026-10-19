@@ -127,7 +127,7 @@
     "optionDescription_one": "Version {{version}} · {{count}} question",
     "optionDescription_other": "Version {{version}} · {{count}} questions",
     "selected": "Selected: {{name}} · version {{version}}",
-    "language": "They receive it in {{language}}, the language of their account.",
+    "language": "It arrives in {{language}}.",
     "culture": {
       "es": "Spanish",
       "en": "English"
@@ -135,7 +135,7 @@
     "messageLabel": "Accompanying message",
     "messageHelp": "This appears above the “{{cta}}” button. The final button inside the form is different: “{{submitLabel}}”.",
     "messageRequiredInfo": "The message is required: WhatsApp does not send the button alone.",
-    "defaultMessage": "Please complete this form.",
+    "defaultMessage": "Complete this form.",
     "openForm": "Open form",
     "required": "Enter the message accompanying the form.",
     "tooLong": "Use up to 1024 characters.",
@@ -199,7 +199,9 @@
       "empty": "{{label}}: has no options and the question is required.",
       "invalidOption_one": "{{label}}: {{count}} option in {{catalog}} does not fit in WhatsApp. Review its text and detail.",
       "invalidOption_other": "{{label}}: {{count}} options in {{catalog}} do not fit in WhatsApp. Review their text and details."
-    }
+    },
+    "preparing": "Preparing the form…",
+    "preparationFailed": "We could not prepare the form."
   },
   "formActions": {
     "title": "Form action",

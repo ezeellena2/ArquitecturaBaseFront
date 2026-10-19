@@ -3,7 +3,7 @@ import { whatsappFormsHttpJson as body } from "@/test/fixtures/whatsappFormsHttp
 import { describe, expect, it } from "vitest";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { ApiError } from "@/shared/api/ApiError";
-import { parseChatForms, parseFormOutgoing } from "./forms";
+import { parseChatForms, parseFormOutgoing, parseChatFormPreparation } from "./forms";
 import type { Outgoing, Thread } from "./chat";
 import { buildTimeline } from "../lib/timeline";
 for (const culture of ["es", "en"] as const) describe("Actual WhatsApp form HTTP contract " + culture, () => {
@@ -26,6 +26,9 @@ for (const culture of ["es", "en"] as const) describe("Actual WhatsApp form HTTP
     expect(selected.name).toEqual({es:"Formulario",en:"Form"});
     expect(selected.submitLabel).toEqual({es:"Completar",en:"Submit"});
     expect(thread.contact.linkedAccount?.isActive).toBe(true);
+  });
+  it("reads the complete presentation culture and real recipient revision from preparation", () => {
+    expect(parseChatFormPreparation(body(culture, "preparation"))).toMatchObject({culture,recipientContextRevision:choices.recipientContextRevision,preparation:{canSend:true,catalogs:[],issues:[]}});
   });
   it("reads acceptance and every captured durable state using the same form identity", () => {
     for (const [name, state] of [["send-pending","Pending"],["outgoing-pending","Pending"],["outgoing-accepted","Accepted"],

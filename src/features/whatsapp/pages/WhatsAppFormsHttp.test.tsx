@@ -36,6 +36,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
       http.get("/api/whatsapp/chats/:id/messages", () => response(threadName)),
       http.put("/api/whatsapp/chats/:id/read", () => new HttpResponse(null,{status:204})),
       http.get("/api/whatsapp/chats/:id/forms", () => response("choices")),
+      http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => response("preparation")),
       http.post("/api/whatsapp/chats/:id/form-messages", async ({request}) => {
         posts.push(await request.json() as FormMessageRequest);
         threadName = "thread-pending";
@@ -58,6 +59,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
     await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(await within(dialog).findByRole("radio",{name:selected.name[culture]}));
+    await waitFor(() => expect(within(dialog).getByRole("button", {name:"Enviar formulario"})).toBeEnabled());
     return dialog;
   }
   beforeEach(() => { queryClient.clear(); posts=[]; textPosts=0; reviews=0; });
