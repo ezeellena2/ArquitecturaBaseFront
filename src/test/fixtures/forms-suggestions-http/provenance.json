@@ -1,63 +1,63 @@
 {
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs",
-      "sha256": "5b194a0b704e9512f0f310b3a7f3a799ae624486cb54e2e7eaf537be6cfb8847"
+      "sha256": "5b194a0b704e9512f0f310b3a7f3a799ae624486cb54e2e7eaf537be6cfb8847",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs",
-      "sha256": "f625255f15dd0bd5bb149c6b60e6f2a5a4ee72672b75b53dfd81ece1961dae03"
+      "sha256": "f625255f15dd0bd5bb149c6b60e6f2a5a4ee72672b75b53dfd81ece1961dae03",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs"
     }
   ],
-  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
+  "schemaVersion": 1,
+  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
+  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
   "sourceState": [],
+  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
   "captures": [
     {
       "length": 276,
-      "name": "conflict-es.json",
-      "sha256": "6b27e17f89563c7a0e0e4ea318a443e0396cfb2b39e0684a1bdf7dda0073547f"
+      "sha256": "c96a693ad9bac71112578761b2a131f77abc06a08dbf2a098b364b7e098ca265",
+      "name": "conflict-es.json"
     },
     {
       "length": 152,
-      "name": "empty-es.json",
-      "sha256": "7978bb1aaf54ca9974120379eb66aace04ef5cf54468edadd73979cfd8172e74"
+      "sha256": "8da239d07e1c6d4673457278bea4836741406e2a3bf3c626f421d4af26397d5d",
+      "name": "empty-es.json"
     },
     {
       "length": 373,
-      "name": "history-es.json",
-      "sha256": "ba95e88a8b60e4bb16b7a7319ab131ae52fc146d13e22bcc76a72d688ad14ad6"
+      "sha256": "46bd4975b6e5af5b98da7ee9130e0c973cd89f3c2f51f812fc06e2c38de4f58f",
+      "name": "history-es.json"
     },
     {
-      "length": 3876,
-      "name": "options-en.json",
-      "sha256": "11936268aee3570ef140393c9e0d80f3b79342018088cc9fcbe5a0b2f973949b"
+      "length": 10230,
+      "sha256": "742689bb1443584916748fc9f74f5f1dee4d201fe69a4aaf67c780b88915ce2c",
+      "name": "options-en.json"
     },
     {
-      "length": 3876,
-      "name": "options-es.json",
-      "sha256": "11936268aee3570ef140393c9e0d80f3b79342018088cc9fcbe5a0b2f973949b"
-    },
-    {
-      "length": 680,
-      "name": "revision-es.json",
-      "sha256": "26946916fe37863da65053fc816b0025813f1acdf684e35396bf1474f9f7f169"
+      "length": 10230,
+      "sha256": "742689bb1443584916748fc9f74f5f1dee4d201fe69a4aaf67c780b88915ce2c",
+      "name": "options-es.json"
     },
     {
       "length": 680,
-      "name": "saved-es.json",
-      "sha256": "26946916fe37863da65053fc816b0025813f1acdf684e35396bf1474f9f7f169"
+      "sha256": "a78f38a672670ff84a9e5513e272d7a3819594e31f6c83c0fefc5d941d906e4e",
+      "name": "revision-es.json"
+    },
+    {
+      "length": 680,
+      "sha256": "a78f38a672670ff84a9e5513e272d7a3819594e31f6c83c0fefc5d941d906e4e",
+      "name": "saved-es.json"
     },
     {
       "length": 285,
-      "name": "source-unpublished-es.json",
-      "sha256": "fc1e7877777d7988866273789ba927f19253148826f3642b3333b7034566f965"
+      "sha256": "a32c577e8536e531f0bcd78453636a43ea3703858632ac885ababb2d21e86c54",
+      "name": "source-unpublished-es.json"
     }
   ],
-  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
-  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
+  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
   "artifactSet": "suggestions",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

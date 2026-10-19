@@ -1,63 +1,63 @@
 {
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs",
-      "sha256": "a52e967dc1a915849b66bbc5a416bcca663a67344c3c246f1c45b0d72e845919"
+      "sha256": "a52e967dc1a915849b66bbc5a416bcca663a67344c3c246f1c45b0d72e845919",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs",
-      "sha256": "c55a895a22d4668305fccd40765fd6b8f564ab53f6b5e19db45f14c495266c13"
+      "sha256": "c55a895a22d4668305fccd40765fd6b8f564ab53f6b5e19db45f14c495266c13",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs"
     }
   ],
-  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
+  "schemaVersion": 1,
+  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
+  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
   "sourceState": [],
+  "producer": "FormRuleHttpTests and FormRuleContractCapture",
   "captures": [
     {
       "length": 281,
-      "name": "conflict-es.json",
-      "sha256": "0791938a75cb3e7835a54accfa7677e72c1b4d455586ad392d6b2ca3aa118d2c"
+      "sha256": "485ad1891e1d041f5185310150eae5965713f7457060805c35587fb014d8718a",
+      "name": "conflict-es.json"
     },
     {
       "length": 146,
-      "name": "empty-es.json",
-      "sha256": "0ff3b831e2d845166d863b2c5ef4a0e085d8fe43540359a177bf85f354d1f9ef"
+      "sha256": "ddc6c32f7869cb53fa4609d921294cea3780b1f2ae8ade2da05e67cb5a959aec",
+      "name": "empty-es.json"
     },
     {
       "length": 375,
-      "name": "history-es.json",
-      "sha256": "6732a34d980c251f0497513b45529bd6ae5cd597925f61d8726d3490ad4be106"
+      "sha256": "b8215016eb5caf3b69954eff8f35216b458d476dc5bc8a6c188ae0f8312849b7",
+      "name": "history-es.json"
     },
     {
-      "length": 14347,
-      "name": "options-en.json",
-      "sha256": "e722d64d6ca6531c6f6cc8e0428e706906d172889cc3a790c7ba9afd408828e4"
+      "length": 14655,
+      "sha256": "15f6f12ab6d27104889f6459d1a1f9bf710a6602e9769fff9c31ad14d93dcce7",
+      "name": "options-en.json"
     },
     {
-      "length": 14347,
-      "name": "options-es.json",
-      "sha256": "e722d64d6ca6531c6f6cc8e0428e706906d172889cc3a790c7ba9afd408828e4"
+      "length": 14655,
+      "sha256": "15f6f12ab6d27104889f6459d1a1f9bf710a6602e9769fff9c31ad14d93dcce7",
+      "name": "options-es.json"
     },
     {
       "length": 505,
-      "name": "revision-es.json",
-      "sha256": "9d54f7bd96f74d6170cc8b4e656ffcceb0066e2a09a6a91dabb453a8a2701b85"
+      "sha256": "b14b6c0f0ad9559936f8d8ed9bba22cb7e4535338e118ac421eb2794ca60efb9",
+      "name": "revision-es.json"
     },
     {
       "length": 338,
-      "name": "role-unavailable-es.json",
-      "sha256": "1250b0338869bb7e69d372d309496a17d2e5256595f7a471804dc5e125106828"
+      "sha256": "72907fdb53a02ea54a450677534391a7e2fa9a115abd2ba3da9de7989dd7f623",
+      "name": "role-unavailable-es.json"
     },
     {
       "length": 501,
-      "name": "saved-es.json",
-      "sha256": "727e8e26a1e1b02870ce08bb06665d71fc85393782f68b6e816e9cd87da09542"
+      "sha256": "db28b41aad3e28eedcd1e18846330ce7465077940903a539048fafa8a2da4351",
+      "name": "saved-es.json"
     }
   ],
-  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
-  "producer": "FormRuleHttpTests and FormRuleContractCapture",
+  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
   "artifactSet": "rules",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

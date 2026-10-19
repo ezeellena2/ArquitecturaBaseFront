@@ -1,57 +1,57 @@
 {
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogProposalHttpTests.cs",
-      "sha256": "bf52cdae68d2426e23459ff7c3b4d1b7c24f84882a5d74f760e92d79b7474258"
+      "sha256": "bf52cdae68d2426e23459ff7c3b4d1b7c24f84882a5d74f760e92d79b7474258",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogProposalHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalScenario.cs",
-      "sha256": "93c9b15e4ec42fb79e07a33160b21ec2b03a704175b8d333c035593380c13b8c"
+      "sha256": "93c9b15e4ec42fb79e07a33160b21ec2b03a704175b8d333c035593380c13b8c",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalScenario.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs",
-      "sha256": "393918492feca3da79522683ca9da35984458d3d65cd164ce2635730906942ff"
+      "sha256": "393918492feca3da79522683ca9da35984458d3d65cd164ce2635730906942ff",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs"
     }
   ],
-  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
+  "schemaVersion": 1,
+  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
+  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
   "sourceState": [],
+  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
   "captures": [
     {
       "length": 1569,
-      "name": "approved-en.json",
-      "sha256": "e54aed73b87fe95268a09107fe697db9e112f11b462caed8b425fe24a97aff08"
+      "sha256": "c080e0f80d86c24557cc6a7de8fb1270de2a635166e5e824b1dd0e6484172e3d",
+      "name": "approved-en.json"
     },
     {
       "length": 267,
-      "name": "conflict.json",
-      "sha256": "e1326821018f494b65b89f1bda22403440bc89a4ad3d6e7bfa455b075ac1bb7e"
+      "sha256": "bd482ed29d98f7b4acb1324514a1c5567b6443e5f258da55b47b40a91edfbccc",
+      "name": "conflict.json"
     },
     {
       "length": 1434,
-      "name": "detail-pending-en.json",
-      "sha256": "57ffbc88ff367262904e289fb4dbc98dad3a9c4dd76c4886b847bb6832686580"
+      "sha256": "1dc03aa9dc92b358134056e2b64bf8cbb8f7a2962b56a9415e054f99377ec3cc",
+      "name": "detail-pending-en.json"
     },
     {
       "length": 1440,
-      "name": "detail-pending-es.json",
-      "sha256": "2acdea163455d156fee2311b46770508697b7dc8499046d9b1b7c72d8dc6fa10"
+      "sha256": "1522b1c9d872c0b41a90d8b425588a447814366af6c29ba8f250f63d499d8f43",
+      "name": "detail-pending-es.json"
     },
     {
       "length": 1542,
-      "name": "discarded-es.json",
-      "sha256": "7d38fc17ec9f2aee5281d07df1531850fdf31c1a28909828e722eef2b0b61936"
+      "sha256": "4fe521ad5e589d93407b27e0132483ec0d67c038b1d9fc3799adce5f56169e38",
+      "name": "discarded-es.json"
     },
     {
       "length": 383,
-      "name": "list-original-en-in-es.json",
-      "sha256": "9ff6135aacd54c59f2cf7074d05e38cb0c2cacb600432af5c0f14f3a793638db"
+      "sha256": "2eb184b288e0cd6b6203f9a2cc32727976ae4bcd2be9d69c3a8bbef904dc738a",
+      "name": "list-original-en-in-es.json"
     }
   ],
-  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
-  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
+  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
   "artifactSet": "catalog-proposals",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

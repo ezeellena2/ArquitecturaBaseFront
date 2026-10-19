@@ -1,44 +1,44 @@
 {
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-      "sha256": "df96f8e62da7956ed455512ef0a1664d97101419f8fad8ff76e294adf6917e48"
+      "sha256": "df96f8e62da7956ed455512ef0a1664d97101419f8fad8ff76e294adf6917e48",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs"
     }
   ],
-  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
+  "schemaVersion": 1,
+  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
+  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
   "sourceState": [],
+  "producer": "WhatsAppFormFilesIntegrationTests",
   "captures": [
     {
       "length": 1824,
-      "name": "draft-created.json",
-      "sha256": "3a26c3a82b9dab889b3e378a6f832514fc12bc28a37d66c43f1b0fadb6acf516"
+      "sha256": "dd216f5acbe1916298c4ac075772c09ccdb7298cc075945efc41e10dc9355dda",
+      "name": "draft-created.json"
     },
     {
       "length": 2770,
-      "name": "reply-completed.json",
-      "sha256": "7149bec86dc6edff8b259100e67628517afaac2dfb40f0dc7decc29b6bc84756"
+      "sha256": "c093abb6e6449b4b29636e8aad70220cbcbc7511690ff9d714621afd85bb1b3a",
+      "name": "reply-completed.json"
     },
     {
       "length": 1935,
-      "name": "reply-downloading.json",
-      "sha256": "9ea47f9dafcb69a923a354ab162f943d242ea3ff2b6b32e97480b5aae2c78a61"
+      "sha256": "8b5a0b4f2b18478e1d7b0e910ee997d879178f8c8e84887953ec840f759c1ec5",
+      "name": "reply-downloading.json"
     },
     {
       "length": 2770,
-      "name": "reply-reloaded.json",
-      "sha256": "7149bec86dc6edff8b259100e67628517afaac2dfb40f0dc7decc29b6bc84756"
+      "sha256": "c093abb6e6449b4b29636e8aad70220cbcbc7511690ff9d714621afd85bb1b3a",
+      "name": "reply-reloaded.json"
     },
     {
       "length": 1828,
-      "name": "reply-without-read.json",
-      "sha256": "53e2c3caa43aa559f052817ca233c88feaaf009acca1e406bf3d5f12858797dc"
+      "sha256": "fa63d2c85b605b10b255d92bbb17b73103a7b16c3166d1c1292def3d632346a4",
+      "name": "reply-without-read.json"
     }
   ],
-  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
-  "producer": "WhatsAppFormFilesIntegrationTests",
+  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
   "artifactSet": "form-files",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

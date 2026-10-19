@@ -1,57 +1,57 @@
 {
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs",
-      "sha256": "082b1f22a87aad7e17e8982d1ab5cbbbcb7b9a3518bacd6e46ee0e78d53eaed1"
+      "sha256": "082b1f22a87aad7e17e8982d1ab5cbbbcb7b9a3518bacd6e46ee0e78d53eaed1",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestScenario.cs",
-      "sha256": "4cfc4abed866138be0a47f2b591220e9b66f53101c2bb8fd649028af2add1e27"
+      "sha256": "4cfc4abed866138be0a47f2b591220e9b66f53101c2bb8fd649028af2add1e27",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestScenario.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestContractCapture.cs",
-      "sha256": "a8e3f9ee5e3b43894da1ea36e5cdae275c94b977b9c9ef18d013d5f42f38a84f"
+      "sha256": "a8e3f9ee5e3b43894da1ea36e5cdae275c94b977b9c9ef18d013d5f42f38a84f",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestContractCapture.cs"
     }
   ],
-  "repositoryHead": "59b527723664daded31cec0f6702c375eb10b2f7",
+  "schemaVersion": 1,
+  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
+  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
   "sourceState": [],
+  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
   "captures": [
     {
       "length": 275,
-      "name": "conflict.json",
-      "sha256": "0f8f4db9c69b1849b984f02dfd950f160d6ad669d56ce0248b4d93f2cc372d4b"
+      "sha256": "e26fe01ccb19504ca1921c723f0001a502630ec00be01d07c930bc5b08ba0a48",
+      "name": "conflict.json"
     },
     {
       "length": 571,
-      "name": "discarded-en.json",
-      "sha256": "cd6e7f16818ec0ac7a2a31da67111dc1ae83ba6d0fee9ecadbb0caa058b0436a"
+      "sha256": "237e26a3d6d9f90d9e30be27476667b84c73cfdde0ef93a5e3f3e1b74cd1ea8a",
+      "name": "discarded-en.json"
     },
     {
       "length": 577,
-      "name": "discarded-es.json",
-      "sha256": "5f907f647cb9b85fac338730a6a97edce42f3c1da49461e5f6038f4b498f0864"
+      "sha256": "e7bde6f49456c01c74c3e0d4d19c45bd4b5fdcdcca5e5ca23fb54474679fe29b",
+      "name": "discarded-es.json"
     },
     {
       "length": 249,
-      "name": "forbidden.json",
-      "sha256": "15517d1e5495923f88576b9da948671647ec4b852f2a521840dee98148d816ca"
+      "sha256": "95dccf689e630bc8cf580d0c864adfef2d83cddb4023154f6e6fc0310db3a84c",
+      "name": "forbidden.json"
     },
     {
       "length": 461,
-      "name": "pending-en.json",
-      "sha256": "2bc3d2a21d69b9700593160161e5d4764f8e4924ad97158b0e03d2b352ba5dba"
+      "sha256": "7b38c722a24f88775dc6bbe956630f7c403d99469d2398d203b4369e39e50bbe",
+      "name": "pending-en.json"
     },
     {
       "length": 467,
-      "name": "pending-es.json",
-      "sha256": "fd00e7327583ffbf88f159db7e5044ccd77753000a1787c1b032d379652d224f"
+      "sha256": "3bebb7a18eb92c56b9087aba77f960d97dd925aa59136ffd933d1c48ed7fa009",
+      "name": "pending-es.json"
     }
   ],
-  "runId": "20261019-150419-252e033eafd845538f13c536a1382ef4",
-  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
+  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
   "artifactSet": "missing-requests",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-19T15:27:40.4736976Z",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }
