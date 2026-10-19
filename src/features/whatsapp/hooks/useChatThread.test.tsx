@@ -194,12 +194,14 @@ it("withdraws the complete conversation scope after a thread GET confirms loss o
   h.client.setQueryData(["other-private-owner"], { marker: "unrelated scope" });
   forbidden = true;
   await act(async () => { await hook.result.current.latest.refetch(); });
-  expect(hook.result.current.messages).toEqual([]);
-  expect(hook.result.current.latest.data).toBeUndefined();
-  expect(hook.result.current.history.data).toBeUndefined();
-  expect(hook.result.current.latest.error).toMatchObject({ status: 403 });
-  expect(JSON.stringify(h.client.getQueryCache().getAll().map(query => query.state.data))).not.toContain("PRIVATE");
-  expect(h.client.getQueryData(["other-private-owner"])).toEqual({ marker: "unrelated scope" });
+  await waitFor(() => {
+    expect(hook.result.current.latest.error).toMatchObject({ status: 403 });
+    expect(hook.result.current.messages).toEqual([]);
+    expect(hook.result.current.latest.data).toBeUndefined();
+    expect(hook.result.current.history.data).toBeUndefined();
+    expect(JSON.stringify(h.client.getQueryCache().getAll().map(query => query.state.data))).not.toContain("PRIVATE");
+    expect(h.client.getQueryData(["other-private-owner"])).toEqual({ marker: "unrelated scope" });
+  });
   const count = reads.mock.calls.length;
   await act(async () => { await hook.result.current.latest.refetch(); await hook.result.current.history.fetchNextPage(); });
   expect(reads).toHaveBeenCalledTimes(count);
