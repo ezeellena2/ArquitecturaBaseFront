@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { httpCohort } from "@/test/httpCohort";
+import { openDraftSession } from "../draftSession";
 import acceptedFixture from "@/test/fixtures/forms-http/published/accepted.json";
 import acceptedStatusFixture from "@/test/fixtures/forms-http/published/accepted-status.json";
 import publishedStatusFixture from "@/test/fixtures/forms-http/published/status-es.json";
@@ -54,9 +55,39 @@ describe("Actual backend HTTP contract", () => {
   });
 });
 
-it("verifies all twenty-eight exact base form captures from the common final run", () => {
+it("verifies all forty-six exact form captures from the common final run", () => {
  const provenance=httpCohort("forms").verify();
  expect(provenance.sources.some(source=>source.path.endsWith("FormHttpContractFixturesTests.cs"))).toBe(true);
  expect(provenance.sources.some(source=>source.path.endsWith("FormPublicationCheckTests.cs"))).toBe(true);
- expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["published/accepted-status.json","published/accepted.json","published/check-next-unavailable.json","published/check-unavailable.json","published/created.json","published/detail-en.json","published/detail-es.json","published/draft-detail.json","published/draft-list.json","published/list-en.json","published/list-es.json","published/status-en.json","published/status-es.json","failed/accepted-status.json","failed/accepted.json","failed/check-next-unavailable.json","failed/check-unavailable.json","failed/created.json","failed/detail-en.json","failed/detail-es.json","failed/draft-detail.json","failed/draft-list.json","failed/list-en.json","failed/list-es.json","failed/status-en.json","failed/status-es.json","budget-http/es.json","budget-http/en.json"].sort());
+ expect(provenance.sources.some(source=>source.path.endsWith("FormPublicationLanguageTests.cs"))).toBe(true);
+ expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["published/accepted-status.json","published/accepted.json","published/check-next-unavailable.json","published/check-unavailable.json","published/created.json","published/detail-en.json","published/detail-es.json","published/draft-detail.json","published/draft-list.json","published/list-en.json","published/list-es.json","published/status-en.json","published/status-es.json","failed/accepted-status.json","failed/accepted.json","failed/check-next-unavailable.json","failed/check-unavailable.json","failed/created.json","failed/detail-en.json","failed/detail-es.json","failed/draft-detail.json","failed/draft-list.json","failed/list-en.json","failed/list-es.json","failed/status-en.json","failed/status-es.json","budget-http/es.json","budget-http/en.json",...(["es","en"] as const).flatMap(original=>[1,2,3].flatMap(version=>["check","status","detail"].map(kind=>"languages/"+original+"/v"+version+"-"+kind+".json")))].sort());
+});
+
+// Run after the joint backend export; missing captures are not replaced with synthetic defaults.
+for (const original of ["es", "en"] as const) it("reads sealed language additions and removals with " + original + " as the original from actual HTTP", () => {
+  const secondary = original === "es" ? "en" : "es";
+  const cohort = httpCohort("forms");
+  const versionIds: string[] = [];
+  for (const version of [1, 2, 3]) {
+    const path = "languages/" + original + "/v" + version;
+    const detail = readFormDetail(cohort.json(path + "-detail.json"));
+    const fields = openDraftSession({ actorId: "contract", editorId: "language" }, detail.definition).value.draft.fields;
+    const checked = readFormPublicationCheck(cohort.json(path + "-check.json"), detail.definition.id, detail.definition.revision, fields);
+    const operation = detail.publication.currentOperation!;
+    const status = readFormPublicationStatus(cohort.json(path + "-status.json"), detail.definition.id, operation.requestId!);
+    const active = detail.publication.activeVersion!;
+    const cultures = version === 2 ? ["en", "es"] : [original];
+    expect(checked.nextVersionNumber).toBe(version);
+    expect(checked.issues).toEqual([]);
+    expect(checked.channels.flatMap(channel => channel.cultures).sort()).toEqual(cultures);
+    expect(checked.cultures.find(item => item.isOriginal)).toMatchObject({ culture: original, isComplete: true, missing: [] });
+    const report = checked.cultures.find(item => item.culture === secondary)!;
+    expect(report.isComplete).toBe(version === 2);
+    expect(report.missing.length > 0).toBe(version !== 2);
+    expect(checked.diff).toMatchObject({ baseVersionId: versionIds.at(-1) ?? null, addedCultures: version === 1 ? [original] : version === 2 ? [secondary] : [], removedCultures: version === 3 ? [secondary] : [] });
+    expect(status).toMatchObject({ state: "Published", versionId: active.versionId, versionNumber: version, cultures: active.cultures });
+    expect([...active.cultures].sort()).toEqual(cultures);
+    versionIds.push(active.versionId);
+  }
+  expect(new Set(versionIds).size).toBe(3);
 });
