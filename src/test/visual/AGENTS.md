@@ -57,3 +57,5 @@ whatsapp-audio.spec prepara H6 real en es/en a1440/390/320 con estados sintétic
 forms-missing.spec prepara H7 en es/en y 1440/390/320: pendientes, confirmación de descarte e historial. missingRequestFixtures contiene sólo ejemplos sintéticos para geometría; la cohorte forms-missing-requests-http acredita HTTP separado.
 
 responses-assisted.spec prepara s4 dentro del D2 real en es/en a1440/390/320: dos registros confirmados sintéticos, origen Manual, modo histórico Always, dato mapeado/corregido y cadena enlazada. Captura plegado/expandido (12 PNG) en test-results/visual sin modificar goldens; se inspeccionan contra s4-sugerir-cadena.png y det-d2-panel.png elegidos en la única ventana final. No acredita persistencia, IA ni Meta. H6/H7 también generan evidencia nueva; una corrida normal conserva comparación de las referencias anteriores y no autoriza actualizarlas.
+
+La matriz D2 selecciona el host region en escritorio y Dialog modal bajo640px; la planilla permanece montada e inert detrás del modal. responses comprueba el encierro de Tab antes de seguir con galería y navegación. Estas assertions y las referencias se ejecutan sólo en el cierre conjunto.

@@ -24,7 +24,7 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
   const [atBottom, setAtBottom] = useState(true);
   const { latest, history, messages, read, formValuesRevoked, denyRead } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
   const readOwner = JSON.stringify([actor, id, i18n.resolvedLanguage, [...new Set(readPermissions)].sort()]);
-  useChatAudioTranscription({ owner: readOwner, contactId: id, enabled: readPermissions.includes("whatsapp.read") && latest.data?.contact.mode === "Manual" && !latest.isError, messages, onChanged: () => { void latest.refetch(); }, onForbidden: denyRead });
+  useChatAudioTranscription({ owner: readOwner, contactId: id, enabled: readPermissions.includes("whatsapp.read") && latest.data?.contact.mode === "Manual" && !latest.isError, messages, onForbidden: denyRead });
   const { mode, setMode, review, setReview, changing, reviewing } = useChatThreadActions(id, latest.refetch);
   const items = useMemo(() => buildTimeline(messages, latest.data?.outgoing ?? []), [messages, latest.data?.outgoing]);
   const contact = latest.data?.contact;

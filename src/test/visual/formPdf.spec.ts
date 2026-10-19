@@ -68,7 +68,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       };
     });
     await marker.click();
-    const panel = page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
+    const panel = page.getByRole(width < 640 ? "dialog" : "region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
     await expect(panel.getByRole("tab", { name: "PDF", exact: true })).toHaveAttribute("aria-selected", "true");
     const documents = panel.getByRole("region", { name: en ? "Response PDF" : "PDF de la respuesta", exact: true });
     await expect(documents.getByText("Visita-VIS-000024.pdf", { exact: true })).toBeVisible();

@@ -18,7 +18,7 @@ for (const language of ["es", "en"] as const)
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
-      const table = page.getByRole("table");
+      const table = page.getByRole("table", { includeHidden: true });
       await expect(table.getByText("0", { exact: true }).first()).toBeVisible();
       await expect(
         table.getByText(en ? "No" : "No", { exact: true }).first(),
@@ -84,8 +84,17 @@ for (const language of ["es", "en"] as const)
       await expect(
         page.getByRole("heading", { name: "TEST-000002", exact: true }),
       ).toBeVisible();
-      const panel = page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
+      const panel = page.getByRole(width < 640 ? "dialog" : "region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
       await expect(table).toBeAttached();
+      if (width < 640) {
+        await expect(panel).toHaveAttribute("aria-modal", "true");
+        await expect(table.locator("xpath=ancestor::*[@inert][1]")).toBeAttached();
+        for (let step = 0; step < 15; step++) {
+          await page.keyboard.press("Tab");
+          expect(await panel.evaluate(node => node.contains(document.activeElement))).toBe(true);
+        }
+        await panel.focus();
+      }
       await expect(panel.getByRole("tab", { name: en ? "Response" : "Respuesta", exact: true })).toHaveAttribute("aria-selected", "true");
       await expect(panel.getByText("comprobante.pdf", { exact: true })).toBeVisible();
       await page.screenshot({
