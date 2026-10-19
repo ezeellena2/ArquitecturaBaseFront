@@ -126,20 +126,17 @@
     "en": "Inglés"
   },
   "contentLanguage": "Textos en",
-  "languageOriginal": "Original",
-  "sharedStructure": "Los tipos, el orden, las opciones y la obligatoriedad son compartidos por los dos idiomas.",
+  "languageOriginal": "original · obligatorio",
   "prefixOriginal": "El prefijo es compartido. Editalo desde el idioma original.",
   "originalText": "Original ({{language}}): {{text}}",
-  "missingText": "Falta en {{language}}",
-  "translationPending": "Traducción pendiente",
+  "missingText": "Sin traducir",
+  "translationPending": "Sin traducir",
   "localizedChange": "{{name}} · {{language}}",
   "reviewFieldText": "{{question}} · {{field}}",
-  "previewContentLanguage": "Contenido en {{language}}",
-  "previewMissingHint": "Los textos pendientes muestran el original marcado; esa referencia no se guarda como traducción.",
-  "languageMissing_one": "{{count}} pendiente",
-  "languageMissing_other": "{{count}} pendientes",
-  "optionsMissing_one": "{{count}} opción muestra el original: falta la traducción.",
-  "optionsMissing_other": "{{count}} opciones muestran el original: falta la traducción.",
+  "previewContentLanguage": "Le llega entero en {{language}}.",
+  "previewMissingHint": "El formulario llega entero en un mismo idioma.",
+  "languageMissing_one": "{{count}} sin traducir",
+  "languageMissing_other": "{{count}} sin traducir",
   "publication": {
     "title": "Publicar en WhatsApp",
     "publish": "Publicar",
@@ -885,5 +882,11 @@
     "topicCount_other": "{{count}} temas",
     "requestCount_one": "{{count}} pedido",
     "requestCount_other": "{{count}} pedidos"
-  }
+  },
+  "languageOptional": "opcional",
+  "languageComplete": "completo",
+  "contentLanguageHint": "El original ({{language}}) es obligatorio; el otro idioma es opcional. Mientras le falte algo, el formulario sale entero en el original.",
+  "previewForAccount": "Así le llega a una cuenta en {{language}}",
+  "previewFallback_one": "Le llega en {{actual}}: le falta {{count}} texto en {{requested}}.",
+  "previewFallback_other": "Le llega en {{actual}}: le faltan {{count}} textos en {{requested}}."
 }

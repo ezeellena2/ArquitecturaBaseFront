@@ -176,12 +176,16 @@ describe("Forms routes", () => {
     await screen.findByLabelText("Nombre");
     await userEvent.click(screen.getByRole("button", { name: /^English/ }));
     expect(screen.getByLabelText("Nombre")).toHaveValue("");
+    expect(screen.getByLabelText("Nombre")).toHaveAttribute("placeholder", "Sin traducir");
+    expect(screen.getByRole("button", { name: /^Español.*original.*obligatorio/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^English.*opcional.*sin traducir/ })).toBeInTheDocument();
     expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
     await userEvent.click(screen.getByRole("button", { name: "Editar Importe cobrado" }));
     expect(screen.getByLabelText("Pregunta")).toHaveValue("");
     expect(screen.getByText("Original (Español): Importe cobrado")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Vista previa" })).getByRole("radio", { name: "No" })).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "Vista previa" })).getByRole("radio", { name: "Yes" })).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Vista previa" })).getByRole("radio", { name: "Sí" })).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Vista previa" })).queryByRole("radio", { name: "Yes" })).not.toBeInTheDocument();
     await pasteText(screen.getByLabelText("Nombre"), "Visit report");
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
     await waitFor(() => expect(store.definitions.get(fixtureFormId)?.revision).toBe(2));

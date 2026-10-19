@@ -126,3 +126,19 @@ it("retains the field but makes no catalog reads without CatalogsRead", async ()
   expect(screen.getByText("Necesitás permiso para leer catálogos y elegir uno.")).toBeInTheDocument();
   expect(reads).toBe(0); expect(screen.queryByText(catalogA)).not.toBeInTheDocument();
 });
+
+it("marks untranslated secondary text neutrally and preserves the original reference without validation", async () => {
+  const question: DraftQuestion = { ...first, help: { es: "Elegí un cliente." }, options: first.options.map((option,index) => ({ ...option, label: index === 0 ? option.label : { ...option.label, en: "South" } })) };
+  const onChange = vi.fn();
+  await act(async () => { renderWithProviders(<QuestionEditor question={question} position={1} total={1} culture="en" original="es" expanded readOnly={false} issues={[]} onChange={onChange} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
+  expect(screen.getByLabelText("Pregunta")).toHaveAttribute("placeholder", "Sin traducir");
+  expect(screen.getByLabelText("Ayuda para el empleado")).toHaveAttribute("placeholder", "Sin traducir");
+  expect(screen.getByLabelText("Opción 1")).toHaveAttribute("placeholder", "Sin traducir");
+  expect(screen.getByText("Sin traducir")).toBeInTheDocument();
+  expect(screen.getByText(/3 sin traducir/)).toBeInTheDocument();
+  expect(screen.getByText("Original (Español): Cliente")).toBeInTheDocument();
+  expect(screen.getByText("Original (Español): Elegí un cliente.")).toBeInTheDocument();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Pregunta")).not.toHaveAttribute("aria-invalid", "true");
+  expect(onChange).not.toHaveBeenCalled();
+});

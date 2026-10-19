@@ -126,20 +126,17 @@
     "en": "English"
   },
   "contentLanguage": "Content language",
-  "languageOriginal": "Original",
-  "sharedStructure": "Types, order, options and required answers are shared across both languages.",
+  "languageOriginal": "original · required",
   "prefixOriginal": "The prefix is shared. Edit it in the original language.",
   "originalText": "Original ({{language}}): {{text}}",
-  "missingText": "Missing in {{language}}",
-  "translationPending": "Translation pending",
+  "missingText": "Untranslated",
+  "translationPending": "Untranslated",
   "localizedChange": "{{name}} · {{language}}",
   "reviewFieldText": "{{question}} · {{field}}",
-  "previewContentLanguage": "Content in {{language}}",
-  "previewMissingHint": "Pending text shows the marked original; this reference is not saved as a translation.",
-  "languageMissing_one": "{{count}} pending",
-  "languageMissing_other": "{{count}} pending",
-  "optionsMissing_one": "{{count}} option shows the original: translation pending.",
-  "optionsMissing_other": "{{count}} options show the original: translation pending.",
+  "previewContentLanguage": "It arrives entirely in {{language}}.",
+  "previewMissingHint": "The entire form uses one language.",
+  "languageMissing_one": "{{count}} untranslated",
+  "languageMissing_other": "{{count}} untranslated",
   "publication": {
     "title": "Publish on WhatsApp",
     "publish": "Publish",
@@ -885,5 +882,11 @@
     "topicCount_other": "{{count}} topics",
     "requestCount_one": "{{count}} request",
     "requestCount_other": "{{count}} requests"
-  }
+  },
+  "languageOptional": "optional",
+  "languageComplete": "complete",
+  "contentLanguageHint": "The original ({{language}}) is required; the other language is optional. While any text is untranslated, the entire form uses the original language.",
+  "previewForAccount": "What an account in {{language}} receives",
+  "previewFallback_one": "It arrives in {{actual}}: {{count}} text is untranslated in {{requested}}.",
+  "previewFallback_other": "It arrives in {{actual}}: {{count}} texts are untranslated in {{requested}}."
 }
