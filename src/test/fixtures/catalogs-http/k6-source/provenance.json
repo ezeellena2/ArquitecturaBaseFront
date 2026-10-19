@@ -1,74 +1,74 @@
 {
-  "sourceState": [],
-  "artifactSet": "catalog-source",
-  "generatedAtUtc": "2026-10-18T14:31:29.3623142Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "schemaVersion": 1,
-  "sources": [
-    {
-      "sha256": "bd9ee33ae002d75e14b43a6c962af3188973f005648c2becb9fa5c8bf1961568",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationCheckTests.cs"
-    }
-  ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "captures": [
     {
-      "sha256": "3e83f8d0d76ac5f11dbae66b3f8e3f90313ffb53b336fd0ebfe50487f14a3bf0",
-      "length": 437,
-      "name": "active-catalog-created.json"
+      "sha256": "288ede31bc68791d3dfd23289902a92e021434c3f7bd5e397ae559d12928ee79",
+      "name": "active-catalog-created.json",
+      "length": 437
     },
     {
-      "sha256": "2ce2a4e35d7fc8906c6fe5236af3f3d3e1ba9c6e15f33aff4a06c3862d433974",
-      "length": 593,
-      "name": "active-catalog-list-usage.json"
+      "sha256": "0d4c5a529a1fb7bc746a209d59ffb1cc692993d0ad625b30ec49892bac398e53",
+      "name": "active-catalog-list-usage.json",
+      "length": 593
     },
     {
-      "sha256": "85ea5b4fc628df877e3dd7fb93bec19b49c9b6cf7db0fdaa4aaf7c0d62dcbde7",
-      "length": 632,
-      "name": "catalog-choice-check-invalid.json"
+      "sha256": "15aa37fa50b4ec36c24a07cdbb6b651b62599933513ae93d1280c7dd67420606",
+      "name": "catalog-choice-check-invalid.json",
+      "length": 632
     },
     {
-      "sha256": "c278704c374f4aae031426df1cd92a4c01a60ce06c615bad17defa5643525c41",
-      "length": 547,
-      "name": "catalog-choice-check-valid.json"
+      "sha256": "bd7587fd1a2965a225fd21ba967d71a2348c8d118ade3aabb7173dbc95087c04",
+      "name": "catalog-choice-check-valid.json",
+      "length": 547
     },
     {
-      "sha256": "d17df0f163867bafd63ef6c96777f041b826bc50175835883ba03451c8014447",
-      "length": 1535,
-      "name": "catalog-choice-create-receipt.json"
+      "sha256": "96eef7ff5298ab7455076a6b667d373a7a72f847b2c64d0bf6ee995f0d7f5683",
+      "name": "catalog-choice-create-receipt.json",
+      "length": 1535
     },
     {
-      "sha256": "11c615d90245af0485c0a76ae18e9b692d32fcd8c12152ccab2312858c4ad99b",
-      "length": 1376,
-      "name": "catalog-choice-created.json"
+      "sha256": "a858d8fe96cfafde1b9e6e70bca23046c901e30272e88bdfc6bc35c8f9452018",
+      "name": "catalog-choice-created.json",
+      "length": 1376
     },
     {
-      "sha256": "9c05e9609a43754faf59ecb195c44813dfebd1b699e42494dfd03c6e085fb54a",
-      "length": 1205,
-      "name": "catalog-choice-detail.json"
+      "sha256": "1a7ab9f4e4f90f0e64cbb7da23a6cf039f0ced24971cdfd707eb862edcf4468c",
+      "name": "catalog-choice-detail.json",
+      "length": 1205
     },
     {
-      "sha256": "56b2936240b3cb847682db9739e030fcf8be67c920f9c4dfe4f286fa1ed5b7df",
-      "length": 924,
-      "name": "catalog-choice-invalid-created.json"
+      "sha256": "8ed2c94a110a4476b0b204722006b25fa9ac402c17377ef757fecd977b28883f",
+      "name": "catalog-choice-invalid-created.json",
+      "length": 924
     },
     {
-      "sha256": "a599d156417a56c63b017d52c670390cdf4bceb39e2e437f836b1103764f3431",
-      "length": 1235,
-      "name": "catalog-choice-reloaded.json"
+      "sha256": "7719105c2744376a20678b669c21e32d8d3e65f42ee640e7a1725521bdfa2938",
+      "name": "catalog-choice-reloaded.json",
+      "length": 1235
     },
     {
-      "sha256": "4d38d43559631b690755848645d3865c5ecfc10616f1d69ba2197c3cc8721e3a",
-      "length": 1518,
-      "name": "catalog-choice-update-receipt.json"
+      "sha256": "5b32dfa72d1d5ddbb047751c6f6fea52065edeb7ed908cb2ef44cbad6789a87d",
+      "name": "catalog-choice-update-receipt.json",
+      "length": 1518
     },
     {
-      "sha256": "16337041257586cb5f5417c84aed95dd057dcc73261af3325db7632f81170b53",
-      "length": 1359,
-      "name": "catalog-choice-updated.json"
+      "sha256": "3fdc5ae88ff90d6b007c4065187ffff68f468087f4e4915f14273af96192c647",
+      "name": "catalog-choice-updated.json",
+      "length": 1359
     }
   ],
-  "repositoryHead": "59c03587ffaaf4fa393bc32af470c18adf7e376b",
-  "runId": "20261018-140832-09e9bc3e4aa44ffcaabfeb59a1f3c02a",
-  "producer": "FormPublicationCheckTests"
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationCheckTests.cs",
+      "sha256": "bd9ee33ae002d75e14b43a6c962af3188973f005648c2becb9fa5c8bf1961568"
+    }
+  ],
+  "generatedAtUtc": "2026-10-19T11:50:45.8815799Z",
+  "repositoryHead": "e3a7432b575dfafbc9ced969ed8a010ff3394db4",
+  "schemaVersion": 1,
+  "sourceState": [],
+  "producer": "FormPublicationCheckTests",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "catalog-source",
+  "runId": "20261019-112021-b94ec0bcd0494ec9802d597e40ba68a2",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }
