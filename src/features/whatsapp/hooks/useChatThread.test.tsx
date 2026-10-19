@@ -209,7 +209,7 @@ it("withdraws the complete conversation scope after a thread GET confirms loss o
 });
 it("cancels historical reads on thread GET403 and refuses a late private page without rollback", async () => {
   const h = harness(); let forbidden = false; let resolve!: (value: Thread) => void;
-  vi.spyOn(chatApi, "getThread").mockImplementation(async (_id, cursor) => {
+  const reads = vi.spyOn(chatApi, "getThread").mockImplementation(async (_id, cursor) => {
     if (cursor) return new Promise<Thread>(done => { resolve = done; });
     if (forbidden) throw new ApiError(403, {});
     return { ...thread("PRIVATE latest chat"), canReadFormRecords: true };
@@ -218,8 +218,18 @@ it("cancels historical reads on thread GET403 and refuses a late private page wi
   await waitFor(() => expect(hook.result.current.messages).toHaveLength(1));
   let loading!: Promise<unknown>;
   await act(async () => { loading = hook.result.current.history.fetchNextPage(); });
+  await waitFor(() => expect(reads).toHaveBeenCalledTimes(2));
+  const olderSignal = reads.mock.calls[1][2]!;
   forbidden = true;
   await act(async () => { await hook.result.current.latest.refetch(); });
+  await waitFor(() => {
+    expect(hook.result.current.latest.error).toMatchObject({ status: 403 });
+    expect(olderSignal.aborted).toBe(true);
+    expect(hook.result.current.messages).toEqual([]);
+    expect(hook.result.current.latest.data).toBeUndefined();
+    expect(hook.result.current.history.data).toBeUndefined();
+    expect(JSON.stringify(h.client.getQueryCache().getAll().map(query => query.state.data))).not.toContain("PRIVATE");
+  });
   await act(async () => { resolve({ ...thread("PRIVATE late chat", true), canReadFormRecords: true }); await loading; });
   expect(hook.result.current.messages).toEqual([]);
   expect(JSON.stringify(h.client.getQueryCache().getAll().map(query => query.state.data))).not.toContain("PRIVATE");
