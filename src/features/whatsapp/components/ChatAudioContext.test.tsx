@@ -23,7 +23,7 @@ function setup(completed = false, audioCount = 1, completeOnPost = true) {
  server.use(http.get("/api/whatsapp/chats/:id/messages", () => { reads++; if (failRead) { failRead = false; return HttpResponse.json({ detail: "Lectura temporalmente no disponible" }, { status: 500 }); } return HttpResponse.json(read()); }), http.put("/api/whatsapp/chats/:id/read", () => new HttpResponse(null, { status: 204 })),
  http.post("/api/whatsapp/chats/:id/messages/:messageId/audio-transcription", () => { transcriptions++; if (completeOnPost) completed = true; return HttpResponse.json({ state: "Transcribing", canPlay: true }, { status: 202 }); }),
  http.post("/api/whatsapp/chats/:id/assistant-suggestions", async ({ request }) => { const body = await request.json() as Record<string, unknown>; suggestions.push(body); return HttpResponse.json({ requestId: body.requestId, sourceMessageId: messageId, state: "NoReply", proposal: null, outgoing: null }, { status: 202 }); }));
- return { suggestions, transcriptions: () => transcriptions, reads: () => reads, failNextRead: () => { failRead = true; } };
+ return { suggestions, transcriptions: () => transcriptions, reads: () => reads, failNextRead: () => { failRead = true; }, completeAudio: () => { completed = true; } };
 }
 it("uses a newly completed audio as the real manual suggestion source and preserves the ordinary draft", async () => {
  const api = setup(); renderWithProviders(<Harness/>);
@@ -58,4 +58,61 @@ it("does not make one thread GET per accepted audio and keeps attempts after a t
  await act(async () => { await readClient.refetchQueries({ queryKey: chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });
  await waitFor(() => expect(api.reads()).toBe(3));
  expect(api.transcriptions()).toBe(2); expect(screen.getByRole("heading", { name: "Juan" })).toBeVisible();
+});
+
+it("keeps an in-flight transcription through a transient thread GET failure before acceptance", async () => {
+ const api = setup(false, 1, false);
+ let posts = 0; let signal: AbortSignal | undefined; let release!: () => void;
+ const gate = new Promise<void>(resolve => { release = resolve; });
+ server.use(http.post("/api/whatsapp/chats/:id/messages/:messageId/audio-transcription", async ({ request }) => {
+  posts++; signal = request.signal; await gate; api.completeAudio();
+  return HttpResponse.json({ state: "Transcribing", canPlay: true }, { status: 202 });
+ }));
+ renderWithProviders(<Harness canSend={false}/>);
+ try {
+  await waitFor(() => expect(posts).toBe(1));
+  api.failNextRead();
+  await act(async () => { await readClient.refetchQueries({ queryKey: chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });
+  await screen.findByText("No se pudo actualizar. Se conserva el historial visible.");
+  expect(signal?.aborted).toBe(false);
+  await act(async () => release());
+  await act(async () => { await readClient.refetchQueries({ queryKey: chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });
+  await screen.findByText("Quiero registrar una visita");
+  expect(screen.getByRole("heading", { name: "Juan" })).toBeVisible();
+  expect(posts).toBe(1);
+ } finally { release(); }
+});
+
+it("aborts an in-flight transcription and withdraws its scope after a thread GET forbidden", async () => {
+ setup(false, 1, false);
+ let posts = 0; let signal: AbortSignal | undefined; let release!: () => void;
+ const gate = new Promise<void>(resolve => { release = resolve; });
+ server.use(http.post("/api/whatsapp/chats/:id/messages/:messageId/audio-transcription", async ({ request }) => {
+  posts++; signal = request.signal; await gate;
+  return HttpResponse.json({ state: "Transcribing", canPlay: true }, { status: 202 });
+ }));
+ renderWithProviders(<Harness canSend={false}/>);
+ try {
+  await waitFor(() => expect(posts).toBe(1));
+  server.use(http.get("/api/whatsapp/chats/:id/messages", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })));
+  await act(async () => { await readClient.refetchQueries({ queryKey: chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });
+  await waitFor(() => expect(signal?.aborted).toBe(true));
+  expect(screen.queryByRole("heading", { name: "Juan" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Escuchar audio" })).not.toBeInTheDocument();
+  await waitFor(() => expect(readClient.getQueryCache().findAll({ queryKey: chatKey }).every(query => query.state.data === undefined)).toBe(true));
+  await act(async () => release());
+  expect(posts).toBe(1);
+ } finally { release(); }
+});
+
+it("withdraws the entire read scope after a transcription POST forbidden", async () => {
+ setup(); let posts = 0;
+ server.use(http.post("/api/whatsapp/chats/:id/messages/:messageId/audio-transcription", () => {
+  posts++; return HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 });
+ }));
+ renderWithProviders(<Harness canSend={false}/>);
+ await waitFor(() => expect(posts).toBe(1));
+ await waitFor(() => expect(screen.queryByRole("heading", { name: "Juan" })).not.toBeInTheDocument());
+ expect(screen.queryByRole("button", { name: "Escuchar audio" })).not.toBeInTheDocument();
+ await waitFor(() => expect(readClient.getQueryCache().findAll({ queryKey: chatKey }).every(query => query.state.data === undefined)).toBe(true));
 });
