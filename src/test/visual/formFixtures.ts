@@ -81,9 +81,11 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       return { ...common, source: { catalog: "01990000-0000-7000-8000-000000000080" } };
     }) } });
   }
-  if (scenario === "forms-translations") {
+  if (scenario === "forms-translations" || scenario.startsWith("forms-languages-")) {
     const original = fixtureDefinition("es");
-    definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: original.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : q.type === "choice" && !q.source ? { ...q, options: q.options.map((o, index) => index === 0 ? { ...o, label: { ...o.label, en: "" } } : o) } : q) } });
+    const complete = scenario === "forms-languages-complete" || scenario === "forms-languages-add";
+    definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: original.draft.fields.map(q => q.type === "longText" ? { ...q, help: complete ? { es: "Contá lo que pasó.", en: "Describe what happened." } : { es: "Contá lo que pasó." } }
+      : !complete && q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : !complete && q.type === "choice" && !q.source ? { ...q, options: q.options.map((o, index) => index === 0 ? { ...o, label: { ...o.label, en: "" } } : o) } : q) } });
   }
   if (scenario.startsWith("forms-publication")) { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "longText" ? { ...q, help: { es: "Contá lo que pasó.", en: "Describe what happened." } } : q) } }); }
   if(scenario === "forms-publication-budget-http"){ const budget=responseBudgetDefinition(culture);definitions.clear();definitions.set(budget.id,budget); }
@@ -94,10 +96,12 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   const reloadFailed = scenario === "forms-publication-failed-reload";
   const reloadReview = scenario === "forms-publication-uncertain-reload";
   const officialPreview = scenario === "forms-publication-preview";
-  if (reloadFailed || reloadReview || officialPreview) {
-   const d=definitions.get(fixtureFormId)!; definitions.set(d.id,{...d,prefixLocked:true});
-   const requestId=guid(92);publications.set(requestId,{definitionId:d.id,requestId,operationId:guid(90),versionId:guid(91),versionNumber:1,draftRevision:1,state:"Accepted",acceptedAtUtc:audit.createdAtUtc,recoveryPath:"/api/forms/definitions/"+d.id+"/publications/"+requestId});
-   publicationCultures.set(requestId, fixturePublicationCultures(d).filter(item => item.isComplete).map(item => item.culture));
+  const languageChange = scenario === "forms-languages-add" || scenario === "forms-languages-remove";
+  const nextVersionNumber = (id: string) => Math.max(0, ...[...publications.values()].filter(value => value.definitionId === id).map(value => value.versionNumber)) + 1;
+  if (reloadFailed || reloadReview || officialPreview || languageChange) {
+   const d=definitions.get(fixtureFormId)!; definitions.set(d.id,{...d,prefixLocked:true,revision:languageChange?2:d.revision});
+   const requestId=guid(92);publications.set(requestId,{definitionId:d.id,requestId,operationId:guid(90),versionId:guid(91),versionNumber:scenario==="forms-languages-remove"?2:1,draftRevision:1,state:"Accepted",acceptedAtUtc:audit.createdAtUtc,recoveryPath:"/api/forms/definitions/"+d.id+"/publications/"+requestId});
+   publicationCultures.set(requestId, languageChange ? scenario === "forms-languages-add" ? ["es"] : ["es", "en"] : fixturePublicationCultures(d).filter(item => item.isComplete).map(item => item.culture));
    publicationStates.set(requestId,reloadFailed?"Failed":reloadReview?"Uncertain":"Published");
   }
   function overview(id:string) {
@@ -134,13 +138,15 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
       const input = await request.json() as DraftWriteBody;
       if (input.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
-      const available = scenario.startsWith("forms-publication");
+      const available = scenario.startsWith("forms-publication") || scenario.startsWith("forms-languages-");
       const cultures = fixturePublicationCultures(definition);
       const complete = cultures.filter(item => item.isComplete).map(item => item.culture);
-      return json({ definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: [...publications.values()].filter(p => p.definitionId === definition.id).length + 1, compatibility: "LocallyValidated",
+      const activeVersion = overview(definition.id).activeVersion;
+      const previousCultures = activeVersion?.cultures ?? [];
+      return json({ definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: nextVersionNumber(definition.id), compatibility: "LocallyValidated",
         canAccept: available, acceptanceAvailability: available ? "Available" : "Unavailable", cultures, channels: [{ channelId: "phone", profileRevision: "fixture-v1", compatibility: "LocallyValidated", externalEvidence: "Pending", cultures: complete }], issues: [],
         checkToken: available ? "fixture-publication-ticket" : null, checkExpiresAtUtc: available ? "2099-10-10T16:00:00Z" : null,
-        diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [], addedCultures: complete, removedCultures: [] } });
+        diff: { baseVersionId: activeVersion?.versionId ?? null, added: activeVersion ? [] : definition.draft.fields.map(q => q.fieldId), changed: [], removed: [], addedCultures: complete.filter(value => !previousCultures.includes(value)), removedCultures: previousCultures.filter(value => !complete.includes(value)) } });
     }
     if (request.method === "POST" && path.endsWith("/publications")) {
       const definition = definitions.get(path.split("/").at(-2)!);
@@ -149,7 +155,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       const prior = publications.get(input.requestId);
       if (prior) return json(prior, 202);
       const result = { definitionId: definition.id, requestId: input.requestId, operationId: guid(90), versionId: guid(91),
-        versionNumber: 1, draftRevision: definition.revision, state: "Accepted", acceptedAtUtc: audit.createdAtUtc,
+        versionNumber: nextVersionNumber(definition.id), draftRevision: definition.revision, state: "Accepted", acceptedAtUtc: audit.createdAtUtc,
         recoveryPath: "/api/forms/definitions/" + definition.id + "/publications/" + input.requestId };
       publications.set(input.requestId, result);
       publicationCultures.set(input.requestId, fixturePublicationCultures(definition).filter(item => item.isComplete).map(item => item.culture));
