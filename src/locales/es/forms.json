@@ -988,6 +988,9 @@
     "pendingTitle_other": "Por aprobar · {{count}}",
     "review": "Revisar",
     "noPending": "No hay respuestas por aprobar.",
+    "noPendingHint": "Los formularios con respuestas que podés decidir van a aparecer acá.",
+    "noDeactivated": "No hay formularios dados de baja",
+    "noDeactivatedHint": "Los formularios publicados que se den de baja van a aparecer acá.",
     "pendingNavigation": "{{position}} de {{count}} por aprobar",
     "pendingKeyboardHint": "↑ ↓ recorren lo que espera · Escape cierra"
   }

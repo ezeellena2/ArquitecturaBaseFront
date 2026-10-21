@@ -988,6 +988,9 @@
     "pendingTitle_other": "To approve · {{count}}",
     "review": "Review",
     "noPending": "No responses to approve.",
+    "noPendingHint": "Forms with responses you can decide on will appear here.",
+    "noDeactivated": "No deactivated forms",
+    "noDeactivatedHint": "Published forms that are deactivated will appear here.",
     "pendingNavigation": "{{position}} of {{count}} to approve",
     "pendingKeyboardHint": "↑ ↓ navigate pending responses · Escape closes"
   }

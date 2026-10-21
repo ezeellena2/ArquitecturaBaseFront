@@ -38,6 +38,10 @@ export function FormOverviewPage() {
   useResponseFeedback(query.error, "forms:overview:" + scope.owner, query.refetch);
   if (!scope.allowed || forbidden) return <ForbiddenPage/>;
   const data = query.data;
+  const empty = pagination.search ? { title: "noMatches", description: "noMatchesDescription" }
+    : !scope.canRead || pendingOnly ? { title: "overview.noPending", description: "overview.noPendingHint" }
+    : state === "Deactivated" ? { title: "overview.noDeactivated", description: "overview.noDeactivatedHint" }
+    : { title: "responses.noForms", description: "responses.noFormsHint" };
   const formPath = (id: string) => "/formularios/" + id + "/respuestas";
   const columns: Column<FormOverviewRow>[] = [
     { id: "name", header: t("formColumn"), cell: row => <div className="inline-flex items-center gap-2 whitespace-nowrap"><Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link>{row.deactivatedAtUtc ? <Badge variant="outline">{t("lifecycle.stateWithoutVersion")}</Badge> : null}</div> },
@@ -60,7 +64,7 @@ export function FormOverviewPage() {
       {!pendingOnly && state === "Active" && !!data?.filterCounts.deactivatedPending ? <Banner action={<Button variant="outline" aria-label={t("overview.viewDeactivated")} onClick={() => update({ state: "Deactivated", pendingOnly: undefined, page: undefined })}>{t("common:actions.view")}</Button>}>{t("overview.deactivatedPending", { count: data.filterCounts.deactivatedPending })}</Banner> : null}
       <Surface><DataTable columns={columns} rows={data?.forms.items ?? []} rowKey={row => row.id}
         isLoading={query.isPending} hasData={!!data} error={query.error ? t("loadFailed") : undefined} onRetry={() => void query.refetch()}
-        emptyTitle={t(pagination.search || pendingOnly ? "noMatches" : "responses.noForms")} emptyDescription={t("responses.noFormsHint")}/>
+        emptyTitle={t(empty.title)} emptyDescription={t(empty.description)}/>
         {data ? <Pagination {...data.forms} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/> : null}
       </Surface>
     </div>

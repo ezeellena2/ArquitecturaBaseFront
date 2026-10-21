@@ -88,6 +88,24 @@ describe("MF1 form overview", () => {
     expect(within(table).getByRole("link", { name: "Registrar visita" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas");
   });
 
+  it.each([
+    { permissions: ["formapprovals.decide"], query: "", title: "No hay respuestas por aprobar.", hint: "Los formularios con respuestas que podés decidir van a aparecer acá." },
+    { permissions: ["formapprovals.decide"], query: "state=Deactivated", title: "No hay respuestas por aprobar.", hint: "Los formularios con respuestas que podés decidir van a aparecer acá." },
+    { permissions: ["formrecords.read", "formapprovals.decide"], query: "pendingOnly=true", title: "No hay respuestas por aprobar.", hint: "Los formularios con respuestas que podés decidir van a aparecer acá." },
+    { permissions: ["formrecords.read"], query: "state=Deactivated", title: "No hay formularios dados de baja", hint: "Los formularios publicados que se den de baja van a aparecer acá." },
+    { permissions: ["formrecords.read"], query: "search=visita", title: "Sin coincidencias", hint: "No encontramos formularios con estos filtros." },
+    { permissions: ["formrecords.read"], query: "", title: "Todavía no hay formularios publicados", hint: "Los formularios publicados van a aparecer acá." },
+  ])("describes the empty overview accurately for $query and $permissions", async ({ permissions, query, title, hint }) => {
+    const payload = overview();
+    payload.forms = { ...payload.forms, items: [], totalCount: 0, totalPages: 0 };
+    payload.filterCounts = { active: 0, deactivated: 0, deactivatedPending: null };
+    setup(permissions, payload);
+    renderRouteWithProviders("/formularios/respuestas?" + query);
+    expect(await screen.findByRole("heading", { name: title })).toBeVisible();
+    expect(screen.getByText(hint, { exact: true })).toBeVisible();
+    if (query || !permissions.includes("formrecords.read")) expect(screen.queryByText("Los formularios publicados van a aparecer acá.")).not.toBeInTheDocument();
+  });
+
   it("denies the overview without either permission and never reads its data", async () => {
     const { requests } = setup(["formtemplates.read"]);
     renderRouteWithProviders("/formularios/respuestas");
@@ -137,5 +155,22 @@ it("renders the inactive-form action with its visible English label", async () =
   const { unmount } = renderRouteWithProviders("/formularios/respuestas?pageSize=20");
   try {
     expect(await screen.findByRole("button", { name: "View deactivated forms" })).toHaveTextContent(/^View$/);
+  } finally { unmount(); await i18n.changeLanguage("es"); }
+});
+
+it.each([
+  { permissions: ["formapprovals.decide"], query: "", title: "No responses to approve.", hint: "Forms with responses you can decide on will appear here." },
+  { permissions: ["formrecords.read"], query: "state=Deactivated", title: "No deactivated forms", hint: "Published forms that are deactivated will appear here." },
+])("keeps the empty overview context accurate in English for $query", async ({ permissions, query, title, hint }) => {
+  const payload = overview();
+  payload.forms = { ...payload.forms, items: [], totalCount: 0, totalPages: 0 };
+  payload.filterCounts = { active: 0, deactivated: 0, deactivatedPending: null };
+  setup(permissions, payload);
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions })));
+  await i18n.changeLanguage("en");
+  const { unmount } = renderRouteWithProviders("/formularios/respuestas?" + query);
+  try {
+    expect(await screen.findByRole("heading", { name: title })).toBeVisible();
+    expect(screen.getByText(hint, { exact: true })).toBeVisible();
   } finally { unmount(); await i18n.changeLanguage("es"); }
 });
