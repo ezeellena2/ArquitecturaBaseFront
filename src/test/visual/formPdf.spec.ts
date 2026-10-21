@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { fixtureFormId } from "./formFixtures";
 import { responseFormId } from "../responseFixtures";
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
@@ -68,12 +68,32 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       };
     });
     await marker.click();
-    const panel = page.getByRole(width < 640 ? "dialog" : "region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
-    await expect(panel.getByRole("tab", { name: "PDF", exact: true })).toHaveAttribute("aria-selected", "true");
-    const documents = panel.getByRole("region", { name: en ? "Response PDF" : "PDF de la respuesta", exact: true });
-    await expect(documents.getByText("Visita-VIS-000024.pdf", { exact: true })).toBeVisible();
-    expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual([]);
-    await page.screenshot({ path: "test-results/pdf-panel-" + language + "-" + width + ".png", fullPage: true });
+    const mobile = width < 640;
+    const panel = mobile ? page.getByRole("main") : page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
+    let documents: Locator;
+    let miniUrl: string | null = null;
+    if (mobile) {
+      await expect(panel.getByRole("heading", { name: "TEST-000002", level: 1, exact: true })).toBeVisible();
+      const activity = panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true });
+      const expand = activity.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true });
+      await expect(expand).toHaveAttribute("aria-expanded", "false");
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual([]);
+      await page.screenshot({ path: "test-results/pdf-panel-" + language + "-" + width + ".png", fullPage: true });
+      await expand.click();
+      documents = activity.getByRole("listitem").filter({ has: page.getByText(en ? "Generate PDF" : "Armar el PDF", { exact: true }) }).last();
+      await expect(documents.getByText("Visita-VIS-000024.pdf", { exact: true })).toBeVisible();
+      const mini = documents.locator("iframe");
+      await expect(mini).toHaveAttribute("src", /^blob:/);
+      await expect(mini).not.toHaveAttribute("sandbox");
+      miniUrl = await mini.getAttribute("src");
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false"]);
+    } else {
+      await expect(panel.getByRole("tab", { name: "PDF", exact: true })).toHaveAttribute("aria-selected", "true");
+      documents = panel.getByRole("region", { name: en ? "Response PDF" : "PDF de la respuesta", exact: true });
+      await expect(documents.getByText("Visita-VIS-000024.pdf", { exact: true })).toBeVisible();
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual([]);
+      await page.screenshot({ path: "test-results/pdf-panel-" + language + "-" + width + ".png", fullPage: true });
+    }
     const view = documents.getByRole("button", { name: en ? "View PDF" : "Ver PDF", exact: true });
     await view.click();
     const dialog = page.getByRole("dialog", { name: en ? "Fixed copy" : "Copia fija", exact: true });
@@ -82,6 +102,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(frame).toHaveAttribute("src", /^blob:/);
     await expect(frame).not.toHaveAttribute("sandbox");
     const fixedUrl = await frame.getAttribute("src");
+    if (mobile) expect(fixedUrl).toBe(miniUrl);
     const alternative = dialog.getByRole("link", { name: en ? "Download" : "Descargar", exact: true });
     await expect(alternative).toHaveAttribute("href", fixedUrl!);
     const fallbackDownload = page.waitForEvent("download");
@@ -92,11 +113,29 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: "test-results/pdf-fixed-" + language + "-" + width + ".png", fullPage: true });
     await dialog.getByRole("button", { name: en ? "Close" : "Cerrar", exact: true }).first().click();
     await expect(view).toBeFocused();
-    expect(await page.evaluate(() => (window as unknown as { fixedPdfRevokedUrls: string[] }).fixedPdfRevokedUrls)).toContain(fixedUrl);
-    const download = page.waitForEvent("download");
-    await documents.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).click();
-    expect((await download).suggestedFilename()).toBe("Visita-VIS-000024.pdf");
-    expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false", "true"]);
+    if (mobile) {
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfRevokedUrls: string[] }).fixedPdfRevokedUrls)).not.toContain(fixedUrl);
+      const activity = panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true });
+      await activity.getByRole("button", { name: en ? "Collapse activity" : "Plegar actividad", exact: true }).click();
+      await activity.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true }).click();
+      await expect(documents.locator("iframe")).toHaveAttribute("src", fixedUrl!);
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false"]);
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfRevokedUrls: string[] }).fixedPdfRevokedUrls)).not.toContain(fixedUrl);
+      await panel.getByRole("button", { name: en ? "Download" : "Descargar", exact: true, expanded: false }).click();
+      const download = page.waitForEvent("download");
+      await page.getByRole("menuitem", { name: "Visita-VIS-000024.pdf", exact: true }).click();
+      expect((await download).suggestedFilename()).toBe("Visita-VIS-000024.pdf");
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false", "true"]);
+      await panel.getByRole("link", { name: en ? "Back to responses" : "Volver a las respuestas", exact: true }).click();
+      await expect(marker).toBeVisible();
+      await expect.poll(() => page.evaluate(() => (window as unknown as { fixedPdfRevokedUrls: string[] }).fixedPdfRevokedUrls)).toContain(fixedUrl);
+    } else {
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfRevokedUrls: string[] }).fixedPdfRevokedUrls)).toContain(fixedUrl);
+      const download = page.waitForEvent("download");
+      await documents.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).click();
+      expect((await download).suggestedFilename()).toBe("Visita-VIS-000024.pdf");
+      expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false", "true"]);
+    }
     expect(await page.evaluate(() => (globalThis as unknown as { pdfsFixture: { writes: unknown[] } }).pdfsFixture.writes)).toEqual([]);
   });
 }

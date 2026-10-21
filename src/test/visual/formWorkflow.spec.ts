@@ -7,8 +7,9 @@ for (const language of ["es", "en"] as const)
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/src/test/visual/index.html?screen=/formularios/" + responseFormId + "/respuestas/" + responseRecordId + "&scenario=responses-workflow&lang=" + language);
       await expect(page.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
-      const panel = page.getByRole(width < 640 ? "dialog" : "region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
-      await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
+      const panel = width < 640 ? page.getByRole("main") : page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
+      if (width < 640) await panel.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true }).click();
+      else await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
       const history = panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true });
       await expect(history.getByText(en ? "Unconfirmed" : "Sin confirmar", { exact: true })).toBeVisible();
       await page.evaluate(() => document.fonts.ready);

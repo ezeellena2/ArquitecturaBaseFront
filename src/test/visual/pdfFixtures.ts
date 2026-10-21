@@ -1,6 +1,7 @@
 import { fixtureDefinition, wireDefinition } from "./formFixtures";
 import { responseRecordId } from "../responseFixtures";
 import type { PdfDesign } from "@/features/business-forms/pdfDesign";
+import type { ResponseWorkflow } from "@/features/business-forms/api/workflow";
 export function samplePdf() {
     const content = "BT /F1 18 Tf 50 780 Td (Example visit receipt) Tj 0 -30 Td /F1 11 Tf (VIS-000024 - Approved) Tj 0 -25 Td (A fixed example used by the UI test fixture.) Tj ET";
     const objects = ["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>", "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>", "<< /Length " + content.length + " >>\nstream\n" + content + "\nendstream", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
@@ -44,8 +45,13 @@ export function createPdfVisualFixtures() {
             }
             if (path.endsWith("/rules/options"))
                 return json({ definitionId: definition.id, name: definition.name, originalCulture: "es", questions: wireDefinition(definition).draft.fields, roles: [], conditionChoices: {} });
-            if (path.endsWith("/workflow"))
-                return json({ recordId: responseRecordId, recordState: "Approved", ruleRevision: 1, task: null, actions: [], documents: [this.document] });
+            if (path.endsWith("/workflow")) {
+                const workflow: ResponseWorkflow = { recordId: responseRecordId, recordState: "Approved", ruleRevision: 1, task: null,
+                    actions: [{ id: this.document.runId, ruleId: "0199a0c0-0000-7000-8000-000000000091", kind: "GeneratePdf", event: "Approved", order: 0, revision: 0, state: "Completed",
+                        reasonCode: null, reason: null, canConsult: false, canRetry: false, recipients: [], createdAtUtc: this.document.createdAtUtc,
+                        updatedAtUtc: this.document.createdAtUtc, completedAtUtc: this.document.createdAtUtc }], documents: [this.document] };
+                return json(workflow);
+            }
             return null;
         } };
 }

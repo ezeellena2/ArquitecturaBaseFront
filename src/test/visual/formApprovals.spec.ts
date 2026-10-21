@@ -62,7 +62,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.goto("/src/test/visual/index.html?screen=/formularios/" + responseFormId + "/respuestas/" + responseRecordId + "&scenario=responses-approval&lang=" + language);
     const panel = width < 640 ? page.getByRole("main") : page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
     await expect(panel.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
-    if (width >= 640) await expect(page.getByRole("table", { includeHidden: true })).toBeAttached();
+    if (width >= 640) await expect(page.getByRole("table", { includeHidden: true }).filter({ has: page.locator("[data-response-id]") })).toBeAttached();
     else await expect(page.getByRole("table", { includeHidden: true })).toHaveCount(0);
     await expect(panel.locator("header").getByText(en ? "To approve" : "Por aprobar", { exact: true })).toBeVisible();
     await page.screenshot({ path: "test-results/approvals-detail-pending-" + language + "-" + width + ".png", fullPage: true });
