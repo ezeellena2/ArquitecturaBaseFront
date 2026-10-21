@@ -35,6 +35,7 @@ import { FilterChip } from "@/shared/ui/FilterChip";
 import { ResponseChoiceMenu } from "../components/ResponseChoiceMenu";
 import { replaceResponseCondition, responseFilterLabels, visibleResponseColumns } from "../responses";
 import type { ResponseRow } from "../api/responses";
+import { responseFullPath } from "../responseNavigationPaths";
 import { ResponseValue } from "../components/ResponseValue";
 import { ResponseColumnsMenu } from "../components/ResponseColumnsMenu";
 import { ResponseFiltersPanel } from "../components/ResponseFiltersPanel";
@@ -45,6 +46,7 @@ export function FormResponsesPage() {
   const route = useResponseRouteQuery(formId);
   const { query, scope } = useResponseSheet(formId, route.query, route.ready);
   const mobile = useMediaQuery("(width < 640px)");
+  const baseMatch = useMatch("/formularios/:formId/respuestas");
   const recordId = useMatch("/formularios/:formId/respuestas/:recordId")?.params.recordId;
   const navigate = useNavigate();
   const update = useQueryUpdate();
@@ -64,6 +66,12 @@ export function FormResponsesPage() {
   const [initialField, setInitialField] = useState<string | undefined>();
   const workspace = useContext(ResponseWorkspaceContext);
   useBreadcrumbLeaf(query.data?.name);
+  useLayoutEffect(() => {
+    if (!baseMatch || recordId || workspace?.fullEntry?.locationKey === null || workspace?.navigation?.origin !== "sheet" || !workspace.fullEntry || !query.data || query.isPlaceholderData) return;
+    const link = container.current?.querySelector<HTMLElement>('[data-response-id="' + workspace.navigation.selection.recordId + '"]');
+    (link ?? container.current)?.focus();
+    workspace.finishFull();
+  }, [baseMatch, recordId, workspace, query.data, query.isPlaceholderData]);
   const deny = useCallback(() => workspace?.deny(), [workspace]);
   const onFileError = useCallback(
     (error: unknown) =>
@@ -98,8 +106,8 @@ export function FormResponsesPage() {
     (query.error instanceof ApiError && query.error.status === 403)
   )
     return <ForbiddenPage />;
-  const recordPath = (id: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); return `/formularios/${formId}/respuestas/${id}?${params}`; };
-  const rememberSheet = (recordId: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); workspace?.setNavigation(formId, { origin: "sheet", selection: { recordId }, search: params.toString() }); };
+  const recordPath = (id: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); return mobile ? responseFullPath(formId, id, params.toString()) : `/formularios/${formId}/respuestas/${id}?${params}`; };
+  const rememberSheet = (recordId: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); workspace?.setNavigation(formId, { origin: "sheet", selection: { recordId }, search: params.toString() }); if (mobile) workspace?.prepareFull(formId, recordId); };
   const columns: Column<ResponseRow>[] = [
     {
       id: "number",
@@ -146,7 +154,7 @@ export function FormResponsesPage() {
       ),
     },
     ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
-    ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false })}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
+    ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...visible.map((column) => ({
       id: column.fieldId,
       header:
@@ -169,6 +177,7 @@ export function FormResponsesPage() {
           onForbidden={deny}
           onError={onFileError}
           detailLink={recordPath(row.id)}
+          onOpenDetail={() => rememberSheet(row.id)}
         />
       ),
     })),
@@ -306,7 +315,7 @@ export function FormResponsesPage() {
           columns={columns}
           rows={data?.records.items ?? []}
           rowKey={(row) => row.id}
-          selectedRowKey={recordId}
+          selectedRowKey={recordId ?? (workspace?.navigation?.origin === "sheet" ? workspace.navigation.selection.recordId : undefined)}
           onRowClick={row => { rememberSheet(row.id); if (row.id === recordId) setFocusRequest(value => value + 1); navigate(recordPath(row.id)); }}
           isLoading={query.isPending}
           hasData={!!data}

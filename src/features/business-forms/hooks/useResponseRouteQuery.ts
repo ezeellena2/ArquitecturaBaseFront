@@ -9,25 +9,20 @@ import type {
   ResponseQuery,
 } from "../responses";
 const guid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function useResponseRouteQuery(formId: string) {
-  const [params] = useSearchParams();
-  const presentation = useSystemPresentation();
-  const pagination = usePagination(presentation.data?.defaultPageSize, true);
-  const update = useQueryUpdate();
-  const workspace = useResponseWorkspace(formId);
+export function responseQueryFromParams(params: URLSearchParams, filter: ResponseFilter, page = 1, pageSize = 20): ResponseQuery {
   const sort = params.get("sort") ?? "-number";
   const sortFieldId = params.get("sortFieldId") ?? undefined;
-  const query: ResponseQuery = {
-    ...workspace.filter,
+  return {
+    ...filter,
     page:
-      Number.isSafeInteger(pagination.page) && pagination.page > 0
-        ? pagination.page
+      Number.isSafeInteger(page) && page > 0
+        ? page
         : 1,
     pageSize:
-      Number.isSafeInteger(pagination.pageSize) &&
-      pagination.pageSize > 0 &&
-      pagination.pageSize <= 100
-        ? pagination.pageSize
+      Number.isSafeInteger(pageSize) &&
+      pageSize > 0 &&
+      pageSize <= 100
+        ? pageSize
         : 20,
     sort: [
       "number",
@@ -47,6 +42,14 @@ export function useResponseRouteQuery(formId: string) {
       .split(",")
       .filter((value) => guid.test(value)),
   };
+}
+export function useResponseRouteQuery(formId: string) {
+  const [params] = useSearchParams();
+  const presentation = useSystemPresentation();
+  const pagination = usePagination(presentation.data?.defaultPageSize, true);
+  const update = useQueryUpdate();
+  const workspace = useResponseWorkspace(formId);
+  const query = responseQueryFromParams(params, workspace.filter, pagination.page, pagination.pageSize);
   const setFilter = (
     filter: ResponseFilter,
     versionIds: readonly string[] = query.versionIds ?? [],

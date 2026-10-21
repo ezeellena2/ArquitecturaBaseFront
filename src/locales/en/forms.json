@@ -757,6 +757,7 @@
     "back": "Back"
   },
   "detail": {
+    "openFull": "Open in full view", "backToResponses": "Back to responses", "expandAnswer": "Expand response", "collapseAnswer": "Collapse response", "expandActivity": "Expand activity", "collapseActivity": "Collapse activity", "answerSummary_one": "{{count}} question", "answerSummary_other": "{{count}} questions",
     "activity": "Activity",
     "photos": "Photos",
     "pdf": "PDF",

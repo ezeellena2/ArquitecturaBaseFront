@@ -16,6 +16,7 @@ export function ResponseValue({
   onForbidden,
   onError,
   detailLink,
+  onOpenDetail,
 }: {
   cell: ResponseCell;
   actor: string;
@@ -27,6 +28,7 @@ export function ResponseValue({
   onForbidden: () => void;
   onError: (error: unknown) => void;
   detailLink: string;
+  onOpenDetail?: () => void;
 }) {
   const { t, i18n } = useTranslation("forms");
   if (cell.state !== "Answered")
@@ -48,6 +50,7 @@ export function ResponseValue({
       return (
         <Link
           to={detailLink}
+          onClick={event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) onOpenDetail?.(); }}
           className="text-[var(--color-brand-700)] underline"
         >
           {t("responses.documents", { count: cell.value.length })} ·{" "}

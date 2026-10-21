@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchApprovalTasks } from "../api/approvals";
 import { useApprovalScope, approvalForbidden } from "./useApprovalQueries";
-export function useFormPendingApprovals(formId: string, page: number, pageSize: number, selectedTaskId?: string) {
+export function useFormPendingApprovals(formId: string, page: number, pageSize: number, selectedTaskId?: string, enabled = true) {
   const originalScope = useApprovalScope();
   const [deniedOwner, setDeniedOwner] = useState<string | null>(null);
   const client = useQueryClient();
-  const scope = { ...originalScope, allowed: originalScope.allowed && deniedOwner !== originalScope.owner };
+  const scope = { ...originalScope, allowed: enabled && originalScope.allowed && deniedOwner !== originalScope.owner };
   const deny = useCallback(() => setDeniedOwner(scope.owner), [scope.owner]);
   const filter = { definitionId: formId, onlyMine: true, page, pageSize };
   const query = useQuery({ queryKey: ["form-approvals", scope.owner, "list", filter],

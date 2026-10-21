@@ -43,11 +43,11 @@ function setup(permissions = ["formrecords.read", "formrules.manage"], approval 
   return { reads, tasks, sheet };
 }
 const path = `/formularios/${responseFormId}/respuestas`;
-it.each(["sheet", "inbox"])("contains mobile focus and preserves navigation in the %s panel", async source => {
+it("contains mobile focus and preserves navigation in the decision-only metadata panel", async () => {
   const listeners = new Set<(event: MediaQueryListEvent) => void>();
   vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: (_type: string, listener: unknown) => { if (query === "(width < 640px)") listeners.add(listener as (event: MediaQueryListEvent) => void); }, removeEventListener: (_type: string, listener: unknown) => { listeners.delete(listener as (event: MediaQueryListEvent) => void); }, dispatchEvent: vi.fn() }));
-  setup(["formrecords.read", "formapprovals.decide", "formrecords.export"], true);
-  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
+  setup(["formapprovals.decide"], true);
+  const origin = "/formularios/por-aprobar";
   const { router } = renderRouteWithProviders(origin + "?pageSize=20");
   const row = await screen.findByRole("link", { name: "TEST-000002" });
   const table = row.closest("table")!;

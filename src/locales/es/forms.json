@@ -757,6 +757,7 @@
     "back": "Volver"
   },
   "detail": {
+    "openFull": "Abrir en pantalla completa", "backToResponses": "Volver a las respuestas", "expandAnswer": "Expandir respuesta", "collapseAnswer": "Plegar respuesta", "expandActivity": "Expandir actividad", "collapseActivity": "Plegar actividad", "answerSummary_one": "{{count}} pregunta", "answerSummary_other": "{{count}} preguntas",
     "activity": "Actividad",
     "photos": "Fotos",
     "pdf": "PDF",
