@@ -20,7 +20,7 @@ const guid = (n: number) => "01990000-0000-7000-8000-" + String(n).padStart(12, 
 const key = (id: string) => "field_" + id.replaceAll("-", "");
 const audit = { createdAtUtc: "2026-10-10T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-10T12:00:00Z", lastChangedBy: { userId: guid(2), displayName: "Ana Pérez" } };
 export function fixtureLifecycle(revision = 1, changes: Partial<FormLifecycle> = {}): FormLifecycle {
-  return { lastOpenSessionExpiresAtUtc: null, canDelete: false, deletionUnavailableReason: null, revision, deactivatedAtUtc: null, deactivatedBy: null, responseCount: null, pendingApprovalCount: null, nextRecordNumber: null,
+  return { deprecationState: null, deprecatedAtUtc: null, lastOpenSessionExpiresAtUtc: null, canDelete: false, deletionUnavailableReason: null, revision, deactivatedAtUtc: null, deactivatedBy: null, responseCount: null, pendingApprovalCount: null, nextRecordNumber: null,
     nextVersionNumber: 1, canDeactivate: false, canReactivate: false, unavailableReason: "NotPublished", ...changes };
 }
 export function fixtureDefinition(culture: FormCulture = "es", prefixLocked = false): FormDefinitionSnapshot {

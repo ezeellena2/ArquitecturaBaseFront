@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { fixtureDefinition, wireDefinition } from "@/test/visual/formFixtures";
 import { readFormDetail, readFormFacets } from "./response";
 const id = fixtureDefinition().id;
-const lifecycle = { lastOpenSessionExpiresAtUtc: null, canDelete: false, deletionUnavailableReason: null, revision: 1, deactivatedAtUtc: null, deactivatedBy: null, responseCount: null, pendingApprovalCount: null, nextRecordNumber: null, nextVersionNumber: 2, canDeactivate: true, canReactivate: false, unavailableReason: null };
+const lifecycle = { deprecationState: null, deprecatedAtUtc: null, lastOpenSessionExpiresAtUtc: null, canDelete: false, deletionUnavailableReason: null, revision: 1, deactivatedAtUtc: null, deactivatedBy: null, responseCount: null, pendingApprovalCount: null, nextRecordNumber: null, nextVersionNumber: 2, canDeactivate: true, canReactivate: false, unavailableReason: null };
 const detail = () => ({ definition: wireDefinition(fixtureDefinition()), capabilities: { canSave: true, canPublish: true, canPreview: true }, audit: { createdAtUtc: "2026-10-20T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-20T12:00:00Z", lastChangedBy: null }, publication: { activeVersion: { versionId: "01990000-0000-7000-8000-000000000099", versionNumber: 1, draftRevision: 1, cultures: ["es"] }, currentOperation: null, displayState: "Published" }, lifecycle });
 describe("form lifecycle response contract", () => {
  it("keeps unknown response counts and deactivation separate from the draft and publication", () => {
@@ -28,4 +28,10 @@ it("requires authoritative deletion capability and nullable open-send expiry wit
  const observed={...detail(),lifecycle:{...lifecycle,lastOpenSessionExpiresAtUtc:null,canDelete:true,deletionUnavailableReason:null}};
  expect(readFormDetail(observed)).toMatchObject({lifecycle:{responseCount:null,canDelete:true,lastOpenSessionExpiresAtUtc:null,deletionUnavailableReason:null}});
  for(const change of [{canDelete:undefined},{lastOpenSessionExpiresAtUtc:undefined},{deletionUnavailableReason:"UnknownState"}]) expect(()=>readFormDetail({...observed,lifecycle:{...observed.lifecycle,...change}})).toThrow();
+});
+
+it("requires nullable deprecation evidence and rejects unknown states without inventing a deprecated date",()=> {
+ const observed={...detail(),lifecycle:{...lifecycle,deprecationState:null,deprecatedAtUtc:null}};
+ expect(readFormDetail(observed).lifecycle).toMatchObject({deprecationState:null,deprecatedAtUtc:null});
+ for(const change of [{deprecationState:undefined},{deprecatedAtUtc:undefined},{deprecationState:"Unknown"}]) expect(()=>readFormDetail({...observed,lifecycle:{...observed.lifecycle,...change}})).toThrow();
 });

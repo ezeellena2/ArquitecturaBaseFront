@@ -946,7 +946,7 @@
     "delete": "Eliminar",
     "deleting": "Eliminando…",
     "deleteTitle": "Eliminar «{{name}}»",
-    "deleteDescription": "Deja de aparecer en los listados y no se puede volver a usar.",
+    "deleteDescription": "Deja de aparecer en los listados y no se puede volver a usar. El prefijo queda reservado. Si llegó a publicarse, sus Flows se deprecan cuando no quedan envíos abiertos.",
     "deleteHint": "Esta acción no se deshace. Si querés conservar el formulario, dalo de baja.",
     "deleteChanged": "Cambió la situación del formulario. Cerrá este diálogo y revisalo antes de eliminarlo.",
     "deletedSuccess": "Eliminamos {{name}}.",
@@ -958,6 +958,13 @@
       "Unavailable": "No se puede eliminar este formulario."
     },
     "noDeletePermission": "Ya no tenés permiso para eliminar este formulario.",
-    "deletedWhileEditing": "El formulario ya fue eliminado. Tus cambios sin guardar se conservan."
+    "deletedWhileEditing": "El formulario ya fue eliminado. Tus cambios sin guardar se conservan.",
+    "deprecation": {
+      "pendingOpen": "En WhatsApp: se deprecan cuando venzan los envíos abiertos. El último vence el {{date}}.",
+      "pending": "Deprecación pendiente en WhatsApp.",
+      "uncertain": "Sin confirmar en WhatsApp. Se sigue consultando.",
+      "deprecatedOn": "Deprecados el {{date}} en WhatsApp.",
+      "deprecated": "Deprecados en WhatsApp."
+    }
   }
 }

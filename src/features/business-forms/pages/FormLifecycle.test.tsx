@@ -128,3 +128,25 @@ it("shows the last open send expiry in the profile time zone only when supplied"
  expect(await within(dialog).findByText("El último envío abierto vence el 21 oct 2026, 15:00.")).toBeVisible();
  expect(within(dialog).queryByText("2026-10-21T18:00:00Z")).not.toBeInTheDocument();
 });
+
+it.each(["Pending","Uncertain","Deprecated"] as const)("shows authoritative %s in the deactivated list and omits it from active rows",async state=>{
+ const store=setup("forms-lifecycle-deactivated");
+ store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{deactivatedAtUtc:"2026-10-20T12:00:00Z",deprecationState:state,lastOpenSessionExpiresAtUtc:state==="Pending"?"2026-10-22T18:00:00Z":null,deprecatedAtUtc:state==="Deprecated"?"2026-10-21T18:00:00Z":null}));
+ const view=renderRouteWithProviders("/formularios?publicationFilter=Deactivated");
+ const table=await screen.findByRole("table");
+ expect(within(table).getByText(state==="Pending"?/se deprecan cuando venzan/:state==="Uncertain"?/Sin confirmar en WhatsApp/:/Deprecados el 21 oct 2026, 15:00/)).toBeVisible();
+ view.unmount();queryClient.clear();
+ store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{deprecationState:state,lastOpenSessionExpiresAtUtc:state==="Pending"?"2026-10-22T18:00:00Z":null,deprecatedAtUtc:state==="Deprecated"?"2026-10-21T18:00:00Z":null}));
+ renderRouteWithProviders("/formularios");
+ const active=await screen.findByRole("table");
+ expect(within(active).queryByText(/se deprecan|Sin confirmar en WhatsApp|Deprecados el/)).not.toBeInTheDocument();
+});
+it("omits WhatsApp deprecation claims from the impact preview when the channel has no confirmed Flows",async()=>{
+ const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{deprecationState:null,deprecatedAtUtc:null,lastOpenSessionExpiresAtUtc:null}));
+ renderRouteWithProviders("/formularios/"+fixtureFormId);
+ const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Dar de baja/}));
+ const dialog=await screen.findByRole("dialog",{name:"Dar de baja «Registrar visita»"});
+ await within(dialog).findByText(/Registrar entrega/);
+ expect(within(dialog).queryByText("Envíos abiertos y WhatsApp")).not.toBeInTheDocument();
+ expect(within(dialog).queryByText(/se deprecan sus Flows/)).not.toBeInTheDocument();
+});

@@ -38,7 +38,7 @@ const displayState = z.enum(["Draft", "Accepted", "Preparing", "Publishing", "Un
 const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, cultures: z.array(z.enum(["es", "en"])).min(1) });
 const currentOperation = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, state: publicationState, stage: z.string().min(1), requiresReview: z.boolean(), canRetry: z.literal(false), requestId: guid.nullable(), recoveryPath: z.string().nullable() });
 const publicationProjection = z.strictObject({ activeVersion: activeVersion.nullable(), currentOperation: currentOperation.nullable(), displayState });
-const lifecycle = z.strictObject({ lastOpenSessionExpiresAtUtc: utc.nullable(), canDelete: z.boolean(), deletionUnavailableReason: z.enum(["PublicationInProgress", "HasResponses", "OpenSends"]).nullable(), revision, deactivatedAtUtc: utc.nullable(), deactivatedBy: author.nullable(),
+const lifecycle = z.strictObject({ deprecationState: z.enum(["Pending", "Uncertain", "Deprecated"]).nullable(), deprecatedAtUtc: utc.nullable(), lastOpenSessionExpiresAtUtc: utc.nullable(), canDelete: z.boolean(), deletionUnavailableReason: z.enum(["PublicationInProgress", "HasResponses", "OpenSends"]).nullable(), revision, deactivatedAtUtc: utc.nullable(), deactivatedBy: author.nullable(),
   responseCount: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(), pendingApprovalCount: z.number().int().min(0).nullable(),
   nextRecordNumber: z.string().min(1).nullable(), nextVersionNumber: revision, canDeactivate: z.boolean(), canReactivate: z.boolean(),
   unavailableReason: z.enum(["PublicationInProgress", "NotPublished"]).nullable() });

@@ -946,7 +946,7 @@
     "delete": "Delete",
     "deleting": "Deleting…",
     "deleteTitle": "Delete “{{name}}”",
-    "deleteDescription": "It will no longer appear in lists and cannot be used again.",
+    "deleteDescription": "It will no longer appear in lists and cannot be used again. The prefix remains reserved. If it was ever published, its Flows are deprecated once no open sends remain.",
     "deleteHint": "This action cannot be undone. To keep the form, deactivate it instead.",
     "deleteChanged": "The form’s situation changed. Close this dialog and review it before deleting it.",
     "deletedSuccess": "Deleted {{name}}.",
@@ -958,6 +958,13 @@
       "Unavailable": "This form cannot be deleted."
     },
     "noDeletePermission": "You no longer have permission to delete this form.",
-    "deletedWhileEditing": "This form was deleted. Your unsaved changes are preserved."
+    "deletedWhileEditing": "This form was deleted. Your unsaved changes are preserved.",
+    "deprecation": {
+      "pendingOpen": "On WhatsApp: they will be deprecated when open sends expire. The last expires on {{date}}.",
+      "pending": "Deprecation pending on WhatsApp.",
+      "uncertain": "Unconfirmed on WhatsApp. Confirmation is still being checked.",
+      "deprecatedOn": "Deprecated on {{date}} on WhatsApp.",
+      "deprecated": "Deprecated on WhatsApp."
+    }
   }
 }
