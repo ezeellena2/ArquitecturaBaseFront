@@ -29,6 +29,55 @@ beforeEach(() => {
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
 const open = async () => { renderRouteWithProviders("/whatsapp/chat"); await userEvent.click(await screen.findByRole("button", { name: "Ana" })); return contact.mode === "Assistant" ? screen.findByRole("region", { name: "Asistente" }) : screen.findByLabelText("Respuesta al cliente"); };
 
+function expectPrivateSendOutsideMutationCache(request: typeof requests[number]) {
+  const states = JSON.stringify(queryClient.getMutationCache().getAll().map(mutation => mutation.state));
+  expect(states).not.toContain(request.body);
+  expect(states).not.toContain(request.requestId);
+}
+
+it("keeps the frozen text and identity outside MutationCache while sending and guards a second submit", async () => {
+  let release!: () => void;
+  const response = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.post("/api/whatsapp/chats/:id/messages", async ({ request }) => {
+    const body = await request.json() as typeof requests[number]; requests.push(body);
+    await response;
+    thread.outgoing = [pending(body.requestId, body.body)];
+    return HttpResponse.json(thread.outgoing[0], { status: 202 });
+  }));
+  const input = await open(); fireEvent.change(input, { target: { value: "Texto privado durante el envío" } });
+  const send = screen.getByRole("button", { name: "Enviar" });
+  try {
+    act(() => { fireEvent.click(send); fireEvent.click(send); fireEvent.keyDown(input, { key: "Enter", ctrlKey: true }); });
+    await waitFor(() => expect(requests).toHaveLength(1));
+    expect(input).toBeDisabled();
+    expectPrivateSendOutsideMutationCache(requests[0]);
+  } finally { await act(async () => release()); }
+  await waitFor(() => expect(input).toHaveValue(""));
+  expect(requests).toHaveLength(1);
+});
+
+it("keeps confirmed text and identity outside MutationCache after accepting the send", async () => {
+  const input = await open(); fireEvent.change(input, { target: { value: "Texto privado del recibo confirmado" } });
+  await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+  await waitFor(() => expect(input).toHaveValue(""));
+  expectPrivateSendOutsideMutationCache(requests[0]);
+});
+
+for (const failure of ["network", "500", "400"] as const) it("keeps the draft outside MutationCache after a " + failure + " send result", async () => {
+  server.use(http.post("/api/whatsapp/chats/:id/messages", async ({ request }) => {
+    const body = await request.json() as typeof requests[number]; requests.push(body);
+    return failure === "network" ? HttpResponse.error() : HttpResponse.json({ code: "Test.SendFailed", detail: "No se pudo enviar." }, { status: Number(failure) });
+  }));
+  const input = await open(); fireEvent.change(input, { target: { value: "Texto privado conservado ante el fallo" } });
+  await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+  if (failure === "400") await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+  else await screen.findAllByRole("button", { name: "Consultar envío" });
+  expect(input).toHaveValue("Texto privado conservado ante el fallo");
+  expect(input).toHaveProperty("disabled", failure !== "400");
+  expectPrivateSendOutsideMutationCache(requests[0]);
+  expect(requests).toHaveLength(1);
+});
+
 it("replaces the visible composer with the primary manual attention control in Assistant mode", async () => {
   contact.mode = "Assistant";
   renderRouteWithProviders("/whatsapp/chat");
