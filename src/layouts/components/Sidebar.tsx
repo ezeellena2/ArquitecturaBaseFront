@@ -52,7 +52,7 @@ function NavItem({
   onNavigate?: () => void;
 }) {
   const Icon = item.icon;
-  const otherFormsPage = /^\/formularios\/(?:por-aprobar|respuestas|faltantes|[^/]+\/respuestas)(?:\/|$)/.test(useLocation().pathname);
+  const otherFormsPage = /^\/formularios\/(?:respuestas|faltantes|[^/]+\/respuestas)(?:\/|$)/.test(useLocation().pathname);
 
   const link = (
     <NavLink

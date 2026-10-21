@@ -12,7 +12,6 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import {
   fetchResponseDetail,
   fetchResponseFacet,
-  fetchResponseNavigation,
   fetchResponseSheet,
 } from "../api/responses";
 import { ResponseWorkspaceContext } from "./useResponseWorkspace";
@@ -70,30 +69,6 @@ export function useResponseFeedback(
     },
     [id],
   );
-}
-export function useResponseNavigation(page = 1, pageSize = 4, search = "") {
-  const scope = useResponseScope();
-  useUnobservedQueryCleanup(["form-responses", scope.owner]);
-  const query = useQuery({
-    queryKey: [
-      "form-responses",
-      scope.owner,
-      "navigation",
-      page,
-      pageSize,
-      search,
-    ],
-    queryFn: ({ signal }) =>
-      fetchResponseNavigation({ page, pageSize, search }, signal),
-    enabled: scope.allowed,
-    gcTime: 0,
-    meta: { errorOwner: "local" },
-    placeholderData: (previous, previousQuery) =>
-      previousQuery?.queryKey[1] === scope.owner
-        ? keepPreviousData(previous)
-        : undefined,
-  });
-  return { query, scope };
 }
 export function useResponseSheet(
   id: string,

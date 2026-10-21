@@ -42,24 +42,6 @@ function setup(
     http.get("/api/me", () =>
       HttpResponse.json({ ...currentUser, permissions }),
     ),
-    http.get("/api/forms/navigation", () =>
-      HttpResponse.json({
-        items: [
-          {
-            id: responseFormId,
-            name: "Formulario publicado",
-            prefix: "TEST",
-            versionNumber: 2,
-          },
-        ],
-        page: 1,
-        pageSize: 4,
-        totalCount: 1,
-        totalPages: 1,
-        hasPrevious: false,
-        hasNext: false,
-      }),
-    ),
     http.post("/api/forms/definitions/:id/records/search", () =>
       HttpResponse.json(responseSheetFixture()),
     ),
@@ -586,12 +568,10 @@ describe("response sheet", () => {
 
   it("uses the confirmed detail name in breadcrumbs even when navigation has a different name", async () => {
     setup();
-    server.use(http.get("/api/forms/navigation", () => HttpResponse.json({ items: [{ id: responseFormId, name: "Nombre del menú", prefix: "TEST", versionNumber: 2 }], page: 1, pageSize: 4, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
     await screen.findByRole("heading", { name: "TEST-000002" });
     const crumbs = within(screen.getByRole("navigation", { name: "Migas de pan" }));
     expect(crumbs.getByText("Formulario publicado")).toHaveAttribute("aria-current", "page");
-    expect(crumbs.queryByText("Nombre del menú")).not.toBeInTheDocument();
   });
 
   it("moves Next and Previous across response pages with the same order", async () => {
@@ -751,11 +731,10 @@ describe("response sheet", () => {
     expect(router.state.location.search).toContain("columns=");
     expect(router.state.location.search).not.toContain("Observaciones");
   });
-  it("opens the static overview without reading legacy navigation and preserves the shell", async () => {
+  it("opens the static overview and preserves the shell", async () => {
     setup();
-    const legacy = vi.fn(); const requested = vi.fn();
-    server.use(http.get("/api/forms/navigation", () => { legacy(); return HttpResponse.json({}); }),
-      http.get("/api/forms/overview", () => { requested(); return HttpResponse.json({ forms: { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false }, filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } }); }));
+    const requested = vi.fn();
+    server.use(http.get("/api/forms/overview", () => { requested(); return HttpResponse.json({ forms: { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false }, filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } }); }));
     renderRouteWithProviders("/perfil");
     await screen.findByRole("heading", { name: "Mi perfil" });
     const shell = screen.getByRole("navigation", { name: "Navegación principal" });
@@ -764,7 +743,6 @@ describe("response sheet", () => {
     await userEvent.click(screen.getByRole("link", { name: "Formularios" }));
     await screen.findByRole("heading", { name: "Formularios", level: 1 });
     await waitFor(() => expect(requested).toHaveBeenCalledOnce());
-    expect(legacy).not.toHaveBeenCalled();
     expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBe(shell);
   });
   it("reports one detail failure when detail and its sheet both fail", async () => {

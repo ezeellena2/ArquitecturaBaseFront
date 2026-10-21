@@ -14,7 +14,6 @@ function setup() {
  let forbidden = false; let detailReads = 0;
  server.use(
   http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
-  http.get("/api/forms/navigation", () => HttpResponse.json({ items: [], page: 1, pageSize: 4, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })),
   http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(responseSheetFixture())),
   http.get("/api/forms/records/:id", () => { detailReads++; return forbidden ? HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }) : HttpResponse.json(assistedResponseFixture()); }),
   http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(responseWorkflowFixture())),

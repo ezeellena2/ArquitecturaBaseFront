@@ -22,12 +22,10 @@ function overview(): FormOverview {
 }
 function setup(permissions: string[], payload = overview()) {
   const requests: URL[] = [];
-  const legacy: string[] = [];
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })),
     http.get("/api/forms/overview", ({ request }) => { requests.push(new URL(request.url)); return HttpResponse.json(payload); }),
-    http.get("/api/forms/navigation", () => { legacy.push("navigation"); return HttpResponse.json({ items: [], page: 1, pageSize: 4, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false }); }),
     http.get("/api/forms/approvals/count", () => HttpResponse.json({ count: 2 })));
-  return { requests, legacy };
+  return { requests };
 }
 beforeEach(() => { queryClient.clear(); localStorage.clear(); });
 
@@ -90,13 +88,24 @@ describe("MF1 form overview", () => {
     expect(reads).toBe(1);
   });
 
-  it("shows one static overview link with the global pending count and does not mount legacy reads", async () => {
-    const { legacy } = setup(["formrecords.read", "formapprovals.decide"]);
+  it("shows one static overview link with the global pending count without per-form links", async () => {
+    setup(["formrecords.read", "formapprovals.decide"]);
     renderRouteWithProviders("/");
     await userEvent.click(await screen.findByRole("button", { name: /^gestión de formularios$/i }));
     expect(await screen.findByRole("link", { name: "Formularios (2)" })).toHaveAttribute("href", "/formularios/respuestas");
     expect(screen.queryByRole("link", { name: /^por aprobar/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^ver todos/i })).not.toBeInTheDocument();
-    expect(legacy).toHaveLength(0);
   });
+});
+
+it("loads the global pending badge only after its menu opens on another screen", async () => {
+  setup(["formapprovals.decide"]);
+  let counts = 0;
+  server.use(http.get("/api/forms/approvals/count", () => { counts++; return HttpResponse.json({ count: 3 }); }));
+  renderRouteWithProviders("/perfil");
+  await screen.findByRole("heading", { name: "Mi perfil" });
+  expect(counts).toBe(0);
+  await userEvent.click(await screen.findByRole("button", { name: "Gestión de formularios" }));
+  expect(await screen.findByRole("link", { name: "Formularios (3)" })).toHaveAttribute("href", "/formularios/respuestas");
+  expect(counts).toBe(1);
 });

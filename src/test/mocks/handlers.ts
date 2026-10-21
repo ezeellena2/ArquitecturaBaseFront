@@ -58,7 +58,6 @@ export const whatsappLoginMethods: LoginMethods = {
 
 /// Handlers por defecto. Cada test agrega los suyos con server.use(...).
 export const handlers = [
-  http.get("/api/forms/navigation", () => HttpResponse.json({items:[],page:1,pageSize:4,totalCount:0,totalPages:0,hasPrevious:false,hasNext:false})),
   http.get("/api/settings/presentation", () => HttpResponse.json({ appearance: initialAppearance, defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20 })),
   http.get("/.well-known/openid-configuration", () => HttpResponse.json({
     issuer: location.origin,

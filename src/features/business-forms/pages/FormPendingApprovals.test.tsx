@@ -14,10 +14,9 @@ vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof imp
 const secondTaskId = "0199a0c0-0000-7000-8000-000000000071";
 function setup(read: boolean) {
  const tasks = [approvalTaskFixture(), { ...approvalTaskFixture(), id: secondTaskId, recordId: responseSecondId, number: "VIS-00002", requestedAtUtc: "2026-10-16T13:00:00Z" }];
- const reads = { records: 0, workflow: 0, options: 0, lists: [] as URL[] };
+ const reads = { records: 0, workflow: 0, lists: [] as URL[] };
  server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["formapprovals.decide",...(read?["formrecords.read"]:[])]})),
   http.get("/api/forms/approvals/count",()=>HttpResponse.json({count:2})),
-  http.get("/api/forms/approvals/options",()=>{reads.options++;return HttpResponse.json({forms:[]});}),
   http.get("/api/forms/approvals",({request})=>{reads.lists.push(new URL(request.url));return HttpResponse.json({items:tasks,page:1,pageSize:20,totalCount:2,totalPages:1,hasPrevious:false,hasNext:false});}),
   http.get("/api/forms/approvals/:id",({params})=>HttpResponse.json(tasks.find(task=>task.id===params.id))),
   http.post("/api/forms/definitions/:id/records/search",()=>{reads.records++;return HttpResponse.json(responseSheetFixture());}),
@@ -27,7 +26,7 @@ function setup(read: boolean) {
 }
 beforeEach(()=>queryClient.clear());
 
-it("lets a decision-only user review that form's oldest-first queue without reading values or options",async()=>{
+it("lets a decision-only user review that form's oldest-first queue without reading values",async()=>{
  const {reads}=setup(false);
  const {router}=renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");
  const pending=await screen.findByRole("region",{name:"Por aprobar · 2"});
@@ -47,7 +46,7 @@ it("lets a decision-only user review that form's oldest-first queue without read
  await userEvent.keyboard("{Escape}");
  await waitFor(()=>expect(screen.queryByRole("region",{name:"Detalle de la respuesta"})).not.toBeInTheDocument());
  expect(screen.getByRole("link",{name:"Revisar VIS-00002"})).toHaveFocus();
- expect(reads.records).toBe(0);expect(reads.workflow).toBe(0);expect(reads.options).toBe(0);
+ expect(reads.records).toBe(0);expect(reads.workflow).toBe(0);
  expect(reads.lists.every(url=>url.searchParams.get("definitionId")===responseFormId&&url.searchParams.get("onlyMine")==="true")).toBe(true);
 });
 
@@ -59,7 +58,7 @@ it("places the same pending section above the readable sheet and opens the real 
  await userEvent.click(within(pending).getByRole("link",{name:"Revisar VIS-00001"}));
  const panel=await screen.findByRole("region",{name:"Detalle de la respuesta"});
  expect(await within(panel).findByText("Importe")).toBeVisible();
- expect(reads.workflow).toBe(1);expect(reads.options).toBe(0);
+ expect(reads.workflow).toBe(1);
 });
 
 it("does not expose per-form approval data to a response-only reader",async()=>{

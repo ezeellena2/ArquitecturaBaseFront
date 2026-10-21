@@ -87,5 +87,5 @@ describe("feature dependency boundaries", () => {
 
 it("keeps layout imports independent of app composition", () => {
   expect(featureDependencies(path.join(root, "layouts/HomeLayout.tsx"), 'import { Shell } from "@/app/Shell";')).toHaveLength(1);
-  expect(featureDependencies(path.join(root, "layouts/HomeLayout.tsx"), 'import { Context } from "./formsNavigation";')).toEqual([]);
+  expect(featureDependencies(path.join(root, "layouts/HomeLayout.tsx"), 'import { Context } from "./formsOverviewNavigation";')).toEqual([]);
 });

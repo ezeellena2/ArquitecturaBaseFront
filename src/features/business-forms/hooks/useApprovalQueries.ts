@@ -1,9 +1,9 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
-import { fetchApprovalCount, fetchApprovalOptions, fetchApprovalTasks, type ApprovalQuery } from "../api/approvals";
+import { fetchApprovalCount } from "../api/approvals";
 export const approvalForbidden = (error: unknown) => error instanceof ApiError && (error.status === 403 || error.status === 401);
 export function useApprovalScope() {
     const { data: user } = useCurrentUser();
@@ -16,11 +16,4 @@ export function useApprovalCount(onlyMine = true, definitionId?: string) {
     const scope = useApprovalScope();
     const query = useQuery({ queryKey: ["form-approvals", scope.owner, "count", onlyMine, definitionId], queryFn: ({ signal }) => fetchApprovalCount({ onlyMine, definitionId }, signal), enabled: scope.allowed, gcTime: 0 });
     return { scope, query };
-}
-export function useApprovalInbox(filter: ApprovalQuery, enabled = true) {
-    const scope = useApprovalScope();
-    const query = useQuery({ queryKey: ["form-approvals", scope.owner, "list", filter], queryFn: ({ signal }) => fetchApprovalTasks(filter, signal), enabled: scope.allowed && enabled, gcTime: 0, placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner ? keepPreviousData(previous) : undefined });
-    const options = useQuery({ queryKey: ["form-approvals", scope.owner, "options", filter.onlyMine], queryFn: ({ signal }) => fetchApprovalOptions(filter.onlyMine, signal), enabled: scope.allowed, gcTime: 0 });
-    const otherCount = useApprovalCount(!filter.onlyMine, filter.definitionId);
-    return { scope, query, options, otherCount: otherCount.query };
 }

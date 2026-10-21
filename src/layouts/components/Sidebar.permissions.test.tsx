@@ -10,11 +10,6 @@ import { Sidebar } from "./Sidebar";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
-vi.mock("../navigation", async () => {
-  const actual = await vi.importActual<typeof import("../navigation")>("../navigation");
-  return { ...actual, forms: { ...actual.forms, items: [{ labelKey: "navigation.allResponses", icon: actual.forms.icon,
-    to: "/formularios/respuestas", permission: ["formrecords.read", "formapprovals.decide"] }] } };
-});
 
 it.each([
   [["formrecords.read"], true],
@@ -26,8 +21,10 @@ it.each([
   renderWithProviders(<MemoryRouter><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()} /></MemoryRouter>);
   const sidebar = await screen.findByRole("complementary");
   await within(sidebar).findByText("ana@example.com");
-  if (allowed) {
-    await userEvent.click(within(sidebar).getByRole("button", { name: /^gestión de formularios$/i }));
-    expect(await screen.findByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/formularios/respuestas");
-  } else expect(within(sidebar).queryByRole("button", { name: /^gestión de formularios$/i })).not.toBeInTheDocument();
+  await userEvent.click(within(sidebar).getByRole("button", { name: /^gestión de formularios$/i }));
+  if (allowed) expect(await screen.findByRole("link", { name: "Formularios" })).toHaveAttribute("href", "/formularios/respuestas");
+  else {
+    expect(screen.queryByRole("link", { name: "Formularios" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Diseñar formularios" })).toBeVisible();
+  }
 });

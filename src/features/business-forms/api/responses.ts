@@ -127,14 +127,6 @@ export const responseSheetSchema = z
         message: "The response rows do not match their columns or versions.",
       });
   });
-export const responseNavigationSchema = page(
-  z.strictObject({
-    id: guid,
-    name: z.string(),
-    prefix: z.string(),
-    versionNumber: z.number().int().positive(),
-  }),
-);
 export const responseRecordNavigationSchema = z.strictObject({
   recordId: guid,
   previousId: guid.nullable(),
@@ -203,23 +195,6 @@ function read<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
   if (!parsed.success) throw new Error("Invalid form response contract.");
   return parsed.data;
-}
-export async function fetchResponseNavigation(
-  query: { page: number; pageSize: number; search?: string },
-  signal: AbortSignal,
-) {
-  const params = new URLSearchParams({
-    page: String(query.page),
-    pageSize: String(query.pageSize),
-  });
-  if (query.search) params.set("search", query.search);
-  return read(
-    responseNavigationSchema,
-    await api.get<unknown>(`/api/forms/navigation?${params}`, {
-      signal,
-      cache: "no-store",
-    }),
-  );
 }
 export async function fetchResponseSheet(
   id: string,

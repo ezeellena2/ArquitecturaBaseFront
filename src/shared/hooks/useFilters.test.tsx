@@ -97,7 +97,7 @@ it("navigates to a response while updating its page atomically and retaining saf
 });
 
 it("preserves return context while fixing page size and navigating between response identities", () => {
-  const state = { approvalReturn: "/formularios/por-aprobar?view=all" };
+  const state = { origin: "/formularios/respuestas" };
   function Wrapper({ children }: { children: ReactNode }) {
     return <MemoryRouter initialEntries={[{ pathname: "/formularios/a/respuestas/r1", state }]}>{children}</MemoryRouter>;
   }
