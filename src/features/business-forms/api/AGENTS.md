@@ -37,7 +37,7 @@ Familias:
 
 ### Respuestas, reglas, PDF, workflow y faltantes
 
-- La planilla valida que cada fila tenga una celda por columna con su tipo y una versión declarada; la celda distingue NotAsked, Unanswered y Answered.
+- La planilla valida que cada fila tenga una celda por columna con su tipo y una versión declarada; la celda distingue NotAsked, Unanswered y Answered. El anclaje de navegación usa POST sobre la respuesta y el mismo cuerpo de búsqueda: devuelve sólo sus vecinos, posición desde uno y total del conjunto, con guard estricto que exige límites coherentes e identidad esperada. No busca páginas de valores ni agrega filtros privados a la URL.
 - Cada documento del workflow exige `runId`, el identificador persistido de la acción que lo generó. La historia relaciona por esa identidad; no se reconstruye el origen por fecha, idioma ni posición. Los escenarios sintéticos lo declaran y las capturas HTTP sólo se renuevan con el export del productor.
 - Los bytes de PDF exigen `application/pdf` y `Content-Language` es o en, que indica el idioma real de la copia.
 - Reglas y sugerencias comparten la gramática de condiciones de la planilla y validan las preguntas con `canonicalFormFieldSchema`. `rules/options` trae preguntas, roles y opciones de condición bajo `formrules.manage`, sin exigir leer roles, catálogos ni respuestas. Las opciones de sugerencias son versiones publicadas: `destinations` son los destinos elegibles y `unavailableDestinations` conserva nombre y estado de los dados de baja o eliminados.

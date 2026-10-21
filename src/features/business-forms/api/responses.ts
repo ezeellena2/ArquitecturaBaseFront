@@ -135,6 +135,22 @@ export const responseNavigationSchema = page(
     versionNumber: z.number().int().positive(),
   }),
 );
+export const responseRecordNavigationSchema = z.strictObject({
+  recordId: guid,
+  previousId: guid.nullable(),
+  nextId: guid.nullable(),
+  position: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  totalCount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+}).superRefine((navigation, context) => {
+  if (navigation.position > navigation.totalCount
+    || (navigation.previousId === null) !== (navigation.position === 1)
+    || (navigation.nextId === null) !== (navigation.position === navigation.totalCount)
+    || navigation.previousId === navigation.recordId || navigation.nextId === navigation.recordId
+    || navigation.previousId !== null && navigation.previousId === navigation.nextId) {
+    context.addIssue({ code: "custom", message: "Invalid record navigation." });
+  }
+});
+export type ResponseRecordNavigation = z.infer<typeof responseRecordNavigationSchema>;
 export const responseFacetSchema = page(
   z.strictObject({
     id: z.string(),
@@ -218,6 +234,20 @@ export async function fetchResponseSheet(
       { signal, cache: "no-store" },
     ),
   );
+}
+export async function fetchResponseRecordNavigation(
+  formId: string,
+  recordId: string,
+  query: ResponseQuery,
+  signal: AbortSignal,
+): Promise<ResponseRecordNavigation> {
+  if (!guid.safeParse(formId).success || !guid.safeParse(recordId).success)
+    throw new Error("Invalid form navigation identity.");
+  const navigation = read(responseRecordNavigationSchema, await api.post<unknown>(
+    `/api/forms/definitions/${formId}/records/${recordId}/navigation`, query, { signal, cache: "no-store" },
+  ));
+  if (navigation.recordId.toLowerCase() !== recordId.toLowerCase()) throw new Error("Invalid form navigation identity.");
+  return navigation;
 }
 export async function fetchResponseDetail(id: string, signal: AbortSignal) {
   return read(
