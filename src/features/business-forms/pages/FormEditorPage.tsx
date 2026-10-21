@@ -215,8 +215,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     });
   }
   async function confirmDeactivation(result: FormDeactivation, expectedRevision: number) {
-    if (!active.current || !editor.confirmRevision(result.definitionId, expectedRevision, result.revision)) return;
-    queryClient.setQueryData<FormDetail>(formDetailKey(scope, result.definitionId), previous => previous && previous.definition.revision === expectedRevision
+    if (!active.current) return;
+    const adopted = editor.confirmRevision(result.definitionId, expectedRevision, result.revision);
+    if (adopted) queryClient.setQueryData<FormDetail>(formDetailKey(scope, result.definitionId), previous => previous && previous.definition.revision === expectedRevision
       ? { ...previous, definition: { ...previous.definition, revision: result.revision }, lifecycle: result.lifecycle } : previous);
     await Promise.all([queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) }), queryClient.invalidateQueries({ queryKey: ["form-responses", responseScope.owner] })]);
   }
