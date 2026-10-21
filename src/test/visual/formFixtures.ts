@@ -135,7 +135,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     lifecycles.set(guid(71), fixtureLifecycle(1, { deactivatedAtUtc: "2026-10-20T12:00:00Z", deactivatedBy: audit.lastChangedBy, responseCount: 8, deprecationState: "Pending", lastOpenSessionExpiresAtUtc: "2026-10-22T18:00:00Z", deletionUnavailableReason: "HasResponses" }));
   }
   if (scenario.includes("lifecycle-deactivated")) {
-    const state = scenario.endsWith("-uncertain") ? "Uncertain" : scenario.endsWith("-deprecated") ? "Deprecated" : "Pending";
+    const state = scenario.endsWith("-uncertain") ? "Uncertain" : scenario.endsWith("-deprecated") ? "Deprecated" : scenario.endsWith("-needsattention") ? "NeedsAttention" : "Pending";
     lifecycles.set(fixtureFormId, { ...lifecycles.get(fixtureFormId)!, deprecationState: state,
       lastOpenSessionExpiresAtUtc: state === "Pending" ? "2026-10-22T18:00:00Z" : null,
       deprecatedAtUtc: state === "Deprecated" ? "2026-10-21T18:00:00Z" : null });

@@ -8,6 +8,7 @@ export function deprecationMessage(lifecycle: Pick<FormLifecycle, "deprecationSt
    ? t("lifecycle.deprecation.pendingOpen", { date: formatDateTimeInZone(lifecycle.lastOpenSessionExpiresAtUtc, culture, timeZoneId) })
    : t("lifecycle.deprecation.pending");
   case "Uncertain": return t("lifecycle.deprecation.uncertain");
+  case "NeedsAttention": return t("lifecycle.deprecation.needsAttention");
   case "Deprecated": return lifecycle.deprecatedAtUtc
    ? t("lifecycle.deprecation.deprecatedOn", { date: formatDateTimeInZone(lifecycle.deprecatedAtUtc, culture, timeZoneId) })
    : t("lifecycle.deprecation.deprecated");

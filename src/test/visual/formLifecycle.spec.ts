@@ -94,14 +94,14 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
  });
 }
 
-// Pending is covered by BA1/BA2 above; these add the two other authoritative states.
-for(const language of ["es","en"] as const) for(const width of [390,320]) for(const state of ["uncertain","deprecated"] as const) for(const surface of ["list","editor"] as const) {
+// Pending is covered by BA1/BA2 above; these add the other authoritative states.
+for(const language of ["es","en"] as const) for(const width of [390,320]) for(const state of ["uncertain","deprecated","needsattention"] as const) for(const surface of ["list","editor"] as const) {
  test("BA WhatsApp "+state+" "+surface+" "+language+" "+width,async({page})=>{
   const es=language==="es";
   await page.setViewportSize({width,height:900});
   const screen=surface==="list"?"/formularios?publicationFilter=Deactivated":"/formularios/"+fixtureFormId;
   await page.goto("/src/test/visual/index.html?screen="+encodeURIComponent(screen)+"&scenario=forms-lifecycle-deactivated-"+state+"&lang="+language);
-  const message=page.getByText(state==="uncertain"?(es?/Sin confirmar en WhatsApp/:/Unconfirmed on WhatsApp/):(es?/Deprecados el 21 oct 2026, 15:00/:/Deprecated on Oct 21, 2026, 3:00 PM/));
+  const message=page.getByText(state==="uncertain"?(es?/Sin confirmar en WhatsApp/:/Unconfirmed on WhatsApp/):state==="needsattention"?(es?/No se pudo deprecar en WhatsApp. Requiere atención./:/Could not deprecate on WhatsApp. Needs attention./):(es?/Deprecados el 21 oct 2026, 15:00/:/Deprecated on Oct 21, 2026, 3:00 PM/));
   await expect(message).toBeVisible();await message.scrollIntoViewIfNeeded();
   if(surface==="editor") await expect(page.getByRole("button",{name:es?"Reactivar":"Reactivate",exact:true})).toBeEnabled();
   else await expect(page.getByRole("table").getByText(es?"Dado de baja · versión 1":"Deactivated · version 1",{exact:true})).toBeVisible();

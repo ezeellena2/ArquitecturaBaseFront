@@ -963,6 +963,7 @@
     "noDeletePermission": "Ya no tenés permiso para eliminar este formulario.",
     "deletedWhileEditing": "El formulario ya fue eliminado. Tus cambios sin guardar se conservan.",
     "deprecation": {
+      "needsAttention": "No se pudo deprecar en WhatsApp. Requiere atención.",
       "pendingOpen": "En WhatsApp: se deprecan cuando venzan los envíos abiertos. El último vence el {{date}}.",
       "pending": "Deprecación pendiente en WhatsApp.",
       "uncertain": "Sin confirmar en WhatsApp. Se sigue consultando.",

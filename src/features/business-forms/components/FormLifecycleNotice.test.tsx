@@ -23,3 +23,8 @@ it("does not label an active form as deactivated when older deprecation evidence
  renderWithProviders(<FormLifecycleNotice lifecycle={fixtureLifecycle(1,{deprecationState:"Deprecated",deprecatedAtUtc:"2026-10-21T18:00:00Z"})}/>);
  expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
+
+for(const language of ["es","en"] as const)it("keeps NeedsAttention visible as a local state without an invented recovery action in "+language,async()=>{
+ await i18n.changeLanguage(language);renderWithProviders(<FormLifecycleNotice lifecycle={fixtureLifecycle(2,{deactivatedAtUtc:"2026-10-21T12:00:00Z",deprecationState:"NeedsAttention",deprecatedAtUtc:null})}/>);
+ const message=await screen.findByText(language==="es"?"No se pudo deprecar en WhatsApp. Requiere atención.":"Could not deprecate on WhatsApp. Needs attention.");expect(message).toBeVisible();expect(message.closest('[role="status"]')?.textContent).toBe(message.textContent);expect(screen.queryByRole("button")).not.toBeInTheDocument();
+});

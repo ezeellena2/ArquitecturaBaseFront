@@ -35,3 +35,8 @@ it("requires nullable deprecation evidence and rejects unknown states without in
  expect(readFormDetail(observed).lifecycle).toMatchObject({deprecationState:null,deprecatedAtUtc:null});
  for(const change of [{deprecationState:undefined},{deprecatedAtUtc:undefined},{deprecationState:"Unknown"}]) expect(()=>readFormDetail({...observed,lifecycle:{...observed.lifecycle,...change}})).toThrow();
 });
+
+it("accepts NeedsAttention as authoritative evidence without inventing a deprecated date",()=>{
+ const observed={...detail(),lifecycle:{...lifecycle,deprecationState:"NeedsAttention",deprecatedAtUtc:null}};
+ expect(readFormDetail(observed).lifecycle).toMatchObject({deprecationState:"NeedsAttention",deprecatedAtUtc:null});
+});

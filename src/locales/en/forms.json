@@ -963,6 +963,7 @@
     "noDeletePermission": "You no longer have permission to delete this form.",
     "deletedWhileEditing": "This form was deleted. Your unsaved changes are preserved.",
     "deprecation": {
+      "needsAttention": "Could not deprecate on WhatsApp. Needs attention.",
       "pendingOpen": "On WhatsApp: they will be deprecated when open sends expire. The last expires on {{date}}.",
       "pending": "Deprecation pending on WhatsApp.",
       "uncertain": "Unconfirmed on WhatsApp. Confirmation is still being checked.",
