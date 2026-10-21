@@ -41,7 +41,7 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
   const client = useQueryClient();
   const table = useRef<HTMLElement | null>(null);
   const previousTask = useRef(taskId);
-  const observedRecord = useRef<{ owner: string; formId: string; taskId: string; recordId: string } | null>(null);
+  const [observedRecord, setObservedRecord] = useState<{ owner: string; formId: string; taskId: string; recordId: string } | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
   const selected = useQuery({ queryKey: ["form-approvals", scope.owner, "task", taskId],
@@ -85,10 +85,12 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
     },
   });
   const task = selected.data?.definitionId === formId ? selected.data : undefined;
-  useLayoutEffect(() => {
-    if (readScope.allowed && scope.allowed && !forbidden && task && task.id === taskId && !selected.isPlaceholderData)
-      observedRecord.current = { owner: scope.owner, formId, taskId: task.id, recordId: task.recordId };
-  }, [readScope.allowed, scope.allowed, forbidden, task, taskId, selected.isPlaceholderData, scope.owner, formId]);
+  if (readScope.allowed && scope.allowed && !forbidden && task && task.id === taskId && !selected.isPlaceholderData) {
+    if (observedRecord?.owner !== scope.owner || observedRecord.formId !== formId || observedRecord.taskId !== taskId || observedRecord.recordId !== task.recordId)
+      setObservedRecord({ owner: scope.owner, formId, taskId: task.id, recordId: task.recordId });
+  } else if (observedRecord && (!readScope.allowed || !taskId || observedRecord.owner !== scope.owner || observedRecord.formId !== formId || observedRecord.taskId !== taskId)) {
+    setObservedRecord(null);
+  }
   const taskNavigationReady = workspace.navigation?.origin === "pending" && workspace.navigation.selection.taskId === taskId &&
     workspace.navigation.selection.recordId === task?.recordId && !!workspace.navigation.pending;
   useLayoutEffect(() => {
@@ -135,7 +137,7 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
   const title = query.data?.items[0]?.formName ?? task?.formName ?? t("overview.pendingColumn");
   const present = (content: ReactNode) => standalone ? <PendingFormPage title={title}>{content}</PendingFormPage> : content;
   if (forbidden) {
-    const recordId = taskId && observedRecord.current?.taskId === taskId && readScope.allowed && observedRecord.current?.owner === scope.owner && observedRecord.current.formId === formId ? observedRecord.current.recordId : undefined;
+    const recordId = taskId && observedRecord?.taskId === taskId && readScope.allowed && observedRecord?.owner === scope.owner && observedRecord.formId === formId ? observedRecord.recordId : undefined;
     return present(<><Surface title={t("overview.pendingColumn")} padded><p role="status">{t("approvals.noPermission")}</p></Surface>
       {recordId ? <FormResponseDetailPage formId={formId} recordId={recordId} decisionAllowed={false} navigation={{ selectionId: recordId, previous: false, next: false, kind: "sheet", onMove: () => {}, onClose: navigation.onClose }}/> : null}</>);
   }

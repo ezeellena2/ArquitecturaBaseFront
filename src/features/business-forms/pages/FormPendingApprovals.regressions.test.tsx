@@ -167,7 +167,7 @@ it.each(["post", "get"] as const)("withdraws approval metadata after %s 403 whil
     fixture.access.denied = true;
     return HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 });
   }));
-  renderRouteWithProviders(path);
+  const { router } = renderRouteWithProviders(path);
   const panel = await openFirst();
   expect(await screen.findByRole("columnheader", { name: "Importe" })).toBeVisible();
   if (source === "post") await userEvent.click(within(panel).getByRole("button", { name: "Aprobar" }));
@@ -188,6 +188,12 @@ it.each(["post", "get"] as const)("withdraws approval metadata after %s 403 whil
   await userEvent.click(within(screen.getByRole("region", { name: "Detalle de la respuesta" })).getByRole("button", { name: "Cerrar" }));
   await waitFor(() => expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument());
   expect(screen.getByRole("columnheader", { name: "Importe" })).toBeVisible();
+  const valueReadsAfterClosing = fixture.reads.values;
+  await act(async () => { await router.navigate(path + "?approval=" + fixture.tasks[0].id); });
+  await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+  expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument();
+  expect(screen.getByRole("columnheader", { name: "Importe" })).toBeVisible();
+  expect(fixture.reads.values).toBe(valueReadsAfterClosing);
 });
 
 it("retains the confirmed queue after a decision and visits the next pending item when the open list compacts", async () => {
