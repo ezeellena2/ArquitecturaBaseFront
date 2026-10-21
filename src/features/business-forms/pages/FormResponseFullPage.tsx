@@ -38,17 +38,17 @@ export function FormResponseFullPage() {
     if (location.pathname + location.search !== path) { navigate(path, { replace: true }); return; }
     if (!ready) workspace.enterFull(recordId, location.key, location.search);
   }, [location.key, location.pathname, location.search, navigate, path, ready, recordId, transitioning, workspace]);
-  return ready || transitioning || prepared ? <FullResponse key={formId} formId={formId} recordId={recordId} transitioning={!ready}/> : <Spinner/>;
+  return ready || transitioning || prepared ? <FullResponse key={formId} formId={formId} recordId={recordId} transitioning={!ready} openPdf={workspace.fullEntry?.recordId === recordId && workspace.fullEntry.intent === "pdf"}/> : <Spinner/>;
 }
 
-function FullResponse({ formId, recordId, transitioning }: { formId: string; recordId: string; transitioning: boolean }) {
+function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: string; recordId: string; transitioning: boolean; openPdf: boolean }) {
   const { t } = useTranslation("forms");
   const mobile = useMediaQuery("(width < 640px)");
   const navigation = useFullResponseNavigation(formId, recordId);
   const state = useResponseDetailState({ formId, recordId, busy: navigation.busy || transitioning, navigationError: navigation.error, retryNavigation: navigation.onRetry });
   const { detail, data, current, workflow, downloads, loadingTarget, allowed, unavailable, deny, onFileError, photos } = state;
   const [answerOpen, setAnswerOpen] = useState(true);
-  const [activityOpen, setActivityOpen] = useState(!mobile);
+  const [activityOpen, setActivityOpen] = useState(!mobile || openPdf);
   const [decisionTarget, setDecisionTarget] = useState<HTMLDivElement | null>(null);
   const container = useRef<HTMLDivElement | null>(null);
   useLayoutEffect(() => { container.current?.focus(); }, [data?.id]);

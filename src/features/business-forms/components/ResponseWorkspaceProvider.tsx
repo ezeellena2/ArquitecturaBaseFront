@@ -42,7 +42,7 @@ export function ResponseWorkspaceProvider({
     <ResponseWorkspaceContext.Provider
       value={{
         fullEntry: state.owner === owner ? state.fullEntry : null,
-        prepareFull: (formId, recordId) => setState(previous => previous.owner === owner && !(previous.fullEntry?.formId === formId && previous.fullEntry.recordId === recordId && previous.fullEntry.locationKey === null) ? { ...previous, fullEntry: { formId, recordId, locationKey: null } } : previous),
+        prepareFull: (formId, recordId, intent) => setState(previous => previous.owner === owner && !(previous.fullEntry?.formId === formId && previous.fullEntry.recordId === recordId && previous.fullEntry.locationKey === null && previous.fullEntry.intent === intent) ? { ...previous, fullEntry: { formId, recordId, locationKey: null, intent } } : previous),
         enterFull: (formId, recordId, locationKey, search) => setState(previous => {
           if (previous.owner !== owner) return previous;
           const entry = previous.fullEntry;
@@ -50,7 +50,7 @@ export function ResponseWorkspaceProvider({
           if (internal && entry.locationKey === locationKey) return previous;
           return { ...previous, formId, filter: internal ? previous.filter : {},
             navigation: internal && previous.navigation ? previous.navigation : { formId, origin: "sheet", selection: { recordId }, search },
-            fullEntry: { formId, recordId, locationKey } };
+            fullEntry: { formId, recordId, locationKey, intent: internal ? entry.intent : undefined } };
         }),
         finishFull: () => setState(previous => previous.fullEntry ? { ...previous, fullEntry: null } : previous),
         denied: state.owner === owner && state.denied,

@@ -6,10 +6,10 @@ export interface ResponseNavigationContext {
   search: string;
   pending?: { tasks: { id: string; recordId: string }[]; page: number; pageSize: number; totalCount: number };
 }
-export interface ResponseFullEntry { formId: string; recordId: string; locationKey: string | null }
+export interface ResponseFullEntry { formId: string; recordId: string; locationKey: string | null; intent?: "pdf" }
 export interface ResponseWorkspace {
   fullEntry: ResponseFullEntry | null;
-  prepareFull: (formId: string, recordId: string) => void;
+  prepareFull: (formId: string, recordId: string, intent?: "pdf") => void;
   enterFull: (formId: string, recordId: string, locationKey: string, search: string) => void;
   finishFull: () => void;
   denied: boolean;
@@ -29,7 +29,7 @@ export function useResponseWorkspace(formId: string) {
   return {
     deny: context.deny,
     fullEntry: context.fullEntry?.formId === formId ? context.fullEntry : null,
-    prepareFull: (recordId: string) => context.prepareFull(formId, recordId),
+    prepareFull: (recordId: string, intent?: "pdf") => context.prepareFull(formId, recordId, intent),
     enterFull: (recordId: string, key: string, search: string) => context.enterFull(formId, recordId, key, search),
     finishFull: context.finishFull,
     filter: context.formId === formId ? context.filter : {},

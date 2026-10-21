@@ -92,11 +92,11 @@ export function FormResponsesPage() {
     !!route.query.versionIds?.length ||
     !!route.query.receivedFromUtc ||
     !!route.query.receivedToUtc;
-  const rememberSheet = (recordId: string, page?: number) => {
+  const rememberSheet = (recordId: string, page?: number, intent?: "pdf") => {
     const params = new URLSearchParams(route.params); params.delete("approval");
     if (page !== undefined) { if (page === 1) params.delete("page"); else params.set("page", String(page)); }
     workspace?.setNavigation(formId, { origin: "sheet", selection: { recordId }, search: params.toString() });
-    if (mobile) workspace?.prepareFull(formId, recordId);
+    if (mobile) workspace?.prepareFull(formId, recordId, intent);
   };
   const index = query.data?.records.items.findIndex(row => row.id === recordId) ?? -1;
   const motion = useResponsePanelNavigation({ contextKey, ids: data?.records.items.map(row => row.id) ?? [], index, page: data?.records.page ?? route.query.page ?? 1, disabled: !data || query.isPlaceholderData,
@@ -159,7 +159,7 @@ export function FormResponsesPage() {
       ),
     },
     ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
-    ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
+    ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...visible.map((column) => ({
       id: column.fieldId,
       header:

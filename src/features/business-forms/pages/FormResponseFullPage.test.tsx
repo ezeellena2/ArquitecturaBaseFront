@@ -237,6 +237,32 @@ function setupIssuedDocuments() {
   return { documents, reads };
 }
 
+it.each(["pdf", "row", "shared"] as const)("opens mobile activity only for the PDF shortcut and retires its intent (%s)", async entry => {
+  mobile(); const { documents, reads } = setupIssuedDocuments();
+  const sheet = responseSheetFixture(); sheet.records.items[0].hasPdf = true;
+  server.use(http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(sheet)));
+  const { router } = renderRouteWithProviders((entry === "shared" ? path + "/" + responseRecordId + "/completa" : path) + "?sort=-number");
+  if (entry !== "shared") await userEvent.click(await screen.findByRole(entry === "pdf" ? "button" : "link", { name: entry === "pdf" ? "Ver PDF de TEST-000002" : "TEST-000002" }));
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  const activity = screen.getByRole("region", { name: "Actividad" });
+  expect(router.state.location.search).toBe("?sort=-number");
+  expect(router.state.location.state).toBeNull();
+  if (entry === "pdf") {
+    expect(within(activity).getByRole("button", { name: "Plegar actividad" })).toHaveAttribute("aria-expanded", "true");
+    expect(await within(activity).findByText(documents[0].name)).toBeVisible();
+    await waitFor(() => expect(reads).toHaveLength(2));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("link", { name: "Volver a las respuestas" }));
+    await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+    await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+    expect(screen.getByRole("button", { name: "Expandir actividad" })).toHaveAttribute("aria-expanded", "false");
+    expect(reads).toHaveLength(2);
+  } else {
+    expect(within(activity).getByRole("button", { name: "Expandir actividad" })).toHaveAttribute("aria-expanded", "false");
+    expect(reads).toEqual([]);
+    expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();
+  }
+});
 it("opens fixed PDF copies in their exact action and reuses preview bytes after folding or enlarging", async () => {
   mobile(); const { documents, reads } = setupIssuedDocuments();
   const view = renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
