@@ -92,6 +92,12 @@ export function FormResponsesPage() {
     !!route.query.versionIds?.length ||
     !!route.query.receivedFromUtc ||
     !!route.query.receivedToUtc;
+  const rememberSheet = (recordId: string, page?: number) => {
+    const params = new URLSearchParams(route.params); params.delete("approval");
+    if (page !== undefined) { if (page === 1) params.delete("page"); else params.set("page", String(page)); }
+    workspace?.setNavigation(formId, { origin: "sheet", selection: { recordId }, search: params.toString() });
+    if (mobile) workspace?.prepareFull(formId, recordId);
+  };
   const index = query.data?.records.items.findIndex(row => row.id === recordId) ?? -1;
   const motion = useResponsePanelNavigation({ contextKey, ids: data?.records.items.map(row => row.id) ?? [], index, page: data?.records.page ?? route.query.page ?? 1, disabled: !data || query.isPlaceholderData,
     loadPage: async page => {
@@ -99,7 +105,7 @@ export function FormResponsesPage() {
       const result = await client.fetchQuery({ queryKey: ["form-responses", scope.owner, "sheet", formId, filter], queryFn: ({ signal }) => fetchResponseSheet(formId, filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
       return { ids: result.records.items.map(row => row.id), totalCount: result.records.totalCount };
     },
-    onNavigate: (id, page) => update({ page: page === 1 ? undefined : String(page) }, { pathname: "/formularios/" + formId + "/respuestas/" + id, replace: true }),
+    onNavigate: (id, page) => { rememberSheet(id, page); update({ page: page === 1 ? undefined : String(page) }, { pathname: "/formularios/" + formId + "/respuestas/" + id, replace: true }); },
   });
   if (
     !scope.allowed ||
@@ -107,7 +113,6 @@ export function FormResponsesPage() {
   )
     return <ForbiddenPage />;
   const recordPath = (id: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); return mobile ? responseFullPath(formId, id, params.toString()) : `/formularios/${formId}/respuestas/${id}?${params}`; };
-  const rememberSheet = (recordId: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); workspace?.setNavigation(formId, { origin: "sheet", selection: { recordId }, search: params.toString() }); if (mobile) workspace?.prepareFull(formId, recordId); };
   const columns: Column<ResponseRow>[] = [
     {
       id: "number",

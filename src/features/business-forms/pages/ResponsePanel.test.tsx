@@ -146,6 +146,31 @@ it("opens a directly linked panel and navigates by arrows without intercepting t
   await waitFor(() => expect(router.state.location.pathname).toBe(path));
   expect(router.state.location.search).toContain("sort=actor");
 });
+it.each([false, true])("keeps the last quick-view row selected after arrow navigation and closing (crossing page: %s)", async crossingPage => {
+  const { sheet } = setup();
+  if (crossingPage) server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+    const body = await request.json() as { page: number };
+    const page = body.page ?? 1;
+    return HttpResponse.json({ ...sheet, records: { ...sheet.records, items: [sheet.records.items[page - 1]], page, pageSize: 1,
+      totalPages: 2, hasPrevious: page > 1, hasNext: page < 2 } });
+  }));
+  const { router } = renderRouteWithProviders(path + "?columns=none&sort=-number&pageSize=" + (crossingPage ? 1 : 20));
+  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  await waitFor(() => expect(panel).toHaveFocus());
+  await userEvent.keyboard("{ArrowDown}");
+  await within(panel).findByRole("heading", { name: "TEST-000001" });
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(router.state.location.pathname).toBe(path));
+  const lastRow = await screen.findByRole("link", { name: "TEST-000001" });
+  await waitFor(() => expect(lastRow).toHaveFocus());
+  expect(lastRow.closest("tr")).toHaveAttribute("aria-selected", "true");
+  expect(screen.getAllByRole("row", { selected: true })).toEqual([lastRow.closest("tr")]);
+  expect(router.state.location.search).toContain("columns=none");
+  expect(router.state.location.search).toContain("sort=-number");
+  expect(new URLSearchParams(router.state.location.search).get("page")).toBe(crossingPage ? "2" : null);
+});
 it("propagates the static state filter to the settled sheet and its count", async () => {
   const { reads } = setup(undefined, true);
   server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })));
