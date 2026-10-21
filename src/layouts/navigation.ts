@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import type { PermissionRequirement } from "@/auth/usePermissions";
 import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon } from "@/shared/ui/icons";
 
 interface NavigationEntry {
@@ -11,7 +12,7 @@ interface NavigationEntry {
 export interface NavigationLink extends NavigationEntry {
   to: string;
   exact?: boolean;
-  permission?: string;
+  permission?: PermissionRequirement;
 }
 
 /// Un ítem que agrupa enlaces. No tiene `to` a propósito: a un grupo no se navega, se despliega. Tampoco

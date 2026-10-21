@@ -2,14 +2,14 @@ import { useTranslation } from "react-i18next";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useIsRecoveringSession } from "./sessionRecoveryStatus";
-import { usePermissions } from "./usePermissions";
+import { usePermissions, type PermissionRequirement } from "./usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Spinner } from "@/shared/ui/Spinner";
 
 /// Exige sesión y, si se pide, un permiso (sección 7.3). Sin sesión manda a /login guardando a dónde iba.
-export function ProtectedRoute({ permission }: { permission?: string } = {}) {
+export function ProtectedRoute({ permission }: { permission?: PermissionRequirement } = {}) {
   const { t } = useTranslation();
   const auth = useAuth();
   const location = useLocation();

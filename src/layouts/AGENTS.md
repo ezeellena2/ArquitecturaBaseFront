@@ -7,7 +7,7 @@ Define layouts de acceso, inicio y aplicación autenticada, además de barra, me
 - WhatsApp, Formularios y Administración comparten el trigger y geometría del panel. El detalle del Sidebar, las migas y el menú de usuario está en [components](components/AGENTS.md). Solo uno se abre a la vez; la ruta abre su sección y los permisos filtran sus destinos. En móvil se despliegan dentro del cajón.
 - Inicio muestra su HomeIcon también expandido y en móvil. WhatsApp lleva encima la misma línea de Administración; se dibuja sólo junto a su sección visible, también contraída.
 
-- Ruta y menú mantienen los mismos permisos. Las rutas hijas usan la sección padre; la pantalla aporta la hoja de sus migas.
+- Ruta y menú mantienen los mismos permisos mediante `PermissionRequirement` y `usePermissions.has`, incluidas las alternativas OR. Las rutas hijas usan la sección padre; la pantalla aporta la hoja de sus migas.
 - Al cerrar sesión, HomeLayout conserva la transición de AppLayout aunque OIDC ya haya quitado el usuario. UserMenu confirma `/login` con `flushSync` antes de liberarla: un cierre voluntario nunca guarda la ruta privada anterior como destino del próximo ingreso. Playwright lo verifica desde Inicio, Usuarios y Configuración.
 - `AppLayout` tiene alto `h-svh` y scroll en `main`, con posición relativa y espacio de scroll para el encabezado adherido. Preservá impresión y foco visible.
 - No agregar scroll de página que rompa `Page`; un cambio de geometría se verifica en navegador porque jsdom no maqueta.

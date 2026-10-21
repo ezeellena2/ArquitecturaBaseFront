@@ -27,6 +27,8 @@ function renderAt(path: string) {
         element: <ProtectedRoute />,
         children: [
           { path: "/tablero", element: <p>tablero</p> },
+          { path: "/formularios-compartidos", element: <ProtectedRoute permission={["formrecords.read", "formapprovals.decide"]} />, children: [{ index: true, element: <p>formularios compartidos</p> }] },
+          { path: "/sin-alternativas", element: <ProtectedRoute permission={[]} />, children: [{ index: true, element: <p>sin alternativas</p> }] },
           {
             path: "/usuarios",
             element: <ProtectedRoute permission="users.manage" />,
@@ -144,4 +146,26 @@ describe("ProtectedRoute", () => {
 
     expect(await screen.findByText("usuarios protegidos")).toBeInTheDocument();
   });
+  it.each([
+    [["formrecords.read"], true],
+    [["formapprovals.decide"], true],
+    [["formrecords.read", "formapprovals.decide"], true],
+    [["formtemplates.read"], false],
+    [[], false],
+  ] as const)("requires at least one declared alternative permission for %j", async (permissions, allowed) => {
+    authState.isAuthenticated = true;
+    authState.user = { access_token: "t" };
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })));
+    renderAt("/formularios-compartidos");
+    expect(await screen.findByText(allowed ? "formularios compartidos" : "pantalla de sin permiso")).toBeInTheDocument();
+  });
+
+  it("does not turn an empty permission requirement into public access", async () => {
+    authState.isAuthenticated = true;
+    authState.user = { access_token: "t" };
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })));
+    renderAt("/sin-alternativas");
+    expect(await screen.findByText("pantalla de sin permiso")).toBeInTheDocument();
+  });
+
 });

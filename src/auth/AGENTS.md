@@ -8,7 +8,7 @@ Contiene configuración y proveedor OIDC, sesión actual, renovación, guards, p
 - Una recuperación silenciosa se intenta una vez por montaje del proveedor; los 401 concurrentes coordinan una sola renovación desde el cliente HTTP.
 - El cierre de sesión espera la revocación del servidor y limpia consultas y sesión. No reutilizar un refresh token.
 - La transición de cierre dura hasta confirmar `/login`: los guards no convierten el cierre voluntario en una recuperación hacia la pantalla de la cuenta anterior. El próximo ingreso usa Inicio; una visita anónima a una ruta privada conserva su destino.
-- Los permisos del front controlan la experiencia; el backend vuelve a autorizar cada petición.
+- Los permisos del front controlan la experiencia; el backend vuelve a autorizar cada petición. `PermissionRequirement` comparte la regla entre menú y guard: un permiso exige ese valor; una lista permite cualquiera de sus alternativas y una lista vacía no autoriza.
 - Cuenta sin correo y sincronización del idioma tienen helpers comunes; no duplicar fallbacks en el menú o las pantallas.
 - `components/AccountRecoveryNotice` comparte el aviso duradero de cuenta sin correo entre los dos inicios autenticados, con la misma sesión/identidad y textos auth.
 
