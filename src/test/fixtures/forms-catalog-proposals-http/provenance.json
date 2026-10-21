@@ -1,57 +1,68 @@
 {
+  "schemaVersion": 1,
+  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
+  "sourceState": [
+    " M docs/architecture/mapa-de-instrucciones.md",
+    " M docs/architecture/premisas-de-la-plantilla.md",
+    " M docs/features/formularios.md",
+    " M docs/features/whatsapp.md",
+    " M docs/history/README.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    " D docs/plans/formularios/dar-de-baja-formularios.md",
+    " M docs/plans/verificacion-y-produccion.md",
+    "?? docs/plans/formularios/menu-y-detalle.md"
+  ],
+  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
   "sources": [
     {
-      "sha256": "bf52cdae68d2426e23459ff7c3b4d1b7c24f84882a5d74f760e92d79b7474258",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogProposalHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogProposalHttpTests.cs",
+      "sha256": "bf52cdae68d2426e23459ff7c3b4d1b7c24f84882a5d74f760e92d79b7474258"
     },
     {
-      "sha256": "93c9b15e4ec42fb79e07a33160b21ec2b03a704175b8d333c035593380c13b8c",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalScenario.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalScenario.cs",
+      "sha256": "93c9b15e4ec42fb79e07a33160b21ec2b03a704175b8d333c035593380c13b8c"
     },
     {
-      "sha256": "393918492feca3da79522683ca9da35984458d3d65cd164ce2635730906942ff",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs",
+      "sha256": "393918492feca3da79522683ca9da35984458d3d65cd164ce2635730906942ff"
     }
   ],
-  "schemaVersion": 1,
-  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
-  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
-  "sourceState": [],
-  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
+  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
   "captures": [
     {
       "length": 1569,
-      "sha256": "c080e0f80d86c24557cc6a7de8fb1270de2a635166e5e824b1dd0e6484172e3d",
+      "sha256": "5042030d6357d40dddc007121769fa58fd0d6f95d9f515f03c33aefae39251c4",
       "name": "approved-en.json"
     },
     {
       "length": 267,
-      "sha256": "bd482ed29d98f7b4acb1324514a1c5567b6443e5f258da55b47b40a91edfbccc",
+      "sha256": "3d33cc3c38eb63c3f677da1298518b5a2d8c492988859b627c37a33b370d4820",
       "name": "conflict.json"
     },
     {
       "length": 1434,
-      "sha256": "1dc03aa9dc92b358134056e2b64bf8cbb8f7a2962b56a9415e054f99377ec3cc",
+      "sha256": "08bf50f3499a7c518462b2477ae55d71bcc4b7e40af9cfe31d52ebf9dadc31b9",
       "name": "detail-pending-en.json"
     },
     {
       "length": 1440,
-      "sha256": "1522b1c9d872c0b41a90d8b425588a447814366af6c29ba8f250f63d499d8f43",
+      "sha256": "216c721c42fb928c1e07186c367510b8155074fdeea721489b1c35c285d7efe2",
       "name": "detail-pending-es.json"
     },
     {
       "length": 1542,
-      "sha256": "4fe521ad5e589d93407b27e0132483ec0d67c038b1d9fc3799adce5f56169e38",
+      "sha256": "88480a5084d33e83557ecd9fb019877b31d416db316af41c6e122e8711971953",
       "name": "discarded-es.json"
     },
     {
       "length": 383,
-      "sha256": "2eb184b288e0cd6b6203f9a2cc32727976ae4bcd2be9d69c3a8bbef904dc738a",
+      "sha256": "8dd207a77b54dada1010c2f788c6ae5c6b332920689143bc108bb92951e14217",
       "name": "list-original-en-in-es.json"
     }
   ],
-  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
-  "artifactSet": "catalog-proposals",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "artifactSet": "catalog-proposals"
 }

@@ -1,33 +1,44 @@
 {
+  "schemaVersion": 1,
+  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
+  "sourceState": [
+    " M docs/architecture/mapa-de-instrucciones.md",
+    " M docs/architecture/premisas-de-la-plantilla.md",
+    " M docs/features/formularios.md",
+    " M docs/features/whatsapp.md",
+    " M docs/history/README.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    " D docs/plans/formularios/dar-de-baja-formularios.md",
+    " M docs/plans/verificacion-y-produccion.md",
+    "?? docs/plans/formularios/menu-y-detalle.md"
+  ],
+  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
   "sources": [
     {
-      "sha256": "d964bf44402720bfe5a00fec51466678dec36ba42b2f6bee1fb5226524a752d9",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs",
+      "sha256": "d964bf44402720bfe5a00fec51466678dec36ba42b2f6bee1fb5226524a752d9"
     },
     {
-      "sha256": "380024a8f42df81af6bad91fa27ad7e1371bb951a8fd4d77ec0826f89d94f653",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs",
+      "sha256": "380024a8f42df81af6bad91fa27ad7e1371bb951a8fd4d77ec0826f89d94f653"
     }
   ],
-  "schemaVersion": 1,
-  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
-  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
-  "sourceState": [],
-  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
+  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
   "captures": [
     {
       "length": 2059,
-      "sha256": "6705a0670e8440ec66022d73448df1ae1871e12210c9985a3980debb5f095706",
+      "sha256": "4d355fa7ccd268567c726c476c41698bdf633b783ea30f2169fef2eaac8aaebb",
       "name": "detail-en.json"
     },
     {
       "length": 2063,
-      "sha256": "b066718646d28b0da29efbd8f68a75e0e4c1fb685acee214736debb9c9c91b64",
+      "sha256": "4f85ab8260425c6bbee58ecb68db037190fe8d00f2d4ed35f2f257794f70ed68",
       "name": "detail-es.json"
     }
   ],
-  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
-  "artifactSet": "suggestion-details",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "artifactSet": "suggestion-details"
 }

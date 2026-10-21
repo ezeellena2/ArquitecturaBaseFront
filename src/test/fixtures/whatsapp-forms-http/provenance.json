@@ -1,413 +1,424 @@
 {
+  "schemaVersion": 1,
+  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
+  "sourceState": [
+    " M docs/architecture/mapa-de-instrucciones.md",
+    " M docs/architecture/premisas-de-la-plantilla.md",
+    " M docs/features/formularios.md",
+    " M docs/features/whatsapp.md",
+    " M docs/history/README.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    " D docs/plans/formularios/dar-de-baja-formularios.md",
+    " M docs/plans/verificacion-y-produccion.md",
+    "?? docs/plans/formularios/menu-y-detalle.md"
+  ],
+  "producer": "WhatsAppFormHttpContractTests and WhatsAppFormSendingTests and WhatsAppFormReplyAppPreviewTests and WhatsAppFormPrivacyTests and CapturingFlowProvider and CapturingStructuredFormSource and ControlledWhatsAppSendClient",
   "sources": [
     {
-      "sha256": "ea530277ebc3e0dd7c0a2ff219be8a5e2ff46272d648b0a5110e216f312a4e34",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
+      "sha256": "ea530277ebc3e0dd7c0a2ff219be8a5e2ff46272d648b0a5110e216f312a4e34"
     },
     {
-      "sha256": "203eb97180feb6fd5c13c075b7d4af257ddd65bf71617576bae881a7eeaae9f3",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
+      "sha256": "203eb97180feb6fd5c13c075b7d4af257ddd65bf71617576bae881a7eeaae9f3"
     },
     {
-      "sha256": "ee741660d73e8e9e989be975a4f60fe45bdb1aab7746f65c33378ec00a0f0c91",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
+      "sha256": "ee741660d73e8e9e989be975a4f60fe45bdb1aab7746f65c33378ec00a0f0c91"
     },
     {
-      "sha256": "640c1b526bdaf023b2cf6c62a6ea4c2e4867c27e69b1c314f32cb43d17dabd72",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormPrivacyTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormPrivacyTests.cs",
+      "sha256": "640c1b526bdaf023b2cf6c62a6ea4c2e4867c27e69b1c314f32cb43d17dabd72"
     },
     {
-      "sha256": "4b5b8b843e9d8481893d1cf790494c749894b50a2d8927722f0fcf0f2a89ec16",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingFlowProvider.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingFlowProvider.cs",
+      "sha256": "955af86c8a0306de1e59f988178349f2f3cc52d83bf434cd99dc06364a61df8d"
     },
     {
-      "sha256": "cdabd6adebd94008b91c1cd89a6e0faeb12ed3ebd7a31e76fb573d5797e895b1",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredFormSource.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredFormSource.cs",
+      "sha256": "cdabd6adebd94008b91c1cd89a6e0faeb12ed3ebd7a31e76fb573d5797e895b1"
     },
     {
-      "sha256": "b08f80196cb2d1baa52fde2f8bdd4f1a7ce339a862e7faafe14a7e8894fc2e35",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/ControlledWhatsAppSendClient.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/ControlledWhatsAppSendClient.cs",
+      "sha256": "b08f80196cb2d1baa52fde2f8bdd4f1a7ce339a862e7faafe14a7e8894fc2e35"
     }
   ],
-  "schemaVersion": 1,
-  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
-  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
-  "sourceState": [],
-  "producer": "WhatsAppFormHttpContractTests and WhatsAppFormSendingTests and WhatsAppFormReplyAppPreviewTests and WhatsAppFormPrivacyTests and CapturingFlowProvider and CapturingStructuredFormSource and ControlledWhatsAppSendClient",
+  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
   "captures": [
     {
       "length": 247,
-      "sha256": "43d7910636250f3220790caa427a06059e5cdd7fbfcecfb0db4e133abc5fc4bb",
+      "sha256": "57c669f2518090736445545735caba5d09fe7df3f6b1bf288e5c1eb6e60531ce",
       "name": "en/choices-forbidden.json"
     },
     {
       "length": 475,
-      "sha256": "34b410530a4f441db6cf681b12e5665c832e1d244252f38a0f5723faeac1698c",
+      "sha256": "2112a7a2dcde68f83157049d6b480e2fb5d9453dfd0504afb83986f9d3d95354",
       "name": "en/choices.json"
     },
     {
       "length": 482,
-      "sha256": "063239b817cd5b3d5e8320ec9e10d6f344cbf802cc3652a165b51cf68e9a5ef1",
+      "sha256": "3c7a990c7ee24fd9ae09c9f608c74cc015d527d5ead9af5abaed4fc0ee092a01",
       "name": "en/empty-secondary-choices.json"
     },
     {
       "length": 1396,
-      "sha256": "123d2e7b66ced4944b1b938404c2135c0f0ff4b195c2ec0a7871d87da3e8c03c",
+      "sha256": "c8c12b1e89b553ababd0939f6fdaad52648e1e129d481c92b6d737df0961a5ee",
       "name": "en/empty-secondary-history.json"
     },
     {
       "length": 170,
-      "sha256": "9520618c2599a0648401be80bdcfd8416d7671fae0c9658bfbcaf40562bc9463",
+      "sha256": "bea846f12dad93f8014f4dd4121b5dfaeaa488f4078052b30362f49490e000a9",
       "name": "en/empty-secondary-preparation.json"
     },
     {
       "length": 651,
-      "sha256": "576bef6fa77eb4b687f9b4fc5aca4de01426a8d5ea70afe6a320d4f7989f933a",
+      "sha256": "ed6ef87d08217f9df950823aa5335c9720873f13ec1afe6d3e9d6834f6521707",
       "name": "en/empty-secondary-receipt.json"
     },
     {
       "length": 3663,
-      "sha256": "112d74ab501d867756d64592808be336790bd58ae7fea383bfc0e62c954e27e1",
+      "sha256": "1fb2dacf592d201d39b7efd718a45942b3dc177839ec80b965dd808ddc630910",
       "name": "en/manifest.json"
     },
     {
       "length": 466,
-      "sha256": "59362953d6a90649e461d9c64cf96e066e58f993c9d332761149920e0afe024d",
+      "sha256": "7651c5af2f5c90ee328918687a7dbc3734927c54e2e02dcef5095a35022fe196",
       "name": "en/original-only-choices.json"
     },
     {
       "length": 1388,
-      "sha256": "02aa0eec38e22747a428511058e412a767eadc6b69ecfc5a60c92aa47bd8b2c3",
+      "sha256": "525b14c66d5d8f56ade263ae5051bf0186515afbae56ac26a808ec828d999a06",
       "name": "en/original-only-history.json"
     },
     {
       "length": 170,
-      "sha256": "d9cdb344d6ed49f11698eccbd852cda3ad9c4aeaf2d4b9592439830b1eae8a74",
+      "sha256": "d1249d023a353c37f2d136bbce415a0b3401636afd5fdf30725c1dff7d66c011",
       "name": "en/original-only-preparation.json"
     },
     {
       "length": 643,
-      "sha256": "4ddf9183ad22899865a15aa983e3dcd7de73f7116171d1b17fdf8cd308058608",
+      "sha256": "c9a67171da79217a17bb2765feb2c3c0115338d9af9508cf93395500be3ed1b0",
       "name": "en/original-only-receipt.json"
     },
     {
       "length": 683,
-      "sha256": "5aa048de991a183121e3769d3d09d2916b6391efaf671b273f27a910215bad99",
+      "sha256": "90ed5e9df60f50f4444c2493b03c5f6b66d5f2e7981567f3446ed4008a03726b",
       "name": "en/outgoing-accepted.json"
     },
     {
       "length": 637,
-      "sha256": "eb8614442f363cc970b96caefe2de624aa7b37e626e51a676ed69b607191cb2e",
+      "sha256": "94566240a923d8c3fa10597e7d1cfba8c7be9adaf36f77d8a05a4385ac6ab8c1",
       "name": "en/outgoing-failed.json"
     },
     {
       "length": 638,
-      "sha256": "ca07cb973974d29c25c2a46b196e4d59d345ecdca126690c6deb904b16387cf4",
+      "sha256": "cd3a363a1b5856abc607ba29c4bfcfff4487da6917a4bfcd89114b1d5a073860",
       "name": "en/outgoing-pending.json"
     },
     {
       "length": 640,
-      "sha256": "92e1c11634d2c9cac7a0d21add4ee8abb0cf08efae26a8700253f38646bca12f",
+      "sha256": "9bfa8a18a8e0bb6627f59e0516b4efa6dea1304a12007b5be951d41655e92c30",
       "name": "en/outgoing-uncertain.json"
     },
     {
       "length": 170,
-      "sha256": "217a25fdf53182631a4da692a8d139610b9e8a56d3c4d63ed9c47d19de4158f3",
+      "sha256": "674d1c175f103ca403e99683fb2355b364515d5b4e327ef1069a9e9a69d8bbfe",
       "name": "en/preparation.json"
     },
     {
       "length": 5734,
-      "sha256": "7e07847361ebee47fd21b5c608841bc32a50767aaeefad65d08c9a5da8d3b800",
+      "sha256": "bcb7c5e36f0c49629be43c593f6fcb7228328820d046db3cb7e1ac93d2d73b20",
       "name": "en/reply-all-states.json"
     },
     {
       "length": 2970,
-      "sha256": "2b1e609f538610e7b23607a82508a5f6d56da451f86258eddbfd1e2c14a3befe",
+      "sha256": "6357c27ce6e3fe83a61129fc518144a487400c4272d6eb87978553619383ab73",
       "name": "en/reply-completed.json"
     },
     {
-      "length": 2096,
-      "sha256": "deee90d2a9580c4682b52aace10805fd94ccc9508b1f0897db1e970371289b97",
+      "length": 5497,
+      "sha256": "81203173d6c49397e304217a6744afa5ea2a443dd6622fa94b613e9d58bff002",
       "name": "en/reply-inbox-read.json"
     },
     {
-      "length": 2096,
-      "sha256": "deee90d2a9580c4682b52aace10805fd94ccc9508b1f0897db1e970371289b97",
+      "length": 5497,
+      "sha256": "81203173d6c49397e304217a6744afa5ea2a443dd6622fa94b613e9d58bff002",
       "name": "en/reply-inbox-without-read.json"
     },
     {
       "length": 1918,
-      "sha256": "fc8b5bb213a250d3f7a03cc6dd342f19a601faf525e802eac5e02c011bc8af98",
+      "sha256": "27e869fc001cd7f05254e5a51c4e3379136dc009fc86170bb46b0b58fa771807",
       "name": "en/reply-latest-page.json"
     },
     {
       "length": 1932,
-      "sha256": "36819ac92e5c2e97db6cc8f08a768502ce91709b0611a54d7e2fd2df854bb4c6",
+      "sha256": "a2c00eb576e809c7f6085e56e416d1ac6e80eb723d879cff061266b46093648e",
       "name": "en/reply-older-page.json"
     },
     {
       "length": 1866,
-      "sha256": "e7f2fddf608064978d7a15acde7a96e5b9b35b62c005009bff8793985c79b08f",
+      "sha256": "924f28694c65eb0374f1c8d7f23b1bf47c2bcbce13647fc3b3044609a4f7c2c3",
       "name": "en/reply-pending.json"
     },
     {
       "length": 4163,
-      "sha256": "899601c20008f687e1279d16ed4a2d9255d62f7e09059322675f3169fcf9833d",
+      "sha256": "c87083a268a6d1646f93efa1174de49c280b54bd905ec7dacd00bcb49cd98248",
       "name": "en/reply-rejected.json"
     },
     {
       "length": 2970,
-      "sha256": "2b1e609f538610e7b23607a82508a5f6d56da451f86258eddbfd1e2c14a3befe",
+      "sha256": "6357c27ce6e3fe83a61129fc518144a487400c4272d6eb87978553619383ab73",
       "name": "en/reply-reloaded.json"
     },
     {
       "length": 4655,
-      "sha256": "4e9d74c0cc7da4997376bba9ee7bce3884a511b7d1abbe4c0f94ee2055299af5",
+      "sha256": "a45334b82f3ba931cd313d825199d29b3da23a4da434700a172375c9bb9e56cc",
       "name": "en/reply-unrecognized.json"
     },
     {
       "length": 1737,
-      "sha256": "592624f5d22bef263c774a36add42a491e22129749b9459eec3044b7e08ef1ff",
+      "sha256": "8fb8b9ad58e886c0155b6405856a240bd09eb32047c5a75710ac467828215606",
       "name": "en/reply-without-read.json"
     },
     {
       "length": 638,
-      "sha256": "d3ab658bdf463bf962fcc91670e514cd2e63e3d07b75b9c61f33ad714637f4ab",
+      "sha256": "6d041c9f671f62f3a593aa09a4d3165eb842897c3fd4e2e0977a81eca2df87f0",
       "name": "en/send-before-failed.json"
     },
     {
       "length": 638,
-      "sha256": "b27e64d42ead2eff124bfa7596324d1521bfad40a7ba768d0abc5a07b73e32de",
+      "sha256": "41485220cf8c81677256f8b2c6cf18a992e5299a04b4b3e183507cf842d2c656",
       "name": "en/send-before-uncertain.json"
     },
     {
       "length": 307,
-      "sha256": "8c7dc02ad4b06b2ddc3911c961401d8fb29eaefb8edf04722399c33c0e350ab8",
+      "sha256": "4a018650b9786f7daacd8f884212e62b673838ca19113c7902c8bb6dbc9e2536",
       "name": "en/send-context-changed.json"
     },
     {
       "length": 638,
-      "sha256": "7498043ca056be5e62a08773cf0d0d85989909c0d7c297c62f4e3fc9ddbbb2a1",
+      "sha256": "2a90a485fcd606cb7b42e1fe6498360bb190cd04607753d4af6f05cb55409112",
       "name": "en/send-pending.json"
     },
     {
       "length": 263,
-      "sha256": "8e2fda93045a29a75b6c8c0891210b133667558c3671b02fd1ce7c147cb85160",
+      "sha256": "aa1c387b7fec02fedfc157e382cef62a7553b13da247b4ad5c835fd9f8faf2e5",
       "name": "en/send-version-unavailable.json"
     },
     {
       "length": 1367,
-      "sha256": "c90e865c7c88ff3e80a5b8600640c210cb950f4a9d46638a8f24da43af4fba9c",
+      "sha256": "5a8f38fda4071523a034cbdbb9929cb295fd3e84c7c24dcecf832c739e429312",
       "name": "en/thread-accepted.json"
     },
     {
       "length": 778,
-      "sha256": "92ae1a4300daff3ade7b03b1821376bb22cfbbb259b8230a4f7b96d6ce0e3d1b",
+      "sha256": "ecb2dd5fbafb844e32c43b58cd0b95b62bbff145f64f55061b80a4ed87f6c62a",
       "name": "en/thread-before-send.json"
     },
     {
       "length": 1315,
-      "sha256": "02698eac98d631801d56cccbf8bb0b2e8ea2fb47d444c52ba58a65df38497634",
+      "sha256": "a52429372af93f15bb7f05180cee3bf7f2122bdc30fd0224067a6707df4bf937",
       "name": "en/thread-failed.json"
     },
     {
       "length": 1316,
-      "sha256": "c60ad1ed6d1d738f0eace6ca50faa343a9d91ed99d5b3464a0bda0ebf2ca96ae",
+      "sha256": "19fe557ab3d8f07c245c8225db1f6e806b3f0035884429b3a00cc817ea64fb25",
       "name": "en/thread-pending.json"
     },
     {
       "length": 531,
-      "sha256": "3c83ccfe9d0aacee3eff9785539b14a2d82a9c9095de705b7cf9708642dd7104",
+      "sha256": "b0aa3dc2e3c2da068c6c473cf695d446a5698a3377860090650cdcc9e977fcbe",
       "name": "en/thread-read-only.json"
     },
     {
       "length": 1367,
-      "sha256": "c90e865c7c88ff3e80a5b8600640c210cb950f4a9d46638a8f24da43af4fba9c",
+      "sha256": "5a8f38fda4071523a034cbdbb9929cb295fd3e84c7c24dcecf832c739e429312",
       "name": "en/thread-reloaded.json"
     },
     {
       "length": 820,
-      "sha256": "199d62069637a71eeb2e2ab0f675d90572a4068f298c3a5c7240b91579106926",
+      "sha256": "3fcbfc932652ecffdc036993a25b35896a6b08ea2d71c6ed7505b1404063a70a",
       "name": "en/thread-send-with-users-read.json"
     },
     {
       "length": 768,
-      "sha256": "5e9a409e3805f640931cba3b444e9e42fd2aeca0dbc08d55012292c1bc66d1b6",
+      "sha256": "2bb3f2d4f6be9066a75bf42b6bd8b020e10182921ab15e445e0aff357df2c349",
       "name": "en/thread-send-without-users-read.json"
     },
     {
       "length": 1318,
-      "sha256": "719721802a661819b0d19246fdcd74bc61ece51d5a9522859fbccceee0d7888f",
+      "sha256": "0e9d55b63a4b0521fc1b2170a6aa156c0caf6fecd1ac4e5d87447d4849a608b6",
       "name": "en/thread-uncertain.json"
     },
     {
       "length": 249,
-      "sha256": "821b8548d66ec7e376c2b5cf399393f1ad2897fd828e6390a90eef992f1d6639",
+      "sha256": "df259e8aab58a49f130e188654b391e88774ae3f5aec1a3f89447e899ab0c3d7",
       "name": "es/choices-forbidden.json"
     },
     {
       "length": 475,
-      "sha256": "cc83aab478ab4beb02b7f36a249296dddbd4dbf1e3e2a270c05feb12d0a37b22",
+      "sha256": "758b664fc15ba82bbb209637ca9558609fd782073bd193d49a04f9a3743d2d43",
       "name": "es/choices.json"
     },
     {
       "length": 2565,
-      "sha256": "2ee5b4606fe0578c98f9aedbec71d5eaef54472db8999de16b4e84facc46c8db",
+      "sha256": "5fbff52212e04463c1542e98cb58af7947ad7669af8b71f19cd3e4b45fa1ed10",
       "name": "es/manifest.json"
     },
     {
       "length": 694,
-      "sha256": "f95b07e8cce72b628ebb4568007d32161d4573865742dee315f231dfa614fdb3",
+      "sha256": "a81094fc30c362b7795d1060dd90797bbc3ef48e7f6e3a32da9a8ae5d3c3a44d",
       "name": "es/outgoing-accepted.json"
     },
     {
       "length": 648,
-      "sha256": "e46a8afa2c893afff799ccde21758a275edab029f65f0037a643d8651a77fb62",
+      "sha256": "4e0637ab1b5e5df5849a67e5e968abd03739ffda81e0ff99d4464ac1292849c4",
       "name": "es/outgoing-failed.json"
     },
     {
       "length": 649,
-      "sha256": "4a079fbc056b442e4278bb33abd740cdd59886065dd25adaf76ceefa9dc2a86f",
+      "sha256": "afca853b4c38dc54663702848ae49e8746574111e138b0f26f7b6dd8c4962098",
       "name": "es/outgoing-pending.json"
     },
     {
       "length": 651,
-      "sha256": "584973c0e997b1af416b4e5957d73407b60f20d227342e3c276f6fdc4560d777",
+      "sha256": "a1d0df5b244fe87b7a262e10be1d3ef5003fa2b524b310988307f3d875708972",
       "name": "es/outgoing-uncertain.json"
     },
     {
       "length": 170,
-      "sha256": "83eb73038f731f6dba6c5fdfac47e6bc9d54fdc6214f284299fdd64b6ebfbadc",
+      "sha256": "d75b07b6344eb9cabde8cb2f1413662ae73b52da79a825bb3a685a79b523bfa4",
       "name": "es/preparation.json"
     },
     {
       "length": 5765,
-      "sha256": "363a1cb1a68c8c2ff411537aa3a052cb2e3aee6ada0dedcd6b739fc3e28a7807",
+      "sha256": "3375014dfff99413e3b28a0b787f46036fc156171ddfd5c92b4d396af004da75",
       "name": "es/reply-all-states.json"
     },
     {
       "length": 2995,
-      "sha256": "daf253b81409e8176b45fde2c2903761e6b352714d0615b84c01a5a5c2183b75",
+      "sha256": "032380276f6227bea11716a62455f70b601a9de089923bf26f1501ecd90b8a63",
       "name": "es/reply-completed.json"
     },
     {
-      "length": 1489,
-      "sha256": "1ec463049e94d8a43512a6f3bc543e67f0196f94daaf80d95d98d8a1828f0af5",
+      "length": 4890,
+      "sha256": "f202ea90151828c176ed5e0ab50ab73cd239f3c3943f1ad29b02f6521ee73042",
       "name": "es/reply-inbox-read.json"
     },
     {
-      "length": 1489,
-      "sha256": "1ec463049e94d8a43512a6f3bc543e67f0196f94daaf80d95d98d8a1828f0af5",
+      "length": 4890,
+      "sha256": "f202ea90151828c176ed5e0ab50ab73cd239f3c3943f1ad29b02f6521ee73042",
       "name": "es/reply-inbox-without-read.json"
     },
     {
       "length": 1929,
-      "sha256": "ba12df3e89c984cba8512fa12b72ab7c314d114c1a08c396dc8a0b4d132afd93",
+      "sha256": "871585ccd9629b6c18aa8dc9baf593da08adcb86a087b753a8640ef0743ff0dd",
       "name": "es/reply-latest-page.json"
     },
     {
       "length": 1949,
-      "sha256": "a4c37cd23a0521187cfb3e4cb274811a2557583a00f7e209e66d43f204473398",
+      "sha256": "0571cd3d036a25246718f9c620149b76ccda818b6ab5c83a3ba039140cb31c27",
       "name": "es/reply-older-page.json"
     },
     {
       "length": 1877,
-      "sha256": "29b9bbd19cf48c33b7a697232a0eadf6d362bbf2b1dac01764296097e7dadb83",
+      "sha256": "ec220004c5ee64a9bae204995fdae744a27c9f13b071f6634861f78533c72dfc",
       "name": "es/reply-pending.json"
     },
     {
       "length": 4194,
-      "sha256": "50c589e0140a71e986403b9f2e23360366a18a15d704578a610f3e000f2e3c6d",
+      "sha256": "799a713740494c2874e3f2171fa8a333c92cd9b9e665264112c88709d017a50b",
       "name": "es/reply-rejected.json"
     },
     {
       "length": 2995,
-      "sha256": "daf253b81409e8176b45fde2c2903761e6b352714d0615b84c01a5a5c2183b75",
+      "sha256": "032380276f6227bea11716a62455f70b601a9de089923bf26f1501ecd90b8a63",
       "name": "es/reply-reloaded.json"
     },
     {
       "length": 4686,
-      "sha256": "2cdb80c6aecebd0f16206bf7be49a4d472f5cc70013b18e324da2f281a2c8309",
+      "sha256": "d47dad6090099c806e8ee847f6fc59f5f47c3863356f225beab0f6219a36f4c1",
       "name": "es/reply-unrecognized.json"
     },
     {
       "length": 1754,
-      "sha256": "fd26f87d9e86c706407b26eaf40f9c2a2c2b5acda6c3b3da80690cdba7d83763",
+      "sha256": "fdf3b61c2f216060f5ca1a08833d7d23932d05cb6363940b3c95fd5c3468806f",
       "name": "es/reply-without-read.json"
     },
     {
       "length": 645,
-      "sha256": "24195219d8ca0d9b1852a262d193764f1cb8145ab88064481d040618c59e5407",
+      "sha256": "f2c96328dbfaef0e7ebf796892870c01b0d8b3f7956809e8d417b19a077f1d9c",
       "name": "es/send-before-failed.json"
     },
     {
       "length": 645,
-      "sha256": "ea20a234f63e7fbcc4d2cf2255c4b515c567918727e0255059302b879dfecffc",
+      "sha256": "9c5f28a98e54009c82e40d0449a92a88a2504e9d4fc2972998876bced4559db9",
       "name": "es/send-before-uncertain.json"
     },
     {
       "length": 322,
-      "sha256": "22f24537452462954dbf1f204e8ca4ed2be74caa1c572febbc3c4bcdb40fa968",
+      "sha256": "9538bb00a522ab52425c13e077d41dd5c6aaaddc24498609d67519726b0f2c30",
       "name": "es/send-context-changed.json"
     },
     {
       "length": 645,
-      "sha256": "0378f450a4dc30c7476fe030b2e561a486694c47c58ecca0c04367c4d12310b6",
+      "sha256": "98e473dc744e84039f9afd714cb3d82b9e2ad9ddf24a3fbec2156cb11a6847ef",
       "name": "es/send-pending.json"
     },
     {
       "length": 273,
-      "sha256": "41f2ef7daf417a6bd7272819e0293a2fe44128ff66908a93567872a6eb53ed8b",
+      "sha256": "b63ca881adb568f20412a0183ce59e9c6973d81f81693a095749f5bc8e4bd96f",
       "name": "es/send-version-unavailable.json"
     },
     {
       "length": 1389,
-      "sha256": "153221723381fd51de656d3a4b6faeaeffa351c7d399f6af620ea3b092b9b44c",
+      "sha256": "996c9744438155d38950a3cec0ce3c9d6edf7d2de96001d91931ee8e2c989e4b",
       "name": "es/thread-accepted.json"
     },
     {
       "length": 778,
-      "sha256": "fa4d3eda40d7c10bf0e9360bc088cffba0d98cf4e99935e9fadf679edb99c55f",
+      "sha256": "98e865269affa69e871b99581264a52470a9f9b700aa274b070d13743d8822e8",
       "name": "es/thread-before-send.json"
     },
     {
       "length": 1326,
-      "sha256": "52f352c2447de9cfe42682881ed4256d80675b3c56656fe025de9beb9694ca51",
+      "sha256": "f44f8e8d3dd0e7b334f95f96d31d2fba1a1793b440ae09156ebd0e3310e878e2",
       "name": "es/thread-failed.json"
     },
     {
       "length": 1327,
-      "sha256": "4d6153bb1bc15de8cc4876be30d0f66b02e928b7685f2cadc8d3d5111c6ac368",
+      "sha256": "70b5ae2837d9b81ae9e71945981521c88eb1fcf2d8438f993d25791aeaa0326a",
       "name": "es/thread-pending.json"
     },
     {
       "length": 531,
-      "sha256": "12db7c605ee5b452e4b3ce61851f5525230fb40367954b0cc40b37897b5e3edd",
+      "sha256": "97927fb1ff3edc1eaebd44e74e8a6b8ef419c2517188a20631d30a958f91059d",
       "name": "es/thread-read-only.json"
     },
     {
       "length": 1389,
-      "sha256": "153221723381fd51de656d3a4b6faeaeffa351c7d399f6af620ea3b092b9b44c",
+      "sha256": "996c9744438155d38950a3cec0ce3c9d6edf7d2de96001d91931ee8e2c989e4b",
       "name": "es/thread-reloaded.json"
     },
     {
       "length": 820,
-      "sha256": "ebfd198d4c913998019047c9d541192e6d0723d82e020d616b4b54387fcaf77c",
+      "sha256": "99d0f64c38441fe21a53a0db840a93c5cc46af1b653d64f1b4eebbccb886703f",
       "name": "es/thread-send-with-users-read.json"
     },
     {
       "length": 768,
-      "sha256": "0980463022e5a64db71f6dc364ce9af8a6836155bd69e37257b7f7ecc46bf0b3",
+      "sha256": "751cf9b1b56398e93b0add235172c40a2f31a41860b1107fd7d5c39a7c7ba9d5",
       "name": "es/thread-send-without-users-read.json"
     },
     {
       "length": 1329,
-      "sha256": "5dce11919a9ec2a862cc04fd45286790d7fd530026322597d0cb93d509bd6c9c",
+      "sha256": "004cb8cf2bd9bd3c757dfac5dac08d1fefad4c329d2eb741dbdb925093f36573",
       "name": "es/thread-uncertain.json"
     }
   ],
-  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
-  "artifactSet": "whatsapp-forms",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "artifactSet": "whatsapp-forms"
 }

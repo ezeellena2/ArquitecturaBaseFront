@@ -1,63 +1,74 @@
 {
+  "schemaVersion": 1,
+  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
+  "sourceState": [
+    " M docs/architecture/mapa-de-instrucciones.md",
+    " M docs/architecture/premisas-de-la-plantilla.md",
+    " M docs/features/formularios.md",
+    " M docs/features/whatsapp.md",
+    " M docs/history/README.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    " D docs/plans/formularios/dar-de-baja-formularios.md",
+    " M docs/plans/verificacion-y-produccion.md",
+    "?? docs/plans/formularios/menu-y-detalle.md"
+  ],
+  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
   "sources": [
     {
-      "sha256": "5b194a0b704e9512f0f310b3a7f3a799ae624486cb54e2e7eaf537be6cfb8847",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs",
+      "sha256": "5b194a0b704e9512f0f310b3a7f3a799ae624486cb54e2e7eaf537be6cfb8847"
     },
     {
-      "sha256": "f625255f15dd0bd5bb149c6b60e6f2a5a4ee72672b75b53dfd81ece1961dae03",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs",
+      "sha256": "f625255f15dd0bd5bb149c6b60e6f2a5a4ee72672b75b53dfd81ece1961dae03"
     }
   ],
-  "schemaVersion": 1,
-  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
-  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
-  "sourceState": [],
-  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
+  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
   "captures": [
     {
       "length": 276,
-      "sha256": "c96a693ad9bac71112578761b2a131f77abc06a08dbf2a098b364b7e098ca265",
+      "sha256": "e0e9a88c691050c91f70a920b63aa4a3cbf2279f932b5893312dbf7c910b9f4b",
       "name": "conflict-es.json"
     },
     {
       "length": 152,
-      "sha256": "8da239d07e1c6d4673457278bea4836741406e2a3bf3c626f421d4af26397d5d",
+      "sha256": "c51bd0031c0c79e7c0b341373a8d6b2a8f9effc0fc7982ad66cc0482dfd26844",
       "name": "empty-es.json"
     },
     {
       "length": 373,
-      "sha256": "46bd4975b6e5af5b98da7ee9130e0c973cd89f3c2f51f812fc06e2c38de4f58f",
+      "sha256": "be99926dda37fd68b895fd16200ba520deeef2462d838ab6a4a4e55ce0da90a4",
       "name": "history-es.json"
     },
     {
-      "length": 10230,
-      "sha256": "742689bb1443584916748fc9f74f5f1dee4d201fe69a4aaf67c780b88915ce2c",
+      "length": 10741,
+      "sha256": "f48dcc7e34bb174f0b0ef83d698927bab9d565197b86faa335a58efbbf896654",
       "name": "options-en.json"
     },
     {
-      "length": 10230,
-      "sha256": "742689bb1443584916748fc9f74f5f1dee4d201fe69a4aaf67c780b88915ce2c",
+      "length": 10741,
+      "sha256": "f48dcc7e34bb174f0b0ef83d698927bab9d565197b86faa335a58efbbf896654",
       "name": "options-es.json"
     },
     {
       "length": 680,
-      "sha256": "a78f38a672670ff84a9e5513e272d7a3819594e31f6c83c0fefc5d941d906e4e",
+      "sha256": "b77c888bd19b69b62e870ba7bba8ff70535424c5678cd851a42064dcbee05024",
       "name": "revision-es.json"
     },
     {
       "length": 680,
-      "sha256": "a78f38a672670ff84a9e5513e272d7a3819594e31f6c83c0fefc5d941d906e4e",
+      "sha256": "b77c888bd19b69b62e870ba7bba8ff70535424c5678cd851a42064dcbee05024",
       "name": "saved-es.json"
     },
     {
       "length": 285,
-      "sha256": "a32c577e8536e531f0bcd78453636a43ea3703858632ac885ababb2d21e86c54",
+      "sha256": "322208288571e9148708d08f7ec15668dcf405edc7b9d60d358a1c1e60664a6a",
       "name": "source-unpublished-es.json"
     }
   ],
-  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
-  "artifactSet": "suggestions",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "artifactSet": "suggestions"
 }

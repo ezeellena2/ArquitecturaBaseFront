@@ -1,63 +1,74 @@
 {
+  "schemaVersion": 1,
+  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
+  "sourceState": [
+    " M docs/architecture/mapa-de-instrucciones.md",
+    " M docs/architecture/premisas-de-la-plantilla.md",
+    " M docs/features/formularios.md",
+    " M docs/features/whatsapp.md",
+    " M docs/history/README.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    " D docs/plans/formularios/dar-de-baja-formularios.md",
+    " M docs/plans/verificacion-y-produccion.md",
+    "?? docs/plans/formularios/menu-y-detalle.md"
+  ],
+  "producer": "FormRuleHttpTests and FormRuleContractCapture",
   "sources": [
     {
-      "sha256": "a52e967dc1a915849b66bbc5a416bcca663a67344c3c246f1c45b0d72e845919",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs",
+      "sha256": "a52e967dc1a915849b66bbc5a416bcca663a67344c3c246f1c45b0d72e845919"
     },
     {
-      "sha256": "c55a895a22d4668305fccd40765fd6b8f564ab53f6b5e19db45f14c495266c13",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs",
+      "sha256": "c55a895a22d4668305fccd40765fd6b8f564ab53f6b5e19db45f14c495266c13"
     }
   ],
-  "schemaVersion": 1,
-  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
-  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
-  "sourceState": [],
-  "producer": "FormRuleHttpTests and FormRuleContractCapture",
+  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
   "captures": [
     {
       "length": 281,
-      "sha256": "485ad1891e1d041f5185310150eae5965713f7457060805c35587fb014d8718a",
+      "sha256": "569ce7b820563e80ad3fc15e1e08fd58a23206cbbd0363f2350cf204c0724f12",
       "name": "conflict-es.json"
     },
     {
       "length": 146,
-      "sha256": "ddc6c32f7869cb53fa4609d921294cea3780b1f2ae8ade2da05e67cb5a959aec",
+      "sha256": "ae751fd457c20247840ffcd5b83e37834d1faba886f9efcea1939612d61c6964",
       "name": "empty-es.json"
     },
     {
       "length": 375,
-      "sha256": "b8215016eb5caf3b69954eff8f35216b458d476dc5bc8a6c188ae0f8312849b7",
+      "sha256": "eae13349ed5066d3fadd28c3e155297abeacaa946cc34944849319f3d45bf2cf",
       "name": "history-es.json"
     },
     {
-      "length": 14655,
-      "sha256": "15f6f12ab6d27104889f6459d1a1f9bf710a6602e9769fff9c31ad14d93dcce7",
+      "length": 16963,
+      "sha256": "6545cb498ab1c8a6f12e963d8e8696b3b863a9c63e3f43a2f71552de873d2675",
       "name": "options-en.json"
     },
     {
-      "length": 14655,
-      "sha256": "15f6f12ab6d27104889f6459d1a1f9bf710a6602e9769fff9c31ad14d93dcce7",
+      "length": 16963,
+      "sha256": "6545cb498ab1c8a6f12e963d8e8696b3b863a9c63e3f43a2f71552de873d2675",
       "name": "options-es.json"
     },
     {
       "length": 505,
-      "sha256": "b14b6c0f0ad9559936f8d8ed9bba22cb7e4535338e118ac421eb2794ca60efb9",
+      "sha256": "9757bc138e210c7d1023010c479363b38e79b7e8c34b3fc652d42f4ee4c94b8c",
       "name": "revision-es.json"
     },
     {
       "length": 338,
-      "sha256": "72907fdb53a02ea54a450677534391a7e2fa9a115abd2ba3da9de7989dd7f623",
+      "sha256": "679d32217937c534d45dd172cee0f9bf4763f489c48830c2aae1ac70486d4086",
       "name": "role-unavailable-es.json"
     },
     {
       "length": 501,
-      "sha256": "db28b41aad3e28eedcd1e18846330ce7465077940903a539048fafa8a2da4351",
+      "sha256": "96f648f9d7882fe8424b78c7f8d590e91b91691c550ebf82f9e9312cb05f4af2",
       "name": "saved-es.json"
     }
   ],
-  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
-  "artifactSet": "rules",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "artifactSet": "rules"
 }

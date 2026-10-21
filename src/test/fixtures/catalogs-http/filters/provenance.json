@@ -1,15 +1,29 @@
 {
+  "schemaVersion": 1,
+  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
+  "sourceState": [
+    " M docs/architecture/mapa-de-instrucciones.md",
+    " M docs/architecture/premisas-de-la-plantilla.md",
+    " M docs/features/formularios.md",
+    " M docs/features/whatsapp.md",
+    " M docs/history/README.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    " D docs/plans/formularios/dar-de-baja-formularios.md",
+    " M docs/plans/verificacion-y-produccion.md",
+    "?? docs/plans/formularios/menu-y-detalle.md"
+  ],
+  "producer": "FormCatalogFiltersEndpointsTests",
   "sources": [
     {
-      "sha256": "77f028bcb4dc764cf8187e6bb39f1d5cde4c235488b0891e673a9de5cb377fcb",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
+      "sha256": "77f028bcb4dc764cf8187e6bb39f1d5cde4c235488b0891e673a9de5cb377fcb"
     }
   ],
-  "schemaVersion": 1,
-  "runId": "20261019-193344-de4408150aaf4b72b0a019527e4c9fc2",
-  "generatedAtUtc": "2026-10-19T20:00:02.3811416Z",
-  "sourceState": [],
-  "producer": "FormCatalogFiltersEndpointsTests",
+  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
   "captures": [
     {
       "length": 273,
@@ -18,27 +32,27 @@
     },
     {
       "length": 511,
-      "sha256": "d8057e68abae7105c87ac910df52e7dbdbedb18b4f3ae0a961ab51dc737628c3",
+      "sha256": "511676e5f14b1f2c03ecb1645248c7fd1bdc1d89c3bd5cfc0eb42513f4c947af",
       "name": "created.json"
     },
     {
       "length": 482,
-      "sha256": "eba3e954ee1d9209724e442b4a4c1b65d9244ea74100803a66cffe2cff640296",
+      "sha256": "2c8b5ad6ba99833b9aca5ebb6c88f3e552bd0fe94773aca0e64dcd5b975d13e7",
       "name": "detail.json"
     },
     {
-      "length": 41326,
-      "sha256": "e92d8a414f3805ddb21de9371c31939693acebe9616412b69eb7d1a4d419b692",
+      "length": 47618,
+      "sha256": "b808a48f650d19657a8e34b077991954d0bba071eed757848989a427246bd13c",
       "name": "options.json"
     },
     {
       "length": 328,
-      "sha256": "af8d8f05f074af12fa1c83c5478f751e9d3ffd39bb8fae006afa7ecbd7b3548a",
+      "sha256": "0060f3ca754543d03af99c37fcc01e16edbd0c297e732eaec4184a6d7ec40e1c",
       "name": "preview-request.json"
     },
     {
       "length": 201,
-      "sha256": "077e6c6c8713d5b37a9ede169511e4d1f9e1a5c725c5b453553f49cad1d4b13b",
+      "sha256": "cefa680cba74b1cc4bb53be74d80f1b45ab2e2908643fcf8bef2ada6ea0a7042",
       "name": "preview.json"
     },
     {
@@ -48,12 +62,9 @@
     },
     {
       "length": 510,
-      "sha256": "880ce9c6c2b4f8ecdb688c10e536a207c8068f154959b20e05bdc17636e279ad",
+      "sha256": "6aa9b5a332f651c0164f8d6d39eabd9135efb9e7a47c62a148db3159a4c3383b",
       "name": "updated.json"
     }
   ],
-  "repositoryHead": "d61ae24485f57212b92ddd3a69b691439de22864",
-  "artifactSet": "catalog-filters",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "artifactSet": "catalog-filters"
 }
