@@ -18,6 +18,18 @@ async function assertContainedTable(page: Page, width: number, mustScroll: boole
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
 }
 
+async function assertOverviewGeometry(page: Page, width: number) {
+  if (width >= 1024) {
+    const controls = [page.getByRole("searchbox"), page.getByRole("group"), page.getByRole("checkbox")];
+    const bounds = await Promise.all(controls.map(control => control.boundingBox()));
+    const boxes = bounds.map(box => box!);
+    expect(Math.min(...boxes.map(box => box.y + box.height))).toBeGreaterThan(Math.max(...boxes.map(box => box.y)));
+  }
+  // These fixture names and values fit on one line; horizontal overflow belongs to the table region.
+  for (const row of await page.getByRole("table").locator("tbody tr").all())
+    expect((await row.boundingBox())!.height).toBeLessThanOrEqual(40);
+}
+
 async function assertStateControls(page: Page, es: boolean, state: "active" | "deactivated", active: number, deactivated: number, width: number) {
   const segment = page.getByRole("group", { name: es ? "Estado de los formularios" : "Form status", exact: true });
   const current = segment.getByRole("button", { name: state === "active" ? (es ? "Activos" : "Active") + " (" + active + ")" : (es ? "Dados de baja" : "Deactivated") + " (" + deactivated + ")", exact: true });
@@ -62,6 +74,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       : "Deactivated forms retain their responses and pending decisions.", { exact: true })).toBeVisible();
     else await expect(page.getByRole("button", { name: es ? "Ver dados de baja" : "View deactivated forms", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
+    await assertOverviewGeometry(page, width);
     await assertContainedTable(page, width, width < 640);
     await page.screenshot({ path: "test-results/form-overview-" + state + "-" + language + "-" + width + ".png", fullPage: true });
     await assertNoWrites(page);
@@ -83,6 +96,7 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     await expect(page.getByRole("checkbox", { name: es ? "Con algo por aprobar" : "With something to approve", exact: true })).toHaveCount(0);
     await assertStateControls(page, es, "active", profile === "read" ? 6 : 2, profile === "read" ? 2 : 1, width);
     await page.evaluate(() => document.fonts.ready);
+    await assertOverviewGeometry(page, width);
     await assertContainedTable(page, width, profile === "read");
     await page.screenshot({ path: "test-results/form-overview-" + profile + "-" + language + "-" + width + ".png", fullPage: true });
     await assertNoWrites(page);
