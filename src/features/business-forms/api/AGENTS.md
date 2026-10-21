@@ -6,6 +6,7 @@ Familias:
 
 - Formularios, ciclo de vida y publicación: `forms.ts` (listado y facetas, detalle, alta, guardado, recuperación del guardado, chequeo, aceptación y estado de la publicación, vista oficial, impacto y baja, eliminación) con sus guards en `response.ts`.
 - Catálogos: `catalogs.ts` (listado, detalle, ítems, Manual, opciones y prueba de Filters, alta y guardado Filters, aprobar o descartar una propuesta) con guards en `catalogResponse.ts`.
+- Tabla MF1: `overview.ts` consume `/api/forms/overview`, con página y facetas hermanas. Los contadores privados son nullable requeridos: null no se convierte en cero ni habilita columnas. El guard es estricto también en cada fila, última respuesta y facetas; no conserva los issues ni su contenido al rechazar.
 - Planilla y detalle de respuestas: `responses.ts` (navegación, búsqueda POST, detalle y conteos por filtro).
 - Reglas y PDF: `rules.ts` (configuración, opciones, revisiones) y `pdf.ts` (diseño, vista previa y copias fijas en bytes).
 - Workflow y aprobaciones: `workflow.ts` (estado, consultar, reintentar, revisar un destinatario) y `approvals.ts` (bandeja, cantidad, opciones, tarea, decisión).
