@@ -927,6 +927,7 @@
     "openSends": "Envíos abiertos y WhatsApp",
     "openSendsHint": "Los envíos abiertos se pueden responder hasta que vencen.",
     "metaIrreversible": "En WhatsApp no se deshace. Al vencer los envíos abiertos, se deprecan sus Flows. Para volver a usarlo, se reactiva con una versión nueva.",
+    "metaIrreversibleNow": "En WhatsApp no se deshace. No hay envíos abiertos: se deprecan ahora sus Flows. Para volver a usarlo, se reactiva con una versión nueva.",
     "whatRemains": "Lo que se conserva",
     "keepsResponsesUnknown": "Las respuestas se conservan.",
     "keepsResponses_one": "Se conserva {{count}} respuesta.",

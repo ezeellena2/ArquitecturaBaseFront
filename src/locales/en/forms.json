@@ -927,6 +927,7 @@
     "openSends": "Open sends and WhatsApp",
     "openSendsHint": "Open sends can still be answered until they expire.",
     "metaIrreversible": "This cannot be undone on WhatsApp. When open sends expire, its Flows are deprecated. Reactivating publishes a new version.",
+    "metaIrreversibleNow": "This cannot be undone on WhatsApp. There are no open sends: its Flows will be deprecated immediately. Reactivating publishes a new version.",
     "whatRemains": "What is kept",
     "keepsResponsesUnknown": "Responses are kept.",
     "keepsResponses_one": "{{count}} response is kept.",

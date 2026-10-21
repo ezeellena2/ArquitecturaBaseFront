@@ -1,0 +1,22 @@
+import { screen, within } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import i18n from "@/shared/i18n";
+import { notify } from "@/shared/ui/notifications";
+import { server } from "@/test/mocks/server";
+import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
+import type { FormDeactivation } from "../api/response";
+import { FormDeactivationDialog } from "./FormDeactivationDialog";
+vi.mock("@/shared/ui/notifications",async()=>({...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"),notify:vi.fn()}));
+const scope={actorId:"actor",culture:"es" as const,permissions:["formtemplates.read","formtemplates.publish"]};
+const impact=(changes:Partial<FormDeactivation["lifecycle"]>={})=>({definitionId:fixtureFormId,revision:1,lifecycle:fixtureLifecycle(1,{canDeactivate:true,unavailableReason:null,deprecationState:"Pending",...changes}),affectedSuggestions:[]});
+beforeEach(async()=>{await i18n.changeLanguage("es");vi.mocked(notify).mockClear();});
+for(const language of ["es","en"] as const) it("explains immediate deprecation without claiming open sends or completed work in "+language,async()=>{
+ await i18n.changeLanguage(language);server.use(http.get("/api/forms/definitions/:id/deactivation",()=>HttpResponse.json(impact())));
+ renderWithProviders(<FormDeactivationDialog id={fixtureFormId} name="Registrar visita" scope={{...scope,culture:language}} onComplete={vi.fn()} onClose={vi.fn()}/>);
+ const dialog=await screen.findByRole("dialog");
+ expect(await within(dialog).findByText(language==="es"?"En WhatsApp no se deshace. No hay envíos abiertos: se deprecan ahora sus Flows. Para volver a usarlo, se reactiva con una versión nueva.":"This cannot be undone on WhatsApp. There are no open sends: its Flows will be deprecated immediately. Reactivating publishes a new version.")).toBeVisible();
+ expect(within(dialog).queryByText(language==="es"?"Los envíos abiertos se pueden responder hasta que vencen.":"Open sends can still be answered until they expire.")).not.toBeInTheDocument();
+ expect(within(dialog).queryByText(language==="es"?"Deprecación pendiente en WhatsApp.":"Deprecation pending on WhatsApp.")).not.toBeInTheDocument();
+});

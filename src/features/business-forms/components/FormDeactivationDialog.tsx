@@ -13,7 +13,6 @@ import { Spinner } from "@/shared/ui/Spinner";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormDeactivation, deactivateForm } from "../api/forms";
 import type { FormDeactivation } from "../api/response";
-import { deprecationMessage } from "../lifecyclePresentation";
 import { administrativeName } from "../editorModel";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
 export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRevisionMismatch, onComplete, onClose, focusFallback, timeZoneId }: {
@@ -38,7 +37,6 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
   notify({ id: feedbackId, kind: "error", message: readErrorMessage(query.error, t) });
  }, [query.error, feedbackId, t]);
  const impact = query.data;
- const channel = impact ? deprecationMessage(impact.lifecycle, t, scope.culture, timeZoneId) : null;
  const revisionMismatch = expectedRevision !== undefined && impact?.revision !== undefined && expectedRevision !== impact.revision;
  const submit = async () => {
   if (flight.current || !impact?.lifecycle.canDeactivate || revisionMismatch || denied) return;
@@ -67,7 +65,7 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
      <Banner tone="info"><span><strong>{t("lifecycle.assistantStops")}</strong><span className="block">{t("lifecycle.assistantStopsHint")}</span></span></Banner>
      {impact.affectedSuggestions.length ? <Banner tone="info"><span><strong>{t("lifecycle.suggestionsStop", { count: impact.affectedSuggestions.length })}</strong><span className="block">{impact.affectedSuggestions.map(form => administrativeName(form.name, scope.culture)).join(", ")}</span></span></Banner> : null}
     </section>
-    {impact.lifecycle.lastOpenSessionExpiresAtUtc || impact.lifecycle.deprecationState ? <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.openSends")}</h2><Banner tone="info"><span>{t("lifecycle.openSendsHint")}{impact.lifecycle.lastOpenSessionExpiresAtUtc && impact.lifecycle.deprecationState !== "Pending"?<span className="block">{t("lifecycle.lastOpenSend", {date:formatDateTimeInZone(impact.lifecycle.lastOpenSessionExpiresAtUtc,scope.culture,timeZoneId)})}</span>:null}</span></Banner>{channel ? <Banner tone={impact.lifecycle.deprecationState === "Uncertain" ? "warning" : "info"}>{channel}</Banner> : null}{impact.lifecycle.deprecationState ? <Banner tone="warning">{t("lifecycle.metaIrreversible")}</Banner> : null}</section> : null}
+    {impact.lifecycle.lastOpenSessionExpiresAtUtc || impact.lifecycle.deprecationState ? <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.openSends")}</h2>{impact.lifecycle.lastOpenSessionExpiresAtUtc ? <Banner tone="info"><span>{t("lifecycle.openSendsHint")}<span className="block">{t("lifecycle.lastOpenSend", {date:formatDateTimeInZone(impact.lifecycle.lastOpenSessionExpiresAtUtc,scope.culture,timeZoneId)})}</span></span></Banner> : null}{impact.lifecycle.deprecationState ? <Banner tone="warning">{t(impact.lifecycle.lastOpenSessionExpiresAtUtc ? "lifecycle.metaIrreversible" : "lifecycle.metaIrreversibleNow")}</Banner> : null}</section> : null}
     <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.whatRemains")}</h2><Banner tone="info"><span>{impact.lifecycle.responseCount === null ? t("lifecycle.keepsResponsesUnknown") : t("lifecycle.keepsResponses", { count: impact.lifecycle.responseCount })}<span className="block">{t("lifecycle.keepsFiles")}</span></span></Banner><Banner tone="info"><span>{t("lifecycle.keepsWorkflow")}{impact.lifecycle.pendingApprovalCount ? <span className="block">{t("lifecycle.keepsApprovals", { count: impact.lifecycle.pendingApprovalCount })}</span> : null}</span></Banner></section>
     {revisionMismatch ? <p className="text-sm">{t("lifecycle.reviewDraft")}</p> : !impact.lifecycle.canDeactivate ? <p className="text-sm">{t(impact.lifecycle.deactivatedAtUtc ? "lifecycle.alreadyDeactivated" : "lifecycle.reasons." + (impact.lifecycle.unavailableReason ?? "Unavailable"))}</p> : null}
    </>}
