@@ -8,7 +8,6 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/Spinner";
-import { Surface } from "@/shared/ui/Surface";
 import type { ResponseDetail } from "../api/responses";
 import type { useResponseWorkflow } from "../hooks/useResponseWorkflow";
 import type { WorkflowHistoryEntry } from "../workflowHistory";
@@ -55,7 +54,7 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
           </div><Badge variant="outline" className="self-start">{t("workflow.states." + action.state)}</Badge>
         </li>;
   };
-  return <Surface title={t("detail.activity")} padded actions={data?.ruleRevision ? <span className="text-xs">{t("workflow.ruleRevision", { revision: data.ruleRevision })}</span> : undefined}>
+  return <>
     <ol className="flex flex-col gap-4">
       {composeWorkflowMoments(record, data).map(moment => {
         const title = moment.kind === "received" ? t("responses.received") : moment.kind === "effects"
@@ -90,5 +89,5 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId }: { work
         <DialogFooter><Button variant="outline" disabled={workflow.busy} onClick={closeReview}>{t("common:actions.cancel")}</Button><Button disabled={disabled || !needsConsult && wasSent === undefined} onClick={async () => { if (!reviewTarget) return; const resolved = needsConsult ? await workflow.checkReview(reviewTarget) : wasSent !== undefined && await workflow.review(reviewTarget, wasSent); if (resolved) closeReview(); }}>{t(needsConsult ? "workflow.consult" : wasSent === undefined ? "workflow.confirmReview" : wasSent ? "workflow.confirmSent" : "workflow.confirmNotSent")}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
-  </Surface>;
+  </>;
 }

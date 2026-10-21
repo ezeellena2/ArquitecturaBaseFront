@@ -41,6 +41,7 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 
 - `useResponseRouteQuery` lleva a la URL sólo página, tamaño, orden, versiones y columnas. Búsqueda, personas, condiciones y estado viven en `useResponseWorkspace`, por dueño y formulario.
 - `useResponseWorkflow` relee cada 2 s sólo mientras haya acciones Waiting o Running. Consultar, Reintentar y la revisión de un destinatario son POST explícitos sobre el mismo RunId y exigen `formrules.manage`; `workflowNextAction` nunca ofrece repetir lo hecho o no aplicable. Tras red, 5xx o 409 en una revisión se relee antes de permitir otro POST. Un 403 de control quita la recuperación y relee; sólo un 403 de lectura retira valores. `observeApproval` actualiza la tarea ya leída sólo si su revisión no retrocede.
+- `useResponseDetailState` reúne valores, workflow, presentación previa, avisos, alcance de archivos y descargas de una respuesta. D2 lo consume separado de su marco; otra composición reutiliza ese dueño, sin duplicar sus lecturas o avisos.
 - `useResponsePanelNavigation` aplica una página tardía sólo al mismo contexto. `useResponseDocumentDownloads` posee una descarga por respuesta, compartida por el menú y la pestaña PDF: cerrar el menú no la aborta; cambiar de dueño, perder lectura o desmontar sí. Respeta la espera de un 429.
 - `useApprovalQueries` exige `formapprovals.decide` y conserva datos previos sólo del mismo dueño.
 
