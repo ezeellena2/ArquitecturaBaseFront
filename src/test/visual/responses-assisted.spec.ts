@@ -2,14 +2,15 @@ import { expect, test } from "@playwright/test";
 import { responseFormId, responseRecordId } from "../responseFixtures";
 
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
-  test(`captured s4 origin and proposed values remain inside D2 in ${language} at ${width}px`, async ({ page }) => {
+  test(`captured s4 origin and proposed values remain in the response detail in ${language} at ${width}px`, async ({ page }) => {
     const en = language === "en";
     await page.setViewportSize({ width, height: 900 });
     await page.clock.install({ time: new Date("2026-10-17T14:00:00Z") });
     await page.goto(`/src/test/visual/index.html?screen=/formularios/${responseFormId}/respuestas/${responseRecordId}&scenario=responses-assisted&lang=${language}`);
-    const panel = page.getByRole(width < 640 ? "dialog" : "region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
+    const panel = width < 640 ? page.getByRole("main") : page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
     await expect(panel.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
-    await expect(page.getByRole("table", { includeHidden: true })).toBeAttached();
+    if (width >= 640) await expect(page.getByRole("table", { includeHidden: true })).toBeAttached();
+    else await expect(page.getByRole("table", { includeHidden: true })).toHaveCount(0);
     await expect(panel.getByText(en ? "From Delivery" : "De Entrega", { exact: true })).toBeVisible();
     await expect(panel.getByText(en ? "Corrected when completing" : "Corregido al completar", { exact: true })).toBeVisible();
     const origin = panel.getByRole("region", { name: en ? "How it started" : "Cómo empezó", exact: true });

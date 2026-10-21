@@ -303,6 +303,13 @@ export function createResponseVisualFixtures(
                 url.searchParams,
               ) as unknown as ResponseQuery);
         const rows = scenario === "responses-empty" ? [] : filterRows(filter);
+        if (path.endsWith("/navigation")) {
+          const recordId = path.split("/").at(-2)!;
+          const index = rows.findIndex(row => row.id === recordId);
+          return index < 0 ? json({ code: "Forms.Record.NotFound" }, 404) : json({ recordId,
+            previousId: rows[index - 1]?.id ?? null, nextId: rows[index + 1]?.id ?? null,
+            position: index + 1, totalCount: rows.length });
+        }
         const result: ResponseSheet = {
           ...sheet,
           records: page(

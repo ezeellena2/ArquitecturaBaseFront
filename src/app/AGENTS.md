@@ -31,3 +31,5 @@ Monta providers, router y árbol de rutas. `routes.tsx` declara rutas y guards; 
 MF1 y el espacio por formulario exigen RecordsRead OR ApprovalsDecide con el requisito común del menú. Los valores y el detalle siguen exigiendo RecordsRead: quien sólo decide ve tareas y decisión, sin lecturas de respuestas o workflow. `approval=TaskId` selecciona el pendiente; `:recordId` conserva la selección de planilla. El contexto de navegación es privado del workspace, sin callbacks ni filtros en history.state.
 
 La ruta estática /formularios/faltantes exige formtemplates.manage independientemente de formtemplates.read. El alta /formularios/nuevo conserva Read+Manage; su semilla de nombre no concede permisos ni escribe el pedido.
+
+La ruta /formularios/:formId/respuestas/:recordId/completa exige RecordsRead y comparte el workspace del formulario con D2. En celular, la entrada D2 con Read redirige allí; la decisión sin lectura conserva su marco de metadata. El enlace completo lleva sólo orden, pregunta de orden y versiones públicos; filtros privados y origen permanecen en memoria.
