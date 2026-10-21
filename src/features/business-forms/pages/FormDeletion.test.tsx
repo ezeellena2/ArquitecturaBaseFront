@@ -122,13 +122,22 @@ it.each([403,409])("retains the dirty draft and prevents another DELETE after a 
 for(const publicationOpen of [false,true]) {
  it("hides deletion from editor and list when the server reports responses"+(publicationOpen?" during a publication":""),async()=>{
   const store=setup(publicationOpen?"forms-lifecycle-publishing":"forms-lifecycle",["formtemplates.read","formtemplates.manage","formtemplates.publish"]);
-  store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:false,responseCount:publicationOpen?null:4,deletionUnavailableReason:"HasResponses",unavailableReason:publicationOpen?"PublicationInProgress":null}));
+  store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:false,responseCount:publicationOpen?null:4,deletionUnavailableReason:publicationOpen?"HasResponses":null,unavailableReason:publicationOpen?"PublicationInProgress":null}));
   const view=renderRouteWithProviders("/formularios/"+fixtureFormId);
   const menu=await openEditorMenu();
   expect(within(menu).queryByRole("menuitem",{name:/Eliminar/})).not.toBeInTheDocument();
+  const explanation=within(menu).getByText("Tiene respuestas: dalo de baja para conservarlas.");
+  expect(explanation).toBeVisible();expect(explanation.closest('[role="menuitem"]')).toBeNull();
   view.unmount();queryClient.clear();
   renderRouteWithProviders("/formularios");
   const table=await screen.findByRole("table");
   expect(within(table).queryByRole("button",{name:/Eliminar/})).not.toBeInTheDocument();
  });
 }
+
+it("does not create an empty lifecycle menu for a manager without publish when responses prevent deletion",async()=>{
+ const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:false,responseCount:null,deletionUnavailableReason:"HasResponses"}));
+ renderRouteWithProviders("/formularios/"+fixtureFormId);
+ await screen.findByLabelText("Nombre");
+ expect(screen.queryByRole("button",{name:"Acciones del formulario"})).not.toBeInTheDocument();
+});
