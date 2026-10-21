@@ -5,7 +5,7 @@ Fecha: **2026-10-21**. **Elegidos CA1-A y CA2–CA6** de la versión 102 del lie
 Origen: la sección «Catálogos» de la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
 y puede cambiar fuera de Git, este documento y sus capturas congelan lo elegido. El alcance y las decisiones están en el
-[plan](../../../ArquitecturaBase/docs/plans/2026-10-21-catalogos-con-origenes-externos.md); las pantallas, los textos y
+[plan](../../../ArquitecturaBase/docs/plans/formularios/catalogos-carga-tipo-y-varias.md); las pantallas, los textos y
 los estados salen de acá. Para recorrerlo tocando, el [prototipo navegable](https://claude.ai/artifact/2noVifPc2MX33UnNvT2jhY)
 tiene siete recorridos en su sección «Catálogos».
 
