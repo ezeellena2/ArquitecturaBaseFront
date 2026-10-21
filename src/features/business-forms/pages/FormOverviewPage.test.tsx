@@ -1,5 +1,6 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import i18n from "@/shared/i18n";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { currentUser } from "@/test/mocks/handlers";
@@ -41,7 +42,9 @@ describe("MF1 form overview", () => {
     expect(screen.getByRole("button", { name: "Activos (4)" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Dados de baja (3)" })).toBeVisible();
     expect(requests.at(-1)?.searchParams.get("pendingOnly")).toBe("true");
-    await userEvent.click(screen.getByRole("button", { name: "Ver dados de baja" }));
+    const viewDeactivated = screen.getByRole("button", { name: "Ver dados de baja" });
+    expect(viewDeactivated).toHaveTextContent(/^Ver$/);
+    await userEvent.click(viewDeactivated);
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("state")).toBe("Deactivated"));
     expect(requests.at(-1)?.searchParams.has("pendingOnly")).toBe(false);
     expect(router.state.location.search).not.toContain("pendingOnly");
@@ -108,4 +111,14 @@ it("loads the global pending badge only after its menu opens on another screen",
   await userEvent.click(await screen.findByRole("button", { name: "Gestión de formularios" }));
   expect(await screen.findByRole("link", { name: "Formularios (3)" })).toHaveAttribute("href", "/formularios/respuestas");
   expect(counts).toBe(1);
+});
+
+it("renders the inactive-form action with its visible English label", async () => {
+  setup(["formrecords.read", "formapprovals.decide"]);
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions: ["formrecords.read", "formapprovals.decide"] })));
+  await i18n.changeLanguage("en");
+  const { unmount } = renderRouteWithProviders("/formularios/respuestas?pageSize=20");
+  try {
+    expect(await screen.findByRole("button", { name: "View deactivated forms" })).toHaveTextContent(/^View$/);
+  } finally { unmount(); await i18n.changeLanguage("es"); }
 });
