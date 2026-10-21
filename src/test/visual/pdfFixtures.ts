@@ -20,7 +20,7 @@ export function createPdfVisualFixtures() {
     const writes: unknown[] = [];
     const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json" } });
     const documentId = "0199a0c0-0000-7000-8000-000000000080";
-    return { writes, document: { id: documentId, culture: "es" as const, name: "Visita-VIS-000024.pdf", size: samplePdf().length, createdAtUtc: "2026-10-16T12:00:00Z" }, async handle(request: Request): Promise<Response | null> {
+    return { writes, document: { id: documentId, runId: "0199a0c0-0000-7000-8000-000000000090", culture: "es" as const, name: "Visita-VIS-000024.pdf", size: samplePdf().length, createdAtUtc: "2026-10-16T12:00:00Z" }, async handle(request: Request): Promise<Response | null> {
             const path = new URL(request.url).pathname;
             if (path.endsWith("/pdf-design/preview")) {
                 const body = await request.json() as {

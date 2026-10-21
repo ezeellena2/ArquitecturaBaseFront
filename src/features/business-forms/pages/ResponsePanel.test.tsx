@@ -26,7 +26,7 @@ function setup(permissions = ["formrecords.read", "formrules.manage"], approval 
       reads.workflow++;
       const task = approval ? tasks.find(task => task.recordId === params.id) : undefined;
       return HttpResponse.json({ ...responseWorkflowFixture(String(params.id)), recordState: task ? task.state === "Open" ? "PendingApproval" : task.state : "Received", task: task ? { id: task.id, roleId: task.role.id, roleName: task.role.name, requestedAtUtc: task.requestedAtUtc, revision: task.revision, state: task.state, decidedAtUtc: task.decidedAtUtc, decidedBy: task.decidedBy, reason: task.reason } : null,
-        documents: pdf ? [{ id: "0199a0c0-0000-7000-8000-000000000080", culture: "es", name: "Visita.pdf", size: 4, createdAtUtc: "2026-10-17T12:00:00Z" }] : [] });
+        documents: pdf ? [{ id: "0199a0c0-0000-7000-8000-000000000080", runId: "0199a0c0-0000-7000-8000-000000000090", culture: "es", name: "Visita.pdf", size: 4, createdAtUtc: "2026-10-17T12:00:00Z" }] : [] });
     }),
     http.get("/api/forms/approvals", () => HttpResponse.json({ items: tasks.filter(task => task.state === "Open"), page: 1, pageSize: 20, totalCount: tasks.filter(task => task.state === "Open").length, totalPages: 1, hasPrevious: false, hasNext: false })),
     http.get("/api/forms/approvals/options", () => HttpResponse.json({ forms: [{ id: responseFormId, name: "Visita" }] })),

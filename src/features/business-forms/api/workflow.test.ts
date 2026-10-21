@@ -73,3 +73,22 @@ it("requires the actual approval request time rather than deriving it from an ac
   expect(readResponseWorkflow(body, recordId)).toEqual(body);
   expect(() => readResponseWorkflow({ ...body, task: { ...body.task, requestedAtUtc: undefined } }, recordId)).toThrow("Invalid response workflow contract.");
 });
+
+// Synthetic decoder examples, not producer HTTP captures.
+it("preserves each document generator even when culture and timestamps are identical", () => {
+  const firstRun = runId;
+  const secondRun = "0199a0c0-0000-7000-8000-000000000093";
+  const base = actionResponse();
+  const actions = [firstRun, secondRun].map((id, order) => ({ ...base.actions[0], id, order, kind: "GeneratePdf",
+    event: "Approved", state: "Completed", canConsult: false, canRetry: false, recipients: [], completedAtUtc: "2026-10-17T12:00:00Z" }));
+  const documents = [firstRun, secondRun].map((id, index) => ({ id: "0199a0c0-0000-7000-8000-00000000008" + index,
+    runId: id, culture: "es", name: "Visita.pdf", size: 4, createdAtUtc: "2026-10-17T12:00:00Z" }));
+  const parsed = readResponseWorkflow({ ...base, recordState: "Approved", actions, documents }, recordId);
+  expect(parsed.documents.map(document => document.runId)).toEqual([firstRun, secondRun]);
+});
+it("requires the stored generator instead of inferring it for a document", () => {
+  const document = { id: "0199a0c0-0000-7000-8000-000000000080", culture: "es", name: "Visita.pdf", size: 4,
+    createdAtUtc: "2026-10-17T12:00:00Z" };
+  expect(() => readResponseWorkflow({ ...actionResponse(), documents: [document] }, recordId)).toThrow("Invalid response workflow contract.");
+  expect(() => readResponseWorkflow({ ...actionResponse(), documents: [{ ...document, runId: "not-a-guid" }] }, recordId)).toThrow("Invalid response workflow contract.");
+});
