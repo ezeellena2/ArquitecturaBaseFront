@@ -2,7 +2,7 @@
 
 Fecha: **2026-10-08**, con las variantes de los cuatro incrementos de la Etapa 1 y el botón «Abrir formulario»
 agregados el **2026-10-10**.
-Estado al **2026-10-19**: **Etapas 1–5, los 18 arreglos del review de Etapa 4, D2 e idioma original/traducción opcional (I1–I3) verificados localmente**. El [cierre canónico](../../../ArquitecturaBase/docs/features/formularios.md#verificación-local-de-idioma-original-y-traducción-opcional--2026-10-19) reúne integración, contratos exportados, suite completa, navegador y visual actuales. El piloto físico de aprobación/PDF en español con foto se completó el 2026-10-17; sus casos restantes y el piloto de IA/audio conservan su alcance separado. Las notas fechadas de cortes anteriores son históricas; las reglas vigentes están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md).
+Estado al **2026-10-21**: Etapas 1–5, idioma original/traducción opcional (I1–I3), baja/reactivación/eliminación y menú/detalle **MF1, DC0 y DC1** implementados localmente. Los cierres fechados siguientes conservan su alcance histórico; las reglas vigentes están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md). El [piloto total con Meta, OpenAI y Azure del 2026-10-20](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-total-con-proveedores-reales--2026-10-20) acreditó el recorrido anterior. Los pilotos propios de ciclo de vida y menú/detalle esperan su code review.
 
 Origen: la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
@@ -502,3 +502,21 @@ El recorrido IAB en es/en a 390/320 comprobó BA1-A, BA2, BA3, BA4 y BA6, NeedsA
 | [P10, español a 320](evidence/formularios-whatsapp/baja-review-20261021-publication-wait-es-320.png) | Comprobación pendiente, espera y acciones separadas ante 429 simulado. |
 | [P10, inglés a 390](evidence/formularios-whatsapp/baja-review-20261021-publication-wait-en-390.png) | Mismo recorrido con copy en inglés y foco visible. |
 | [P11, inglés a 320](evidence/formularios-whatsapp/baja-review-20261021-unavailable-menu-en-320.png) | Motivo de la acción apagada alcanzable por teclado; no inicia otra publicación. |
+
+## Cierre local de menú y detalle — 2026-10-21
+
+MF1, D2 como vista rápida y DC0/DC1 ajustado siguen los tableros elegidos y la versión 96. La pantalla completa conserva el origen, las flechas y el retorno a la fila; Actividad y Respuesta son plegables y el PDF queda vinculado a la acción que lo generó. Los permisos de lectura y decisión se retiran por separado.
+
+La última suite visual, sobre producto `54cca75` y los contratos del export conjunto, pasó **617/617 escenas** en 8,5 minutos. Se conservaron los hashes de las **127 referencias**, sin actualizar snapshots ni alterar timeouts, reintentos o tolerancias. El build y lint completos quedaron limpios, incluidos **49/49 controles de arquitectura**. La [verificación conjunta](../../../ArquitecturaBase/docs/features/formularios.md#verificación-conjunta-de-menú-detalle-y-aislamiento--2026-10-21) conserva Docker, procedencia y los resultados completos.
+
+El recorrido interactivo en IAB verificó componentes productivos con transporte sintético: es/en a 1440, 390 y 320 px, tabla contenida, permisos, D2, pantalla completa, flechas, retorno y foco, plegado, visor y descarga del mismo blob. Las capturas siguientes pertenecen a la última corrida visual en verde. El iframe nativo del PDF aparece blanco en estos PNG: acreditan su marco, nombre, idioma y controles; no sus píxeles internos. Los tests verifican carga diferida, reutilización y retiro del blob. No se inició un piloto con Meta ni se repitió la calificación de IA.
+
+| Evidencia | Alcance |
+| --- | --- |
+| [MF1 escritorio](evidence/formularios-whatsapp/menu-detalle-20261021/form-overview-active-es-1440.png) | Filtros en una fila, pendientes y última respuesta en tabla densa. |
+| [MF1 lectura, en, 390](evidence/formularios-whatsapp/menu-detalle-20261021/form-overview-read-en-390.png) | Desplazamiento horizontal contenido, sin columna de aprobación. |
+| [Sólo decisión, es, 320](evidence/formularios-whatsapp/menu-detalle-20261021/response-full-decide-es-320.png) | Metadata y decisión, sin valores ni acceso a pantalla completa. |
+| [D2 escritorio, en](evidence/formularios-whatsapp/menu-detalle-20261021/response-full-quick-en-1440.png) | Vista rápida sobre la planilla con acceso a pantalla completa. |
+| [DC1 inicial, es, 320](evidence/formularios-whatsapp/menu-detalle-20261021/response-full-initial-es-320.png) | Formulario/número legibles, Respuesta abierta, Actividad plegada y adjunto legible. |
+| [Actividad, en, 390](evidence/formularios-whatsapp/menu-detalle-20261021/response-full-activity-en-390.png) | PDF vinculado a su acción, nombre, idioma y marco de miniatura. |
+| [Visor PDF, es, 320](evidence/formularios-whatsapp/menu-detalle-20261021/response-full-pdf-es-320.png) | Descargar y Cerrar dentro del diálogo de copia fija. |

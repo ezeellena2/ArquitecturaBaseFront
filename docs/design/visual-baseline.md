@@ -403,3 +403,7 @@ Se compara antes de programar; el laboratorio se borra al decidir.
 ## Pendiente de compilación CSS — 2026-10-12
 
 Al verificar el arnés compilado se comprobó que la optimización de Tailwind transforma el reinicio `translate: 0 0` del panel de conversaciones en `transform: translate(0)`, mientras las utilidades del diálogo conservan su traslación individual; el panel móvil queda desplazado. La misma transformación está en `dist`. K7 no cambia el build productivo ni ese diseño. Su corrección queda pendiente del sistema visual; el catálogo de pruebas conserva explícitamente los estilos de desarrollo elegidos, sin actualizar referencias para aceptar la diferencia.
+
+## Menú y detalle de formularios — 2026-10-21
+
+MF1 y DC0/DC1 ajustado de la versión 96 están implementados junto con D2 como vista rápida. El [cierre visual y su evidencia](formularios-whatsapp.md#cierre-local-de-menú-y-detalle--2026-10-21) conserva es/en a 1440/390/320, la distinción Read/Decide y el alcance del visor PDF; las referencias elegidas se mantienen. El piloto real con Meta espera el code review propio.
