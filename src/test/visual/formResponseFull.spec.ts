@@ -58,6 +58,16 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(activity.getByRole("button", { name: en ? mobile ? "Expand activity" : "Collapse activity" : mobile ? "Expandir actividad" : "Plegar actividad", exact: true })).toHaveAttribute("aria-expanded", String(!mobile));
     await page.evaluate(() => document.fonts.ready);
     if (mobile) expect((await fixtureCalls(page)).filter(call => call.path.includes("/documents/"))).toEqual([]);
+    const attachmentName = answer.getByText("comprobante.pdf", { exact: true });
+    const fileBounds = (await attachmentName.boundingBox())!;
+    const valueBounds = (await attachmentName.locator("xpath=ancestor::dd").boundingBox())!;
+    const attachmentRow = attachmentName.locator("..").locator("..");
+    const downloadBounds = (await attachmentRow.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).boundingBox())!;
+    expect(fileBounds.width).toBeGreaterThanOrEqual(valueBounds.width * 0.7);
+    expect(fileBounds.x).toBeGreaterThanOrEqual(valueBounds.x);
+    expect(fileBounds.x + fileBounds.width).toBeLessThanOrEqual(valueBounds.x + valueBounds.width);
+    expect(fileBounds.x + fileBounds.width <= downloadBounds.x || fileBounds.y + fileBounds.height <= downloadBounds.y).toBe(true);
+    expect(await attachmentRow.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
     await assertContained(page, width);
     await page.screenshot({ path: "test-results/response-full-initial-" + language + "-" + width + ".png", fullPage: true });
     const fold = answer.getByRole("button", { name: en ? "Collapse response" : "Plegar respuesta", exact: true });

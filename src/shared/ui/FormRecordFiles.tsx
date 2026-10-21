@@ -165,8 +165,8 @@ function DocumentDownload({
   const { t, i18n } = useTranslation();
   const [requested, setRequested] = useState(false);
   return (
-    <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] p-2">
-      <div className="min-w-0 flex-1">
+    <div className="flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-border)] p-2">
+      <div className="min-w-0 basis-40 grow">
         <p className="break-words">{file.name}</p>
         <p className="text-xs text-[var(--color-content-muted)]">
           {fileSize(file.size, i18n.resolvedLanguage ?? "es")}
