@@ -22,6 +22,7 @@ import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { formActorKey, formScopeKey, useFormDefinitions, type FormReadScope } from "../hooks/useFormQueries";
+import { useResponseScope } from "../hooks/useResponseQueries";
 import { deprecationMessage } from "../lifecyclePresentation";
 import { publicationLabelKey } from "../publicationPresentation";
 import { administrativeName } from "../editorModel";
@@ -41,6 +42,7 @@ export function FormsPage() {
   const update = useQueryUpdate();
   const navigate = useNavigate();
   const client = useQueryClient();
+  const responseScope = useResponseScope();
   const host = useRef<HTMLDivElement>(null);
   const focusFallback = useRef<HTMLElement | null>(null);
   const [action, setAction] = useState<{ row: Row; owner: string; kind: "deactivate" | "delete" } | null>(null);
@@ -67,7 +69,7 @@ export function FormsPage() {
   const clearFilters = () => update({ search: undefined, publicationFilter: undefined, page: undefined });
   const canPublish = scope.permissions.includes("formtemplates.publish");
   const chooseAction = (row: Row, kind: "deactivate" | "delete") => { focusFallback.current = host.current?.querySelector<HTMLInputElement>("input") ?? null; setAction({ row, kind, owner: JSON.stringify(formScopeKey(scope)) }); };
-  const refresh = async () => { await client.invalidateQueries({ queryKey: formActorKey(scope.actorId) }); };
+  const refresh = async () => { await Promise.all([client.invalidateQueries({ queryKey: formActorKey(scope.actorId) }), client.invalidateQueries({ queryKey: ["form-responses", responseScope.owner] })]); };
   const columns: Column<Row>[] = [
     { id: "name", header: t("formColumn"), sortable: true, cell: row => <Link to={`/formularios/${row.id}`} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{administrativeName(row.name, scope.culture)}</Link> },
     { id: "questionCount", header: t("countColumn"), sortable: true, cell: row => row.questionCount },

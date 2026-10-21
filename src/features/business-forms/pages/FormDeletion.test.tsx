@@ -141,3 +141,19 @@ it("does not create an empty lifecycle menu for a manager without publish when r
  await screen.findByLabelText("Nombre");
  expect(screen.queryByRole("button",{name:"Acciones del formulario"})).not.toBeInTheDocument();
 });
+
+for (const source of ["row", "editor"] as const) {
+ it("refreshes response navigation after deletion from the " + source, async () => {
+  const store=setup("forms-lifecycle",["formtemplates.read","formtemplates.manage","formrecords.read"]);store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:true})); const navigation=vi.fn();
+  server.use(http.get("/api/forms/navigation",()=>{navigation(); const visible=store.definitions.has(fixtureFormId); return HttpResponse.json({items:visible?[{id:fixtureFormId,name:"Visita en respuestas",prefix:"VIS",versionNumber:1}]:[],page:1,pageSize:4,totalCount:visible?1:0,totalPages:visible?1:0,hasPrevious:false,hasNext:false});}));
+  renderRouteWithProviders(source==="row"?"/formularios":"/formularios/"+fixtureFormId);
+  await waitFor(()=>expect(navigation).toHaveBeenCalledOnce());
+  if(source==="row") await userEvent.click(await screen.findByRole("button",{name:"Eliminar Registrar visita"}));
+  else {const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));}
+  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+  await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  await waitFor(()=>expect(navigation).toHaveBeenCalledTimes(2));
+  const nav=queryClient.getQueryCache().getAll().find(query=>query.queryKey[0]==="form-responses"&&query.queryKey[2]==="navigation");
+  expect(nav?.state.data).toMatchObject({items:[],totalCount:0});
+ });
+}

@@ -150,3 +150,21 @@ it("omits WhatsApp deprecation claims from the impact preview when the channel h
  expect(within(dialog).queryByText("Envíos abiertos y WhatsApp")).not.toBeInTheDocument();
  expect(within(dialog).queryByText(/se deprecan sus Flows/)).not.toBeInTheDocument();
 });
+
+for (const source of ["row", "editor"] as const) {
+ it("refreshes response navigation after deactivation from the " + source, async () => {
+  const store=setup(); const navigation=vi.fn();
+  server.use(http.get("/api/forms/navigation",()=>{navigation(); const visible=store.definitions.has(fixtureFormId); return HttpResponse.json({items:visible?[{id:fixtureFormId,name:"Visita en respuestas",prefix:"VIS",versionNumber:1}]:[],page:1,pageSize:4,totalCount:visible?1:0,totalPages:visible?1:0,hasPrevious:false,hasNext:false});}));
+  renderRouteWithProviders(source==="row"?"/formularios":"/formularios/"+fixtureFormId);
+  await waitFor(()=>expect(navigation).toHaveBeenCalledOnce());
+  if(source==="row") await userEvent.click(await screen.findByRole("button",{name:"Dar de baja Registrar visita"}));
+  else { const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Dar de baja/})); }
+  const dialog=await screen.findByRole("dialog",{name:"Dar de baja «Registrar visita»"});
+  await userEvent.click(await within(dialog).findByRole("button",{name:"Dar de baja"}));
+  await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  await waitFor(()=>expect(navigation).toHaveBeenCalledTimes(2));
+  const nav=queryClient.getQueryCache().getAll().find(query=>query.queryKey[0]==="form-responses"&&query.queryKey[2]==="navigation");
+  expect(nav?.state.data).toMatchObject({items:[{id:fixtureFormId}],totalCount:1});
+  if(source==="row") {expect(screen.queryByRole("link",{name:"Registrar visita"})).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Dados de baja (1)"})).toBeVisible();await waitFor(()=>expect(screen.getByRole("searchbox")).toHaveFocus());}
+ });
+}

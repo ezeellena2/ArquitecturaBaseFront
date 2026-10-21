@@ -32,6 +32,7 @@ import { OfficialFormPreview } from "../components/OfficialFormPreview";
 import { PublicationProgress } from "../components/PublicationProgress";
 import { publicationLabelKey } from "../publicationPresentation";
 import { useFormPublication } from "../hooks/useFormPublication";
+import { useResponseScope } from "../hooks/useResponseQueries";
 import { FormDeletionDialog } from "../components/FormDeletionDialog";
 import { FormDeactivationDialog } from "../components/FormDeactivationDialog";
 import { FormLifecycleMenu } from "../components/FormLifecycleMenu";
@@ -87,6 +88,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const presentation = useSystemPresentation();
   const publication = useFormPublication(scope);
   const queryClient = useQueryClient();
+  const responseScope = useResponseScope();
   const lifecycle = "definition" in initial ? initial.lifecycle : undefined;
   const deactivated = !!lifecycle?.deactivatedAtUtc;
   const projection = "definition" in initial ? initial.publication : undefined;
@@ -216,7 +218,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     if (!active.current || !editor.confirmRevision(result.definitionId, expectedRevision, result.revision)) return;
     queryClient.setQueryData<FormDetail>(formDetailKey(scope, result.definitionId), previous => previous && previous.definition.revision === expectedRevision
       ? { ...previous, definition: { ...previous.definition, revision: result.revision }, lifecycle: result.lifecycle } : previous);
-    await queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) });
+    await Promise.all([queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) }), queryClient.invalidateQueries({ queryKey: ["form-responses", responseScope.owner] })]);
   }
   function removeQuestion(localId: string) {
     if (readOnly) return;
@@ -268,7 +270,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
 
   {previewOpen && "definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <OfficialFormPreview key={projection.activeVersion.versionId} definitionId={initial.definition.id} versionId={projection.activeVersion.versionId} versionNumber={projection.activeVersion.versionNumber} cultures={projection.activeVersion.cultures} initialCulture={contentCulture} onClose={() => setPreviewOpen(false)} /> : null}
   {deactivationOpen && scope.permissions.includes("formtemplates.publish") && session.confirmed ? <FormDeactivationDialog id={session.confirmed.id} name={session.confirmed.name[session.confirmed.draft.culture] ?? originalName} focusFallback={lifecycleAction} timeZoneId={timeZoneId} scope={scope} expectedRevision={session.confirmed.revision} onRevisionMismatch={() => { setDeactivationOpen(false); editor.requireReview(new ApiError(409, { code: "Forms.Draft.RevisionConflict" })); }} onComplete={confirmDeactivation} onClose={() => setDeactivationOpen(false)} /> : null}
-  {deletionOpen && session.confirmed && scope.permissions.includes("formtemplates.manage") ? <FormDeletionDialog id={session.confirmed.id} name={session.confirmed.name[session.confirmed.draft.culture] ?? originalName} revision={session.confirmed.revision} scope={scope} focusFallback={deletionFallback} onChanged={() => { deletionFallback.current = host.current?.querySelector<HTMLElement>('[data-form-text="name"]') ?? null; void queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) }); }} onClose={() => { if (!deletionFallback.current?.isConnected) deletionFallback.current = lifecycleAction.current ?? host.current?.querySelector<HTMLElement>('[data-form-text="name"]') ?? null; setDeletionOpen(false); }} onDeleted={() => { guard.allowNextNavigation(); void navigate("/formularios", { replace: true }); queryClient.removeQueries({ queryKey: formDetailKey(scope, session.confirmed!.id) }); void queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) }); }} /> : null}
+  {deletionOpen && session.confirmed && scope.permissions.includes("formtemplates.manage") ? <FormDeletionDialog id={session.confirmed.id} name={session.confirmed.name[session.confirmed.draft.culture] ?? originalName} revision={session.confirmed.revision} scope={scope} focusFallback={deletionFallback} onChanged={() => { deletionFallback.current = host.current?.querySelector<HTMLElement>('[data-form-text="name"]') ?? null; void queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) }); }} onClose={() => { if (!deletionFallback.current?.isConnected) deletionFallback.current = lifecycleAction.current ?? host.current?.querySelector<HTMLElement>('[data-form-text="name"]') ?? null; setDeletionOpen(false); }} onDeleted={() => { guard.allowNextNavigation(); void navigate("/formularios", { replace: true }); queryClient.removeQueries({ queryKey: formDetailKey(scope, session.confirmed!.id) }); void queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) }); void queryClient.invalidateQueries({ queryKey: ["form-responses", responseScope.owner] }); }} /> : null}
   {publicationOpen && session.confirmed && scope.permissions.includes("formtemplates.publish") ? <PublicationCheckDialog onCloseAutoFocus={event => { const target = [publicationReturnFocus.current, publicationAction.current, lifecycleAction.current].find(node => node?.isConnected && !node.matches(":disabled")); if (target) { event.preventDefault(); target.focus(); } }} key={session.confirmed.revision + ":" + [...scope.permissions].sort().join(",")} scope={scope} id={session.confirmed.id} revision={session.confirmed.revision} reactivation={deactivated && lifecycle ? { name: session.confirmed.name[session.confirmed.draft.culture] ?? originalName, nextRecordNumber: lifecycle.nextRecordNumber } : undefined} savedAt={"definition" in initial ? formatDateTimeInZone(initial.audit.lastChangedAtUtc, scope.culture, timeZoneId) : undefined} prefixLocked={session.confirmed.prefixLocked} baseVersionId={projection?.activeVersion?.versionId} baseVersionNumber={projection?.activeVersion?.versionNumber} value={value} dirty={dirty} canSave={editor.canSave && !cooldown.isRunning && !hasInvalidFileCounts(value.draft.fields)} accepting={publication.busy} onAccept={(body, checked) => {
     const acceptance = publication.accept(session.confirmed!.id, body, checked);
     setPublicationOpen(false);
