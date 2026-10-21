@@ -142,6 +142,16 @@ it("keeps the PDF route current before its confirmed labels arrive", async () =>
   expect(items[1]).toHaveAttribute("aria-current", "page");
 });
 
+it.each(["/formularios/form-id/respuestas", "/formularios/form-id/respuestas/record-id"])("keeps the form breadcrumb unchanged in the sheet and quick-detail route %s", async path => {
+  renderWithProviders(<MemoryRouter initialEntries={[path]}><Breadcrumbs/><ChildScreen leaf="Registrar visita"/></MemoryRouter>);
+  const items = await breadcrumbs();
+  expect(items.map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Formularios", "Registrar visita"]);
+  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios/respuestas");
+  expect(items[3]).toHaveAttribute("aria-current", "page");
+  expect(within(items[3]).queryByRole("link")).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Respuestas" })).not.toBeInTheDocument();
+});
+
 it("keeps the full response under MF1 without linking a reader to template design", async () => {
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })));
   renderWithProviders(<MemoryRouter initialEntries={["/formularios/form-id/respuestas/record-id/completa"]}>

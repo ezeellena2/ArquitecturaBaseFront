@@ -39,8 +39,8 @@ export function Breadcrumbs() {
   const parent = useCurrentBreadcrumbParent();
   const pdfPath = /^\/formularios\/([^/]+)\/pdf$/.exec(pathname);
   if (pdfPath) return <PdfBreadcrumbs formId={pdfPath[1]} leaf={leaf} parent={parent} />;
-  const responsePath = /^\/formularios\/(?:respuestas$|([^/]+)\/respuestas(?:\/([^/]+)(?:\/completa)?)?$)/.exec(pathname);
-  if (responsePath) return <ResponseBreadcrumbs formId={responsePath[1]} detail={!!responsePath[2]} leaf={leaf} parent={parent} />;
+  const responsePath = /^\/formularios\/(?:respuestas$|([^/]+)\/respuestas(?:\/([^/]+)(\/completa)?)?$)/.exec(pathname);
+  if (responsePath) return <ResponseBreadcrumbs formId={responsePath[1]} detail={!!responsePath[3]} leaf={leaf} parent={parent} />;
   const activeLabelKey = pathname === "/" ? undefined : findActiveLabelKey(pathname);
   const parentLink = activeLabelKey ? undefined : parentLinkOf(pathname);
   const branchLabelKey = activeLabelKey || parentLink ? (isFormsPath(pathname) ? "navigation.forms" : branchOf(pathname)?.labelKey) : undefined;
