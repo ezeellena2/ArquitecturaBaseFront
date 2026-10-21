@@ -206,7 +206,7 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   de Inicio no llama al modelo.
 - **Formularios** ([guía](../src/features/business-forms/AGENTS.md), [diseño](design/formularios-whatsapp.md),
   [contrato](../../ArquitecturaBase/docs/features/formularios.md)): `/formularios` implementa A–E y P1–P3, con I1–I3 como reemplazo de E/P1 para idiomas; WhatsApp,
-  C1–C5 y R1–R3, sin importar `business-forms`. D2 conserva planilla/bandeja, URL, orden y un único dueño de decisión;
+  C1–C5 y R1–R3, sin importar `business-forms`. MF1 reúne formularios según Read o Decide; cada formulario contiene su planilla y pendientes. D2 conserva URL, orden y un único dueño de decisión; DC0/DC1 reutiliza ese dueño en pantalla completa.
   Respuesta, Fotos, Actividad y PDF consumen hechos capturados. La aprobación sin RecordsRead conserva sólo metadata.
   Reglas, diseño PDF y sugerencias tienen guardado/revisión propios; OfferWhen usa el borrador existente sin publicarse.
   La publicación requiere el original completo y admite traducción secundaria opcional; la preview y el envío usan

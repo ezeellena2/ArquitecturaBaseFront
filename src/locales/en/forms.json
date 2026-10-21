@@ -454,7 +454,6 @@
   },
   "responses": {
     "title": "Responses",
-    "searchForms": "Search forms",
     "version": "Form version",
     "noForms": "No published forms yet",
     "noFormsHint": "Published forms will appear here.",
@@ -676,16 +675,8 @@
     }
   },
   "approvals": {
-    "title": "To approve",
     "loadFailed": "We couldn't load the approvals.",
-    "scope": "Scope",
-    "mine": "For me ({{count}})",
-    "all": "All open ({{count}})",
-    "form": "Form",
-    "allForms": "All forms",
-    "waiting": "Waiting",
     "role": "Role",
-    "empty": "No responses to approve",
     "emptyHint": "Responses waiting for approval appear here, oldest first.",
     "approve": "Approve",
     "reject": "Reject",
@@ -711,8 +702,7 @@
       "Rejected": "Rejected"
     },
     "state": "State",
-    "allStates": "All states",
-    "back": "Back to To approve"
+    "allStates": "All states"
   },
   "pdf": {
     "title": "PDF design",
@@ -757,7 +747,14 @@
     "back": "Back"
   },
   "detail": {
-    "openFull": "Open in full view", "backToResponses": "Back to responses", "expandAnswer": "Expand response", "collapseAnswer": "Collapse response", "expandActivity": "Expand activity", "collapseActivity": "Collapse activity", "answerSummary_one": "{{count}} question", "answerSummary_other": "{{count}} questions",
+    "openFull": "Open in full view",
+    "backToResponses": "Back to responses",
+    "expandAnswer": "Expand response",
+    "collapseAnswer": "Collapse response",
+    "expandActivity": "Expand activity",
+    "collapseActivity": "Collapse activity",
+    "answerSummary_one": "{{count}} question",
+    "answerSummary_other": "{{count}} questions",
     "activity": "Activity",
     "photos": "Photos",
     "pdf": "PDF",

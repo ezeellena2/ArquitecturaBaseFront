@@ -454,7 +454,6 @@
   },
   "responses": {
     "title": "Respuestas",
-    "searchForms": "Buscar formularios",
     "version": "Versión del formulario",
     "noForms": "Todavía no hay formularios publicados",
     "noFormsHint": "Los formularios publicados van a aparecer acá.",
@@ -676,16 +675,8 @@
     }
   },
   "approvals": {
-    "title": "Por aprobar",
     "loadFailed": "No pudimos cargar las aprobaciones.",
-    "scope": "Alcance",
-    "mine": "Para mí ({{count}})",
-    "all": "Todas abiertas ({{count}})",
-    "form": "Formulario",
-    "allForms": "Todos los formularios",
-    "waiting": "En espera",
     "role": "Rol",
-    "empty": "No hay respuestas por aprobar",
     "emptyHint": "Las respuestas que esperan aprobación aparecen acá, de la más vieja a la más nueva.",
     "approve": "Aprobar",
     "reject": "Rechazar",
@@ -711,8 +702,7 @@
       "Rejected": "Rechazada"
     },
     "state": "Estado",
-    "allStates": "Todos los estados",
-    "back": "Volver a Por aprobar"
+    "allStates": "Todos los estados"
   },
   "pdf": {
     "title": "Diseño del PDF",
@@ -757,7 +747,14 @@
     "back": "Volver"
   },
   "detail": {
-    "openFull": "Abrir en pantalla completa", "backToResponses": "Volver a las respuestas", "expandAnswer": "Expandir respuesta", "collapseAnswer": "Plegar respuesta", "expandActivity": "Expandir actividad", "collapseActivity": "Plegar actividad", "answerSummary_one": "{{count}} pregunta", "answerSummary_other": "{{count}} preguntas",
+    "openFull": "Abrir en pantalla completa",
+    "backToResponses": "Volver a las respuestas",
+    "expandAnswer": "Expandir respuesta",
+    "collapseAnswer": "Plegar respuesta",
+    "expandActivity": "Expandir actividad",
+    "collapseActivity": "Plegar actividad",
+    "answerSummary_one": "{{count}} pregunta",
+    "answerSummary_other": "{{count}} preguntas",
     "activity": "Actividad",
     "photos": "Fotos",
     "pdf": "PDF",

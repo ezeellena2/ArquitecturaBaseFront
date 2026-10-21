@@ -12,7 +12,7 @@ Lectura obligatoria: la [regla funcional del backend](../../../../ArquitecturaBa
 
 ## Al modificar
 
-- No importes otra feature: `app` compone rutas y el panel del menú (`app/FormResponsesNavigation` usa hooks de acá) y lo común sube a `shared`.
+- No importes otra feature: `app` compone rutas y el enlace MF1 y su contador diferido (`app/FormOverviewCount` usa hooks de acá) y lo común sube a `shared`.
 - Cada pantalla exige sólo sus permisos (tabla en `pages`); ninguno implica otro. Las capacidades del servidor (`canSave`, `canPublish`, `canPreview`, `canDeactivate`, `canDelete`, `canDecide`…) mandan: el front no las deduce.
 - Las claves de consulta separan actor, permisos y cultura, además del formulario o catálogo. Cambiar de dueño cancela y retira lo privado; un 403 retira lo que esa lectura mostró, no alcanza con ocultarlo.
 - Borradores, cuerpos y UUID congelados, tickets, URL efímeras, filtros privados y blobs viven en su dueño: nunca en MutationCache, URL, storage ni logs, y sin reintentos automáticos de escritura ([editores privados](../../../docs/architecture.md#reglas)).

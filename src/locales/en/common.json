@@ -110,9 +110,6 @@
     "whatsappChat": "Chat",
     "catalogs": "Catalogs",
     "responses": "Responses",
-    "allResponses": "View all",
-    "allResponsesCount": "View all ({{count}})",
-    "approvals": "To approve",
     "missingForms": "Missing forms",
     "formOverview": "Forms"
   },
