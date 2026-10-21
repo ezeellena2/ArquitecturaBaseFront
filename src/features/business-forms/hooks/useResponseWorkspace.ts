@@ -1,11 +1,19 @@
 import { createContext, useContext } from "react";
 import type { ResponseFilter } from "../responses";
+export interface ResponseNavigationContext {
+  origin: "sheet" | "pending";
+  selection: { recordId: string; taskId?: string };
+  search: string;
+  pending?: { tasks: { id: string; recordId: string }[]; page: number; pageSize: number; totalCount: number };
+}
 export interface ResponseWorkspace {
   denied: boolean;
   deny: () => void;
   formId: string;
   filter: ResponseFilter;
   setFilter: (formId: string, filter: ResponseFilter) => void;
+  navigation: (ResponseNavigationContext & { formId: string }) | null;
+  setNavigation: (formId: string, navigation: ResponseNavigationContext | null) => void;
 }
 export const ResponseWorkspaceContext = createContext<ResponseWorkspace | null>(
   null,
@@ -17,5 +25,7 @@ export function useResponseWorkspace(formId: string) {
     deny: context.deny,
     filter: context.formId === formId ? context.filter : {},
     setFilter: (filter: ResponseFilter) => context.setFilter(formId, filter),
+    navigation: context.navigation?.formId === formId ? context.navigation : null,
+    setNavigation: (navigation: ResponseNavigationContext | null) => context.setNavigation(formId, navigation),
   };
 }

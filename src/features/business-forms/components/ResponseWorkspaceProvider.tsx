@@ -1,7 +1,7 @@
 import { useCallback, useState, type ReactNode } from "react";
 import { useLocation } from "react-router";
 import { PrivateFormFilesScopeProvider } from "@/shared/hooks/PrivateFormFilesScope";
-import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
+import { ResponseWorkspaceContext, type ResponseNavigationContext } from "../hooks/useResponseWorkspace";
 import type { ResponseFilter } from "../responses";
 export function ResponseWorkspaceProvider({
   owner,
@@ -17,20 +17,21 @@ export function ResponseWorkspaceProvider({
     formId: string;
     filter: ResponseFilter;
     denied: boolean;
-  }>({ owner, formId: "", filter: {}, denied: false });
+    navigation: (ResponseNavigationContext & { formId: string }) | null;
+  }>({ owner, formId: "", filter: {}, denied: false, navigation: null });
   const location = useLocation();
   const activeForm = formId ?? /^\/formularios\/([^/]+)\/respuestas(?:\/|$)/.exec(
     location.pathname,
   )?.[1];
-  if (state.formId && state.formId !== activeForm)
-    setState({ ...state, formId: "", filter: {} });
+  if (state.formId && state.formId !== activeForm || state.navigation && state.navigation.formId !== activeForm)
+    setState({ ...state, formId: "", filter: {}, navigation: null });
   if (state.owner !== owner)
-    setState({ owner, formId: "", filter: {}, denied: false });
+    setState({ owner, formId: "", filter: {}, denied: false, navigation: null });
   const deny = useCallback(
     () =>
       setState((previous) =>
         previous.owner === owner && !previous.denied
-          ? { owner, formId: "", filter: {}, denied: true }
+          ? { owner, formId: "", filter: {}, denied: true, navigation: null }
           : previous,
       ),
     [owner],
@@ -43,6 +44,8 @@ export function ResponseWorkspaceProvider({
         deny,
         formId: state.owner === owner ? state.formId : "",
         filter: state.owner === owner ? state.filter : {},
+        navigation: state.owner === owner ? state.navigation : null,
+        setNavigation: (formId, navigation) => setState(previous => previous.owner === owner ? { ...previous, navigation: navigation ? { ...navigation, formId } : null } : previous),
         setFilter: (formId, filter) =>
           setState((previous) =>
             previous.owner === owner

@@ -1,7 +1,8 @@
+import { QueryObserver } from "@tanstack/react-query";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { notify } from "@/shared/ui/notifications";
 import { server } from "@/test/mocks/server";
@@ -9,6 +10,8 @@ import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { createFormFixtureStore, fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
+let stopOverview: (() => void) | undefined;
+afterEach(() => { stopOverview?.(); stopOverview = undefined; });
 function setup(scenario = "forms-lifecycle", permissions = ["formtemplates.read", "formtemplates.manage"]) {
  const store = createFormFixtureStore("es", scenario);
  server.use(http.all("/api/forms/*", ({ request }) => store.handle(request)), http.get("/api/me", () => HttpResponse.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false, culture: "es", timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })));
@@ -143,9 +146,16 @@ it("does not create an empty lifecycle menu for a manager without publish when r
 });
 
 for (const source of ["row", "editor"] as const) {
- it("refreshes response navigation after deletion from the " + source, async () => {
+ it("refreshes the observed overview after deletion from the " + source, async () => {
   const store=setup("forms-lifecycle",["formtemplates.read","formtemplates.manage","formrecords.read"]);store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:true})); const navigation=vi.fn();
-  server.use(http.get("/api/forms/navigation",()=>{navigation(); const visible=store.definitions.has(fixtureFormId); return HttpResponse.json({items:visible?[{id:fixtureFormId,name:"Visita en respuestas",prefix:"VIS",versionNumber:1}]:[],page:1,pageSize:4,totalCount:visible?1:0,totalPages:visible?1:0,hasPrevious:false,hasNext:false});}));
+  // Synthetic observed projection; the decoder and exported HTTP contracts are tested separately.
+  const observer = new QueryObserver(queryClient, { queryKey: ["form-overview", "actor:es:formrecords.read,formtemplates.manage,formtemplates.read", { state: "Active" }], gcTime: 0, queryFn: async () => {
+    navigation(); const exists = store.definitions.has(fixtureFormId); const inactive = !!store.lifecycles.get(fixtureFormId)?.deactivatedAtUtc;
+    const active = exists && !inactive;
+    return { forms: { items: active ? [{ id: fixtureFormId, name: "Registrar visita", prefix: "VIS", deactivatedAtUtc: null, pendingApprovalCount: null, responseCount: 0, lastResponse: null }] : [], page: 1, pageSize: 20, totalCount: active ? 1 : 0, totalPages: active ? 1 : 0, hasPrevious: false, hasNext: false },
+      filterCounts: { active: active ? 1 : 0, deactivated: exists && inactive ? 1 : 0, deactivatedPending: null } };
+  } });
+  stopOverview = observer.subscribe(() => {});
   renderRouteWithProviders(source==="row"?"/formularios":"/formularios/"+fixtureFormId);
   await waitFor(()=>expect(navigation).toHaveBeenCalledOnce());
   if(source==="row") await userEvent.click(await screen.findByRole("button",{name:"Eliminar Registrar visita"}));
@@ -153,8 +163,8 @@ for (const source of ["row", "editor"] as const) {
   const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
   await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   await waitFor(()=>expect(navigation).toHaveBeenCalledTimes(2));
-  const nav=queryClient.getQueryCache().getAll().find(query=>query.queryKey[0]==="form-responses"&&query.queryKey[2]==="navigation");
-  expect(nav?.state.data).toMatchObject({items:[],totalCount:0});
+  const nav=queryClient.getQueryCache().getAll().find(query=>query.queryKey[0]==="form-overview");
+  expect(nav?.state.data).toMatchObject({forms:{items:[],totalCount:0},filterCounts:{active:0,deactivated:0}});
  });
 }
 

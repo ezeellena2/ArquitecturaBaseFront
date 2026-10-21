@@ -68,7 +68,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     useLayoutEffect(() => { live.current = true; return () => { live.current = false; controller.current?.abort(); }; }, []);
     useEffect(() => { if (approvalForbidden(query.error))
         onForbidden(); }, [query.error, onForbidden]);
-    const refresh = (task?: ApprovalTask) => { void client.invalidateQueries({ queryKey: ["form-approvals", scope.owner], predicate: entry => entry.queryKey[2] !== "task" }); onDecided?.(task); };
+    const refresh = (task?: ApprovalTask) => { void client.invalidateQueries({ queryKey: ["form-approvals", scope.owner], predicate: entry => entry.queryKey[2] !== "task" }); void client.invalidateQueries({ queryKey: ["form-overview", scope.owner] }); onDecided?.(task); };
     const decide = async (decision: ApprovalDecision) => {
         const task = query.data;
         if (!task?.canDecide || disabled || busy || query.isFetching || cooldown.isRunning)
