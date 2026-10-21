@@ -1,22 +1,21 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "suggestion-details",
+  "captures": [
+    {
+      "length": 2059,
+      "name": "detail-en.json",
+      "sha256": "60bb8e26537168fd6c1f5d62bbe95e8f4522dddfd0f421a35e15b010c4b924b9"
+    },
+    {
+      "length": 2063,
+      "name": "detail-es.json",
+      "sha256": "48155c26b511f2965793c4f30872382a9195d8f4b59fed35be56d3e00333edc1"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs",
@@ -27,18 +26,8 @@
       "sha256": "380024a8f42df81af6bad91fa27ad7e1371bb951a8fd4d77ec0826f89d94f653"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 2059,
-      "sha256": "4d355fa7ccd268567c726c476c41698bdf633b783ea30f2169fef2eaac8aaebb",
-      "name": "detail-en.json"
-    },
-    {
-      "length": 2063,
-      "sha256": "4f85ab8260425c6bbee58ecb68db037190fe8d00f2d4ed35f2f257794f70ed68",
-      "name": "detail-es.json"
-    }
-  ],
-  "artifactSet": "suggestion-details"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

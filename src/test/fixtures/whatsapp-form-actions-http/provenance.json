@@ -1,22 +1,26 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "whatsapp-actions",
+  "captures": [
+    {
+      "length": 492,
+      "name": "chats-form-actions.json",
+      "sha256": "ab9b9c9873af011ab4f0f69ddbccba29c11e827ef4ce447688c37290280e9307"
+    },
+    {
+      "length": 1602,
+      "name": "thread-form-actions-restricted.json",
+      "sha256": "5ac75f3c638719edf3a3716df0e9dc543dc7ad6140307f71097e0abd088e5d35"
+    },
+    {
+      "length": 1760,
+      "name": "thread-form-actions.json",
+      "sha256": "2b2264c197b0174ce3d76ba734572ac336c4618bb12b181d5670cd20930348b0"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
@@ -31,23 +35,8 @@
       "sha256": "6aeafef0e7c7edf49a05170c057312550d46b2958a44f1dd1556a440c6031e6b"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 492,
-      "sha256": "d6ef4e8eeb9e01405822d7e63fc3c3729f9e8ca01789419878cf2f65e9d84f7b",
-      "name": "chats-form-actions.json"
-    },
-    {
-      "length": 1602,
-      "sha256": "03262a431fea79325d8d6036963697c766260ed574c475d85343c16d957a4331",
-      "name": "thread-form-actions-restricted.json"
-    },
-    {
-      "length": 1760,
-      "sha256": "93060d5fc56e7a9c4eb55a95ab65a9669408b2a0b491b62272ec860c22e08d96",
-      "name": "thread-form-actions.json"
-    }
-  ],
-  "artifactSet": "whatsapp-actions"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

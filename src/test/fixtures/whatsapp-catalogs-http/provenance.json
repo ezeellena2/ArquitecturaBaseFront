@@ -1,160 +1,149 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "whatsapp-catalogs",
+  "captures": [
+    {
+      "length": 527,
+      "name": "en/choices.json",
+      "sha256": "2cc63851491bd463be5e6e6e43398c04791a651e4525743164024cb77804b5b0"
+    },
+    {
+      "length": 245,
+      "name": "en/preparation.json",
+      "sha256": "65d2c280f5fdfb2acfc93969ac03d78eed9809b9414ca2a12997d7b2a7c96704"
+    },
+    {
+      "length": 5885,
+      "name": "en/reply-all-states.json",
+      "sha256": "7f8e2b0bbbade4bd3f3c702168f8329dd0aa7db7a11d405e7263d900a2295d96"
+    },
+    {
+      "length": 3084,
+      "name": "en/reply-completed.json",
+      "sha256": "78d22374bb0a6a025f7e563e5452b84ee5d7a24eaacf4f02dc2f018919f4bbb2"
+    },
+    {
+      "length": 4537,
+      "name": "en/reply-inbox-read.json",
+      "sha256": "3417d5f8d092ff74d255b276c43b4a47b265a9f20cdc59e991a691d54347dde8"
+    },
+    {
+      "length": 4537,
+      "name": "en/reply-inbox-without-read.json",
+      "sha256": "3417d5f8d092ff74d255b276c43b4a47b265a9f20cdc59e991a691d54347dde8"
+    },
+    {
+      "length": 1918,
+      "name": "en/reply-latest-page.json",
+      "sha256": "3e0245952a494fa2263e113badb605556db469a8fe86a34ecd7bdaed2823e748"
+    },
+    {
+      "length": 1969,
+      "name": "en/reply-older-page.json",
+      "sha256": "e58413386a7219203447a2c7d33e61d1377d3172dca6ca1c07d0b1c858b53dba"
+    },
+    {
+      "length": 1866,
+      "name": "en/reply-pending.json",
+      "sha256": "a77aba02d30f23888c82e9b010195b28984fd9ac0b546d11c859cc21c59c0b91"
+    },
+    {
+      "length": 4314,
+      "name": "en/reply-rejected.json",
+      "sha256": "90aff453512ba7e9cc4a721c53c5e663eac5d7df0d224ea3bfd544599a29a841"
+    },
+    {
+      "length": 3084,
+      "name": "en/reply-reloaded.json",
+      "sha256": "78d22374bb0a6a025f7e563e5452b84ee5d7a24eaacf4f02dc2f018919f4bbb2"
+    },
+    {
+      "length": 4806,
+      "name": "en/reply-unrecognized.json",
+      "sha256": "332b0bd9b233edaf07b08d81c4b9b70743bdbcf3c1e600b9f896ca7a0874156e"
+    },
+    {
+      "length": 1737,
+      "name": "en/reply-without-read.json",
+      "sha256": "3790521157b3fca3a6f0bfe95f2c8056a5403c2da31554a8fa87739b3f73a270"
+    },
+    {
+      "length": 527,
+      "name": "es/choices.json",
+      "sha256": "43199964399e5ba3cb9d7aaeda3ca8625c98f7a57423979d44d583f99b353c98"
+    },
+    {
+      "length": 245,
+      "name": "es/preparation.json",
+      "sha256": "2b263ec82b6a86a245a422e537d49448bce2e10620b5fa0c5f31b77883bc89a3"
+    },
+    {
+      "length": 5915,
+      "name": "es/reply-all-states.json",
+      "sha256": "71518d3a4d55add5382340115aada1086575604e3912c8c742510de052661184"
+    },
+    {
+      "length": 3108,
+      "name": "es/reply-completed.json",
+      "sha256": "e672a1d471620ed8eb9ef3825e774cef481ddee05a4412effbd3d7d8f93344c2"
+    },
+    {
+      "length": 5221,
+      "name": "es/reply-inbox-read.json",
+      "sha256": "06cbe870ff4beef45a88d494fe2c39f08b0a85cb07c39f11d3356eb08f63c2e7"
+    },
+    {
+      "length": 5221,
+      "name": "es/reply-inbox-without-read.json",
+      "sha256": "06cbe870ff4beef45a88d494fe2c39f08b0a85cb07c39f11d3356eb08f63c2e7"
+    },
+    {
+      "length": 1929,
+      "name": "es/reply-latest-page.json",
+      "sha256": "d24c08f096f44f0f8903811510ee793c8868fbd41bf612d51d25b503cf739570"
+    },
+    {
+      "length": 1986,
+      "name": "es/reply-older-page.json",
+      "sha256": "a365d747b2986c5ea0e75b9003ec1bf6602209b9fa12997b32535d7fb6aca58a"
+    },
+    {
+      "length": 1877,
+      "name": "es/reply-pending.json",
+      "sha256": "e2048e06ff7b43d24aee2b31ab1db6688f02bbbfd091a02c5ea2463cab2e63dd"
+    },
+    {
+      "length": 4344,
+      "name": "es/reply-rejected.json",
+      "sha256": "327afc5d94ec75de043318a8d671c6ab90de29b205607a47083f53f5cef46f19"
+    },
+    {
+      "length": 3108,
+      "name": "es/reply-reloaded.json",
+      "sha256": "e672a1d471620ed8eb9ef3825e774cef481ddee05a4412effbd3d7d8f93344c2"
+    },
+    {
+      "length": 4836,
+      "name": "es/reply-unrecognized.json",
+      "sha256": "21def75cc4c82a7854d1916c61d2f76e6e215243d11d7533a6f021105c0ff526"
+    },
+    {
+      "length": 1754,
+      "name": "es/reply-without-read.json",
+      "sha256": "b1e5086b3c93a4a616883bb11936830aba2d080008bc4cc7bde7ea23a689b31e"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "WhatsAppFormReplyAppPreviewTests",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
       "sha256": "ee741660d73e8e9e989be975a4f60fe45bdb1aab7746f65c33378ec00a0f0c91"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 527,
-      "sha256": "2e2816e3cbc4fedccbc4f3e8b9dc6d68978e0cb3120c892a151b1ae808d25ef9",
-      "name": "en/choices.json"
-    },
-    {
-      "length": 245,
-      "sha256": "9a53f3d0bd77d41bd2ab309757cc62b81329dd53c52d5143ca80794e48ed25b3",
-      "name": "en/preparation.json"
-    },
-    {
-      "length": 5885,
-      "sha256": "77be2410b2f222799b255fef207694cb42659261828baed24b6250b544103cb3",
-      "name": "en/reply-all-states.json"
-    },
-    {
-      "length": 3084,
-      "sha256": "6c2a413828266df8b7fb91506f4665386fa772603dc839a1daa0610d933e5c69",
-      "name": "en/reply-completed.json"
-    },
-    {
-      "length": 4537,
-      "sha256": "e4bc8217cc07316d3d8e3adaa87928ef496bf123c5c9f175067e94bb072cbfab",
-      "name": "en/reply-inbox-read.json"
-    },
-    {
-      "length": 4537,
-      "sha256": "e4bc8217cc07316d3d8e3adaa87928ef496bf123c5c9f175067e94bb072cbfab",
-      "name": "en/reply-inbox-without-read.json"
-    },
-    {
-      "length": 1918,
-      "sha256": "8b1cf1a0bfb06fa6edfa3de7b38d4547de16175c0f11fdf78cdc0ca4e080f612",
-      "name": "en/reply-latest-page.json"
-    },
-    {
-      "length": 1969,
-      "sha256": "d3c22a7f6b780a391e4aa3b8b6a78bcaa51bdd1e9df09084e9245c1c72070a71",
-      "name": "en/reply-older-page.json"
-    },
-    {
-      "length": 1866,
-      "sha256": "e67b546936327944bbcd566bfe68041f90965d2355f34978cac4f064aa4626cb",
-      "name": "en/reply-pending.json"
-    },
-    {
-      "length": 4314,
-      "sha256": "bc517aa15df84df60d3211986cb5326e4598ea9ce78f1d097dfc50383843609b",
-      "name": "en/reply-rejected.json"
-    },
-    {
-      "length": 3084,
-      "sha256": "6c2a413828266df8b7fb91506f4665386fa772603dc839a1daa0610d933e5c69",
-      "name": "en/reply-reloaded.json"
-    },
-    {
-      "length": 4806,
-      "sha256": "877c576a809132197e803988af3742708f66b42e966c04fd68e1f89d5efee41b",
-      "name": "en/reply-unrecognized.json"
-    },
-    {
-      "length": 1737,
-      "sha256": "6a6717c50ac803634cb0d66a99be9501bea89f370c59a030ba801232662ead44",
-      "name": "en/reply-without-read.json"
-    },
-    {
-      "length": 527,
-      "sha256": "21256af19b7c79700ca3fa41a42656cfdfe037048dab226a851cdf8c03ca953b",
-      "name": "es/choices.json"
-    },
-    {
-      "length": 245,
-      "sha256": "6e2d62559cd3bbf0376ca42e58d14be40f703b35c2db5f3b42c48a255b4bbe23",
-      "name": "es/preparation.json"
-    },
-    {
-      "length": 5915,
-      "sha256": "2f0de98b62c68525cf03e9a6e35f30736dd5151066934d14da89d835831797a3",
-      "name": "es/reply-all-states.json"
-    },
-    {
-      "length": 3108,
-      "sha256": "dd0704f4aa9d4478007003c0acf70184bbdb55f497259f46026cb8710a794016",
-      "name": "es/reply-completed.json"
-    },
-    {
-      "length": 5221,
-      "sha256": "da8a8c99ab7ce774c9aee209677029fe9859b73a319aa55baba676734588029d",
-      "name": "es/reply-inbox-read.json"
-    },
-    {
-      "length": 5221,
-      "sha256": "da8a8c99ab7ce774c9aee209677029fe9859b73a319aa55baba676734588029d",
-      "name": "es/reply-inbox-without-read.json"
-    },
-    {
-      "length": 1929,
-      "sha256": "11d518a0fbd712cea8672cf5f7c38d224e3f35492351036cd1975c9f5fdf3c54",
-      "name": "es/reply-latest-page.json"
-    },
-    {
-      "length": 1986,
-      "sha256": "2c07d482880023248f461705c02a679b9701157035b51e020512d807e351a577",
-      "name": "es/reply-older-page.json"
-    },
-    {
-      "length": 1877,
-      "sha256": "d0d4db09fee0aaf883c2fb82643df32975e599ed4382c7871ced49ded418c747",
-      "name": "es/reply-pending.json"
-    },
-    {
-      "length": 4344,
-      "sha256": "e1b952ca52685af15bc6ee309e5af32778b57db74702e4610586198f86b0f835",
-      "name": "es/reply-rejected.json"
-    },
-    {
-      "length": 3108,
-      "sha256": "dd0704f4aa9d4478007003c0acf70184bbdb55f497259f46026cb8710a794016",
-      "name": "es/reply-reloaded.json"
-    },
-    {
-      "length": 4836,
-      "sha256": "d3122957f53e32168857baf354f4e16f9e43e1434b2b6e0f24e79e34821b36f4",
-      "name": "es/reply-unrecognized.json"
-    },
-    {
-      "length": 1754,
-      "sha256": "6b202f529ae4fa8f8b7b44393e36917e476ff44dffab475f22388da1ae49cb5e",
-      "name": "es/reply-without-read.json"
-    }
-  ],
-  "artifactSet": "whatsapp-catalogs"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

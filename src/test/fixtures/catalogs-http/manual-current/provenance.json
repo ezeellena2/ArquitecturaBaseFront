@@ -1,105 +1,94 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "manual-catalogs",
+  "captures": [
+    {
+      "length": 259,
+      "name": "conflict-en.json",
+      "sha256": "de8a6cba1151c32fc869cece1a8f05bced32c1b82c879f0d8f7b0dd815c830b3"
+    },
+    {
+      "length": 267,
+      "name": "conflict-es.json",
+      "sha256": "02004b7e907130a71746bbeaab24503a93b317537c0bbeeafcfdcb5821bdd7ff"
+    },
+    {
+      "length": 306,
+      "name": "conflict-request.request.json",
+      "sha256": "ab42025328c22b52c1677b29d4c8644104435c5bf3083cb60249c36e6d54477c"
+    },
+    {
+      "length": 451,
+      "name": "create-duplicate-positions-request.request.json",
+      "sha256": "d56d6641edc9fd4f8ff07553b4b5de4e1e261e16b7c0d823dbf038fef390c73a"
+    },
+    {
+      "length": 430,
+      "name": "create-request.request.json",
+      "sha256": "fd76ca19fd574108d1a45461fea9e652cc606f10eb4541a3011bcc69897422c6"
+    },
+    {
+      "length": 474,
+      "name": "created.json",
+      "sha256": "f640b4666d0bf4d22f50cc855142c1e1a4f4df4933303d5789452c599fee0ba4"
+    },
+    {
+      "length": 349,
+      "name": "detail.json",
+      "sha256": "4454d88724188d3f7162d99935294cd408a74dfdb490c0481d1df35cd23b089c"
+    },
+    {
+      "length": 260,
+      "name": "inactive-request.request.json",
+      "sha256": "f2053f12129752a1c990160caa43b9f310fbad7a5b40a36cdbeb5bc275bdace0"
+    },
+    {
+      "length": 626,
+      "name": "items.json",
+      "sha256": "fb782242663db73380663d2de3346392612ebdf9e17700c7a082ee3853219014"
+    },
+    {
+      "length": 379,
+      "name": "list-en.json",
+      "sha256": "2ee0d8965db04e97d4ee58970a60c4018a7517680720353d39990698cfa0f99e"
+    },
+    {
+      "length": 388,
+      "name": "list-es.json",
+      "sha256": "2194db321c172b601b863dc2bb29dce2c39968932333045fec26ad519675234f"
+    },
+    {
+      "length": 229,
+      "name": "missing-revision-request.request.json",
+      "sha256": "6b269a4b479323ca1528f5cae5bd48fe7dde6e58b083488e73a3134c0a9de87e"
+    },
+    {
+      "length": 323,
+      "name": "queued-moves-request.request.json",
+      "sha256": "e11bdb2c5c1ca423189b325e5e31398ceb30811e3f3b5373064798797993594c"
+    },
+    {
+      "length": 492,
+      "name": "update-request.request.json",
+      "sha256": "719d0ffadd1054691626535e11717c933e7f2ed624c17d8ea8b09f2232f554d9"
+    },
+    {
+      "length": 432,
+      "name": "updated.json",
+      "sha256": "aa2cf3f894f791838410a8d7e4b54542cbeed8d8dffb987bf335125d768d799d"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "FormCatalogEndpointsTests",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs",
       "sha256": "5138231678e29d7d501c15f5bbd63b19f4ab3508ed9b789f30e3382e20a881c5"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 259,
-      "sha256": "e021429975b5e35aa76d863ede47bd7e60c43c30b0499c85f8cb887c20aa34c6",
-      "name": "conflict-en.json"
-    },
-    {
-      "length": 267,
-      "sha256": "3518458c4c6b04221385f337a7c71b10a8de8941ee708c4728988fa618decc1e",
-      "name": "conflict-es.json"
-    },
-    {
-      "length": 306,
-      "sha256": "b8a6496a3ccaa2a5c07743996eb8994b83418b13ce69d5ae8e66387203517ed1",
-      "name": "conflict-request.request.json"
-    },
-    {
-      "length": 451,
-      "sha256": "1f505286c20f4255f15ddce99929aaad7796680a7aea580a3f1aca8ddbddfd35",
-      "name": "create-duplicate-positions-request.request.json"
-    },
-    {
-      "length": 430,
-      "sha256": "fd76ca19fd574108d1a45461fea9e652cc606f10eb4541a3011bcc69897422c6",
-      "name": "create-request.request.json"
-    },
-    {
-      "length": 474,
-      "sha256": "3268bf7368a33aeafc792935b3580291a067869e41409a79777b677a49a917af",
-      "name": "created.json"
-    },
-    {
-      "length": 349,
-      "sha256": "65f7f1c135d68e2ca7d4be203ca19ae00c5b58db86b6dde20e7df64b038607e4",
-      "name": "detail.json"
-    },
-    {
-      "length": 260,
-      "sha256": "f2053f12129752a1c990160caa43b9f310fbad7a5b40a36cdbeb5bc275bdace0",
-      "name": "inactive-request.request.json"
-    },
-    {
-      "length": 626,
-      "sha256": "bf0b669444b22ceb4c3622cbc951c263a529238226f60d1e68fb5d1a4d58d29f",
-      "name": "items.json"
-    },
-    {
-      "length": 379,
-      "sha256": "7b0d2ba4c97250f05050dcaabc8a87cd35bb57ef0bc74fb75b0927fa05901881",
-      "name": "list-en.json"
-    },
-    {
-      "length": 388,
-      "sha256": "9d032c3250223a3e670d63be7c93210e90757e1599b2dedf7ae08eedb1b39ea7",
-      "name": "list-es.json"
-    },
-    {
-      "length": 229,
-      "sha256": "6b269a4b479323ca1528f5cae5bd48fe7dde6e58b083488e73a3134c0a9de87e",
-      "name": "missing-revision-request.request.json"
-    },
-    {
-      "length": 323,
-      "sha256": "47d46f8aa3b74e548e95feafbdd8d2ed06373f1488bbb203129e2ac9bc888e06",
-      "name": "queued-moves-request.request.json"
-    },
-    {
-      "length": 492,
-      "sha256": "cf89086a9a331d2c1f9d67c1ef306e6fddebd7d83cf941998e8c8d70d95c4acb",
-      "name": "update-request.request.json"
-    },
-    {
-      "length": 432,
-      "sha256": "c70c36b480bbc89d78ffd542abceee1e833772163d16d29533b139512d4c2318",
-      "name": "updated.json"
-    }
-  ],
-  "artifactSet": "manual-catalogs"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

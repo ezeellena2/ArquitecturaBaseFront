@@ -1,22 +1,71 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "approvals",
+  "captures": [
+    {
+      "length": 271,
+      "name": "conflict-approved-es.json",
+      "sha256": "d90de2b2dd0a688e602580408401cd16940602769965edf1950a1370a8ea88b9"
+    },
+    {
+      "length": 271,
+      "name": "conflict-rejected-es.json",
+      "sha256": "904ecec9f4f571bebc2dd150eda5c2fe7ad41917362c0017caa1a24dd697ce11"
+    },
+    {
+      "length": 11,
+      "name": "count-es.json",
+      "sha256": "6aea6dfe6561984cdc5c54ead84d47d2cf29e48253ae282aef237404adad4661"
+    },
+    {
+      "length": 264,
+      "name": "decision-approved-es.json",
+      "sha256": "8a7c06ae4de1f03d3da24c1fc86eed18b0649b02b8c8d54541a0b5faf6fa23de"
+    },
+    {
+      "length": 283,
+      "name": "decision-rejected-es.json",
+      "sha256": "9be3fa6ed2e708bfc5d6e0c3a31a3abd24acd52b1a0817f0e6f2b840bad284b0"
+    },
+    {
+      "length": 648,
+      "name": "inbox-en.json",
+      "sha256": "347ff8333d0d1876cab9b5d898b7f068aa7c5b02a0bd70f4542cadea7361dcfa"
+    },
+    {
+      "length": 651,
+      "name": "inbox-es.json",
+      "sha256": "a5f95dfab158baffddc526ed4b9936e92076a5807e62839155cfd0c731524d43"
+    },
+    {
+      "length": 85,
+      "name": "options-es.json",
+      "sha256": "bd72cd72b019d973fac63f41a4dc574f7bc02e0b3c8b26032bc872c4a5a08b81"
+    },
+    {
+      "length": 265,
+      "name": "own-response-es.json",
+      "sha256": "247ca0425c30aa09e24c457b6331ca7cff11298a47f193df1d943aad1696e37c"
+    },
+    {
+      "length": 649,
+      "name": "task-approved-es.json",
+      "sha256": "84146630c658c8ee08cfefe2b799b2a65aac498af50668c2daaa789d9aff764a"
+    },
+    {
+      "length": 550,
+      "name": "task-open-es.json",
+      "sha256": "11b72f4030cc4f30319224c302dde8e2e56a4dc1ecf23e9c55388311f4c26bed"
+    },
+    {
+      "length": 668,
+      "name": "task-rejected-es.json",
+      "sha256": "3d0a78ae238266f531308f2376c4d2758f28f8ad08d7fdc6c362efad2b6ad072"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "FormApprovalHttpTests and FormApprovalContractCapture",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormApprovalHttpTests.cs",
@@ -27,68 +76,8 @@
       "sha256": "d8c904819828d54469cfa365a6b4799c63e9a1b4fd5fdc5f568fade31b6f12f8"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 271,
-      "sha256": "a1b4b2174dea47facfd95e7ac304a828fed6c51e9906c9eb1aa097197b00d2dd",
-      "name": "conflict-approved-es.json"
-    },
-    {
-      "length": 271,
-      "sha256": "a58b69855d26e3965c201b4b7cd10ee72bc2c902f4228f358e308dcd076480e0",
-      "name": "conflict-rejected-es.json"
-    },
-    {
-      "length": 11,
-      "sha256": "6aea6dfe6561984cdc5c54ead84d47d2cf29e48253ae282aef237404adad4661",
-      "name": "count-es.json"
-    },
-    {
-      "length": 264,
-      "sha256": "b1b0e832ff9de9a2d09adb3331925e8087f6ff6daf6ede936e1dd812678be11e",
-      "name": "decision-approved-es.json"
-    },
-    {
-      "length": 283,
-      "sha256": "229c3a3e38ed7d8d33cd74e152c11cfcfca291cb0f7c02efc8a9522e5e8c2f44",
-      "name": "decision-rejected-es.json"
-    },
-    {
-      "length": 648,
-      "sha256": "b04b7d4f53f8de6afa796417af686d8d59a7e962f20337bd1077a4c4ed4d1593",
-      "name": "inbox-en.json"
-    },
-    {
-      "length": 651,
-      "sha256": "b3075da3f4dc34fde93e9161b2f1d165e8a8be709d8d747c91bdf15bb347e625",
-      "name": "inbox-es.json"
-    },
-    {
-      "length": 85,
-      "sha256": "7d5ab34184d0c5909c66c530449d9f424ce68cf3df5941500a344fda0e9a9b6f",
-      "name": "options-es.json"
-    },
-    {
-      "length": 265,
-      "sha256": "b160f377880285058ebd8c2298bc1320b4e7d189e3a39a0256714a6215777b62",
-      "name": "own-response-es.json"
-    },
-    {
-      "length": 649,
-      "sha256": "0241fa4c5f63b86d95a7c7978dd337ef5a7f7025d62f60074632511b07d417d9",
-      "name": "task-approved-es.json"
-    },
-    {
-      "length": 550,
-      "sha256": "e40992badf01e0fc9d73a81b22266df52ddc90603ada9201f94886907069cab7",
-      "name": "task-open-es.json"
-    },
-    {
-      "length": 668,
-      "sha256": "5984b377eb4932b61e76fa72666fed4b65dfd49f8a681f4b4fef018c4b494802",
-      "name": "task-rejected-es.json"
-    }
-  ],
-  "artifactSet": "approvals"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

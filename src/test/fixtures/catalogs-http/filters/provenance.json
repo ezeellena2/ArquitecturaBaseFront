@@ -1,70 +1,59 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "catalog-filters",
+  "captures": [
+    {
+      "length": 273,
+      "name": "create-request.json",
+      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82"
+    },
+    {
+      "length": 511,
+      "name": "created.json",
+      "sha256": "802f09ecfd003827b48c1016683ca2fb4d4346ddd36512f077c73e18a76f4144"
+    },
+    {
+      "length": 482,
+      "name": "detail.json",
+      "sha256": "016cd2a219bf14651324ba394954531bcbdabe76531390ed7c37d9f029e29801"
+    },
+    {
+      "length": 48098,
+      "name": "options.json",
+      "sha256": "92b790dab9303f71108d254f4b127f8654a0a1ec2b54bbff9474729ab33af4e3"
+    },
+    {
+      "length": 328,
+      "name": "preview-request.json",
+      "sha256": "9e271da5a38c0d0756c7d0fa938eab2b85d57e591b51467b7285ca45ce4ef117"
+    },
+    {
+      "length": 201,
+      "name": "preview.json",
+      "sha256": "bec647fcd13ab4f564b489375188e819064063519f6e6035761e719b006ae750"
+    },
+    {
+      "length": 289,
+      "name": "update-request.json",
+      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c"
+    },
+    {
+      "length": 510,
+      "name": "updated.json",
+      "sha256": "49bb9f0c048f93bb08bd56ae94ddf902ad838fda3a149759d94cdbf39e56f2b4"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "FormCatalogFiltersEndpointsTests",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
       "sha256": "77f028bcb4dc764cf8187e6bb39f1d5cde4c235488b0891e673a9de5cb377fcb"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 273,
-      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
-      "name": "create-request.json"
-    },
-    {
-      "length": 511,
-      "sha256": "511676e5f14b1f2c03ecb1645248c7fd1bdc1d89c3bd5cfc0eb42513f4c947af",
-      "name": "created.json"
-    },
-    {
-      "length": 482,
-      "sha256": "2c8b5ad6ba99833b9aca5ebb6c88f3e552bd0fe94773aca0e64dcd5b975d13e7",
-      "name": "detail.json"
-    },
-    {
-      "length": 47618,
-      "sha256": "b808a48f650d19657a8e34b077991954d0bba071eed757848989a427246bd13c",
-      "name": "options.json"
-    },
-    {
-      "length": 328,
-      "sha256": "0060f3ca754543d03af99c37fcc01e16edbd0c297e732eaec4184a6d7ec40e1c",
-      "name": "preview-request.json"
-    },
-    {
-      "length": 201,
-      "sha256": "cefa680cba74b1cc4bb53be74d80f1b45ab2e2908643fcf8bef2ada6ea0a7042",
-      "name": "preview.json"
-    },
-    {
-      "length": 289,
-      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
-      "name": "update-request.json"
-    },
-    {
-      "length": 510,
-      "sha256": "6aa9b5a332f651c0164f8d6d39eabd9135efb9e7a47c62a148db3159a4c3383b",
-      "name": "updated.json"
-    }
-  ],
-  "artifactSet": "catalog-filters"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

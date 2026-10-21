@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Las reglas cambiaron. Recargá la revisión vigente antes de guardar.","traceId":"00-365e6b426ce694326f1fa9c4d72b4c0f-a9a826fef542bffc-01","code":"Forms.Rule.RevisionConflict"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Las reglas cambiaron. Recargá la revisión vigente antes de guardar.","traceId":"00-379a2b25a761e4662cf01ef67797abea-ba7808886810f073-01","code":"Forms.Rule.RevisionConflict"}

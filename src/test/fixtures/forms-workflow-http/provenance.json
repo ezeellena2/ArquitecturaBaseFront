@@ -1,22 +1,171 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "workflow",
+  "captures": [
+    {
+      "length": 1197,
+      "name": "approval-approved-d2-es.json",
+      "sha256": "a80520f5e0f86bf33d724439d63fe77fcc7c0868be3e09998f02c9b89af59f73"
+    },
+    {
+      "length": 574,
+      "name": "approval-failed-without-task-d2-es.json",
+      "sha256": "b522176f39606dfdce49eef988cbeae444d3751acf8b1c92b7df59cc10ae20f5"
+    },
+    {
+      "length": 760,
+      "name": "approval-pending-d2-approved-es.json",
+      "sha256": "ae39947cb5d3d55d85f8cdb31f6819889bb5be86b03b9f814d4ba7ec2db1e49d"
+    },
+    {
+      "length": 760,
+      "name": "approval-pending-d2-rejected-es.json",
+      "sha256": "ba12cebec0ace549543cb77e1d500fdb691587523e91e52a63140f65052d1ace"
+    },
+    {
+      "length": 1216,
+      "name": "approval-rejected-d2-es.json",
+      "sha256": "71a595304155201e2640744ff7340a23fb93afbc058c7caf68deb419740e4c87"
+    },
+    {
+      "length": 772,
+      "name": "completed-en.json",
+      "sha256": "808505e5b3034cbf52ecf4b9d4aefb43394e04360963ad5c81cdb0998a59e40e"
+    },
+    {
+      "length": 852,
+      "name": "consult-es.json",
+      "sha256": "74cd416842b566afbaa3931124f791f1dcad39447294186811d9d3b674128d99"
+    },
+    {
+      "length": 249,
+      "name": "control-forbidden-es.json",
+      "sha256": "99a1ae58ea44bfc2530fbaa3fd2c1d018cb4b1f03123caf373655d70065104bf"
+    },
+    {
+      "length": 2589,
+      "name": "e2e-approved-notice-fallback-es.json",
+      "sha256": "e0e862590926159703df945ffac85a8b858c468414ce6b912c5eb83ae84a4d2a"
+    },
+    {
+      "length": 2745,
+      "name": "e2e-catalog-original-item-en.json",
+      "sha256": "28712fab9f96c298b06d5c1b2f2f9c7f312f79f96ae6f29bc26ad4aa8a16640d"
+    },
+    {
+      "length": 2745,
+      "name": "e2e-english-en.json",
+      "sha256": "53bb872e6d1b2a74522d1ceedc2d2e484d6a800b6e192afeda17de2d2f45265a"
+    },
+    {
+      "length": 2589,
+      "name": "e2e-footer-fallback-es.json",
+      "sha256": "1beed0a7796e98d78a36abeebe609dcd20fa561a3ab84b79da8773b60f27bcb2"
+    },
+    {
+      "length": 852,
+      "name": "failed-en.json",
+      "sha256": "397acd813ec43b8e92bca813afd245894c8d3682ff45e5855266b328c94493c1"
+    },
+    {
+      "length": 877,
+      "name": "failed-es.json",
+      "sha256": "0a8abf02fda9de720fb41d860e544bd7132205d4bb2461b00c658ac217615d12"
+    },
+    {
+      "length": 514,
+      "name": "not-applicable-es.json",
+      "sha256": "b96626742f552e3e1f80fb3221a8ec79a120257d67fe3488580af39bc207673f"
+    },
+    {
+      "length": 1397,
+      "name": "pdf-completed-es.json",
+      "sha256": "e1df22606fc71b742448f3353b0435203da40e187a2565b61fd9049abb978920"
+    },
+    {
+      "length": 249,
+      "name": "read-forbidden-es.json",
+      "sha256": "f553e197904d4c33cb8479c7b6ffbc52135025e6eb6eb2457b8c7ddde5afd36c"
+    },
+    {
+      "length": 750,
+      "name": "retry-en.json",
+      "sha256": "5d1a3545c89557878ebf7d8f2c880d13ac4c6a053a78fac79d351ba1cd5c3c65"
+    },
+    {
+      "length": 905,
+      "name": "review-completed-es.json",
+      "sha256": "936501bc67638218ea46d0f0fae2a09b59ddc2a3708e1805c75dec3e91e6b664"
+    },
+    {
+      "length": 1096,
+      "name": "review-failed-es.json",
+      "sha256": "9e4f4b50fa7348d8732c3c78054eb54a96893573c3a8651357ff87f00c5b2b8a"
+    },
+    {
+      "length": 986,
+      "name": "review-not-sent-es.json",
+      "sha256": "f8679359d23688c9bd855d176f28b617e2f76de5943bcf0717176e49a3c72b91"
+    },
+    {
+      "length": 985,
+      "name": "review-sent-es.json",
+      "sha256": "8b1c828aa53fbaafb41c14194d4156066d43265067b111428d80c52c5fb4ac05"
+    },
+    {
+      "length": 1384,
+      "name": "role-completed-en.json",
+      "sha256": "2179534a428e1969a1428caaf3021d0fccefb4747022d42735867e46e3ebcebb"
+    },
+    {
+      "length": 1396,
+      "name": "role-completed-es.json",
+      "sha256": "0a13b0da5302e6f54feca1fec01e59d50f60a2ba9af2ed6df2f4493549d30608"
+    },
+    {
+      "length": 940,
+      "name": "role-delivered-read-en.json",
+      "sha256": "9f3f50b87bae36e6ae2b7a2369f98baacc24d0541fa835731310af88b7f23765"
+    },
+    {
+      "length": 940,
+      "name": "role-delivered-read-es.json",
+      "sha256": "9f3f50b87bae36e6ae2b7a2369f98baacc24d0541fa835731310af88b7f23765"
+    },
+    {
+      "length": 922,
+      "name": "role-late-accepted-read-only-en.json",
+      "sha256": "c230d3f47c0283ae9df76fb76d17c9fdba8fa5f487586a2ed8e4bf413dab951f"
+    },
+    {
+      "length": 922,
+      "name": "role-late-accepted-read-only-es.json",
+      "sha256": "c230d3f47c0283ae9df76fb76d17c9fdba8fa5f487586a2ed8e4bf413dab951f"
+    },
+    {
+      "length": 1125,
+      "name": "role-uncertain-es.json",
+      "sha256": "bc5ec60cd2537dee990c85324867f59b1d4c9f4efe8074370b7a4b2bad78dfc8"
+    },
+    {
+      "length": 861,
+      "name": "running-es.json",
+      "sha256": "10399a3a24d9d586d61631de8f69d3d23468bede915d9ad191ecc7a4346e5cb7"
+    },
+    {
+      "length": 864,
+      "name": "uncertain-es.json",
+      "sha256": "834e897a097137bec03ed12ea14934bc4e5a63f364f12f4888f1b88809ff7034"
+    },
+    {
+      "length": 490,
+      "name": "waiting-es.json",
+      "sha256": "3778c9f13c37daed4650145ea89c807f86782ad9505d2024fc56c4efc19ed608"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "FormWorkflowHttpTests and FormDetailMomentsHttpTests and FormApprovalHttpTests and FormPdfHttpTests and FormWorkflowEndToEndHttpTests and FormResponseHttpTests and FormPublishedVersionFixture and FormRecordCaptureIntegrationTests and FormActionRecoveryIntegrationTests and FormDraftDurabilityTests and FormPdfRendererFixture and CapturingFormActionChannel and FormWorkflowContractCapture",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormWorkflowHttpTests.cs",
@@ -71,168 +220,8 @@
       "sha256": "44848ef90915e3281eee2e0a2536534223dc4ec450bdf0c82ab05be432b2a9fb"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 1197,
-      "sha256": "86677397e55abc7219cdd9324db5ab94cfc29bf60ba61d634c3625ce7e1ebd0d",
-      "name": "approval-approved-d2-es.json"
-    },
-    {
-      "length": 574,
-      "sha256": "cef0fb9b06cf951b43891810e633c970f2fe64f2a3074a17633d108247aa3574",
-      "name": "approval-failed-without-task-d2-es.json"
-    },
-    {
-      "length": 760,
-      "sha256": "5a382284091bf5d60ec62c5f5d0a41d30e0aebda11d6f0d2d511b29bb1137956",
-      "name": "approval-pending-d2-approved-es.json"
-    },
-    {
-      "length": 760,
-      "sha256": "74546552604eefa3b1792118505bcc262a06a4e3cb263fa8d2a4aa0db7899b3d",
-      "name": "approval-pending-d2-rejected-es.json"
-    },
-    {
-      "length": 1216,
-      "sha256": "5adb24fd242b5c10c228a265fb6e3f293d7ee24c7ec563b40c784351cb847cec",
-      "name": "approval-rejected-d2-es.json"
-    },
-    {
-      "length": 772,
-      "sha256": "fe90e0f842e54cf4db1582e4013a542be40ed879313845bbe6329b6ca5043c23",
-      "name": "completed-en.json"
-    },
-    {
-      "length": 852,
-      "sha256": "ceec2325a15cfd9e06365f5ee916ac76af3bd4341d66ae76a81ae2a6d7f69908",
-      "name": "consult-es.json"
-    },
-    {
-      "length": 249,
-      "sha256": "9d20b018e92c67a1e6b8340e24e473a382c867e47eb25c88794ffb924f7c391e",
-      "name": "control-forbidden-es.json"
-    },
-    {
-      "length": 2589,
-      "sha256": "afd1ad75359edb15c51d42aa556c7f592674261db5e6cd4587e237329d8f230d",
-      "name": "e2e-approved-notice-fallback-es.json"
-    },
-    {
-      "length": 2745,
-      "sha256": "505e3a9ee5b134395ae2aba0dea091d671e5ee0d4c1e01052d4b97cb5ed6ff0a",
-      "name": "e2e-catalog-original-item-en.json"
-    },
-    {
-      "length": 2745,
-      "sha256": "2c73806a96120b6736db6ffdf094f305b15fa64355ec29e710be5a7d549f58ba",
-      "name": "e2e-english-en.json"
-    },
-    {
-      "length": 2589,
-      "sha256": "c6742a69dc2e386b71d1f468a991168cd9443e59df649d30df612e0907bee030",
-      "name": "e2e-footer-fallback-es.json"
-    },
-    {
-      "length": 852,
-      "sha256": "75585271957b7b4f6393441a3e5c01693c768a9a6b62f6adb7be3a3cadb99add",
-      "name": "failed-en.json"
-    },
-    {
-      "length": 877,
-      "sha256": "4de60fa1fa67d71a344e1af6bb93d0b53bdf26df3ba4a4c772eb040e8d828c3e",
-      "name": "failed-es.json"
-    },
-    {
-      "length": 514,
-      "sha256": "921a0139cc526f18a895d209d58ed733410f3c2a9440c81e9905df9ffc3db175",
-      "name": "not-applicable-es.json"
-    },
-    {
-      "length": 1397,
-      "sha256": "e05e7ec312e162fc8185b81971df109ae8d835c155e403ba0ac4f9fe79637293",
-      "name": "pdf-completed-es.json"
-    },
-    {
-      "length": 249,
-      "sha256": "a5a6b3a255fb7ee9e6b8d28d44167b95de59460113f079a6c111e9e10af2e882",
-      "name": "read-forbidden-es.json"
-    },
-    {
-      "length": 750,
-      "sha256": "464985fe87f937bdce395b8540c91e51eebc19a81ee6ee8f3c898d5a0a4570de",
-      "name": "retry-en.json"
-    },
-    {
-      "length": 905,
-      "sha256": "5080a0e5ab12ff416ad6da473fb84824d8dfadf5bde599914956c0f3d9eb975a",
-      "name": "review-completed-es.json"
-    },
-    {
-      "length": 1096,
-      "sha256": "df68244a3e0fedd6a1613028f6b2a80b634a6b138eea540a62a5d27b20dda349",
-      "name": "review-failed-es.json"
-    },
-    {
-      "length": 986,
-      "sha256": "6b1f3ff223b8860b9c03c711258979cf1e8bf1368707d00302ae3f0ffea7adda",
-      "name": "review-not-sent-es.json"
-    },
-    {
-      "length": 985,
-      "sha256": "27d205121ff9c0b0a37efd2bd8510c8a02f8c53cebb26624223d37960402ef3c",
-      "name": "review-sent-es.json"
-    },
-    {
-      "length": 1384,
-      "sha256": "076a2e4156e9d70f009d015a2a440b2fa91fda9a04496647506bd6b53f47bed4",
-      "name": "role-completed-en.json"
-    },
-    {
-      "length": 1396,
-      "sha256": "8fdb827469cc89a3cf52b790bb0efdc36d78ae400ae4c5d1b7d5eb414ed2c5a5",
-      "name": "role-completed-es.json"
-    },
-    {
-      "length": 940,
-      "sha256": "3d3701ee386dedf5052551748af3155781d13cfdd44df0faa06a42cd4b38d501",
-      "name": "role-delivered-read-en.json"
-    },
-    {
-      "length": 940,
-      "sha256": "3d3701ee386dedf5052551748af3155781d13cfdd44df0faa06a42cd4b38d501",
-      "name": "role-delivered-read-es.json"
-    },
-    {
-      "length": 922,
-      "sha256": "25bfcbae220c1639690f852ac3514af7493a6b15a5f56e9fee2551c5ed3d3507",
-      "name": "role-late-accepted-read-only-en.json"
-    },
-    {
-      "length": 922,
-      "sha256": "25bfcbae220c1639690f852ac3514af7493a6b15a5f56e9fee2551c5ed3d3507",
-      "name": "role-late-accepted-read-only-es.json"
-    },
-    {
-      "length": 1125,
-      "sha256": "b8b1a255a85c9483b135202d12cd41253b1c0ed43d4b6f5de675cb7abd326c55",
-      "name": "role-uncertain-es.json"
-    },
-    {
-      "length": 861,
-      "sha256": "d51925192331969701a0254288671fa49078b260ba3fe1f54041cf258ec9e6c7",
-      "name": "running-es.json"
-    },
-    {
-      "length": 864,
-      "sha256": "0c3caae4ce35a07d223a47c6633d754ff9e1b64f2beb821c1e6500010981246f",
-      "name": "uncertain-es.json"
-    },
-    {
-      "length": 490,
-      "sha256": "6e69809dd978ad9eb3213c6e096bba09f0061885276fa054e1c222965097b5c3",
-      "name": "waiting-es.json"
-    }
-  ],
-  "artifactSet": "workflow"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

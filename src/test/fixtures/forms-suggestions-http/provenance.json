@@ -1,22 +1,51 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "suggestions",
+  "captures": [
+    {
+      "length": 276,
+      "name": "conflict-es.json",
+      "sha256": "42c71312b0319ae7563e50917ad7eac9da6f7df4ec97d8a173a876863f8d42e8"
+    },
+    {
+      "length": 152,
+      "name": "empty-es.json",
+      "sha256": "e60f63faf7f8c649c7190ca7694ce9630a288a721c7de99f81740216e2672cb3"
+    },
+    {
+      "length": 373,
+      "name": "history-es.json",
+      "sha256": "3e426272c6309d99cb8749e3c6c29517a24284d223e9a8b4856a22efa8fe0ad5"
+    },
+    {
+      "length": 10741,
+      "name": "options-en.json",
+      "sha256": "279ef5a7baab8ae593580a5af27276fe6ae29719d801e13af06d290da1b09071"
+    },
+    {
+      "length": 10741,
+      "name": "options-es.json",
+      "sha256": "279ef5a7baab8ae593580a5af27276fe6ae29719d801e13af06d290da1b09071"
+    },
+    {
+      "length": 680,
+      "name": "revision-es.json",
+      "sha256": "9b78db19e45f9fef3e4f6ecfffb89029da8a6cb9eae12bdd9ecfb3490bbe63f1"
+    },
+    {
+      "length": 680,
+      "name": "saved-es.json",
+      "sha256": "9b78db19e45f9fef3e4f6ecfffb89029da8a6cb9eae12bdd9ecfb3490bbe63f1"
+    },
+    {
+      "length": 285,
+      "name": "source-unpublished-es.json",
+      "sha256": "a795a52b81b2993947ce218f5ce7c3b6420f8ec39fe067da0207dff467962d74"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs",
@@ -27,48 +56,8 @@
       "sha256": "f625255f15dd0bd5bb149c6b60e6f2a5a4ee72672b75b53dfd81ece1961dae03"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 276,
-      "sha256": "e0e9a88c691050c91f70a920b63aa4a3cbf2279f932b5893312dbf7c910b9f4b",
-      "name": "conflict-es.json"
-    },
-    {
-      "length": 152,
-      "sha256": "c51bd0031c0c79e7c0b341373a8d6b2a8f9effc0fc7982ad66cc0482dfd26844",
-      "name": "empty-es.json"
-    },
-    {
-      "length": 373,
-      "sha256": "be99926dda37fd68b895fd16200ba520deeef2462d838ab6a4a4e55ce0da90a4",
-      "name": "history-es.json"
-    },
-    {
-      "length": 10741,
-      "sha256": "f48dcc7e34bb174f0b0ef83d698927bab9d565197b86faa335a58efbbf896654",
-      "name": "options-en.json"
-    },
-    {
-      "length": 10741,
-      "sha256": "f48dcc7e34bb174f0b0ef83d698927bab9d565197b86faa335a58efbbf896654",
-      "name": "options-es.json"
-    },
-    {
-      "length": 680,
-      "sha256": "b77c888bd19b69b62e870ba7bba8ff70535424c5678cd851a42064dcbee05024",
-      "name": "revision-es.json"
-    },
-    {
-      "length": 680,
-      "sha256": "b77c888bd19b69b62e870ba7bba8ff70535424c5678cd851a42064dcbee05024",
-      "name": "saved-es.json"
-    },
-    {
-      "length": 285,
-      "sha256": "322208288571e9148708d08f7ec15668dcf405edc7b9d60d358a1c1e60664a6a",
-      "name": "source-unpublished-es.json"
-    }
-  ],
-  "artifactSet": "suggestions"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

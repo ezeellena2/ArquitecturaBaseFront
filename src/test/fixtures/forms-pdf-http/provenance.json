@@ -1,22 +1,151 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "pdf",
+  "captures": [
+    {
+      "length": 113,
+      "name": "default-es.http.json",
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750"
+    },
+    {
+      "length": 434,
+      "name": "default-es.json",
+      "sha256": "fefe016a6d0524f5f72cc37fc738ae7f7832bbeff0ca9ee1d1249d2220369db0"
+    },
+    {
+      "length": 113,
+      "name": "design-en.http.json",
+      "sha256": "0f8f73cb726d462e5f9a15bd0d8036b3226eff91d528cafaffc83e5435040c5b"
+    },
+    {
+      "length": 428,
+      "name": "design-en.json",
+      "sha256": "774f860cbbed726d42030b296507f0920429959aebdf78b46591b3ba251dff16"
+    },
+    {
+      "length": 113,
+      "name": "design-es.http.json",
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750"
+    },
+    {
+      "length": 428,
+      "name": "design-es.json",
+      "sha256": "774f860cbbed726d42030b296507f0920429959aebdf78b46591b3ba251dff16"
+    },
+    {
+      "length": 239,
+      "name": "document-es.http.json",
+      "sha256": "3e8832ee58497726009e12c3cd750706362595637b020226e986dd14de010935"
+    },
+    {
+      "length": 92765,
+      "name": "document-es.pdf",
+      "sha256": "b6e3f553df5acf19a248ae77cad5494363d22303e0e22da1fc9f37bbe2db3e4f"
+    },
+    {
+      "length": 126,
+      "name": "document-mismatch-en.http.json",
+      "sha256": "649dd22ba8604d082006a51379393dac4a4edbd077ceb1087a2005ca0df11aeb"
+    },
+    {
+      "length": 233,
+      "name": "document-mismatch-en.json",
+      "sha256": "1c2a72eb641b4143d5883a858bc7ae094be40a4c9cb66bab75d7ee06ea459f58"
+    },
+    {
+      "length": 235,
+      "name": "e2e-approved-notice-fallback-es.http.json",
+      "sha256": "3f9788689fdae84aba86c6fe3bf470f85c463a4965a44079d45134d81503ac85"
+    },
+    {
+      "length": 96737,
+      "name": "e2e-approved-notice-fallback-es.pdf",
+      "sha256": "02e003be345a31187df1056781b834054f8748de629fd856094225281242486c"
+    },
+    {
+      "length": 227,
+      "name": "e2e-catalog-original-item-en.http.json",
+      "sha256": "f7b38ce180411ff4f6eef063be759034e5c58e24e2e86ae5d07e64e92de7efe2"
+    },
+    {
+      "length": 96755,
+      "name": "e2e-catalog-original-item-en.pdf",
+      "sha256": "ddb8c3942516f622f56ab27c86434510f6c535fbb7e7bd101b769d3b3281ef5a"
+    },
+    {
+      "length": 227,
+      "name": "e2e-english-en.http.json",
+      "sha256": "977300cef0b10178880e85e469729889cc4442310035c9d402ff0b9563c97784"
+    },
+    {
+      "length": 96698,
+      "name": "e2e-english-en.pdf",
+      "sha256": "49b27d9e0106d63491e2c780469435ae27ef49ff8b76c1859226c167733faeb7"
+    },
+    {
+      "length": 235,
+      "name": "e2e-footer-fallback-es.http.json",
+      "sha256": "ff832eadbde4ad28a4a7be27290f98bb86e41b2dc9470e9ecb0f6f289fa21aae"
+    },
+    {
+      "length": 96723,
+      "name": "e2e-footer-fallback-es.pdf",
+      "sha256": "2023cbadad7c50b2d2a12fdb327e7ca1908d2ae31d0eb1212f5ac9f493408e1c"
+    },
+    {
+      "length": 113,
+      "name": "issued-es.http.json",
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750"
+    },
+    {
+      "length": 1397,
+      "name": "issued-es.json",
+      "sha256": "e1df22606fc71b742448f3353b0435203da40e187a2565b61fd9049abb978920"
+    },
+    {
+      "length": 97,
+      "name": "preview-en-fallback.http.json",
+      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557"
+    },
+    {
+      "length": 92673,
+      "name": "preview-en-fallback.pdf",
+      "sha256": "9512b41bd60bd8cbd3b6064e4c9b7e3e4e5e73285453d9e3ea837cf7846210b0"
+    },
+    {
+      "length": 97,
+      "name": "preview-es.http.json",
+      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557"
+    },
+    {
+      "length": 92673,
+      "name": "preview-es.pdf",
+      "sha256": "9512b41bd60bd8cbd3b6064e4c9b7e3e4e5e73285453d9e3ea837cf7846210b0"
+    },
+    {
+      "length": 126,
+      "name": "revision-conflict-es.http.json",
+      "sha256": "df56339c416f718077082192ac83ee75ab57a0ceae71a070c2dde1539fa6c336"
+    },
+    {
+      "length": 257,
+      "name": "revision-conflict-es.json",
+      "sha256": "76287c93903f3a4c6784a35f53df64ec6d2b0b1839cc350325ce3539a424cf1d"
+    },
+    {
+      "length": 113,
+      "name": "saved-es.http.json",
+      "sha256": "f79512e1dc5cfd52944722535d3494161d30e73731264cccf471ac1d997f3252"
+    },
+    {
+      "length": 428,
+      "name": "saved-es.json",
+      "sha256": "774f860cbbed726d42030b296507f0920429959aebdf78b46591b3ba251dff16"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "FormPdfHttpTests and FormWorkflowEndToEndHttpTests and FormResponseHttpTests and FormPublishedVersionFixture and FormRecordCaptureIntegrationTests and FormActionRecoveryIntegrationTests and FormDraftDurabilityTests and FormPdfRendererFixture and CapturingFormActionChannel and FormPdfContractCapture",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPdfHttpTests.cs",
@@ -59,148 +188,8 @@
       "sha256": "8839855d373aa18c9164ad5ec0cf0f0406a3332f28461df6a6574fb7ab1a15ee"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 113,
-      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
-      "name": "default-es.http.json"
-    },
-    {
-      "length": 434,
-      "sha256": "a78aa0f60252f99a76f2871d75d681d9638e105f1334c1e62a98cdbb49f86173",
-      "name": "default-es.json"
-    },
-    {
-      "length": 113,
-      "sha256": "0f8f73cb726d462e5f9a15bd0d8036b3226eff91d528cafaffc83e5435040c5b",
-      "name": "design-en.http.json"
-    },
-    {
-      "length": 428,
-      "sha256": "af7eb35f31821d4019f90048cb709a2901eff95821c70fb4c0f643d8da673bdd",
-      "name": "design-en.json"
-    },
-    {
-      "length": 113,
-      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
-      "name": "design-es.http.json"
-    },
-    {
-      "length": 428,
-      "sha256": "af7eb35f31821d4019f90048cb709a2901eff95821c70fb4c0f643d8da673bdd",
-      "name": "design-es.json"
-    },
-    {
-      "length": 239,
-      "sha256": "a8e1bf7b65a352e6483ef866a1e9a10aa4acb3146325ea546ff2b3846a03e4d8",
-      "name": "document-es.http.json"
-    },
-    {
-      "length": 92753,
-      "sha256": "625de08e61870602b03574adb144a7d731932251c3d769ca553818bbb483e821",
-      "name": "document-es.pdf"
-    },
-    {
-      "length": 126,
-      "sha256": "649dd22ba8604d082006a51379393dac4a4edbd077ceb1087a2005ca0df11aeb",
-      "name": "document-mismatch-en.http.json"
-    },
-    {
-      "length": 233,
-      "sha256": "17640e59788ffb0be22992fd5252d65190edb7fd25ed3407c2a4b5389faec4e0",
-      "name": "document-mismatch-en.json"
-    },
-    {
-      "length": 235,
-      "sha256": "8a9f2170f2d65ad81877de5ccd196a7343e2ffcf89fe661328228de6426c78b8",
-      "name": "e2e-approved-notice-fallback-es.http.json"
-    },
-    {
-      "length": 96746,
-      "sha256": "a91a928332a501324853f48bcbb0db8e3845e4f4d77e77d77271c7335e4b1bc1",
-      "name": "e2e-approved-notice-fallback-es.pdf"
-    },
-    {
-      "length": 227,
-      "sha256": "1f8103658509839a0273ca5fdefb4e9ecb9a3a0d768b603d2306ee085209dab6",
-      "name": "e2e-catalog-original-item-en.http.json"
-    },
-    {
-      "length": 96713,
-      "sha256": "a5c272c601e76cb9c261e10e305af8fce9cf8e1e5be628319500e7c942bcff39",
-      "name": "e2e-catalog-original-item-en.pdf"
-    },
-    {
-      "length": 227,
-      "sha256": "4ce6f7e9baf9c75922792ea3c4d27e8a94a0e946969abf97305a04412d912644",
-      "name": "e2e-english-en.http.json"
-    },
-    {
-      "length": 96696,
-      "sha256": "de893edecb96a0050c49b71006a737f20cce5e12dd2679c1078e88d56019fe23",
-      "name": "e2e-english-en.pdf"
-    },
-    {
-      "length": 235,
-      "sha256": "fc006e145cc8e2303c86c8899839c34c29b7c45981f0c78c8623b9415e91651b",
-      "name": "e2e-footer-fallback-es.http.json"
-    },
-    {
-      "length": 96637,
-      "sha256": "fb006e6d161e8d073778ff95038c30a9ebcbccb35de233582a48f3913ebb99b0",
-      "name": "e2e-footer-fallback-es.pdf"
-    },
-    {
-      "length": 113,
-      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
-      "name": "issued-es.http.json"
-    },
-    {
-      "length": 1397,
-      "sha256": "e05e7ec312e162fc8185b81971df109ae8d835c155e403ba0ac4f9fe79637293",
-      "name": "issued-es.json"
-    },
-    {
-      "length": 97,
-      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557",
-      "name": "preview-en-fallback.http.json"
-    },
-    {
-      "length": 92687,
-      "sha256": "1be1e71103fd489769873e61209c56ad537bebd0fafbf3e18b39913fbf88889c",
-      "name": "preview-en-fallback.pdf"
-    },
-    {
-      "length": 97,
-      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557",
-      "name": "preview-es.http.json"
-    },
-    {
-      "length": 92687,
-      "sha256": "1be1e71103fd489769873e61209c56ad537bebd0fafbf3e18b39913fbf88889c",
-      "name": "preview-es.pdf"
-    },
-    {
-      "length": 126,
-      "sha256": "df56339c416f718077082192ac83ee75ab57a0ceae71a070c2dde1539fa6c336",
-      "name": "revision-conflict-es.http.json"
-    },
-    {
-      "length": 257,
-      "sha256": "fa6d08cee2f1077891e67c417fa38c533013e123a4f131caa3ccbba66ad985c7",
-      "name": "revision-conflict-es.json"
-    },
-    {
-      "length": 113,
-      "sha256": "f79512e1dc5cfd52944722535d3494161d30e73731264cccf471ac1d997f3252",
-      "name": "saved-es.http.json"
-    },
-    {
-      "length": 428,
-      "sha256": "af7eb35f31821d4019f90048cb709a2901eff95821c70fb4c0f643d8da673bdd",
-      "name": "saved-es.json"
-    }
-  ],
-  "artifactSet": "pdf"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }
