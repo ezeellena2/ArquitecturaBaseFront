@@ -52,7 +52,7 @@ function FullResponse({ formId, recordId, transitioning }: { formId: string; rec
   const [decisionTarget, setDecisionTarget] = useState<HTMLDivElement | null>(null);
   const container = useRef<HTMLDivElement | null>(null);
   useLayoutEffect(() => { container.current?.focus(); }, [data?.id]);
-  useBreadcrumbLeaf(data ? data.name + " / " + data.number : undefined);
+  useBreadcrumbLeaf(data?.number, data?.name);
   const refresh = async (task?: ApprovalTask) => {
     if (task && !await workflow.observeApproval(task)) return;
     void workflow.query.refetch(); navigation.refreshPending();

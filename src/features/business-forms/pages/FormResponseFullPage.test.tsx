@@ -316,3 +316,12 @@ it("keeps the loaded PDF identity when anchoring changes only the return page", 
   expect(screen.getAllByTitle("Vista previa del PDF").map(preview => preview.getAttribute("src"))).toEqual(urls);
   expect(URL.revokeObjectURL).not.toHaveBeenCalled();
 });
+it("supplies the confirmed form parent and response number to full-page breadcrumbs", async () => {
+  setup();
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  const trail = within(screen.getByRole("navigation", { name: "Migas de pan" }));
+  expect(trail.getAllByRole("listitem").map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Formularios", "Formulario publicado", "TEST-000002"]);
+  expect(trail.getByRole("link", { name: "Formulario publicado" })).toHaveAttribute("href", path);
+  expect(trail.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
+});

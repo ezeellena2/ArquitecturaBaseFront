@@ -141,3 +141,17 @@ it("keeps the PDF route current before its confirmed labels arrive", async () =>
   expect(items.map(item => item.textContent)).toEqual(["Inicio", "Diseño del PDF"]);
   expect(items[1]).toHaveAttribute("aria-current", "page");
 });
+
+it("keeps the full response under MF1 without linking a reader to template design", async () => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })));
+  renderWithProviders(<MemoryRouter initialEntries={["/formularios/form-id/respuestas/record-id/completa"]}>
+    <Breadcrumbs/><ChildScreen leaf="VIS-000024" parent="Registrar visita"/>
+  </MemoryRouter>);
+  const items = await breadcrumbs();
+  expect(items.map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Formularios", "Registrar visita", "VIS-000024"]);
+  expect(within(items[1]).queryByRole("link")).not.toBeInTheDocument();
+  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios/respuestas");
+  expect(within(items[3]).getByRole("link")).toHaveAttribute("href", "/formularios/form-id/respuestas");
+  expect(items[4]).toHaveAttribute("aria-current", "page");
+  expect(screen.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
+});
