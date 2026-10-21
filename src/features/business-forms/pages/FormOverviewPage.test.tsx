@@ -39,9 +39,13 @@ describe("MF1 form overview", () => {
     expect(within(table).getByRole("columnheader", { name: "Por aprobar" })).toBeVisible();
     expect(within(table).getByRole("columnheader", { name: "Respuestas" })).toBeVisible();
     expect(within(table).getByRole("link", { name: "VIS-000024" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    expect(screen.getByRole("button", { name: "Activos (4)" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Activos (4)" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Dados de baja (3)" })).toBeVisible();
     expect(requests.at(-1)?.searchParams.get("pendingOnly")).toBe("true");
+    expect(screen.queryByRole("button", { name: "Ver dados de baja" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("checkbox", { name: "Con algo por aprobar" }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.has("pendingOnly")).toBe(false));
+    expect(screen.getByRole("button", { name: "Activos (4)" })).toHaveAttribute("aria-pressed", "true");
     const viewDeactivated = screen.getByRole("button", { name: "Ver dados de baja" });
     expect(viewDeactivated).toHaveTextContent(/^Ver$/);
     await userEvent.click(viewDeactivated);
@@ -50,6 +54,19 @@ describe("MF1 form overview", () => {
     expect(router.state.location.search).not.toContain("pendingOnly");
     expect(screen.getByRole("checkbox", { name: "Con algo por aprobar" })).not.toBeChecked();
     expect(await screen.findByText("Los formularios dados de baja conservan sus respuestas y lo que espera una decisión.")).toBeVisible();
+  });
+
+  it.each(["Active", "Deactivated"])("marks inactive rows and leaves state segments unselected while pendingOnly crosses %s", async state => {
+    const payload = overview();
+    payload.forms.items[0].deactivatedAtUtc = "2026-10-20T15:00:00Z";
+    setup(["formrecords.read", "formapprovals.decide"], payload);
+    renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&state=" + state);
+    const row = (await screen.findByRole("link", { name: "Registrar visita" })).closest("tr")!;
+    expect(within(row).getByText("Dado de baja", { exact: true })).toBeVisible();
+    const segment = screen.getByRole("group", { name: "Estado de los formularios" });
+    for (const option of within(segment).getAllByRole("button")) expect(option).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("button", { name: "Ver dados de baja" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Los formularios dados de baja conservan sus respuestas y lo que espera una decisión.")).not.toBeInTheDocument();
   });
 
   it.each([

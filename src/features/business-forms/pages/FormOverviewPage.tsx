@@ -40,7 +40,7 @@ export function FormOverviewPage() {
   const data = query.data;
   const formPath = (id: string) => "/formularios/" + id + "/respuestas";
   const columns: Column<FormOverviewRow>[] = [
-    { id: "name", header: t("formColumn"), cell: row => <Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link> },
+    { id: "name", header: t("formColumn"), cell: row => <div className="inline-flex items-center gap-2 whitespace-nowrap"><Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link>{row.deactivatedAtUtc ? <Badge variant="outline">{t("lifecycle.stateWithoutVersion")}</Badge> : null}</div> },
     ...(scope.canDecide ? [{ id: "pending", header: t("overview.pendingColumn"), cell: (row: FormOverviewRow) => row.pendingApprovalCount ? <Link to={formPath(row.id)} aria-label={t("overview.pendingFor", { name: row.name, count: row.pendingApprovalCount })}><Badge variant="warning">{row.pendingApprovalCount}</Badge></Link> : "—" }] : []),
     ...(scope.canRead ? [
       { id: "responses", header: t("overview.responses"), cell: (row: FormOverviewRow) => row.responseCount ?? "—" },
@@ -50,14 +50,14 @@ export function FormOverviewPage() {
   return <Page title={t("overview.title")}>
     <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput maxLength={100} label={t("overview.search")} value={pagination.search ?? ""} onChange={pagination.setSearch}/></div><div className="max-w-full overflow-x-auto">
       <SegmentedControl aria-label={t("overview.state")} options={[
-        { key: "Active", label: t("active") + " (" + (data?.filterCounts.active ?? "—") + ")", pressed: state === "Active", onSelect: () => update({ state: undefined, page: undefined }) },
-        { key: "Deactivated", label: t("deactivated") + " (" + (data?.filterCounts.deactivated ?? "—") + ")", pressed: state === "Deactivated", onSelect: () => update({ state: "Deactivated", page: undefined }) },
+        { key: "Active", label: t("active") + " (" + (data?.filterCounts.active ?? "—") + ")", pressed: !pendingOnly && state === "Active", onSelect: () => update({ state: undefined, page: undefined }) },
+        { key: "Deactivated", label: t("deactivated") + " (" + (data?.filterCounts.deactivated ?? "—") + ")", pressed: !pendingOnly && state === "Deactivated", onSelect: () => update({ state: "Deactivated", page: undefined }) },
       ]}/></div>
       {both ? <CheckboxField label={t("overview.pendingOnly")} checked={pendingOnly} onCheckedChange={checked => update({ pendingOnly: checked ? "true" : undefined, page: undefined })}/> : null}
     </div></FilterBar>
     <div className="flex flex-col gap-4">
-      {state === "Deactivated" ? <Banner>{t("overview.deactivatedHint")}</Banner> : null}
-      {state === "Active" && !!data?.filterCounts.deactivatedPending ? <Banner action={<Button variant="outline" aria-label={t("overview.viewDeactivated")} onClick={() => update({ state: "Deactivated", pendingOnly: undefined, page: undefined })}>{t("common:actions.view")}</Button>}>{t("overview.deactivatedPending", { count: data.filterCounts.deactivatedPending })}</Banner> : null}
+      {!pendingOnly && state === "Deactivated" ? <Banner>{t("overview.deactivatedHint")}</Banner> : null}
+      {!pendingOnly && state === "Active" && !!data?.filterCounts.deactivatedPending ? <Banner action={<Button variant="outline" aria-label={t("overview.viewDeactivated")} onClick={() => update({ state: "Deactivated", pendingOnly: undefined, page: undefined })}>{t("common:actions.view")}</Button>}>{t("overview.deactivatedPending", { count: data.filterCounts.deactivatedPending })}</Banner> : null}
       <Surface><DataTable columns={columns} rows={data?.forms.items ?? []} rowKey={row => row.id}
         isLoading={query.isPending} hasData={!!data} error={query.error ? t("loadFailed") : undefined} onRetry={() => void query.refetch()}
         emptyTitle={t(pagination.search || pendingOnly ? "noMatches" : "responses.noForms")} emptyDescription={t("responses.noFormsHint")}/>

@@ -77,6 +77,18 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await assertOverviewGeometry(page, width);
     await assertContainedTable(page, width, width < 640);
     await page.screenshot({ path: "test-results/form-overview-" + state + "-" + language + "-" + width + ".png", fullPage: true });
+    if (state === "active") {
+      await page.getByRole("checkbox", { name: es ? "Con algo por aprobar" : "With something to approve", exact: true }).click();
+      const inactiveRow = table.getByRole("link", { name: es ? "Control de vehículo" : "Vehicle inspection", exact: true }).locator("xpath=ancestor::tr");
+      await expect(inactiveRow.getByText(es ? "Dado de baja" : "Deactivated", { exact: true })).toBeVisible();
+      await expect(table.getByRole("row")).toHaveCount(4);
+      for (const option of await page.getByRole("group", { name: es ? "Estado de los formularios" : "Form status", exact: true }).getByRole("button").all())
+        await expect(option).toHaveAttribute("aria-pressed", "false");
+      await expect(page.getByRole("button", { name: es ? "Ver dados de baja" : "View deactivated forms", exact: true })).toHaveCount(0);
+      await assertOverviewGeometry(page, width);
+      await assertContainedTable(page, width, width < 640);
+      await page.screenshot({ path: "test-results/form-overview-pending-" + language + "-" + width + ".png", fullPage: true });
+    }
     await assertNoWrites(page);
   });
 }
