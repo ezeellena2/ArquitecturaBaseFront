@@ -310,7 +310,7 @@ Los tableros elegidos de la página «Formularios por WhatsApp» (historia compl
 R1–R3), los ajustes G2/G5 de la versión 75 y D2 de la versión 79 reemplazan la maqueta aislada del plan. I1–I3, elegidos
 el 2026-10-18 en la versión 85, sustituyen el idioma de E/P1 con original obligatorio y traducción opcional; su
 implementación y verificación se distinguen en [el diseño del área](formularios-whatsapp.md). D2 reemplaza
-el detalle vertical de T3/G4/G5; H1–H7 y s1–s4 conservan los tableros elegidos del asistente. El botón que abre un
+el detalle vertical de T3/G4/G5. MF1 y DC0/DC1 ajustado, elegidos el 2026-10-20 con los ajustes de la versión 96, reemplazan la navegación dinámica y la bandeja global: D2 es vista rápida de escritorio y DC1 la pantalla completa, directa en móvil con lectura. H1–H7 y s1–s4 conservan los tableros elegidos del asistente. El botón que abre un
 formulario dice siempre «Abrir formulario». La [calificación local del cierre](../../../ArquitecturaBase/docs/features/formularios.md#cierre-local-de-la-etapa-5-y-del-review-de-la-etapa-4)
 separa integración, contratos, visuales y navegador de la calificación del proveedor y del piloto físico con Meta.
 Capturas, decisiones, alcance, piezas y estado: [formularios-whatsapp.md](formularios-whatsapp.md).

@@ -178,12 +178,12 @@ que reunían el detalle en una sola columna. **Elegido D2**, que reemplaza ese d
 
 | Captura | Qué define |
 | --- | --- |
-| [D2 · Panel lateral sobre la planilla](evidence/formularios-whatsapp/det-d2-panel.png) | **Elegido el 2026-10-17.** Tocar una fila abre la respuesta al costado, sin salir de la planilla; ↑ ↓ (también las flechas del teclado) pasan de respuesta y Escape cierra. Arriba, el estado y los momentos uno por renglón, armados con las reglas que tenía el formulario al llegar la respuesta: Recibida con su origen, Por aprobar → Aprobada o Rechazada y lo que pasó al recibirla, aprobarla o rechazarla, con el resumen de sus acciones; lo que no aplica no se muestra. Mientras espera, Aprobar y Rechazar van en el renglón «Por aprobar». Pestañas Respuesta («pregunta · valor» con las fotos), Fotos, Actividad (las acciones por momento, con Consultar o Reintentar) y PDF (cuando hay copia), más Abrir conversación y Descargar ▾. En el celular ocupa la pantalla, con ↑ ↓ arriba y la decisión fija abajo. Desde el 2026-10-20 es la vista rápida: la pantalla completa es DC1 ajustado (abajo). Entrando por «Por aprobar · N», ↑ ↓ recorren lo que espera, de la más vieja a la más nueva, y el pie del panel lo dice (ajuste del 2026-10-20, versión 96). |
+| [D2 · Panel lateral sobre la planilla](evidence/formularios-whatsapp/det-d2-panel.png) | **Elegido el 2026-10-17.** Tocar una fila abre la respuesta al costado, sin salir de la planilla; ↑ ↓ (también las flechas del teclado) pasan de respuesta y Escape cierra. Arriba, el estado y los momentos uno por renglón, armados con las reglas que tenía el formulario al llegar la respuesta: Recibida con su origen, Por aprobar → Aprobada o Rechazada y lo que pasó al recibirla, aprobarla o rechazarla, con el resumen de sus acciones; lo que no aplica no se muestra. Mientras espera, Aprobar y Rechazar van en el renglón «Por aprobar». Pestañas Respuesta («pregunta · valor» con las fotos), Fotos, Actividad (las acciones por momento, con Consultar o Reintentar) y PDF (cuando hay copia), más Abrir conversación y Descargar ▾. Quien sólo aprueba conserva el panel de metadata en el celular, con ↑ ↓ arriba y la decisión fija abajo; con lectura se abre directamente DC1. Desde el 2026-10-20 es la vista rápida de escritorio: la pantalla completa es DC1 ajustado (abajo). Entrando por «Por aprobar · N», ↑ ↓ recorren lo que espera, de la más vieja a la más nueva, y el pie del panel lo dice (ajuste del 2026-10-20, versión 96). |
 
 D2 está implementado sobre esos tableros: el panel conserva el listado y su orden; los momentos proceden de acciones ya capturadas, no de reglas actuales. El selector Estado y la marca PDF de la planilla usan el contrato del servidor; la decisión sin lectura de respuestas conserva sólo metadata. La [verificación del cierre](../../../ArquitecturaBase/docs/features/formularios.md#cierre-local-de-la-etapa-5-y-del-review-de-la-etapa-4) acredita navegador, capturas visuales y consumidores HTTP actuales, con sus límites explícitos.
 
 Detalle completo (2026-10-20, versión 94 del lienzo): D2 deja de ser el único detalle. **Se eligieron DC0 y DC1 ajustado**,
-por programar: el panel queda como vista rápida y la respuesta se abre también en una pantalla propia. DC1, DC2 y DC3 quedan en el
+implementados localmente: el panel queda como vista rápida y la respuesta se abre también en una pantalla propia. La verificación conjunta y el piloto conservan sus alcances separados. DC1, DC2 y DC3 quedan en el
 lienzo como las alternativas que no se eligieron.
 
 | Captura | Qué define |
@@ -245,7 +245,7 @@ con las mismas palabras que Formularios, el celular conserva la tabla y BA6 marc
 | [BA6 · Una sugerencia hacia un dado de baja](evidence/formularios-whatsapp/baja-ba6-sugerencias.png) | **Ajuste del 2026-10-20, versión 96.** En el editor de sugerencias de otro formulario, la fila que apunta a un dado de baja dice «Dado de baja», solo tiene Quitar y pide quitarla; mientras quede, Guardar sugerencias está apagado. Dar de baja no las borra: dejan de ofrecerse y, si se reactiva, vuelven las que quedaron. «Formulario a sugerir» solo ofrece publicados. |
 
 El menú de Formularios (2026-10-20, versión 88 del lienzo): tres conceptos, MF1–MF3, comparados con las capturas de hoy
-(MF0). **Elegido MF1**, por programar: cambia la decisión 1 (Navegación) y reemplaza el panel de T1 y la bandeja de G3.
+(MF0). **Elegido MF1 e implementado localmente**: cambia la decisión 1 (Navegación) y reemplaza el panel de T1 y la bandeja de G3.
 Se ajustó el mismo día con la guía (versión 96 del lienzo).
 
 | Captura | Qué define |
@@ -254,11 +254,7 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
 
 ## Decisiones de diseño
 
-1. **Navegación.** «Formularios» es una entrada propia del menú principal con su panel, como WhatsApp. Arriba,
-   «Respuestas», con un enlace por formulario publicado que la persona puede ver. Abajo, separado, «Diseñar
-   formularios», solo con permiso de administrar. El panel de la Etapa 3 compone la parte fija con la lista paginada del backend mediante `FormResponsesShell` y el contexto neutral de layouts; no fija formularios en `navigation.ts`.
-   **MF1, elegido el 2026-10-20 y por programar, la cambia:** el grupo se llama «Gestión de formularios» y «Formularios»,
-   la tabla de todos los formularios con lo que cada uno tiene por aprobar, reemplaza «Respuestas» y «Por aprobar».
+1. **Navegación.** El grupo «Gestión de formularios» contiene «Formularios», con la tabla MF1 de formularios y sus pendientes, además de Diseñar formularios, Catálogos y Formularios que faltan según sus permisos. MF1 reemplaza la navegación dinámica por formulario de la Etapa 3 y la bandeja global de G3. La tabla exige leer respuestas o decidir; cada permiso conserva su alcance independiente. Las [reglas vigentes](../../../ArquitecturaBase/docs/features/formularios.md#gestión-de-formularios-y-detalle-completo--2026-10-21) fijan las proyecciones y la navegación D2/DC1.
 2. **Editor en una sola pantalla, sin pestañas.** A la izquierda, las superficies «El formulario», «Preguntas» y
    «Cuando llega una respuesta». A la derecha, la vista previa del celular, que refleja el borrador mientras se edita
    y aclara que la vista oficial de WhatsApp aparece al publicar.
@@ -486,7 +482,7 @@ El recorrido interactivo en IAB sobre componentes productivos y datos sintético
 | [BA4 Eliminar, inglés a 320](evidence/formularios-whatsapp/baja-20261021-ba4-eliminar-en-320.png) | Diálogo completo móvil, prefijo reservado y pie fijo. |
 | [BA6, inglés a 390](evidence/formularios-whatsapp/baja-20261021-ba6-en-390.png) | Destino dado de baja, sólo Quitar y Guardar apagado. |
 
-MF1 y el detalle completo siguen en la [etapa siguiente](../../../ArquitecturaBase/docs/plans/formularios/menu-y-detalle.md). El [piloto real de baja y reactivación](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-baja-reactivación-y-eliminación) conserva su cierre físico separado.
+MF1 y el detalle completo tienen sus [reglas implementadas](../../../ArquitecturaBase/docs/features/formularios.md#gestión-de-formularios-y-detalle-completo--2026-10-21). El [piloto real de baja y reactivación](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-baja-reactivación-y-eliminación) conserva su cierre físico separado.
 
 ## Verificación posterior al review de baja — 2026-10-21
 
