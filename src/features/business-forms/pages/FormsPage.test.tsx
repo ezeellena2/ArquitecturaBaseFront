@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { server } from "@/test/mocks/server";
-import { createFormFixtureStore, fixtureFormId } from "@/test/visual/formFixtures";
+import { createFormFixtureStore, fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
 import { notify } from "@/shared/ui/notifications";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
@@ -320,7 +320,7 @@ describe("Forms routes", () => {
 
 it.each([null,1])("shows Failed independently of previous active version %s",async activeVersionNumber=>{
  setup();
- server.use(http.get("/api/forms/definitions",()=>Response.json({items:[{id:fixtureFormId,name:{es:"Visita",en:"Visit"},prefix:"VIS",questionCount:6,activeVersionNumber,displayState:"Failed",lastChangedAtUtc:"2026-10-10T12:00:00Z",lastChangedBy:null,canEdit:true}],page:1,pageSize:20,totalCount:1,totalPages:1,hasNext:false,hasPrevious:false})));
+ server.use(http.get("/api/forms/definitions",()=>Response.json({items:[{id:fixtureFormId,name:{es:"Visita",en:"Visit"},prefix:"VIS",questionCount:6,activeVersionNumber,displayState:"Failed",lastChangedAtUtc:"2026-10-10T12:00:00Z",lastChangedBy:null,canEdit:true,lifecycle:fixtureLifecycle()}],page:1,pageSize:20,totalCount:1,totalPages:1,hasNext:false,hasPrevious:false})));
  renderRouteWithProviders("/formularios");
  await screen.findByText("No se pudo publicar",{exact:true});
  expect(screen.queryByText(/^No se pudo publicar · versión/)).not.toBeInTheDocument();

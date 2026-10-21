@@ -13,7 +13,7 @@ import { queryClient } from "@/shared/api/queryClient";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
-import { fixtureDefinition, wireDefinition } from "@/test/visual/formFixtures";
+import { fixtureDefinition, fixtureLifecycle, wireDefinition } from "@/test/visual/formFixtures";
 import { readFormPublicationCheck, type FormPublicationCheck } from "../api/response";
 import { openDraftSession } from "../draftSession";
 import type { FormDefinitionSnapshot } from "../model";
@@ -57,7 +57,7 @@ for (const culture of ["es", "en"] as const) describe("publication response budg
     let writes = 0;
     server.use(
       http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture, permissions: ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"] })),
-      http.get("/api/forms/definitions/:id", () => HttpResponse.json({ definition: wireDefinition(definition),
+      http.get("/api/forms/definitions/:id", () => HttpResponse.json({ definition: wireDefinition(definition), lifecycle: fixtureLifecycle(definition.revision),
         capabilities: { canSave: true, canPublish: true, canPreview: false },
         audit: { createdAtUtc: "2026-10-11T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-11T12:00:00Z", lastChangedBy: null },
         publication: { activeVersion: null, currentOperation: null, displayState: "Draft" } })),
