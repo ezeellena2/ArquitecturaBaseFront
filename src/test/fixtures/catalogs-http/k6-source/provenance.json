@@ -1,74 +1,79 @@
 {
-  "artifactSet": "catalog-source",
-  "captures": [
-    {
-      "length": 437,
-      "name": "active-catalog-created.json",
-      "sha256": "7ff0ff0aeeca21b1c373f4454de8d6f613a61149a99fa0b2682dd6c74ccbed75"
-    },
-    {
-      "length": 593,
-      "name": "active-catalog-list-usage.json",
-      "sha256": "26ab410bbd70d706a1d71ef328faf51fc47d02fe34f73e1fb0075a7f997d3b53"
-    },
-    {
-      "length": 827,
-      "name": "catalog-choice-check-invalid.json",
-      "sha256": "d8b5f911dbbb1cdb3226d24501acf8a8a73259d91a680f3a77bc0c89a5d9e14e"
-    },
-    {
-      "length": 742,
-      "name": "catalog-choice-check-valid.json",
-      "sha256": "91a494101e5c92c60fc0e95702a26e3776b8ab948aa40b5b7c67fd4262d0aea0"
-    },
-    {
-      "length": 1535,
-      "name": "catalog-choice-create-receipt.json",
-      "sha256": "2d7dab75ca10ac68ac4640df53f9222cbcad3fabcc5a1b366f89c9bf70d527e9"
-    },
-    {
-      "length": 1376,
-      "name": "catalog-choice-created.json",
-      "sha256": "2ebba6923da8be9e7c37782cd13c83799cdcff35c000cd6a8660006ab6ab480c"
-    },
-    {
-      "length": 1583,
-      "name": "catalog-choice-detail.json",
-      "sha256": "85e17a62951a8b24d46368daf67f4dee8aaaed7a817a5596f64ab08382f6ab84"
-    },
-    {
-      "length": 924,
-      "name": "catalog-choice-invalid-created.json",
-      "sha256": "cd69c9b2e8f937fe76c3549c5b1e0d441eb31a37d801def1fab2a88d32e6dc28"
-    },
-    {
-      "length": 1613,
-      "name": "catalog-choice-reloaded.json",
-      "sha256": "8889cc9cc3bb046f6bc373d73a7c4af14f73dc5c5a008828935fc28b5badfd6e"
-    },
-    {
-      "length": 1518,
-      "name": "catalog-choice-update-receipt.json",
-      "sha256": "9033224e35c84228807a83b7f8f837e3de135671d6d094cfb6f3c18e89286fa9"
-    },
-    {
-      "length": 1359,
-      "name": "catalog-choice-updated.json",
-      "sha256": "ad9ae0ed4b468a528e152d679eb1b8eab3f4f32d95806a6de0921d31d110544f"
-    }
-  ],
-  "schemaVersion": 1,
   "producer": "FormPublicationCheckTests",
-  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "sourceState": [
+    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationCheckTests.cs",
       "sha256": "ec49392c616c66fe43f231108ddee314fcb2578e0c860a0d4600488e2a58a2ad"
     }
   ],
-  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
-  "sourceState": [],
-  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "schemaVersion": 1,
+  "captures": [
+    {
+      "sha256": "f2f672ff0b3fd5e8c3481e035397f8cecd50d93adfc3033055d71fb3e44d5bcc",
+      "length": 437,
+      "name": "active-catalog-created.json"
+    },
+    {
+      "sha256": "57c5f9ff62a2d924866db0be413d59e5ae0313bb1d2d373bd744e625f7e6e08b",
+      "length": 593,
+      "name": "active-catalog-list-usage.json"
+    },
+    {
+      "sha256": "05772b2719d99249087333b6066110d32d383428d5398312440ae46d61fdb9d6",
+      "length": 827,
+      "name": "catalog-choice-check-invalid.json"
+    },
+    {
+      "sha256": "bd968aedcbfd26b9fe102397ceeb2ab1cd5f45eaa2c5ce9bf83e7332eb189d9a",
+      "length": 742,
+      "name": "catalog-choice-check-valid.json"
+    },
+    {
+      "sha256": "a60a7c6694197702cc9e94360ce815aad16a117a806762e9d3939b0a74cd08b3",
+      "length": 1535,
+      "name": "catalog-choice-create-receipt.json"
+    },
+    {
+      "sha256": "78c434e16cfbf4d6be4409f4dae8b3fa9ff1e85efe047fc802b5092386334507",
+      "length": 1376,
+      "name": "catalog-choice-created.json"
+    },
+    {
+      "sha256": "5b02db4b5c007e80262c40370d9ccdf3ac8440c938b8d52b0bcab92d326581a4",
+      "length": 1583,
+      "name": "catalog-choice-detail.json"
+    },
+    {
+      "sha256": "848fb83034eca7911da9e37fe29ba71297a533dba6d7c36cf59133a47ba13d46",
+      "length": 924,
+      "name": "catalog-choice-invalid-created.json"
+    },
+    {
+      "sha256": "d7c238af07d329865870d68293e96857b860bca484d84858abf2b52b34498a9e",
+      "length": 1613,
+      "name": "catalog-choice-reloaded.json"
+    },
+    {
+      "sha256": "479176057ccc14fcb9b66dd21bbaf369f70393abbee5324890976fe5c239529d",
+      "length": 1518,
+      "name": "catalog-choice-update-receipt.json"
+    },
+    {
+      "sha256": "dbd6efed83c011500210aa39c3e11f8a911715bdd6b07dadc4c495f88d50dec9",
+      "length": 1359,
+      "name": "catalog-choice-updated.json"
+    }
+  ],
+  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
+  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "catalog-source",
+  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
 }

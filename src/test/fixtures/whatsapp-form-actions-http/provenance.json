@@ -1,26 +1,12 @@
 {
-  "artifactSet": "whatsapp-actions",
-  "captures": [
-    {
-      "length": 492,
-      "name": "chats-form-actions.json",
-      "sha256": "ab9b9c9873af011ab4f0f69ddbccba29c11e827ef4ce447688c37290280e9307"
-    },
-    {
-      "length": 1602,
-      "name": "thread-form-actions-restricted.json",
-      "sha256": "5ac75f3c638719edf3a3716df0e9dc543dc7ad6140307f71097e0abd088e5d35"
-    },
-    {
-      "length": 1760,
-      "name": "thread-form-actions.json",
-      "sha256": "2b2264c197b0174ce3d76ba734572ac336c4618bb12b181d5670cd20930348b0"
-    }
-  ],
-  "schemaVersion": 1,
   "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario",
-  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "sourceState": [
+    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
@@ -35,8 +21,27 @@
       "sha256": "6aeafef0e7c7edf49a05170c057312550d46b2958a44f1dd1556a440c6031e6b"
     }
   ],
-  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
-  "sourceState": [],
-  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "schemaVersion": 1,
+  "captures": [
+    {
+      "sha256": "fedcfa08c08fbf3d91dd5b22b26230b7e4dfb2e31f04bef3cf9aaf8d2cc7365c",
+      "length": 492,
+      "name": "chats-form-actions.json"
+    },
+    {
+      "sha256": "9eabe4dcf838c9329f8ac155eda53d370c2c430a555b5f1aa499d99993804c67",
+      "length": 1602,
+      "name": "thread-form-actions-restricted.json"
+    },
+    {
+      "sha256": "21a099878299d78cf3f03012ab41a38aa8fd68b62159f3d97f5d71a95be5b2e6",
+      "length": 1760,
+      "name": "thread-form-actions.json"
+    }
+  ],
+  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
+  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "whatsapp-actions",
+  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
 }

@@ -1,94 +1,99 @@
 {
-  "artifactSet": "manual-catalogs",
-  "captures": [
-    {
-      "length": 259,
-      "name": "conflict-en.json",
-      "sha256": "de8a6cba1151c32fc869cece1a8f05bced32c1b82c879f0d8f7b0dd815c830b3"
-    },
-    {
-      "length": 267,
-      "name": "conflict-es.json",
-      "sha256": "02004b7e907130a71746bbeaab24503a93b317537c0bbeeafcfdcb5821bdd7ff"
-    },
-    {
-      "length": 306,
-      "name": "conflict-request.request.json",
-      "sha256": "ab42025328c22b52c1677b29d4c8644104435c5bf3083cb60249c36e6d54477c"
-    },
-    {
-      "length": 451,
-      "name": "create-duplicate-positions-request.request.json",
-      "sha256": "d56d6641edc9fd4f8ff07553b4b5de4e1e261e16b7c0d823dbf038fef390c73a"
-    },
-    {
-      "length": 430,
-      "name": "create-request.request.json",
-      "sha256": "fd76ca19fd574108d1a45461fea9e652cc606f10eb4541a3011bcc69897422c6"
-    },
-    {
-      "length": 474,
-      "name": "created.json",
-      "sha256": "f640b4666d0bf4d22f50cc855142c1e1a4f4df4933303d5789452c599fee0ba4"
-    },
-    {
-      "length": 349,
-      "name": "detail.json",
-      "sha256": "4454d88724188d3f7162d99935294cd408a74dfdb490c0481d1df35cd23b089c"
-    },
-    {
-      "length": 260,
-      "name": "inactive-request.request.json",
-      "sha256": "f2053f12129752a1c990160caa43b9f310fbad7a5b40a36cdbeb5bc275bdace0"
-    },
-    {
-      "length": 626,
-      "name": "items.json",
-      "sha256": "fb782242663db73380663d2de3346392612ebdf9e17700c7a082ee3853219014"
-    },
-    {
-      "length": 379,
-      "name": "list-en.json",
-      "sha256": "2ee0d8965db04e97d4ee58970a60c4018a7517680720353d39990698cfa0f99e"
-    },
-    {
-      "length": 388,
-      "name": "list-es.json",
-      "sha256": "2194db321c172b601b863dc2bb29dce2c39968932333045fec26ad519675234f"
-    },
-    {
-      "length": 229,
-      "name": "missing-revision-request.request.json",
-      "sha256": "6b269a4b479323ca1528f5cae5bd48fe7dde6e58b083488e73a3134c0a9de87e"
-    },
-    {
-      "length": 323,
-      "name": "queued-moves-request.request.json",
-      "sha256": "e11bdb2c5c1ca423189b325e5e31398ceb30811e3f3b5373064798797993594c"
-    },
-    {
-      "length": 492,
-      "name": "update-request.request.json",
-      "sha256": "719d0ffadd1054691626535e11717c933e7f2ed624c17d8ea8b09f2232f554d9"
-    },
-    {
-      "length": 432,
-      "name": "updated.json",
-      "sha256": "aa2cf3f894f791838410a8d7e4b54542cbeed8d8dffb987bf335125d768d799d"
-    }
-  ],
-  "schemaVersion": 1,
   "producer": "FormCatalogEndpointsTests",
-  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "sourceState": [
+    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs",
       "sha256": "5138231678e29d7d501c15f5bbd63b19f4ab3508ed9b789f30e3382e20a881c5"
     }
   ],
-  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
-  "sourceState": [],
-  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "schemaVersion": 1,
+  "captures": [
+    {
+      "sha256": "85a231ac9957590ba6f4133866c042ec237ffe16795ec2c73ff731705226a053",
+      "length": 259,
+      "name": "conflict-en.json"
+    },
+    {
+      "sha256": "20a9ad52d04efd75cd27e6fbbe48b26d49d0fa02aad3fe3ac44538c189beb1b3",
+      "length": 267,
+      "name": "conflict-es.json"
+    },
+    {
+      "sha256": "63f925a0fe83cb8d84b7b855a68831b918c363f7da6a1a74998ca01a1ba522e4",
+      "length": 306,
+      "name": "conflict-request.request.json"
+    },
+    {
+      "sha256": "eafc46fcee9c1cd962786ee41a57ad73da10f52228c82ae919c55e509c09afd2",
+      "length": 451,
+      "name": "create-duplicate-positions-request.request.json"
+    },
+    {
+      "sha256": "fd76ca19fd574108d1a45461fea9e652cc606f10eb4541a3011bcc69897422c6",
+      "length": 430,
+      "name": "create-request.request.json"
+    },
+    {
+      "sha256": "30ebe8ca8bc354bcb5b8fedcfa9b58d6d658f6c3f407e1995ec0c042d4d0f02a",
+      "length": 474,
+      "name": "created.json"
+    },
+    {
+      "sha256": "261fe25f97b3d2358a6b41292f9f5db99f944a5b50d5b50594a9fcd740355a5b",
+      "length": 349,
+      "name": "detail.json"
+    },
+    {
+      "sha256": "f2053f12129752a1c990160caa43b9f310fbad7a5b40a36cdbeb5bc275bdace0",
+      "length": 260,
+      "name": "inactive-request.request.json"
+    },
+    {
+      "sha256": "215cfc858ae48410ad3d4ab9f75dc88269a227e141e20ca2514d13bacc1e4d35",
+      "length": 626,
+      "name": "items.json"
+    },
+    {
+      "sha256": "f0ea4ac180cf2a1006f832a4336c71029c9f596594fd8e77c1365d2b826d133d",
+      "length": 379,
+      "name": "list-en.json"
+    },
+    {
+      "sha256": "436d18e31acf6e96d23ac7bba22c6aab1d9d792306a25c64041562a55f7deee3",
+      "length": 388,
+      "name": "list-es.json"
+    },
+    {
+      "sha256": "6b269a4b479323ca1528f5cae5bd48fe7dde6e58b083488e73a3134c0a9de87e",
+      "length": 229,
+      "name": "missing-revision-request.request.json"
+    },
+    {
+      "sha256": "0012cc9cfe87fffe04fcc5b547766d500e9370560a53e21d13d32a6c61d925c0",
+      "length": 323,
+      "name": "queued-moves-request.request.json"
+    },
+    {
+      "sha256": "a105ed4d1fa34b2e3076684550779102c2555d726c159f4ac2b75bfd942ffa79",
+      "length": 492,
+      "name": "update-request.request.json"
+    },
+    {
+      "sha256": "71b3dd736d5f29a30df0cf61b2439f26d2b35997b3ad50ba3f58d294e17d719a",
+      "length": 432,
+      "name": "updated.json"
+    }
+  ],
+  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
+  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "manual-catalogs",
+  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
 }

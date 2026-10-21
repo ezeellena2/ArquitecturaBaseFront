@@ -1,26 +1,12 @@
 {
-  "artifactSet": "whatsapp-audio",
-  "captures": [
-    {
-      "length": 53,
-      "name": "audio-request.json",
-      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed"
-    },
-    {
-      "length": 975,
-      "name": "audio-thread-completed.json",
-      "sha256": "9107fbd30c75cb596d632238197b1909f7a7017502efa4be32c5e8882d1b414d"
-    },
-    {
-      "length": 933,
-      "name": "audio-thread-pending.json",
-      "sha256": "c4180b0d490c72f14d5d839efe49dbe5f053ae04b5f9a4cf0c4a84564d4b003b"
-    }
-  ],
-  "schemaVersion": 1,
   "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
-  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "sourceState": [
+    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs",
@@ -31,8 +17,27 @@
       "sha256": "c65bb2dc8f403bb0e4ce66b75aeb3f5a3558eef6d2b5b7bf1ba17f02e1a47348"
     }
   ],
-  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
-  "sourceState": [],
-  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "schemaVersion": 1,
+  "captures": [
+    {
+      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
+      "length": 53,
+      "name": "audio-request.json"
+    },
+    {
+      "sha256": "8957544cae0668ff38e919b1a3c3862373d04f798946ad71923fc4f1e1e483f8",
+      "length": 975,
+      "name": "audio-thread-completed.json"
+    },
+    {
+      "sha256": "bb9968900a12936c05263989cfe9c974f3f38b1d7af073d4d1b76bb840298fd7",
+      "length": 933,
+      "name": "audio-thread-pending.json"
+    }
+  ],
+  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
+  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "whatsapp-audio",
+  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
 }

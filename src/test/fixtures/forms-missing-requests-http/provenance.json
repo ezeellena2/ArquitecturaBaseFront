@@ -1,41 +1,12 @@
 {
-  "artifactSet": "missing-requests",
-  "captures": [
-    {
-      "length": 275,
-      "name": "conflict.json",
-      "sha256": "c67757ff0c7d4537694aa90b145b37292beecf253347fd2a0272e2d2a07dfb7e"
-    },
-    {
-      "length": 571,
-      "name": "discarded-en.json",
-      "sha256": "6309bafe41842797dcda0be736ab73671ac9198494d0a2ff83c701bdecde04c2"
-    },
-    {
-      "length": 577,
-      "name": "discarded-es.json",
-      "sha256": "4884708db6b012d03f48847e7c4e64546f02ce9b0f1162098594d361bc06cb39"
-    },
-    {
-      "length": 249,
-      "name": "forbidden.json",
-      "sha256": "c5b2e1104bb40134c976aab272857c6bfe3a2b9d3e07cd578636bd9e07107acd"
-    },
-    {
-      "length": 461,
-      "name": "pending-en.json",
-      "sha256": "3e70c790558c8c8cb585d0a3366ae0b4ff12872767f24975a02e98d91ba263e4"
-    },
-    {
-      "length": 467,
-      "name": "pending-es.json",
-      "sha256": "b8320715b5a2318224ed773d5f85c0a99491d3174c31d96413376942174dae50"
-    }
-  ],
-  "schemaVersion": 1,
   "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
-  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "sourceState": [
+    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs",
@@ -50,8 +21,42 @@
       "sha256": "a8e3f9ee5e3b43894da1ea36e5cdae275c94b977b9c9ef18d013d5f42f38a84f"
     }
   ],
-  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
-  "sourceState": [],
-  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "schemaVersion": 1,
+  "captures": [
+    {
+      "sha256": "2818251057b745785184d5066846926d318dcb3dfe0eb1aa07c88ca800ab6f95",
+      "length": 275,
+      "name": "conflict.json"
+    },
+    {
+      "sha256": "b1102725eec7454efbd33ce259c45ea0f6a1dc6b7ec709835dc4d5809590ca44",
+      "length": 571,
+      "name": "discarded-en.json"
+    },
+    {
+      "sha256": "5f6e9d7e73c0489817d3098de75a1b71243ef3501be7d30ea20294ab5fc6c3f3",
+      "length": 577,
+      "name": "discarded-es.json"
+    },
+    {
+      "sha256": "5ab370e2b4b52a0c179bb9e9d6bf65db82523cb4e47d1a57d0ff0e0875950738",
+      "length": 249,
+      "name": "forbidden.json"
+    },
+    {
+      "sha256": "2b7462ca0612032c544a6f11b9c1f0308946a57a8321003e422e28d764babb91",
+      "length": 461,
+      "name": "pending-en.json"
+    },
+    {
+      "sha256": "77da3497568f8f3c8a1d7d5c0a6bab3474356419ab9f3005a8791db54dca0bf5",
+      "length": 467,
+      "name": "pending-es.json"
+    }
+  ],
+  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
+  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "missing-requests",
+  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
 }

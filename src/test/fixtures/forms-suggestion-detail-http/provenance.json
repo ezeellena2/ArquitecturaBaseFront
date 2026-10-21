@@ -1,21 +1,12 @@
 {
-  "artifactSet": "suggestion-details",
-  "captures": [
-    {
-      "length": 2059,
-      "name": "detail-en.json",
-      "sha256": "60bb8e26537168fd6c1f5d62bbe95e8f4522dddfd0f421a35e15b010c4b924b9"
-    },
-    {
-      "length": 2063,
-      "name": "detail-es.json",
-      "sha256": "48155c26b511f2965793c4f30872382a9195d8f4b59fed35be56d3e00333edc1"
-    }
-  ],
-  "schemaVersion": 1,
   "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
-  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "sourceState": [
+    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  ],
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs",
@@ -26,8 +17,22 @@
       "sha256": "380024a8f42df81af6bad91fa27ad7e1371bb951a8fd4d77ec0826f89d94f653"
     }
   ],
-  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
-  "sourceState": [],
-  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "schemaVersion": 1,
+  "captures": [
+    {
+      "sha256": "49aea04a1cb47e332d28e3cc21741f2b97e2e57ca6575d1cb2da5efe78f6137f",
+      "length": 2059,
+      "name": "detail-en.json"
+    },
+    {
+      "sha256": "2587caf0d93a1eaed786eb2e37d130b0ecfdf7362c4c5d9a5d848a2bf7a44e20",
+      "length": 2063,
+      "name": "detail-es.json"
+    }
+  ],
+  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
+  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "suggestion-details",
+  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
 }
