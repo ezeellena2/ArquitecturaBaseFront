@@ -359,6 +359,7 @@ Sin elección; no se implementan sin ella.
 | WhatsApp · Orientación y mensajes del sistema | backend | Panel 2 desactualizado: Meta aprobó la invitación como Marketing, con otro texto |
 | Plantilla · Listado | ejemplo `/usuarios` | Se duplica para cada listado |
 | Formularios por WhatsApp | `/formularios`, respuestas, aprobación, diseño PDF y chat | [Diseño y estado de calificación](formularios-whatsapp.md) |
+| Casos del asistente | Pantalla Asistente del panel de WhatsApp y el chat | [Tableros elegidos, por programar](asistente-casos.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
