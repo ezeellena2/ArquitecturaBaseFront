@@ -34,6 +34,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Superficie con título | `Surface` | Título y contenido; `headingLevel` conserva la jerarquía y `titleRef` permite devolver el foco |
 | Formulario | `FormField`, `Input`, `Textarea`, `NativeSelect`, campos especializados | Valores, reglas y errores de campo |
 | Formulario corto | `DialogContent`, `DialogHeader`, `DialogFooter` | Campos y acciones; conservar `useRestoreFocusOnClose` |
+| Decisión extensa en móvil | `DialogContent mobileFullscreen`, cuerpo desplazable y `DialogFooter` fuera del scroll | Variante optativa; conserva el diálogo predeterminado en otros usos |
 | Decisión previa | `ConfirmDialog` | Consecuencia y acción concreta |
 | Casillas y alternativas | `CheckboxField`, `RadioGroupField`, `Checkbox` para tablas | Opciones, estado y validación |
 | Íconos y acciones | `shared/ui/icons`, `IconButton`, `RowActions` | Nombre traducido, permiso y operación |
@@ -107,6 +108,7 @@ del build ni agregan rutas productivas. No requiere una API ni hace escrituras r
 Muestra los componentes reales con sus variantes, campos normales e inválidos, carga, vacío y recuperación.
 Incluye Input, Textarea, NativeSelect, Select, MultiSelect, radios, checks, búsqueda y segmentados,
 además de botones con ícono, tooltips de acciones deshabilitadas y un formulario corto en Dialog.
+La variante `?scenario=mobile-dialog` muestra `mobileFullscreen`: al abrir el formulario, el cuerpo se desplaza y el pie conserva sus acciones en móvil.
 También permite revisar rutas existentes con `?screen=/usuarios`, `?screen=/roles/support` o `?screen=/perfil`.
 
 Preparación en otra instalación:

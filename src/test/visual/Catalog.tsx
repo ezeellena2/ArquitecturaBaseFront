@@ -31,6 +31,7 @@ import { MessageHistory } from "@/shared/ui/MessageHistory";
 // Referencia local con componentes reales, no una segunda implementación visual.
 export function Catalog() {
   const { t, i18n } = useTranslation(["common", "whatsapp"]);
+  const mobileDialog = new URLSearchParams(location.search).get("scenario") === "mobile-dialog";
   const formPieces = new URLSearchParams(location.search).get("scenario") === "form-controls";
   const tabPieces = new URLSearchParams(location.search).get("scenario") === "tabs";
   const [confirm, setConfirm] = useState(false);
@@ -132,11 +133,14 @@ export function Catalog() {
     </div>
     <ConfirmDialog open={confirm} onOpenChange={setConfirm} title={t("users:actions.delete")} description={text.name} confirmLabel={t("users:actions.delete")} onConfirm={() => {}} />
     {formOpen ? <Dialog open onOpenChange={setFormOpen}>
-      <DialogContent onCloseAutoFocus={restoreFocus}>
+      <DialogContent mobileFullscreen={mobileDialog} onCloseAutoFocus={restoreFocus}>
         <DialogHeader><DialogTitle>{pieces.modalTitle}</DialogTitle><DialogDescription>{pieces.modalDescription}</DialogDescription></DialogHeader>
-        <form className="flex flex-col gap-4" onSubmit={event => { event.preventDefault(); setFormOpen(false); notify({ id: "catalog:form", kind: "success", message: text.notice }); }}>
+        <form className={mobileDialog ? "flex min-h-0 flex-1 flex-col gap-4" : "flex flex-col gap-4"} onSubmit={event => { event.preventDefault(); setFormOpen(false); notify({ id: "catalog:form", kind: "success", message: text.notice }); }}>
+          <div className={mobileDialog ? "min-h-0 flex-1 space-y-4 overflow-y-auto" : "contents"}>
           <FormField label={text.name}><Input defaultValue="Ana Pérez" /></FormField>
           <FormField label={pieces.description}><Textarea defaultValue="" /></FormField>
+          {mobileDialog ? Array.from({length:12},(_,index)=><p key={index} className="text-sm">{text.hint}</p>) : null}
+          </div>
           <DialogFooter><Button type="button" variant="outline" onClick={() => setFormOpen(false)}>{t("actions.cancel")}</Button><Button type="submit">{t("actions.save")}</Button></DialogFooter>
         </form>
       </DialogContent>

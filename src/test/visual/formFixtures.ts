@@ -121,10 +121,10 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
    return {activeVersion,currentOperation:operation?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision,state,stage:state==="Published"?"Complete":state==="Failed"?"Upload":"Accepted",requiresReview:state==="Uncertain",canRetry:false,requestId:operation.requestId,recoveryPath:operation.recoveryPath}:null,displayState:state};
   }
   const lifecycles = new Map<string, FormLifecycle>();
-  if (scenario.startsWith("forms-lifecycle")) lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025", deletionUnavailableReason: "HasResponses" }));
+  if (scenario.startsWith("forms-lifecycle")) lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025", deletionUnavailableReason: "HasResponses", deprecationState: "Pending" }));
   if (scenario.includes("lifecycle-deactivated")) lifecycles.set(fixtureFormId, fixtureLifecycle(1, { deactivatedAtUtc: "2026-10-20T12:00:00Z", deactivatedBy: audit.lastChangedBy, responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025" }));
   if (scenario === "forms-lifecycle-deletable") lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 0, canDelete: true }));
-  if (scenario === "forms-lifecycle-open") lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025", lastOpenSessionExpiresAtUtc: "2026-10-22T18:00:00Z", deletionUnavailableReason: "OpenSends" }));
+  if (scenario === "forms-lifecycle-open") lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025", lastOpenSessionExpiresAtUtc: "2026-10-22T18:00:00Z", deletionUnavailableReason: "OpenSends", deprecationState: "Pending" }));
   if (scenario === "forms-lifecycle-table") {
     const original = definitions.get(fixtureFormId)!;
     definitions.set(guid(70), { ...original, id: guid(70), prefix: "ENT", name: { es: "Registrar entrega", en: "Register delivery" }, prefixLocked: false });
@@ -132,7 +132,13 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     definitions.set(guid(71), { ...original, id: guid(71), prefix: "CTL", name: { es: "Control anterior", en: "Previous inspection" } });
     publications.set(guid(72), { definitionId: guid(71), requestId: guid(72), operationId: guid(73), versionId: guid(74), versionNumber: 1, draftRevision: 1, state: "Accepted", acceptedAtUtc: audit.createdAtUtc, recoveryPath: "/api/forms/definitions/" + guid(71) + "/publications/" + guid(72) });
     publicationStates.set(guid(72), "Published"); publicationCultures.set(guid(72), ["es", "en"]);
-    lifecycles.set(guid(71), fixtureLifecycle(1, { deactivatedAtUtc: "2026-10-20T12:00:00Z", deactivatedBy: audit.lastChangedBy, responseCount: 8 }));
+    lifecycles.set(guid(71), fixtureLifecycle(1, { deactivatedAtUtc: "2026-10-20T12:00:00Z", deactivatedBy: audit.lastChangedBy, responseCount: 8, deprecationState: "Pending", lastOpenSessionExpiresAtUtc: "2026-10-22T18:00:00Z", deletionUnavailableReason: "HasResponses" }));
+  }
+  if (scenario.includes("lifecycle-deactivated")) {
+    const state = scenario.endsWith("-uncertain") ? "Uncertain" : scenario.endsWith("-deprecated") ? "Deprecated" : "Pending";
+    lifecycles.set(fixtureFormId, { ...lifecycles.get(fixtureFormId)!, deprecationState: state,
+      lastOpenSessionExpiresAtUtc: state === "Pending" ? "2026-10-22T18:00:00Z" : null,
+      deprecatedAtUtc: state === "Deprecated" ? "2026-10-21T18:00:00Z" : null });
   }
   function lifecycleOf(definition: FormDefinitionSnapshot): FormLifecycle {
     const stored = lifecycles.get(definition.id);
