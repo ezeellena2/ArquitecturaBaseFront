@@ -14,9 +14,9 @@ function findActiveLabelKey(pathname: string): string | undefined {
   return navigationLinks.find((entry) => entry.to === pathname)?.labelKey ?? extraLabelKeys[pathname];
 }
 
-function Separator() {
+function Separator({ className = "" }: { className?: string }) {
   return (
-    <li aria-hidden="true" className="text-[var(--color-content-muted)]">
+    <li aria-hidden="true" className={"text-[var(--color-content-muted)] " + className}>
       /
     </li>
   );
@@ -98,12 +98,13 @@ export function Breadcrumbs() {
 
 function ResponseBreadcrumbs({ formId, detail, leaf, parent }: { formId?: string; detail: boolean; leaf?: string; parent?: string }) {
   const { t } = useTranslation();
+  const ancestorClassName = detail && formId ? "hidden sm:block" : "";
   return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm">
-    <li><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator/>
-    <li className="truncate text-[var(--color-content-muted)]">{t("navigation.forms")}</li><Separator/>
-    {formId ? <><li><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.formOverview")}</Link></li><Separator/></> : null}
-    {detail && formId ? <><li className="truncate"><Link to={"/formularios/" + formId + "/respuestas"} className={linkClassName}>{parent ?? t("navigation.responses")}</Link></li><Separator/></> : null}
-    <li aria-current="page" className="truncate font-medium">{leaf ?? t(formId ? "navigation.responses" : "navigation.formOverview")}</li>
+    <li className={ancestorClassName}><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator className={ancestorClassName}/>
+    <li className={"truncate text-[var(--color-content-muted)] " + ancestorClassName}>{t("navigation.forms")}</li><Separator className={ancestorClassName}/>
+    {formId ? <><li className={ancestorClassName}><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.formOverview")}</Link></li><Separator className={ancestorClassName}/></> : null}
+    {detail && formId ? <><li className="min-w-0 truncate"><Link to={"/formularios/" + formId + "/respuestas"} className={linkClassName}>{parent ?? t("navigation.responses")}</Link></li><Separator/></> : null}
+    <li aria-current="page" className={"truncate font-medium" + (detail ? " shrink-0" : "")}>{leaf ?? t(formId ? "navigation.responses" : "navigation.formOverview")}</li>
   </ol></nav>;
 }
 

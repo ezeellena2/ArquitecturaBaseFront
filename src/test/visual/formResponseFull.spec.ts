@@ -7,6 +7,9 @@ const secondPath = sheetPath + "/" + responseFullFixtureIds.second + "/completa"
 const fixtureCalls = (page: Page) => page.evaluate(() => (window as typeof window & {
   formResponseFullFixture: { calls: { method: string; path: string }[] };
 }).formResponseFullFixture.calls);
+const routerLocation = (page: Page) => page.evaluate(() => (window as typeof window & {
+  visualRouterLocation: { pathname: string; search: string };
+}).visualRouterLocation);
 async function assertReadOnly(page: Page) {
   const calls = await fixtureCalls(page);
   expect(calls.filter(call => call.method !== "GET" &&
@@ -42,6 +45,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: formName, level: 1, exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await assertSheetScroll(page, width);
+    const search = page.getByRole("searchbox", { name: en ? "Search long text answers" : "Buscar en textos largos", exact: true });
+    const privateSearch = "Texto"; // Matches the observed long-text fixture while remaining private route state.
+    const searches = async () => (await fixtureCalls(page)).filter(call => call.method === "POST" && call.path.endsWith("/records/search")).length;
+    const beforeSearch = await searches();
+    await search.fill(privateSearch);
+    await expect.poll(searches).toBe(beforeSearch + 1);
     await page.getByRole("link", { name: "TEST-000002", exact: true }).click();
     if (!mobile) {
       const quick = page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
@@ -50,7 +59,21 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await quick.getByRole("link", { name: en ? "Open in full view" : "Abrir en pantalla completa", exact: true }).click();
     }
     await expect(page.getByRole("heading", { name: "TEST-000002", level: 1, exact: true })).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe(firstPath);
+    expect(await routerLocation(page)).toEqual({ pathname: firstPath, search: "" });
+    if (mobile) {
+      const breadcrumbs = page.getByRole("navigation", { name: en ? "Breadcrumb" : "Migas de pan", exact: true });
+      const parent = breadcrumbs.getByRole("link", { name: formName, exact: true }).locator("..");
+      const leaf = breadcrumbs.locator('[aria-current="page"]');
+      await expect(parent).toBeVisible();
+      await expect(leaf).toHaveText("TEST-000002");
+      expect(await parent.evaluate(node => {
+        const range = document.createRange();
+        const text = node.querySelector("a")!.firstChild!;
+        range.setStart(text, 0); range.setEnd(text, text.textContent!.indexOf(" "));
+        return node.clientWidth >= range.getBoundingClientRect().width;
+      })).toBe(true);
+      expect(await leaf.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+    }
     await expect(page.getByRole("table", { includeHidden: true })).toHaveCount(0);
     const answer = page.getByRole("region", { name: en ? "Response" : "Respuesta", exact: true });
     const activity = page.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true });
@@ -90,13 +113,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await assertContained(page, width);
     await page.screenshot({ path: "test-results/response-full-activity-" + language + "-" + width + ".png", fullPage: true });
     const view = pdfAction.getByRole("button", { name: en ? "View PDF" : "Ver PDF", exact: true });
-    const fullUrl = page.url();
+    const fullLocation = await routerLocation(page);
     await view.click();
     const dialog = page.getByRole("dialog", { name: en ? "Fixed copy" : "Copia fija", exact: true });
     await expect(dialog.locator("iframe")).toBeVisible();
-    expect(page.url()).toBe(fullUrl);
+    expect(await routerLocation(page)).toEqual(fullLocation);
     expect((await fixtureCalls(page)).filter(call => call.path.includes("/documents/"))).toHaveLength(1);
     await page.screenshot({ path: "test-results/response-full-pdf-" + language + "-" + width + ".png", fullPage: true });
+    await dialog.focus(); // The native PDF frame otherwise owns keyboard events.
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0); await expect(view).toBeFocused();
     await page.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).click();
@@ -106,13 +130,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const focusOwner = page.locator("main [tabindex='-1'][aria-busy]");
     await focusOwner.focus(); await page.keyboard.press("ArrowDown");
     await expect(page.getByRole("heading", { name: "TEST-000001", level: 1, exact: true })).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe(secondPath);
+    expect((await routerLocation(page)).pathname).toBe(secondPath);
     await expect(focusOwner).toBeFocused();
     await page.keyboard.press("ArrowUp");
     await expect(page.getByRole("heading", { name: "TEST-000002", level: 1, exact: true })).toBeVisible();
     await page.getByRole("link", { name: en ? "Back to responses" : "Volver a las respuestas", exact: true }).click();
     const row = page.getByRole("link", { name: "TEST-000002", exact: true });
     await expect(row).toBeFocused();
+    await expect(page.getByRole("searchbox", { name: en ? "Search long text answers" : "Buscar en textos largos", exact: true })).toHaveValue(privateSearch);
     await expect(row.locator("xpath=ancestor::tr")).toHaveAttribute("aria-selected", "true");
     await assertSheetScroll(page, width); await assertReadOnly(page);
   });
@@ -127,7 +152,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const panel = page.getByRole(width < 640 ? "dialog" : "region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
     await expect(panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true })).toBeVisible();
     await expect(panel.getByRole("link", { name: en ? "Open in full view" : "Abrir en pantalla completa", exact: true })).toHaveCount(0);
-    expect(new URL(page.url()).pathname).toBe(sheetPath);
+    expect((await routerLocation(page)).pathname).toBe(sheetPath);
     await page.evaluate(() => document.fonts.ready); await assertContained(page, width);
     await page.screenshot({ path: "test-results/response-full-decide-" + language + "-" + width + ".png", fullPage: true });
     await page.keyboard.press("Escape");

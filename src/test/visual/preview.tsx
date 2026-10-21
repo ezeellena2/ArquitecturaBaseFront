@@ -31,5 +31,9 @@ if ((screen !== "/" || parameters.get("scenario")?.startsWith("assistant-")) && 
 const router = createMemoryRouter([...routes, { Component: AppLayout, children: [{ path: "/catalogo", Component: Catalog }, { path: "/form-replies", Component: FormReplyPreview }, { path:"/form-files",Component:FormFilesPreview }, { path: "/formularios/catalogos-preview", Component: CatalogComponentsPreview }] }], {
   initialEntries: [screen],
 });
+// Read-only test observation of the actual in-memory route; no history state or private workspace data.
+const captureLocation = () => Object.assign(window, { visualRouterLocation: { pathname: router.state.location.pathname, search: router.state.location.search } });
+captureLocation();
+router.subscribe(captureLocation);
 createRoot(document.getElementById("root")!).render(<AppProviders><RouterProvider router={router} /></AppProviders>);
 

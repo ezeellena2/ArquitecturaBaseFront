@@ -10,6 +10,7 @@
 - **Gestión de formularios.** MF1 tiene un solo enlace «Formularios», con RecordsRead OR ApprovalsDecide y el conteo global sólo para quien decide. `FormsOverviewNavigationContext` aporta cantidad, carga y reintento; `setActive` comunica visibilidad a app. No muestra formularios individuales ni «Por aprobar» global. La línea sobre Formularios o WhatsApp sólo aparece si la sección tiene algo visible.
 - **Cajón** (menos de 768 px): se cierra al navegar y con Escape; el ☰ de `Topbar` existe sólo en el teléfono, con nombre fijo y `aria-expanded`.
 - **Migas.** Inicio, el grupo como texto (no enlace) y la pantalla. Una ruta hija enlaza a la pantalla de la que cuelga y termina en la hoja que fija la pantalla con `useBreadcrumbLeaf`; hasta entonces el enlace queda último sin `aria-current`. La barra final no cambia la pantalla y una ruta del menú ignora una hoja que haya quedado.
+- **Detalle de respuesta móvil.** En las migas del detalle, el teléfono conserva sólo el formulario padre y el número de respuesta; sus ancestros y separadores se ocultan juntos. Escritorio mantiene la jerarquía completa. La geometría de DC1 comprueba espacio legible para el padre y número completo.
 - **Menú de usuario.** Nombre, correo o número formateado (`accountName`); el idioma se aplica y se guarda en el perfil, y vuelve atrás si falla. El cierre de sesión sigue la regla del caparazón ([guía padre](../AGENTS.md)).
 
 ## Referencias
