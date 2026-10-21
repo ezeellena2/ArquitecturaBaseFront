@@ -28,8 +28,8 @@ it("allows authoritative deletion with an unknown response count and preserves u
  const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" sin guardar");
  const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));
  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});
- expect(within(dialog).getByText(/El prefijo queda reservado/)).toBeVisible();
- expect(within(dialog).getByText(/Si llegó a publicarse, sus Flows se deprecan cuando no quedan envíos abiertos/)).toBeVisible();
+ expect(within(dialog).getByText(/El prefijo VIS queda reservado/)).toBeVisible();
+ expect(within(dialog).getByText(/En WhatsApp no se deshace. Sus Flows se deprecan cuando no quedan envíos abiertos/)).toBeVisible();
  expect(store.calls.filter(call=>call.method==="DELETE")).toHaveLength(0);
  await userEvent.click(within(dialog).getByRole("button",{name:"Cancelar"}));
  await waitFor(()=>expect(screen.getByRole("button",{name:"Acciones del formulario"})).toHaveFocus());

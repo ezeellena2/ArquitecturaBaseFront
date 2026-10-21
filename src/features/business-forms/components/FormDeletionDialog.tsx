@@ -4,14 +4,15 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { deleteForm, fetchFormDefinition } from "../api/forms";
 import type { FormReadScope } from "../hooks/useFormQueries";
 
-export function FormDeletionDialog({ id, name, revision, scope, onDeleted, onClose, focusFallback, onChanged }: {
- id: string; name: string; revision: number; scope: FormReadScope;
+export function FormDeletionDialog({ id, name, prefix, hasPublishedVersion, revision, scope, onDeleted, onClose, focusFallback, onChanged }: {
+ id: string; name: string; prefix: string; hasPublishedVersion: boolean; revision: number; scope: FormReadScope;
  onChanged?: () => void; onDeleted: () => void | Promise<void>; onClose: () => void; focusFallback?: RefObject<HTMLElement | null>;
 }) {
  const { t } = useTranslation("forms");
@@ -58,6 +59,8 @@ export function FormDeletionDialog({ id, name, revision, scope, onDeleted, onClo
   <DialogContent mobileFullscreen showCloseButton={!busy} onCloseAutoFocus={restoreFocus}>
    <DialogHeader className="shrink-0"><DialogTitle className="pr-6">{t("lifecycle.deleteTitle", { name })}</DialogTitle><DialogDescription>{t("lifecycle.deleteDescription")}</DialogDescription></DialogHeader>
    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+   <p className="text-sm">{t("lifecycle.reservedPrefix", { prefix })}</p>
+   {hasPublishedVersion ? <Banner tone="warning">{t("lifecycle.deletePublishedHint")}</Banner> : null}
    <p className="text-sm">{t("lifecycle.deleteHint")}</p>
    {blocked ? <p role="status" className="text-sm">{t(denied ? "lifecycle.noDeletePermission" : "lifecycle.deleteChanged")}</p> : null}
    {cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: cooldown.seconds })}</p> : null}

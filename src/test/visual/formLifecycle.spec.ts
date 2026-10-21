@@ -35,7 +35,13 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
   await assertContained(page,width);
   await page.screenshot({path:"test-results/form-lifecycle-ba1-active-"+language+"-"+width+".png",fullPage:true});
   await area.evaluate(node=>{node.scrollLeft=node.scrollWidth;});
-  await expect(page.getByRole("button",{name:es?"Eliminar Registrar entrega":"Delete Register delivery",exact:true})).toBeVisible();
+  const draftDelete=page.getByRole("button",{name:es?"Eliminar Registrar entrega":"Delete Register delivery",exact:true});
+  await expect(draftDelete).toBeVisible();await draftDelete.click();
+  const draftDialog=page.getByRole("dialog");await expect(draftDialog.getByText(es?"El prefijo ENT queda reservado.":"The ENT prefix remains reserved.",{exact:true})).toBeVisible();
+  await expect(draftDialog.getByText(es?/En WhatsApp no se deshace/:/This cannot be undone on WhatsApp/)).toHaveCount(0);
+  await assertMobileDialog(draftDialog,width,900);await draftDialog.locator(".overflow-y-auto").first().evaluate(node=>{node.scrollTop=0;});
+  await page.screenshot({path:"test-results/form-lifecycle-delete-draft-"+language+"-"+width+".png",fullPage:true});
+  await draftDialog.press("Escape");await expect(draftDelete).toBeFocused();
   const inactive=segment.getByRole("button",{name:es?"Dados de baja (1)":"Deactivated (1)",exact:true});
   await inactive.scrollIntoViewIfNeeded();await inactive.click();
   await expect(table.getByRole("link",{name:es?"Control anterior":"Previous inspection",exact:true})).toBeVisible();
@@ -59,6 +65,7 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
     if(state==="reactivate") await page.getByRole("button",{name:es?"Reactivar":"Reactivate",exact:true}).click();
     else {const {menu}=await openMenu(page,es);await menu.getByRole("menuitem",{name:state==="delete"?(es?/Eliminar/:/Delete/):(es?/Dar de baja/:/Deactivate/)}).click();}
     const dialog=page.getByRole("dialog");await expect(dialog).toBeVisible();
+    if(state==="delete") {await expect(dialog.getByText(es?"El prefijo VIS queda reservado.":"The VIS prefix remains reserved.",{exact:true})).toBeVisible();await expect(dialog.getByText(es?"En WhatsApp no se deshace. Sus Flows se deprecan cuando no quedan envíos abiertos.":"This cannot be undone on WhatsApp. Its Flows are deprecated once no open sends remain.",{exact:true})).toBeVisible();}
     const confirm=dialog.getByRole("button",{name:state==="reactivate"?(es?"Reactivar con la versión 2":"Reactivate with version 2"):state==="delete"?(es?"Eliminar":"Delete"):(es?"Dar de baja":"Deactivate"),exact:true});
     await expect(confirm).toBeEnabled();
     await assertMobileDialog(dialog,width,900);
