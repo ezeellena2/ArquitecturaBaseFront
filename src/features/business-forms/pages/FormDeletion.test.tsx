@@ -126,7 +126,7 @@ for(const publicationOpen of [false,true]) {
   const view=renderRouteWithProviders("/formularios/"+fixtureFormId);
   const menu=await openEditorMenu();
   expect(within(menu).queryByRole("menuitem",{name:/Eliminar/})).not.toBeInTheDocument();
-  const explanation=within(menu).getByText("Tiene respuestas: dalo de baja para conservarlas.");
+  const explanation=within(menu).getByText("Tiene respuestas y no se puede eliminar.");
   expect(explanation).toBeVisible();expect(explanation.closest('[role="menuitem"]')).toBeNull();
   view.unmount();queryClient.clear();
   renderRouteWithProviders("/formularios");

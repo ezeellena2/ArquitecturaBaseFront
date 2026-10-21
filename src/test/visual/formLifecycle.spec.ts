@@ -54,7 +54,7 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
     await expect(page.getByText(es?/se deprecan cuando venzan los envíos abiertos/:/they will be deprecated when open sends expire/)).toBeVisible();
     const {menu}=await openMenu(page,es);
     await expect(menu.getByRole("menuitem",{name:es?/Eliminar/:/Delete/})).toHaveCount(0);
-    await expect(menu.getByText(es?"Tiene respuestas: dalo de baja para conservarlas.":"It has responses: deactivate it to keep them.",{exact:true})).toBeVisible();
+    await expect(menu.getByText(es?"Tiene respuestas y no se puede eliminar.":"It has responses and cannot be deleted.",{exact:true})).toBeVisible();
    } else {
     if(state==="reactivate") await page.getByRole("button",{name:es?"Reactivar":"Reactivate",exact:true}).click();
     else {const {menu}=await openMenu(page,es);await menu.getByRole("menuitem",{name:state==="delete"?(es?/Eliminar/:/Delete/):(es?/Dar de baja/:/Deactivate/)}).click();}

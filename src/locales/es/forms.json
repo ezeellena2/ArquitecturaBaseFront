@@ -953,7 +953,7 @@
     "lastOpenSend": "El último envío abierto vence el {{date}}.",
     "deletionReasons": {
       "PublicationInProgress": "Hay una publicación en curso.",
-      "HasResponses": "Tiene respuestas: dalo de baja para conservarlas.",
+      "HasResponses": "Tiene respuestas y no se puede eliminar.",
       "OpenSends": "Tiene envíos vigentes o respuestas en proceso.",
       "Unavailable": "No se puede eliminar este formulario."
     },

@@ -953,7 +953,7 @@
     "lastOpenSend": "The last open send expires on {{date}}.",
     "deletionReasons": {
       "PublicationInProgress": "A publication is in progress.",
-      "HasResponses": "It has responses: deactivate it to keep them.",
+      "HasResponses": "It has responses and cannot be deleted.",
       "OpenSends": "It has valid open sends or replies being processed.",
       "Unavailable": "This form cannot be deleted."
     },
