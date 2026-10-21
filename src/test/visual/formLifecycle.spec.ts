@@ -110,3 +110,10 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) for(co
   await page.screenshot({path:"test-results/form-lifecycle-status-"+state+"-"+surface+"-"+language+"-"+width+".png",fullPage:true});
  });
 }
+
+for(const language of ["es","en"] as const)for(const width of [390,320]){
+ test("BA2 unavailable action reasons stay reachable with the keyboard "+language+" "+width,async({page})=>{
+  const es=language==="es";await page.setViewportSize({width,height:900});await page.goto("/src/test/visual/index.html?screen=/formularios/"+fixtureFormId+"&scenario=forms-lifecycle-publishing&lang="+language);await page.getByRole("heading",{name:es?"Registrar visita":"Register visit",level:1,exact:true}).waitFor({state:"visible"});
+  const {trigger,menu}=await openMenu(page,es);const action=menu.getByRole("menuitem",{name:es?/Dar de baja/:/Deactivate/});await menu.press("Home");await expect(action).toBeFocused();await expect(action).toHaveAttribute("aria-disabled","true");await expect(action).toContainText(es?"Hay una publicación en curso.":"A publication is in progress.");await action.press("Enter");await expect(menu).toBeVisible();await expect(page.getByRole("dialog")).toHaveCount(0);await page.evaluate(()=>document.fonts.ready);await assertContained(page,width);await page.screenshot({path:"test-results/form-lifecycle-unavailable-menu-"+language+"-"+width+".png",fullPage:true});await menu.press("Escape");await expect(trigger).toBeFocused();
+ });
+}

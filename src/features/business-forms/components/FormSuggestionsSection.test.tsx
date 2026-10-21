@@ -46,6 +46,7 @@ it.each(["Deactivated", "Deleted"] as const)("keeps a %s target named and remova
  const first=within(await screen.findByRole("region",{name:"Sugerencia 1"}));
  expect(first.getByText("Facturar entrega")).toBeVisible();
  expect(first.getByText(state === "Deleted" ? "Eliminado" : "Dado de baja")).toBeVisible();
+ expect(first.queryByRole("alert")).not.toBeInTheDocument();
  expect(first.queryByRole("button",{name:/Editar/})).not.toBeInTheDocument();
  expect(first.getAllByRole("button")).toHaveLength(1);
  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toBeDisabled();
