@@ -42,12 +42,14 @@ export function FormDeletionDialog({ id, name, revision, scope, onDeleted, onClo
   } finally { flight.current = null; if (active.current) setBusy(false); }
  };
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
-  <DialogContent showCloseButton={!busy} onCloseAutoFocus={restoreFocus}>
-   <DialogHeader><DialogTitle className="pr-6">{t("lifecycle.deleteTitle", { name })}</DialogTitle><DialogDescription>{t("lifecycle.deleteDescription")}</DialogDescription></DialogHeader>
+  <DialogContent mobileFullscreen showCloseButton={!busy} onCloseAutoFocus={restoreFocus}>
+   <DialogHeader className="shrink-0"><DialogTitle className="pr-6">{t("lifecycle.deleteTitle", { name })}</DialogTitle><DialogDescription>{t("lifecycle.deleteDescription")}</DialogDescription></DialogHeader>
+   <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
    <p className="text-sm">{t("lifecycle.deleteHint")}</p>
    {blocked ? <p role="status" className="text-sm">{t(denied ? "lifecycle.noDeletePermission" : "lifecycle.deleteChanged")}</p> : null}
    {cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: cooldown.seconds })}</p> : null}
-   <DialogFooter><Button variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button variant="destructive" disabled={busy || blocked || cooldown.isRunning} onClick={() => void submit()}>{t(busy ? "lifecycle.deleting" : "lifecycle.delete")}</Button></DialogFooter>
+   </div>
+   <DialogFooter className="shrink-0"><Button variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button variant="destructive" disabled={busy || blocked || cooldown.isRunning} onClick={() => void submit()}>{t(busy ? "lifecycle.deleting" : "lifecycle.delete")}</Button></DialogFooter>
   </DialogContent>
  </Dialog>;
 }

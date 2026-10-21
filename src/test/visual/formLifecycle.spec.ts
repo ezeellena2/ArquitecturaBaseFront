@@ -60,11 +60,9 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
     const dialog=page.getByRole("dialog");await expect(dialog).toBeVisible();
     const confirm=dialog.getByRole("button",{name:state==="reactivate"?(es?"Reactivar con la versión 2":"Reactivate with version 2"):state==="delete"?(es?"Eliminar":"Delete"):(es?"Dar de baja":"Deactivate"),exact:true});
     await expect(confirm).toBeEnabled();
-    if(state!=="delete") {
-     await assertMobileDialog(dialog,width,900);
-     await page.screenshot({path:"test-results/form-lifecycle-"+state+"-end-"+language+"-"+width+".png",fullPage:true});
-     await dialog.locator(".overflow-y-auto").first().evaluate(node=>{node.scrollTop=0;});
-    }
+    await assertMobileDialog(dialog,width,900);
+    await page.screenshot({path:"test-results/form-lifecycle-"+state+"-end-"+language+"-"+width+".png",fullPage:true});
+    await dialog.locator(".overflow-y-auto").first().evaluate(node=>{node.scrollTop=0;});
     await dialog.getByRole("button",{name:es?"Cancelar":"Cancel",exact:true}).focus();
    }
    await page.evaluate(()=>document.fonts.ready);await assertContained(page,width);

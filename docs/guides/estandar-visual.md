@@ -109,6 +109,7 @@ Muestra los componentes reales con sus variantes, campos normales e inválidos, 
 Incluye Input, Textarea, NativeSelect, Select, MultiSelect, radios, checks, búsqueda y segmentados,
 además de botones con ícono, tooltips de acciones deshabilitadas y un formulario corto en Dialog.
 La variante `?scenario=mobile-dialog` muestra `mobileFullscreen`: al abrir el formulario, el cuerpo se desplaza y el pie conserva sus acciones en móvil.
+Los diálogos de baja, reactivación y eliminación de formularios aplican esta variante en móvil, con el cuerpo desplazable y el pie fuera del scroll.
 También permite revisar rutas existentes con `?screen=/usuarios`, `?screen=/roles/support` o `?screen=/perfil`.
 
 Preparación en otra instalación:
