@@ -38,5 +38,5 @@ El plan no lo decía; se resolvió con la opción más simple y quedó confirmad
 
 ## Lo que no entra
 
-- Filtrar por persona con «Proveedores de mi zona», que muestra el prototipo en el recorrido 5: depende de los campos
-  tipados del plan (un campo de papel «filtro»), que todavía no tienen tablero.
+- Filtrar por persona con «Proveedores de mi zona», que muestra el prototipo en el recorrido 5: es de la etapa siguiente,
+  con sus tableros elegidos en [campos extra](catalogos-campos-extra.md) (CE4-A), donde el filtro va en la pregunta.

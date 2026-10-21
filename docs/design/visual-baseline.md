@@ -361,6 +361,7 @@ Sin elección; no se implementan sin ella.
 | Formularios por WhatsApp | `/formularios`, respuestas, aprobación, diseño PDF y chat | [Diseño y estado de calificación](formularios-whatsapp.md) |
 | Casos del asistente | Pantalla Asistente del panel de WhatsApp y el chat | [Tableros elegidos, por programar](asistente-casos.md) |
 | Mejoras de catálogos | Editor de catálogos, «Elegir de un catálogo» y las respuestas | [Tableros elegidos, por programar](catalogos-mejoras.md) |
+| Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [Tableros elegidos, por programar](catalogos-campos-extra.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
