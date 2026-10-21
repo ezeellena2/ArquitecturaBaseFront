@@ -12,14 +12,13 @@ vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof imp
 beforeEach(() => { queryClient.clear(); vi.clearAllMocks(); });
 afterEach(() => vi.restoreAllMocks());
 function setup(permissions = ["formrecords.read", "formrules.manage"], approval = false, pdf = false) {
-  const reads = { values: 0, workflow: 0, files: 0, decisions: 0, searches: [] as Record<string, unknown>[] };
+  const reads = { tasks: 0, values: 0, workflow: 0, files: 0, decisions: 0, searches: [] as Record<string, unknown>[] };
   const tasks = [approvalTaskFixture(), { ...approvalTaskFixture(), id: "0199a0c0-0000-7000-8000-000000000071", recordId: responseSecondId, number: "TEST-000001" }];
   tasks[0].number = "TEST-000002";
   const sheet = responseSheetFixture(); sheet.hasApproval = approval;
   if (pdf) sheet.records.items[0].hasPdf = true;
   server.use(
     http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })),
-    http.get("/api/forms/navigation", () => HttpResponse.json({ items: [], page: 1, pageSize: 4, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })),
     http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { reads.searches.push(await request.json() as Record<string, unknown>); return HttpResponse.json(sheet); }),
     http.get("/api/forms/records/:id", ({ params }) => { reads.values++; return HttpResponse.json(responseDetailFixture(String(params.id))); }),
     http.get("/api/forms/records/:id/workflow", ({ params }) => {
@@ -29,9 +28,8 @@ function setup(permissions = ["formrecords.read", "formrules.manage"], approval 
         documents: pdf ? [{ id: "0199a0c0-0000-7000-8000-000000000080", runId: "0199a0c0-0000-7000-8000-000000000090", culture: "es", name: "Visita.pdf", size: 4, createdAtUtc: "2026-10-17T12:00:00Z" }] : [] });
     }),
     http.get("/api/forms/approvals", () => HttpResponse.json({ items: tasks.filter(task => task.state === "Open"), page: 1, pageSize: 20, totalCount: tasks.filter(task => task.state === "Open").length, totalPages: 1, hasPrevious: false, hasNext: false })),
-    http.get("/api/forms/approvals/options", () => HttpResponse.json({ forms: [{ id: responseFormId, name: "Visita" }] })),
     http.get("/api/forms/approvals/count", () => HttpResponse.json({ count: tasks.filter(task => task.state === "Open").length })),
-    http.get("/api/forms/approvals/:id", ({ params }) => HttpResponse.json(tasks.find(task => task.id === params.id))),
+    http.get("/api/forms/approvals/:id", ({ params }) => { reads.tasks++; return HttpResponse.json(tasks.find(task => task.id === params.id)); }),
     http.post("/api/forms/approvals/:id/decisions", async ({ params, request }) => {
       const body = await request.json() as { decision: "Approved" | "Rejected"; reason?: string };
       const task = tasks.find(task => task.id === params.id)!; reads.decisions++;
@@ -43,20 +41,21 @@ function setup(permissions = ["formrecords.read", "formrules.manage"], approval 
   return { reads, tasks, sheet };
 }
 const path = `/formularios/${responseFormId}/respuestas`;
+const rowName = (source: string, number: string) => (source === "pending" ? "Revisar " : "") + number;
 it("contains mobile focus and preserves navigation in the decision-only metadata panel", async () => {
   const listeners = new Set<(event: MediaQueryListEvent) => void>();
   vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: (_type: string, listener: unknown) => { if (query === "(width < 640px)") listeners.add(listener as (event: MediaQueryListEvent) => void); }, removeEventListener: (_type: string, listener: unknown) => { listeners.delete(listener as (event: MediaQueryListEvent) => void); }, dispatchEvent: vi.fn() }));
   setup(["formapprovals.decide"], true);
-  const origin = "/formularios/por-aprobar";
-  const { router } = renderRouteWithProviders(origin + "?pageSize=20");
-  const row = await screen.findByRole("link", { name: "TEST-000002" });
+  const origin = path;
+  const { router } = renderRouteWithProviders(origin + "?approvalPageSize=20");
+  const row = await screen.findByRole("link", { name: "Revisar TEST-000002" });
   const table = row.closest("table")!;
   await userEvent.click(row);
   const panel = await screen.findByRole("dialog", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("heading", { name: "TEST-000002" });
   expect(panel).toHaveAttribute("aria-modal", "true");
-  expect(table.closest("[inert]")).not.toBeNull();
-  expect(within(panel).getByText("1 de 2")).toBeInTheDocument();
+  expect(table.closest('[aria-hidden="true"]')).not.toBeNull();
+  expect(within(panel).getByText("1 de 2 por aprobar")).toBeInTheDocument();
   await act(async () => row.focus());
   await waitFor(() => expect(panel.contains(document.activeElement)).toBe(true));
   for (let index = 0; index < 15; index++) { await userEvent.tab(); expect(panel.contains(document.activeElement)).toBe(true); }
@@ -68,29 +67,29 @@ it("contains mobile focus and preserves navigation in the decision-only metadata
   await act(async () => panel.focus());
   await userEvent.keyboard("{ArrowDown}");
   await within(panel).findByRole("heading", { name: "TEST-000001" });
-  expect(within(panel).getByText("2 de 2")).toBeInTheDocument();
+  expect(within(panel).getByText("2 de 2 por aprobar")).toBeInTheDocument();
   await act(async () => { for (const listener of listeners) listener({ matches: false } as MediaQueryListEvent); });
   const desktop = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   expect(desktop).toHaveFocus();
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(router.state.location.pathname).toBe(origin));
-  expect(table.closest("[inert]")).toBeNull();
-  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000001" })).toHaveFocus());
+  await waitFor(() => expect(table.closest('[aria-hidden="true"]')).toBeNull());
+  await waitFor(() => expect(screen.getByRole("link", { name: "Revisar TEST-000001" })).toHaveFocus());
 });
-it("keeps the inbox total confirmed with the navigation context after a decision", async () => {
+it("keeps the per-form pending total confirmed with the navigation context after a decision", async () => {
   const { tasks } = setup(["formapprovals.decide"], true);
   server.use(http.get("/api/forms/approvals", () => {
     const open = tasks.filter(task => task.state === "Open");
     return HttpResponse.json({ items: open.slice(0, 1), page: 1, pageSize: 1, totalCount: open.length, totalPages: open.length, hasPrevious: false, hasNext: open.length > 1 });
   }));
-  renderRouteWithProviders("/formularios/por-aprobar?pageSize=1");
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  renderRouteWithProviders(path + "?approvalPageSize=1");
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000002" }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
-  expect(within(panel).getByText("1 de 2")).toBeInTheDocument();
+  expect(within(panel).getByText("1 de 2 por aprobar")).toBeInTheDocument();
   await userEvent.click(await within(panel).findByRole("button", { name: "Aprobar" }));
   await within(panel).findByText(/Luz/);
-  await waitFor(() => expect(screen.queryByRole("link", { name: "TEST-000002" })).not.toBeInTheDocument());
-  expect(within(panel).getByText("1 de 2")).toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByRole("link", { name: "Revisar TEST-000002" })).not.toBeInTheDocument());
+  expect(within(panel).getByText("1 de 2 por aprobar")).toBeInTheDocument();
 });
 it("keeps the mounted sheet and private filter when a response opens and closes by URL", async () => {
   const { reads } = setup(); const { router } = renderRouteWithProviders(path);
@@ -195,19 +194,19 @@ it("keeps a valid PDF tab when the destination also has a PDF", async () => {
   expect(new URLSearchParams(router.state.location.search).get("tab")).toBe("pdf");
   expect(within(panel).getByRole("tab", { name: "PDF" })).toHaveAttribute("aria-selected", "true");
 });
-it.each(["sheet", "inbox"])("shows unavailable for a confirmed response belonging to another form in the %s", async source => {
+it.each(["sheet", "pending"])("shows unavailable for a confirmed response belonging to another form in the %s", async source => {
   const { tasks } = setup(["formrecords.read", "formapprovals.decide"], true);
   server.use(http.get("/api/forms/records/:id", () => HttpResponse.json({ ...responseDetailFixture(), definitionId: "0199a0c0-0000-7000-8000-000000000098" })));
-  renderRouteWithProviders(source === "sheet" ? path + "/" + responseRecordId : "/formularios/por-aprobar/" + tasks[0].id);
+  renderRouteWithProviders(source === "sheet" ? path + "/" + responseRecordId : path + "?approval=" + tasks[0].id);
   await screen.findByText("No encontramos esa respuesta o no está disponible");
   const panel = screen.getByRole("region", { name: "Detalle de la respuesta" });
   expect(within(panel).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
 });
-it.each(["sheet", "inbox"])("pushes opening %s and replaces arrow navigation in browser history", async source => {
+it.each(["sheet", "pending"])("pushes opening %s and replaces arrow navigation in browser history", async source => {
   setup(["formrecords.read", "formapprovals.decide"], true);
-  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
-  const { router } = renderRouteWithProviders(origin + "?pageSize=20");
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  const origin = path;
+  const { router } = renderRouteWithProviders(origin + (source === "pending" ? "?approvalPageSize=20&pageSize=20" : "?pageSize=20"));
+  await userEvent.click(await screen.findByRole("link", { name: rowName(source, "TEST-000002") }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   expect(router.state.historyAction).toBe("PUSH");
   await userEvent.click(within(panel).getByRole("button", { name: "Siguiente" }));
@@ -215,31 +214,33 @@ it.each(["sheet", "inbox"])("pushes opening %s and replaces arrow navigation in 
   expect(router.state.historyAction).toBe("REPLACE");
   await act(async () => { await router.navigate(-1); });
   expect(router.state.location.pathname).toBe(origin);
+  expect(new URLSearchParams(router.state.location.search).has("approval")).toBe(false);
 });
-it.each(["sheet", "inbox"])("returns keyboard focus to the %s panel after clicking another row", async source => {
+it.each(["sheet", "pending"])("returns keyboard focus to the %s panel after clicking another row", async source => {
   setup(["formrecords.read", "formapprovals.decide"], true);
-  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
+  const origin = path;
   const { router } = renderRouteWithProviders(origin);
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  await userEvent.click(await screen.findByRole("link", { name: rowName(source, "TEST-000002") }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("heading", { name: "TEST-000002" });
-  await userEvent.click(screen.getByRole("link", { name: "TEST-000001" }));
+  await userEvent.click(screen.getByRole("link", { name: rowName(source, "TEST-000001") }));
   await within(panel).findByRole("heading", { name: "TEST-000001" });
   expect(panel).toHaveFocus();
   await userEvent.keyboard("{ArrowUp}");
   await within(panel).findByRole("heading", { name: "TEST-000002" });
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(router.state.location.pathname).toBe(origin));
-  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000002" })).toHaveFocus());
+  expect(new URLSearchParams(router.state.location.search).has("approval")).toBe(false);
+  await waitFor(() => expect(screen.getByRole("link", { name: rowName(source, "TEST-000002") })).toHaveFocus());
 });
 it.each([
   ["sheet", "link"], ["sheet", "cell"],
-  ["inbox", "link"], ["inbox", "cell"],
+  ["pending", "link"], ["pending", "cell"],
 ] as const)("returns focus to the same %s panel after reselecting its %s", async (source, control) => {
   setup(["formrecords.read", "formapprovals.decide"], true);
-  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
+  const origin = path;
   const { router } = renderRouteWithProviders(origin);
-  const link = await screen.findByRole("link", { name: "TEST-000002" });
+  const link = await screen.findByRole("link", { name: rowName(source, "TEST-000002") });
   await userEvent.click(link);
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("heading", { name: "TEST-000002" });
@@ -254,7 +255,8 @@ it.each([
   await within(panel).findByRole("heading", { name: "TEST-000001" });
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(router.state.location.pathname).toBe(origin));
-  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000001" })).toHaveFocus());
+  expect(new URLSearchParams(router.state.location.search).has("approval")).toBe(false);
+  await waitFor(() => expect(screen.getByRole("link", { name: rowName(source, "TEST-000001") })).toHaveFocus());
 });
 it("keeps focus on an external sort control while the response panel remains open", async () => {
   setup();
@@ -269,54 +271,53 @@ it("keeps focus on an external sort control while the response panel remains ope
   expect(screen.getByRole("region", { name: "Detalle de la respuesta" })).toBe(panel);
   expect(sort).toHaveFocus();
 });
-it.each(["sheet", "inbox"])("lets Escape close the %s panel immediately after selecting a delayed response", async source => {
+it.each(["sheet", "pending"])("lets Escape close the %s panel immediately after selecting a delayed response", async source => {
   setup(["formrecords.read", "formapprovals.decide"], true);
   let release: (() => void) | undefined;
   const gate = new Promise<void>(resolve => { release = resolve; });
   let requested = false;
   server.use(http.get("/api/forms/records/" + responseSecondId, async () => { requested = true; await gate; return HttpResponse.json(responseDetailFixture(responseSecondId)); }));
-  const origin = source === "sheet" ? path : "/formularios/por-aprobar";
+  const origin = path;
   const { router } = renderRouteWithProviders(origin);
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  await userEvent.click(await screen.findByRole("link", { name: rowName(source, "TEST-000002") }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("heading", { name: "TEST-000002" });
-  await userEvent.click(screen.getByRole("link", { name: "TEST-000001" }));
+  await userEvent.click(screen.getByRole("link", { name: rowName(source, "TEST-000001") }));
   await waitFor(() => expect(requested).toBe(true));
   expect(panel).toHaveFocus();
   await userEvent.keyboard("{Escape}");
   expect(router.state.location.pathname).toBe(origin);
-  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000001" })).toHaveFocus());
+  expect(new URLSearchParams(router.state.location.search).has("approval")).toBe(false);
+  await waitFor(() => expect(screen.getByRole("link", { name: rowName(source, "TEST-000001") })).toHaveFocus());
   await act(async () => release?.());
   expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument();
 });
 it("keeps a metadata-only approval panel after deciding without reading values, workflow or PDF", async () => {
-  const { reads } = setup(["formapprovals.decide"], true); const { router } = renderRouteWithProviders("/formularios/por-aprobar?view=all&pageSize=20");
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
-  await waitFor(() => expect(router.state.location.pathname).toContain("/formularios/por-aprobar/"));
+  const { reads, tasks } = setup(["formapprovals.decide"], true); const { router } = renderRouteWithProviders(path + "?approvalPageSize=20");
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000002" }));
+  await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("approval")).toBe(tasks[0].id));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await userEvent.click(await within(panel).findByRole("button", { name: "Aprobar" }));
   await within(panel).findByText(/Luz/);
   expect(reads).toMatchObject({ values: 0, workflow: 0, files: 0, decisions: 1 });
   expect(within(panel).queryByRole("tab", { name: "PDF" })).not.toBeInTheDocument();
-  await waitFor(() => expect(screen.queryByRole("link", { name: "TEST-000002" })).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.queryByRole("link", { name: "Revisar TEST-000002" })).not.toBeInTheDocument());
   await userEvent.click(within(panel).getByRole("button", { name: "Cerrar" }));
-  await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000001" })).toHaveFocus());
+  await waitFor(() => expect(screen.getByRole("region", { name: "Por aprobar · 1" }).parentElement).toHaveFocus());
 });
-it("uses the inbox order for its panel instead of the response sheet order", async () => {
+it("uses the per-form pending order for its panel instead of the response sheet order", async () => {
   const { tasks } = setup(["formapprovals.decide", "formrecords.read"], true);
-  tasks.reverse(); const { router } = renderRouteWithProviders("/formularios/por-aprobar?view=all&pageSize=20");
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000001" }));
+  tasks.reverse(); const { router } = renderRouteWithProviders(path + "?approvalPageSize=20");
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000001" }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await userEvent.click(within(panel).getByRole("button", { name: "Siguiente" }));
-  await waitFor(() => expect(router.state.location.pathname).toBe("/formularios/por-aprobar/" + tasks[1].id));
+  await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("approval")).toBe(tasks[1].id));
   await screen.findByRole("heading", { name: "TEST-000002" });
 });
-it.each([false, true])("retains the inbox panel, focus and cached photos while the next task and response load (another form: %s)", async anotherForm => {
+it("retains the pending panel, focus and cached photos while the next task and response load in the same form", async () => {
   vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:visit-photo");
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
   const { tasks, reads } = setup(["formapprovals.decide", "formrecords.read"], true);
-  const nextFormId = anotherForm ? "0199a0c0-0000-7000-8000-000000000098" : responseFormId;
-  tasks[1].definitionId = nextFormId;
   let releaseTask: (() => void) | undefined;
   let releaseRecord: (() => void) | undefined;
   const taskGate = new Promise<void>(resolve => { releaseTask = resolve; });
@@ -332,14 +333,13 @@ it.each([false, true])("retains the inbox panel, focus and cached photos while t
     http.get("/api/forms/records/:id", async ({ params }) => {
       if (params.id === responseSecondId) { recordRequested = true; await recordGate; }
       const detail = responseDetailFixture(String(params.id));
-      if (params.id === responseSecondId) detail.definitionId = nextFormId;
       detail.values.push({ fieldId: "0199a0c0-0000-7000-8000-000000000099", key: "photo", type: "photo", label: "Foto de la visita", value: [{ fileId: String(params.id), name: "Visita.jpg", contentType: "image/jpeg", size: 4, hasThumbnail: true }] });
       return HttpResponse.json(detail);
     }),
     http.get("/api/forms/records/:recordId/files/:fileId/thumbnail", ({ params }) => { thumbnails.push(String(params.recordId)); return new HttpResponse(new Uint8Array([1, 2, 3]), { headers: { "content-type": "image/jpeg" } }); }),
   );
-  renderRouteWithProviders("/formularios/por-aprobar?view=all&pageSize=20");
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  renderRouteWithProviders(path + "?approvalPageSize=20");
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000002" }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   const approve = await within(panel).findByRole("button", { name: "Aprobar" });
   await waitFor(() => expect(thumbnails).toEqual([responseRecordId]));
@@ -367,11 +367,10 @@ it.each([false, true])("retains the inbox panel, focus and cached photos while t
   await within(panel).findByRole("heading", { name: "TEST-000001" });
   expect(within(panel).getByRole("tab", { name: "Fotos (1)" })).toHaveAttribute("aria-selected", "true");
   expect(panel).toHaveFocus();
-  if (anotherForm) await waitFor(() => expect(queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-files" && query.queryKey[4] === responseRecordId })).toHaveLength(0));
   await userEvent.click(within(panel).getByRole("button", { name: "Anterior" }));
   await within(panel).findByRole("heading", { name: "TEST-000002" });
   await waitFor(() => expect(queryClient.isFetching()).toBe(0));
-  expect(thumbnails.filter(id => id === responseRecordId)).toHaveLength(anotherForm ? 2 : 1);
+  expect(thumbnails.filter(id => id === responseRecordId)).toHaveLength(1);
 });
 it("lets Escape dismiss a rejection before the panel and preserves the active response", async () => {
   setup(["formapprovals.decide", "formrecords.read"], true);
@@ -389,15 +388,6 @@ it("lets Escape dismiss a rejection before the panel and preserves the active re
   expect(router.state.location.pathname).toBe(path + "/" + responseRecordId);
 });
 
-it("closes the inbox panel before changing its list scope", async () => {
-  setup(["formapprovals.decide", "formrecords.read"], true);
-  const { router } = renderRouteWithProviders("/formularios/por-aprobar?view=all&pageSize=20");
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
-  await screen.findByRole("region", { name: "Detalle de la respuesta" });
-  await userEvent.click(screen.getByRole("button", { name: /Para mí/ }));
-  await waitFor(() => expect(router.state.location.pathname).toBe("/formularios/por-aprobar"));
-  expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument();
-});
 it("retries the failed next-page navigation instead of reloading the current sheet", async () => {
   const { sheet } = setup();
   const first = { ...sheet, records: { ...sheet.records, items: [sheet.records.items[0]], hasNext: true, totalPages: 2, pageSize: 1 } };
@@ -489,17 +479,24 @@ it.each(["close", "filter"] as const)("does not apply a pending next page after 
   expect(router.state.location.search).not.toContain("new filter");
 });
 
-it("withdraws denied task metadata in the inbox while preserving independently readable response values", async () => {
+it("withdraws denied task metadata in the per-form pending while preserving independently readable response values", async () => {
   const { reads } = setup(["formrecords.read", "formapprovals.decide"], true);
   server.use(http.post("/api/forms/approvals/:id/decisions", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })));
-  renderRouteWithProviders("/formularios/por-aprobar?view=all&pageSize=20");
-  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
-  const panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+  renderRouteWithProviders(path + "?approvalPageSize=20");
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000002" }));
+  let panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
   await userEvent.click(await panel.findByRole("button", { name: "Aprobar" }));
-  await panel.findByText("Ya no tenés permiso para decidir esta aprobación.");
+  await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");
+  panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
   expect(panel.getByText("Texto completo para revisar")).toBeVisible();
   expect(panel.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
   expect(panel.getByRole("heading", { name: "Por aprobar", level: 3 })).toBeInTheDocument();
   expect(reads.values).toBeGreaterThan(0);
-  await waitFor(() => expect(queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-approvals" && query.queryKey[2] === "task" })).toHaveLength(0));
+  const readsAfterDenial = reads.tasks;
+  await waitFor(() => {
+    for (const query of queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-approvals" && query.queryKey[2] === "task" })) expect(query.state.data).toBeUndefined();
+  });
+  await userEvent.click(panel.getByRole("tab", { name: "Actividad" }));
+  await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+  expect(reads.tasks).toBe(readsAfterDenial);
 });

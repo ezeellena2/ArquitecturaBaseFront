@@ -17,8 +17,8 @@ import { ResponseDocuments } from "./ResponseDocuments";
 import { ResponseWorkflowHistory } from "./ResponseWorkflowHistory";
 import { ResponseAnswer } from "./ResponseAnswer";
 
-export function ResponseDetailContent({ state, formId, recordId, onDecided, onDecisionForbidden }: {
-  state: ResponseDetailState; formId: string; recordId: string; onDecided?: () => void; onDecisionForbidden?: () => void;
+export function ResponseDetailContent({ state, formId, recordId, onDecided, onDecisionForbidden, decisionAllowed = true }: {
+  state: ResponseDetailState; formId: string; recordId: string; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean;
 }) {
   const { t, i18n } = useTranslation("forms");
   const { detail, workflow, data, current, hasPhotos, photos, downloads, loadingTarget, deny, onFileError } = state;
@@ -31,7 +31,7 @@ export function ResponseDetailContent({ state, formId, recordId, onDecided, onDe
   if (!data) return null;
   const date = (utc: string) => formatDateTimeInZone(utc, i18n.language, detail.scope.user?.timeZoneId);
   const moments = composeWorkflowMoments(data, current);
-  const canDecide = detail.scope.user?.permissions.includes("formapprovals.decide");
+  const canDecide = decisionAllowed && detail.scope.user?.permissions.includes("formapprovals.decide");
   const tab = ["answer", "activity", ...(hasPhotos ? ["photos"] : [])].includes(params.get("tab") ?? "") ? params.get("tab")! : params.get("tab") === "pdf" && current?.documents.length ? "pdf" : "answer";
   const refresh = async (task?: ApprovalTask) => { if (task && !await workflow.observeApproval(task)) return; void workflow.query.refetch(); onDecided?.(); };
   return <div className={canDecide && current?.task?.state === "Open" ? "max-sm:pb-20" : undefined}>

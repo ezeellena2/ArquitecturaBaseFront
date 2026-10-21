@@ -176,7 +176,8 @@ it.each(["post", "get"] as const)("withdraws approval metadata after %s 403 whil
     await act(async () => { await queryClient.invalidateQueries({ predicate: query => query.queryKey[0] === "form-approvals" }); });
   }
   await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");
-  await waitFor(() => expect(screen.queryByText("Supervisión")).not.toBeInTheDocument());
+  expect(screen.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Rechazar" })).not.toBeInTheDocument();
   expect(screen.getByRole("columnheader", { name: "Importe" })).toBeVisible();
   expect(screen.queryByRole("link", { name: "Revisar VIS-00001" })).not.toBeInTheDocument();
   await waitFor(() => {
@@ -184,6 +185,9 @@ it.each(["post", "get"] as const)("withdraws approval metadata after %s 403 whil
       expect(query.state.data).toBeUndefined();
   });
   expect(fixture.reads.values).toBeGreaterThan(0);
+  await userEvent.click(within(screen.getByRole("region", { name: "Detalle de la respuesta" })).getByRole("button", { name: "Cerrar" }));
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument());
+  expect(screen.getByRole("columnheader", { name: "Importe" })).toBeVisible();
 });
 
 it("retains the confirmed queue after a decision and visits the next pending item when the open list compacts", async () => {
@@ -305,4 +309,45 @@ it("shares the observed compacted queue with full-detail navigation before Next 
     expect(observed.snapshot?.search).toContain("approval=" + fixture.tasks[0].id);
     expect(observed.snapshot?.pending).toMatchObject({ page: 1, pageSize: 1, totalCount: 2 });
   } finally { observe.mockRestore(); }
+});
+
+it.each(["list", "task"])("announces a failed per-form %s read once and retries only that read", async target => {
+  const fixture = setup();
+  let attempts = 0;
+  let recovered = false;
+  const failure = () => HttpResponse.json({ code: "Test.Read", detail: "Falló esta lectura de aprobaciones." }, { status: 400 });
+  server.use(target === "list" ? http.get("/api/forms/approvals", () => {
+    attempts++; return !recovered ? failure() : HttpResponse.json({ items: fixture.tasks, page: 1, pageSize: 20, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false });
+  }) : http.get("/api/forms/approvals/" + fixture.tasks[0].id, () => { attempts++; return !recovered ? failure() : HttpResponse.json(fixture.tasks[0]); }));
+  renderRouteWithProviders(path + (target === "task" ? "?approval=" + fixture.tasks[0].id : ""));
+  await waitFor(() => expect(notify).toHaveBeenCalledOnce());
+  expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "Falló esta lectura de aprobaciones." });
+  expect(screen.queryByText("Falló esta lectura de aprobaciones.")).not.toBeInTheDocument();
+  const owner = target === "task" ? within(screen.getByRole("region", { name: "Detalle de la respuesta" })) : screen;
+  const beforeRetry = attempts; recovered = true;
+  await userEvent.click(owner.getByRole("button", { name: "Reintentar" }));
+  if (target === "task") expect(await owner.findByRole("button", { name: "Aprobar" })).toBeVisible();
+  else expect(await owner.findByRole("link", { name: "Revisar VIS-00001" })).toBeVisible();
+  expect(attempts).toBe(beforeRetry + 1);
+  expect(fixture.decisions).toEqual([]);
+});
+
+it.each(["available", "missing"])("returns from an %s response to the same per-form pending page and private sheet filter", async availability => {
+  setup(true);
+  if (availability === "missing") server.use(http.get("/api/forms/records/" + responseSecondId, () => HttpResponse.json({ code: "Forms.Record.NotFound" }, { status: 404 })));
+  const { router } = renderRouteWithProviders(path + "?approvalPage=2&approvalPageSize=1&pageSize=20&columns=none");
+  const search = await screen.findByRole("searchbox", { name: "Buscar en textos largos" });
+  await userEvent.type(search, "filtro privado");
+  await waitFor(() => expect(search).toHaveValue("filtro privado"));
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00002" }));
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: availability === "missing" ? "No encontramos esa respuesta o no está disponible" : "TEST-000001" });
+  await userEvent.click(within(panel).getByRole("button", { name: "Cerrar" }));
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument());
+  expect(router.state.location.pathname).toBe(path);
+  expect(new URLSearchParams(router.state.location.search).get("approvalPage")).toBe("2");
+  expect(new URLSearchParams(router.state.location.search).get("approvalPageSize")).toBe("1");
+  expect(new URLSearchParams(router.state.location.search).get("columns")).toBe("none");
+  expect(screen.getByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("filtro privado");
+  await waitFor(() => expect(screen.getByRole("link", { name: "Revisar VIS-00002" })).toHaveFocus());
 });

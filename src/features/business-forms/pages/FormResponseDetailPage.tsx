@@ -19,8 +19,8 @@ import { ResponsePanelFrame, type ResponsePanelNavigation } from "../components/
 function ResponsePanelFilesScope({ enabled, scope, children }: { enabled: boolean; scope: string | null; children: ReactNode }) {
   return enabled ? <PrivateFormFilesScopeProvider scope={scope}>{children}</PrivateFormFilesScopeProvider> : children;
 }
-export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden, retainPreviousForm = false }: {
-  formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; retainPreviousForm?: boolean;
+export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed = true, retainPreviousForm = false }: {
+  formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean; retainPreviousForm?: boolean;
 }) {
   const mobile = useMediaQuery("(width < 640px)");
   const navigate = useNavigate();
@@ -34,10 +34,10 @@ export function FormResponseDetailPage({ formId, recordId, navigation, onDecided
     workspace.prepareFull(recordId);
     navigate(responseFullPath(formId, recordId, location.search), { replace: true });
   }, [mobile, navigate, formId, recordId, location.search, workspace]);
-  return mobile ? null : <QuickResponseDetail formId={formId} recordId={recordId} navigation={navigation} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} retainPreviousForm={retainPreviousForm}/>;
+  return mobile ? null : <QuickResponseDetail formId={formId} recordId={recordId} navigation={navigation} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed} retainPreviousForm={retainPreviousForm}/>;
 }
-function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisionForbidden, retainPreviousForm }: {
-  formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; retainPreviousForm: boolean;
+function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed, retainPreviousForm }: {
+  formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean; retainPreviousForm: boolean;
 }) {
   const { t } = useTranslation("forms");
   const location = useLocation();
@@ -55,6 +55,6 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="link" size="inline" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
     {current?.documents.length ? <ResponseDocumentDownloads documents={current.documents} downloads={downloads}/> : null}
   </>}>
-    <ResponseDetailContent state={state} formId={formId} recordId={recordId} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden}/>
+    <ResponseDetailContent state={state} formId={formId} recordId={recordId} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed}/>
   </ResponsePanelFrame></ResponsePanelFilesScope>;
 }

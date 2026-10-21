@@ -8,6 +8,7 @@ import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { Page } from "@/shared/ui/Page";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { ApiError } from "@/shared/api/ApiError";
 import { Button } from "@/shared/ui/button";
 import { DataTable } from "@/shared/ui/DataTable";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -40,6 +41,7 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
   const client = useQueryClient();
   const table = useRef<HTMLElement | null>(null);
   const previousTask = useRef(taskId);
+  const observedRecord = useRef<{ owner: string; formId: string; taskId: string; recordId: string } | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
   const selected = useQuery({ queryKey: ["form-approvals", scope.owner, "task", taskId],
@@ -79,10 +81,14 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
       const target = nextQueue?.tasks.find(task => task.id === id);
       if (!nextQueue || !target) return;
       workspace.setNavigation({ origin: "pending", selection: { taskId: target.id, recordId: target.recordId }, search: pendingSearch(target.id, nextPage), pending: nextQueue });
-      update({ approval: id, approvalPage: nextPage === 1 ? undefined : String(nextPage), tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: true });
+      update({ approval: id, approvalPage: nextPage === 1 ? undefined : String(nextPage) }, { pathname: "/formularios/" + formId + "/respuestas", replace: true });
     },
   });
   const task = selected.data?.definitionId === formId ? selected.data : undefined;
+  useLayoutEffect(() => {
+    if (readScope.allowed && scope.allowed && !forbidden && task && task.id === taskId && !selected.isPlaceholderData)
+      observedRecord.current = { owner: scope.owner, formId, taskId: task.id, recordId: task.recordId };
+  }, [readScope.allowed, scope.allowed, forbidden, task, taskId, selected.isPlaceholderData, scope.owner, formId]);
   const taskNavigationReady = workspace.navigation?.origin === "pending" && workspace.navigation.selection.taskId === taskId &&
     workspace.navigation.selection.recordId === task?.recordId && !!workspace.navigation.pending;
   useLayoutEffect(() => {
@@ -124,10 +130,15 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
   useLayoutEffect(() => { if (forbidden && workspace.navigation?.origin === "pending") workspace.setNavigation(null); }, [forbidden, workspace]);
   useResponseFeedback(approvalForbidden(query.error) ? null : query.error, "approvals:form:" + scope.owner + ":" + formId, query.refetch);
   const selectionError = selected.error ?? motion.error;
+  const taskMissing = selected.error instanceof ApiError && selected.error.status === 404;
   useResponseFeedback(approvalForbidden(selectionError) ? null : selectionError, "approvals:form-selection:" + scope.owner + ":" + formId, motion.error ? motion.retry : selected.refetch);
   const title = query.data?.items[0]?.formName ?? task?.formName ?? t("overview.pendingColumn");
   const present = (content: ReactNode) => standalone ? <PendingFormPage title={title}>{content}</PendingFormPage> : content;
-  if (forbidden) return present(<Surface title={t("overview.pendingColumn")} padded><p role="status">{t("approvals.noPermission")}</p></Surface>);
+  if (forbidden) {
+    const recordId = taskId && observedRecord.current?.taskId === taskId && readScope.allowed && observedRecord.current?.owner === scope.owner && observedRecord.current.formId === formId ? observedRecord.current.recordId : undefined;
+    return present(<><Surface title={t("overview.pendingColumn")} padded><p role="status">{t("approvals.noPermission")}</p></Surface>
+      {recordId ? <FormResponseDetailPage formId={formId} recordId={recordId} decisionAllowed={false} navigation={{ selectionId: recordId, previous: false, next: false, kind: "sheet", onMove: () => {}, onClose: navigation.onClose }}/> : null}</>);
+  }
   if (!scope.allowed) return null;
   return present(<><div className="mb-4" ref={node => { table.current = node; }} tabIndex={-1}>
     <Surface title={query.data ? t("overview.pendingTitle", { count: query.data.totalCount }) : t("overview.pendingColumn")}>
@@ -144,12 +155,12 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
       {query.data && query.data.totalPages > 1 ? <Pagination {...query.data} onPageChange={next => update({ approvalPage: next === 1 ? undefined : String(next), approval: undefined })} onPageSizeChange={size => update({ approvalPageSize: String(size), approvalPage: undefined, approval: undefined })}/> : null}
     </Surface>
   </div>
-  {taskId ? task && readScope.allowed ? taskNavigationReady ? <FormResponseDetailPage formId={formId} recordId={task.recordId} navigation={navigation} onDecided={refresh} onDecisionForbidden={deny}/> : <Spinner/> :
+  {taskId ? task && readScope.allowed ? taskNavigationReady || !mobile ? <FormResponseDetailPage formId={formId} recordId={task.recordId} navigation={navigation} onDecided={refresh} onDecisionForbidden={deny}/> : <Spinner/> :
     <ResponsePanelFrame title={task?.number ?? t("responses.detail")} subtitle={task?.formName} navigation={navigation} loading={busy}>
       {approvalForbidden(selected.error) ? <p role="status">{t("approvals.noPermission")}</p> : task ? <div className={task.state === "Open" ? "max-sm:pb-20" : undefined}>
         <ApprovalDecisionPanel taskId={task.id} disabled={busy} actionsTarget={decisionActions} onDecided={refresh} onForbidden={deny}/>
         <div ref={setDecisionActions} className={task.state === "Open" ? "mt-3 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
-      </div> : selected.isPending ? <Spinner/> : <EmptyState embedded title={t("responses.unavailable")}/>}
+      </div> : selected.isPending ? <Spinner/> : <EmptyState embedded title={t(selected.error && !taskMissing ? "approvals.loadFailed" : "responses.unavailable")} action={selected.error && !taskMissing ? <Button variant="outline" onClick={() => void selected.refetch()}>{t("common:actions.retry")}</Button> : undefined}/>}
     </ResponsePanelFrame> : null}
   </>);
 }
