@@ -1,22 +1,161 @@
 {
-  "schemaVersion": 1,
-  "repositoryHead": "23014e6b12553d12938ba94d5f30a6fdcef67156",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-10-21T06:11:07.1703181Z",
-  "sourceState": [
-    " M docs/architecture/mapa-de-instrucciones.md",
-    " M docs/architecture/premisas-de-la-plantilla.md",
-    " M docs/features/formularios.md",
-    " M docs/features/whatsapp.md",
-    " M docs/history/README.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    " D docs/plans/formularios/dar-de-baja-formularios.md",
-    " M docs/plans/verificacion-y-produccion.md",
-    "?? docs/plans/formularios/menu-y-detalle.md"
+  "artifactSet": "lifecycle",
+  "captures": [
+    {
+      "length": 518,
+      "name": "en/deactivated.json",
+      "sha256": "7ceea02123b0c33077a50eb490297310bc1e409f25e89d1347181417b8542e2f"
+    },
+    {
+      "length": 266,
+      "name": "en/delete-responses-conflict.json",
+      "sha256": "33222e3fe1033adb7046006e0518c3a8dc3cc5506171ac04981da29d39c0700d"
+    },
+    {
+      "length": 1861,
+      "name": "en/detail-deactivated.json",
+      "sha256": "23738c9f498efd3da4f7247a866fe6d15ed807c23f4b0c4bb5b81bf0d3354e5b"
+    },
+    {
+      "length": 1657,
+      "name": "en/detail-reactivated.json",
+      "sha256": "8392dde777c28ed2260bb15d3b3b5ca6b9adc04cfea58ef46eecd468d40df375"
+    },
+    {
+      "length": 1757,
+      "name": "en/detail-reactivation-pending.json",
+      "sha256": "d856c6bff4242da99464294ba8843a2026022fbbd66f629db9a23eb078c59def"
+    },
+    {
+      "length": 53,
+      "name": "en/facets.json",
+      "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4"
+    },
+    {
+      "length": 896,
+      "name": "en/list-deactivated.json",
+      "sha256": "df4c191ea2828566f95e74bdb96bbb8e129fa01717ef6088891de47120759ed2"
+    },
+    {
+      "length": 71601,
+      "name": "en/options-deleted.json",
+      "sha256": "ed942671e141c6a6365c09bdf6ba6647861da8c220c57113d1e40a5048e2ba43"
+    },
+    {
+      "length": 20628,
+      "name": "en/options-unavailable.json",
+      "sha256": "f004ce48aa194325ce9ffa49bd9eaf1f2ea6921d488c918ad723689740d7b854"
+    },
+    {
+      "length": 579,
+      "name": "en/preview-affected.json",
+      "sha256": "071af4c504a3517d4331042ed82a93461b0be45eb5fd725621d2042084879ef4"
+    },
+    {
+      "length": 579,
+      "name": "en/preview.json",
+      "sha256": "87a1a8e07329e109d474044127f8e0f40737871de750e24cf5dcc43e5e50b53b"
+    },
+    {
+      "length": 1813,
+      "name": "en/status-deprecated.json",
+      "sha256": "cffbb89b9d852e829b1e1457e00485520a8b260843119ee96b3b31230550047b"
+    },
+    {
+      "length": 1799,
+      "name": "en/status-needsattention.json",
+      "sha256": "f102dd5e14763470f19d758805285cde9ce18d01dc557c5369b7c0a920bb6c4b"
+    },
+    {
+      "length": 1818,
+      "name": "en/status-pending.json",
+      "sha256": "a7c9f30d6e71533a5544ac49cacd868d5cba2c693d3cd921c2d9ecc30d177548"
+    },
+    {
+      "length": 1794,
+      "name": "en/status-uncertain.json",
+      "sha256": "3ec6bf45000e80bdb74dae4c28b297d9e3254c91254be066418441750ff2e363"
+    },
+    {
+      "length": 518,
+      "name": "es/deactivated.json",
+      "sha256": "283719d3f9697c25877e5a065ff19ff7ef77bece36209ab3b231b52eecd53597"
+    },
+    {
+      "length": 276,
+      "name": "es/delete-responses-conflict.json",
+      "sha256": "3ae44b6b3cf0a7e0fdd780e7b48f57c5ea462662a0d787783de701f98f5b1c28"
+    },
+    {
+      "length": 1861,
+      "name": "es/detail-deactivated.json",
+      "sha256": "3b3a36c213d69d6708d58dc303c32d7ef8ec85835f97b373b73a277a8badf4be"
+    },
+    {
+      "length": 1657,
+      "name": "es/detail-reactivated.json",
+      "sha256": "7294eb823b01641920dc85ded49cbeb79434ab31d1a0cd4df271ceb0e9239c21"
+    },
+    {
+      "length": 1757,
+      "name": "es/detail-reactivation-pending.json",
+      "sha256": "8f53cf60a2dd38b4a43b18c9ebca0e75f77376990be6ffdc47daa1898528b0df"
+    },
+    {
+      "length": 53,
+      "name": "es/facets.json",
+      "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4"
+    },
+    {
+      "length": 896,
+      "name": "es/list-deactivated.json",
+      "sha256": "a7d537396ad54330acb39123412dfcc20eda6c774ff97e1d808d20e1cfe5b2da"
+    },
+    {
+      "length": 71601,
+      "name": "es/options-deleted.json",
+      "sha256": "ed942671e141c6a6365c09bdf6ba6647861da8c220c57113d1e40a5048e2ba43"
+    },
+    {
+      "length": 19707,
+      "name": "es/options-unavailable.json",
+      "sha256": "21788bd2fbbc9d5f7323771bdcdb512ece178d782ada33c8565662e9821295d9"
+    },
+    {
+      "length": 579,
+      "name": "es/preview-affected.json",
+      "sha256": "071af4c504a3517d4331042ed82a93461b0be45eb5fd725621d2042084879ef4"
+    },
+    {
+      "length": 579,
+      "name": "es/preview.json",
+      "sha256": "13523721effb7c24e5390f740ca025f4b872fd40586bed95464c70c236ce62e7"
+    },
+    {
+      "length": 1813,
+      "name": "es/status-deprecated.json",
+      "sha256": "98e44a68da66912127a1c1d3d8bea0f269d05d8890207eb2b978776a9448114c"
+    },
+    {
+      "length": 1799,
+      "name": "es/status-needsattention.json",
+      "sha256": "cdbddf5f2b20775c25690f675d23231170999faa62109d7d08162ccab49cdcd7"
+    },
+    {
+      "length": 1818,
+      "name": "es/status-pending.json",
+      "sha256": "70b947a85316ef9f709545d94f2d68fb4484e6437ff038f6ff089e65e89ceb3b"
+    },
+    {
+      "length": 1794,
+      "name": "es/status-uncertain.json",
+      "sha256": "c2771c492a401e8069c66dc34b570f18b42901d9656a2c262dbae0ba1219ff6f"
+    }
   ],
+  "schemaVersion": 1,
   "producer": "FormDeactivationHttpTests and FormDeletionHttpTests and FormRetirementStatusHttpTests and FormLifecycleContractCapture and ControlledFormChannelStateSource and FormDraftEditingTests and FormDraftDurabilityTests and FormSuggestionHttpTests and FormPublicationAcceptanceTests and FormPublishedSelectionTests",
+  "repositoryHead": "49e14c216c45c1bf97dce09cd54676599b237c19",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDeactivationHttpTests.cs",
@@ -24,11 +163,11 @@
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDeletionHttpTests.cs",
-      "sha256": "f5df0f8f4c0aa36e816d4ddf485e4bf35803c338102f11bc10fe04370a702118"
+      "sha256": "0423f7c77151666305e8830445df2d16529d83d4c704917b995c683a8e6b81ee"
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRetirementStatusHttpTests.cs",
-      "sha256": "bf950690651a00624209d2ce499a7ba9e8b1be1cd4017c4fd916dfe8f2621ae3"
+      "sha256": "9cffd43943a79b5bc5e11d0bb54c4c87ace181fdc93f5e717e3f5e12aefaf57a"
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormLifecycleContractCapture.cs",
@@ -59,148 +198,8 @@
       "sha256": "70988d62379b7391199af36cd4bfbaddab9d6d5a70ea1b7ede9b592e7bab4953"
     }
   ],
-  "runId": "20261021-052328-ab8e3afa187940919f4bf93910626d2f",
-  "captures": [
-    {
-      "length": 518,
-      "sha256": "958c5a4d4bf0fafc9421b36ce04209d6f4e5ac68ab38a077dae61a30be5b373c",
-      "name": "en/deactivated.json"
-    },
-    {
-      "length": 266,
-      "sha256": "f3beb6ae3be962e8a3831577fb1e0807a353ae9c0fc077e74c6894db17811992",
-      "name": "en/delete-responses-conflict.json"
-    },
-    {
-      "length": 1861,
-      "sha256": "85f918184f7ba60704960a09dab4150ee13eb948b40a86fadd5a2cfc0361d96a",
-      "name": "en/detail-deactivated.json"
-    },
-    {
-      "length": 1657,
-      "sha256": "464fcab583eab25c8a73c7889b058bf1fc2ef148d21ddd7a431596ec5abf296c",
-      "name": "en/detail-reactivated.json"
-    },
-    {
-      "length": 1757,
-      "sha256": "e9116fae043f7c3c72935a6f1e8e8fccdc551d541fdd83c6f7da3bf0f0db9cd2",
-      "name": "en/detail-reactivation-pending.json"
-    },
-    {
-      "length": 53,
-      "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4",
-      "name": "en/facets.json"
-    },
-    {
-      "length": 896,
-      "sha256": "64d31e2d0fdf7921c0d4d193aebcb94a18535535e6390c3e1e3745cfe25a9113",
-      "name": "en/list-deactivated.json"
-    },
-    {
-      "length": 71601,
-      "sha256": "9bd58549aa941135f1f21a5cb422de14cfabedbc8192633cf5e6ccd450e70778",
-      "name": "en/options-deleted.json"
-    },
-    {
-      "length": 20628,
-      "sha256": "da7ff1a28f45ff77bc67aa4551eae0b3dc008a36ce31159da28057c7edb6e264",
-      "name": "en/options-unavailable.json"
-    },
-    {
-      "length": 579,
-      "sha256": "d6ca6c15cbfc569c52d16957ef0d0f088c992be7e1b36d97033f5cddcc03df4a",
-      "name": "en/preview-affected.json"
-    },
-    {
-      "length": 579,
-      "sha256": "4b9da8d6bad9ec5a29a2c07aca10e1bc2c48c3cd63290b7a290a57865fac1edd",
-      "name": "en/preview.json"
-    },
-    {
-      "length": 1813,
-      "sha256": "c4e041b065e1b910ba3325d1ae65c38ed3a0f087f8b87188bbd7f9c8d4cc9868",
-      "name": "en/status-deprecated.json"
-    },
-    {
-      "length": 1818,
-      "sha256": "4b2634f1d198a09438294636cdec6866a946dfd12576e0f5b7da45232a387ae6",
-      "name": "en/status-pending.json"
-    },
-    {
-      "length": 1794,
-      "sha256": "1f3a8031003d0895d09f5332804c3252912e3c27e3e2f5b2e6279236dcda3818",
-      "name": "en/status-uncertain.json"
-    },
-    {
-      "length": 518,
-      "sha256": "91fe7c79fdd88841be3bf0d47eeb28b8a79070fe072f3394bfba066445dcc57e",
-      "name": "es/deactivated.json"
-    },
-    {
-      "length": 276,
-      "sha256": "cad9f2325d411ae2280d846c908100a4f0ed6004a45d7738eb973488f3a2ef11",
-      "name": "es/delete-responses-conflict.json"
-    },
-    {
-      "length": 1861,
-      "sha256": "ef596bec43b22a2d6bf2a21f2a4fabff8e53d667b6d09225c9bf91feb8725625",
-      "name": "es/detail-deactivated.json"
-    },
-    {
-      "length": 1657,
-      "sha256": "b0da606977081cc7441a12fbd0a2f18bfe7ee6ac28122abae849bf65ba9690c1",
-      "name": "es/detail-reactivated.json"
-    },
-    {
-      "length": 1757,
-      "sha256": "b1280703210eccb74ebc438528d47cfc2f989d7d254b4fc1fdb97c91bc2b7dc9",
-      "name": "es/detail-reactivation-pending.json"
-    },
-    {
-      "length": 53,
-      "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4",
-      "name": "es/facets.json"
-    },
-    {
-      "length": 896,
-      "sha256": "0b9987c71cbb107d0866920e782a0af5a3a7fd4668ba22517d4f751189e83036",
-      "name": "es/list-deactivated.json"
-    },
-    {
-      "length": 71601,
-      "sha256": "9bd58549aa941135f1f21a5cb422de14cfabedbc8192633cf5e6ccd450e70778",
-      "name": "es/options-deleted.json"
-    },
-    {
-      "length": 19707,
-      "sha256": "f72715e292fd24fdd3a5e18299c574d83f9be7bc0886de5e0b86728315a65ba7",
-      "name": "es/options-unavailable.json"
-    },
-    {
-      "length": 579,
-      "sha256": "d6ca6c15cbfc569c52d16957ef0d0f088c992be7e1b36d97033f5cddcc03df4a",
-      "name": "es/preview-affected.json"
-    },
-    {
-      "length": 579,
-      "sha256": "5945237a21dd28054affa9bebe270ff5a925f490e4c0b61773ebd863a9f6b8b0",
-      "name": "es/preview.json"
-    },
-    {
-      "length": 1813,
-      "sha256": "6bd3ce8bf8bd2c3e136399568751e176e82108434d6072f89d0c249df9197edd",
-      "name": "es/status-deprecated.json"
-    },
-    {
-      "length": 1818,
-      "sha256": "ed0ef0f5f8574f2f5d7e2af084e12fbd7d83bfd2c3642f66a6fb99f1aaa6257a",
-      "name": "es/status-pending.json"
-    },
-    {
-      "length": 1794,
-      "sha256": "a3ea15bdb27640e83bc10d2a2b4e1680927a7d333020229564dacb15c753f1f3",
-      "name": "es/status-uncertain.json"
-    }
-  ],
-  "artifactSet": "lifecycle"
+  "generatedAtUtc": "2026-10-21T15:11:22.2163322Z",
+  "sourceState": [],
+  "runId": "20261021-141839-b590895e7fee4a4c8bbd4aeecd648066",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

@@ -7,8 +7,8 @@ import { deactivateForm, deleteForm, fetchFormDeactivation, fetchFormDefinition,
 import { readFormDeactivation, readFormDeactivationPreview, readFormDetail, readFormFacets, readFormPage } from "./response";
 import { readSuggestionOptions } from "./suggestions";
 
-const names = ["preview", "deactivated", "detail-deactivated", "list-deactivated", "facets", "options-unavailable", "detail-reactivation-pending", "detail-reactivated", "preview-affected", "options-deleted", "delete-responses-conflict", "status-pending", "status-uncertain", "status-deprecated"];
-it("qualifies all twenty-eight exact lifecycle captures and their real producers", () => {
+const names = ["preview", "deactivated", "detail-deactivated", "list-deactivated", "facets", "options-unavailable", "detail-reactivation-pending", "detail-reactivated", "preview-affected", "options-deleted", "delete-responses-conflict", "status-pending", "status-uncertain", "status-deprecated", "status-needsattention"];
+it("qualifies all thirty exact lifecycle captures and their real producers", () => {
  const provenance = httpCohort("lifecycle").verify();
  expect(provenance.captures.map(capture => capture.name).sort()).toEqual(["es", "en"].flatMap(culture => names.map(name => culture + "/" + name + ".json")).sort());
  for (const source of ["FormDeactivationHttpTests.cs", "FormDeletionHttpTests.cs", "FormRetirementStatusHttpTests.cs", "FormLifecycleContractCapture.cs"]) expect(provenance.sources.some(item => item.path.endsWith(source))).toBe(true);
@@ -51,7 +51,7 @@ for (const culture of ["es", "en"] as const) {
  });
  it("preserves nullable private counts and authoritative channel dates in actual " + culture + " HTTP", () => {
   const cohort = httpCohort("lifecycle");
-  for (const state of ["Pending", "Uncertain", "Deprecated"] as const) {
+  for (const state of ["Pending", "Uncertain", "Deprecated", "NeedsAttention"] as const) {
    const detail = readFormDetail(cohort.json(culture + "/status-" + state.toLowerCase() + ".json"));
    expect(detail.lifecycle).toMatchObject({ deprecationState: state, responseCount: null, pendingApprovalCount: null, nextRecordNumber: null });
    expect(detail.lifecycle.deactivatedAtUtc).not.toBeNull();
