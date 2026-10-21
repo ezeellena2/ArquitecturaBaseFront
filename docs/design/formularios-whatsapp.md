@@ -230,9 +230,9 @@ mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre l
 | [I3 · Los idiomas al publicar](evidence/formularios-whatsapp/idi-i3-idiomas.png) | La confirmación con la traducción incompleta o completa, y una versión nueva que suma el inglés o lo pierde, con aviso. |
 
 Dar de baja, reactivar y eliminar (2026-10-20, versión 88 del lienzo), con las reglas de
-[dar-de-baja-formularios.md](../../../ArquitecturaBase/docs/plans/formularios/dar-de-baja-formularios.md). BA1 tenía dos
+[ciclo de vida de formularios](../../../ArquitecturaBase/docs/features/formularios.md#dar-de-baja-reactivar-y-eliminar--2026-10-21). BA1 tenía dos
 conceptos de dónde viven las acciones: A, en la fila; B, en una ficha al costado. **BA1-A y BA2–BA5 se eligieron el
-2026-10-20**; por programar. Se ajustaron el mismo día con la guía (versión 96 del lienzo): «Activos» y «Dados de baja»
+2026-10-20**; implementados junto con BA6. Se ajustaron el mismo día con la guía (versión 96 del lienzo): «Activos» y «Dados de baja»
 con las mismas palabras que Formularios, el celular conserva la tabla y BA6 marca las sugerencias hacia un dado de baja.
 
 | Captura | Qué define |
@@ -466,3 +466,24 @@ del recorrido se conservan como evidencia local; entre ellas:
 
 El proveedor Meta del recorrido local fue simulado. El
 [piloto físico de idioma original y traducción opcional](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-idioma-original-y-traducción-opcional) conserva su criterio de cierre separado.
+
+## Cierre local de baja, reactivación y eliminación — 2026-10-21
+
+BA1-A, BA2, BA3, BA4 y BA6 siguen los tableros elegidos y los ajustes de la versión 96. Activos reúne publicados y borradores; la reactivación continúa en Dados de baja hasta confirmar la versión nueva. La tabla y el segmentado conservan el desplazamiento dentro de su caja en el celular. El editor explica por qué no se puede eliminar un formulario con respuestas como texto no accionable. La sugerencia hacia un dado de baja sólo permite Quitar y bloquea Guardar mientras permanezca.
+
+El cierre del front quedó en **2479/2479 tests en 233 archivos**, sin fallos ni omitidos, con build/TypeScript y lint aprobados; los controles de arquitectura fueron **49/49**.
+
+La visual normal cerró **567/567**, incluidas **40 escenas nuevas** en es/en a 390/320. Las **127 referencias** conservaron sus hashes, sin cambios de tolerancias. Los **109 tests de contratos en 23 archivos** consumen el export real conjunto de **20 cohortes, 354 capturas y 63 fuentes únicas**, de fuente backend `23014e6b`; lifecycle aporta 28 cuerpos, catorce por idioma, con bytes y SHA256 intactos.
+
+El recorrido interactivo en IAB sobre componentes productivos y datos sintéticos comprobó los filtros, el desplazamiento contenido, los diálogos móviles con pie fijo, Cancelar y retorno de foco, el diálogo de reactivación y los estados Pendiente/Sin confirmar, y BA6 con Quitar que habilita Guardar. Se inspeccionaron las capturas actuales, incluido el motivo neutral en el menú. Las pruebas de persistencia y concurrencia corresponden a la [integración Docker del backend](../../../ArquitecturaBase/docs/features/formularios.md#verificación-local-del-ciclo-de-vida--2026-10-21); este recorrido no usa Meta real.
+
+| Evidencia de la implementación | Alcance |
+| --- | --- |
+| [BA1-A, español a 390](evidence/formularios-whatsapp/baja-20261021-ba1-es-390.png) | Tabla y segmentado con desplazamiento contenido. |
+| [BA2, inglés a 320](evidence/formularios-whatsapp/baja-20261021-ba2-en-320.png) | Baja, Reactivar y motivo no accionable; Eliminar ausente. |
+| [BA3, español a 390](evidence/formularios-whatsapp/baja-20261021-ba3-es-390.png) | Sugerencia afectada, vencimiento, conservación y confirmación. |
+| [BA4 Reactivar, español a 320](evidence/formularios-whatsapp/baja-20261021-ba4-reactivar-es-320.png) | Versión nueva, numeración y comprobación de publicación. |
+| [BA4 Eliminar, inglés a 320](evidence/formularios-whatsapp/baja-20261021-ba4-eliminar-en-320.png) | Diálogo completo móvil, prefijo reservado y pie fijo. |
+| [BA6, inglés a 390](evidence/formularios-whatsapp/baja-20261021-ba6-en-390.png) | Destino dado de baja, sólo Quitar y Guardar apagado. |
+
+MF1 y el detalle completo siguen en la [etapa siguiente](../../../ArquitecturaBase/docs/plans/formularios/menu-y-detalle.md). El [piloto real de baja y reactivación](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-baja-reactivación-y-eliminación) espera el code review.
