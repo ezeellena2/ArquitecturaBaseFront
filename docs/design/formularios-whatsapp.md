@@ -76,7 +76,7 @@ Incremento 1 de la Etapa 1, crear y editar (2026-10-10). Son variantes de los ta
 
 | Captura | Qué define |
 | --- | --- |
-| [A · El listado de la Etapa 1](evidence/formularios-whatsapp/e1-a-listado.png) | El 02 recortado: panel con solo «Diseñar formularios», columnas Formulario, Preguntas, En WhatsApp, Último cambio y Acciones (solo Editar), filtros con conteos del servidor y los estados de la lista. |
+| [A · El listado de la Etapa 1](evidence/formularios-whatsapp/e1-a-listado.png) | El 02 recortado: panel con solo «Diseñar formularios», columnas Formulario, Preguntas, En WhatsApp, Último cambio y Acciones (solo Editar), filtros con conteos del servidor y los estados de la lista. BA1-A (2026-10-20) le suma los dados de baja y sus acciones. |
 | [B · Nuevo formulario](evidence/formularios-whatsapp/e1-b-alta.png) | El editor e1-1 vacío: nada existe hasta «Guardar borrador», prefijo sugerido, pregunta nueva abierta en el lugar, Subir y Bajar, qué pasa al guardar (Guardando…, Guardado, No se guardó, Sin confirmar) y qué pide confirmación. |
 | [C · El prefijo de numeración](evidence/formularios-whatsapp/e1-c-prefijo.png) | Sugerido, editado, ocupado, fijo al publicar, fijo aunque la publicación falló y fijado mientras se editaba. |
 | [D · Otra persona guardó antes](evidence/formularios-whatsapp/e1-d-conflicto.png) | Aviso con «Revisar», comparación «Guardado actualmente» y «Mis cambios» por pregunta y opción, «Usar borrador actual» o «Conservar mis cambios», sin combinar nada solo. |
@@ -154,7 +154,7 @@ sin aprobación, PDF ni asistente. Cargar desde la web queda para después (deci
 
 | Captura | Qué define |
 | --- | --- |
-| [T1 · La planilla](evidence/formularios-whatsapp/pla-t1-planilla.png) | «Respuestas» en el panel, columnas fijas (número, recibida, cargó) y una por pregunta de todas las versiones; «—» si no existía y «Sin respuesta» si no se contestó. Fotos: primera miniatura y cantidad, abre el visor de F4; documentos: tipo y cantidad. Con muchas preguntas se desplaza a lo ancho y «Columnas» oculta las que sobran (elegido el 2026-10-16). |
+| [T1 · La planilla](evidence/formularios-whatsapp/pla-t1-planilla.png) | «Respuestas» en el panel (MF1 la reemplaza por «Formularios», 2026-10-20), columnas fijas (número, recibida, cargó) y una por pregunta de todas las versiones; «—» si no existía y «Sin respuesta» si no se contestó. Fotos: primera miniatura y cantidad, abre el visor de F4; documentos: tipo y cantidad. Con muchas preguntas se desplaza a lo ancho y «Columnas» oculta las que sobran (elegido el 2026-10-16). |
 | [T2 · Más filtros](evidence/formularios-whatsapp/pla-t2-filtros.png) | Un filtro por pregunta según su tipo, con conteos del servidor; versión del formulario; búsqueda privada fuera de la dirección. |
 | [T3 · Una respuesta](evidence/formularios-whatsapp/pla-t3-respuesta.png) | Lo que respondió con las preguntas de su versión, de dónde vino, historial y anterior/siguiente dentro de la planilla. A todo el ancho, con galería de fotos que abre el visor y documentos con descarga (elegido el 2026-10-16). |
 | [T4 · Estados y casos](evidence/formularios-whatsapp/pla-t4-estados.png) | Carga, sin respuestas, sin coincidencias, error, muchos formularios, sin permiso, respuesta que no está y pregunta que cambió de tipo. |
@@ -167,7 +167,7 @@ que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesi
 | --- | --- |
 | [G1 · Cuando llega una respuesta](evidence/formularios-whatsapp/reg-g1-reglas.png) | Reglas en palabras (cuándo, si, hacer en orden), una abierta para editar, Guardar reglas e historial de revisiones. |
 | [G2 · El diseño del PDF](evidence/formularios-whatsapp/reg-g2-pdf.png) | Comprobante simple: nombre obligatorio en el idioma original y traducción opcional, qué preguntas incluye, quién aprobó, texto al pie y vista previa. «Incluir las fotos»: marcada, van chicas debajo de su pregunta; sin marcar, dice cuántas hay; los documentos solo se nombran (elegido el 2026-10-16). |
-| [G3 · Por aprobar](evidence/formularios-whatsapp/reg-g3-por-aprobar.png) | La bandeja de quien decide, en el panel con su cantidad; ordenada de la más vieja a la más nueva. |
+| [G3 · Por aprobar](evidence/formularios-whatsapp/reg-g3-por-aprobar.png) | La bandeja de quien decide, en el panel con su cantidad; ordenada de la más vieja a la más nueva. MF1 (2026-10-20) la reemplaza por la columna y el filtro de «Formularios». |
 | [G4 · Aprobar o rechazar](evidence/formularios-whatsapp/reg-g4-decidir.png) | El detalle con la decisión; rechazar pide motivo; otra persona decidió antes; no aprobar lo propio. |
 | [G5 · Qué pasó después](evidence/formularios-whatsapp/reg-g5-historial.png) | Cada acción con su estado (esperando, en curso, hecho, no se pudo, sin confirmar, no aplica) y el PDF como copia fija. «Reintentar» retoma solo lo que no salió; lo «Sin confirmar» se consulta primero (2026-10-16). |
 | [G6 · Lo que recibe el empleado](evidence/formularios-whatsapp/reg-g6-celular.png) | Confirmación al recibir, aviso con el PDF al aprobar, motivo al rechazar, también en inglés. |
@@ -220,11 +220,33 @@ mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre l
 | [I2 · Publicar con la traducción incompleta](evidence/formularios-whatsapp/idi-i2-publicar.png) | La comprobación no frena por una traducción que falta: dice «En WhatsApp, en español» y avisa «El inglés no se publica», con lo que le falta y «Completar el inglés». A Meta van solo los idiomas completos; sumar el inglés después es la versión siguiente. |
 | [I3 · Los idiomas al publicar](evidence/formularios-whatsapp/idi-i3-idiomas.png) | La confirmación con la traducción incompleta o completa, y una versión nueva que suma el inglés o lo pierde, con aviso. |
 
+Dar de baja, reactivar y eliminar (2026-10-20, versión 88 del lienzo), con las reglas de
+[dar-de-baja-formularios.md](../../../ArquitecturaBase/docs/plans/formularios/dar-de-baja-formularios.md). BA1 tenía dos
+conceptos de dónde viven las acciones: A, en la fila; B, en una ficha al costado. **BA1-A y BA2–BA5 se eligieron el
+2026-10-20**; por programar.
+
+| Captura | Qué define |
+| --- | --- |
+| [BA1-A · Las acciones en la fila](evidence/formularios-whatsapp/baja-ba1-a-fila.png) | **Elegido el 2026-10-20.** Diseñar formularios suma «Dados de baja (N)» al segmentado y la columna Respuestas. El estado dice «Dado de baja · versión N» y, debajo, lo que pasa en WhatsApp. Las acciones de cada fila: Editar; Dar de baja en los publicados; Reactivar en los dados de baja; Eliminar, último, solo sin respuestas. Editar y Eliminar piden administrar; Dar de baja y Reactivar, publicar; lo que no se puede no se dibuja. En el celular, una tarjeta por formulario con los mismos íconos a 44 px. |
+| [BA2 · El editor](evidence/formularios-whatsapp/baja-ba2-editor.png) | **Elegido el 2026-10-20.** Un menú «⋯» junto a la acción principal, con las mismas acciones; lo que no se puede queda apagado con el motivo. El dado de baja muestra un aviso con quién y cuándo, que no se manda ni lo ofrece el asistente y que lo cargado se conserva, y WhatsApp en palabras: «Se deprecan cuando venzan los envíos abiertos», «Deprecados el …» o que no se pudo confirmar y se sigue consultando. Reactivar ocupa el lugar de «Publicar en WhatsApp». |
+| [BA3 · El diálogo «Dar de baja»](evidence/formularios-whatsapp/baja-ba3-dar-de-baja.png) | **Elegido el 2026-10-20.** Qué deja de pasar (el chat, el asistente y las sugerencias de otros formularios, con sus nombres), los envíos abiertos con el vencimiento del último, «En WhatsApp no se deshace» y lo que se conserva. Lo que no aplica no se muestra; error, 390 px e inglés. |
+| [BA4 · Reactivar y eliminar](evidence/formularios-whatsapp/baja-ba4-reactivar.png) | **Elegido el 2026-10-20.** Reactivar muestra la versión nueva, qué cambia, la numeración que sigue y la comprobación de siempre. Eliminar, solo sin respuestas: desaparece de los listados, el prefijo queda reservado y, si se publicó, sus Flows se deprecan. Con respuestas, Eliminar no está: el menú dice por qué. |
+| [BA5 · El circuito de punta a punta](evidence/formularios-whatsapp/baja-ba5-circuito.png) | **Elegido el 2026-10-20.** Activo, dar de baja, un envío abierto que se responde igual, deprecados en WhatsApp al vencer y reactivar con una versión nueva: qué hacen la persona, el sistema y el asistente en cada paso. |
+
+El menú de Formularios (2026-10-20, versión 88 del lienzo): tres conceptos, MF1–MF3, comparados con las capturas de hoy
+(MF0). **Elegido MF1**, por programar: cambia la decisión 1 (Navegación) y reemplaza el panel de T1 y la bandeja de G3.
+
+| Captura | Qué define |
+| --- | --- |
+| [MF1 · Una tabla de formularios](evidence/formularios-whatsapp/menu-mf1-tabla.png) | **Elegido el 2026-10-20.** El grupo del menú pasa a llamarse «Gestión de formularios». Su panel tiene «Formularios», con lo que espera tu decisión, y Diseñar formularios, Catálogos y Formularios que faltan, como están. «Formularios» es una tabla: lo que cada uno tiene por aprobar, cuántas respuestas y la última con su estado; primero los que esperan aprobación y después por la última respuesta. «Con algo por aprobar» deja solo esos, incluidos los dados de baja que esperan una decisión; «Dados de baja (N)» los muestra aparte, con un aviso, y una línea arriba de la tabla avisa si alguno espera una decisión. Al entrar en un formulario, «Por aprobar · N», de la más vieja a la más nueva, arriba de la planilla; «Revisar» abre D2. No hay bandeja aparte. Quien solo ve respuestas, sin «Por aprobar» ni número; quien solo aprueba, los formularios con algo para decidir y la tarea sin las respuestas; sin permiso, no ve «Formularios». En el celular, una tarjeta por formulario. |
+
 ## Decisiones de diseño
 
 1. **Navegación.** «Formularios» es una entrada propia del menú principal con su panel, como WhatsApp. Arriba,
    «Respuestas», con un enlace por formulario publicado que la persona puede ver. Abajo, separado, «Diseñar
    formularios», solo con permiso de administrar. El panel de la Etapa 3 compone la parte fija con la lista paginada del backend mediante `FormResponsesShell` y el contexto neutral de layouts; no fija formularios en `navigation.ts`.
+   **MF1, elegido el 2026-10-20 y por programar, la cambia:** el grupo se llama «Gestión de formularios» y «Formularios»,
+   la tabla de todos los formularios con lo que cada uno tiene por aprobar, reemplaza «Respuestas» y «Por aprobar».
 2. **Editor en una sola pantalla, sin pestañas.** A la izquierda, las superficies «El formulario», «Preguntas» y
    «Cuando llega una respuesta». A la derecha, la vista previa del celular, que refleja el borrador mientras se edita
    y aclara que la vista oficial de WhatsApp aparece al publicar.
