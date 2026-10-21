@@ -10,7 +10,7 @@ import failedEnDetail from "../fixtures/forms-http/failed/detail-en.json" with {
 import failedEsStatus from "../fixtures/forms-http/failed/status-es.json" with { type: "json" };
 import failedEnStatus from "../fixtures/forms-http/failed/status-en.json" with { type: "json" };
 import { validFileCounts } from "@/features/business-forms/fileQuestions";
-import type { FormPublicationCheck } from "@/features/business-forms/api/response";
+import type { FormLifecycle, FormPublicationCheck } from "@/features/business-forms/api/response";
 import { administrativeName } from "@/features/business-forms/editorModel";
 import type { DraftWriteBody, FormCulture, FormDefinitionSnapshot, CanonicalQuestion, FormDraftSaveResult } from "@/features/business-forms/model";
 
@@ -18,6 +18,10 @@ export const fixtureFormId = "01990000-0000-7000-8000-000000000001";
 const guid = (n: number) => "01990000-0000-7000-8000-" + String(n).padStart(12, "0");
 const key = (id: string) => "field_" + id.replaceAll("-", "");
 const audit = { createdAtUtc: "2026-10-10T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-10T12:00:00Z", lastChangedBy: { userId: guid(2), displayName: "Ana Pérez" } };
+export function fixtureLifecycle(revision = 1, changes: Partial<FormLifecycle> = {}): FormLifecycle {
+  return { revision, deactivatedAtUtc: null, deactivatedBy: null, responseCount: null, pendingApprovalCount: null, nextRecordNumber: null,
+    nextVersionNumber: 1, canDeactivate: false, canReactivate: false, unavailableReason: "NotPublished", ...changes };
+}
 export function fixtureDefinition(culture: FormCulture = "es", prefixLocked = false): FormDefinitionSnapshot {
   const common = (n: number, es: string, en: string) => ({ fieldId: guid(n), key: key(guid(n)), label: { es, en }, help: null, required: true });
   return { offerWhen: null, id: fixtureFormId, name: { es: "Registrar visita", en: "Register visit" }, prefix: "VIS", prefixLocked, revision: 1,
@@ -98,7 +102,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   const officialPreview = scenario === "forms-publication-preview";
   const languageChange = scenario === "forms-languages-add" || scenario === "forms-languages-remove";
   const nextVersionNumber = (id: string) => Math.max(0, ...[...publications.values()].filter(value => value.definitionId === id).map(value => value.versionNumber)) + 1;
-  if (reloadFailed || reloadReview || officialPreview || languageChange) {
+  if (reloadFailed || reloadReview || officialPreview || languageChange || scenario.startsWith("forms-lifecycle")) {
    const d=definitions.get(fixtureFormId)!; definitions.set(d.id,{...d,prefixLocked:true,revision:languageChange?2:d.revision});
    const requestId=guid(92);publications.set(requestId,{definitionId:d.id,requestId,operationId:guid(90),versionId:guid(91),versionNumber:scenario==="forms-languages-remove"?2:1,draftRevision:1,state:"Accepted",acceptedAtUtc:audit.createdAtUtc,recoveryPath:"/api/forms/definitions/"+d.id+"/publications/"+requestId});
    publicationCultures.set(requestId, languageChange ? scenario === "forms-languages-add" ? ["es"] : ["es", "en"] : fixturePublicationCultures(d).filter(item => item.isComplete).map(item => item.culture));
@@ -107,8 +111,20 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   function overview(id:string) {
    const operation=[...publications.values()].filter(p=>p.definitionId===id).at(-1);
    const state=operation?publicationStates.get(operation.requestId)??operation.state:"Draft";
-   const activeVersion=operation&&state==="Published"?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision,cultures:publicationCultures.get(operation.requestId)!}:null;
+   const active = [...publications.values()].filter(p => p.definitionId === id && publicationStates.get(p.requestId) === "Published").at(-1);
+   const activeVersion=active?{versionId:active.versionId,versionNumber:active.versionNumber,draftRevision:active.draftRevision,cultures:publicationCultures.get(active.requestId)!}:null;
    return {activeVersion,currentOperation:operation?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision,state,stage:state==="Published"?"Complete":state==="Failed"?"Upload":"Accepted",requiresReview:state==="Uncertain",canRetry:false,requestId:operation.requestId,recoveryPath:operation.recoveryPath}:null,displayState:state};
+  }
+  const lifecycles = new Map<string, FormLifecycle>();
+  if (scenario.includes("lifecycle-deactivated")) lifecycles.set(fixtureFormId, fixtureLifecycle(1, { deactivatedAtUtc: "2026-10-20T12:00:00Z", deactivatedBy: audit.lastChangedBy, responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025" }));
+  function lifecycleOf(definition: FormDefinitionSnapshot): FormLifecycle {
+    const stored = lifecycles.get(definition.id);
+    const projection = overview(definition.id);
+    const pending = !["Draft", "Published", "Failed"].includes(projection.displayState);
+    const deactivated = !!stored?.deactivatedAtUtc;
+    return fixtureLifecycle(definition.revision, { ...stored, revision: definition.revision, nextVersionNumber: nextVersionNumber(definition.id),
+      canDeactivate: !!projection.activeVersion && !deactivated && !pending, canReactivate: deactivated && !pending,
+      unavailableReason: pending ? "PublicationInProgress" : projection.activeVersion ? null : "NotPublished" });
   }
   let publicationMissing = false; let publicationReads = 0;
   const receipts = new Map<string, { body: string; kind: "Create" | "Update"; result: FormDraftSaveResult }>();
@@ -125,7 +141,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     if (scenario === "forms-publication-http-published" || scenario === "forms-publication-http-failed") {
       const failed = scenario.endsWith("failed");
       if (request.method !== "GET") return json({ code: "Forms.Draft.RevisionConflict" }, 409);
-      if (path.endsWith("/facets")) return json({ all: 1, published: failed ? 0 : 1, drafts: failed ? 1 : 0 });
+      if (path.endsWith("/facets")) return json({ active: 1, published: failed ? 0 : 1, drafts: failed ? 1 : 0, deactivated: 0 });
       if (path === "/api/forms/definitions") return json(culture === "es" ? publishedEsList : publishedEnList);
       if (path.includes("/publications/")) return json(culture === "es" ? failedEsStatus : failedEnStatus);
       return json(failed ? culture === "es" ? failedEsDetail : failedEnDetail : culture === "es" ? publishedEsDetail : publishedEnDetail);
@@ -138,7 +154,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
       const input = await request.json() as DraftWriteBody;
       if (input.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
-      const available = scenario.startsWith("forms-publication") || scenario.startsWith("forms-languages-");
+      const available = scenario.startsWith("forms-publication") || scenario.startsWith("forms-languages-") || scenario.startsWith("forms-lifecycle");
       const cultures = fixturePublicationCultures(definition);
       const complete = cultures.filter(item => item.isComplete).map(item => item.culture);
       const activeVersion = overview(definition.id).activeVersion;
@@ -171,6 +187,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       publicationReads++;
       const state=scenario === "forms-publication-progress" ? publicationReads > 1 ? "Published" : "Publishing" : publicationStates.get(publication.requestId) ?? "Accepted";
       publicationStates.set(publication.requestId,state);
+      if (state === "Published" && scenario.startsWith("forms-lifecycle") && publication.versionNumber > 1) lifecycles.delete(publication.definitionId);
       return json({ ...identity, state, cultures: publicationCultures.get(publication.requestId)!,
         stage: state === "Uncertain" ? "Validate" : scenario === "forms-publication-progress" ? publicationReads > 1 ? "Complete" : "Validate" : "Accepted",
         updatedAtUtc: audit.createdAtUtc, nextCheckAtUtc: null, canRetry: false, requiresReview: state === "Uncertain", issues: reloadFailed ? Array.from({length:6},()=>({channelId:"WhatsApp",fieldId:null,choiceId:null,path:"channel",code:"WhatsApp.Flow.ValidationFailed",message:culture==="es"?"WhatsApp rechazó la validación del formulario.":"WhatsApp rejected the form validation.",limit:null,culture:"en"})) : [] });
@@ -187,25 +204,38 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       return receipt ? json({ requestId: receipt.result.requestId, kind: receipt.kind, status: "Committed", committedAtUtc: audit.createdAtUtc,
         currentRevision: definitions.get(receipt.result.definition.id)!.revision, result: wireCommit(receipt.result) }) : json({ code: "Forms.Draft.ChangeNotFound" }, 404);
     }
+    if (path.endsWith("/deactivation")) {
+      const definition = definitions.get(path.split("/").at(-2)!);
+      if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
+      if (request.method === "GET") return json({ definitionId: definition.id, revision: definition.revision, lifecycle: lifecycleOf(definition), affectedSuggestions: scenario.startsWith("forms-lifecycle") ? [{ definitionId: guid(70), name: { es: "Registrar entrega", en: "Register delivery" } }] : [] });
+      const input = await request.json() as { expectedRevision: number };
+      if (input.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
+      if (!lifecycleOf(definition).canDeactivate) return json({ code: "Forms.Definition.NotAvailable" }, 409);
+      const updated = { ...definition, revision: definition.revision + 1 };
+      definitions.set(definition.id, updated);
+      lifecycles.set(definition.id, fixtureLifecycle(updated.revision, { deactivatedAtUtc: "2026-10-20T12:00:00Z", deactivatedBy: audit.lastChangedBy }));
+      return json({ definitionId: definition.id, revision: updated.revision, lifecycle: lifecycleOf(updated) });
+    }
     if (request.method === "GET" && path === "/api/forms/definitions/facets") {
       const matches = [...definitions.values()].filter(d => administrativeName(d.name, culture).toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase()));
-      const published=matches.filter(d=>overview(d.id).activeVersion).length;
-      return json({ all: matches.length, published, drafts: matches.length-published });
+      const active = matches.filter(d => !lifecycleOf(d).deactivatedAtUtc);
+      const published=active.filter(d=>overview(d.id).activeVersion).length;
+      return json({ active: active.length, published, drafts: active.length-published, deactivated: matches.length-active.length });
     }
     if (request.method === "GET" && path === "/api/forms/definitions") {
       if (scenario === "forms-loading") return new Promise(() => {});
       if (scenario === "forms-error") return json({ code: "General.Unexpected", traceId: "forms-fixture" }, 500);
-      const values = [...definitions.values()].filter(d => (url.searchParams.get("publicationFilter") === "Published" ? !!overview(d.id).activeVersion : url.searchParams.get("publicationFilter") === "Drafts" ? !overview(d.id).activeVersion : true) && administrativeName(d.name, culture).toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase()));
+      const values = [...definitions.values()].filter(d => (url.searchParams.get("publicationFilter") === "Deactivated" ? !!lifecycleOf(d).deactivatedAtUtc : !lifecycleOf(d).deactivatedAtUtc) && (url.searchParams.get("publicationFilter") === "Published" ? !!overview(d.id).activeVersion : url.searchParams.get("publicationFilter") === "Drafts" ? !overview(d.id).activeVersion : true) && administrativeName(d.name, culture).toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase()));
       const sort = url.searchParams.get("sort") ?? "name";
       values.sort((a, b) => (sort.includes("questionCount") ? a.draft.fields.length - b.draft.fields.length : administrativeName(a.name, culture).localeCompare(administrativeName(b.name, culture))) * (sort.startsWith("-") ? -1 : 1));
       const page = Number(url.searchParams.get("page") ?? 1); const pageSize = Number(url.searchParams.get("pageSize") ?? 20);
       return json({ items: values.slice((page - 1) * pageSize, page * pageSize).map(d => ({ id: d.id, name: d.name, prefix: d.prefix, questionCount: d.draft.fields.length,
-        activeVersionNumber: overview(d.id).activeVersion?.versionNumber ?? null, displayState: overview(d.id).displayState, lastChangedAtUtc: audit.lastChangedAtUtc, lastChangedBy: audit.lastChangedBy, canEdit: canSave })),
+        activeVersionNumber: overview(d.id).activeVersion?.versionNumber ?? null, displayState: overview(d.id).displayState, lastChangedAtUtc: audit.lastChangedAtUtc, lastChangedBy: audit.lastChangedBy, canEdit: canSave, lifecycle: lifecycleOf(d) })),
         page, pageSize, totalCount: values.length, totalPages: Math.ceil(values.length / pageSize), hasPrevious: page > 1, hasNext: page * pageSize < values.length });
     }
     if (request.method === "GET") {
       const definition = definitions.get(path.split("/").at(-1)!);
-      return definition ? json({ definition: wireDefinition(definition), capabilities: { canSave, canPublish: true, canPreview: !!overview(definition.id).activeVersion }, publication: overview(definition.id), audit }) : json({ code: "Forms.Definition.NotFound" }, 404);
+      return definition ? json({ definition: wireDefinition(definition), capabilities: { canSave, canPublish: true, canPreview: !!overview(definition.id).activeVersion }, publication: overview(definition.id), audit, lifecycle: lifecycleOf(definition) }) : json({ code: "Forms.Definition.NotFound" }, 404);
     }
     if (!canSave) return json({ code: "General.Forbidden" }, 403);
     const body = await request.json() as DraftWriteBody;
@@ -250,5 +280,5 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     if (scenario === "forms-uncertain" || scenario === "forms-expired") return json({ code: "General.Unexpected", traceId: "forms-fixture" }, 500);
     return json(wireCommit(result), previous ? 200 : 201);
   }
-  return { handle, definitions, calls, writes, ruleWrites: ruleFixture.writes };
+  return { handle, definitions, lifecycles, lifecycleOf, calls, writes, ruleWrites: ruleFixture.writes };
 }

@@ -1,3 +1,4 @@
+import { fixtureLifecycle } from "@/test/visual/formFixtures";
 import { afterEach, describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
@@ -68,7 +69,7 @@ describe("form draft HTTP contract", () => {
 
   it("consumes the detail wrapper and preserves every translation and audit value", async () => {
     const audit = { createdAtUtc: "2026-10-09T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-09T12:00:00Z", lastChangedBy: null };
-    server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition, capabilities: { canSave: false, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })));
+    server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition, lifecycle: fixtureLifecycle(definition.revision), capabilities: { canSave: false, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })));
     const detail = await fetchFormDefinition(id);
     expect(detail.audit).toEqual(audit);
     expect(detail.capabilities.canSave).toBe(false);
@@ -78,7 +79,7 @@ describe("form draft HTTP contract", () => {
 
   it("recognizes nullable .NET configuration outside its applicable type", async () => {
     server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: { ...definition, draft: { ...definition.draft,
-      fields: [{ ...definition.draft.fields[0], type: "decimal", maxLength: null, options: null }] } }, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" },
+      fields: [{ ...definition.draft.fields[0], type: "decimal", maxLength: null, options: null }] } }, lifecycle: fixtureLifecycle(definition.revision), capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" },
       audit: { createdAtUtc: "2026-10-09T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-09T12:00:00Z", lastChangedBy: null } })));
     const field = (await fetchFormDefinition(id)).definition.draft.fields[0];
     expect(field.type).toBe("decimal");
@@ -98,10 +99,10 @@ describe("form draft HTTP contract", () => {
     const urls: URL[] = [];
     const page = { items: [], page: 3, pageSize: 50, totalCount: 110, totalPages: 3, hasPrevious: true, hasNext: false };
     server.use(http.get("/api/forms/definitions", ({ request }) => { urls.push(new URL(request.url)); return HttpResponse.json(page); }),
-      http.get("/api/forms/definitions/facets", ({ request }) => { urls.push(new URL(request.url)); return HttpResponse.json({ all: 110, published: 0, drafts: 110 }); }));
+      http.get("/api/forms/definitions/facets", ({ request }) => { urls.push(new URL(request.url)); return HttpResponse.json({ active: 110, published: 0, drafts: 110, deactivated: 0 }); }));
     const query = { page: 3, pageSize: 50, search: "A&B", sort: "-lastChangedAtUtc" as const, publicationFilter: "Drafts" as const };
     expect(await fetchFormDefinitions(query)).toEqual(page);
-    expect(await fetchFormFacets(query)).toEqual({ all: 110, published: 0, drafts: 110 });
+    expect(await fetchFormFacets(query)).toEqual({ active: 110, published: 0, drafts: 110, deactivated: 0 });
     expect(urls.map(url => Object.fromEntries(url.searchParams))).toEqual([{ ...query, page: "3", pageSize: "50" }, { search: query.search }]);
   });
 
@@ -134,7 +135,7 @@ describe("form draft HTTP contract", () => {
 it.each([null, "Cuando visita a un cliente"])("preserves the canonical monolingual offer instruction in detail and recovery: %j", async offerWhen => {
   const changed = { ...definition, offerWhen };
   const audit = { createdAtUtc: "2026-10-09T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-09T12:00:00Z", lastChangedBy: null };
-  server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: changed, capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })),
+  server.use(http.get(`/api/forms/definitions/${id}`, () => HttpResponse.json({ definition: changed, lifecycle: fixtureLifecycle(changed.revision), capabilities: { canSave: true, canPublish: true, canPreview: false }, publication: { activeVersion: null, currentOperation: null, displayState: "Draft" }, audit })),
     http.get(`/api/forms/draft-changes/${requestId}`, () => HttpResponse.json({ requestId, kind: "Create", status: "Committed", committedAtUtc: "2026-10-09T12:00:00Z", currentRevision: 1, result: { ...commit, definition: changed } })));
   expect((await fetchFormDefinition(id)).definition).toHaveProperty("offerWhen", offerWhen);
   expect((await recoverFormDraft(requestId)).result.definition).toHaveProperty("offerWhen", offerWhen);

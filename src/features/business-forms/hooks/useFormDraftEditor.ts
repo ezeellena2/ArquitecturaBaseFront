@@ -175,6 +175,13 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
       if (!review.capabilities.canSave) setDeniedPermissions(permissionsStamp);
       setIssue(null); setReview(null);
     },
+    confirmRevision: (id: string, expectedRevision: number, revision: number) => {
+      const session = current.current;
+      if (!alive() || inFlight.current || !session?.confirmed || session.phase !== "Editing" || session.confirmed.id !== id
+        || session.confirmed.revision !== expectedRevision || revision !== expectedRevision + 1) return false;
+      publish({ ...session, confirmed: { ...session.confirmed, revision }, currentRevision: revision });
+      return true;
+    },
     lockPrefix: (id: string) => {
       if (!alive() || current.current?.confirmed?.id !== id) return;
       publish({ ...current.current, confirmed: { ...current.current.confirmed, prefixLocked: true } });

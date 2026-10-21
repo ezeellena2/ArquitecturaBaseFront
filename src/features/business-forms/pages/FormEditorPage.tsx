@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router";
@@ -31,13 +32,16 @@ import { OfficialFormPreview } from "../components/OfficialFormPreview";
 import { PublicationProgress } from "../components/PublicationProgress";
 import { publicationLabelKey } from "../publicationPresentation";
 import { useFormPublication } from "../hooks/useFormPublication";
+import { FormDeactivationDialog } from "../components/FormDeactivationDialog";
+import { FormLifecycleMenu } from "../components/FormLifecycleMenu";
+import { FormLifecycleNotice } from "../components/FormLifecycleNotice";
 import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
 import { DraftReview, DraftReviewChanges } from "../components/DraftReview";
 import { publicationFieldIssues } from "../validationPaths";
 import { missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
-import { useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
+import { formActorKey, formDetailKey, useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
-import type { FormDetail, FormPublicationCheck } from "../api/response";
+import type { FormDeactivation, FormDetail, FormPublicationCheck } from "../api/response";
 import type { DraftEditorValue, FormCulture, FormDefinitionSnapshot } from "../model";
 
 import { missingFormInitial } from "../missingFormSeed";
@@ -48,7 +52,10 @@ const FormRulesSection = lazy(() => import("../components/FormRulesSection").the
 export function FormEditorPage() {
   const { t, i18n } = useTranslation("forms");
   const { formId = "" } = useParams();
-  const navigationState = useLocation().state;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navigationState = location.state;
+  const reactivateOnOpen = navigationState !== null && typeof navigationState === "object" && "reactivateFormId" in navigationState && navigationState.reactivateFormId === formId;
   const { data: user } = useCurrentUser();
   const scope: FormReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
   const detail = useFormDefinition(scope, formId);
@@ -60,13 +67,14 @@ export function FormEditorPage() {
     if (["cancelled", "session", "forbidden"].includes(feedback.kind) || detail.error instanceof ApiError && detail.error.status === 404) return;
     notify({ id: detailFeedbackId, kind: "error", message: readErrorMessage(detail.error, t) });
   }, [detail.error, detailFeedbackId, t]);
-  if (!user || formId && detail.isPending) return <Page title={t(formId ? "title" : "new")}><Spinner /></Page>;
+  useEffect(() => { if (reactivateOnOpen && detail.data && detail.isFetchedAfterMount && !detail.isError) void navigate(location.pathname + location.search, { replace: true, state: null }); }, [reactivateOnOpen, detail.data, detail.isFetchedAfterMount, detail.isError, navigate, location.pathname, location.search]);
+  if (!user || formId && (detail.isPending || reactivateOnOpen && !detail.isFetchedAfterMount)) return <Page title={t(formId ? "title" : "new")}><Spinner /></Page>;
   if (!scope.permissions.includes("formtemplates.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
-  if (formId && !detail.data) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
-  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} timeZoneId={user.timeZoneId} initial={detail.data ?? missingFormInitial(scope, formId, navigationState)} onPublicationChanged={() => { void detail.refetch(); }} />;
+  if (formId && (!detail.data || reactivateOnOpen && detail.isError)) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
+  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} reactivateOnOpen={reactivateOnOpen} timeZoneId={user.timeZoneId} initial={detail.data ?? missingFormInitial(scope, formId, navigationState)} onPublicationChanged={() => { void detail.refetch(); }} />;
 }
 
-function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {
+function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactivateOnOpen }: { reactivateOnOpen: boolean; scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {
   const { t, i18n } = useTranslation("forms");
   useTranslation("forms", { lng: "en" });
   useTranslation("forms", { lng: "es" });
@@ -77,6 +85,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   const editor = useFormDraftEditor(scope, initial);
   const presentation = useSystemPresentation();
   const publication = useFormPublication(scope);
+  const queryClient = useQueryClient();
+  const lifecycle = "definition" in initial ? initial.lifecycle : undefined;
+  const deactivated = !!lifecycle?.deactivatedAtUtc;
   const projection = "definition" in initial ? initial.publication : undefined;
   const { resume } = publication;
   useEffect(() => { if ("definition" in initial && initial.capabilities.canPublish) void resume(initial.definition.id, initial.publication); }, [initial, resume]);
@@ -97,8 +108,12 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   const [discardOpen, setDiscardOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [retainedReview, setRetainedReview] = useState<{ value: DraftEditorValue; definition: FormDefinitionSnapshot } | null>(null);
-  const [publicationOpen, setPublicationOpen] = useState(false);
+  const lifecycleAction = useRef<HTMLButtonElement>(null);
+  const publicationAction = useRef<HTMLButtonElement>(null);
+  const publicationReturnFocus = useRef<HTMLElement | null>(null);
+  const [publicationOpen, setPublicationOpen] = useState(() => reactivateOnOpen && !!lifecycle?.deactivatedAtUtc && lifecycle.canReactivate && scope.permissions.includes("formtemplates.publish"));
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [deactivationOpen, setDeactivationOpen] = useState(false);
   useEffect(() => {
     const error = publication.error;
     if (error instanceof ApiError && ["Forms.Draft.RevisionConflict", "Forms.Publication.DraftMustBeSaved"].includes(error.code ?? "")) {
@@ -193,6 +208,12 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
       (optionInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".source") ? '[data-question-control="catalog"]' : issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]'))?.focus();
     });
   }
+  async function confirmDeactivation(result: FormDeactivation, expectedRevision: number) {
+    if (!active.current || !editor.confirmRevision(result.definitionId, expectedRevision, result.revision)) return;
+    queryClient.setQueryData<FormDetail>(formDetailKey(scope, result.definitionId), previous => previous && previous.definition.revision === expectedRevision
+      ? { ...previous, definition: { ...previous.definition, revision: result.revision }, lifecycle: result.lifecycle } : previous);
+    await queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) });
+  }
   function removeQuestion(localId: string) {
     if (readOnly) return;
     const index = value!.draft.fields.findIndex(q => q.localId === localId);
@@ -202,15 +223,17 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
     change({ ...value!, draft: { ...value!.draft, fields: value!.draft.fields.filter(q => q.localId !== localId) } });
     if (!removeId) requestAnimationFrame(() => removalFocus.current?.focus());
   }
-  return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : dirty || frozen || publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
+  return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : dirty || frozen || publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!editor.canSave || hasInvalidFileCounts(value.draft.fields)} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
-    {scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish) && session.confirmed ? <Button type="button" disabled={frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publication.resetRejected(); setPublicationOpen(true); }}>{t("publication.title")}</Button> : null}
+    {scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish) && session.confirmed ? <Button ref={publicationAction} type="button" disabled={deactivated && !lifecycle?.canReactivate || frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publicationReturnFocus.current = publicationAction.current; publication.resetRejected(); setPublicationOpen(true); }}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button> : null}
+    {lifecycle && scope.permissions.includes("formtemplates.publish") ? <FormLifecycleMenu triggerRef={lifecycleAction} lifecycle={lifecycle} blocked={frozen || editor.busy || publicationPending} onDeactivate={() => setDeactivationOpen(true)} onReactivate={() => { publicationReturnFocus.current = lifecycleAction.current; publication.resetRejected(); setPublicationOpen(true); }} /> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
   </>}>
     <div className="flex flex-col gap-4">
     {cooldown.isRunning ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("wait", { count: cooldown.seconds })}</p> : null}
-    <PublicationProgress publication={publication} projection={projection} feedbackId={`forms:publication:${session.scope.editorId}`} onReplay={() => void publication.replay()} onGoToIssue={goToPublicationIssue} canLocateIssue={issue => publicationFieldIssues(value, [issue]).length > 0} />
+    {lifecycle ? <FormLifecycleNotice lifecycle={lifecycle} timeZoneId={timeZoneId} /> : null}
+    {!deactivated || publication.phase === "Accepting" || publication.phase === "Unconfirmed" || (publicationVersion ?? 0) > (projection?.activeVersion?.versionNumber ?? 0) ? <PublicationProgress publication={publication} projection={projection} feedbackId={`forms:publication:${session.scope.editorId}`} onReplay={() => void publication.replay()} onGoToIssue={goToPublicationIssue} canLocateIssue={issue => publicationFieldIssues(value, [issue]).length > 0} /> : null}
     {session.phase === "Unconfirmed" ? <Surface padded><p className="text-sm">{t(editor.issue?.kind === "forbidden" ? "noSave" : editor.issue?.code === "Forms.Draft.RequestConflict" ? "requestConflict" : editor.issue?.kind === "expired" ? "expired" : "uncertainHint")}</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning || editor.issue?.kind === "expired"} onClick={() => void operate(editor.recover)}>{t(editor.busy ? "recovering" : "recover")}</Button>{editor.issue?.kind === "missing" && scope.permissions.includes("formtemplates.manage") ? <Button type="button" variant="outline" disabled={editor.busy} onClick={() => void operate(editor.retry)}>{t("retrySame")}</Button> : null}</div></Surface> : null}
     {reviewRequired ? <Surface padded><p className="text-sm">{t("reviewPending")}</p><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning} onClick={showReview}>{t("review")}</Button></Surface> : null}
     {retainedReview ? <Surface title={t("reviewChangesToInspect")} padded><p className="mb-3 text-sm">{t("reviewNoSave")}</p><DraftReviewChanges catalogScope={scope} value={retainedReview.value} definition={retainedReview.definition} culture={scope.culture} /></Surface> : null}
@@ -240,7 +263,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged }: { scop
   </Page>
 
   {previewOpen && "definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <OfficialFormPreview key={projection.activeVersion.versionId} definitionId={initial.definition.id} versionId={projection.activeVersion.versionId} versionNumber={projection.activeVersion.versionNumber} cultures={projection.activeVersion.cultures} initialCulture={contentCulture} onClose={() => setPreviewOpen(false)} /> : null}
-  {publicationOpen && session.confirmed && scope.permissions.includes("formtemplates.publish") ? <PublicationCheckDialog key={session.confirmed.revision + ":" + [...scope.permissions].sort().join(",")} scope={scope} id={session.confirmed.id} revision={session.confirmed.revision} savedAt={"definition" in initial ? formatDateTimeInZone(initial.audit.lastChangedAtUtc, scope.culture, timeZoneId) : undefined} prefixLocked={session.confirmed.prefixLocked} baseVersionId={projection?.activeVersion?.versionId} baseVersionNumber={projection?.activeVersion?.versionNumber} value={value} dirty={dirty} canSave={editor.canSave && !cooldown.isRunning && !hasInvalidFileCounts(value.draft.fields)} accepting={publication.busy} onAccept={(body, checked) => {
+  {deactivationOpen && scope.permissions.includes("formtemplates.publish") && session.confirmed ? <FormDeactivationDialog id={session.confirmed.id} name={session.confirmed.name[session.confirmed.draft.culture] ?? originalName} focusFallback={lifecycleAction} scope={scope} expectedRevision={session.confirmed.revision} onRevisionMismatch={() => { setDeactivationOpen(false); editor.requireReview(new ApiError(409, { code: "Forms.Draft.RevisionConflict" })); }} onComplete={confirmDeactivation} onClose={() => setDeactivationOpen(false)} /> : null}
+  {publicationOpen && session.confirmed && scope.permissions.includes("formtemplates.publish") ? <PublicationCheckDialog onCloseAutoFocus={event => { const target = [publicationReturnFocus.current, publicationAction.current, lifecycleAction.current].find(node => node?.isConnected && !node.matches(":disabled")); if (target) { event.preventDefault(); target.focus(); } }} key={session.confirmed.revision + ":" + [...scope.permissions].sort().join(",")} scope={scope} id={session.confirmed.id} revision={session.confirmed.revision} reactivation={deactivated && lifecycle ? { name: session.confirmed.name[session.confirmed.draft.culture] ?? originalName, nextRecordNumber: lifecycle.nextRecordNumber } : undefined} savedAt={"definition" in initial ? formatDateTimeInZone(initial.audit.lastChangedAtUtc, scope.culture, timeZoneId) : undefined} prefixLocked={session.confirmed.prefixLocked} baseVersionId={projection?.activeVersion?.versionId} baseVersionNumber={projection?.activeVersion?.versionNumber} value={value} dirty={dirty} canSave={editor.canSave && !cooldown.isRunning && !hasInvalidFileCounts(value.draft.fields)} accepting={publication.busy} onAccept={(body, checked) => {
     const acceptance = publication.accept(session.confirmed!.id, body, checked);
     setPublicationOpen(false);
     void acceptance.then(receipt => { if (receipt && active.current) notify({ id: `forms:publication-accepted:${scope.actorId}:${receipt.operationId}`, kind: "success", message: t("publication.accepted", { version: receipt.versionNumber }) }); });

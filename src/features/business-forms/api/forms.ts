@@ -1,13 +1,13 @@
 import { api } from "@/shared/api/httpClient";
 import type { DraftEditorValue, DraftWriteBody, FormPublicationWriteBody } from "../model";
-import { formId, readFormPreview, publicationPath, readFormPublicationReceipt, readFormPublicationStatus, readFormPublicationCheck, readFormCommit, readFormDetail, readFormFacets, readFormPage, readFormRecovery, recoveryPath } from "./response";
+import { formId, readFormDeactivation, readFormDeactivationPreview, readFormPreview, publicationPath, readFormPublicationReceipt, readFormPublicationStatus, readFormPublicationCheck, readFormCommit, readFormDetail, readFormFacets, readFormPage, readFormRecovery, recoveryPath } from "./response";
 
 export interface FormListQuery {
   readonly page: number;
   readonly pageSize: number;
   readonly search?: string;
   readonly sort?: "name" | "-name" | "questionCount" | "-questionCount" | "lastChangedAtUtc" | "-lastChangedAtUtc";
-  readonly publicationFilter: "All" | "Published" | "Drafts";
+  readonly publicationFilter: "Active" | "Published" | "Drafts" | "Deactivated";
 }
 function queryString(query: FormListQuery): string {
   return new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)])).toString();
@@ -25,3 +25,6 @@ export const acceptFormPublication = async (id: string, body: FormPublicationWri
 export const fetchFormPublication = async (id: string, requestId: string, signal?: AbortSignal) => readFormPublicationStatus(await api.get<unknown>(publicationPath(id, requestId), { signal }), id, requestId);
 
 export async function fetchFormPreview(id: string, versionId: string, culture: "es" | "en", signal?: AbortSignal) { return readFormPreview(await api.get<unknown>(`/api/forms/definitions/${formId(id)}/versions/${formId(versionId)}/preview?${new URLSearchParams({culture})}`, { signal, cache: "no-store" })); }
+
+export const fetchFormDeactivation = async (id: string, signal?: AbortSignal) => readFormDeactivationPreview(await api.get<unknown>(`/api/forms/definitions/${formId(id)}/deactivation`, { signal, cache: "no-store" }), id);
+export const deactivateForm = async (id: string, expectedRevision: number, signal?: AbortSignal) => readFormDeactivation(await api.post<unknown>(`/api/forms/definitions/${formId(id)}/deactivation`, { expectedRevision }, { signal }), id);

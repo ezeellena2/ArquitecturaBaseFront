@@ -38,7 +38,13 @@ const displayState = z.enum(["Draft", "Accepted", "Preparing", "Publishing", "Un
 const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, cultures: z.array(z.enum(["es", "en"])).min(1) });
 const currentOperation = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, state: publicationState, stage: z.string().min(1), requiresReview: z.boolean(), canRetry: z.literal(false), requestId: guid.nullable(), recoveryPath: z.string().nullable() });
 const publicationProjection = z.strictObject({ activeVersion: activeVersion.nullable(), currentOperation: currentOperation.nullable(), displayState });
-const detail = z.strictObject({ definition, capabilities: z.strictObject({ canSave: z.boolean(), canPublish: z.boolean(), canPreview: z.boolean() }), audit, publication: publicationProjection });
+const lifecycle = z.strictObject({ revision, deactivatedAtUtc: utc.nullable(), deactivatedBy: author.nullable(),
+  responseCount: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(), pendingApprovalCount: z.number().int().min(0).nullable(),
+  nextRecordNumber: z.string().min(1).nullable(), nextVersionNumber: revision, canDeactivate: z.boolean(), canReactivate: z.boolean(),
+  unavailableReason: z.enum(["PublicationInProgress", "NotPublished"]).nullable() });
+const deactivation = z.strictObject({ definitionId: guid, revision, lifecycle });
+const deactivationPreview = deactivation.extend({ affectedSuggestions: z.array(z.strictObject({ definitionId: guid, name: nameText })) });
+const detail = z.strictObject({ definition, lifecycle, capabilities: z.strictObject({ canSave: z.boolean(), canPublish: z.boolean(), canPreview: z.boolean() }), audit, publication: publicationProjection });
 const commit = z.strictObject({ requestId: guid, definition,
   identityMap: z.strictObject({ fields: z.array(z.strictObject({ localId: z.string(), fieldId: guid, key: z.string(), replacesFieldId: guid.nullable() })),
     choices: z.array(z.strictObject({ fieldLocalId: z.string(), localId: z.string(), fieldId: guid, choiceId: guid })) }),
@@ -47,11 +53,11 @@ const commit = z.strictObject({ requestId: guid, definition,
 const recovered = z.strictObject({ requestId: guid, kind: z.enum(["Create", "Update"]), status: z.literal("Committed"), committedAtUtc: utc, currentRevision: revision, result: commit })
   .refine(value => value.requestId === value.result.requestId && value.currentRevision >= value.result.definition.revision);
 const row = z.strictObject({ id: guid, name: nameText, prefix: z.string(), questionCount: z.number().int().min(0), activeVersionNumber: revision.nullable(),
-  displayState, lastChangedAtUtc: utc, lastChangedBy: author.nullable(), canEdit: z.boolean() });
+  displayState, lastChangedAtUtc: utc, lastChangedBy: author.nullable(), canEdit: z.boolean(), lifecycle });
 const checkedRow = row.refine(value => Object.values(value.name).some(name => !!name.trim()));
 const page = z.strictObject({ items: z.array(checkedRow), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: z.number().int().min(0),
   totalPages: z.number().int().min(0), hasPrevious: z.boolean(), hasNext: z.boolean() });
-const facets = z.strictObject({ all: z.number().int().min(0), published: z.number().int().min(0), drafts: z.number().int().min(0) });
+const facets = z.strictObject({ active: z.number().int().min(0), published: z.number().int().min(0), drafts: z.number().int().min(0), deactivated: z.number().int().min(0) });
 
 export class UnsupportedFormResponse extends Error {
   constructor() { super("Unsupported form response."); this.name = "UnsupportedFormResponse"; }
@@ -148,3 +154,17 @@ export type FormPublicationStatus = ReturnType<typeof readFormPublicationStatus>
 const officialPreview = z.strictObject({ url: z.string().url().refine(value => { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }), expiresAtUtc: utc });
 export class ExpiredFormPreview extends Error { constructor() { super("The form preview has expired."); this.name = "ExpiredFormPreview"; } }
 export function readFormPreview(value: unknown, now = Date.now()) { const checked = read(officialPreview, value); if (Date.parse(checked.expiresAtUtc) <= now) throw new ExpiredFormPreview(); return checked; }
+
+export type FormLifecycle = z.infer<typeof lifecycle>;
+export type FormDeactivation = z.infer<typeof deactivation>;
+export type FormDeactivationPreview = z.infer<typeof deactivationPreview>;
+export function readFormDeactivation(value: unknown, id: string): FormDeactivation {
+  const result = read(deactivation, value);
+  if (result.definitionId.toLowerCase() !== id.toLowerCase() || result.revision !== result.lifecycle.revision) throw new UnsupportedFormResponse();
+  return result;
+}
+export function readFormDeactivationPreview(value: unknown, id: string): FormDeactivationPreview {
+  const result = read(deactivationPreview, value);
+  if (result.definitionId.toLowerCase() !== id.toLowerCase() || result.revision !== result.lifecycle.revision) throw new UnsupportedFormResponse();
+  return result;
+}

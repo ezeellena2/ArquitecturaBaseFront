@@ -254,10 +254,11 @@ describe("Forms routes", () => {
     expect(store.calls.some(call => call.method === "GET" && call.path.includes("/definitions/0199"))).toBe(true);
     expect(screen.queryByRole("button", { name: "Publicar en WhatsApp" })).not.toBeInTheDocument();
   });
-  it("keeps server facets and filters in the URL and exposes no future actions", async () => {
+  it("keeps server lifecycle facets and filters in the URL", async () => {
     setup();
     const { router } = renderRouteWithProviders("/formularios");
     await screen.findByRole("table");
+    expect(screen.getByRole("columnheader", { name: "Respuestas" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Publicados (0)" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Publicados (0)" }));
     await waitFor(() => expect(router.state.location.search).toContain("publicationFilter=Published"));
@@ -588,3 +589,11 @@ it("uses the chosen I1 labels when English is the original and Spanish is untran
   expect(screen.getByRole("button", { name: "Español · 1 sin traducir" })).toBeInTheDocument();
   expect(screen.getByText("El original (inglés) es obligatorio; el otro idioma es opcional. Mientras le falte algo, el formulario sale entero en el original.")).toBeInTheDocument();
 });
+
+ it("labels the default lifecycle scope as Active and offers the deactivated scope", async () => {
+  setup();
+  renderRouteWithProviders("/formularios");
+  await screen.findByRole("table");
+  expect(screen.getByRole("button", { name: "Activos (1)" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: /^Dados de baja/ })).toBeInTheDocument();
+ });
