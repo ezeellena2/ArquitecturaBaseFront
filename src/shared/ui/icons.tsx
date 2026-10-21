@@ -351,3 +351,5 @@ export function LockIcon(props: IconProps) {
 export function ArrowDownIcon(props: IconProps) { return <Icon {...props}><path d="M12 5v14m-6-6 6 6 6-6"/></Icon>; }
 export function CloseIcon(props: IconProps) { return <Icon {...props}><path d="m6 6 12 12M18 6 6 18"/></Icon>; }
 export function DocumentIcon(props: IconProps) { return <Icon {...props}><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></Icon>; }
+
+export { EllipsisVertical as MoreVerticalIcon } from "lucide-react";

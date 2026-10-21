@@ -54,10 +54,12 @@ function DialogContent({
   children,
   showCloseButton = true,
   placement = "center",
+  mobileFullscreen = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
   placement?: "center" | "right"
+  mobileFullscreen?: boolean
 }) {
   const { t } = useTranslation()
   const registerHost = React.useCallback((host: HTMLDivElement | null) => {
@@ -76,6 +78,8 @@ function DialogContent({
         className={cn(
           placement === "right"
             ? "fixed inset-y-0 right-0 z-50 flex h-svh w-full max-w-lg flex-col gap-4 overflow-y-auto border-l bg-background p-4 outline-none"
+            : mobileFullscreen
+              ? "fixed inset-0 z-50 flex h-svh w-full max-w-full flex-col gap-4 overflow-hidden border bg-background p-4 outline-none sm:top-[50%] sm:left-[50%] sm:right-auto sm:bottom-auto sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[var(--radius-card)]"
             : "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100svh-2rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 rounded-[var(--radius-card)] border bg-background p-4 duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 motion-reduce:animate-none sm:max-w-lg",
           className
         )}

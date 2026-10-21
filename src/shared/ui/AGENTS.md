@@ -55,7 +55,7 @@ Sonner sólo se importa en notifications.ts y sonner.tsx; arquitectura verifica 
 
 `PhotoViewer` presenta el Dialog común, navegación por flechas/Escape y retorno del foco. `PhotoThumbnail` fija la variante de miniatura. `PrivateImage` mantiene su URL Blob sólo mientras existe el elemento y la revoca al cambiar/desmontar; ninguna pieza conoce una feature, credenciales o rutas.
 
-`FormRecordFiles` compone miniaturas, visor y descargas privadas para chat y planilla/detalle. Recibe actor, respuesta, metadatos y callbacks de acceso; no importa features. Variante compacta: primera foto/cantidad; galería puede abarcar todas las fotos de la respuesta. `DialogContent` admite placement right para el panel de filtros, conservando foco, host de notificaciones y variante predeterminada.
+`FormRecordFiles` compone miniaturas, visor y descargas privadas para chat y planilla/detalle. Recibe actor, respuesta, metadatos y callbacks de acceso; no importa features. Variante compacta: primera foto/cantidad; galería puede abarcar todas las fotos de la respuesta. `DialogContent` admite placement right para el panel de filtros y mobileFullscreen optativo para decisiones con cuerpo desplazable y pie fuera del scroll en móvil. Conserva foco, host de notificaciones y variante predeterminada; el consumidor compone el cuerpo y el pie con las piezas comunes.
 
 `Tabs`, `TabsList`, `TabsTrigger` y `TabsContent` comparten pestañas subrayadas con tokens del sistema sobre Radix. Conservan asociación entre pestaña/panel, selección controlada o inicial, foco y navegación por teclado; el consumidor aporta nombres, valores y contenido. No conocen rutas, permisos ni consultas. El catálogo las muestra con `?scenario=tabs`.
 
