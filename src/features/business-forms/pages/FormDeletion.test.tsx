@@ -157,3 +157,17 @@ for (const source of ["row", "editor"] as const) {
   expect(nav?.state.data).toMatchObject({items:[],totalCount:0});
  });
 }
+
+for(const failure of ["network","500"] as const) it("observes a deleted definition after a lost "+failure+" result before leaving",async()=>{
+ const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:true}));const writes=vi.fn();
+ server.use(http.delete("/api/forms/definitions/:id",async({request})=>{writes();await store.handle(request);return failure==="network"?HttpResponse.error():HttpResponse.json({traceId:"lost-delete"},{status:500});}));
+ const {router}=renderRouteWithProviders("/formularios/"+fixtureFormId);const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" sin guardar");const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));const dialog=await screen.findByRole("dialog");await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+ await waitFor(()=>expect(router.state.location.pathname).toBe("/formularios"));expect(writes).toHaveBeenCalledOnce();expect(screen.queryByRole("dialog")).not.toBeInTheDocument();expect(screen.queryByText("Tenés cambios sin guardar")).not.toBeInTheDocument();
+});
+
+for(const readStatus of [403,404] as const) it("does not infer deletion from a recovery GET "+readStatus+" without its typed absence",async()=>{
+ const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:true}));let attempted=false;const writes=vi.fn();
+ server.use(http.delete("/api/forms/definitions/:id",()=>{attempted=true;writes();return HttpResponse.error();}),http.get("/api/forms/definitions/:id",({request})=>attempted?HttpResponse.json({code:readStatus===403?"General.Forbidden":"Other.NotFound"},{status:readStatus}):store.handle(request)));
+ const {router}=renderRouteWithProviders("/formularios/"+fixtureFormId);const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));const dialog=await screen.findByRole("dialog");await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+ if(readStatus===403) {await screen.findByRole("heading",{name:"No tenés permiso"});expect(screen.queryByLabelText("Nombre")).not.toBeInTheDocument();} else {await within(dialog).findByText("Cambió la situación del formulario. Cerrá este diálogo y revisalo antes de eliminarlo.");expect(within(dialog).getByRole("button",{name:"Eliminar"})).toBeDisabled();}expect(router.state.location.pathname).toBe("/formularios/"+fixtureFormId);expect(writes).toHaveBeenCalledOnce();expect(vi.mocked(notify).mock.calls.some(([notice])=>notice.kind==="success")).toBe(false);
+});

@@ -168,3 +168,16 @@ for (const source of ["row", "editor"] as const) {
   if(source==="row") {expect(screen.queryByRole("link",{name:"Registrar visita"})).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Dados de baja (1)"})).toBeVisible();await waitFor(()=>expect(screen.getByRole("searchbox")).toHaveFocus());}
  });
 }
+
+it("refreshes observed deactivation without adopting its revision or losing an unsaved draft",async()=>{
+ const store=setup();const writes=vi.fn();
+ server.use(http.post("/api/forms/definitions/:id/deactivation",async({request})=>{await store.handle(request);return HttpResponse.error();}),http.put("/api/forms/definitions/:id/draft",async({request})=>{writes(await request.clone().json());return store.handle(request);}));
+ renderRouteWithProviders("/formularios/"+fixtureFormId);const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" privado");const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Dar de baja/}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("button",{name:"Dar de baja"}));
+ await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(screen.getByText(/Dado de baja por/)).toBeVisible();expect(name).toHaveValue("Registrar visita privado");expect(vi.mocked(notify).mock.calls.some(([notice])=>notice.kind==="success")).toBe(false);
+ await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));await waitFor(()=>expect(writes).toHaveBeenCalledOnce());expect(writes).toHaveBeenCalledWith(expect.objectContaining({expectedRevision:1,name:expect.objectContaining({es:"Registrar visita privado"})}));expect(await screen.findByRole("button",{name:"Revisar"})).toBeVisible();
+});
+it("routes a deactivation revision conflict to explicit draft review without replacing private edits",async()=>{
+ const store=setup();server.use(http.post("/api/forms/definitions/:id/deactivation",()=>{const definition=store.definitions.get(fixtureFormId)!;store.definitions.set(fixtureFormId,{...definition,revision:2});return HttpResponse.json({code:"Forms.Draft.RevisionConflict"},{status:409});}));
+ renderRouteWithProviders("/formularios/"+fixtureFormId);const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" privado");const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Dar de baja/}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("button",{name:"Dar de baja"}));await userEvent.click(await within(dialog).findByRole("button",{name:"Revisar"}));
+ await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(name).toHaveValue("Registrar visita privado");expect(screen.getByRole("button",{name:"Guardar borrador"})).toBeDisabled();expect(screen.getByRole("button",{name:"Revisar"})).toBeVisible();
+});

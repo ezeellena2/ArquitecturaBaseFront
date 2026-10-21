@@ -22,8 +22,8 @@ Cada pieza implementa parte de un tablero elegido con `shared/ui` y recibe datos
 ### Ciclo de vida
 
 - `FormLifecycleMenu`: baja o reactivación exigen Publish y quedan apagadas con su motivo. Eliminar exige Manage y se omite con respuestas (`HasResponses` o contador positivo); si el menú ya tiene acciones de publicación, ese motivo es texto no accionable. No crea un menú vacío.
-- `FormDeactivationDialog` lee el impacto al abrir: sugerencias afectadas por nombre, envíos abiertos sólo con evidencia del canal y respuestas conservadas. Confirma con la revisión del impacto y, si difiere de la del editor, ofrece revisar. Un fallo conserva el diálogo, avisa una vez y relee.
-- `FormDeletionDialog` manda `expectedRevision`; un 403, 404 o 409 bloquea la confirmación, lo explica en el diálogo y da la causa en un toast.
+- `FormDeactivationDialog` lee el impacto al abrir: sugerencias afectadas por nombre, envíos abiertos sólo con evidencia del canal y respuestas conservadas. Confirma con la revisión del impacto y, si difiere de la del editor, ofrece revisar. Un fallo conserva el diálogo y avisa una vez; red o 5xx relee antes de repetir. Una baja observada por GET refresca metadata sin adoptar su revisión en el borrador ni atribuirla al intento propio.
+- `FormDeletionDialog` manda `expectedRevision`; un 403, 404 o 409 bloquea la confirmación, lo explica en el diálogo y da la causa en un toast. Tras red o 5xx consulta el detalle: sólo 404 `Forms.Definition.NotFound` confirma ausencia; otra revisión exige cerrar y revisar, sin adoptarla para otro DELETE.
 - `deprecationMessage`: Pending (con vencimiento si existe), Uncertain «Sin confirmar» y Deprecated con la fecha del servidor; null no es deprecación. Nada consulta Meta ni decide por reloj.
 
 ### Catálogos

@@ -15,9 +15,9 @@ import { fetchFormDeactivation, deactivateForm } from "../api/forms";
 import type { FormDeactivation } from "../api/response";
 import { administrativeName } from "../editorModel";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
-export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRevisionMismatch, onComplete, onClose, focusFallback, timeZoneId }: {
+export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRevisionMismatch, onComplete, onObserved, onClose, focusFallback, timeZoneId }: {
  timeZoneId?: string; id: string; name: string; scope: FormReadScope; expectedRevision?: number; onRevisionMismatch?: () => void;
- onComplete: (result: FormDeactivation, expectedRevision: number) => void | Promise<void>; onClose: () => void; focusFallback?: RefObject<HTMLElement | null>;
+ onComplete: (result: FormDeactivation, expectedRevision: number) => void | Promise<void>; onObserved: () => void | Promise<void>; onClose: () => void; focusFallback?: RefObject<HTMLElement | null>;
 }) {
  const { t } = useTranslation("forms");
  const key = [...formScopeKey(scope), "deactivation", id];
@@ -25,6 +25,7 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
  const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchFormDeactivation(id, signal), gcTime: 0, meta: { errorOwner: "local" } });
  const [busy, setBusy] = useState(false);
  const [denied, setDenied] = useState(false);
+ const [needsRead, setNeedsRead] = useState(false);
  const active = useRef(true);
  const flight = useRef<AbortController | null>(null);
  const feedbackId = "forms:deactivation:" + JSON.stringify(key);
@@ -38,8 +39,14 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
  }, [query.error, feedbackId, t]);
  const impact = query.data;
  const revisionMismatch = expectedRevision !== undefined && impact?.revision !== undefined && expectedRevision !== impact.revision;
+ const reread = async () => {
+  const current = await query.refetch();
+  if (!active.current || current.error || !current.data) return;
+  setNeedsRead(false);
+  if (current.data.lifecycle.deactivatedAtUtc) { await onObserved(); if (active.current) onClose(); }
+ };
  const submit = async () => {
-  if (flight.current || !impact?.lifecycle.canDeactivate || revisionMismatch || denied) return;
+  if (flight.current || needsRead || !impact?.lifecycle.canDeactivate || revisionMismatch || denied) return;
   const controller = new AbortController(); flight.current = controller; setBusy(true); dismissNotification(feedbackId);
   try {
    const result = await deactivateForm(id, impact.revision, controller.signal);
@@ -51,8 +58,9 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
   } catch (error) {
    if (!active.current || errorFeedback(error).kind === "cancelled") return;
    if (error instanceof ApiError && error.status === 403) setDenied(true);
-   else if (!["session", "forbidden"].includes(errorFeedback(error).kind)) notify({ id: feedbackId, kind: "error", message: operationalErrorMessage(error, t, "save") });
-   void query.refetch();
+   else if (!["session", "forbidden"].includes(errorFeedback(error).kind)) notify({ id: feedbackId, kind: "error", message: operationalErrorMessage(error, t) });
+   if (errorFeedback(error, { writing: true }).kind === "uncertain") { setNeedsRead(true); await reread(); }
+   else void query.refetch();
   } finally { flight.current = null; if (active.current) setBusy(false); }
  };
  const forbidden = denied || query.error instanceof ApiError && query.error.status === 403;
@@ -67,9 +75,10 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
     </section>
     {impact.lifecycle.lastOpenSessionExpiresAtUtc || impact.lifecycle.deprecationState ? <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.openSends")}</h2>{impact.lifecycle.lastOpenSessionExpiresAtUtc ? <Banner tone="info"><span>{t("lifecycle.openSendsHint")}<span className="block">{t("lifecycle.lastOpenSend", {date:formatDateTimeInZone(impact.lifecycle.lastOpenSessionExpiresAtUtc,scope.culture,timeZoneId)})}</span></span></Banner> : null}{impact.lifecycle.deprecationState ? <Banner tone="warning">{t(impact.lifecycle.lastOpenSessionExpiresAtUtc ? "lifecycle.metaIrreversible" : "lifecycle.metaIrreversibleNow")}</Banner> : null}</section> : null}
     <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.whatRemains")}</h2><Banner tone="info"><span>{impact.lifecycle.responseCount === null ? t("lifecycle.keepsResponsesUnknown") : t("lifecycle.keepsResponses", { count: impact.lifecycle.responseCount })}<span className="block">{t("lifecycle.keepsFiles")}</span></span></Banner><Banner tone="info"><span>{t("lifecycle.keepsWorkflow")}{impact.lifecycle.pendingApprovalCount ? <span className="block">{t("lifecycle.keepsApprovals", { count: impact.lifecycle.pendingApprovalCount })}</span> : null}</span></Banner></section>
+    {needsRead ? <Button variant="outline" disabled={busy || query.isFetching} onClick={() => void reread()}>{t("common:actions.retry")}</Button> : null}
     {revisionMismatch ? <p className="text-sm">{t("lifecycle.reviewDraft")}</p> : !impact.lifecycle.canDeactivate ? <p className="text-sm">{t(impact.lifecycle.deactivatedAtUtc ? "lifecycle.alreadyDeactivated" : "lifecycle.reasons." + (impact.lifecycle.unavailableReason ?? "Unavailable"))}</p> : null}
    </>}
   </div>
-  <DialogFooter className="shrink-0"><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button>{revisionMismatch && onRevisionMismatch ? <Button type="button" onClick={onRevisionMismatch}>{t("review")}</Button> : <Button type="button" disabled={busy || forbidden || !impact?.lifecycle.canDeactivate} onClick={() => void submit()}>{t(busy ? "lifecycle.deactivating" : "lifecycle.deactivate")}</Button>}</DialogFooter>
+  <DialogFooter className="shrink-0"><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button>{revisionMismatch && onRevisionMismatch ? <Button type="button" onClick={onRevisionMismatch}>{t("review")}</Button> : <Button type="button" disabled={busy || needsRead || forbidden || !impact?.lifecycle.canDeactivate} onClick={() => void submit()}>{t(busy ? "lifecycle.deactivating" : "lifecycle.deactivate")}</Button>}</DialogFooter>
  </DialogContent></Dialog>;
 }

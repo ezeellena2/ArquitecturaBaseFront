@@ -7,7 +7,7 @@ import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import { deleteForm } from "../api/forms";
+import { deleteForm, fetchFormDefinition } from "../api/forms";
 import type { FormReadScope } from "../hooks/useFormQueries";
 
 export function FormDeletionDialog({ id, name, revision, scope, onDeleted, onClose, focusFallback, onChanged }: {
@@ -37,8 +37,21 @@ export function FormDeletionDialog({ id, name, revision, scope, onDeleted, onClo
    if (!active.current || errorFeedback(error).kind === "cancelled") return;
    if (error instanceof ApiError && (error.status === 403 || error.status === 404 || error.status === 409)) { setBlocked(true); if (error.status === 403) setDenied(true); onChanged?.(); }
    if (error instanceof ApiError && error.status === 429) cooldown.restart(error.retryAfterSeconds ?? 60);
-   const feedback = errorFeedback(error);
-   if (!["cancelled", "session", "forbidden"].includes(feedback.kind)) notify({ id: feedbackId, kind: "error", message: operationalErrorMessage(error, t, "save") });
+   const feedback = errorFeedback(error, { writing: true });
+   if (!["cancelled", "session", "forbidden"].includes(feedback.kind)) notify({ id: feedbackId, kind: "error", message: operationalErrorMessage(error, t) });
+   if (feedback.kind === "uncertain") {
+    setBlocked(true);
+    try {
+     const current = await fetchFormDefinition(id, controller.signal);
+     if (!active.current || controller.signal.aborted) return;
+     setBlocked(current.definition.revision !== revision || !current.lifecycle.canDelete);
+     onChanged?.();
+    } catch (readError) {
+     if (!active.current || controller.signal.aborted) return;
+     if (readError instanceof ApiError && readError.status === 404 && readError.code === "Forms.Definition.NotFound") { await onDeleted(); if (active.current) onClose(); }
+     else if (readError instanceof ApiError && readError.status === 403) { setDenied(true); onChanged?.(); }
+    }
+   }
   } finally { flight.current = null; if (active.current) setBusy(false); }
  };
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
