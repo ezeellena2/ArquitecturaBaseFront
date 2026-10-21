@@ -33,3 +33,6 @@ src/test/fixtures/whatsapp-audio-http/** -text whitespace=cr-at-eol
 src/test/fixtures/forms-missing-requests-http/** -text
 src/test/fixtures/whatsapp-assistant-http/** -text
 src/test/fixtures/forms-http/** -text whitespace=cr-at-eol
+
+# Deactivation, reactivation and channel status remain exact backend HTTP bytes.
+src/test/fixtures/forms-lifecycle-http/** -text whitespace=cr-at-eol

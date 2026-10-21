@@ -6,6 +6,7 @@ import { HttpResponse } from "msw";
 import { z } from "zod";
 const cohorts = {
   forms: ["forms-http","FORMS_HTTP_CONTRACT_INPUT","forms"],
+  lifecycle: ["forms-lifecycle-http", "FORM_LIFECYCLE_HTTP_CONTRACT_INPUT", "lifecycle"],
   manualCatalogs: ["catalogs-http/manual-current","FORMS_CATALOG_HTTP_CONTRACT_INPUT","manual-catalogs"],
   catalogFilters: ["catalogs-http/filters","FORMS_CATALOG_FILTERS_HTTP_CONTRACT_INPUT","catalog-filters"],
   catalogSource: ["catalogs-http/k6-source","FORMS_CATALOG_SOURCE_HTTP_CONTRACT_INPUT","catalog-source"],

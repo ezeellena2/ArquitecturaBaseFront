@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflict","status":409,"detail":"The form already has responses and cannot be deleted.","traceId":"00-4e066a58f40d62cb5929f705a28217ee-0a351483f548ffdd-01","code":"Forms.Definition.HasResponses"}
