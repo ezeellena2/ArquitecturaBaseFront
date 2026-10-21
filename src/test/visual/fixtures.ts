@@ -1,3 +1,4 @@
+import { createFormOverviewVisualFixtures } from "./formOverviewFixtures";
 import { createPdfVisualFixtures } from "./pdfFixtures";
 import { createApprovalVisualFixtures } from "./approvalFixtures";
 import { createResponseVisualFixtures } from "./responseFixtures";
@@ -22,6 +23,8 @@ import { emptyBusinessDetails } from "@/features/artificial-intelligence/busines
 // Datos ficticios estables, con los tipos de los contratos reales.
 export function installVisualFixtures(language: "es" | "en", scenario: string | null) {
   const english = language === "en";
+  const formOverviewFixture = scenario?.startsWith("forms-overview") ? createFormOverviewVisualFixtures(language, scenario) : undefined;
+  if (formOverviewFixture) Object.assign(globalThis, { formOverviewFixture });
   const pdfsFixture = scenario === "forms-pdf" || scenario === "responses-pdf" ? createPdfVisualFixtures() : undefined;
   if(pdfsFixture) Object.assign(globalThis,{pdfsFixture});
   const approvalsScenario = scenario?.startsWith("approvals-") || scenario === "responses-approval";
@@ -36,7 +39,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const chatFormsScenario = scenario?.startsWith("forms-chat-") ?? false;
   const chatFormsFixture = chatFormsScenario ? createChatFormFixtures(language, scenario!) : undefined;
   if (chatFormsFixture) Object.assign(globalThis,{chatFormsFixture});
-  const formsScenario = !chatFormsScenario && (scenario?.startsWith("forms-") ?? false);
+  const formsScenario = !formOverviewFixture && !chatFormsScenario && (scenario?.startsWith("forms-") ?? false);
   const missingRequestFixture=scenario?.startsWith("forms-missing")?createMissingRequestVisualFixtures(language):undefined;
   const formsFixture = formsScenario ? createFormFixtureStore(language, scenario!, language === "es" ? budgetEsRaw : budgetEnRaw) : undefined;
   if (formsFixture) Object.assign(globalThis, { formsFixture });
@@ -51,7 +54,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false,
     hasGoogleLogin: false, culture: language, timeZoneId: "America/Argentina/Buenos_Aires",
     lastLoginAtUtc: "2026-09-18T12:00:00Z", roles: ["Admin"],
-    permissions: [...(missingRequestFixture ? ["formcatalogs.read"] : []), ...(scenario?.startsWith("forms-lifecycle") ? ["formrecords.read"] : []), ...(scenario === "forms-lifecycle-suggestions" ? ["formsuggestions.manage"] : []), ...(scenario === "forms-pdf" ? ["formrules.manage"] : []), ...(approvalsScenario ? ["formapprovals.decide"] : []), ...(responsesScenario && scenario !== "responses-denied" ? ["formrecords.read", "whatsapp.read", ...(scenario === "responses-workflow" ? ["formrules.manage"] : []), ...(scenario === "responses-read" ? [] : ["formrecords.export"])] : []), ...(catalogsScenario && scenario !== "catalogs-denied" && scenario !== "forms-catalog-no-read" ? (catalogQuestionsScenario || scenario === "catalogs-read" || scenario === "catalogs-filters-read") ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? (scenario === "forms-read" || scenario === "forms-catalog-read") ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-rules") ? ["formrules.manage"] : []), ...((scenario?.startsWith("forms-publication") || scenario?.startsWith("forms-languages-") || scenario?.startsWith("forms-lifecycle")) ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), ...(catalogsScenario ? [] : ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"]), ...(chatScenario ? (scenario === "forms-chat-read" || scenario === "forms-chat-catalog-inactive-read") ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] : []), ...(scenario?.startsWith("forms-chat-actions") && scenario !== "forms-chat-actions-no-values" ? ["formrecords.read"] : []), ...(scenario?.startsWith("forms-chat-catalog") && scenario !== "forms-chat-catalog-no-values" ? ["formrecords.read"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
+    permissions: formOverviewFixture?.permissions ?? [...(missingRequestFixture ? ["formcatalogs.read"] : []), ...(scenario?.startsWith("forms-lifecycle") ? ["formrecords.read"] : []), ...(scenario === "forms-lifecycle-suggestions" ? ["formsuggestions.manage"] : []), ...(scenario === "forms-pdf" ? ["formrules.manage"] : []), ...(approvalsScenario ? ["formapprovals.decide"] : []), ...(responsesScenario && scenario !== "responses-denied" ? ["formrecords.read", "whatsapp.read", ...(scenario === "responses-workflow" ? ["formrules.manage"] : []), ...(scenario === "responses-read" ? [] : ["formrecords.export"])] : []), ...(catalogsScenario && scenario !== "catalogs-denied" && scenario !== "forms-catalog-no-read" ? (catalogQuestionsScenario || scenario === "catalogs-read" || scenario === "catalogs-filters-read") ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? (scenario === "forms-read" || scenario === "forms-catalog-read") ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-rules") ? ["formrules.manage"] : []), ...((scenario?.startsWith("forms-publication") || scenario?.startsWith("forms-languages-") || scenario?.startsWith("forms-lifecycle")) ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), ...(catalogsScenario ? [] : ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"]), ...(chatScenario ? (scenario === "forms-chat-read" || scenario === "forms-chat-catalog-inactive-read") ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] : []), ...(scenario?.startsWith("forms-chat-actions") && scenario !== "forms-chat-actions-no-values" ? ["formrecords.read"] : []), ...(scenario?.startsWith("forms-chat-catalog") && scenario !== "forms-chat-catalog-no-values" ? ["formrecords.read"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []),
       ...(businessScenario && scenario !== "business-denied" ? scenario === "business-read" ? ["ai.business.read"] : ["ai.business.read", "ai.business.manage"] : []),
       ...(scenario === "business-roles" || roleGroupsScenario ? ["ai.read", "ai.manage"] : [])],
   };
@@ -162,6 +165,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     const requestUrl = new URL(request.url);
     const path = requestUrl.pathname;
     if (responsesScenario && /\/api\/forms\/records\/.+\/files\//.test(path)) return new Response(await fileImage(),{headers:{"content-type":"image/jpeg"}});
+    if (formOverviewFixture && path.startsWith("/api/forms/")) { const result = await formOverviewFixture.handle(request); if (result) return result; }
     if (pdfsFixture && path.startsWith("/api/forms/")) { const result = await pdfsFixture.handle(request); if(result) return result; }
     if (approvalsFixture && path.startsWith("/api/forms/")) { const result = await approvalsFixture.handle(request); if(result) return result; }
     if (responseFixtures && path.startsWith("/api/forms/")) return responseFixtures.handle(request);
