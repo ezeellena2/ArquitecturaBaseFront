@@ -211,14 +211,34 @@ test("private search stays out of URL and shows no matches", async ({
     page.getByRole("link", { name: "TEST-000002", exact: true }),
   ).toBeVisible();
 });
-test("all response forms are paged from the backend", async ({ page }) => {
-  await page.goto(
-    "/src/test/visual/index.html?screen=/formularios/respuestas&scenario=responses-many&lang=en",
-  );
-  await expect(
-    page.getByRole("link", { name: "Delivery report", exact: true }).last(),
-  ).toBeVisible();
-  await expect(page.getByRole("table").getByRole("row")).toHaveCount(21);
+test("form overview pages server results instead of the retired response navigation", async ({ page }) => {
+  const screen = encodeURIComponent("/formularios/respuestas?pageSize=2");
+  await page.goto("/src/test/visual/index.html?screen=" + screen + "&scenario=forms-overview&lang=en");
+  await expect(page.getByRole("heading", { name: "Forms", level: 1, exact: true })).toBeVisible();
+  const table = page.getByRole("table");
+  await expect(table.getByRole("link", { name: "Register visit", exact: true })).toBeVisible();
+  await expect(table.getByRole("row")).toHaveCount(3);
+  await expect(page.getByText("Page 1 of 3", { exact: true })).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => {
+    const original = window.fetch;
+    const reads: string[] = [];
+    Object.assign(window, { overviewPageReads: reads });
+    window.fetch = (input, init) => {
+      const request = input instanceof Request ? input : new Request(new URL(String(input), location.href), init);
+      if (new URL(request.url).pathname === "/api/forms/overview") reads.push(request.url);
+      return original(input, init);
+    };
+  });
+  await page.getByRole("button", { name: "Next page", exact: true }).click();
+  await expect(table.getByRole("link", { name: "Site survey", exact: true })).toBeVisible();
+  await expect(table.getByRole("link", { name: "Register visit", exact: true })).toHaveCount(0);
+  await expect(table.getByRole("row")).toHaveCount(3);
+  await expect(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { overviewPageReads: string[] }).overviewPageReads.some(read => {
+    const query = new URL(read).searchParams;
+    return query.get("page") === "2" && query.get("pageSize") === "2";
+  }))).toBe(true);
 });
 
 test("sheet photo opens the shared viewer with every photo and restores focus", async ({

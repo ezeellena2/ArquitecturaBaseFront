@@ -195,36 +195,6 @@ export function createResponseVisualFixtures(
       if (scenario === "responses-loading") {
         await new Promise((resolve) => setTimeout(resolve, 60_000));
       }
-      if (path === "/api/forms/navigation") {
-        const forms = Array.from(
-          { length: scenario === "responses-many" ? 26 : 1 },
-          (_, index) => ({
-            id: index ? id(100 + index) : responseFormId,
-            name: index
-              ? `${en ? "Form" : "Formulario"} ${index + 1}`
-              : sheet.name,
-            prefix: "TEST",
-            versionNumber: 2,
-          }),
-        );
-        const number = Number(url.searchParams.get("page") ?? 1),
-          size = Number(url.searchParams.get("pageSize") ?? 20);
-        const searched = forms.filter(
-          (form) =>
-            !url.searchParams.get("search") ||
-            form.name
-              .toLowerCase()
-              .includes(url.searchParams.get("search")!.toLowerCase()),
-        );
-        return json(
-          page(
-            searched.slice((number - 1) * size, number * size),
-            number,
-            size,
-            searched.length,
-          ),
-        );
-      }
       if (scenario === "responses-revoked")
         return json({ code: "Authorization.Forbidden" }, 403);
       if (path.includes("/filter-counts/")) {

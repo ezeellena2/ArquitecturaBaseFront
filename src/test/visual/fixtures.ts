@@ -173,7 +173,6 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (pdfsFixture && path.startsWith("/api/forms/")) { const result = await pdfsFixture.handle(request); if(result) return result; }
     if (approvalsFixture && path.startsWith("/api/forms/")) { const result = await approvalsFixture.handle(request); if(result) return result; }
     if (responseFixtures && path.startsWith("/api/forms/")) return responseFixtures.handle(request);
-    if (path === "/api/forms/navigation") return json(pageOf([]));
     if (scenario === "file-cards" && /^\/api\/forms\/records\//.test(path)) return new Response(await fileImage(),{headers:{"content-type":"image/jpeg"}});
     if (catalogsFixture && (path.startsWith("/api/forms/catalogs") || path === "/api/forms/catalog-filter-options" || path === "/api/forms/catalog-previews")) return catalogsFixture.handle(request);
     if (chatFormsFixture && path.startsWith("/api/whatsapp/chats")) return chatFormsFixture.handle(request);
