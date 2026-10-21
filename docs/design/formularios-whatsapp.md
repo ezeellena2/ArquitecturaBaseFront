@@ -486,4 +486,23 @@ El recorrido interactivo en IAB sobre componentes productivos y datos sintético
 | [BA4 Eliminar, inglés a 320](evidence/formularios-whatsapp/baja-20261021-ba4-eliminar-en-320.png) | Diálogo completo móvil, prefijo reservado y pie fijo. |
 | [BA6, inglés a 390](evidence/formularios-whatsapp/baja-20261021-ba6-en-390.png) | Destino dado de baja, sólo Quitar y Guardar apagado. |
 
-MF1 y el detalle completo siguen en la [etapa siguiente](../../../ArquitecturaBase/docs/plans/formularios/menu-y-detalle.md). El [piloto real de baja y reactivación](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-baja-reactivación-y-eliminación) espera el code review.
+MF1 y el detalle completo siguen en la [etapa siguiente](../../../ArquitecturaBase/docs/plans/formularios/menu-y-detalle.md). El [piloto real de baja y reactivación](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-baja-reactivación-y-eliminación) conserva su cierre físico separado.
+
+## Verificación posterior al review de baja — 2026-10-21
+
+El review conserva BA1-A y BA2–BA6. Se revisaron la baja sin envíos abiertos, el prefijo reservado al eliminar, la advertencia de WhatsApp sólo para formularios que llegaron a publicarse, los motivos alcanzables por teclado y el estado «Requiere atención», sin una acción nueva ni una fecha de deprecación inventada. Las relecturas tras red/5xx conservan el borrador y no atribuyen al operador un cambio observado de otro intento.
+
+El front cerró **2511/2511 tests en 237 archivos**, build/TypeScript y lint aprobados, con **49/49** controles de arquitectura. La visual estándar quedó **585/585**, con las **127 referencias** idénticas en inventario y SHA256, sin cambios de snapshots ni tolerancias. Se inspeccionaron las seis capturas P10 en es/en a 1440/390/320 y muestras actuales de eliminación y NeedsAttention. El export real de la misma corrida backend `49e14c21` reúne **20 cohortes, 356 capturas y 63 fuentes únicas** —80 referencias de fuentes sumadas por cohorte—; lifecycle contiene **30 cuerpos**, quince por idioma, incluidos los dos NeedsAttention. Los consumidores verificaron sus bytes, hashes y contratos estrictos.
+
+El recorrido IAB en es/en a 390/320 comprobó BA1–BA6, NeedsAttention en tabla y editor y el teclado. Las confirmaciones durables se cancelaron; BA6 sólo cambió el borrador local y se descartó. P10 se acredita con seis casos y capturas de un 429 simulado por el arnés visual, sin atribuirlo a ese recorrido manual. La tabla y el segmentado mantienen scroll contenido y los diálogos móviles, cuerpo desplazable y pie fijo. Servidor y pestañas del agente quedaron cerrados. El transporte del arnés es simulado; la [integración del backend](../../../ArquitecturaBase/docs/features/formularios.md#verificación-local-del-ciclo-de-vida--2026-10-21), MF1 y el piloto físico mantienen sus alcances separados.
+
+| Evidencia posterior al review | Alcance |
+| --- | --- |
+| [BA3 sin envíos abiertos, español a 320](evidence/formularios-whatsapp/baja-review-20261021-no-open-es-320.jpg) | JPEG del recorrido IAB, sin convertir: aviso inmediato, conservación y pie fijo. |
+| [Eliminar borrador, español a 320](evidence/formularios-whatsapp/baja-review-20261021-delete-draft-es-320.png) | Prefijo ENT reservado, sin advertencia de Flows publicados. |
+| [Eliminar publicado, inglés a 320](evidence/formularios-whatsapp/baja-review-20261021-delete-published-en-320.png) | Prefijo VIS, advertencia de WhatsApp y Cancelar con foco. |
+| [NeedsAttention en editor, inglés a 390](evidence/formularios-whatsapp/baja-review-20261021-needsattention-editor-en-390.png) | Aviso explícito sin fecha de deprecación ni acción nueva. |
+| [NeedsAttention en tabla, español a 320](evidence/formularios-whatsapp/baja-review-20261021-needsattention-list-es-320.png) | Tabla desplazada hasta el estado autoritativo; scroll contenido. |
+| [P10, español a 320](evidence/formularios-whatsapp/baja-review-20261021-publication-wait-es-320.png) | Comprobación pendiente, espera y acciones separadas ante 429 simulado. |
+| [P10, inglés a 390](evidence/formularios-whatsapp/baja-review-20261021-publication-wait-en-390.png) | Mismo recorrido con copy en inglés y foco visible. |
+| [P11, inglés a 320](evidence/formularios-whatsapp/baja-review-20261021-unavailable-menu-en-320.png) | Motivo de la acción apagada alcanzable por teclado; no inicia otra publicación. |
