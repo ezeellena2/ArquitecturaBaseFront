@@ -78,6 +78,18 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await assertContainedTable(page, width, width < 640);
     await page.screenshot({ path: "test-results/form-overview-" + state + "-" + language + "-" + width + ".png", fullPage: true });
     if (state === "active") {
+      const menuToggle = page.getByRole("button", { name: es ? "Menú de navegación" : "Navigation menu", exact: true });
+      if (width < 640) await menuToggle.click();
+      const overviewLink = page.getByRole("link", { name: es ? /^Formularios(?: \(\d+\))?$/ : /^Forms(?: \(\d+\))?$/ });
+      await expect(overviewLink).toHaveAttribute("href", "/formularios/respuestas");
+      await expect(overviewLink).toHaveAttribute("aria-current", "page");
+      for (const [name, href] of [
+        [es ? "Diseñar formularios" : "Design forms", "/formularios"],
+        [es ? "Catálogos" : "Catalogs", "/catalogos"],
+        [es ? "Formularios que faltan" : "Missing forms", "/formularios/faltantes"],
+      ]) await expect(page.getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
+      await page.screenshot({ path: "test-results/form-overview-all-permissions-" + language + "-" + width + ".png", fullPage: true });
+      if (width < 640) { await page.keyboard.press("Escape"); await expect(menuToggle).toHaveAttribute("aria-expanded", "false"); }
       await page.getByRole("checkbox", { name: es ? "Con algo por aprobar" : "With something to approve", exact: true }).click();
       const inactiveRow = table.getByRole("link", { name: es ? "Control de vehículo" : "Vehicle inspection", exact: true }).locator("xpath=ancestor::tr");
       await expect(inactiveRow.getByText(es ? "Dado de baja" : "Deactivated", { exact: true })).toBeVisible();

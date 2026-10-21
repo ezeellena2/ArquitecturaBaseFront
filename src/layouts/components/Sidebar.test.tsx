@@ -46,6 +46,28 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link",{name:"Formularios"})).toHaveAttribute("href","/formularios/respuestas");
     expect(screen.queryByRole("link",{name:"Diseñar formularios"})).not.toBeInTheDocument();
   });
+  it.each([
+    "/formularios/respuestas", "/formularios/form-id/respuestas",
+    "/formularios/form-id/respuestas/record-id", "/formularios/form-id/respuestas/record-id/completa",
+  ])("marks the overview as current on the response workspace route %s", async path => {
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formapprovals.decide", "formtemplates.read", "formtemplates.manage", "formcatalogs.read"] })));
+    renderWithProviders(<MemoryRouter initialEntries={[path]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);
+    const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
+    expect(await within(panel).findByRole("link", { name: "Formularios" })).toHaveAttribute("aria-current", "page");
+    expect(within(panel).getByRole("link", { name: "Diseñar formularios" })).not.toHaveAttribute("aria-current", "page");
+    expect(within(panel).getAllByRole("link").map(link => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Formularios", "/formularios/respuestas"], ["Diseñar formularios", "/formularios"],
+      ["Catálogos", "/catalogos"], ["Formularios que faltan", "/formularios/faltantes"],
+    ]);
+  });
+
+  it.each(["/formularios/form-id", "/catalogos", "/formularios/faltantes"])("does not mark the overview on the separate forms task %s", async path => {
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formtemplates.read", "formtemplates.manage", "formcatalogs.read"] })));
+    renderWithProviders(<MemoryRouter initialEntries={[path]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);
+    const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
+    expect(await within(panel).findByRole("link", { name: "Formularios" })).not.toHaveAttribute("aria-current", "page");
+  });
+
   // AppProviders usa el queryClient de la app (un singleton). Sin esto, la respuesta de /api/me de un test
   // queda cacheada (staleTime: 30s) y se filtra al siguiente, que pisó el handler con otro permiso.
   beforeEach(() => {

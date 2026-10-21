@@ -1,6 +1,6 @@
 import { useContext, useEffect, useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, useLocation } from "react-router";
+import { Link, useLocation, useMatch } from "react-router";
 import {
   administration,
   whatsapp,
@@ -52,27 +52,29 @@ function NavItem({
   onNavigate?: () => void;
 }) {
   const Icon = item.icon;
-  const otherFormsPage = /^\/formularios\/(?:respuestas|faltantes|[^/]+\/respuestas)(?:\/|$)/.test(useLocation().pathname);
+  const pathname = useLocation().pathname;
+  const otherFormsPage = /^\/formularios\/(?:respuestas|faltantes|[^/]+\/respuestas)(?:\/|$)/.test(pathname);
+  const responseWorkspace = item.to === "/formularios/respuestas" && /^\/formularios\/(?:respuestas(?:\/|$)|[^/]+\/respuestas(?:\/|$))/.test(pathname);
+
+  const match = useMatch({ path: item.to, end: item.exact || item.to === "/" });
+  const isCurrent = (!!match || responseWorkspace) && !(item.to === "/formularios" && otherFormsPage);
 
   const link = (
-    <NavLink
+    <Link
       to={item.to}
-      end={item.exact || item.to === "/"}
-      aria-current={item.to === "/formularios" && otherFormsPage ? false : undefined}
+      aria-current={isCurrent ? "page" : undefined}
       onClick={onNavigate}
-      className={({ isActive }) =>
-        cn(
+      className={cn(
           "relative flex min-h-[30px] items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm transition-colors",
-          isActive && !(item.to === "/formularios" && otherFormsPage)
+          isCurrent
             ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
             : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
           collapsed ? "size-[30px] justify-center px-0" : "",
-        )
-      }
+        )}
     >
       {showIcon ? <Icon className="size-4 shrink-0" /> : null}
       {collapsed ? <span className="sr-only">{label}</span> : <span className="min-w-0 break-words leading-4">{label}</span>}
-    </NavLink>
+    </Link>
   );
 
   if (!collapsed) {

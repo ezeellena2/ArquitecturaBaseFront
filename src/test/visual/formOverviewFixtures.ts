@@ -9,7 +9,8 @@ export function createFormOverviewVisualFixtures(language: "es" | "en", scenario
   const en = language === "en";
   const canRead = scenario !== "forms-overview-decide";
   const canDecide = scenario !== "forms-overview-read";
-  const permissions = [...(canRead ? ["formrecords.read"] : []), ...(canDecide ? ["formapprovals.decide"] : [])];
+  const permissions = [...(canRead ? ["formrecords.read"] : []), ...(canDecide ? ["formapprovals.decide"] : []),
+    ...(canRead && canDecide ? ["formtemplates.read", "formtemplates.manage", "formcatalogs.read"] : [])];
   const names = en
     ? ["Register visit", "Register delivery", "Site survey", "Register maintenance", "Safety checklist", "Invoice delivery", "Vehicle inspection", "Previous inspection"]
     : ["Registrar visita", "Registrar entrega", "Relevamiento de obra", "Registrar mantenimiento", "Checklist de seguridad", "Facturar entrega", "Control de vehículo", "Control anterior"];
