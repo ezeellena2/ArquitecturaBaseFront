@@ -1,0 +1,59 @@
+# Components: piezas de pantalla de formularios
+
+Cada pieza implementa parte de un tablero elegido con `shared/ui` y recibe datos de su página o de un hook. Los diálogos y secciones con operación privada (baja, eliminación, vista oficial, Excel, decisión, reglas, sugerencias, PDF y documentos) llaman a `api/` y son el único dueño de sus avisos. Presentan la lógica pura de la raíz (`editorModel`, `fileQuestions`, `responses`, `rules`, `suggestions`, `workflow*`, entre otras).
+
+## Al modificar
+
+### Editor y vista previa
+
+- `QuestionEditor` edita exactamente la entrada del idioma elegido y conserva los mapas completos; el original se ve como referencia y cada faltante dice «Sin traducir», sin alerta. Borrar una ayuda deja su clave en null: ni al editar, ni al resolver un conflicto, ni al congelar el cuerpo se convierte `{es:null,en:null}` en `help: null` o se omiten claves. Texto corto empieza en 80 y largo en 600 (un límite mayor explícito es válido); no se agregan controles de precisión ni rangos.
+- Cambiar el tipo crea otra identidad con `replacesFieldId` y conserva textos, ayuda y obligatoriedad. Una pregunta de catálogo guarda sólo la referencia (null hasta elegir, con validación en la pregunta); cambiar el catálogo de una confirmada se confirma y usa LocalId nuevo, FieldId null y `replacesFieldId`.
+- Subir y Bajar dejan el foco en una acción habilitada del mismo elemento y anuncian la posición; Listo vuelve a Editar; quitar enfoca la vecina o Agregar (`ConfirmDialog.focusFallback`). Sólo lectura conserva «Ver pregunta» sin acciones de escritura.
+- `FileQuestionSettings`: mínimo mayor que cero hace obligatoria la pregunta; vacío (null) no es cero; un rango inválido marca ambos controles y bloquea Guardar. Sin `form-files` instalado, Foto y Documento se ven deshabilitados. El contador suma máximos sin impedir guardar.
+- `FormPreview` es orientativa y usa una sola cultura (`missingFormTexts`): el original entero mientras falte un texto y el secundario al completarse, incluidos los textos de plataforma; no cambia el idioma de la aplicación. Cada pregunta de archivo abre pantalla; una lista de catálogo muestra un selector vacío y deshabilitado.
+- `DraftReview` compara por identidad cada texto por idioma, metadatos, fuente, archivos, pertenencia y orden, con los nombres actuales de catálogo. «Conservar mis cambios» toma lo conservable y lo retirado queda con lo actual; `DraftReviewChanges` deja visibles las diferencias, sin guardar.
+
+### Publicación
+
+- `PublicationCheckDialog` comprueba sólo lo guardado. Título y acción usan `nextVersionNumber` del chequeo, orientativo (el recibo es definitivo) y nunca derivado de `activeVersion`; el diff nombra la versión activa sólo si `diff.baseVersionId` coincide con el detalle. Muestra fecha guardada y el prefijo que se fija sólo si sigue libre. Los idiomas salen de `channels[].cultures`; cada idioma incompleto o perdido tiene un único aviso con hasta tres faltantes y el resto contado. «Completar» requiere Manage y lleva al control exacto sin guardar; «Ir a la pregunta» no devuelve el foco al disparador, Cancelar y Escape sí.
+- `PublicationProgress` dice el estado en palabras, sin etapa técnica ni reintento del worker; Failed no muestra progreso. Agrupa diagnósticos repetidos (`uniquePublicationIssues`), da una vez el aviso de revisión y un solo toast con los idiomas de `status.cultures` al publicar una operación propia. Lo publicado es texto estático; sólo el progreso se anuncia. Los diagnósticos se ligan por FieldId y ChoiceId (`publicationFieldIssues`), no por índices.
+- `OfficialFormPreview` ofrece sólo `activeVersion.cultures` (el primero si falta el del editor). Cambiar de idioma limpia y espera otra acción; al vencer quita iframe y enlace sin renovar; un 403 describe la pérdida de lectura y bloquea renovar; un 429 respeta la espera; una respuesta tardía no se aplica. La URL vive sólo en el diálogo.
+
+### Ciclo de vida
+
+- `FormLifecycleMenu`: baja o reactivación exigen Publish y quedan apagadas con su motivo. Eliminar exige Manage y se omite con respuestas (`HasResponses` o contador positivo); si el menú ya tiene acciones de publicación, ese motivo es texto no accionable. No crea un menú vacío.
+- `FormDeactivationDialog` lee el impacto al abrir: sugerencias afectadas por nombre, envíos abiertos sólo con evidencia del canal y respuestas conservadas. Confirma con la revisión del impacto y, si difiere de la del editor, ofrece revisar. Un fallo conserva el diálogo, avisa una vez y relee.
+- `FormDeletionDialog` manda `expectedRevision`; un 403, 404 o 409 bloquea la confirmación, lo explica en el diálogo y da la causa en un toast.
+- `deprecationMessage`: Pending (con vencimiento si existe), Uncertain «Sin confirmar» y Deprecated con la fecha del servidor; null no es deprecación. Nada consulta Meta ni decide por reloj.
+
+### Catálogos
+
+- `CatalogManualItemsEditor` limita texto a 30, detalle a 300 y código a 80; editar el código conserva el ItemId. Los errores `items[n]` van a su opción con `FormField`, sin otro aviso.
+- `CatalogFiltersEditor` traduce columnas y operadores por key, usa las etiquetas de choices del backend y sólo admite el nombre como texto. Un rol guardado que ya no existe conserva su ID y dice «Valor no disponible», sin GUID. `filters.conditions[n]` se muestra junto a su valor.
+- `CatalogStateAction` confirma baja o reactivación; se aplica con Guardar.
+- `CatalogQuestionSelector`: activos elegibles; inactivos y no disponibles visibles y deshabilitados; el seleccionado se conserva fuera de página y buscar vuelve a la página 1. Los nombres exigen leer catálogos; editar, sólo Manage de formularios. Sin lectura no consulta y conserva la referencia; `CatalogQuestionName` retira el nombre ante 401 o 403. Una búsqueda sin coincidencias no es un catálogo vacío; `usageCount` null no es cero.
+
+### Planilla, filtros y Excel
+
+- `ResponseWorkspaceProvider` (desde `ResponseWorkspaceLayout`) guarda el filtro privado por dueño y formulario; salir del formulario lo limpia y `deny` retira filtros y miniaturas.
+- `ResponseFiltersPanel` y sus controles usan conteos del servidor. El conteo es informativo: Aplicar depende del borrador válido; Reintentar sólo aparece por red, 5xx o 429 tras su espera, que se conserva al editar.
+- `ResponseExportDialog` (sólo con `formrecords.export`) pide por POST el XLSX que genera el servidor, con los filtros y todas o sólo las columnas visibles, hasta 10.000 respuestas; cancela al cerrar o perder el alcance.
+- `ResponseValue` no confunde ausente, opcional vacía, 0 y false; conserva la escala decimal y la fecha sin hora; archivos con `FormRecordFiles`. El enlace al chat requiere `whatsapp.read` y sólo navega.
+
+### Detalle, actividad y aprobación
+
+- `ResponsePanelFrame`: marco sin overlay en escritorio y diálogo bajo la barra en celular. ↑, ↓ y Escape no actúan en campos, IME, pestañas, menús ni diálogos; en el extremo el foco pasa al panel.
+- `ResponseWorkflowHistory` separa Entregado y Leído (fechas del proveedor) de Hecho y de la revisión humana; no repite la causa que avisa el detalle. Resolver un envío sólo se ofrece al destinatario sin confirmar con capacidad del servidor: Salió no reenvía; No salió habilita el reintento en NotifyAuthor; NotifyRole nunca reintenta en parte. Confirmar devuelve el foco a la fila. `workflowHistory` ordena por UTC con desempate estable y muestra cada acción una vez; `workflowMoments` usa sólo acciones capturadas, sin reglas actuales, ramas futuras ni NotApplicable, y conserva aprobaciones fallidas.
+- `ResponseDocuments` abre o descarga copias fijas por DocumentId; blobs y object URLs viven en el dueño visual y se revocan al salir. `ResponseAssistance` pliega los valores propuestos con inclusión, corrección y mapeo; la cadena enlaza sólo registros confirmados y no enlaza el anterior mientras carga otro.
+- `ApprovalDecisionPanel`: rechazar exige motivo de 1 a 500 caracteres recortado (`prepareApprovalDecision`), sólo en memoria. El POST usa la revisión leída; un 409 relee y muestra la decisión vigente. Un solo editor de decisión, también tras resolver o un 409; el resultado recibe el foco y en celular los controles van abajo con un portal.
+
+### Reglas, PDF y sugerencias
+
+- `FormRulesSection` guarda sólo reglas, con su revisión, y conserva UUID e identidad de reglas y acciones. `prepareRules` exige la aprobación última y sólo al recibir, el PDF sólo al aprobar y generado antes de adjuntarlo, y el original en los mensajes. Ante 409, «Conservar mis cambios» adopta sólo la revisión base y avisa que el próximo Guardar reemplaza; otro 409 exige releer. Guardar explica su bloqueo; el foco sigue el patrón de preguntas. Un 403 desmonta el editor y retira sus consultas; una revisión nueva del formulario refresca opciones sin remontar el borrador. El historial usa los `changes` del servidor.
+- `FormPdfPreview` toma el idioma real de `Content-Language` y avisa el respaldo; usa la variante PDF de `EmbeddedPreview` (sin sandbox; la externa lo conserva) y descarga el mismo blob.
+- `FormSuggestionsSection` guarda con revisión e historial propios. When admite hasta 1000 caracteres y lo exige Assistant; los mapeos unen preguntas del mismo tipo, o el número de registro con texto; una lista exige el mismo catálogo y Foto o Documento no se mapean. `SourceNotPublished` es un estado de configuración. Los errores con corchetes se normalizan y abren la primera fila marcada. Un destino dado de baja o eliminado conserva nombre y estado, sólo ofrece Quitar (que enfoca la vecina o Agregar) y bloquea Guardar.
+
+## Referencias
+
+- [Tableros y correspondencia con `shared/ui`](../../../../docs/design/formularios-whatsapp.md#correspondencia-con-sharedui).
+- Tests junto a cada pieza (`QuestionEditor.test.tsx`, `PublicationCheckDialog.test.tsx`, `FormRulesSection.test.tsx`…) y escenas en `src/test/visual`.

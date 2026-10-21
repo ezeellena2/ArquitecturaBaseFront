@@ -4,7 +4,7 @@ Define layouts de acceso, inicio y aplicación autenticada, además de barra, me
 
 ## Al modificar
 
-- WhatsApp y Administración comparten el trigger y geometría del panel. Solo uno se abre a la vez; la ruta abre su sección y los permisos filtran sus destinos. En móvil se despliegan dentro del cajón.
+- WhatsApp, Formularios y Administración comparten el trigger y geometría del panel. El detalle del Sidebar, las migas y el menú de usuario está en [components](components/AGENTS.md). Solo uno se abre a la vez; la ruta abre su sección y los permisos filtran sus destinos. En móvil se despliegan dentro del cajón.
 - Inicio muestra su HomeIcon también expandido y en móvil. WhatsApp lleva encima la misma línea de Administración; se dibuja sólo junto a su sección visible, también contraída.
 
 - Ruta y menú mantienen los mismos permisos. Las rutas hijas usan la sección padre; la pantalla aporta la hoja de sus migas.
