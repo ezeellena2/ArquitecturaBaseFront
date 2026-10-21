@@ -32,6 +32,7 @@ import { OfficialFormPreview } from "../components/OfficialFormPreview";
 import { PublicationProgress } from "../components/PublicationProgress";
 import { publicationLabelKey } from "../publicationPresentation";
 import { useFormPublication } from "../hooks/useFormPublication";
+import { FormDeletionDialog } from "../components/FormDeletionDialog";
 import { FormDeactivationDialog } from "../components/FormDeactivationDialog";
 import { FormLifecycleMenu } from "../components/FormLifecycleMenu";
 import { FormLifecycleNotice } from "../components/FormLifecycleNotice";
@@ -109,11 +110,13 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const [reviewOpen, setReviewOpen] = useState(false);
   const [retainedReview, setRetainedReview] = useState<{ value: DraftEditorValue; definition: FormDefinitionSnapshot } | null>(null);
   const lifecycleAction = useRef<HTMLButtonElement>(null);
+  const deletionFallback = useRef<HTMLElement | null>(null);
   const publicationAction = useRef<HTMLButtonElement>(null);
   const publicationReturnFocus = useRef<HTMLElement | null>(null);
   const [publicationOpen, setPublicationOpen] = useState(() => reactivateOnOpen && !!lifecycle?.deactivatedAtUtc && lifecycle.canReactivate && scope.permissions.includes("formtemplates.publish"));
   const [previewOpen, setPreviewOpen] = useState(false);
   const [deactivationOpen, setDeactivationOpen] = useState(false);
+  const [deletionOpen, setDeletionOpen] = useState(false);
   useEffect(() => {
     const error = publication.error;
     if (error instanceof ApiError && ["Forms.Draft.RevisionConflict", "Forms.Publication.DraftMustBeSaved"].includes(error.code ?? "")) {
@@ -138,6 +141,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const guard = useUnsavedChangesGuard(dirty || rulesDirty || suggestionsDirty || frozen || publicationPending);
   const reviewRequired = session?.phase === "ReviewRequired";
   const readOnly = !editor.canSave;
+  const knownDeleted = editor.issue?.kind === "read" && editor.issue.code === "Forms.Definition.NotFound";
   const originalName = value?.name[value.draft.culture] ?? "";
   useBreadcrumbLeaf(originalName || t("new"));
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
@@ -160,7 +164,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     if (issue.kind === "validation" && feedback.kind === "fields" || issue.kind === "forbidden" || feedback.kind === "session") return;
     if (feedback.kind === "wait") restartCooldown(Math.min(86400, Math.max(1, feedback.retryAfterSeconds ?? 60)));
     const conflict = issue.kind === "conflict" && issue.code !== "Forms.Draft.RequestConflict";
-    const message = issue.code === "Forms.Draft.RequestConflict" ? t("requestConflict") : issue.kind === "validation" ? t("unmappedValidation")
+    const message = issue.code === "Forms.Definition.NotFound" ? t("lifecycle.deletedWhileEditing") : issue.code === "Forms.Draft.RequestConflict" ? t("requestConflict") : issue.kind === "validation" ? t("unmappedValidation")
       : feedback.kind === "wait" ? t("wait", { count: feedback.retryAfterSeconds ?? 60 }) : issue.kind === "uncertain" ? operationalErrorMessage(issue.error, t)
       : t(conflict ? "conflict" : issue.kind === "expired" ? "expired" : issue.kind === "missing" ? "notConfirmed" : issue.kind === "read" ? "reviewFailed" : "saveFailed");
     notify({ id: feedbackId, kind: feedback.kind === "wait" ? "warning" : "error", message,
@@ -226,8 +230,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : dirty || frozen || publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!editor.canSave || hasInvalidFileCounts(value.draft.fields)} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
-    {scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish) && session.confirmed ? <Button ref={publicationAction} type="button" disabled={deactivated && !lifecycle?.canReactivate || frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publicationReturnFocus.current = publicationAction.current; publication.resetRejected(); setPublicationOpen(true); }}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button> : null}
-    {lifecycle && scope.permissions.includes("formtemplates.publish") ? <FormLifecycleMenu triggerRef={lifecycleAction} lifecycle={lifecycle} blocked={frozen || editor.busy || publicationPending} onDeactivate={() => setDeactivationOpen(true)} onReactivate={() => { publicationReturnFocus.current = lifecycleAction.current; publication.resetRejected(); setPublicationOpen(true); }} /> : null}
+    {scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish) && session.confirmed ? <Button ref={publicationAction} type="button" disabled={knownDeleted || deactivated && !lifecycle?.canReactivate || frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publicationReturnFocus.current = publicationAction.current; publication.resetRejected(); setPublicationOpen(true); }}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button> : null}
+    {lifecycle && (scope.permissions.includes("formtemplates.publish") || scope.permissions.includes("formtemplates.manage")) ? <FormLifecycleMenu canManage={scope.permissions.includes("formtemplates.manage")} canPublish={scope.permissions.includes("formtemplates.publish")} onDelete={() => { deletionFallback.current = lifecycleAction.current; setDeletionOpen(true); }} triggerRef={lifecycleAction} lifecycle={lifecycle} blocked={knownDeleted || frozen || editor.busy || publicationPending} onDeactivate={() => setDeactivationOpen(true)} onReactivate={() => { publicationReturnFocus.current = lifecycleAction.current; publication.resetRejected(); setPublicationOpen(true); }} /> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
   </>}>
     <div className="flex flex-col gap-4">
@@ -263,7 +267,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   </Page>
 
   {previewOpen && "definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <OfficialFormPreview key={projection.activeVersion.versionId} definitionId={initial.definition.id} versionId={projection.activeVersion.versionId} versionNumber={projection.activeVersion.versionNumber} cultures={projection.activeVersion.cultures} initialCulture={contentCulture} onClose={() => setPreviewOpen(false)} /> : null}
-  {deactivationOpen && scope.permissions.includes("formtemplates.publish") && session.confirmed ? <FormDeactivationDialog id={session.confirmed.id} name={session.confirmed.name[session.confirmed.draft.culture] ?? originalName} focusFallback={lifecycleAction} scope={scope} expectedRevision={session.confirmed.revision} onRevisionMismatch={() => { setDeactivationOpen(false); editor.requireReview(new ApiError(409, { code: "Forms.Draft.RevisionConflict" })); }} onComplete={confirmDeactivation} onClose={() => setDeactivationOpen(false)} /> : null}
+  {deactivationOpen && scope.permissions.includes("formtemplates.publish") && session.confirmed ? <FormDeactivationDialog id={session.confirmed.id} name={session.confirmed.name[session.confirmed.draft.culture] ?? originalName} focusFallback={lifecycleAction} timeZoneId={timeZoneId} scope={scope} expectedRevision={session.confirmed.revision} onRevisionMismatch={() => { setDeactivationOpen(false); editor.requireReview(new ApiError(409, { code: "Forms.Draft.RevisionConflict" })); }} onComplete={confirmDeactivation} onClose={() => setDeactivationOpen(false)} /> : null}
+  {deletionOpen && session.confirmed && scope.permissions.includes("formtemplates.manage") ? <FormDeletionDialog id={session.confirmed.id} name={session.confirmed.name[session.confirmed.draft.culture] ?? originalName} revision={session.confirmed.revision} scope={scope} focusFallback={deletionFallback} onChanged={() => { deletionFallback.current = host.current?.querySelector<HTMLElement>('[data-form-text="name"]') ?? null; void queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) }); }} onClose={() => { if (!deletionFallback.current?.isConnected) deletionFallback.current = lifecycleAction.current ?? host.current?.querySelector<HTMLElement>('[data-form-text="name"]') ?? null; setDeletionOpen(false); }} onDeleted={() => { guard.allowNextNavigation(); void navigate("/formularios", { replace: true }); queryClient.removeQueries({ queryKey: formDetailKey(scope, session.confirmed!.id) }); void queryClient.invalidateQueries({ queryKey: formActorKey(scope.actorId) }); }} /> : null}
   {publicationOpen && session.confirmed && scope.permissions.includes("formtemplates.publish") ? <PublicationCheckDialog onCloseAutoFocus={event => { const target = [publicationReturnFocus.current, publicationAction.current, lifecycleAction.current].find(node => node?.isConnected && !node.matches(":disabled")); if (target) { event.preventDefault(); target.focus(); } }} key={session.confirmed.revision + ":" + [...scope.permissions].sort().join(",")} scope={scope} id={session.confirmed.id} revision={session.confirmed.revision} reactivation={deactivated && lifecycle ? { name: session.confirmed.name[session.confirmed.draft.culture] ?? originalName, nextRecordNumber: lifecycle.nextRecordNumber } : undefined} savedAt={"definition" in initial ? formatDateTimeInZone(initial.audit.lastChangedAtUtc, scope.culture, timeZoneId) : undefined} prefixLocked={session.confirmed.prefixLocked} baseVersionId={projection?.activeVersion?.versionId} baseVersionNumber={projection?.activeVersion?.versionNumber} value={value} dirty={dirty} canSave={editor.canSave && !cooldown.isRunning && !hasInvalidFileCounts(value.draft.fields)} accepting={publication.busy} onAccept={(body, checked) => {
     const acceptance = publication.accept(session.confirmed!.id, body, checked);
     setPublicationOpen(false);

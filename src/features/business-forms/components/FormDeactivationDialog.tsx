@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -14,8 +15,8 @@ import { fetchFormDeactivation, deactivateForm } from "../api/forms";
 import type { FormDeactivation } from "../api/response";
 import { administrativeName } from "../editorModel";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
-export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRevisionMismatch, onComplete, onClose, focusFallback }: {
- id: string; name: string; scope: FormReadScope; expectedRevision?: number; onRevisionMismatch?: () => void;
+export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRevisionMismatch, onComplete, onClose, focusFallback, timeZoneId }: {
+ timeZoneId?: string; id: string; name: string; scope: FormReadScope; expectedRevision?: number; onRevisionMismatch?: () => void;
  onComplete: (result: FormDeactivation, expectedRevision: number) => void | Promise<void>; onClose: () => void; focusFallback?: RefObject<HTMLElement | null>;
 }) {
  const { t } = useTranslation("forms");
@@ -64,7 +65,7 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
      <Banner tone="info"><span><strong>{t("lifecycle.assistantStops")}</strong><span className="block">{t("lifecycle.assistantStopsHint")}</span></span></Banner>
      {impact.affectedSuggestions.length ? <Banner tone="info"><span><strong>{t("lifecycle.suggestionsStop", { count: impact.affectedSuggestions.length })}</strong><span className="block">{impact.affectedSuggestions.map(form => administrativeName(form.name, scope.culture)).join(", ")}</span></span></Banner> : null}
     </section>
-    <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.openSends")}</h2><Banner tone="info">{t("lifecycle.openSendsHint")}</Banner><Banner tone="warning">{t("lifecycle.metaIrreversible")}</Banner></section>
+    <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.openSends")}</h2><Banner tone="info"><span>{t("lifecycle.openSendsHint")}{impact.lifecycle.lastOpenSessionExpiresAtUtc?<span className="block">{t("lifecycle.lastOpenSend", {date:formatDateTimeInZone(impact.lifecycle.lastOpenSessionExpiresAtUtc,scope.culture,timeZoneId)})}</span>:null}</span></Banner><Banner tone="warning">{t("lifecycle.metaIrreversible")}</Banner></section>
     <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.whatRemains")}</h2><Banner tone="info"><span>{impact.lifecycle.responseCount === null ? t("lifecycle.keepsResponsesUnknown") : t("lifecycle.keepsResponses", { count: impact.lifecycle.responseCount })}<span className="block">{t("lifecycle.keepsFiles")}</span></span></Banner><Banner tone="info"><span>{t("lifecycle.keepsWorkflow")}{impact.lifecycle.pendingApprovalCount ? <span className="block">{t("lifecycle.keepsApprovals", { count: impact.lifecycle.pendingApprovalCount })}</span> : null}</span></Banner></section>
     {revisionMismatch ? <p className="text-sm">{t("lifecycle.reviewDraft")}</p> : !impact.lifecycle.canDeactivate ? <p className="text-sm">{t(impact.lifecycle.deactivatedAtUtc ? "lifecycle.alreadyDeactivated" : "lifecycle.reasons." + (impact.lifecycle.unavailableReason ?? "Unavailable"))}</p> : null}
    </>}

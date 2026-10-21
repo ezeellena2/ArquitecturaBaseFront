@@ -1,3 +1,4 @@
+import { readSuggestionOptions, type FormSuggestionSet } from "@/features/business-forms/api/suggestions";
 import { createRuleVisualFixtures } from "./formRuleFixtures";
 import budgetEsCheck from "../fixtures/forms-http/budget-http/es.json" with { type: "json" };
 import budgetEnCheck from "../fixtures/forms-http/budget-http/en.json" with { type: "json" };
@@ -19,7 +20,7 @@ const guid = (n: number) => "01990000-0000-7000-8000-" + String(n).padStart(12, 
 const key = (id: string) => "field_" + id.replaceAll("-", "");
 const audit = { createdAtUtc: "2026-10-10T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-10-10T12:00:00Z", lastChangedBy: { userId: guid(2), displayName: "Ana Pérez" } };
 export function fixtureLifecycle(revision = 1, changes: Partial<FormLifecycle> = {}): FormLifecycle {
-  return { revision, deactivatedAtUtc: null, deactivatedBy: null, responseCount: null, pendingApprovalCount: null, nextRecordNumber: null,
+  return { lastOpenSessionExpiresAtUtc: null, canDelete: false, deletionUnavailableReason: null, revision, deactivatedAtUtc: null, deactivatedBy: null, responseCount: null, pendingApprovalCount: null, nextRecordNumber: null,
     nextVersionNumber: 1, canDeactivate: false, canReactivate: false, unavailableReason: "NotPublished", ...changes };
 }
 export function fixtureDefinition(culture: FormCulture = "es", prefixLocked = false): FormDefinitionSnapshot {
@@ -108,6 +109,10 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
    publicationCultures.set(requestId, languageChange ? scenario === "forms-languages-add" ? ["es"] : ["es", "en"] : fixturePublicationCultures(d).filter(item => item.isComplete).map(item => item.culture));
    publicationStates.set(requestId,reloadFailed?"Failed":reloadReview?"Uncertain":"Published");
   }
+  if (scenario === "forms-lifecycle-publishing") {
+    publications.set(guid(93), { definitionId: fixtureFormId, requestId: guid(93), operationId: guid(94), versionId: guid(95), versionNumber: 2, draftRevision: 1, state: "Accepted", acceptedAtUtc: audit.createdAtUtc, recoveryPath: "/api/forms/definitions/" + fixtureFormId + "/publications/" + guid(93) });
+    publicationStates.set(guid(93), "Accepted"); publicationCultures.set(guid(93), ["es", "en"]);
+  }
   function overview(id:string) {
    const operation=[...publications.values()].filter(p=>p.definitionId===id).at(-1);
    const state=operation?publicationStates.get(operation.requestId)??operation.state:"Draft";
@@ -116,7 +121,19 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
    return {activeVersion,currentOperation:operation?{versionId:operation.versionId,versionNumber:operation.versionNumber,draftRevision:operation.draftRevision,state,stage:state==="Published"?"Complete":state==="Failed"?"Upload":"Accepted",requiresReview:state==="Uncertain",canRetry:false,requestId:operation.requestId,recoveryPath:operation.recoveryPath}:null,displayState:state};
   }
   const lifecycles = new Map<string, FormLifecycle>();
+  if (scenario.startsWith("forms-lifecycle")) lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025", deletionUnavailableReason: "HasResponses" }));
   if (scenario.includes("lifecycle-deactivated")) lifecycles.set(fixtureFormId, fixtureLifecycle(1, { deactivatedAtUtc: "2026-10-20T12:00:00Z", deactivatedBy: audit.lastChangedBy, responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025" }));
+  if (scenario === "forms-lifecycle-deletable") lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 0, canDelete: true }));
+  if (scenario === "forms-lifecycle-open") lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 24, pendingApprovalCount: 2, nextRecordNumber: "VIS-000025", lastOpenSessionExpiresAtUtc: "2026-10-22T18:00:00Z", deletionUnavailableReason: "OpenSends" }));
+  if (scenario === "forms-lifecycle-table") {
+    const original = definitions.get(fixtureFormId)!;
+    definitions.set(guid(70), { ...original, id: guid(70), prefix: "ENT", name: { es: "Registrar entrega", en: "Register delivery" }, prefixLocked: false });
+    lifecycles.set(guid(70), fixtureLifecycle(1, { canDelete: true, responseCount: 0 }));
+    definitions.set(guid(71), { ...original, id: guid(71), prefix: "CTL", name: { es: "Control anterior", en: "Previous inspection" } });
+    publications.set(guid(72), { definitionId: guid(71), requestId: guid(72), operationId: guid(73), versionId: guid(74), versionNumber: 1, draftRevision: 1, state: "Accepted", acceptedAtUtc: audit.createdAtUtc, recoveryPath: "/api/forms/definitions/" + guid(71) + "/publications/" + guid(72) });
+    publicationStates.set(guid(72), "Published"); publicationCultures.set(guid(72), ["es", "en"]);
+    lifecycles.set(guid(71), fixtureLifecycle(1, { deactivatedAtUtc: "2026-10-20T12:00:00Z", deactivatedBy: audit.lastChangedBy, responseCount: 8 }));
+  }
   function lifecycleOf(definition: FormDefinitionSnapshot): FormLifecycle {
     const stored = lifecycles.get(definition.id);
     const projection = overview(definition.id);
@@ -127,6 +144,17 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       unavailableReason: pending ? "PublicationInProgress" : projection.activeVersion ? null : "NotPublished" });
   }
   let publicationMissing = false; let publicationReads = 0;
+  const sourceDefinition = definitions.get(fixtureFormId);
+  const suggestionOptions = sourceDefinition && scenario === "forms-lifecycle-suggestions" ? readSuggestionOptions({
+    source: { definitionId: fixtureFormId, versionId: guid(91), name: sourceDefinition.name, originalCulture: sourceDefinition.draft.culture, questions: wireDefinition(sourceDefinition).draft.fields },
+    destinations: [{ definitionId: guid(70), versionId: guid(74), name: { es: "Registrar entrega", en: "Register delivery" }, originalCulture: "es", questions: [] }],
+    unavailableDestinations: [{ definitionId: guid(71), name: { es: "Control anterior", en: "Previous inspection" }, state: "Deactivated" }],
+    conditionChoices: {},
+  }) : null;
+  let suggestionSet: FormSuggestionSet = { id: guid(75), definitionId: fixtureFormId, sourceVersionId: guid(91), revision: 1, createdAtUtc: audit.createdAtUtc, author: audit.lastChangedBy, suggestions: [
+    { id: guid(76), destinationDefinitionId: guid(70), destinationVersionId: guid(74), mode: "Assistant", when: culture === "es" ? "Cuando pide una entrega." : "When a delivery is requested.", isActive: true, conditions: [], mappings: [] },
+    { id: guid(77), destinationDefinitionId: guid(71), destinationVersionId: guid(78), mode: "Always", when: null, isActive: true, conditions: [], mappings: [] },
+  ] };
   const receipts = new Map<string, { body: string; kind: "Create" | "Update"; result: FormDraftSaveResult }>();
   let conflict = false; let missing = false; let serial = 100;
   const writes: DraftWriteBody[] = [];
@@ -136,6 +164,16 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname;
     calls.push({ method: request.method, path });
+    if (scenario === "forms-lifecycle-suggestions" && path.includes("/suggestions")) {
+      if (path.endsWith("/options")) return json(suggestionOptions);
+      if (path.endsWith("/revisions")) return json({ items: [], page: 1, pageSize: 10, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false });
+      if (request.method === "POST") {
+        const body = await request.json() as { expectedRevision: number; suggestions: FormSuggestionSet["suggestions"] };
+        if (body.expectedRevision !== suggestionSet.revision) return json({ code: "Forms.Suggestion.RevisionConflict" }, 409);
+        suggestionSet = { ...suggestionSet, revision: suggestionSet.revision + 1, suggestions: body.suggestions };
+      }
+      return json(suggestionSet);
+    }
     const ruleResponse = await ruleFixture.handle(request);
     if (ruleResponse) return ruleResponse;
     if (scenario === "forms-publication-http-published" || scenario === "forms-publication-http-failed") {
@@ -203,6 +241,16 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       const receipt = receipts.get(path.split("/").at(-1)!);
       return receipt ? json({ requestId: receipt.result.requestId, kind: receipt.kind, status: "Committed", committedAtUtc: audit.createdAtUtc,
         currentRevision: definitions.get(receipt.result.definition.id)!.revision, result: wireCommit(receipt.result) }) : json({ code: "Forms.Draft.ChangeNotFound" }, 404);
+    }
+    if (request.method === "DELETE" && /^\/api\/forms\/definitions\/[^/]+$/.test(path)) {
+      const id = path.split("/").at(-1)!;
+      const definition = definitions.get(id);
+      if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
+      const body = await request.json() as { expectedRevision: number };
+      if (body.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
+      if (!lifecycleOf(definition).canDelete) return json({ code: "Forms.Definition.HasResponses" }, 409);
+      definitions.delete(id); lifecycles.delete(id);
+      return new Response(null, { status: 204 });
     }
     if (path.endsWith("/deactivation")) {
       const definition = definitions.get(path.split("/").at(-2)!);

@@ -854,7 +854,9 @@
     "historyMappings_one": "{{count}} mapped field",
     "historyMappings_other": "{{count}} mapped fields",
     "deactivated": "Deactivated",
-    "deactivatedHint": "This form is deactivated. Remove the suggestion to save."
+    "deactivatedHint": "This form is deactivated. Remove the suggestion to save.",
+    "deleted": "Deleted",
+    "deletedHint": "This form was deleted. Remove the suggestion to save."
   },
   "missing": {
     "title": "Missing forms",
@@ -940,6 +942,22 @@
       "PublicationInProgress": "A publication is in progress.",
       "NotPublished": "Publish the form first.",
       "Unavailable": "This action is unavailable."
-    }
+    },
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "deleteTitle": "Delete “{{name}}”",
+    "deleteDescription": "It will no longer appear in lists and cannot be used again.",
+    "deleteHint": "This action cannot be undone. To keep the form, deactivate it instead.",
+    "deleteChanged": "The form’s situation changed. Close this dialog and review it before deleting it.",
+    "deletedSuccess": "Deleted {{name}}.",
+    "lastOpenSend": "The last open send expires on {{date}}.",
+    "deletionReasons": {
+      "PublicationInProgress": "A publication is in progress.",
+      "HasResponses": "It has responses: deactivate it to keep them.",
+      "OpenSends": "It has valid open sends or replies being processed.",
+      "Unavailable": "This form cannot be deleted."
+    },
+    "noDeletePermission": "You no longer have permission to delete this form.",
+    "deletedWhileEditing": "This form was deleted. Your unsaved changes are preserved."
   }
 }

@@ -67,7 +67,8 @@ it("reactivates through the normal saved draft check and keeps the form deactiva
  await waitFor(()=>expect(screen.getByRole("button",{name:"Acciones del formulario"})).toHaveFocus());
 });
 it("does not offer deactivation without Publish and preserves an unknown response count", async () => {
- setup("forms-lifecycle", ["formtemplates.read", "formtemplates.manage"]);
+ const store=setup("forms-lifecycle", ["formtemplates.read", "formtemplates.manage"]);
+ store.lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: null }));
  renderRouteWithProviders("/formularios"); const table = await screen.findByRole("table");
  expect(within(table).getByRole("columnheader", { name: "Respuestas" })).toBeInTheDocument();
  expect(within(table).queryByRole("button", { name: /Dar de baja/ })).not.toBeInTheDocument();
@@ -107,7 +108,7 @@ it("waits for the current deactivated detail before consuming a row intent when 
  const stale=readFormDetail(await(await previous.handle(new Request("http://localhost/api/forms/definitions/"+fixtureFormId))).json());
  queryClient.setQueryData(formDetailKey({actorId:"actor",culture:"es",permissions:["formtemplates.read","formtemplates.manage","formtemplates.publish","formrecords.read"]},fixtureFormId),stale);
  let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});const requested=vi.fn();
- server.use(http.get("/api/forms/definitions/:id",async({request})=>{requested();await pending;return store.handle(request);}));
+ server.use(http.get("/api/forms/definitions/"+fixtureFormId,async({request})=>{requested();await pending;return store.handle(request);}));
  const {router}=renderRouteWithProviders("/formularios?publicationFilter=Deactivated");
  await userEvent.click(await screen.findByRole("button",{name:"Reactivar Registrar visita"}));
  await waitFor(()=>expect(requested).toHaveBeenCalledOnce());
@@ -117,4 +118,13 @@ it("waits for the current deactivated detail before consuming a row intent when 
  await screen.findByRole("dialog",{name:"Reactivar «Registrar visita»"});
  await waitFor(()=>expect(router.state.location.state).toBeNull());
  expect(store.calls.filter(call=>call.method==="POST"&&call.path.endsWith("/publications"))).toHaveLength(0);
+});
+
+it("shows the last open send expiry in the profile time zone only when supplied",async()=>{
+ const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{lastOpenSessionExpiresAtUtc:"2026-10-21T18:00:00Z"}));
+ renderRouteWithProviders("/formularios/"+fixtureFormId);
+ const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Dar de baja/}));
+ const dialog=await screen.findByRole("dialog",{name:"Dar de baja «Registrar visita»"});
+ expect(await within(dialog).findByText("El último envío abierto vence el 21 oct 2026, 15:00.")).toBeVisible();
+ expect(within(dialog).queryByText("2026-10-21T18:00:00Z")).not.toBeInTheDocument();
 });

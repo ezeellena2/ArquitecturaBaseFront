@@ -342,3 +342,17 @@ describe("scoped form queries", () => {
     expect(spy).not.toHaveBeenCalled(); spy.mockRestore();
   });
 });
+
+it("rejects a deleted definition definitively without retaining or replaying its pending UUID",async()=>{
+ const h=harness();const canonical=receipt("01990000-0000-7000-8000-000000000020").definition;
+ const writes=vi.fn(),recoveries=vi.fn();
+ server.use(http.put("/api/forms/definitions/"+id+"/draft",()=>{writes();return HttpResponse.json({code:"Forms.Definition.NotFound",detail:"El formulario ya fue eliminado."},{status:404});}),http.get("/api/forms/draft-changes/:id",()=>{recoveries();return HttpResponse.json({},{status:404});}));
+ const data=readFormDetail({definition:canonical,lifecycle:fixtureLifecycle(1),capabilities:{canSave:true,canPublish:true,canPreview:false},publication:{activeVersion:null,currentOperation:null,displayState:"Draft"},audit});
+ const {result}=renderHook(()=>useFormDraftEditor(scope,data),h);
+ act(()=>result.current.change({...result.current.session!.value,name:{es:"Mi borrador"}}));
+ await act(()=>result.current.save());
+ expect(result.current.session).toMatchObject({phase:"Editing",pending:null,value:{name:{es:"Mi borrador"}}});
+ expect(result.current.canSave).toBe(false);
+ await act(()=>result.current.retry());await act(()=>result.current.recover());await act(()=>result.current.save());
+ expect(writes).toHaveBeenCalledOnce();expect(recoveries).not.toHaveBeenCalled();
+});

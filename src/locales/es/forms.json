@@ -854,7 +854,9 @@
     "historyMappings_one": "{{count}} dato mapeado",
     "historyMappings_other": "{{count}} datos mapeados",
     "deactivated": "Dado de baja",
-    "deactivatedHint": "Este formulario está dado de baja. Quitá la sugerencia para guardar."
+    "deactivatedHint": "Este formulario está dado de baja. Quitá la sugerencia para guardar.",
+    "deleted": "Eliminado",
+    "deletedHint": "Este formulario fue eliminado. Quitá la sugerencia para guardar."
   },
   "missing": {
     "title": "Formularios que faltan",
@@ -940,6 +942,22 @@
       "PublicationInProgress": "Hay una publicación en curso.",
       "NotPublished": "Primero hay que publicar el formulario.",
       "Unavailable": "La acción no está disponible."
-    }
+    },
+    "delete": "Eliminar",
+    "deleting": "Eliminando…",
+    "deleteTitle": "Eliminar «{{name}}»",
+    "deleteDescription": "Deja de aparecer en los listados y no se puede volver a usar.",
+    "deleteHint": "Esta acción no se deshace. Si querés conservar el formulario, dalo de baja.",
+    "deleteChanged": "Cambió la situación del formulario. Cerrá este diálogo y revisalo antes de eliminarlo.",
+    "deletedSuccess": "Eliminamos {{name}}.",
+    "lastOpenSend": "El último envío abierto vence el {{date}}.",
+    "deletionReasons": {
+      "PublicationInProgress": "Hay una publicación en curso.",
+      "HasResponses": "Tiene respuestas: dalo de baja para conservarlas.",
+      "OpenSends": "Tiene envíos vigentes o respuestas en proceso.",
+      "Unavailable": "No se puede eliminar este formulario."
+    },
+    "noDeletePermission": "Ya no tenés permiso para eliminar este formulario.",
+    "deletedWhileEditing": "El formulario ya fue eliminado. Tus cambios sin guardar se conservan."
   }
 }

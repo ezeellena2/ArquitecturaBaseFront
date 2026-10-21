@@ -35,6 +35,7 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
   const [issue, setIssue] = useState<FormEditorIssue | null>(null);
   const [review, setReview] = useState<FormDetail | null>(null);
   const [busy, setBusy] = useState(false);
+  const knownDeleted = !!session?.confirmed && issue?.kind === "read" && issue.code === "Forms.Definition.NotFound";
   const current = useRef(session);
   const active = useRef(false);
   const context = useRef(scope);
@@ -78,7 +79,7 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
   useEffect(() => { manageDenied.current = false; }, [permissionsStamp]);
 
   function alive() { return active.current && current.current !== null && owner.key === contextKey(context.current) && canReadForms(context.current); }
-  function writable() { return alive() && capability && !manageDenied.current && context.current.permissions.includes("formtemplates.manage"); }
+  function writable() { return alive() && !knownDeleted && capability && !manageDenied.current && context.current.permissions.includes("formtemplates.manage"); }
   function begin() {
     if (!alive() || inFlight.current) return null;
     const controller = new AbortController(); inFlight.current = controller; setBusy(true); return controller;
@@ -108,7 +109,11 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
       const code = error instanceof ApiError ? error.code : undefined;
       const traceId = error instanceof ApiError ? error.traceId : undefined;
       const reason = code && Object.hasOwn(conflictReasons, code) ? conflictReasons[code as keyof typeof conflictReasons] : undefined;
-      if (error instanceof ApiError && error.status === 400) {
+      if (attempt.definitionId !== null && error instanceof ApiError && error.status === 404 && code === "Forms.Definition.NotFound") {
+        publish(rejectDraftSave(current.current!, attempt.identity, "Validation"));
+        manageDenied.current = true; setDeniedPermissions(permissionsStamp);
+        setIssue({ kind: "read", code, traceId, error });
+      } else if (error instanceof ApiError && error.status === 400) {
         publish(rejectDraftSave(current.current!, attempt.identity, "Validation"));
         setIssue({ kind: "validation", code, traceId, error, fields: draftFieldIssues(attempt.body, error.errors) });
       } else if (error instanceof ApiError && error.status === 409 && reason) {
@@ -156,9 +161,9 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
     } finally { finish(controller); }
   }
   return { session: owns ? session : null, issue: owns ? issue : null, review: owns ? review : null, busy: owns && busy,
-    canSave: owns && capability && deniedPermissions !== permissionsStamp && scope.permissions.includes("formtemplates.manage") && session?.phase === "Editing" && !busy,
-    change: (value: DraftEditorValue) => { if (alive()) { publish(changeDraft(current.current!, value)); if (current.current?.phase === "Editing") setIssue(null); } },
-    discard: () => { if (alive()) { publish(discardDraft(current.current!)); if (current.current?.phase === "Editing") setIssue(null); } },
+    canSave: owns && !knownDeleted && capability && deniedPermissions !== permissionsStamp && scope.permissions.includes("formtemplates.manage") && session?.phase === "Editing" && !busy,
+    change: (value: DraftEditorValue) => { if (alive()) { publish(changeDraft(current.current!, value)); if (current.current?.phase === "Editing" && !knownDeleted) setIssue(null); } },
+    discard: () => { if (alive()) { publish(discardDraft(current.current!)); if (current.current?.phase === "Editing" && !knownDeleted) setIssue(null); } },
     useCurrent: () => {
       if (!alive() || !review || current.current?.phase !== "ReviewRequired" || busy) return;
       publish(openDraftSession(current.current.scope, review.definition));

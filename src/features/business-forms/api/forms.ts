@@ -28,3 +28,5 @@ export async function fetchFormPreview(id: string, versionId: string, culture: "
 
 export const fetchFormDeactivation = async (id: string, signal?: AbortSignal) => readFormDeactivationPreview(await api.get<unknown>(`/api/forms/definitions/${formId(id)}/deactivation`, { signal, cache: "no-store" }), id);
 export const deactivateForm = async (id: string, expectedRevision: number, signal?: AbortSignal) => readFormDeactivation(await api.post<unknown>(`/api/forms/definitions/${formId(id)}/deactivation`, { expectedRevision }, { signal }), id);
+
+export const deleteForm = (id: string, expectedRevision: number, signal?: AbortSignal) => api.delete<void>(`/api/forms/definitions/${formId(id)}`, { body: JSON.stringify({ expectedRevision }), signal });
