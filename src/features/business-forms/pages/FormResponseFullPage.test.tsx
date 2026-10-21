@@ -5,12 +5,14 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { queryClient } from "@/shared/api/queryClient";
+import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { approvalTaskFixture } from "@/test/approvalFixtures";
 import { responseFormId, responseRecordId, responseSecondId, responseSheetFixture, responseDetailFixture, responseWorkflowFixture } from "@/test/responseFixtures";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
+vi.mock("@/shared/hooks/usePrivateFormFile", async () => ({ ...await vi.importActual<typeof import("@/shared/hooks/usePrivateFormFile")>("@/shared/hooks/usePrivateFormFile"), savePrivateBlob: vi.fn() }));
 const path = `/formularios/${responseFormId}/respuestas`;
 const secondTaskId = "0199a0c0-0000-7000-8000-000000000071";
 const priorRecordId = "0199a0c0-0000-7000-8000-000000000072";
@@ -215,4 +217,102 @@ it("keeps the previous answer visible and busy until the next full response is c
     expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled();
   } finally { await act(async () => release?.()); }
   await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
+});
+function setupIssuedDocuments() {
+  setup();
+  const documents = [0, 1].map(index => ({ id: `0199a0c0-0000-7000-8000-00000000008${index}`, runId: `0199a0c0-0000-7000-8000-00000000009${index}`,
+    culture: index === 0 ? "es" as const : "en" as const, name: index === 0 ? "Primer comprobante.pdf" : "Second receipt.pdf", size: 40,
+    createdAtUtc: index === 0 ? "2026-10-16T15:00:00Z" : "2026-10-16T11:00:00Z" }));
+  const reads: string[] = [];
+  let url = 0;
+  Object.defineProperty(URL, "createObjectURL", { configurable: true, value: vi.fn(() => "blob:fixed-pdf-" + ++url) });
+  Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+  server.use(
+    http.get("/api/forms/records/:id/workflow", ({ params }) => HttpResponse.json({ ...responseWorkflowFixture(String(params.id)), recordState: "Approved", ruleRevision: 1,
+      actions: documents.map((document, index) => ({ id: document.runId, ruleId: document.runId, kind: "GeneratePdf", event: "Approved", order: index + 1, revision: 0, state: "Completed",
+        reasonCode: null, reason: null, canConsult: false, canRetry: false, recipients: [], createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: `2026-10-16T1${index + 2}:00:00Z`, completedAtUtc: `2026-10-16T1${index + 2}:00:00Z` })),
+      documents: [...documents].reverse() })),
+    http.get("/api/forms/records/:id/documents/:documentId/content", ({ params }) => { reads.push(String(params.documentId)); return new HttpResponse(new Uint8Array([37, 80, 68, 70]), { headers: { "content-type": "application/pdf", "content-language": documents.find(document => document.id === params.documentId)!.culture } }); }),
+  );
+  return { documents, reads };
+}
+
+it("opens fixed PDF copies in their exact action and reuses preview bytes after folding or enlarging", async () => {
+  mobile(); const { documents, reads } = setupIssuedDocuments();
+  const view = renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  await waitFor(() => expect(screen.getByRole("button", { name: "Expandir actividad" })).toBeEnabled());
+  expect(reads).toEqual([]);
+  expect(screen.getByText("Recibida · Al aprobarla")).toBeVisible();
+  await userEvent.click(screen.getByRole("button", { name: "Expandir actividad" }));
+  const actions = await screen.findAllByText("Armar el PDF", { exact: true });
+  const first = actions[0].closest("li")!;
+  const second = actions[1].closest("li")!;
+  expect(within(first).getByText(documents[0].name)).toBeVisible();
+  expect(within(second).getByText(documents[1].name)).toBeVisible();
+  const preview = await within(first).findByTitle("Vista previa del PDF");
+  await waitFor(() => expect(reads).toHaveLength(2));
+  const src = preview.getAttribute("src");
+  await userEvent.click(within(first).getByRole("button", { name: "Ver PDF" }));
+  const dialog = await screen.findByRole("dialog");
+  expect(within(dialog).getByTitle("Vista previa del PDF")).toHaveAttribute("src", src);
+  expect(reads).toHaveLength(2);
+  await userEvent.click(within(dialog).getAllByRole("button", { name: "Cerrar" })[0]);
+  await userEvent.click(screen.getByRole("button", { name: "Plegar actividad" }));
+  await userEvent.click(screen.getByRole("button", { name: "Expandir actividad" }));
+  expect(reads).toHaveLength(2);
+  expect(within(first).getByTitle("Vista previa del PDF")).toHaveAttribute("src", src);
+  expect(within(first).queryByText("Se lo mandó Ana")).not.toBeInTheDocument();
+  expect(screen.getByText("Se lo mandó Ana")).toBeVisible();
+  view.unmount();
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith(src);
+  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
+});
+
+it("offers uploaded documents in the full download menu and reads bytes only after selection", async () => {
+  mobile(); setupIssuedDocuments();
+  const fileId = "0199a0c0-0000-7000-8000-000000000089";
+  let files = 0;
+  server.use(http.get("/api/forms/records/:id", ({ params }) => { const record = responseDetailFixture(String(params.id));
+    record.values.push({ fieldId: fileId, key: "remito", type: "document", label: "Remito", value: [{ fileId, name: "remito.pdf", contentType: "application/pdf", size: 40, hasThumbnail: false }] });
+    return HttpResponse.json(record); }),
+    http.get("/api/forms/records/:id/files/:fileId/content", () => { files++; return new HttpResponse(new Uint8Array([37, 80, 68, 70]), { headers: { "content-type": "application/pdf" } }); }));
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  await act(async () => screen.getByRole("button", { name: "Descargar", expanded: false }).focus());
+  await userEvent.keyboard("{Enter}");
+  const item = await screen.findByRole("menuitem", { name: "remito.pdf" });
+  expect(files).toBe(0);
+  await userEvent.click(item);
+  await waitFor(() => expect(files).toBe(1));
+  await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledWith(expect.anything(), "remito.pdf"));
+});
+
+it("withdraws the full response when its inline issued PDF read is forbidden", async () => {
+  mobile(); setupIssuedDocuments();
+  server.use(http.get("/api/forms/records/:id/documents/:documentId/content", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })));
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  await userEvent.click(screen.getByRole("button", { name: "Expandir actividad" }));
+  await waitFor(() => expect(screen.queryByRole("heading", { name: "TEST-000002", level: 1 })).not.toBeInTheDocument());
+  expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();
+  expect(URL.createObjectURL).not.toHaveBeenCalled();
+});
+it("keeps the loaded PDF identity when anchoring changes only the return page", async () => {
+  const { reads } = setupIssuedDocuments();
+  let position = 1;
+  server.use(http.post("/api/forms/definitions/:id/records/:recordId/navigation", ({ params }) => HttpResponse.json({ recordId: params.recordId,
+    previousId: position === 1 ? null : priorRecordId, nextId: responseSecondId, position, totalCount: 43 })));
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  await waitFor(() => expect(screen.getAllByTitle("Vista previa del PDF")).toHaveLength(2));
+  expect(reads).toHaveLength(2);
+  const urls = screen.getAllByTitle("Vista previa del PDF").map(preview => preview.getAttribute("src"));
+  position = 21;
+  await act(async () => { await queryClient.invalidateQueries({ predicate: query => query.queryKey[0] === "form-responses" && query.queryKey[2] === "record-navigation" }); });
+  expect(await screen.findByText("21 de 43")).toBeVisible();
+  await waitFor(() => expect(screen.getAllByTitle("Vista previa del PDF")).toHaveLength(2));
+  expect(reads).toHaveLength(2);
+  expect(screen.getAllByTitle("Vista previa del PDF").map(preview => preview.getAttribute("src"))).toEqual(urls);
+  expect(URL.revokeObjectURL).not.toHaveBeenCalled();
 });

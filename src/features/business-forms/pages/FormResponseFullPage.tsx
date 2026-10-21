@@ -16,11 +16,12 @@ import { useResponseWorkspace } from "../hooks/useResponseWorkspace";
 import { useResponseDetailState } from "../hooks/useResponseDetailState";
 import { useFullResponseNavigation } from "../hooks/useFullResponseNavigation";
 import { responseFullPath } from "../responseNavigationPaths";
+import { composeWorkflowMoments } from "../workflowMoments";
 import { approvalStateVariant } from "../approvals";
 import type { ApprovalTask } from "../api/approvals";
 import { ResponseAnswer } from "../components/ResponseAnswer";
 import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
-import { ResponseDocumentDownloads } from "../components/ResponseDocuments";
+import { ResponseDocumentDownloads, ResponseDocumentPreview } from "../components/ResponseDocuments";
 import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
 
 export function FormResponseFullPage() {
@@ -61,6 +62,8 @@ function FullResponse({ formId, recordId, transitioning }: { formId: string; rec
   const backTo = { to: navigation.backTo, label: t("detail.backToResponses") };
   if (!allowed) return <Page title={t("responses.detail")} backTo={backTo}><ForbiddenPage/></Page>;
   if (!data || unavailable) return <Page title={t("responses.detail")} backTo={backTo}>{detail.query.isPending ? <Spinner/> : <EmptyState title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</Page>;
+  const files = data.values.filter(value => value.type === "document").flatMap(value => Array.isArray(value.value) ? value.value : []);
+  const activitySummary = composeWorkflowMoments(data, current).map(moment => t(moment.kind === "received" ? "responses.received" : moment.kind === "effects" ? "detail.events." + moment.event : "approvals.taskStates." + moment.task.state)).join(" · ");
   return <div ref={container} tabIndex={-1} className={pending ? "outline-none max-sm:pb-24" : "outline-none"} aria-busy={loadingTarget} onKeyDown={event => {
     if (event.defaultPrevented || event.nativeEvent.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
       event.target instanceof Element && event.target.closest('input,textarea,select,[contenteditable="true"],[role="dialog"],[role="combobox"],[role="menu"]')) return;
@@ -71,15 +74,15 @@ function FullResponse({ formId, recordId, transitioning }: { formId: string; rec
     <IconButton label={t("responses.previous")} disabled={!navigation.previous || loadingTarget} onClick={() => navigation.onMove(-1)}><ArrowUpIcon className="size-4"/></IconButton>
     <IconButton label={t("responses.next")} disabled={!navigation.next || loadingTarget} onClick={() => navigation.onMove(1)}><ArrowDownIcon className="size-4"/></IconButton>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="outline" size="sm" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
-    {current?.documents.length ? <ResponseDocumentDownloads documents={current.documents} downloads={downloads}/> : null}
+    {current?.documents.length || files.length ? <ResponseDocumentDownloads documents={current?.documents ?? []} files={files} downloads={downloads}/> : null}
     <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
   </>}>
     <div className="space-y-4">
       <CollapsibleSection title={t("responses.answer")} open={answerOpen} onOpenChange={setAnswerOpen} expandLabel={t("detail.expandAnswer")} collapseLabel={t("detail.collapseAnswer")} meta={t("responses.versionLabel", { version: data.versionNumber })} summary={t("detail.answerSummary", { count: data.values.length })}>
         <div className="px-4"><ResponseAnswer record={data} actor={detail.scope.user!.id} busy={loadingTarget} photos={photos} onForbidden={deny} onError={onFileError}/></div>
       </CollapsibleSection>
-      <CollapsibleSection title={t("detail.activity")} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
-        <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId}/></div>
+      <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
+        <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} renderDocuments={runId => current?.documents.filter(document => document.runId === runId).map(document => <ResponseDocumentPreview key={document.id} owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny} enabled={activityOpen && !loadingTarget}/>)}/></div>
       </CollapsibleSection>
       {current?.task && canDecide ? <ApprovalDecisionPanel key={current.task.id} embedded taskId={current.task.id} disabled={loadingTarget} actionsTarget={decisionTarget} onForbidden={navigation.denyDecision} onDecided={refresh}/> : null}
     </div>

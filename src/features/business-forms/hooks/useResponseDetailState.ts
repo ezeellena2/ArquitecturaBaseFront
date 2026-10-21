@@ -25,7 +25,8 @@ export function useResponseDetailState({ formId, recordId, busy = false, navigat
   useResponseFeedback(detail.query.isPending ? null : detail.query.error ?? workflow.error ?? navigationError,
     "responses:detail-page:" + detail.scope.owner + ":" + formId,
     detail.query.error ? detail.query.refetch : workflow.error ? workflow.query.refetch : retryNavigation);
-  const deny = useCallback(() => workspace?.deny(), [workspace]);
+  const denyWorkspace = workspace?.deny;
+  const deny = useCallback(() => denyWorkspace?.(), [denyWorkspace]);
   const onFileError = useCallback((error: unknown) => notify({ id: "responses:files:" + detail.scope.owner + ":" + recordId, kind: "error", message: readErrorMessage(error, t) }), [detail.scope.owner, recordId, t]);
   const data = detail.query.data;
   const [presentedWorkflow, setPresentedWorkflow] = useState<{ owner: string; data: NonNullable<typeof workflow.query.data> } | null>(null);

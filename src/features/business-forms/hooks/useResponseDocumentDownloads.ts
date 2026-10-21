@@ -6,6 +6,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchResponseDocument } from "../api/pdf";
+import { readFormFile, type PrivateFormFile } from "@/shared/api/formFiles";
 import type { ResponseWorkflow } from "../api/workflow";
 type IssuedDocument = ResponseWorkflow["documents"][number];
 export function useResponseDocumentDownloads(owner: string, recordId: string, onForbidden: () => void, disabled = false) {
@@ -20,13 +21,13 @@ export function useResponseDocumentDownloads(owner: string, recordId: string, on
   useEffect(() => () => { request.current?.abort(); request.current = null; dismissNotification(operationId); }, [operationId]);
   const busy = operation?.owner === operationId && operation.busy;
   const waiting = waitOwner === operationId && cooldown.isRunning;
-  const download = async (document: IssuedDocument) => {
+  const perform = async (load: (signal: AbortSignal) => Promise<{ blob: Blob; fileName?: string | null }>, name: string) => {
     if (disabled || busy || waiting || request.current) return;
     const controller = new AbortController(); request.current = controller;
     setOperation({ owner: operationId, busy: true }); dismissNotification(operationId);
     try {
-      const file = await fetchResponseDocument(recordId, document.id, true, controller.signal);
-      if (current.current === operationId && !controller.signal.aborted) savePrivateBlob(file.blob, file.fileName ?? document.name);
+      const file = await load(controller.signal);
+      if (current.current === operationId && !controller.signal.aborted) savePrivateBlob(file.blob, file.fileName ?? name);
     } catch (failure) {
       if (current.current !== operationId || controller.signal.aborted || errorFeedback(failure).kind === "cancelled") return;
       if (failure instanceof ApiError && failure.status === 403) { onForbidden(); return; }
@@ -37,6 +38,8 @@ export function useResponseDocumentDownloads(owner: string, recordId: string, on
       if (current.current === operationId) setOperation({ owner: operationId, busy: false });
     }
   };
-  return { download, disabled: disabled || busy || waiting, seconds: waiting ? cooldown.seconds : 0 };
+  const download = (document: IssuedDocument) => perform(signal => fetchResponseDocument(recordId, document.id, true, signal), document.name);
+  const downloadFile = (file: PrivateFormFile) => perform(async signal => ({ blob: await readFormFile(recordId, file.fileId, false, signal) }), file.name);
+  return { download, downloadFile, disabled: disabled || busy || waiting, seconds: waiting ? cooldown.seconds : 0 };
 }
 export type ResponseDocumentDownloadsState = ReturnType<typeof useResponseDocumentDownloads>;
