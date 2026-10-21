@@ -970,5 +970,27 @@
       "deprecatedOn": "Deprecated on {{date}} on WhatsApp.",
       "deprecated": "Deprecated on WhatsApp."
     }
+  },
+  "overview": {
+    "title": "Forms",
+    "search": "Search forms",
+    "state": "Form status",
+    "pendingColumn": "To approve",
+    "responses": "Responses",
+    "lastResponse": "Last response",
+    "noResponses": "No responses yet",
+    "pendingOnly": "With something to approve",
+    "deactivatedHint": "Deactivated forms retain their responses and pending decisions.",
+    "deactivatedPending_one": "There is {{count}} deactivated form with something to approve.",
+    "deactivatedPending_other": "There are {{count}} deactivated forms with something to approve.",
+    "viewDeactivated": "View deactivated forms",
+    "pendingFor_one": "Review {{count}} response for {{name}}",
+    "pendingFor_other": "Review {{count}} responses for {{name}}",
+    "pendingTitle_one": "To approve · {{count}}",
+    "pendingTitle_other": "To approve · {{count}}",
+    "review": "Review",
+    "noPending": "No responses to approve.",
+    "pendingNavigation": "{{position}} of {{count}} to approve",
+    "pendingKeyboardHint": "↑ ↓ navigate pending responses · Escape closes"
   }
 }

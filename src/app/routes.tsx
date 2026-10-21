@@ -8,7 +8,7 @@ import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { HomeLayout } from "@/layouts/HomeLayout";
 import { AppLayout } from "@/layouts/AppLayout";
-import { FormResponsesShell } from "./FormResponsesShell";
+import { FormOverviewShell } from "./FormOverviewShell";
 import { Spinner } from "@/shared/ui/Spinner";
 import { RouteErrorPage } from "./RouteErrorPage";
 
@@ -32,7 +32,7 @@ export const routes: RouteObject[] = [
     HydrateFallback: Spinner,
     children: [
       {
-        element: <HomeLayout authenticatedShell={<FormResponsesShell><AppLayout /></FormResponsesShell>} />,
+        element: <HomeLayout authenticatedShell={<FormOverviewShell><AppLayout /></FormOverviewShell>} />,
         children: [
           { path: "/", lazy: async () => ({ Component: (await import("@/app/AuthenticatedHome")).AuthenticatedHome }) },
           {
@@ -53,8 +53,8 @@ export const routes: RouteObject[] = [
               { element: <ProtectedRoute permission="formrules.manage" />, children: [{ path: "/formularios/:formId/pdf", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormPdfDesignPage")).FormPdfDesignPage }) }] },
               { element: <ProtectedRoute permission="formapprovals.decide" />, children: [{ path: "/formularios/por-aprobar", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ApprovalInboxPage")).ApprovalInboxPage }), children: [{ path: ":taskId", element: null }] }] },
               {
-                element: <ProtectedRoute permission="formrecords.read" />,
-                children: [{ lazy: async () => ({ Component: (await import("@/features/business-forms/components/ResponseWorkspaceLayout")).ResponseWorkspaceLayout }), children: [{ path: "/formularios/:formId/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponsesPage")).FormResponsesPage }), children: [{ path: ":recordId", element: null }] }, { path: "/formularios/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ResponseFormsPage")).ResponseFormsPage }) }] }],
+                element: <ProtectedRoute permission={["formrecords.read", "formapprovals.decide"]} />,
+                children: [{ lazy: async () => ({ Component: (await import("@/features/business-forms/components/ResponseWorkspaceLayout")).ResponseWorkspaceLayout }), children: [{ path: "/formularios/:formId/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormResponseWorkspacePage")).FormResponseWorkspacePage }), children: [{ path: ":recordId", element: null }] }, { path: "/formularios/respuestas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormOverviewPage")).FormOverviewPage }) }] }],
               },
               {
                 element: <ProtectedRoute permission="formtemplates.read" />,

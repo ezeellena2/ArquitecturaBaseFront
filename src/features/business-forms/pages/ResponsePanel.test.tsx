@@ -49,8 +49,8 @@ it.each(["sheet", "inbox"])("contains mobile focus and preserves navigation in t
   setup(["formrecords.read", "formapprovals.decide", "formrecords.export"], true);
   const origin = source === "sheet" ? path : "/formularios/por-aprobar";
   const { router } = renderRouteWithProviders(origin + "?pageSize=20");
-  const table = await screen.findByRole("table");
-  const row = screen.getByRole("link", { name: "TEST-000002" });
+  const row = await screen.findByRole("link", { name: "TEST-000002" });
+  const table = row.closest("table")!;
   await userEvent.click(row);
   const panel = await screen.findByRole("dialog", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("heading", { name: "TEST-000002" });

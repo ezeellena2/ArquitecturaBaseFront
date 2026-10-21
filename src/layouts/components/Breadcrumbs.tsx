@@ -98,7 +98,7 @@ export function Breadcrumbs() {
 
 function ResponseBreadcrumbs({formId,detail,leaf,parent}:{formId?:string;detail:boolean;leaf?:string;parent?:string}) {
  const {t}=useTranslation();const name=parent;
- return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm"><li><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator/><li><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.forms")}</Link></li><Separator/>{detail&&formId?<><li className="truncate"><Link to={`/formularios/${formId}/respuestas`} className={linkClassName}>{name??t("navigation.responses")}</Link></li><Separator/></>:null}<li aria-current="page" className="truncate font-medium">{leaf??t("navigation.responses")}</li></ol></nav>;
+ return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm"><li><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator/><li><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.forms")}</Link></li><Separator/>{detail&&formId?<><li className="truncate"><Link to={`/formularios/${formId}/respuestas`} className={linkClassName}>{name??t("navigation.responses")}</Link></li><Separator/></>:null}<li aria-current="page" className="truncate font-medium">{leaf??t(formId?"navigation.responses":"navigation.formOverview")}</li></ol></nav>;
 }
 
 function PdfBreadcrumbs({ formId, leaf, parent }: { formId: string; leaf?: string; parent?: string }) {

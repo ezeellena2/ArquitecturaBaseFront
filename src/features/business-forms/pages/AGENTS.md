@@ -7,8 +7,8 @@ Una página por ruta. Cada una arma el alcance (`FormReadScope`, `CatalogReadSco
 | `/formularios` | `FormsPage` | `formtemplates.read` | A, BA1-A |
 | `/formularios/nuevo`, `/formularios/:formId` | `FormEditorPage` | read; alta con manage | e1-1, B–D, I1–I3, P1–P3, F1, K6, G1, s2, BA2–BA4, BA6 |
 | `/catalogos`, `/catalogos/nuevo`, `/catalogos/:catalogId` | `CatalogsPage`, `CatalogEditorPage` (Filters en `CatalogFiltersEditorPage`) | `formcatalogs.read`; alta con manage | K1–K4, H4 |
-| `/formularios/respuestas` | `ResponseFormsPage` | `formrecords.read` | T1 |
-| `/formularios/:formId/respuestas/:recordId?` | `FormResponsesPage` y `FormResponseDetailPage` | `formrecords.read` | T1–T5, D2, s4 |
+| `/formularios/respuestas` | `FormOverviewPage` | read OR decide | MF1 |
+| `/formularios/:formId/respuestas/:recordId?` | `FormResponseWorkspacePage`, planilla y D2 | entrada read OR decide; valores sólo read | MF1, T1–T5, D2, s4 |
 | `/formularios/por-aprobar/:taskId?` | `ApprovalInboxPage` | `formapprovals.decide` | G3, G4 en D2 |
 | `/formularios/:formId/pdf` | `FormPdfDesignPage` | `formrules.manage` | G2 |
 | `/formularios/faltantes` | `MissingFormsPage` | `formtemplates.manage` | H7 |
@@ -36,7 +36,7 @@ Cada ruta exige sólo su permiso: respuestas no dependen de leer plantillas ni c
 
 ### Respuestas, aprobación y PDF
 
-- `ResponseFormsPage` lista por HTTP paginado los formularios publicados que la persona puede consultar. `FormResponsesPage` mantiene montada la planilla y abre el panel por RecordId en la ruta anidada; la pestaña del panel (`tab`) va en la URL. Cerrar devuelve el foco a su fila o a otra disponible; volver a activar la misma fila pide foco en el marco, ordenar o filtrar no.
+- `FormOverviewPage` usa la página y facetas de Overview: Activos/Dados de baja, orden fijo del servidor y filtro de pendientes sólo con Read+Decide. Un null no habilita columnas ni se convierte en cero. «Ver» los dados de baja retira PendingOnly en la misma actualización. `FormResponseWorkspacePage` monta planilla con Read o sólo tareas con Decide; el bloque de pendientes se comparte. `FormResponsesPage` mantiene montada la planilla y abre el panel por RecordId en la ruta anidada; la pestaña del panel (`tab`) va en la URL. Cerrar devuelve el foco a su fila o a otra disponible; volver a activar la misma fila pide foco en el marco, ordenar o filtrar no.
 - `FormResponseDetailPage` compone el marco D2 con `useResponseDetailState` y `ResponseDetailContent`: estado confirmado del workflow (PendingApproval y tarea Open como Por aprobar), momentos y pestañas Respuesta, Fotos, Actividad y PDF. El hook es el único dueño de avisos de valores, workflow y navegación. Las migas toman el nombre confirmado de la planilla. Mientras llega otra respuesta, el detalle anterior queda visible y ocupado; decidir y descargar se bloquean hasta confirmar el destino.
 - Un 403 retira filas, valores, conteos y visor; un fallo recuperable conserva lo anterior con Reintentar. Columnas por FieldId en orden actual y retiradas al final; el Estado aparece sólo con `hasApproval`. `hasPdf` marca la fila sin leer workflow por fila y abre la pestaña PDF; los bytes requieren una acción.
 - `ApprovalInboxPage` lleva «Para mí»/«Todas» (`view`), formulario y página a la URL, de la más vieja a la más nueva; «Para mí» excluye las propias y «Todas» las muestra sin poder decidir. Sin `formrecords.read` el panel muestra sólo metadata y decisión, sin pedir valores, workflow ni PDF; con lectura reutiliza `FormResponseDetailPage`. Perder Decide retira metadata y controles, no la lectura de respuestas.

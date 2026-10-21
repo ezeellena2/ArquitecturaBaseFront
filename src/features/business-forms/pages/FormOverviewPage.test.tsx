@@ -1,0 +1,102 @@
+import { act, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { currentUser } from "@/test/mocks/handlers";
+import { server } from "@/test/mocks/server";
+import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { queryClient } from "@/shared/api/queryClient";
+import type { FormOverview } from "../api/overview";
+import { responseFormId, responseRecordId } from "@/test/responseFixtures";
+
+vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
+  useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
+
+// Synthetic behavior DTO; producer qualification runs separately against the real export.
+function overview(): FormOverview {
+  return { forms: { items: [{ id: responseFormId, name: "Registrar visita", prefix: "VIS", deactivatedAtUtc: null,
+    pendingApprovalCount: 2, responseCount: 24, lastResponse: { id: responseRecordId, number: "VIS-000024",
+      submittedAtUtc: "2026-10-21T12:30:00Z", state: "PendingApproval" } }],
+    page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false },
+    filterCounts: { active: 4, deactivated: 3, deactivatedPending: 1 } };
+}
+function setup(permissions: string[], payload = overview()) {
+  const requests: URL[] = [];
+  const legacy: string[] = [];
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })),
+    http.get("/api/forms/overview", ({ request }) => { requests.push(new URL(request.url)); return HttpResponse.json(payload); }),
+    http.get("/api/forms/navigation", () => { legacy.push("navigation"); return HttpResponse.json({ items: [], page: 1, pageSize: 4, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false }); }),
+    http.get("/api/forms/approvals/count", () => HttpResponse.json({ count: 2 })));
+  return { requests, legacy };
+}
+beforeEach(() => { queryClient.clear(); localStorage.clear(); });
+
+describe("MF1 form overview", () => {
+  it("uses authoritative facets and clears pendingOnly when opening inactive forms", async () => {
+    const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
+    const { router } = renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&pageSize=20");
+    await screen.findByRole("heading", { name: "Formularios", level: 1 });
+    const table = await screen.findByRole("table");
+    expect(within(table).getByRole("columnheader", { name: "Por aprobar" })).toBeVisible();
+    expect(within(table).getByRole("columnheader", { name: "Respuestas" })).toBeVisible();
+    expect(within(table).getByRole("link", { name: "VIS-000024" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    expect(screen.getByRole("button", { name: "Activos (4)" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Dados de baja (3)" })).toBeVisible();
+    expect(requests.at(-1)?.searchParams.get("pendingOnly")).toBe("true");
+    await userEvent.click(screen.getByRole("button", { name: "Ver dados de baja" }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("state")).toBe("Deactivated"));
+    expect(requests.at(-1)?.searchParams.has("pendingOnly")).toBe(false);
+    expect(router.state.location.search).not.toContain("pendingOnly");
+    expect(screen.getByRole("checkbox", { name: "Con algo por aprobar" })).not.toBeChecked();
+    expect(await screen.findByText("Los formularios dados de baja conservan sus respuestas y lo que espera una decisión.")).toBeVisible();
+  });
+
+  it.each([
+    [["formrecords.read"], true, false],
+    [["formapprovals.decide"], false, true],
+  ] as const)("keeps the columns and filter within the permission scope %j", async (permissions, read, decide) => {
+    const payload = overview();
+    if (!read) { payload.forms.items[0].responseCount = null; payload.forms.items[0].lastResponse = null; }
+    if (!decide) { payload.forms.items[0].pendingApprovalCount = null; payload.filterCounts.deactivatedPending = null; }
+    const { requests } = setup([...permissions], payload);
+    renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&pageSize=20");
+    await screen.findByRole("heading", { name: "Formularios", level: 1 });
+    const table = await screen.findByRole("table");
+    expect(within(table).queryByRole("columnheader", { name: "Respuestas" }) !== null).toBe(read);
+    expect(within(table).queryByRole("columnheader", { name: "Última respuesta" }) !== null).toBe(read);
+    expect(within(table).queryByRole("columnheader", { name: "Por aprobar" }) !== null).toBe(decide);
+    expect(screen.queryByRole("checkbox", { name: "Con algo por aprobar" })).not.toBeInTheDocument();
+    expect(requests.at(-1)?.searchParams.has("pendingOnly")).toBe(false);
+    expect(within(table).getByRole("link", { name: "Registrar visita" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas");
+  });
+
+  it("denies the overview without either permission and never reads its data", async () => {
+    const { requests } = setup(["formtemplates.read"]);
+    renderRouteWithProviders("/formularios/respuestas");
+    await screen.findByRole("heading", { name: /no tenés permiso/i });
+    expect(requests).toHaveLength(0);
+  });
+
+  it("purges observed private rows and counts immediately after a 403 without refetching", async () => {
+    setup(["formrecords.read", "formapprovals.decide"]);
+    renderRouteWithProviders("/formularios/respuestas?pageSize=20");
+    await screen.findByRole("link", { name: "Registrar visita" });
+    let reads = 0;
+    server.use(http.get("/api/forms/overview", () => { reads++; return HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }); }));
+    await act(async () => { await queryClient.invalidateQueries({ queryKey: ["form-overview"] }); });
+    await screen.findByRole("heading", { name: "No tenés permiso" });
+    await waitFor(() => expect(queryClient.getQueryCache().findAll({ queryKey: ["form-overview"] }).flatMap(query => query.state.data === undefined ? [] : [query.state.data])).toEqual([]));
+    expect(screen.queryByRole("link", { name: "Registrar visita" })).not.toBeInTheDocument();
+    expect(reads).toBe(1);
+  });
+
+  it("shows one static overview link with the global pending count and does not mount legacy reads", async () => {
+    const { legacy } = setup(["formrecords.read", "formapprovals.decide"]);
+    renderRouteWithProviders("/");
+    await userEvent.click(await screen.findByRole("button", { name: /^gestión de formularios$/i }));
+    expect(await screen.findByRole("link", { name: "Formularios (2)" })).toHaveAttribute("href", "/formularios/respuestas");
+    expect(screen.queryByRole("link", { name: /^por aprobar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^ver todos/i })).not.toBeInTheDocument();
+    expect(legacy).toHaveLength(0);
+  });
+});

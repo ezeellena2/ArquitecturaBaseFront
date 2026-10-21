@@ -89,7 +89,7 @@
     "close": "Cerrar aviso"
   },
   "navigation": {
-    "forms": "Formularios",
+    "forms": "Gestión de formularios",
     "designForms": "Diseñar formularios",
     "general": "General",
     "administration": "Administración",
@@ -113,7 +113,8 @@
     "allResponses": "Ver todos",
     "allResponsesCount": "Ver todos ({{count}})",
     "approvals": "Por aprobar",
-    "missingForms": "Formularios que faltan"
+    "missingForms": "Formularios que faltan",
+    "formOverview": "Formularios"
   },
   "layout": {
     "sidebar": {

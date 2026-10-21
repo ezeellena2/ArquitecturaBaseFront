@@ -970,5 +970,27 @@
       "deprecatedOn": "Deprecados el {{date}} en WhatsApp.",
       "deprecated": "Deprecados en WhatsApp."
     }
+  },
+  "overview": {
+    "title": "Formularios",
+    "search": "Buscar formularios",
+    "state": "Estado de los formularios",
+    "pendingColumn": "Por aprobar",
+    "responses": "Respuestas",
+    "lastResponse": "Última respuesta",
+    "noResponses": "Sin respuestas todavía",
+    "pendingOnly": "Con algo por aprobar",
+    "deactivatedHint": "Los formularios dados de baja conservan sus respuestas y lo que espera una decisión.",
+    "deactivatedPending_one": "Hay {{count}} formulario dado de baja con algo por aprobar.",
+    "deactivatedPending_other": "Hay {{count}} formularios dados de baja con algo por aprobar.",
+    "viewDeactivated": "Ver dados de baja",
+    "pendingFor_one": "Revisar {{count}} respuesta de {{name}}",
+    "pendingFor_other": "Revisar {{count}} respuestas de {{name}}",
+    "pendingTitle_one": "Por aprobar · {{count}}",
+    "pendingTitle_other": "Por aprobar · {{count}}",
+    "review": "Revisar",
+    "noPending": "No hay respuestas por aprobar.",
+    "pendingNavigation": "{{position}} de {{count}} por aprobar",
+    "pendingKeyboardHint": "↑ ↓ recorren lo que espera · Escape cierra"
   }
 }

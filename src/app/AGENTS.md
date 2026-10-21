@@ -26,8 +26,8 @@ Monta providers, router y árbol de rutas. `routes.tsx` declara rutas y guards; 
 - `SystemTheme`, bajo QueryClientProvider, aplica la apariencia pública a documentElement.
   Abarca acceso público y portales; no guarda preferencias locales ni depende de una feature.
 
-`routes` compone `FormResponsesShell` alrededor de AppLayout, sin desmontar el caparazón entre rutas. El shell entrega un contexto neutral y carga la lectura de navegación con un import dinámico al abrir el panel o entrar a Formularios. `ResponseWorkspaceLayout` mantiene el alcance privado de filtros y archivos sólo entre las rutas de respuestas.
+`routes` compone `FormOverviewShell` alrededor de AppLayout, sin desmontar el caparazón entre rutas. El contexto neutral sólo aporta el conteo global de aprobaciones; la lectura lazy se monta al abrir Gestión de formularios o entrar en el área y sólo con Decide. MF1 no monta la navegación dinámica anterior. `ResponseWorkspaceLayout` conserva filtros, navegación y archivos entre las rutas de un formulario.
 
-D2 anida `:recordId` bajo la planilla y `:taskId` bajo Por aprobar para conservar el listado montado. Cada página compone un único panel; la bandeja activa ResponseWorkspaceProvider con formId explícito sólo si existe RecordsRead. No hay contexto de navegación global ni acceso a valores por el permiso de decidir.
+MF1 y el espacio por formulario exigen RecordsRead OR ApprovalsDecide con el requisito común del menú. Los valores y el detalle siguen exigiendo RecordsRead: quien sólo decide ve tareas y decisión, sin lecturas de respuestas o workflow. `approval=TaskId` selecciona el pendiente; `:recordId` conserva la selección de planilla. El contexto de navegación es privado del workspace, sin callbacks ni filtros en history.state.
 
 La ruta estática /formularios/faltantes exige formtemplates.manage independientemente de formtemplates.read. El alta /formularios/nuevo conserva Read+Manage; su semilla de nombre no concede permisos ni escribe el pedido.

@@ -14,7 +14,7 @@ import {
   type NavigationItem,
   type NavigationLink,
 } from "../navigation";
-import { FormsResponseNavigationContext } from "../formsNavigation";
+import { FormsOverviewNavigationContext } from "../formsOverviewNavigation";
 import { FormIcon } from "@/shared/ui/icons";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -371,14 +371,14 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const adminPending = isPending && administration.items.every(dependsOnPermissions);
   const showAdministration = adminItems.length > 0;
   const whatsappItems = visibleItems(whatsapp.items, canSee, false);
-  const responses = useContext(FormsResponseNavigationContext);
+  const responses = useContext(FormsOverviewNavigationContext);
   const activateResponses = responses?.setActive;
   useEffect(() => { activateResponses?.(openPanel === "forms" && (!isMobile || mobileOpen)); }, [activateResponses, openPanel, isMobile, mobileOpen]);
-  const formsItems = visibleItems(forms.items.filter(item => item.labelKey !== "navigation.approvals"), canSee, false);
+  const formsItems = visibleItems(forms.items.filter(item => item.labelKey !== "navigation.formOverview"), canSee, false);
   const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : administration;
   const selectedItems = openPanel === "forms" ? formsItems : openPanel === "whatsapp" ? whatsappItems : adminItems;
   const PanelIcon = selectedPanel.icon;
-  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && (responses?.canRead || responses?.canApprove)) && openPanel !== undefined && !isMobile;
+  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && has(["formrecords.read", "formapprovals.decide"])) && openPanel !== undefined && !isMobile;
 
   return (
     <>
@@ -525,10 +525,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             );
           })}
 
-          {formsItems.length > 0 || (responses?.canRead || responses?.canApprove) ? (
+          {formsItems.length > 0 || has(["formrecords.read", "formapprovals.decide"]) ? (
             <div className="mt-2 border-t border-[var(--color-border)] pt-2">
               {isPending ? <Skeleton aria-hidden="true" className="h-9" /> : isMobile ? (
-                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<><ApprovalLink onNavigate={onNavigate}/><ResponseLinks onNavigate={onNavigate} /></>} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
+                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<FormsOverviewLink onNavigate={onNavigate}/>} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={forms.icon} label={t(forms.labelKey)} open={openPanel === "forms"} collapsed={iconsOnly} panelId={panelId}
                   onToggle={() => setOpenPanel(openPanel === "forms" ? undefined : "forms")} />
@@ -661,7 +661,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           </IconButton>
 
           <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
-            {openPanel === "forms" ? <><ApprovalLink onNavigate={onNavigate}/><ResponseLinks onNavigate={onNavigate} /></> : null}
+            {openPanel === "forms" ? <FormsOverviewLink onNavigate={onNavigate}/> : null}
             <ul className="flex flex-col gap-1">
               <NavItems items={selectedItems} controls={controls} translate={t} onNavigate={onNavigate} pending={isPending} />
             </ul>
@@ -672,19 +672,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   );
 }
 
-function ResponseLinks({onNavigate}:{onNavigate?:()=>void}) {
- const navigation=useContext(FormsResponseNavigationContext);const {t}=useTranslation();
- if(!navigation?.canRead)return null;
- return <div className="mb-3 border-b border-[var(--color-border)] pb-3">
-  <p className="px-2 py-2 text-xs font-medium uppercase tracking-wide text-[var(--color-content-muted)]">{t("navigation.responses")}</p>
-  {navigation.pending&&!navigation.items.length?<Skeleton className="h-9"/>:navigation.failed?<Button type="button" variant="ghost" onClick={navigation.retry}>{t("actions.retry")}</Button>:null}
-  <ul className="flex flex-col gap-1">{navigation.items.map(item=><li key={item.id}><NavItem item={{labelKey:"navigation.responses",icon:FormIcon,to:`/formularios/${item.id}/respuestas`,permission:"formrecords.read"}} label={item.name} collapsed={false} onNavigate={onNavigate}/></li>)}</ul>
-  {navigation.hasMore||!navigation.pending&&!navigation.failed&&navigation.items.length===0?<NavItem item={{labelKey:"navigation.allResponses",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:"formrecords.read"}} label={navigation.totalCount > 0 ? t("navigation.allResponsesCount", { count: navigation.totalCount }) : t("navigation.allResponses")} collapsed={false} onNavigate={onNavigate}/>:null}
- </div>;
-}
-
-function ApprovalLink({onNavigate}:{onNavigate?:()=>void}) {
- const navigation=useContext(FormsResponseNavigationContext);const {t}=useTranslation();
- if(!navigation?.canApprove)return null;
- return <div className="mb-2"><NavItem item={{labelKey:"navigation.approvals",icon:FormIcon,to:"/formularios/por-aprobar"}} label={t("navigation.approvals")+(navigation.approvalCount===undefined?"":" ("+navigation.approvalCount+")")} collapsed={false} onNavigate={onNavigate}/>{navigation.approvalsPending?<Skeleton className="h-4"/>:navigation.approvalsFailed?<Button variant="ghost" size="sm" onClick={navigation.retryApprovals}>{t("actions.retry")}</Button>:null}</div>;
+function FormsOverviewLink({onNavigate}:{onNavigate?:()=>void}) {
+ const overview=useContext(FormsOverviewNavigationContext);const {t}=useTranslation();const {has,isPending}=usePermissions();
+ if(isPending)return <Skeleton className="h-9"/>;
+ if(!has(["formrecords.read","formapprovals.decide"]))return null;
+ const count=has("formapprovals.decide")?overview?.count:undefined;
+ return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide"]}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} collapsed={false} onNavigate={onNavigate}/>{overview?.pending?<Skeleton className="h-4"/>:overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
 }

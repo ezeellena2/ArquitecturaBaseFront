@@ -89,7 +89,7 @@
     "close": "Close notification"
   },
   "navigation": {
-    "forms": "Forms",
+    "forms": "Form management",
     "designForms": "Design forms",
     "general": "General",
     "administration": "Administration",
@@ -113,7 +113,8 @@
     "allResponses": "View all",
     "allResponsesCount": "View all ({{count}})",
     "approvals": "To approve",
-    "missingForms": "Missing forms"
+    "missingForms": "Missing forms",
+    "formOverview": "Forms"
   },
   "layout": {
     "sidebar": {

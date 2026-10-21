@@ -38,18 +38,23 @@ async function openAdministration() {
 }
 
 describe("Sidebar", () => {
-  it("builds the response panel from published forms for a reader without template permission", async () => {
+  it("shows the overview without dynamic form links for a reader without template permission", async () => {
     server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["formrecords.read"]})),
       http.get("/api/forms/navigation",()=>HttpResponse.json({items:[{id:"0199a0c0-0000-7000-8000-000000000001",name:"Entrega publicada",prefix:"ENT",versionNumber:2}],page:1,pageSize:4,totalCount:9,totalPages:3,hasPrevious:false,hasNext:true})));
     renderRouteWithProviders("/");
-    await userEvent.click(await screen.findByRole("button", {name:/^formularios$/i}));
-    expect(await screen.findByRole("link",{name:"Entrega publicada"})).toHaveAttribute("href","/formularios/0199a0c0-0000-7000-8000-000000000001/respuestas");
-    expect(screen.getByRole("link",{name:"Ver todos (9)"})).toHaveAttribute("href","/formularios/respuestas");
+    await userEvent.click(await screen.findByRole("button", {name:/^gestión de formularios$/i}));
+    expect(screen.queryByRole("link",{name:"Entrega publicada"})).not.toBeInTheDocument();
+    expect(screen.getByRole("link",{name:"Formularios"})).toHaveAttribute("href","/formularios/respuestas");
     expect(screen.queryByRole("link",{name:"Diseñar formularios"})).not.toBeInTheDocument();
   });
   // AppProviders usa el queryClient de la app (un singleton). Sin esto, la respuesta de /api/me de un test
   // queda cacheada (staleTime: 30s) y se filtra al siguiente, que pisó el handler con otro permiso.
   beforeEach(() => {
+    server.use(
+      http.get("/api/roles/paged", () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })),
+      http.get("/api/users", () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })),
+      http.get("/api/users/filter-counts", () => HttpResponse.json({ status: { all: 0, active: 0, inactive: 0 }, roles: [], createdWithin: [] })),
+    );
     queryClient.clear();
     globalThis.localStorage.clear();
   });

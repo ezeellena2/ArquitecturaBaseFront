@@ -27,7 +27,7 @@ it.each([
   const sidebar = await screen.findByRole("complementary");
   await within(sidebar).findByText("ana@example.com");
   if (allowed) {
-    await userEvent.click(within(sidebar).getByRole("button", { name: /^formularios$/i }));
+    await userEvent.click(within(sidebar).getByRole("button", { name: /^gestión de formularios$/i }));
     expect(await screen.findByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/formularios/respuestas");
-  } else expect(within(sidebar).queryByRole("button", { name: /^formularios$/i })).not.toBeInTheDocument();
+  } else expect(within(sidebar).queryByRole("button", { name: /^gestión de formularios$/i })).not.toBeInTheDocument();
 });

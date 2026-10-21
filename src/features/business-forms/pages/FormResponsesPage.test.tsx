@@ -15,7 +15,7 @@ import {
 } from "@/test/responseFixtures";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { approvalTaskFixture, approvalTaskId } from "@/test/approvalFixtures";
-import type { ApprovalTask } from "../api/approvals";
+import type { ApprovalPage, ApprovalTask } from "../api/approvals";
 import type { ResponseAction, ResponseRecipient, ResponseWorkflow } from "../api/workflow";
 vi.mock("react-oidc-context", async () => ({
   ...(await vi.importActual<typeof import("react-oidc-context")>(
@@ -36,7 +36,9 @@ vi.mock("@/shared/ui/notifications", async () => ({
 function setup(
   permissions = ["formrecords.read", "formrecords.export", "whatsapp.read"],
 ) {
+  const emptyApprovals: ApprovalPage = { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false };
   server.use(
+    http.get("/api/forms/approvals", () => HttpResponse.json(emptyApprovals)),
     http.get("/api/me", () =>
       HttpResponse.json({ ...currentUser, permissions }),
     ),
@@ -749,20 +751,20 @@ describe("response sheet", () => {
     expect(router.state.location.search).toContain("columns=");
     expect(router.state.location.search).not.toContain("Observaciones");
   });
-  it("loads response navigation only when the forms panel opens and preserves the shell", async () => {
+  it("opens the static overview without reading legacy navigation and preserves the shell", async () => {
     setup();
-    const requested = vi.fn();
-    server.use(http.get("/api/forms/navigation", () => { requested(); return HttpResponse.json({ items: [{ id: responseFormId, name: "Published form", prefix: "TEST", versionNumber: 2 }], page: 1, pageSize: 4, totalCount: 12, totalPages: 3, hasPrevious: false, hasNext: true }); }));
+    const legacy = vi.fn(); const requested = vi.fn();
+    server.use(http.get("/api/forms/navigation", () => { legacy(); return HttpResponse.json({}); }),
+      http.get("/api/forms/overview", () => { requested(); return HttpResponse.json({ forms: { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false }, filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } }); }));
     renderRouteWithProviders("/perfil");
     await screen.findByRole("heading", { name: "Mi perfil" });
     const shell = screen.getByRole("navigation", { name: "Navegación principal" });
-    const trigger = await screen.findByRole("button", { name: "Formularios" });
     expect(requested).not.toHaveBeenCalled();
-    await userEvent.click(trigger);
-    await screen.findByRole("link", { name: "Published form" });
-    expect(screen.getByRole("link", { name: "Ver todos (12)" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("link", { name: "Published form" }));
-    await screen.findByRole("table");
+    await userEvent.click(await screen.findByRole("button", { name: "Gestión de formularios" }));
+    await userEvent.click(screen.getByRole("link", { name: "Formularios" }));
+    await screen.findByRole("heading", { name: "Formularios", level: 1 });
+    await waitFor(() => expect(requested).toHaveBeenCalledOnce());
+    expect(legacy).not.toHaveBeenCalled();
     expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBe(shell);
   });
   it("reports one detail failure when detail and its sheet both fail", async () => {
@@ -774,12 +776,13 @@ describe("response sheet", () => {
     await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
     expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
   });
-  it("keeps a navigation failure local to the forms panel on another screen", async () => {
+  it("does not load the overview while another screen is open", async () => {
     setup();
-    server.use(http.get("/api/forms/navigation", () => HttpResponse.json({ code: "Test.Failure" }, { status: 500 })));
+    const requested = vi.fn(); server.use(http.get("/api/forms/overview", () => { requested(); return HttpResponse.json({ code: "Test.Failure" }, { status: 500 }); }));
     renderRouteWithProviders("/perfil");
     await screen.findByRole("heading", { name: "Mi perfil" });
     expect(notify).not.toHaveBeenCalled();
+    expect(requested).not.toHaveBeenCalled();
   });
   it("opens the historical detail and moves within the same sheet", async () => {
     setup();

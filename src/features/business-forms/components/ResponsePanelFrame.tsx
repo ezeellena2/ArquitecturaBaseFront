@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/shared/ui/dialog";
 export interface ResponsePanelNavigation {
   previous: boolean; next: boolean; busy?: boolean; position?: number; count?: number; selectionId?: string; focusRequest?: number;
   onMove: (direction: number) => void; onClose: () => void;
-  error?: unknown; onRetry?: () => unknown;
+  error?: unknown; onRetry?: () => unknown; kind?: "sheet" | "pending";
 }
 export function ResponsePanelFrame({ title, status, subtitle, navigation, children, actions, loading }: {
   title: string; loading?: boolean; status?: ReactNode; subtitle?: ReactNode; navigation: ResponsePanelNavigation; children: ReactNode; actions?: ReactNode;
@@ -49,7 +49,7 @@ export function ResponsePanelFrame({ title, status, subtitle, navigation, childr
     <header className="shrink-0 border-b border-[var(--color-border)] px-4 py-3">
       <div className="flex items-center gap-2 max-sm:flex-wrap">
         {mobile ? <DialogTitle asChild>{heading}</DialogTitle> : heading}{status}
-        {mobile && navigation.position !== undefined && navigation.count !== undefined ? <span className="text-xs text-[var(--color-content-muted)]">{t("responses.position", { position: navigation.position, count: navigation.count })}</span> : null}
+        {mobile && navigation.position !== undefined && navigation.count !== undefined ? <span className="text-xs text-[var(--color-content-muted)]">{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</span> : null}
         <ActionTooltip label={t("responses.previous")}><span className="inline-flex max-sm:ml-auto"><Button ref={previous} variant="ghost" size="icon" aria-label={t("responses.previous")} disabled={!navigation.previous || navigation.busy} onClick={() => navigation.onMove(-1)}><ArrowUpIcon className="size-4"/></Button></span></ActionTooltip>
         <ActionTooltip label={t("responses.next")}><span className="inline-flex"><Button ref={next} variant="ghost" size="icon" aria-label={t("responses.next")} disabled={!navigation.next || navigation.busy} onClick={() => navigation.onMove(1)}><ArrowDownIcon className="size-4"/></Button></span></ActionTooltip>
         <IconButton variant="ghost" label={t("common:actions.close")} onClick={navigation.onClose}><CloseIcon className="size-4"/></IconButton>
@@ -58,7 +58,7 @@ export function ResponsePanelFrame({ title, status, subtitle, navigation, childr
       {actions ? <div className="mt-2 flex flex-wrap items-center gap-3">{actions}</div> : null}
     </header>
     <div className="min-h-0 flex-1 overflow-y-auto p-4">{navigation.error && navigation.onRetry ? <div className="mb-3 space-y-2"><p className="text-sm">{t("responses.loadFailed")}</p><Button variant="outline" onClick={() => { navigation.onRetry?.(); }}>{t("common:actions.retry")}</Button></div> : null}{children}</div>
-    {!mobile ? <p className="shrink-0 border-t border-[var(--color-border)] px-4 py-2 text-xs text-[var(--color-content-muted)]">{navigation.position !== undefined && navigation.count !== undefined ? <><span>{t("responses.position", { position: navigation.position, count: navigation.count })}</span><span aria-hidden="true" className="max-sm:hidden"> · </span></> : null}<span className="max-sm:hidden">{t("detail.keyboardHint")}</span></p> : null}
+    {!mobile ? <p className="shrink-0 border-t border-[var(--color-border)] px-4 py-2 text-xs text-[var(--color-content-muted)]">{navigation.position !== undefined && navigation.count !== undefined ? <><span>{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</span><span aria-hidden="true" className="max-sm:hidden"> · </span></> : null}<span className="max-sm:hidden">{t(navigation.kind === "pending" ? "overview.pendingKeyboardHint" : "detail.keyboardHint")}</span></p> : null}
   </>;
   return mobile ? <Dialog open onOpenChange={open => { if (!open) navigation.onClose(); }}><DialogContent {...interaction} placement="right" showCloseButton={false} aria-modal="true" aria-labelledby={undefined} aria-describedby={undefined} className="top-12 bottom-0 h-[calc(100svh-3rem)] max-w-none gap-0 overflow-hidden p-0" onOpenAutoFocus={event => { event.preventDefault(); panel.current?.focus(); }} onCloseAutoFocus={event => event.preventDefault()} onEscapeKeyDown={event => { event.preventDefault(); navigation.onClose(); }}>{content}</DialogContent></Dialog> : <section {...interaction} className="absolute top-12 right-0 bottom-0 z-20 flex w-[min(520px,100%)] flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl outline-none">{content}</section>;
 }

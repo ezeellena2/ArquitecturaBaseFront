@@ -6,6 +6,7 @@ import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { DocumentIcon } from "@/shared/ui/icons";
 import { fetchResponseSheet } from "../api/responses";
+import { FormPendingApprovals } from "../components/FormPendingApprovals";
 import { FormResponseDetailPage } from "./FormResponseDetailPage";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
@@ -97,8 +98,8 @@ export function FormResponsesPage() {
     (query.error instanceof ApiError && query.error.status === 403)
   )
     return <ForbiddenPage />;
-  const recordPath = (id: string) =>
-    `/formularios/${formId}/respuestas/${id}?${route.params}`;
+  const recordPath = (id: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); return `/formularios/${formId}/respuestas/${id}?${params}`; };
+  const rememberSheet = (recordId: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); workspace?.setNavigation(formId, { origin: "sheet", selection: { recordId }, search: params.toString() }); };
   const columns: Column<ResponseRow>[] = [
     {
       id: "number",
@@ -108,7 +109,7 @@ export function FormResponsesPage() {
         <Link
           data-response-id={row.id}
           to={recordPath(row.id)}
-          onClick={event => { if (row.id === recordId && !event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) setFocusRequest(value => value + 1); }}
+          onClick={event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { rememberSheet(row.id); if (row.id === recordId) setFocusRequest(value => value + 1); } }}
           className="font-medium text-[var(--color-brand-700)] underline"
         >
           {row.number}
@@ -202,6 +203,7 @@ export function FormResponsesPage() {
         ) : undefined
       }
     >
+      {scope.user?.permissions.includes("formapprovals.decide") ? <FormPendingApprovals formId={formId} onDecided={() => { void query.refetch(); }}/> : null}
       <FilterBar>
         <div className="flex flex-wrap items-center gap-3">
           {!data ||
@@ -305,7 +307,7 @@ export function FormResponsesPage() {
           rows={data?.records.items ?? []}
           rowKey={(row) => row.id}
           selectedRowKey={recordId}
-          onRowClick={row => { if (row.id === recordId) setFocusRequest(value => value + 1); navigate(recordPath(row.id)); }}
+          onRowClick={row => { rememberSheet(row.id); if (row.id === recordId) setFocusRequest(value => value + 1); navigate(recordPath(row.id)); }}
           isLoading={query.isPending}
           hasData={!!data}
           error={query.error ? t(query.error instanceof ApiError && query.error.status === 404 ? "responses.unavailableForm" : "responses.loadFailed") : undefined}

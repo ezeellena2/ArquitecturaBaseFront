@@ -10,7 +10,7 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 - `usePrivateQueryCleanup` cancela y retira al desmontar: listado y detalle de formularios, baja, reglas, sugerencias y diseño PDF. `useUnobservedQueryCleanup` espera una microtarea y retira sólo consultas sin observadores: catálogos, respuestas, aprobaciones y faltantes; desmontar una pregunta no corta la lectura de otra. La retirada inmediata por pérdida de permiso queda en su dueño.
 - Listados y opciones de filtros conservan la última lectura exitosa del mismo dueño durante otra consulta y su fallo; `placeholderData` sólo reutiliza datos de la misma raíz. Las facetas de formularios dependen sólo de `search`: cuentan antes de filtrar por estado.
 - Lo privado usa `gcTime: 0`, y los detalles que inicializan un editor `staleTime: 0`. Si la pantalla interpreta el error, la consulta declara `meta.errorOwner: "local"`; el selector de catálogos y el nombre de la pregunta dejan el único aviso a QueryCache (`"global"`). Una lectura cancelada no anuncia fallo; cancelar una escritura puede dejarla incierta.
-- `app/FormResponsesNavigation` consume `useResponseNavigation` y `useApprovalCount` al entrar en Formularios o abrir el panel: su firma es contrato con `app`.
+- `useFormOverview` permite Read OR Decide y separa contadores privados nullable. Su 403 niega ese dueño y retira el contenido de la caché observada sin repetir la lectura. `app/FormOverviewCount` consume sólo `useApprovalCount` para el menú. Las invalidaciones de ciclo de vida y decisión incluyen el dueño de Overview.
 
 ### Borrador del formulario
 
@@ -39,11 +39,11 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 
 ### Respuestas, aprobaciones y documentos
 
-- `useResponseRouteQuery` lleva a la URL sólo página, tamaño, orden, versiones y columnas. Búsqueda, personas, condiciones y estado viven en `useResponseWorkspace`, por dueño y formulario.
+- `useResponseRouteQuery` lleva a la URL sólo página, tamaño, orden, versiones y columnas. Búsqueda, personas, condiciones y estado viven en `useResponseWorkspace`, por dueño y formulario. El mismo workspace conserva origen (planilla o pendientes), RecordId/TaskId separados, parámetros públicos y la cola observada de tareas; nunca callbacks. Cambiar dueño/formulario o negar el alcance lo retira.
 - `useResponseWorkflow` relee cada 2 s sólo mientras haya acciones Waiting o Running. Consultar, Reintentar y la revisión de un destinatario son POST explícitos sobre el mismo RunId y exigen `formrules.manage`; `workflowNextAction` nunca ofrece repetir lo hecho o no aplicable. Tras red, 5xx o 409 en una revisión se relee antes de permitir otro POST. Un 403 de control quita la recuperación y relee; sólo un 403 de lectura retira valores. `observeApproval` actualiza la tarea ya leída sólo si su revisión no retrocede.
 - `useResponseDetailState` reúne valores, workflow, presentación previa, avisos, alcance de archivos y descargas de una respuesta. D2 lo consume separado de su marco; otra composición reutiliza ese dueño, sin duplicar sus lecturas o avisos.
 - `useResponsePanelNavigation` aplica una página tardía sólo al mismo contexto. `useResponseDocumentDownloads` posee una descarga por respuesta, compartida por el menú y la pestaña PDF: cerrar el menú no la aborta; cambiar de dueño, perder lectura o desmontar sí. Respeta la espera de un 429.
-- `useApprovalQueries` exige `formapprovals.decide` y conserva datos previos sólo del mismo dueño.
+- `useApprovalQueries` exige `formapprovals.decide` y conserva datos previos sólo del mismo dueño. `useFormPendingApprovals` lee sólo las tareas decidibles del formulario, sin opciones globales. Negar la lista, tarea, decisión o navegación retira su metadata y contexto sin negar la planilla autorizada.
 
 ## Referencias
 
