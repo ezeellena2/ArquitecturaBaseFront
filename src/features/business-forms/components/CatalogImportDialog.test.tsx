@@ -27,7 +27,7 @@ it("reviews pasted rows through Append preview without saving, then requires the
   const { user, onApplied } = await mount();
   await user.type(screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
-  await screen.findByText("Repetido: también está en la fila 2.");
+  await screen.findByText("Repetido: también está en otra fila.");
   expect(check).toHaveBeenCalledExactlyOnceWith(catalog.id, expect.objectContaining({ file: expect.any(File), mode: "Append", expectedRevision: 7 }), expect.any(AbortSignal));
   expect(apply).not.toHaveBeenCalled();
   const button = screen.getByRole("button", { name: "Aplicar sin la fila con errores" });
@@ -121,5 +121,51 @@ it.each([
   expect(within(screen.getByRole("tabpanel")).getByRole("cell", { name: shownAfter })).toBeInTheDocument();
   await user.click(screen.getByRole("tab", { name: culture === "en" ? "Changes" : "Cambios" }));
   expect(within(screen.getByRole("tabpanel")).getByText(`${culture === "en" ? "Value" : "Valor"}: ${shownBefore} → ${shownAfter}`)).toBeInTheDocument();
+  expect(apply).not.toHaveBeenCalled();
+});
+
+it.each(["es", "en"] as const)("identifies errors and warnings with the original header and related row in %s", async culture => {
+  await i18n.changeLanguage(culture);
+  const base = catalogImportPreviewFixture(), english = culture === "en";
+  const errorMessage = english ? "Duplicate: it is also in another row." : "Repetido: también está en otra fila.";
+  const warningMessage = english ? "This column is not part of the catalog: it is ignored." : "Esta columna no es del catálogo: se ignora.";
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", deactivated: [],
+    counts: { ...base.counts, deactivated: 0, warnings: 1 },
+    issues: [
+      { row: 1, column: "Supervisor", severity: "Warning", code: "Forms.CatalogImport.UnknownColumn", message: warningMessage, relatedRow: null, length: null },
+      { ...base.issues[0]!, message: errorMessage },
+    ], confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
+  const apply = vi.spyOn(imports, "applyCatalogImport");
+  const { user } = await mount();
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tSupervisor\nN\tNorte\tAna" } });
+  await user.click(screen.getByRole("button", { name: english ? "Review" : "Revisar" }));
+  expect(await screen.findByRole("columnheader", { name: english ? "Type" : "Tipo" })).toBeInTheDocument();
+  const warningRow = screen.getByText("Supervisor").closest("tr")!;
+  expect(within(warningRow).getByText(english ? "Warning" : "Aviso")).toBeInTheDocument();
+  expect(within(warningRow).getByText(warningMessage)).toBeInTheDocument();
+  const errorRow = screen.getByText(errorMessage).closest("tr")!;
+  expect(within(errorRow).getByText("Error")).toBeInTheDocument();
+  expect(within(errorRow).getByText(english ? "Row 2" : "Fila 2")).toBeInTheDocument();
+  expect(apply).not.toHaveBeenCalled();
+});
+
+it("preserves the file after a preview conflict and rereads only on explicit review", async () => {
+  const check = vi.spyOn(imports, "previewCatalogImport")
+    .mockRejectedValueOnce(new ApiError(409, { code: "Forms.Catalog.RevisionConflict" }))
+    .mockResolvedValue({ ...catalogImportPreviewFixture(), revision: 8, mode: "Append" });
+  const read = vi.spyOn(catalogs, "fetchCatalog").mockResolvedValue({ ...catalog, revision: 8 });
+  const apply = vi.spyOn(imports, "applyCatalogImport");
+  const { user, onObserved } = await mount();
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\nN\tNorte" } });
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  const retry = await screen.findByRole("button", { name: "Revisar de nuevo" });
+  expect(screen.getByRole("textbox")).toHaveValue("Code\tText\nN\tNorte");
+  expect(check).toHaveBeenCalledOnce();
+  expect(read).not.toHaveBeenCalled();
+  await user.click(retry);
+  await waitFor(() => expect(check).toHaveBeenCalledTimes(2));
+  expect(read).toHaveBeenCalledExactlyOnceWith(catalog.id, expect.any(AbortSignal));
+  expect(check.mock.calls[1]![1]).toMatchObject({ file: check.mock.calls[0]![1].file, expectedRevision: 8, mode: "Append" });
+  expect(onObserved).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ revision: 8 }));
   expect(apply).not.toHaveBeenCalled();
 });

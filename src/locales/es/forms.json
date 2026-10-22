@@ -497,6 +497,10 @@
       "row": "Fila",
       "column": "Columna",
       "what": "Qué pasa",
+      "severity": "Tipo",
+      "error": "Error",
+      "warning": "Aviso",
+      "relatedRow": "Fila {{row}}",
       "columns": {
         "code": "Código",
         "text": "Texto",

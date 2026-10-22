@@ -497,6 +497,10 @@
       "row": "Row",
       "column": "Column",
       "what": "What happened",
+      "severity": "Type",
+      "error": "Error",
+      "warning": "Warning",
+      "relatedRow": "Row {{row}}",
       "columns": {
         "code": "Code",
         "text": "Text",

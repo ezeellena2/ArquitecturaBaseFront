@@ -18,12 +18,14 @@ export function createCatalogImportVisualStore(culture: "es" | "en", catalogId: 
   const preview = (mode: CatalogImportMode): CatalogImportPreview => {
     const original = catalogImportPreviewFixture();
     const issues: CatalogImportPreview["issues"] = Array.from({ length: 24 }, (_, index) => ({
-      row: index + 4, column: index % 2 ? "text" : "code", severity: "Error", code: "Forms.CatalogImport.DuplicateCode",
-      message: culture === "es" ? "Revisá esta celda: el código o el texto se repite en la planilla."
-        : "Review this cell: the code or text is repeated in the spreadsheet.", relatedRow: 2, length: null,
+      row: index + 4, column: "code", severity: "Error", code: "Forms.CatalogImport.DuplicateCode",
+      message: culture === "es" ? "Repetido: también está en otra fila."
+        : "Duplicate: it is also in another row.", relatedRow: 2, length: null,
     }));
+    issues.push({ row: 1, column: culture === "es" ? "Responsable" : "Supervisor", severity: "Warning", code: "Forms.CatalogImport.UnknownColumn",
+      message: culture === "es" ? "Esta columna no es del catálogo: se ignora." : "This column is not part of the catalog: it is ignored.", relatedRow: null, length: null });
     return { ...original, catalogId, revision: applied ? 2 : 1, mode, sheetName: culture === "es" ? "Clientes" : "Customers", rowsRead: 27,
-      counts: { added: 1, changed: 1, deactivated: mode === "Replace" ? 1 : 0, reactivated: 0, unchanged: 1, errorRows: 24, warnings: 0 },
+      counts: { added: 1, changed: 1, deactivated: mode === "Replace" ? 1 : 0, reactivated: 0, unchanged: 1, errorRows: 24, warnings: 1 },
       issues, added: [{ row: 2, code: "N", text: "Norte", value: null }],
       changed: [{ row: 3, itemId: "01990000-0000-7000-8000-000000000081", code: "C1", changes: [{ column: "text", before: "Pérez", after: "Pérez Norte" }] }],
       deactivated: mode === "Replace" ? [{ itemId: "01990000-0000-7000-8000-000000000083", code: "C3", text: "Ríos" }] : [],

@@ -85,6 +85,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(received.previews[0]!.bytes).toBeGreaterThan(0); expect(received.applies).toEqual([]); expect(received.writes).toEqual([]);
     await expect(dialog.getByRole("columnheader", { name: label("Fila", "Row"), exact: true })).toBeVisible();
     await expect(dialog.getByRole("columnheader", { name: label("Columna", "Column"), exact: true })).toBeVisible();
+    await expect(dialog.getByRole("columnheader", { name: label("Tipo", "Type"), exact: true })).toBeVisible();
+    await expect(dialog.getByRole("cell", { name: label("Responsable", "Supervisor"), exact: true })).toHaveCount(1);
+    await expect(dialog.getByText(label("Fila 2", "Row 2"), { exact: true })).toHaveCount(24);
+    await expect(dialog.getByText(label("Aviso", "Warning"), { exact: true })).toHaveCount(1);
     const apply = dialog.getByRole("button", { name: label("Aplicar sin las 24 filas con errores", "Apply without the 24 rows with errors"), exact: true });
     await expect(apply).toBeDisabled();
     await page.screenshot({ path: info.outputPath("catalog-import-counts-" + source + ".png"), fullPage: true });
