@@ -68,6 +68,10 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => ({ ...value, error: null, draft: stageCatalogDraftMove(value.draft, itemId, direction) }));
   }, [owned, isCurrentOwner]);
+  const changeSort = useCallback((sortAlphabetically: boolean) => {
+    if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview || !stateRef.current.draft.id || stateRef.current.draft.moves.length) return;
+    setState(value => ({ ...value, error: null, draft: { ...value.draft, sortAlphabetically } }));
+  }, [owned, isCurrentOwner]);
   const clearMoves = useCallback(() => {
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => ({ ...value, error: null, draft: { ...value.draft, moves: [] } }));
@@ -165,11 +169,19 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || operation.current || !stateRef.current.current) return;
     setState(fresh(owner, stateRef.current.current, kind, valueType, scope.culture));
   }, [owned, owner, kind, valueType, scope.culture, isCurrentOwner]);
+  const observeCatalog = useCallback((catalog: CatalogDetail) => {
+    const current = stateRef.current, draft = current.draft, baseline = current.baseline;
+    if (!owned || !isCurrentOwner() || operation.current || current.busy || catalog.id !== draft.id || catalog.revision < (draft.revision ?? 0)
+      || draft.sortAlphabetically || draft.moves.length || Object.keys(draft.items.changes).length
+      || draft.isActive !== baseline.isActive || JSON.stringify(draft.name) !== JSON.stringify(baseline.name) || JSON.stringify(draft.description) !== JSON.stringify(baseline.description)) return;
+    setState(fresh(owner, catalog, kind, valueType, scope.culture));
+    void client.invalidateQueries({ queryKey: ["form-catalogs", scope.actorId] });
+  }, [owned, isCurrentOwner, owner, kind, valueType, scope.culture, scope.actorId, client]);
   const draft = owned ? state.draft : null;
   const dirty = !!draft && (draft.isActive !== state.baseline.isActive || JSON.stringify(draft.name) !== JSON.stringify(state.baseline.name)
     || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description)
-    || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0);
+    || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0 || draft.sortAlphabetically);
   return { draft, dirty, busy: owned && state.busy, requiresReview: owned && state.requiresReview, current: owned ? state.current : null,
     saved: owned ? state.saved : null, previewResult: owned && canManage ? state.previewResult : null, error: owned ? state.error : null, canSave: owned && canManage && !state.busy && !state.requiresReview,
-    changeMetadata, changeFilters, clearPreview, preview, changeItem, changeMove, clearMoves, loadItems, save, discardProposal, readCurrent, adoptCurrent };
+    changeSort, observeCatalog, changeMetadata, changeFilters, clearPreview, preview, changeItem, changeMove, clearMoves, loadItems, save, discardProposal, readCurrent, adoptCurrent };
 }

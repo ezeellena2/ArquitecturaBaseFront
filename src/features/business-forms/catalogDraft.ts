@@ -20,10 +20,11 @@ export interface CatalogDraft {
   readonly description: Readonly<Record<"es" | "en", string>>;
   readonly items: CatalogItemEdits;
   readonly moves: readonly CatalogItemMove[];
+  readonly sortAlphabetically: boolean;
 }
 export function openCatalogDraft(catalog?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text", culture: FormCulture = "es"): CatalogDraft {
   const origin = catalog?.kind ?? kind;
-  return { valueType: catalog?.valueType ?? (origin === "Filters" ? "Text" : valueType), culture, proposal: catalog?.proposal ?? null, isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: { es: catalog?.name.es ?? "", en: catalog?.name.en ?? "" }, description: { es: catalog?.description.es ?? "", en: catalog?.description.en ?? "" }, items: newCatalogItemEdits(), moves: [] };
+  return { valueType: catalog?.valueType ?? (origin === "Filters" ? "Text" : valueType), culture, proposal: catalog?.proposal ?? null, isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: { es: catalog?.name.es ?? "", en: catalog?.name.en ?? "" }, description: { es: catalog?.description.es ?? "", en: catalog?.description.en ?? "" }, items: newCatalogItemEdits(), moves: [], sortAlphabetically: false };
 }
 export function catalogItemValue(item: CatalogItem, valueType: CatalogValueType, culture: FormCulture): CatalogManualItemValue {
   // A persisted UUID is also a valid local correlation key. UI identity prefixes never enter a body.
@@ -41,11 +42,11 @@ export function catalogDraftBody(draft: CatalogDraft): CreateManualCatalogBody {
 }
 
 export function stageCatalogDraftMove(draft: CatalogDraft, itemId: string, direction: CatalogItemMove["direction"]): CatalogDraft {
-  if (!draft.id || !draft.items.originals["item:" + itemId]) return draft;
+  if (!draft.id || draft.sortAlphabetically || !draft.items.originals["item:" + itemId]) return draft;
   return { ...draft, moves: [...draft.moves, { itemId, direction }] };
 }
 export function catalogDraftUpdateBody(draft: CatalogDraft): UpdateManualCatalogBody {
   if (!draft.id || draft.revision === null) throw new Error("An unsaved catalog cannot be updated.");
   const body = catalogDraftBody(draft);
-  return { name: body.name, description: body.description, items: body.items, expectedRevision: draft.revision, isActive: draft.isActive, ...(draft.moves.length ? { moves: draft.moves.map(move => ({ ...move })) } : {}) };
+  return { name: body.name, description: body.description, items: body.items, expectedRevision: draft.revision, isActive: draft.isActive, ...(draft.sortAlphabetically ? { sortAlphabetically: true } : {}), ...(!draft.sortAlphabetically && draft.moves.length ? { moves: draft.moves.map(move => ({ ...move })) } : {}) };
 }

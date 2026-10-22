@@ -80,3 +80,9 @@ it("keeps the chosen type immutable, formats loaded values and writes only canon
   expect(body).not.toHaveProperty("valueType");
   expect(body.items[0]).toMatchObject({ itemId: item.id, value: "2500.75" });
 });
+
+it("sends alphabetical ordering as one explicit command without reconstructing thousands of moves", () => {
+  const draft = { ...openCatalogDraft(catalog), sortAlphabetically: true };
+  expect(catalogDraftUpdateBody(draft)).toMatchObject({ sortAlphabetically: true, items: [] });
+  expect(catalogDraftUpdateBody(draft)).not.toHaveProperty("moves");
+});

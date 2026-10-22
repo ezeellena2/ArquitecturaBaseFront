@@ -268,3 +268,20 @@ it("keeps an incomplete typed item in memory and blocks a direct save without a 
   expect(result.current.dirty).toBe(true); expect(writes).toBe(0);
   expect(h.client.getMutationCache().getAll()).toEqual([]);
 });
+
+it("adopts an import baseline only while clean and keeps a concurrent local edit", () => {
+ const {result}=renderHook(()=>useCatalogDraftEditor(scope,initial),harness());
+ act(()=>result.current.observeCatalog({...initial,revision:2,name:{es:"Importado",en:"Imported"}}));
+ expect(result.current.draft!.revision).toBe(2);expect(result.current.draft!.name.es).toBe("Importado");expect(result.current.dirty).toBe(false);
+ act(()=>result.current.changeMetadata({name:{es:"Mi edición",en:"My edit"}}));
+ act(()=>result.current.observeCatalog({...initial,revision:3}));
+ expect(result.current.draft!.revision).toBe(2);expect(result.current.draft!.name.es).toBe("Mi edición");expect(result.current.dirty).toBe(true);
+});
+it("stages one alphabetical command and rejects mixing it with captured moves", () => {
+ const {result}=renderHook(()=>useCatalogDraftEditor(scope,initial),harness());
+ act(()=>result.current.loadItems([{id:itemId,code:"C1",value:null,text:{es:"Uno",en:null},detail:{},position:1,isActive:true}]));
+ act(()=>result.current.changeSort(true));act(()=>result.current.changeMove(itemId,"down"));
+ expect(result.current.draft).toMatchObject({sortAlphabetically:true,moves:[]});expect(result.current.dirty).toBe(true);
+ act(()=>result.current.changeSort(false));act(()=>result.current.changeMove(itemId,"down"));act(()=>result.current.changeSort(true));
+ expect(result.current.draft).toMatchObject({sortAlphabetically:false,moves:[{itemId,direction:"down"}]});
+});
