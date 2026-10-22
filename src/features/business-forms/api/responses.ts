@@ -11,6 +11,7 @@ const type = z.enum([
   "date",
   "boolean",
   "choice",
+  "multiChoice",
   "photo",
   "document",
 ]);
@@ -25,6 +26,7 @@ const file = z.strictObject({
   size: z.number().int().positive(),
   hasThumbnail: z.boolean(),
 });
+const fileList = z.array(file);
 const choice = z.strictObject({
   choiceId: guid,
   label: z.string(),
@@ -35,13 +37,22 @@ const choice = z.strictObject({
   valueType: z.enum(catalogValueTypes).exclude(["Text"]).optional(),
 }).refine(value => (value.value === undefined) === (value.valueType === undefined)
   && (value.valueType === undefined || isCanonicalCatalogValue(value.valueType, value.value ?? null)));
+const choiceList = z.array(choice).max(20).refine(choices => new Set(choices.map(choice => choice.choiceId)).size === choices.length);
 const value = z.union([
   z.string(),
   z.boolean(),
   choice,
-  z.array(file),
+  choiceList,
+  fileList,
   z.null(),
 ]);
+function validResponseValue(kind: z.infer<typeof type>, input: z.infer<typeof value>): boolean {
+  if (kind === "boolean") return typeof input === "boolean";
+  if (kind === "choice") return choice.safeParse(input).success;
+  if (kind === "multiChoice") return choiceList.safeParse(input).success;
+  if (kind === "photo" || kind === "document") return fileList.safeParse(input).success;
+  return typeof input === "string";
+}
 export const responseCellSchema = z
   .strictObject({
     fieldId: guid,
@@ -50,18 +61,16 @@ export const responseCellSchema = z
     value,
   })
   .superRefine((cell, ctx) => {
+    if (cell.type === "multiChoice") {
+      const choices = choiceList.safeParse(cell.value);
+      const valid = cell.state === "NotAsked" ? cell.value === null
+        : cell.state === "Unanswered" ? cell.value === null || choices.success && choices.data.length === 0
+          : choices.success && choices.data.length > 0;
+      if (!valid) ctx.addIssue({ code: "custom", message: "Invalid multiple-choice response state." });
+      return;
+    }
     if (cell.state !== "Answered") return;
-    const valid =
-      cell.type === "boolean"
-        ? typeof cell.value === "boolean"
-        : cell.type === "choice"
-          ? cell.value !== null &&
-            typeof cell.value === "object" &&
-            !Array.isArray(cell.value)
-          : cell.type === "photo" || cell.type === "document"
-            ? Array.isArray(cell.value)
-            : typeof cell.value === "string";
-    if (!valid)
+    if (!validResponseValue(cell.type, cell.value))
       ctx.addIssue({ code: "custom", message: "Invalid response value." });
   });
 const column = z.strictObject({
@@ -71,7 +80,7 @@ const column = z.strictObject({
   introducedInVersion: z.number().int().positive(),
   valueType: z.enum(catalogValueTypes).exclude(["Text"]).optional(),
   options: z.array(z.strictObject({ id: guid, label: z.string() })),
-}).refine(column => column.valueType === undefined || column.type === "choice");
+}).refine(column => column.valueType === undefined || column.type === "choice" || column.type === "multiChoice");
 const row = z.strictObject({
   id: guid,
   versionId: guid,
@@ -165,7 +174,8 @@ const origin = z.strictObject({
   conversationId: guid.nullable(),
   maskedAddress: z.string().nullable(),
 });
-const historicalValue = z.strictObject({ fieldId: guid, key: z.string(), type, label: z.string(), value });
+const historicalValue = z.strictObject({ fieldId: guid, key: z.string(), type, label: z.string(), value })
+  .refine(row => row.value === null || validResponseValue(row.type, row.value));
 const assistance = z.strictObject({
  senderKind: z.enum(["Manual", "Assistant"]), operator: author.nullable(), reason: z.string().nullable(),
  values: z.array(z.strictObject({ proposed: historicalValue, included: z.boolean(), changed: z.boolean(), mapped: z.boolean() })),

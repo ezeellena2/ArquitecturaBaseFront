@@ -64,3 +64,54 @@ it("reads the sealed catalog type on a choice column even without rows and rejec
   for (const valueType of [null, "Boolean", "Text"]) expect(responseSheetSchema.safeParse({ ...empty, columns: [{ ...choice, valueType }] }).success).toBe(false);
   expect(responseSheetSchema.safeParse({ ...empty, columns: [{ ...choice, type: "shortText", valueType: "Decimal" }] }).success).toBe(false);
 });
+
+
+
+it("keeps an ordered captured choice list, its typed pairs and an explicit empty list", () => {
+  const option = { choiceId: "01990000-0000-7000-8000-000000000021", label: "Frío histórico", catalogId: "01990000-0000-7000-8000-000000000020", catalogName: "Fallas anteriores", detail: "Detalle conservado", valueType: "Decimal", value: "9007199254740993.0123" };
+  const second = { choiceId: "01990000-0000-7000-8000-000000000022", label: "Ruido histórico" };
+  const cell = { fieldId: option.choiceId, type: "multiChoice", state: "Answered", value: [second, option] };
+  expect(responseCellSchema.parse(cell).value).toEqual([second, option]);
+  expect(responseCellSchema.parse({ ...cell, state: "Unanswered", value: [] }).value).toEqual([]);
+  expect(responseCellSchema.parse({ ...cell, state: "NotAsked", value: null }).value).toBeNull();
+  const sheet = responseSheetFixture();
+  const empty = { ...sheet, columns: [{ fieldId: option.choiceId, type: "multiChoice", label: "Fallas", introducedInVersion: 1, valueType: "Decimal", options: [{ id: option.choiceId, label: option.label }] }],
+    records: { ...sheet.records, items: [], totalCount: 0, totalPages: 0, hasNext: false, hasPrevious: false } };
+  expect(responseSheetSchema.parse(empty).columns[0]).toHaveProperty("valueType", "Decimal");
+});
+it.each(["scalar-option", "mixed-file", "unknown", "half-pair", "duplicate"])("rejects a malformed multi-choice projection: %s", invalid => {
+  const option = { choiceId: "01990000-0000-7000-8000-000000000021", label: "private historical choice" };
+  const file = { fileId: "01990000-0000-7000-8000-000000000022", name: "private.pdf", contentType: "application/pdf", size: 10, hasThumbnail: false };
+  const values: Record<string, unknown> = { "scalar-option": option, "mixed-file": [option, file],
+    unknown: [{ ...option, unknown: "private" }], "half-pair": [{ ...option, valueType: "Decimal" }], duplicate: [option, option] };
+  expect(responseCellSchema.safeParse({ fieldId: option.choiceId, type: "multiChoice", state: "Answered", value: values[invalid] }).success).toBe(false);
+  expect(responseCellSchema.safeParse({ fieldId: option.choiceId, type: "choice", state: "Answered", value: [option] }).success).toBe(false);
+  expect(responseCellSchema.safeParse({ fieldId: option.choiceId, type: "document", state: "Answered", value: [option] }).success).toBe(false);
+});
+
+it("validates multi-choice detail rows with the same closed historical list shape", () => {
+  const detail = responseDetailFixture();
+  const option = { choiceId: "01990000-0000-7000-8000-000000000021", label: "Opción histórica", value: "2028-02-29", valueType: "Date" };
+  const row = { fieldId: option.choiceId, key: "faults", type: "multiChoice", label: "Fallas", value: [option] };
+  expect(responseDetailSchema.parse({ ...detail, values: [row] }).values[0].value).toEqual([option]);
+  expect(responseDetailSchema.parse({ ...detail, values: [{ ...row, value: [] }] }).values[0].value).toEqual([]);
+  expect(responseDetailSchema.parse({ ...detail, values: [{ ...row, value: null }] }).values[0].value).toBeNull();
+  for (const value of [option, "private raw", [option, option], [{ ...option, extra: "private" }], [{ ...option, valueType: undefined }]]) {
+    expect(responseDetailSchema.safeParse({ ...detail, values: [{ ...row, value }] }).success).toBe(false);
+  }
+});
+
+it("does not reinterpret files as an unanswered multi-choice list", () => {
+  const file = { fileId: "01990000-0000-7000-8000-000000000022", name: "private.pdf", contentType: "application/pdf", size: 10, hasThumbnail: false };
+  expect(responseCellSchema.safeParse({ fieldId: file.fileId, type: "multiChoice", state: "Unanswered", value: [file] }).success).toBe(false);
+});
+
+it.each([
+  ["Answered", []],
+  ["Answered", null],
+  ["Unanswered", [{ choiceId: "01990000-0000-7000-8000-000000000021", label: "Captured" }]],
+  ["NotAsked", []],
+  ["NotAsked", [{ choiceId: "01990000-0000-7000-8000-000000000021", label: "Captured" }]],
+])("rejects an incoherent multi-choice %s cell without changing scalar contracts", (state, value) => {
+  expect(responseCellSchema.safeParse({ fieldId: "01990000-0000-7000-8000-000000000022", type: "multiChoice", state, value }).success).toBe(false);
+});

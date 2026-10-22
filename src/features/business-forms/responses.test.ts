@@ -6,6 +6,7 @@ import {
   replaceResponseCondition,
   responseValueText,
   selectedResponseChoices,
+  responseFiles,
   visibleResponseColumns,
   type ResponseColumn,
   type ResponseCell,
@@ -169,4 +170,32 @@ describe("selected response choices", () => {
   ])("does not interpret a scalar, absent value or file list as options: $fieldId", value => {
     expect(selectedResponseChoices(value)).toEqual([]);
   });
+});
+
+
+
+it("uses the captured multi-choice order for cell text and preserves the option objects", () => {
+  const cold = Object.freeze({ choiceId: "cold", label: "Frío", catalogName: "Fallas históricas", detail: "Detalle original" });
+  const noise = Object.freeze({ choiceId: "noise", label: "Ruido" });
+  const values = [noise, cold];
+  const cell: ResponseCell = { fieldId: "faults", type: "multiChoice", state: "Answered", value: values };
+  expect(selectedResponseChoices(cell)).toBe(values);
+  expect(selectedResponseChoices(cell)[0]).toBe(noise);
+  expect(responseValueText(cell, "Sin respuesta", "Sí", "No")).toBe("Ruido, Frío");
+  expect(selectedResponseChoices({ ...cell, state: "Unanswered", value: [] })).toEqual([]);
+  expect(responseValueText({ ...cell, state: "Unanswered", value: [] }, "Sin respuesta", "Sí", "No")).toBe("Sin respuesta");
+  expect(responseValueText({ ...cell, state: "NotAsked", value: null }, "Sin respuesta", "Sí", "No")).toBe("—");
+});
+
+it("keeps option arrays out of file readers and formats multi-choice filter labels without IDs", () => {
+  const option = { choiceId: "cold", label: "Cold" };
+  const file = { fileId: "file", name: "private.pdf", contentType: "application/pdf", size: 10, hasThumbnail: false };
+  const multiple: ResponseCell = { fieldId: "faults", type: "multiChoice", state: "Answered", value: [option] };
+  expect(responseFiles(multiple)).toEqual([]);
+  expect(responseFiles({ ...multiple, type: "document", value: [file] })).toEqual([file]);
+  expect(selectedResponseChoices({ ...multiple, type: "document", value: [file] })).toEqual([]);
+  const column: ResponseColumn = { fieldId: "faults", type: "multiChoice", label: "Faults", options: [{ id: "cold", label: "Cold" }, { id: "noise", label: "Noise" }], introducedInVersion: 1 };
+  const query = { page: 1, pageSize: 20, conditions: [{ fieldId: "faults", operator: "anyOf", values: ["noise", "cold"] }] };
+  expect(responseFilterLabels(query, [column], key => key)[0].label).toBe("Faults: responses.anyOf Noise, Cold");
+  expect(responseFilterLabels(query, [column], key => key)[0].label).not.toMatch(/noise|cold/);
 });

@@ -33,7 +33,7 @@ import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { ResponseChoiceMenu } from "../components/ResponseChoiceMenu";
-import { replaceResponseCondition, responseFilterLabels, visibleResponseColumns } from "../responses";
+import { replaceResponseCondition, responseFiles, responseFilterLabels, visibleResponseColumns } from "../responses";
 import type { ResponseRow } from "../api/responses";
 import { responseFullPath } from "../responseNavigationPaths";
 import { ResponseValue } from "../components/ResponseValue";
@@ -178,7 +178,7 @@ export function FormResponsesPage() {
           label={column.label}
           viewerFiles={row.cells
             .filter((cell) => cell.type === "photo")
-            .flatMap((cell) => (Array.isArray(cell.value) ? cell.value : []))}
+            .flatMap((cell) => responseFiles(cell))}
           onForbidden={deny}
           onError={onFileError}
           detailLink={recordPath(row.id)}

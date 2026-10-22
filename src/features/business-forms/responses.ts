@@ -8,6 +8,7 @@ export type ResponseType =
   | "date"
   | "boolean"
   | "choice"
+  | "multiChoice"
   | "photo"
   | "document";
 export interface ResponseChoice {
@@ -20,7 +21,7 @@ export interface ResponseChoice {
   valueType?: Exclude<CatalogValueType, "Text">;
 }
 export type ResponseValue =
-  string | boolean | ResponseChoice | PrivateFormFile[] | null;
+  string | boolean | ResponseChoice | ResponseChoice[] | PrivateFormFile[] | null;
 export interface ResponseCell {
   fieldId: string;
   type: ResponseType;
@@ -79,9 +80,18 @@ export function visibleResponseColumns(
   return columns.filter((column) => ids.has(column.fieldId));
 }
 export function selectedResponseChoices(cell: ResponseCell): readonly ResponseChoice[] {
-  if (cell.state !== "Answered" || cell.type !== "choice" || !cell.value ||
-    typeof cell.value !== "object" || Array.isArray(cell.value)) return [];
-  return [cell.value];
+  if (cell.state !== "Answered") return [];
+  const values = cell.value;
+  if (cell.type === "multiChoice" && Array.isArray(values)
+    && values.every((value): value is ResponseChoice => "choiceId" in value)) return values;
+  return cell.type === "choice" && values !== null && typeof values === "object"
+    && !Array.isArray(values) && "choiceId" in values ? [values] : [];
+}
+
+export function responseFiles(cell: Pick<ResponseCell, "type" | "value">): readonly PrivateFormFile[] {
+  const values = cell.value;
+  return (cell.type === "photo" || cell.type === "document") && Array.isArray(values)
+    && values.every((value): value is PrivateFormFile => "fileId" in value) ? values : [];
 }
 
 export function responseValueText(
@@ -94,7 +104,7 @@ export function responseValueText(
   if (cell.state === "Unanswered") return unanswered;
   if (typeof cell.value === "boolean") return cell.value ? yes : no;
   if (typeof cell.value === "string") return cell.value;
-  return selectedResponseChoices(cell)[0]?.label ?? "";
+  return selectedResponseChoices(cell).map(choice => choice.label).join(", ");
 }
 
 export function receivedDateBoundary(
@@ -143,8 +153,8 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
   for (const fieldId of new Set(query.conditions?.map(item => item.fieldId) ?? [])) {
     const column = columns.find(item => item.fieldId === fieldId);
     const parts = query.conditions?.filter(item => item.fieldId === fieldId).map(item => {
-      const values = item.values?.map(value => column?.type === "choice" ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? t(value === "true" ? "responses.yes" : "responses.no") : value).join(", ");
-      const operator = ({ gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
+      const values = item.values?.map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? t(value === "true" ? "responses.yes" : "responses.no") : value).join(", ");
+      const operator = ({ anyOf: "anyOf", gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
       return [operator ? t("responses." + operator) : "", values].filter(Boolean).join(" ");
     });
     labels.push({ key: fieldId, label: [column?.label, parts?.join(" · ")].filter(Boolean).join(": ") });

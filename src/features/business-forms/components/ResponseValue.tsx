@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatDateOnly } from "@/shared/lib/dateTime";
 import { formatExactDecimal } from "@/shared/lib/decimal";
-import { responseDocumentFormat, responseValueText, selectedResponseChoices, type ResponseCell } from "../responses";
+import { responseDocumentFormat, responseFiles, responseValueText, selectedResponseChoices, type ResponseCell } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 export function ResponseValue({
   cell,
@@ -42,6 +42,7 @@ export function ResponseValue({
         )}
       </span>
     );
+  const files = responseFiles(cell);
   if (
     (cell.type === "photo" || cell.type === "document") &&
     Array.isArray(cell.value)
@@ -53,10 +54,10 @@ export function ResponseValue({
           onClick={event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) onOpenDetail?.(); }}
           className="text-[var(--color-brand-700)] underline"
         >
-          {t("responses.documents", { count: cell.value.length })} ·{" "}
+          {t("responses.documents", { count: files.length })} ·{" "}
           {[
             ...new Set(
-              cell.value.map((file) =>
+              files.map((file) =>
                 responseDocumentFormat(file.contentType),
               ),
             ),
@@ -67,11 +68,11 @@ export function ResponseValue({
       <FormRecordFiles
         actor={actor}
         recordId={recordId}
-        files={cell.value}
+        files={files}
         photo={cell.type === "photo"}
         label={viewerFiles ? t("responses.photos") : label}
         number={number}
-        thumbnailLimit={detail ? cell.value.length : 1}
+        thumbnailLimit={detail ? files.length : 1}
         compact={!detail}
         viewerFiles={viewerFiles}
         onForbidden={onForbidden}
@@ -79,6 +80,15 @@ export function ResponseValue({
       />
     );
   }
+  const choices = selectedResponseChoices(cell);
+  if (cell.type === "multiChoice" && detail)
+    return <div className="min-w-0 space-y-2 break-words whitespace-pre-wrap">
+      {choices.map(choice => <div key={choice.choiceId}>
+        <span>{choice.label}</span>
+        {choice.detail ? <p className="text-xs text-[var(--color-content-muted)]">{choice.detail}</p> : null}
+        {choice.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{choice.catalogName}</p> : null}
+      </div>)}
+    </div>;
   const text =
     typeof cell.value === "string" && cell.type === "decimal"
       ? (formatExactDecimal(cell.value, i18n.language) ?? cell.value)
@@ -90,11 +100,11 @@ export function ResponseValue({
             t("responses.yes"),
             t("responses.no"),
           );
-  const choice = selectedResponseChoices(cell)[0];
+  const choice = cell.type === "choice" ? choices[0] : undefined;
   return (
     <div
       className={
-        detail ? "min-w-0 break-words whitespace-pre-wrap" : "max-w-64 truncate"
+        detail ? "min-w-0 break-words whitespace-pre-wrap" : cell.type === "multiChoice" ? "max-w-64 break-words whitespace-normal" : "max-w-64 truncate"
       }
     >
       <span>{text}</span>

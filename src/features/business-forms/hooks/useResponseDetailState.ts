@@ -1,3 +1,4 @@
+import { responseFiles } from "../responses";
 import { useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
@@ -39,7 +40,7 @@ export function useResponseDetailState({ formId, recordId, busy = false, navigat
   const allowed = detail.scope.allowed && !(detail.query.error instanceof ApiError && detail.query.error.status === 403);
   const loadingTarget = busy || detail.query.isPlaceholderData || data?.id !== recordId;
   const hasPhotos = data?.values.some(value => value.type === "photo") ?? false;
-  const photos = data?.values.filter(value => value.type === "photo").flatMap(value => Array.isArray(value.value) ? value.value : []) ?? [];
+  const photos = data?.values.filter(value => value.type === "photo").flatMap(responseFiles) ?? [];
   return { detail, workflow, data, current, downloads, unavailable, fileScope, allowed, loadingTarget,
     loading: busy || detail.query.isFetching, hasPhotos, photos, deny, onFileError };
 }

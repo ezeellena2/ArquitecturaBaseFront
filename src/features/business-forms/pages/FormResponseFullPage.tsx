@@ -1,3 +1,4 @@
+import { responseFiles } from "../responses";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -62,7 +63,7 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   const backTo = { to: navigation.backTo, label: t("detail.backToResponses") };
   if (!allowed) return <Page title={t("responses.detail")} backTo={backTo}><ForbiddenPage/></Page>;
   if (!data || unavailable) return <Page title={t("responses.detail")} backTo={backTo}>{detail.query.isPending ? <Spinner/> : <EmptyState title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</Page>;
-  const files = data.values.filter(value => value.type === "document").flatMap(value => Array.isArray(value.value) ? value.value : []);
+  const files = data.values.filter(value => value.type === "document").flatMap(responseFiles);
   const activitySummary = composeWorkflowMoments(data, current).map(moment => t(moment.kind === "received" ? "responses.received" : moment.kind === "effects" ? "detail.events." + moment.event : "approvals.taskStates." + moment.task.state)).join(" · ");
   return <div ref={container} tabIndex={-1} className={pending ? "outline-none max-sm:pb-24" : "outline-none"} aria-busy={loadingTarget} onKeyDown={event => {
     if (event.defaultPrevented || event.nativeEvent.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
