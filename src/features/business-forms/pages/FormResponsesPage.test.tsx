@@ -762,12 +762,14 @@ describe("response sheet", () => {
     expect(notify).not.toHaveBeenCalled();
     expect(requested).not.toHaveBeenCalled();
   });
-  it("opens the historical detail and moves within the same sheet", async () => {
+  it.each(["", "?pageSize=20&sort=-number"])("opens the historical detail and returns to its captured sheet (%s)", async initialSearch => {
     setup();
-    const { router } = renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
-    await userEvent.click(
-      await screen.findByRole("link", { name: "TEST-000002" }),
-    );
+    const path = `/formularios/${responseFormId}/respuestas`;
+    const { router } = renderRouteWithProviders(path + initialSearch);
+    const firstRow = await screen.findByRole("link", { name: "TEST-000002" });
+    const capturedSearch = router.state.location.search;
+    if (initialSearch) expect(capturedSearch).toBe(initialSearch);
+    await userEvent.click(firstRow);
     await screen.findByRole("heading", { name: "TEST-000002" });
     const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
     expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();
@@ -781,8 +783,13 @@ describe("response sheet", () => {
     await screen.findByRole("heading", { name: "TEST-000001" });
     const back = within(screen.getByRole("region", { name: "Detalle de la respuesta" })).getByRole("button", { name: "Cerrar" });
     await userEvent.click(back);
-    expect(router.state.location.pathname + router.state.location.search).toBe(`/formularios/${responseFormId}/respuestas?pageSize=20`);
+    await waitFor(() => expect(router.state.location.pathname).toBe(path));
     await screen.findByRole("table");
+    const lastRow = screen.getByRole("link", { name: "TEST-000001" });
+    await waitFor(() => expect(lastRow).toHaveFocus());
+    expect(router.state.location.search).toBe(capturedSearch);
+    expect(lastRow.closest("tr")).toHaveAttribute("aria-selected", "true");
+    expect(screen.getAllByRole("row", { selected: true })).toEqual([lastRow.closest("tr")]);
   });
   it("keeps the previous detail and focused Next button while the next answer loads", async () => {
     setup();

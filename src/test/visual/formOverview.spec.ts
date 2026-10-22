@@ -90,7 +90,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       ]) await expect(page.getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
       await page.screenshot({ path: "test-results/form-overview-all-permissions-" + language + "-" + width + ".png", fullPage: true });
       if (width < 640) { await page.keyboard.press("Escape"); await expect(menuToggle).toHaveAttribute("aria-expanded", "false"); }
-      await page.getByRole("checkbox", { name: es ? "Con algo por aprobar" : "With something to approve", exact: true }).click();
+      const pendingLabel = es ? "Con algo por aprobar" : "With something to approve";
+      const pendingCheckbox = page.getByRole("checkbox", { name: pendingLabel, exact: true });
+      const label = page.getByText(pendingLabel, { exact: true });
+      await expect(label).toHaveCount(1);
+      await label.click();
+      await expect(pendingCheckbox).toBeChecked();
       const inactiveRow = table.getByRole("link", { name: es ? "Control de vehículo" : "Vehicle inspection", exact: true }).locator("xpath=ancestor::tr");
       await expect(inactiveRow.getByText(es ? "Dado de baja" : "Deactivated", { exact: true })).toBeVisible();
       await expect(table.getByRole("row")).toHaveCount(4);

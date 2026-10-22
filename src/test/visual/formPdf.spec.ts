@@ -75,11 +75,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     if (mobile) {
       await expect(panel.getByRole("heading", { name: "TEST-000002", level: 1, exact: true })).toBeVisible();
       const activity = panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true });
-      const expand = activity.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true });
-      await expect(expand).toHaveAttribute("aria-expanded", "false");
-      expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual([]);
-      await page.screenshot({ path: "test-results/pdf-panel-" + language + "-" + width + ".png", fullPage: true });
-      await expand.click();
+      const collapse = activity.getByRole("button", { name: en ? "Collapse activity" : "Plegar actividad", exact: true });
+      await expect(collapse).toHaveAttribute("aria-expanded", "true");
       documents = activity.getByRole("listitem").filter({ has: page.getByText(en ? "Generate PDF" : "Armar el PDF", { exact: true }) }).last();
       await expect(documents.getByText("Visita-VIS-000024.pdf", { exact: true })).toBeVisible();
       const mini = documents.locator("iframe");
@@ -87,6 +84,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await expect(mini).not.toHaveAttribute("sandbox");
       miniUrl = await mini.getAttribute("src");
       expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false"]);
+      await page.screenshot({ path: "test-results/pdf-panel-" + language + "-" + width + ".png", fullPage: true });
     } else {
       await expect(panel.getByRole("tab", { name: "PDF", exact: true })).toHaveAttribute("aria-selected", "true");
       documents = panel.getByRole("region", { name: en ? "Response PDF" : "PDF de la respuesta", exact: true });
