@@ -1,6 +1,7 @@
-import { fireEvent, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import i18n from "@/shared/i18n";
 import { FormReplyValues, type FormReplyDisplayRow } from "./FormReplyValues";
 
 const rows: readonly FormReplyDisplayRow[] = [
@@ -63,4 +64,23 @@ describe("FormReplyValues presentation", () => {
     expect(group).toHaveAttribute("aria-label", "Respuestas del formulario");
     expect(within(group).getByRole("button")).toHaveAccessibleName("Ver las 7 respuestas");
   });
+});
+
+afterEach(async () => { cleanup(); await i18n.changeLanguage("es"); });
+it.each(["es", "en"] as const)("shows a multi-choice catalog once and associates each captured detail with its choice in %s", async culture => {
+  await i18n.changeLanguage(culture);
+  const choices: readonly FormReplyDisplayRow[] = [{ id: "faults", label: "Fallas", answer: { type: "multiChoice", value: [
+    { label: "Frío", catalogName: "Fallas de heladeras", detail: "No enfría" },
+    { label: "Ruido", catalogName: "Fallas de heladeras", detail: "Motor ruidoso" },
+    { label: "Luz", catalogName: "Fallas de heladeras", detail: null },
+  ] } }];
+  let view!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { view = renderWithProviders(<FormReplyValues rows={choices}/>); });
+  expect(screen.getAllByText("Fallas de heladeras", { exact: false })).toHaveLength(1);
+  expect(screen.getByText("Frío, Ruido, Luz")).toBeInTheDocument();
+  expect(screen.getByText("Frío: No enfría")).toBeInTheDocument();
+  expect(screen.getByText("Ruido: Motor ruidoso")).toBeInTheDocument();
+  view.rerender(<FormReplyValues rows={[]}/>);
+  expect(screen.queryByText("Fallas de heladeras")).not.toBeInTheDocument();
+  expect(screen.queryByText("Frío: No enfría")).not.toBeInTheDocument();
 });

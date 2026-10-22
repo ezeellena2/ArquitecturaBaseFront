@@ -29,7 +29,10 @@ export function FormReplyValues({ rows, preserveViewport, actor="", recordId, nu
       {shown.map(row => <div key={row.id} className={cn("grid min-w-0 grid-cols-1 gap-1 px-3 py-2 sm:gap-3",row.answer.type==="photo"||row.answer.type==="document"?"sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]":"sm:grid-cols-2")}>
         <dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{row.label}</dt>
         <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} number={number} onForbidden={onForbidden} onError={onFileError} focusFallback={focusFallback} date={date}/> : t("forms.reply.valuesUnavailable") : row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}
-          {row.answer.type==="choice"&&row.answer.detail ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.detail}</p> : null}{row.answer.type === "multiChoice" ? row.answer.value?.map((choice, index) => choice.catalogName || choice.detail ? <p key={index} className="text-xs text-[var(--color-content-muted)]">{[choice.catalogName, choice.detail].filter(Boolean).join(" · ")}</p> : null) : null}</dd>
+          {row.answer.type==="choice"&&row.answer.detail ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.detail}</p> : null}{row.answer.type === "multiChoice" ? <>
+            {[...new Set(row.answer.value?.flatMap(choice => choice.catalogName ? [choice.catalogName] : []) ?? [])].map(name => <p key={name} className="text-xs text-[var(--color-content-muted)]">{name}</p>)}
+            {row.answer.value?.map((choice, index) => choice.detail ? <p key={index} className="text-xs text-[var(--color-content-muted)]">{choice.label}: {choice.detail}</p> : null)}
+          </> : null}</dd>
       </div>)}
     </dl>
     {mayFold ? <div className="px-3 py-2"><Button type="button" variant="outline" size="sm" aria-expanded={expanded} aria-controls={id} onClick={toggle}>
