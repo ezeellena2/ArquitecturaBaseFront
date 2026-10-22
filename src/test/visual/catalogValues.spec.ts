@@ -13,7 +13,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const type = page.getByRole("textbox", { name: label("Tipo de valor", "Value type"), exact: true });
     await expect(type).toHaveValue("Decimal"); await expect(type).toHaveAttribute("readonly", "");
     await expect(page.getByRole("columnheader", { name: label("Valor", "Value"), exact: true })).toBeVisible();
-    await page.getByRole("button", { name: label("Editar Interior", "Edit Inland"), exact: true }).click();
+    // Option labels follow the selected Spanish content culture, independently from the UI.
+    await page.getByRole("button", { name: label("Editar Interior", "Edit Interior"), exact: true }).click();
     const value = page.getByRole("textbox", { name: label("Valor · Decimal", "Value · Decimal"), exact: true });
     await value.fill("mil");
     await expect(value).toHaveAttribute("aria-invalid", "true");
