@@ -453,3 +453,26 @@ it("applies an explicitly reviewed paste and adopts the returned clean baseline 
  await user.click(screen.getByRole("button",{name:"Pegar de Excel"}));await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
  await user.click(screen.getByRole("button",{name:"Revisar"}));await waitFor(()=>expect(check).toHaveBeenCalledTimes(2));expect(check.mock.calls[1]![1].expectedRevision).toBe(2);
 });
+
+it.each(["es", "en"] as const)("localizes discard cancellation and preserves the unsaved catalog in %s", async culture => {
+  const label = (es: string, en: string) => culture === "es" ? es : en;
+  setup(["formcatalogs.read", "formcatalogs.manage"], culture);
+  await act(async () => { await i18n.changeLanguage(culture); });
+  const router = await mount("/catalogos/nuevo?valueType=Decimal");
+  const user = userEvent.setup();
+  const name = await screen.findByRole("textbox", { name: label("Nombre", "Name") });
+  await pasteText(user, name, "Catálogo pendiente");
+  const previousLocation = router.state.location;
+  const discard = screen.getByRole("button", { name: label("Descartar", "Discard") });
+  await user.click(discard);
+  const dialog = await screen.findByRole("dialog", { name: label("¿Descartar los cambios?", "Discard changes?") });
+  const stay = within(dialog).getByRole("button", { name: label("Seguir editando", "Keep editing") });
+  expect(within(dialog).queryByRole("button", { name: "keepEditing" })).not.toBeInTheDocument();
+  await user.click(stay);
+  await waitFor(() => expect(dialog).not.toBeInTheDocument());
+  expect(name).toHaveValue("Catálogo pendiente");
+  expect(router.state.location.pathname).toBe(previousLocation.pathname);
+  expect(router.state.location.search).toBe(previousLocation.search);
+  expect(new URLSearchParams(router.state.location.search).get("valueType")).toBe("Decimal");
+  await waitFor(() => expect(discard).toHaveFocus());
+});
