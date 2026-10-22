@@ -32,7 +32,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: english ? "Edit Central" : "Editar Central", exact: true }).click();
     await page.getByRole("textbox", { name: english ? "Code" : "Código", exact: true }).fill("D2");
     await page.getByRole("button", { name: english ? "Save" : "Guardar", exact: true }).click();
-    await expect(page.getByText("D2", { exact: true })).toBeVisible();
+    if (width >= 640) await expect(page.getByRole("textbox", { name: english ? "Option 1 code" : "Código de la opción 1", exact: true })).toHaveValue("D2");
+    else await expect(page.getByText("D2", { exact: true })).toBeVisible();
     const saved = await page.evaluate(() => {
       const fixture = (globalThis as unknown as { catalogsFixture: { writes: { method: string; body: { items: { itemId: string | null; position?: number }[] } }[] } }).catalogsFixture;
       return fixture.writes.map(write => ({ method: write.method, items: write.body.items }));
@@ -54,17 +55,17 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await enter("/catalogos/" + visualCatalogId + "?pageSize=1");
     await page.getByRole("button", { name: english ? "Move Pérez down" : "Bajar Pérez", exact: true }).click();
     await page.getByRole("button", { name: english ? "Next page" : "Página siguiente", exact: true }).click();
-    await expect(page.getByText("López", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: english ? "Edit López" : "Editar López", exact: true })).toBeVisible();
     await page.getByRole("button", { name: english ? "Next page" : "Página siguiente", exact: true }).click();
     await page.getByRole("button", { name: english ? "Move Ríos up" : "Subir Ríos", exact: true }).click();
     expect(await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: unknown[] } }).catalogsFixture.writes.length)).toBe(0);
     await page.screenshot({ path: info.outputPath("manual-moves-pending.png"), fullPage: true });
     await page.getByRole("button", { name: english ? "Save" : "Guardar", exact: true }).click();
-    await expect(page.getByText("Pérez", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: english ? "Edit Pérez" : "Editar Pérez", exact: true })).toBeVisible();
     const moves = await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: { body: { moves: { itemId: string; direction: string }[] } }[] } }).catalogsFixture.writes.map(write => write.body.moves));
     expect(moves).toEqual([[{ itemId: "01990000-0000-7000-8000-000000000081", direction: "down" }, { itemId: "01990000-0000-7000-8000-000000000083", direction: "up" }]]);
     await page.getByRole("button", { name: english ? "Previous page" : "Página anterior", exact: true }).click();
-    await expect(page.getByText("Ríos", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: english ? "Edit Ríos" : "Editar Ríos", exact: true })).toBeVisible();
     await page.getByRole("button", { name: english ? "Previous page" : "Página anterior", exact: true }).click();
     await expect(page.getByRole("button", { name: english ? "Move López up" : "Subir López", exact: true })).toBeDisabled();
   });

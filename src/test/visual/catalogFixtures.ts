@@ -1,3 +1,4 @@
+import { createCatalogImportVisualStore } from "./catalogImportVisualFixtures";
 import filterOptions from "../fixtures/catalogs-http/filters/options.json" with { type: "json" };
 import filterPreview from "../fixtures/catalogs-http/filters/preview.json" with { type: "json" };
 import filterPreviewRequest from "../fixtures/catalogs-http/filters/preview-request.json" with { type: "json" };
@@ -27,7 +28,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
     const number = Number(params.get("page") ?? 1), size = Number(params.get("pageSize") ?? 20), totalPages = Math.ceil(rows.length / size);
     return { items: rows.slice((number - 1) * size, number * size), page: number, pageSize: size, totalCount: rows.length, totalPages, hasPrevious: number > 1, hasNext: number < totalPages };
   };
-  return { writes, reads, async handle(request: Request): Promise<Response> {
+  const store = { writes, reads, async handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (scenario === "catalogs-denied") return json({ code: "Authorization.Forbidden" }, 403);
     if (request.method === "POST" || request.method === "PUT") {
@@ -62,6 +63,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
     }
     return json(catalog);
   } };
+  return scenario.startsWith("catalogs-import") ? createCatalogImportVisualStore(culture, visualCatalogId, () => store) : store;
 }
 
 function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
