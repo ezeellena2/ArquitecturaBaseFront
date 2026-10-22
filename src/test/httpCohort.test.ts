@@ -38,6 +38,7 @@ function syntheticCohort(artifactSet = "workflow", environment = "FORMS_WORKFLOW
 it.each([
   ["forms","FORMS_HTTP_CONTRACT_INPUT","forms",false],
   ["lifecycle", "FORM_LIFECYCLE_HTTP_CONTRACT_INPUT", "lifecycle", true],
+  ["catalogImports","FORM_CATALOG_IMPORT_HTTP_INPUT","catalog-imports",true],
   ["manualCatalogs","FORMS_CATALOG_HTTP_CONTRACT_INPUT","manual-catalogs",false],
   ["catalogFilters","FORMS_CATALOG_FILTERS_HTTP_CONTRACT_INPUT","catalog-filters",false],
   ["catalogSource","FORMS_CATALOG_SOURCE_HTTP_CONTRACT_INPUT","catalog-source",false],
