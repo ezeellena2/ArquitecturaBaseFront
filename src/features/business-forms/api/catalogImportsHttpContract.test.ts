@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { http } from "msw";
 import { z } from "zod";
 import { httpCohort } from "@/test/httpCohort";
@@ -66,33 +66,37 @@ for (const culture of cultures) {
     const id = plan.catalogId;
     const route = "/api/forms/catalogs/" + id;
     const requests: Record<string, string>[] = [];
-    const record = async (request: Request) => {
-      expect(request.cache).toBe("no-store");
-      expect(request.headers.get("content-type")).toMatch(/^multipart\/form-data; boundary=/);
-      const data = await request.formData();
-      const uploaded = data.get("file");
-      expect(uploaded).not.toBeNull();
-      if (uploaded === null || typeof uploaded === "string") throw new Error("Expected the original import file.");
-      expect(uploaded.name).toBe("catalog.csv");
-      expect(await uploaded.text()).toBe(csv);
-      requests.push(Object.fromEntries([...data.entries()].filter((entry): entry is [string, string] => typeof entry[1] === "string")));
-    };
-    server.use(http.post(route + "/import-previews", async ({ request }) => {
-      await record(request);
-      return cohort.response(capture(culture, "replace-preview.json"));
-    }), http.post(route + "/imports", async ({ request }) => {
-      await record(request);
-      return cohort.response(capture(culture, "applied.json"));
-    }));
     const body = { file: new File([csv], "catalog.csv", { type: "text/csv" }), mode: "Replace" as const, expectedRevision: 1 };
-    expect(await previewCatalogImport(id, body)).toEqual(plan);
-    const apply = { ...body, sheetSha256: plan.sheetSha256, confirmDeactivations: 2, confirmEmpty: false, confirmErrors: true };
-    expect(await applyCatalogImport(id, apply)).toEqual(readCatalogSave(cohort.json(capture(culture, "applied.json")), [], id, 1));
-    expect(requests).toEqual([{ mode: "Replace", expectedRevision: "1" }, { mode: "Replace", expectedRevision: "1", sheetSha256: plan.sheetSha256, confirmDeactivations: "2", confirmEmpty: "false", confirmErrors: "true" }]);
-    for (const [name, status, code] of [["confirmation-required.json", 400, "Forms.CatalogImport.ConfirmationRequired"], ["conflict.json", 409, "Forms.Catalog.RevisionConflict"]] as const) {
-      server.use(http.post(route + "/imports", () => cohort.response(capture(culture, name), status, { "content-type": "application/problem+json" })));
-      await expect(applyCatalogImport(id, apply)).rejects.toMatchObject({ status, code, problem: cohort.json(capture(culture, name)) });
-    }
+    const captures = [["replace-preview.json", 200], ["applied.json", 200], ["confirmation-required.json", 400], ["conflict.json", 409]] as const;
+    // jsdom FormData stays at the fetch boundary, as in the shared HTTP client tests.
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async (path, init) => {
+      const index = requests.length;
+      const captured = captures[index];
+      if (!captured) throw new Error("Unexpected import request.");
+      expect(path).toBe(route + (index === 0 ? "/import-previews" : "/imports"));
+      expect(init?.method).toBe("POST");
+      expect(init?.cache).toBe("no-store");
+      expect(new Headers(init?.headers).get("content-type")).toBeNull();
+      const data = init?.body;
+      if (!(data instanceof FormData)) throw new Error("Expected the original import form.");
+      expect(data.get("file")).toBe(body.file);
+      expect(body.file.name).toBe("catalog.csv");
+      requests.push(Object.fromEntries([...data.entries()].filter((entry): entry is [string, string] => typeof entry[1] === "string")));
+      return cohort.response(capture(culture, captured[0]), captured[1], {
+        "content-type": captured[1] === 200 ? "application/json" : "application/problem+json",
+      });
+    });
+    try {
+      expect(await previewCatalogImport(id, body)).toEqual(plan);
+      const apply = { ...body, sheetSha256: plan.sheetSha256, confirmDeactivations: 2, confirmEmpty: false, confirmErrors: true };
+      expect(await applyCatalogImport(id, apply)).toEqual(readCatalogSave(cohort.json(capture(culture, "applied.json")), [], id, 1));
+      expect(requests).toEqual([{ mode: "Replace", expectedRevision: "1" }, { mode: "Replace", expectedRevision: "1", sheetSha256: plan.sheetSha256, confirmDeactivations: "2", confirmEmpty: "false", confirmErrors: "true" }]);
+      for (const [name, status, code] of [["confirmation-required.json", 400, "Forms.CatalogImport.ConfirmationRequired"], ["conflict.json", 409, "Forms.Catalog.RevisionConflict"]] as const) {
+        await expect(applyCatalogImport(id, apply)).rejects.toMatchObject({ status, code, problem: cohort.json(capture(culture, name)) });
+      }
+      expect(requests).toHaveLength(4);
+      expect(requests.slice(2)).toEqual([requests[1], requests[1]]);
+    } finally { fetch.mockRestore(); }
   });
 
   it("downloads the actual " + culture + " export and template bytes with their captured HTTP metadata", async () => {
