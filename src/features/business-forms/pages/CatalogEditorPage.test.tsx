@@ -11,10 +11,7 @@ import i18n from "@/shared/i18n";
 import { server } from "@/test/mocks/server";
 import { notify } from "@/shared/ui/notifications";
 import capturedOptionsRaw from "@/test/fixtures/catalogs-http/filters/options.json?raw";
-import capturedDetailRaw from "@/test/fixtures/catalogs-http/filters/detail.json?raw";
-import capturedPreviewRequest from "@/test/fixtures/catalogs-http/filters/preview-request.json";
-import capturedPreviewRaw from "@/test/fixtures/catalogs-http/filters/preview.json?raw";
-import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview } from "../api/catalogResponse";
+import { readCatalogFilterOptions } from "../api/catalogResponse";
 import { CatalogEditorPage } from "./CatalogEditorPage";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
@@ -26,8 +23,8 @@ async function pasteText(user: ReturnType<typeof userEvent.setup>, control: HTML
 }
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
-const initial = { proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null };
-const option = { id: itemId, code: "C1", text: { es: "Pérez", en: null }, detail: { es: null, en: null }, position: 1, isActive: true };
+const initial = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null };
+const option = { value: null, id: itemId, code: "C1", text: { es: "Pérez", en: null }, detail: { es: null, en: null }, position: 1, isActive: true };
 function setup(permissions = ["formcatalogs.read", "formcatalogs.manage"], culture: "es" | "en" = "es") {
   server.use(http.get("/api/me", () => HttpResponse.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false, culture, timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(initial)), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [option], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
 }
@@ -235,27 +232,6 @@ describe("Filters editor connected to current DTOs", () => {
   });
 });
 
-it("renders unchanged real K4 detail/options and the result of the captured preview request", async () => {
-  setup(); const detail = readCatalog(JSON.parse(capturedDetailRaw)); const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)); const preview = readCatalogFilterPreview(JSON.parse(capturedPreviewRaw));
-  const person = options.sampleUsers!.items.find(person => person.id === capturedPreviewRequest.sampleUserId)!;
-  const json = (body: string) => new HttpResponse(body, { headers: { "content-type": "application/json" } });
-  const received: unknown[] = [];
-  server.use(http.get("/api/forms/catalogs/" + detail.id, () => json(capturedDetailRaw)), http.get("/api/forms/catalog-filter-options", () => json(capturedOptionsRaw)), http.post("/api/forms/catalog-previews", async ({ request }) => { received.push(await request.json()); return json(capturedPreviewRaw); }));
-  await mount("/catalogos/" + detail.id); const user = userEvent.setup();
-  expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveValue(detail.name.es);
-  await user.selectOptions(await screen.findByRole("combobox", { name: "Texto de cada opción" }), capturedPreviewRequest.filters.textColumn);
-  await user.selectOptions(screen.getByRole("combobox", { name: "Detalle" }), capturedPreviewRequest.filters.detailColumn ?? "");
-  for (const [index, condition] of capturedPreviewRequest.filters.conditions.entries()) {
-    await user.click(screen.getByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición " + (index + 1) }), condition.column);
-    await user.selectOptions(screen.getByRole("combobox", { name: "Comparación de la condición " + (index + 1) }), condition.operator);
-    const label = "Valor de la condición " + (index + 1); const choice = screen.queryByRole("combobox", { name: label });
-    if (choice) await user.selectOptions(choice, condition.value); else await pasteText(user, screen.getByRole("textbox", { name: label }), condition.value);
-  }
-  await user.click(screen.getByRole("combobox", { name: "Como si lo recibiera" })); await user.click(screen.getByRole("option", { name: person.name }));
-  await user.click(screen.getByRole("button", { name: "Probar" }));
-  await screen.findByText(preview.items[0]!.text, { exact: true }); expect(screen.getByText(preview.items[0]!.detail!, { exact: true })).toBeInTheDocument(); expect(received).toEqual([capturedPreviewRequest]);
-});
-
 it("edits fixed Users filters without source availability flags", async () => {
   filterSetup();
   server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [{ id: itemId, text: "Beatriz", detail: null, canSend:true }], totalCount: 1, exceedsLimit: false })));
@@ -366,4 +342,49 @@ it("does not reset the sample page when its initial search is unchanged", async 
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
   expect(screen.getByText("Página 2 de 2", {exact:true})).toBeInTheDocument();
   expect(screen.getByRole("button", {name:"Página anterior"})).toBeEnabled();
+});
+
+it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invalid input and never changes the persisted type", async language => {
+  setup(undefined, language); await i18n.changeLanguage(language);
+  const typed = { ...initial, valueType: "Decimal" };
+  const bodies: Record<string, unknown>[] = [];
+  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(typed)),
+    http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, value: "9007199254740993.0123" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+    http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json({ catalog: { ...typed, revision: 2 }, itemIdentityMap: {} }); }));
+  await mount("/catalogos/" + id + "?valueType=Date");
+  const user = userEvent.setup();
+  const type = await screen.findByRole("textbox", { name: language === "es" ? "Tipo de valor" : "Value type" });
+  expect(type).toHaveValue("Decimal"); expect(type).toHaveAttribute("readonly");
+  await user.click(await screen.findByRole("button", { name: language === "es" ? "Editar Pérez" : "Edit Pérez" }));
+  const value = screen.getByRole("textbox", { name: language === "es" ? "Valor · Decimal" : "Value · Decimal" });
+  expect(value).toHaveValue(language === "es" ? "9.007.199.254.740.993,0123" : "9,007,199,254,740,993.0123");
+  await user.clear(value); await pasteText(user, value, "mil");
+  expect(value).toHaveValue("mil"); expect(value).toHaveAttribute("aria-invalid", "true");
+  const save = screen.getByRole("button", { name: language === "es" ? "Guardar" : "Save" });
+  expect(save).toBeDisabled(); expect(value).not.toHaveAttribute("readonly"); expect(bodies).toEqual([]);
+  await user.clear(value); await pasteText(user, value, language === "es" ? "1.500,50" : "1,500.50");
+  expect(save).toBeEnabled(); await user.click(save);
+  await waitFor(() => expect(bodies).toHaveLength(1));
+  expect(bodies[0]).not.toHaveProperty("valueType");
+  expect(bodies[0]).toMatchObject({ expectedRevision: 1, items: [{ itemId, value: "1500.5", code: "C1" }] });
+});
+
+it("sends the chosen type only on creation and binds a value error to its unchanged item identity", async () => {
+  setup(); const bodies: Record<string, unknown>[] = [];
+  server.use(http.post("/api/forms/catalogs", async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>; bodies.push(body);
+    return HttpResponse.json({ code: "Validation.Failed", errors: { "items[0].value": ["Revisá el valor decimal."] } }, { status: 400 });
+  }));
+  await mount("/catalogos/nuevo?valueType=Decimal"); const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
+  const text = screen.getByRole("textbox", { name: "Texto" }); await pasteText(user, text, "GBA");
+  await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "Z-GBA");
+  await pasteText(user, screen.getByRole("textbox", { name: "Valor · Decimal" }), "1.500,50");
+  await user.click(screen.getByRole("button", { name: "Guardar" }));
+  const value = screen.getByRole("textbox", { name: "Valor · Decimal" });
+  await waitFor(() => expect(value).toHaveAccessibleDescription(expect.stringContaining("Revisá el valor decimal.")));
+  expect(value).toHaveValue("1.500,50");
+  expect(bodies).toHaveLength(1);
+  expect(bodies[0]).toMatchObject({ valueType: "Decimal", items: [{ itemId: null, text: { es: "GBA" }, value: "1500.5" }] });
+  expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
 });

@@ -480,7 +480,7 @@ it("creates a catalog question, reports its missing selection, then saves the se
   const store = setup("forms-empty", ["formtemplates.read","formtemplates.manage","formcatalogs.read"]);
   const catalogId = "01990000-0000-7000-8000-000000000080";
   const sent: unknown[] = [];
-  server.use(http.get("/api/forms/catalogs", () => Response.json({items:[{id:catalogId,name:"Clientes",description:null,origin:"Manual",optionsCount:1,usageCount:0,state:"Active",stateReason:null,canEdit:false}],page:1,pageSize:20,totalCount:1,totalPages:1,hasPrevious:false,hasNext:false,filterCounts:{byKind:{all:1,manual:1,filters:0}}})),
+  server.use(http.get("/api/forms/catalogs", () => Response.json({items:[{ valueType: "Text" as const,id:catalogId,name:"Clientes",description:null,origin:"Manual",optionsCount:1,usageCount:0,state:"Active",stateReason:null,canEdit:false}],page:1,pageSize:20,totalCount:1,totalPages:1,hasPrevious:false,hasNext:false,filterCounts:{byKind:{all:1,manual:1,filters:0}}})),
     http.post("/api/forms/definitions", async ({request}) => {
       const body = await request.clone().json() as {draft:{fields:{source:{catalog:string|null}}[]}}; sent.push(body);
       if (sent.length===1) {

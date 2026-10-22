@@ -25,7 +25,7 @@ export function CatalogQuestionSelector({ scope, value, readOnly, error, onChang
   const failure = list.error ?? detail.error;
   const canRead = !!scope.actorId && scope.permissions.includes("formcatalogs.read") && !(failure instanceof ApiError && failure.status === 403);
   const reason = (state: string, code: string | null) => state === "Unavailable" && code ? t("catalogs.unavailableReason") : t("catalogs.state." + state);
-  const label = (name: string, origin: string, count: number | null, state: string, code: string | null) => [name, t("catalogs.source." + (origin === "Manual" ? "manual" : "database")), count === null ? null : t("catalogs.filters.result", { count }), state === "Active" ? null : reason(state, code)].filter(Boolean).join(" · ");
+  const label = (name: string, valueType: string, origin: string, count: number | null, state: string, code: string | null) => [name, t("catalogs.valueTypes." + valueType), t("catalogs.source." + (origin === "Manual" ? "manual" : "database")), count === null ? null : t("catalogs.filters.result", { count }), state === "Active" ? null : reason(state, code)].filter(Boolean).join(" · ");
   const selected = currentRow ?? detail.data;
   const selectedName = currentRow?.name ?? (detail.data ? administrativeName(detail.data.name, scope.culture) : t("catalogQuestion.selected"));
   const selectedDescription = currentRow?.description ?? (detail.data ? administrativeName(detail.data.description, scope.culture) : undefined);
@@ -36,8 +36,8 @@ export function CatalogQuestionSelector({ scope, value, readOnly, error, onChang
         if (readOnly || !canRead) return;
         if (rows.some(row => row.id === event.target.value && row.state === "Active")) onChange(event.target.value);
       }}><option value="" disabled>{t("select")}</option>
-        {canRead && value && !currentRow ? <option value={value} disabled={!detail.data || detailState !== "Active"}>{detail.data ? label(selectedName, detail.data.kind, null, detailState, detail.data.unavailableReasonCode) : selectedName}</option> : null}
-        {canRead ? rows.map(row => <option key={row.id} value={row.id} disabled={row.state !== "Active"}>{label(row.name, row.origin, row.optionsCount, row.state, row.stateReason)}</option>) : null}
+        {canRead && value && !currentRow ? <option value={value} disabled={!detail.data || detailState !== "Active"}>{detail.data ? label(selectedName, detail.data.valueType, detail.data.kind, null, detailState, detail.data.unavailableReasonCode) : selectedName}</option> : null}
+        {canRead ? rows.map(row => <option key={row.id} value={row.id} disabled={row.state !== "Active"}>{label(row.name, row.valueType, row.origin, row.optionsCount, row.state, row.stateReason)}</option>) : null}
       </NativeSelect>
     </FormField>
     {canRead && !readOnly ? <SearchInput value={search} label={t("catalogQuestion.search")} onChange={next => { setSearch(next); setPage(1); }} /> : null}

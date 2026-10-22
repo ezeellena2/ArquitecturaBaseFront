@@ -1,11 +1,10 @@
-import filterDetail from "../fixtures/catalogs-http/filters/detail.json" with { type: "json" };
 import filterOptions from "../fixtures/catalogs-http/filters/options.json" with { type: "json" };
 import filterPreview from "../fixtures/catalogs-http/filters/preview.json" with { type: "json" };
 import filterPreviewRequest from "../fixtures/catalogs-http/filters/preview-request.json" with { type: "json" };
 import type { FiltersCatalogBody, CatalogFilterPreviewBody } from "@/features/business-forms/api/catalogs";
 import type { CatalogFilterOptions } from "@/features/business-forms/api/catalogResponse";
-import { readCatalog, type CatalogDetail, type CatalogItem } from "@/features/business-forms/api/catalogResponse";
-import type { ManualCatalogBody, UpdateManualCatalogBody } from "@/features/business-forms/api/catalogs";
+import { type CatalogDetail, type CatalogItem } from "@/features/business-forms/api/catalogResponse";
+import type { CreateManualCatalogBody, UpdateManualCatalogBody } from "@/features/business-forms/api/catalogs";
 import { administrativeName } from "@/features/business-forms/editorModel";
 
 // Browser-only simulated persistence. The real app/API harness qualifies database behavior separately.
@@ -13,11 +12,15 @@ export const visualCatalogId = "01990000-0000-7000-8000-000000000080";
 export function createCatalogFixtureStore(culture: "es" | "en", scenario: string) {
   if (scenario.startsWith("forms-catalog")) return createQuestionCatalogFixtureStore(culture);
   if (scenario.startsWith("catalogs-filters")) return createFiltersFixtureStore(culture, scenario);
-  let catalog: CatalogDetail = { proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null, filters: null };
-  let items: CatalogItem[] = ["Pérez", "López", "Ríos"].map((name, index) => ({ id: "01990000-0000-7000-8000-00000000008" + (index + 1), code: "C" + (index + 1), text: { es: name, en: null }, detail: { es: null, en: null }, position: index + 1, isActive: true }));
+  let catalog: CatalogDetail = { valueType: "Text" as const, proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null, filters: null };
+  let items: CatalogItem[] = ["Pérez", "López", "Ríos"].map((name, index) => ({ value: null, id: "01990000-0000-7000-8000-00000000008" + (index + 1), code: "C" + (index + 1), text: { es: name, en: null }, detail: { es: null, en: null }, position: index + 1, isActive: true }));
+  if (scenario === "catalogs-typed") {
+    catalog = { ...catalog, valueType: "Decimal", name: { es: "Recargo por zona", en: "Zone surcharge" } };
+    items = items.map((item, index) => ({ ...item, value: ["0", "1500.5", "3200"][index]!, text: { es: ["CABA", "GBA", "Interior"][index]!, en: ["CABA", "GBA", "Inland"][index]! } }));
+  }
   let conflict = scenario === "catalogs-conflict";
   let identity = 100;
-  const writes: { method: string; body: ManualCatalogBody | UpdateManualCatalogBody }[] = [];
+  const writes: { method: string; body: CreateManualCatalogBody | UpdateManualCatalogBody }[] = [];
   const reads: string[] = [];
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
   const page = <T,>(rows: T[], params: URLSearchParams) => {
@@ -28,7 +31,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
     const url = new URL(request.url);
     if (scenario === "catalogs-denied") return json({ code: "Authorization.Forbidden" }, 403);
     if (request.method === "POST" || request.method === "PUT") {
-      const body = await request.json() as ManualCatalogBody | UpdateManualCatalogBody;
+      const body = await request.json() as CreateManualCatalogBody | UpdateManualCatalogBody;
       writes.push({ method: request.method, body });
       if (scenario === "catalogs-read") return json({ code: "Authorization.Forbidden" }, 403);
       if (request.method === "PUT" && conflict) { conflict = false; catalog = { ...catalog, revision: 2, name: { es: "Clientes actuales", en: "Current customers" } }; return json({ code: "Forms.Catalog.RevisionConflict" }, 409); }
@@ -39,7 +42,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
         const itemId = value.itemId ?? "01990000-0000-7000-8000-" + String(++identity).padStart(12, "0");
         if (!value.itemId) itemIdentityMap[value.localId] = itemId;
         const existing = items.find(item => item.id === itemId);
-        const next = { id: itemId, code: value.code, text: { ...value.text }, detail: { ...value.detail }, isActive: value.isActive, position: existing?.position ?? items.length + 1 };
+        const next = { value: value.value ?? null, id: itemId, code: value.code, text: { ...value.text }, detail: { ...value.detail }, isActive: value.isActive, position: existing?.position ?? items.length + 1 };
         items = existing ? items.map(item => item.id === itemId ? next : item) : [...items, next];
       }
       if ("moves" in body) for (const move of body.moves ?? []) {
@@ -47,14 +50,14 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
         if (index >= 0 && target >= 0 && target < items.length) { const item = items.splice(index, 1)[0]!; items.splice(target, 0, item); }
       }
       items = items.map((item, index) => ({ ...item, position: index + 1 }));
-      catalog = { ...catalog, name: { ...body.name }, description: { ...body.description }, isActive: "isActive" in body ? body.isActive ?? catalog.isActive : catalog.isActive, revision: request.method === "POST" ? 1 : catalog.revision + 1, itemsCount: items.length };
+      catalog = { ...catalog, valueType: "valueType" in body ? body.valueType ?? "Text" : catalog.valueType, name: { ...body.name }, description: { ...body.description }, isActive: "isActive" in body ? body.isActive ?? catalog.isActive : catalog.isActive, revision: request.method === "POST" ? 1 : catalog.revision + 1, itemsCount: items.length };
       return json({ catalog, itemIdentityMap }, request.method === "POST" ? 201 : 200);
     }
     reads.push(url.pathname + url.search);
     if (url.pathname.endsWith("/items")) return json(page(items.filter(item => !url.searchParams.get("search") || item.text.es?.toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())), url.searchParams));
     if (url.pathname === "/api/forms/catalogs") {
       const matches = (!url.searchParams.get("search") || administrativeName(catalog.name, culture).toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === (catalog.isActive ? "Active" : "Inactive"));
-      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Manual") ? [{ id: catalog.id, name: administrativeName(catalog.name, culture), description: administrativeName(catalog.description, culture), origin: "Manual", optionsCount: items.length, usageCount: null, state: catalog.isActive ? "Active" : "Inactive", stateReason: null, canEdit: scenario !== "catalogs-read" }] : [];
+      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Manual") ? [{ valueType: catalog.valueType, id: catalog.id, name: administrativeName(catalog.name, culture), description: administrativeName(catalog.description, culture), origin: "Manual", optionsCount: items.length, usageCount: null, state: catalog.isActive ? "Active" : "Inactive", stateReason: null, canEdit: scenario !== "catalogs-read" }] : [];
       return json({ ...page(rows, url.searchParams), filterCounts: { byKind: { all: matches ? 1 : 0, manual: matches ? 1 : 0, filters: 0 } } });
     }
     return json(catalog);
@@ -62,8 +65,8 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
 }
 
 function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
-  // Existing simulated server, using exported fictitious data as a seed. This is not an HTTP producer or database test.
-  let catalog: CatalogDetail = { ...readCatalog(filterDetail), id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), kind: "Filters", filters: filterPreviewRequest.filters };
+  // Synthetic current DTO. Actual producer bodies remain covered by the HTTP contract tests.
+  let catalog: CatalogDetail = { valueType: "Text", proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Personas por filtro", en: "People by filter" }, description: { es: "Descripción del filtro", en: "Filter description" }, kind: "Filters", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null, filters: filterPreviewRequest.filters };
   const readOnly = scenario === "catalogs-filters-read";
   const missingRole = scenario === "catalogs-filters-missing-role";
   if (missingRole) catalog = { ...catalog, filters: { ...filterPreviewRequest.filters, conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000699" }] } };
@@ -104,7 +107,7 @@ function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
     if (url.pathname === "/api/forms/catalogs") {
       const state = catalog.isActive ? "Active" : "Inactive";
       const matches = (!url.searchParams.get("search") || administrativeName(catalog.name, culture).toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === state);
-      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Filters") ? [{ id: catalog.id, name: administrativeName(catalog.name, culture), description: administrativeName(catalog.description, culture), origin: "Filters", optionsCount: null, usageCount: null, state, stateReason: null, canEdit: !readOnly }] : [];
+      const rows = matches && (!url.searchParams.get("kind") || url.searchParams.get("kind") === "Filters") ? [{ valueType: "Text" as const, id: catalog.id, name: administrativeName(catalog.name, culture), description: administrativeName(catalog.description, culture), origin: "Filters", optionsCount: null, usageCount: null, state, stateReason: null, canEdit: !readOnly }] : [];
       return json({ ...paged(rows, url.searchParams), filterCounts: { byKind: { all: matches ? 1 : 0, manual: 0, filters: matches ? 1 : 0 } } });
     }
     return json(catalog);
@@ -117,11 +120,11 @@ function createQuestionCatalogFixtureStore(culture: "es" | "en") {
   const id = (n: number) => "01990000-0000-7000-8000-" + String(n).padStart(12, "0");
   const names = (es: string, en: string) => culture === "es" ? es : en;
   const rows = [
-    { id: visualCatalogId, name: names("Clientes", "Customers"), description: names("Clientes para las visitas", "Customers for visits"), origin: "Manual", optionsCount: 3, usageCount: null, state: "Active", stateReason: null, canEdit: false },
-    { id: id(81), name: names("Supervisores activos", "Active supervisors"), description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Active", stateReason: null, canEdit: false },
-    { id: id(82), name: names("Responsables de obra", "Site managers"), description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.ContentInvalid", canEdit: false },
-    { id: id(83), name: names("Archivados", "Archived"), description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Inactive", stateReason: null, canEdit: false },
-    ...Array.from({ length: 21 }, (_, index) => ({ id: id(300 + index), name: names("ZZ catálogo ", "ZZ catalog ") + String(index + 1).padStart(2, "0"), description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: false })),
+    { valueType: "Text" as const, id: visualCatalogId, name: names("Clientes", "Customers"), description: names("Clientes para las visitas", "Customers for visits"), origin: "Manual", optionsCount: 3, usageCount: null, state: "Active", stateReason: null, canEdit: false },
+    { valueType: "Text" as const, id: id(81), name: names("Supervisores activos", "Active supervisors"), description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Active", stateReason: null, canEdit: false },
+    { valueType: "Text" as const, id: id(82), name: names("Responsables de obra", "Site managers"), description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.ContentInvalid", canEdit: false },
+    { valueType: "Text" as const, id: id(83), name: names("Archivados", "Archived"), description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Inactive", stateReason: null, canEdit: false },
+    ...Array.from({ length: 21 }, (_, index) => ({ valueType: "Text" as const, id: id(300 + index), name: names("ZZ catálogo ", "ZZ catalog ") + String(index + 1).padStart(2, "0"), description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: false })),
   ];
   const calls: { method: string; path: string }[] = [];
   const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
@@ -133,7 +136,7 @@ function createQuestionCatalogFixtureStore(culture: "es" | "en") {
       return json({ items: all.slice((page - 1) * pageSize, page * pageSize), page, pageSize, totalCount: all.length, totalPages, hasPrevious: page > 1, hasNext: page < totalPages, filterCounts: { byKind: { all: all.length, manual: all.filter(row => row.origin === "Manual").length, filters: all.filter(row => row.origin === "Filters").length } } });
     }
     const row = rows.find(row => row.id === url.pathname.split("/").at(-1));
-    if (row?.id !== visualCatalogId && row) return json({ ...filterDetail, id: row.id, key: row.id.replaceAll("-", ""), name: { es: row.name, en: row.name }, description: { es: "Catálogo de prueba", en: "Test catalog" }, kind: row.origin, isActive: row.state !== "Inactive", unavailableReasonCode: row.stateReason, itemsCount: row.optionsCount, filters: row.origin === "Filters" ? filterPreviewRequest.filters : null });
+    if (row?.id !== visualCatalogId && row) return json({ valueType: "Text" as const, proposal: null, revision: 1, usageCount: null, id: row.id, key: row.id.replaceAll("-", ""), name: { es: row.name, en: row.name }, description: { es: "Catálogo de prueba", en: "Test catalog" }, kind: row.origin, isActive: row.state !== "Inactive", unavailableReasonCode: row.stateReason, itemsCount: row.optionsCount, filters: row.origin === "Filters" ? filterPreviewRequest.filters : null });
     return base.handle(request);
   } };
 }

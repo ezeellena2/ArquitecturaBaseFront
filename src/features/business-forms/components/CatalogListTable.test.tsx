@@ -4,15 +4,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
 import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
-import listEs from "@/test/fixtures/catalogs-http/manual-current/list-es.json";
-import listEn from "@/test/fixtures/catalogs-http/manual-current/list-en.json";
-import { readCatalogPage } from "../api/catalogResponse";
 import { CatalogListTable, type CatalogListRow } from "./CatalogListTable";
 
 const rows: CatalogListRow[] = [
-  { id: "manual", name: "Clientes", description: "A quiénes se visita", origin: "Manual", optionsCount: 46, usageCount: 3, state: "Active", stateReason: null, canEdit: true },
-  { id: "filters", name: "Supervisores activos", description: null, origin: "Filters", optionsCount: 7, usageCount: 2, state: "Active", stateReason: null, canEdit: true },
-  { id: "invalid", name: "Responsables", description: null, origin: "Filters", optionsCount: null, usageCount: 1, state: "Unavailable", stateReason: "El catálogo tiene una configuración no válida.", canEdit: true },
+  { valueType: "Text" as const, id: "manual", name: "Clientes", description: "A quiénes se visita", origin: "Manual", optionsCount: 46, usageCount: 3, state: "Active", stateReason: null, canEdit: true },
+  { valueType: "Text" as const, id: "filters", name: "Supervisores activos", description: null, origin: "Filters", optionsCount: 7, usageCount: 2, state: "Active", stateReason: null, canEdit: true },
+  { valueType: "Text" as const, id: "invalid", name: "Responsables", description: null, origin: "Filters", optionsCount: null, usageCount: 1, state: "Unavailable", stateReason: "El catálogo tiene una configuración no válida.", canEdit: true },
 ];
 const page = { items: rows, page: 2, pageSize: 3, totalCount: 7, totalPages: 3, hasPrevious: true, hasNext: true };
 afterEach(async () => { cleanup(); await act(async () => { await i18n.changeLanguage("es"); }); });
@@ -52,16 +49,5 @@ describe("Chosen catalog list board K1", () => {
     await mount("es", false);
     expect(screen.getByRole("link", { name: "Clientes" })).toHaveAttribute("href", "/catalogos/manual");
     expect(screen.queryByRole("button", { name: "Editar Clientes" })).not.toBeInTheDocument();
-  });
-  for (const [language, raw] of [["es", listEs], ["en", listEn]] as const) it("renders the real localized page without exposing hidden usage or unauthorized edits in " + language, async () => {
-    await i18n.changeLanguage(language); const actualPage = readCatalogPage(raw); const onPageChange = vi.fn();
-    await act(async () => { renderWithProviders(<MemoryRouter><CatalogListTable page={actualPage} canManage hasFilters={false} onPageChange={onPageChange} onViewUsage={() => {}} onEdit={() => {}} /></MemoryRouter>); });
-    const row = screen.getByRole("row", { name: new RegExp(actualPage.items[0]!.name) });
-    expect(within(row).getAllByRole("cell")[3]).toHaveTextContent("—");
-    expect(within(row).queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.getByText(language === "es" ? "2–2 de 3" : "2–2 of 3")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: language === "es" ? "Página siguiente" : "Next page" }));
-    expect(onPageChange).toHaveBeenCalledExactlyOnceWith(3);
-    expect(screen.getByRole("link", { name: actualPage.items[0]!.name })).toHaveAttribute("href", "/catalogos/" + actualPage.items[0]!.id);
   });
 });

@@ -1,3 +1,4 @@
+import type { CatalogValueType } from "../catalogValues";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
@@ -15,6 +16,7 @@ export interface CatalogListRow {
   name: string;
   description: string | null;
   origin: "Manual" | "Filters";
+  valueType: CatalogValueType;
   optionsCount: number | null;
   usageCount: number | null;
   state: "Active" | "Inactive" | "Unavailable";

@@ -5,6 +5,7 @@ export interface CatalogManualItemValue {
   readonly label: Readonly<Record<string, string | null>>;
   readonly detail: Readonly<Record<string, string | null>>;
   readonly code: string;
+  readonly value: string | null;
   readonly isActive: boolean;
   readonly position: number | null;
 }
@@ -18,7 +19,7 @@ const sameTexts = (first: Readonly<Record<string, string | null>>, second: Reado
   const keys = Object.keys(first);
   return keys.length === Object.keys(second).length && keys.every(key => Object.hasOwn(second, key) && first[key] === second[key]);
 };
-const sameValue = (first: CatalogManualItemValue, second: CatalogManualItemValue) => first.itemId === second.itemId && first.code === second.code
+const sameValue = (first: CatalogManualItemValue, second: CatalogManualItemValue) => first.itemId === second.itemId && first.code === second.code && first.value === second.value
   && first.isActive === second.isActive && first.position === second.position && sameTexts(first.label, second.label) && sameTexts(first.detail, second.detail);
 
 export const newCatalogItemEdits = (): CatalogItemEdits => ({ originals: {}, changes: {} });

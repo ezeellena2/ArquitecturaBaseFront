@@ -1,3 +1,4 @@
+import type { CatalogValueType } from "../catalogValues";
 import { useTranslation } from "react-i18next";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
@@ -7,8 +8,8 @@ import { Textarea } from "@/shared/ui/textarea";
 import type { FormCulture } from "../model";
 
 type Texts = Readonly<Record<"es" | "en", string>>;
-export function CatalogMetadataFields({ name, description, culture, canManage, busy = false, origin = "Manual", originalCulture, errors = {}, onCultureChange, onChange }: {
-  name: Texts; description: Texts; culture: FormCulture; canManage: boolean; busy?: boolean; origin?: "Manual" | "Filters"; originalCulture?: FormCulture;
+export function CatalogMetadataFields({ name, description, culture, canManage, busy = false, origin = "Manual", valueType, originalCulture, errors = {}, onCultureChange, onChange }: {
+  valueType: CatalogValueType; name: Texts; description: Texts; culture: FormCulture; canManage: boolean; busy?: boolean; origin?: "Manual" | "Filters"; originalCulture?: FormCulture;
   errors?: Readonly<Record<string, readonly string[]>>;
   onCultureChange: (culture: FormCulture) => void;
   onChange: (value: { name?: Texts; description?: Texts }) => void;
@@ -25,6 +26,7 @@ export function CatalogMetadataFields({ name, description, culture, canManage, b
         <Input readOnly={readOnly} maxLength={120} value={name[culture]} onChange={event => onChange({ name: { ...name, [culture]: event.target.value } })} />
       </FormField>
       <FormField label={t("catalogs.columns.origin")} hint={t("catalogs.origin.fixedHint")}><Input readOnly value={t(origin === "Manual" ? "catalogs.source.manual" : "catalogs.source.database")} /></FormField>
+      <div className="sm:col-span-2"><FormField label={t("catalogs.valueType.label")} hint={t("catalogs.valueType.fixedHint")}><Input readOnly value={t("catalogs.valueTypes." + valueType)} /></FormField></div>
       <div className="sm:col-span-2"><FormField label={t("catalogs.metadata.description")} required={!originalCulture || culture === originalCulture} hint={t("catalogs.metadata.descriptionHint")} error={errors["description." + culture]?.join(" ")}>
         <Textarea readOnly={readOnly} maxLength={1000} value={description[culture]} onChange={event => onChange({ description: { ...description, [culture]: event.target.value } })} />
       </FormField></div>

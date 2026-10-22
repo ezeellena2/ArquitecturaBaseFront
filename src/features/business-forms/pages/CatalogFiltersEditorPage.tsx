@@ -105,7 +105,7 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
     {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><div><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("review")}</Button></div></Surface> : null}
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">
-        <CatalogMetadataFields name={draft.name} description={draft.description} culture={culture} onCultureChange={setCulture} canManage={canManage && !editor.requiresReview} busy={editor.busy} origin="Filters" originalCulture={proposal?.originalCulture} errors={fields} onChange={editor.changeMetadata} />
+        <CatalogMetadataFields valueType="Text" name={draft.name} description={draft.description} culture={culture} onCultureChange={setCulture} canManage={canManage && !editor.requiresReview} busy={editor.busy} origin="Filters" originalCulture={proposal?.originalCulture} errors={fields} onChange={editor.changeMetadata} />
         {!options.data && options.isPending ? <Spinner /> : options.data ? <CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={canManage && !editor.requiresReview} busy={editor.busy} errors={fields} onChange={editor.changeFilters} /> : <EmptyState title={t("catalogs.filters.optionsFailed")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} />}
       </div>
       <Surface title={t("catalogs.filters.previewTitle")} padded>

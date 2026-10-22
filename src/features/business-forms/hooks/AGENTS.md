@@ -33,6 +33,7 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 ### Catálogos
 
 - `useCatalogDraftEditor` sirve a Manual y Filters. Su dueño combina actor, cultura, catálogo y origen, más una época que separa callbacks del baseline anterior. Perder Manage deja el borrador sólo lectura mientras siga Read; un guardado confirmado o una adopción reinician el baseline.
+- `catalogValues` convierte una única vez entre entrada local y strings canónicos, sin Number ni redondeo: entero de hasta 18 dígitos, Decimal exacto y fecha sin hora. El borrador conserva el tipo del servidor y la entrada inválida; bloquea escribirla y PUT nunca cambia el tipo.
 - Manual conserva originales, delta y movimientos entre páginas (`catalogDraft`, `catalogItemEdits`). Los ítems nuevos tienen LocalId sin ItemId ni posición y el servidor los agrega al final; las flechas encolan ItemId y dirección para el mismo Guardar, sin autosave ni lecturas extra.
 - Filters activo prueba con la persona elegida antes de guardar y no escribe si excede 200; dado de baja guarda sin persona ni prueba. `catalogFiltersBody` retira los `localId`. Cambiar condiciones limpia el resultado anterior. Una propuesta pendiente sólo se aprueba (con persona) o se descarta.
 - Un 409 conserva el borrador hasta releer y adoptar; red o 5xx permite otro Guardar con la misma revisión. Un alta fallida sin ID permite otro intento sin ofrecer releer.

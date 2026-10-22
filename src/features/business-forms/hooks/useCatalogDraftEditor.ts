@@ -1,3 +1,4 @@
+import { parseCatalogValue, type CatalogValueType } from "../catalogValues";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
@@ -5,7 +6,7 @@ import type { CatalogItemMove } from "../api/catalogs";
 import { createManualCatalog, fetchCatalog, updateManualCatalog, createFiltersCatalog, updateFiltersCatalog, previewCatalogFilters, approveCatalogProposal, discardCatalogProposal } from "../api/catalogs";
 import type { CatalogDetail, CatalogItem, CatalogSave, CatalogFilterPreview } from "../api/catalogResponse";
 import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
-import type { CatalogManualItemValue } from "../catalogItemEdits";
+import { catalogItemChanges, type CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 
 import { catalogFiltersBody } from "../catalogFilterDraft";
@@ -24,13 +25,13 @@ interface EditorState {
   readonly previewResult: CatalogFilterPreview | null;
   readonly error: unknown;
 }
-function fresh(owner: string, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual"): EditorState {
-  const draft = openCatalogDraft(initial, kind);
+function fresh(owner: string, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text", culture: FormCulture = "es"): EditorState {
+  const draft = openCatalogDraft(initial, kind, valueType, culture);
   return { owner, epoch: {}, draft, baseline: { isActive: draft.isActive, name: draft.name, description: draft.description, filters: draft.filters }, busy: false, requiresReview: false, current: null, saved: null, previewResult: null, error: null };
 }
-export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual") {
+export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text") {
   const client = useQueryClient();
-  const owner = JSON.stringify([scope.actorId, scope.culture, initial?.id ?? null, initial?.kind ?? kind]);
+  const owner = JSON.stringify([scope.actorId, scope.culture, initial?.id ?? null, initial?.kind ?? kind, initial?.valueType ?? valueType]);
   const canRead = scope.actorId !== null && scope.permissions.includes("formcatalogs.read");
   const canManage = canRead && scope.permissions.includes("formcatalogs.manage");
   const ownerRef = useRef(owner);
@@ -38,14 +39,14 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   const initialRef = useRef(initial);
   const active = useRef(true);
   const operation = useRef<AbortController | null>(null);
-  const [state, setState] = useState(() => fresh(owner, initial, kind));
+  const [state, setState] = useState(() => fresh(owner, initial, kind, valueType, scope.culture));
   const stateRef = useRef(state);
   useLayoutEffect(() => { ownerRef.current = owner; permissionsRef.current = { canRead, canManage }; initialRef.current = initial; stateRef.current = state; }, [owner, canRead, canManage, initial, state]);
   useEffect(() => {
     active.current = true;
-    setState(fresh(owner, canRead ? initialRef.current : undefined, kind));
+    setState(fresh(owner, canRead ? initialRef.current : undefined, kind, valueType, scope.culture));
     return () => { active.current = false; operation.current?.abort(); operation.current = null; };
-  }, [owner, canRead, kind]);
+  }, [owner, canRead, kind, valueType, scope.culture]);
   const owned = state.owner === owner && canRead;
   const isCurrentOwner = useCallback(() => active.current && ownerRef.current === owner && permissionsRef.current.canRead
     && stateRef.current.epoch === state.epoch, [owner, state.epoch]);
@@ -78,6 +79,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   const save = useCallback(async (sampleUserId?: string) => {
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview) return;
     const captured = stateRef.current.draft;
+    if (captured.kind === "Manual" && catalogItemChanges(captured.items).some(item => !parseCatalogValue(captured.valueType, item.value, captured.culture).valid)) return;
     const pendingProposal = captured.proposal?.state === "Pending";
     if (captured.filters && (captured.isActive || pendingProposal) && !sampleUserId) return;
     let writing = false;
@@ -102,7 +104,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
           ? await updateManualCatalog(captured.id, catalogDraftUpdateBody(captured), controller.signal)
           : await createManualCatalog(catalogDraftBody(captured), controller.signal);
       if (!accepts(owner, controller) || !permissionsRef.current.canManage) return;
-      const next = fresh(owner, saved.catalog);
+      const next = fresh(owner, saved.catalog, kind, valueType, scope.culture);
       setState({ ...next, saved });
       // The next revision loads canonical item pages afresh. No collection is reconstructed from a partial page.
       void client.invalidateQueries({ queryKey: ["form-catalogs", scope.actorId] });
@@ -114,7 +116,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     } finally {
       if (operation.current === controller) { operation.current = null; if (active.current && ownerRef.current === owner) setState(value => ({ ...value, busy: false })); }
     }
-  }, [client, owned, owner, scope.actorId, isCurrentOwner, accepts]);
+  }, [client, owned, owner, scope.actorId, scope.culture, kind, valueType, isCurrentOwner, accepts]);
   const discardProposal = useCallback(async () => {
     const captured = stateRef.current.draft;
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview
@@ -124,7 +126,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     try {
       const discarded = await discardCatalogProposal(captured.id, captured.revision, controller.signal);
       if (!accepts(owner, controller) || !permissionsRef.current.canManage) return;
-      setState(fresh(owner, discarded));
+      setState(fresh(owner, discarded, kind, valueType, scope.culture));
       void client.invalidateQueries({ queryKey: ["form-catalogs", scope.actorId] });
       return discarded;
     } catch (error) {
@@ -132,7 +134,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     } finally {
       if (operation.current === controller) { operation.current = null; if (isCurrentOwner()) setState(value => ({ ...value, busy: false })); }
     }
-  }, [client, owned, owner, scope.actorId, isCurrentOwner, accepts]);
+  }, [client, owned, owner, scope.actorId, scope.culture, kind, valueType, isCurrentOwner, accepts]);
   const clearPreview = useCallback(() => {
     if (owned && isCurrentOwner() && !operation.current) setState(value => ({ ...value, previewResult: null, error: null }));
   }, [owned, isCurrentOwner]);
@@ -161,8 +163,8 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   }, [owned, owner, isCurrentOwner, accepts]);
   const adoptCurrent = useCallback(() => {
     if (!owned || !isCurrentOwner() || operation.current || !stateRef.current.current) return;
-    setState(fresh(owner, stateRef.current.current));
-  }, [owned, owner, isCurrentOwner]);
+    setState(fresh(owner, stateRef.current.current, kind, valueType, scope.culture));
+  }, [owned, owner, kind, valueType, scope.culture, isCurrentOwner]);
   const draft = owned ? state.draft : null;
   const dirty = !!draft && (draft.isActive !== state.baseline.isActive || JSON.stringify(draft.name) !== JSON.stringify(state.baseline.name)
     || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description)

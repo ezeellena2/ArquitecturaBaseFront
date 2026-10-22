@@ -1,3 +1,4 @@
+import type { CatalogValueType } from "../catalogValues";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
@@ -9,8 +10,8 @@ import { Textarea } from "@/shared/ui/textarea";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 
-export function CatalogItemFields({ item, culture, readOnly, errors, onChange, onDone }: {
-  item: CatalogManualItemValue; culture: FormCulture; readOnly: boolean;
+export function CatalogItemFields({ item, culture, valueType, readOnly, errors, onChange, onDone }: {
+  item: CatalogManualItemValue; culture: FormCulture; valueType: CatalogValueType; readOnly: boolean;
   errors?: Readonly<Record<string, readonly string[]>>;
   onChange: (item: CatalogManualItemValue) => void; onDone: () => void;
 }) {
@@ -25,6 +26,7 @@ export function CatalogItemFields({ item, culture, readOnly, errors, onChange, o
       <FormField label={t("catalogs.items.code")} required error={errors?.code?.join(" ")} hint={t("catalogs.items.codeHint")}>
         <Input maxLength={80} readOnly={readOnly} value={item.code} onChange={event => onChange({ ...item, code: event.target.value })} />
       </FormField>
+      {valueType !== "Text" ? <FormField label={t("catalogs.valueType.valueLabel", { type: t("catalogs.valueTypes." + valueType) })} required error={errors?.value?.join(" ")} hint={t("catalogs.valueType.inputHint." + valueType)}><Input type={valueType === "Date" ? "date" : "text"} inputMode={valueType === "Integer" ? "numeric" : valueType === "Decimal" ? "decimal" : undefined} maxLength={64} readOnly={readOnly} value={item.value ?? ""} onChange={event => onChange({ ...item, value: event.target.value || null })} /></FormField> : null}
       <FormField label={t("catalogs.items.detail")} error={errors?.["detail." + culture]?.join(" ")} hint={t("optional")}>
         <Textarea maxLength={300} readOnly={readOnly} value={item.detail[culture] ?? ""} onChange={event => onChange({ ...item, detail: { ...item.detail, [culture]: event.target.value || null } })} />
       </FormField>

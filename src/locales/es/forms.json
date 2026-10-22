@@ -316,7 +316,8 @@
       "moveAfterSave": "{{action}}. Guardá la opción para poder moverla.",
       "movesPending_one": "1 movimiento pendiente. Se aplicará al guardar.",
       "movesPending_other": "{{count}} movimientos pendientes. Se aplicarán en este orden al guardar.",
-      "clearMoves": "Descartar movimientos"
+      "clearMoves": "Descartar movimientos",
+      "value": "Valor"
     },
     "filters": {
       "title": "De dónde salen: la base, con filtros",
@@ -408,6 +409,24 @@
         "Approved": "Propuesta aprobada",
         "Discarded": "Propuesta descartada"
       }
+    },
+    "valueTypes": {
+      "Text": "Texto",
+      "Integer": "Entero",
+      "Decimal": "Decimal",
+      "Date": "Fecha"
+    },
+    "valueType": {
+      "label": "Tipo de valor",
+      "fixedHint": "Se elige al crear el catálogo y después no se puede cambiar.",
+      "inputHint": {
+        "Integer": "Número entero, hasta 18 dígitos.",
+        "Decimal": "Número decimal, sin redondeos.",
+        "Date": "Fecha sin hora."
+      },
+      "required": "Ingresá un valor.",
+      "invalid": "Ingresá un valor válido para este tipo.",
+      "valueLabel": "Valor · {{type}}"
     }
   },
   "catalogQuestion": {

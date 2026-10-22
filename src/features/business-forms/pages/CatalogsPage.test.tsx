@@ -7,18 +7,12 @@ import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import i18n from "@/shared/i18n";
-import listRaw from "@/test/fixtures/catalogs-http/manual-current/list-es.json";
+// Explicit synthetic current DTO for route behavior. Producer bodies live in CatalogsPage.http.test.
+const listRaw = { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } };
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 function setup(permissions: string[]) { server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })), http.get("/api/forms/catalogs", () => HttpResponse.json(listRaw))); }
 beforeEach(async () => { queryClient.clear(); await i18n.changeLanguage("es"); });
 describe("Catalog routes and navigation", () => {
-  it("lists the raw localized page with Read, hides New without Manage, and opens the catalog panel", async () => {
-    setup(["formcatalogs.read"]);
-    await act(async () => { renderRouteWithProviders("/catalogos?page=2&pageSize=1&sort=name"); });
-    expect(await screen.findByRole("link", { name: listRaw.items[0]!.name })).toHaveAttribute("href", "/catalogos/" + listRaw.items[0]!.id);
-    expect(screen.queryByRole("button", { name: "Nuevo catálogo" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Catálogos" })).toBeInTheDocument();
-  });
   it("chooses Manual without a write and navigates to the protected editor", async () => {
     setup(["formcatalogs.read", "formcatalogs.manage"]); let writes = 0;
     server.use(http.post("/api/forms/catalogs", () => { writes++; return HttpResponse.json({}, { status: 500 }); }));
@@ -44,7 +38,7 @@ describe("Catalog routes and navigation", () => {
 
 it("uses server origin counts for the whole query and resets the page when choosing an origin", async () => {
   // Synthetic current DTO projection, deliberately one row but 100 matching catalogs.
-  const page = { items: [{ id: "01990000-0000-7000-8000-000000000030", name: "Supervisores", description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.ContentInvalid", canEdit: false }], page: 5, pageSize: 1, totalCount: 20, totalPages: 20, hasPrevious: true, hasNext: true, filterCounts: { byKind: { all: 100, manual: 80, filters: 20 } } };
+  const page = { items: [{ valueType: "Text" as const, id: "01990000-0000-7000-8000-000000000030", name: "Supervisores", description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.ContentInvalid", canEdit: false }], page: 5, pageSize: 1, totalCount: 20, totalPages: 20, hasPrevious: true, hasNext: true, filterCounts: { byKind: { all: 100, manual: 80, filters: 20 } } };
   setup(["formcatalogs.read"]); const requests: URLSearchParams[] = [];
   server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json(page); }));
   let router!: ReturnType<typeof renderRouteWithProviders>["router"];

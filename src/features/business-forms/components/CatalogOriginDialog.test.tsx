@@ -39,13 +39,13 @@ describe("Chosen catalog origin board K2", () => {
       expect(onSelect).not.toHaveBeenCalled();
       expect(screen.queryByRole("radio", { name: language === "es" ? "Escribir una consulta" : "Write a query" })).not.toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: language === "es" ? "Continuar" : "Continue" }));
-      expect(onSelect).toHaveBeenCalledExactlyOnceWith("Filters");
+      expect(onSelect).toHaveBeenCalledExactlyOnceWith("Filters", "Text");
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     });
     it("continues with the manual source without creating a catalog in " + language, async () => {
       const { user, onSelect } = await mount(language);
       await user.click(screen.getByRole("button", { name: language === "es" ? "Continuar" : "Continue" }));
-      expect(onSelect).toHaveBeenCalledExactlyOnceWith("Manual");
+      expect(onSelect).toHaveBeenCalledExactlyOnceWith("Manual", "Text");
     });
   }
   for (const action of ["Cancel", "Escape"] as const) {
@@ -59,4 +59,13 @@ describe("Chosen catalog origin board K2", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   }
+});
+
+
+it.each(["es", "en"] as const)("chooses the immutable manual value type explicitly in %s", async language => {
+  const { user, onSelect } = await mount(language);
+  await user.click(screen.getByRole("radio", { name: "Decimal" }));
+  expect(onSelect).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: language === "es" ? "Continuar" : "Continue" }));
+  expect(onSelect).toHaveBeenCalledExactlyOnceWith("Manual", "Decimal");
 });

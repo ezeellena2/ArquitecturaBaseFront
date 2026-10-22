@@ -12,7 +12,7 @@ import { proposalCatalog, proposalActorId } from "@/test/mocks/catalogProposal";
 afterEach(() => vi.restoreAllMocks());
 const id = "01990000-0000-7000-8000-000000000091";
 const scope = { actorId: "author", culture: "es" as const, permissions: ["formcatalogs.read"] };
-const page = { items: [{ id, name: "Clientes privados", description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: false }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } };
+const page = { items: [{ valueType: "Text" as const, id, name: "Clientes privados", description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: false }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } };
 it("removes catalog names when CatalogsRead is revoked while keeping the selected reference in the caller", async () => {
   let reads = 0; server.use(http.get("/api/forms/catalogs", () => { reads++; return HttpResponse.json(page); }));
   const onChange = vi.fn(); const renderSelector = (permissions: readonly string[]) => <MemoryRouter><CatalogQuestionSelector scope={{ ...scope, permissions }} value={id} readOnly={false} onChange={onChange} /></MemoryRouter>;
@@ -89,4 +89,13 @@ it("uses the original name and description of an approved monolingual catalog ou
  await screen.findByRole("option", { name: /Supervisores activos/ });
  expect(screen.getByText("· Supervisores activos")).toBeInTheDocument();
  expect(screen.getByRole("combobox", { name: "Catálogo" })).toHaveAccessibleDescription("Supervisores disponibles");
+});
+
+
+it("shows the immutable catalog value type without reading its items", async () => {
+  let itemReads = 0;
+  server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ ...page, items: [{ ...page.items[0], valueType: "Decimal" }] })), http.get("/api/forms/catalogs/:id/items", () => { itemReads++; return HttpResponse.json({}); }));
+  renderWithProviders(<MemoryRouter><CatalogQuestionSelector scope={scope} value={id} readOnly onChange={() => undefined}/></MemoryRouter>);
+  expect(await screen.findByRole("option", { name: /Clientes privados.*Decimal/ })).toBeInTheDocument();
+  expect(itemReads).toBe(0);
 });

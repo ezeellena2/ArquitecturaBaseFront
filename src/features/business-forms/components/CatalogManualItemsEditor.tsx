@@ -1,3 +1,4 @@
+import type { CatalogValueType } from "../catalogValues";
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { PagedResult } from "@/shared/api/pagedResult";
@@ -12,9 +13,10 @@ import type { FormCulture } from "../model";
 import { CatalogItemFields } from "./CatalogItemFields";
 import { CatalogItemsTable } from "./CatalogItemsTable";
 
-export function CatalogManualItemsEditor({ items, culture, canManage, busy = false, hasPendingMoves = false, errors, editingItems = [], expandedKey, onExpand, onChange, onAdd, onMove, filters, pagination, onPageChange, onPageSizeChange }: {
+export function CatalogManualItemsEditor({ items, culture, valueType, canManage, busy = false, hasPendingMoves = false, errors, editingItems = [], expandedKey, onExpand, onChange, onAdd, onMove, filters, pagination, onPageChange, onPageSizeChange }: {
   items: readonly CatalogManualItemValue[];
   culture: FormCulture;
+  valueType: CatalogValueType;
   canManage: boolean;
   busy?: boolean;
   hasPendingMoves?: boolean;
@@ -43,10 +45,10 @@ export function CatalogManualItemsEditor({ items, culture, canManage, busy = fal
   const expandedItem = items.find(item => item.localId === expandedKey) ?? editingItems.find(item => item.localId === expandedKey);
   return <Surface title={t("catalogs.items.title")} actions={canManage ? <Button ref={addRef} type="button" variant="outline" disabled={busy} onClick={onAdd}><PlusIcon className="size-4" />{t("addOption")}</Button> : undefined}>
     {filters}
-    <CatalogItemsTable items={items} culture={culture} canManage={canManage} busy={busy} hasPendingMoves={hasPendingMoves} totalCount={pagination?.totalCount} expandedKey={expandedKey}
-      expandedContent={fieldsInsideTable && expandedItem ? <CatalogItemFields item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} readOnly={readOnly} onChange={onChange} onDone={() => onExpand(null)}/> : undefined}
+    <CatalogItemsTable items={items} culture={culture} valueType={valueType} canManage={canManage} busy={busy} hasPendingMoves={hasPendingMoves} totalCount={pagination?.totalCount} expandedKey={expandedKey}
+      expandedContent={fieldsInsideTable && expandedItem ? <CatalogItemFields item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} valueType={valueType} readOnly={readOnly} onChange={onChange} onDone={() => onExpand(null)}/> : undefined}
       onExpand={onExpand} onChange={onChange} onMove={onMove} onActionRef={(key, button) => { if (button) actionRefs.current.set(key, button); else actionRefs.current.delete(key); }}/>
-    {expandedItem && (!fieldsInsideTable || !items.some(item => item.localId === expandedItem.localId)) ? <div className="flex flex-col gap-3 p-4"><p className="text-sm font-medium">{t("catalogs.items.editing", { name: localizedValue(expandedItem.label, culture, "es") || t("option", { number: expandedItem.position }) })}</p><CatalogItemFields item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} readOnly={readOnly} onChange={onChange} onDone={() => onExpand(null)} /></div> : null}
+    {expandedItem && (!fieldsInsideTable || !items.some(item => item.localId === expandedItem.localId)) ? <div className="flex flex-col gap-3 p-4"><p className="text-sm font-medium">{t("catalogs.items.editing", { name: localizedValue(expandedItem.label, culture, "es") || t("option", { number: expandedItem.position }) })}</p><CatalogItemFields item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} valueType={valueType} readOnly={readOnly} onChange={onChange} onDone={() => onExpand(null)} /></div> : null}
     {items.length === 0 ? <div className="p-4"><p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.items.empty")}</p></div> : null}
     {pagination && onPageChange ? <Pagination {...pagination} onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} /> : null}
   </Surface>;

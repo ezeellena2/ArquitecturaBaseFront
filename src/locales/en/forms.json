@@ -316,7 +316,8 @@
       "moveAfterSave": "{{action}}. Save the option before moving it.",
       "movesPending_one": "1 pending move. It will apply when you save.",
       "movesPending_other": "{{count}} pending moves. They will apply in this order when you save.",
-      "clearMoves": "Discard moves"
+      "clearMoves": "Discard moves",
+      "value": "Value"
     },
     "filters": {
       "title": "Where options come from: database with filters",
@@ -408,6 +409,24 @@
         "Approved": "Proposal approved",
         "Discarded": "Proposal discarded"
       }
+    },
+    "valueTypes": {
+      "Text": "Text",
+      "Integer": "Whole number",
+      "Decimal": "Decimal",
+      "Date": "Date"
+    },
+    "valueType": {
+      "label": "Value type",
+      "fixedHint": "Choose it when creating the catalog. It cannot be changed later.",
+      "inputHint": {
+        "Integer": "Whole number, up to 18 digits.",
+        "Decimal": "Decimal number, without rounding.",
+        "Date": "Date without a time."
+      },
+      "required": "Enter a value.",
+      "invalid": "Enter a valid value for this type.",
+      "valueLabel": "Value · {{type}}"
     }
   },
   "catalogQuestion": {

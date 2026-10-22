@@ -10,7 +10,7 @@ import { useCatalogDraftEditor } from "./useCatalogDraftEditor";
 
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
-const initial: CatalogDetail = { proposal: null, id, key: id.replaceAll("-", ""), kind: "Manual", revision: 1, name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
+const initial: CatalogDetail = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), kind: "Manual", revision: 1, name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
 const scope = { actorId: "actor-a", culture: "es" as const, permissions: ["formcatalogs.read", "formcatalogs.manage"] };
 function harness() {
   const client = createQueryClient();
@@ -22,7 +22,7 @@ describe("Manual catalog editor ownership", () => {
     const h = harness(); const received: unknown[] = [];
     server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { received.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {} }); }));
     const { result } = renderHook(() => useCatalogDraftEditor(scope, initial), h);
-    act(() => result.current.loadItems([{ id: itemId, code: "C1", text: { es: "Uno", en: null }, detail: {}, position: 1, isActive: true }]));
+    act(() => result.current.loadItems([{ value: null, id: itemId, code: "C1", text: { es: "Uno", en: null }, detail: {}, position: 1, isActive: true }]));
     act(() => result.current.changeItem({ ...Object.values(result.current.draft!.items.originals)[0]!, code: "C2" }));
     await act(() => result.current.save());
     expect(received).toHaveLength(1);
@@ -114,7 +114,7 @@ describe("Manual catalog editor ownership", () => {
   it("resets loaded originals and pending values when the catalog identity changes", () => {
     const nextId = "01990000-0000-7000-8000-000000000022";
     const { result, rerender } = renderHook(({ catalog }) => useCatalogDraftEditor(scope, catalog), { ...harness(), initialProps: { catalog: initial } });
-    act(() => result.current.loadItems([{ id: itemId, code: "C1", text: { es: "Uno", en: null }, detail: {}, position: 1, isActive: true }]));
+    act(() => result.current.loadItems([{ value: null, id: itemId, code: "C1", text: { es: "Uno", en: null }, detail: {}, position: 1, isActive: true }]));
     act(() => result.current.changeItem({ ...Object.values(result.current.draft!.items.originals)[0]!, code: "PRIVATE" }));
     rerender({ catalog: { ...initial, id: nextId, key: nextId.replaceAll("-", ""), name: { es: "Otro", en: "Other" } } });
     expect(result.current.draft).toMatchObject({ id: nextId, name: { es: "Otro", en: "Other" }, items: { originals: {}, changes: {} } });
@@ -138,9 +138,9 @@ describe("Manual catalog editor ownership", () => {
     const old = { loadItems: result.current.loadItems, changeMetadata: result.current.changeMetadata, changeItem: result.current.changeItem };
     rerender({ catalog: transition === "catalog" ? { ...initial, id: nextId, key: nextId.replaceAll("-", ""), name: { es: "Otro", en: "Other" } } : initial, actorId: transition === "actor" ? "actor-b" : "actor-a" });
     act(() => {
-      old.loadItems([{ id: itemId, code: "OLD-PRIVATE", text: { es: "Previous private row", en: null }, detail: {}, position: 1, isActive: true }], 1);
+      old.loadItems([{ value: null, id: itemId, code: "OLD-PRIVATE", text: { es: "Previous private row", en: null }, detail: {}, position: 1, isActive: true }], 1);
       old.changeMetadata({ name: { es: "Previous private name", en: "Old owner" } });
-      old.changeItem({ localId: "old-new-item", itemId: null, label: { es: "Previous private option" }, detail: {}, position: 2, code: "OLD-NEW", isActive: true });
+      old.changeItem({ value: null, localId: "old-new-item", itemId: null, label: { es: "Previous private option" }, detail: {}, position: 2, code: "OLD-NEW", isActive: true });
     });
     expect(result.current.draft!.name).toEqual(transition === "catalog" ? { es: "Otro", en: "Other" } : initial.name);
     expect(result.current.draft!.items).toEqual({ originals: {}, changes: {} });
@@ -160,7 +160,7 @@ describe("Manual catalog editor ownership", () => {
     const { result, rerender } = renderHook(({ permissions }) => useCatalogDraftEditor({ ...scope, permissions }, initial), { ...harness(), initialProps: { permissions: scope.permissions } });
     const oldMetadata = result.current.changeMetadata; const oldItem = result.current.changeItem;
     rerender({ permissions: ["formcatalogs.read"] });
-    act(() => { oldMetadata({ name: { es: "Forbidden edit", en: "Edit" } }); oldItem({ localId: "forbidden-option", itemId: null, label: { es: "No" }, detail: {}, code: "NO", position: 1, isActive: true }); });
+    act(() => { oldMetadata({ name: { es: "Forbidden edit", en: "Edit" } }); oldItem({ value: null, localId: "forbidden-option", itemId: null, label: { es: "No" }, detail: {}, code: "NO", position: 1, isActive: true }); });
     expect(result.current.draft!.name).toEqual(initial.name);
     expect(result.current.draft!.items.changes).toEqual({});
     expect(result.current.canSave).toBe(false);
@@ -170,7 +170,7 @@ describe("Manual catalog editor ownership", () => {
     const { result, rerender } = renderHook(({ catalog, actorId }) => useCatalogDraftEditor({ ...scope, actorId }, catalog), { ...harness(), initialProps: { catalog: initial, actorId: "actor-a" } });
     const oldLoadItems = result.current.loadItems;
     rerender({ catalog: transition === "catalog" ? { ...initial, id: nextId, key: nextId.replaceAll("-", "") } : initial, actorId: transition === "actor" ? "actor-b" : "actor-a" });
-    act(() => oldLoadItems([{ id: itemId, code: "OLD", text: { es: "Private row A", en: null }, detail: {}, position: 1, isActive: true }], 1));
+    act(() => oldLoadItems([{ value: null, id: itemId, code: "OLD", text: { es: "Private row A", en: null }, detail: {}, position: 1, isActive: true }], 1));
     expect(result.current.draft!.items).toEqual({ originals: {}, changes: {} });
   });
   it("rejects callbacks from an earlier editor epoch when the original actor returns", async () => {
@@ -208,7 +208,7 @@ describe("Manual catalog editor ownership", () => {
     const oldLoadItems = result.current.loadItems;
     await act(() => result.current.save());
     if (decision === "adopt") { await act(() => result.current.readCurrent()); act(() => result.current.adoptCurrent()); }
-    const item = { id: itemId, code: "CANONICAL", text: { es: "Confirmed option", en: null }, detail: {}, position: 1, isActive: true };
+    const item = { value: null, id: itemId, code: "CANONICAL", text: { es: "Confirmed option", en: null }, detail: {}, position: 1, isActive: true };
     act(() => oldLoadItems([{ ...item, code: "OLD" }], 2));
     expect(result.current.draft!.items).toEqual({ originals: {}, changes: {} });
     act(() => result.current.loadItems([item], 2));
@@ -255,4 +255,16 @@ describe("Filters catalog editor", () => {
     rerender({ permissions: scope.permissions }); await act(() => result.current.save(itemId));
     expect(calls).toBe(1); expect(result.current.requiresReview).toBe(false); expect(result.current.canSave).toBe(true);
   });
+});
+
+it("keeps an incomplete typed item in memory and blocks a direct save without a request or MutationCache entry", async () => {
+  const h = harness(); let writes = 0;
+  server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({}); }));
+  const { result } = renderHook(() => useCatalogDraftEditor(scope, { ...initial, valueType: "Integer" }), h);
+  act(() => result.current.loadItems([{ value: "12", id: itemId, code: "C1", text: { es: "Uno" }, detail: {}, position: 1, isActive: true }]));
+  act(() => result.current.changeItem({ ...Object.values(result.current.draft!.items.originals)[0]!, value: "-" }));
+  await act(() => result.current.save());
+  expect(result.current.draft!.items.changes["item:" + itemId]?.value).toBe("-");
+  expect(result.current.dirty).toBe(true); expect(writes).toBe(0);
+  expect(h.client.getMutationCache().getAll()).toEqual([]);
 });

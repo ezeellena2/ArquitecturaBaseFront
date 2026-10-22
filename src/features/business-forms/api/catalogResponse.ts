@@ -1,3 +1,4 @@
+import { catalogValueTypes } from "../catalogValues";
 import { z } from "zod";
 import type { PagedResult } from "@/shared/api/pagedResult";
 
@@ -24,13 +25,14 @@ const filterColumn = z.strictObject({ key: z.string(), dataType: z.string(), can
 const sampleUsers = z.strictObject({ items: z.array(z.strictObject({ id: guid, name: z.string() })), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() });
 const filterOptions = z.strictObject({ source: z.literal("users"), columns: z.array(filterColumn), sampleUsers: sampleUsers.nullable() });
 const filterPreview = z.strictObject({ items: z.array(z.strictObject({ id: guid, text: z.string(), detail: z.string().nullable(), canSend: z.boolean() })), totalCount: count, exceedsLimit: z.boolean() });
-const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), kind: z.enum(["Manual", "Filters"]), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable() })
+const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), kind: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable() })
   .refine(value => value.proposal ? value.kind === "Filters" && value.filters !== null && !!value.name[value.proposal.originalCulture]?.trim() && !!value.description[value.proposal.originalCulture]?.trim() && (value.proposal.state === "Approved" || !value.isActive) : requiredText(120).safeParse(value.name).success && requiredText(1000).safeParse(value.description).success)
-  .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase());
-const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: nullableText(200).refine(value => !!value.es?.trim()), detail: nullableText(500), position: z.number().int().min(1).max(10000), isActive: z.boolean() });
+  .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase())
+  .refine(value => value.kind !== "Filters" || value.valueType === "Text");
+const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: nullableText(200).refine(value => !!value.es?.trim()), detail: nullableText(500), value: z.string().max(64).nullable(), position: z.number().int().min(1).max(10000), isActive: z.boolean() });
 const itemPage = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
   .refine(value => new Set(value.items.map(row => row.id.toLowerCase())).size === value.items.length);
-const listItem = z.strictObject({ id: guid, name: z.string().min(1), description: z.string().nullable(), origin: z.enum(["Manual", "Filters"]), optionsCount: count.nullable(), usageCount: count.nullable(), state: z.enum(["Active", "Inactive", "Unavailable"]), stateReason: z.string().nullable(), canEdit: z.boolean() });
+const listItem = z.strictObject({ id: guid, name: z.string().min(1), description: z.string().nullable(), origin: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), optionsCount: count.nullable(), usageCount: count.nullable(), state: z.enum(["Active", "Inactive", "Unavailable"]), stateReason: z.string().nullable(), canEdit: z.boolean() }).refine(value => value.origin !== "Filters" || value.valueType === "Text");
 const catalogPage = z.strictObject({ filterCounts: z.strictObject({ byKind: z.strictObject({ all: count, manual: count, filters: count }) }), items: z.array(listItem), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
   .refine(value => new Set(value.items.map(row => row.id.toLowerCase())).size === value.items.length);
 const saved = z.strictObject({ catalog, itemIdentityMap: z.record(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/), guid) });

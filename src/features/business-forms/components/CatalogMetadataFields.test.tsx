@@ -14,7 +14,7 @@ describe("Bilingual catalog metadata", () => {
     function Host() {
       const [culture, setCulture] = useState<FormCulture>("es");
       const [value, setValue] = useState({ name: { es: "Clientes", en: "" }, description: { es: "Visitas", en: "" } });
-      return <CatalogMetadataFields {...value} culture={culture} canManage onCultureChange={setCulture} onChange={change => setValue(previous => ({ ...previous, ...change }))} />;
+      return <CatalogMetadataFields valueType="Text" {...value} culture={culture} canManage onCultureChange={setCulture} onChange={change => setValue(previous => ({ ...previous, ...change }))} />;
     }
     await act(async () => { renderWithProviders(<Host />); });
     const user = userEvent.setup();
@@ -34,7 +34,7 @@ describe("Bilingual catalog metadata", () => {
     expect(screen.getByRole("textbox", { name: descriptionLabel })).toHaveValue("Visits");
   });
   it("keeps fields read-only without Manage and binds translated field errors", async () => {
-    await act(async () => { renderWithProviders(<CatalogMetadataFields name={{ es: "Clientes", en: "Customers" }} description={{ es: "Visitas", en: "Visits" }} culture="es" canManage={false} onCultureChange={() => {}} onChange={() => {}} errors={{ "name.es": ["Revisá el nombre"] }} />); });
+    await act(async () => { renderWithProviders(<CatalogMetadataFields valueType="Text" name={{ es: "Clientes", en: "Customers" }} description={{ es: "Visitas", en: "Visits" }} culture="es" canManage={false} onCultureChange={() => {}} onChange={() => {}} errors={{ "name.es": ["Revisá el nombre"] }} />); });
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAccessibleDescription("Revisá el nombre");
     expect(screen.getByRole("alert")).toHaveTextContent("Revisá el nombre");

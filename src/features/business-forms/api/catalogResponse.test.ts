@@ -4,7 +4,7 @@ import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview, readCa
 // Synthetic responses from the current .NET DTOs; real K4 exports qualify the contract at closure.
 const id = "01990000-0000-7000-8000-000000000020";
 const filters = { textColumn: "name", detailColumn: null, conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000601" }], excludeRecipient: true, sortColumn: "name", sortDescending: false };
-const catalog = { proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Responsables", en: "Assignees" }, description: { es: "Personas disponibles", en: "Available people" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null };
+const catalog = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Responsables", en: "Assignees" }, description: { es: "Personas disponibles", en: "Available people" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null };
 const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: "01990000-0000-7000-8000-000000000601", label: "Operario" }] }];
 
  describe("Current catalog response DTO", () => {
@@ -30,7 +30,7 @@ const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: t
 });
 
 it("uses the server's origin facets, independent of the current page length", () => {
-  const response = { items: [{ id, name: "Responsables", description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.ContentInvalid", canEdit: true }], page: 5, pageSize: 1, totalCount: 20, totalPages: 20, hasPrevious: true, hasNext: true, filterCounts: { byKind: { all: 100, manual: 80, filters: 20 } } };
+  const response = { items: [{ valueType: "Text" as const, id, name: "Responsables", description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.ContentInvalid", canEdit: true }], page: 5, pageSize: 1, totalCount: 20, totalPages: 20, hasPrevious: true, hasNext: true, filterCounts: { byKind: { all: 100, manual: 80, filters: 20 } } };
   expect(readCatalogPage(response)).toEqual(response);
   const previous = { items: response.items, page: response.page, pageSize: response.pageSize, totalCount: response.totalCount, totalPages: response.totalPages, hasPrevious: response.hasPrevious, hasNext: response.hasNext };
   expect(() => readCatalogPage(previous)).toThrow("Unsupported catalog response.");

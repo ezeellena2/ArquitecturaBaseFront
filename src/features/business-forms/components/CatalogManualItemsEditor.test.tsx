@@ -7,7 +7,7 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import { CatalogManualItemsEditor } from "./CatalogManualItemsEditor";
 
-const first: CatalogManualItemValue = { localId: "first", itemId: "saved-first", label: { es: "Pérez Hnos.", en: "" }, detail: { es: "Av. Colón 1234", en: null }, code: "C-001", isActive: true, position: 1 };
+const first: CatalogManualItemValue = { value: null, localId: "first", itemId: "saved-first", label: { es: "Pérez Hnos.", en: "" }, detail: { es: "Av. Colón 1234", en: null }, code: "C-001", isActive: true, position: 1 };
 const second: CatalogManualItemValue = { ...first, localId: "second", itemId: "saved-second", label: { es: "Ferretería Sur", en: "South hardware" }, code: "C-002", position: 2 };
 afterEach(async () => { cleanup(); await act(async () => { await i18n.changeLanguage("es"); }); });
 async function mount(culture: "es" | "en", canManage = true) {
@@ -15,7 +15,7 @@ async function mount(culture: "es" | "en", canManage = true) {
   function Host() {
     const [items, setItems] = useState([first, second]);
     const [expanded, setExpanded] = useState<string | null>(null);
-    return <CatalogManualItemsEditor items={items} culture={culture} canManage={canManage} expandedKey={expanded}
+    return <CatalogManualItemsEditor valueType="Text" items={items} culture={culture} canManage={canManage} expandedKey={expanded}
       onExpand={setExpanded} onChange={item => { onChange(item); setItems(current => current.map(row => row.localId === item.localId ? item : row)); }}
       onAdd={onAdd} onMove={vi.fn()} />;
   }
@@ -70,7 +70,7 @@ it("keeps an edited option outside the current page and returns focus to Add whe
   function Host() {
     const [editing, setEditing] = useState(first);
     const [expanded, setExpanded] = useState<string | null>(first.localId);
-    return <CatalogManualItemsEditor items={[second]} editingItems={[editing]} culture="en" canManage expandedKey={expanded} onExpand={setExpanded} onChange={item => { changed(item); setEditing(item); }} onAdd={() => undefined}/>;
+    return <CatalogManualItemsEditor valueType="Text" items={[second]} editingItems={[editing]} culture="en" canManage expandedKey={expanded} onExpand={setExpanded} onChange={item => { changed(item); setEditing(item); }} onAdd={() => undefined}/>;
   }
   await act(async () => { renderWithProviders(<Host/>); });
   const text = screen.getByRole("textbox", { name: "Texto" });
