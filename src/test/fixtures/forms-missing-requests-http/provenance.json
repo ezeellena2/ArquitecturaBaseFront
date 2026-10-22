@@ -1,12 +1,46 @@
 {
+  "generatedAtUtc": "2026-10-22T01:35:20.3604027Z",
+  "schemaVersion": 1,
+  "repositoryHead": "6732fa5da46b5a1f9d40fe049c7d9577fc0060f9",
+  "runId": "20261022-004502-e7394c4e320c48f38f599396d85ba3fe",
   "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "sourceState": [
-    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "length": 275,
+      "sha256": "213ec5a5be14406f1b45fe0745412b66a5c73b59a2faa25603f7b0a167cfe48c",
+      "name": "conflict.json"
+    },
+    {
+      "length": 571,
+      "sha256": "b678bf1acc08934579a325db1ad61a95653111be51713ce83a130fc81f8deaac",
+      "name": "discarded-en.json"
+    },
+    {
+      "length": 577,
+      "sha256": "28121f84a7c7dd59803c231ac52b130dff9dc4b7ccc751898a9d27d6dd960da2",
+      "name": "discarded-es.json"
+    },
+    {
+      "length": 249,
+      "sha256": "14ce4271a5a319453f7d9d5baf34b8b3b3d7b5c32b473db605a9583a3cfdebc8",
+      "name": "forbidden.json"
+    },
+    {
+      "length": 461,
+      "sha256": "4dc7d622f86b6e4f183569a18077fb12bc9dee3ffc37ff42ff3a137796e5ac92",
+      "name": "pending-en.json"
+    },
+    {
+      "length": 467,
+      "sha256": "e8dd768f5630932e8919e62c9c60fd70ca430fa5ccc97cbe81a9b693d2a4e001",
+      "name": "pending-es.json"
+    }
   ],
+  "sourceState": [
+    " M docs/reviews/2026-10-21-code-review-menu-y-detalle.md"
+  ],
+  "artifactSet": "missing-requests",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs",
@@ -21,42 +55,5 @@
       "sha256": "a8e3f9ee5e3b43894da1ea36e5cdae275c94b977b9c9ef18d013d5f42f38a84f"
     }
   ],
-  "schemaVersion": 1,
-  "captures": [
-    {
-      "sha256": "2818251057b745785184d5066846926d318dcb3dfe0eb1aa07c88ca800ab6f95",
-      "length": 275,
-      "name": "conflict.json"
-    },
-    {
-      "sha256": "b1102725eec7454efbd33ce259c45ea0f6a1dc6b7ec709835dc4d5809590ca44",
-      "length": 571,
-      "name": "discarded-en.json"
-    },
-    {
-      "sha256": "5f6e9d7e73c0489817d3098de75a1b71243ef3501be7d30ea20294ab5fc6c3f3",
-      "length": 577,
-      "name": "discarded-es.json"
-    },
-    {
-      "sha256": "5ab370e2b4b52a0c179bb9e9d6bf65db82523cb4e47d1a57d0ff0e0875950738",
-      "length": 249,
-      "name": "forbidden.json"
-    },
-    {
-      "sha256": "2b7462ca0612032c544a6f11b9c1f0308946a57a8321003e422e28d764babb91",
-      "length": 461,
-      "name": "pending-en.json"
-    },
-    {
-      "sha256": "77da3497568f8f3c8a1d7d5c0a6bab3474356419ab9f3005a8791db54dca0bf5",
-      "length": 467,
-      "name": "pending-es.json"
-    }
-  ],
-  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
-  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "missing-requests",
-  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

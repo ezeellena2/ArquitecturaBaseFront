@@ -1,49 +1,46 @@
 {
+  "generatedAtUtc": "2026-10-22T01:35:20.3604027Z",
+  "schemaVersion": 1,
+  "repositoryHead": "6732fa5da46b5a1f9d40fe049c7d9577fc0060f9",
+  "runId": "20261022-004502-e7394c4e320c48f38f599396d85ba3fe",
   "producer": "WhatsAppFormFilesIntegrationTests",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "sourceState": [
-    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "length": 1824,
+      "sha256": "ce4c7b8f0cfbfe983e591401409edbae305d04dc00a642c0af280edae829cb67",
+      "name": "draft-created.json"
+    },
+    {
+      "length": 2770,
+      "sha256": "8f0067b2789fd1ff9be33cdd9a8e72072adfde61a6ac3ffbece0db7221ca250b",
+      "name": "reply-completed.json"
+    },
+    {
+      "length": 1935,
+      "sha256": "32e49d58e06c52b709e97c90f44b75d8640034ae8c77959900e941eecedd0505",
+      "name": "reply-downloading.json"
+    },
+    {
+      "length": 2770,
+      "sha256": "8f0067b2789fd1ff9be33cdd9a8e72072adfde61a6ac3ffbece0db7221ca250b",
+      "name": "reply-reloaded.json"
+    },
+    {
+      "length": 1828,
+      "sha256": "cb1e6037ca1ff99f63e7a1f4ecabd72abb046df3e5e86ff104584bc5fd66cb28",
+      "name": "reply-without-read.json"
+    }
   ],
+  "sourceState": [
+    " M docs/reviews/2026-10-21-code-review-menu-y-detalle.md"
+  ],
+  "artifactSet": "form-files",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
       "sha256": "df96f8e62da7956ed455512ef0a1664d97101419f8fad8ff76e294adf6917e48"
     }
   ],
-  "schemaVersion": 1,
-  "captures": [
-    {
-      "sha256": "0eff5f434a09cae2c7f37705d87998cae478c5827c1789b26859512176c699df",
-      "length": 1824,
-      "name": "draft-created.json"
-    },
-    {
-      "sha256": "6cfd9a46367504a8d783ed4121c8b6f53d20c87a4dceae9d93fc1ba74a230460",
-      "length": 2770,
-      "name": "reply-completed.json"
-    },
-    {
-      "sha256": "de84dd5fcd2f8c34cc73de16d1cd628e6f7df55c7f1295ae428c8048cdc5f146",
-      "length": 1935,
-      "name": "reply-downloading.json"
-    },
-    {
-      "sha256": "6cfd9a46367504a8d783ed4121c8b6f53d20c87a4dceae9d93fc1ba74a230460",
-      "length": 2770,
-      "name": "reply-reloaded.json"
-    },
-    {
-      "sha256": "910b593ac078f057c12a82e807083cb295a7cf68d49a392bdbf438707d9a33f9",
-      "length": 1828,
-      "name": "reply-without-read.json"
-    }
-  ],
-  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
-  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "form-files",
-  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

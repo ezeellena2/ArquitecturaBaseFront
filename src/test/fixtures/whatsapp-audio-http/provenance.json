@@ -1,12 +1,31 @@
 {
+  "generatedAtUtc": "2026-10-22T01:35:20.3604027Z",
+  "schemaVersion": 1,
+  "repositoryHead": "6732fa5da46b5a1f9d40fe049c7d9577fc0060f9",
+  "runId": "20261022-004502-e7394c4e320c48f38f599396d85ba3fe",
   "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "sourceState": [
-    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "length": 53,
+      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
+      "name": "audio-request.json"
+    },
+    {
+      "length": 975,
+      "sha256": "58ae2e9f0a6a3e36e3d159c32c8061bb41ad6cdf48f9503573b0a078204f43b1",
+      "name": "audio-thread-completed.json"
+    },
+    {
+      "length": 933,
+      "sha256": "898de2298a1d75f462d1812b2bf749e08615362114dd031d3ed5695e45aa3e9d",
+      "name": "audio-thread-pending.json"
+    }
   ],
+  "sourceState": [
+    " M docs/reviews/2026-10-21-code-review-menu-y-detalle.md"
+  ],
+  "artifactSet": "whatsapp-audio",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs",
@@ -17,27 +36,5 @@
       "sha256": "c65bb2dc8f403bb0e4ce66b75aeb3f5a3558eef6d2b5b7bf1ba17f02e1a47348"
     }
   ],
-  "schemaVersion": 1,
-  "captures": [
-    {
-      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
-      "length": 53,
-      "name": "audio-request.json"
-    },
-    {
-      "sha256": "8957544cae0668ff38e919b1a3c3862373d04f798946ad71923fc4f1e1e483f8",
-      "length": 975,
-      "name": "audio-thread-completed.json"
-    },
-    {
-      "sha256": "bb9968900a12936c05263989cfe9c974f3f38b1d7af073d4d1b76bb840298fd7",
-      "length": 933,
-      "name": "audio-thread-pending.json"
-    }
-  ],
-  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
-  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "whatsapp-audio",
-  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

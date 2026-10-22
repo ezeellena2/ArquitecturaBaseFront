@@ -1,12 +1,26 @@
 {
+  "generatedAtUtc": "2026-10-22T01:35:20.3604027Z",
+  "schemaVersion": 1,
+  "repositoryHead": "6732fa5da46b5a1f9d40fe049c7d9577fc0060f9",
+  "runId": "20261022-004502-e7394c4e320c48f38f599396d85ba3fe",
   "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "sourceState": [
-    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "length": 2059,
+      "sha256": "fcfac5187dbf781c89918db6a1bc081be3b94e5a98ab31a6b359160311175dcf",
+      "name": "detail-en.json"
+    },
+    {
+      "length": 2063,
+      "sha256": "e280c9d65042e6286cc94abfa7986af0edd02c35a90ef3e84ff2943bac7d4819",
+      "name": "detail-es.json"
+    }
   ],
+  "sourceState": [
+    " M docs/reviews/2026-10-21-code-review-menu-y-detalle.md"
+  ],
+  "artifactSet": "suggestion-details",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs",
@@ -17,22 +31,5 @@
       "sha256": "380024a8f42df81af6bad91fa27ad7e1371bb951a8fd4d77ec0826f89d94f653"
     }
   ],
-  "schemaVersion": 1,
-  "captures": [
-    {
-      "sha256": "49aea04a1cb47e332d28e3cc21741f2b97e2e57ca6575d1cb2da5efe78f6137f",
-      "length": 2059,
-      "name": "detail-en.json"
-    },
-    {
-      "sha256": "2587caf0d93a1eaed786eb2e37d130b0ecfdf7362c4c5d9a5d848a2bf7a44e20",
-      "length": 2063,
-      "name": "detail-es.json"
-    }
-  ],
-  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
-  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "suggestion-details",
-  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

@@ -1,12 +1,166 @@
 {
+  "generatedAtUtc": "2026-10-22T01:35:20.3604027Z",
+  "schemaVersion": 1,
+  "repositoryHead": "6732fa5da46b5a1f9d40fe049c7d9577fc0060f9",
+  "runId": "20261022-004502-e7394c4e320c48f38f599396d85ba3fe",
   "producer": "FormDeactivationHttpTests and FormDeletionHttpTests and FormRetirementStatusHttpTests and FormLifecycleContractCapture and ControlledFormChannelStateSource and FormDraftEditingTests and FormDraftDurabilityTests and FormSuggestionHttpTests and FormPublicationAcceptanceTests and FormPublishedSelectionTests",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "sourceState": [
-    " M docs/plans/2026-10-21-catalogos-con-origenes-externos.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? docs/plans/formularios/catalogos-campos-extra.md"
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "captures": [
+    {
+      "length": 518,
+      "sha256": "4c4aedc828139f256da08e2f1d9775d96099ccf42d495273531a6b8aec88cd25",
+      "name": "en/deactivated.json"
+    },
+    {
+      "length": 266,
+      "sha256": "a7f8338c223a2d037ed3b9fff93515f2dd7bc8439c8e7a1652d7aa9d6d15e2ea",
+      "name": "en/delete-responses-conflict.json"
+    },
+    {
+      "length": 1861,
+      "sha256": "729c033e1c19abe85275efbbadebbcbe35cc538ac200e6551b879caf5c935ed7",
+      "name": "en/detail-deactivated.json"
+    },
+    {
+      "length": 1657,
+      "sha256": "4c275d0996bc58e23a34bb13b3dbacfaf6c7b119f537e165c7c32c795c58eff0",
+      "name": "en/detail-reactivated.json"
+    },
+    {
+      "length": 1757,
+      "sha256": "f74df31d27429720dbcbbbbe691a4f884b51adc9b346663526bfc866633ca75e",
+      "name": "en/detail-reactivation-pending.json"
+    },
+    {
+      "length": 53,
+      "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4",
+      "name": "en/facets.json"
+    },
+    {
+      "length": 896,
+      "sha256": "c0aa2d5c2fc6383854664d4e0371eabf8140466dc7671bb90c27d6642bd18ef7",
+      "name": "en/list-deactivated.json"
+    },
+    {
+      "length": 105435,
+      "sha256": "75625fb78e2206f9267251f671271e805f76a798051391aa8bc742233935183f",
+      "name": "en/options-deleted.json"
+    },
+    {
+      "length": 36476,
+      "sha256": "a4bd57309b9c3bf4c29a826dabf66d53b8d3b88d76dbe04768e86d67940b85da",
+      "name": "en/options-unavailable.json"
+    },
+    {
+      "length": 579,
+      "sha256": "e184ac3f9a2cc6936817dbc40e2e6b259be7788d415198185c308999086813d1",
+      "name": "en/preview-affected.json"
+    },
+    {
+      "length": 579,
+      "sha256": "6f81b90c6e787e8adedf9bf0ec2852dae2434377997f6048dd815387a8f50497",
+      "name": "en/preview.json"
+    },
+    {
+      "length": 1813,
+      "sha256": "dd955987633678c34082e9185cf0a5be22fa1791886741ddb87096ddc30eb340",
+      "name": "en/status-deprecated.json"
+    },
+    {
+      "length": 1799,
+      "sha256": "ffb9d8df37227f74262b838c93c13fa68f46b5a7b23776233a991fff72af943c",
+      "name": "en/status-needsattention.json"
+    },
+    {
+      "length": 1818,
+      "sha256": "7fbb505981388e8f792a28262ccb7815bf380039f4aa3df028559b1e1da722e0",
+      "name": "en/status-pending.json"
+    },
+    {
+      "length": 1794,
+      "sha256": "466c93fc9e430e09aac044e5d1fce4e8e4508f9ddeacfe7004fa0fc4dd45ba86",
+      "name": "en/status-uncertain.json"
+    },
+    {
+      "length": 518,
+      "sha256": "dfc4ada8e0f5e8fb41e45c2627c3ef3254fc93c528dd5a09de3117c52f086399",
+      "name": "es/deactivated.json"
+    },
+    {
+      "length": 276,
+      "sha256": "60ed3068f44d56e5ead6deccf17f7cf8e2e31469425591b8b5f60dde467719ed",
+      "name": "es/delete-responses-conflict.json"
+    },
+    {
+      "length": 1861,
+      "sha256": "8888e5a613b889c8e1f79bbfeb681d4af5f3ff7787cfbc14df7e8794a6f54d53",
+      "name": "es/detail-deactivated.json"
+    },
+    {
+      "length": 1657,
+      "sha256": "2d016e3102909121fb56e66a0bca8d4d2c468e69dda1ed3c8d241a1154948626",
+      "name": "es/detail-reactivated.json"
+    },
+    {
+      "length": 1757,
+      "sha256": "ae03d9527f661925484fc442d3497d10660fc68cbdf02fdd208ceea4abe5b48d",
+      "name": "es/detail-reactivation-pending.json"
+    },
+    {
+      "length": 53,
+      "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4",
+      "name": "es/facets.json"
+    },
+    {
+      "length": 896,
+      "sha256": "a871b00752295fdcb55e1650b688b9414aca2643afaa59027d8df131b410e144",
+      "name": "es/list-deactivated.json"
+    },
+    {
+      "length": 105435,
+      "sha256": "75625fb78e2206f9267251f671271e805f76a798051391aa8bc742233935183f",
+      "name": "es/options-deleted.json"
+    },
+    {
+      "length": 35555,
+      "sha256": "3c56c8486d7caf423e99af2562552ba235937776ad08facdce599acba6565d88",
+      "name": "es/options-unavailable.json"
+    },
+    {
+      "length": 579,
+      "sha256": "e184ac3f9a2cc6936817dbc40e2e6b259be7788d415198185c308999086813d1",
+      "name": "es/preview-affected.json"
+    },
+    {
+      "length": 579,
+      "sha256": "a6612122af71ddd1de6fca14585df03581d49b2f7ddc4e487672ddb308ec75c3",
+      "name": "es/preview.json"
+    },
+    {
+      "length": 1813,
+      "sha256": "e599d9ea7438b25bc0d57a609ce417c151c7cdb8b3339b1ea492df5eb5eaa8c5",
+      "name": "es/status-deprecated.json"
+    },
+    {
+      "length": 1799,
+      "sha256": "222f0bd02e106b096935936c2f4a55e186a6824eeb7aba75bce8253b572b870c",
+      "name": "es/status-needsattention.json"
+    },
+    {
+      "length": 1818,
+      "sha256": "6336bcff1a2ce2d1990cf2ee455d54a3326730afe347e5b95ba8c0180a15b37a",
+      "name": "es/status-pending.json"
+    },
+    {
+      "length": 1794,
+      "sha256": "c6243c430277340ffd95aadc82ab78c78cbd81588ecceaa3bb6273f6410f7ac1",
+      "name": "es/status-uncertain.json"
+    }
   ],
+  "sourceState": [
+    " M docs/reviews/2026-10-21-code-review-menu-y-detalle.md"
+  ],
+  "artifactSet": "lifecycle",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDeactivationHttpTests.cs",
@@ -49,162 +203,5 @@
       "sha256": "70988d62379b7391199af36cd4bfbaddab9d6d5a70ea1b7ede9b592e7bab4953"
     }
   ],
-  "schemaVersion": 1,
-  "captures": [
-    {
-      "sha256": "f0fa3a4245f9db81a53b4da06a7f84806cc110ba9a16d90545863fe565c6a1b2",
-      "length": 518,
-      "name": "en/deactivated.json"
-    },
-    {
-      "sha256": "9ec8a9d11ddffc9687252ac46a2c26ae58c22366745b88969a97d45204d25d6f",
-      "length": 266,
-      "name": "en/delete-responses-conflict.json"
-    },
-    {
-      "sha256": "012649aa0ff445a0e36aae3244c36ce50208ac27e79110a6c8480518b71e23a4",
-      "length": 1861,
-      "name": "en/detail-deactivated.json"
-    },
-    {
-      "sha256": "621499a33e7ecc38155cb446b18e388719f0c4fd3c8535452b557987f8d5142c",
-      "length": 1657,
-      "name": "en/detail-reactivated.json"
-    },
-    {
-      "sha256": "c45c897215a00cae63805bd2e61370a4c3e571909d8d64c5216852dfdd3c5f7f",
-      "length": 1757,
-      "name": "en/detail-reactivation-pending.json"
-    },
-    {
-      "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4",
-      "length": 53,
-      "name": "en/facets.json"
-    },
-    {
-      "sha256": "5a5752a62aa4129b239f0d967f003df58aabcaaf3d126270a883b8bc1efba5f8",
-      "length": 896,
-      "name": "en/list-deactivated.json"
-    },
-    {
-      "sha256": "f0b09a7b88decf354d8b4b4874f861a8797461217e640436a998f22c4d19522e",
-      "length": 97619,
-      "name": "en/options-deleted.json"
-    },
-    {
-      "sha256": "c750ce17d8dff56ac3b53750a49bedc3b108278e4106730326029333c0aeeae4",
-      "length": 33336,
-      "name": "en/options-unavailable.json"
-    },
-    {
-      "sha256": "2dfbdb333d498bdf060fde04b01b7fd14aab05c7bddb7ba8ecb600a96602937d",
-      "length": 579,
-      "name": "en/preview-affected.json"
-    },
-    {
-      "sha256": "a3ce800286f90632b12ff63c2b304a8abffc388cfce63f48c3fbbd3b37695e05",
-      "length": 579,
-      "name": "en/preview.json"
-    },
-    {
-      "sha256": "585dc19357068d11a301b3b42220fef6e4defc8380b37b8113e3af343748a239",
-      "length": 1813,
-      "name": "en/status-deprecated.json"
-    },
-    {
-      "sha256": "4b1037bedfc7f4d13f8a4cd4206ae420c64ec8ef5d3db87dd52a86bd5d0c2f8f",
-      "length": 1799,
-      "name": "en/status-needsattention.json"
-    },
-    {
-      "sha256": "21f7e3a3e70a4e1df1db03dc92d07b59a6760a102f5895f64cfdc2f591523e35",
-      "length": 1818,
-      "name": "en/status-pending.json"
-    },
-    {
-      "sha256": "e77a28988a9b49382858c9cec40a1d9b5c5d9fd7656a699a3143992d6e6bb1dc",
-      "length": 1794,
-      "name": "en/status-uncertain.json"
-    },
-    {
-      "sha256": "4bb960f07cb67d90fcae49075ba5ec001fc10f40cf6047ffa19379b3fb1872eb",
-      "length": 518,
-      "name": "es/deactivated.json"
-    },
-    {
-      "sha256": "df0ec5f619ebfae32e3a1b2094029e1ee522d492600cb34e5499a5eed44bf640",
-      "length": 276,
-      "name": "es/delete-responses-conflict.json"
-    },
-    {
-      "sha256": "dbff5c06ce0633b80676480947a2b975dee5182d1562d5435f35bcd94da3587e",
-      "length": 1861,
-      "name": "es/detail-deactivated.json"
-    },
-    {
-      "sha256": "9fe2e7e1db9d09298405207220a6c61dc930b48dcda7476fcc3e4f9be8189c7a",
-      "length": 1657,
-      "name": "es/detail-reactivated.json"
-    },
-    {
-      "sha256": "453c6b765ec3a6435df0f6ca4fd8a811069a81eac91d2db566941d674a3899fb",
-      "length": 1757,
-      "name": "es/detail-reactivation-pending.json"
-    },
-    {
-      "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4",
-      "length": 53,
-      "name": "es/facets.json"
-    },
-    {
-      "sha256": "6e79a3aeee294170440528cd68e58f8396d39b45ff2324e44b56195a3346dadc",
-      "length": 896,
-      "name": "es/list-deactivated.json"
-    },
-    {
-      "sha256": "f0b09a7b88decf354d8b4b4874f861a8797461217e640436a998f22c4d19522e",
-      "length": 97619,
-      "name": "es/options-deleted.json"
-    },
-    {
-      "sha256": "0051f16fba79ae505d40c2716e164b64c99115be7972dbf73faa6b89a52f92b8",
-      "length": 32415,
-      "name": "es/options-unavailable.json"
-    },
-    {
-      "sha256": "2dfbdb333d498bdf060fde04b01b7fd14aab05c7bddb7ba8ecb600a96602937d",
-      "length": 579,
-      "name": "es/preview-affected.json"
-    },
-    {
-      "sha256": "8d29970d8fc41802c4d5154d453eee3cbba90f5766418f15ad5c18269e9f671c",
-      "length": 579,
-      "name": "es/preview.json"
-    },
-    {
-      "sha256": "ce9aae61508c6ccb96292c35738ded1ea1bb0d1fd2ecdef184e4fe9491fca1e7",
-      "length": 1813,
-      "name": "es/status-deprecated.json"
-    },
-    {
-      "sha256": "15af371312ddf113f3a35ad3a9c60c12578ebfd550a424a33d481cb9fba45646",
-      "length": 1799,
-      "name": "es/status-needsattention.json"
-    },
-    {
-      "sha256": "07beb2504e63a1c85c304d5d4daa95f9b52f35c774cb2d6ede8f2f97f91e836a",
-      "length": 1818,
-      "name": "es/status-pending.json"
-    },
-    {
-      "sha256": "218ea37a7be5d0cb51a48a4479620cf0fb5e450c8ea76d0d09c763bcf98e91de",
-      "length": 1794,
-      "name": "es/status-uncertain.json"
-    }
-  ],
-  "runId": "20261021-215429-cdff15e2b5e048b98305bf815bd9a2e5",
-  "repositoryHead": "64303a4b31c4fb99a5722972ab63116c93570e04",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "lifecycle",
-  "generatedAtUtc": "2026-10-21T22:48:18.1381117Z"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }
