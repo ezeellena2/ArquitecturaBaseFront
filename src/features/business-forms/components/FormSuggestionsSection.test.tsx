@@ -59,3 +59,23 @@ it.each(["Deactivated", "Deleted"] as const)("keeps a %s target named and remova
  await userEvent.click(screen.getByRole("button",{name:"Agregar sugerencia"}));
  expect(within(screen.getByRole("combobox",{name:"Formulario a sugerir"})).queryByRole("option",{name:"Facturar entrega"})).not.toBeInTheDocument();
 });
+
+
+it("clears a condition value after changing its question and focuses the surviving condition when removed", async () => {
+  setup(); const textId = crypto.randomUUID();
+  server.use(http.get("/api/forms/definitions/:id/suggestions/options", () => HttpResponse.json({ source: { ...source, questions: [...source.questions, question(textId, "Notas")] }, destinations: [destination], unavailableDestinations: [], conditionChoices: {} })));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>); await add();
+  await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "gte");
+  await userEvent.type(screen.getByRole("textbox", { name: "Valor" }), "12");
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), textId);
+  expect(screen.getByRole("combobox", { name: "Condición" })).toHaveValue("answered");
+  expect(screen.queryByRole("textbox", { name: "Valor" })).not.toBeInTheDocument();
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "contains");
+  expect(screen.getByRole("textbox", { name: "Valor" })).toHaveValue("");
+  await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
+  await userEvent.click(screen.getByRole("button", { name: "Quitar condición 1" }));
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "Pregunta" })).toHaveFocus());
+  await userEvent.click(screen.getByRole("button", { name: "Quitar condición 1" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Agregar condición" })).toHaveFocus());
+});

@@ -357,3 +357,26 @@ it("explains an in-flight save and its server cooldown once without discarding t
   expect(screen.getAllByText(/Esperá [0-9]+ segundos para volver a intentar./)).toHaveLength(1);
   expect(screen.getByRole("textbox",{name:"Mensaje"})).toHaveValue("Mensaje guardado propio");
 });
+
+
+it("clears the previous condition values when changing its question and saves only the new condition", async () => {
+  setup(); const decimalId = crypto.randomUUID(); const textId = crypto.randomUUID();
+  serveRules([{ ...storedRule(), conditions: [{ fieldId: decimalId, operator: "gte", values: ["12"] }] }]);
+  server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [
+    { fieldId: decimalId, key: "field_" + decimalId.replaceAll("-", ""), type: "decimal", label: { es: "Importe" }, help: null, required: false, maxLength: null, options: null },
+    { fieldId: textId, key: "field_" + textId.replaceAll("-", ""), type: "shortText", label: { es: "Notas" }, help: null, required: false, maxLength: 80, options: null },
+  ], conditionChoices: {}, roles: [] })));
+  const writes = vi.fn();
+  server.use(http.post("/api/forms/definitions/:id/rules", async ({ request }) => { const body = await request.json() as { rules: FormRule[] }; writes(body); return HttpResponse.json({ ...initial(), id: actor, revision: 2, rules: body.rules, createdAtUtc: "2026-10-17T12:00:00Z" }); }));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  expect(screen.getByRole("textbox", { name: "Valor" })).toHaveValue("12");
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), textId);
+  expect(screen.getByRole("combobox", { name: "Condición" })).toHaveValue("answered");
+  expect(screen.queryByRole("textbox", { name: "Valor" })).not.toBeInTheDocument();
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "contains");
+  expect(screen.getByRole("textbox", { name: "Valor" })).toHaveValue("");
+  await userEvent.type(screen.getByRole("textbox", { name: "Valor" }), "nueva nota");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await waitFor(() => expect(writes).toHaveBeenCalledWith(expect.objectContaining({ rules: [expect.objectContaining({ conditions: [{ fieldId: textId, operator: "contains", values: ["nueva nota"] }] })] })));
+});

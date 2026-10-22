@@ -1,3 +1,4 @@
+import { FormConditionsEditor } from "./FormConditionsEditor";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
@@ -13,9 +14,7 @@ import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
-import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
-import { MultiSelect } from "@/shared/ui/MultiSelect";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Pagination } from "@/shared/ui/Pagination";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -28,7 +27,7 @@ import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hoo
 import { localizedValue, moveItem } from "../editorModel";
 import { newRule, newRuleAction, clearUnavailablePdfAttachments, prepareRules, ruleFieldErrors, ruleActionKinds, ruleEvents, type FormRule, type RuleActionKind } from "../rules";
 import type { FormCulture } from "../model";
-import { responseFilterLabels, type ResponseColumn, type ResponseCondition } from "../responses";
+import { responseFilterLabels, type ResponseColumn } from "../responses";
 interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; scope: FormReadScope; contentCulture: FormCulture; onDirtyChange: (dirty: boolean) => void }
 export function FormRulesSection(props: Props) {
   const { t } = useTranslation("forms");
@@ -124,7 +123,6 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
     setCurrent(null); setNeedsReview(false); setError(null);
     pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save");
   };
-  const label = (fieldId: string) => columns.find(column => column.fieldId === fieldId)?.label ?? t("rules.missingQuestion");
   const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, contentCulture, options.originalCulture) : ""}</li>)}</ol></>;
   return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
     <Surface title={t("rules.title")} actions={<>{dirty ? <Badge variant="outline">{t("dirty")}</Badge> : <span className="text-xs">{t("rules.revision", { revision: baseline.revision })}</span>}<Button aria-describedby={saveReason ? saveHintId : undefined} disabled={!!saveReason} onClick={() => void run("save", async signal => {
@@ -145,19 +143,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
         </div></div>
         {expanded === rule.id ? <div className="mt-3 space-y-5">
           <FormField label={t("rules.when")}><NativeSelect disabled={blocked} value={rule.event} onChange={event => changeRule(index, clearUnavailablePdfAttachments({ ...rule, event: event.target.value as FormRule["event"] }))}>{ruleEvents.map(event => <option key={event} value={event}>{t("rules.events." + event)}</option>)}</NativeSelect></FormField>
-          <div className="space-y-3"><h3 className="text-sm font-medium">{t("rules.ifOptional")}</h3>{rule.conditions.map((condition, conditionIndex) => {
-            const field = options.questions.find(item => item.fieldId === condition.fieldId);
-            const operators = ["answered", "unanswered", "notAsked", ...(field?.type === "decimal" || field?.type === "date" ? ["equals", "gte", "lte"] : field?.type === "shortText" || field?.type === "longText" ? ["contains", "equals"] : field?.type === "boolean" || field?.type === "choice" && columns.find(column => column.fieldId === field.fieldId)?.options.length ? ["in"] : [])];
-            const updateCondition = (value: ResponseCondition) => changeRule(index, { ...rule, conditions: rule.conditions.map((item, position) => position === conditionIndex ? value : item) });
-            const presence = ["answered", "unanswered", "notAsked"].includes(condition.operator);
-            return <div key={conditionIndex} className="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-              <FormField label={t("rules.question")}><NativeSelect data-condition-position={conditionIndex} disabled={blocked} value={condition.fieldId} onChange={event => updateCondition({ fieldId: event.target.value, operator: "answered", values: [] })}>{options.questions.map(question => <option key={question.fieldId} value={question.fieldId}>{label(question.fieldId)}</option>)}</NativeSelect></FormField>
-              <FormField label={t("rules.operator")}><NativeSelect disabled={blocked} value={condition.operator} onChange={event => updateCondition({ ...condition, operator: event.target.value, values: ["answered", "unanswered", "notAsked"].includes(event.target.value) || field?.type === "choice" ? [] : [field?.type === "boolean" ? "true" : ""] })}>{operators.map(operator => <option key={operator} value={operator}>{t("rules.operators." + operator)}</option>)}</NativeSelect></FormField>
-              {!presence ? <FormField label={t("rules.value")}>{field?.type === "boolean" ? <NativeSelect disabled={blocked} value={condition.values?.[0] ?? ""} onChange={event => updateCondition({ ...condition, values: [event.target.value] })}><option value="true">{t("responses.yes")}</option><option value="false">{t("responses.no")}</option></NativeSelect> : field?.type === "choice" ? <MultiSelect disabled={blocked} value={condition.values ?? []} onChange={values => updateCondition({ ...condition, values })} placeholder={t("rules.chooseValues")} options={(columns.find(column => column.fieldId === field.fieldId)?.options ?? []).map(option => ({ value: option.id, label: option.label }))}/> : <Input disabled={blocked} type={field?.type === "date" ? "date" : "text"} inputMode={field?.type === "decimal" ? "decimal" : undefined} value={condition.values?.[0] ?? ""} onChange={event => updateCondition({ ...condition, values: [event.target.value] })} />}</FormField> : <span />}
-              <IconButton className="sm:mt-6" label={t("rules.removeCondition", { number: conditionIndex + 1 })} disabled={blocked} onClick={() => { const nextPosition = Math.min(conditionIndex, rule.conditions.length - 2); pendingFocus.current = { selector: nextPosition >= 0 ? '[data-rule-id="' + rule.id + '"] [data-condition-position="' + nextPosition + '"]' : '[data-add-condition="' + rule.id + '"]' }; changeRule(index, { ...rule, conditions: rule.conditions.filter((_, position) => position !== conditionIndex) }); }}><TrashIcon className="size-4" /></IconButton>
-            </div>;
-          })}{fieldError("rules." + index + ".conditions") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{fieldError("rules." + index + ".conditions")}</p> : null}
-          <p className="text-xs text-[var(--color-content-muted)]">{t("rules.always")}</p><Button data-add-condition={rule.id} variant="outline" disabled={blocked || !options.questions.length || rule.conditions.length >= 10} onClick={() => changeRule(index, { ...rule, conditions: [...rule.conditions, { fieldId: options.questions[0].fieldId, operator: "answered", values: [] }] })}>{t("rules.addCondition")}</Button></div>
+          <FormConditionsEditor heading={t("rules.ifOptional")} conditions={rule.conditions} columns={columns} blocked={blocked} error={fieldError("rules." + index + ".conditions")} onChange={conditions => changeRule(index, { ...rule, conditions })}/>
           <div className="space-y-3"><h3 className="text-sm font-medium">{t("rules.doInOrder")}</h3>{rule.actions.map((action, actionIndex) => {
             const actionPath = "rules." + index + ".actions." + actionIndex;
             return <Surface key={action.id} padded>
