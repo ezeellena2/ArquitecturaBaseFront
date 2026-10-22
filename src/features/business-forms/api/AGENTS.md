@@ -9,7 +9,7 @@ Familias:
 - Tabla MF1: `overview.ts` consume `/api/forms/overview`, con página y facetas hermanas. Los contadores privados son nullable requeridos: null no se convierte en cero ni habilita columnas. El guard es estricto también en cada fila, última respuesta y facetas; no conserva los issues ni su contenido al rechazar.
 - Planilla y detalle de respuestas: `responses.ts` (búsqueda POST, anclaje de vecinos por RecordId, detalle y conteos por filtro).
 - Reglas y PDF: `rules.ts` (configuración, opciones, revisiones) y `pdf.ts` (diseño, vista previa y copias fijas en bytes).
-- Workflow y aprobaciones: `workflow.ts` (estado, consultar, reintentar, revisar un destinatario) y `approvals.ts` (tareas por formulario, cantidad, tarea y decisión).
+- Workflow y aprobaciones: `workflow.ts` (estado, consultar, reintentar, revisar un destinatario) y `approvals.ts` (tareas por formulario, cantidad, tarea, continuación anclada y decisión).
 - Sugerencias y formularios que faltan: `suggestions.ts` y `missingRequests.ts`.
 
 ## Al modificar
@@ -38,6 +38,7 @@ Familias:
 ### Respuestas, reglas, PDF, workflow y faltantes
 
 - La planilla valida que cada fila tenga una celda por columna con su tipo y una versión declarada; la celda distingue NotAsked, Unanswered y Answered. El anclaje de navegación usa POST sobre la respuesta y el mismo cuerpo de búsqueda: devuelve sólo sus vecinos, posición desde uno y total del conjunto, con guard estricto que exige límites coherentes e identidad esperada. No busca páginas de valores ni agrega filtros privados a la URL.
+- La continuación de pendientes usa GET por TaskId con DefinitionId, dirección y tamaño del lote. El cliente exige identidades coincidentes, tareas Open autorizadas del mismo formulario, posiciones actuales consecutivas y límites coherentes; conserva Previous en orden ascendente. Es metadata privada con no-store y cancelación, sin respuestas ni escritura en MutationCache.
 - Cada documento del workflow exige `runId`, el identificador persistido de la acción que lo generó. La historia relaciona por esa identidad; no se reconstruye el origen por fecha, idioma ni posición. Los escenarios sintéticos lo declaran y las capturas HTTP sólo se renuevan con el export del productor.
 - Los bytes de PDF exigen `application/pdf` y `Content-Language` es o en, que indica el idioma real de la copia.
 - Reglas y sugerencias comparten la gramática de condiciones de la planilla y validan las preguntas con `canonicalFormFieldSchema`. `rules/options` trae preguntas, roles y opciones de condición bajo `formrules.manage`, sin exigir leer roles, catálogos ni respuestas. Las opciones de sugerencias son versiones publicadas: `destinations` son los destinos elegibles y `unavailableDestinations` conserva nombre y estado de los dados de baja o eliminados.
