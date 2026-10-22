@@ -767,6 +767,11 @@ describe("response sheet", () => {
     const path = `/formularios/${responseFormId}/respuestas`;
     const { router } = renderRouteWithProviders(path + initialSearch);
     const firstRow = await screen.findByRole("link", { name: "TEST-000002" });
+    await waitFor(() => {
+      const linkedLocation = new URL(firstRow.getAttribute("href") ?? "", window.location.href);
+      expect(linkedLocation.searchParams.get("pageSize")).toBe("20");
+      expect(linkedLocation.search).toBe(router.state.location.search);
+    });
     const capturedSearch = router.state.location.search;
     if (initialSearch) expect(capturedSearch).toBe(initialSearch);
     await userEvent.click(firstRow);
