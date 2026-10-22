@@ -63,3 +63,22 @@ describe("Chosen manual catalog editor K3", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+
+it("keeps an edited option outside the current page and returns focus to Add when it is collapsed", async () => {
+  const changed = vi.fn();
+  function Host() {
+    const [editing, setEditing] = useState(first);
+    const [expanded, setExpanded] = useState<string | null>(first.localId);
+    return <CatalogManualItemsEditor items={[second]} editingItems={[editing]} culture="en" canManage expandedKey={expanded} onExpand={setExpanded} onChange={item => { changed(item); setEditing(item); }} onAdd={() => undefined}/>;
+  }
+  await act(async () => { renderWithProviders(<Host/>); });
+  const text = screen.getByRole("textbox", { name: "Texto" });
+  await waitFor(() => expect(text).toHaveFocus());
+  await userEvent.type(text, "Historical branch");
+  expect(changed).toHaveBeenLastCalledWith({ ...first, label: { es: first.label.es, en: "Historical branch" } });
+  expect(screen.getByText("South hardware")).toBeVisible();
+  await userEvent.click(screen.getByRole("button", { name: "Listo" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Agregar opción" })).toHaveFocus());
+  expect(screen.queryByRole("textbox", { name: "Texto" })).not.toBeInTheDocument();
+});
