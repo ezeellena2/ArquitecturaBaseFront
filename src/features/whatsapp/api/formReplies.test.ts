@@ -87,3 +87,17 @@ it("accepts a safe inactive-item notice without any answer values", async () => 
 });
 
 it("redacts form action text and captions before caching a thread without answer permission",async()=>{server.use(http.get("/api/whatsapp/chats/"+id+"/messages",()=>HttpResponse.json({ assistantSuggestion: null, assistantAvailability: { state: "notInstalled" },canReadFormRecords:false,contact:{id,profileName:"Recipient",phoneNumber:null,mode:"Manual",modeRevision:1,lastInboundAtUtc:"2026-10-16T12:00:00Z",lastInboundSequence:1,unreadCount:0,preview:"Acción del formulario"},messages:[{ audio: null, quickReplies: null, assistant: null,id,direction:"Outbound",kind:"Document",origin:"FormAction",operatorUserId:null,body:"private PDF caption",occurredAtUtc:"2026-10-16T12:00:00Z",inboundSequence:0,status:"Delivered",errorCode:null}],outgoing:[{ quickReplies: null, assistant: null,id,requestId:id,operatorUserId:null,origin:"FormAction",kind:"Text",body:"private pending text",requestedAtUtc:"2026-10-16T12:00:00Z",state:"Uncertain",waMessageId:null}],beforeAtUtc:null,beforeId:null})));const result=await getThread(id);expect(result.messages[0].body).toBeNull();expect(result.outgoing[0].body).toBeNull();expect(JSON.stringify(result)).not.toContain("private");});
+
+it.each(["Integer", "Decimal", "Date"])("retains the sealed %s catalog pair in a permitted historical reply", async valueType => {
+  const value = valueType === "Date" ? "2026-10-22" : "1500";
+  const rows = [{ fieldId: id, key: "zone", type: "choice", label: "Zone", value: { choiceId: otherId, label: "Captured label", catalogId: id, catalogName: "Captured catalog", value, valueType } }];
+  install(completed(rows));
+  expect((await getThread(id)).messages[0].formReply).toEqual(completed(rows));
+});
+it.each([{ value: "1500" }, { valueType: "Decimal" }, { value: "1500", valueType: "Text" }, { value: null, valueType: "Decimal" }, { value: "1500", valueType: "Boolean" }])("rejects an incomplete or unknown sealed catalog pair without retaining values %#", async pair => {
+  const rows = [{ fieldId: id, key: "zone", type: "choice", label: "Zone", value: { choiceId: otherId, label: "private label", catalogId: id, catalogName: "Catalog", ...pair } }];
+  install(completed(rows));
+  expect((await getThread(id)).messages[0].formReply).toBeNull();
+  install(completed(rows), false);
+  expect((await getThread(id)).messages[0].formReply).toEqual(completed(null));
+});

@@ -24,8 +24,8 @@ const value = z.discriminatedUnion('type', [
   z.strictObject({ ...field, type: z.literal('decimal'), value: decimal.nullable() }),
   z.strictObject({ ...field, type: z.literal('date'), value: date.nullable() }),
   z.strictObject({ ...field, type: z.literal('boolean'), value: z.boolean().nullable() }),
-  z.strictObject({ ...field, type: z.literal('choice'), value: z.strictObject({ choiceId: guid, label: text, catalogId:guid.optional(), catalogName:text.optional(), detail:z.string().nullable().optional() })
-    .refine(value=>(value.catalogId===undefined)===(value.catalogName===undefined) && (value.detail===undefined||value.catalogId!==undefined)).nullable() }),
+  z.strictObject({ ...field, type: z.literal('choice'), value: z.strictObject({ choiceId: guid, label: text, catalogId:guid.optional(), catalogName:text.optional(), detail:z.string().nullable().optional(), value: z.string().min(1).max(64).optional(), valueType: z.enum(["Integer", "Decimal", "Date"]).optional() })
+    .refine(value=>(value.catalogId===undefined)===(value.catalogName===undefined) && (value.detail===undefined||value.catalogId!==undefined) && (value.value===undefined)===(value.valueType===undefined)).nullable() }),
 ]);
 const values = z.array(value).refine(rows => new Set(rows.map(row => row.fieldId)).size === rows.length && new Set(rows.map(row => row.key)).size === rows.length);
 const fileMetadata = { fileCount:z.number().int().nonnegative().optional(), receivedAtUtc:z.iso.datetime().optional() };

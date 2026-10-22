@@ -5,7 +5,7 @@ import { buildTimeline } from './timeline';
 
 const completed: FormReply = { state: 'Completed', definitionId: 'historical-definition', versionId: 'historical-version', versionNumber: 1,
   name: 'Historical English form', recordId: 'record-a', number: 'VIS-000024', values: [
-    { fieldId: 'old-choice', key: 'client', type: 'choice', label: 'Historical client', value: { choiceId: 'retired-choice', label: 'Retired English choice' } },
+    { fieldId: 'old-choice', key: 'client', type: 'choice', label: 'Historical client', value: { choiceId: 'retired-choice', label: 'Retired English choice', valueType: "Decimal", value: "9007199254740993.0123" } },
     { fieldId: 'bool', key: 'confirmed', type: 'boolean', label: 'Confirmed?', value: false },
     { fieldId: 'zero', key: 'returned', type: 'decimal', label: 'Returned', value: '0' },
     { fieldId: 'none', key: 'optional', type: 'shortText', label: 'Optional', value: null },
@@ -41,4 +41,10 @@ describe('historical form reply timeline adapter', () => {
     expect(presentation(message(completed, 'Text'))).toBeNull();
     expect(presentation(message(completed, 'FlowReply', 'Access'))).toBeNull();
   });
+});
+
+it("keeps the sealed catalog scalar out of the chat presentation while preserving its historical label", () => {
+  const result = presentation(message(completed));
+  expect(JSON.stringify(result)).toContain("Retired English choice");
+  expect(JSON.stringify(result)).not.toContain("9007199254740993.0123");
 });
