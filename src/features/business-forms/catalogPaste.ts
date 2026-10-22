@@ -17,7 +17,7 @@ export function parseCatalogPaste(text: string): CatalogPaste {
     if (character === "\t") cell();
     else if (character === "\r" || character === "\n") { if (character === "\r" && text[index + 1] === "\n") index++; line(); }
     else if (character === '"' && state === "start") state = "quoted";
-    else { if (state === "closed" || character === '"') return { valid: false, reason: "format" }; field += character; state = "plain"; }
+    else { if (state === "closed") return { valid: false, reason: "format" }; field += character; state = "plain"; }
     if (row.length > 64 || rows.length > 10002) return { valid: false, reason: "limit" };
   }
   if (state === "quoted") return { valid: false, reason: "format" };

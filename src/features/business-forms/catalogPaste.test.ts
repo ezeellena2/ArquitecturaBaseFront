@@ -11,3 +11,10 @@ it("rejects broken quoting and excessive columns without inventing rows", () => 
   expect(parseCatalogPaste('Code\tText\nA\t"open')).toEqual({ valid: false, reason: "format" });
   expect(parseCatalogPaste(Array.from({ length: 65 }, () => "Header").join("\t"))).toEqual({ valid: false, reason: "limit" });
 });
+
+it.each([
+  ['Caño 1/2"', '"Code","Text"\r\n"A","Caño 1/2"""'],
+  ['Codo "T"', '"Code","Text"\r\n"A","Codo ""T"""'],
+])("preserves literal quotes inside the unquoted pasted cell %s", (text, csv) => {
+  expect(parseCatalogPaste("Code\tText\nA\t" + text)).toEqual({ valid: true, csv, rowCount: 1, columnCount: 2 });
+});
