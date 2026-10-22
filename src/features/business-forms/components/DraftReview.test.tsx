@@ -83,3 +83,19 @@ it("names catalog questions consistently when reviewing a source replacement", a
   expect(within(screen.getByRole("dialog")).queryAllByText(/Elegir de un catálogo/)).toHaveLength(2);
   await waitFor(()=>expect(screen.getAllByText("· "+catalog.name.es)).toHaveLength(2));
 });
+
+it("names a multi-choice translation with the label of the selected display culture", async () => {
+  const own = definition.draft.fields[0];
+  if (own.type !== "choice" || own.source) throw new Error("Expected authored choices");
+  const current: FormDefinitionSnapshot = { ...definition, draft: { ...definition.draft, fields: [{
+    ...own, type: "multiChoice", selection: { minSelected: 1, maxSelected: 3 }, label: { es: "Cliente", en: "Customer" },
+    options: own.options.map(option => ({ ...option, label: { ...option.label, en: option.choiceId === "north" ? "North" : "South" } })),
+  }] } };
+  const opened = openDraftSession({ actorId: "actor", editorId: "editor" }, current).value;
+  const mine = { ...opened, draft: { ...opened.draft, fields: opened.draft.fields.map(question =>
+    question.type === "multiChoice" && !question.source ? { ...question, options: question.options.map(option =>
+      option.choiceId === "north" ? { ...option, label: { ...option.label, es: "Mi Norte" } } : option) } : question) } };
+  await act(async () => { renderWithProviders(<DraftReview value={mine} definition={current} culture="en"
+    open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
+  expect(within(screen.getByRole("dialog")).getByRole("cell", { name: "Customer · Opción: North · Español" })).toBeInTheDocument();
+});

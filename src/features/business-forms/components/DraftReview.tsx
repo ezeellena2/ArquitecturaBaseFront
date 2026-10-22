@@ -74,7 +74,7 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
       const questionLabel = question ? localizedValue(question.label, culture, value.draft.culture) : t("question");
       if (row.kind === "optionOrder") return t("reviewOptionOrder", { question: questionLabel });
       const item = (row.mine ?? row.current) as DraftChoice | string | null;
-      const option = question?.type === "choice" && !question.source ? question.options.find(o => (o.choiceId ?? `new:${o.localId}`) === row.optionId) : undefined;
+      const option = (question?.type === "choice" || question?.type === "multiChoice") && !question.source ? question.options.find(o => (o.choiceId ?? `new:${o.localId}`) === row.optionId) : undefined;
       const optionLabel = option ? localizedValue(option.label, culture, value.draft.culture) : typeof item === "string" ? item : item ? localizedValue(item.label, culture, value.draft.culture) : "";
       return t("reviewOption", { question: questionLabel, option: optionLabel || t("translationPending") });
     }
