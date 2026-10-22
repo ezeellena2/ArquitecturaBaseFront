@@ -13,7 +13,7 @@ async function contained(page: Page, width: number) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
 }
 async function importAction(page: Page, en: boolean, width: number, source: "file" | "paste") {
-  const name = source === "file" ? en ? "Import" : "Importar" : en ? "Paste from Excel" : "Pegar de Excel";
+  const name = source === "file" ? en ? "Import" : "Importar" : en ? "Paste from Excel" : "Pegar desde Excel";
   if (width < 640) {
     await page.getByRole("button", { name: en ? "More option actions" : "Más acciones de opciones", exact: true }).click();
     await page.getByRole("menuitem", { name, exact: true }).click();

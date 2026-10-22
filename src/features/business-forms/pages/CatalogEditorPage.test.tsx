@@ -443,14 +443,14 @@ it("applies an explicitly reviewed paste and adopts the returned clean baseline 
  setup();const base=catalogImportPreviewFixture();const check=vi.spyOn(catalogImports,"previewCatalogImport").mockResolvedValue({...base,revision:1,mode:"Append",counts:{...base.counts,errorRows:0,deactivated:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});
  const apply=vi.spyOn(catalogImports,"applyCatalogImport").mockResolvedValue({catalog:{...initial,kind:"Manual",revision:2},itemIdentityMap:{}});
  await mount("/catalogos/"+id);const user=userEvent.setup();
- await user.click(await screen.findByRole("button",{name:"Pegar de Excel"}));
+ await user.click(await screen.findByRole("button",{name:"Pegar desde Excel"}));
  await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
  await user.click(screen.getByRole("button",{name:"Revisar"}));
  expect(await screen.findByRole("button",{name:"Aplicar"})).toBeEnabled();expect(apply).not.toHaveBeenCalled();
  await user.click(screen.getByRole("button",{name:"Aplicar"}));
  await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(apply).toHaveBeenCalledOnce();expect(check).toHaveBeenCalledOnce();
  expect(screen.queryByText("Cambios sin guardar",{exact:true})).not.toBeInTheDocument();expect(queryClient.getMutationCache().getAll()).toEqual([]);
- await user.click(screen.getByRole("button",{name:"Pegar de Excel"}));await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
+ await user.click(screen.getByRole("button",{name:"Pegar desde Excel"}));await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
  await user.click(screen.getByRole("button",{name:"Revisar"}));await waitFor(()=>expect(check).toHaveBeenCalledTimes(2));expect(check.mock.calls[1]![1].expectedRevision).toBe(2);
 });
 

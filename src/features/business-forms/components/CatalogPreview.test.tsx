@@ -11,6 +11,7 @@ it.each(["es", "en"] as const)("starts closed, opens single-choice options and c
   await i18n.changeLanguage(language);
   await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture={language}/>); });
   const user = userEvent.setup(), english = language === "en";
+  expect(screen.getByText(english ? "Each form question decides this. This switch changes only the preview." : "Lo decide cada pregunta del formulario. Este selector cambia solo la vista previa.")).toBeInTheDocument();
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: english ? "Choose an option" : "Elegí una opción" }));
   const option = screen.getByRole("radio", { name: english ? "North" : "Norte" });

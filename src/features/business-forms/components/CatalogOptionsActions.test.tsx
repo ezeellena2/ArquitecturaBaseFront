@@ -27,14 +27,14 @@ async function more(user: ReturnType<typeof userEvent.setup>) {
 
 it("keeps desktop import and export visible and dispatches the explicit file or paste source", async () => {
   const value = props(); await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup();
-  const paste = await screen.findByRole("button", { name: "Pegar de Excel" });
+  const paste = await screen.findByRole("button", { name: "Pegar desde Excel" });
   await user.click(paste); expect(value.onImport).toHaveBeenLastCalledWith("paste"); expect(value.focusRef.current).toBe(paste);
   const file = screen.getByRole("button", { name: "Importar" });
   await user.click(file); expect(value.onImport).toHaveBeenLastCalledWith("file"); expect(value.focusRef.current).toBe(file);
   await user.click(screen.getByRole("button", { name: "Exportar" })); expect(value.onExport).toHaveBeenLastCalledWith(false);
-  await more(user); await user.click(screen.getByRole("menuitem", { name: "Plantilla vacía" })); expect(value.onExport).toHaveBeenLastCalledWith(true);
+  await more(user); await user.click(screen.getByRole("menuitem", { name: "Descargar la plantilla" })); expect(value.onExport).toHaveBeenLastCalledWith(true);
   await more(user); await user.click(screen.getByRole("menuitem", { name: "Ordenar A–Z" })); expect(value.onSort).toHaveBeenCalledOnce();
-  await more(user); await user.click(screen.getByRole("menuitem", { name: "Generar códigos faltantes" })); expect(value.onGenerateCodes).toHaveBeenCalledOnce();
+  await more(user); await user.click(screen.getByRole("menuitem", { name: "Generar los códigos que faltan" })); expect(value.onGenerateCodes).toHaveBeenCalledOnce();
 });
 
 it("moves the mobile actions into the same menu and remembers its actual trigger", async () => {
@@ -43,7 +43,7 @@ it("moves the mobile actions into the same menu and remembers its actual trigger
   expect(screen.queryByRole("button", { name: "Exportar" })).not.toBeInTheDocument();
   const { trigger, menu } = await more(user);
   expect(within(menu).getAllByRole("menuitem")).toHaveLength(6);
-  await user.click(within(menu).getByRole("menuitem", { name: "Pegar de Excel" }));
+  await user.click(within(menu).getByRole("menuitem", { name: "Pegar desde Excel" }));
   expect(value.onImport).toHaveBeenCalledWith("paste"); expect(value.focusRef.current).toBe(trigger);
 });
 
@@ -53,7 +53,7 @@ it.each([false, true])("offers only export and template to a read-only user on m
   expect(within(menu).getAllByRole("menuitem")).toHaveLength(mobile ? 2 : 1);
   expect(screen.queryByRole("menuitem", { name: /Importar|Pegar|Ordenar|Generar/ })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Importar|Pegar/ })).not.toBeInTheDocument();
-  await user.click(within(menu).getByRole("menuitem", { name: "Plantilla vacía" }));
+  await user.click(within(menu).getByRole("menuitem", { name: "Descargar la plantilla" }));
   expect(value.onExport).toHaveBeenCalledWith(true); expect(value.onImport).not.toHaveBeenCalled();
 });
 
@@ -61,12 +61,12 @@ it("keeps a new catalog's reason visible and its unavailable menu actions keyboa
   const value = props({ saved: false }); await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup();
   const file = await screen.findByRole("button", { name: "Importar" });
   expect(file).toBeDisabled(); expect(file).toHaveAccessibleDescription("Guardá el catálogo antes.");
-  expect(screen.getByRole("button", { name: "Pegar de Excel" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Pegar desde Excel" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Exportar" })).toBeDisabled();
-  const { menu } = await more(user); const template = within(menu).getByRole("menuitem", { name: /Plantilla vacía/ });
+  const { menu } = await more(user); const template = within(menu).getByRole("menuitem", { name: /Descargar la plantilla/ });
   await user.keyboard("{Home}"); expect(template).toHaveFocus(); expect(template).toHaveAttribute("aria-disabled", "true");
   await user.keyboard("{Enter}"); expect(value.onExport).not.toHaveBeenCalled(); expect(menu).toBeVisible();
-  const generate = within(menu).getByRole("menuitem", { name: "Generar códigos faltantes" });
+  const generate = within(menu).getByRole("menuitem", { name: "Generar los códigos que faltan" });
   await user.click(generate); expect(value.onGenerateCodes).toHaveBeenCalledOnce();
 });
 
@@ -113,4 +113,7 @@ it("uses the existing English action labels", async () => {
   await act(async () => { await i18n.changeLanguage("en"); }); await mount(<CatalogOptionsActions {...props()} />);
   expect(await screen.findByRole("button", { name: "Paste from Excel" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Import" })).toBeEnabled(); expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
+  const user = userEvent.setup(), trigger = screen.getByRole("button", { name: "More option actions" });
+  act(() => trigger.focus()); await user.keyboard("{Enter}");
+  expect(await screen.findByRole("menuitem", { name: "Download the template" })).toBeEnabled();
 });
