@@ -10,6 +10,7 @@ export type FormReplyPresentation = { readonly fileCount?:number; readonly recei
 function answer(row: FormReplyValue): FormReplyDisplayValue {
   if(row.type==="photo"||row.type==="document")return {type:row.type,value:row.value};
   if (row.type === 'boolean') return { type: 'boolean', value: row.value };
+  if (row.type === 'multiChoice') return { type: 'multiChoice', value: row.value?.map(choice => ({ label: choice.label, catalogName: choice.catalogName, detail: choice.detail })) ?? null };
   if (row.type === 'choice') return { type: 'choice', value: row.value?.label ?? null, catalogName:row.value?.catalogName, detail:row.value?.detail };
   return { type: row.type, value: row.value };
 }

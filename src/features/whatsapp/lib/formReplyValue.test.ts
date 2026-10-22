@@ -26,3 +26,13 @@ describe("form reply value presentation", () => {
     expect(formatFormReplyValue({ type: "decimal", value: "1e3" }, "es", es)).toBeNull();
   });
 });
+
+it("joins historical multi-choice labels in order and presents an empty selection as unanswered", () => {
+  expect(formatFormReplyValue({ type: "multiChoice", value: [{ label: "Ruido" }, { label: "Frío", detail: "Histórico" }] }, "es", es)).toBe("Ruido, Frío");
+  expect(formatFormReplyValue({ type: "multiChoice", value: [] }, "es", es)).toBe("Sin respuesta");
+  expect(formatFormReplyValue({ type: "multiChoice", value: [] }, "en", en)).toBe("No answer");
+});
+
+it("shows an omitted multi answer as unanswered without converting it to an empty list", () => {
+  expect(formatFormReplyValue({ type: "multiChoice", value: null }, "en", en)).toBe("No answer");
+});

@@ -7,6 +7,7 @@ export type FormReplyDisplayValue =
   | { readonly type:"photo"|"document";readonly value:readonly PrivateFormFile[] }
   | { readonly type: "shortText" | "longText"; readonly value: string | null }
   | { readonly type: "choice"; readonly value: string | null; readonly catalogName?: string; readonly detail?: string | null }
+  | { readonly type: "multiChoice"; readonly value: readonly { readonly label: string; readonly catalogName?: string; readonly detail?: string | null }[] | null }
   | { readonly type: "decimal" | "date"; readonly value: string | null }
   | { readonly type: "boolean"; readonly value: boolean | null };
 
@@ -14,6 +15,7 @@ export function formatFormReplyValue(answer: FormReplyDisplayValue, language: st
   labels: { readonly missing: string; readonly yes: string; readonly no: string }): string | null {
   if (answer.type==="photo"||answer.type==="document") return "";
   if (answer.value === null) return labels.missing;
+  if (answer.type === "multiChoice") return answer.value.length ? answer.value.map(choice => choice.label).join(", ") : labels.missing;
   switch (answer.type) {
     case "decimal": return formatExactDecimal(answer.value, language);
     case "date": return formatDateOnly(answer.value, language);

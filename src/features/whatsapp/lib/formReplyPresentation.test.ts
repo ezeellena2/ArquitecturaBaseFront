@@ -48,3 +48,16 @@ it("keeps the sealed catalog scalar out of the chat presentation while preservin
   expect(JSON.stringify(result)).toContain("Retired English choice");
   expect(JSON.stringify(result)).not.toContain("9007199254740993.0123");
 });
+
+it("keeps multi-choice labels and metadata in received order without copying catalog scalars into presentation", () => {
+  const result = presentation(message({ ...completed, values: [{ fieldId: "multi", key: "faults", type: "multiChoice", label: "Fallas", value: [
+    { choiceId: "noise", label: "Ruido", catalogId: "catalog", catalogName: "Fallas anteriores", detail: "Primero", value: "9007199254740993.0123", valueType: "Decimal" },
+    { choiceId: "cold", label: "Frío" },
+  ] }] }));
+  expect(result).toMatchObject({ state: "Completed", values: [{ id: "multi", label: "Fallas", answer: { type: "multiChoice", value: [
+    { label: "Ruido", catalogName: "Fallas anteriores", detail: "Primero" }, { label: "Frío" },
+  ] } }] });
+  expect(JSON.stringify(result)).not.toContain("9007199254740993");
+  expect(presentation(message({ ...completed, values: [{ fieldId: "multi", key: "faults", type: "multiChoice", label: "Fallas", value: [] }] })))
+    .toMatchObject({ values: [{ answer: { type: "multiChoice", value: [] } }] });
+});

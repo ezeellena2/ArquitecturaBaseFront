@@ -101,3 +101,41 @@ it.each([{ value: "1500" }, { valueType: "Decimal" }, { value: "1500", valueType
   install(completed(rows), false);
   expect((await getThread(id)).messages[0].formReply).toEqual(completed(null));
 });
+
+
+
+it("retains an ordered multi-choice list and removes it before validating a denied thread", async () => {
+  const values = [{ fieldId: id, key: "faults", type: "multiChoice", label: "Fallas", value: [
+    { choiceId: otherId, label: "Ruido histórico", catalogId: id, catalogName: "Fallas anteriores", detail: "Primero", value: "9007199254740993.0123", valueType: "Decimal" },
+    { choiceId: id, label: "Frío histórico" },
+  ] }];
+  install(completed(values));
+  expect((await getThread(id)).messages[0].formReply).toEqual(completed(values));
+  install(completed([{ ...values[0], value: [] }]));
+  expect((await getThread(id)).messages[0].formReply).toEqual(completed([{ ...values[0], value: [] }]));
+  const malformed = [{ ...values[0], value: [{ choiceId: "private-invalid-id", label: "private multi text" }] }];
+  install(completed(malformed), false);
+  const denied = await getThread(id);
+  expect(denied.messages[0].formReply).toEqual(completed(null));
+  expect(JSON.stringify(denied)).not.toContain("private");
+  install(completed(malformed), true);
+  expect((await getThread(id)).messages[0].formReply).toBeNull();
+});
+it.each(["mixed-file", "duplicate", "half-pair", "object-instead-of-list"])("rejects a malformed permitted multi projection without leaking it: %s", invalid => {
+  const option = { choiceId: id, label: "private multi option" };
+  const value = invalid === "mixed-file" ? [option, { fileId: otherId, name: "private.pdf", size: 10, contentType: "application/pdf", hasThumbnail: false }]
+    : invalid === "duplicate" ? [option, option] : invalid === "half-pair" ? [{ ...option, valueType: "Integer" }] : option;
+  // The route adapter drops the invalid form reply rather than returning parser issues.
+  install(completed([{ fieldId: id, key: "faults", type: "multiChoice", label: "Fallas", value }]));
+  return getThread(id).then(thread => {
+    expect(thread.messages[0].formReply).toBeNull();
+    expect(thread.messages[0].body).toBeNull();
+    expect(JSON.stringify(thread)).not.toContain("private");
+  });
+});
+
+it("preserves a null omitted optional multi answer separately from an explicit empty array", async () => {
+  const row = { fieldId: id, key: "optional", type: "multiChoice", label: "Optional", value: null };
+  install(completed([row]));
+  expect((await getThread(id)).messages[0].formReply).toEqual(completed([row]));
+});
