@@ -6,7 +6,8 @@ const fixture = (page: Page) => page.evaluate(() => (window as typeof window & {
 }).catalogsFixture);
 async function enter(page: Page, language: "es" | "en", scenario: string, query = "") {
   await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + visualCatalogId + query, lang: language, scenario }));
-  await expect(page.getByRole("heading", { name: language === "en" ? "Customers" : "Clientes", exact: true })).toBeVisible();
+  const typed = scenario === "catalogs-import-typed";
+  await expect(page.getByRole("heading", { name: typed ? language === "en" ? "Zone surcharge" : "Recargo por zona" : language === "en" ? "Customers" : "Clientes", exact: true })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }
 async function contained(page: Page, width: number) {
@@ -111,5 +112,38 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await apply.click(); await expect(dialog).toHaveCount(0);
     expect((await fixture(page)).applies).toHaveLength(1);
     await contained(page, width);
+  });
+
+  test("CA2 typed values and diagnostics " + language + " " + width, async ({ page }, info) => {
+    const en = language === "en", label = (es: string, english: string) => en ? english : es;
+    await page.setViewportSize({ width, height: 900 }); await enter(page, language, "catalogs-import-typed");
+    await importAction(page, en, width, "paste");
+    const dialog = page.getByRole("dialog", { name: label("Importar opciones a «Recargo por zona»", "Import options into “Zone surcharge”"), exact: true });
+    await dialog.getByRole("textbox", { name: label("Pegá las filas con encabezados", "Paste rows with headers"), exact: true }).fill("Code\tText\tValue\nN\tNorte\t1500.5\nC1\tGBA\t1500.5\n");
+    await dialog.getByRole("button", { name: label("Revisar", "Review"), exact: true }).click();
+    const apply = dialog.getByRole("button", { name: label("Aplicar sin las 24 filas con errores", "Apply without the 24 rows with errors"), exact: true });
+    await expect(apply).toBeDisabled();
+    await dialog.getByRole("tab", { name: label("Altas", "New"), exact: true }).click();
+    await expect(dialog.getByRole("columnheader", { name: label("Valor", "Value"), exact: true })).toBeVisible();
+    const addedValue = dialog.getByRole("cell", { name: label("1.500,5", "1,500.5"), exact: true });
+    await addedValue.scrollIntoViewIfNeeded(); await expect(addedValue).toBeVisible();
+    await page.screenshot({ path: info.outputPath("catalog-import-typed-added.png"), fullPage: true });
+    await dialog.getByRole("tab", { name: label("Cambios", "Changes"), exact: true }).click();
+    const changedValue = dialog.getByRole("cell", { name: label("Valor: 1.000 → 1.500,5", "Value: 1,000 → 1,500.5"), exact: true });
+    await changedValue.scrollIntoViewIfNeeded(); await expect(changedValue).toBeVisible();
+    await page.screenshot({ path: info.outputPath("catalog-import-typed-changed.png"), fullPage: true });
+    await dialog.getByRole("tab", { name: label("Errores y avisos", "Errors and warnings"), exact: true }).click();
+    await expect(dialog.getByRole("columnheader", { name: label("Tipo", "Type"), exact: true })).toBeVisible();
+    const related = dialog.getByText(label("Fila 2", "Row 2"), { exact: true });
+    await expect(related).toHaveCount(24); await related.first().scrollIntoViewIfNeeded();
+    await expect(related.first()).toBeVisible();
+    await expect(dialog.getByText("Error", { exact: true }).first()).toBeVisible();
+    await page.screenshot({ path: info.outputPath("catalog-import-typed-error.png"), fullPage: true });
+    const header = dialog.getByRole("cell", { name: label("Responsable", "Supervisor"), exact: true });
+    await header.scrollIntoViewIfNeeded(); await expect(header).toBeVisible();
+    await expect(dialog.getByText(label("Aviso", "Warning"), { exact: true })).toBeVisible();
+    await page.screenshot({ path: info.outputPath("catalog-import-typed-warning.png"), fullPage: true });
+    await contained(page, width);
+    expect((await fixture(page)).applies).toEqual([]); expect((await fixture(page)).writes).toEqual([]);
   });
 }

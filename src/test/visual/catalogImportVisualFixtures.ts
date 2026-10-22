@@ -7,9 +7,9 @@ interface ImportSubmission { mode: CatalogImportMode; expectedRevision: number; 
 export interface CatalogImportVisualStore extends BaseStore { previews: ImportSubmission[]; applies: ImportSubmission[] }
 
 // Explicit simulated transport. No parser, database or actual producer evidence is claimed here.
-export function createCatalogImportVisualStore(culture: "es" | "en", catalogId: string,
+export function createCatalogImportVisualStore(culture: "es" | "en", catalog: Pick<CatalogDetail, "id" | "valueType" | "name">,
   createBase: () => BaseStore): CatalogImportVisualStore {
-  const base = createBase();
+  const base = createBase(), catalogId = catalog.id, typed = catalog.valueType === "Decimal";
   const previews: ImportSubmission[] = [], applies: ImportSubmission[] = [];
   let applied = false;
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
@@ -24,10 +24,10 @@ export function createCatalogImportVisualStore(culture: "es" | "en", catalogId: 
     }));
     issues.push({ row: 1, column: culture === "es" ? "Responsable" : "Supervisor", severity: "Warning", code: "Forms.CatalogImport.UnknownColumn",
       message: culture === "es" ? "Esta columna no es del catálogo: se ignora." : "This column is not part of the catalog: it is ignored.", relatedRow: null, length: null });
-    return { ...original, catalogId, revision: applied ? 2 : 1, mode, sheetName: culture === "es" ? "Clientes" : "Customers", rowsRead: 27,
+    return { ...original, catalogId, revision: applied ? 2 : 1, mode, sheetName: catalog.name[culture] ?? catalog.name.es ?? "", rowsRead: 27,
       counts: { added: 1, changed: 1, deactivated: mode === "Replace" ? 1 : 0, reactivated: 0, unchanged: 1, errorRows: 24, warnings: 1 },
-      issues, added: [{ row: 2, code: "N", text: "Norte", value: null }],
-      changed: [{ row: 3, itemId: "01990000-0000-7000-8000-000000000081", code: "C1", changes: [{ column: "text", before: "Pérez", after: "Pérez Norte" }] }],
+      issues, added: [{ row: 2, code: "N", text: "Norte", value: typed ? "1500.5" : null }],
+      changed: [{ row: 3, itemId: "01990000-0000-7000-8000-000000000081", code: "C1", changes: typed ? [{ column: "value", before: "1000", after: "1500.5" }] : [{ column: "text", before: "Pérez", after: "Pérez Norte" }] }],
       deactivated: mode === "Replace" ? [{ itemId: "01990000-0000-7000-8000-000000000083", code: "C3", text: "Ríos" }] : [],
       confirmations: { deactivations: mode === "Replace" ? 1 : 0, emptySheet: false, manyErrors: true } };
   };

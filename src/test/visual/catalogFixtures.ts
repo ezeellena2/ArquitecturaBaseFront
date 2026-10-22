@@ -15,7 +15,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
   if (scenario.startsWith("catalogs-filters")) return createFiltersFixtureStore(culture, scenario);
   let catalog: CatalogDetail = { valueType: "Text" as const, proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null, filters: null };
   let items: CatalogItem[] = ["Pérez", "López", "Ríos"].map((name, index) => ({ value: null, id: "01990000-0000-7000-8000-00000000008" + (index + 1), code: "C" + (index + 1), text: { es: name, en: null }, detail: { es: null, en: null }, position: index + 1, isActive: true }));
-  if (scenario === "catalogs-typed") {
+  if (scenario === "catalogs-typed" || scenario === "catalogs-import-typed") {
     catalog = { ...catalog, valueType: "Decimal", name: { es: "Recargo por zona", en: "Zone surcharge" } };
     items = items.map((item, index) => ({ ...item, value: ["0", "1500.5", "3200"][index]!, text: { es: ["CABA", "GBA", "Interior"][index]!, en: ["CABA", "GBA", "Inland"][index]! } }));
   }
@@ -63,7 +63,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
     }
     return json(catalog);
   } };
-  return scenario.startsWith("catalogs-import") ? createCatalogImportVisualStore(culture, visualCatalogId, () => store) : store;
+  return scenario.startsWith("catalogs-import") ? createCatalogImportVisualStore(culture, catalog, () => store) : store;
 }
 
 function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
