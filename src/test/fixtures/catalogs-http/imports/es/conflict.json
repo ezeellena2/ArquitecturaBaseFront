@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"El catálogo cambió. Recargalo e intentá de nuevo.","traceId":"00-ae079bc48ac4f5cb7876e6a749d56a9a-f8764862b5202f88-01","code":"Forms.Catalog.RevisionConflict"}

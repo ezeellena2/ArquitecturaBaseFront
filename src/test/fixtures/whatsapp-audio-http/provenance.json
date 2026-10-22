@@ -1,40 +1,38 @@
 {
-  "generatedAtUtc": "2026-10-22T01:35:20.3604027Z",
-  "schemaVersion": 1,
-  "repositoryHead": "6732fa5da46b5a1f9d40fe049c7d9577fc0060f9",
-  "runId": "20261022-004502-e7394c4e320c48f38f599396d85ba3fe",
-  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "generatedAtUtc": "2026-10-22T19:02:20.7265373Z",
+  "runId": "20261022-182821-262ad02cbf954670aa5846d39f54a352",
+  "repositoryHead": "496ec1e59246b3431c7a470f55edb279eedacd13",
+  "artifactSet": "whatsapp-audio",
+  "sourceState": [],
   "captures": [
     {
-      "length": 53,
+      "name": "audio-request.json",
       "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
-      "name": "audio-request.json"
+      "length": 53
     },
     {
-      "length": 975,
-      "sha256": "58ae2e9f0a6a3e36e3d159c32c8061bb41ad6cdf48f9503573b0a078204f43b1",
-      "name": "audio-thread-completed.json"
+      "name": "audio-thread-completed.json",
+      "sha256": "65a5070ec8a9e3c197af34ef33aec8a9662a648e76aee8fb285897310f65ca12",
+      "length": 975
     },
     {
-      "length": 933,
-      "sha256": "898de2298a1d75f462d1812b2bf749e08615362114dd031d3ed5695e45aa3e9d",
-      "name": "audio-thread-pending.json"
+      "name": "audio-thread-pending.json",
+      "sha256": "f05d6f29591f501d73ed1efa6b0c4bbf183d8532664329277fbc15d85fdb36cf",
+      "length": 933
     }
   ],
-  "sourceState": [
-    " M docs/reviews/2026-10-21-code-review-menu-y-detalle.md"
-  ],
-  "artifactSet": "whatsapp-audio",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs",
-      "sha256": "d9dafe29d34258e355da3b56c378040a6a1d9882044dd0a68de945ba92cc6540"
+      "sha256": "d9dafe29d34258e355da3b56c378040a6a1d9882044dd0a68de945ba92cc6540",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs",
-      "sha256": "c65bb2dc8f403bb0e4ce66b75aeb3f5a3558eef6d2b5b7bf1ba17f02e1a47348"
+      "sha256": "c65bb2dc8f403bb0e4ce66b75aeb3f5a3558eef6d2b5b7bf1ba17f02e1a47348",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs"
     }
-  ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  ]
 }

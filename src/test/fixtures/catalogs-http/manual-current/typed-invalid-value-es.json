@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"El valor no corresponde al tipo del catálogo.","traceId":"00-38d11fa2229c3be735e0451f23546a60-59d7b59a69395d66-01","code":"Forms.Catalog.ItemValueInvalid","errors":{"items[1].value":["El valor no corresponde al tipo del catálogo."]}}

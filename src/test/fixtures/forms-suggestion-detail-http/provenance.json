@@ -1,35 +1,33 @@
 {
-  "generatedAtUtc": "2026-10-22T01:35:20.3604027Z",
-  "schemaVersion": 1,
-  "repositoryHead": "6732fa5da46b5a1f9d40fe049c7d9577fc0060f9",
-  "runId": "20261022-004502-e7394c4e320c48f38f599396d85ba3fe",
-  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "generatedAtUtc": "2026-10-22T19:02:20.7265373Z",
+  "runId": "20261022-182821-262ad02cbf954670aa5846d39f54a352",
+  "repositoryHead": "496ec1e59246b3431c7a470f55edb279eedacd13",
+  "artifactSet": "suggestion-details",
+  "sourceState": [],
   "captures": [
     {
-      "length": 2059,
-      "sha256": "fcfac5187dbf781c89918db6a1bc081be3b94e5a98ab31a6b359160311175dcf",
-      "name": "detail-en.json"
+      "name": "detail-en.json",
+      "sha256": "f7e51ef0b6c1d79121f04cf7c04e87236ba6ce590ca0b6d37e69c6fa8a2716e2",
+      "length": 2059
     },
     {
-      "length": 2063,
-      "sha256": "e280c9d65042e6286cc94abfa7986af0edd02c35a90ef3e84ff2943bac7d4819",
-      "name": "detail-es.json"
+      "name": "detail-es.json",
+      "sha256": "af2709311f0aee03a451b7fe079c44ebfde6e141e611755ac107715d9f47db23",
+      "length": 2063
     }
   ],
-  "sourceState": [
-    " M docs/reviews/2026-10-21-code-review-menu-y-detalle.md"
-  ],
-  "artifactSet": "suggestion-details",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "schemaVersion": 1,
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs",
-      "sha256": "d964bf44402720bfe5a00fec51466678dec36ba42b2f6bee1fb5226524a752d9"
+      "sha256": "d964bf44402720bfe5a00fec51466678dec36ba42b2f6bee1fb5226524a752d9",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs",
-      "sha256": "380024a8f42df81af6bad91fa27ad7e1371bb951a8fd4d77ec0826f89d94f653"
+      "sha256": "380024a8f42df81af6bad91fa27ad7e1371bb951a8fd4d77ec0826f89d94f653",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs"
     }
-  ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  ]
 }

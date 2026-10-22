@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Cargá el valor de la opción.","traceId":"00-6f1907e30aa102cf9afada2af582cd7a-8170a2611f131668-01","code":"Forms.Catalog.ItemValueRequired","errors":{"items[0].value":["Cargá el valor de la opción."]}}

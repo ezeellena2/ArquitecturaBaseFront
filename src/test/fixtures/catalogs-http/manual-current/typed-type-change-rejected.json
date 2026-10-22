@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"La solicitud tiene un formato inválido.","traceId":"00-c5081bff391b74ff6917dd0e6724928a-6d8e2feaec70c585-01","code":"Request.Invalid"}
