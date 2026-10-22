@@ -123,12 +123,17 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await dialog.focus(); // The native PDF frame otherwise owns keyboard events.
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0); await expect(view).toBeFocused();
-    await page.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).click();
+    const headerDownload = page.getByRole("button", { name: en ? "Download" : "Descargar", exact: true });
+    await headerDownload.click();
     await expect(page.getByRole("menuitem", { name: docName, exact: true })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "comprobante.pdf", exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await expect(headerDownload).toBeFocused();
     const focusOwner = page.locator("main [tabindex='-1'][aria-busy]");
-    await focusOwner.focus(); await page.keyboard.press("ArrowDown");
+    await expect(focusOwner).toHaveAttribute("aria-busy", "false");
+    await focusOwner.focus(); await expect(focusOwner).toBeFocused();
+    await page.keyboard.press("ArrowDown");
     await expect(page.getByRole("heading", { name: "TEST-000001", level: 1, exact: true })).toBeVisible();
     expect((await routerLocation(page)).pathname).toBe(secondPath);
     await expect(focusOwner).toBeFocused();
