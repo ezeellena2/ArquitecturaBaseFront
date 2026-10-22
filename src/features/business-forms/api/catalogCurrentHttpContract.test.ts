@@ -7,10 +7,10 @@ import { createManualCatalog, fetchCatalogPage, fetchCatalog, updateManualCatalo
 // Current producer cohort, separate from the immutable pre-K4 fixtures.
 const cohort=httpCohort("manualCatalogs");
 const raw=(name:string)=>cohort.bytes(name).toString("utf8");
-it("verifies all fifteen exact current Manual captures from the common run", () => {
+it("verifies all twenty-seven exact current Manual captures from the common run", () => {
  const provenance=cohort.verify();
  expect(provenance.sources.some(source=>source.path.endsWith("FormCatalogEndpointsTests.cs"))).toBe(true);
- expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["created.json","updated.json","detail.json","items.json","list-es.json","list-en.json","conflict-es.json","conflict-en.json","create-request.request.json","create-duplicate-positions-request.request.json","missing-revision-request.request.json","inactive-request.request.json","conflict-request.request.json","queued-moves-request.request.json","update-request.request.json"].sort());
+ expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["created.json","updated.json","detail.json","items.json","list-es.json","list-en.json","conflict-es.json","conflict-en.json","create-request.request.json","create-duplicate-positions-request.request.json","missing-revision-request.request.json","inactive-request.request.json","conflict-request.request.json","queued-moves-request.request.json","update-request.request.json", ...["text","integer","decimal","date"].flatMap(type=>["typed-"+type+"-created.json","typed-"+type+"-items.json"]), "typed-invalid-value-es.json","typed-invalid-value-en.json","typed-required-value.json","typed-type-change-rejected.json"].sort());
 });
 it("consumes current Manual receipts and detail with filters:null", async () => {
   const createdBody = raw("created.json"), updatedBody = raw("updated.json"), detailBody = raw("detail.json");
