@@ -14,6 +14,8 @@ export const responseFullFixtureIds = { form: responseFormId, first: responseRec
 export function createFormResponseFullFixtures(language: "es" | "en", scenario: string) {
   const en = language === "en";
   const decideOnly = scenario === "responses-full-decide";
+  const readDecide = scenario === "responses-full-read-decide";
+  const canDecide = decideOnly || readDecide;
   const name = en ? "Delivery report" : "Informe de entregas";
   const base = createResponseVisualFixtures(language, "responses-full");
   const pdf = samplePdf();
@@ -35,7 +37,7 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
         canConsult: false, canRetry: false, recipients: [], createdAtUtc: "2026-10-16T14:00:00Z", updatedAtUtc: document.createdAtUtc, completedAtUtc: document.createdAtUtc },
     ], documents: [document],
   });
-  return { permissions: decideOnly ? ["formapprovals.decide"] : ["formrecords.read", "whatsapp.read"], calls, document,
+  return { permissions: decideOnly ? ["formapprovals.decide"] : readDecide ? ["formrecords.read", "formapprovals.decide"] : ["formrecords.read", "whatsapp.read"], calls, document,
     async handle(request: Request): Promise<Response | null> {
       const url = new URL(request.url), path = url.pathname;
       if (!path.startsWith("/api/forms/")) return null;
@@ -44,10 +46,10 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
       if (request.method !== "GET" && !readingPost) return json({ code: "Test.ReadOnlyScenario" }, 405);
       if (path === "/api/forms/overview") {
         const result: FormOverview = { forms: { items: [{ id: responseFormId, name, prefix: "TEST", deactivatedAtUtc: null,
-          pendingApprovalCount: decideOnly ? 2 : null, responseCount: decideOnly ? null : 2,
-          lastResponse: decideOnly ? null : { id: responseRecordId, number: "TEST-000002", submittedAtUtc: "2026-10-16T12:00:00Z", state: "Approved" } }],
+          pendingApprovalCount: canDecide ? 2 : null, responseCount: decideOnly ? null : 2,
+          lastResponse: decideOnly ? null : { id: responseRecordId, number: "TEST-000002", submittedAtUtc: "2026-10-16T12:00:00Z", state: readDecide ? "PendingApproval" : "Approved" } }],
           page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false },
-          filterCounts: { active: 1, deactivated: 0, deactivatedPending: decideOnly ? 0 : null } };
+          filterCounts: { active: 1, deactivated: 0, deactivatedPending: canDecide ? 0 : null } };
         return json(result);
       }
       if (path === "/api/forms/approvals/count") return json({ count: tasks.length });
@@ -70,11 +72,20 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
         const response = await base.handle(request);
         const sheet = await response.json() as ResponseSheet;
         sheet.hasApproval = true;
-        for (const row of sheet.records.items) { row.state = row.id === responseRecordId ? "Approved" : "Received"; row.hasPdf = row.id === responseRecordId; }
+        for (const row of sheet.records.items) { row.state = readDecide ? "PendingApproval" : row.id === responseRecordId ? "Approved" : "Received"; row.hasPdf = !readDecide && row.id === responseRecordId; }
         return json(sheet);
       }
       if (path.includes("/files/")) return null; // The common visual image transport supplies the existing sample JPEG.
-      if (/\/records\/[^/]+\/workflow$/.test(path)) return json(path.includes(responseRecordId) ? approved() : responseWorkflowFixture(responseSecondId));
+      if (/\/records\/[^/]+\/workflow$/.test(path)) {
+        if (readDecide) {
+          const task = tasks.find(task => path.includes(task.recordId));
+          if (!task) return json({ code: "Forms.Record.NotFound" }, 404);
+          return json({ ...responseWorkflowFixture(task.recordId), recordState: "PendingApproval", ruleRevision: 3,
+            task: { id: task.id, roleId: task.role.id, roleName: task.role.name, requestedAtUtc: task.requestedAtUtc,
+              state: task.state, revision: task.revision, decidedAtUtc: null, decidedBy: null, reason: null } } satisfies ResponseWorkflow);
+        }
+        return json(path.includes(responseRecordId) ? approved() : responseWorkflowFixture(responseSecondId));
+      }
       return base.handle(request);
     },
   };

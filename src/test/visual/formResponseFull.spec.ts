@@ -142,6 +142,54 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await assertSheetScroll(page, width); await assertReadOnly(page);
   });
 
+  test("DC0 DC1 pending keyboard with Read and Decide " + language + " " + width, async ({ page }) => {
+    const en = language === "en", mobile = width < 640;
+    const formName = en ? "Delivery report" : "Informe de entregas";
+    const reviewName = (en ? "Review" : "Revisar") + " TEST-000002";
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/src/test/visual/index.html?screen=/formularios/respuestas&scenario=responses-full-read-decide&lang=" + language);
+    await expect(page.getByRole("heading", { name: en ? "Forms" : "Formularios", level: 1, exact: true })).toBeVisible();
+    await page.getByRole("link", { name: formName, exact: true }).click();
+    await expect(page.getByRole("heading", { name: formName, level: 1, exact: true })).toBeVisible();
+    const pending = page.getByRole("region", { name: en ? "To approve · 2" : "Por aprobar · 2", exact: true });
+    await expect(pending.getByRole("link", { name: reviewName, exact: true })).toBeVisible();
+    for (const table of await page.locator('[data-slot="table-container"]').all()) {
+      const bounds = (await table.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+    }
+    await pending.getByRole("link", { name: reviewName, exact: true }).click();
+    if (!mobile) {
+      const quick = page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
+      await expect(quick.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
+      await expect(quick.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true })).toBeVisible();
+      await page.screenshot({ path: "test-results/response-full-pending-quick-" + language + "-" + width + ".png", fullPage: true });
+      await quick.getByRole("link", { name: en ? "Open in full view" : "Abrir en pantalla completa", exact: true }).click();
+    }
+    await expect(page.getByRole("heading", { name: "TEST-000002", level: 1, exact: true })).toBeVisible();
+    expect(await routerLocation(page)).toEqual({ pathname: firstPath, search: "" });
+    await expect(page.getByText(en ? "1 of 2 to approve" : "1 de 2 por aprobar", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true })).toBeVisible();
+    const owner = page.locator("main [tabindex='-1'][aria-busy]");
+    await expect(owner).toHaveAttribute("aria-busy", "false");
+    await owner.focus(); await page.keyboard.press("ArrowDown");
+    await expect(page.getByRole("heading", { name: "TEST-000001", level: 1, exact: true })).toBeVisible();
+    expect((await routerLocation(page)).pathname).toBe(secondPath);
+    await expect(page.getByText(en ? "2 of 2 to approve" : "2 de 2 por aprobar", { exact: true })).toBeVisible();
+    await expect(owner).toHaveAttribute("aria-busy", "false"); await expect(owner).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(page.getByRole("heading", { name: "TEST-000002", level: 1, exact: true })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready); await assertContained(page, width);
+    await page.screenshot({ path: "test-results/response-full-pending-" + language + "-" + width + ".png", fullPage: true });
+    await page.getByRole("link", { name: en ? "Back to responses" : "Volver a las respuestas", exact: true }).click();
+    expect((await routerLocation(page)).pathname).toBe(sheetPath);
+    const selected = page.getByRole("link", { name: reviewName, exact: true });
+    await expect(selected).toBeFocused();
+    await expect(selected.locator("xpath=ancestor::tr")).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole(mobile ? "dialog" : "region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true })).toHaveCount(0);
+    expect((await fixtureCalls(page)).filter(call => call.path.endsWith("/navigation") || call.path.endsWith("/continuation"))).toEqual([]);
+    await assertContained(page, width); await assertReadOnly(page);
+  });
+
   test("DC0 decision-only keeps metadata instead of full " + language + " " + width, async ({ page }) => {
     const en = language === "en";
     await page.setViewportSize({ width, height: 900 });
