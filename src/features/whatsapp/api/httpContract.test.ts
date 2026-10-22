@@ -78,11 +78,12 @@ for (const culture of ["es", "en"] as const) describe("Actual WhatsApp form HTTP
 });
 
 const originalPresentationCaptures = ["original-only", "empty-secondary"] as const;
-it("qualifies the full WhatsApp form cohort including eight original-language HTTP captures", () => {
+it("qualifies the full WhatsApp form cohort including original-language and multiple-selection captures", () => {
   const manifest = httpCohort("whatsappForms").verify();
-  expect(manifest.captures).toHaveLength(74);
+  expect(manifest.captures).toHaveLength(76);
   expect(manifest.captures.map(capture => capture.name)).toEqual(expect.arrayContaining(
-    originalPresentationCaptures.flatMap(sample => ["choices", "preparation", "receipt", "history"].map(part => "en/" + sample + "-" + part + ".json")),
+    [...originalPresentationCaptures.flatMap(sample => ["choices", "preparation", "receipt", "history"].map(part => "en/" + sample + "-" + part + ".json")),
+      "es/reply-multiple-choice.json", "en/reply-multiple-choice.json"],
   ));
 });
 it.each(originalPresentationCaptures)("consumes real %s maps from an English account through preparation, receipt and history", sample => {

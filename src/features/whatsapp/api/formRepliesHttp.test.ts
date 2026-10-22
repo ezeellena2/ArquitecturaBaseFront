@@ -73,4 +73,52 @@ for (const culture of ['es', 'en'] as const) describe('actual received form HTTP
     }
     expect(replies.find(row => row.state === 'Unrecognized')).toMatchObject({ definitionId: null, versionId: null, versionNumber: null, name: null });
   });
+
+  it('decodes every real replay card with twenty ordered historical choices and two private files', async () => {
+    const { original, parsed } = await read('reply-multiple-choice');
+    expect(parsed.canReadFormRecords).toBe(true);
+    const captured = original.messages.filter(message => message.kind === 'FlowReply'
+      && message.formReply?.state === 'Completed' && message.formReply.values?.some(row => row.type === 'multiChoice'));
+    expect(captured.length).toBeGreaterThan(0);
+    const expectedLabels = Array.from({ length: 20 }, (_, index) => (culture === 'es' ? 'Opción ' : 'Option ') + (20 - index));
+    const timeline = buildTimeline(parsed.messages, parsed.outgoing);
+    for (const message of captured) {
+      const capturedReply = message.formReply!;
+      const decoded = parsed.messages.find(row => row.id === message.id)?.formReply;
+      expect(decoded).toEqual(capturedReply);
+      if (!decoded || decoded.state !== 'Completed' || !decoded.values) throw new Error('The real multiple-selection reply was discarded.');
+      expect(decoded.number).toMatch(/-000001$/);
+      expect(decoded.values.map(row => row.type)).toEqual(['multiChoice', 'photo', 'document']);
+      const multiple = decoded.values.find(row => row.type === 'multiChoice');
+      if (!multiple || multiple.type !== 'multiChoice' || multiple.value === null) throw new Error('Expected the captured ordered choice list.');
+      expect(multiple.value).toHaveLength(20);
+      expect(multiple.value.map(choice => choice.label)).toEqual(expectedLabels);
+      expect(new Set(multiple.value.map(choice => choice.choiceId)).size).toBe(20);
+      for (const choice of multiple.value) {
+        expect(choice.catalogId).toEqual(expect.any(String));
+        // This producer uses a Text catalog. Typed scalars and explicit [] are qualified by other cases, not fabricated here.
+        expect(choice).not.toHaveProperty('value');
+        expect(choice).not.toHaveProperty('valueType');
+      }
+      for (const type of ['photo', 'document'] as const) {
+        const row = decoded.values.find(row => row.type === type);
+        if (!row || row.type !== 'photo' && row.type !== 'document') throw new Error('Expected the captured private file row.');
+        expect(row.value).toHaveLength(1);
+        expect(row.value[0]).toMatchObject({ contentType: type === 'photo' ? 'image/jpeg' : 'application/pdf', hasThumbnail: type === 'photo' });
+      }
+      const cards = timeline.filter(item => item.formReply?.state === 'Completed' && item.formReply.recordId === decoded.recordId);
+      expect(cards.length).toBeGreaterThan(0);
+      for (const item of cards) {
+        if (item.formReply?.state !== 'Completed') throw new Error('Expected the captured completed presentation.');
+        expect(item.body).toBeNull();
+        expect(item.formReply.recordNumber).toBe(decoded.number);
+        const answer = item.formReply.values?.find(row => row.answer.type === 'multiChoice')?.answer;
+        if (!answer || answer.type !== 'multiChoice') throw new Error('Expected the historical multi-choice presentation.');
+        expect(answer.value?.map(choice => choice.label)).toEqual(expectedLabels);
+      }
+    }
+    expect(JSON.stringify(parsed)).not.toContain('flow_token');
+    expect(JSON.stringify(parsed)).not.toContain('protectedPayload');
+  });
+
 });
