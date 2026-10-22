@@ -260,3 +260,61 @@ it("keeps the monolingual offer instruction through opening, frozen save and can
   expect(recovered.phase).toBe("ReviewRequired");
   expect(recovered.confirmed?.revision).toBe(2);
 });
+
+// These use the existing initial/result fixtures: same local option token under two parents.
+function multiSaveFixture(catalog = false) {
+  const value: DraftEditorValue = { ...initial, draft: { ...initial.draft, fields: initial.draft.fields.map(field => {
+    if (field.type !== "choice" || field.source) throw new Error("Expected own choices");
+    const multiple = { ...field, type: "multiChoice" as const, selection: { minSelected: field.required ? 1 : 0, maxSelected: 3 } };
+    return catalog ? { ...multiple, source: { catalog: "catalog-id" }, options: undefined } : multiple;
+  }) } };
+  const previous = result();
+  const canonical: FormDraftSaveResult = { ...previous, definition: { ...previous.definition, draft: { ...previous.definition.draft,
+    fields: previous.definition.draft.fields.map(field => {
+      if (field.type !== "choice" || field.source) throw new Error("Expected own choices");
+      const multiple = { ...field, type: "multiChoice" as const, selection: { minSelected: field.required ? 1 : 0, maxSelected: 3 } };
+      return catalog ? { ...multiple, source: { catalog: "catalog-id" }, options: undefined } : multiple;
+    }) } }, identityMap: { ...previous.identityMap, choices: catalog ? [] : previous.identityMap.choices } };
+  return { value, canonical };
+}
+it.each([false, true])("binds both multi parents and preserves frozen ranges (catalog: %s)", catalog => {
+  const { value, canonical } = multiSaveFixture(catalog);
+  const saving = beginDraftSave(startDraftSession(scope, value), identity.requestId);
+  const frozenField = saving.pending!.body.draft.fields[0]!;
+  if (frozenField.type !== "multiChoice") throw new Error("Expected multiple choice");
+  expect(Object.isFrozen(frozenField.selection)).toBe(true);
+  const confirmed = confirmDraftSave(saving, identity, canonical);
+  expect(confirmed.phase).toBe("Editing");
+  expect(confirmed.pending).toBeNull();
+  expect(confirmed.value.draft.fields.map(field => field.localId)).toEqual(["q-a", "q-b"]);
+  expect(confirmed.value.draft.fields[0]).toHaveProperty("selection", { minSelected: 1, maxSelected: 3 });
+  if (catalog) expect(confirmed.identityMap!.choices).toEqual([]);
+  else {
+    expect(confirmed.value.draft.fields[0]).toHaveProperty("options.0.localId", "opt-1");
+    expect(confirmed.value.draft.fields[0]).toHaveProperty("options.0.choiceId", "choice-a");
+    expect(confirmed.value.draft.fields[1]).toHaveProperty("options.0.localId", "opt-1");
+    expect(confirmed.value.draft.fields[1]).toHaveProperty("options.0.choiceId", "choice-b");
+  }
+});
+it.each(["minimum", "maximum"] as const)("keeps the original attempt uncertain when the response changes the %s", bound => {
+  const { value, canonical } = multiSaveFixture();
+  const saving = beginDraftSave(startDraftSession(scope, value), identity.requestId);
+  const changed = { ...canonical, definition: { ...canonical.definition, draft: { ...canonical.definition.draft,
+    fields: canonical.definition.draft.fields.map((field, index) => field.type === "multiChoice" && index === 1
+      ? { ...field, required: bound === "minimum", selection: bound === "minimum" ? { minSelected: 1, maxSelected: 3 } : { minSelected: 0, maxSelected: 2 } } : field),
+  } } };
+  const uncertain = confirmDraftSave(saving, identity, changed);
+  expect(uncertain.phase).toBe("Unconfirmed");
+  expect(uncertain.pending).toBe(saving.pending);
+  expect(uncertain.baseline).toBe(saving.baseline);
+  expect(uncertain.pending!.body.requestId).toBe(identity.requestId);
+  expect(discardDraft(uncertain)).toBe(uncertain);
+});
+it("cannot confirm an old multi save into a reopened editor or another attempt", () => {
+  const { value, canonical } = multiSaveFixture();
+  const reopened = beginDraftSave(startDraftSession({ ...scope, editorId: "new-editor" }, value), identity.requestId);
+  expect(confirmDraftSave(reopened, identity, canonical)).toBe(reopened);
+  const nextAttempt = beginDraftSave(startDraftSession(scope, value), "next-request");
+  expect(confirmDraftSave(nextAttempt, identity, canonical)).toBe(nextAttempt);
+  expect(nextAttempt.pending!.body.draft.fields[0]).toHaveProperty("selection", { minSelected: 1, maxSelected: 3 });
+});

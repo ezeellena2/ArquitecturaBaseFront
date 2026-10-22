@@ -119,3 +119,23 @@ it("rebases one monolingual offer instruction explicitly without creating transl
   expect(resolveDraftReview(review, { offerWhen: "current" })).toHaveProperty("offerWhen", definition.offerWhen);
   expect(resolveDraftReview(review, {})).toBeNull();
 });
+
+it("counts each missing own multi-choice translation and keeps range-only conflicts explicit", () => {
+  const multiple: FormDefinitionSnapshot = { ...current, name: { es: "Visita", en: "Visit" }, draft: { ...current.draft, fields: [{
+    fieldId: "multi", key: "field_multi", type: "multiChoice", label: { es: "Fallas", en: "Faults" }, help: null, required: true,
+    selection: { minSelected: 1, maxSelected: 3 },
+    options: [{ choiceId: "cold", label: { es: "Frío", en: "" } }, { choiceId: "noise", label: { es: "Ruido", en: "Noise" } }],
+  }] } };
+  const saved = openDraftSession(scope, multiple).value;
+  expect(missingFormTexts(saved, "en")).toBe(1);
+  expect(missingFormTexts(saved, "es")).toBe(0);
+  const mine = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(field => field.type === "multiChoice"
+    ? { ...field, selection: { ...field.selection, maxSelected: 2 } } : field) } };
+  const review = createDraftReview(mine, multiple);
+  expect(review.rows).toContainEqual(expect.objectContaining({ id: "field:multi", canKeep: true }));
+  const keepMine = Object.fromEntries(review.rows.map(row => [row.id, "mine"]));
+  const keepCurrent = Object.fromEntries(review.rows.map(row => [row.id, "current"]));
+  expect(resolveDraftReview(review, keepMine)?.draft.fields[0]).toHaveProperty("selection.maxSelected", 2);
+  expect(resolveDraftReview(review, keepCurrent)?.draft.fields[0]).toHaveProperty("selection.maxSelected", 3);
+  expect(mine.draft.fields[0]).toHaveProperty("selection.maxSelected", 2);
+});
