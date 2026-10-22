@@ -200,3 +200,30 @@ it.each([
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await waitFor(() => expect(notice).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: "error", message: "Revisá la planilla." })));
 });
+
+it.each(["es", "en"] as const)("uses localized pasted-row steps and filenames in %s", async culture => {
+  await i18n.changeLanguage(culture);
+  const base = catalogImportPreviewFixture();
+  const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append" });
+  const { user } = await mount();
+  expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(culture === "en" ? "Rows" : "Filas");
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\nN\tNorte" } });
+  await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
+  await screen.findByRole("tab", { name: culture === "en" ? "New" : "Altas" });
+  const filename = culture === "en" ? "Pasted.csv" : "Pegado.csv";
+  expect(check.mock.calls[0]![1].file.name).toBe(filename);
+  expect(screen.getByText(new RegExp(filename.replace(".", "\\.")))).toBeInTheDocument();
+});
+
+it.each([
+  ["es", "columns"], ["en", "columns"], ["es", "bytes"], ["en", "bytes"],
+] as const)("describes the pasted text limit without a file instruction in %s for %s", async (culture, limit) => {
+  await i18n.changeLanguage(culture);
+  const check = vi.spyOn(imports, "previewCatalogImport");
+  if (limit === "bytes") vi.spyOn(Blob.prototype, "size", "get").mockReturnValue(10 * 1024 * 1024 + 1);
+  const { user } = await mount();
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: limit === "columns" ? Array.from({ length: 65 }, () => "Header").join("\t") : "Code\tText\nN\tNorte" } });
+  await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
+  expect(screen.getByText(culture === "en" ? "Paste up to 10,000 rows and 64 columns, without exceeding 10 MB of text." : "Pegá hasta 10.000 filas y 64 columnas, sin superar 10 MB de texto.")).toBeInTheDocument();
+  expect(check).not.toHaveBeenCalled();
+});

@@ -57,9 +57,9 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
     if (state.source === "paste" && !file) {
       const pasted = parseCatalogPaste(state.paste);
       if (!pasted.valid) { setState(value => ({ ...value, fileError: t("catalogs.import.pasteError." + pasted.reason) })); return; }
-      file = new File([pasted.csv], "Pegado.csv", { type: "text/csv" });
+      file = new File([pasted.csv], t("catalogs.import.pastedFileName"), { type: "text/csv" });
     }
-    if (!file || !/\.(csv|xlsx)$/i.test(file.name) || file.size > 10 * 1024 * 1024) { setState(value => ({ ...value, fileError: t("catalogs.import.fileError") })); return; }
+    if (!file || !/\.(csv|xlsx)$/i.test(file.name) || file.size > 10 * 1024 * 1024) { setState(value => ({ ...value, fileError: t(state.source === "paste" ? "catalogs.import.pasteError.limit" : "catalogs.import.fileError") })); return; }
     const capturedFile = file, controller = new AbortController(); operation.current = controller;
     setState(value => ({ ...value, file: capturedFile, busy: "preview", fileError: null }));
     try {
@@ -91,7 +91,7 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
   return <Dialog open onOpenChange={open => { if (!open && state.busy !== "apply") close(); }}><DialogContent mobileFullscreen className="flex flex-col sm:max-w-3xl" showCloseButton={state.busy !== "apply"} onCloseAutoFocus={restoreFocus}>
     <DialogHeader><DialogTitle>{t("catalogs.import.title", { name: catalog.name[scope.culture] || catalog.name.es })}</DialogTitle><DialogDescription>{t("catalogs.import.description")}</DialogDescription></DialogHeader>
     <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
-      <ol className="flex flex-wrap gap-4 text-sm">{["fileStep", "reviewStep", "applyStep"].map((step, index) => <li key={step} aria-current={index === (preview ? 1 : 0) ? "step" : undefined}>{index + 1} · {t("catalogs.import." + step)}</li>)}</ol>
+      <ol className="flex flex-wrap gap-4 text-sm">{["fileStep", "reviewStep", "applyStep"].map((step, index) => <li key={step} aria-current={index === (preview ? 1 : 0) ? "step" : undefined}>{index + 1} · {t("catalogs.import." + (state.source === "paste" && step === "fileStep" ? "pasteStep" : step))}</li>)}</ol>
       {!owned || state.forbidden ? <p>{t("catalogs.import.forbidden")}</p> : !preview ? <Tabs value={state.source} onValueChange={changeSource}>
         <TabsList><TabsTrigger value="file" disabled={!!state.busy}>{t("catalogs.import.upload")}</TabsTrigger><TabsTrigger value="paste" disabled={!!state.busy}>{t("catalogs.import.paste")}</TabsTrigger></TabsList>
         <TabsContent value="file"><div className="space-y-3"><Button type="button" variant="link" onClick={onTemplate}>{t("catalogs.import.template")}</Button><FormField label={t("catalogs.import.file")} hint={t("catalogs.import.fileHint")} error={state.fileError ?? undefined}><Input type="file" accept=".xlsx,.csv" disabled={!!state.busy} onChange={event => setState(value => ({ ...value, file: event.target.files?.[0] ?? null, fileError: null }))}/></FormField></div></TabsContent>
