@@ -227,3 +227,26 @@ it.each([
   expect(screen.getByText(culture === "en" ? "Paste up to 10,000 rows and 64 columns, without exceeding 10 MB of text." : "Pegá hasta 10.000 filas y 64 columnas, sin superar 10 MB de texto.")).toBeInTheDocument();
   expect(check).not.toHaveBeenCalled();
 });
+
+it.each([
+  ["es", "Text"], ["en", "Text"], ["es", "Decimal"], ["en", "Decimal"],
+] as const)("labels every import review table with its actual %s %s columns", async (culture, valueType) => {
+  await i18n.changeLanguage(culture);
+  const base = catalogImportPreviewFixture(), english = culture === "en";
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", issues: [],
+    added: [{ ...base.added[0]!, value: valueType === "Text" ? null : "1500.5" }],
+    changed: [{ row: 3, itemId: base.deactivated[0]!.itemId, code: "S", changes: [{ column: "active", before: "true", after: "false" }] }],
+    counts: { ...base.counts, changed: 1, errorRows: 0 }, confirmations: { ...base.confirmations, manyErrors: false },
+  });
+  const user = userEvent.setup();
+  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, valueType }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tActive\nN\tNorte\tYes\nS\tSur\tNo" } });
+  await user.click(screen.getByRole("button", { name: english ? "Review" : "Revisar" }));
+  await user.click(await screen.findByRole("tab", { name: english ? "New" : "Altas" }));
+  const headers = () => within(screen.getByRole("tabpanel")).getAllByRole("columnheader").map(node => node.textContent);
+  expect(headers()).toEqual([english ? "Row" : "Fila", english ? "Code" : "Código", english ? "Text" : "Texto", ...(valueType === "Text" ? [] : [english ? "Value" : "Valor"])]);
+  await user.click(screen.getByRole("tab", { name: english ? "Changes" : "Cambios" }));
+  expect(headers()).toEqual([english ? "Row" : "Fila", english ? "Code" : "Código", english ? "Changes" : "Cambios"]);
+  await user.click(screen.getByRole("tab", { name: english ? "Deactivated" : "Bajas" }));
+  expect(headers()).toEqual([english ? "Code" : "Código", english ? "Text" : "Texto"]);
+});
