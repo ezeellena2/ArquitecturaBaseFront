@@ -11,6 +11,7 @@ import failedEnDetail from "../fixtures/forms-http/failed/detail-en.json" with {
 import failedEsStatus from "../fixtures/forms-http/failed/status-es.json" with { type: "json" };
 import failedEnStatus from "../fixtures/forms-http/failed/status-en.json" with { type: "json" };
 import { validFileCounts } from "@/features/business-forms/fileQuestions";
+import { validSelectionCounts } from "@/features/business-forms/selectionQuestions";
 import type { FormLifecycle, FormPublicationCheck } from "@/features/business-forms/api/response";
 import { administrativeName } from "@/features/business-forms/editorModel";
 import type { DraftWriteBody, FormCulture, FormDefinitionSnapshot, CanonicalQuestion, FormDraftSaveResult } from "@/features/business-forms/model";
@@ -46,7 +47,7 @@ export function responseBudgetDefinition(culture: FormCulture): FormDefinitionSn
 }
 export function wireDefinition(definition: FormDefinitionSnapshot) {
   return { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map(q => ({ ...q,
-    maxLength: "maxLength" in q ? q.maxLength : null, options: q.type === "choice" && !q.source ? q.options : null,
+    maxLength: "maxLength" in q ? q.maxLength : null, options: (q.type === "choice" || q.type === "multiChoice") && !q.source ? q.options : null,
   })) } };
 }
 // Synthetic language reports exercise the consumer; real HTTP bodies remain unchanged.
@@ -61,7 +62,7 @@ function fixturePublicationCultures(definition: FormDefinitionSnapshot): FormPub
       const path = "draft.fields[" + index + "]";
       visit(path + ".label", field.label, field.fieldId);
       if (field.help && Object.values(field.help).some(value => !!value?.trim())) visit(path + ".help", field.help, field.fieldId);
-      if (field.type === "choice" && !field.source) field.options.forEach((option, position) => visit(path + ".options[" + position + "].label", option.label, field.fieldId, option.choiceId));
+      if ((field.type === "choice" || field.type === "multiChoice") && !field.source) field.options.forEach((option, position) => visit(path + ".options[" + position + "].label", option.label, field.fieldId, option.choiceId));
     });
     return { culture, isOriginal: culture === definition.draft.culture, isComplete: missing.length === 0, missing };
   });
@@ -84,6 +85,19 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       if (index !== 0 || field.type !== "choice" || field.source) return field;
       const { options: _options, ...common } = field;
       return { ...common, source: { catalog: "01990000-0000-7000-8000-000000000080" } };
+    }) } });
+  }
+  if (scenario === "forms-multiple-own" || scenario === "forms-catalog-multiple") {
+    const definition = definitions.get(fixtureFormId)!;
+    definitions.set(fixtureFormId, { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map((field, index) => {
+      if (index === 0 && field.type === "choice") return field.source
+        ? { ...field, label: { es: "Fallas", en: "Faults" } }
+        : { ...field, label: { es: "Fallas", en: "Faults" }, options: [
+          { choiceId: guid(20), label: { es: "Frío", en: "Cold" } },
+          { choiceId: guid(21), label: { es: "Ruido", en: "Noise" } },
+          { choiceId: guid(22), label: { es: "Puerta", en: "Door" } },
+        ] };
+      return field.type === "longText" ? { ...field, help: { es: "Contá lo que pasó.", en: "Describe what happened." } } : field;
     }) } });
   }
   if (scenario === "forms-translations" || scenario.startsWith("forms-languages-")) {
@@ -313,13 +327,24 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     const canonical: CanonicalQuestion[] = body.draft.fields.map(q => {
       const fieldId = q.fieldId ?? guid(serial++); const common = { fieldId, key: key(fieldId), label: q.label, help: q.help && Object.values(q.help).some(text => !!text?.trim()) ? Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => !!entry[1]?.trim())) : null, required: q.required };
       fields.push({ localId: q.localId, fieldId, key: common.key, replacesFieldId: q.replacesFieldId });
-      if (q.type === "choice" && q.source) {
+      if ((q.type === "choice" || q.type === "multiChoice") && q.source) {
         if (!q.source.catalog) throw new Error("The synthetic canonical response requires a selected catalog.");
+        if (q.type === "multiChoice") {
+          if (!validSelectionCounts(q.selection)) throw new Error("Invalid selection counts.");
+          return { ...common, type: q.type, source: { catalog: q.source.catalog }, selection: { ...q.selection } };
+        }
         return { ...common, type: q.type, source: { catalog: q.source.catalog } };
       }
-      if (q.type === "choice" && !q.source) return { ...common, type: q.type, options: q.options.map(o => {
+      if ((q.type === "choice" || q.type === "multiChoice") && !q.source) {
+        const options = q.options.map(o => {
         const choiceId = o.choiceId ?? guid(serial++); choices.push({ fieldLocalId: q.localId, localId: o.localId, fieldId, choiceId }); return { choiceId, label: o.label };
-      }) };
+        });
+        if (q.type === "multiChoice") {
+          if (!validSelectionCounts(q.selection)) throw new Error("Invalid selection counts.");
+          return { ...common, type: q.type, options, selection: { ...q.selection } };
+        }
+        return { ...common, type: q.type, options };
+      }
       if (q.type === "photo" || q.type === "document") {
         if (!validFileCounts(q.files)) throw new Error("Invalid file counts.");
         return { ...common, type: q.type, files: { ...q.files } };

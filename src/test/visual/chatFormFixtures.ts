@@ -30,6 +30,16 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
          value:{choiceId:guid(703),label:"Pérez Hnos.",catalogId:guid(702),catalogName:"Clientes",detail:"Av. Colón 1234"}}]}});
  }
  if(scenario==="forms-chat-catalog-inactive-read"){contact.linkedAccount=null;contact.formEligibility=null;}
+ if(scenario==="forms-chat-multiple"){
+  contact.linkedAccount=null;contact.formEligibility=null;
+  thread.canReadFormRecords=true;
+  thread.messages.push({audio:null,quickReplies:null,assistant:null,origin:"Conversation",id:guid(730),direction:"Inbound",kind:"FlowReply",body:null,
+   occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:2,operatorUserId:null,status:null,errorCode:null,purpose:"Business",
+   formReply:{state:"Completed",definitionId:options[0].definitionId,versionId:options[0].versionId,versionNumber:1,name:language==="es"?"Registrar visita":"Register visit",
+    recordId:guid(731),number:"VIS-000031",values:[{fieldId:guid(701),key:"faults",type:"multiChoice",label:language==="es"?"Fallas":"Faults",
+     value:[{choiceId:guid(703),label:language==="es"?"Frío":"Cold"},
+      {choiceId:guid(704),label:language==="es"?"Ruido":"Noise"}]}]}});
+ }
  if(scenario.startsWith("forms-chat-actions")){
   thread.canReadFormRecords=scenario!=="forms-chat-actions-no-values";contact.preview=language==="es"?"Acción del formulario":"Form action";
   for(const [index,kind] of (["Text","Document"] as const).entries())thread.messages.push({ audio: null, quickReplies: null, assistant: null,id:guid(750+index),direction:"Outbound",origin:"FormAction",kind,body:language==="es"?(index?"Se aprobó VIS-000024. Acá tenés tu comprobante.":"Recibimos VIS-000024."):(index?"VIS-000024 was approved. Here is your receipt.":"We received VIS-000024."),occurredAtUtc:contact.lastInboundAtUtc,inboundSequence:0,operatorUserId:null,status:"Delivered",errorCode:null,purpose:"Business"});

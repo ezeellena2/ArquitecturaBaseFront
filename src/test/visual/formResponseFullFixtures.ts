@@ -1,6 +1,7 @@
 import type { FormOverview } from "@/features/business-forms/api/overview";
 import type { ApprovalPage, ApprovalTask } from "@/features/business-forms/api/approvals";
-import type { ResponseSheet } from "@/features/business-forms/api/responses";
+import type { ResponseDetail, ResponseSheet } from "@/features/business-forms/api/responses";
+import type { ResponseQuery } from "@/features/business-forms/responses";
 import type { ResponseWorkflow } from "@/features/business-forms/api/workflow";
 import { approvalTaskFixture } from "../approvalFixtures";
 import { responseFormId, responseRecordId, responseSecondId, responseWorkflowFixture } from "../responseFixtures";
@@ -15,6 +16,7 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
   const en = language === "en";
   const decideOnly = scenario === "responses-full-decide";
   const readDecide = scenario === "responses-full-read-decide";
+  const multiple = scenario === "responses-full-multiple";
   const canDecide = decideOnly || readDecide;
   const name = en ? "Delivery report" : "Informe de entregas";
   const base = createResponseVisualFixtures(language, "responses-full");
@@ -25,7 +27,35 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
     id: id(370 + index), recordId, number: "TEST-00000" + (2 - index), formName: name,
     requestedAtUtc: "2026-10-16T1" + (2 + index) + ":00:00Z", role: { id: id(375), name: en ? "Supervision" : "Supervisión" } }));
   const calls: { method: string; path: string }[] = [];
+  const queries: ResponseQuery[] = [];
   const json = (body: unknown, status = 200) => Response.json(body, { status });
+  const multipleFieldId = id(34);
+  const choiceLabels = en ? ["Cold", "Noise", "Counter refrigeration", "Noise in main compressor", "Water leak in pipe"]
+    : ["Frío", "Ruido", "Refrigeración del mostrador", "Ruido en compresor principal", "Pérdida de agua en caño"];
+  const choices = choiceLabels.map((label, index) => ({ choiceId: id(401 + index), label, catalogId: null, catalogName: null, detail: null }));
+  const capturedChoices = (recordId: string) => recordId === responseRecordId ? choices.slice(0, 2) : choices.slice(2);
+  async function multipleSheet(request: Request, query: ResponseQuery): Promise<ResponseSheet> {
+    const conditions = query.conditions?.filter(condition => condition.fieldId !== multipleFieldId);
+    const source = await base.handle(new Request(new URL("/api/forms/definitions/" + responseFormId + "/records/search", request.url), {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...query, conditions }),
+    }));
+    const sheet = await source.json() as ResponseSheet;
+    const column = sheet.columns.find(column => column.fieldId === multipleFieldId)!;
+    column.type = "multiChoice"; column.label = en ? "Faults" : "Fallas";
+    column.options = choices.map(choice => ({ id: choice.choiceId, label: choice.label }));
+    for (const row of sheet.records.items) {
+      const cell = row.cells.find(cell => cell.fieldId === multipleFieldId)!;
+      cell.type = "multiChoice"; cell.value = capturedChoices(row.id);
+    }
+    sheet.records.items = sheet.records.items.filter(row => (query.conditions ?? []).every(condition => {
+      if (condition.fieldId !== multipleFieldId) return true;
+      if (condition.operator === "answered") return true;
+      return condition.operator === "anyOf" && capturedChoices(row.id).some(choice => condition.values?.includes(choice.choiceId));
+    }));
+    const total = sheet.records.items.length;
+    sheet.records = { ...sheet.records, totalCount: total, totalPages: Math.ceil(total / sheet.records.pageSize), hasNext: false, hasPrevious: false };
+    return sheet;
+  }
   const approved = (): ResponseWorkflow => ({
     ...responseWorkflowFixture(responseRecordId), recordState: "Approved", ruleRevision: 3,
     task: { id: tasks[0].id, roleId: tasks[0].role.id, roleName: tasks[0].role.name, requestedAtUtc: tasks[0].requestedAtUtc,
@@ -37,12 +67,12 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
         canConsult: false, canRetry: false, recipients: [], createdAtUtc: "2026-10-16T14:00:00Z", updatedAtUtc: document.createdAtUtc, completedAtUtc: document.createdAtUtc },
     ], documents: [document],
   });
-  return { permissions: decideOnly ? ["formapprovals.decide"] : readDecide ? ["formrecords.read", "formapprovals.decide"] : ["formrecords.read", "whatsapp.read"], calls, document,
+  return { permissions: decideOnly ? ["formapprovals.decide"] : readDecide ? ["formrecords.read", "formapprovals.decide"] : ["formrecords.read", "whatsapp.read"], calls, queries, document,
     async handle(request: Request): Promise<Response | null> {
       const url = new URL(request.url), path = url.pathname;
       if (!path.startsWith("/api/forms/")) return null;
       calls.push({ method: request.method, path });
-      const readingPost = request.method === "POST" && /^\/api\/forms\/definitions\/[^/]+\/records\/(?:search|[^/]+\/navigation)$/.test(path);
+      const readingPost = request.method === "POST" && /^\/api\/forms\/definitions\/[^/]+\/records\/(?:search|filter-counts\/search|[^/]+\/navigation)$/.test(path);
       if (request.method !== "GET" && !readingPost) return json({ code: "Test.ReadOnlyScenario" }, 405);
       if (path === "/api/forms/overview") {
         const result: FormOverview = { forms: { items: [{ id: responseFormId, name, prefix: "TEST", deactivatedAtUtc: null,
@@ -65,6 +95,29 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
         return task ? json(task) : json({ code: "Forms.Task.NotFound" }, 404);
       }
       if (decideOnly && /^\/api\/forms\/(?:records\/|definitions\/[^/]+\/records)/.test(path)) return json({ code: "Authorization.Forbidden" }, 403);
+      if (multiple && path.endsWith("/records/filter-counts/search")) {
+        const body = await request.clone().json() as { dimension: string; fieldId?: string; filter: ResponseQuery; search?: string };
+        if (body.dimension === "choice" && body.fieldId === multipleFieldId) {
+          const sheet = await multipleSheet(request, { ...body.filter, conditions: body.filter.conditions?.filter(condition => condition.fieldId !== multipleFieldId) });
+          const items = choices.filter(choice => !body.search || choice.label.toLowerCase().includes(body.search.toLowerCase()))
+            .map(choice => ({ id: choice.choiceId, label: choice.label, count: sheet.records.items.filter(row => capturedChoices(row.id).some(value => value.choiceId === choice.choiceId)).length }));
+          return json({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: items.length ? 1 : 0, hasNext: false, hasPrevious: false });
+        }
+      }
+      if (multiple && /\/records\/(?:search|[^/]+\/navigation)$/.test(path)) {
+        const query = await request.json() as ResponseQuery;
+        queries.push(query);
+        const sheet = await multipleSheet(request, query);
+        if (path.endsWith("/navigation")) {
+          const recordId = path.split("/").at(-2)!;
+          const index = sheet.records.items.findIndex(row => row.id === recordId);
+          return index < 0 ? json({ code: "Forms.Record.NotFound" }, 404) : json({ recordId,
+            previousId: sheet.records.items[index - 1]?.id ?? null, nextId: sheet.records.items[index + 1]?.id ?? null, position: index + 1, totalCount: sheet.records.totalCount });
+        }
+        sheet.hasApproval = true;
+        for (const row of sheet.records.items) { row.state = row.id === responseRecordId ? "Approved" : "Received"; row.hasPdf = row.id === responseRecordId; }
+        return json(sheet);
+      }
       if (/\/documents\/[^/]+\/content$/.test(path)) return new Response(pdf, { headers: { "content-type": "application/pdf",
         "content-language": language, "content-disposition": 'inline; filename="' + document.name + '"' } });
       if (/\/files\/[^/]+\/content$/.test(path) && path.includes(id(72))) return new Response(pdf, { headers: { "content-type": "application/pdf", "content-disposition": "attachment; filename=comprobante.pdf" } });
@@ -85,6 +138,13 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
               state: task.state, revision: task.revision, decidedAtUtc: null, decidedBy: null, reason: null } } satisfies ResponseWorkflow);
         }
         return json(path.includes(responseRecordId) ? approved() : responseWorkflowFixture(responseSecondId));
+      }
+      if (multiple && /\/records\/[^/]+$/.test(path)) {
+        const response = await base.handle(request);
+        const detail = await response.json() as ResponseDetail;
+        detail.values = detail.values.map(value => value.fieldId === multipleFieldId
+          ? { ...value, type: "multiChoice", label: en ? "Faults" : "Fallas", value: capturedChoices(detail.id) } : value);
+        return json(detail);
       }
       return base.handle(request);
     },
