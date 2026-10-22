@@ -15,7 +15,9 @@ await build({
   mode: "development",
   define: { "process.env.NODE_ENV": JSON.stringify("development") },
   build: { target: "esnext", outDir, emptyOutDir: true, sourcemap: false, cssMinify: false,
-    rollupOptions: { input: {
+    rollupOptions: { output: { codeSplitting: { groups: [{
+      name: "visual-shared", test: /[\\/]node_modules[\\/]|[\\/]src[\\/]shared[\\/]/,
+    }] } }, input: {
       main: path.resolve(root, "index.html"), silentRenew: path.resolve(root, "silent-renew.html"),
       visual: path.resolve(root, "src/test/visual/index.html"), session: path.resolve(root, "src/test/visual/session.html"),
       designLab: path.resolve(root, "design-lab/whatsapp-chat/index.html"),
