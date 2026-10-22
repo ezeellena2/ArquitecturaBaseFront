@@ -34,6 +34,7 @@ Familias:
 
 - Los catálogos comunes exigen nombre y descripción en es y en; uno propuesto por el asistente exige sólo su original. La opción exige texto en español, admite inglés y detalle opcionales; `usageCount` e `itemsCount` null son desconocidos. `filters` siempre viaja, null en Manual.
 - `valueType` es requerido y cerrado (Text, Integer, Decimal, Date) en detalle/lista; cada ítem trae `value` nullable requerido. Sólo el alta Manual admite elegir el tipo; PUT no lo manda y Filters siempre es Text. La referencia capturada puede omitir ambos `value/valueType` o traer el par tipado canónico, nunca medio par; las pantallas de respuestas siguen mostrando sólo su etiqueta.
+- `catalogImports` envía File/modo/revisión por FormData al preview y Apply; el preview es privado y exige id, revisión y modo coincidentes. Apply sólo acepta mapa vacío; exportar usa GET binario con nombre del servidor. Las capturas reales se califican después del export, sin completar propiedades.
 - Manual manda metadatos, delta de ítems y movimientos; Filters, nombre, descripción y filtros. Al actualizar suman `expectedRevision` e `isActive` para dar de baja o reactivar. La persona de ejemplo sólo viaja a la prueba y a la aprobación de una propuesta.
 
 ### Respuestas, reglas, PDF, workflow y faltantes
