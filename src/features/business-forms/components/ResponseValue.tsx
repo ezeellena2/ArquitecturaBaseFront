@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatDateOnly } from "@/shared/lib/dateTime";
 import { formatExactDecimal } from "@/shared/lib/decimal";
-import { responseDocumentFormat, responseValueText, type ResponseCell } from "../responses";
+import { responseDocumentFormat, responseValueText, selectedResponseChoices, type ResponseCell } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 export function ResponseValue({
   cell,
@@ -90,13 +90,7 @@ export function ResponseValue({
             t("responses.yes"),
             t("responses.no"),
           );
-  const choice =
-    cell.type === "choice" &&
-    cell.value &&
-    typeof cell.value === "object" &&
-    !Array.isArray(cell.value)
-      ? cell.value
-      : null;
+  const choice = selectedResponseChoices(cell)[0];
   return (
     <div
       className={

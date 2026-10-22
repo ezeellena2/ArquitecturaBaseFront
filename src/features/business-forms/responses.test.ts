@@ -5,6 +5,7 @@ import {
   receivedDateBoundary,
   replaceResponseCondition,
   responseValueText,
+  selectedResponseChoices,
   visibleResponseColumns,
   type ResponseColumn,
   type ResponseCell,
@@ -133,4 +134,39 @@ it("treats null or absent response state as no applied state filter", () => {
   expect(normalizeResponseQuery(query, [])?.state).toBeNull();
   expect(responseFilterLabels(query, [], key => key)).toEqual([]);
   expect(responseFilterLabels({ page: 1, pageSize: 20 }, [], key => key)).toEqual([]);
+});
+
+
+it("keeps the historical choice label without a current catalog", () => {
+  const value = Object.freeze({ choiceId: "historic-option", label: "Sucursal histórica", catalogId: "historic-catalog", catalogName: "Sucursales anteriores", detail: "Detalle capturado" });
+  const cell: ResponseCell = { fieldId: "branch", type: "choice", state: "Answered", value };
+  expect(responseValueText(cell, "Sin respuesta", "Sí", "No")).toBe("Sucursal histórica");
+});
+
+
+describe("selected response choices", () => {
+  const choice = Object.freeze({ choiceId: "historic-option", label: "Sucursal histórica", catalogId: "historic-catalog", catalogName: "Sucursales anteriores", detail: "Detalle capturado" });
+  const cell: ResponseCell = { fieldId: "branch", type: "choice", state: "Answered", value: choice };
+
+  it("keeps the captured option and its historical metadata without resolving the current catalog", () => {
+    expect(selectedResponseChoices(cell)).toEqual([choice]);
+    expect(selectedResponseChoices(cell)[0]).toBe(choice);
+    expect(responseValueText(cell, "Sin respuesta", "Sí", "No")).toBe("Sucursal histórica");
+    expect(choice).toEqual({ choiceId: "historic-option", label: "Sucursal histórica", catalogId: "historic-catalog", catalogName: "Sucursales anteriores", detail: "Detalle capturado" });
+  });
+
+  it.each(["NotAsked", "Unanswered"] as const)("keeps %s separate from selected options", state => {
+    expect(selectedResponseChoices({ ...cell, state, value: null })).toEqual([]);
+    expect(responseValueText({ ...cell, state, value: null }, "Sin respuesta", "Sí", "No")).toBe(state === "NotAsked" ? "—" : "Sin respuesta");
+  });
+
+  it.each<ResponseCell>([
+    { ...cell, value: null },
+    { fieldId: "zero", type: "decimal", state: "Answered", value: "0" },
+    { fieldId: "no", type: "boolean", state: "Answered", value: false },
+    { fieldId: "photo", type: "photo", state: "Answered", value: [{ fileId: "photo", name: "Visita.jpg", contentType: "image/jpeg", size: 4, hasThumbnail: true }] },
+    { fieldId: "document", type: "document", state: "Answered", value: [{ fileId: "document", name: "Visita.pdf", contentType: "application/pdf", size: 4, hasThumbnail: false }] },
+  ])("does not interpret a scalar, absent value or file list as options: $fieldId", value => {
+    expect(selectedResponseChoices(value)).toEqual([]);
+  });
 });

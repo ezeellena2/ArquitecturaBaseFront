@@ -74,6 +74,12 @@ export function visibleResponseColumns(
   const ids = new Set(selection.split(","));
   return columns.filter((column) => ids.has(column.fieldId));
 }
+export function selectedResponseChoices(cell: ResponseCell): readonly ResponseChoice[] {
+  if (cell.state !== "Answered" || cell.type !== "choice" || !cell.value ||
+    typeof cell.value !== "object" || Array.isArray(cell.value)) return [];
+  return [cell.value];
+}
+
 export function responseValueText(
   cell: ResponseCell,
   unanswered: string,
@@ -84,8 +90,7 @@ export function responseValueText(
   if (cell.state === "Unanswered") return unanswered;
   if (typeof cell.value === "boolean") return cell.value ? yes : no;
   if (typeof cell.value === "string") return cell.value;
-  if (cell.value && !Array.isArray(cell.value)) return cell.value.label;
-  return "";
+  return selectedResponseChoices(cell)[0]?.label ?? "";
 }
 
 export function receivedDateBoundary(

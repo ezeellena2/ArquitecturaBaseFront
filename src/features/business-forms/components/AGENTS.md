@@ -38,7 +38,7 @@ Cada pieza implementa parte de un tablero elegido con `shared/ui` y recibe datos
 - `ResponseWorkspaceProvider` (desde `ResponseWorkspaceLayout`) guarda el filtro privado por dueño y formulario; salir del formulario lo limpia y `deny` retira filtros y miniaturas.
 - `ResponseFiltersPanel` y sus controles usan conteos del servidor. El conteo es informativo: Aplicar depende del borrador válido; Reintentar sólo aparece por red, 5xx o 429 tras su espera, que se conserva al editar.
 - `ResponseExportDialog` (sólo con `formrecords.export`) pide por POST el XLSX que genera el servidor, con los filtros y todas o sólo las columnas visibles, hasta 10.000 respuestas; cancela al cerrar o perder el alcance.
-- `ResponseValue` no confunde ausente, opcional vacía, 0 y false; conserva la escala decimal y la fecha sin hora; archivos con `FormRecordFiles`. El enlace al chat requiere `whatsapp.read` y sólo navega.
+- `selectedResponseChoices` en `responses` es la lectura única de opciones capturadas; no resuelve el catálogo actual ni trata archivos como opciones. `ResponseValue` no confunde ausente, opcional vacía, 0 y false; conserva la escala decimal y la fecha sin hora; archivos con `FormRecordFiles`. El enlace al chat requiere `whatsapp.read` y sólo navega.
 
 ### Detalle, actividad y aprobación
 
