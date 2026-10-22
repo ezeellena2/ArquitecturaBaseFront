@@ -30,3 +30,14 @@ it("switches only the illustrative preview to checkboxes while leaving catalog d
   await userEvent.click(screen.getByText("Norte")); expect(screen.getByRole("checkbox", { name: "Norte" })).toBeChecked();
   expect(items[0]).not.toHaveProperty("selected");
 });
+
+it.each(["es", "en"] as const)("describes the correct WhatsApp option limit for each preview mode in %s", async language => {
+  await i18n.changeLanguage(language);
+  await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture={language}/>); });
+  expect(screen.getByText(/WhatsApp.*200/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: language === "en" ? "Multiple" : "Varias" }));
+  expect(screen.queryByText(/WhatsApp.*200/)).not.toBeInTheDocument();
+  expect(screen.getByText(/WhatsApp.*20/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: language === "en" ? "One option" : "Una opción" }));
+  expect(screen.getByText(/WhatsApp.*200/)).toBeInTheDocument();
+});

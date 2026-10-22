@@ -536,7 +536,8 @@
       "choose": "Elegí una opción",
       "back": "Volver",
       "upTo": "Elegí hasta {{count}}",
-      "limit": "Vista orientativa de esta página. WhatsApp admite hasta 200 opciones activas al enviar."
+      "limit": "Vista orientativa de esta página. WhatsApp admite hasta 200 opciones activas al enviar.",
+      "limitMany": "Vista orientativa de esta página. WhatsApp admite hasta 20 opciones activas en una pregunta de varias."
     },
     "actions": {
       "paste": "Pegar de Excel",

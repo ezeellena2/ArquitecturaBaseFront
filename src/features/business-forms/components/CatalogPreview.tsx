@@ -24,6 +24,6 @@ export function CatalogPreview({ items, name, culture }: { items: readonly Catal
       : <Button type="button" variant="outline" onClick={() => setOpen(true)} aria-expanded={open}>{chosen ? label(chosen) : content("catalogs.preview.choose")}</Button>}
       <div className="mt-auto"><Button className="w-full" disabled>{content("submitLabel")}</Button><p className="mt-2 text-center text-xs text-[var(--color-content-muted)]">{content("previewOnly")}</p></div>
     </PhonePreview>
-    <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.preview.limit")}</p>
+    <p className="text-xs text-[var(--color-content-muted)]">{t(mode === "many" ? "catalogs.preview.limitMany" : "catalogs.preview.limit")}</p>
   </section>;
 }

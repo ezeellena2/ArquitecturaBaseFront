@@ -536,7 +536,8 @@
       "choose": "Choose an option",
       "back": "Back",
       "upTo": "Choose up to {{count}}",
-      "limit": "Illustrative preview of this page. WhatsApp allows up to 200 active options when sending."
+      "limit": "Illustrative preview of this page. WhatsApp allows up to 200 active options when sending.",
+      "limitMany": "Illustrative preview of this page. WhatsApp allows up to 20 active options in a multiple-choice question."
     },
     "actions": {
       "paste": "Paste from Excel",
