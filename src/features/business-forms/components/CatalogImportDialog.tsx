@@ -19,6 +19,7 @@ import { fetchCatalog } from "../api/catalogs";
 import { applyCatalogImport, previewCatalogImport, type CatalogImportPreview } from "../api/catalogImports";
 import type { CatalogDetail } from "../api/catalogResponse";
 import { parseCatalogPaste } from "../catalogPaste";
+import { formatCatalogValue } from "../catalogValues";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 
 export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; initialSource: "file" | "paste"; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void }
@@ -80,6 +81,7 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
     finally { if (operation.current === controller) { operation.current = null; if (active.current) setState(value => ({ ...value, busy: null })); } }
   };
   const columnLabel = (column: string) => t("catalogs.import.columns." + column, { defaultValue: t("catalogs.import.column") });
+  const displayValue = (value: string | null) => value === null ? "—" : formatCatalogValue(catalog.valueType, value, scope.culture);
   const close = () => { if (state.busy === "apply") return; operation.current?.abort(); operation.current = null; setState(fresh(owner, state.revision, state.source)); onClose(); };
   const changeSource = (source: string) => { if (!state.busy && (source === "file" || source === "paste")) setState(fresh(owner, state.revision, source)); };
   return <Dialog open onOpenChange={open => { if (!open && state.busy !== "apply") close(); }}><DialogContent mobileFullscreen className="flex flex-col sm:max-w-3xl" showCloseButton={state.busy !== "apply"} onCloseAutoFocus={restoreFocus}>
@@ -97,8 +99,8 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
         {preview.alreadyAppliedAtUtc ? <Banner>{t("catalogs.import.alreadyApplied", { date: formatDateTimeInZone(preview.alreadyAppliedAtUtc, i18n.language, timeZoneId) })}</Banner> : null}
         <Tabs defaultValue={preview.issues.length ? "issues" : "added"}><TabsList>{["issues", "added", "changed", "deactivated"].map(key => <TabsTrigger key={key} value={key}>{t("catalogs.import.tabs." + key)}</TabsTrigger>)}</TabsList>
           <TabsContent value="issues"><Table><TableHeader><TableRow><TableHead>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.column")}</TableHead><TableHead>{t("catalogs.import.what")}</TableHead></TableRow></TableHeader><TableBody>{preview.issues.map((issue, index) => <TableRow key={index}><TableCell>{issue.row}</TableCell><TableCell>{columnLabel(issue.column)}</TableCell><TableCell className="whitespace-normal">{issue.message}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
-          <TabsContent value="added"><Table><TableBody>{preview.added.map(item => <TableRow key={item.row}><TableCell>{item.row}</TableCell><TableCell>{item.code}</TableCell><TableCell>{item.text}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
-          <TabsContent value="changed"><Table><TableBody>{preview.changed.map(item => <TableRow key={item.itemId}><TableCell>{item.row}</TableCell><TableCell>{item.code}</TableCell><TableCell className="whitespace-normal">{item.changes.map((change, index) => <p key={index}>{columnLabel(change.column)}: {change.before ?? "—"} → {change.after ?? "—"}</p>)}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
+          <TabsContent value="added"><Table><TableBody>{preview.added.map(item => <TableRow key={item.row}><TableCell>{item.row}</TableCell><TableCell>{item.code}</TableCell><TableCell>{item.text}</TableCell>{catalog.valueType !== "Text" ? <TableCell>{displayValue(item.value)}</TableCell> : null}</TableRow>)}</TableBody></Table></TabsContent>
+          <TabsContent value="changed"><Table><TableBody>{preview.changed.map(item => <TableRow key={item.itemId}><TableCell>{item.row}</TableCell><TableCell>{item.code}</TableCell><TableCell className="whitespace-normal">{item.changes.map((change, index) => <p key={index}>{columnLabel(change.column)}: {change.column === "value" ? displayValue(change.before) : change.before ?? "—"} → {change.column === "value" ? displayValue(change.after) : change.after ?? "—"}</p>)}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
           <TabsContent value="deactivated"><Table><TableBody>{preview.deactivated.map(item => <TableRow key={item.itemId}><TableCell>{item.code}</TableCell><TableCell>{item.text}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
         </Tabs>
         {preview.listsTruncated ? <p className="text-sm">{t("catalogs.import.truncated")}</p> : null}

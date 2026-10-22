@@ -10,7 +10,7 @@ const previewSchema = z.strictObject({
   sheetSha256: z.string().regex(/^[a-fA-F0-9]{64}$/), sheetName: z.string(), rowsRead: count,
   counts: z.strictObject({ added: count, changed: count, deactivated: count, reactivated: count, unchanged: count, errorRows: count, warnings: count }),
   issues: z.array(z.strictObject({ row: count, column: z.string(), severity: z.enum(["Error", "Warning"]), code: z.string(), message: z.string(), relatedRow: count.nullable(), length: count.nullable() })),
-  added: z.array(z.strictObject({ row: count, code: z.string(), text: z.string() })).max(100),
+  added: z.array(z.strictObject({ row: count, code: z.string(), text: z.string(), value: z.string().nullable() })).max(100),
   changed: z.array(z.strictObject({ row: count, itemId: guid, code: z.string(), changes: z.array(z.strictObject({ column: z.string(), before: z.string().nullable(), after: z.string().nullable() })) })).max(100),
   deactivated: z.array(z.strictObject({ itemId: guid, code: z.string(), text: z.string() })).max(100),
   listsTruncated: z.boolean(), confirmations: z.strictObject({ deactivations: count, emptySheet: z.boolean(), manyErrors: z.boolean() }),

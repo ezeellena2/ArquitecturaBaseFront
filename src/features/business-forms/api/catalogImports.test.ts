@@ -9,6 +9,14 @@ it("reads the complete strict import preview without keeping zod issues or accep
     expect(() => readCatalogImportPreview(body, id, 7, "Replace")).toThrow("Unsupported catalog response.");
   }
 });
+it("requires the normalized nullable value in every added preview row", () => {
+  for (const value of [null, "1500.5", "2026-04-03"]) {
+    const body = { ...preview, added: [{ ...preview.added[0]!, value }] };
+    expect(readCatalogImportPreview(body, id, 7, "Replace")).toEqual(body);
+  }
+  const { value: _value, ...withoutValue } = { ...preview.added[0]!, value: null };
+  expect(() => readCatalogImportPreview({ ...preview, added: [withoutValue] }, id, 7, "Replace")).toThrow("Unsupported catalog response.");
+});
 it("sends the same file and captured revision as private multipart and keeps apply confirmations exact", async () => {
   const post = vi.spyOn(api, "post").mockResolvedValue(preview);
   const body = { file: new File(["Code,Text"], "pasted.csv"), expectedRevision: 7, mode: "Replace" as const }, signal = new AbortController().signal;

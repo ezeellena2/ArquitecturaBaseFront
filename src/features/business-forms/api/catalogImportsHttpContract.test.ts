@@ -39,7 +39,7 @@ for (const culture of cultures) {
       confirmations: { deactivations: 2, emptySheet: false, manyErrors: true } });
     expect(replace.issues).toEqual([{ row: 4, column: "text", severity: "Error", code: "Forms.CatalogImport.TextTooLong", message: expect.any(String), relatedRow: null, length: 31 }]);
     expect(replace.issues[0].message.length).toBeGreaterThan(0);
-    expect(replace.added).toEqual([{ row: 3, code: "NEW", text: "Nueva" }]);
+    expect(replace.added).toEqual([{ row: 3, code: "NEW", text: "Nueva", value: null }]);
     expect(replace.changed).toHaveLength(1);
     expect(replace.changed[0]).toMatchObject({ row: 2, code: "A" });
     expect(replace.deactivated.map(item => item.code).sort()).toEqual(["B", "C"]);

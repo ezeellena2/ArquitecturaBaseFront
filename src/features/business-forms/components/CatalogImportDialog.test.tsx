@@ -1,8 +1,9 @@
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { queryClient } from "@/shared/api/queryClient";
+import i18n from "@/shared/i18n";
 import { ApiError } from "@/shared/api/ApiError";
 import { catalogImportPreviewFixture } from "@/test/catalogImportFixtures";
 import * as imports from "../api/catalogImports";
@@ -11,7 +12,7 @@ import type { CatalogDetail } from "../api/catalogResponse";
 import { CatalogImportDialog } from "./CatalogImportDialog";
 const catalog: CatalogDetail = { valueType: "Text", proposal: null, id: catalogImportPreviewFixture().catalogId, key: catalogImportPreviewFixture().catalogId.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 2, usageCount: null, unavailableReasonCode: null, filters: null };
 const scope = { actorId: "actor", culture: "es" as const, permissions: ["formcatalogs.read", "formcatalogs.manage"] };
-afterEach(() => { cleanup(); vi.restoreAllMocks(); queryClient.clear(); });
+afterEach(async () => { cleanup(); vi.restoreAllMocks(); queryClient.clear(); await i18n.changeLanguage("es"); });
 async function mount(initialSource: "file" | "paste" = "paste") {
   const onApplied = vi.fn(), onObserved = vi.fn(), onClose = vi.fn();
   const props = { scope, catalog, initialSource, onApplied, onObserved, onClose, onTemplate: vi.fn() };
@@ -97,4 +98,28 @@ it("removes the pasted text and review on a forbidden write without retrying",as
  await user.type(screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");await user.click(screen.getByRole("button",{name:"Revisar"}));
  await user.click(await screen.findByRole("button",{name:"Aplicar"}));
  expect(await screen.findByText("Ya no tenés permiso para importar opciones.")).toBeInTheDocument();expect(screen.queryByRole("textbox")).not.toBeInTheDocument();expect(screen.queryByRole("button",{name:"Aplicar"})).not.toBeInTheDocument();expect(apply).toHaveBeenCalledOnce();
+});
+
+it.each([
+  ["Decimal", "es", "1500.5", "1.500,5", "2500.75", "2.500,75"],
+  ["Decimal", "en", "1500.5", "1,500.5", "2500.75", "2,500.75"],
+  ["Date", "es", "2026-04-03", "3 abr 2026", "2026-05-04", "4 may 2026"],
+  ["Date", "en", "2026-04-03", "Apr 3, 2026", "2026-05-04", "May 4, 2026"],
+] as const)("shows normalized %s values for added and changed rows in %s before applying", async (valueType, culture, before, shownBefore, after, shownAfter) => {
+  await i18n.changeLanguage(culture);
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", issues: [], deactivated: [],
+    added: [{ ...base.added[0]!, value: after }],
+    changed: [{ row: 3, itemId: catalog.id, code: "C", changes: [{ column: "value", before, after }] }],
+    counts: { ...base.counts, changed: 1, deactivated: 0, errorRows: 0 }, confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
+  const apply = vi.spyOn(imports, "applyCatalogImport");
+  const user = userEvent.setup();
+  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, valueType }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tValue\nN\tNorte\t" + after } });
+  await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
+  await user.click(await screen.findByRole("tab", { name: culture === "en" ? "New" : "Altas" }));
+  expect(within(screen.getByRole("tabpanel")).getByRole("cell", { name: shownAfter })).toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: culture === "en" ? "Changes" : "Cambios" }));
+  expect(within(screen.getByRole("tabpanel")).getByText(`${culture === "en" ? "Value" : "Valor"}: ${shownBefore} → ${shownAfter}`)).toBeInTheDocument();
+  expect(apply).not.toHaveBeenCalled();
 });

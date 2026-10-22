@@ -24,7 +24,7 @@ export function createCatalogImportVisualStore(culture: "es" | "en", catalogId: 
     }));
     return { ...original, catalogId, revision: applied ? 2 : 1, mode, sheetName: culture === "es" ? "Clientes" : "Customers", rowsRead: 27,
       counts: { added: 1, changed: 1, deactivated: mode === "Replace" ? 1 : 0, reactivated: 0, unchanged: 1, errorRows: 24, warnings: 0 },
-      issues, added: [{ row: 2, code: "N", text: "Norte" }],
+      issues, added: [{ row: 2, code: "N", text: "Norte", value: null }],
       changed: [{ row: 3, itemId: "01990000-0000-7000-8000-000000000081", code: "C1", changes: [{ column: "text", before: "Pérez", after: "Pérez Norte" }] }],
       deactivated: mode === "Replace" ? [{ itemId: "01990000-0000-7000-8000-000000000083", code: "C3", text: "Ríos" }] : [],
       confirmations: { deactivations: mode === "Replace" ? 1 : 0, emptySheet: false, manyErrors: true } };
