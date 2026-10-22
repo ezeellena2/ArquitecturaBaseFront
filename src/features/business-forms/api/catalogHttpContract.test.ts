@@ -63,9 +63,11 @@ describe("Historical catalog HTTP exports and current contract rejection", () =>
     await expect(fetchCatalog(id)).rejects.toThrow("Unsupported catalog response.");
     expect(sent).toEqual([createBody, updateBody]);
   });
-  it("continues to consume the unchanged real item page", async () => {
+  it("rejects the unchanged historical item page without the now-required nullable value", async () => {
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => json(itemsRaw)));
-    expect(await fetchCatalogItems(id, { page: 1, pageSize: 20 })).toEqual(JSON.parse(itemsRaw));
+    expect(JSON.parse(itemsRaw).items.length).toBeGreaterThan(0);
+    for (const item of JSON.parse(itemsRaw).items) expect(item).not.toHaveProperty("value");
+    await expect(fetchCatalogItems(id, { page: 1, pageSize: 20 })).rejects.toThrow("Unsupported catalog response.");
   });
   for (const [culture, raw] of [["es", listEsRaw], ["en", listEnRaw]] as const) it("rejects the historical localized page without the now-required origin facets in " + culture, async () => {
     configureHttpClient({ getLanguage: () => culture });
