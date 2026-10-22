@@ -520,3 +520,19 @@ El recorrido interactivo en IAB verificó componentes productivos con transporte
 | [DC1 inicial, es, 320](evidence/formularios-whatsapp/menu-detalle-20261021/response-full-initial-es-320.png) | Formulario/número legibles, Respuesta abierta, Actividad plegada y adjunto legible. |
 | [Actividad, en, 390](evidence/formularios-whatsapp/menu-detalle-20261021/response-full-activity-en-390.png) | PDF vinculado a su acción, nombre, idioma y marco de miniatura. |
 | [Visor PDF, es, 320](evidence/formularios-whatsapp/menu-detalle-20261021/response-full-pdf-es-320.png) | Descargar y Cerrar dentro del diálogo de copia fija. |
+
+## Verificación interactiva posterior al review de menú — 2026-10-21
+
+Se recorrieron en IAB los componentes productivos con transporte sintético: MF1 con las cuatro entradas, el filtro de pendientes y las bajas identificadas; D2 con migas de planilla; teclado desde Por aprobar hasta la pantalla completa y retorno a la tarea; selección/foco al cerrar; el atajo móvil del PDF y el perfil que sólo decide. Español e inglés a 390/320 px, más escritorio para MF1, D2 y pendientes. No se usaron datos de Aspire ni Meta. Los servidores y pestañas propios se cerraron y se retiró el tamaño temporal del navegador.
+
+El atajo «Ver PDF» abre Actividad; la entrada ordinaria mantiene el plegado. Esta comprobación acredita estado, controles y referencia a la copia, sin atribuir píxeles al iframe nativo. Quedan pendientes la integración completa y la suite visual conjunta; estas capturas son evidencia del recorrido interactivo y no se presentan como resultado de esa suite.
+
+| Evidencia del review | Alcance |
+| --- | --- |
+| [MF1 pendientes, es, escritorio](evidence/formularios-whatsapp/menu-review-20261021/mf1-pending-es-desktop.png) | Cuatro entradas, segmentos sin selección, baja marcada y sin aviso repetido. |
+| [MF1 pendientes, en, 320](evidence/formularios-whatsapp/menu-review-20261021/mf1-pending-en-320.png) | Traducción y tabla con desplazamiento contenido. |
+| [D2, es, escritorio](evidence/formularios-whatsapp/menu-review-20261021/d2-breadcrumb-es-desktop.png) | Migas de la planilla, sin la rama genérica de respuesta. |
+| [Pendientes completos, es, 390](evidence/formularios-whatsapp/menu-review-20261021/pending-full-es-390.png) | Origen Por aprobar, contador de cola y decisión al pie. |
+| [Pendientes completos, en, 320](evidence/formularios-whatsapp/menu-review-20261021/pending-full-en-320.png) | Interfaz en inglés; conserva el texto y el archivo históricos. |
+| [Atajo PDF, en, 390](evidence/formularios-whatsapp/menu-review-20261021/pdf-intent-en-390.png) | Actividad abierta y copia vinculada a Al aprobarla. |
+| [Sólo decisión, es, 320](evidence/formularios-whatsapp/menu-review-20261021/decide-only-es-320.png) | Metadata y decisión sin respuestas ni pantalla completa. |
