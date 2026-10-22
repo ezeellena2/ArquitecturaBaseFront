@@ -360,7 +360,7 @@ Sin elección; no se implementan sin ella.
 | Plantilla · Listado | ejemplo `/usuarios` | Se duplica para cada listado |
 | Formularios por WhatsApp | `/formularios`, respuestas, aprobación, diseño PDF y chat | [Diseño y estado de calificación](formularios-whatsapp.md) |
 | Casos del asistente | Pantalla Asistente del panel de WhatsApp y el chat | [Tableros elegidos, por programar](asistente-casos.md) |
-| Mejoras de catálogos | Editor de catálogos, «Elegir de un catálogo» y las respuestas | [Tableros elegidos, por programar](catalogos-mejoras.md) |
+| Mejoras de catálogos | Editor de catálogos, «Elegir de un catálogo» y las respuestas | [E1 implementado y recorrido local](catalogos-mejoras.md#recorrido-local-de-e1--2026-10-22) |
 | Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [Tableros elegidos, por programar](catalogos-campos-extra.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
