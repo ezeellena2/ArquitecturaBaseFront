@@ -1,6 +1,6 @@
-import { type ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { responseFullPath } from "../responseNavigationPaths";
@@ -15,11 +15,11 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { Pagination } from "@/shared/ui/Pagination";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
-import { fetchApprovalTask, fetchApprovalTasks, type ApprovalPage, type ApprovalTask } from "../api/approvals";
+import { fetchApprovalTask, type ApprovalTask } from "../api/approvals";
 import { approvalForbidden } from "../hooks/useApprovalQueries";
 import { useFormPendingApprovals } from "../hooks/useFormPendingApprovals";
 import { useResponseFeedback, useResponseScope } from "../hooks/useResponseQueries";
-import { useResponsePanelNavigation } from "../hooks/useResponsePanelNavigation";
+import { usePendingApprovalNavigation } from "../hooks/usePendingApprovalNavigation";
 import { useResponseWorkspace } from "../hooks/useResponseWorkspace";
 import { FormResponseDetailPage } from "../pages/FormResponseDetailPage";
 import { ApprovalDecisionPanel } from "./ApprovalDecisionPanel";
@@ -38,7 +38,6 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
   const { scope, query, deny, forbidden } = useFormPendingApprovals(formId, page, pageSize, taskId);
   const workspace = useResponseWorkspace(formId);
   const readScope = useResponseScope();
-  const client = useQueryClient();
   const table = useRef<HTMLElement | null>(null);
   const previousTask = useRef(taskId);
   const [observedRecord, setObservedRecord] = useState<{ owner: string; formId: string; taskId: string; recordId: string } | null>(null);
@@ -56,32 +55,14 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
     return next.toString();
   }, [params, page]);
   const captured = workspace.navigation?.origin === "pending" ? workspace.navigation.pending : undefined;
-  const queue = useMemo(() => {
-    if (!captured) return undefined;
-    const appended = taskId && !query.data?.items.some(task => task.id === taskId) && query.data?.page === captured.page
-      ? query.data.items.filter(task => !captured.tasks.some(item => item.id === task.id)).map(task => ({ id: task.id, recordId: task.recordId })) : [];
-    return appended.length ? { ...captured, tasks: [...captured.tasks, ...appended] } : captured;
-  }, [captured, taskId, query.data]);
-  const ids = queue?.tasks.map(task => task.id) ?? query.data?.items.map(task => task.id) ?? [];
-  const navigationPage = captured?.page ?? page;
-  const index = taskId ? ids.indexOf(taskId) : -1;
-  const motion = useResponsePanelNavigation({ contextKey: [scope.owner, formId, taskId, page].join(":"), ids, index, page: navigationPage,
+  const queue = captured;
+  const motion = usePendingApprovalNavigation({ owner: scope.owner, formId, taskId, pending: queue, allowed: scope.allowed,
     disabled: !query.data || query.isPlaceholderData || selected.isPlaceholderData,
-    loadPage: async nextPage => {
-      const filter = { definitionId: formId, onlyMine: true, page: nextPage, pageSize };
-      try {
-        const result = await client.fetchQuery({ queryKey: ["form-approvals", scope.owner, "list", filter],
-          queryFn: ({ signal }) => fetchApprovalTasks(filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
-        return { ids: result.items.map(task => task.id), totalCount: result.totalCount };
-      } catch (error) { if (approvalForbidden(error)) deny(); throw error; }
-    },
-    onNavigate: (id, nextPage) => {
-      const loaded = client.getQueryData<ApprovalPage>(["form-approvals", scope.owner, "list", { definitionId: formId, onlyMine: true, page: nextPage, pageSize }]);
-      const nextQueue = queue?.page === nextPage ? queue : loaded ? { tasks: loaded.items.map(task => ({ id: task.id, recordId: task.recordId })), page: nextPage, pageSize, totalCount: loaded.totalCount } : undefined;
-      const target = nextQueue?.tasks.find(task => task.id === id);
-      if (!nextQueue || !target) return;
-      workspace.setNavigation({ origin: "pending", selection: { taskId: target.id, recordId: target.recordId }, search: pendingSearch(target.id, nextPage), pending: nextQueue });
-      update({ approval: id, approvalPage: nextPage === 1 ? undefined : String(nextPage) }, { pathname: "/formularios/" + formId + "/respuestas", replace: true });
+    onForbidden: deny,
+    onQueue: pending => { const current = workspace.navigation; if (current?.origin === "pending") workspace.setNavigation({ ...current, pending }); },
+    onNavigate: (target, pending, nextPage) => {
+      workspace.setNavigation({ origin: "pending", selection: { taskId: target.id, recordId: target.recordId }, search: pendingSearch(target.id, nextPage), pending });
+      update({ approval: target.id, approvalPage: nextPage === 1 ? undefined : String(nextPage) }, { pathname: "/formularios/" + formId + "/respuestas", replace: true });
     },
   });
   const task = selected.data?.definitionId === formId ? selected.data : undefined;
@@ -91,26 +72,24 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
   } else if (observedRecord && (!readScope.allowed || !taskId || observedRecord.owner !== scope.owner || observedRecord.formId !== formId || observedRecord.taskId !== taskId)) {
     setObservedRecord(null);
   }
-  const taskNavigationReady = workspace.navigation?.origin === "pending" && workspace.navigation.selection.taskId === taskId &&
-    workspace.navigation.selection.recordId === task?.recordId && !!workspace.navigation.pending;
+  const taskNavigationReady = !!task && !!captured?.tasks.some(item => item.id === taskId && item.recordId === task.recordId);
   useLayoutEffect(() => {
-    if (!readScope.allowed || !scope.allowed || forbidden || taskNavigationReady || !taskId || task?.id !== taskId ||
+    if (!scope.allowed || forbidden || taskNavigationReady || !taskId || task?.id !== taskId ||
       !query.data || query.isPlaceholderData || selected.isPlaceholderData) return;
     workspace.setNavigation({ origin: "pending", selection: { taskId: task.id, recordId: task.recordId }, search: pendingSearch(task.id),
-      pending: { tasks: query.data.items.map(item => ({ id: item.id, recordId: item.recordId })), page: query.data.page, pageSize: query.data.pageSize, totalCount: query.data.totalCount } });
+      pending: { tasks: query.data.items.map(item => ({ id: item.id, recordId: item.recordId, requestedAtUtc: item.requestedAtUtc })), page: query.data.page, pageSize: query.data.pageSize, totalCount: query.data.totalCount } });
   }, [readScope.allowed, scope.allowed, forbidden, taskNavigationReady, taskId, task, query.data, query.isPlaceholderData, selected.isPlaceholderData, workspace, pendingSearch]);
-  useLayoutEffect(() => {
-    const current = workspace.navigation;
-    if (!scope.allowed || forbidden || query.isPlaceholderData || selected.isPlaceholderData || !queue || queue === captured || !taskId ||
-      current?.origin !== "pending" || current.selection.taskId !== taskId || current.selection.recordId !== task?.recordId) return;
-    workspace.setNavigation({ ...current, pending: queue });
-  }, [workspace, scope.allowed, forbidden, query.isPlaceholderData, selected.isPlaceholderData, queue, captured, taskId, task?.recordId]);
   const busy = motion.busy || selected.isPlaceholderData;
-  const navigation = { selectionId: taskId, focusRequest, previous: index > 0 || index === 0 && (navigationPage > 1),
-    next: index >= 0 && (index < ids.length - 1 || (navigationPage - 1) * pageSize + index + 1 < (queue?.totalCount ?? query.data?.totalCount ?? 0)), busy,
-    position: index >= 0 ? (navigationPage - 1) * pageSize + index + 1 : undefined, count: captured?.totalCount ?? query.data?.totalCount, kind: "pending" as const,
+  const navigation = { selectionId: taskId, focusRequest, previous: motion.previous, next: motion.next, busy,
+    position: motion.position, count: motion.count, kind: "pending" as const,
     onMove: (direction: number) => { void motion.move(direction); },
-    onClose: () => update({ approval: undefined, tab: undefined }, { replace: false }), error: motion.error, onRetry: motion.retry };
+    onClose: () => {
+      const reference = queue?.tasks.find(task => task.id === taskId);
+      const source = workspace.navigation;
+      if (source?.origin === "pending" && reference)
+        workspace.setNavigation({ ...source, selection: { taskId: reference.id, recordId: reference.recordId }, search: params.toString() });
+      update({ approval: undefined, tab: undefined }, { replace: false });
+    }, error: motion.error, onRetry: motion.retry };
   useLayoutEffect(() => {
     if (taskId) previousTask.current = taskId;
     else if (previousTask.current) {
@@ -119,7 +98,7 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
     }
   }, [taskId]);
   const remember = (task: ApprovalTask) => workspace.setNavigation({ origin: "pending", selection: { taskId: task.id, recordId: task.recordId },
-    search: pendingSearch(task.id), pending: { tasks: query.data?.items.map(item => ({ id: item.id, recordId: item.recordId })) ?? [], page, pageSize, totalCount: query.data?.totalCount ?? 0 } });
+    search: pendingSearch(task.id), pending: { tasks: query.data?.items.map(item => ({ id: item.id, recordId: item.recordId, requestedAtUtc: item.requestedAtUtc })) ?? [], page, pageSize, totalCount: query.data?.totalCount ?? 0 } });
   const full = mobile && readScope.allowed;
   const open = (task: ApprovalTask) => { remember(task); if (full) { workspace.prepareFull(task.recordId); navigate(responseFullPath(formId, task.recordId, params.toString())); return; } if (task.id === taskId) setFocusRequest(value => value + 1); update({ approval: task.id, tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }); };
   const refresh = () => { onDecided?.(); };

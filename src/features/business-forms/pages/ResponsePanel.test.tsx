@@ -525,3 +525,23 @@ it("withdraws denied task metadata in the per-form pending while preserving inde
   await waitFor(() => expect(queryClient.isFetching()).toBe(0));
   expect(reads.tasks).toBe(readsAfterDenial);
 });
+
+it.each(["link", "row"] as const)("returns to the visible pending row after browser Back and Escape (%s)", async activation => {
+  setup(["formrecords.read", "formapprovals.decide"], true);
+  const { router } = renderRouteWithProviders(path);
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000002" }));
+  let panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  const next = screen.getByRole("link", { name: "Revisar TEST-000001" });
+  await userEvent.click(activation === "link" ? next : next.closest("tr")!.querySelector("td")!);
+  await within(panel).findByRole("heading", { name: "TEST-000001" });
+  await act(async () => { await router.navigate(-1); });
+  panel = screen.getByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  await act(async () => panel.focus()); await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument());
+  const selected = screen.getByRole("link", { name: "Revisar TEST-000002" });
+  await waitFor(() => expect(selected).toHaveFocus());
+  expect(selected.closest("tr")).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("link", { name: "Revisar TEST-000001" }).closest("tr")).not.toHaveAttribute("aria-selected", "true");
+});

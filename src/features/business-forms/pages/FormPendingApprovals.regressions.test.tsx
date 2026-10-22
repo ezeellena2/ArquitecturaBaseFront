@@ -51,6 +51,16 @@ function setup(read = false) {
       return HttpResponse.json({ items: open.slice((page - 1) * pageSize, page * pageSize), page, pageSize,
         totalCount: open.length, totalPages, hasPrevious: page > 1, hasNext: page < totalPages });
     }),
+    http.get("/api/forms/approvals/:id/continuation", ({ params, request }) => {
+      if (access.denied) return denied();
+      const url = new URL(request.url); const direction = url.searchParams.get("direction")!;
+      const anchor = tasks.findIndex(task => task.id === params.id); const open = tasks.filter(task => task.state === "Open");
+      const candidates = open.filter(task => direction === "Next" ? tasks.indexOf(task) > anchor : tasks.indexOf(task) < anchor);
+      const size = Number(url.searchParams.get("pageSize"));
+      const items = direction === "Next" ? candidates.slice(0, size) : candidates.slice(-size);
+      return HttpResponse.json({ anchorTaskId: params.id, definitionId: responseFormId, direction,
+        items: items.map(task => ({ task, position: open.indexOf(task) + 1 })), totalCount: open.length, hasMore: candidates.length > items.length });
+    }),
     http.get("/api/forms/approvals/:id", ({ params }) => {
       if (access.denied) return denied();
       const task = tasks.find(item => item.id === params.id);
@@ -245,15 +255,13 @@ it("withdraws pending metadata when loading the next page is forbidden while ret
   setup(true);
   renderRouteWithProviders(path + "?approvalPageSize=1");
   const panel = await openFirst();
-  server.use(http.get("/api/forms/approvals", ({request}) => new URL(request.url).searchParams.get("page") === "2"
-    ? HttpResponse.json({code:"Authorization.Forbidden"},{status:403})
-    : HttpResponse.json({items:[approvalTaskFixture()],page:1,pageSize:1,totalCount:2,totalPages:2,hasPrevious:false,hasNext:true})));
+  server.use(http.get("/api/forms/approvals/:id/continuation", () => HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));
   await userEvent.click(within(panel).getByRole("button", {name:"Siguiente"}));
   await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");
   expect(screen.getByRole("columnheader", {name:"Importe"})).toBeVisible();
   expect(screen.queryByRole("link", {name:"Revisar VIS-00001"})).not.toBeInTheDocument();
   await waitFor(() => {
-    for (const query of queryClient.getQueryCache().findAll({predicate: query => query.queryKey[0] === "form-approvals" && ["task","list"].includes(String(query.queryKey[2]))}))
+    for (const query of queryClient.getQueryCache().findAll({predicate: query => query.queryKey[0] === "form-approvals" && ["task","list","continuation"].includes(String(query.queryKey[2]))}))
       expect(query.state.data).toBeUndefined();
   });
 });
@@ -295,7 +303,7 @@ it.each(["sheet", "values"])("keeps decision metadata available when %s reading 
   });
 });
 
-it("shares the observed compacted queue with full-detail navigation before Next is pressed", async () => {
+it("shares only captured and anchored pending references with full-detail navigation", async () => {
   const fixture = setup();
   const useWorkspace = workspaceHooks.useResponseWorkspace;
   const observed: { snapshot: ResponseNavigationContext | null } = { snapshot: null };
@@ -310,10 +318,14 @@ it("shares the observed compacted queue with full-detail navigation before Next 
     await userEvent.click(within(panel).getByRole("button", { name: "Aprobar" }));
     await within(panel).findByText(/Supervisora/);
     await waitFor(() => expect(screen.getByRole("link", { name: "Revisar VIS-00002" })).toBeVisible());
-    await waitFor(() => expect(observed.snapshot?.pending?.tasks).toEqual(fixture.tasks.map(task => ({ id: task.id, recordId: task.recordId }))));
+    expect(observed.snapshot?.pending?.tasks).toEqual([{ id: fixture.tasks[0].id, recordId: fixture.tasks[0].recordId, requestedAtUtc: fixture.tasks[0].requestedAtUtc }]);
     expect(observed.snapshot?.selection).toEqual({ taskId: fixture.tasks[0].id, recordId: fixture.tasks[0].recordId });
     expect(observed.snapshot?.search).toContain("approval=" + fixture.tasks[0].id);
     expect(observed.snapshot?.pending).toMatchObject({ page: 1, pageSize: 1, totalCount: 2 });
+    await userEvent.click(within(panel).getByRole("button", { name: "Siguiente" }));
+    await waitFor(() => expect(observed.snapshot?.selection.taskId).toBe(fixture.tasks[1].id));
+    expect(observed.snapshot?.pending?.tasks).toEqual(fixture.tasks.map((task, index) => ({ id: task.id, recordId: task.recordId, requestedAtUtc: task.requestedAtUtc, ...(index ? { position: 1 } : {}) })));
+    expect(observed.snapshot?.pending?.totalCount).toBe(2);
   } finally { observe.mockRestore(); }
 });
 

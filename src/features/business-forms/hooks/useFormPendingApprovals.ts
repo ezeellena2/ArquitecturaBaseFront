@@ -19,7 +19,7 @@ export function useFormPendingApprovals(formId: string, page: number, pageSize: 
   useEffect(() => {
     if (deniedOwner !== scope.owner) return;
     const predicate = (entry: { queryKey: readonly unknown[]; state: { data: unknown } }) => entry.queryKey[0] === "form-approvals" && entry.queryKey[1] === scope.owner &&
-      (entry.queryKey[2] === "list" && (entry.queryKey[3] as typeof filter | undefined)?.definitionId === formId ||
+      ((entry.queryKey[2] === "continuation" && entry.queryKey[3] === formId) || entry.queryKey[2] === "list" && (entry.queryKey[3] as typeof filter | undefined)?.definitionId === formId ||
        entry.queryKey[2] === "task" && (entry.queryKey[3] === selectedTaskId || (entry.state.data as { definitionId?: string } | undefined)?.definitionId === formId));
     void client.cancelQueries({ predicate });
     client.removeQueries({ predicate });

@@ -17,7 +17,7 @@ const path = `/formularios/${responseFormId}/respuestas`;
 const secondTaskId = "0199a0c0-0000-7000-8000-000000000071";
 const priorRecordId = "0199a0c0-0000-7000-8000-000000000072";
 function setup(permissions = ["formrecords.read"], pending = false) {
-  const reads = { details: 0, workflow: 0, sheets: [] as Record<string, unknown>[], anchors: [] as Record<string, unknown>[], decisions: 0 };
+  const reads = { details: 0, workflow: 0, sheets: [] as Record<string, unknown>[], anchors: [] as Record<string, unknown>[], continuations: [] as string[], pendingPages: [] as string[][], decisions: 0 };
   const tasks = [approvalTaskFixture(), { ...approvalTaskFixture(), id: secondTaskId, recordId: responseSecondId, number: "TEST-000001", requestedAtUtc: "2026-10-16T13:00:00Z" }];
   const sheet = responseSheetFixture(); sheet.hasApproval = pending;
   server.use(
@@ -26,7 +26,19 @@ function setup(permissions = ["formrecords.read"], pending = false) {
     http.post("/api/forms/definitions/:id/records/:recordId/navigation", async ({ params, request }) => { reads.anchors.push(await request.json() as Record<string, unknown>); const first = params.recordId === responseRecordId; return HttpResponse.json({ recordId: params.recordId, previousId: first ? null : responseRecordId, nextId: first ? responseSecondId : null, position: first ? 1 : 2, totalCount: 2 }); }),
     http.get("/api/forms/records/:id", ({ params }) => { reads.details++; return HttpResponse.json(responseDetailFixture(String(params.id))); }),
     http.get("/api/forms/records/:id/workflow", ({ params }) => { reads.workflow++; const task = pending ? tasks.find(task => task.recordId === params.id) : undefined; return HttpResponse.json({ ...responseWorkflowFixture(String(params.id)), recordState: task ? task.state === "Open" ? "PendingApproval" : task.state : "Received", task: task ? { id: task.id, roleId: task.role.id, roleName: task.role.name, requestedAtUtc: task.requestedAtUtc, revision: task.revision, state: task.state, decidedAtUtc: task.decidedAtUtc, decidedBy: task.decidedBy, reason: task.reason } : null }); }),
-    http.get("/api/forms/approvals", ({ request }) => { const url = new URL(request.url); const size = Number(url.searchParams.get("pageSize") ?? 20); const page = Number(url.searchParams.get("page") ?? 1); const open = tasks.filter(task => task.state === "Open"); return HttpResponse.json({ items: open.slice((page - 1) * size, page * size), page, pageSize: size, totalCount: open.length, totalPages: Math.ceil(open.length / size), hasPrevious: page > 1, hasNext: page * size < open.length }); }),
+    http.get("/api/forms/approvals", ({ request }) => { const url = new URL(request.url); const size = Number(url.searchParams.get("pageSize") ?? 20); const page = Number(url.searchParams.get("page") ?? 1); const open = tasks.filter(task => task.state === "Open"); reads.pendingPages.push(open.slice((page - 1) * size, page * size).map(task => task.id)); return HttpResponse.json({ items: open.slice((page - 1) * size, page * size), page, pageSize: size, totalCount: open.length, totalPages: Math.ceil(open.length / size), hasPrevious: page > 1, hasNext: page * size < open.length }); }),
+    http.get("/api/forms/approvals/:id/continuation", ({ params, request }) => {
+      reads.continuations.push(String(params.id));
+      const url = new URL(request.url); const size = Number(url.searchParams.get("pageSize") ?? 20);
+      const direction = url.searchParams.get("direction");
+      const ordered = [...tasks].sort((left, right) => left.requestedAtUtc.localeCompare(right.requestedAtUtc) || left.id.localeCompare(right.id));
+      const anchorIndex = ordered.findIndex(task => task.id === params.id);
+      const open = ordered.filter(task => task.state === "Open");
+      const candidates = open.filter(task => direction === "Previous" ? ordered.indexOf(task) < anchorIndex : ordered.indexOf(task) > anchorIndex);
+      const batch = direction === "Previous" ? candidates.slice(-size) : candidates.slice(0, size);
+      return HttpResponse.json({ anchorTaskId: params.id, definitionId: responseFormId, direction,
+        items: batch.map(task => ({ task, position: open.indexOf(task) + 1 })), totalCount: open.length, hasMore: candidates.length > size });
+    }),
     http.get("/api/forms/approvals/:id", ({ params }) => HttpResponse.json(tasks.find(task => task.id === params.id))),
     http.post("/api/forms/approvals/:id/decisions", async ({ params, request }) => { const body = await request.json() as { decision: "Approved" }; const task = tasks.find(task => task.id === params.id)!; reads.decisions++; Object.assign(task, { state: body.decision, revision: 2, canDecide: false, cannotDecideReason: "AlreadyDecided", decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" } }); return HttpResponse.json({ taskId: task.id, recordId: task.recordId, state: task.state, revision: task.revision, decidedAtUtc: task.decidedAtUtc, decidedBy: task.decidedBy, reason: null }); }),
   );
@@ -95,7 +107,7 @@ it("keeps decision-only users in the metadata quick view and refuses the full ro
   expect(reads.details).toBe(0); expect(reads.workflow).toBe(0); expect(reads.anchors).toHaveLength(0);
 });
 
-it("keeps the captured pending successor after deciding on a compacted one-row page", async () => {
+it("continues to the pending successor after deciding on a compacted one-row page", async () => {
   const { reads } = setup(["formrecords.read", "formapprovals.decide"], true);
   const { router } = renderRouteWithProviders(path + "?approvalPageSize=1");
   await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }));
@@ -111,14 +123,88 @@ it("keeps the captured pending successor after deciding on a compacted one-row p
   await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
   expect(reads.anchors).toHaveLength(0);
   expect(await screen.findByText("2 de 2 por aprobar")).toBeVisible();
+  expect(reads.continuations).toHaveLength(1);
+});
+it.each(["quick", "full"] as const)("does not skip the next pending task when another approver removes an earlier row (%s)", async view => {
+  const { reads, tasks } = setup(["formrecords.read", "formapprovals.decide"], true);
+  const thirdTask = { ...tasks[1], id: "0199a0c0-0000-7000-8000-000000000073", recordId: priorRecordId, number: "TEST-000003", requestedAtUtc: "2026-10-16T14:00:00Z" };
+  const fourthTask = { ...tasks[1], id: "0199a0c0-0000-7000-8000-000000000074", recordId: "0199a0c0-0000-7000-8000-000000000075", number: "TEST-000004", requestedAtUtc: "2026-10-16T15:00:00Z" };
+  tasks.push(thirdTask, fourthTask);
+  let continuations = 0;
+  server.use(
+    http.get("/api/forms/records/:id", ({ params }) => HttpResponse.json({ ...responseDetailFixture(responseRecordId), id: String(params.id), number: tasks.find(task => task.recordId === params.id)!.number })),
+    http.get("/api/forms/approvals/:id/continuation", ({ params }) => {
+      continuations++;
+      return HttpResponse.json({ anchorTaskId: params.id, definitionId: responseFormId, direction: "Next", items: [thirdTask, fourthTask].map((task, index) => ({ task, position: index + 2 })), totalCount: 3, hasMore: false });
+    }),
+  );
+  const { router } = renderRouteWithProviders(path + "?approvalPageSize=2");
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000001" }));
+  const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(quick).findByRole("heading", { name: "TEST-000001" });
+  if (view === "full") {
+    await userEvent.click(within(quick).getByRole("link", { name: "Abrir en pantalla completa" }));
+    await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
+  }
+  Object.assign(tasks[0], { state: "Approved", revision: 2, canDecide: false, cannotDecideReason: "AlreadyDecided" });
+  await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+  await waitFor(() => expect(view === "full" ? router.state.location.pathname : new URLSearchParams(router.state.location.search).get("approval"))
+    .toBe(view === "full" ? path + "/" + thirdTask.recordId + "/completa" : thirdTask.id));
+  expect(continuations).toBe(1);
+  expect(reads.anchors).toHaveLength(0);
+});
+
+it.each(["quick", "full"] as const)("continues after the resolved anchor without accepting a compacted offset page (%s)", async view => {
+  const { reads, tasks } = setup(["formrecords.read", "formapprovals.decide"], true);
+  const thirdTask = { ...tasks[1], id: "0199a0c0-0000-7000-8000-000000000073", recordId: priorRecordId, number: "TEST-000003", requestedAtUtc: "2026-10-16T14:00:00Z" };
+  const fourthTask = { ...tasks[1], id: "0199a0c0-0000-7000-8000-000000000074", recordId: "0199a0c0-0000-7000-8000-000000000075", number: "TEST-000004", requestedAtUtc: "2026-10-16T15:00:00Z" };
+  tasks.push(thirdTask, fourthTask);
+  server.use(http.get("/api/forms/records/:id", ({ params }) => HttpResponse.json({ ...responseDetailFixture(responseRecordId), id: String(params.id), number: tasks.find(task => task.recordId === params.id)!.number })));
+  const { router } = renderRouteWithProviders(path + "?approvalPageSize=1&approvalPage=2");
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000001" }));
+  const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(quick).findByRole("heading", { name: "TEST-000001" });
+  if (view === "full") {
+    await userEvent.click(within(quick).getByRole("link", { name: "Abrir en pantalla completa" }));
+    await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
+  }
+  Object.assign(tasks[0], { state: "Approved", revision: 2, canDecide: false, cannotDecideReason: "AlreadyDecided" });
+  await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
+  await waitFor(() => expect(reads.decisions).toBe(1));
+  await waitFor(() => expect(reads.pendingPages.at(-1)).toEqual([fourthTask.id]));
+  await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+  await waitFor(() => expect(view === "full" ? router.state.location.pathname : new URLSearchParams(router.state.location.search).get("approval"))
+    .toBe(view === "full" ? path + "/" + thirdTask.recordId + "/completa" : thirdTask.id));
+  expect(reads.continuations).toEqual([tasks[1].id]);
+  expect(reads.anchors).toHaveLength(0);
+});
+it("keeps keyboard arrows in the pending queue without publishing its private sheet filter", async () => {
+  const { reads } = setup(["formrecords.read", "formapprovals.decide"], true);
+  const { router } = renderRouteWithProviders(path);
+  await userEvent.type(await screen.findByRole("searchbox", { name: "Buscar en textos largos" }), "private pending keyboard");
+  await waitFor(() => expect(reads.sheets.at(-1)?.search).toBe("private pending keyboard"));
+  await userEvent.click(screen.getByRole("link", { name: "Revisar VIS-00001" }));
+  const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await userEvent.click(await within(quick).findByRole("link", { name: "Abrir en pantalla completa" }));
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  await userEvent.keyboard("{ArrowDown}");
+  await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
+  expect(screen.getByText("2 de 2 por aprobar")).toBeVisible();
+  await userEvent.keyboard("{ArrowUp}");
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  expect(screen.getByText("1 de 2 por aprobar")).toBeVisible();
+  expect(reads.anchors).toHaveLength(0);
+  expect(router.state.location.search).not.toContain("private");
+  expect(JSON.stringify(router.state.location.state)).not.toContain("private");
+  await userEvent.click(screen.getByRole("link", { name: "Volver a las respuestas" }));
+  expect(await screen.findByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("private pending keyboard");
 });
 it("withdraws only pending metadata when cross-page approval navigation is forbidden", async () => {
   const { reads } = setup(["formrecords.read", "formapprovals.decide"], true);
-  server.use(http.get("/api/forms/approvals", ({ request }) => {
-    const page = Number(new URL(request.url).searchParams.get("page") ?? 1);
-    return page === 2 ? HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }) :
-      HttpResponse.json({ items: [approvalTaskFixture()], page: 1, pageSize: 1, totalCount: 2, totalPages: 2, hasPrevious: false, hasNext: true });
-  }));
+  server.use(
+    http.get("/api/forms/approvals", () => HttpResponse.json({ items: [approvalTaskFixture()], page: 1, pageSize: 1, totalCount: 2, totalPages: 2, hasPrevious: false, hasNext: true })),
+    http.get("/api/forms/approvals/:id/continuation", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })),
+  );
   renderRouteWithProviders(path + "?approvalPageSize=1");
   await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }));
   const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
@@ -177,6 +263,7 @@ it.each([false, true])("keeps the observed pending order when a cold approval li
   await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
   await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
   expect(await screen.findByText("2 de 2 por aprobar")).toBeVisible();
+  expect(reads.continuations).toHaveLength(0);
   expect(reads.anchors).toHaveLength(0);
 });
 it.each(["document", "pdf"])("preserves the sheet context from its mobile %s shortcut", async shortcut => {

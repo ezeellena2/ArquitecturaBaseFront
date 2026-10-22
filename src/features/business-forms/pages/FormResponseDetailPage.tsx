@@ -30,7 +30,11 @@ export function FormResponseDetailPage({ formId, recordId, navigation, onDecided
   useLayoutEffect(() => {
     if (!mobile || redirected.current) return;
     redirected.current = true;
-    if (workspace.navigation?.selection.recordId !== recordId) workspace.setNavigation({ origin: "sheet", selection: { recordId }, search: location.search });
+    if (workspace.navigation?.selection.recordId !== recordId) {
+      const source = workspace.navigation;
+      const observed = source?.origin === "pending" ? source.pending?.tasks.find(task => task.recordId === recordId) : undefined;
+      workspace.setNavigation(source && observed ? { ...source, selection: { recordId, taskId: observed.id }, search: location.search } : { origin: "sheet", selection: { recordId }, search: location.search });
+    }
     workspace.prepareFull(recordId);
     navigate(responseFullPath(formId, recordId, location.search), { replace: true });
   }, [mobile, navigate, formId, recordId, location.search, workspace]);
@@ -49,7 +53,11 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : null} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
     <Button variant="outline" size="sm" asChild><Link to={responseFullPath(formId, recordId, location.search)} onClick={event => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-      if (workspace.navigation?.selection.recordId !== recordId) workspace.setNavigation({ origin: "sheet", selection: { recordId }, search: location.search });
+      if (workspace.navigation?.selection.recordId !== recordId) {
+        const source = workspace.navigation;
+        const observed = source?.origin === "pending" ? source.pending?.tasks.find(task => task.recordId === recordId) : undefined;
+        workspace.setNavigation(source && observed ? { ...source, selection: { recordId, taskId: observed.id }, search: location.search } : { origin: "sheet", selection: { recordId }, search: location.search });
+      }
       workspace.prepareFull(recordId);
     }}>{t("detail.openFull")}</Link></Button>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="link" size="inline" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}

@@ -1,10 +1,15 @@
 import { createContext, useContext } from "react";
 import type { ResponseFilter } from "../responses";
+export interface PendingApprovalNavigation {
+  tasks: { id: string; recordId: string; requestedAtUtc: string; position?: number }[];
+  page: number; pageSize: number; totalCount: number;
+  offset?: number; hasPrevious?: boolean; hasNext?: boolean;
+}
 export interface ResponseNavigationContext {
   origin: "sheet" | "pending";
   selection: { recordId: string; taskId?: string };
   search: string;
-  pending?: { tasks: { id: string; recordId: string }[]; page: number; pageSize: number; totalCount: number };
+  pending?: PendingApprovalNavigation;
 }
 export interface ResponseFullEntry { formId: string; recordId: string; locationKey: string | null; intent?: "pdf" }
 export interface ResponseWorkspace {
