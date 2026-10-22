@@ -1,11 +1,11 @@
 # Mejoras de catálogos: tableros elegidos
 
 Fecha: **2026-10-21**. **Elegidos CA1-A y CA2–CA6** de la versión 102 del lienzo; la 110 suma el ajuste de claridad de
-la vista previa (abajo). E1 implementado; cierre local conjunto en curso.
+la vista previa (abajo). E1 implementado y verificado localmente; el code review y el piloto real siguen pendientes.
 
 Origen: la sección «Catálogos» de la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
-y puede cambiar fuera de Git, este documento y sus capturas congelan lo elegido. El alcance y las decisiones están en el
+y puede cambiar fuera de Git, este documento y sus capturas congelan lo elegido. El alcance y las decisiones están en las
 [reglas vigentes](../../../ArquitecturaBase/docs/features/formularios.md#catálogos-base-de-la-etapa-e1--2026-10-21); las pantallas, los textos y
 los estados salen de acá. Para recorrerlo tocando, el [prototipo navegable](https://claude.ai/artifact/2noVifPc2MX33UnNvT2jhY)
 tiene siete recorridos en su sección «Catálogos».
@@ -59,9 +59,11 @@ varias.
 
 El navegador recorrió las piezas CA1-A y CA2–CA6 en español e inglés, a 1440, 390 y 320 × 900 px, con componentes y rutas productivos sobre transporte y datos sintéticos. Se comprobaron tabla con desplazamiento contenido, editor por opción, revisión de filas y confirmaciones, foco con teclado, formato decimal, identidad nueva al cambiar la multiplicidad, rango, casillas propias, filtro «alguna de» y listas históricas en detalle y chat. El texto de cancelación de Descartar se corrigió usando la traducción compartida existente, con regresión es/en que conserva borrador, ruta y foco.
 
-CA6 encadena piezas de escenas independientes; este recorrido no prueba propagación de datos entre ellas, persistencia ni entrega a Meta. Los XLSX/PDF múltiples se comprueban con la integración y los cuerpos HTTP reales del backend, no con el PDF de muestra del navegador. La verificación conjunta completa de E1 sigue en curso; el [piloto real](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-catálogos-e1) queda para después del code review.
+CA6 encadena piezas de escenas independientes; este recorrido no prueba propagación de datos entre ellas, persistencia ni entrega a Meta. Los XLSX/PDF múltiples se comprueban con la integración y los cuerpos HTTP reales del backend, no con el PDF de muestra del navegador. La [verificación local de E1](../../../ArquitecturaBase/docs/features/formularios.md#verificación-local-de-catálogos-e1--2026-10-22) quedó completa; el [piloto real](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-catálogos-e1) queda para después del code review.
 
 Las capturas son JPEG nativos, con dimensiones comprobadas y sin procesar. Las referencias elegidas de arriba conservan sus archivos originales.
+
+El recorrido móvil se repitió después del reinicio, en es/en a 390 y 320 px: se renovaron sus treinta JPEG. Las doce capturas de escritorio conservaron sus bytes; las referencias elegidas CA1-A y CA2–CA6 permanecen intactas.
 
 | Vista | es · 1440 | en · 1440 | es · 390 | en · 390 | es · 320 | en · 320 |
 | --- | --- | --- | --- | --- | --- | --- |
