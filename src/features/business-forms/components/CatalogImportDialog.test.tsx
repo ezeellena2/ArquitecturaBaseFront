@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { queryClient } from "@/shared/api/queryClient";
 import i18n from "@/shared/i18n";
+import * as notifications from "@/shared/ui/notifications";
 import { ApiError } from "@/shared/api/ApiError";
 import { catalogImportPreviewFixture } from "@/test/catalogImportFixtures";
 import * as imports from "../api/catalogImports";
@@ -168,4 +169,34 @@ it("preserves the file after a preview conflict and rereads only on explicit rev
   expect(check.mock.calls[1]![1]).toMatchObject({ file: check.mock.calls[0]![1].file, expectedRevision: 8, mode: "Append" });
   expect(onObserved).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ revision: 8 }));
   expect(apply).not.toHaveBeenCalled();
+});
+
+it.each([
+  ["es", "TooManyColumns", "La planilla tiene demasiadas columnas.", "Hoja «Detalle 2026»: La planilla tiene demasiadas columnas."],
+  ["en", "TooManyColumns", "The spreadsheet has too many columns.", "Sheet “Detalle 2026”: The spreadsheet has too many columns."],
+  ["es", "TooManyRows", "La planilla tiene demasiadas filas.", "Hoja «Detalle 2026»: La planilla tiene demasiadas filas."],
+  ["en", "TooManyRows", "The spreadsheet has too many rows.", "Sheet “Detalle 2026”: The spreadsheet has too many rows."],
+] as const)("names the offending sheet for a %s %s response without repeating the preview", async (culture, reason, detail, message) => {
+  await i18n.changeLanguage(culture);
+  const notice = vi.spyOn(notifications, "notify");
+  const check = vi.spyOn(imports, "previewCatalogImport").mockRejectedValue(new ApiError(400, { code: "Forms.CatalogImport." + reason, detail, sheet: "Detalle 2026" }));
+  const { user } = await mount();
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\nN\tNorte" } });
+  await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
+  await waitFor(() => expect(notice).toHaveBeenCalledOnce());
+  expect(notice).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: "error", message }));
+  expect(check).toHaveBeenCalledOnce();
+  expect(screen.getByRole("textbox")).toHaveValue("Code\tText\nN\tNorte");
+});
+
+it.each([
+  ["Forms.CatalogImport.FileUnreadable", "Do not render this metadata"],
+  ["Forms.CatalogImport.TooManyColumns", { private: "Do not render this metadata" }],
+])("ignores unrelated or malformed sheet metadata for %s", async (code, sheet) => {
+  const notice = vi.spyOn(notifications, "notify");
+  vi.spyOn(imports, "previewCatalogImport").mockRejectedValue(new ApiError(400, { code, detail: "Revisá la planilla.", sheet }));
+  const { user } = await mount();
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\nN\tNorte" } });
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await waitFor(() => expect(notice).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: "error", message: "Revisá la planilla." })));
 });

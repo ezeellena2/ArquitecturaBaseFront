@@ -461,6 +461,7 @@
       "pastedRows": "Pegá las filas con encabezados",
       "pasteHint": "Copiá Código, Texto y las demás columnas con sus encabezados desde Excel. Pegar agrega o actualiza por código.",
       "fileError": "Elegí un archivo XLSX o CSV de hasta 10 MB.",
+      "sheetError": "Hoja «{{sheet}}»: {{message}}",
       "pasteError": {
         "format": "Revisá las comillas y los encabezados de las filas pegadas.",
         "limit": "Pegá hasta 10.000 filas y 64 columnas, en un archivo de hasta 10 MB."

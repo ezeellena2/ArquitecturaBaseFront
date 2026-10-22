@@ -45,7 +45,11 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
     const conflict = error instanceof ApiError && error.status === 409;
     const fileError = error instanceof ApiError ? error.errors?.file?.join(" ") : undefined;
     setState(value => ({ ...value, busy: null, conflict, fileError: fileError ?? null }));
-    if (!["cancelled", "session", "fields"].includes(errorFeedback(error, { fields: ["file"] }).kind)) notify({ id: feedbackId, kind: "error", message: writing ? operationalErrorMessage(error, t, "save") : readErrorMessage(error, t) });
+    if (!["cancelled", "session", "fields"].includes(errorFeedback(error, { fields: ["file"] }).kind)) {
+      const message = writing ? operationalErrorMessage(error, t, "save") : readErrorMessage(error, t);
+      const sheet = error instanceof ApiError && ["Forms.CatalogImport.TooManyColumns", "Forms.CatalogImport.TooManyRows"].includes(error.code ?? "") && typeof error.problem.sheet === "string" ? error.problem.sheet : null;
+      notify({ id: feedbackId, kind: "error", message: sheet ? t("catalogs.import.sheetError", { sheet, message }) : message });
+    }
   };
   const review = async (refresh = false) => {
     if (!owned || state.forbidden || operation.current) return;
