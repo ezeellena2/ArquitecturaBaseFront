@@ -112,7 +112,8 @@
     "choice": "Elegir de una lista",
     "catalogChoice": "Elegir de un catálogo",
     "photo": "Foto",
-    "document": "Documento"
+    "document": "Documento",
+    "multiChoice": "Elegir varias"
   },
   "reviewOption": "{{question}} · Opción: {{option}}",
   "reviewOptionOrder": "Orden de opciones de {{question}}",
@@ -677,7 +678,9 @@
     "appliedFilters_other": "{{count}} filtros aplicados",
     "position": "{{position}} de {{count}}",
     "viewResponses_one": "Ver {{count}} respuesta",
-    "viewResponses_other": "Ver {{count}} respuestas"
+    "viewResponses_other": "Ver {{count}} respuestas",
+    "anyOf": "alguna de",
+    "anyOfCount": "alguna de {{count}}"
   },
   "rules": {
     "title": "Cuando llega una respuesta",
@@ -741,7 +744,8 @@
       "lte": "Es menor o igual a",
       "answered": "Tiene respuesta",
       "unanswered": "Sin respuesta",
-      "notAsked": "No se preguntó"
+      "notAsked": "No se preguntó",
+      "anyOf": "Eligió alguna de"
     },
     "errors": {
       "required": "Completá este dato.",
@@ -1131,5 +1135,19 @@
     "noDeactivatedHint": "Los formularios publicados que se den de baja van a aparecer acá.",
     "pendingNavigation": "{{position}} de {{count}} por aprobar",
     "pendingKeyboardHint": "↑ ↓ recorren lo que espera · Escape cierra"
+  },
+  "multiple": {
+    "allow": "Permitir elegir varias",
+    "minimum": "Mínimo",
+    "maximum": "Máximo",
+    "hint": "Con mínimo 1, la pregunta es obligatoria. WhatsApp muestra hasta 20 opciones en una pregunta de varias.",
+    "range": "varias, hasta {{maximum}}",
+    "invalidRange": "Elegí un mínimo entre 0 y el máximo, y un máximo entre 1 y 20.",
+    "impossibleMinimum": "El mínimo no puede superar la cantidad de opciones de esta pregunta.",
+    "optionLimit": "Esta pregunta admite hasta 20 opciones propias.",
+    "upTo": "Elegí hasta {{maximum}}",
+    "changeTitle": "¿Crear una pregunta nueva?",
+    "changeDescription": "Cambiar entre elegir una y varias crea una pregunta nueva. Las respuestas anteriores conservan la pregunta original.",
+    "changeAction": "Crear la pregunta nueva"
   }
 }

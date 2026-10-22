@@ -69,7 +69,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
     const question = value.draft.fields.find(field => field.fieldId === issue.fieldId);
     if (!question) return t(issue.path.startsWith("name") ? "name" : "submitLabel");
     const name = localizedValue(question.label, scope.culture, value.draft.culture);
-    const option = question.type === "choice" && !question.source ? question.options.find(choice => choice.choiceId === issue.choiceId) : undefined;
+    const option = (question.type === "choice" || question.type === "multiChoice") && !question.source ? question.options.find(choice => choice.choiceId === issue.choiceId) : undefined;
     return option ? t("publication.missingChoice", { name, option: localizedValue(option.label, scope.culture, value.draft.culture) })
       : t(issue.path.includes(".help") ? "publication.missingHelp" : "publication.missingQuestion", { name });
   };

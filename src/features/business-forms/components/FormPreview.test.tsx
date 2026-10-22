@@ -117,3 +117,46 @@ for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as c
     expect(within(preview).getByText(ui === "es" ? "Vista previa en " + languages[secondary] + "." : "Preview in " + languages[secondary] + ".")).toBeInTheDocument();
   });
 }
+
+for (const original of ["es", "en"] as const) it("keeps a complete " + original + " phone until every own multi label is translated", async () => {
+  const secondary = original === "es" ? "en" : "es";
+  const base = completePreview(original);
+  const question: DraftQuestion = { localId: "faults", fieldId: null, replacesFieldId: null, type: "multiChoice",
+    label: { es: "Fallas", en: "Faults" }, help: null, required: false, selection: { minSelected: 0, maxSelected: 1 },
+    options: [{ localId: "cold", choiceId: null, label: { es: "Frío", en: "Cold" } }, { localId: "noise", choiceId: null, label: { es: "Ruido", en: "Noise" } }] };
+  const complete: DraftEditorValue = { ...base, draft: { ...base.draft, fields: [question] } };
+  const partial: DraftEditorValue = { ...complete, draft: { ...complete.draft, fields: [{ ...question,
+    options: question.options.map((option, index) => index === 1 ? { ...option, label: { ...option.label, [secondary]: "" } } : option) }] } };
+  let view!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { view = renderWithProviders(<FormPreview value={partial} culture={secondary}/>); });
+  const preview = screen.getByRole("region", { name: "Vista previa" });
+  expect(preview.querySelector("[lang]")).toHaveAttribute("lang", original);
+  expect(within(preview).getByRole("checkbox", { name: original === "es" ? "Ruido" : "Noise" })).not.toBeChecked();
+  expect(within(preview).getByText(original === "es" ? "Elegí hasta 1" : "Choose up to 1", { exact: true })).toBeVisible();
+  expect(within(preview).queryByRole("checkbox", { name: secondary === "es" ? "Frío" : "Cold" })).not.toBeInTheDocument();
+  await act(async () => { view.rerender(<FormPreview value={complete} culture={secondary}/>); });
+  expect(preview.querySelector("[lang]")).toHaveAttribute("lang", secondary);
+  const coldText = secondary === "es" ? "Frío" : "Cold";
+  const noiseText = secondary === "es" ? "Ruido" : "Noise";
+  await userEvent.click(within(preview).getByText(coldText, { exact: true }));
+  expect(within(preview).getByRole("checkbox", { name: coldText })).toBeChecked();
+  expect(within(preview).getByRole("checkbox", { name: noiseText })).toBeDisabled();
+  await userEvent.click(within(preview).getByText(coldText, { exact: true }));
+  expect(within(preview).getByRole("checkbox", { name: noiseText })).toBeEnabled();
+  expect(i18n.language).toBe("es");
+});
+it("does not resolve catalog options for the illustrative multi preview", async () => {
+  const { http, HttpResponse } = await import("msw");
+  const { server } = await import("@/test/mocks/server");
+  let reads = 0;
+  server.use(http.get("/api/forms/catalogs/:id", () => { reads++; return HttpResponse.json({}, { status: 500 }); }),
+    http.get("/api/forms/catalogs/:id/items", () => { reads++; return HttpResponse.json({}, { status: 500 }); }));
+  const base = completePreview("es");
+  const value: DraftEditorValue = { ...base, draft: { ...base.draft, fields: [{ localId: "catalog-multi", fieldId: null, replacesFieldId: null,
+    type: "multiChoice", source: { catalog: "01990000-0000-7000-8000-000000000091" }, label: { es: "Fallas", en: "Faults" }, help: null,
+    required: true, selection: { minSelected: 1, maxSelected: 3 } }] } };
+  await act(async () => { renderWithProviders(<FormPreview value={value} culture="es"/>); });
+  expect(screen.getByText("Las opciones se preparan según quien lo recibe, al mandar el formulario.")).toBeVisible();
+  expect(screen.queryByRole("checkbox", { name: "Frío" })).not.toBeInTheDocument();
+  expect(reads).toBe(0);
+});

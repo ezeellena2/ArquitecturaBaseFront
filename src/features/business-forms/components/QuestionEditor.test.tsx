@@ -143,3 +143,74 @@ it("marks untranslated secondary text neutrally and preserves the original refer
   expect(screen.getByLabelText("Pregunta")).not.toHaveAttribute("aria-invalid", "true");
   expect(onChange).not.toHaveBeenCalled();
 });
+
+// CA4 characterization, applied only after the closed model accepts multiChoice.
+it("requires an explicit decision before replacing a saved question and every own option identity", async () => {
+  const onChange = vi.fn();
+  await act(async () => { renderWithProviders(<QuestionEditor question={first} position={1} total={1}
+    culture="es" original="es" expanded readOnly={false} issues={[]} onChange={onChange}
+    onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
+  const toggle = screen.getByRole("checkbox", { name: "Permitir elegir varias" });
+  await userEvent.click(screen.getByText("Permitir elegir varias", { exact: true }));
+  expect(onChange).not.toHaveBeenCalled();
+  await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }));
+  expect(onChange).not.toHaveBeenCalled();
+  expect(toggle).not.toBeChecked();
+  expect(toggle).toHaveFocus();
+  await userEvent.click(screen.getByText("Permitir elegir varias", { exact: true }));
+  await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Crear la pregunta nueva" }));
+  expect(onChange).toHaveBeenCalledOnce();
+  const changed = onChange.mock.calls[0]![0] as DraftQuestion;
+  expect(changed).toMatchObject({ type: "multiChoice", fieldId: null, replacesFieldId: first.fieldId,
+    selection: { minSelected: 1, maxSelected: 3 }, label: first.label, help: first.help });
+  expect(changed.localId).not.toBe(first.localId);
+  if (changed.type !== "multiChoice" || changed.source || first.type !== "choice" || first.source) throw new Error("Expected own choices.");
+  expect(changed.options.map(option => option.label)).toEqual(first.options.map(option => option.label));
+  expect(changed.options.every(option => option.choiceId === null)).toBe(true);
+  expect(changed.options.every(option => !first.options.some(previous => previous.localId === option.localId))).toBe(true);
+});
+it("does not apply a pending multiplicity decision after the editor loses write permission", async () => {
+  const onChange = vi.fn();
+  const props = { question: first, position: 1, total: 1, culture: "es" as const, original: "es" as const,
+    expanded: true, issues: [], onChange, onExpand: () => {}, onMove: () => {}, onRemove: () => {} };
+  let view!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { view = renderWithProviders(<QuestionEditor {...props} readOnly={false}/>); });
+  await userEvent.click(screen.getByText("Permitir elegir varias", { exact: true }));
+  view.rerender(<QuestionEditor {...props} readOnly/>);
+  const confirm = within(screen.getByRole("dialog")).getByRole("button", { name: "Crear la pregunta nueva" });
+  await userEvent.click(confirm);
+  expect(onChange).not.toHaveBeenCalled();
+});
+function MultipleRangeHarness() {
+  if (first.type !== "choice" || first.source) throw new Error("Expected own choices");
+  const [question, setQuestion] = useState<DraftQuestion>({ ...first, type: "multiChoice", required: true,
+    selection: { minSelected: 1, maxSelected: 3 } });
+  return <QuestionEditor question={question} position={1} total={1} culture="es" original="es" expanded
+    readOnly={false} issues={[]} onChange={setQuestion} onExpand={() => {}} onMove={() => {}} onRemove={() => {}}/>;
+}
+it("keeps cleared bounds invalid instead of silently making the question optional", async () => {
+  await act(async () => { renderWithProviders(<MultipleRangeHarness/>); });
+  const minimum = screen.getByRole("spinbutton", { name: "Mínimo" });
+  const maximum = screen.getByRole("spinbutton", { name: "Máximo" });
+  await userEvent.clear(minimum);
+  expect(minimum).toHaveValue(null);
+  expect(minimum).toHaveAttribute("aria-invalid", "true");
+  expect(maximum).toHaveAttribute("aria-invalid", "true");
+  await userEvent.type(minimum, "0");
+  expect(screen.getByRole("checkbox", { name: "Obligatoria" })).not.toBeChecked();
+  await userEvent.clear(maximum); await userEvent.type(maximum, "0");
+  expect(maximum).toHaveValue(0);
+  expect(maximum).toHaveAttribute("aria-invalid", "true");
+  await userEvent.clear(maximum); await userEvent.type(maximum, "20");
+  expect(maximum).not.toHaveAttribute("aria-invalid", "true");
+});
+it("preserves twenty-one authored options while refusing to add another, rather than clipping them", async () => {
+  const question: DraftQuestion = { ...first, type: "multiChoice", selection: { minSelected: 1, maxSelected: 20 },
+    options: Array.from({ length: 21 }, (_, index) => ({ localId: "own-" + index, choiceId: null, label: { es: "Opción " + (index + 1) } })) };
+  await act(async () => { renderWithProviders(<QuestionEditor question={question} position={1} total={1}
+    culture="es" original="es" expanded readOnly={false} issues={[]} onChange={vi.fn()}
+    onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
+  expect(screen.getByLabelText("Opción 21")).toHaveValue("Opción 21");
+  expect(screen.getByRole("button", { name: "Agregar opción" })).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveTextContent("20 opciones");
+});

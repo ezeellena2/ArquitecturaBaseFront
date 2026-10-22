@@ -5,6 +5,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import { FormField } from "@/shared/ui/FormField";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
+import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { PhonePreview } from "@/shared/ui/PhonePreview";
 import { Button } from "@/shared/ui/button";
 import { formScreens } from "../fileQuestions";
@@ -23,6 +24,7 @@ export function FormPreview({ value, culture }: { value: DraftEditorValue; cultu
   const screen = Math.min(selectedScreen, screens.length - 1);
   const lastScreen = screen === screens.length - 1;
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [multipleAnswers, setMultipleAnswers] = useState<Record<string, readonly string[]>>({});
   const text = (map: Readonly<Partial<Record<FormCulture, string | null>>> | null) => {
     const selected = map?.[previewCulture];
     return selected?.trim() ? selected : "";
@@ -39,6 +41,16 @@ export function FormPreview({ value, culture }: { value: DraftEditorValue; cultu
         const setAnswer = (next: string) => setAnswers(previous => ({ ...previous, [q.localId]: next }));
         const help = text(q.help) || undefined;
         if (q.type === "photo" || q.type === "document") return <div key={q.localId} className="flex flex-col gap-2"><p className="text-sm font-medium">{label}</p>{help ? <p className="text-sm text-[var(--color-content-muted)]">{help}</p> : null}<Button type="button" variant="outline" disabled>{content(q.type === "document" ? "files.attachDocument" : q.files.photoSource === "camera" ? "files.takePhoto" : "files.addPhotos")}</Button><p className="text-xs text-[var(--color-content-muted)]">{content("files.range", { minimum: q.files.minFiles, maximum: q.files.maxFiles })}</p></div>;
+        if (q.type === "multiChoice") {
+          const maximum = q.selection.maxSelected;
+          const own = q.source ? [] : q.options;
+          const picked = (multipleAnswers[q.localId] ?? []).filter(id => own.some(option => (option.choiceId ?? option.localId) === id)).slice(0, maximum ?? 0);
+          return <div key={q.localId} role="group" aria-label={label} className="flex flex-col gap-1.5"><p className="text-sm font-medium">{label}{q.required ? " *" : ""}</p><p className="text-xs text-[var(--color-content-muted)]">{help ?? content("multiple.upTo", { maximum: maximum ?? "—" })}</p>
+            {q.source ? <p className="text-xs text-[var(--color-content-muted)]">{content("catalogQuestion.optionsAtSend")}</p> : own.map((option, index) => {
+              const id = option.choiceId ?? option.localId; const selected = picked.includes(id);
+              return <CheckboxField key={id} label={text(option.label) || content("option", { number: index + 1 })} checked={selected} disabled={!selected && (maximum === null || picked.length >= maximum)} onCheckedChange={checked => setMultipleAnswers(previous => ({ ...previous, [q.localId]: checked ? [...picked, id] : picked.filter(value => value !== id) }))}/>;
+            })}</div>;
+        }
         if (q.type === "boolean") return <div key={q.localId} className="flex flex-col gap-1.5"><p className="text-sm font-medium">{label}{q.required ? " *" : ""}</p><RadioGroupField label={label} value={answers[q.localId]} onValueChange={setAnswer} options={[{ value: "true", label: content("yes") }, { value: "false", label: content("no") }]} />{help ? <p className="text-sm text-[var(--color-content-muted)]">{help}</p> : null}</div>;
         return <FormField key={q.localId} label={label} required={q.required} hint={[help, q.type === "choice" && q.source ? content("catalogQuestion.optionsAtSend") : q.type === "decimal" ? content("decimalHint") : q.type === "date" ? content("dateHint") : undefined].filter(Boolean).join(" · ") || undefined}>
           {q.type === "choice" && q.source ? <NativeSelect disabled value=""><option value="">{content("select")}</option></NativeSelect>

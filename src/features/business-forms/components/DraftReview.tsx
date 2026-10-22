@@ -41,7 +41,7 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
       const source = side === "mine" ? value : review.current;
       const question = source.draft.fields.find(q => identity(q) === row.parentId);
       return item.map(id => {
-        if (row.kind === "optionOrder" && question?.type === "choice" && !question.source) {
+        if (row.kind === "optionOrder" && (question?.type === "choice" || question?.type === "multiChoice") && !question.source) {
           const option = question.options.find(o => (o.choiceId ?? `new:${o.localId}`) === id);
           return option ? localizedValue(option.label, culture, source.draft.culture) : t("removed");
         }
@@ -54,8 +54,9 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
       const help = q.help && Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => entry[1] !== null));
       return [text(q.label), t("types." + questionEditorType(q)), t(q.required ? "required" : "optional"), help ? `${t("help")}: ${text(help)}` : "",
         q.type === "photo" || q.type === "document" ? t("files.range", { minimum: q.files.minFiles, maximum: q.files.maxFiles }) + (q.type === "photo" ? " · " + t("files.sources." + q.files.photoSource) : "") : "",
+        q.type === "multiChoice" ? t("multiple.range", { maximum: q.selection.maxSelected }) + " · " + t("multiple.minimum") + ": " + q.selection.minSelected : "",
         "maxLength" in q ? `${t("maxLength")}: ${q.maxLength ?? (q.type === "shortText" ? 80 : 600)}` : "",
-        q.type === "choice" && !q.source && !review.rows.some(r => r.parentId === row.parentId && r.kind === "option") ? q.options.map(o => text(o.label)).join("; ") : ""].filter(Boolean).join(" · ");
+        (q.type === "choice" || q.type === "multiChoice") && !q.source && !review.rows.some(r => r.parentId === row.parentId && r.kind === "option") ? q.options.map(o => text(o.label)).join("; ") : ""].filter(Boolean).join(" · ");
     }
     if ("label" in item && typeof item.label === "object") return text(item.label as LocalizedText);
     return text(item as LocalizedText);
@@ -63,7 +64,7 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
   function catalog(row:DraftReviewRow,side:"mine"|"current") {
     const item=row[side];
     const question = item && typeof item === "object" && "type" in item ? item as DraftQuestion : null;
-    return catalogScope && question?.type === "choice" && question.source?.catalog
+    return catalogScope && (question?.type === "choice" || question?.type === "multiChoice") && question.source?.catalog
       ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog}/> : null;
   }
   function title(row: DraftReviewRow) {

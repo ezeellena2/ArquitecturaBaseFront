@@ -16,6 +16,8 @@ import type { DraftFieldIssue } from "../validationPaths";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogQuestionName } from "./CatalogQuestionName";
 import { FileQuestionSettings } from "./FileQuestionSettings";
+import { SelectionRangeFields } from "./SelectionRangeFields";
+import { changeQuestionMultiplicity, validSelectionCounts } from "../selectionQuestions";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 
 const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
@@ -32,7 +34,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
   const rootRef = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<{ item: string; delta: number } | null>(null);
   const [announcement, setAnnouncement] = useState("");
-  const [confirmation, setConfirmation] = useState<{ type: QuestionEditorType } | { option: string } | { catalog: string } | null>(null);
+  const [confirmation, setConfirmation] = useState<{ type: QuestionEditorType } | { option: string } | { catalog: string } | { multiple: boolean } | null>(null);
   const label = localizedValue(question.label, culture, original) || t("question");
   const reference = (text: Readonly<Record<string, string | null>> | null) => culture !== original && text?.[original] ? t("originalText", { language: t("cultures." + original), text: text[original] }) : undefined;
   const languageIssues = issues.filter(issue => !/\.(es|en)$/.test(issue.path) || issue.path.endsWith("." + culture));
@@ -52,14 +54,14 @@ export function QuestionEditor({ question, position, total, culture, original, e
     onMove(delta);
   }
   function moveOption(index: number, delta: number) {
-    if (question.type !== "choice" || question.source) return;
+    if ((question.type !== "choice" && question.type !== "multiChoice") || question.source) return;
     const option = question.options[index]!;
     pendingFocus.current = { item: option.localId, delta };
     setAnnouncement(t("position", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }), position: index + 1 + delta, total: question.options.length }));
     onChange({ ...question, options: moveItem(question.options, index, delta) });
   }
   function removeOption(localId: string) {
-    if (question.type !== "choice" || question.source) return;
+    if ((question.type !== "choice" && question.type !== "multiChoice") || question.source) return;
     const index = question.options.findIndex(o => o.localId === localId);
     const neighbor = question.options[index + 1] ?? question.options[index - 1];
     optionRemovalFocus.current = [...(rootRef.current?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(input => input.dataset.choiceLocalId === neighbor?.localId) ?? addOptionButton.current;
@@ -71,10 +73,12 @@ export function QuestionEditor({ question, position, total, culture, original, e
     if (question.fieldId) setConfirmation({ type });
     else onChange(replaceQuestionType(question, type, crypto.randomUUID(), original));
   }
+  const selectionError = question.type === "multiChoice" ? fieldError("selection(?:\\.(?:minSelected|maxSelected))?") ?? (!validSelectionCounts(question.selection) ? t("multiple.invalidRange") : !question.source && question.selection.minSelected > question.options.length ? t("multiple.impossibleMinimum") : undefined) : undefined;
+  const optionError = fieldError("options") ?? (question.type === "multiChoice" && !question.source && question.options.length > 20 ? t("multiple.optionLimit") : undefined);
   return <div ref={rootRef} data-question-local-id={question.localId} className="border-t border-[var(--color-border)] first:border-t-0">
     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
       <span className="text-sm text-[var(--color-content-muted)]">{position}</span>
-      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t("types." + questionEditorType(question))}{question.type === "photo" || question.type === "document" ? " · " + t("files.range", { minimum: question.files.minFiles, maximum: question.files.maxFiles }) + (question.type === "photo" ? " · " + t("files.sources." + question.files.photoSource) : "") : ""}{!expanded && question.type === "choice" && question.source?.catalog && catalogScope ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog} /> : null} · {t(question.required ? "required" : "optional")}{culture !== original && missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{culture !== original && !question.label[culture]?.trim() ? <Badge variant="outline" className="text-[var(--color-content-muted)]">{t("missingText")}</Badge> : null}{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{t("publication.questionIssue", { language: t("cultures." + (issues[0]!.path.match(/\.(es|en)$/)?.[1] ?? culture)) })}</Badge> : null}</div>
+      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t("types." + questionEditorType(question))}{question.type === "photo" || question.type === "document" ? " · " + t("files.range", { minimum: question.files.minFiles, maximum: question.files.maxFiles }) + (question.type === "photo" ? " · " + t("files.sources." + question.files.photoSource) : "") : ""}{question.type === "multiChoice" ? " · " + t("multiple.range", { maximum: question.selection.maxSelected }) : ""}{!expanded && (question.type === "choice" || question.type === "multiChoice") && question.source?.catalog && catalogScope ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog} /> : null} · {t(question.required ? "required" : "optional")}{culture !== original && missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{culture !== original && !question.label[culture]?.trim() ? <Badge variant="outline" className="text-[var(--color-content-muted)]">{t("missingText")}</Badge> : null}{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{t("publication.questionIssue", { language: t("cultures." + (issues[0]!.path.match(/\.(es|en)$/)?.[1] ?? culture)) })}</Badge> : null}</div>
       <div className="flex items-center gap-1">
         {!readOnly ? <>
         <IconButton size="icon-sm" label={t("up", { name: label })} disabled={readOnly || position === 1} disabledLabel={t("position", { name: label, position, total })} data-move-item={question.localId} data-move-delta={-1} onClick={() => moveQuestion(-1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
@@ -90,18 +94,23 @@ export function QuestionEditor({ question, position, total, culture, original, e
         <FormField label={t("type")} error={fieldError("type")} hint={question.type === "date" ? t("dateHint") : undefined}><NativeSelect disabled={readOnly} value={questionEditorType(question)} onChange={e => changeType(e.target.value as QuestionEditorType)}>{types.map(type => <option key={type} value={type} disabled={type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read") || (type === "photo" || type === "document") && !filesAvailable}>{t(`types.${type}`)}{(type === "photo" || type === "document") && !filesAvailable ? " · " + t("files.storageMissing") : ""}</option>)}</NativeSelect></FormField>
         <FormField label={t("help")} hint={reference(question.help) ?? t("optional")} error={fieldError("help")}><Textarea data-question-control="help" readOnly={readOnly} placeholder={culture !== original && question.help?.[original]?.trim() ? t("missingText") : undefined} value={question.help?.[culture] ?? ""} onChange={e => onChange({ ...question, help: { ...question.help, [culture]: e.target.value || null } })} /></FormField>
         <div className="flex flex-col gap-4">
-          {question.type !== "photo" && question.type !== "document" ? <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly} onCheckedChange={checked => onChange({ ...question, required: checked })} /> : null}
+          {question.type !== "photo" && question.type !== "document" ? <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly} onCheckedChange={checked => onChange(question.type === "multiChoice" ? { ...question, required: checked, selection: { ...question.selection, minSelected: checked ? Math.max(1, question.selection.minSelected ?? 0) : 0 } } : { ...question, required: checked })} /> : null}
           {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><Input type="number" min={1} max={10000} readOnly={readOnly} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></FormField> : null}
         </div>
       </div>
       {question.type === "photo" || question.type === "document" ? <FileQuestionSettings question={question} readOnly={readOnly} error={fieldError("files")} onChange={onChange} /> : null}
-      {question.type === "choice" && question.source ? <CatalogQuestionSelector scope={catalogScope ?? { actorId: null, culture, permissions: [] }} value={question.source.catalog ?? ""} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onChange={catalogId => {
+      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSelector scope={catalogScope ?? { actorId: null, culture, permissions: [] }} value={question.source.catalog ?? ""} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onChange={catalogId => {
         if (catalogId === question.source?.catalog) return;
         if (question.fieldId) setConfirmation({ catalog: catalogId });
         else onChange(changeQuestionCatalog(question, catalogId, question.localId));
       }} /> : null}
-      {question.type === "choice" && !question.source ? <div className="flex flex-col gap-3">
-        {fieldError("options") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{fieldError("options")}</p> : null}
+      {question.type === "choice" || question.type === "multiChoice" ? <CheckboxField label={t("multiple.allow")} checked={question.type === "multiChoice"} disabled={readOnly} onCheckedChange={multiple => {
+        if (question.fieldId) setConfirmation({ multiple });
+        else onChange(changeQuestionMultiplicity(question, multiple, question.localId, () => crypto.randomUUID()));
+      }} /> : null}
+      {question.type === "multiChoice" ? <div data-question-control="selection" className="space-y-2"><SelectionRangeFields value={{ minimum: question.selection.minSelected, maximum: question.selection.maxSelected }} limit={20} minimumLabel={t("multiple.minimum")} maximumLabel={t("multiple.maximum")} readOnly={readOnly} error={selectionError} onChange={range => onChange({ ...question, selection: { minSelected: range.minimum, maxSelected: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })}/><p className="text-xs text-[var(--color-content-muted)]">{t("multiple.hint")}</p></div> : null}
+      {(question.type === "choice" || question.type === "multiChoice") && !question.source ? <div className="flex flex-col gap-3">
+        {optionError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{optionError}</p> : null}
         {question.options.map((option, index) => <div key={option.localId} className="flex flex-wrap items-end gap-2">
           <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={languageIssues.find(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))?.messages[0]}><Input data-choice-local-id={option.localId} readOnly={readOnly} placeholder={culture !== original ? t("missingText") : undefined} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>
           {!readOnly ? <div className="flex gap-1">
@@ -110,15 +119,16 @@ export function QuestionEditor({ question, position, total, culture, original, e
             <IconButton size="icon-sm" label={t("remove", { name: t("option", { number: index + 1 }) })} onClick={() => { if (option.choiceId || Object.values(option.label).some(Boolean)) setConfirmation({ option: option.localId }); else removeOption(option.localId); }}><TrashIcon className="size-4" /></IconButton>
           </div> : null}
         </div>)}
-        {!readOnly ? <Button ref={addOptionButton} type="button" variant="outline" disabled={question.options.length >= 50} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button> : null}
+        {!readOnly ? <Button ref={addOptionButton} type="button" variant="outline" disabled={question.options.length >= (question.type === "multiChoice" ? 20 : 50)} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button> : null}
       </div> : null}
       <div className="flex justify-end"><Button type="button" variant="outline" onClick={() => { onExpand(false); editButton.current?.focus(); }}>{t("done")}</Button></div>
     </div> : null}
     <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</span>
-    <ConfirmDialog focusFallback={optionRemovalFocus} open={confirmation !== null} onOpenChange={open => { if (!open) setConfirmation(null); }} title={t(confirmation && "catalog" in confirmation ? "catalogQuestion.changeTitle" : confirmation && "type" in confirmation ? "changeTypeTitle" : "optionRemovedTitle")} description={t(confirmation && "catalog" in confirmation ? "catalogQuestion.changeDescription" : confirmation && "type" in confirmation ? "changeTypeDescription" : "optionRemovedDescription")} confirmLabel={t(confirmation && "catalog" in confirmation ? "catalogQuestion.changeAction" : confirmation && "type" in confirmation ? "changeTypeAction" : "removeOptionAction")} onConfirm={() => {
+    <ConfirmDialog focusFallback={optionRemovalFocus} open={confirmation !== null} onOpenChange={open => { if (!open) setConfirmation(null); }} title={t(confirmation && "multiple" in confirmation ? "multiple.changeTitle" : confirmation && "catalog" in confirmation ? "catalogQuestion.changeTitle" : confirmation && "type" in confirmation ? "changeTypeTitle" : "optionRemovedTitle")} description={t(confirmation && "multiple" in confirmation ? "multiple.changeDescription" : confirmation && "catalog" in confirmation ? "catalogQuestion.changeDescription" : confirmation && "type" in confirmation ? "changeTypeDescription" : "optionRemovedDescription")} confirmLabel={t(confirmation && "multiple" in confirmation ? "multiple.changeAction" : confirmation && "catalog" in confirmation ? "catalogQuestion.changeAction" : confirmation && "type" in confirmation ? "changeTypeAction" : "removeOptionAction")} onConfirm={() => {
       if (readOnly || !confirmation) return;
       if ("type" in confirmation) onChange(replaceQuestionType(question, confirmation.type, crypto.randomUUID(), original));
       else if ("catalog" in confirmation) { if (catalogScope?.permissions.includes("formcatalogs.read")) onChange(changeQuestionCatalog(question, confirmation.catalog, crypto.randomUUID())); }
+      else if ("multiple" in confirmation) { if (question.type === "choice" || question.type === "multiChoice") onChange(changeQuestionMultiplicity(question, confirmation.multiple, crypto.randomUUID(), () => crypto.randomUUID())); }
       else removeOption(confirmation.option);
     }} />
   </div>;

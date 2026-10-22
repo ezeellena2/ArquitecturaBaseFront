@@ -112,7 +112,8 @@
     "choice": "Choose from a list",
     "catalogChoice": "Choose from a catalog",
     "photo": "Photo",
-    "document": "Document"
+    "document": "Document",
+    "multiChoice": "Choose several"
   },
   "reviewOption": "{{question}} · Option: {{option}}",
   "reviewOptionOrder": "Option order for {{question}}",
@@ -677,7 +678,9 @@
     "appliedFilters_other": "{{count}} applied filters",
     "position": "{{position}} of {{count}}",
     "viewResponses_one": "View {{count}} response",
-    "viewResponses_other": "View {{count}} responses"
+    "viewResponses_other": "View {{count}} responses",
+    "anyOf": "any of",
+    "anyOfCount": "any of {{count}}"
   },
   "rules": {
     "title": "When a response arrives",
@@ -741,7 +744,8 @@
       "lte": "Is less than or equal to",
       "answered": "Answered",
       "unanswered": "Unanswered",
-      "notAsked": "Not asked"
+      "notAsked": "Not asked",
+      "anyOf": "Chose any of"
     },
     "errors": {
       "required": "Fill in this field.",
@@ -1131,5 +1135,19 @@
     "noDeactivatedHint": "Published forms that are deactivated will appear here.",
     "pendingNavigation": "{{position}} of {{count}} to approve",
     "pendingKeyboardHint": "↑ ↓ navigate pending responses · Escape closes"
+  },
+  "multiple": {
+    "allow": "Allow choosing several",
+    "minimum": "Minimum",
+    "maximum": "Maximum",
+    "hint": "A minimum of 1 makes the question required. WhatsApp shows up to 20 options in a multiple-choice question.",
+    "range": "several, up to {{maximum}}",
+    "invalidRange": "Choose a minimum between 0 and the maximum, and a maximum between 1 and 20.",
+    "impossibleMinimum": "The minimum cannot exceed the number of options in this question.",
+    "optionLimit": "This question supports up to 20 authored options.",
+    "upTo": "Choose up to {{maximum}}",
+    "changeTitle": "Create a new question?",
+    "changeDescription": "Switching between one choice and several creates a new question. Previous responses keep the original question.",
+    "changeAction": "Create the new question"
   }
 }
