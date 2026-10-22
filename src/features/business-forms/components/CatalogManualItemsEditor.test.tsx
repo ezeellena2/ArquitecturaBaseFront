@@ -2,6 +2,7 @@ import { useState } from "react";
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
@@ -81,4 +82,27 @@ it("keeps an edited option outside the current page and returns focus to Add whe
   await userEvent.click(screen.getByRole("button", { name: "Listo" }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Agregar opción" })).toHaveFocus());
   expect(screen.queryByRole("textbox", { name: "Texto" })).not.toBeInTheDocument();
+});
+
+vi.mock("@/shared/hooks/useMediaQuery",()=>({useMediaQuery:vi.fn(()=>false)}));
+afterEach(()=>vi.mocked(useMediaQuery).mockReturnValue(false));
+it("changes the inline text with the captured item identity and retains the other language", async()=>{
+ vi.mocked(useMediaQuery).mockReturnValue(true); const change=vi.fn();
+ renderWithProviders(<CatalogManualItemsEditor items={[first]} culture="es" valueType="Text" canManage expandedKey={null} onExpand={vi.fn()} onChange={change} onAdd={vi.fn()}/>);
+ const input=screen.getByRole("textbox",{name:"Texto de la opción 1"});await userEvent.clear(input);
+ expect(change).toHaveBeenLastCalledWith(expect.objectContaining({itemId:"saved-first",localId:"first",label:{es:"",en:""}}));
+ expect(screen.getByRole("textbox",{name:"Código de la opción 1"})).toHaveValue("C-001");
+});
+it("bulk changes only the selected current page and clears selection on another page",async()=>{
+ const change=vi.fn();const props={culture:"es" as const,valueType:"Text" as const,canManage:true,expandedKey:null,onExpand:vi.fn(),onChange:change,onAdd:vi.fn()};
+ const {rerender}=renderWithProviders(<CatalogManualItemsEditor {...props} items={[first,second]}/>);const user=userEvent.setup();
+ await user.click(screen.getByRole("checkbox",{name:"Seleccionar Pérez Hnos."}));
+ await user.click(screen.getByRole("button",{name:"Dar de baja"}));
+ expect(change.mock.calls.map(([item])=>item.localId)).toEqual(["first"]);expect(change.mock.calls[0]![0].isActive).toBe(false);
+ rerender(<CatalogManualItemsEditor {...props} items={[second]}/>);
+ expect(screen.queryByRole("button",{name:"Dar de baja"})).not.toBeInTheDocument();
+ expect(screen.getByRole("checkbox",{name:"Seleccionar Ferretería Sur"})).not.toBeChecked();
+ await user.click(screen.getByRole("checkbox",{name:"Seleccionar opciones de esta página"}));
+ await user.click(screen.getByRole("button",{name:"Reactivar"}));
+ expect(change.mock.calls.map(([item])=>item.localId)).toEqual(["first","second"]);
 });

@@ -12,6 +12,8 @@ import { server } from "@/test/mocks/server";
 import { notify } from "@/shared/ui/notifications";
 import capturedOptionsRaw from "@/test/fixtures/catalogs-http/filters/options.json?raw";
 import { readCatalogFilterOptions } from "../api/catalogResponse";
+import * as catalogImports from "../api/catalogImports";
+import { catalogImportPreviewFixture } from "@/test/catalogImportFixtures";
 import { CatalogEditorPage } from "./CatalogEditorPage";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
@@ -35,13 +37,20 @@ async function mount(path: string) {
   return router;
 }
 beforeEach(async () => { queryClient.clear(); vi.mocked(notify).mockClear(); await i18n.changeLanguage("es"); });
-afterEach(() => { cleanup(); queryClient.clear(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); queryClient.clear(); });
 describe("Manual catalog page with synthetic current DTO responses", () => {
-  it("limits option text and detail to the complete WhatsApp lengths", async () => {
-    setup(); await mount("/catalogos/" + id);
-    await userEvent.click(await screen.findByRole("button", {name:"Editar Pérez"}));
-    expect(screen.getByRole("textbox", {name:"Texto"})).toHaveAttribute("maxlength", "30");
+  it("preserves a text beyond WhatsApp length and blocks saving until corrected", async () => {
+    setup(); await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", {name:"Editar Pérez"}));
+    const text = screen.getByRole("textbox", {name:"Texto"});
+    await user.clear(text); await pasteText(user, text, "123456789012345678901234567890X");
+    expect(text).toHaveValue("123456789012345678901234567890X");
+    expect(screen.getByText("31/30")).toBeInTheDocument();
+    expect(text).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button",{name:"Guardar"})).toBeDisabled();
     expect(screen.getByRole("textbox", {name:"Detalle"})).toHaveAttribute("maxlength", "300");
+    await user.clear(text); await pasteText(user, text, "Texto corregido");
+    expect(screen.getByRole("button",{name:"Guardar"})).toBeEnabled();
   });
 
   it("creates bilingual metadata and one item in a single request and reloads its canonical identity", async () => {
@@ -51,7 +60,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes");
     await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
     await user.click(screen.getByRole("button", { name: "Inglés" }));
-    await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), "Customers");
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Customers");
     await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
     await user.click(screen.getByRole("button", { name: "Español" }));
     await user.click(screen.getByRole("button", { name: "Agregar opción" }));
@@ -165,16 +174,17 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   });
 
   it("opens the invalid option and binds server validation to its fields without a duplicate toast", async () => {
-    setup(); server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Validation.Failed", errors: { "items[0].code": ["Ingresá un código."], "items[0].text.es": ["Ingresá el texto." ] } }, { status: 400 })));
+    setup(); server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Validation.Failed", errors: { "items[0].code": ["Código ya usado en otra página."], "items[0].text.es": ["Revisá el texto." ] } }, { status: 400 })));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
     await user.clear(screen.getByRole("textbox", { name: "Código" }));
+    await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "C99");
     await user.click(screen.getByRole("button", { name: "Listo" }));
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     const code = await screen.findByRole("textbox", { name: "Código" });
     expect(code).toHaveAttribute("aria-invalid", "true");
-    expect(code).toHaveAccessibleDescription("Ingresá un código.");
-    expect(screen.getByRole("textbox", { name: "Texto" })).toHaveAccessibleDescription("Ingresá el texto.");
+    expect(code).toHaveAccessibleDescription("Código ya usado en otra página.");
+    expect(screen.getByRole("textbox", { name: "Texto" })).toHaveAccessibleDescription("Revisá el texto.");
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
   });
 
@@ -387,4 +397,59 @@ it("sends the chosen type only on creation and binds a value error to its unchan
   expect(bodies).toHaveLength(1);
   expect(bodies[0]).toMatchObject({ valueType: "Decimal", items: [{ itemId: null, text: { es: "GBA" }, value: "1500.5" }] });
   expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
+});
+
+
+it("blocks a duplicate code on either row but keeps duplicate labels as a warning", async () => {
+  setup(); const other = { ...option, id:"01990000-0000-7000-8000-000000000022", code:"C2", text:{es:"Otro",en:null},position:2 };
+  server.use(http.get("/api/forms/catalogs/"+id+"/items",()=>HttpResponse.json({items:[option,other],page:1,pageSize:20,totalCount:2,totalPages:1,hasNext:false,hasPrevious:false})));
+  await mount("/catalogos/"+id); const user=userEvent.setup();
+  await user.click(await screen.findByRole("button",{name:"Editar Otro"}));
+  const code=screen.getByRole("textbox",{name:"Código"}); await user.clear(code); await pasteText(user,code,"c1");
+  expect(code).toHaveAttribute("aria-invalid","true");
+  expect(code).toHaveAccessibleDescription(expect.stringContaining("fila 1"));
+  expect(screen.getByRole("button",{name:"Guardar"})).toBeDisabled();
+  await user.clear(code);await pasteText(user,code,"C2");
+  const text=screen.getByRole("textbox",{name:"Texto"});await user.clear(text);await pasteText(user,text,"Pérez");
+  expect(text).toHaveAccessibleDescription(expect.stringContaining("fila 1"));
+  expect(text).not.toHaveAttribute("aria-invalid","true");
+  expect(screen.getByRole("button",{name:"Guardar"})).toBeEnabled();
+});
+
+
+it("requires a clean saved catalog to import, while Read still offers export",async()=>{
+ setup();await mount("/catalogos/"+id);const user=userEvent.setup();
+ const name=await screen.findByRole("textbox",{name:"Nombre"});
+ expect(await screen.findByRole("button",{name:"Importar"})).toBeEnabled();
+ await pasteText(user,name," editado");
+ expect(screen.getByRole("button",{name:"Importar"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Importar"})).toHaveAccessibleDescription("Guardá o descartá los cambios antes de importar.");
+ expect(screen.getByRole("button",{name:"Exportar"})).toBeEnabled();
+ cleanup();queryClient.clear();setup(["formcatalogs.read"]);await mount("/catalogos/"+id);
+ await screen.findByRole("textbox",{name:"Nombre"});expect(await screen.findByRole("button",{name:"Exportar"})).toBeEnabled();
+ expect(screen.queryByRole("button",{name:"Importar"})).not.toBeInTheDocument();
+});
+it("saves alphabetical ordering as a single command and no movements",async()=>{
+ setup();const bodies:Record<string,unknown>[]=[];server.use(http.put("/api/forms/catalogs/"+id,async({request})=>{bodies.push(await request.json() as Record<string,unknown>);return HttpResponse.json({catalog:{...initial,revision:2},itemIdentityMap:{}});}));
+ await mount("/catalogos/"+id);const user=userEvent.setup();
+ const more=await screen.findByRole("button",{name:"Más acciones de opciones"});act(()=>more.focus());await user.keyboard("{Enter}");
+ await user.click(await screen.findByRole("menuitem",{name:"Ordenar A–Z"}));
+ expect(screen.getByRole("status")).toHaveTextContent("Se ordenará A–Z al guardar.");expect(bodies).toEqual([]);
+ expect(screen.getByRole("button",{name:"Bajar Pérez"})).toBeDisabled();
+ await user.click(screen.getByRole("button",{name:"Guardar"}));await waitFor(()=>expect(bodies).toHaveLength(1));
+ expect(bodies[0]).toMatchObject({expectedRevision:1,sortAlphabetically:true,items:[]});expect(bodies[0]).not.toHaveProperty("moves");
+});
+it("applies an explicitly reviewed paste and adopts the returned clean baseline without saving the draft",async()=>{
+ setup();const base=catalogImportPreviewFixture();const check=vi.spyOn(catalogImports,"previewCatalogImport").mockResolvedValue({...base,revision:1,mode:"Append",counts:{...base.counts,errorRows:0,deactivated:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});
+ const apply=vi.spyOn(catalogImports,"applyCatalogImport").mockResolvedValue({catalog:{...initial,kind:"Manual",revision:2},itemIdentityMap:{}});
+ await mount("/catalogos/"+id);const user=userEvent.setup();
+ await user.click(await screen.findByRole("button",{name:"Pegar de Excel"}));
+ await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
+ await user.click(screen.getByRole("button",{name:"Revisar"}));
+ expect(await screen.findByRole("button",{name:"Aplicar"})).toBeEnabled();expect(apply).not.toHaveBeenCalled();
+ await user.click(screen.getByRole("button",{name:"Aplicar"}));
+ await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(apply).toHaveBeenCalledOnce();expect(check).toHaveBeenCalledOnce();
+ expect(screen.queryByText("Cambios sin guardar",{exact:true})).not.toBeInTheDocument();expect(queryClient.getMutationCache().getAll()).toEqual([]);
+ await user.click(screen.getByRole("button",{name:"Pegar de Excel"}));await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
+ await user.click(screen.getByRole("button",{name:"Revisar"}));await waitFor(()=>expect(check).toHaveBeenCalledTimes(2));expect(check.mock.calls[1]![1].expectedRevision).toBe(2);
 });

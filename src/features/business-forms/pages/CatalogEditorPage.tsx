@@ -1,3 +1,8 @@
+import { catalogItemProblems, duplicateCatalogTexts, generateMissingCatalogCodes } from "../catalogEditing";
+import { CatalogImportDialog } from "../components/CatalogImportDialog";
+import { CatalogPreview } from "../components/CatalogPreview";
+import { CatalogOptionsActions } from "../components/CatalogOptionsActions";
+import { useCatalogExport } from "../hooks/useCatalogExport";
 import { isCatalogValueType, parseCatalogValue, type CatalogValueType } from "../catalogValues";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -62,10 +67,10 @@ export function CatalogEditorPage() {
   if ((initial?.kind ?? searchParams.get("kind")) === "Filters") return <CatalogFiltersEditorPage key={detailOwner} scope={scope} initial={initial} timeZoneId={user.timeZoneId} />;
   const requestedType = searchParams.get("valueType");
   const valueType = isCatalogValueType(requestedType) ? requestedType : "Text";
-  return <ManualCatalogEditor key={JSON.stringify([scope.actorId, scope.culture, catalogId, initial?.valueType ?? valueType])} scope={scope} initial={initial} valueType={valueType} />;
+  return <ManualCatalogEditor key={JSON.stringify([scope.actorId, scope.culture, catalogId, initial?.valueType ?? valueType])} scope={scope} initial={initial} valueType={valueType} timeZoneId={user.timeZoneId} />;
 }
 
-function ManualCatalogEditor({ scope, initial, valueType }: { scope: CatalogReadScope; initial?: CatalogDetail; valueType: CatalogValueType }) {
+function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope: CatalogReadScope; initial?: CatalogDetail; valueType: CatalogValueType; timeZoneId: string }) {
   const { t } = useTranslation("forms");
   const navigate = useNavigate();
   const editor = useCatalogDraftEditor(scope, initial, "Manual", valueType);
@@ -73,12 +78,15 @@ function ManualCatalogEditor({ scope, initial, valueType }: { scope: CatalogRead
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [importSource, setImportSource] = useState<"file" | "paste" | null>(null);
+  const importFocus = useRef<HTMLButtonElement>(null);
   const [handledValidation, setHandledValidation] = useState<unknown>(null);
   const active = useRef(true);
   const feedbackId = "catalogs:editor:" + useId();
   const presentation = useSystemPresentation();
   const pagination = usePagination(presentation.data?.defaultPageSize, true);
   const draft = editor.draft;
+  const exported = useCatalogExport(scope, draft?.id ?? null);
   const pageSize = Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1 && pagination.pageSize <= 100 ? pagination.pageSize : 20;
   const page = Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1;
   const items = useCatalogItems(scope, draft?.id ?? "", draft?.revision ?? null, { page, pageSize, sort: "position", search: pagination.search });
@@ -97,6 +105,14 @@ function ManualCatalogEditor({ scope, initial, valueType }: { scope: CatalogRead
     const item = match ? changedItems[Number(match[1])] : undefined;
     if (item && match) { (itemErrors[item.localId] ??= {})[match[2]!] = messages; itemErrorPaths.push(key); }
   }
+  const knownItems = draft ? [...Object.values(draft.items.originals).map(item => currentCatalogItem(draft.items, item)), ...changedItems.filter(item => item.itemId === null)] : [];
+  const itemWarnings: Record<string, string> = {};
+  const localProblems = catalogItemProblems(knownItems);
+  for (const issue of localProblems) {
+    const key = issue.kind === "duplicateCode" ? issue.otherPosition ? "duplicateCode" : "duplicateCodeNew" : issue.kind;
+    (itemErrors[issue.localId] ??= {})[issue.field] = [t("catalogs.items." + key, { row: issue.otherPosition })];
+  }
+  for (const [localId, duplicate] of Object.entries(duplicateCatalogTexts(knownItems, culture))) itemWarnings[localId] = t("catalogs.items." + (duplicate ? "duplicateText" : "duplicateTextNew"), { row: duplicate });
   const invalidValues = draft ? changedItems.flatMap(item => {
     const parsed = parseCatalogValue(draft.valueType, item.value, draft.culture);
     if (parsed.valid) return [];
@@ -125,7 +141,7 @@ function ManualCatalogEditor({ scope, initial, valueType }: { scope: CatalogRead
     }
   }
   const save = async () => {
-    if (!editor.canSave || invalidValues.length) return;
+    if (!editor.canSave || invalidValues.length || localProblems.length) return;
     const saved = await editor.save();
     if (!saved || !active.current) return;
     setExpanded(null);
@@ -138,19 +154,24 @@ function ManualCatalogEditor({ scope, initial, valueType }: { scope: CatalogRead
     editor.changeItem({ localId, itemId: null, label: { es: "", en: null }, detail: { es: null, en: null }, code: "", value: null, isActive: true, position: null });
     setExpanded(localId);
   };
+  const generateCodes = () => generateMissingCatalogCodes(knownItems).forEach((item, index) => { if (knownItems[index]!.code !== item.code) editor.changeItem(item); });
+  const generateCode = (localId: string) => generateMissingCatalogCodes(knownItems).filter(item => item.localId === localId).forEach(editor.changeItem);
   const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item, draft.valueType, draft.culture))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
-  if (!draft || [editor.error, items.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
-  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
-    actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly || invalidValues.length > 0} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
+  if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
+  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
+    actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly || invalidValues.length > 0 || localProblems.length > 0} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
     <div className="flex flex-col gap-4">
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button></Surface> : null}
-      <CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} />
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} /></div><div className="xl:sticky xl:top-4"><CatalogPreview items={rowItems} name={draft.name[culture] || currentName} culture={culture} /></div></div>
+      {draft.sortAlphabetically ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.actions.sortPending")}</p><Button variant="outline" disabled={readOnly} onClick={() => editor.changeSort(false)}>{t("catalogs.actions.clearSort")}</Button></div></Surface> : null}
+      {localProblems.length ? <p className="text-sm text-[var(--color-danger)]">{t("catalogs.items.reviewInvalid")}</p> : null}
       {draft.moves.length ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.items.movesPending", { count: draft.moves.length })}</p><Button variant="outline" disabled={readOnly} onClick={editor.clearMoves}>{t("catalogs.items.clearMoves")}</Button></div></Surface> : null}
-      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
+      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor sortPending={draft.sortAlphabetically} warnings={itemWarnings} onGenerateCode={item => generateCode(item.localId)} actions={<CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} />} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
         filters={draft.id ? <div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={pagination.setSearch} /></div> : undefined}
         pagination={items.data} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
     </div>
+    {importSource && draft.id && canManage ? <CatalogImportDialog scope={scope} catalog={{ ...initial!, revision: draft.revision!, name: draft.name, description: draft.description, isActive: draft.isActive }} initialSource={importSource} timeZoneId={timeZoneId} focusFallback={importFocus} onClose={() => setImportSource(null)} onObserved={editor.observeCatalog} onApplied={catalog => { editor.observeCatalog(catalog); setExpanded(null); }} onTemplate={() => void exported.download(true)} /> : null}
     <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("keepEditing")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
     <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent onCloseAutoFocus={restoreReviewFocus} className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.value ? <><p className="text-sm">{entry.value.name.es}</p><p className="text-sm">{entry.value.name.en}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.es}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.en}</p></> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</Surface>)}</div>
