@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {act,fireEvent,screen} from "@testing-library/react";
-import {expect,it} from "vitest";
+import {expect,it,vi} from "vitest";
 import {renderWithProviders} from "@/test/utils/renderWithProviders";
 import {newQuestion} from "../editorModel";
 import type {DraftQuestion} from "../model";
@@ -26,4 +26,21 @@ it("marks both controls when the backend reports a group error",async()=>{
  const question=newQuestion("photo","es","test");if(question.type!=="photo")throw new Error("Expected photo");
  await act(async()=>{renderWithProviders(<FileQuestionSettings question={question} readOnly={false} error="Revisá las cantidades" onChange={()=>undefined}/>);});
  expect(screen.getByRole("spinbutton",{name:"Máximo"})).toHaveAttribute("aria-invalid","true");
+});
+
+
+it.each(["photo", "document"] as const)("keeps the %s settings and derives required only from the minimum", async type => {
+  const question = newQuestion(type, "es", "test");
+  if (question.type !== "photo" && question.type !== "document") throw new Error("Expected a file question");
+  const change = vi.fn();
+  const view = renderWithProviders(<FileQuestionSettings question={question} readOnly={false} onChange={change}/>);
+  fireEvent.change(screen.getByRole("spinbutton", { name: "Mínimo" }), { target: { value: "2" } });
+  const updated = change.mock.calls[0]?.[0] as DraftQuestion | undefined;
+  expect(updated).toEqual({ ...question, required: true, files: { ...question.files, minFiles: 2 } });
+  if (!updated || updated.type !== "photo" && updated.type !== "document") throw new Error("Expected a file question");
+  view.rerender(<FileQuestionSettings question={updated} readOnly={false} onChange={change}/>);
+  fireEvent.change(screen.getByRole("spinbutton", { name: "Máximo" }), { target: { value: "5" } });
+  expect(change).toHaveBeenLastCalledWith({ ...updated, files: { ...updated.files, maxFiles: 5 } });
+  fireEvent.change(screen.getByRole("spinbutton", { name: "Mínimo" }), { target: { value: "0" } });
+  expect(change).toHaveBeenLastCalledWith({ ...updated, required: false, files: { ...updated.files, minFiles: 0 } });
 });
