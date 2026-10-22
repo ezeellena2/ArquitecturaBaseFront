@@ -1,3 +1,4 @@
+import { catalogValueTypes, isCanonicalCatalogValue } from "../catalogValues";
 import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
 import type { ResponseQuery } from "../responses";
@@ -30,7 +31,10 @@ const choice = z.strictObject({
   catalogId: guid.nullish(),
   catalogName: z.string().nullish(),
   detail: z.string().nullish(),
-});
+  value: z.string().optional(),
+  valueType: z.enum(catalogValueTypes).exclude(["Text"]).optional(),
+}).refine(value => (value.value === undefined) === (value.valueType === undefined)
+  && (value.valueType === undefined || isCanonicalCatalogValue(value.valueType, value.value ?? null)));
 const value = z.union([
   z.string(),
   z.boolean(),
@@ -65,8 +69,9 @@ const column = z.strictObject({
   type,
   label: z.string(),
   introducedInVersion: z.number().int().positive(),
+  valueType: z.enum(catalogValueTypes).exclude(["Text"]).optional(),
   options: z.array(z.strictObject({ id: guid, label: z.string() })),
-});
+}).refine(column => column.valueType === undefined || column.type === "choice");
 const row = z.strictObject({
   id: guid,
   versionId: guid,

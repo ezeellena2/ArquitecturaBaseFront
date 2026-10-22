@@ -1,3 +1,4 @@
+import type { CatalogValueType } from "./catalogValues";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 export type ResponseType =
@@ -15,6 +16,8 @@ export interface ResponseChoice {
   catalogId?: string | null;
   catalogName?: string | null;
   detail?: string | null;
+  value?: string;
+  valueType?: Exclude<CatalogValueType, "Text">;
 }
 export type ResponseValue =
   string | boolean | ResponseChoice | PrivateFormFile[] | null;
@@ -29,6 +32,7 @@ export interface ResponseColumn {
   type: ResponseType;
   label: string;
   introducedInVersion: number;
+  valueType?: Exclude<CatalogValueType, "Text">;
   options: { id: string; label: string }[];
 }
 export interface ResponseCondition {

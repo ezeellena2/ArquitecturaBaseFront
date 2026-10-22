@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { expect, it } from "vitest";
-import { responseDetailSchema, responseSheetSchema, fetchResponseSheet, fetchResponseFacet } from "./responses";
+import { responseCellSchema, responseDetailSchema, responseSheetSchema, fetchResponseSheet, fetchResponseFacet } from "./responses";
 import { responseDetailFixture, responseSheetFixture } from "@/test/responseFixtures";
 it("requires each row to belong to its declared version and field columns", () => {
   const sheet = responseSheetFixture();
@@ -42,4 +42,25 @@ it.each(["Received", "PendingApproval", "Approved", "Rejected"] as const)("sends
   await fetchResponseSheet(sheet.definitionId, filter, signal);
   await fetchResponseFacet(sheet.definitionId, filter, "actor", undefined, 1, "", signal);
   expect(requests).toEqual([filter, { filter, dimension: "actor", page: 1, pageSize: 20, search: "" }]);
+});
+
+it("retains a sealed canonical catalog value without accepting half a pair or changing its historical label", () => {
+  const captured = { choiceId: "01990000-0000-7000-8000-000000000021", label: "Tarifa histórica", catalogId: "01990000-0000-7000-8000-000000000020", catalogName: "Tarifas" };
+  const cell = { fieldId: captured.choiceId, type: "choice", state: "Answered", value: captured };
+  expect(responseCellSchema.safeParse(cell).success).toBe(true);
+  for (const [valueType, value] of [["Integer", "999999999999999999"], ["Decimal", "9007199254740993.0123"], ["Date", "2028-02-29"]] as const) {
+    expect(responseCellSchema.parse({ ...cell, value: { ...captured, valueType, value } }).value).toEqual({ ...captured, valueType, value });
+  }
+  for (const pair of [{ value: "12" }, { valueType: "Integer" }, { value: null, valueType: "Integer" }, { value: "12", valueType: "Text" }, { value: "12", valueType: "Boolean" }, { value: "01", valueType: "Integer" }, { value: "1.20", valueType: "Decimal" }, { value: "2026-02-29", valueType: "Date" }]) {
+    expect(responseCellSchema.safeParse({ ...cell, value: { ...captured, ...pair } }).success).toBe(false);
+  }
+});
+
+it("reads the sealed catalog type on a choice column even without rows and rejects unknown or misplaced types", () => {
+  const sheet = responseSheetFixture();
+  const choice = sheet.columns.find(column => column.type === "choice")!;
+  const empty = { ...sheet, columns: [{ ...choice, valueType: "Decimal" }], records: { ...sheet.records, items: [], totalCount: 0, totalPages: 0, hasNext: false, hasPrevious: false } };
+  expect(responseSheetSchema.parse(empty).columns[0]).toMatchObject({ valueType: "Decimal" });
+  for (const valueType of [null, "Boolean", "Text"]) expect(responseSheetSchema.safeParse({ ...empty, columns: [{ ...choice, valueType }] }).success).toBe(false);
+  expect(responseSheetSchema.safeParse({ ...empty, columns: [{ ...choice, type: "shortText", valueType: "Decimal" }] }).success).toBe(false);
 });
