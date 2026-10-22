@@ -6,6 +6,7 @@
 
 - Toda llamada al backend pasa por `api`; consultas y mutaciones se coordinan con TanStack Query.
 - Los errores se deciden por `code`, nunca por el texto; conservá extensiones de ProblemDetails y errores por campo.
+- FormData viaja como multipart sin fijar Content-Type: el navegador agrega su boundary. Conserva sesión, idioma, cancelación y la única renovación; JSON mantiene su tratamiento. El transporte no importa ninguna feature.
 - Conservá tratamiento de respuestas sin cuerpo, errores de red, renovación única y expiración de sesión; no duplicar `fetch` en una pantalla.
 - Un endpoint usado por varias features vive acá; uno exclusivo queda en `features/<área>/api`.
 - Mantené claves de consultas e invalidaciones coherentes con listas, conteos, detalle y usuario actual.

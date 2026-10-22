@@ -61,9 +61,8 @@ async function send(path: string, init: RequestInit, token: string | undefined):
     headers.set("accept-language", language);
   }
 
-  if (init.body !== undefined) {
-    headers.set("content-type", "application/json");
-  }
+  if (init.body instanceof FormData) headers.delete("content-type");
+  else if (init.body !== undefined) headers.set("content-type", "application/json");
 
   return fetch(path, { ...init, headers });
 }
@@ -143,10 +142,10 @@ export const api = {
     request<Blob>(path, { ...init, method: "GET", cache: "no-store" }, true),
   get: <T>(path: string, init?: RequestInit) => request<T>(path, { ...init, method: "GET" }),
   post: <T>(path: string, body?: unknown, init?: RequestInit) =>
-    request<T>(path, { ...init, method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }),
+    request<T>(path, { ...init, method: "POST", body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body) }),
   put: <T>(path: string, body?: unknown, init?: RequestInit) =>
-    request<T>(path, { ...init, method: "PUT", body: body === undefined ? undefined : JSON.stringify(body) }),
+    request<T>(path, { ...init, method: "PUT", body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body) }),
   patch: <T>(path: string, body?: unknown, init?: RequestInit) =>
-    request<T>(path, { ...init, method: "PATCH", body: body === undefined ? undefined : JSON.stringify(body) }),
+    request<T>(path, { ...init, method: "PATCH", body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body) }),
   delete: <T>(path: string, init?: RequestInit) => request<T>(path, { ...init, method: "DELETE" }),
 };

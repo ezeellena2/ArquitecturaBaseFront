@@ -273,3 +273,26 @@ it.each([404,429])("binary reads preserve ProblemDetails for HTTP %s",async stat
  expect(result).toBeInstanceOf(ApiError);
  expect(result).toMatchObject({status,traceId:"trace-file",detail:"Safe detail",...(status===429?{retryAfterSeconds:23}:{})});
 });
+
+it("leaves the FormData boundary to the browser and preserves the file through the single session renewal", async () => {
+  const file = new File(["Code,Text\nN,Norte"], "Opciones.csv", { type: "text/csv" });
+  const body = new FormData(); body.append("file", file); body.append("mode", "Append"); body.append("expectedRevision", "7");
+  const requests: RequestInit[] = [];
+  const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async (_path, init) => {
+    requests.push(init!);
+    return requests.length === 1 ? HttpResponse.json({}, { status: 401 }) : HttpResponse.json({ done: true });
+  });
+  configureHttpClient({ getAccessToken: () => "old", getLanguage: () => "es", renewSession: async () => "fresh" });
+  try {
+    await expect(api.post("/api/forms/catalogs/import", body)).resolves.toEqual({ done: true });
+    expect(requests).toHaveLength(2);
+    expect(requests.map(request => new Headers(request.headers).get("authorization"))).toEqual(["Bearer old", "Bearer fresh"]);
+    for (const request of requests) {
+      expect(new Headers(request.headers).get("content-type")).toBeNull();
+      expect(new Headers(request.headers).get("accept-language")).toBe("es");
+      expect(request.body).toBe(body);
+      expect((request.body as FormData).get("file")).toBe(file);
+      expect((request.body as FormData).get("mode")).toBe("Append");
+    }
+  } finally { fetch.mockRestore(); resetHttpClient(); }
+});
