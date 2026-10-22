@@ -79,3 +79,25 @@ it("clears a condition value after changing its question and focuses the survivi
   await userEvent.click(screen.getByRole("button", { name: "Quitar condición 1" }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Agregar condición" })).toHaveFocus());
 });
+
+
+it("omits multiple-choice questions from both mapping selectors while retaining valid record-number mapping", async () => {
+  setup();
+  const sourceMultiId = "0199a0c0-0000-7000-8000-000000000070";
+  const targetMultiId = "0199a0c0-0000-7000-8000-000000000071";
+  const multiple = (fieldId: string, label: string) => ({ ...question(fieldId, label, "multiChoice"), source: { catalog: id },
+    selection: { minSelected: 0, maxSelected: 3 }, options: null });
+  server.use(http.get("/api/forms/definitions/:id/suggestions/options", () => HttpResponse.json({
+    source: { ...source, questions: [...source.questions, multiple(sourceMultiId, "Fallas de origen")] },
+    destinations: [{ ...destination, questions: [...destination.questions, multiple(targetMultiId, "Fallas de destino")] }],
+    unavailableDestinations: [], conditionChoices: {},
+  })));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>); await add();
+  await userEvent.click(screen.getByRole("button", { name: "Agregar dato" }));
+  const origin = screen.getByRole("combobox", { name: "Dato de origen 1" });
+  expect(within(origin).queryByRole("option", { name: "Fallas de origen" })).not.toBeInTheDocument();
+  await userEvent.selectOptions(origin, "RecordNumber");
+  const target = screen.getByRole("combobox", { name: "Pregunta de destino 1" });
+  expect(within(target).queryByRole("option", { name: "Fallas de destino" })).not.toBeInTheDocument();
+  expect(within(target).getByRole("option", { name: "Entrega asociada" })).toBeInTheDocument();
+});

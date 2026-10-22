@@ -26,16 +26,17 @@ export function ResponseChoiceMenu({
 }) {
   const [open, setOpen] = useState(false);
   const { t } = useTranslation("forms");
+  const operator = column.type === "multiChoice" ? "anyOf" : "in";
   const selected =
     filter.conditions?.find(
       (condition) =>
-        condition.fieldId === column.fieldId && condition.operator === "in",
+        condition.fieldId === column.fieldId && condition.operator === operator,
     )?.values ?? [];
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <FilterMenuTrigger>
         {column.label}
-        {selected.length ? ` (${selected.length})` : ""}
+        {selected.length ? column.type === "multiChoice" ? `: ${t("responses.anyOfCount", { count: selected.length })}` : ` (${selected.length})` : ""}
       </FilterMenuTrigger>
       <DropdownMenuContent align="start">
         {open ? (

@@ -52,3 +52,23 @@ it("exports the same selected state without adding a state facet or another filt
   await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
   expect(body).toEqual({ filter: selected, columns: null });
 });
+
+
+it("keeps per-option server counts and applies anyOf from More filters", async () => {
+  const bodies = setup();
+  const column = { fieldId: "01990000-0000-7000-8000-000000000910", type: "multiChoice" as const, label: "Fallas",
+    introducedInVersion: 1, options: [{ id: "01990000-0000-7000-8000-000000000911", label: "Frío" }, { id: "01990000-0000-7000-8000-000000000912", label: "Ruido" }] };
+  server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => {
+    const { fieldId } = await request.json() as { fieldId?: string };
+    const items = fieldId === column.fieldId ? column.options.map(option => ({ ...option, count: 2 })) : [];
+    return HttpResponse.json({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: items.length ? 1 : 0, hasPrevious: false, hasNext: false });
+  }));
+  const apply = vi.fn();
+  renderWithProviders(<ResponseFiltersPanel formId={responseFormId} query={{ page: 1, pageSize: 20 }} columns={[column]} zone="UTC" onApply={apply} onClose={vi.fn()}/>);
+  await userEvent.click(await screen.findByText("Frío", { exact: true }));
+  expect(screen.getByRole("checkbox", { name: "Frío" })).toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "Ruido" })).toBeEnabled();
+  await waitFor(() => expect(bodies.some(body => body.conditions?.some(condition => condition.operator === "anyOf" && condition.values?.[0] === column.options[0]!.id))).toBe(true));
+  await userEvent.click(await screen.findByRole("button", { name: /Ver 2 respuestas/ }));
+  expect(apply).toHaveBeenCalledWith(expect.objectContaining({ conditions: [{ fieldId: column.fieldId, operator: "anyOf", values: [column.options[0]!.id] }] }), []);
+});

@@ -74,3 +74,11 @@ it("preserves a selected PDF only while a prior generator still applies without 
   expect(clearUnavailablePdfAttachments({ ...rule, event: "Rejected" }).actions[2].includePdf).toBe(false);
   expect(rule.actions[2].includePdf).toBe(true);
 });
+
+
+it("preserves anyOf and captured multi option IDs when preparing rules", () => {
+  const multi: ResponseColumn = { ...column, fieldId: "multi", type: "multiChoice", options: [{ id: "cold", label: "Frío" }] };
+  const condition = { fieldId: multi.fieldId, operator: "anyOf", values: ["cold"] };
+  const rule = { ...newRule(), event: "Approved" as const, conditions: [condition], actions: [newRuleAction("GeneratePdf")] };
+  expect(prepareRules([rule], original, [multi])).toMatchObject({ issues: [], rules: [{ conditions: [condition] }] });
+});

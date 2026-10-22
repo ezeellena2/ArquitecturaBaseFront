@@ -200,7 +200,7 @@ export function ResponseFiltersPanel({
                       }}
                     />
                   </FormField>
-                  {column.type === "choice" || column.type === "boolean" ? (
+                  {column.type === "choice" || column.type === "multiChoice" || column.type === "boolean" ? (
                     <ResponseFacetControl
                       formId={formId}
                       filter={facetFilter}
@@ -212,10 +212,10 @@ export function ResponseFiltersPanel({
                         draft.conditions?.find(
                           (condition) =>
                             condition.fieldId === column.fieldId &&
-                            condition.operator === "in",
+                            condition.operator === (column.type === "multiChoice" ? "anyOf" : "in"),
                         )?.values ?? []
                       }
-                      onChange={(ids) => condition(column.fieldId, "in", ids)}
+                      onChange={(ids) => condition(column.fieldId, column.type === "multiChoice" ? "anyOf" : "in", ids)}
                     />
                   ) : column.type === "decimal" || column.type === "date" ? (
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

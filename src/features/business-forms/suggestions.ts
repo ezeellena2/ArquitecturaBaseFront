@@ -11,7 +11,7 @@ export const newSuggestion = (): FormSuggestion => ({ id: crypto.randomUUID(), d
 export function mappingTargets(source: SuggestionMapping["source"], questions: readonly SuggestionQuestion[], destination: readonly SuggestionQuestion[]): readonly SuggestionQuestion[] {
   if(source.kind==="RecordNumber") return destination.filter(field=>field.type==="shortText"||field.type==="longText");
   const field=questions.find(field=>field.fieldId===source.fieldId);
-  return !field||field.type==="photo"||field.type==="document"?[]:destination.filter(target=>target.type===field.type
+  return !field||field.type==="photo"||field.type==="document"||field.type==="multiChoice"?[]:destination.filter(target=>target.type===field.type
     && (field.type!=="choice" || field.source?.catalog != null && target.source?.catalog===field.source.catalog));
 }
 export function prepareSuggestions(suggestions: readonly FormSuggestion[], source: PublishedSuggestionForm, destinations: readonly PublishedSuggestionForm[], columns: readonly ResponseColumn[]) {

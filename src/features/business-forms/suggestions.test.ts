@@ -27,3 +27,16 @@ it("validates optional conditions against the published source using the shared 
 it("keeps the explanation in the local draft but sends no inactive AI instruction in Always mode",()=>{const draft={...suggestion(),mode:"Always" as const,when:"Mi explicación conservada"};expect(prepareSuggestions([draft],source,[destination],[]).suggestions[0].when).toBeNull();expect(draft.when).toBe("Mi explicación conservada");});
 
 it("normalizes bracket field errors and resolves the first control to its stable suggestion identity",()=>{const draft={...suggestion(),mappings:[{source:{kind:"RecordNumber" as const,fieldId:null},destinationFieldId:"target-text"}]};const result=suggestionFieldErrors({"suggestions[0].mappings[0].source.kind":["Origen inválido"],"unknown.path":["Dato no reconocido"]},[draft]);expect(result.errors["suggestions.0.mappings.0.source"]).toEqual(["Origen inválido"]);expect(result.errors["unknown.path"]).toEqual(["Dato no reconocido"]);expect(result.firstSuggestionId).toBe(draft.id);expect(result.firstPath).toBe("suggestions.0.mappings.0.source");});
+
+
+it("never maps a multiple-choice source or target, even when both use the same catalog", () => {
+  const choice = (fieldId: string) => ({ fieldId, type: "choice" as const, label: { es: fieldId }, source: { catalog: "same-catalog" } });
+  const multiple = (fieldId: string) => ({ ...choice(fieldId), type: "multiChoice" as const, selection: { minSelected: 0, maxSelected: 3 } });
+  const sources = [multiple("multi-source"), choice("single-source")];
+  const targets = [multiple("multi-target"), choice("single-target")];
+  expect(mappingTargets({ kind: "Field", fieldId: "multi-source" }, sources, targets)).toEqual([]);
+  expect(mappingTargets({ kind: "Field", fieldId: "single-source" }, sources, targets).map(question => question.fieldId)).toEqual(["single-target"]);
+  const draft = { ...suggestion(), mappings: [{ source: { kind: "Field" as const, fieldId: "multi-source" }, destinationFieldId: "multi-target" }] };
+  expect(prepareSuggestions([draft], { ...source, questions: sources }, [{ ...destination, questions: targets }], []).issues)
+    .toContainEqual({ path: "suggestions.0.mappings.0.destinationFieldId", key: "incompatible" });
+});

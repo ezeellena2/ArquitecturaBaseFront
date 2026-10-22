@@ -6,7 +6,7 @@ const guid=z.string().uuid();
 const revision=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const author=z.strictObject({userId:guid,displayName:z.string().nullable()});
 const text=z.record(z.string().refine(value=>value==="es"||value==="en"),z.string());
-const condition=z.strictObject({fieldId:guid,operator:z.enum(["in","contains","equals","gte","lte","answered","unanswered","notAsked"]),values:z.array(z.string()).nullable()});
+const condition=z.strictObject({fieldId:guid,operator:z.enum(["in","anyOf","contains","equals","gte","lte","answered","unanswered","notAsked"]),values:z.array(z.string()).nullable()});
 const mapping=z.strictObject({source:z.strictObject({kind:z.enum(["Field","RecordNumber"]),fieldId:guid.nullable()}),destinationFieldId:guid});
 const suggestion=z.strictObject({id:guid,destinationDefinitionId:guid,destinationVersionId:guid,mode:z.enum(["Assistant","Always"]),when:z.string().max(1000).nullable(),isActive:z.boolean(),conditions:z.array(condition).max(10),mappings:z.array(mapping).max(40)});
 const set=z.strictObject({id:guid.nullable(),definitionId:guid,sourceVersionId:guid.nullable(),revision,suggestions:z.array(suggestion).max(20),createdAtUtc:z.iso.datetime().nullable(),author:author.nullable()});

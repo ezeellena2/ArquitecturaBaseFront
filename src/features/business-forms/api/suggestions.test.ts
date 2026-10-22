@@ -21,3 +21,11 @@ it("reads deactivated target metadata without making it an eligible destination"
  expect(()=>readSuggestionOptions({...body,unavailableDestinations:[{...body.unavailableDestinations[0],state:"Unknown"}]})).toThrow();
  expect(()=>readSuggestionOptions({...body,unavailableDestinations:undefined})).toThrow();
 });
+
+
+it("retains anyOf in the suggestion contract without broadening the grammar", () => {
+  const condition = { fieldId: version, operator: "anyOf", values: [version] };
+  const row = { ...suggestion, conditions: [condition] };
+  expect(readSuggestionSet({ ...current(), id: version, sourceVersionId: version, revision: 1, suggestions: [row], createdAtUtc: "2026-10-22T12:00:00Z" }).suggestions[0].conditions).toEqual([condition]);
+  expect(() => readSuggestionSet({ ...current(), suggestions: [{ ...row, conditions: [{ ...condition, operator: "anyUnknown" }] }] })).toThrow("Invalid form suggestions contract.");
+});

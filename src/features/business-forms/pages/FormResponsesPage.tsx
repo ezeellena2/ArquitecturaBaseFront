@@ -168,7 +168,7 @@ export function FormResponsesPage() {
           ? " " +
             t("responses.sinceVersion", { version: column.introducedInVersion })
           : ""),
-      sortable: true,
+      sortable: column.type !== "multiChoice",
       cell: (row: ResponseRow) => (
         <ResponseValue
           cell={row.cells.find((cell) => cell.fieldId === column.fieldId)!}
@@ -188,7 +188,7 @@ export function FormResponsesPage() {
     })),
   ];
   const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, scope.user?.timeZoneId, data?.versions);
-  const firstChoice = data?.columns.find((column) => column.type === "choice");
+  const firstChoice = data?.columns.find((column) => column.type === "choice" || column.type === "multiChoice");
   const sort = route.query.sort?.replace(
     "field",
     route.query.sortFieldId ?? "field",
@@ -248,7 +248,7 @@ export function FormResponsesPage() {
                   conditions: replaceResponseCondition(
                     route.query.conditions ?? [],
                     firstChoice.fieldId,
-                    "in",
+                    firstChoice.type === "multiChoice" ? "anyOf" : "in",
                     ids,
                   ),
                 })

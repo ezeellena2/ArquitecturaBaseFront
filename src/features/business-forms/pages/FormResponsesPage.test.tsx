@@ -1439,3 +1439,37 @@ it("keeps one workflow read notification in the detail without repeating its cau
   });
 
 });
+
+
+it("filters multi choices through anyOf while keeping their column unsortable", async () => {
+  setup();
+  const sheet = responseSheetFixture();
+  const single = sheet.columns.find(column => column.type === "choice")!;
+  const options = [
+    { id: "01990000-0000-7000-8000-000000000911", label: "Frío" },
+    { id: "01990000-0000-7000-8000-000000000912", label: "Ruido" },
+  ];
+  single.type = "multiChoice"; single.label = "Fallas"; single.options = options;
+  for (const row of sheet.records.items) {
+    const cell = row.cells.find(cell => cell.fieldId === single.fieldId)!;
+    cell.type = "multiChoice"; cell.state = "Answered";
+    cell.value = [...options].reverse().map(option => ({ choiceId: option.id, label: option.label }));
+  }
+  const requests: unknown[] = [];
+  server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { requests.push(await request.json()); return HttpResponse.json(sheet); }),
+    http.post("/api/forms/definitions/:id/records/filter-counts/search", () => HttpResponse.json({
+      items: options.map(option => ({ ...option, count: 2 })), page: 1, pageSize: 20, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false,
+    })));
+  renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+  const header = await screen.findByRole("columnheader", { name: "Fallas" });
+  expect(within(header).queryByRole("button")).not.toBeInTheDocument();
+  expect(screen.getAllByText("Ruido, Frío", { exact: true })).toHaveLength(sheet.records.items.length);
+  const trigger = screen.getByRole("button", { name: "Fallas" });
+  trigger.focus(); await userEvent.keyboard("{Enter}");
+  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: /Frío/ }));
+  await waitFor(() => expect(requests).toContainEqual(expect.objectContaining({ conditions: [{ fieldId: single.fieldId, operator: "anyOf", values: [options[0]!.id] }] })));
+  await userEvent.keyboard("{Escape}");
+  expect(screen.getByRole("button", { name: "Fallas: alguna de 1" })).toBeInTheDocument();
+  expect(await screen.findByText("Fallas: alguna de Frío", { exact: true })).toBeInTheDocument();
+  expect(requests.every(body => (body as { sortFieldId?: string }).sortFieldId !== single.fieldId)).toBe(true);
+});

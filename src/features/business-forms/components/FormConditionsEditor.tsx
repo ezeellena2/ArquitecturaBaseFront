@@ -33,7 +33,7 @@ export function FormConditionsEditor({ conditions, columns, blocked, error, onCh
     {conditions.map((condition, index) => {
       const field = columns.find(column => column.fieldId === condition.fieldId);
       const presence = ["answered", "unanswered", "notAsked"].includes(condition.operator);
-      const operators = ["answered", "unanswered", "notAsked", ...(field?.type === "decimal" || field?.type === "date" ? ["equals", "gte", "lte"] : field?.type === "shortText" || field?.type === "longText" ? ["contains", "equals"] : field?.type === "boolean" || field?.type === "choice" && field.options.length ? ["in"] : [])];
+      const operators = ["answered", "unanswered", "notAsked", ...(field?.type === "decimal" || field?.type === "date" ? ["equals", "gte", "lte"] : field?.type === "shortText" || field?.type === "longText" ? ["contains", "equals"] : field?.type === "multiChoice" && field.options.length ? ["anyOf"] : field?.type === "boolean" || field?.type === "choice" && field.options.length ? ["in"] : [])];
       const update = (next: ResponseCondition) => onChange(conditions.map((row, position) => position === index ? next : row));
       return <div key={index} className="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <FormField label={t("rules.question")} error={fieldPath && index === 0 ? error : undefined}>
@@ -43,13 +43,13 @@ export function FormConditionsEditor({ conditions, columns, blocked, error, onCh
           </NativeSelect>
         </FormField>
         <FormField label={t("rules.operator")}>
-          <NativeSelect disabled={blocked} value={condition.operator} onChange={event => update({ ...condition, operator: event.target.value, values: ["answered", "unanswered", "notAsked"].includes(event.target.value) || field?.type === "choice" ? [] : [field?.type === "boolean" ? "true" : ""] })}>
+          <NativeSelect disabled={blocked} value={condition.operator} onChange={event => update({ ...condition, operator: event.target.value, values: ["answered", "unanswered", "notAsked"].includes(event.target.value) || field?.type === "choice" || field?.type === "multiChoice" ? [] : [field?.type === "boolean" ? "true" : ""] })}>
             {operators.map(operator => <option key={operator} value={operator}>{t("rules.operators." + operator)}</option>)}
           </NativeSelect>
         </FormField>
         {!presence ? <FormField label={t("rules.value")}>
           {field?.type === "boolean" ? <NativeSelect disabled={blocked} value={condition.values?.[0] ?? ""} onChange={event => update({ ...condition, values: [event.target.value] })}><option value="true">{t("responses.yes")}</option><option value="false">{t("responses.no")}</option></NativeSelect>
-            : field?.type === "choice" ? <MultiSelect disabled={blocked} value={condition.values ?? []} options={field.options.map(choice => ({ value: choice.id, label: choice.label }))} placeholder={t("rules.chooseValues")} onChange={values => update({ ...condition, values })}/>
+            : field?.type === "choice" || field?.type === "multiChoice" ? <MultiSelect disabled={blocked} value={condition.values ?? []} options={field.options.map(choice => ({ value: choice.id, label: choice.label }))} placeholder={t("rules.chooseValues")} onChange={values => update({ ...condition, values })}/>
             : <Input disabled={blocked} type={field?.type === "date" ? "date" : "text"} inputMode={field?.type === "decimal" ? "decimal" : undefined} value={condition.values?.[0] ?? ""} onChange={event => update({ ...condition, values: [event.target.value] })}/>}
         </FormField> : <span/>}
         <IconButton className="sm:mt-6" label={t("rules.removeCondition", { number: index + 1 })} disabled={blocked} onClick={() => { pendingFocus.current = Math.min(index, conditions.length - 2); onChange(conditions.filter((_, position) => position !== index)); }}><TrashIcon className="size-4"/></IconButton>

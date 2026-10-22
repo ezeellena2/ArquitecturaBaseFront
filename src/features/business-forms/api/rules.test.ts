@@ -24,3 +24,13 @@ it.each([undefined, null, { ...changes, addedRules: -1 }, { ...changes, updatedR
   server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json(historyRow(value))));
   await expect(fetchRuleHistory(definitionId, 1)).rejects.toThrow("Invalid form rules contract.");
 });
+
+
+it("reads an anyOf condition without replacing it with the single-choice operator", () => {
+  const condition = { fieldId: definitionId, operator: "anyOf", values: [definitionId] };
+  const body = { id: definitionId, definitionId, revision: 1, originalCulture: "es", rules: [{
+    id: definitionId, event: "Approved", conditions: [condition], actions: [newRuleAction("GeneratePdf")],
+  }], createdAtUtc: "2026-10-22T12:00:00Z", author: null };
+  expect(readRuleSet(body).rules[0].conditions).toEqual([condition]);
+  expect(() => readRuleSet({ ...body, rules: [{ ...body.rules[0], conditions: [{ ...condition, operator: "anyUnknown" }] }] })).toThrow("Invalid form rules contract.");
+});
