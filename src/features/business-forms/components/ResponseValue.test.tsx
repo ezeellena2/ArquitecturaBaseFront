@@ -37,3 +37,10 @@ it.each([false, true])("shows every historical multi-choice label without numeri
   expect(screen.queryByText(/9007199254740993|9\.007\.199/)).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Descargar|Ver foto/ })).not.toBeInTheDocument();
 });
+
+it.each(["choice", "multiChoice"] as const)("shows every sealed extra field only in the %s detail", async type => {
+  const choice = { choiceId: "historic", label: "Proveedor histórico", fields: [{ fieldId: "tax", label: "CUIT histórico", type: "text" as const, role: "data" as const, value: "30-71234567-8" }, { fieldId: "zone", label: "Zona histórica", type: "catalog" as const, role: "filter" as const, value: "private-option-id", text: "Centro de entonces" }, { fieldId: "days", label: "Plazo", type: "integer" as const, role: "data" as const, value: "900719925474099123" }] };
+  const cell: ResponseCell = { fieldId: "supplier", type, state: "Answered", value: type === "choice" ? choice : [choice] };
+  await act(async () => { renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-1" label="Proveedor" detail detailLink="" onForbidden={() => undefined} onError={() => undefined}/>); });
+  expect(screen.getByText("CUIT histórico")).toBeInTheDocument(); expect(screen.getByText("30-71234567-8")).toBeInTheDocument(); expect(screen.getByText("Zona histórica")).toBeInTheDocument(); expect(screen.getByText("Centro de entonces")).toBeInTheDocument(); expect(document.body).not.toHaveTextContent("private-option-id");
+});

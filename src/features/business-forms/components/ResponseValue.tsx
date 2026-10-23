@@ -3,8 +3,11 @@ import { Link } from "react-router";
 import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatDateOnly } from "@/shared/lib/dateTime";
 import { formatExactDecimal } from "@/shared/lib/decimal";
-import { responseDocumentFormat, responseFiles, responseValueText, selectedResponseChoices, type ResponseCell } from "../responses";
+import { responseCatalogFieldText, responseDocumentFormat, responseFiles, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
+function CapturedFields({ choice, culture, yes, no }: { choice: ResponseChoice; culture: string; yes: string; no: string }) {
+  return choice.fields?.length ? <dl className="mt-1 space-y-0.5 text-xs text-[var(--color-content-muted)]">{choice.fields.map(field => <div key={field.fieldId} className="flex flex-wrap gap-x-1"><dt>{field.label}</dt><dd className="min-w-0 break-words">{responseCatalogFieldText(field, culture, yes, no)}</dd></div>)}</dl> : null;
+}
 export function ResponseValue({
   cell,
   actor,
@@ -87,6 +90,7 @@ export function ResponseValue({
         <span>{choice.label}</span>
         {choice.detail ? <p className="text-xs text-[var(--color-content-muted)]">{choice.detail}</p> : null}
         {choice.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{choice.catalogName}</p> : null}
+        <CapturedFields choice={choice} culture={i18n.language} yes={t("responses.yes")} no={t("responses.no")}/>
       </div>)}
     </div>;
   const text =
@@ -118,6 +122,7 @@ export function ResponseValue({
           {choice.catalogName}
         </p>
       ) : null}
+      {detail && choice ? <CapturedFields choice={choice} culture={i18n.language} yes={t("responses.yes")} no={t("responses.no")}/> : null}
     </div>
   );
 }
