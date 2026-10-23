@@ -103,6 +103,21 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await waitFor(() => expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Catálogo actual"));
     expect(writes).toBe(1);
   });
+  it("reports a source in use without entering review", async () => {
+    setup(); let writes = 0; const detail = "Un campo o un dato de las personas toma sus valores de este catálogo: no se puede dar de baja.";
+    server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.SourceInUse", detail }, { status: 409 }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Dar de baja" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Dar de baja" }));
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.kind === "error" && notice.message === detail)).toBe(true));
+    expect(writes).toBe(1);
+    expect(screen.queryByText("Revisión del catálogo")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Revisar" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Reactivar" })).toBeEnabled();
+    expect(screen.getByRole("textbox", { name: "Nombre" })).not.toHaveAttribute("readonly");
+  });
   it("allows catalog Read without form template Read and hides all writes without Manage", async () => {
     setup(["formcatalogs.read"]); await mount("/catalogos/" + id);
     expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");

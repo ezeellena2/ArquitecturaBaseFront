@@ -42,7 +42,7 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 - `catalogFields` conserva entradas locales y escribe tipos exactos; campos/presentación participan del baseline y no entran en MutationCache. Mapas de valores se copian y comparan estructuralmente, sin depender del orden de claves.
 - `validationPaths` analiza segmentos de propiedades e índices, sin fijar los nombres de los campos. Los errores de una colección se ligan a los `localId` del cuerpo enviado y conservan su ruta relativa; los de publicación siguen por FieldId/ChoiceId.
 - Filters activo prueba con la persona elegida antes de guardar y no escribe si excede 200; dado de baja guarda sin persona ni prueba. `catalogFiltersBody` retira los `localId`. Cambiar condiciones limpia el resultado anterior. Una propuesta pendiente sólo se aprueba (con persona) o se descarta.
-- Un 409 conserva el borrador hasta releer y adoptar; red o 5xx permite otro Guardar con la misma revisión. Un alta fallida sin ID permite otro intento sin ofrecer releer.
+- Un 409 de revisión (`Forms.Catalog.RevisionConflict`) conserva el borrador hasta releer y adoptar. Los demás 409 son errores del editor, que sigue editable y conserva `current`: `SourceInUse` va al Toaster y `FieldInUse` se liga al campo. Red o 5xx permite otro Guardar con la misma revisión. Un alta fallida sin ID permite otro intento sin ofrecer releer.
 
 ### Datos de personas
 

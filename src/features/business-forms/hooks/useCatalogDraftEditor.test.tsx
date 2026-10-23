@@ -50,6 +50,25 @@ describe("Manual catalog editor ownership", () => {
     expect(result.current.requiresReview).toBe(false);
     expect(writes).toBe(1);
   });
+  it("keeps the draft editable after a business conflict and requires review only for a revision conflict", async () => {
+    let code = "Forms.Catalog.SourceInUse"; let writes = 0;
+    server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code, detail: "En uso." }, { status: 409 }); }));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, initial), harness());
+    act(() => result.current.changeMetadata({ isActive: false, name: { es: "Mi baja", en: "My deactivation" } }));
+    await act(() => result.current.save());
+    expect(result.current.requiresReview).toBe(false);
+    expect(result.current.canSave).toBe(true);
+    expect(result.current.error).toMatchObject({ status: 409, code: "Forms.Catalog.SourceInUse" });
+    expect(result.current.draft).toMatchObject({ isActive: false, revision: 1, name: { es: "Mi baja" } });
+    act(() => result.current.changeMetadata({ isActive: true }));
+    expect(result.current.draft!.isActive).toBe(true);
+    code = "Forms.Catalog.RevisionConflict";
+    await act(() => result.current.save());
+    expect(result.current.requiresReview).toBe(true);
+    expect(result.current.canSave).toBe(false);
+    expect(result.current.draft!.name.es).toBe("Mi baja");
+    expect(writes).toBe(2);
+  });
   it("blocks concurrent saves and ignores a late result after another actor takes ownership", async () => {
     let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; }); let calls = 0;
     server.use(http.put("/api/forms/catalogs/" + id, async () => { calls++; await gate; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));

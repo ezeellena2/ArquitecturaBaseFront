@@ -15,6 +15,8 @@ import { catalogFieldsBody, parseCatalogFieldValue, type CatalogFieldDraft } fro
 import type { CatalogPresentation } from "../api/catalogResponse";
 
 export interface CatalogReadScope { readonly actorId: string | null; readonly culture: FormCulture; readonly permissions: readonly string[] }
+// Only a stale revision requires rereading. Other 409s are business errors the author corrects in the editor.
+const isRevisionConflict = (error: unknown) => error instanceof ApiError && error.code === "Forms.Catalog.RevisionConflict";
 interface EditorState {
   readonly owner: string;
   readonly epoch: object;
@@ -126,7 +128,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
       return saved;
     } catch (error) {
       if (!accepts(owner, controller)) return;
-      const review = writing && captured.id !== null && error instanceof ApiError && error.status === 409;
+      const review = writing && captured.id !== null && isRevisionConflict(error);
       setState(value => ({ ...value, busy: false, error, requiresReview: review, ...(review ? { current: null } : {}) }));
     } finally {
       if (operation.current === controller) { operation.current = null; if (active.current && ownerRef.current === owner) setState(value => ({ ...value, busy: false })); }
@@ -145,7 +147,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
       void client.invalidateQueries({ queryKey: ["form-catalogs", scope.actorId] });
       return discarded;
     } catch (error) {
-      if (accepts(owner, controller)) setState(value => ({ ...value, busy: false, error, current: null, requiresReview: error instanceof ApiError && error.status === 409 }));
+      if (accepts(owner, controller)) { const review = isRevisionConflict(error); setState(value => ({ ...value, busy: false, error, requiresReview: review, ...(review ? { current: null } : {}) })); }
     } finally {
       if (operation.current === controller) { operation.current = null; if (isCurrentOwner()) setState(value => ({ ...value, busy: false })); }
     }
