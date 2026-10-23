@@ -18,6 +18,17 @@ for(const culture of ["es","en"])describe("captured catalog HTTP "+culture,()=>{
     expect(prepared.preparation.catalogs[0]).toMatchObject({count:1});
     expect(Object.keys(prepared.preparation.catalogs[0]).sort()).toEqual(["count","fieldId","label"]);
   });
+  it("reads both recipient blocks without receiving options or private values",()=>{
+    for(const [name,code] of [["preparation-recipient-data-missing","Forms.Record.RecipientDataMissing"],["preparation-filter-unavailable","Forms.Record.CatalogFilterUnavailable"]] as const){
+      const prepared=parseChatFormPreparation(json(culture,name));
+      expect(prepared.culture).toBe(culture);
+      expect(prepared.preparation.canSend).toBe(false);
+      expect(prepared.preparation.catalogs).toEqual([]);
+      expect(prepared.preparation.issues).toHaveLength(1);
+      expect(prepared.preparation.issues[0]!.code).toBe(code);
+      expect(Object.keys(prepared.preparation).sort()).toEqual(["canSend","catalogs","issues"]);
+    }
+  });
   it("preserves the historical reference after reload and hides it without record permission",async()=>{
     for(const name of ["reply-completed","reply-reloaded","reply-without-read"]){
       const original=JSON.parse(raw(culture,name)) as Thread;
@@ -39,8 +50,9 @@ for(const culture of ["es","en"])describe("captured catalog HTTP "+culture,()=>{
     expect(JSON.stringify(rejected)).not.toContain("Pérez Hnos.");
   });
 });
-it("verifies all twenty-six exact catalog chat captures from the common run",()=>{
+it("verifies all thirty exact catalog chat captures from the common run",()=>{
  const provenance=cohort.verify();
  expect(provenance.sources.some(source=>source.path.endsWith("WhatsAppFormReplyAppPreviewTests.cs"))).toBe(true);
- expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["es/choices.json","es/preparation.json","es/reply-completed.json","es/reply-reloaded.json","es/reply-without-read.json","es/reply-rejected.json","es/reply-pending.json","es/reply-unrecognized.json","es/reply-inbox-read.json","es/reply-inbox-without-read.json","es/reply-latest-page.json","es/reply-older-page.json","es/reply-all-states.json","en/choices.json","en/preparation.json","en/reply-completed.json","en/reply-reloaded.json","en/reply-without-read.json","en/reply-rejected.json","en/reply-pending.json","en/reply-unrecognized.json","en/reply-inbox-read.json","en/reply-inbox-without-read.json","en/reply-latest-page.json","en/reply-older-page.json","en/reply-all-states.json"].sort());
+ expect(provenance.sources.some(source=>source.path.endsWith("WhatsAppCatalogRecipientSendingTests.cs"))).toBe(true);
+ expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["es/choices.json","es/preparation.json","es/reply-completed.json","es/reply-reloaded.json","es/reply-without-read.json","es/reply-rejected.json","es/reply-pending.json","es/reply-unrecognized.json","es/reply-inbox-read.json","es/reply-inbox-without-read.json","es/reply-latest-page.json","es/reply-older-page.json","es/reply-all-states.json","en/choices.json","en/preparation.json","en/reply-completed.json","en/reply-reloaded.json","en/reply-without-read.json","en/reply-rejected.json","en/reply-pending.json","en/reply-unrecognized.json","en/reply-inbox-read.json","en/reply-inbox-without-read.json","en/reply-latest-page.json","en/reply-older-page.json","en/reply-all-states.json","es/preparation-recipient-data-missing.json","es/preparation-filter-unavailable.json","en/preparation-recipient-data-missing.json","en/preparation-filter-unavailable.json"].sort());
 });
