@@ -55,6 +55,11 @@ describe("Manual catalog edits across partial pages", () => {
     expect(withCatalogFieldValue(item, "tax", "20-2")).toEqual({ ...item, fields: { zone: "zone-centro", tax: "20-2" } });
     expect(item.fieldTexts.zone).toEqual({ es: "Centro" });
   });
+  it("drops the source text when a value is written without its texts", () => {
+    const item = { ...first, fields: { zone: "zone-centro" }, fieldTexts: { zone: { es: "Centro" }, other: { es: "Otro" } } };
+    // A pending type change edits the cell as text: going back to the catalog type must not label "foo" as «Centro».
+    expect(withCatalogFieldValue(item, "zone", "foo")).toEqual({ ...first, fields: { zone: "foo" }, fieldTexts: { other: { es: "Otro" } } });
+  });
   it("does not stage unchanged text maps when their property order differs", () => {
     const state = mergeCatalogItemPage(newCatalogItemEdits(), [first]);
     const reordered = { ...first, label: { en: "", es: "Pérez Hnos." }, detail: { en: null, es: "Av. Colón 1234" } };

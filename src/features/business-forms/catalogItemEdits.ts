@@ -46,11 +46,14 @@ export function stageCatalogItem(state: CatalogItemEdits, item: CatalogManualIte
   return { originals: state.originals, changes };
 }
 
-// Clearing a value also drops its option text, so a cell never shows an option it no longer holds; a chosen option brings its texts.
+// A value keeps only the option texts that arrive with it (a chosen option); clearing it or writing it without texts
+// (as a pending type change does) drops the previous ones, so a cell never shows an option it no longer holds.
 export function withCatalogFieldValue(item: CatalogManualItemValue, key: string, value: string | null, texts?: Readonly<Record<string, string>>): CatalogManualItemValue {
   const next = { ...item, fields: { ...item.fields, [key]: value } };
-  if (value === null && item.fieldTexts && Object.hasOwn(item.fieldTexts, key)) { const { [key]: _cleared, ...fieldTexts } = item.fieldTexts; return { ...next, fieldTexts }; }
-  return value !== null && texts ? { ...next, fieldTexts: { ...item.fieldTexts, [key]: { ...texts } } } : next;
+  if (texts) return { ...next, fieldTexts: { ...item.fieldTexts, [key]: { ...texts } } };
+  if (!item.fieldTexts || !Object.hasOwn(item.fieldTexts, key)) return next;
+  const { [key]: _previous, ...fieldTexts } = item.fieldTexts;
+  return { ...next, fieldTexts };
 }
 
 export const catalogItemChanges = (state: CatalogItemEdits): readonly CatalogManualItemValue[] => Object.values(state.changes).map(copy);
