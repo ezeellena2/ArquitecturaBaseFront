@@ -1,4 +1,5 @@
 import { catalogValueTypes, isCanonicalCatalogValue } from "../catalogValues";
+import { catalogFieldTypes } from "./catalogResponse";
 import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
 import type { ResponseQuery } from "../responses";
@@ -27,6 +28,33 @@ const file = z.strictObject({
   hasThumbnail: z.boolean(),
 });
 const fileList = z.array(file);
+const catalogFieldId = guid.refine(value => value !== "00000000-0000-0000-0000-000000000000");
+const catalogFieldMetadata = z.strictObject({
+  fieldId: catalogFieldId,
+  key: z.string().regex(/^[a-z][a-z0-9_]{0,39}$/),
+  label: z.string().min(1).max(120),
+  type: z.enum(catalogFieldTypes),
+  role: z.enum(["data", "filter"]),
+});
+const catalogFieldSnapshot = z.strictObject({
+  fieldId: catalogFieldId,
+  label: z.string().min(1).max(120),
+  type: z.enum(catalogFieldTypes),
+  role: z.enum(["data", "filter"]),
+  value: z.string().max(300),
+  text: z.string().max(300).optional(),
+}).refine(field => {
+  if (field.type !== "catalog" && field.text !== undefined) return false;
+  if (field.type === "integer") return isCanonicalCatalogValue("Integer", field.value);
+  if (field.type === "decimal") return isCanonicalCatalogValue("Decimal", field.value);
+  if (field.type === "date") return isCanonicalCatalogValue("Date", field.value);
+  if (field.type === "boolean") return field.value === "true" || field.value === "false";
+  if (field.type === "catalog") return catalogFieldId.safeParse(field.value).success;
+  return true;
+});
+// Column metadata includes current and historical definitions; only a single captured choice has the twenty-field limit.
+const catalogColumnFields = z.array(catalogFieldMetadata).refine(fields => new Set(fields.map(field => field.fieldId.toLowerCase())).size === fields.length);
+const capturedCatalogFields = z.array(catalogFieldSnapshot).max(20).refine(fields => new Set(fields.map(field => field.fieldId.toLowerCase())).size === fields.length);
 const choice = z.strictObject({
   choiceId: guid,
   label: z.string(),
@@ -35,6 +63,7 @@ const choice = z.strictObject({
   detail: z.string().nullish(),
   value: z.string().optional(),
   valueType: z.enum(catalogValueTypes).exclude(["Text"]).optional(),
+  fields: capturedCatalogFields.optional(),
 }).refine(value => (value.value === undefined) === (value.valueType === undefined)
   && (value.valueType === undefined || isCanonicalCatalogValue(value.valueType, value.value ?? null)));
 const choiceList = z.array(choice).max(20).refine(choices => new Set(choices.map(choice => choice.choiceId)).size === choices.length);
@@ -80,7 +109,8 @@ const column = z.strictObject({
   introducedInVersion: z.number().int().positive(),
   valueType: z.enum(catalogValueTypes).exclude(["Text"]).optional(),
   options: z.array(z.strictObject({ id: guid, label: z.string() })),
-}).refine(column => column.valueType === undefined || column.type === "choice" || column.type === "multiChoice");
+  fields: catalogColumnFields.optional(),
+}).refine(column => column.valueType === undefined && column.fields === undefined || column.type === "choice" || column.type === "multiChoice");
 const row = z.strictObject({
   id: guid,
   versionId: guid,
