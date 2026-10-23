@@ -301,7 +301,8 @@
       "convertedValues_one": "1 value can convert.", "convertedValues_other": "{{count}} values can convert.", "invalidCodes": "Review options with these codes: {{codes}}.",
       "roles": { "filter": "Filter", "data": "Data" },
       "roleHint": { "filter": "Show each person their own options, or use a fixed question filter.", "data": "Captured with the selected option and included in the response." },
-      "types": { "text": "Text", "integer": "Whole number", "decimal": "Decimal", "date": "Date", "boolean": "Yes or no", "catalog": "Pick from a catalog" }
+      "types": { "text": "Text", "integer": "Whole number", "decimal": "Decimal", "date": "Date", "boolean": "Yes or no", "catalog": "Pick from a catalog" },
+      "restoreField": "Restore field"
     },
     "presentation": {
       "title": "In WhatsApp", "heading": "Title · up to 30 characters", "description": "Description · up to 300", "add": "Add field", "example": "For example",

@@ -301,7 +301,8 @@
       "convertedValues_one": "1 valor puede convertirse.", "convertedValues_other": "{{count}} valores pueden convertirse.", "invalidCodes": "Revisá las opciones con código: {{codes}}.",
       "roles": { "filter": "Filtro", "data": "Dato" },
       "roleHint": { "filter": "Para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta.", "data": "Se guarda con la opción y viaja con la respuesta." },
-      "types": { "text": "Texto", "integer": "Entero", "decimal": "Decimal", "date": "Fecha", "boolean": "Sí o no", "catalog": "Elegir de un catálogo" }
+      "types": { "text": "Texto", "integer": "Entero", "decimal": "Decimal", "date": "Fecha", "boolean": "Sí o no", "catalog": "Elegir de un catálogo" },
+      "restoreField": "Restaurar el campo"
     },
     "presentation": {
       "title": "En WhatsApp", "heading": "Título · hasta 30 caracteres", "description": "Descripción · hasta 300", "add": "Agregar campo", "example": "Por ejemplo",

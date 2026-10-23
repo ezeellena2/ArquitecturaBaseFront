@@ -56,3 +56,31 @@ it("allows reading the full field definition without offering changes", async ()
   expect(screen.getByRole("textbox", { name: "Clave" })).toHaveAttribute("readonly");
   expect(screen.queryByRole("button", { name: "Quitar CUIT" })).not.toBeInTheDocument();
 });
+
+it("shows a removed field rejected by a concurrent use and restores its identity without losing other edits", async () => {
+  const other: CatalogFieldDraft = { ...newCatalogField("other", 2), name: { es: "Otro cambio" }, key: "other" };
+  let savedFields: readonly CatalogFieldDraft[] = [field, other], confirmed: readonly string[] = [];
+  const serverErrors = { saved: { isActive: ["El campo está en uso. Sacá esos usos para quitarlo."] } };
+  function Recovery({ errors = {} as Readonly<Record<string, Readonly<Record<string, readonly string[]>>>> }) {
+    const [values, setValues] = useState<readonly CatalogFieldDraft[]>([field, other]);
+    const [removals, setRemovals] = useState<readonly string[]>([]);
+    return <CatalogFieldsSection fields={values} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} errors={errors} confirmedRemovals={removals} onChange={(next, nextRemovals) => { savedFields = next; confirmed = nextRemovals; setValues(next); setRemovals(nextRemovals); }} />;
+  }
+  let rendered!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { rendered = renderWithProviders(<MemoryRouter><Recovery /></MemoryRouter>); });
+  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
+  await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
+  const dialog = screen.getByRole("dialog");
+  await userEvent.click(within(dialog).getByRole("checkbox"));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Quitar el campo" }));
+  expect(savedFields[0]?.isActive).toBe(false);
+  expect(confirmed).toEqual([field.id]);
+  await act(async () => { rendered.rerender(<MemoryRouter><Recovery errors={serverErrors} /></MemoryRouter>); });
+  expect(await screen.findByRole("alert")).toHaveTextContent(serverErrors.saved.isActive[0]!);
+  const restore = screen.getByRole("button", { name: "Restaurar el campo" });
+  await userEvent.click(restore);
+  expect(savedFields[0]).toMatchObject({ id: field.id, localId: field.localId, isActive: true });
+  expect(savedFields[1]?.name.es).toBe("Otro cambio");
+  expect(confirmed).toEqual([]);
+  expect(screen.getByRole("button", { name: "Quitar CUIT" })).toBeInTheDocument();
+});
