@@ -32,10 +32,11 @@ export interface CatalogItemsQuery {
   readonly search?: string;
   readonly sort?: "position" | "-position" | "code" | "-code" | "text" | "-text" | "isActive" | "-isActive";
   readonly isActive?: boolean;
+  readonly ids?: readonly string[];
 }
 export const fetchCatalog = async (id: string, signal?: AbortSignal) => readCatalog(await api.get<unknown>(`/api/forms/catalogs/${catalogId(id)}`, { signal }), id);
 export const fetchCatalogItems = async (id: string, query: CatalogItemsQuery, signal?: AbortSignal) => {
-  const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));
+  const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).flatMap(([key, value]) => Array.isArray(value) ? value.map(item => [key, String(item)]) : [[key, String(value)]]));
   return readCatalogItems(await api.get<unknown>(`/api/forms/catalogs/${catalogId(id)}/items?${params}`, { signal }));
 };
 export const createManualCatalog = async (body: CreateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.post<unknown>("/api/forms/catalogs", body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId), undefined, undefined, body.fields?.filter(field => field.id === null).map(field => field.localId) ?? []);

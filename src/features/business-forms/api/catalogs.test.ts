@@ -42,6 +42,14 @@ describe("Manual catalog adapter against current DTO source", () => {
     const page = await fetchCatalogItems(id, { page: 1, pageSize: 20, sort: "position", isActive: false });
     expect(page.items).toEqual([item]);
   });
+  it("requests catalog options by repeated ids", async () => {
+    const urls: string[] = [];
+    server.use(http.get("/api/forms/catalogs/" + id + "/items", ({ request }) => { urls.push(request.url); return HttpResponse.json({ items: [item], page: 1, pageSize: 2, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false }); }));
+    await fetchCatalogItems(id, { page: 1, pageSize: 2, ids: [itemId, otherId] });
+    const query = new URL(urls[0]!).searchParams;
+    expect(query.getAll("ids")).toEqual([itemId, otherId]);
+    expect(new URL(urls[0]!).search).toBe(`?page=1&pageSize=2&ids=${itemId}&ids=${otherId}`);
+  });
   it("rejects wrong-catalog save replies and incomplete local identity maps", async () => {
     server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ catalog: { ...catalog, id: otherId, key: otherId.replaceAll("-", ""), revision: 2 }, itemIdentityMap: { "new-option": itemId }, fieldIdentityMap: {} })));
     await expect(updateManualCatalog(id, { ...body, expectedRevision: 1 })).rejects.toThrow("Unsupported catalog response.");

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { createQueryClient } from "@/shared/api/queryClient";
-import { useCatalogDetail, useCatalogItems, useCatalogFilterOptions } from "./useCatalogQueries";
+import { catalogScopeKey, useCatalogDetail, useCatalogItems, useCatalogItemsById, useCatalogFilterOptions } from "./useCatalogQueries";
 
 import options from "@/test/fixtures/catalogs-http/filters/options.json";
 
@@ -39,6 +39,27 @@ describe("Private catalog reads", () => {
     expect(result.current.data).toBeUndefined();
     await waitFor(() => expect(calls).toEqual([id, id, nextId]));
     expect(h.client.getQueryCache().getAll().filter(query => query.state.data !== undefined)).toHaveLength(1);
+  });
+  it("reads option labels by id without a catalog revision and only with catalog read", async () => {
+    const optionId = "01990000-0000-7000-8000-000000000021";
+    const requests: URLSearchParams[] = [];
+    server.use(http.get("/api/forms/catalogs/:id/items", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json({ items: [{ value: null, id: optionId, code: "S", text: { es: "Sur", en: null }, detail: {}, position: 37, isActive: false, fields: {}, fieldTexts: {} }], page: 1, pageSize: 1, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false }); }));
+    const h = harness();
+    const { result, rerender } = renderHook(({ permissions, ids }) => useCatalogItemsById({ ...scope, permissions }, id, ids), { ...h, initialProps: { permissions: ["formcatalogs.manage"], ids: [optionId] as readonly string[] } });
+    await act(async () => { await Promise.resolve(); });
+    expect(requests).toHaveLength(0);
+    rerender({ permissions: ["formcatalogs.read"], ids: [] });
+    await act(async () => { await Promise.resolve(); });
+    expect(requests).toHaveLength(0);
+    rerender({ permissions: ["formcatalogs.read"], ids: [optionId] });
+    await waitFor(() => expect(result.current.data?.items[0]?.text.es).toBe("Sur"));
+    expect(requests.map(query => [query.getAll("ids"), query.get("pageSize"), query.get("isActive")])).toEqual([[[optionId], "1", null]]);
+    const query = h.client.getQueryCache().getAll().find(entry => entry.state.data !== undefined)!;
+    expect(query.queryKey).toEqual([...catalogScopeKey(scope), "items-by-id", id, [optionId]]);
+    expect(query.meta?.errorOwner).toBe("global");
+    rerender({ permissions: [], ids: [optionId] });
+    await waitFor(() => expect(result.current.data).toBeUndefined());
+    expect(h.client.getQueryCache().getAll().some(entry => entry.state.data !== undefined)).toBe(false);
   });
   it("does not request private content for Manage without Read", async () => {
     let calls = 0; server.use(http.get("/api/forms/catalogs/" + id, () => { calls++; return HttpResponse.json(detail); }));

@@ -17,6 +17,11 @@ export function useCatalogItems(scope: CatalogReadScope, id: string, revision: n
   useUnobservedQueryCleanup(root);
   return useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogItems(id, query, signal), enabled: canRead(scope) && id !== "" && revision !== null, staleTime: 0, gcTime: 0, meta: { errorOwner } });
 }
+export function useCatalogItemsById(scope: CatalogReadScope, id: string, itemIds: readonly string[], errorOwner: "local" | "global" = "global") {
+  const root = [...catalogScopeKey(scope), "items-by-id", id, itemIds] as const;
+  useUnobservedQueryCleanup(root);
+  return useQuery({ queryKey: root, queryFn: ({ signal }) => fetchCatalogItems(id, { page: 1, pageSize: itemIds.length, ids: itemIds }, signal), enabled: canRead(scope) && id !== "" && itemIds.length > 0, staleTime: 0, gcTime: 0, meta: { errorOwner } });
+}
 
 export function useCatalogPage(scope: CatalogReadScope, query: CatalogListQuery, errorOwner: "local" | "global" = "local") {
   const root = [...catalogScopeKey(scope), "list"] as const;
