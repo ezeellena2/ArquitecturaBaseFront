@@ -309,6 +309,13 @@
       "roles": { "filter": "Filter", "data": "Data" },
       "roleHint": { "filter": "Show each person their own options, or use a fixed question filter.", "data": "Captured with the selected option and included in the response." },
       "types": { "text": "Text", "integer": "Whole number", "decimal": "Decimal", "date": "Date", "boolean": "Yes or no", "catalog": "Pick from a catalog" },
+      "problem": {
+        "required": "Missing: it is required.",
+        "invalid": { "text": "“{{value}}” has characters that cannot be saved.", "integer": "“{{value}}” is not a whole number.", "decimal": "“{{value}}” is not a number.", "date": "“{{value}}” is not a date.", "boolean": "“{{value}}” is not yes or no.", "catalog": "“{{value}}” is not an option from the catalog." },
+        "range": "“{{value}}” is out of range: {{rule}}.",
+        "rule": { "between": "from {{min}} to {{max}}", "from": "from {{min}}", "to": "up to {{max}}" },
+        "length_one": "“{{value}}” is longer than {{count}} character.", "length_other": "“{{value}}” is longer than {{count}} characters."
+      },
       "restoreField": "Restore field"
     },
     "presentation": {

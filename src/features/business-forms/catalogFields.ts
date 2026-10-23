@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { CatalogField } from "./api/catalogResponse";
 import { formatCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
 import type { FormCulture } from "./model";
@@ -6,6 +7,8 @@ export type CatalogFieldType = CatalogField["type"];
 export interface CatalogFieldDraft extends Omit<CatalogField, "id"> { readonly id: string | null; readonly localId: string }
 export type CatalogFieldBody = Omit<CatalogFieldDraft, "hasValues" | "usedBy">;
 export type CatalogFieldValueResult = { readonly valid: true; readonly value: string | null } | { readonly valid: false; readonly reason: "required" | "invalid" | "range" | "length" };
+export type CatalogFieldProblemReason = Extract<CatalogFieldValueResult, { valid: false }>["reason"];
+const textMaxLength = 300;
 
 export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: { es: "" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, hasValues: false, usedBy: [] });
 export const openCatalogField = (field: CatalogField, culture: FormCulture = "es"): CatalogFieldDraft => ({ ...field, localId: field.id, name: { ...field.name }, min: field.min === null ? null : formatCatalogFieldValue(field, field.min, culture), max: field.max === null ? null : formatCatalogFieldValue(field, field.max, culture), usedBy: field.usedBy.map(use => ({ ...use })) });
@@ -39,8 +42,20 @@ export function parseCatalogFieldValue(field: Pick<CatalogFieldDraft, "type" | "
     return result;
   }
   if (field.type === "boolean" && text !== "true" && text !== "false" || field.type === "catalog" && (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text) || /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(text))) return { valid: false, reason: "invalid" };
-  if (field.type === "text" && text.length > (field.maxLength ?? 300)) return { valid: false, reason: "length" };
+  if (field.type === "text" && text.length > (field.maxLength ?? textMaxLength)) return { valid: false, reason: "length" };
   return { valid: true, value: field.type === "catalog" ? text.toLowerCase() : text };
+}
+
+/** What is wrong with a field value, quoting the value as entered (cut at 40 characters) and the reason for the field type. */
+export function catalogFieldProblemText(t: TFunction<"forms">, field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">, value: string | null, reason: CatalogFieldProblemReason): string {
+  if (reason === "required") return t("catalogs.fields.problem.required");
+  const characters = [...(value?.trim() ?? "")];
+  const shown = characters.length > 40 ? characters.slice(0, 40).join("") + "…" : characters.join("");
+  if (reason === "invalid") return t("catalogs.fields.problem.invalid." + field.type, { value: shown });
+  if (reason === "length") return t("catalogs.fields.problem.length", { value: shown, count: field.maxLength ?? textMaxLength });
+  const min = field.min?.trim(), max = field.max?.trim();
+  const rule = min && max ? t("catalogs.fields.problem.rule.between", { min, max }) : min ? t("catalogs.fields.problem.rule.from", { min }) : t("catalogs.fields.problem.rule.to", { max });
+  return t("catalogs.fields.problem.range", { value: shown, rule });
 }
 
 export function formatCatalogFieldValue(field: Pick<CatalogFieldDraft, "type">, value: string | null | undefined, culture: FormCulture): string {
