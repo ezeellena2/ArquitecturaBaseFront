@@ -3,6 +3,8 @@ import { MemoryRouter } from "react-router";
 import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it } from "vitest";
+import { http, HttpResponse } from "msw";
+import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { newCatalogField, type CatalogFieldDraft } from "../catalogFields";
 import { CatalogFieldsSection } from "./CatalogFieldsSection";
@@ -48,6 +50,17 @@ it("opens the failed field and shows missing counts from the complete server val
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[field]} errors={{ saved: { required: ["Completá las opciones activas."] } }} feedback={{ missingCount: 12 }} /></MemoryRouter>); });
   expect(screen.getByText("Completá las opciones activas.")).toBeInTheDocument();
   expect(screen.getByText("Faltan valores en 12 opciones activas.")).toBeInTheDocument();
+});
+
+it.each(["role", "type", "sourceCatalogId"])("shows the uses next to an in-use %s error inside the editor of that field", async path => {
+  const filter: CatalogFieldDraft = { ...field, role: "filter", type: path === "sourceCatalogId" ? "catalog" : "text", sourceCatalogId: path === "sourceCatalogId" ? "01990000-0000-7000-8000-000000000009" : null };
+  const other: CatalogFieldDraft = { ...newCatalogField("other", 2), id: "01990000-0000-7000-8000-000000000003", key: "zone", name: { es: "Zona" } };
+  const uses = [{ definitionId: "01990000-0000-7000-8000-000000000002", formName: "Pedir repuesto", question: "Proveedor", stage: "Active" as const }];
+  server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: "01990000-0000-7000-8000-000000000009", name: "Proveedores", description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })));
+  await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[filter, other]} errors={{ saved: { [path]: ["El campo está en uso."] } }} feedback={{ uses }} /></MemoryRouter>); });
+  expect(screen.getByText("El campo está en uso.")).toBeInTheDocument();
+  expect(screen.getAllByText("Pedir repuesto · Proveedor")).toHaveLength(1);
+  expect(screen.getByRole("textbox", { name: "Clave" })).toHaveValue("tax_id");
 });
 
 it("allows reading the full field definition without offering changes", async () => {

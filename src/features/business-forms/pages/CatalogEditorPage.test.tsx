@@ -118,6 +118,33 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.getByRole("button", { name: "Reactivar" })).toBeEnabled();
     expect(screen.getByRole("textbox", { name: "Nombre" })).not.toHaveAttribute("readonly");
   });
+  it("shows the uses of a field that became in use and restores it without discarding the draft", async () => {
+    setup(); const fieldId = "01990000-0000-7000-8000-000000000031"; const bodies: { name: { es: string }; fields: { id: string | null; isActive: boolean }[] }[] = [];
+    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
+    const message = "El campo está en uso. Sacá esos usos para quitarlo.";
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [taxId] })), http.put("/api/forms/catalogs/" + id, async ({ request }) => {
+      const body = await request.json() as typeof bodies[number]; bodies.push(body);
+      return bodies.length === 1
+        ? HttpResponse.json({ code: "Forms.Catalog.FieldInUse", detail: message, errors: { "fields[0].isActive": [message] }, uses: [{ definitionId: "01990000-0000-7000-8000-000000000032", formName: "Pedir repuesto", question: "Proveedor", stage: "Active" }] }, { status: 409 })
+        : HttpResponse.json({ catalog: { ...initial, revision: 2, name: { es: body.name.es, en: "Customers" }, fields: [taxId] }, itemIdentityMap: {}, fieldIdentityMap: {} });
+    }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    const name = await screen.findByRole("textbox", { name: "Nombre" }); await user.clear(name); await pasteText(user, name, "Mi catálogo");
+    await user.click(screen.getByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Quitar CUIT" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Quitar el campo" }));
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("Pedir repuesto · Proveedor")).toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.queryByText("Revisión del catálogo")).not.toBeInTheDocument();
+    expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Restaurar el campo" }));
+    expect(screen.queryByText("Pedir repuesto · Proveedor")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(bodies).toHaveLength(2));
+    expect(bodies[0]).toMatchObject({ name: { es: "Mi catálogo" }, fields: [{ id: fieldId, isActive: false }] });
+    expect(bodies[1]).toMatchObject({ name: { es: "Mi catálogo" }, fields: [{ id: fieldId, isActive: true }] });
+  });
   it("allows catalog Read without form template Read and hides all writes without Manage", async () => {
     setup(["formcatalogs.read"]); await mount("/catalogos/" + id);
     expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");

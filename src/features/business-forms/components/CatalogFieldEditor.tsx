@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
@@ -11,7 +11,7 @@ import type { CatalogFieldDraft } from "../catalogFields";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 
-export function CatalogFieldEditor({ field, scope, errors = {}, readOnly, onChange, onDone }: { field: CatalogFieldDraft; scope: CatalogReadScope; errors?: Readonly<Record<string, readonly string[]>>; readOnly: boolean; onChange: (field: CatalogFieldDraft) => void; onDone: () => void }) {
+export function CatalogFieldEditor({ field, scope, errors = {}, uses, readOnly, onChange, onDone }: { field: CatalogFieldDraft; scope: CatalogReadScope; errors?: Readonly<Record<string, readonly string[]>>; uses?: ReactNode; readOnly: boolean; onChange: (field: CatalogFieldDraft) => void; onDone: () => void }) {
   const { t } = useTranslation("forms");
   const nameRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -20,6 +20,7 @@ export function CatalogFieldEditor({ field, scope, errors = {}, readOnly, onChan
   const error = (path: string) => errors[path]?.join(" ");
   const range = ["integer", "decimal", "date"].includes(field.type);
   return <div ref={rootRef} className="space-y-4 bg-[var(--color-surface-muted)] p-4">
+    {uses}
     <div className="grid gap-4 sm:grid-cols-2">
       <FormField label={t("name")} required error={error("name.es") ?? error("name")}><Input ref={nameRef} maxLength={120} readOnly={readOnly} value={field.name.es} onChange={event => onChange({ ...field, name: { ...field.name, es: event.target.value } })} /></FormField>
       <FormField label={t("catalogs.fields.englishName")} error={error("name.en")}><Input maxLength={120} readOnly={readOnly} value={field.name.en ?? ""} onChange={event => onChange({ ...field, name: { ...field.name, en: event.target.value } })} /></FormField>
