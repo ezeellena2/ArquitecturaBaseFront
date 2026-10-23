@@ -28,6 +28,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width + 1);
     if (width < 640) expect(await tableContainer.evaluate(node => node.scrollWidth)).toBeGreaterThan(await tableContainer.evaluate(node => node.clientWidth));
+    await extraHeader.scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath("ce5-default-data-fields.png"), fullPage: true });
 
     const columns = page.getByRole("button", { name: label("Columnas", "Columns"), exact: true });
@@ -39,6 +40,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(table.getByRole("columnheader", { name: question, exact: true })).toHaveCount(0);
     await expect(table.getByRole("columnheader", { name: question + " · " + zone, exact: true })).toBeVisible();
     await expect(table.getByText(label("Centro, Centro", "Center, Center"), { exact: true })).toBeVisible();
+    await table.getByRole("columnheader", { name: question + " · " + zone, exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath("ce5-filter-field-visible.png"), fullPage: true });
     const exportButton = page.getByRole("button", { name: label("Exportar a Excel", "Export to Excel"), exact: true });
     await exportButton.click();
