@@ -1,6 +1,6 @@
 # Components: piezas de pantalla de formularios
 
-Tableros con shared/ui y datos de su dueño, que también posee los avisos.
+Tableros con shared/ui; su dueño posee datos y avisos.
 
 ## Al modificar
 
@@ -53,10 +53,12 @@ Tableros con shared/ui y datos de su dueño, que también posee los avisos.
 
 - `FormPendingApprovals` comparte tareas sobre la planilla y para quien sólo decide. Revisar abre D2 en escritorio y full en celular con Read; las flechas recorren tareas de más vieja a más nueva, como dice el pie. Captura TaskId y RecordId separados, usa la página leída y no crea tareas ni lee valores por conservar contexto. Durante otro GET mantiene dueño ocupado y Fotos si es válida; decidir comparte sucesores observados con full sin cambiar selección ni total. Sin Read conserva revisión por metadata si sigue Decide; sin Decide retira tarea y cola y conserva sólo RecordId ya observado con Read. La historia no habilita otro editor.
 - `ResponsePanelFrame`: marco D2 sin overlay en escritorio y diálogo de metadata para quien sólo decide en celular. ↑, ↓ y Escape no actúan en campos, IME, pestañas, menús ni diálogos; en el extremo el foco pasa al panel.
-- `ResponseDetailContent` compone las pestañas y momentos de D2 con el estado de su dueño; `ResponseAnswer` presenta valores y asistencia sin volver a consultar el detalle.
+- `ResponseDetailContent` compone D2 con el estado del dueño; `ResponseAnswer` reutiliza valores y asistencia.
 - `ResponseWorkflowHistory` es la única historia y revisión: Surface en D2, sección en full, montada entre pestañas. Muestra autor y remitente Manual/Assistant capturados; documentos opcionales no crean otro dueño ni editor. Separa Entregado/Leído (fechas del proveedor), Hecho y revisión humana; no repite causas del detalle. Resolver sólo para destinatario sin confirmar con capacidad: Salió no reenvía; No salió habilita NotifyAuthor; NotifyRole no reintenta en parte. Confirmar enfoca la fila. `workflowHistory` ordena UTC con desempate estable, cada acción una vez; `workflowMoments` usa acciones capturadas, sin reglas actuales, ramas futuras ni NotApplicable, conservando aprobaciones fallidas.
-- `ResponseDocuments` abre/descarga copias fijas por DocumentId; el dueño visual posee y revoca blobs/URLs. Full compone `ResponseDocumentPreview` en la acción exacta de Al aprobarla (`documents.runId == action.id`): lee al abrir Actividad por primera vez y reutiliza blob/URL al plegar o ampliar. D2 mantiene PDF explícito y no monta ese loader en Actividad. El menú full incluye documentos cargados. `ResponseAssistance` pliega propuestas con inclusión, corrección y mapeo; sólo enlaza registros confirmados y oculta el enlace anterior mientras carga otro.
-- `ApprovalDecisionPanel`: rechazar exige motivo de 1 a 500 caracteres recortado (`prepareApprovalDecision`), sólo en memoria. El POST usa la revisión leída; un 409 relee y muestra la decisión vigente. Un solo editor de decisión, también tras resolver o un 409; el resultado recibe el foco y en celular los controles van abajo con un portal.
+- `ResponseDocuments` abre/descarga copias fijas por DocumentId; el dueño visual posee y revoca blobs/URLs. Full compone `ResponseDocumentPreview` en la acción exacta de Al aprobarla (`documents.runId == action.id`): lee al abrir Actividad por primera vez y reutiliza blob/URL al plegar o ampliar. D2 mantiene PDF explícito y no monta ese loader en Actividad. `ResponseAssistance` pliega propuestas con inclusión, corrección y mapeo; sólo enlaza registros confirmados y oculta el enlace anterior mientras carga otro.
+- `ApprovalDecisionPanel`: rechazar exige motivo de 1 a 500 caracteres recortado (`prepareApprovalDecision`), sólo en memoria. POST con revisión leída; 409 relee la decisión vigente. Un solo editor tras resolver o 409; el resultado recibe foco y el portal ubica los controles abajo en celular.
+
+- `ResponseValue` presenta todos los campos capturados por opción sólo en detalle; el formato usa el tipo, nombre y texto del snapshot. Columnas muestra datos por defecto y filtros optativos; cada subcolumna es independiente de la pregunta. Exportar sólo visibles conserva esos pares exactos.
 
 ### Reglas, PDF y sugerencias
 
@@ -67,5 +69,4 @@ Tableros con shared/ui y datos de su dueño, que también posee los avisos.
 
 ## Referencias
 
-- [Tableros y correspondencia con `shared/ui`](../../../../docs/design/formularios-whatsapp.md#correspondencia-con-sharedui).
-- Tests junto a cada pieza y escenas en `src/test/visual`.
+- [Tableros](../../../../docs/design/formularios-whatsapp.md).

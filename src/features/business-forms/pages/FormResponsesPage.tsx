@@ -33,7 +33,7 @@ import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { ResponseChoiceMenu } from "../components/ResponseChoiceMenu";
-import { replaceResponseCondition, responseFiles, responseFilterLabels, visibleResponseColumns } from "../responses";
+import { replaceResponseCondition, responseCatalogFieldCellText, responseFiles, responseFilterLabels, visibleResponseColumnDescriptors, visibleResponseColumns } from "../responses";
 import type { ResponseRow } from "../api/responses";
 import { responseFullPath } from "../responseNavigationPaths";
 import { ResponseValue } from "../components/ResponseValue";
@@ -84,6 +84,8 @@ export function FormResponsesPage() {
   );
   const data = query.data;
   const visible = visibleResponseColumns(data?.columns ?? [], route.selection);
+  const displayColumns = visibleResponseColumnDescriptors(data?.columns ?? [], route.selection);
+  const visibleCatalogFields = displayColumns.flatMap(column => column.catalogField ? [{ questionId: column.question.fieldId, fieldId: column.catalogField.fieldId }] : []);
   const hasFilters =
     !!route.query.state ||
     !!route.query.search ||
@@ -160,31 +162,16 @@ export function FormResponsesPage() {
     },
     ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
     ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
-    ...visible.map((column) => ({
-      id: column.fieldId,
-      header:
-        column.label +
-        (column.introducedInVersion > 1
-          ? " " +
-            t("responses.sinceVersion", { version: column.introducedInVersion })
-          : ""),
-      sortable: column.type !== "multiChoice",
-      cell: (row: ResponseRow) => (
-        <ResponseValue
-          cell={row.cells.find((cell) => cell.fieldId === column.fieldId)!}
-          actor={scope.user!.id}
-          recordId={row.id}
-          number={row.number}
-          label={column.label}
-          viewerFiles={row.cells
-            .filter((cell) => cell.type === "photo")
-            .flatMap((cell) => responseFiles(cell))}
-          onForbidden={deny}
-          onError={onFileError}
-          detailLink={recordPath(row.id)}
-          onOpenDetail={() => rememberSheet(row.id)}
-        />
-      ),
+    ...displayColumns.map(({ id, question: column, catalogField }) => ({
+      id,
+      header: catalogField ? `${column.label} · ${catalogField.label}` : column.label + (column.introducedInVersion > 1 ? " " + t("responses.sinceVersion", { version: column.introducedInVersion }) : ""),
+      sortable: !catalogField && column.type !== "multiChoice",
+      cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words">{responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))}</span> : <ResponseValue
+          cell={row.cells.find(cell => cell.fieldId === column.fieldId)!}
+          actor={scope.user!.id} recordId={row.id} number={row.number} label={column.label}
+          viewerFiles={row.cells.filter(cell => cell.type === "photo").flatMap(cell => responseFiles(cell))}
+          onForbidden={deny} onError={onFileError} detailLink={recordPath(row.id)} onOpenDetail={() => rememberSheet(row.id)}
+        />,
     })),
   ];
   const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, scope.user?.timeZoneId, data?.versions);
@@ -289,6 +276,7 @@ export function FormResponsesPage() {
           <ResponseColumnsMenu
             columns={data?.columns ?? []}
             visible={visible}
+            visibleCatalogFields={visibleCatalogFields}
             onChange={(ids) => route.setColumns(data?.columns ?? [], ids)}
           />
           {hasFilters ? (
@@ -375,6 +363,7 @@ export function FormResponsesPage() {
           cooldown={exportCooldown}
           columns={data.columns}
           visible={visible}
+          visibleCatalogFields={visibleCatalogFields}
           onForbidden={() => {
             setPanel(null);
             notify({ id: `responses:export-permission:${scope.owner}:${formId}`, kind: "error", message: t("responses.exportNoPermission") });

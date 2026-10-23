@@ -1,0 +1,11 @@
+import { act, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, expect, it, vi } from "vitest";
+import { api } from "@/shared/api/httpClient";
+import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { ResponseExportDialog } from "./ResponseExportDialog";
+vi.mock("@/shared/hooks/usePrivateFormFile", () => ({ savePrivateBlob: vi.fn() }));
+afterEach(() => vi.restoreAllMocks());
+it("exports an independently visible extra field with its base question hidden", async () => { const download = vi.spyOn(api, "download").mockResolvedValue({ blob: new Blob(["xlsx"]), fileName: "response.xlsx" });
+ await act(async () => { renderWithProviders(<ResponseExportDialog formId="form" prefix="VIS" filter={{ page: 1, pageSize: 20 }} total={1} ready cooldown={{ seconds: 0, isRunning: false, restart: vi.fn() }} columns={[{ fieldId: "supplier", type: "choice", label: "Proveedor", introducedInVersion: 1, options: [], fields: [{ fieldId: "tax", key: "tax", label: "CUIT", type: "text", role: "data" }] }]} visible={[]} visibleCatalogFields={[{ questionId: "supplier", fieldId: "tax" }]} filterLabels={[]} onClose={vi.fn()} onForbidden={vi.fn()}/>); });
+ await userEvent.click(screen.getByRole("radio", { name: /Solo las visibles/ })); await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" })); await waitFor(() => expect(download).toHaveBeenCalled()); expect(download.mock.calls[0]![1]).toMatchObject({ columns: [], catalogFields: [{ questionId: "supplier", fieldId: "tax" }] }); expect(screen.getByRole("radio", { name: /Solo las visibles \(1 columna\)/ })).toBeInTheDocument(); });

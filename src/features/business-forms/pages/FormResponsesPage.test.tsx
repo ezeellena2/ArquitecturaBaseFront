@@ -1478,3 +1478,16 @@ it("filters multi choices through anyOf while keeping their column unsortable", 
   expect(await screen.findByText("Fallas: alguna de Frío", { exact: true })).toBeInTheDocument();
   expect(requests.every(body => (body as { sortFieldId?: string }).sortFieldId !== single.fieldId)).toBe(true);
 });
+
+it("shows sealed data subcolumns without enabling sorting or requiring catalog permission", async () => {
+  setup(["formrecords.read", "formrecords.export"]);
+  const sheet = responseSheetFixture(); const question = sheet.columns.find(column => column.type === "choice")!;
+  const extra = { fieldId: "01990000-0000-7000-8000-000000000081", key: "tax", label: "CUIT histórico", type: "text" as const, role: "data" as const };
+  question.fields = [extra]; const choice = sheet.records.items[0]!.cells.find(cell => cell.type === "choice")!;
+  choice.value = { choiceId: "01990000-0000-7000-8000-000000000082", label: "Proveedor histórico", catalogId: "01990000-0000-7000-8000-000000000083", fields: [{ fieldId: extra.fieldId, label: extra.label, type: extra.type, role: extra.role, value: "30-71234567-8" }] };
+  const requested = vi.fn(); server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { requested(await request.json()); return HttpResponse.json(sheet); }));
+  renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+  const header = await screen.findByRole("columnheader", { name: "Modalidad · CUIT histórico" });
+  expect(within(header).queryByRole("button")).not.toBeInTheDocument(); expect(screen.getByText("30-71234567-8")).toBeInTheDocument();
+  const before = requested.mock.calls.length; await userEvent.click(header); expect(requested).toHaveBeenCalledTimes(before);
+});

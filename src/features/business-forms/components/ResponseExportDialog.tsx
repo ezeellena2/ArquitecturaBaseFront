@@ -17,7 +17,7 @@ import {
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Button } from "@/shared/ui/button";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import type { ResponseColumn, ResponseQuery } from "../responses";
+import type { ResponseCatalogFieldSelection, ResponseColumn, ResponseQuery } from "../responses";
 export function ResponseExportDialog({
   formId,
   prefix,
@@ -27,6 +27,7 @@ export function ResponseExportDialog({
   cooldown,
   columns,
   visible,
+  visibleCatalogFields = [],
   onClose,
   onForbidden,
   filterLabels,
@@ -39,6 +40,7 @@ export function ResponseExportDialog({
   cooldown: ReturnType<typeof useCountdown>;
   columns: readonly ResponseColumn[];
   visible: readonly ResponseColumn[];
+  visibleCatalogFields?: readonly ResponseCatalogFieldSelection[];
   onClose: () => void;
   onForbidden: () => void;
   filterLabels: readonly string[];
@@ -70,6 +72,7 @@ export function ResponseExportDialog({
             selection === "visible"
               ? visible.map((column) => column.fieldId)
               : null,
+          catalogFields: selection === "visible" ? visibleCatalogFields : null,
         },
         { signal: current.signal },
       );
@@ -129,11 +132,11 @@ export function ResponseExportDialog({
           options={[
             {
               value: "all",
-              label: t("responses.allColumns", { count: columns.length }),
+              label: t("responses.allColumns", { count: columns.reduce((count, column) => count + 1 + (column.fields?.length ?? 0), 0) }),
             },
             {
               value: "visible",
-              label: t("responses.visibleColumns", { count: visible.length }),
+              label: t("responses.visibleColumns", { count: visible.length + visibleCatalogFields.length }),
             },
           ]}
         />
