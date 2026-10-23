@@ -13,6 +13,7 @@ import { catalogFiltersBody } from "../catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "../components/CatalogFiltersEditor";
 import { catalogFieldsBody, parseCatalogFieldValue, type CatalogFieldDraft } from "../catalogFields";
 import type { CatalogPresentation } from "../api/catalogResponse";
+import { withoutPresentationFields } from "../catalogPresentation";
 
 export interface CatalogReadScope { readonly actorId: string | null; readonly culture: FormCulture; readonly permissions: readonly string[] }
 // Only a stale revision requires rereading. Other 409s are business errors the author corrects in the editor.
@@ -66,7 +67,12 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   }, [owned, isCurrentOwner]);
   const changeFields = useCallback((fields: readonly CatalogFieldDraft[], confirmFieldRemovals: readonly string[]) => {
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
-    setState(value => ({ ...value, error: null, draft: { ...value.draft, fields: fields.map(field => ({ ...field, name: { ...field.name }, usedBy: field.usedBy.map(use => ({ ...use })) })), confirmFieldRemovals: [...confirmFieldRemovals] } }));
+    setState(value => {
+      // A field that stops being active or is discarded also leaves what travels to WhatsApp.
+      const removed = value.draft.fields.filter(previous => previous.isActive && !fields.some(field => field.localId === previous.localId && field.isActive)).map(field => field.id ?? field.localId);
+      return { ...value, error: null, draft: { ...value.draft, fields: fields.map(field => ({ ...field, name: { ...field.name }, usedBy: field.usedBy.map(use => ({ ...use })) })), confirmFieldRemovals: [...confirmFieldRemovals],
+        presentation: removed.length ? withoutPresentationFields(value.draft.presentation, removed) : value.draft.presentation } };
+    });
   }, [owned, isCurrentOwner]);
   const changePresentation = useCallback((presentation: CatalogPresentation | null) => {
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;

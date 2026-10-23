@@ -69,6 +69,18 @@ describe("Manual catalog editor ownership", () => {
     expect(result.current.draft!.name.es).toBe("Mi baja");
     expect(writes).toBe(2);
   });
+  it("removing a field also removes it from the draft presentation and the saved body", async () => {
+    const fieldId = "01990000-0000-7000-8000-000000000031"; const bodies: unknown[] = [];
+    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position: 1, isActive: true, hasValues: false, usedBy: [{ definitionId: null, formName: "Clientes", question: null, stage: "Catalog" as const }] };
+    const catalog: CatalogDetail = { ...initial, fields: [taxId], presentation: { title: ["text", fieldId], description: [fieldId] } };
+    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...catalog, revision: 2, fields: [{ ...taxId, isActive: false, usedBy: [] }], presentation: { title: ["text"], description: [] } }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, catalog), harness());
+    act(() => result.current.changeFields(result.current.draft!.fields.map(field => ({ ...field, isActive: false })), []));
+    expect(result.current.draft!.presentation).toEqual({ title: ["text"], description: [] });
+    await act(() => result.current.save());
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toMatchObject({ presentation: { title: ["text"], description: [] }, fields: [{ id: fieldId, isActive: false }] });
+  });
   it("blocks concurrent saves and ignores a late result after another actor takes ownership", async () => {
     let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; }); let calls = 0;
     server.use(http.put("/api/forms/catalogs/" + id, async () => { calls++; await gate; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));

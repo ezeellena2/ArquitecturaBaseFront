@@ -1,6 +1,13 @@
 import { expect, it } from "vitest";
-import { catalogOptionPresentation } from "./catalogPresentation";
+import { catalogOptionPresentation, withoutPresentationFields } from "./catalogPresentation";
 import { newCatalogField } from "./catalogFields";
+
+it("takes removed fields out of the presentation and falls back to the text title", () => {
+  expect(withoutPresentationFields(null, ["zone"])).toBeNull();
+  expect(withoutPresentationFields({ title: ["zone"], description: ["tax", "zone", "detail"] }, ["zone"])).toEqual({ title: ["text"], description: ["tax", "detail"] });
+  expect(withoutPresentationFields({ title: ["text", "zone"], description: ["tax"] }, ["zone", "tax"])).toEqual({ title: ["text"], description: [] });
+  expect(withoutPresentationFields({ title: ["code", "zone"], description: [] }, ["other"])).toEqual({ title: ["code", "zone"], description: [] });
+});
 
 const item = { localId: "row", itemId: "saved-row", code: "NORTH", label: { es: "Frío Sur", en: "South Cooling" }, detail: { es: "Disponible" }, value: null, position: 1, isActive: true, fields: { tax: "30-71234567-8", zone: "zone-option", empty: null }, fieldTexts: { zone: { es: "Centro", en: "Central" } } };
 it("keeps the usual text/detail presentation when no override is configured", () => {

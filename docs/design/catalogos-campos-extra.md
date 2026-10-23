@@ -69,6 +69,12 @@ opción»; al tocarlo, la lista; y arriba, «Una opción / Varias», que decide 
 de CE3-A (versión 110 del lienzo) ya lo muestran, y sus capturas de arriba son las ajustadas; en la sección del catálogo se
 ve también la lista, como al tocarlo.
 
+## Ajuste del review de E2, 2026-10-23
+
+- **Quitar un campo que usa la presentación del propio catálogo (CE1 y CE3-B).** Ese uso ya no impide quitarlo: al
+  quitarlo, sale también del título y de la descripción de «En WhatsApp» del borrador, y si el título queda vacío vuelve
+  al texto de la opción. Los usos en el borrador o la versión activa de un formulario lo siguen impidiendo y se listan.
+
 ## Lo que no se ve en las pantallas
 
 «Datos de las personas» se ve en Administración y en «Editar usuario», pero lo maneja el módulo de formularios: la pantalla y

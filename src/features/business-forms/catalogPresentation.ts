@@ -7,6 +7,14 @@ import { localizedValue } from "./editorModel";
 import type { CatalogManualItemValue } from "./catalogItemEdits";
 import type { FormCulture } from "./model";
 
+/** A removed field leaves the presentation; an empty title falls back to the option text, the default. */
+export function withoutPresentationFields(presentation: CatalogPresentation | null, keys: readonly string[]): CatalogPresentation | null {
+  if (!presentation) return null;
+  const kept = (part: readonly string[]) => part.filter(key => !keys.includes(key));
+  const title = kept(presentation.title);
+  return { title: title.length ? title : ["text"], description: kept(presentation.description) };
+}
+
 export function catalogOptionPresentation(item: CatalogManualItemValue, presentation: CatalogPresentation | null, fields: readonly CatalogFieldDraft[], valueType: CatalogValueType, culture: FormCulture, booleanLabels?: { readonly yes: string; readonly no: string }, inputCulture: FormCulture = culture): { title: string; description: string } {
   const selected = presentation ?? { title: ["text"], description: ["detail"] };
   const scalar = (type: CatalogFieldDraft["type"], input: string | null | undefined): string => {

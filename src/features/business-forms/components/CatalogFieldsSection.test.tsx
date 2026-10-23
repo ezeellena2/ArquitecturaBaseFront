@@ -46,6 +46,16 @@ it("shows where an in-use field is referenced and never offers to confirm its re
   expect(within(screen.getByRole("dialog")).getByText(/Pedir repuesto/)).toBeInTheDocument();
   expect(within(screen.getByRole("dialog")).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
 });
+it("offers removing a field used only by its own catalog presentation", async () => {
+  await mount([{ ...field, usedBy: [{ definitionId: null, formName: "Proveedores", question: null, stage: "Catalog" }] }]);
+  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
+  await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
+  const dialog = screen.getByRole("dialog");
+  expect(within(dialog).queryByText("Proveedores")).not.toBeInTheDocument();
+  await userEvent.click(within(dialog).getByRole("checkbox"));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Quitar el campo" }));
+  expect(screen.queryByRole("button", { name: "Editar CUIT" })).not.toBeInTheDocument();
+});
 it("opens the failed field and shows missing counts from the complete server validation", async () => {
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[field]} errors={{ saved: { required: ["Completá las opciones activas."] } }} feedback={{ missingCount: 12 }} /></MemoryRouter>); });
   expect(screen.getByText("Completá las opciones activas.")).toBeInTheDocument();
