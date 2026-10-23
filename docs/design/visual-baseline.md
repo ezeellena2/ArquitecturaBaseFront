@@ -140,7 +140,9 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
   título, estado y acciones pueden ocupar varias filas. Sin estado expandido, antetítulo, descripción ni ícono.
 - Título de la pantalla abierta y su acción primaria a la derecha.
 - Pantalla hija: `backTo`, caja de 24 px con flecha de 14 px, tooltip, sin borde permanente y nombre accesible que dice
-  a dónde vuelve. `status` acompaña al título sin formar parte del nombre (“Cambios sin guardar”).
+  a dónde vuelve. `status` acompaña al título sin formar parte del nombre y muestra solo el estado del objeto, como
+  «Activo» o «Dado de baja». No muestra «Cambios sin guardar» ni números de revisión: que Guardar esté habilitado ya
+  dice que hay cambios.
 - Migas en la barra superior, tres niveles (`Inicio / Gestión de usuarios / Usuarios`); una ruta hija suma la hoja
   (`… / Roles y permisos / Soporte`) con `useBreadcrumbLeaf`. Hasta que la pone, el padre queda último sin marcar como actual.
 
@@ -191,7 +193,14 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
 - La ayuda ocupa el renglón que reemplaza el error, sin saltos. Ningún campo productivo fuera de `FormField` sin razón documentada.
 - Se valida al enviar; después del primer error, en vivo mientras se corrige.
 - Cancelar junto a la primaria, que va última; una destructiva, separada a la izquierda.
-- Al guardar, el botón se deshabilita y explica el estado, sin tapar la pantalla ni perder lo escrito.
+- Al guardar, el botón se deshabilita mientras trabaja, sin tapar la pantalla ni perder lo escrito.
+- **Un botón está habilitado o deshabilitado, sin explicaciones al lado** (decisión del usuario, 2026-10-23):
+  - no se agregan textos debajo ni al costado, como «No hay cambios para guardar», «Revisá los datos marcados antes de
+    guardar» o «Guardá … antes»;
+  - los botones no cambian de lugar ni de forma con cada acción;
+  - si el motivo de un deshabilitado no es obvio, va como tooltip al pasar el mouse o con el foco;
+  - los errores se marcan en sus campos.
+- **Las acciones de una superficie van al borde derecho de su encabezado,** a la altura del título.
 - Breve y contextual: diálogo. Largo, seccionado o compartible: ruta propia. Un único valor puede editarse en línea.
 
 ## Responsive y accesibilidad mínimos
