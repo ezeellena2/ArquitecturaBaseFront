@@ -1,7 +1,53 @@
 {
+  "captures": [
+    {
+      "length": 1668,
+      "sha256": "9c2ad51ac64c026a3f76116a28be5db951311a02e926ce6c4b2d5fa88193166c",
+      "name": "approved-en.json"
+    },
+    {
+      "length": 267,
+      "sha256": "bfca02010f81b59e4dcf0b60998d5b1757396061810a9309e77ea7b9937ea62c",
+      "name": "conflict.json"
+    },
+    {
+      "length": 1541,
+      "sha256": "e3afc0d1ad370c95ab3a7034f4045c69be0f046a2f2b601eb4021fc6c984b1b4",
+      "name": "detail-pending-en.json"
+    },
+    {
+      "length": 1547,
+      "sha256": "c5313fe83500d97ee91cd962137074b69808601318f9db55c7b01396c0041ee6",
+      "name": "detail-pending-es.json"
+    },
+    {
+      "length": 1617,
+      "sha256": "67f8916e7762b7e9ba3879a1f01e67dfb78a096b96ca118744b27ab11c3d0dc7",
+      "name": "discarded-es.json"
+    },
+    {
+      "length": 402,
+      "sha256": "6ba65c7d1c579e02b98760dcffbe19cb6cd932a60e760ea885c09abefcd7d2b5",
+      "name": "list-original-en-in-es.json"
+    }
+  ],
+  "sourceState": [
+    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
+    "?? docs/features/formularios-e2.md.pending",
+    "?? docs/features/formularios.md.pending",
+    "?? docs/history/README.md.pending",
+    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
+    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
+    "?? docs/plans/README.md.pending",
+    "?? docs/plans/formularios/README.md.pending",
+    "?? docs/plans/verificacion-y-produccion.md.pending",
+    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
+  ],
   "schemaVersion": 1,
+  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
+  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "artifactSet": "catalog-proposals",
-  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "bf52cdae68d2426e23459ff7c3b4d1b7c24f84882a5d74f760e92d79b7474258",
@@ -16,42 +62,7 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "approved-en.json",
-      "sha256": "1cf51fd9e59a343628bf9932c3ba59b3afb9f4cd062d199e3ff04b634beae2b8",
-      "length": 1588
-    },
-    {
-      "name": "conflict.json",
-      "sha256": "8991e95c784cf06034bcc688416089a8d247be48fcb37a57fcb6a0a35839f0c8",
-      "length": 267
-    },
-    {
-      "name": "detail-pending-en.json",
-      "sha256": "7f16f5d5d43f541dae09dc0b03fbdddcaba789c9b15973894437c624a7ce2a38",
-      "length": 1453
-    },
-    {
-      "name": "detail-pending-es.json",
-      "sha256": "bc4733a0b76007f71de6880b53ce64eb4e45d4908e6af44f941bc74c7a289205",
-      "length": 1459
-    },
-    {
-      "name": "discarded-es.json",
-      "sha256": "62a1d7e19a83e2de07d121fdc6d25af33aac71592a10f707b37c74f4806314ae",
-      "length": 1561
-    },
-    {
-      "name": "list-original-en-in-es.json",
-      "sha256": "9bba184c14f778f19cbf2da28c6362afa5599be53110a4aad8a7f407a2cbec60",
-      "length": 402
-    }
-  ],
-  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture"
+  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
+  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

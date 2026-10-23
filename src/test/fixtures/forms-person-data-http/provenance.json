@@ -1,0 +1,154 @@
+{
+  "captures": [
+    {
+      "length": 265,
+      "sha256": "d80ebf7cdcf1b0ccc5d66ecf96a54ecacb753156a6675e7a4c9ca67b5c160e30",
+      "name": "attribute-created-en.json"
+    },
+    {
+      "length": 265,
+      "sha256": "ca4e56043aba2916599a05be91796b3edcddddc8d1367a06d3f9080da4b017b5",
+      "name": "attribute-created-es.json"
+    },
+    {
+      "length": 290,
+      "sha256": "5180e126423899846af774b22df3d5b12d3379240102c8103e4430748c2d55b2",
+      "name": "attribute-updated-en.json"
+    },
+    {
+      "length": 290,
+      "sha256": "7af6f6e9ae35f5942456b6800abac6092e4958adbca0f5ec71e238e8a4a1f2ee",
+      "name": "attribute-updated-es.json"
+    },
+    {
+      "length": 593,
+      "sha256": "c7eeeef3840c590e354a154e314e22d12d77e411339bc27e751725e1a4164c26",
+      "name": "attributes-en.json"
+    },
+    {
+      "length": 302,
+      "sha256": "ce0135dfd448bc62f39b29edb9ebe231a85b8f4cd731cbec6c5ef376dbd650ea",
+      "name": "attributes-es.json"
+    },
+    {
+      "length": 259,
+      "sha256": "cbd91e09eac434c248f1e5645e9e57a6a62b701fcbde7f628b0e870811b21567",
+      "name": "conflict-en.json"
+    },
+    {
+      "length": 271,
+      "sha256": "413a8486d4c00c8b30c5945265b45fcf85e845ff6a487c20789aaf3b16e378b8",
+      "name": "conflict-es.json"
+    },
+    {
+      "length": 247,
+      "sha256": "b1588ef13440b444d691284ac356f673852a0c52879e5a3cc5cb107533c51769",
+      "name": "forbidden-en.json"
+    },
+    {
+      "length": 249,
+      "sha256": "b58460e5683ad31a23ebc4c3c82168de4731c9fbfd632d07497729f33067b273",
+      "name": "forbidden-es.json"
+    },
+    {
+      "length": 356,
+      "sha256": "b9bcbc8fc23b648028456363801b67dd7e7969e46ce9c3102fc7cbd5d72bc543",
+      "name": "invalid-value-en.json"
+    },
+    {
+      "length": 346,
+      "sha256": "764f750cb4d1126abb8f8e530f187f0db17fc465446f4282f9d76fc39dfe64da",
+      "name": "invalid-value-es.json"
+    },
+    {
+      "length": 302,
+      "sha256": "af849eaa203ecb3acb93989d4187db65cfa0d3d9228bad0f4e0ae5d27785f22e",
+      "name": "people-en.json"
+    },
+    {
+      "length": 301,
+      "sha256": "5c6ae114e14bf17bc6288a6ed9e0c8834afb906eb10791978262d75f7863361e",
+      "name": "people-es.json"
+    },
+    {
+      "length": 77,
+      "sha256": "c17eabec23c28543490dff6a9625052087d5acc5da217db3de14d46be90f5724",
+      "name": "person-data-empty-en.json"
+    },
+    {
+      "length": 77,
+      "sha256": "9dd50ab6380440ff981a1f219d39d6659f65a31f7f0afefc44bb5f73df06bd97",
+      "name": "person-data-empty-es.json"
+    },
+    {
+      "length": 178,
+      "sha256": "b2fdd42505531c0d89f422f246050f1184e50641b2707cb53061ee5fdceeb7c8",
+      "name": "person-data-en.json"
+    },
+    {
+      "length": 177,
+      "sha256": "ab329ceb34afc916f30a3c24106c2ba8d79a4faf57d1758227e25eae44e66dc9",
+      "name": "person-data-es.json"
+    },
+    {
+      "length": 178,
+      "sha256": "b2fdd42505531c0d89f422f246050f1184e50641b2707cb53061ee5fdceeb7c8",
+      "name": "person-data-saved-en.json"
+    },
+    {
+      "length": 177,
+      "sha256": "ab329ceb34afc916f30a3c24106c2ba8d79a4faf57d1758227e25eae44e66dc9",
+      "name": "person-data-saved-es.json"
+    },
+    {
+      "length": 224,
+      "sha256": "ae99cd8d255337198cfcfc6ea301de36b6ea262208cc2af7bc73f1e1429d12bf",
+      "name": "person-options-en.json"
+    },
+    {
+      "length": 221,
+      "sha256": "e894a43f2cc131d253fd9a0674afa33e9c7bcdf66526dc45326f04b466b45893",
+      "name": "person-options-es.json"
+    },
+    {
+      "length": 292,
+      "sha256": "02ccc2cb5a911286db7978b160999605c9c5f6a8abde7459963775cd092fd080",
+      "name": "source-in-use-en.json"
+    },
+    {
+      "length": 305,
+      "sha256": "21c57eb2bada5ca0e718ea21e12fc4155c94c1373232418bcd4a7bca2f8ee363",
+      "name": "source-in-use-es.json"
+    }
+  ],
+  "sourceState": [
+    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
+    "?? docs/features/formularios-e2.md.pending",
+    "?? docs/features/formularios.md.pending",
+    "?? docs/history/README.md.pending",
+    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
+    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
+    "?? docs/plans/README.md.pending",
+    "?? docs/plans/formularios/README.md.pending",
+    "?? docs/plans/verificacion-y-produccion.md.pending",
+    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
+  ],
+  "schemaVersion": 1,
+  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
+  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "artifactSet": "person-data",
+  "sources": [
+    {
+      "sha256": "e8c3bf9898421f36d05075ac04049468ede6b32ccb08c998d37a1f650d222c4d",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPersonDataHttpTests.cs"
+    },
+    {
+      "sha256": "7f271b548b7ddd97177428782d6b6e2fd58294e7b282007a5655f9fdbb293c9b",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPersonDataContractCapture.cs"
+    }
+  ],
+  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
+  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+}

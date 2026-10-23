@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"El diseño del PDF cambió. Volvé a cargarlo.","traceId":"00-b37918e27d89d2f409690d206daa06ec-f7211351d3ba6771-01","code":"Forms.Pdf.RevisionConflict"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"El diseño del PDF cambió. Volvé a cargarlo.","traceId":"00-380753c7446c223fa80eb413357ffe1c-a534b53fe5587ac2-01","code":"Forms.Pdf.RevisionConflict"}

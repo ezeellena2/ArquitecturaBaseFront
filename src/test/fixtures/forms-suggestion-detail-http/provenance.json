@@ -1,7 +1,33 @@
 {
+  "captures": [
+    {
+      "length": 2059,
+      "sha256": "edb2c6a0ba8b0aa23008af4f92838f008a2d3ae374c1a099b4ccf970cc0e1fd0",
+      "name": "detail-en.json"
+    },
+    {
+      "length": 2063,
+      "sha256": "595f3bea30a4340728f65c3dfc4820c585dc071eaa3e017b02e50b92ca1dba79",
+      "name": "detail-es.json"
+    }
+  ],
+  "sourceState": [
+    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
+    "?? docs/features/formularios-e2.md.pending",
+    "?? docs/features/formularios.md.pending",
+    "?? docs/history/README.md.pending",
+    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
+    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
+    "?? docs/plans/README.md.pending",
+    "?? docs/plans/formularios/README.md.pending",
+    "?? docs/plans/verificacion-y-produccion.md.pending",
+    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
+  ],
   "schemaVersion": 1,
+  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
+  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "artifactSet": "suggestion-details",
-  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "d964bf44402720bfe5a00fec51466678dec36ba42b2f6bee1fb5226524a752d9",
@@ -12,22 +38,7 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "detail-en.json",
-      "sha256": "076a7c1adcfa3bd1e8ca4fada579034ab2dd04693c10a5b44a16bb7126e7e4b8",
-      "length": 2059
-    },
-    {
-      "name": "detail-es.json",
-      "sha256": "08bc542d4ca995cf23a306ca521edf591f1aa1ce74f517600aaf75876565ee2a",
-      "length": 2063
-    }
-  ],
-  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture"
+  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
+  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

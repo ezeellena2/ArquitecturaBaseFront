@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Confirmá que querés quitar el campo y sus valores.","traceId":"00-6dd8b89b4c2a3b40d5f7f73514d20fc1-168258375e1d5ed5-01","code":"Forms.Catalog.FieldRemovalNotConfirmed","errors":{"fields[0].isActive":["Confirmá que querés quitar el campo y sus valores."]},"count":1}

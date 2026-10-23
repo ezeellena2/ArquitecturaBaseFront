@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"El valor no corresponde al dato.","traceId":"00-235162c5fab6f093ef58c93707d93b56-271bc1ca0e858982-01","code":"Forms.PersonData.ValueInvalid","errors":{"values.01a16798-82e4-73a0-869d-b285ac4406a8":["El valor no corresponde al dato."]}}

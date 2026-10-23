@@ -1,44 +1,55 @@
 {
+  "captures": [
+    {
+      "length": 1824,
+      "sha256": "bcce422c2d3b8f3299064cdab76bdb40ec01c7fc79f9f70d8926fd76c9c5fab1",
+      "name": "draft-created.json"
+    },
+    {
+      "length": 2770,
+      "sha256": "2f3a8aa8c41666403d28670e38a54918daf5ba51f1ac3846a1132216311c06ec",
+      "name": "reply-completed.json"
+    },
+    {
+      "length": 1935,
+      "sha256": "4ce94434d3899f0483021d38952f6700a62d0726b054176f8da3160bb97f13dc",
+      "name": "reply-downloading.json"
+    },
+    {
+      "length": 2770,
+      "sha256": "2f3a8aa8c41666403d28670e38a54918daf5ba51f1ac3846a1132216311c06ec",
+      "name": "reply-reloaded.json"
+    },
+    {
+      "length": 1828,
+      "sha256": "cdb2f93fc94bf99f9ee61899a80c1d69891c2733d0e607616a4f185e831062fb",
+      "name": "reply-without-read.json"
+    }
+  ],
+  "sourceState": [
+    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
+    "?? docs/features/formularios-e2.md.pending",
+    "?? docs/features/formularios.md.pending",
+    "?? docs/history/README.md.pending",
+    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
+    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
+    "?? docs/plans/README.md.pending",
+    "?? docs/plans/formularios/README.md.pending",
+    "?? docs/plans/verificacion-y-produccion.md.pending",
+    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
+  ],
   "schemaVersion": 1,
+  "producer": "WhatsAppFormFilesIntegrationTests",
+  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "artifactSet": "form-files",
-  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "df96f8e62da7956ed455512ef0a1664d97101419f8fad8ff76e294adf6917e48",
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "draft-created.json",
-      "sha256": "e5b04646bf266d27b8cd30344b326128a8c70339b2bc57d0afe4c56b126a291d",
-      "length": 1824
-    },
-    {
-      "name": "reply-completed.json",
-      "sha256": "ae6221182ef30971e84ad4b56c0349d8f12a38f0435b94f26a50108bd8e1c04a",
-      "length": 2770
-    },
-    {
-      "name": "reply-downloading.json",
-      "sha256": "b043c5684a220c792c902962aaee7437d0e56c841f45f2ff2367e3a0f96e11f6",
-      "length": 1935
-    },
-    {
-      "name": "reply-reloaded.json",
-      "sha256": "ae6221182ef30971e84ad4b56c0349d8f12a38f0435b94f26a50108bd8e1c04a",
-      "length": 2770
-    },
-    {
-      "name": "reply-without-read.json",
-      "sha256": "3b8b7ea851d87d2c1d319dfb43ed4453ef8bfd3aec798e1026807745383f4185",
-      "length": 1828
-    }
-  ],
-  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "WhatsAppFormFilesIntegrationTests"
+  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
+  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

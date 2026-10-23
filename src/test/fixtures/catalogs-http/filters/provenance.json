@@ -1,59 +1,70 @@
 {
+  "captures": [
+    {
+      "length": 273,
+      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
+      "name": "create-request.json"
+    },
+    {
+      "length": 613,
+      "sha256": "3370b7a27d1b2252078714e43f715461656d4e4dc9f28185077f0056e79ed15b",
+      "name": "created.json"
+    },
+    {
+      "length": 591,
+      "sha256": "96ae22e95f448a4268108f38a7fc80602f53849200fb8bab84621f77a51a2185",
+      "name": "detail.json"
+    },
+    {
+      "length": 55920,
+      "sha256": "841d4beb3ff6f33a5c8392f6139d114371c29b5a056b1e145dfed2ef997bbc13",
+      "name": "options.json"
+    },
+    {
+      "length": 328,
+      "sha256": "cee5c2e877fd1d1d6f4e2c72024c43a5a7a8490d7a7b46cc996f98371713ba11",
+      "name": "preview-request.json"
+    },
+    {
+      "length": 201,
+      "sha256": "82df95517d34aed9b227a2a4746ed0fd386997cb326c41bf903ade203effeef8",
+      "name": "preview.json"
+    },
+    {
+      "length": 289,
+      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
+      "name": "update-request.json"
+    },
+    {
+      "length": 612,
+      "sha256": "3ff78bba953cc0a8ce4707c0511d65bd49229ee24b544b4b1fce1a78f40c566a",
+      "name": "updated.json"
+    }
+  ],
+  "sourceState": [
+    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
+    "?? docs/features/formularios-e2.md.pending",
+    "?? docs/features/formularios.md.pending",
+    "?? docs/history/README.md.pending",
+    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
+    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
+    "?? docs/plans/README.md.pending",
+    "?? docs/plans/formularios/README.md.pending",
+    "?? docs/plans/verificacion-y-produccion.md.pending",
+    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
+  ],
   "schemaVersion": 1,
+  "producer": "FormCatalogFiltersEndpointsTests",
+  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "artifactSet": "catalog-filters",
-  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "77f028bcb4dc764cf8187e6bb39f1d5cde4c235488b0891e673a9de5cb377fcb",
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "create-request.json",
-      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
-      "length": 273
-    },
-    {
-      "name": "created.json",
-      "sha256": "d196b4b7d0390b1f8216b80956758c358bd84b1a2f2f09ddb2f4ea4561eb74d7",
-      "length": 530
-    },
-    {
-      "name": "detail.json",
-      "sha256": "54faff1d34963c67aed676e0648d7f3e93d36715b7e373018f15448e1aea4d9d",
-      "length": 501
-    },
-    {
-      "name": "options.json",
-      "sha256": "b731f3c5481a23890e4b565f09c2cab774018d6f0564a81fb03231dfed73f535",
-      "length": 55536
-    },
-    {
-      "name": "preview-request.json",
-      "sha256": "f226401cfea61d1d537d7cd353df38f763b97a85fba55b25c766a251e4c5e176",
-      "length": 328
-    },
-    {
-      "name": "preview.json",
-      "sha256": "1d5109337c7fde652f8a2f4bc8b74b7c4ca02caf8e2a7f62b12632ab39fb0c8a",
-      "length": 201
-    },
-    {
-      "name": "update-request.json",
-      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
-      "length": 289
-    },
-    {
-      "name": "updated.json",
-      "sha256": "a487394794d8a43326380c6968c7cccd7d0f688a8be30b569c49de0f9025086c",
-      "length": 529
-    }
-  ],
-  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "FormCatalogFiltersEndpointsTests"
+  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
+  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

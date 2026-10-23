@@ -1,7 +1,38 @@
 {
+  "captures": [
+    {
+      "length": 492,
+      "sha256": "bfd14101fdfe510c4839bf95888a324f85d0036c1667a58612399e56b73fd37c",
+      "name": "chats-form-actions.json"
+    },
+    {
+      "length": 1601,
+      "sha256": "69691cbf96b99a91b4724aca6360f5ad2f37de588ee9e06bac132d9270eb92f1",
+      "name": "thread-form-actions-restricted.json"
+    },
+    {
+      "length": 1759,
+      "sha256": "20efdf4f5b6826a3dcadfa8ba8771441f92ad3614f14023db0c4957ec242d63c",
+      "name": "thread-form-actions.json"
+    }
+  ],
+  "sourceState": [
+    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
+    "?? docs/features/formularios-e2.md.pending",
+    "?? docs/features/formularios.md.pending",
+    "?? docs/history/README.md.pending",
+    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
+    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
+    "?? docs/plans/README.md.pending",
+    "?? docs/plans/formularios/README.md.pending",
+    "?? docs/plans/verificacion-y-produccion.md.pending",
+    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
+  ],
   "schemaVersion": 1,
+  "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario",
+  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "artifactSet": "whatsapp-actions",
-  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "769692bd79bcdcefd4a0612b1cc0892a6eb505f993c02ff32a1a74539beacf9c",
@@ -16,27 +47,7 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppFormActionScenario.cs"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "chats-form-actions.json",
-      "sha256": "3dc9f2948c6ce9394c2d156038ae97afa24a76a486b041c8e837ea23139dfb13",
-      "length": 492
-    },
-    {
-      "name": "thread-form-actions-restricted.json",
-      "sha256": "66e2a883e3c6634c394fb8c2d1316d23c05a197fbbeeb51fe37f2ad7c09c7870",
-      "length": 1602
-    },
-    {
-      "name": "thread-form-actions.json",
-      "sha256": "ed374708290a6501ceee2e897990783d398db218367ded7e0a8d55f9dffd82d2",
-      "length": 1760
-    }
-  ],
-  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario"
+  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
+  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

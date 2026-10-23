@@ -1,7 +1,38 @@
 {
+  "captures": [
+    {
+      "length": 53,
+      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
+      "name": "audio-request.json"
+    },
+    {
+      "length": 975,
+      "sha256": "905de88b0cf77a5c710b56fa09a5893cc9d57fffb6d74ad8911efb2c3ab7fa57",
+      "name": "audio-thread-completed.json"
+    },
+    {
+      "length": 933,
+      "sha256": "b846443801cc580bd54184ac7fee2fa3f5061181da9a1d0a27abe3ab68eece40",
+      "name": "audio-thread-pending.json"
+    }
+  ],
+  "sourceState": [
+    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
+    "?? docs/features/formularios-e2.md.pending",
+    "?? docs/features/formularios.md.pending",
+    "?? docs/history/README.md.pending",
+    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
+    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
+    "?? docs/plans/README.md.pending",
+    "?? docs/plans/formularios/README.md.pending",
+    "?? docs/plans/verificacion-y-produccion.md.pending",
+    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
+  ],
   "schemaVersion": 1,
+  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
+  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "artifactSet": "whatsapp-audio",
-  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "d9dafe29d34258e355da3b56c378040a6a1d9882044dd0a68de945ba92cc6540",
@@ -12,27 +43,7 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "audio-request.json",
-      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
-      "length": 53
-    },
-    {
-      "name": "audio-thread-completed.json",
-      "sha256": "78f43655f249794e555a61a34f5caea8de57f33d69d755b687ff065772251571",
-      "length": 975
-    },
-    {
-      "name": "audio-thread-pending.json",
-      "sha256": "333943779cc3cdceb325727947e0ba22920b71b6e99e6e2398e04509f5cd503f",
-      "length": 933
-    }
-  ],
-  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture"
+  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
+  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

@@ -1,1 +1,1 @@
-{"items":[{"id":"01a1660b-f513-7bc7-98b3-9bf78d08cc35","code":"NORTH","text":{"es":"Norte","en":"North"},"detail":{"es":"Zona","en":"Area"},"position":1,"isActive":true,"value":null}],"page":1,"pageSize":20,"totalCount":1,"totalPages":1,"hasPrevious":false,"hasNext":false}
+{"items":[{"id":"01a16799-b653-752b-8fbf-27944708a80c","code":"NORTH","text":{"es":"Norte","en":"North"},"detail":{"es":"Zona","en":"Area"},"position":1,"isActive":true,"value":null,"fields":{},"fieldTexts":{}}],"page":1,"pageSize":20,"totalCount":1,"totalPages":1,"hasPrevious":false,"hasNext":false}

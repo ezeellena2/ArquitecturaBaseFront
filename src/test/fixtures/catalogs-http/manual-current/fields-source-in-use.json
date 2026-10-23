@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Un campo o un dato de las personas toma sus valores de este catálogo: no se puede dar de baja.","traceId":"00-13f2c1c905ff0cf67114e46cc64d3900-c5502ba0d29e43f0-01","code":"Forms.Catalog.SourceInUse"}
