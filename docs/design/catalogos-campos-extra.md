@@ -74,6 +74,7 @@ ve también la lista, como al tocarlo.
 - **Quitar un campo que usa la presentación del propio catálogo (CE1 y CE3-B).** Ese uso ya no impide quitarlo: al
   quitarlo, sale también del título y de la descripción de «En WhatsApp» del borrador, y si el título queda vacío vuelve
   al texto de la opción. Los usos en el borrador o la versión activa de un formulario lo siguen impidiendo y se listan.
+  «Restaurar el campo» lo devuelve a su lugar en «En WhatsApp» si la presentación no se editó después de quitarlo.
 
 ## Lo que no se ve en las pantallas
 

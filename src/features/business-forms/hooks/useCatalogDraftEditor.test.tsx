@@ -81,6 +81,24 @@ describe("Manual catalog editor ownership", () => {
     expect(bodies).toHaveLength(1);
     expect(bodies[0]).toMatchObject({ presentation: { title: ["text"], description: [] }, fields: [{ id: fieldId, isActive: false }] });
   });
+  it("restoring a removed field puts it back in the draft presentation unless the author edited the presentation", () => {
+    const field = (id: string, key: string, position: number) => ({ id, key, name: { es: key }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position, isActive: true, hasValues: false, usedBy: [{ definitionId: null, formName: "Clientes", question: null, stage: "Catalog" as const }] });
+    const taxId = "01990000-0000-7000-8000-000000000031", zone = "01990000-0000-7000-8000-000000000032";
+    const catalog: CatalogDetail = { ...initial, fields: [field(taxId, "tax_id", 1), field(zone, "zone", 2)], presentation: { title: [taxId], description: [zone] } };
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, catalog), harness());
+    const setActive = (active: Readonly<Record<string, boolean>>) => act(() => result.current.changeFields(result.current.draft!.fields.map(value => ({ ...value, isActive: active[value.id!] ?? value.isActive })), []));
+    setActive({ [taxId]: false, [zone]: false });
+    expect(result.current.draft!.presentation).toEqual({ title: ["text"], description: [] });
+    setActive({ [taxId]: true });
+    expect(result.current.draft!.presentation).toEqual({ title: [taxId], description: [] });
+    setActive({ [zone]: true });
+    expect(result.current.draft!.presentation).toEqual(catalog.presentation);
+    expect(result.current.dirty).toBe(false);
+    setActive({ [taxId]: false });
+    act(() => result.current.changePresentation({ title: ["code"], description: [zone] }));
+    setActive({ [taxId]: true });
+    expect(result.current.draft!.presentation).toEqual({ title: ["code"], description: [zone] });
+  });
   it("blocks concurrent saves and ignores a late result after another actor takes ownership", async () => {
     let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; }); let calls = 0;
     server.use(http.put("/api/forms/catalogs/" + id, async () => { calls++; await gate; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));

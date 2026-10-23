@@ -69,9 +69,13 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => {
       // A field that stops being active or is discarded also leaves what travels to WhatsApp.
-      const removed = value.draft.fields.filter(previous => previous.isActive && !fields.some(field => field.localId === previous.localId && field.isActive)).map(field => field.id ?? field.localId);
+      const removedFrom = (before: readonly CatalogFieldDraft[], after: readonly CatalogFieldDraft[]) => before.filter(previous => previous.isActive && !after.some(field => field.localId === previous.localId && field.isActive)).map(field => field.id ?? field.localId);
+      const fromBaseline = (after: readonly CatalogFieldDraft[]) => { const removed = removedFrom(value.baseline.fields, after); return removed.length ? withoutPresentationFields(value.baseline.presentation, removed) : value.baseline.presentation; };
+      // While the author has not edited the presentation, it follows the removals, so restoring a field puts it back.
+      const followsRemovals = JSON.stringify(value.draft.presentation) === JSON.stringify(fromBaseline(value.draft.fields));
+      const removed = removedFrom(value.draft.fields, fields);
       return { ...value, error: null, draft: { ...value.draft, fields: fields.map(field => ({ ...field, name: { ...field.name }, usedBy: field.usedBy.map(use => ({ ...use })) })), confirmFieldRemovals: [...confirmFieldRemovals],
-        presentation: removed.length ? withoutPresentationFields(value.draft.presentation, removed) : value.draft.presentation } };
+        presentation: followsRemovals ? fromBaseline(fields) : removed.length ? withoutPresentationFields(value.draft.presentation, removed) : value.draft.presentation } };
     });
   }, [owned, isCurrentOwner]);
   const changePresentation = useCallback((presentation: CatalogPresentation | null) => {
