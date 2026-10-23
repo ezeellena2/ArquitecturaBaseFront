@@ -2,6 +2,7 @@ import { httpCohort } from "@/test/httpCohort";
 import { expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { readCatalog, readCatalogItems, readCatalogSave } from "./catalogResponse";
+import { readCatalogFieldFeedback } from "./catalogFieldFeedback";
 import { server } from "@/test/mocks/server";
 import { createManualCatalog, fetchCatalogPage, fetchCatalog, updateManualCatalog, type ManualCatalogBody, type UpdateManualCatalogBody } from "./catalogs";
 
@@ -60,4 +61,8 @@ it("passes untouched field rejections through the current Manual client", async 
     server.use(http.put("/api/forms/catalogs/" + created.catalog.id, () => cohort.response(name, status, { "content-type": "application/problem+json" })));
     await expect(updateManualCatalog(created.catalog.id, body)).rejects.toMatchObject({ status, code, problem: cohort.json(name) });
   }
+});
+it("reads the row, attempted value and reason of a type change that does not convert", () => {
+  const conversion = cohort.json("fields-conversion-error.json") as { invalidRows: { itemId: string }[] };
+  expect(readCatalogFieldFeedback(conversion)).toEqual({ convertedCount: 0, invalidCount: 1, invalidRows: [{ itemId: conversion.invalidRows[0]!.itemId, code: "ONE", row: 1, value: "1", reason: "invalid" }] });
 });

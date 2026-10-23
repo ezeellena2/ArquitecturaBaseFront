@@ -75,6 +75,12 @@ ve también la lista, como al tocarlo.
   quitarlo, sale también del título y de la descripción de «En WhatsApp» del borrador, y si el título queda vacío vuelve
   al texto de la opción. Los usos en el borrador o la versión activa de un formulario lo siguen impidiendo y se listan.
   «Restaurar el campo» lo devuelve a su lugar en «En WhatsApp» si la presentación no se editó después de quitarlo.
+- **Cambiar el tipo de un campo cargado (CE1 y CE2).** El editor ya no frena Guardar por el cambio: lo revisa el servidor
+  sobre los valores guardados. Si alguno no convierte, se abre «Cambiar el tipo» como en CE1, armado con las filas que
+  devuelve el servidor (hasta 50, con número, valor y motivo): muestra cinco y «Y N más.». «Ver los N en la tabla» deja en
+  la tabla solo esas opciones, con un chip «Con error · N filas» que se quita para volver al listado; buscar, guardar o
+  releer y adoptar también lo quitan. Cada celda queda marcada con su motivo hasta que se la edita. La lista de códigos
+  que mostraba la sección «Campos» se retira.
 
 ## Lo que no se ve en las pantallas
 

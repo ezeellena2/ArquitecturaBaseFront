@@ -1,6 +1,7 @@
 import { catalogItemProblems, duplicateCatalogTexts, generateMissingCatalogCodes } from "../catalogEditing";
 import { indexedValidationIssues } from "../validationPaths";
-import { readCatalogFieldFeedback } from "../api/catalogFieldFeedback";
+import { readCatalogFieldFeedback, type CatalogInvalidFieldRow } from "../api/catalogFieldFeedback";
+import { CatalogFieldConversionDialog } from "../components/CatalogFieldConversionDialog";
 import { CatalogFieldsSection } from "../components/CatalogFieldsSection";
 import { CatalogPresentationSection } from "../components/CatalogPresentationSection";
 import { CatalogImportDialog } from "../components/CatalogImportDialog";
@@ -22,6 +23,7 @@ import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { FilterChip } from "@/shared/ui/FilterChip";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
 import { SearchInput } from "@/shared/ui/SearchInput";
@@ -30,7 +32,9 @@ import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import type { CatalogDetail } from "../api/catalogResponse";
-import { catalogItemFieldIssues, catalogItemValue } from "../catalogDraft";
+import { catalogItemFieldIssues, catalogItemValue, editedFieldIds } from "../catalogDraft";
+import { catalogFieldProblemText, type CatalogFieldType } from "../catalogFields";
+import { localizedValue } from "../editorModel";
 import { catalogItemChanges, currentCatalogItem } from "../catalogItemEdits";
 import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor";
 import { CatalogStateAction } from "../components/CatalogStateAction";
@@ -40,6 +44,14 @@ import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
 import type { FormCulture } from "../model";
 
 import { CatalogFiltersEditorPage } from "./CatalogFiltersEditorPage";
+
+// A type or source change the server could not convert: its rows stay marked until edited, until the next Save, or
+// until that field's type or source changes again. `showRows` filters the options table to them.
+interface FieldConversion {
+  readonly fieldLocalId: string; readonly from: CatalogFieldType; readonly to: CatalogFieldType; readonly sourceCatalogId: string | null;
+  readonly convertedCount: number; readonly invalidCount: number; readonly rows: readonly CatalogInvalidFieldRow[];
+  readonly open: boolean; readonly showRows: boolean;
+}
 
 export function CatalogEditorPage() {
   const { t, i18n } = useTranslation("forms");
@@ -85,6 +97,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const [importSource, setImportSource] = useState<"file" | "paste" | null>(null);
   const importFocus = useRef<HTMLButtonElement>(null);
   const [handledValidation, setHandledValidation] = useState<unknown>(null);
+  const [conversion, setConversion] = useState<FieldConversion | null>(null);
   const active = useRef(true);
   const feedbackId = "catalogs:editor:" + useId();
   const presentation = useSystemPresentation();
@@ -93,7 +106,8 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const exported = useCatalogExport(scope, draft?.id ?? null);
   const pageSize = Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1 && pagination.pageSize <= 100 ? pagination.pageSize : 20;
   const page = Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1;
-  const items = useCatalogItems(scope, draft?.id ?? "", draft?.revision ?? null, { page, pageSize, sort: "position", search: pagination.search });
+  const rowFilter = conversion?.showRows ? conversion.rows.map(row => row.itemId) : null;
+  const items = useCatalogItems(scope, draft?.id ?? "", draft?.revision ?? null, rowFilter ? { page: 1, pageSize: 50, sort: "position", ids: rowFilter } : { page, pageSize, sort: "position", search: pagination.search });
   const loadItems = editor.loadItems;
   useEffect(() => { if (items.data) loadItems(items.data.items, draft?.revision ?? null); }, [items.data, loadItems, draft?.revision]);
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
@@ -134,6 +148,16 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     for (const issue of issues) (itemErrors[item.localId] ??= {})["fields." + issue.fieldId] = [t("catalogs.fields." + issue.reason)];
     return issues.length ? [item.localId] : [];
   }) : [];
+  const conversionField = conversion ? draft?.fields.find(field => field.localId === conversion.fieldLocalId) : undefined;
+  if (conversion && (!conversionField?.isActive || conversionField.type !== conversion.to || conversionField.sourceCatalogId !== conversion.sourceCatalogId)) setConversion(null);
+  if (draft && conversion && conversionField?.id) {
+    const fieldId = conversionField.id;
+    for (const row of conversion.rows) {
+      const original = draft.items.originals["item:" + row.itemId];
+      if (original && editedFieldIds(draft, currentCatalogItem(draft.items, original)).includes(fieldId)) continue;
+      (itemErrors[row.itemId] ??= {})["fields." + fieldId] ??= [catalogFieldProblemText(t, conversionField, row.value, row.reason)];
+    }
+  }
   const itemErrorPathsStamp = JSON.stringify([...itemErrorPaths, ...definitionErrorPaths]);
   const currentName = draft?.name[scope.culture] || t("catalogs.new");
   useBreadcrumbLeaf(currentName);
@@ -149,6 +173,10 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     const keys = Object.keys(editor.error instanceof ApiError ? editor.error.errors ?? {} : {});
     if (keys.some(key => key === "name.en" || key === "description.en")) setCulture("en");
     else if (keys.some(key => key === "name.es" || key === "description.es")) setCulture("es");
+    const typeChanged = draft?.fields.find(field => definitionErrors[field.localId]?.type);
+    const savedType = draft?.savedFields.find(field => field.id === typeChanged?.id)?.type;
+    if (editor.error instanceof ApiError && editor.error.code === "Forms.Catalog.FieldTypeNotConvertible" && fieldFeedback?.invalidRows?.length && typeChanged && savedType)
+      setConversion({ fieldLocalId: typeChanged.localId, from: savedType, to: typeChanged.type, sourceCatalogId: typeChanged.sourceCatalogId, convertedCount: fieldFeedback.convertedCount ?? 0, invalidCount: fieldFeedback.invalidCount ?? fieldFeedback.invalidRows.length, rows: fieldFeedback.invalidRows, open: true, showRows: false });
     const invalidItem = changedItems.find(item => itemErrors[item.localId]);
     if (invalidItem) {
       setExpanded(invalidItem.localId);
@@ -157,6 +185,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   }
   const save = async () => {
     if (!editor.canSave || invalidValues.length || invalidFieldValues.length || localProblems.length) return;
+    setConversion(null);
     const saved = await editor.save();
     if (!saved || !active.current) return;
     setExpanded(null);
@@ -173,6 +202,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const generateCode = (localId: string) => generateMissingCatalogCodes(knownItems).filter(item => item.localId === localId).forEach(editor.changeItem);
   const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item, draft.valueType, draft.culture, draft.savedFields))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
+  const hideErrorRows = () => setConversion(current => current && { ...current, showRows: false });
   if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
     actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly || invalidValues.length > 0 || invalidFieldValues.length > 0 || localProblems.length > 0} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
@@ -184,14 +214,15 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
       {localProblems.length ? <p className="text-sm text-[var(--color-danger)]">{t("catalogs.items.reviewInvalid")}</p> : null}
       {draft.moves.length ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.items.movesPending", { count: draft.moves.length })}</p><Button variant="outline" disabled={readOnly} onClick={editor.clearMoves}>{t("catalogs.items.clearMoves")}</Button></div></Surface> : null}
       {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor fields={draft.fields} scope={scope} sortPending={draft.sortAlphabetically} warnings={itemWarnings} onGenerateCode={item => generateCode(item.localId)} actions={<CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} />} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
-        filters={draft.id ? <div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={pagination.setSearch} /></div> : undefined}
-        pagination={items.data} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
+        filters={draft.id ? <><div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={search => { hideErrorRows(); pagination.setSearch(search); }} /></div>{rowFilter ? <FilterChip removeLabel={t("catalogs.items.clearErrorRows")} onRemove={hideErrorRows}>{t("catalogs.items.errorRows", { count: rowFilter.length })}</FilterChip> : null}</> : undefined}
+        pagination={rowFilter ? undefined : items.data} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
     </div>
     {importSource && draft.id && canManage ? <CatalogImportDialog scope={scope} catalog={{ ...initial!, revision: draft.revision!, name: draft.name, description: draft.description, isActive: draft.isActive }} initialSource={importSource} timeZoneId={timeZoneId} focusFallback={importFocus} onClose={() => setImportSource(null)} onObserved={editor.observeCatalog} onApplied={catalog => { editor.observeCatalog(catalog); setExpanded(null); }} onTemplate={() => void exported.download(true)} /> : null}
+    {conversion?.open && conversionField ? <CatalogFieldConversionDialog name={localizedValue(conversionField.name, culture, "es") || t("catalogs.fields.new")} from={conversion.from} field={conversionField} convertedCount={conversion.convertedCount} invalidCount={conversion.invalidCount} rows={conversion.rows} onClose={() => setConversion(current => current && { ...current, open: false })} onShowRows={() => { setExpanded(null); setConversion(current => current && { ...current, open: false, showRows: true }); }} /> : null}
     <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("stay")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
     <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent onCloseAutoFocus={restoreReviewFocus} className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.value ? <><p className="text-sm">{entry.value.name.es}</p><p className="text-sm">{entry.value.name.en}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.es}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.en}</p></> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</Surface>)}</div>
-      <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setExpanded(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
+      <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setConversion(null); setExpanded(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
     </DialogContent></Dialog>
   </Page>;
 }

@@ -169,6 +169,51 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     expect(screen.getByRole("combobox", { name: "Zona" })).toHaveValue("Sur");
   });
+  it("opens the type change dialog from the server rows and filters the table to them", async () => {
+    vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(min-width: 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }) as MediaQueryList);
+    const term = savedField({ key: "term", name: "Plazo", type: "text" });
+    const rows = [{ ...option, fields: { [fieldId]: "30 días" } }, { ...option, id: "01990000-0000-7000-8000-000000000022", code: "C2", text: { es: "Gómez", en: null }, position: 2, fields: { [fieldId]: "60" } }];
+    const message = "Hay valores que no se convierten al tipo nuevo.";
+    const requests: URLSearchParams[] = [];
+    setup();
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, itemsCount: 2, fields: [term] })),
+      http.get("/api/forms/catalogs/" + id + "/items", ({ request }) => {
+        const query = new URL(request.url).searchParams; requests.push(query);
+        const ids = query.getAll("ids"), items = ids.length ? rows.filter(row => ids.includes(row.id)) : rows;
+        return HttpResponse.json({ items, page: 1, pageSize: Number(query.get("pageSize")), totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
+      }),
+      http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.FieldTypeNotConvertible", title: "Datos inválidos", detail: message, errors: { "fields[0].type": [message] }, convertedCount: 1, invalidCount: 1, invalidRows: [{ itemId, code: "C1", row: 1, value: "30 días", reason: "invalid" }] }, { status: 400, headers: { "content-type": "application/problem+json" } })));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
+    expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Cambiar el tipo de «Plazo»" });
+    expect(within(dialog).getByText("De texto a entero")).toBeInTheDocument();
+    expect(within(dialog).getByText("Se revisan los 2 valores cargados: 1 se convierte y 1 no.")).toBeInTheDocument();
+    expect(within(dialog).getByRole("cell", { name: "«30 días» no es un número entero." })).toBeInTheDocument();
+    expect(screen.queryByText(/Revisá las opciones con código/)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Ver la fila en la tabla" }));
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Texto de la opción 2" })).not.toBeInTheDocument());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(requests.at(-1)?.getAll("ids")).toEqual([itemId]);
+    expect(requests.at(-1)?.get("pageSize")).toBe("50");
+    expect(requests.at(-1)?.get("sort")).toBe("position");
+    const cell = screen.getByRole("textbox", { name: "Fila 1 · Plazo" });
+    expect(cell).toBeInvalid();
+    expect(cell).toHaveAccessibleDescription("«30 días» no es un número entero.");
+    expect(screen.getByText("Con error · 1 fila")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Quitar el filtro" }));
+    expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
+    expect(screen.queryByText("Con error · 1 fila")).not.toBeInTheDocument();
+    expect(requests.at(-1)?.getAll("ids")).toEqual([]);
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeInvalid();
+    await user.clear(screen.getByRole("textbox", { name: "Fila 1 · Plazo" }));
+    await pasteText(user, screen.getByRole("textbox", { name: "Fila 1 · Plazo" }), "30");
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeValid();
+    expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
+  });
   it("retains a conflicted draft through reread and requires an explicit adoption without a second write", async () => {
     setup(); let writes = 0;
     server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 }); }));

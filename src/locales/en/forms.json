@@ -305,7 +305,7 @@
       "invalid": "Review this value: it does not match the field type.", "required": "The required value is missing.", "range": "The value is outside the field minimum or maximum.", "length": "The text exceeds the allowed length.",
       "missingValues_one": "Values are missing from 1 active option.", "missingValues_other": "Values are missing from {{count}} active options.",
       "invalidValues_one": "1 option has a value that cannot convert.", "invalidValues_other": "{{count}} options have values that cannot convert.",
-      "convertedValues_one": "1 value can convert.", "convertedValues_other": "{{count}} values can convert.", "invalidCodes": "Review options with these codes: {{codes}}.",
+      "convertedValues_one": "1 value can convert.", "convertedValues_other": "{{count}} values can convert.",
       "roles": { "filter": "Filter", "data": "Data" },
       "roleHint": { "filter": "Show each person their own options, or use a fixed question filter.", "data": "Captured with the selected option and included in the response." },
       "types": { "text": "Text", "integer": "Whole number", "decimal": "Decimal", "date": "Date", "boolean": "Yes or no", "catalog": "Pick from a catalog" },
@@ -316,7 +316,15 @@
         "rule": { "between": "from {{min}} to {{max}}", "from": "from {{min}}", "to": "up to {{max}}" },
         "length_one": "“{{value}}” is longer than {{count}} character.", "length_other": "“{{value}}” is longer than {{count}} characters."
       },
-      "restoreField": "Restore field"
+      "restoreField": "Restore field",
+      "conversion": {
+        "title": "Change the type of “{{name}}”", "types": "From {{from}} to {{to}}",
+        "reviewed_one": "1 loaded value is checked: {{converted}} and {{invalid}}.", "reviewed_other": "All {{count}} loaded values are checked: {{converted}} and {{invalid}}.",
+        "converted_one": "{{count}} converts", "converted_other": "{{count}} convert", "invalid_one": "{{count}} doesn't", "invalid_other": "{{count}} don't",
+        "row": "Row", "what": "What happens", "more_one": "And {{count}} more.", "more_other": "And {{count}} more.",
+        "hint": "Fix them in the table, or export, fix the Excel file and import it. The type changes on save, once they all fit.",
+        "show_one": "Show the row in the table", "show_other": "Show the {{count}} in the table"
+      }
     },
     "presentation": {
       "title": "In WhatsApp", "heading": "Title · up to 30 characters", "description": "Description · up to 300", "add": "Add field", "example": "For example",
@@ -405,7 +413,8 @@
       "duplicateText": "Also in row {{row}}: they will look the same in WhatsApp.",
       "duplicateTextNew": "Another new option has the same text: they will look the same in WhatsApp.",
       "textTooLong": "WhatsApp shows up to 30 characters.",
-      "reviewInvalid": "Review the marked options before saving."
+      "reviewInvalid": "Review the marked options before saving.",
+      "errorRows_one": "With errors · 1 row", "errorRows_other": "With errors · {{count}} rows", "clearErrorRows": "Remove the filter"
     },
     "filters": {
       "title": "Where options come from: database with filters",
