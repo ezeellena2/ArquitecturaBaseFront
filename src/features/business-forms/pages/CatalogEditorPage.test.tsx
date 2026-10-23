@@ -87,6 +87,23 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     expect(screen.getByRole("textbox", { name: "Código" })).toHaveValue("C2");
   });
+  it("saves an edited inactive option that lacks a required value, as the server allows", async () => {
+    setup(); const fieldId = "01990000-0000-7000-8000-000000000031"; const bodies: { items: { itemId: string; text: { es: string }; isActive: boolean }[] }[] = [];
+    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: true, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [taxId] })), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, isActive: false }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => {
+      bodies.push(await request.json() as typeof bodies[number]);
+      return HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [taxId] }, itemIdentityMap: {}, fieldIdentityMap: {} });
+    }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Reactivar Pérez" }));
+    await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
+    const text = screen.getByRole("textbox", { name: "Texto" }); await user.clear(text); await pasteText(user, text, "Pérez Norte");
+    await user.click(screen.getByRole("checkbox", { name: "Activa" }));
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toMatchObject({ items: [{ itemId, text: { es: "Pérez Norte" }, isActive: false }] });
+  });
   it("retains a conflicted draft through reread and requires an explicit adoption without a second write", async () => {
     setup(); let writes = 0;
     server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 }); }));

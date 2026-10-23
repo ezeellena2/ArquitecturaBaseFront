@@ -5,13 +5,13 @@ import { ApiError } from "@/shared/api/ApiError";
 import type { CatalogItemMove } from "../api/catalogs";
 import { createManualCatalog, fetchCatalog, updateManualCatalog, createFiltersCatalog, updateFiltersCatalog, previewCatalogFilters, approveCatalogProposal, discardCatalogProposal } from "../api/catalogs";
 import type { CatalogDetail, CatalogItem, CatalogSave, CatalogFilterPreview } from "../api/catalogResponse";
-import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
+import { catalogDraftBody, catalogDraftUpdateBody, catalogItemFieldIssues, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
 import { catalogItemChanges, type CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 
 import { catalogFiltersBody } from "../catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "../components/CatalogFiltersEditor";
-import { catalogFieldsBody, parseCatalogFieldValue, type CatalogFieldDraft } from "../catalogFields";
+import { catalogFieldsBody, type CatalogFieldDraft } from "../catalogFields";
 import type { CatalogPresentation } from "../api/catalogResponse";
 import { withoutPresentationFields } from "../catalogPresentation";
 
@@ -102,7 +102,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview) return;
     const captured = stateRef.current.draft;
     if (captured.kind === "Manual" && catalogItemChanges(captured.items).some(item => !parseCatalogValue(captured.valueType, item.value, captured.culture).valid)) return;
-    if (captured.kind === "Manual" && catalogItemChanges(captured.items).some(item => captured.fields.some(field => field.id && field.isActive && !parseCatalogFieldValue(field, item.fields?.[field.id], captured.culture).valid))) return;
+    if (captured.kind === "Manual" && catalogItemChanges(captured.items).some(item => catalogItemFieldIssues(captured, item).length)) return;
     const pendingProposal = captured.proposal?.state === "Pending";
     if (captured.filters && (captured.isActive || pendingProposal) && !sampleUserId) return;
     let writing = false;

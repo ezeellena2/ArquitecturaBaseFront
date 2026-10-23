@@ -1,6 +1,5 @@
 import { catalogItemProblems, duplicateCatalogTexts, generateMissingCatalogCodes } from "../catalogEditing";
 import { indexedValidationIssues } from "../validationPaths";
-import { parseCatalogFieldValue } from "../catalogFields";
 import { readCatalogFieldFeedback } from "../api/catalogFieldFeedback";
 import { CatalogFieldsSection } from "../components/CatalogFieldsSection";
 import { CatalogPresentationSection } from "../components/CatalogPresentationSection";
@@ -31,7 +30,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import type { CatalogDetail } from "../api/catalogResponse";
-import { catalogItemValue } from "../catalogDraft";
+import { catalogItemFieldIssues, catalogItemValue } from "../catalogDraft";
 import { catalogItemChanges, currentCatalogItem } from "../catalogItemEdits";
 import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor";
 import { CatalogStateAction } from "../components/CatalogStateAction";
@@ -130,13 +129,11 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     (itemErrors[item.localId] ??= {}).value = [t("catalogs.valueType." + parsed.reason)];
     return [item.localId];
   }) : [];
-  const invalidFieldValues = draft ? knownItems.flatMap(item => item.isActive ? draft.fields.flatMap(field => {
-    if (!field.id || !field.isActive) return [];
-    const result = parseCatalogFieldValue(field, item.fields?.[field.id], draft.culture);
-    if (result.valid) return [];
-    (itemErrors[item.localId] ??= {})["fields." + field.id] = [t("catalogs.fields." + result.reason)];
-    return [item.localId];
-  }) : []) : [];
+  const invalidFieldValues = draft ? changedItems.flatMap(item => {
+    const issues = catalogItemFieldIssues(draft, item);
+    for (const issue of issues) (itemErrors[item.localId] ??= {})["fields." + issue.fieldId] = [t("catalogs.fields." + issue.reason)];
+    return issues.length ? [item.localId] : [];
+  }) : [];
   const itemErrorPathsStamp = JSON.stringify([...itemErrorPaths, ...definitionErrorPaths]);
   const currentName = draft?.name[scope.culture] || t("catalogs.new");
   useBreadcrumbLeaf(currentName);

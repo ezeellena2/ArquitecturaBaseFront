@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem } from "./catalogDraft";
+import { catalogDraftUpdateBody, catalogItemFieldIssues, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem } from "./catalogDraft";
 import { catalogItemChanges, mergeCatalogItemPage, newCatalogItemEdits, stageCatalogItem } from "./catalogItemEdits";
 import type { CatalogDetail, CatalogField } from "./api/catalogResponse";
 
@@ -29,6 +29,16 @@ it("owns staged field maps and compares their contents without depending on prop
   const changed = stageCatalogItem(loaded, { ...original, fields });
   fields.first = "outside";
   expect(catalogItemChanges(changed)[0]?.fields).toEqual({ first: "changed", second: "2" });
+});
+
+it("requires a field value only on active options", () => {
+  const draft = loadCatalogDraftItems(openCatalogDraft({ ...catalog, fields: [{ ...field, required: true }] }), [{ ...item, isActive: false, fields: {} }]);
+  const original = Object.values(draft.items.originals)[0]!;
+  expect(catalogItemFieldIssues(draft, original)).toEqual([]);
+  expect(catalogItemFieldIssues(draft, { ...original, isActive: true })).toEqual([{ fieldId, reason: "required" }]);
+  expect(catalogItemFieldIssues(draft, { ...original, fields: { [fieldId]: "abc" } })).toEqual([{ fieldId, reason: "invalid" }]);
+  const cleared = stageCatalogDraftItem(draft, { ...original, label: { es: "Norte nuevo" }, fields: { [fieldId]: "" } });
+  expect(catalogDraftUpdateBody(cleared).items[0]).toMatchObject({ isActive: false, fields: { [fieldId]: null } });
 });
 
 it("opens canonical decimal bounds in the catalog culture without changing their magnitude", () => {
