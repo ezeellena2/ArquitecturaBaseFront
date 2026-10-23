@@ -188,7 +188,40 @@ export function createResponseVisualFixtures(
   let failOnce = scenario === "responses-error";
   let actionState: "Uncertain" | "Failed" | "Completed" = "Uncertain";
   const workflow = (recordId: string) => ({ ...responseWorkflowFixture(recordId), ...(scenario === "responses-workflow" ? { recordState: "Approved", ruleRevision: 3, actions: [{ id: id(90), ruleId: id(91), kind: "NotifyAuthor", event: "Approved", order: 1, revision: 0, state: actionState, reasonCode: actionState === "Completed" ? null : "Test.Delivery", reason: actionState === "Completed" ? null : en ? "Delivery needs review." : "Revisá la entrega.", canConsult: actionState === "Uncertain", canRetry: actionState === "Failed", recipients: [{ user: { userId: id(92), displayName: "Juan Gómez" }, channelId: "WhatsApp", state: actionState === "Completed" ? "Accepted" : actionState, reasonCode: null, reason: null, canReview: actionState === "Uncertain", review: null, deliveredAtUtc: null, readAtUtc: null }], createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: actionState === "Completed" ? "2026-10-16T12:01:00Z" : null }] } : {}) });
+  const exports: unknown[] = [];
+  if (scenario === "responses-catalog-fields") {
+    sheet.name = en ? "Request a spare part" : "Pedir repuesto";
+    const column = sheet.columns[4];
+    column.label = en ? "Suppliers to contact" : "Proveedores a consultar";
+    column.type = "multiChoice";
+    column.fields = [
+      { fieldId: id(301), key: "cuit", label: "CUIT", type: "text", role: "data" },
+      { fieldId: id(302), key: "zone", label: en ? "Zone" : "Zona", type: "catalog", role: "filter" },
+      { fieldId: id(303), key: "payment_days", label: en ? "Payment terms" : "Plazo de pago", type: "integer", role: "data" },
+    ];
+    const row = sheet.records.items[0];
+    row.cells[4] = {
+      fieldId: column.fieldId, type: "multiChoice", state: "Answered", value: [
+        { choiceId: id(40), label: "Frío Norte SRL", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores", detail: null,
+          fields: [
+            { fieldId: id(301), label: "CUIT", type: "text", role: "data", value: "30-71234567-8" },
+            { fieldId: id(302), label: en ? "Zone" : "Zona", type: "catalog", role: "filter", value: id(320), text: en ? "Center" : "Centro" },
+            { fieldId: id(303), label: en ? "Payment terms" : "Plazo de pago", type: "integer", role: "data", value: "30" },
+          ] },
+        { choiceId: id(41), label: "Repuestos Sur", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores", detail: null,
+          fields: [
+            { fieldId: id(301), label: "CUIT", type: "text", role: "data", value: "30-65432109-7" },
+            { fieldId: id(302), label: en ? "Zone" : "Zona", type: "catalog", role: "filter", value: id(320), text: en ? "Center" : "Centro" },
+            { fieldId: id(303), label: en ? "Previous terms" : "Plazo anterior", type: "text", role: "data", value: en ? "Cash" : "Contado" },
+          ] },
+      ],
+    };
+    sheet.records.items[1].cells[4] = { fieldId: column.fieldId, type: "multiChoice", state: "Answered", value: [
+      { choiceId: id(42), label: en ? "Previous supplier" : "Proveedor anterior", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores", detail: null },
+    ] };
+  }
   return {
+    exports,
     async handle(request: Request): Promise<Response> {
       const url = new URL(request.url);
       const path = url.pathname;
@@ -260,8 +293,13 @@ export function createResponseVisualFixtures(
         );
       }
       if (path.includes("/definitions/")) {
-        if (path.endsWith("/export"))
+        if (path.endsWith("/export")) {
+          if (scenario === "responses-catalog-fields") {
+            exports.push(await request.json());
+            return new Response(new Uint8Array([80, 75, 3, 4]), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": "attachment; filename=E2.xlsx" } });
+          }
           return json({ code: "Forms.Record.ExportTooLarge" }, 400);
+        }
         if (failOnce) {
           failOnce = false;
           return json({ code: "Unexpected", traceId: "visual-response" }, 500);
