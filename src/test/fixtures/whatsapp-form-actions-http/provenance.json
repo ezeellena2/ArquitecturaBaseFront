@@ -1,30 +1,7 @@
 {
-  "generatedAtUtc": "2026-10-22T19:02:20.7265373Z",
-  "runId": "20261022-182821-262ad02cbf954670aa5846d39f54a352",
-  "repositoryHead": "496ec1e59246b3431c7a470f55edb279eedacd13",
-  "artifactSet": "whatsapp-actions",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "chats-form-actions.json",
-      "sha256": "b3a71a7e92052ca27f2a66aebfeb390f2818b5c7a9f6e56dafb8beda39393026",
-      "length": 492
-    },
-    {
-      "name": "thread-form-actions-restricted.json",
-      "sha256": "d495768178b8adc9a5fa008fe61ec2538775c0b160001c279899513b5398f5c6",
-      "length": 1602
-    },
-    {
-      "name": "thread-form-actions.json",
-      "sha256": "e7de92a755e50d1d647dbc46ea488092e5744ea3b603665208a90b22144b7d2a",
-      "length": 1760
-    }
-  ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "schemaVersion": 1,
+  "artifactSet": "whatsapp-actions",
+  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "769692bd79bcdcefd4a0612b1cc0892a6eb505f993c02ff32a1a74539beacf9c",
@@ -38,5 +15,28 @@
       "sha256": "6aeafef0e7c7edf49a05170c057312550d46b2958a44f1dd1556a440c6031e6b",
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppFormActionScenario.cs"
     }
-  ]
+  ],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
+  "sourceState": [],
+  "captures": [
+    {
+      "name": "chats-form-actions.json",
+      "sha256": "3dc9f2948c6ce9394c2d156038ae97afa24a76a486b041c8e837ea23139dfb13",
+      "length": 492
+    },
+    {
+      "name": "thread-form-actions-restricted.json",
+      "sha256": "66e2a883e3c6634c394fb8c2d1316d23c05a197fbbeeb51fe37f2ad7c09c7870",
+      "length": 1602
+    },
+    {
+      "name": "thread-form-actions.json",
+      "sha256": "ed374708290a6501ceee2e897990783d398db218367ded7e0a8d55f9dffd82d2",
+      "length": 1760
+    }
+  ],
+  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario"
 }

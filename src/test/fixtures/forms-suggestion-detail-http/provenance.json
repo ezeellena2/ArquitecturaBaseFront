@@ -1,25 +1,7 @@
 {
-  "generatedAtUtc": "2026-10-22T19:02:20.7265373Z",
-  "runId": "20261022-182821-262ad02cbf954670aa5846d39f54a352",
-  "repositoryHead": "496ec1e59246b3431c7a470f55edb279eedacd13",
-  "artifactSet": "suggestion-details",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "detail-en.json",
-      "sha256": "f7e51ef0b6c1d79121f04cf7c04e87236ba6ce590ca0b6d37e69c6fa8a2716e2",
-      "length": 2059
-    },
-    {
-      "name": "detail-es.json",
-      "sha256": "af2709311f0aee03a451b7fe079c44ebfde6e141e611755ac107715d9f47db23",
-      "length": 2063
-    }
-  ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "schemaVersion": 1,
+  "artifactSet": "suggestion-details",
+  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "d964bf44402720bfe5a00fec51466678dec36ba42b2f6bee1fb5226524a752d9",
@@ -29,5 +11,23 @@
       "sha256": "380024a8f42df81af6bad91fa27ad7e1371bb951a8fd4d77ec0826f89d94f653",
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs"
     }
-  ]
+  ],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
+  "sourceState": [],
+  "captures": [
+    {
+      "name": "detail-en.json",
+      "sha256": "076a7c1adcfa3bd1e8ca4fada579034ab2dd04693c10a5b44a16bb7126e7e4b8",
+      "length": 2059
+    },
+    {
+      "name": "detail-es.json",
+      "sha256": "08bc542d4ca995cf23a306ca521edf591f1aa1ce74f517600aaf75876565ee2a",
+      "length": 2063
+    }
+  ],
+  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture"
 }

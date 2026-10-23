@@ -1,45 +1,7 @@
 {
-  "generatedAtUtc": "2026-10-22T19:02:20.7265373Z",
-  "runId": "20261022-182821-262ad02cbf954670aa5846d39f54a352",
-  "repositoryHead": "496ec1e59246b3431c7a470f55edb279eedacd13",
-  "artifactSet": "catalog-proposals",
-  "sourceState": [],
-  "captures": [
-    {
-      "name": "approved-en.json",
-      "sha256": "fcd37375e257878f8288fb93755c72634b3250b7c946815d71a9fb4be4692a54",
-      "length": 1588
-    },
-    {
-      "name": "conflict.json",
-      "sha256": "aa51de2be51baaa91991dac3e387b32d50d2d63e5ba865c1c3b53fd169d4c2ce",
-      "length": 267
-    },
-    {
-      "name": "detail-pending-en.json",
-      "sha256": "bd007f25159819650e9160c627ab4d53cd39a904c17444bb65bd3f2741c2a5cf",
-      "length": 1453
-    },
-    {
-      "name": "detail-pending-es.json",
-      "sha256": "cb00953b0ab70a1157365eabce7d26e085e5abb0de526ecac1da2e378b7e3a6f",
-      "length": 1459
-    },
-    {
-      "name": "discarded-es.json",
-      "sha256": "24ea621b2a3431ae2928c5e61cf737149bafa9a588fc97723a45589142983bfc",
-      "length": 1561
-    },
-    {
-      "name": "list-original-en-in-es.json",
-      "sha256": "33b0b4723f2fa2ed03c751d8e289a0a6c850a3994292c7bdd0f19f498a23a185",
-      "length": 402
-    }
-  ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
   "schemaVersion": 1,
+  "artifactSet": "catalog-proposals",
+  "generatedAtUtc": "2026-10-23T00:07:12.9140100Z",
   "sources": [
     {
       "sha256": "bf52cdae68d2426e23459ff7c3b4d1b7c24f84882a5d74f760e92d79b7474258",
@@ -53,5 +15,43 @@
       "sha256": "393918492feca3da79522683ca9da35984458d3d65cd164ce2635730906942ff",
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs"
     }
-  ]
+  ],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "repositoryHead": "76b07d6f6d650cc2ebe71b1d2328b835339994d7",
+  "sourceState": [],
+  "captures": [
+    {
+      "name": "approved-en.json",
+      "sha256": "1cf51fd9e59a343628bf9932c3ba59b3afb9f4cd062d199e3ff04b634beae2b8",
+      "length": 1588
+    },
+    {
+      "name": "conflict.json",
+      "sha256": "8991e95c784cf06034bcc688416089a8d247be48fcb37a57fcb6a0a35839f0c8",
+      "length": 267
+    },
+    {
+      "name": "detail-pending-en.json",
+      "sha256": "7f16f5d5d43f541dae09dc0b03fbdddcaba789c9b15973894437c624a7ce2a38",
+      "length": 1453
+    },
+    {
+      "name": "detail-pending-es.json",
+      "sha256": "bc4733a0b76007f71de6880b53ce64eb4e45d4908e6af44f941bc74c7a289205",
+      "length": 1459
+    },
+    {
+      "name": "discarded-es.json",
+      "sha256": "62a1d7e19a83e2de07d121fdc6d25af33aac71592a10f707b37c74f4806314ae",
+      "length": 1561
+    },
+    {
+      "name": "list-original-en-in-es.json",
+      "sha256": "9bba184c14f778f19cbf2da28c6362afa5599be53110a4aad8a7f407a2cbec60",
+      "length": 402
+    }
+  ],
+  "runId": "20261022-232900-f581c74e9c8e4d28940699dd1589547b",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture"
 }

@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Acceso denegado","status":403,"detail":"No podés decidir una respuesta que cargaste vos.","traceId":"00-fc24eb1b3689591234b3f017ad762966-d04a4948e8a6b95a-01","code":"Forms.Approval.OwnResponse"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Acceso denegado","status":403,"detail":"No podés decidir una respuesta que cargaste vos.","traceId":"00-730e817138a8bc9a863345e9172a966b-6cf4c1c3fd2e7724-01","code":"Forms.Approval.OwnResponse"}
