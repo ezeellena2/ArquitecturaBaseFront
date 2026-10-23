@@ -9,19 +9,24 @@ import type { PersonAttribute } from "../api/personData";
 import { localizedValue } from "../editorModel";
 import type { DraftQuestionSource, FormCatalogMatch } from "../model";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
+import { useCatalogItemsById } from "../hooks/useCatalogQueries";
 import { normalizeCatalogQuestionSource } from "../catalogQuestionSource";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
 function FixedValue({ field, value, scope, readOnly, error, onChange }: { field: CatalogField; value: string | null; scope: CatalogReadScope; readOnly: boolean; error?: string; onChange: (value: string | null) => void }) {
   const { t } = useTranslation("forms");
-  const [local, setLocal] = useState<{ value: string | null; input: string | null; valid: boolean } | null>(null);
-  const displayed = local?.value === value ? local.input : formatCatalogFieldValue(field, value, scope.culture);
+  const [local, setLocal] = useState<{ value: string | null; input: string | null; valid: boolean; texts?: Readonly<Record<string, string>> } | null>(null);
+  const mine = local?.value === value ? local : null;
+  const displayed = mine ? mine.input : formatCatalogFieldValue(field, value, scope.culture);
+  // The label of a catalog value is read by id: its option may be beyond the first page of the search, or inactive.
+  const byId = field.type === "catalog" && value !== null && !mine?.texts ? value : null;
+  const option = useCatalogItemsById(scope, byId ? field.sourceCatalogId ?? "" : "", byId ? [byId] : []).data?.items.find(item => item.id === value);
   const draft = { ...openCatalogField(field, scope.culture), required: true };
-  const invalid = local?.value === value && !local.valid;
-  return <CatalogExtraFieldInput field={draft} culture={scope.culture} scope={scope} value={displayed} readOnly={readOnly} label={t("catalogQuestion.filter.fixedValue")} error={error ?? (invalid ? t("catalogQuestion.filter.invalidValue") : undefined)} onChange={input => {
+  const invalid = mine !== null && !mine.valid;
+  return <CatalogExtraFieldInput field={draft} culture={scope.culture} scope={scope} value={displayed} texts={mine?.texts ?? option?.text} readOnly={readOnly} label={t("catalogQuestion.filter.fixedValue")} error={error ?? (invalid ? t("catalogQuestion.filter.invalidValue") : undefined)} onChange={(input, texts) => {
     const parsed = parseCatalogFieldValue(draft, input, scope.culture);
     const next = parsed.valid ? parsed.value : null;
-    setLocal({ value: next, input, valid: parsed.valid });
+    setLocal({ value: next, input, valid: parsed.valid, texts });
     onChange(next);
   }} />;
 }

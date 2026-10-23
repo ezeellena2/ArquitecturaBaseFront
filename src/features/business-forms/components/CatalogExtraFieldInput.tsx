@@ -11,7 +11,7 @@ import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
 import { localizedValue } from "../editorModel";
 
 interface Props {
-  field: CatalogFieldDraft; value: string | null | undefined; texts?: Readonly<Record<string, string>>;
+  field: CatalogFieldDraft; value: string | null | undefined; texts?: Readonly<Record<string, string | null>>;
   culture: FormCulture; label: string; readOnly: boolean; error?: string; scope?: CatalogReadScope;
   id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string;
   onChange: (value: string | null, texts?: Readonly<Record<string, string>>) => void;

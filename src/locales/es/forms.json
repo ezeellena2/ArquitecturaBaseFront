@@ -689,7 +689,6 @@
       "noOptions": "No hay opciones para esta persona."
     },
     "review": {
-      "catalogValue": "opción de catálogo",
       "changedValue": "Cambió el valor elegido",
       "noFilters": "Sin filtros de opciones"
     }

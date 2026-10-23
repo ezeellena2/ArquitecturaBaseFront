@@ -1,11 +1,19 @@
+import type { ReactNode } from "react";
 import { ApiError } from "@/shared/api/ApiError";
 import { useTranslation } from "react-i18next";
 import { formatDateOnly } from "@/shared/lib/dateTime";
+import type { CatalogField } from "../api/catalogResponse";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
-import { useCatalogDetail } from "../hooks/useCatalogQueries";
+import { useCatalogDetail, useCatalogItemsById } from "../hooks/useCatalogQueries";
 import { usePersonAttributes } from "../hooks/usePersonData";
 import { localizedValue } from "../editorModel";
 import type { DraftQuestionSource } from "../model";
+
+// The chosen option is read by id, so its label shows even beyond the first page or once it is inactive, never its GUID.
+function FixedCatalogValue({ scope, field, value }: { scope: CatalogReadScope; field: CatalogField; value: string }) {
+  const option = useCatalogItemsById(scope, field.sourceCatalogId ?? "", [value]).data?.items.find(item => item.id === value);
+  return option ? localizedValue(option.text, scope.culture, "es") : null;
+}
 
 export function CatalogQuestionSourceSummary({ scope, source, compared }: { scope: CatalogReadScope; source: DraftQuestionSource; compared?: DraftQuestionSource | null }) {
   const { t } = useTranslation("forms");
@@ -17,9 +25,9 @@ export function CatalogQuestionSourceSummary({ scope, source, compared }: { scop
   return <span className="mt-1 block space-y-1 text-xs text-[var(--color-content-muted)]">{(source.match ?? []).map(condition => {
     const field = fields.find(field => field.id === condition.fieldId);
     const peer = compared?.match?.find(item => item.fieldId === condition.fieldId);
-    let value: string;
+    let value: ReactNode;
     if ("personAttributeId" in condition) value = localizedValue(attributes.data?.items.find(attribute => attribute.id === condition.personAttributeId)?.name ?? {}, scope.culture, "es") || t("catalogQuestion.filter.personData");
-    else value = field?.type === "catalog" ? t("catalogQuestion.review.catalogValue") : field?.type === "boolean" ? t(condition.value === "true" ? "yes" : condition.value === "false" ? "no" : "translationPending") : field?.type === "decimal" && scope.culture === "es" ? (condition.value ?? "").replace(".", ",") : field?.type === "date" && condition.value ? formatDateOnly(condition.value, scope.culture, "numeric") ?? condition.value : condition.value ?? t("translationPending");
+    else value = field?.type === "catalog" ? condition.value ? <FixedCatalogValue scope={scope} field={field} value={condition.value}/> : t("translationPending") : field?.type === "boolean" ? t(condition.value === "true" ? "yes" : condition.value === "false" ? "no" : "translationPending") : field?.type === "decimal" && scope.culture === "es" ? (condition.value ?? "").replace(".", ",") : field?.type === "date" && condition.value ? formatDateOnly(condition.value, scope.culture, "numeric") ?? condition.value : condition.value ?? t("translationPending");
     const changed = field?.type === "catalog" && "value" in condition && (!peer || !("value" in peer) || condition.value !== peer.value);
     return <span className="block" key={condition.fieldId}>{name(condition.fieldId)}: {value}{changed ? " · " + t("catalogQuestion.review.changedValue") : ""}</span>;
   })}
