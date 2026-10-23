@@ -49,7 +49,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const es = language === "es";
     await page.setViewportSize({ width, height: 900 });
     await open(page, language, "person-data-save-error");
-    const edit = page.getByRole("button", { name: es ? "Editar Juan Gómez" : "Edit Juan Gómez", exact: true });
+    const edit = page.getByRole("button", { name: es ? "Editar a Juan Gómez" : "Edit Juan Gómez", exact: true });
     await edit.click();
     const dialog = page.getByRole("dialog", { name: es ? "Editar usuario" : "Edit user", exact: true });
     const zone = dialog.getByRole("combobox", { name: es ? "Zona" : "Zone", exact: true });

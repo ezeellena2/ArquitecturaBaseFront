@@ -42,7 +42,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("CE2 typed values columns and contained scrolling " + language + " " + width, async ({ page }, info) => {
     const es = language === "es", term = es ? "Plazo de pago (días)" : "Payment term (days)";
     await page.setViewportSize({ width, height: 900 }); await open(page, language);
-    const region = page.getByRole("region", { name: es ? "Opciones" : "Options", exact: true });
+    const region = page.locator(`[data-slot="table-container"][role="region"][aria-label="${es ? "Opciones" : "Options"}"]`);
     await contained(page, region, width);
     expect(await region.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
     await region.evaluate(node => { node.scrollLeft = node.scrollWidth; });
