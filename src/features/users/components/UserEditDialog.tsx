@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/shared/ui/notifications";
@@ -23,6 +23,7 @@ import { VerifyDestinationDialog } from "@/shared/ui/VerifyDestinationDialog";
 import { displayNameMaxLength } from "@/shared/api/accountRules";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { rolesQueryKey } from "@/shared/api/roles";
+import { UserDataSectionContext, type UserDataSaveState } from "@/shared/hooks/userDataSectionContext";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { cn } from "@/shared/lib/utils";
 import { Banner } from "@/shared/ui/Banner";
@@ -160,6 +161,20 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   const isMounted = useRef(true);
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
   const unverifiedNoteId = useId();
+  const extension = useContext(UserDataSectionContext);
+  const extraOwner = useMemo(() => ({ userId: user.id, extension }), [user.id, extension]);
+  const currentExtraOwner = useRef(extraOwner), submittedExtraOwner = useRef<object | null>(null);
+  useLayoutEffect(() => { currentExtraOwner.current = extraOwner; }, [extraOwner]);
+  const extraState = useRef<{ owner: object; value: UserDataSaveState } | null>(null);
+  const [extraStatus, setExtraStatus] = useState<{ owner: object | null; busy: boolean; ready: boolean }>({ owner: null, busy: false, ready: false });
+  const extraFlags = extraStatus.owner === extraOwner ? extraStatus : { busy: false, ready: false };
+  const [savedExtraOwner, setSavedExtraOwner] = useState<object | null>(null);
+  const userSaved = savedExtraOwner === extraOwner;
+  const onExtraState = useCallback((next: UserDataSaveState) => {
+    if (currentExtraOwner.current !== extraOwner) return;
+    extraState.current = { owner: extraOwner, value: next };
+    setExtraStatus(previous => previous.owner === extraOwner && previous.busy === next.busy && previous.ready === next.ready ? previous : { owner: extraOwner, busy: next.busy, ready: next.ready });
+  }, [extraOwner]);
 
   const [draft, setDraft] = useState<DraftValues | undefined>();
   const [loadedUserId, setLoadedUserId] = useState<string | undefined>();
@@ -226,7 +241,10 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   const mutation = useMutation({
     mutationFn: (body: UpdateUserBody) => updateUser(user.id, body),
     onSuccess: async () => {
-      notify({ id: "features/users/components/UserEditDialog:1", kind: "success", message: t("edit.success") });
+      if (!isMounted.current || submittedExtraOwner.current !== currentExtraOwner.current) return;
+      setSavedExtraOwner(extraOwner);
+      const extra = extraState.current?.owner === extraOwner ? extraState.current.value : null;
+      const extraSaved = !extra?.dirty || await extra.save();
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
         queryClient.invalidateQueries({ queryKey: userQueryKey(user.id) }),
@@ -234,7 +252,10 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
         // Si se cambió los roles a sí mismo, sus propios permisos pueden haber cambiado.
         queryClient.invalidateQueries({ queryKey: currentUserQueryKey }),
       ]);
-      onClose();
+      if (isMounted.current && extraSaved) {
+        notify({ id: "features/users/components/UserEditDialog:1", kind: "success", message: t("edit.success") });
+        onClose();
+      }
     },
     onError: (error) => {
       const next = userFormErrors(error, t, isMounted.current ? visibleFields : []);
@@ -267,6 +288,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   }
 
   function submit(values: DraftValues) {
+    if (extension && (!extraFlags.ready || extraFlags.busy)) return;
     const newEmail = isAddingEmail ? email.trim() : "";
     const newNumber = isAddingPhone ? number.trim() : "";
 
@@ -278,6 +300,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
 
     setErrors({ fields: {} });
     // Lo que no se agregó no viaja: ausente, el backend lo deja como está.
+    submittedExtraOwner.current = extraOwner;
     mutation.mutate({
       displayName: values.displayName.trim() || null,
       roles: values.roles,
@@ -368,6 +391,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
               </FormField>
 
               <RolesField value={draft.roles} onChange={(roles) => setDraft({ ...draft, roles })} />
+              {extension ? <extension.Section userId={user.id} disabled={mutation.isPending} userSaved={userSaved} onState={onExtraState} /> : null}
 
               {/* `shrink-0`: con `overflow-hidden`, un hijo de una columna flexible se deja achicar por debajo de su
                   contenido. Con el reenvío abierto el cuerpo no entraba, y en vez de scrollear, la caja se comía la fila
@@ -497,7 +521,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                 <Button type="button" variant="outline" onClick={onClose}>
                   {t("common:actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={mutation.isPending}>
+                <Button type="submit" disabled={mutation.isPending || !!extension && (!extraFlags.ready || extraFlags.busy)}>
                   {mutation.isPending ? t("edit.saving") : t("edit.submit")}
                 </Button>
               </DialogFooter>
