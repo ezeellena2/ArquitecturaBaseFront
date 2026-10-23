@@ -11,7 +11,7 @@ import { PublicationCheckDialog } from "./PublicationCheckDialog";
 const definition = fixtureDefinition();
 const value = openDraftSession({ actorId: "actor", editorId: "editor" }, definition).value;
 const checked: FormPublicationCheck = { definitionId: definition.id, draftRevision: 1, nextVersionNumber: 3, compatibility: "LocallyValidated", canAccept: true,
-  acceptanceAvailability: "Available", checkToken: "synthetic-ticket", checkExpiresAtUtc: "2099-10-10T16:00:00Z", channels: [{ channelId: "phone", profileRevision: "1", compatibility: "LocallyValidated", externalEvidence: "Pending", cultures: ["es", "en"] }], issues: [],
+  acceptanceAvailability: "Available", checkToken: "synthetic-ticket", checkExpiresAtUtc: "2099-10-10T16:00:00Z", warnings: [], channels: [{ channelId: "phone", profileRevision: "1", compatibility: "LocallyValidated", externalEvidence: "Pending", cultures: ["es", "en"] }], issues: [],
   cultures: [{ culture: "es", isOriginal: true, isComplete: true, missing: [] }, { culture: "en", isOriginal: false, isComplete: true, missing: [] }],
   diff: { baseVersionId: "previous", added: [definition.draft.fields[0]!.fieldId], changed: [definition.draft.fields[1]!.fieldId], removed: ["retired"], addedCultures: [], removedCultures: [] } };
 let result = checked;
@@ -143,5 +143,14 @@ it("keeps one removal warning and its omissions without an editing action for Pu
   expect(within(notice).getByText("El inglés deja de publicarse.")).toBeInTheDocument();
   expect(within(notice).getAllByRole("listitem")).toHaveLength(3);
   expect(within(notice).queryByRole("button")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
+});
+
+it("shows recipient diagnostics without disabling an otherwise publishable version", async () => {
+  result = { ...checked, warnings: [{ fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh", message: "Como mucho 18 opciones de 20.", limit: 20, maximum: 18 }, { fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.RecipientsWithoutData", message: "2 personas sin sucursal.", count: 2, people: ["Ana", "Luis"] }] };
+  await mount();
+  expect(screen.getByText("Como mucho 18 opciones de 20.")).toBeInTheDocument();
+  expect(screen.getByText("2 personas sin sucursal.")).toBeInTheDocument();
+  expect(screen.getByText("Ana, Luis")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
 });

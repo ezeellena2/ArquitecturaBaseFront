@@ -240,7 +240,14 @@
     "cultureRemoved": "{{language}} will no longer be published.",
     "cultureRemovedHint": "From version {{version}}, accounts in {{language}} receive it in {{original}}.",
     "publishedLanguages": "Version {{version}} is published in {{languages}}.",
-    "willSendCultures": "It is sent to WhatsApp in {{languages}}."
+    "willSendCultures": "It is sent to WhatsApp in {{languages}}.",
+    "blockingIssues": "Problems · block publication",
+    "nonBlockingWarnings": "Warnings · do not block publication",
+    "noDiagnostics": "None.",
+    "recipientMaximum": "At most {{maximum}} options per person, against a limit of {{limit}}.",
+    "recipientMaximumForGroup": "At most {{maximum}} options per person ({{group}}), against a limit of {{limit}}.",
+    "recipientsMissingData_one": "{{count}} person is missing the data needed to receive it.",
+    "recipientsMissingData_other": "{{count}} people are missing the data needed to receive it."
   },
   "reviewNoSave": "Neither option saves. After choosing, review the marked changes and select “Save draft”.",
   "reviewChangesToInspect": "Changes from the other revision to review",

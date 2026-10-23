@@ -240,7 +240,14 @@
     "cultureRemoved": "El {{language}} deja de publicarse.",
     "cultureRemovedHint": "Desde la versión {{version}}, las cuentas en {{language}} lo reciben en {{original}}.",
     "publishedLanguages": "Publicamos la versión {{version}}, en {{languages}}.",
-    "willSendCultures": "Se manda a WhatsApp, en {{languages}}."
+    "willSendCultures": "Se manda a WhatsApp, en {{languages}}.",
+    "blockingIssues": "Problemas · frenan",
+    "nonBlockingWarnings": "Avisos · no frenan",
+    "noDiagnostics": "Ninguno.",
+    "recipientMaximum": "Como mucho {{maximum}} opciones por persona, de un límite de {{limit}}.",
+    "recipientMaximumForGroup": "Como mucho {{maximum}} opciones por persona ({{group}}), de un límite de {{limit}}.",
+    "recipientsMissingData_one": "{{count}} persona no tiene el dato necesario para recibirlo.",
+    "recipientsMissingData_other": "{{count}} personas no tienen el dato necesario para recibirlo."
   },
   "reviewNoSave": "Ninguna opción guarda. Después de elegir, revisás los cambios marcados y tocás «Guardar borrador».",
   "reviewChangesToInspect": "Cambios de la otra revisión para revisar",

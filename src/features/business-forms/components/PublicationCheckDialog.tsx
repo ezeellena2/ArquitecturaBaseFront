@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
+import { AlertTriangleIcon, CheckIcon, InfoIcon } from "@/shared/ui/icons";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { localizedValue } from "../editorModel";
 import { useFormPublicationCheck } from "../hooks/useFormPublicationCheck";
@@ -95,8 +96,29 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
           </Banner>;
         })}
 
-        {check.result.issues.length ? <ul className="flex flex-col gap-3">{check.result.issues.map((issue, index) => <li key={issue.path + ":" + index}><Surface padded><p className="text-sm font-medium">{issueName(issue)}</p><p className="text-sm">{issue.message}</p>{issue.fieldId || issue.path.startsWith("name.") || issue.path.startsWith("draft.submitLabel.") ? <div><Button type="button" size="sm" variant="outline" onClick={() => { locatingIssue.current = true; onGoToIssue(issue); }}>{t(issue.fieldId ? "publication.goToQuestion" : "publication.goToText")}</Button></div> : null}</Surface></li>)}</ul>
-          : <Surface title={t("publication.fixed")} padded><p className="text-sm">{t("publication.fixedQuestions")}</p>{!prefixLocked ? <p className="text-sm">{t("publication.fixedPrefix", { prefix: value.prefix })}</p> : null}<p className="text-sm text-[var(--color-content-muted)]">{t("publication.acceptedNotPublished")}</p></Surface>}
+        <div className="flex flex-col gap-3">
+          <h3 className="text-sm font-medium">{t("publication.blockingIssues")}</h3>
+          {check.result.issues.length ? <ul className="flex flex-col gap-3">{check.result.issues.map((issue, index) => <li key={issue.path + ":" + index}><Surface padded><p className="text-sm font-medium">{issueName(issue)}</p><p className="text-sm">{issue.message}</p>{issue.fieldId || issue.path.startsWith("name.") || issue.path.startsWith("draft.submitLabel.") ? <div><Button type="button" size="sm" variant="outline" onClick={() => { locatingIssue.current = true; onGoToIssue(issue); }}>{t(issue.fieldId ? "publication.goToQuestion" : "publication.goToText")}</Button></div> : null}</Surface></li>)}</ul>
+          : <p className="flex items-center gap-2 text-sm text-[var(--color-success-700)]"><CheckIcon aria-hidden="true" className="size-4 shrink-0" />{t("publication.noDiagnostics")}</p>}
+        </div>
+        <div className="flex flex-col gap-3">
+          <h3 className="text-sm font-medium">{t("publication.nonBlockingWarnings")}</h3>
+          {check.result.warnings.length ? <ul className="flex flex-col gap-3">{check.result.warnings.map((warning, index) => {
+            const question = value.draft.fields.find(field => field.fieldId === warning.fieldId);
+            const Icon = warning.code === "Forms.Publication.RecipientsWithoutData" ? AlertTriangleIcon : InfoIcon;
+            return <li key={warning.path + ":" + index} className="flex items-start gap-2">
+              <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--color-warning-700)]" />
+              <div className="flex min-w-0 flex-col gap-1 text-sm">
+                {question ? <p className="font-medium">{localizedValue(question.label, scope.culture, value.draft.culture)}</p> : null}
+                <p>{warning.message}</p>
+                {warning.maximum !== undefined && warning.limit !== undefined ? <p className="text-[var(--color-content-muted)]">{t(warning.maximumLabel ? "publication.recipientMaximumForGroup" : "publication.recipientMaximum", { maximum: warning.maximum, limit: warning.limit, group: warning.maximumLabel })}</p> : null}
+                {warning.count !== undefined ? <p className="text-[var(--color-content-muted)]">{t("publication.recipientsMissingData", { count: warning.count })}</p> : null}
+                {warning.people?.length ? <p>{warning.people.join(", ")}</p> : null}
+              </div>
+            </li>;
+          })}</ul> : <p className="flex items-center gap-2 text-sm text-[var(--color-success-700)]"><CheckIcon aria-hidden="true" className="size-4 shrink-0" />{t("publication.noDiagnostics")}</p>}
+        </div>
+        {!check.result.issues.length ? <Surface title={t("publication.fixed")} padded><p className="text-sm">{t("publication.fixedQuestions")}</p>{!prefixLocked ? <p className="text-sm">{t("publication.fixedPrefix", { prefix: value.prefix })}</p> : null}<p className="text-sm text-[var(--color-content-muted)]">{t("publication.acceptedNotPublished")}</p></Surface> : null}
         {expired ? <p role="status" className="text-sm">{t("publication.expired")}</p> : !check.result.canAccept ? <p className="text-sm text-[var(--color-content-muted)]">{t(check.result.acceptanceAvailability === "InProgress" ? "publication.inProgress" : "publication.unavailable")}</p> : <Surface title={t("publication.whatHappens")} padded><ol className="list-decimal space-y-1 pl-5 text-sm"><li>{t("publication.willAccept")}</li><li>{publishedCultures.length ? t("publication.willSendCultures", { languages }) : t("publication.willSend")}</li><li>{t("publication.willActivate")}</li></ol></Surface>}
       </div> : null}
     {cooldown.isRunning ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("wait", { count: cooldown.seconds })}</p> : null}
