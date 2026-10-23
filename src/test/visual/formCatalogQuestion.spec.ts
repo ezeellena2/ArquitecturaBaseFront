@@ -20,8 +20,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("option", { name: new RegExp(label("Responsables de obra", "Site managers")) })).toBeDisabled();
     await expect(page.getByRole("option", { name: new RegExp(label("Archivados", "Archived")) })).toBeDisabled();
     const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
-    await expect(preview.getByRole("combobox", { name: label("Cliente", "Customer"), exact: true })).toBeDisabled();
-    await expect(preview.getByRole("option")).toHaveCount(1);
+    await expect(preview.getByRole("combobox", { name: label("Cliente", "Customer"), exact: true })).toBeEnabled();
+    await expect(preview.getByRole("option")).toHaveCount(4);
+    await expect(preview.getByRole("option", { name: "Pérez", exact: true })).toHaveText("Pérez");
     await page.getByRole("button", { name: label("Página siguiente", "Next page"), exact: true }).click();
     await expect(page.getByText(label("Página 2 de 2", "Page 2 of 2"), { exact: true })).toBeVisible();
     await expect(catalog).toHaveValue(visualCatalogId);
@@ -52,7 +53,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: label("Editar Cliente", "Edit Customer"), exact: true }).click();
     await expect(catalog).toHaveValue(filtersId); await catalog.scrollIntoViewIfNeeded(); await geometry(); await page.screenshot({ path: info.outputPath("catalog-saved.png"), fullPage: true });
     const calls = await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { calls: { path: string }[] } }).catalogsFixture.calls);
-    expect(calls.some(call => call.path.includes("catalog-previews") || call.path.endsWith("/items") || call.path.includes("catalog-filter-options"))).toBe(false);
+    expect(calls.some(call => call.path.endsWith("/items"))).toBe(true);
+    expect(calls.some(call => call.path.includes("catalog-previews") || call.path.includes("catalog-filter-options"))).toBe(false);
   });
   test("Catalog question permissions " + language + " " + width, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 }); const english = language === "en";

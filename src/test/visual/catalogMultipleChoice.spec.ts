@@ -56,10 +56,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
     await preview.scrollIntoViewIfNeeded();
     if (catalog) {
-      await expect(preview.getByText(label("Las opciones se preparan según quien lo recibe, al mandar el formulario.", "Options are prepared for the recipient when sending the form."), { exact: true })).toBeVisible();
-      await expect(preview.getByRole("checkbox")).toHaveCount(0);
-      expect(await page.evaluate(() => (window as typeof window & { catalogsFixture: { calls: { path: string }[] } }).catalogsFixture.calls
-        .some(call => call.path.endsWith("/items") || call.path.includes("catalog-previews")))).toBe(false);
+      await expect(preview.getByRole("checkbox")).toHaveCount(3);
+      await preview.getByText("Pérez", { exact: true }).click();
+      await expect(preview.getByRole("checkbox", { name: "Pérez", exact: true })).toBeChecked();
+      const calls = await page.evaluate(() => (window as typeof window & { catalogsFixture: { calls: { path: string }[] } }).catalogsFixture.calls);
+      expect(calls.some(call => call.path.endsWith("/items"))).toBe(true);
+      expect(calls.some(call => call.path.includes("catalog-previews") || call.path.includes("catalog-filter-options"))).toBe(false);
     } else {
       await expect(preview.getByText(label("Elegí hasta 3", "Choose up to 3"), { exact: true })).toBeVisible();
       await preview.getByText(label("Frío", "Cold"), { exact: true }).click();
