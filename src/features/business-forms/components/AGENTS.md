@@ -33,6 +33,7 @@ Cada pieza implementa parte de un tablero elegido con `shared/ui` y recibe datos
 - `CatalogFiltersEditor` traduce columnas y operadores por key, usa las etiquetas de choices del backend y sólo admite el nombre como texto. Un rol guardado que ya no existe conserva su ID y dice «Valor no disponible», sin GUID. `filters.conditions[n]` se muestra junto a su valor.
 - `CatalogStateAction` confirma baja o reactivación; se aplica con Guardar.
 - `CatalogQuestionSelector`: activos elegibles; inactivos y no disponibles visibles y deshabilitados; el seleccionado se conserva fuera de página y buscar vuelve a la página 1. Los nombres exigen leer catálogos; editar, sólo Manage de formularios. Sin lectura no consulta y conserva la referencia; `CatalogQuestionName` retira el nombre ante 401 o 403. Una búsqueda sin coincidencias no es un catálogo vacío; `usageCount` null no es cero.
+- `CatalogQuestionSettings` reúne la configuración de la fuente en la pregunta; delega el selector y deja al dueño de la pregunta la confirmación de cambios de identidad.
 
 ### Planilla, filtros y Excel
 

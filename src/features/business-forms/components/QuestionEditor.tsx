@@ -18,7 +18,7 @@ import { CatalogQuestionName } from "./CatalogQuestionName";
 import { FileQuestionSettings } from "./FileQuestionSettings";
 import { SelectionRangeFields } from "./SelectionRangeFields";
 import { changeQuestionMultiplicity, validSelectionCounts } from "../selectionQuestions";
-import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
+import { CatalogQuestionSettings } from "./CatalogQuestionSettings";
 
 const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
 export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, filesAvailable = false }: {
@@ -99,7 +99,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
         </div>
       </div>
       {question.type === "photo" || question.type === "document" ? <FileQuestionSettings question={question} readOnly={readOnly} error={fieldError("files")} onChange={onChange} /> : null}
-      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSelector scope={catalogScope ?? { actorId: null, culture, permissions: [] }} value={question.source.catalog ?? ""} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onChange={catalogId => {
+      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
         if (catalogId === question.source?.catalog) return;
         if (question.fieldId) setConfirmation({ catalog: catalogId });
         else onChange(changeQuestionCatalog(question, catalogId, question.localId));
