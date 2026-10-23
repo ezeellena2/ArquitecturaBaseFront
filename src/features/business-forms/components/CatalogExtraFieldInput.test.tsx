@@ -25,3 +25,13 @@ it("can clear an optional boolean without turning the empty value into false", a
   await userEvent.click(screen.getByRole("button", { name: "Limpiar Confirmado" }));
   expect(change).toHaveBeenCalledWith(null);
 });
+it.each([["boolean", "Con GPS"], ["date", "30 días"]] as const)("shows a saved value the %s control cannot hold as it is until it is cleared", async (type, saved) => {
+  const change = vi.fn();
+  await act(async () => { renderWithProviders(<CatalogExtraFieldInput field={{ ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", type, required: true }} label="Fila 1 · Dato" value={saved} culture="es" readOnly={false} onChange={change} />); });
+  const input = screen.getByRole("textbox", { name: "Fila 1 · Dato" });
+  expect(input).toHaveValue(saved);
+  expect(input).toHaveAttribute("readonly");
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Limpiar Fila 1 · Dato" }));
+  expect(change).toHaveBeenCalledWith(null);
+});

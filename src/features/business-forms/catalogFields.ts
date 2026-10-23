@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import type { CatalogField } from "./api/catalogResponse";
-import { formatCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
+import { formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
 import type { FormCulture } from "./model";
 
 export type CatalogFieldType = CatalogField["type"];
@@ -11,6 +11,12 @@ export type CatalogFieldProblemReason = Extract<CatalogFieldValueResult, { valid
 const textMaxLength = 300;
 /** An option of the source catalog: a non-empty GUID. */
 export const isCatalogOptionId = (text: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text) && !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(text);
+/** A loaded value the control of the draft type cannot hold (a type change pending save), shown as it is until edited. */
+export function unconvertedFieldValue(type: CatalogFieldType, value: string | null | undefined): string | null {
+  if (!value) return null;
+  const fits = type === "catalog" ? isCatalogOptionId(value) : type === "boolean" ? value === "true" || value === "false" : type === "date" ? isCanonicalCatalogValue("Date", value) : true;
+  return fits ? null : value;
+}
 
 export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: { es: "" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, hasValues: false, usedBy: [] });
 export const openCatalogField = (field: CatalogField, culture: FormCulture = "es"): CatalogFieldDraft => ({ ...field, localId: field.id, name: { ...field.name }, min: field.min === null ? null : formatCatalogFieldValue(field, field.min, culture), max: field.max === null ? null : formatCatalogFieldValue(field, field.max, culture), usedBy: field.usedBy.map(use => ({ ...use })) });

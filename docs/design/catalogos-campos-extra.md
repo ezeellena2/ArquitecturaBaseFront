@@ -79,7 +79,9 @@ ve también la lista, como al tocarlo.
   sobre los valores guardados. Si alguno no convierte, se abre «Cambiar el tipo» como en CE1, armado con las filas que
   devuelve el servidor (hasta 50, con número, valor y motivo): muestra cinco y «Y N más.». «Ver los N en la tabla» deja en
   la tabla solo esas opciones, con un chip «Con error · N filas» que se quita para volver al listado; buscar, guardar o
-  releer y adoptar también lo quitan. Cada celda queda marcada con su motivo hasta que se la edita. La lista de códigos
+  releer y adoptar también lo quitan. Cada celda queda marcada con su motivo hasta que se la edita. Mientras el cambio no
+  se guarda, un valor que el control del tipo nuevo no admite se ve tal cual: en catálogo, en el buscador; en Sí/No y
+  fecha, en un campo de sólo lectura con «Limpiar», que lo vacía para cargarlo con la casilla o la fecha. La lista de códigos
   que mostraba la sección «Campos» se retira.
 
 ## Lo que no se ve en las pantallas
