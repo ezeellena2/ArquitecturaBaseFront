@@ -169,27 +169,44 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     expect(screen.getByRole("combobox", { name: "Zona" })).toHaveValue("Sur");
   });
-  it("opens the type change dialog from the server rows and filters the table to them", async () => {
-    vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(min-width: 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }) as MediaQueryList);
+  const secondItemId = "01990000-0000-7000-8000-000000000022";
+  const termRows = [{ ...option, fields: { [fieldId]: "30 días" } }, { ...option, id: secondItemId, code: "C2", text: { es: "Gómez", en: null }, position: 2, fields: { [fieldId]: "60 días" } }];
+  function viewport(desktop: boolean) {
+    vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: desktop && query === "(min-width: 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }) as MediaQueryList);
+  }
+  // «Plazo» goes from text to integer: the first Save comes back with `invalid` on the given option, later ones succeed.
+  function conversionSetup(invalid = termRows[0]!) {
     const term = savedField({ key: "term", name: "Plazo", type: "text" });
-    const rows = [{ ...option, fields: { [fieldId]: "30 días" } }, { ...option, id: "01990000-0000-7000-8000-000000000022", code: "C2", text: { es: "Gómez", en: null }, position: 2, fields: { [fieldId]: "60" } }];
     const message = "Hay valores que no se convierten al tipo nuevo.";
-    const requests: URLSearchParams[] = [];
+    const requests: URLSearchParams[] = []; let saves = 0;
     setup();
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, itemsCount: 2, fields: [term] })),
       http.get("/api/forms/catalogs/" + id + "/items", ({ request }) => {
         const query = new URL(request.url).searchParams; requests.push(query);
-        const ids = query.getAll("ids"), items = ids.length ? rows.filter(row => ids.includes(row.id)) : rows;
+        const ids = query.getAll("ids"), items = ids.length ? termRows.filter(row => ids.includes(row.id)) : termRows;
         return HttpResponse.json({ items, page: 1, pageSize: Number(query.get("pageSize")), totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
       }),
-      http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.FieldTypeNotConvertible", title: "Datos inválidos", detail: message, errors: { "fields[0].type": [message] }, convertedCount: 1, invalidCount: 1, invalidRows: [{ itemId, code: "C1", row: 1, value: "30 días", reason: "invalid" }] }, { status: 400, headers: { "content-type": "application/problem+json" } })));
-    await mount("/catalogos/" + id); const user = userEvent.setup();
+      http.put("/api/forms/catalogs/" + id, () => saves++
+        ? HttpResponse.json({ catalog: { ...initial, revision: 2, itemsCount: 2, fields: [{ ...term, type: "integer" }] }, itemIdentityMap: {}, fieldIdentityMap: {} })
+        : HttpResponse.json({ code: "Forms.Catalog.FieldTypeNotConvertible", title: "Datos inválidos", detail: message, errors: { "fields[0].type": [message] }, convertedCount: 1, invalidCount: 1, invalidRows: [{ itemId: invalid.id, code: invalid.code, row: invalid.position, value: invalid.fields[fieldId], reason: "invalid" }] }, { status: 400, headers: { "content-type": "application/problem+json" } })));
+    return requests;
+  }
+  async function saveTypeChange(user: ReturnType<typeof userEvent.setup>) {
+    await mount("/catalogos/" + id);
     await user.click(await screen.findByRole("button", { name: "Editar campos" }));
     await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
-    expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
-    const dialog = await screen.findByRole("dialog", { name: "Cambiar el tipo de «Plazo»" });
+    return screen.findByRole("dialog", { name: "Cambiar el tipo de «Plazo»" });
+  }
+  async function showErrorRows(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(within(await saveTypeChange(user)).getByRole("button", { name: "Ver la fila en la tabla" }));
+    expect(await screen.findByText("Con error · 1 fila")).toBeInTheDocument();
+  }
+  it("opens the type change dialog from the server rows and filters the table to them", async () => {
+    viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
+    const dialog = await saveTypeChange(user);
     expect(within(dialog).getByText("De texto a entero")).toBeInTheDocument();
     expect(within(dialog).getByText("Se revisan los 2 valores cargados: 1 se convierte y 1 no.")).toBeInTheDocument();
     expect(within(dialog).getByRole("cell", { name: "«30 días» no es un número entero." })).toBeInTheDocument();
@@ -213,6 +230,31 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await pasteText(user, screen.getByRole("textbox", { name: "Fila 1 · Plazo" }), "30");
     expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeValid();
     expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
+  });
+  it("goes back to the whole list when searching while the rows with errors show", async () => {
+    viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
+    await showErrorRows(user);
+    await user.type(screen.getByRole("searchbox", { name: "Buscar opción" }), "Gó");
+    await waitFor(() => expect(screen.queryByText("Con error · 1 fila")).not.toBeInTheDocument());
+    await waitFor(() => expect(requests.at(-1)?.get("search")).toBe("Gó"));
+    expect(requests.at(-1)?.getAll("ids")).toEqual([]);
+  });
+  it("drops the marks and the filter when the field goes back to its saved type", async () => {
+    viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
+    await showErrorRows(user);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
+    expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
+    expect(screen.queryByText("Con error · 1 fila")).not.toBeInTheDocument();
+    expect(requests.at(-1)?.getAll("ids")).toEqual([]);
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeValid();
+  });
+  it("drops the filter when saving again", async () => {
+    viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
+    await showErrorRows(user);
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(screen.queryByText("Con error · 1 fila")).not.toBeInTheDocument());
+    expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
+    expect(requests.at(-1)?.getAll("ids")).toEqual([]);
   });
   it("retains a conflicted draft through reread and requires an explicit adoption without a second write", async () => {
     setup(); let writes = 0;
