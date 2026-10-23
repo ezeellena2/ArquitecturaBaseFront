@@ -27,7 +27,7 @@ Familias:
 - El detalle es `{ definition, lifecycle, capabilities, audit, publication }`. `lifecycle` es metadata hermana del borrador: no participa del guardado ni de la revisión, y `responseCount` null es desconocido, nunca cero.
 - La definición guardada exige nombre de hasta 120 caracteres sin espacios sobrantes, textos del idioma original no vacíos, ids únicos, `key = field_<FieldId sin guiones>`, hasta 40 preguntas; single admite hasta 50 opciones y multi hasta 20. `selection` se exige sólo en multiChoice: mínimo 0..máximo, máximo 1..20, required iff mínimo >0 y mínimo no mayor a opciones propias. Null se omite fuera de ese tipo. `maxLength` sólo en textos; `options` u `source` sólo en una lista y mutuamente excluyentes; `files` sólo en Foto o Documento, con `required` igual a `minFiles > 0` y origen sólo en Foto. Los snapshots anteriores a archivos omiten `files`, sin inventar valores. `help` es null o trae textos no vacíos. `offerWhen` es null o hasta 1000 caracteres recortados y no viaja en el chequeo ni en la aceptación.
 - La proyección separa versión activa y operación actual: sólo con `canPublish` la operación trae `requestId` y su ruta propia; `canPreview` exige versión activa. Alta y guardado devuelven el commit con mapa de identidad; la recuperación envuelve el resultado original junto a `currentRevision`.
-- El chequeo valida que cada diagnóstico apunte a una pregunta u opción del cuerpo enviado, que `canAccept` venga con ticket y vencimiento (y sin ellos cuando no se acepta) y que definición y revisión coincidan. El estado exige `issues` y `cultures` como arrays.
+- El chequeo valida que cada diagnóstico apunte a una pregunta u opción del cuerpo enviado, que `canAccept` venga con ticket y vencimiento (y sin ellos cuando no se acepta) y que definición y revisión coincidan. El estado exige `issues` y `cultures` como arrays. El chequeo también exige `warnings` separado (incluso vacío); sus IDs deben pertenecer al snapshot enviado.
 - La vista oficial pide `culture` explícita y `no-store`, exige HTTPS sin credenciales y rechaza una URL vencida (`ExpiredFormPreview`).
 
 ### Catálogos
@@ -39,8 +39,13 @@ Familias:
 
 ### Datos de personas
 
-- `personData.ts` cierra metadatos, tabla sin correo, valores por GUID y opciones exclusivas id/text. La fuente Catalog exige identidad; Text, null. Nombres sólo es obligatorio. Revisión inicial null, primera escritura1 y edición exactamente siguiente con misma persona/atributo; no retiene issues. Todas las llamadas son no-store y cancelables, sin MutationCache.
+- `personData.ts` cierra metadatos, tabla sin correo, valores por GUID y opciones exclusivas id/text. La fuente Catalog exige identidad; Text, null. Del nombre, sólo el español es obligatorio. Revisión inicial null, primera escritura 1 y edición exactamente siguiente con misma persona/atributo; no retiene issues. Todas las llamadas son no-store y cancelables, sin MutationCache.
 - PUT de datos envía delta: ausente conserva, null limpia; los valores inactivos no se devuelven. El selector paginado de opciones no requiere CatalogsRead. `personDataHttpContract` consume los cuerpos intactos de la cohorte `personData` de la corrida conjunta.
+
+### Vista previa por persona
+
+- `recipientPreview.ts` usa recipient-samples y el POST de recipient-previews con `canonicalCatalogSourceSchema` compartido (fuente cerrada, Match XOR y presentación), persona explícita y cultura. Son lecturas no-store cancelables, sin guardar ni MutationCache. El guard conserva Ready, RecipientDataMissing y FilterUnavailable; el límite es 20 o 200 y la muestra común cuenta hasta 201, pero muestra como máximo el límite. Representa títulos vacíos/largos y descripciones largas para que el editor explique el diagnóstico.
+- El cliente comprueba persona, límite según tipo y que los valores personales correspondan sólo a atributos del Match enviado. Respuestas, opciones, diagnósticos y muestras son cerrados; nunca retiene issues privados de zod ni agrega actor al cuerpo.
 
 ### Respuestas, reglas, PDF, workflow y faltantes
 
