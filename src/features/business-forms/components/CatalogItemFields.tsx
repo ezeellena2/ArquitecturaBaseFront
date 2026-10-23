@@ -10,20 +10,29 @@ import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
+import type { CatalogFieldDraft } from "../catalogFields";
+import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
+import { localizedValue } from "../editorModel";
+import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-export function CatalogItemFields({ item, culture, valueType, readOnly, errors, warning, onGenerateCode, onChange, onDone }: {
+export function CatalogItemFields({ item, culture, valueType, fields = [], scope, readOnly, errors, warning, onGenerateCode, onChange, onDone }: {
   item: CatalogManualItemValue; culture: FormCulture; valueType: CatalogValueType; readOnly: boolean;
   errors?: Readonly<Record<string, readonly string[]>>; warning?: string; onGenerateCode?: () => void;
   onChange: (item: CatalogManualItemValue) => void; onDone: () => void;
+  fields?: readonly CatalogFieldDraft[]; scope?: CatalogReadScope;
 }) {
   const { t } = useTranslation("forms");
   const textRef = useRef<HTMLInputElement>(null);
-  const columns = catalogItemColumns(valueType, culture);
+  const columns = catalogItemColumns(valueType, culture, fields);
   useEffect(() => { textRef.current?.focus(); }, []);
   return <Surface padded>
     <div className="grid gap-4 sm:grid-cols-2">
       {columns.map(column => {
         const error = errors?.[column.errorPath]?.join(" ");
+        if (column.field) {
+          const field = column.field, key = field.id ?? field.localId, label = localizedValue(field.name, culture, "es");
+          return <FormField key={column.id} label={label} required={field.required} error={error}><CatalogExtraFieldInput field={field} scope={scope} label={label} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} culture={culture} readOnly={readOnly} onChange={(value, texts) => onChange({ ...item, fields: { ...item.fields, [key]: value }, ...(texts ? { fieldTexts: { ...item.fieldTexts, [key]: { ...texts } } } : {}) })} /></FormField>;
+        }
         switch (column.id) {
         case "text": return <FormField key={column.id} label={<span className="flex w-full justify-between gap-3"><span>{t(column.editorLabelKey)}</span><span aria-hidden="true" className="text-xs text-[var(--color-content-muted)]">{(item.label[culture] ?? "").length}/{column.maxLength}</span></span>} required={column.required} error={error} hint={warning ?? (culture === "en" ? t("catalogs.items.englishHint") : undefined)}>
         <Input ref={textRef} readOnly={readOnly} value={item.label[culture] ?? ""} onChange={event => onChange({ ...item, label: { ...item.label, [culture]: event.target.value } })} />
