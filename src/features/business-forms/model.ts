@@ -6,9 +6,25 @@ export interface FormFileSettings { readonly minFiles: number; readonly maxFiles
 export interface FormSelectionSettings { readonly minSelected: number; readonly maxSelected: number }
 export interface DraftSelectionSettings { readonly minSelected: number | null; readonly maxSelected: number | null }
 
+export interface FormCatalogPresentation { readonly title: readonly string[]; readonly description: readonly string[] }
+export type FormCatalogMatch<TValue = string> = { readonly fieldId: string } & (
+  | { readonly value: TValue; readonly personAttributeId?: never }
+  | { readonly personAttributeId: TValue; readonly value?: never }
+);
+export interface FormQuestionSource {
+  readonly catalog: string;
+  readonly match?: readonly FormCatalogMatch[] | null;
+  readonly presentation?: FormCatalogPresentation | null;
+}
+export interface DraftQuestionSource {
+  readonly catalog: string | null;
+  readonly match?: readonly FormCatalogMatch<string | null>[] | null;
+  readonly presentation?: FormCatalogPresentation | null;
+}
+
 export type DraftFileSettings = Omit<FormFileSettings,"minFiles"|"maxFiles"> & { readonly minFiles:number|null; readonly maxFiles:number|null };
 
-type QuestionContent<TOption, THelp, TMaxLength = number, TCatalog = string, TFiles = FormFileSettings, TSelection = FormSelectionSettings> = {
+type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestionSource, TFiles = FormFileSettings, TSelection = FormSelectionSettings> = {
   readonly label: LocalizedText;
   readonly help: THelp;
   readonly required: boolean;
@@ -17,15 +33,15 @@ type QuestionContent<TOption, THelp, TMaxLength = number, TCatalog = string, TFi
   | { readonly type: "photo" | "document"; readonly files: TFiles; readonly source?: null }
   | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null }
   | { readonly type: "choice"; readonly options: readonly TOption[]; readonly source?: null }
-  | { readonly type: "choice"; readonly source: { readonly catalog: TCatalog }; readonly options?: null }
+  | { readonly type: "choice"; readonly source: TSource; readonly options?: null }
   | ({ readonly type: "multiChoice"; readonly selection: TSelection } & (
     | { readonly options: readonly TOption[]; readonly source?: null }
-    | { readonly source: { readonly catalog: TCatalog }; readonly options?: null }
+    | { readonly source: TSource; readonly options?: null }
   ))
 );
 export type DraftChoice = { readonly localId: string; readonly choiceId: string | null; readonly label: LocalizedText };
 export type CanonicalChoice = { readonly choiceId: string; readonly label: LocalizedText };
-export type DraftQuestion = QuestionContent<DraftChoice, Readonly<Record<string, string | null>> | null, number | null, string | null, DraftFileSettings, DraftSelectionSettings> & {
+export type DraftQuestion = QuestionContent<DraftChoice, Readonly<Record<string, string | null>> | null, number | null, DraftQuestionSource, DraftFileSettings, DraftSelectionSettings> & {
   readonly localId: string;
   readonly fieldId: string | null;
   readonly replacesFieldId: string | null;
@@ -79,4 +95,11 @@ export interface FormPublicationWriteBody extends FormPublicationValue {
   readonly requestId: string;
   readonly expectedRevision: number;
   readonly checkToken: string;
+}
+
+export interface CatalogQuestionPreview {
+  readonly source: DraftQuestionSource;
+  readonly culture: FormCulture;
+  readonly state: "Ready" | "RecipientDataMissing" | "FilterUnavailable";
+  readonly options: readonly { readonly id: string; readonly title: string; readonly description: string | null }[];
 }

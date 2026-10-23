@@ -1,3 +1,4 @@
+import { copyCatalogQuestionSource, normalizeCatalogQuestionSource, sameCatalogQuestionSource } from "./catalogQuestionSource";
 import type {
   CanonicalQuestion, DraftEditorValue, DraftQuestion, DraftWriteBody, FormDefinitionSnapshot,
   FormDraftSaveResult, FormIdentityMap,
@@ -33,8 +34,8 @@ function snapshot<T>(value: T): T {
 function editorQuestion(field: CanonicalQuestion, localId: string, optionLocalId: (id: string) => string): DraftQuestion {
   const common = { localId, fieldId: field.fieldId, replacesFieldId: null, label: field.label, help: field.help, required: field.required };
   switch (field.type) {
-    case "multiChoice": return field.source ? { ...common, type: field.type, selection: { ...field.selection }, source: { ...field.source } } : { ...common, type: field.type, selection: { ...field.selection }, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
-    case "choice": return field.source ? { ...common, type: field.type, source: { ...field.source } } : { ...common, type: field.type, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
+    case "multiChoice": return field.source ? { ...common, type: field.type, selection: { ...field.selection }, source: copyCatalogQuestionSource(field.source) } : { ...common, type: field.type, selection: { ...field.selection }, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
+    case "choice": return field.source ? { ...common, type: field.type, source: copyCatalogQuestionSource(field.source) } : { ...common, type: field.type, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
     case "photo": case "document": return { ...common, type: field.type, files: { ...field.files } };
     case "shortText": case "longText": return { ...common, type: field.type, maxLength: field.maxLength };
     default: return { ...common, type: field.type };
@@ -62,7 +63,7 @@ export function discardDraft(session: DraftSession): DraftSession {
 
 export function beginDraftSave(session: DraftSession, requestId: string): DraftSession {
   if (session.phase !== "Editing") return session;
-  const body: DraftWriteBody = { ...session.value, requestId,
+  const body: DraftWriteBody = { ...session.value, draft: { ...session.value.draft, fields: session.value.draft.fields.map(field => (field.type === "choice" || field.type === "multiChoice") && field.source ? { ...field, source: normalizeCatalogQuestionSource(field.source) } : field) }, requestId,
     ...(session.confirmed ? { expectedRevision: session.confirmed.revision } : {}) };
   return { ...session, phase: "Saving", pending: snapshot({
     identity: { ...session.scope, requestId }, definitionId: session.confirmed?.id ?? null, body,
@@ -116,7 +117,7 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
     if (field.type === "multiChoice" && saved.type === "multiChoice"
       && (field.selection.minSelected !== saved.selection.minSelected || field.selection.maxSelected !== saved.selection.maxSelected)) return null;
     const options = new Map<string, string>();
-    if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && field.source?.catalog !== saved.source?.catalog) return null;
+    if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !sameCatalogQuestionSource(field.source, saved.source)) return null;
     if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !field.source && !saved.source) {
       const savedOptions = new Map(saved.options.map(option => [option.choiceId, option]));
       if (savedOptions.size !== saved.options.length || field.options.length !== saved.options.length) return null;

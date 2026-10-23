@@ -1,3 +1,4 @@
+import { normalizeCatalogQuestionSource } from "./catalogQuestionSource";
 import { openDraftSession } from "./draftSession";
 import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture, FormDefinitionSnapshot, LocalizedText } from "./model";
 
@@ -40,7 +41,7 @@ export const missingFormTexts = (value: DraftEditorValue, culture: FormCulture) 
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const fieldIdentity = (q: DraftQuestion) => q.fieldId ?? "new:" + q.localId;
 const choiceIdentity = (o: DraftChoice) => o.choiceId ?? "new:" + o.localId;
-const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ?? null, required: q.required, ...(q.type === "photo" || q.type === "document" ? { files: q.files } : {}), ...(q.type === "multiChoice" ? { selection: q.selection } : {}), ...("maxLength" in q ? { maxLength: q.maxLength } : {}) });
+const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ? normalizeCatalogQuestionSource(q.source) : null, required: q.required, ...(q.type === "photo" || q.type === "document" ? { files: q.files } : {}), ...(q.type === "multiChoice" ? { selection: q.selection } : {}), ...("maxLength" in q ? { maxLength: q.maxLength } : {}) });
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;

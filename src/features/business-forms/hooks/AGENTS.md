@@ -23,6 +23,9 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 - `selectionQuestions` valida rangos de varias: mínimo 0..máximo, máximo 1..20, required si mínimo >0 y mínimo no mayor a opciones propias. Cambiar multiplicidad de una guardada crea FieldId y ChoiceIds nuevos; en una nueva conserva sus identidades. `draftSession` verifica selección y opciones al confirmar el cuerpo congelado.
 - `confirmRevision` acepta sólo la revisión siguiente de una baja propia y conserva valor y baseline; `lockPrefix` fija el prefijo al confirmarse una publicación.
 
+- `catalogQuestionSource` copia colecciones, ordena filtros por FieldId y omite ajustes null/vacíos; null en controles pendientes sigue siendo inválido. El cuerpo congelado y el recibo comparan toda la fuente, sin renovar identidad por filtros o presentación.
+- `useRecipientPreview` prueba una persona por dueño y fuente, sin caché de cuerpos ni MutationCache. Cambiar persona, fuente, idioma o permisos retira opciones anteriores y aborta la lectura; las muestras paginadas tienen su propia limpieza.
+
 ### Publicación
 
 - El chequeo y la publicación exigen Read + Publish, sin Manage, y pertenecen al editor: el chequeo usa sólo la revisión y el cuerpo guardados.
