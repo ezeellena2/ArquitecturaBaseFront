@@ -52,7 +52,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
       }
       items = items.map((item, index) => ({ ...item, position: index + 1 }));
       catalog = { ...catalog, valueType: "valueType" in body ? body.valueType ?? "Text" : catalog.valueType, name: { ...body.name }, description: { ...body.description }, isActive: "isActive" in body ? body.isActive ?? catalog.isActive : catalog.isActive, revision: request.method === "POST" ? 1 : catalog.revision + 1, itemsCount: items.length };
-      return json({ catalog, itemIdentityMap }, request.method === "POST" ? 201 : 200);
+      return json({ catalog, itemIdentityMap, fieldIdentityMap: {} }, request.method === "POST" ? 201 : 200);
     }
     reads.push(url.pathname + url.search);
     if (url.pathname.endsWith("/items")) return json(page(items.filter(item => !url.searchParams.get("search") || item.text.es?.toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())), url.searchParams));

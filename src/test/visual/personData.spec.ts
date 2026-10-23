@@ -62,7 +62,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(alert).toContainText(es ? "El resto del usuario ya se guardó." : "The rest of the account has already been saved.");
     await expect(dialog).toBeVisible();
     await expect(zone).toHaveValue(es ? "Norte" : "North");
-    const reload = dialog.getByRole("button", { name: es ? "Recargar datos" : "Reload data", exact: true });
+    const reload = dialog.getByRole("button", { name: es ? "Volver a cargar los datos" : "Reload data", exact: true });
     await reload.focus();
     await expect(reload).toBeFocused();
     expect(await reload.evaluate(node => { const box = node.getBoundingClientRect(); return node.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)); })).toBe(true);
