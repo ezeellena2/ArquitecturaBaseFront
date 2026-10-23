@@ -23,10 +23,13 @@ async function open(page: Page, language: Language, width: number, scenario = "f
 async function recipient(page: Page, editor: Locator, language: Language, name: string) {
   const sample = editor.getByRole("combobox", { name: text(language, "Como si lo recibiera", "As if received by"), exact: true });
   await sample.fill(name);
-  await expect(page.getByRole("option", { name: new RegExp(name) })).toBeVisible();
+  const options = page.getByRole("listbox", { name: text(language, "Como si lo recibiera", "As if received by"), exact: true }).getByRole("option");
+  await expect(options).toHaveCount(1);
+  await expect(options).toHaveText(new RegExp(name));
   await sample.press("ArrowDown");
   await sample.press("Enter");
   await expect(sample).toBeFocused();
+  await expect(sample).toHaveValue(new RegExp(name));
 }
 async function contained(page: Page, editor: Locator, width: number) {
   const bounds = (await editor.boundingBox())!;

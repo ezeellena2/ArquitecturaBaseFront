@@ -8,7 +8,7 @@ const id = (value: number) => "01990000-0000-7000-8000-" + String(value).padStar
 export const catalogQuestionFixtureIds = { suppliers: id(700), zones: id(701), question: id(703), tax: id(720), zone: id(721), category: id(722), paymentDays: id(723), attribute: id(730), center: id(740), south: id(741), juan: id(750), pablo: id(751) };
 
 // Synthetic browser transport for CE3-B/CE4-A. No captured HTTP body, API or provider is contacted.
-export function createCatalogQuestionVisualFixtures(culture: FormCulture, scenario: string) {
+export function createCatalogQuestionVisualFixtures(culture: FormCulture, _scenario: string) {
   const ids = catalogQuestionFixtureIds;
   const forms = createFormFixtureStore(culture, "forms-catalog");
   const original = forms.definitions.get(fixtureFormId)!;
@@ -50,7 +50,7 @@ export function createCatalogQuestionVisualFixtures(culture: FormCulture, scenar
       const body = await request.json() as RecipientPreviewBody;
       previews.push(body);
       const sample = samples.find(sample => sample.id === body.sampleUserId)!;
-      const missing = body.sampleUserId === ids.pablo || scenario.endsWith("-missing");
+      const missing = body.sampleUserId === ids.pablo;
       const matched = missing ? [] : items.filter(item => (body.source.match ?? []).every(match => item.fields?.[match.fieldId] === ("personAttributeId" in match ? ids.center : match.value)));
       const selected = body.source.presentation ?? catalog.presentation!;
       const part = (item: CatalogItem, field: string): string => field === "text" ? item.text[body.culture] ?? item.text.es! : field === "code" ? item.code : field === "detail" ? item.detail[body.culture] ?? item.detail.es ?? "" : item.fieldTexts?.[field]?.[body.culture] ?? item.fields?.[field] ?? "";
