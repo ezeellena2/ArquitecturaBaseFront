@@ -1,3 +1,4 @@
+import { CatalogQuestionSourceSummary } from "./CatalogQuestionSourceSummary";
 import { CatalogQuestionName } from "./CatalogQuestionName";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useTranslation } from "react-i18next";
@@ -64,8 +65,10 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
   function catalog(row:DraftReviewRow,side:"mine"|"current") {
     const item=row[side];
     const question = item && typeof item === "object" && "type" in item ? item as DraftQuestion : null;
+    const other = row[side === "mine" ? "current" : "mine"];
+    const otherQuestion = other && typeof other === "object" && "type" in other ? other as DraftQuestion : null;
     return catalogScope && (question?.type === "choice" || question?.type === "multiChoice") && question.source?.catalog
-      ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog}/> : null;
+      ? <><CatalogQuestionName scope={catalogScope} id={question.source.catalog}/><CatalogQuestionSourceSummary scope={catalogScope} source={question.source} compared={otherQuestion && (otherQuestion.type === "choice" || otherQuestion.type === "multiChoice") ? otherQuestion.source : null}/></> : null;
   }
   function title(row: DraftReviewRow) {
     if (row.kind === "field") return localizedValue((row.mine as DraftQuestion | null)?.label ?? (row.current as DraftQuestion).label, culture, value.draft.culture) || t("question");
