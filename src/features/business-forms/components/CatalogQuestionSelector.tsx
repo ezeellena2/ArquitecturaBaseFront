@@ -1,3 +1,4 @@
+import type { CatalogDetail } from "../api/catalogResponse";
 import { administrativeName } from "../editorModel";
 import { useState } from "react";
 import { Link } from "react-router";
@@ -13,30 +14,31 @@ import { Spinner } from "@/shared/ui/Spinner";
 import { useCatalogDetail, useCatalogPage } from "../hooks/useCatalogQueries";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 
-export function CatalogQuestionSelector({ scope, value, readOnly, error, onChange, manualOnly = false }: { scope: CatalogReadScope; value: string; readOnly: boolean; error?: string; onChange: (id: string) => void; manualOnly?: boolean }) {
+export function CatalogQuestionSelector({ scope, value, readOnly, error, onChange, manualOnly = false, selectedCatalog }: { scope: CatalogReadScope; value: string; readOnly: boolean; error?: string; onChange: (id: string) => void; manualOnly?: boolean; selectedCatalog?: CatalogDetail | null }) {
   const { t } = useTranslation("forms");
   const [search, setSearch] = useState(""); const [page, setPage] = useState(1);
   const query = { page, pageSize: 20, sort: "name" as const, search, ...(manualOnly ? { kind: "Manual" as const } : {}) };
   const list = useCatalogPage(scope, query, "global");
   const rows = list.data?.items ?? [];
   const currentRow = rows.find(row => row.id === value);
-  const detailId = value && list.data && !currentRow ? value : "";
+  const detailId = selectedCatalog === undefined && value && list.data && !currentRow ? value : "";
   const detail = useCatalogDetail(scope, detailId, "global");
+  const resolvedDetail = selectedCatalog === undefined ? detail.data : selectedCatalog;
   const failure = list.error ?? detail.error;
   const canRead = !!scope.actorId && scope.permissions.includes("formcatalogs.read") && !(failure instanceof ApiError && failure.status === 403);
   const reason = (state: string, code: string | null) => state === "Unavailable" && code ? t("catalogs.unavailableReason") : t("catalogs.state." + state);
   const label = (name: string, valueType: string, origin: string, count: number | null, state: string, code: string | null) => [name, t("catalogs.valueTypes." + valueType), t("catalogs.source." + (origin === "Manual" ? "manual" : "database")), count === null ? null : t("catalogs.filters.result", { count }), state === "Active" ? null : reason(state, code)].filter(Boolean).join(" · ");
-  const selected = currentRow ?? detail.data;
-  const selectedName = currentRow?.name ?? (detail.data ? administrativeName(detail.data.name, scope.culture) : t("catalogQuestion.selected"));
-  const selectedDescription = currentRow?.description ?? (detail.data ? administrativeName(detail.data.description, scope.culture) : undefined);
-  const detailState = detail.data?.unavailableReasonCode ? "Unavailable" : detail.data?.isActive ? "Active" : "Inactive";
+  const selected = currentRow ?? resolvedDetail;
+  const selectedName = currentRow?.name ?? (resolvedDetail ? administrativeName(resolvedDetail.name, scope.culture) : t("catalogQuestion.selected"));
+  const selectedDescription = currentRow?.description ?? (resolvedDetail ? administrativeName(resolvedDetail.description, scope.culture) : undefined);
+  const detailState = resolvedDetail?.unavailableReasonCode ? "Unavailable" : resolvedDetail?.isActive ? "Active" : "Inactive";
   return <div className="flex flex-col gap-3">
     <FormField label={t("catalogQuestion.catalog")} required error={error} hint={!canRead ? t("catalogQuestion.requiresRead") : selectedDescription ?? t("catalogQuestion.hint")}>
       <NativeSelect data-question-control="catalog" value={canRead ? value : ""} disabled={readOnly || !canRead || list.isPending} onChange={event => {
         if (readOnly || !canRead) return;
         if (rows.some(row => row.id === event.target.value && row.state === "Active" && (!manualOnly || row.origin === "Manual"))) onChange(event.target.value);
       }}><option value="" disabled>{t("select")}</option>
-        {canRead && value && !currentRow ? <option value={value} disabled={!detail.data || detailState !== "Active"}>{detail.data ? label(selectedName, detail.data.valueType, detail.data.kind, null, detailState, detail.data.unavailableReasonCode) : selectedName}</option> : null}
+        {canRead && value && !currentRow ? <option value={value} disabled={!resolvedDetail || detailState !== "Active"}>{resolvedDetail ? label(selectedName, resolvedDetail.valueType, resolvedDetail.kind, null, detailState, resolvedDetail.unavailableReasonCode) : selectedName}</option> : null}
         {canRead ? rows.map(row => <option key={row.id} value={row.id} disabled={row.state !== "Active" || manualOnly && row.origin !== "Manual"}>{label(row.name, row.valueType, row.origin, row.optionsCount, row.state, row.stateReason)}</option>) : null}
       </NativeSelect>
     </FormField>

@@ -1,6 +1,6 @@
 # Components: piezas de pantalla de formularios
 
-Piezas de tableros elegidos con shared/ui, datos de página o hook y lógica pura de la raíz. Cada operación privada (baja, Excel, reglas, sugerencias, PDF, decisión) es el único dueño de sus avisos y llama a api/.
+Tableros con shared/ui y datos de su dueño, que también posee los avisos.
 
 ## Al modificar
 
@@ -15,7 +15,7 @@ Piezas de tableros elegidos con shared/ui, datos de página o hook y lógica pur
 
 ### Publicación
 
-- `PublicationCheckDialog` usa sólo guardado. Título/acción: nextVersionNumber orientativo del chequeo, nunca activeVersion; recibo definitivo. Diff sólo nombra base si coincide diff.baseVersionId. Fecha guardada y prefijo fijado si libre; idiomas de channels[].cultures, un aviso por incompleto/perdido, hasta 3 faltantes y resto contado. Completar requiere Manage y enfoca control sin guardar. Ir a pregunta no devuelve foco al disparador; Cancelar/Escape sí.
+- `PublicationCheckDialog` separa problemas que frenan y avisos que no frenan (máximo/límite y personas); Publicar sigue canAccept. Usa sólo guardado. Título/acción: nextVersionNumber orientativo del chequeo, nunca activeVersion; recibo definitivo. Diff sólo nombra base si coincide diff.baseVersionId. Fecha guardada y prefijo fijado si libre; idiomas de channels[].cultures, un aviso por incompleto/perdido, hasta 3 faltantes y resto contado. Completar requiere Manage y enfoca control sin guardar. Ir a pregunta no devuelve foco al disparador; Cancelar/Escape sí.
 - `PublicationProgress` nombra estado, sin detalle técnico ni reintento del worker; Failed sin progreso. Agrupa issues repetidos y avisa una vez la revisión; operación propia publicada da un toast con status.cultures. Sólo progreso se anuncia; publicado es estático. Diagnósticos por FieldId/ChoiceId, nunca índices.
 - `OfficialFormPreview` ofrece sólo activeVersion.cultures (primero si falta idioma editor). Cambiar idioma limpia y espera acción; vencer retira iframe/enlace sin renovar.403 explica y bloquea;429 respeta espera. Descarta respuesta tardía; URL sólo vive en diálogo.
 
@@ -33,9 +33,9 @@ Piezas de tableros elegidos con shared/ui, datos de página o hook y lógica pur
 - `CatalogFiltersEditor` traduce columnas y operadores por key, usa las etiquetas de choices del backend y sólo admite el nombre como texto. Un rol guardado que ya no existe conserva su ID y dice «Valor no disponible», sin GUID. `filters.conditions[n]` se muestra junto a su valor.
 - `CatalogStateAction` confirma baja o reactivación; se aplica con Guardar.
 - `CatalogQuestionSelector`: activos elegibles; inactivos y no disponibles visibles y deshabilitados; el seleccionado se conserva fuera de página y buscar vuelve a la página 1. Los nombres exigen leer catálogos; editar, sólo Manage de formularios. Sin lectura no consulta y conserva la referencia; `CatalogQuestionName` retira el nombre ante 401 o 403. Una búsqueda sin coincidencias no es un catálogo vacío; `usageCount` null no es cero.
-- `CatalogQuestionSettings` reúne la configuración de la fuente en la pregunta; delega el selector y deja al dueño de la pregunta la confirmación de cambios de identidad.
+- `CatalogQuestionSettings` compone selector, multiplicidad, filtros y presentación propia/heredada. Sólo campos de filtro; dato personal Catalog de la misma fuente. La prueba selecciona persona y llena el teléfono, sin mostrar opciones ante faltantes o fallo. El selector reutiliza su metadata.
 
-- CE1: `CatalogFieldsSection` define campos y abre el primero con error; sólo lectura permite ver su configuración. Clave guardada inmutable, nuevos opcionales y sin carga hasta Guardar; quitar valores exige casilla y los usos impiden quitar. El servidor informa faltantes y conversiones de todas las opciones, sin estimarlos desde la página.
+- CE1: `CatalogFieldsSection` define campos y abre el primero con error; sólo lectura permite ver su configuración. Clave guardada inmutable, nuevos opcionales y sin carga hasta Guardar; quitar valores exige casilla y los usos impiden quitar. Faltantes y conversiones vienen del servidor. Quitado con error queda visible y permite restaurar identidad y valores sin perder otros cambios.
 - CE2: columnas extra tipadas después del código; texto y acciones fijos, desplazamiento dentro de `WideTable` y visibilidad local en Campos. Booleano distingue null/false. Catálogo fuente busca opciones activas por texto; conserva etiqueta sin mostrar GUID. Los valores y rangos se interpretan en la cultura del borrador, independiente del idioma de textos.
 - CE3: `CatalogPresentationSection` y `CatalogPreview` comparten composición exacta: partes no vacías con « · », sólo campos seleccionados, etiquetas fuente y formato del idioma mostrado. La alerta completa del servidor no bloquea Guardar; avisa antes de publicar.
 - Import: MissingColumn/DuplicateColumn se muestran junto al archivo/pegado sin toast y conservan contenido. Columnas extra por nombre y valores exactos; las de catálogo usan FieldTexts/BeforeText/AfterText del productor, sin consultas ni GUID visibles.

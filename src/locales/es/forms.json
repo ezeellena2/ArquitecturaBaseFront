@@ -626,14 +626,57 @@
     "catalog": "Catálogo",
     "selected": "Catálogo seleccionado",
     "requiresRead": "Necesitás permiso para leer catálogos y elegir uno.",
-    "hint": "El empleado ve el texto y el detalle de cada opción.",
+    "hint": "Las opciones se preparan al mandar el formulario.",
     "search": "Buscar catálogo",
     "empty": "Todavía no hay catálogos disponibles.",
     "view": "Ver el catálogo",
     "changeTitle": "¿Cambiar el catálogo?",
     "changeDescription": "La pregunta guardada se reemplaza por una nueva. Las versiones anteriores conservan su catálogo.",
     "changeAction": "Cambiar catálogo",
-    "noResults": "No hay catálogos que coincidan con la búsqueda."
+    "noResults": "No hay catálogos que coincidan con la búsqueda.",
+    "filter": {
+      "title": "Qué opciones ve cada persona",
+      "hint": "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona debe elegir del mismo catálogo.",
+      "condition": "Condición {{number}}",
+      "byPerson": "Según quien lo recibe",
+      "fixed": "Filtro fijo",
+      "field": "Campo",
+      "personData": "Dato de la persona",
+      "fixedValue": "Valor fijo",
+      "remove": "Quitar condición {{number}}",
+      "addPerson": "Agregar filtro según quien lo recibe",
+      "addFixed": "Agregar filtro fijo",
+      "noFields": "Este catálogo no tiene campos de filtro disponibles.",
+      "unavailable": "Campo no disponible",
+      "invalidValue": "Revisá el valor y el tipo del campo.",
+      "dataFailed": "No se pudieron leer los datos de las personas."
+    },
+    "presentation": {
+      "mode": "Qué viaja a WhatsApp",
+      "inherit": "Como en el catálogo",
+      "inheritHint": "Cambia si cambia el catálogo.",
+      "own": "Propio de esta pregunta",
+      "ownHint": "Otros campos, solo para este formulario."
+    },
+    "preview": {
+      "asRecipient": "Como si lo recibiera",
+      "saveFirst": "Guardá el formulario para probar con una persona.",
+      "loading": "Preparando las opciones de esta persona…",
+      "denied": "Ya no tenés permiso para probar con personas.",
+      "failed": "No se pudo preparar la vista previa.",
+      "catalogFailed": "No se pudo leer la configuración del catálogo.",
+      "count_one": "{{count}} opción",
+      "count_other": "{{count}} opciones",
+      "missingData": "La persona no tiene el dato necesario; no se le puede mandar el formulario.",
+      "unavailable": "El filtro no está disponible; no se puede preparar el formulario.",
+      "exceeds": "Supera el límite de {{limit}} opciones de esta pregunta.",
+      "noOptions": "No hay opciones para esta persona."
+    },
+    "review": {
+      "catalogValue": "opción de catálogo",
+      "changedValue": "Cambió el valor elegido",
+      "noFilters": "Sin filtros de opciones"
+    }
   },
   "files": {
     "photoSource": "De dónde sale la foto",
