@@ -41,6 +41,10 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 - Filters activo prueba con la persona elegida antes de guardar y no escribe si excede 200; dado de baja guarda sin persona ni prueba. `catalogFiltersBody` retira los `localId`. Cambiar condiciones limpia el resultado anterior. Una propuesta pendiente sólo se aprueba (con persona) o se descarta.
 - Un 409 conserva el borrador hasta releer y adoptar; red o 5xx permite otro Guardar con la misma revisión. Un alta fallida sin ID permite otro intento sin ofrecer releer.
 
+### Datos de personas
+
+- `usePersonData` conserva baseline, delta y revisión por actor, idioma, permisos y persona. No usa MutationCache. Ausente conserva y null limpia; un 409 exige releer definiciones y valores y adoptar explícitamente. Una respuesta tardía no cambia otro dueño. Un 401/403 retira valores y caché del alcance; las opciones del dato usan su ruta autorizada, sin CatalogsRead.
+
 ### Respuestas, aprobaciones y documentos
 
 - `useResponseRouteQuery` lleva a la URL sólo página, tamaño, orden, versiones y columnas. Búsqueda, personas, condiciones y estado viven en `useResponseWorkspace`, por dueño y formulario. El mismo workspace conserva origen (planilla o pendientes), RecordId/TaskId separados, parámetros públicos y la cola observada de tareas; nunca callbacks. Cambiar dueño/formulario o negar el alcance lo retira.
