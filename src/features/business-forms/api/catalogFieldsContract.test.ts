@@ -44,3 +44,15 @@ it("retains source option labels up to the existing option text limit", () => {
   const page = { items: [{ ...item, fields, fieldTexts }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false };
   expect(readCatalogItems(page).items[0]?.fieldTexts).toEqual(fieldTexts);
 });
+
+
+it.each([0, 25, 2147483647])("reads an HTTP field ordering value %s without confusing it with the twenty-field count", position => {
+  const expected = { ...field, position };
+  const definition = { ...catalog, fields: [expected] };
+  expect(readCatalog(definition).fields?.[0]).toEqual(expected);
+  const receipt = { catalog: definition, itemIdentityMap: {}, fieldIdentityMap: {} };
+  expect(readCatalogSave(receipt, [], id, 1).catalog.fields?.[0]).toEqual(expected);
+});
+it.each([-1, 0.5, 2147483648])("rejects an ordering value outside the nonnegative HTTP int contract: %s", position => {
+  expect(() => readCatalog({ ...catalog, fields: [{ ...field, position }] })).toThrow(UnsupportedCatalogResponse);
+});
