@@ -706,6 +706,24 @@ it("imports with the fields saved in this session instead of the ones loaded on 
   act(() => within(dialog).getByRole("tab", { name: "Cambios" }).focus()); await user.keyboard("{Enter}");
   expect(await within(dialog).findByText("CUIT: — → 20-2")).toBeInTheDocument();
 });
+it("warns about long titles with the check of the applied import instead of the one loaded on entry", async () => {
+  setup(); const entryTitle = "Pérez · Distribuidora del Litoral Norte", importedTitle = "Norte · Ferretería Industrial del Centro";
+  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, presentationCheck: { titleTooLongCount: 1, examples: [{ itemId, title: entryTitle }] } })));
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(catalogImports, "previewCatalogImport").mockResolvedValue({ ...base, revision: 1, mode: "Append", counts: { ...base.counts, errorRows: 0, deactivated: 0 }, issues: [], deactivated: [], confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
+  vi.spyOn(catalogImports, "applyCatalogImport").mockResolvedValue({ catalog: { ...initial, kind: "Manual", revision: 2, presentationCheck: { titleTooLongCount: 4, examples: [{ itemId, title: importedTitle }] } }, itemIdentityMap: {}, fieldIdentityMap: {} });
+  await mount("/catalogos/" + id); const user = userEvent.setup();
+  expect(await screen.findByText("1 opción supera los 30 caracteres. Podés guardar; revisá el título antes de publicar.")).toBeInTheDocument();
+  expect(screen.getByText(entryTitle)).toBeInTheDocument();
+  await user.click(await screen.findByRole("button", { name: "Pegar desde Excel" }));
+  await pasteText(user, screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\nN\tNorte");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await user.click(await screen.findByRole("button", { name: "Aplicar" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(await screen.findByText("4 opciones superan los 30 caracteres. Podés guardar; revisá el título antes de publicar.")).toBeInTheDocument();
+  expect(screen.getByText(importedTitle)).toBeInTheDocument();
+  expect(screen.queryByText(entryTitle)).not.toBeInTheDocument();
+});
 
 it.each(["es", "en"] as const)("localizes discard cancellation and preserves the unsaved catalog in %s", async culture => {
   const label = (es: string, en: string) => culture === "es" ? es : en;
