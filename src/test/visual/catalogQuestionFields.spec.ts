@@ -37,6 +37,11 @@ async function contained(page: Page, editor: Locator, width: number) {
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(width + 1);
   expect(await editor.evaluate(node => node.scrollWidth)).toBeLessThanOrEqual(Math.ceil(bounds.width) + 1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width + 1);
+  const addButtons = editor.getByRole("region", { name: /Qué opciones ve cada persona|Which options each person sees/ }).getByRole("button", { name: /^(Agregar filtro|Add (?:filter|fixed filter))/ });
+  expect(await addButtons.evaluateAll(buttons => buttons.every(button => {
+    const bounds = button.getBoundingClientRect(), container = button.parentElement!.getBoundingClientRect();
+    return bounds.left >= container.left - 1 && bounds.right <= container.right + 1;
+  }))).toBe(true);
 }
 async function observed(page: Page) {
   return page.evaluate(() => {

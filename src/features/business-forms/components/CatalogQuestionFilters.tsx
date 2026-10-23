@@ -47,7 +47,7 @@ export function CatalogQuestionFilters({ source, fields, attributes, scope, read
         {!readOnly ? <Button type="button" variant="outline" aria-label={t("catalogQuestion.filter.remove", { number: index + 1 })} onClick={() => update(match.filter((_, position) => position !== index))}>×</Button> : null}
       </div></fieldset>;
     })}
-    {!readOnly ? <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm" disabled={!available.some(field => compatible(field).length > 0)} onClick={() => add(true)}>{t("catalogQuestion.filter.addPerson")}</Button><Button type="button" variant="outline" size="sm" disabled={available.length === 0} onClick={() => add(false)}>{t("catalogQuestion.filter.addFixed")}</Button></div> : null}
+    {!readOnly ? <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm-wrap" disabled={!available.some(field => compatible(field).length > 0)} onClick={() => add(true)}>{t("catalogQuestion.filter.addPerson")}</Button><Button type="button" variant="outline" size="sm-wrap" disabled={available.length === 0} onClick={() => add(false)}>{t("catalogQuestion.filter.addFixed")}</Button></div> : null}
     {!eligible.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogQuestion.filter.noFields")}</p> : null}
   </div>;
 }

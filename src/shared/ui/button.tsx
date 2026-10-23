@@ -24,6 +24,7 @@ const buttonVariants = cva(
         default: "h-[var(--height-control)] px-3 has-[>svg]:px-2.5",
         xs: "h-[22px] gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-[var(--height-control-small)] gap-1.5 rounded-md px-2.5 has-[>svg]:px-2",
+        "sm-wrap": "h-auto min-h-[var(--height-control-small)] max-w-full gap-1.5 whitespace-normal rounded-md px-2.5 py-1 has-[>svg]:px-2",
         inline: "h-auto gap-1.5 p-0 text-xs",
         touch: "min-h-11 h-auto px-4 py-2 whitespace-normal",
         lg: "h-9 rounded-md px-5 has-[>svg]:px-4",
