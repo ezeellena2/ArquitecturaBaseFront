@@ -1,5 +1,5 @@
 // Synthetic current detail; real catalog bodies are qualified in HTTP tests.
-const manualDetail = { valueType: "Text", kind: "Manual", proposal: null, revision: 1, isActive: true, usageCount: null, unavailableReasonCode: null, filters: null, description: { es: "Catálogo de prueba", en: "Test catalog" } };
+const manualDetail = { valueType: "Text", kind: "Manual", proposal: null, revision: 1, isActive: true, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] }, description: { es: "Catálogo de prueba", en: "Test catalog" } };
 import type { DraftFieldIssue } from "../validationPaths";
 import { MemoryRouter } from "react-router";
 import { http, HttpResponse } from "msw";

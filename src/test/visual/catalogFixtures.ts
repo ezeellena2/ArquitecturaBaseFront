@@ -13,8 +13,8 @@ export const visualCatalogId = "01990000-0000-7000-8000-000000000080";
 export function createCatalogFixtureStore(culture: "es" | "en", scenario: string) {
   if (scenario.startsWith("forms-catalog")) return createQuestionCatalogFixtureStore(culture);
   if (scenario.startsWith("catalogs-filters")) return createFiltersFixtureStore(culture, scenario);
-  let catalog: CatalogDetail = { valueType: "Text" as const, proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null, filters: null };
-  let items: CatalogItem[] = ["Pérez", "López", "Ríos"].map((name, index) => ({ value: null, id: "01990000-0000-7000-8000-00000000008" + (index + 1), code: "C" + (index + 1), text: { es: name, en: null }, detail: { es: null, en: null }, position: index + 1, isActive: true }));
+  let catalog: CatalogDetail = { valueType: "Text" as const, proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
+  let items: CatalogItem[] = ["Pérez", "López", "Ríos"].map((name, index) => ({ value: null, id: "01990000-0000-7000-8000-00000000008" + (index + 1), code: "C" + (index + 1), text: { es: name, en: null }, detail: { es: null, en: null }, position: index + 1, isActive: true, fields: {}, fieldTexts: {} }));
   if (scenario === "catalogs-typed" || scenario === "catalogs-import-typed") {
     catalog = { ...catalog, valueType: "Decimal", name: { es: "Recargo por zona", en: "Zone surcharge" } };
     items = items.map((item, index) => ({ ...item, value: ["0", "1500.5", "3200"][index]!, text: { es: ["CABA", "GBA", "Interior"][index]!, en: ["CABA", "GBA", "Inland"][index]! } }));
@@ -43,7 +43,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
         const itemId = value.itemId ?? "01990000-0000-7000-8000-" + String(++identity).padStart(12, "0");
         if (!value.itemId) itemIdentityMap[value.localId] = itemId;
         const existing = items.find(item => item.id === itemId);
-        const next = { value: value.value ?? null, id: itemId, code: value.code, text: { ...value.text }, detail: { ...value.detail }, isActive: value.isActive, position: existing?.position ?? items.length + 1 };
+        const next = { value: value.value ?? null, id: itemId, code: value.code, text: { ...value.text }, detail: { ...value.detail }, isActive: value.isActive, position: existing?.position ?? items.length + 1, fields: {}, fieldTexts: {} };
         items = existing ? items.map(item => item.id === itemId ? next : item) : [...items, next];
       }
       if ("moves" in body) for (const move of body.moves ?? []) {
@@ -68,7 +68,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
 
 function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
   // Synthetic current DTO. Actual producer bodies remain covered by the HTTP contract tests.
-  let catalog: CatalogDetail = { valueType: "Text", proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Personas por filtro", en: "People by filter" }, description: { es: "Descripción del filtro", en: "Filter description" }, kind: "Filters", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null, filters: filterPreviewRequest.filters };
+  let catalog: CatalogDetail = { valueType: "Text", proposal: null, id: visualCatalogId, key: visualCatalogId.replaceAll("-", ""), name: { es: "Personas por filtro", en: "People by filter" }, description: { es: "Descripción del filtro", en: "Filter description" }, kind: "Filters", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null, filters: filterPreviewRequest.filters, fields: null, presentation: null, presentationCheck: null };
   const readOnly = scenario === "catalogs-filters-read";
   const missingRole = scenario === "catalogs-filters-missing-role";
   if (missingRole) catalog = { ...catalog, filters: { ...filterPreviewRequest.filters, conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000699" }] } };
@@ -103,7 +103,7 @@ function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {
       if (request.method === "PUT" && conflict) { conflict = false; catalog = { ...catalog, revision: 2, name: { es: "Personas actuales", en: "Current people" } }; return json({ code: "Forms.Catalog.RevisionConflict" }, 409); }
       if (body.expectedRevision !== undefined && body.expectedRevision !== catalog.revision) return json({ code: "Forms.Catalog.RevisionConflict" }, 409);
       catalog = { ...catalog, name: { ...body.name }, description: { ...body.description }, filters: { ...body.filters, conditions: body.filters.conditions.map(condition => ({ ...condition })) }, isActive: body.isActive ?? catalog.isActive, revision: request.method === "POST" ? 1 : catalog.revision + 1, unavailableReasonCode: null };
-      return json({ catalog, itemIdentityMap: {} }, request.method === "POST" ? 201 : 200);
+      return json({ catalog, itemIdentityMap: {}, fieldIdentityMap: {} }, request.method === "POST" ? 201 : 200);
     }
     reads.push(url.pathname + url.search);
     if (url.pathname === "/api/forms/catalogs") {
@@ -138,7 +138,7 @@ function createQuestionCatalogFixtureStore(culture: "es" | "en") {
       return json({ items: all.slice((page - 1) * pageSize, page * pageSize), page, pageSize, totalCount: all.length, totalPages, hasPrevious: page > 1, hasNext: page < totalPages, filterCounts: { byKind: { all: all.length, manual: all.filter(row => row.origin === "Manual").length, filters: all.filter(row => row.origin === "Filters").length } } });
     }
     const row = rows.find(row => row.id === url.pathname.split("/").at(-1));
-    if (row?.id !== visualCatalogId && row) return json({ valueType: "Text" as const, proposal: null, revision: 1, usageCount: null, id: row.id, key: row.id.replaceAll("-", ""), name: { es: row.name, en: row.name }, description: { es: "Catálogo de prueba", en: "Test catalog" }, kind: row.origin, isActive: row.state !== "Inactive", unavailableReasonCode: row.stateReason, itemsCount: row.optionsCount, filters: row.origin === "Filters" ? filterPreviewRequest.filters : null });
+    if (row?.id !== visualCatalogId && row) return json({ valueType: "Text" as const, proposal: null, revision: 1, usageCount: null, id: row.id, key: row.id.replaceAll("-", ""), name: { es: row.name, en: row.name }, description: { es: "Catálogo de prueba", en: "Test catalog" }, kind: row.origin, isActive: row.state !== "Inactive", unavailableReasonCode: row.stateReason, itemsCount: row.optionsCount, filters: row.origin === "Filters" ? filterPreviewRequest.filters : null, fields: row.origin === "Filters" ? null : [], presentation: null, presentationCheck: row.origin === "Filters" ? null : { titleTooLongCount: 0, examples: [] } });
     return base.handle(request);
   } };
 }

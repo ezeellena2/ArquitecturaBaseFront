@@ -25,8 +25,8 @@ async function pasteText(user: ReturnType<typeof userEvent.setup>, control: HTML
 }
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
-const initial = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null };
-const option = { value: null, id: itemId, code: "C1", text: { es: "Pérez", en: null }, detail: { es: null, en: null }, position: 1, isActive: true };
+const initial = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
+const option = { value: null, id: itemId, code: "C1", text: { es: "Pérez", en: null }, detail: { es: null, en: null }, position: 1, isActive: true, fields: {}, fieldTexts: {} };
 function setup(permissions = ["formcatalogs.read", "formcatalogs.manage"], culture: "es" | "en" = "es") {
   server.use(http.get("/api/me", () => HttpResponse.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false, culture, timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(initial)), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [option], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
 }
@@ -55,7 +55,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
 
   it("creates bilingual metadata and one item in a single request and reloads its canonical identity", async () => {
     setup(); const bodies: Record<string, unknown>[] = [];
-    server.use(http.post("/api/forms/catalogs", async ({ request }) => { const body = await request.json() as Record<string, unknown>; bodies.push(body); const items = body.items as { localId: string }[]; return HttpResponse.json({ catalog: initial, itemIdentityMap: { [items[0]!.localId]: itemId } }, { status: 201 }); }));
+    server.use(http.post("/api/forms/catalogs", async ({ request }) => { const body = await request.json() as Record<string, unknown>; bodies.push(body); const items = body.items as { localId: string }[]; return HttpResponse.json({ catalog: initial, itemIdentityMap: { [items[0]!.localId]: itemId }, fieldIdentityMap: {} }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo"); const user = userEvent.setup();
     await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes");
     await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
@@ -76,7 +76,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
     setup(); const bodies: unknown[] = []; let savedOption = option;
-    server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {} }); }));
+    server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
     const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await pasteText(user, code, "C2");
@@ -106,7 +106,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("allows catalog Read without form template Read and hides all writes without Manage", async () => {
     setup(["formcatalogs.read"]); await mount("/catalogos/" + id);
     expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
-    await screen.findByText("Pérez");
+    await within(await screen.findByRole("table")).findByText("Pérez");
     expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Dar de baja" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Agregar opción" })).not.toBeInTheDocument();
@@ -122,7 +122,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   });
   it("preserves a failed new catalog and allows an explicit retry without a nonexistent resource review", async () => {
     setup(); let calls = 0;
-    server.use(http.post("/api/forms/catalogs", async ({ request }) => { calls++; const body = await request.json() as { items: { localId: string }[] }; return calls === 1 ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json({ catalog: { ...initial, itemsCount: 0 }, itemIdentityMap: Object.fromEntries(body.items.map(item => [item.localId, itemId])) }, { status: 201 }); }));
+    server.use(http.post("/api/forms/catalogs", async ({ request }) => { calls++; const body = await request.json() as { items: { localId: string }[] }; return calls === 1 ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json({ catalog: { ...initial, itemsCount: 0 }, itemIdentityMap: Object.fromEntries(body.items.map(item => [item.localId, itemId])), fieldIdentityMap: {} }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo"); const user = userEvent.setup();
     await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
     await user.click(screen.getByRole("button", { name: "Inglés" })); await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
@@ -144,7 +144,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: rows, page: 1, pageSize: 20, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => {
       bodies.push(await request.json() as Record<string, unknown>);
       rows = [rows[1]!, rows[0]!].map((row, index) => ({ ...row, position: index + 1 }));
-      return HttpResponse.json({ catalog: { ...initial, revision: 2, itemsCount: 2 }, itemIdentityMap: {} });
+      return HttpResponse.json({ catalog: { ...initial, revision: 2, itemsCount: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} });
     }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Bajar Pérez" }));
@@ -161,7 +161,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
 
   it("allows reversing a queued move before saving even when the confirmed position is first", async () => {
     setup(); const bodies: unknown[] = [];
-    server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [option, { ...option, id: "01990000-0000-7000-8000-000000000022", code: "C2", text: { es: "López", en: null }, position: 2 }], page: 1, pageSize: 20, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {} }); }));
+    server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [option, { ...option, id: "01990000-0000-7000-8000-000000000022", code: "C2", text: { es: "López", en: null }, position: 2 }], page: 1, pageSize: 20, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     expect(await screen.findByRole("button", { name: "Subir Pérez" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Bajar Pérez" }));
@@ -199,7 +199,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
 
 });
 
-const filtersDetail = { ...initial, kind: "Filters", filters: { textColumn: "name", detailColumn: "role", conditions: [], excludeRecipient: true, sortColumn: "name", sortDescending: false } };
+const filtersDetail = { ...initial, kind: "Filters", filters: { textColumn: "name", detailColumn: "role", conditions: [], excludeRecipient: true, sortColumn: "name", sortDescending: false }, fields: null, presentation: null, presentationCheck: null };
 function filterSetup(permissions = ["formcatalogs.read", "formcatalogs.manage"]) {
   setup(permissions);
   server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(filtersDetail)), http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ source: "users", columns: [
@@ -212,7 +212,7 @@ async function selectSample() { const user = userEvent.setup(); await user.click
 describe("Filters editor connected to current DTOs", () => {
   it("edits conditions, previews explicitly and saves only configuration", async () => {
     filterSetup(); const previews: unknown[] = []; const writes: unknown[] = [];
-    server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { previews.push(await request.json()); return HttpResponse.json({ items: [{ id, text: "Beatriz", detail: "Operario", canSend:true }], totalCount: 1, exceedsLimit: false }); }), http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { const body = await request.json() as { filters: typeof filtersDetail.filters }; writes.push(body); return HttpResponse.json({ catalog: { ...filtersDetail, filters: body.filters, revision: 2 }, itemIdentityMap: {} }); }));
+    server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { previews.push(await request.json()); return HttpResponse.json({ items: [{ id, text: "Beatriz", detail: "Operario", canSend:true }], totalCount: 1, exceedsLimit: false }); }), http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { const body = await request.json() as { filters: typeof filtersDetail.filters }; writes.push(body); return HttpResponse.json({ catalog: { ...filtersDetail, filters: body.filters, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición 1" }), "role");
     expect(screen.getByRole("combobox", { name: "Comparación de la condición 1" })).toHaveValue("has"); expect(writes).toHaveLength(0);
@@ -223,7 +223,7 @@ describe("Filters editor connected to current DTOs", () => {
   });
   it("creates Filters from the new-catalog route and reloads the saved kind", async () => {
     filterSetup(); const writes: unknown[] = [];
-    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })), http.post("/api/forms/catalogs/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: filtersDetail, itemIdentityMap: {} }, { status: 201 }); }));
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })), http.post("/api/forms/catalogs/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: filtersDetail, itemIdentityMap: {}, fieldIdentityMap: {} }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo?kind=Filters"); const user = userEvent.setup();
     await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas"); await user.click(screen.getByRole("button", { name: "Inglés" })); await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
     await selectSample(); await user.click(screen.getByRole("button", { name: "Guardar" })); await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
@@ -295,7 +295,7 @@ it.each([false, true])("saves and reloads deactivation and reactivation for Filt
     http.put("/api/forms/catalogs/" + id + (filters ? "/filters" : ""), async ({ request }) => {
       const body = await request.json() as { isActive: boolean; expectedRevision: number }; bodies.push(body);
       detail = { ...detail, isActive: body.isActive, revision: body.expectedRevision + 1 };
-      return HttpResponse.json({ catalog: detail, itemIdentityMap: {} });
+      return HttpResponse.json({ catalog: detail, itemIdentityMap: {}, fieldIdentityMap: {} });
     }), http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })));
   await mount("/catalogos/" + id); const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Dar de baja" }));
@@ -329,7 +329,7 @@ it.each([false,true].flatMap(filters=>["network",500,503].map(failure=>({filters
   if(filters)filterSetup();else setup();
   const detail={...(filters?filtersDetail:initial),isActive:false}; let writes=0;
   server.use(http.get("/api/forms/catalogs/"+id,()=>HttpResponse.json(detail)),
-    http.put("/api/forms/catalogs/"+id+(filters?"/filters":""),()=>++writes===1?(failure==="network"?HttpResponse.error():HttpResponse.json({traceId:"catalog-save"},{status:Number(failure)})):HttpResponse.json({catalog:{...detail,revision:2},itemIdentityMap:{}})));
+    http.put("/api/forms/catalogs/"+id+(filters?"/filters":""),()=>++writes===1?(failure==="network"?HttpResponse.error():HttpResponse.json({traceId:"catalog-save"},{status:Number(failure)})):HttpResponse.json({catalog:{...detail,revision:2},itemIdentityMap:{}, fieldIdentityMap: {}})));
   await mount("/catalogos/"+id);
   await pasteText(userEvent.setup(), await screen.findByRole("textbox",{name:"Nombre"})," editado");
   await userEvent.click(screen.getByRole("button",{name:"Guardar"}));
@@ -360,7 +360,7 @@ it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invali
   const bodies: Record<string, unknown>[] = [];
   server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(typed)),
     http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, value: "9007199254740993.0123" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
-    http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json({ catalog: { ...typed, revision: 2 }, itemIdentityMap: {} }); }));
+    http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json({ catalog: { ...typed, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
   await mount("/catalogos/" + id + "?valueType=Date");
   const user = userEvent.setup();
   const type = await screen.findByRole("textbox", { name: language === "es" ? "Tipo de valor" : "Value type" });
@@ -430,7 +430,7 @@ it("requires a clean saved catalog to import, while Read still offers export",as
  expect(screen.queryByRole("button",{name:"Importar"})).not.toBeInTheDocument();
 });
 it("saves alphabetical ordering as a single command and no movements",async()=>{
- setup();const bodies:Record<string,unknown>[]=[];server.use(http.put("/api/forms/catalogs/"+id,async({request})=>{bodies.push(await request.json() as Record<string,unknown>);return HttpResponse.json({catalog:{...initial,revision:2},itemIdentityMap:{}});}));
+ setup();const bodies:Record<string,unknown>[]=[];server.use(http.put("/api/forms/catalogs/"+id,async({request})=>{bodies.push(await request.json() as Record<string,unknown>);return HttpResponse.json({catalog:{...initial,revision:2},itemIdentityMap:{}, fieldIdentityMap: {}});}));
  await mount("/catalogos/"+id);const user=userEvent.setup();
  const more=await screen.findByRole("button",{name:"Más acciones de opciones"});act(()=>more.focus());await user.keyboard("{Enter}");
  await user.click(await screen.findByRole("menuitem",{name:"Ordenar A–Z"}));
@@ -441,7 +441,7 @@ it("saves alphabetical ordering as a single command and no movements",async()=>{
 });
 it("applies an explicitly reviewed paste and adopts the returned clean baseline without saving the draft",async()=>{
  setup();const base=catalogImportPreviewFixture();const check=vi.spyOn(catalogImports,"previewCatalogImport").mockResolvedValue({...base,revision:1,mode:"Append",counts:{...base.counts,errorRows:0,deactivated:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});
- const apply=vi.spyOn(catalogImports,"applyCatalogImport").mockResolvedValue({catalog:{...initial,kind:"Manual",revision:2},itemIdentityMap:{}});
+ const apply=vi.spyOn(catalogImports,"applyCatalogImport").mockResolvedValue({catalog:{...initial,kind:"Manual",revision:2},itemIdentityMap:{}, fieldIdentityMap: {}});
  await mount("/catalogos/"+id);const user=userEvent.setup();
  await user.click(await screen.findByRole("button",{name:"Pegar desde Excel"}));
  await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");

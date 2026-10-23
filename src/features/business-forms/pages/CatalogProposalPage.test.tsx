@@ -25,7 +25,7 @@ async function mount(permissions = ["formcatalogs.read", "formcatalogs.manage"],
  http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(current)),
  http.get("/api/forms/catalog-filter-options", () => HttpResponse.json({ ...proposalOptions, sampleUsers: permissions.includes("formcatalogs.manage") ? proposalOptions.sampleUsers : null })),
  http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [{ id: actor, text: "Ana Pérez", detail: "Supervisor", canSend: true }], totalCount: 1, exceedsLimit: false })),
- http.post("/api/forms/catalogs/" + id + "/proposal/approve", async ({ request }) => { writes.push(await request.json()); current = approved(); return HttpResponse.json({ catalog: current, itemIdentityMap: {} }); }),
+ http.post("/api/forms/catalogs/" + id + "/proposal/approve", async ({ request }) => { writes.push(await request.json()); current = approved(); return HttpResponse.json({ catalog: current, itemIdentityMap: {}, fieldIdentityMap: {} }); }),
  http.post("/api/forms/catalogs/" + id + "/proposal/discard", async ({ request }) => { discarded.push(await request.json()); current = { ...current, revision: current.revision + 1, proposal: { ...current.proposal, state: "Discarded", decidedBy: { userId: operator, displayName: "Laura" }, decidedAtUtc: "2026-10-17T13:00:00Z" } }; return HttpResponse.json(current); }));
  const router = createMemoryRouter([{ path: "/catalogos/:catalogId", Component: CatalogEditorPage }, { path: "/catalogos", element: <p>Catalog list</p> }], { initialEntries: ["/catalogos/" + id] });
  await act(async () => { render(<AppProviders><RouterProvider router={router} /></AppProviders>); });
@@ -93,7 +93,7 @@ it("keeps an operationally failed edit for one explicit approval retry with its 
  const actual = await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications");
  vi.mocked(notify).mockImplementation(actual.notify);
  await mount(); let count = 0;
- server.use(http.post("/api/forms/catalogs/" + id + "/proposal/approve", async ({ request }) => { writes.push(await request.json()); count++; return count === 1 ? HttpResponse.json({}, { status: 503 }) : HttpResponse.json({ catalog: approved(), itemIdentityMap: {} }); }));
+ server.use(http.post("/api/forms/catalogs/" + id + "/proposal/approve", async ({ request }) => { writes.push(await request.json()); count++; return count === 1 ? HttpResponse.json({}, { status: 503 }) : HttpResponse.json({ catalog: approved(), itemIdentityMap: {}, fieldIdentityMap: {} }); }));
  await rename("Mi propuesta"); await chooseSample(); await userEvent.click(screen.getByRole("button", { name: "Aprobar y activar" }));
  await waitFor(() => expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(1));
  expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Mi propuesta");
@@ -124,7 +124,7 @@ it("retires approval controls when Manage is revoked and drops a late confirmed 
  await waitFor(() => expect(resolve).toBeDefined());
  act(() => queryClient.setQueryData<CurrentUser>(["current-user"], previous => previous ? { ...previous, permissions: ["formcatalogs.read"] } : previous));
  await waitFor(() => expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly"));
- await act(async () => { resolve(HttpResponse.json({ catalog: approved(), itemIdentityMap: {} })); });
+ await act(async () => { resolve(HttpResponse.json({ catalog: approved(), itemIdentityMap: {}, fieldIdentityMap: {} })); });
  expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Mi borrador");
  expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
  expect(screen.queryByRole("button", { name: "Aprobar y activar" })).not.toBeInTheDocument();

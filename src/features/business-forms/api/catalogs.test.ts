@@ -8,15 +8,15 @@ import { createManualCatalog, fetchCatalog, fetchCatalogItems, updateManualCatal
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
 const otherId = "01990000-0000-7000-8000-000000000022";
-const catalog = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Personas a visitar", en: "People to visit" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
-const item = { value: null, id: itemId, code: "C-001", text: { es: "Pérez Hnos.", en: null }, detail: { es: "Av. Colón 1234", en: null }, position: 1, isActive: false };
+const catalog = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Personas a visitar", en: "People to visit" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
+const item = { value: null, id: itemId, code: "C-001", text: { es: "Pérez Hnos.", en: null }, detail: { es: "Av. Colón 1234", en: null }, position: 1, isActive: false, fields: {}, fieldTexts: {} };
 const body = { name: catalog.name, description: catalog.description, items: [{ localId: "new-option", itemId: null, code: item.code, text: item.text, detail: item.detail, isActive: false }] };
 afterEach(resetHttpClient);
 
 describe("Manual catalog adapter against current DTO source", () => {
   it("sends metadata and item delta in one create request without filling optional English", async () => {
     const received: unknown[] = [];
-    server.use(http.post("/api/forms/catalogs", async ({ request }) => { received.push(await request.json()); return HttpResponse.json({ catalog, itemIdentityMap: { "new-option": itemId } }, { status: 201 }); }));
+    server.use(http.post("/api/forms/catalogs", async ({ request }) => { received.push(await request.json()); return HttpResponse.json({ catalog, itemIdentityMap: { "new-option": itemId }, fieldIdentityMap: {} }, { status: 201 }); }));
     const saved = await createManualCatalog(body);
     expect(received).toEqual([body]);
     expect(saved.catalog.name).toEqual(catalog.name);
@@ -28,7 +28,7 @@ describe("Manual catalog adapter against current DTO source", () => {
   it("updates an existing identity and editable code with one expectedRevision body", async () => {
     const update = { ...body, expectedRevision: 1, items: [{ ...body.items[0]!, itemId, code: "C-099", isActive: true }] };
     const received: unknown[] = [];
-    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { received.push(await request.json()); return HttpResponse.json({ catalog: { ...catalog, revision: 2 }, itemIdentityMap: {} }); }));
+    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { received.push(await request.json()); return HttpResponse.json({ catalog: { ...catalog, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     const saved = await updateManualCatalog(id, update);
     expect(saved.catalog.revision).toBe(2);
     expect(received).toEqual([update]);
@@ -43,9 +43,9 @@ describe("Manual catalog adapter against current DTO source", () => {
     expect(page.items).toEqual([item]);
   });
   it("rejects wrong-catalog save replies and incomplete local identity maps", async () => {
-    server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ catalog: { ...catalog, id: otherId, key: otherId.replaceAll("-", ""), revision: 2 }, itemIdentityMap: { "new-option": itemId } })));
+    server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ catalog: { ...catalog, id: otherId, key: otherId.replaceAll("-", ""), revision: 2 }, itemIdentityMap: { "new-option": itemId }, fieldIdentityMap: {} })));
     await expect(updateManualCatalog(id, { ...body, expectedRevision: 1 })).rejects.toThrow("Unsupported catalog response.");
-    server.use(http.post("/api/forms/catalogs", () => HttpResponse.json({ catalog, itemIdentityMap: {} }, { status: 201 })));
+    server.use(http.post("/api/forms/catalogs", () => HttpResponse.json({ catalog, itemIdentityMap: {}, fieldIdentityMap: {} }, { status: 201 })));
     await expect(createManualCatalog(body)).rejects.toThrow("Unsupported catalog response.");
   });
   it("rejects incompatible response maps without retaining private values or Zod issues", async () => {
@@ -65,8 +65,8 @@ describe("Manual catalog adapter against current DTO source", () => {
   it("preserves a hidden usage count as null in detail and write receipts", async () => {
     const hidden = { ...catalog, usageCount: null };
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(hidden)),
-      http.post("/api/forms/catalogs", () => HttpResponse.json({ catalog: hidden, itemIdentityMap: { "new-option": itemId } }, { status: 201 })),
-      http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ catalog: { ...hidden, revision: 2 }, itemIdentityMap: {} })));
+      http.post("/api/forms/catalogs", () => HttpResponse.json({ catalog: hidden, itemIdentityMap: { "new-option": itemId }, fieldIdentityMap: {} }, { status: 201 })),
+      http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ catalog: { ...hidden, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} })));
     expect((await fetchCatalog(id)).usageCount).toBeNull();
     expect((await createManualCatalog(body)).catalog.usageCount).toBeNull();
     expect((await updateManualCatalog(id, { ...body, expectedRevision: 1, items: [] })).catalog.usageCount).toBeNull();

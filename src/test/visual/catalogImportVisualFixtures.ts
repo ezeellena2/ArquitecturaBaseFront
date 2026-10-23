@@ -42,7 +42,7 @@ export function createCatalogImportVisualStore(culture: "es" | "en", catalog: Pi
       applies.push(submission); applied = true;
       const current = await base.handle(new Request(url.origin + "/api/forms/catalogs/" + catalogId));
       const catalog = await current.json() as CatalogDetail;
-      return json({ catalog: { ...catalog, revision: 2 }, itemIdentityMap: {} });
+      return json({ catalog: { ...catalog, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} });
     }
     if (applied && request.method === "GET" && url.pathname === "/api/forms/catalogs/" + catalogId) {
       const response = await base.handle(request); const catalog = await response.json() as CatalogDetail;

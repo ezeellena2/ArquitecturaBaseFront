@@ -1,9 +1,9 @@
 import { expect, it } from "vitest";
 import { readCatalog, readCatalogItems, readCatalogPage } from "./catalogResponse";
 const id = "01990000-0000-7000-8000-000000000020";
-const detail = { proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" }, description: { es: "Valor por zona", en: "Value per zone" }, kind: "Manual", valueType: "Decimal", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null };
+const detail = { proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" }, description: { es: "Valor por zona", en: "Value per zone" }, kind: "Manual", valueType: "Decimal", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
 const row = { id, name: "Zonas", description: null, origin: "Manual", valueType: "Decimal", optionsCount: 1, usageCount: null, state: "Active", stateReason: null, canEdit: true };
-const item = { id, code: "GBA", text: { es: "GBA", en: null }, detail: { es: null, en: null }, value: "1500.5", position: 1, isActive: true };
+const item = { id, code: "GBA", text: { es: "GBA", en: null }, detail: { es: null, en: null }, value: "1500.5", position: 1, isActive: true, fields: {}, fieldTexts: {} };
 const page = <T,>(items: T[]) => ({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
 
 it.each(["Text", "Integer", "Decimal", "Date"])("reads the required closed catalog type %s in detail and list", valueType => {
@@ -16,8 +16,8 @@ it("rejects missing, null or unknown value types without completing older bodies
 });
 it("keeps Filters limited to Text", () => {
   const filters = { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false };
-  expect(readCatalog({ ...detail, kind: "Filters", valueType: "Text", filters }).valueType).toBe("Text");
-  expect(() => readCatalog({ ...detail, kind: "Filters", filters })).toThrow("Unsupported catalog response.");
+  expect(readCatalog({ ...detail, kind: "Filters", valueType: "Text", filters, fields: null, presentation: null, presentationCheck: null }).valueType).toBe("Text");
+  expect(() => readCatalog({ ...detail, kind: "Filters", filters, fields: null, presentation: null, presentationCheck: null })).toThrow("Unsupported catalog response.");
   expect(() => readCatalogPage({ ...page([{ ...row, origin: "Filters" }]), filterCounts: { byKind: { all: 1, manual: 0, filters: 1 } } })).toThrow("Unsupported catalog response.");
 });
 it("requires each item value as a nullable string without changing its bytes", () => {

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { CatalogDetail } from "./api/catalogResponse";
 import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove } from "./catalogDraft";
 
-const catalog: CatalogDetail = { valueType: "Text" as const, proposal: null, id: "01990000-0000-7000-8000-000000000020", key: "01990000000070008000000000000020", kind: "Manual", name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, revision: 1, isActive: true, itemsCount: 3, usageCount: 0, unavailableReasonCode: null, filters: null };
-const item = { value: null, id: "01990000-0000-7000-8000-000000000021", code: "C1", text: { es: "Cliente", en: null }, detail: { es: null, en: null }, position: 1, isActive: true };
+const catalog: CatalogDetail = { valueType: "Text" as const, proposal: null, id: "01990000-0000-7000-8000-000000000020", key: "01990000000070008000000000000020", kind: "Manual", name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, revision: 1, isActive: true, itemsCount: 3, usageCount: 0, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
+const item = { value: null, id: "01990000-0000-7000-8000-000000000021", code: "C1", text: { es: "Cliente", en: null }, detail: { es: null, en: null }, position: 1, isActive: true, fields: {}, fieldTexts: {} };
 
 describe("Catalog draft body by identity", () => {
   it("sends only touched identities across loaded pages and preserves nullable optional text", () => {

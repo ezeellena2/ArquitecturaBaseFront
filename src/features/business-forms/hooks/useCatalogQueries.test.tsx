@@ -10,7 +10,7 @@ import { useCatalogDetail, useCatalogItems, useCatalogFilterOptions } from "./us
 import options from "@/test/fixtures/catalogs-http/filters/options.json";
 
 const id = "01990000-0000-7000-8000-000000000020";
-const detail = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null };
+const detail = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
 const scope = { actorId: "actor-a", culture: "es" as const, permissions: ["formcatalogs.read"] };
 function harness() {
   const client = createQueryClient(); client.setDefaultOptions({ queries: { retry: false } });
@@ -29,7 +29,7 @@ describe("Private catalog reads", () => {
   });
   it("loads canonical pages afresh for a confirmed revision and keeps previous pages out of a new catalog", async () => {
     const calls: string[] = [];
-    server.use(http.get("/api/forms/catalogs/:id/items", ({ params }) => { calls.push(String(params.id)); return HttpResponse.json({ items: [{ value: null, id: "01990000-0000-7000-8000-000000000021", code: "C1", text: { es: "Uno", en: null }, detail: {}, position: 1, isActive: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false }); }));
+    server.use(http.get("/api/forms/catalogs/:id/items", ({ params }) => { calls.push(String(params.id)); return HttpResponse.json({ items: [{ value: null, id: "01990000-0000-7000-8000-000000000021", code: "C1", text: { es: "Uno", en: null }, detail: {}, position: 1, isActive: true, fields: {}, fieldTexts: {} }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false }); }));
     const h = harness(); const { result, rerender } = renderHook(({ catalogId, revision }) => useCatalogItems(scope, catalogId, revision, { page: 1, pageSize: 20 }), { ...h, initialProps: { catalogId: id, revision: 1 } });
     await waitFor(() => expect(result.current.data?.items).toHaveLength(1));
     await act(async () => { rerender({ catalogId: id, revision: 2 }); });

@@ -31,8 +31,8 @@ it("approves the edited proposal in one closed command and validates its confirm
  const input = { expectedRevision: 1, name: { es: "Supervisores" }, description: { es: "Editado" }, filters: proposalCatalog().filters, sampleUserId: proposalActorId };
  let body: unknown;
  const approved = { ...proposalCatalog(), name: input.name, description: input.description, revision: 2, isActive: true, proposal: { ...proposalEvidence, state: "Approved", decidedBy: { userId: proposalActorId, displayName: "Ana" }, decidedAtUtc: "2026-10-17T13:00:00Z" } };
- server.use(http.post("/api/forms/catalogs/" + proposalCatalogId + "/proposal/approve", async ({ request }) => { body = await request.json(); return HttpResponse.json({ catalog: approved, itemIdentityMap: {} }); }));
- await expect(catalogs.approveCatalogProposal(proposalCatalogId, input)).resolves.toEqual({ catalog: approved, itemIdentityMap: {} });
+ server.use(http.post("/api/forms/catalogs/" + proposalCatalogId + "/proposal/approve", async ({ request }) => { body = await request.json(); return HttpResponse.json({ catalog: approved, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+ await expect(catalogs.approveCatalogProposal(proposalCatalogId, input)).resolves.toEqual({ catalog: approved, itemIdentityMap: {}, fieldIdentityMap: {} });
  expect(body).toEqual(input);
 });
 it("discards by revision and retains the captured initial proposal", async () => {
