@@ -29,6 +29,11 @@ describe("catalog extra field values", () => {
     expect(body[0]).toMatchObject({ id: field.id, key: "payment_days", name: field.name, type: "decimal" });
     expect(body[0]?.name).not.toBe(field.name);
   });
+  it("omits blank translations from field names instead of sending empty strings", () => {
+    const body = catalogFieldsBody([{ ...field, name: { es: "Plazo", en: "" } }, { ...field, localId: "other", name: { es: " Monto ", en: "   " } }]);
+    expect(body[0]?.name).toEqual({ es: "Plazo" });
+    expect(body[1]?.name).toEqual({ es: "Monto" });
+  });
   it("validates local bounds without throwing and rejects an empty catalog identity", () => {
     expect(parseCatalogFieldValue({ ...field, min: "1,5", max: "2,5" }, "2", "es")).toEqual({ valid: true, value: "2" });
     expect(parseCatalogFieldValue({ ...field, min: "bad" }, "2", "es")).toEqual({ valid: false, reason: "invalid" });

@@ -57,6 +57,6 @@ export function catalogFieldsBody(fields: readonly CatalogFieldDraft[], culture:
       const result = type ? parseCatalogValue(type, input, culture) : null;
       return result?.valid ? result.value : input;
     };
-    return { ...field, name: { ...field.name }, min: bound(field.min), max: bound(field.max), position: index + 1 };
+    return { ...field, name: { es: field.name.es.trim(), ...(field.name.en?.trim() ? { en: field.name.en.trim() } : {}) }, min: bound(field.min), max: bound(field.max), position: index + 1 };
   });
 }

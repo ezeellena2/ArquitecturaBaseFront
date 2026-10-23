@@ -18,7 +18,7 @@ describe("catalog extra field boundary", () => {
   });
   it("rejects missing current fields, unknown field properties and invalid metadata", () => {
     const { fields: _fields, ...incomplete } = catalog;
-    for (const value of [incomplete, { ...catalog, fields: [{ ...field, hidden: "private" }] }, { ...catalog, fields: [{ ...field, type: "money" }] }, { ...catalog, fields: [{ ...field, role: "admin" }] }, { ...catalog, fields: [field, field] }, { ...catalog, fields: [{ ...field, key: "Tax ID" }] }]) expect(() => readCatalog(value)).toThrow(UnsupportedCatalogResponse);
+    for (const value of [incomplete, { ...catalog, fields: [{ ...field, hidden: "private" }] }, { ...catalog, fields: [{ ...field, type: "money" }] }, { ...catalog, fields: [{ ...field, role: "admin" }] }, { ...catalog, fields: [field, field] }, { ...catalog, fields: [{ ...field, key: "Tax ID" }] }, { ...catalog, fields: [{ ...field, name: { es: "CUIT", en: "" } }] }]) expect(() => readCatalog(value)).toThrow(UnsupportedCatalogResponse);
   });
   it("reads canonical item maps and source labels while rejecting malformed keys or extra properties", () => {
     const page = { items: [item], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false };
