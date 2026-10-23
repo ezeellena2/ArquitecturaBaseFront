@@ -13,7 +13,7 @@ import { WideTable, WideTableCell, WideTableHead } from "@/shared/ui/WideTable";
 import { localizedValue } from "../editorModel";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
-import type { CatalogFieldDraft } from "../catalogFields";
+import { isCatalogOptionId, type CatalogFieldDraft } from "../catalogFields";
 import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { formatDateOnly } from "@/shared/lib/dateTime";
@@ -59,7 +59,7 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
             let content: ReactNode;
             if (column.field) {
               const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key];
-              content = editing ? <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} error={error} onChange={(value, texts) => onChange({ ...item, fields: { ...item.fields, [key]: value }, ...(texts ? { fieldTexts: { ...item.fieldTexts, [key]: { ...texts } } } : {}) })} /> : value === null || value === undefined ? "—" : field.type === "catalog" ? texts ? localizedValue(texts, culture, "es") : "—" : field.type === "boolean" ? t(value === "true" ? "catalogs.presentation.yes" : "catalogs.presentation.no") : field.type === "date" ? formatDateOnly(value, culture, "numeric") ?? value : value;
+              content = editing ? <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} error={error} onChange={(value, texts) => onChange({ ...item, fields: { ...item.fields, [key]: value }, ...(texts ? { fieldTexts: { ...item.fieldTexts, [key]: { ...texts } } } : {}) })} /> : value === null || value === undefined ? "—" : field.type === "catalog" ? texts ? localizedValue(texts, culture, "es") : isCatalogOptionId(value) ? "—" : value : field.type === "boolean" ? t(value === "true" ? "catalogs.presentation.yes" : "catalogs.presentation.no") : field.type === "date" ? formatDateOnly(value, culture, "numeric") ?? value : value;
             } else switch (column.id) {
               case "text": content = editing ? <CatalogInlineInput label={t("catalogs.items.inlineText", { number })} value={item.label[culture] ?? ""} readOnly={readOnly} count error={error} warning={warnings?.[item.localId]} onChange={value => onChange({ ...item, label: { ...item.label, [culture]: value } })}/> : <><p>{name}</p><p className="text-xs text-[var(--color-content-muted)]">{item.code}</p></>; break;
               case "code": content = <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineCode", { number })} value={item.code} readOnly={readOnly} error={error} onChange={code => onChange({ ...item, code })}/>; break;

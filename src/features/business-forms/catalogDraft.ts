@@ -24,18 +24,21 @@ export interface CatalogDraft {
   readonly moves: readonly CatalogItemMove[];
   readonly sortAlphabetically: boolean;
   readonly fields: readonly CatalogFieldDraft[];
+  // The confirmed definition: loaded values are formatted with it and an unedited value is checked against it.
+  readonly savedFields: readonly CatalogFieldDraft[];
   readonly presentation: CatalogPresentation | null;
   readonly confirmFieldRemovals: readonly string[];
 }
 export function openCatalogDraft(catalog?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text", culture: FormCulture = "es"): CatalogDraft {
   const origin = catalog?.kind ?? kind;
-  return { valueType: catalog?.valueType ?? (origin === "Filters" ? "Text" : valueType), culture, proposal: catalog?.proposal ?? null, isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: { es: catalog?.name.es ?? "", en: catalog?.name.en ?? "" }, description: { es: catalog?.description.es ?? "", en: catalog?.description.en ?? "" }, items: newCatalogItemEdits(), moves: [], sortAlphabetically: false, fields: catalog?.fields?.map(field => openCatalogField(field, culture)) ?? [], presentation: catalog?.presentation ? { title: [...catalog.presentation.title], description: [...catalog.presentation.description] } : null, confirmFieldRemovals: [] };
+  const fields = catalog?.fields?.map(field => openCatalogField(field, culture)) ?? [];
+  return { valueType: catalog?.valueType ?? (origin === "Filters" ? "Text" : valueType), culture, proposal: catalog?.proposal ?? null, isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: { es: catalog?.name.es ?? "", en: catalog?.name.en ?? "" }, description: { es: catalog?.description.es ?? "", en: catalog?.description.en ?? "" }, items: newCatalogItemEdits(), moves: [], sortAlphabetically: false, fields, savedFields: fields, presentation: catalog?.presentation ? { title: [...catalog.presentation.title], description: [...catalog.presentation.description] } : null, confirmFieldRemovals: [] };
 }
 export function catalogItemValue(item: CatalogItem, valueType: CatalogValueType, culture: FormCulture, fields: readonly CatalogFieldDraft[] = []): CatalogManualItemValue {
   // A persisted UUID is also a valid local correlation key. UI identity prefixes never enter a body.
   return { value: valueType === "Text" ? null : valueType === "Date" ? item.value : formatCatalogValue(valueType, item.value, culture), localId: item.id, itemId: item.id, label: { ...item.text }, detail: { ...item.detail }, code: item.code, position: item.position, isActive: item.isActive, fields: Object.fromEntries(Object.entries(item.fields ?? {}).map(([id, value]) => { const field = fields.find(field => field.id === id); return [id, field ? formatCatalogFieldValue(field, value, culture) || null : value]; })), fieldTexts: Object.fromEntries(Object.entries(item.fieldTexts ?? {}).map(([id, text]) => [id, { ...text }])) };
 }
-export const loadCatalogDraftItems = (draft: CatalogDraft, items: readonly CatalogItem[]): CatalogDraft => ({ ...draft, items: mergeCatalogItemPage(draft.items, items.map(item => catalogItemValue(item, draft.valueType, draft.culture, draft.fields))) });
+export const loadCatalogDraftItems = (draft: CatalogDraft, items: readonly CatalogItem[]): CatalogDraft => ({ ...draft, items: mergeCatalogItemPage(draft.items, items.map(item => catalogItemValue(item, draft.valueType, draft.culture, draft.savedFields))) });
 export const stageCatalogDraftItem = (draft: CatalogDraft, item: CatalogManualItemValue): CatalogDraft => ({ ...draft, items: stageCatalogItem(draft.items, item) });
 function canonicalItemValue(draft: CatalogDraft, item: CatalogManualItemValue): string | null {
   const parsed = parseCatalogValue(draft.valueType, item.value, draft.culture);
@@ -45,21 +48,37 @@ function canonicalItemValue(draft: CatalogDraft, item: CatalogManualItemValue): 
 // The server requires a field value only on active options.
 export const catalogItemFieldRule = (field: CatalogFieldDraft, item: Pick<CatalogManualItemValue, "isActive">): CatalogFieldDraft => ({ ...field, required: field.required && item.isActive });
 export interface CatalogItemFieldIssue { readonly fieldId: string; readonly reason: Extract<CatalogFieldValueResult, { valid: false }>["reason"] }
-export function catalogItemFieldIssues(draft: Pick<CatalogDraft, "fields" | "culture">, item: CatalogManualItemValue): readonly CatalogItemFieldIssue[] {
+/** The field values the author edited: all of a new option's, or those that differ from the loaded value. */
+export function editedFieldIds(draft: Pick<CatalogDraft, "items">, item: CatalogManualItemValue): readonly string[] {
+  const original = item.itemId === null ? undefined : draft.items.originals["item:" + item.itemId];
+  return Object.keys(item.fields ?? {}).filter(id => !original || (item.fields?.[id] ?? null) !== (original.fields?.[id] ?? null));
+}
+// An edited value, and any value of a new option, follows the draft definition. An unedited one is checked against the
+// saved definition: the server reviews a type or required change over all the stored values and answers for them.
+export function catalogItemFieldIssues(draft: Pick<CatalogDraft, "fields" | "savedFields" | "items" | "culture">, item: CatalogManualItemValue): readonly CatalogItemFieldIssue[] {
+  const edited = editedFieldIds(draft, item);
   return draft.fields.flatMap(field => {
     if (!field.id || !field.isActive) return [];
-    const result = parseCatalogFieldValue(catalogItemFieldRule(field, item), item.fields?.[field.id], draft.culture);
+    const definition = item.itemId === null || edited.includes(field.id) ? field : draft.savedFields.find(saved => saved.id === field.id) ?? field;
+    const result = parseCatalogFieldValue(catalogItemFieldRule(definition, item), item.fields?.[field.id], draft.culture);
     return result.valid ? [] : [{ fieldId: field.id, reason: result.reason }];
   });
 }
-export function catalogDraftBody(draft: CatalogDraft): CreateManualCatalogBody {
-  return { valueType: draft.valueType, name: { ...draft.name }, description: { ...draft.description }, fields: catalogFieldsBody(draft.fields, draft.culture), presentation: draft.presentation ? { title: [...draft.presentation.title], description: [...draft.presentation.description] } : null, items: catalogItemChanges(draft.items).map(item => ({ value: canonicalItemValue(draft, item), localId: item.localId, itemId: item.itemId, code: item.code, text: { ...item.label }, detail: { ...item.detail }, isActive: item.isActive, ...(item.fields ? { fields: Object.fromEntries(Object.entries(item.fields).flatMap(([id, input]) => {
+// items[i].fields is a delta: an absent key keeps the stored value, so only edited values travel.
+function editedFieldValues(draft: CatalogDraft, item: CatalogManualItemValue): Readonly<Record<string, string | null>> {
+  return Object.fromEntries(editedFieldIds(draft, item).flatMap(id => {
     const field = draft.fields.find(field => field.id === id && field.isActive);
     if (!field) return [];
-    const parsed = parseCatalogFieldValue(catalogItemFieldRule(field, item), input, draft.culture);
+    const parsed = parseCatalogFieldValue(catalogItemFieldRule(field, item), item.fields?.[id], draft.culture);
     if (!parsed.valid) throw new Error("Invalid catalog field value.");
     return [[id, parsed.value]];
-  })) } : {}) })) };
+  }));
+}
+export function catalogDraftBody(draft: CatalogDraft): CreateManualCatalogBody {
+  return { valueType: draft.valueType, name: { ...draft.name }, description: { ...draft.description }, fields: catalogFieldsBody(draft.fields, draft.culture), presentation: draft.presentation ? { title: [...draft.presentation.title], description: [...draft.presentation.description] } : null, items: catalogItemChanges(draft.items).map(item => {
+    const fields = editedFieldValues(draft, item);
+    return { value: canonicalItemValue(draft, item), localId: item.localId, itemId: item.itemId, code: item.code, text: { ...item.label }, detail: { ...item.detail }, isActive: item.isActive, ...(Object.keys(fields).length ? { fields } : {}) };
+  }) };
 }
 
 export function stageCatalogDraftMove(draft: CatalogDraft, itemId: string, direction: CatalogItemMove["direction"]): CatalogDraft {

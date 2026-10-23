@@ -9,6 +9,8 @@ export type CatalogFieldBody = Omit<CatalogFieldDraft, "hasValues" | "usedBy">;
 export type CatalogFieldValueResult = { readonly valid: true; readonly value: string | null } | { readonly valid: false; readonly reason: "required" | "invalid" | "range" | "length" };
 export type CatalogFieldProblemReason = Extract<CatalogFieldValueResult, { valid: false }>["reason"];
 const textMaxLength = 300;
+/** An option of the source catalog: a non-empty GUID. */
+export const isCatalogOptionId = (text: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text) && !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(text);
 
 export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: { es: "" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, hasValues: false, usedBy: [] });
 export const openCatalogField = (field: CatalogField, culture: FormCulture = "es"): CatalogFieldDraft => ({ ...field, localId: field.id, name: { ...field.name }, min: field.min === null ? null : formatCatalogFieldValue(field, field.min, culture), max: field.max === null ? null : formatCatalogFieldValue(field, field.max, culture), usedBy: field.usedBy.map(use => ({ ...use })) });
@@ -41,7 +43,7 @@ export function parseCatalogFieldValue(field: Pick<CatalogFieldDraft, "type" | "
     }
     return result;
   }
-  if (field.type === "boolean" && text !== "true" && text !== "false" || field.type === "catalog" && (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text) || /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(text))) return { valid: false, reason: "invalid" };
+  if (field.type === "boolean" && text !== "true" && text !== "false" || field.type === "catalog" && !isCatalogOptionId(text)) return { valid: false, reason: "invalid" };
   if (field.type === "text" && text.length > (field.maxLength ?? textMaxLength)) return { valid: false, reason: "length" };
   return { valid: true, value: field.type === "catalog" ? text.toLowerCase() : text };
 }

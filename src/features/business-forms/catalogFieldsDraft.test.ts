@@ -41,6 +41,17 @@ it("requires a field value only on active options", () => {
   expect(catalogDraftUpdateBody(cleared).items[0]).toMatchObject({ isActive: false, fields: { [fieldId]: null } });
 });
 
+it("sends only the edited field values of a changed option", () => {
+  const zoneId = "01990000-0000-7000-8000-000000000013";
+  const zone: CatalogField = { ...field, id: zoneId, key: "zone", name: { es: "Zona" }, type: "text", position: 2 };
+  const loaded = loadCatalogDraftItems(openCatalogDraft({ ...catalog, fields: [field, zone] }), [{ ...item, fields: { [fieldId]: "1500.5", [zoneId]: "Norte" } }]);
+  const original = Object.values(loaded.items.originals)[0]!;
+  const edited = stageCatalogDraftItem(loaded, { ...original, fields: { ...original.fields, [zoneId]: "Sur" } });
+  expect(catalogDraftUpdateBody(edited).items[0]?.fields).toEqual({ [zoneId]: "Sur" });
+  const renamed = stageCatalogDraftItem(loaded, { ...original, label: { es: "Norte nuevo" } });
+  expect(catalogDraftUpdateBody(renamed).items[0]).not.toHaveProperty("fields");
+});
+
 it("opens canonical decimal bounds in the catalog culture without changing their magnitude", () => {
   const draft = openCatalogDraft({ ...catalog, fields: [{ ...field, min: "1.234", max: "10.123" }] });
   expect(draft.fields[0]).toMatchObject({ min: "1,234", max: "10,123" });

@@ -104,6 +104,71 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await waitFor(() => expect(bodies).toHaveLength(1));
     expect(bodies[0]).toMatchObject({ items: [{ itemId, text: { es: "Pérez Norte" }, isActive: false }] });
   });
+  const fieldId = "01990000-0000-7000-8000-000000000031";
+  const savedField = (values: { key: string; name: string; type: string }) => ({ id: fieldId, key: values.key, name: { es: values.name }, type: values.type, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: true, usedBy: [] });
+  function fieldSetup(field: ReturnType<typeof savedField>, values: Record<string, string>, answer: () => Response) {
+    setup(); const bodies: { fields: Record<string, unknown>[]; items: Record<string, unknown>[] }[] = [];
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [field] })), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, fields: values }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as typeof bodies[number]); return answer(); }));
+    return bodies;
+  }
+  async function renameOption(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
+    const text = screen.getByRole("textbox", { name: "Texto" }); await user.clear(text); await pasteText(user, text, "Pérez Norte");
+  }
+  it("lets the server review a type change instead of blocking Save", async () => {
+    const term = savedField({ key: "term", name: "Plazo", type: "text" });
+    const bodies = fieldSetup(term, { [fieldId]: "30 días" }, () => HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ ...term, type: "integer" }] }, itemIdentityMap: {}, fieldIdentityMap: {} }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
+    await renameOption(user);
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toMatchObject({ fields: [{ id: fieldId, type: "integer" }], items: [{ itemId, text: { es: "Pérez Norte" } }] });
+    expect(bodies[0]!.items[0]).not.toHaveProperty("fields");
+  });
+  it("lets the server count missing values when a field becomes required", async () => {
+    const message = "Completá el CUIT en las opciones activas.";
+    const bodies = fieldSetup(savedField({ key: "tax_id", name: "CUIT", type: "text" }), {}, () => HttpResponse.json({ code: "Forms.Catalog.FieldValuesMissing", detail: message, errors: { "fields[0].required": [message] }, missingCount: 12 }, { status: 400 }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar CUIT" }));
+    await user.click(screen.getByRole("checkbox", { name: "Obligatorio" }));
+    await renameOption(user);
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("Faltan valores en 12 opciones activas.")).toBeInTheDocument();
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toMatchObject({ fields: [{ id: fieldId, required: true }] });
+    expect(bodies[0]!.items[0]).not.toHaveProperty("fields");
+    expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
+  });
+  it("does not send a reformatted value when another column of the option changes", async () => {
+    const amount = savedField({ key: "amount", name: "Cantidad", type: "integer" });
+    const bodies = fieldSetup(amount, { [fieldId]: "1500" }, () => HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ ...amount, type: "text" }] }, itemIdentityMap: {}, fieldIdentityMap: {} }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Cantidad" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
+    await renameOption(user);
+    expect(screen.getByRole("textbox", { name: "Cantidad" })).toHaveValue("1.500");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toMatchObject({ fields: [{ id: fieldId, type: "text" }], items: [{ itemId, text: { es: "Pérez Norte" } }] });
+    expect(bodies[0]!.items[0]).not.toHaveProperty("fields");
+  });
+  it("shows a saved value that is not an option yet while a change to a catalog field is pending", async () => {
+    fieldSetup(savedField({ key: "zone", name: "Zona", type: "text" }), { [fieldId]: "Sur" }, () => HttpResponse.json({}, { status: 500 }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Zona" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "catalog");
+    expect(within(await screen.findByRole("table")).getByText("Sur", { exact: true })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
+    expect(screen.getByRole("combobox", { name: "Zona" })).toHaveValue("Sur");
+  });
   it("retains a conflicted draft through reread and requires an explicit adoption without a second write", async () => {
     setup(); let writes = 0;
     server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 }); }));
