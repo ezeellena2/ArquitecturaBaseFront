@@ -24,6 +24,8 @@ it("offers neither filters nor its own presentation for a Filters catalog", asyn
   renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage", "formcatalogs.read"] }} source={{ catalog: id }} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}><p>Una o varias</p></CatalogQuestionSettings></MemoryRouter>);
   await waitFor(() => expect(served).toBe(true));
   await waitFor(() => expect(screen.queryByText("Cargando…")).not.toBeInTheDocument());
+  // A detail the strict guard rejects would also leave nothing to show; only a loaded catalog proves the Filters branch.
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(screen.getByText("Una o varias")).toBeInTheDocument();
   expect(screen.queryByText("Qué opciones ve cada persona")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Agregar filtro fijo" })).not.toBeInTheDocument();
