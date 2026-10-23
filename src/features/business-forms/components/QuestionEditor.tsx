@@ -11,7 +11,7 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { PencilIcon, ChevronDownIcon, TrashIcon } from "@/shared/ui/icons";
 import { localizedValue, missingQuestionTexts, moveItem, replaceQuestionType, questionEditorType, changeQuestionCatalog, type QuestionEditorType } from "../editorModel";
-import type { DraftQuestion, FormCulture } from "../model";
+import type { CatalogQuestionPreview, DraftQuestion, FormCulture } from "../model";
 import type { DraftFieldIssue } from "../validationPaths";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogQuestionName } from "./CatalogQuestionName";
@@ -21,9 +21,9 @@ import { changeQuestionMultiplicity, validSelectionCounts } from "../selectionQu
 import { CatalogQuestionSettings } from "./CatalogQuestionSettings";
 
 const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
-export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, filesAvailable = false }: {
+export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, definitionId = null, previewCulture = culture, onPreviewChange, filesAvailable = false }: {
   question: DraftQuestion; position: number; total: number; culture: FormCulture; original: FormCulture; expanded: boolean; readOnly: boolean;
-  catalogScope?: CatalogReadScope; filesAvailable?: boolean;
+  catalogScope?: CatalogReadScope; definitionId?: string | null; previewCulture?: FormCulture; onPreviewChange?: (questionId: string, preview: CatalogQuestionPreview | null) => void; filesAvailable?: boolean;
   issues: readonly DraftFieldIssue[]; onChange: (question: DraftQuestion) => void; onExpand: (open: boolean) => void; onMove: (delta: number) => void; onRemove: () => void;
 }) {
   const { t } = useTranslation("forms");
@@ -75,6 +75,11 @@ export function QuestionEditor({ question, position, total, culture, original, e
   }
   const selectionError = question.type === "multiChoice" ? fieldError("selection(?:\\.(?:minSelected|maxSelected))?") ?? (!validSelectionCounts(question.selection) ? t("multiple.invalidRange") : !question.source && question.selection.minSelected > question.options.length ? t("multiple.impossibleMinimum") : undefined) : undefined;
   const optionError = fieldError("options") ?? (question.type === "multiChoice" && !question.source && question.options.length > 20 ? t("multiple.optionLimit") : undefined);
+  const selectionControls = <>{question.type === "choice" || question.type === "multiChoice" ? <CheckboxField label={t("multiple.allow")} checked={question.type === "multiChoice"} disabled={readOnly} onCheckedChange={multiple => {
+        if (question.fieldId) setConfirmation({ multiple });
+        else onChange(changeQuestionMultiplicity(question, multiple, question.localId, () => crypto.randomUUID()));
+      }} /> : null}
+      {question.type === "multiChoice" ? <div data-question-control="selection" className="space-y-2"><SelectionRangeFields value={{ minimum: question.selection.minSelected, maximum: question.selection.maxSelected }} limit={20} minimumLabel={t("multiple.minimum")} maximumLabel={t("multiple.maximum")} readOnly={readOnly} error={selectionError} onChange={range => onChange({ ...question, selection: { minSelected: range.minimum, maxSelected: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })}/><p className="text-xs text-[var(--color-content-muted)]">{t("multiple.hint")}</p></div> : null}</>;
   return <div ref={rootRef} data-question-local-id={question.localId} className="border-t border-[var(--color-border)] first:border-t-0">
     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
       <span className="text-sm text-[var(--color-content-muted)]">{position}</span>
@@ -99,16 +104,12 @@ export function QuestionEditor({ question, position, total, culture, original, e
         </div>
       </div>
       {question.type === "photo" || question.type === "document" ? <FileQuestionSettings question={question} readOnly={readOnly} error={fieldError("files")} onChange={onChange} /> : null}
-      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
+      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} type={question.type} questionId={question.localId} definitionId={definitionId} contentCulture={previewCulture} onPreviewChange={onPreviewChange} onSourceChange={source => onChange({ ...question, source })} errors={Object.fromEntries(languageIssues.filter(issue => issue.path.includes(".source.") && !issue.choiceLocalId).map(issue => [issue.path.split(".source.")[1]!, issue.messages]))} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
         if (catalogId === question.source?.catalog) return;
         if (question.fieldId) setConfirmation({ catalog: catalogId });
         else onChange(changeQuestionCatalog(question, catalogId, question.localId));
-      }} /> : null}
-      {question.type === "choice" || question.type === "multiChoice" ? <CheckboxField label={t("multiple.allow")} checked={question.type === "multiChoice"} disabled={readOnly} onCheckedChange={multiple => {
-        if (question.fieldId) setConfirmation({ multiple });
-        else onChange(changeQuestionMultiplicity(question, multiple, question.localId, () => crypto.randomUUID()));
-      }} /> : null}
-      {question.type === "multiChoice" ? <div data-question-control="selection" className="space-y-2"><SelectionRangeFields value={{ minimum: question.selection.minSelected, maximum: question.selection.maxSelected }} limit={20} minimumLabel={t("multiple.minimum")} maximumLabel={t("multiple.maximum")} readOnly={readOnly} error={selectionError} onChange={range => onChange({ ...question, selection: { minSelected: range.minimum, maxSelected: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })}/><p className="text-xs text-[var(--color-content-muted)]">{t("multiple.hint")}</p></div> : null}
+      }}>{selectionControls}</CatalogQuestionSettings> : null}
+      {(question.type === "choice" || question.type === "multiChoice") && !question.source ? selectionControls : null}
       {(question.type === "choice" || question.type === "multiChoice") && !question.source ? <div className="flex flex-col gap-3">
         {optionError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{optionError}</p> : null}
         {question.options.map((option, index) => <div key={option.localId} className="flex flex-wrap items-end gap-2">

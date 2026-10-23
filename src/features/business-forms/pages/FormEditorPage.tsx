@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -46,7 +46,7 @@ import { missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../edi
 import { formActorKey, formDetailKey, useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
 import type { FormDeactivation, FormDetail, FormPublicationCheck } from "../api/response";
-import type { DraftEditorValue, FormCulture, FormDefinitionSnapshot } from "../model";
+import type { CatalogQuestionPreview, DraftEditorValue, FormCulture, FormDefinitionSnapshot } from "../model";
 
 import { missingFormInitial } from "../missingFormSeed";
 
@@ -109,6 +109,12 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
 
   const cooldown = useCountdown(0);
   const { restart: restartCooldown } = cooldown;
+  const previewOwner = JSON.stringify([scope.actorId, scope.culture, [...scope.permissions].sort(), editor.session?.scope.editorId]);
+  const [catalogPreviews, setCatalogPreviews] = useState<{ owner: string; items: Readonly<Record<string, CatalogQuestionPreview | null>> }>({ owner: previewOwner, items: {} });
+  const observeCatalogPreview = useCallback((questionId: string, preview: CatalogQuestionPreview | null) => setCatalogPreviews(previous => {
+    const items = previous.owner === previewOwner ? previous.items : {};
+    return JSON.stringify(items[questionId] ?? null) === JSON.stringify(preview) && previous.owner === previewOwner ? previous : { owner: previewOwner, items: { ...items, [questionId]: preview } };
+  }), [previewOwner]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [prefixTouched, setPrefixTouched] = useState("definition" in initial);
   const [removeId, setRemoveId] = useState<string | null>(null);
@@ -155,7 +161,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     if (!editor.issue) { dismissNotification(feedbackId); return; }
     const issue = editor.issue;
     const visiblePaths = issue.fields?.filter(field => /^(name(?:\.(es|en))?|prefix|offerWhen|draft\.fields|draft\.submitLabel(?:\.(es|en))?)$/.test(field.path)
-      || /\.(label|help)(?:\.(es|en))?$/.test(field.path) || /\.(type|required|maxLength|options|selection(?:\.(?:minSelected|maxSelected))?)$/.test(field.path)).map(field => field.path) ?? [];
+      || /\.(label|help)(?:\.(es|en))?$/.test(field.path) || /\.(type|required|maxLength|options|selection(?:\.(?:minSelected|maxSelected))?)$/.test(field.path) || /\.source(?:\.|$)/.test(field.path)).map(field => field.path) ?? [];
     const feedback = errorFeedback(issue.error, { writing: session?.phase === "Unconfirmed", fields: visiblePaths });
     if (issue.kind === "validation" && visiblePaths.length) {
       const first = issue.fields?.find(field => visiblePaths.includes(field.path));
@@ -261,13 +267,13 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
         </div><p className="text-xs text-[var(--color-content-muted)]">{t("translations")}</p></Surface>
         <Surface title={t("questions")} actions={<>{maximumFiles(value.draft.fields) > 0 ? <span className="text-xs text-[var(--color-content-muted)]">{t("files.budget", { total: maximumFiles(value.draft.fields) })}</span> : null}<span className="text-xs text-[var(--color-content-muted)]">{t("publication.questions", { count: value.draft.fields.length })}</span>{!readOnly ? <Button ref={addQuestionButton} type="button" variant="outline" disabled={value.draft.fields.length >= 40} onClick={() => { const q = newQuestion("shortText", value.draft.culture, crypto.randomUUID()); change({ ...value, draft: { ...value.draft, fields: [...value.draft.fields, q] } }); setExpanded(q.localId); }}>{t("addQuestion")}</Button> : null}</>}>
           {value.draft.fields.length === 0 ? <EmptyState embedded title={t("emptyQuestions")} /> : null}
-          {value.draft.fields.map((q, index) => <QuestionEditor key={q.localId} catalogScope={scope} filesAvailable={presentation.data?.installedFeatures?.includes("form-files") ?? false} question={q} position={index + 1} total={value.draft.fields.length} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalid === q.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.fieldLocalId === q.localId)} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, fields: moveItem(value.draft.fields, index, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }} />)}
+          {value.draft.fields.map((q, index) => <QuestionEditor key={q.localId} catalogScope={scope} definitionId={session.confirmed?.id ?? null} previewCulture={contentCulture !== value.draft.culture && missingFormTexts(value, contentCulture) ? value.draft.culture : contentCulture} onPreviewChange={observeCatalogPreview} filesAvailable={presentation.data?.installedFeatures?.includes("form-files") ?? false} question={q} position={index + 1} total={value.draft.fields.length} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalid === q.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.fieldLocalId === q.localId)} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, fields: moveItem(value.draft.fields, index, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }} />)}
           {value.draft.fields.length >= 40 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("questionLimit", { count: 40 })}</p> : null}
           {errorFor("draft.fields") ? <p role="alert" className="p-4 text-sm text-[var(--color-danger)]">{errorFor("draft.fields")}</p> : null}
 
         </Surface>
       </div>
-      <FormPreview key={session.scope.editorId} value={value} culture={contentCulture} />
+      <FormPreview key={session.scope.editorId} value={value} culture={contentCulture} catalogPreviews={catalogPreviews.owner === previewOwner ? catalogPreviews.items : {}} />
     </div>
     {session.confirmed && scope.permissions.includes("formsuggestions.manage") ? <Suspense fallback={<Spinner />}><FormSuggestionsSection publishedVersionId={projection?.activeVersion?.versionId??null} timeZoneId={timeZoneId} definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} contentCulture={contentCulture} onDirtyChange={setSuggestionsDirty} /></Suspense> : null}
     {session.confirmed && scope.permissions.includes("formrules.manage") ? <Suspense fallback={<Spinner />}><FormRulesSection timeZoneId={timeZoneId} definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} contentCulture={contentCulture} onDirtyChange={setRulesDirty} /></Suspense> : null}

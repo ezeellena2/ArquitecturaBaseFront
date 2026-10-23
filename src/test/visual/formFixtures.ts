@@ -1,3 +1,5 @@
+import { canonicalCatalogSourceSchema } from "@/features/business-forms/api/response";
+import { normalizeCatalogQuestionSource } from "@/features/business-forms/catalogQuestionSource";
 import { readSuggestionOptions, type FormSuggestionSet } from "@/features/business-forms/api/suggestions";
 import { createRuleVisualFixtures } from "./formRuleFixtures";
 import budgetEsCheck from "../fixtures/forms-http/budget-http/es.json" with { type: "json" };
@@ -218,7 +220,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       const activeVersion = overview(definition.id).activeVersion;
       const previousCultures = activeVersion?.cultures ?? [];
       return json({ definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: nextVersionNumber(definition.id), compatibility: "LocallyValidated",
-        canAccept: available, acceptanceAvailability: available ? "Available" : "Unavailable", cultures, channels: [{ channelId: "phone", profileRevision: "fixture-v1", compatibility: "LocallyValidated", externalEvidence: "Pending", cultures: complete }], issues: [],
+        canAccept: available, acceptanceAvailability: available ? "Available" : "Unavailable", cultures, channels: [{ channelId: "phone", profileRevision: "fixture-v1", compatibility: "LocallyValidated", externalEvidence: "Pending", cultures: complete }], issues: [], warnings: [],
         checkToken: available ? "fixture-publication-ticket" : null, checkExpiresAtUtc: available ? "2099-10-10T16:00:00Z" : null,
         diff: { baseVersionId: activeVersion?.versionId ?? null, added: activeVersion ? [] : definition.draft.fields.map(q => q.fieldId), changed: [], removed: [], addedCultures: complete.filter(value => !previousCultures.includes(value)), removedCultures: previousCultures.filter(value => !complete.includes(value)) } });
     }
@@ -329,11 +331,13 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       fields.push({ localId: q.localId, fieldId, key: common.key, replacesFieldId: q.replacesFieldId });
       if ((q.type === "choice" || q.type === "multiChoice") && q.source) {
         if (!q.source.catalog) throw new Error("The synthetic canonical response requires a selected catalog.");
+        const source = canonicalCatalogSourceSchema.safeParse(normalizeCatalogQuestionSource(q.source));
+        if (!source.success) throw new Error("The synthetic canonical response requires a complete catalog source.");
         if (q.type === "multiChoice") {
           if (!validSelectionCounts(q.selection)) throw new Error("Invalid selection counts.");
-          return { ...common, type: q.type, source: { catalog: q.source.catalog }, selection: { ...q.selection } };
+          return { ...common, type: q.type, source: source.data, selection: { ...q.selection } };
         }
-        return { ...common, type: q.type, source: { catalog: q.source.catalog } };
+        return { ...common, type: q.type, source: source.data };
       }
       if ((q.type === "choice" || q.type === "multiChoice") && !q.source) {
         const options = q.options.map(o => {

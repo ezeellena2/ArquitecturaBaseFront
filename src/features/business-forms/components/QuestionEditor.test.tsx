@@ -7,12 +7,13 @@ import { server } from "@/test/mocks/server";
 import { useState } from "react";
 import { act, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { QuestionEditor } from "./QuestionEditor";
 import { moveItem } from "../editorModel";
 import type { DraftQuestion } from "../model";
 
+beforeEach(() => { server.use(http.get("/api/forms/catalogs/:id/items", () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })), http.get("/api/forms/catalogs/:id", ({ params }) => HttpResponse.json({ ...manualDetail, id: params.id, key: String(params.id).replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, itemsCount: 0 }))); });
 const first: DraftQuestion = { localId: "a", fieldId: "field-a", replacesFieldId: null, type: "choice", label: { es: "Cliente" }, help: null, required: true,
   options: [{ localId: "north", choiceId: "north", label: { es: "Norte" } }, { localId: "south", choiceId: "south", label: { es: "Sur" } }] };
 const second: DraftQuestion = { localId: "b", fieldId: "field-b", replacesFieldId: null, type: "date", label: { es: "Fecha" }, help: null, required: true };

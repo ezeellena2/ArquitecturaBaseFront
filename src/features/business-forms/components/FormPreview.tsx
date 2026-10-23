@@ -11,9 +11,10 @@ import { Button } from "@/shared/ui/button";
 import { formScreens } from "../fileQuestions";
 import { Banner } from "@/shared/ui/Banner";
 import { missingFormTexts } from "../editorModel";
-import type { DraftEditorValue, FormCulture } from "../model";
+import type { CatalogQuestionPreview, DraftEditorValue, FormCulture } from "../model";
+import { sameCatalogQuestionSource } from "../catalogQuestionSource";
 
-export function FormPreview({ value, culture }: { value: DraftEditorValue; culture: FormCulture }) {
+export function FormPreview({ value, culture, catalogPreviews = {} }: { value: DraftEditorValue; culture: FormCulture; catalogPreviews?: Readonly<Record<string, CatalogQuestionPreview | null>> }) {
   const { t } = useTranslation("forms");
   const missing = culture === value.draft.culture ? 0 : missingFormTexts(value, culture);
   const previewCulture = missing ? value.draft.culture : culture;
@@ -41,6 +42,16 @@ export function FormPreview({ value, culture }: { value: DraftEditorValue; cultu
         const setAnswer = (next: string) => setAnswers(previous => ({ ...previous, [q.localId]: next }));
         const help = text(q.help) || undefined;
         if (q.type === "photo" || q.type === "document") return <div key={q.localId} className="flex flex-col gap-2"><p className="text-sm font-medium">{label}</p>{help ? <p className="text-sm text-[var(--color-content-muted)]">{help}</p> : null}<Button type="button" variant="outline" disabled>{content(q.type === "document" ? "files.attachDocument" : q.files.photoSource === "camera" ? "files.takePhoto" : "files.addPhotos")}</Button><p className="text-xs text-[var(--color-content-muted)]">{content("files.range", { minimum: q.files.minFiles, maximum: q.files.maxFiles })}</p></div>;
+        if ((q.type === "choice" || q.type === "multiChoice") && q.source) {
+          const candidate = catalogPreviews[q.localId];
+          const prepared = candidate?.culture === previewCulture && sameCatalogQuestionSource(candidate.source, q.source) ? candidate : null;
+          const options = prepared?.state === "Ready" ? prepared.options : [];
+          const maximum = q.type === "multiChoice" ? q.selection.maxSelected : null;
+          const picked = (multipleAnswers[q.localId] ?? []).filter(id => options.some(option => option.id === id)).slice(0, maximum ?? 0);
+          return <div key={q.localId} role="group" aria-label={label} className="flex flex-col gap-1.5"><p className="text-sm font-medium">{label}{q.required ? " *" : ""}</p>{help ? <p className="text-xs text-[var(--color-content-muted)]">{help}</p> : null}
+            {!prepared ? <>{q.type === "choice" ? <NativeSelect aria-label={label} disabled value=""><option value="">{content("select")}</option></NativeSelect> : null}<p className="text-xs text-[var(--color-content-muted)]">{content("catalogQuestion.optionsAtSend")}</p></> : prepared.state !== "Ready" ? <p className="text-xs text-[var(--color-content-muted)]">{content(prepared.state === "RecipientDataMissing" ? "catalogQuestion.preview.missingData" : "catalogQuestion.preview.unavailable")}</p> : options.length === 0 ? <p className="text-xs text-[var(--color-content-muted)]">{content("catalogQuestion.preview.noOptions")}</p> : q.type === "multiChoice" ? <><p className="text-xs text-[var(--color-content-muted)]">{content("multiple.upTo", { maximum: maximum ?? "—" })}</p>{options.map(option => <CheckboxField key={option.id} label={option.title} description={option.description || undefined} checked={picked.includes(option.id)} disabled={!picked.includes(option.id) && (maximum === null || picked.length >= maximum)} onCheckedChange={checked => setMultipleAnswers(previous => ({ ...previous, [q.localId]: checked ? [...picked, option.id] : picked.filter(id => id !== option.id) }))}/>)}</> : <><NativeSelect aria-label={label} value={options.some(option => option.id === answer) ? answer : ""} onChange={event => setAnswer(event.target.value)}><option value="">{content("select")}</option>{options.map(option => <option key={option.id} value={option.id}>{option.title}</option>)}</NativeSelect>{options.find(option => option.id === answer)?.description ? <p className="text-xs text-[var(--color-content-muted)]">{options.find(option => option.id === answer)!.description}</p> : null}</>}
+          </div>;
+        }
         if (q.type === "multiChoice") {
           const maximum = q.selection.maxSelected;
           const own = q.source ? [] : q.options;
