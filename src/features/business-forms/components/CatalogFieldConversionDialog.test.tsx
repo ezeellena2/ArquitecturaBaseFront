@@ -16,7 +16,7 @@ it("lists row, value and reason with the remaining count and offers to show thos
   await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Plazo de pago (días)" from="text" field={term} convertedCount={1188} invalidCount={12} rows={rows} onClose={onClose} onShowRows={onShowRows} />); });
   const dialog = screen.getByRole("dialog", { name: "Cambiar el tipo de «Plazo de pago (días)»" });
   expect(within(dialog).getByText("De texto a entero")).toBeInTheDocument();
-  expect(within(dialog).getByText("Se revisan los 1200 valores cargados: 1188 se convierten y 12 no.")).toBeInTheDocument();
+  expect(within(dialog).getByText("Se revisan los 1.200 valores cargados: 1.188 se convierten y 12 no.")).toBeInTheDocument();
   expect(within(dialog).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Fila", "Qué pasa"]);
   const [first, second] = within(dialog).getAllByRole("row").slice(1).map(row => within(row).getAllByRole("cell").map(cell => cell.textContent));
   expect(first).toEqual(["37", "«30 días» no es un número entero."]);
@@ -48,5 +48,15 @@ it("speaks English with the same counts", async () => {
     expect(within(dialog).getByText("1 loaded value is checked: 0 convert and 1 doesn't.")).toBeInTheDocument();
     expect(within(dialog).queryByText(/more\.$/)).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Show the row in the table" })).toBeInTheDocument();
+  } finally { await act(async () => { await i18n.changeLanguage("es"); }); }
+});
+
+it("groups thousands in every count", async () => {
+  await act(async () => { await i18n.changeLanguage("en"); });
+  try {
+    await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Term" from="text" field={term} convertedCount={1188} invalidCount={1200} rows={rows} onClose={() => {}} onShowRows={() => {}} />); });
+    const dialog = screen.getByRole("dialog", { name: "Change the type of “Term”" });
+    expect(within(dialog).getByText("All 2,388 loaded values are checked: 1,188 convert and 1,200 don't.")).toBeInTheDocument();
+    expect(within(dialog).getByText("And 1,198 more.")).toBeInTheDocument();
   } finally { await act(async () => { await i18n.changeLanguage("es"); }); }
 });

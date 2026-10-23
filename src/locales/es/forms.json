@@ -319,9 +319,9 @@
       "restoreField": "Restaurar el campo",
       "conversion": {
         "title": "Cambiar el tipo de «{{name}}»", "types": "De {{from}} a {{to}}",
-        "reviewed_one": "Se revisa 1 valor cargado: {{converted}} y {{invalid}}.", "reviewed_other": "Se revisan los {{count}} valores cargados: {{converted}} y {{invalid}}.",
-        "converted_one": "{{count}} se convierte", "converted_other": "{{count}} se convierten", "invalid_one": "{{count}} no", "invalid_other": "{{count}} no",
-        "row": "Fila", "what": "Qué pasa", "more_one": "Y {{count}} más.", "more_other": "Y {{count}} más.",
+        "reviewed_one": "Se revisa 1 valor cargado: {{converted}} y {{invalid}}.", "reviewed_other": "Se revisan los {{count, number(useGrouping: always)}} valores cargados: {{converted}} y {{invalid}}.",
+        "converted_one": "{{count}} se convierte", "converted_other": "{{count, number(useGrouping: always)}} se convierten", "invalid_one": "{{count}} no", "invalid_other": "{{count, number(useGrouping: always)}} no",
+        "row": "Fila", "what": "Qué pasa", "more_one": "Y {{count}} más.", "more_other": "Y {{count, number(useGrouping: always)}} más.",
         "hint": "Corregilos en la tabla, o exportá, corregí el Excel e importalo. El tipo cambia al guardar, cuando todos entran.",
         "show_one": "Ver la fila en la tabla", "show_other": "Ver los {{count}} en la tabla"
       }

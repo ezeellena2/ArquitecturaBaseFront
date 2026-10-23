@@ -319,9 +319,9 @@
       "restoreField": "Restore field",
       "conversion": {
         "title": "Change the type of “{{name}}”", "types": "From {{from}} to {{to}}",
-        "reviewed_one": "1 loaded value is checked: {{converted}} and {{invalid}}.", "reviewed_other": "All {{count}} loaded values are checked: {{converted}} and {{invalid}}.",
-        "converted_one": "{{count}} converts", "converted_other": "{{count}} convert", "invalid_one": "{{count}} doesn't", "invalid_other": "{{count}} don't",
-        "row": "Row", "what": "What happens", "more_one": "And {{count}} more.", "more_other": "And {{count}} more.",
+        "reviewed_one": "1 loaded value is checked: {{converted}} and {{invalid}}.", "reviewed_other": "All {{count, number(useGrouping: always)}} loaded values are checked: {{converted}} and {{invalid}}.",
+        "converted_one": "{{count}} converts", "converted_other": "{{count, number(useGrouping: always)}} convert", "invalid_one": "{{count}} doesn't", "invalid_other": "{{count, number(useGrouping: always)}} don't",
+        "row": "Row", "what": "What happens", "more_one": "And {{count}} more.", "more_other": "And {{count, number(useGrouping: always)}} more.",
         "hint": "Fix them in the table, or export, fix the Excel file and import it. The type changes on save, once they all fit.",
         "show_one": "Show the row in the table", "show_other": "Show the {{count}} in the table"
       }
