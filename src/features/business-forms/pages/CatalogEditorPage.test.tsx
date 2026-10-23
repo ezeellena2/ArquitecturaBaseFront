@@ -241,6 +241,13 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(within(screen.getByRole("row", { name: /Pérez/ })).getByText("«30 días» no es un número entero.")).toBeInTheDocument();
     expect(within(screen.getByRole("row", { name: /Gómez/ })).queryByText(/no es un número entero/)).not.toBeInTheDocument();
   });
+  it("keeps the catalog's last option from moving down while only the rows with errors show", async () => {
+    viewport(true); conversionSetup(termRows[1]); const user = userEvent.setup();
+    await showErrorRows(user);
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Bajar Pérez" })).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Bajar Gómez" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Subir Gómez" })).toBeEnabled();
+  });
   it("goes back to the whole list when searching while the rows with errors show", async () => {
     viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
     await showErrorRows(user);
