@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { newCatalogField } from "../catalogFields";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import { CatalogManualItemsEditor } from "./CatalogManualItemsEditor";
 
@@ -105,4 +106,22 @@ it("bulk changes only the selected current page and clears selection on another 
  await user.click(screen.getByRole("checkbox",{name:"Seleccionar opciones de esta página"}));
  await user.click(screen.getByRole("button",{name:"Reactivar"}));
  expect(change.mock.calls.map(([item])=>item.localId)).toEqual(["first","second"]);
+});
+const confirmed = { ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", type: "boolean" as const, required: true, name: { es: "Confirmado" } };
+const inactive: CatalogManualItemValue = { ...first, isActive: false, fields: { [confirmed.id]: "true" } };
+it("presents a required field as optional on an inactive option, as the server only requires it on active ones", async () => {
+  const change = vi.fn(); const props = { fields: [confirmed], culture: "es" as const, valueType: "Text" as const, canManage: true, expandedKey: "first", onExpand: vi.fn(), onChange: change, onAdd: vi.fn() };
+  const { rerender } = renderWithProviders(<CatalogManualItemsEditor {...props} items={[inactive]} />);
+  expect(screen.getByText("Confirmado", { selector: "label" })).toHaveTextContent(/^Confirmado$/);
+  await userEvent.click(screen.getByRole("button", { name: "Limpiar Confirmado" }));
+  expect(change).toHaveBeenLastCalledWith(expect.objectContaining({ localId: "first", fields: { [confirmed.id]: null } }));
+  rerender(<CatalogManualItemsEditor {...props} items={[{ ...inactive, isActive: true }]} />);
+  expect(screen.getByText("Confirmado", { selector: "label" })).toHaveTextContent(/^Confirmado \*$/);
+  expect(screen.queryByRole("button", { name: "Limpiar Confirmado" })).not.toBeInTheDocument();
+});
+it("lets an inactive option clear a required boolean from its table cell", async () => {
+  vi.mocked(useMediaQuery).mockReturnValue(true); const change = vi.fn();
+  renderWithProviders(<CatalogManualItemsEditor items={[{ ...inactive, fields: { [confirmed.id]: "false" } }]} fields={[confirmed]} culture="es" valueType="Text" canManage expandedKey={null} onExpand={vi.fn()} onChange={change} onAdd={vi.fn()} />);
+  await userEvent.click(screen.getByRole("button", { name: "Limpiar Fila 1 · Confirmado" }));
+  expect(change).toHaveBeenLastCalledWith(expect.objectContaining({ localId: "first", fields: { [confirmed.id]: null } }));
 });

@@ -11,6 +11,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 import type { CatalogFieldDraft } from "../catalogFields";
+import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { localizedValue } from "../editorModel";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
@@ -30,7 +31,7 @@ export function CatalogItemFields({ item, culture, valueType, fields = [], scope
       {columns.map(column => {
         const error = errors?.[column.errorPath]?.join(" ");
         if (column.field) {
-          const field = column.field, key = field.id ?? field.localId, label = localizedValue(field.name, culture, "es");
+          const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, label = localizedValue(field.name, culture, "es");
           return <FormField key={column.id} label={label} required={field.required} error={error}><CatalogExtraFieldInput field={field} scope={scope} label={label} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} culture={culture} readOnly={readOnly} onChange={(value, texts) => onChange({ ...item, fields: { ...item.fields, [key]: value }, ...(texts ? { fieldTexts: { ...item.fieldTexts, [key]: { ...texts } } } : {}) })} /></FormField>;
         }
         switch (column.id) {

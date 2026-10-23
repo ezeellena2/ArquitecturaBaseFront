@@ -43,12 +43,12 @@ function canonicalItemValue(draft: CatalogDraft, item: CatalogManualItemValue): 
   return parsed.value;
 }
 // The server requires a field value only on active options.
-const itemFieldRule = (field: CatalogFieldDraft, item: CatalogManualItemValue): CatalogFieldDraft => ({ ...field, required: field.required && item.isActive });
+export const catalogItemFieldRule = (field: CatalogFieldDraft, item: Pick<CatalogManualItemValue, "isActive">): CatalogFieldDraft => ({ ...field, required: field.required && item.isActive });
 export interface CatalogItemFieldIssue { readonly fieldId: string; readonly reason: Extract<CatalogFieldValueResult, { valid: false }>["reason"] }
 export function catalogItemFieldIssues(draft: Pick<CatalogDraft, "fields" | "culture">, item: CatalogManualItemValue): readonly CatalogItemFieldIssue[] {
   return draft.fields.flatMap(field => {
     if (!field.id || !field.isActive) return [];
-    const result = parseCatalogFieldValue(itemFieldRule(field, item), item.fields?.[field.id], draft.culture);
+    const result = parseCatalogFieldValue(catalogItemFieldRule(field, item), item.fields?.[field.id], draft.culture);
     return result.valid ? [] : [{ fieldId: field.id, reason: result.reason }];
   });
 }
@@ -56,7 +56,7 @@ export function catalogDraftBody(draft: CatalogDraft): CreateManualCatalogBody {
   return { valueType: draft.valueType, name: { ...draft.name }, description: { ...draft.description }, fields: catalogFieldsBody(draft.fields, draft.culture), presentation: draft.presentation ? { title: [...draft.presentation.title], description: [...draft.presentation.description] } : null, items: catalogItemChanges(draft.items).map(item => ({ value: canonicalItemValue(draft, item), localId: item.localId, itemId: item.itemId, code: item.code, text: { ...item.label }, detail: { ...item.detail }, isActive: item.isActive, ...(item.fields ? { fields: Object.fromEntries(Object.entries(item.fields).flatMap(([id, input]) => {
     const field = draft.fields.find(field => field.id === id && field.isActive);
     if (!field) return [];
-    const parsed = parseCatalogFieldValue(itemFieldRule(field, item), input, draft.culture);
+    const parsed = parseCatalogFieldValue(catalogItemFieldRule(field, item), input, draft.culture);
     if (!parsed.valid) throw new Error("Invalid catalog field value.");
     return [[id, parsed.value]];
   })) } : {}) })) };
