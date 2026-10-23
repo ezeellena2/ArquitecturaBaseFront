@@ -89,7 +89,7 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
   const close = () => { if (state.busy === "apply") return; operation.current?.abort(); operation.current = null; setState(fresh(owner, state.revision, state.source)); onClose(); };
   const changeSource = (source: string) => { if (!state.busy && (source === "file" || source === "paste")) setState(fresh(owner, state.revision, source)); };
   return <Dialog open onOpenChange={open => { if (!open && state.busy !== "apply") close(); }}><DialogContent mobileFullscreen className="flex flex-col sm:max-w-3xl" showCloseButton={state.busy !== "apply"} onCloseAutoFocus={restoreFocus}>
-    <DialogHeader><DialogTitle>{t("catalogs.import.title", { name: catalog.name[scope.culture] || catalog.name.es })}</DialogTitle><DialogDescription>{t("catalogs.import.description")}</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle className="pr-6">{t("catalogs.import.title", { name: catalog.name[scope.culture] || catalog.name.es })}</DialogTitle><DialogDescription>{t("catalogs.import.description")}</DialogDescription></DialogHeader>
     <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
       <ol className="flex flex-wrap gap-4 text-sm">{["fileStep", "reviewStep", "applyStep"].map((step, index) => <li key={step} aria-current={index === (preview ? 1 : 0) ? "step" : undefined}>{index + 1} · {t("catalogs.import." + (state.source === "paste" && step === "fileStep" ? "pasteStep" : step))}</li>)}</ol>
       {!owned || state.forbidden ? <p>{t("catalogs.import.forbidden")}</p> : !preview ? <Tabs value={state.source} onValueChange={changeSource}>

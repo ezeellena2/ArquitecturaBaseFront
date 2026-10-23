@@ -119,6 +119,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.setViewportSize({ width, height: 900 }); await enter(page, language, "catalogs-import-typed");
     await importAction(page, en, width, "paste");
     const dialog = page.getByRole("dialog", { name: label("Importar opciones a «Recargo por zona»", "Import options into “Zone surcharge”"), exact: true });
+    await expect(dialog.getByRole("heading")).toBeVisible();
+    const overlappingTitleRects = await dialog.evaluate(node => {
+      const range = document.createRange(); range.selectNodeContents(node.querySelector('[data-slot="dialog-title"]')!);
+      const close = node.querySelector('[data-slot="dialog-close"]')!.getBoundingClientRect();
+      return Array.from(range.getClientRects(), rect => ({ left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom }))
+        .filter(rect => rect.left < close.right && rect.right > close.left && rect.top < close.bottom && rect.bottom > close.top);
+    });
+    expect(overlappingTitleRects).toEqual([]);
     await dialog.getByRole("textbox", { name: label("Pegá las filas con encabezados", "Paste rows with headers"), exact: true }).fill("Code\tText\tValue\nN\tNorte\t1500.5\nC1\tGBA\t1500.5\n");
     await dialog.getByRole("button", { name: label("Revisar", "Review"), exact: true }).click();
     const apply = dialog.getByRole("button", { name: label("Aplicar sin las 24 filas con errores", "Apply without the 24 rows with errors"), exact: true });
