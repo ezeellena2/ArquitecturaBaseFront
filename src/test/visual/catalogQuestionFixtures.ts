@@ -13,9 +13,9 @@ export function createCatalogQuestionVisualFixtures(culture: FormCulture, scenar
   const forms = createFormFixtureStore(culture, "forms-catalog");
   const original = forms.definitions.get(fixtureFormId)!;
   const definition: FormDefinitionSnapshot = { ...original, name: { es: "Pedir repuesto", en: "Request a spare part" }, prefix: "PDR", draft: { ...original.draft, fields: [
-    { fieldId: id(702), key: "sucursal", type: "shortText", label: { es: "Sucursal", en: "Branch" }, help: null, required: true, maxLength: 80 },
-    { fieldId: id(704), key: "repuesto", type: "shortText", label: { es: "Repuesto", en: "Spare part" }, help: null, required: true, maxLength: 80 },
-    { fieldId: ids.question, key: "proveedores", type: "multiChoice", label: { es: "Proveedores a consultar", en: "Suppliers to contact" }, help: null, required: true,
+    { fieldId: id(702), key: "field_" + id(702).replaceAll("-", ""), type: "shortText", label: { es: "Sucursal", en: "Branch" }, help: null, required: true, maxLength: 80 },
+    { fieldId: id(704), key: "field_" + id(704).replaceAll("-", ""), type: "shortText", label: { es: "Repuesto", en: "Spare part" }, help: null, required: true, maxLength: 80 },
+    { fieldId: ids.question, key: "field_" + ids.question.replaceAll("-", ""), type: "multiChoice", label: { es: "Proveedores a consultar", en: "Suppliers to contact" }, help: null, required: true,
       source: { catalog: ids.suppliers, match: [{ fieldId: ids.zone, personAttributeId: ids.attribute }] }, selection: { minSelected: 1, maxSelected: 3 } },
   ] } };
   forms.definitions.set(definition.id, definition);
