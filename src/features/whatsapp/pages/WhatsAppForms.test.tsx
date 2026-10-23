@@ -138,6 +138,8 @@ it("prepares recipient catalogs and shows their counts before sending", async ()
 
 it.each([
   ["CatalogEmpty","Cliente: no tiene opciones y la pregunta es obligatoria."],
+  ["RecipientDataMissing","Cliente: a esta persona le falta un dato para recibir estas opciones. Cargalo en Editar usuario y volvé a mandar."],
+  ["CatalogFilterUnavailable","Cliente: el filtro no se puede usar. Avisale a quien administra el formulario."],
   ["CatalogTooLarge","Cliente: supera las 200 opciones que admite WhatsApp. Ajustá el catálogo antes de mandar."],
   ["CatalogUnavailable","Cliente: el catálogo no se puede usar. Avisale a quien lo administra."],
   ["CatalogOptionInvalid","Cliente: 2 opciones de Clientes no entran en WhatsApp. Revisá sus textos y detalles."],

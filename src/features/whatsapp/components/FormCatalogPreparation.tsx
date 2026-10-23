@@ -8,6 +8,7 @@ import type { ChatFormPreparation } from "../api/forms";
 const issueKeys: Readonly<Record<string,string>> = {
   "Forms.Record.CatalogUnavailable":"unavailable", "Forms.Record.CatalogTooLarge":"tooLarge",
   "Forms.Record.CatalogTooLargeForMultiple":"tooLargeForMultiple",
+  "Forms.Record.RecipientDataMissing":"recipientDataMissing", "Forms.Record.CatalogFilterUnavailable":"filterUnavailable",
   "Forms.Record.CatalogEmpty":"empty", "Forms.Record.CatalogOptionInvalid":"invalidOption",
 };
 export function FormCatalogPreparation({query,waiting,hasCatalogQuestions}: {query:UseQueryResult<ChatFormPreparation>,waiting:boolean,hasCatalogQuestions:boolean}) {
