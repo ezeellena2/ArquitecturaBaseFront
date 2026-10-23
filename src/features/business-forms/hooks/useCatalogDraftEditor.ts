@@ -11,13 +11,15 @@ import type { FormCulture } from "../model";
 
 import { catalogFiltersBody } from "../catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "../components/CatalogFiltersEditor";
+import { catalogFieldsBody, parseCatalogFieldValue, type CatalogFieldDraft } from "../catalogFields";
+import type { CatalogPresentation } from "../api/catalogResponse";
 
 export interface CatalogReadScope { readonly actorId: string | null; readonly culture: FormCulture; readonly permissions: readonly string[] }
 interface EditorState {
   readonly owner: string;
   readonly epoch: object;
   readonly draft: CatalogDraft;
-  readonly baseline: Pick<CatalogDraft, "name" | "description" | "filters" | "isActive">;
+  readonly baseline: Pick<CatalogDraft, "name" | "description" | "filters" | "isActive" | "fields" | "presentation">;
   readonly busy: boolean;
   readonly requiresReview: boolean;
   readonly current: CatalogDetail | null;
@@ -27,7 +29,7 @@ interface EditorState {
 }
 function fresh(owner: string, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text", culture: FormCulture = "es"): EditorState {
   const draft = openCatalogDraft(initial, kind, valueType, culture);
-  return { owner, epoch: {}, draft, baseline: { isActive: draft.isActive, name: draft.name, description: draft.description, filters: draft.filters }, busy: false, requiresReview: false, current: null, saved: null, previewResult: null, error: null };
+  return { owner, epoch: {}, draft, baseline: { isActive: draft.isActive, name: draft.name, description: draft.description, filters: draft.filters, fields: draft.fields, presentation: draft.presentation }, busy: false, requiresReview: false, current: null, saved: null, previewResult: null, error: null };
 }
 export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text") {
   const client = useQueryClient();
@@ -60,6 +62,14 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => ({ ...value, error: null, previewResult: null, draft: { ...value.draft, filters: { ...filters, conditions: filters.conditions.map(condition => ({ ...condition })) } } }));
   }, [owned, isCurrentOwner]);
+  const changeFields = useCallback((fields: readonly CatalogFieldDraft[], confirmFieldRemovals: readonly string[]) => {
+    if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
+    setState(value => ({ ...value, error: null, draft: { ...value.draft, fields: fields.map(field => ({ ...field, name: { ...field.name }, usedBy: field.usedBy.map(use => ({ ...use })) })), confirmFieldRemovals: [...confirmFieldRemovals] } }));
+  }, [owned, isCurrentOwner]);
+  const changePresentation = useCallback((presentation: CatalogPresentation | null) => {
+    if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
+    setState(value => ({ ...value, error: null, draft: { ...value.draft, presentation: presentation ? { title: [...presentation.title], description: [...presentation.description] } : null } }));
+  }, [owned, isCurrentOwner]);
   const changeItem = useCallback((item: CatalogManualItemValue) => {
     if (!owned || !isCurrentOwner() || !canManage || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => ({ ...value, error: null, draft: stageCatalogDraftItem(value.draft, item) }));
@@ -84,6 +94,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview) return;
     const captured = stateRef.current.draft;
     if (captured.kind === "Manual" && catalogItemChanges(captured.items).some(item => !parseCatalogValue(captured.valueType, item.value, captured.culture).valid)) return;
+    if (captured.kind === "Manual" && catalogItemChanges(captured.items).some(item => captured.fields.some(field => field.id && field.isActive && !parseCatalogFieldValue(field, item.fields?.[field.id], captured.culture).valid))) return;
     const pendingProposal = captured.proposal?.state === "Pending";
     if (captured.filters && (captured.isActive || pendingProposal) && !sampleUserId) return;
     let writing = false;
@@ -173,15 +184,17 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     const current = stateRef.current, draft = current.draft, baseline = current.baseline;
     if (!owned || !isCurrentOwner() || operation.current || current.busy || catalog.id !== draft.id || catalog.revision < (draft.revision ?? 0)
       || draft.sortAlphabetically || draft.moves.length || Object.keys(draft.items.changes).length
-      || draft.isActive !== baseline.isActive || JSON.stringify(draft.name) !== JSON.stringify(baseline.name) || JSON.stringify(draft.description) !== JSON.stringify(baseline.description)) return;
+      || draft.isActive !== baseline.isActive || JSON.stringify(draft.name) !== JSON.stringify(baseline.name) || JSON.stringify(draft.description) !== JSON.stringify(baseline.description)
+      || JSON.stringify(catalogFieldsBody(draft.fields, draft.culture)) !== JSON.stringify(catalogFieldsBody(baseline.fields, draft.culture)) || JSON.stringify(draft.presentation) !== JSON.stringify(baseline.presentation)) return;
     setState(fresh(owner, catalog, kind, valueType, scope.culture));
     void client.invalidateQueries({ queryKey: ["form-catalogs", scope.actorId] });
   }, [owned, isCurrentOwner, owner, kind, valueType, scope.culture, scope.actorId, client]);
   const draft = owned ? state.draft : null;
   const dirty = !!draft && (draft.isActive !== state.baseline.isActive || JSON.stringify(draft.name) !== JSON.stringify(state.baseline.name)
     || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description)
+    || JSON.stringify(catalogFieldsBody(draft.fields, draft.culture)) !== JSON.stringify(catalogFieldsBody(state.baseline.fields, draft.culture)) || JSON.stringify(draft.presentation) !== JSON.stringify(state.baseline.presentation)
     || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0 || draft.sortAlphabetically);
   return { draft, dirty, busy: owned && state.busy, requiresReview: owned && state.requiresReview, current: owned ? state.current : null,
     saved: owned ? state.saved : null, previewResult: owned && canManage ? state.previewResult : null, error: owned ? state.error : null, canSave: owned && canManage && !state.busy && !state.requiresReview,
-    changeSort, observeCatalog, changeMetadata, changeFilters, clearPreview, preview, changeItem, changeMove, clearMoves, loadItems, save, discardProposal, readCurrent, adoptCurrent };
+    changeSort, observeCatalog, changeMetadata, changeFilters, changeFields, changePresentation, clearPreview, preview, changeItem, changeMove, clearMoves, loadItems, save, discardProposal, readCurrent, adoptCurrent };
 }

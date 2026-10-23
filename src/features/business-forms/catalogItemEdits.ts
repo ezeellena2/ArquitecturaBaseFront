@@ -8,19 +8,21 @@ export interface CatalogManualItemValue {
   readonly value: string | null;
   readonly isActive: boolean;
   readonly position: number | null;
+  readonly fields?: Readonly<Record<string, string | null>>;
+  readonly fieldTexts?: Readonly<Record<string, Readonly<Record<string, string>>>>;
 }
 export interface CatalogItemEdits {
   readonly originals: Readonly<Record<string, CatalogManualItemValue>>;
   readonly changes: Readonly<Record<string, CatalogManualItemValue>>;
 }
 const identity = (item: CatalogManualItemValue) => item.itemId ? "item:" + item.itemId : "new:" + item.localId;
-const copy = (item: CatalogManualItemValue): CatalogManualItemValue => ({ ...item, label: { ...item.label }, detail: { ...item.detail } });
+const copy = (item: CatalogManualItemValue): CatalogManualItemValue => ({ ...item, label: { ...item.label }, detail: { ...item.detail }, ...(item.fields ? { fields: { ...item.fields } } : {}), ...(item.fieldTexts ? { fieldTexts: Object.fromEntries(Object.entries(item.fieldTexts).map(([id, texts]) => [id, { ...texts }])) } : {}) });
 const sameTexts = (first: Readonly<Record<string, string | null>>, second: Readonly<Record<string, string | null>>) => {
   const keys = Object.keys(first);
   return keys.length === Object.keys(second).length && keys.every(key => Object.hasOwn(second, key) && first[key] === second[key]);
 };
 const sameValue = (first: CatalogManualItemValue, second: CatalogManualItemValue) => first.itemId === second.itemId && first.code === second.code && first.value === second.value
-  && first.isActive === second.isActive && first.position === second.position && sameTexts(first.label, second.label) && sameTexts(first.detail, second.detail);
+  && first.isActive === second.isActive && first.position === second.position && sameTexts(first.label, second.label) && sameTexts(first.detail, second.detail) && sameTexts(first.fields ?? {}, second.fields ?? {});
 
 export const newCatalogItemEdits = (): CatalogItemEdits => ({ originals: {}, changes: {} });
 
