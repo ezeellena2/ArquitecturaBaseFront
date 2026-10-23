@@ -33,3 +33,5 @@ MF1 y el espacio por formulario exigen RecordsRead OR ApprovalsDecide con el req
 La ruta estática /formularios/faltantes exige formtemplates.manage independientemente de formtemplates.read. El alta /formularios/nuevo conserva Read+Manage; su semilla de nombre no concede permisos ni escribe el pedido.
 
 La ruta /formularios/:formId/respuestas/:recordId/completa exige RecordsRead y comparte el workspace del formulario con D2. En celular, la entrada D2 con Read redirige allí; la decisión sin lectura conserva su marco de metadata. El enlace completo lleva sólo orden, pregunta de orden y versiones públicos; filtros privados y origen permanecen en memoria.
+
+`UserDataSectionShell` aporta la sección lazy de Datos sólo con forms en installedFeatures y UsersManage. El contrato neutral no conserva valores. La carga de la sección tiene su Suspense local, sin desmontar AppLayout. La tabla del módulo abre el editor de usuario por id mediante app. /datos-de-personas exige FormPersonDataManage; UsersRead se controla sólo para la tabla de personas.

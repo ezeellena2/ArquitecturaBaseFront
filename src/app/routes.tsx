@@ -9,6 +9,7 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { HomeLayout } from "@/layouts/HomeLayout";
 import { AppLayout } from "@/layouts/AppLayout";
 import { FormOverviewShell } from "./FormOverviewShell";
+import { UserDataSectionShell } from "./UserDataSectionShell";
 import { Spinner } from "@/shared/ui/Spinner";
 import { RouteErrorPage } from "./RouteErrorPage";
 
@@ -32,7 +33,7 @@ export const routes: RouteObject[] = [
     HydrateFallback: Spinner,
     children: [
       {
-        element: <HomeLayout authenticatedShell={<FormOverviewShell><AppLayout /></FormOverviewShell>} />,
+        element: <HomeLayout authenticatedShell={<UserDataSectionShell><FormOverviewShell><AppLayout /></FormOverviewShell></UserDataSectionShell>} />,
         children: [
           { path: "/", lazy: async () => ({ Component: (await import("@/app/AuthenticatedHome")).AuthenticatedHome }) },
           {
@@ -49,6 +50,7 @@ export const routes: RouteObject[] = [
                   { path: "/catalogos/:catalogId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/CatalogEditorPage")).CatalogEditorPage }) },
                 ],
               },
+              { element: <ProtectedRoute permission="formpersondata.manage" />, children: [{ path: "/datos-de-personas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/PersonDataPage")).PersonDataPage }) }] },
               { element: <ProtectedRoute permission="formtemplates.manage" />, children: [{ path: "/formularios/faltantes", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/MissingFormsPage")).MissingFormsPage }) }] },
               { element: <ProtectedRoute permission="formrules.manage" />, children: [{ path: "/formularios/:formId/pdf", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormPdfDesignPage")).FormPdfDesignPage }) }] },
               {

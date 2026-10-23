@@ -62,6 +62,7 @@ export const administration: NavigationPanel = {
       children: [
         { labelKey: "navigation.users", to: "/usuarios", icon: UsersIcon, permission: "users.read" },
         { labelKey: "navigation.roles", to: "/roles", icon: ShieldIcon, permission: "roles.read" },
+        { labelKey: "navigation.personData", to: "/datos-de-personas", icon: UsersIcon, permission: "formpersondata.manage" },
       ],
     },
     { labelKey: "navigation.settings", icon: SettingsIcon, children: [

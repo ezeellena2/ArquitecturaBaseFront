@@ -26,3 +26,5 @@ Las migas de respuesta leen número y nombre del padre aportados por el detalle 
 Las migas del diseño PDF usan el nombre confirmado que aporta su pantalla: Inicio / formulario / Diseño del PDF. El formulario enlaza al editor sólo con formtemplates.read; RulesManage por sí solo conserva el nombre como texto.
 
 «Formularios que faltan» es un destino fijo de Formularios, debajo de Catálogos, con formtemplates.manage exacto. Sus migas usan la entrada propia y no enlazan al listado de diseño sin permiso de lectura.
+
+Datos de las personas es una entrada plana de Administración, con formpersondata.manage. La lectura de personas exige además users.read dentro de la pantalla; ese requisito no oculta la administración de definiciones.
