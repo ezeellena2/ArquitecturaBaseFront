@@ -1,0 +1,20 @@
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import type { PropsWithChildren } from "react";
+import { beforeEach, expect, it, vi } from "vitest";
+import { ApiError } from "@/shared/api/ApiError";
+import { createQueryClient } from "@/shared/api/queryClient";
+import { previewRecipient } from "../api/recipientPreview";
+import { useRecipientPreview } from "./useRecipientPreview";
+vi.mock("../api/recipientPreview", () => ({ previewRecipient: vi.fn() }));
+const scope = { actorId: "actor", culture: "es" as const, permissions: ["formtemplates.read", "formtemplates.manage"] };
+const source = { catalog: "catalog", match: [{ fieldId: "branch", personAttributeId: "attribute" }] };
+const data = (name: string) => ({ recipient: { id: name, name, values: [] }, state: "Ready" as const, optionCount: 1, limit: 200 as const, exceedsLimit: false, options: [{ id: "option", title: name, description: null }], presentationCheck: { titleTooLongCount: 0, examples: [] } });
+function mount() { const client = createQueryClient(); function Wrapper({ children }: PropsWithChildren) { return <QueryClientProvider client={client}>{children}</QueryClientProvider>; }
+ const hook = renderHook(({ actorId, catalog }) => useRecipientPreview({ ...scope, actorId }, "form", "question", "choice", { ...source, catalog }), { wrapper: Wrapper, initialProps: { actorId: "actor", catalog: "catalog" } }); return { ...hook, client }; }
+beforeEach(() => { vi.clearAllMocks(); vi.mocked(previewRecipient).mockImplementation((_id, body) => Promise.resolve(data(body.sampleUserId))); });
+it("previews an explicit sample outside mutation and query caches without persisting the draft", async () => { const { result, client } = mount(); expect(previewRecipient).not.toHaveBeenCalled(); act(() => result.current.select({ id: "Ana", name: "Ana" })); await waitFor(() => expect(result.current.result?.recipient.id).toBe("Ana")); expect(previewRecipient).toHaveBeenCalledWith("form", { type: "choice", source, sampleUserId: "Ana", culture: "es" }, expect.any(AbortSignal)); expect(client.getMutationCache().getAll()).toEqual([]); expect(client.getQueryCache().getAll()).toEqual([]); });
+it("ignores another recipient's late preview and immediately hides stale options", async () => { const { result } = mount(); let finish!: (value: ReturnType<typeof data>) => void; let firstSignal!: AbortSignal;
+ vi.mocked(previewRecipient).mockImplementationOnce((_id, _body, signal) => { firstSignal = signal!; return new Promise(resolve => { finish = resolve; }); }); act(() => result.current.select({ id: "Ana", name: "Ana" })); await waitFor(() => expect(previewRecipient).toHaveBeenCalledTimes(1)); act(() => result.current.select({ id: "Luis", name: "Luis" })); expect(result.current.result).toBeNull(); await waitFor(() => expect(result.current.result?.recipient.id).toBe("Luis")); expect(firstSignal.aborted).toBe(true); await act(async () => { finish(data("Ana")); }); expect(result.current.result?.recipient.id).toBe("Luis"); });
+it("retires the selected person when ownership changes and never applies the old result", async () => { const { result, rerender } = mount(); act(() => result.current.select({ id: "Ana", name: "Ana" })); await waitFor(() => expect(result.current.result).not.toBeNull()); rerender({ actorId: "other", catalog: "catalog" }); expect(result.current.person).toBeNull(); expect(result.current.result).toBeNull(); });
+it("clears stale options after a source change and a failed preview", async () => { const { result, rerender } = mount(); act(() => result.current.select({ id: "Ana", name: "Ana" })); await waitFor(() => expect(result.current.result).not.toBeNull()); vi.mocked(previewRecipient).mockRejectedValue(new ApiError(409, { code: "Forms.Catalog.FilterUnavailable" })); rerender({ actorId: "actor", catalog: "other" }); expect(result.current.result).toBeNull(); await waitFor(() => expect(result.current.error).toBeInstanceOf(ApiError)); expect(result.current.result).toBeNull(); });
