@@ -46,6 +46,13 @@ export function stageCatalogItem(state: CatalogItemEdits, item: CatalogManualIte
   return { originals: state.originals, changes };
 }
 
+// Clearing a value also drops its option text, so a cell never shows an option it no longer holds; a chosen option brings its texts.
+export function withCatalogFieldValue(item: CatalogManualItemValue, key: string, value: string | null, texts?: Readonly<Record<string, string>>): CatalogManualItemValue {
+  const next = { ...item, fields: { ...item.fields, [key]: value } };
+  if (value === null && item.fieldTexts && Object.hasOwn(item.fieldTexts, key)) { const { [key]: _cleared, ...fieldTexts } = item.fieldTexts; return { ...next, fieldTexts }; }
+  return value !== null && texts ? { ...next, fieldTexts: { ...item.fieldTexts, [key]: { ...texts } } } : next;
+}
+
 export const catalogItemChanges = (state: CatalogItemEdits): readonly CatalogManualItemValue[] => Object.values(state.changes).map(copy);
 
 export function currentCatalogItem(state: CatalogItemEdits, item: CatalogManualItemValue): CatalogManualItemValue {

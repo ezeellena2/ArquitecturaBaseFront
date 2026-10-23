@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogItemChanges, mergeCatalogItemPage, newCatalogItemEdits, stageCatalogItem, type CatalogManualItemValue } from "./catalogItemEdits";
+import { catalogItemChanges, mergeCatalogItemPage, newCatalogItemEdits, stageCatalogItem, withCatalogFieldValue, type CatalogManualItemValue } from "./catalogItemEdits";
 
 const first: CatalogManualItemValue = { value: null, localId: "first", itemId: "saved-first", label: { es: "Pérez Hnos.", en: "" }, detail: { es: "Av. Colón 1234", en: null }, code: "C-001", isActive: true, position: 1 };
 const second: CatalogManualItemValue = { ...first, localId: "second", itemId: "saved-second", label: { es: "Ferretería Sur", en: "South hardware" }, code: "C-002", position: 2 };
@@ -46,6 +46,14 @@ describe("Manual catalog edits across partial pages", () => {
     source.label.es = "Changed outside the editor";
     source.detail.es = "Changed outside the editor";
     expect(catalogItemChanges(state)).toEqual([{ ...first, code: "LOCAL" }]);
+  });
+  it("drops the source text when a field value is cleared", () => {
+    const item = { ...first, fields: { zone: "zone-centro", tax: "20-1" }, fieldTexts: { zone: { es: "Centro" }, other: { es: "Otro" } } };
+    const cleared = withCatalogFieldValue(item, "zone", null);
+    expect(cleared).toEqual({ ...first, fields: { zone: null, tax: "20-1" }, fieldTexts: { other: { es: "Otro" } } });
+    expect(withCatalogFieldValue(cleared, "zone", "zone-norte", { es: "Norte", en: "North" })).toEqual({ ...first, fields: { zone: "zone-norte", tax: "20-1" }, fieldTexts: { zone: { es: "Norte", en: "North" }, other: { es: "Otro" } } });
+    expect(withCatalogFieldValue(item, "tax", "20-2")).toEqual({ ...item, fields: { zone: "zone-centro", tax: "20-2" } });
+    expect(item.fieldTexts.zone).toEqual({ es: "Centro" });
   });
   it("does not stage unchanged text maps when their property order differs", () => {
     const state = mergeCatalogItemPage(newCatalogItemEdits(), [first]);

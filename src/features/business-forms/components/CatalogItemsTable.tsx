@@ -11,7 +11,7 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { WideTable, WideTableCell, WideTableHead } from "@/shared/ui/WideTable";
 import { localizedValue } from "../editorModel";
-import type { CatalogManualItemValue } from "../catalogItemEdits";
+import { withCatalogFieldValue, type CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 import { unconvertedFieldValue, type CatalogFieldDraft } from "../catalogFields";
 import { catalogItemFieldRule } from "../catalogDraft";
@@ -59,7 +59,7 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
             let content: ReactNode;
             if (column.field) {
               const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key];
-              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} error={error} onChange={(value, texts) => onChange({ ...item, fields: { ...item.fields, [key]: value }, ...(texts ? { fieldTexts: { ...item.fieldTexts, [key]: { ...texts } } } : {}) })} />;
+              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} error={error} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} />;
               else {
                 const shown = value === null || value === undefined ? "—" : field.type === "catalog" && texts ? localizedValue(texts, culture, "es") : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "boolean" ? t(value === "true" ? "catalogs.presentation.yes" : "catalogs.presentation.no") : field.type === "date" ? formatDateOnly(value, culture, "numeric") ?? value : value);
                 // The text cell (below 640 px or without Manage) keeps its mark, such as a value the new type does not take.
