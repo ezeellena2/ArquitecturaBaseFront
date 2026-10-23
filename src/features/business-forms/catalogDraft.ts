@@ -53,13 +53,15 @@ export function editedFieldIds(draft: Pick<CatalogDraft, "items">, item: Catalog
   const original = item.itemId === null ? undefined : draft.items.originals["item:" + item.itemId];
   return Object.keys(item.fields ?? {}).filter(id => !original || (item.fields?.[id] ?? null) !== (original.fields?.[id] ?? null));
 }
-// An edited value, and any value of a new option, follows the draft definition. An unedited one is checked against the
-// saved definition: the server reviews a type or required change over all the stored values and answers for them.
+// An edited value, and any value of a new option, follows the draft definition. An unedited one keeps the saved type,
+// range and length, and is required only when both definitions require it: the server reviews a type or required change
+// over all the stored values and answers for them.
 export function catalogItemFieldIssues(draft: Pick<CatalogDraft, "fields" | "savedFields" | "items" | "culture">, item: CatalogManualItemValue): readonly CatalogItemFieldIssue[] {
   const edited = editedFieldIds(draft, item);
   return draft.fields.flatMap(field => {
     if (!field.id || !field.isActive) return [];
-    const definition = item.itemId === null || edited.includes(field.id) ? field : draft.savedFields.find(saved => saved.id === field.id) ?? field;
+    const saved = item.itemId === null || edited.includes(field.id) ? undefined : draft.savedFields.find(candidate => candidate.id === field.id);
+    const definition = saved ? { ...saved, required: saved.required && field.required } : field;
     const result = parseCatalogFieldValue(catalogItemFieldRule(definition, item), item.fields?.[field.id], draft.culture);
     return result.valid ? [] : [{ fieldId: field.id, reason: result.reason }];
   });

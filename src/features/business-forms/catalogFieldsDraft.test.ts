@@ -41,6 +41,13 @@ it("requires a field value only on active options", () => {
   expect(catalogDraftUpdateBody(cleared).items[0]).toMatchObject({ isActive: false, fields: { [fieldId]: null } });
 });
 
+it("requires an unedited value only when both the saved and the draft definitions require it", () => {
+  const draft = loadCatalogDraftItems(openCatalogDraft({ ...catalog, fields: [{ ...field, required: true }] }), [{ ...item, isActive: false, fields: {} }]);
+  const original = Object.values(draft.items.originals)[0]!;
+  const optional = { ...draft, fields: draft.fields.map(field => ({ ...field, required: false })) };
+  expect(catalogItemFieldIssues(optional, { ...original, isActive: true })).toEqual([]);
+});
+
 it("sends only the edited field values of a changed option", () => {
   const zoneId = "01990000-0000-7000-8000-000000000013";
   const zone: CatalogField = { ...field, id: zoneId, key: "zone", name: { es: "Zona" }, type: "text", position: 2 };
