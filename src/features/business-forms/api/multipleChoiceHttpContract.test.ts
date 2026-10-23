@@ -16,8 +16,8 @@ it("qualifies all multiple-choice capture names and producer sources from the jo
   const definitions = httpCohort("forms").verify();
   const responses = httpCohort("responses").verify();
   const pdf = httpCohort("pdf").verify();
-  expect(definitions.captures).toHaveLength(48);
-  expect(responses.captures).toHaveLength(45);
+  expect(definitions.captures).toHaveLength(60);
+  expect(responses.captures).toHaveLength(55);
   expect(pdf.captures).toHaveLength(32);
   expect(definitions.captures.map(item => item.name)).toEqual(expect.arrayContaining([
     "multiple-choice/draft.json", "multiple-choice/catalog-too-large.json",

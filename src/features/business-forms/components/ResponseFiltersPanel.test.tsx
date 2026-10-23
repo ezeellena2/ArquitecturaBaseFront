@@ -50,7 +50,7 @@ it("exports the same selected state without adding a state facet or another filt
   await act(async () => { renderWithProviders(<Export/>); });
   await userEvent.click(await screen.findByRole("button", { name: "Exportar a Excel" }));
   await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
-  expect(body).toEqual({ filter: selected, columns: null });
+  expect(body).toEqual({ filter: selected, columns: null, catalogFields: null });
 });
 
 
