@@ -7,6 +7,7 @@ import { z } from "zod";
 const cohorts = {
   forms: ["forms-http","FORMS_HTTP_CONTRACT_INPUT","forms"],
   lifecycle: ["forms-lifecycle-http", "FORM_LIFECYCLE_HTTP_CONTRACT_INPUT", "lifecycle"],
+  personData: ["forms-person-data-http", "FORM_PERSON_DATA_HTTP_INPUT", "person-data"],
   catalogImports: ["catalogs-http/imports","FORM_CATALOG_IMPORT_HTTP_INPUT","catalog-imports"],
   manualCatalogs: ["catalogs-http/manual-current","FORMS_CATALOG_HTTP_CONTRACT_INPUT","manual-catalogs"],
   catalogFilters: ["catalogs-http/filters","FORMS_CATALOG_FILTERS_HTTP_CONTRACT_INPUT","catalog-filters"],
