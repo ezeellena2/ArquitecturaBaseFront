@@ -125,7 +125,7 @@ it.each([
   expect(apply).not.toHaveBeenCalled();
 });
 
-it.each(["es", "en"] as const)("identifies errors and warnings with the original header and related row in %s", async culture => {
+it.each([["es", "Supervisor"], ["en", "Supervisor"], ["es", "textEn"], ["en", "textEn"], ["es", "detailEn"], ["en", "detailEn"]] as const)("identifies errors and warnings with the original header and related row in %s %s", async (culture, header) => {
   await i18n.changeLanguage(culture);
   const base = catalogImportPreviewFixture(), english = culture === "en";
   const errorMessage = english ? "Duplicate: it is also in another row." : "Repetido: también está en otra fila.";
@@ -133,15 +133,15 @@ it.each(["es", "en"] as const)("identifies errors and warnings with the original
   vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", deactivated: [],
     counts: { ...base.counts, deactivated: 0, warnings: 1 },
     issues: [
-      { row: 1, column: "Supervisor", severity: "Warning", code: "Forms.CatalogImport.UnknownColumn", message: warningMessage, relatedRow: null, length: null },
+      { row: 1, column: header, severity: "Warning", code: "Forms.CatalogImport.UnknownColumn", message: warningMessage, relatedRow: null, length: null },
       { ...base.issues[0]!, message: errorMessage },
     ], confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
   const apply = vi.spyOn(imports, "applyCatalogImport");
   const { user } = await mount();
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tSupervisor\nN\tNorte\tAna" } });
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\t" + header + "\nN\tNorte\tAna" } });
   await user.click(screen.getByRole("button", { name: english ? "Review" : "Revisar" }));
   expect(await screen.findByRole("columnheader", { name: english ? "Type" : "Tipo" })).toBeInTheDocument();
-  const warningRow = screen.getByText("Supervisor").closest("tr")!;
+  const warningRow = screen.getByText(header).closest("tr")!;
   expect(within(warningRow).getByText(english ? "Warning" : "Aviso")).toBeInTheDocument();
   expect(within(warningRow).getByText(warningMessage)).toBeInTheDocument();
   const errorRow = screen.getByText(errorMessage).closest("tr")!;
