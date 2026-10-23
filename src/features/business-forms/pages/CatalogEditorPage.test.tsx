@@ -681,6 +681,31 @@ it("applies an explicitly reviewed paste and adopts the returned clean baseline 
  await user.click(screen.getByRole("button",{name:"Pegar desde Excel"}));await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
  await user.click(screen.getByRole("button",{name:"Revisar"}));await waitFor(()=>expect(check).toHaveBeenCalledTimes(2));expect(check.mock.calls[1]![1].expectedRevision).toBe(2);
 });
+it("imports with the fields saved in this session instead of the ones loaded on entry", async () => {
+  setup(); const fieldId = "01990000-0000-7000-8000-000000000031";
+  const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
+  server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => {
+    const body = await request.json() as { fields: { localId: string }[] };
+    return HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [taxId] }, itemIdentityMap: {}, fieldIdentityMap: { [body.fields[0]!.localId]: fieldId } });
+  }));
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(catalogImports, "previewCatalogImport").mockResolvedValue({ ...base, revision: 2, mode: "Append", counts: { ...base.counts, errorRows: 0, deactivated: 0, changed: 1 }, issues: [], deactivated: [], confirmations: { deactivations: 0, emptySheet: false, manyErrors: false },
+    added: [{ row: 2, code: "N", text: "Norte", value: null, fields: { [fieldId]: "20-1" } }], changed: [{ row: 3, itemId, code: "C1", changes: [{ column: fieldId, before: null, after: "20-2" }] }] });
+  await mount("/catalogos/" + id); const user = userEvent.setup();
+  await screen.findByRole("textbox", { name: "Nombre" });
+  await user.click(screen.getByRole("button", { name: "Agregar campo" }));
+  await user.paste("CUIT");
+  await user.click(screen.getByRole("button", { name: "Guardar" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Pegar desde Excel" })).toBeEnabled());
+  await user.click(screen.getByRole("button", { name: "Pegar desde Excel" }));
+  await pasteText(user, screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\ttax_id\nN\tNorte\t20-1");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  const dialog = await screen.findByRole("dialog");
+  expect(await within(dialog).findByRole("columnheader", { name: "CUIT" })).toBeInTheDocument();
+  expect(within(dialog).queryByText(fieldId, { exact: false })).not.toBeInTheDocument();
+  act(() => within(dialog).getByRole("tab", { name: "Cambios" }).focus()); await user.keyboard("{Enter}");
+  expect(await within(dialog).findByText("CUIT: — → 20-2")).toBeInTheDocument();
+});
 
 it.each(["es", "en"] as const)("localizes discard cancellation and preserves the unsaved catalog in %s", async culture => {
   const label = (es: string, en: string) => culture === "es" ? es : en;

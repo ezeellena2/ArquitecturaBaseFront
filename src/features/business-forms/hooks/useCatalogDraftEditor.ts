@@ -26,13 +26,15 @@ interface EditorState {
   readonly busy: boolean;
   readonly requiresReview: boolean;
   readonly current: CatalogDetail | null;
+  // The confirmed detail the baseline came from (loaded, saved, imported or adopted): the definition for dialogs.
+  readonly confirmed: CatalogDetail | null;
   readonly saved: CatalogSave | null;
   readonly previewResult: CatalogFilterPreview | null;
   readonly error: unknown;
 }
 function fresh(owner: string, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text", culture: FormCulture = "es"): EditorState {
   const draft = openCatalogDraft(initial, kind, valueType, culture);
-  return { owner, epoch: {}, draft, baseline: { isActive: draft.isActive, name: draft.name, description: draft.description, filters: draft.filters, fields: draft.fields, presentation: draft.presentation }, busy: false, requiresReview: false, current: null, saved: null, previewResult: null, error: null };
+  return { owner, epoch: {}, draft, baseline: { isActive: draft.isActive, name: draft.name, description: draft.description, filters: draft.filters, fields: draft.fields, presentation: draft.presentation }, busy: false, requiresReview: false, current: null, confirmed: initial ?? null, saved: null, previewResult: null, error: null };
 }
 export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text") {
   const client = useQueryClient();
@@ -206,7 +208,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description)
     || JSON.stringify(catalogFieldsBody(draft.fields, draft.culture)) !== JSON.stringify(catalogFieldsBody(state.baseline.fields, draft.culture)) || JSON.stringify(draft.presentation) !== JSON.stringify(state.baseline.presentation)
     || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0 || draft.sortAlphabetically);
-  return { draft, dirty, busy: owned && state.busy, requiresReview: owned && state.requiresReview, current: owned ? state.current : null,
+  return { draft, dirty, busy: owned && state.busy, requiresReview: owned && state.requiresReview, current: owned ? state.current : null, confirmed: owned ? state.confirmed : null,
     saved: owned ? state.saved : null, previewResult: owned && canManage ? state.previewResult : null, error: owned ? state.error : null, canSave: owned && canManage && !state.busy && !state.requiresReview,
     changeSort, observeCatalog, changeMetadata, changeFilters, changeFields, changePresentation, clearPreview, preview, changeItem, changeMove, clearMoves, loadItems, save, discardProposal, readCurrent, adoptCurrent };
 }

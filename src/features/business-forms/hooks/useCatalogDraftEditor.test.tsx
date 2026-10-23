@@ -326,6 +326,24 @@ it("adopts an import baseline only while clean and keeps a concurrent local edit
  act(()=>result.current.observeCatalog({...initial,revision:3}));
  expect(result.current.draft!.revision).toBe(2);expect(result.current.draft!.name.es).toBe("Mi edición");expect(result.current.dirty).toBe(true);
 });
+it("exposes the confirmed catalog after saving, importing or adopting", async () => {
+  const fieldId = "01990000-0000-7000-8000-000000000031";
+  const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position: 1, isActive: true, hasValues: false, usedBy: [] };
+  const saved: CatalogDetail = { ...initial, revision: 2, fields: [taxId] };
+  const imported: CatalogDetail = { ...saved, revision: 3, itemsCount: 2 };
+  const current: CatalogDetail = { ...imported, revision: 4, name: { es: "Actual", en: "Current" } };
+  server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ catalog: saved, itemIdentityMap: {}, fieldIdentityMap: {} })), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(current)));
+  const { result } = renderHook(() => useCatalogDraftEditor(scope, initial), harness());
+  expect(result.current.confirmed).toEqual(initial);
+  act(() => result.current.changeMetadata({ name: { es: "Con CUIT", en: "With tax id" } }));
+  await act(() => result.current.save());
+  expect(result.current.confirmed).toEqual(saved);
+  act(() => result.current.observeCatalog(imported));
+  expect(result.current.confirmed).toEqual(imported);
+  await act(() => result.current.readCurrent());
+  act(() => result.current.adoptCurrent());
+  expect(result.current.confirmed).toEqual(current);
+});
 it("stages one alphabetical command and rejects mixing it with captured moves", () => {
  const {result}=renderHook(()=>useCatalogDraftEditor(scope,initial),harness());
  act(()=>result.current.loadItems([{id:itemId,code:"C1",value:null,text:{es:"Uno",en:null},detail:{},position:1,isActive:true, fields: {}, fieldTexts: {}}]));
