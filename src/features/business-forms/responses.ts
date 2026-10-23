@@ -1,4 +1,7 @@
+import type { CatalogFieldType } from "./catalogFields";
 import type { CatalogValueType } from "./catalogValues";
+import { formatExactDecimal } from "@/shared/lib/decimal";
+import { formatDateOnly } from "@/shared/lib/dateTime";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 export type ResponseType =
@@ -11,6 +14,10 @@ export type ResponseType =
   | "multiChoice"
   | "photo"
   | "document";
+export interface ResponseCatalogField { readonly fieldId: string; readonly key: string; readonly label: string; readonly type: CatalogFieldType; readonly role: "data" | "filter" }
+export interface ResponseCapturedCatalogField extends Omit<ResponseCatalogField, "key"> { readonly value: string; readonly text?: string }
+export interface ResponseCatalogFieldSelection { readonly questionId: string; readonly fieldId: string }
+export interface ResponseColumnDescriptor { readonly id: string; readonly question: ResponseColumn; readonly catalogField?: ResponseCatalogField }
 export interface ResponseChoice {
   choiceId: string;
   label: string;
@@ -19,6 +26,7 @@ export interface ResponseChoice {
   detail?: string | null;
   value?: string;
   valueType?: Exclude<CatalogValueType, "Text">;
+  fields?: readonly ResponseCapturedCatalogField[];
 }
 export type ResponseValue =
   string | boolean | ResponseChoice | ResponseChoice[] | PrivateFormFile[] | null;
@@ -35,6 +43,7 @@ export interface ResponseColumn {
   introducedInVersion: number;
   valueType?: Exclude<CatalogValueType, "Text">;
   options: { id: string; label: string }[];
+  fields?: readonly ResponseCatalogField[];
 }
 export interface ResponseCondition {
   fieldId: string;
@@ -78,6 +87,31 @@ export function visibleResponseColumns(
   if (selection === null) return columns;
   const ids = new Set(selection.split(","));
   return columns.filter((column) => ids.has(column.fieldId));
+}
+export const responseCatalogColumnId = (questionId: string, fieldId: string) => `${questionId}:${fieldId}`;
+export function responseColumnDescriptors(columns: readonly ResponseColumn[]): readonly ResponseColumnDescriptor[] {
+  return columns.flatMap(question => [{ id: question.fieldId, question }, ...(question.fields ?? []).map(catalogField => ({ id: responseCatalogColumnId(question.fieldId, catalogField.fieldId), question, catalogField }))]);
+}
+export function visibleResponseColumnDescriptors(columns: readonly ResponseColumn[], selection: string | null): readonly ResponseColumnDescriptor[] {
+  const selected = selection === null ? null : new Set(selection.split(","));
+  return responseColumnDescriptors(columns).filter(column => selected ? selected.has(column.id) : !column.catalogField || column.catalogField.role === "data");
+}
+export function responseColumnSelection(columns: readonly ResponseColumn[], ids: readonly string[]): string | null {
+  const selected = new Set(ids);
+  const ordered = responseColumnDescriptors(columns).filter(column => selected.has(column.id)).map(column => column.id);
+  const defaults = visibleResponseColumnDescriptors(columns, null).map(column => column.id);
+  return ordered.length === defaults.length && defaults.every(id => selected.has(id)) ? null : ordered.join(",") || "none";
+}
+export function responseCatalogFieldText(field: ResponseCapturedCatalogField, culture: string, yes: string, no: string): string {
+  if (field.type === "catalog") return field.text?.trim() ? field.text : "—";
+  if (field.type === "boolean") return field.value === "true" ? yes : field.value === "false" ? no : "—";
+  if (field.type === "integer" || field.type === "decimal") return formatExactDecimal(field.value, culture) ?? field.value;
+  if (field.type === "date") return formatDateOnly(field.value, culture, "numeric") ?? field.value;
+  return field.value || "—";
+}
+export function responseCatalogFieldCellText(cell: ResponseCell, fieldId: string, culture: string, yes: string, no: string): string {
+  const values = selectedResponseChoices(cell).map(choice => choice.fields?.find(field => field.fieldId === fieldId));
+  return values.some(value => value !== undefined) ? values.map(value => value ? responseCatalogFieldText(value, culture, yes, no) : "—").join(", ") : "—";
 }
 export function selectedResponseChoices(cell: ResponseCell): readonly ResponseChoice[] {
   if (cell.state !== "Answered") return [];

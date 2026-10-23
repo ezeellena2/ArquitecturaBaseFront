@@ -3,6 +3,7 @@ import { usePagination } from "@/shared/hooks/usePagination";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { useResponseWorkspace } from "./useResponseWorkspace";
+import { responseColumnSelection } from "../responses";
 import type {
   ResponseColumn,
   ResponseFilter,
@@ -65,12 +66,7 @@ export function useResponseRouteQuery(formId: string) {
     ids: readonly string[],
   ) =>
     update({
-      columns:
-        ids.length === columns.length
-          ? undefined
-          : ids.length
-            ? ids.join(",")
-            : "none",
+      columns: responseColumnSelection(columns, ids) ?? undefined,
     });
   const toggleSort = (field: string) => {
     const dynamic = guid.test(field);
