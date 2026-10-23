@@ -49,6 +49,7 @@ describe("catalog extra field values", () => {
     expect(catalogFieldProblemText(es, { ...field, type: "date", min: null, max: null }, "mañana", "invalid")).toBe("«mañana» no es una fecha.");
     expect(catalogFieldProblemText(es, { ...field, type: "boolean", min: null, max: null }, "quizás", "invalid")).toBe("«quizás» no es sí o no.");
     expect(catalogFieldProblemText(es, { ...field, type: "catalog", min: null, max: null }, "Centro", "invalid")).toBe("«Centro» no es una opción del catálogo.");
+    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null }, "a\u0000b", "invalid")).toBe("«a\u0000b» tiene caracteres que no se pueden guardar.");
     expect(catalogFieldProblemText(es, field, "181", "range")).toBe("«181» está fuera del rango: de 0 a 180.");
     expect(catalogFieldProblemText(es, { ...field, max: null }, "-1", "range")).toBe("«-1» está fuera del rango: desde 0.");
     expect(catalogFieldProblemText(es, { ...field, min: null }, "181", "range")).toBe("«181» está fuera del rango: hasta 180.");
@@ -56,6 +57,9 @@ describe("catalog extra field values", () => {
     expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null, maxLength: 1 }, "AB", "length")).toBe("«AB» supera 1 carácter.");
     expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null, maxLength: null }, "x".repeat(301), "length")).toBe("«" + "x".repeat(40) + "…» supera los 300 caracteres.");
     expect(catalogFieldProblemText(en, { ...field, type: "integer" }, "30 days", "invalid")).toBe("“30 days” is not a whole number.");
+    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null }, "a\u0000b", "invalid")).toBe("“a\u0000b” has characters that cannot be saved.");
+    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null, maxLength: 1 }, "AB", "length")).toBe("“AB” is longer than 1 character.");
+    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null, maxLength: 13 }, "20-12345678-90", "length")).toBe("“20-12345678-90” is longer than 13 characters.");
     expect(catalogFieldProblemText(en, field, "181", "range")).toBe("“181” is out of range: from 0 to 180.");
     expect(catalogFieldProblemText(en, field, null, "required")).toBe("Missing: it is required.");
   });
