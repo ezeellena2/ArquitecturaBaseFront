@@ -11,6 +11,7 @@ Una página por ruta. Cada una arma el alcance (`FormReadScope`, `CatalogReadSco
 | `/formularios/:formId/respuestas/:recordId?` | `FormResponseWorkspacePage`, planilla y D2 | entrada read OR decide; valores sólo read | MF1, T1–T5, D2, s4 |
 | `/formularios/:formId/respuestas/:recordId/completa` | `FormResponseFullPage` | `formrecords.read` | DC0, DC1 |
 | `/formularios/:formId/pdf` | `FormPdfDesignPage` | `formrules.manage` | G2 |
+| `/datos-de-personas` | `PersonDataPage` | `formpersondata.manage`; tabla además `users.read` | CE4-A |
 | `/formularios/faltantes` | `MissingFormsPage` | `formtemplates.manage` | H7 |
 
 Cada ruta exige sólo su permiso: respuestas no dependen de leer plantillas ni catálogos, el diseño PDF no lee valores y Formularios que faltan no exige leer plantillas.
@@ -34,6 +35,8 @@ Cada ruta exige sólo su permiso: respuestas no dependen de leer plantillas ni c
 - Manual CE1–CE3 compone campos, opciones y presentación desde un solo borrador. Errores de definición e ítems se ligan por LocalId; metadata de fallo sólo pasa por `readCatalogFieldFeedback`, sin copiar valores privados. La advertencia de títulos usa el chequeo completo confirmado cuando el borrador sigue limpio.
 - `CatalogFiltersEditorPage` busca personas de ejemplo con 300 ms de espera, paginadas y explícitas; una búsqueda pendiente no deshabilita el control ni pierde el foco; cambiar de persona o de condiciones limpia la prueba, que marca sin recortar las filas que no se pueden enviar; un fallo de la prueba deja la configuración editable. Sin manage se ve la configuración sin personas ni prueba.
 - Una propuesta del asistente muestra solicitante, fechas, decisión y limitaciones, sin identificadores del modelo ni consultas a IA. `originalProposal` no se edita; sólo «Aprobar y activar» o «Descartar propuesta» (con confirmación) la resuelven, con read y manage. Su original es obligatorio también después de resolverla y la traducción ausente queda vacía.
+
+- `PersonDataPage` define atributos y muestra la tabla propia con valores sólo con UsersRead adicional. Las dos tablas conservan scroll contenido. Editar persona usa el punto neutral de app y abre el editor de usuario; no importa Users. El dato en uso conserva tipo, catálogo y activo. El nombre inglés es opcional.
 
 ### Respuestas, aprobación y PDF
 

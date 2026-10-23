@@ -40,6 +40,8 @@ Piezas de tableros elegidos con shared/ui, datos de página o hook y lógica pur
 - CE3: `CatalogPresentationSection` y `CatalogPreview` comparten composición exacta: partes no vacías con « · », sólo campos seleccionados, etiquetas fuente y formato del idioma mostrado. La alerta completa del servidor no bloquea Guardar; avisa antes de publicar.
 - Import: MissingColumn/DuplicateColumn se muestran junto al archivo/pegado sin toast y conservan contenido. Columnas extra por nombre y valores exactos; las de catálogo usan FieldTexts/BeforeText/AfterText del productor, sin consultas ni GUID visibles.
 
+- CE4: `PersonDataSection` guarda valores aparte; `PersonAttributeDialog` define datos. Las opciones usan person-attributes/{id}/options sin CatalogsRead. Usuarios se compone en app por el contrato neutral.
+
 ### Planilla, filtros y Excel
 
 - `ResponseWorkspaceProvider` (desde `ResponseWorkspaceLayout`) guarda el filtro privado por dueño y formulario; salir del formulario lo limpia y `deny` retira filtros y miniaturas.
@@ -66,4 +68,4 @@ Piezas de tableros elegidos con shared/ui, datos de página o hook y lógica pur
 ## Referencias
 
 - [Tableros y correspondencia con `shared/ui`](../../../../docs/design/formularios-whatsapp.md#correspondencia-con-sharedui).
-- Tests junto a cada pieza (`QuestionEditor.test.tsx`, `PublicationCheckDialog.test.tsx`, `FormRulesSection.test.tsx`…) y escenas en `src/test/visual`.
+- Tests junto a cada pieza y escenas en `src/test/visual`.
