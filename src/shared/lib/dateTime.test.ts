@@ -29,6 +29,10 @@ describe("calendar dates and message times", () => {
 
 
 describe("formatDateOnly", () => {
+  it("offers a numeric calendar date without changing the default presentation", () => {
+    expect(formatDateOnly("2026-10-08", "es", "numeric")).toBe("08/10/2026");
+    expect(formatDateOnly("2026-10-08", "en", "numeric")).toBe("10/08/2026");
+  });
   it("keeps a calendar day independent of the profile time zone", () => {
     expect(formatDateOnly("2026-10-08", "es")).toBe("8 oct 2026");
     expect(formatDateOnly("2026-10-08", "en")).toBe("Oct 8, 2026");

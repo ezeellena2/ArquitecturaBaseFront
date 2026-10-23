@@ -29,11 +29,11 @@ export function calendarDateInZone(valueUtc: string, timeZone: string | undefine
 }
 
 // A calendar day has no profile time zone. UTC is only the stable anchor used by Intl.
-export function formatDateOnly(value: string, language: string): string | null {
+export function formatDateOnly(value: string, language: string, style: "medium" | "numeric" = "medium"): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith("0000")) return null;
   const day = new Date(value + "T00:00:00.000Z");
   if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== value) return null;
-  return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeZone: "UTC" }).format(day);
+  return new Intl.DateTimeFormat(language, style === "numeric" ? { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" } : { dateStyle: "medium", timeZone: "UTC" }).format(day);
 }
 
 export function formatRelativeTime(valueUtc: string, language: string, now = Date.now()): string {
