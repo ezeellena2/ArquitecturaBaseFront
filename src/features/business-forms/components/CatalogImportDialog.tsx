@@ -47,7 +47,7 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
     setState(value => ({ ...value, busy: null, conflict, fileError: fileError ?? null }));
     if (!["cancelled", "session", "fields"].includes(errorFeedback(error, { fields: ["file"] }).kind)) {
       const message = writing ? operationalErrorMessage(error, t, "save") : readErrorMessage(error, t);
-      const sheet = error instanceof ApiError && ["Forms.CatalogImport.TooManyColumns", "Forms.CatalogImport.TooManyRows"].includes(error.code ?? "") && typeof error.problem.sheet === "string" ? error.problem.sheet : null;
+      const sheet = error instanceof ApiError && ["Forms.CatalogImport.TooManyColumns", "Forms.CatalogImport.TooManyRows", "Forms.CatalogImport.TooManyCells"].includes(error.code ?? "") && typeof error.problem.sheet === "string" ? error.problem.sheet : null;
       notify({ id: feedbackId, kind: "error", message: sheet ? t("catalogs.import.sheetError", { sheet, message }) : message });
     }
   };

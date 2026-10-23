@@ -176,6 +176,8 @@ it.each([
   ["en", "TooManyColumns", "The spreadsheet has too many columns.", "Sheet “Detalle 2026”: The spreadsheet has too many columns."],
   ["es", "TooManyRows", "La planilla tiene demasiadas filas.", "Hoja «Detalle 2026»: La planilla tiene demasiadas filas."],
   ["en", "TooManyRows", "The spreadsheet has too many rows.", "Sheet “Detalle 2026”: The spreadsheet has too many rows."],
+  ["es", "TooManyCells", "El archivo tiene demasiadas celdas, incluso vacías o con formato. Quitá las que no uses y volvé a cargarlo.", "Hoja «Detalle 2026»: El archivo tiene demasiadas celdas, incluso vacías o con formato. Quitá las que no uses y volvé a cargarlo."],
+  ["en", "TooManyCells", "The file has too many cells, including empty or formatted cells. Remove unused cells and upload it again.", "Sheet “Detalle 2026”: The file has too many cells, including empty or formatted cells. Remove unused cells and upload it again."],
 ] as const)("names the offending sheet for a %s %s response without repeating the preview", async (culture, reason, detail, message) => {
   await i18n.changeLanguage(culture);
   const notice = vi.spyOn(notifications, "notify");
