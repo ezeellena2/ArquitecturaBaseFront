@@ -231,6 +231,16 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeValid();
     expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
   });
+  it("marks the value that does not convert on a 390 px screen too", async () => {
+    viewport(false); conversionSetup(); const user = userEvent.setup();
+    await showErrorRows(user);
+    await waitFor(() => expect(screen.queryByRole("row", { name: /Gómez/ })).not.toBeInTheDocument());
+    expect(within(screen.getByRole("row", { name: /Pérez/ })).getByText("«30 días» no es un número entero.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Quitar el filtro" }));
+    expect(await screen.findByRole("row", { name: /Gómez/ })).toBeInTheDocument();
+    expect(within(screen.getByRole("row", { name: /Pérez/ })).getByText("«30 días» no es un número entero.")).toBeInTheDocument();
+    expect(within(screen.getByRole("row", { name: /Gómez/ })).queryByText(/no es un número entero/)).not.toBeInTheDocument();
+  });
   it("goes back to the whole list when searching while the rows with errors show", async () => {
     viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
     await showErrorRows(user);
