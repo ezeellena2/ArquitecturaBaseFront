@@ -362,6 +362,7 @@ Sin elección; no se implementan sin ella.
 | Casos del asistente | Pantalla Asistente del panel de WhatsApp y el chat | [Tableros elegidos, por programar](asistente-casos.md) |
 | Mejoras de catálogos | Editor de catálogos, «Elegir de un catálogo» y las respuestas | [E1 implementado y recorrido local](catalogos-mejoras.md#recorrido-local-de-e1--2026-10-22) |
 | Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [Tableros elegidos, por programar](catalogos-campos-extra.md) |
+| Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
