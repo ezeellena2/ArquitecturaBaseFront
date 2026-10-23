@@ -1,5 +1,9 @@
 import { catalogItemProblems, duplicateCatalogTexts, generateMissingCatalogCodes } from "../catalogEditing";
 import { indexedValidationIssues } from "../validationPaths";
+import { parseCatalogFieldValue } from "../catalogFields";
+import { readCatalogFieldFeedback } from "../api/catalogFieldFeedback";
+import { CatalogFieldsSection } from "../components/CatalogFieldsSection";
+import { CatalogPresentationSection } from "../components/CatalogPresentationSection";
 import { CatalogImportDialog } from "../components/CatalogImportDialog";
 import { CatalogPreview } from "../components/CatalogPreview";
 import { CatalogOptionsActions } from "../components/CatalogOptionsActions";
@@ -98,12 +102,19 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const canManage = scope.permissions.includes("formcatalogs.manage") && (initial?.kind ?? "Manual") === "Manual";
   const readOnly = !editor.canSave;
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
+  const fieldFeedback = editor.error instanceof ApiError ? readCatalogFieldFeedback(editor.error.problem) : null;
   const changedItems = draft ? catalogItemChanges(draft.items) : [];
   const itemErrors: Record<string, Record<string, readonly string[]>> = {};
   const itemErrorPaths: string[] = [];
   for (const issue of indexedValidationIssues(changedItems, fields, "items")) {
     (itemErrors[issue.localId] ??= {})[issue.relativePath] = issue.messages;
     itemErrorPaths.push(issue.path);
+  }
+  const definitionErrors: Record<string, Record<string, readonly string[]>> = {};
+  const definitionErrorPaths: string[] = [];
+  for (const issue of indexedValidationIssues(draft?.fields ?? [], fields, "fields")) {
+    (definitionErrors[issue.localId] ??= {})[issue.relativePath] = issue.messages;
+    definitionErrorPaths.push(issue.path);
   }
   const knownItems = draft ? [...Object.values(draft.items.originals).map(item => currentCatalogItem(draft.items, item)), ...changedItems.filter(item => item.itemId === null)] : [];
   const itemWarnings: Record<string, string> = {};
@@ -119,13 +130,20 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     (itemErrors[item.localId] ??= {}).value = [t("catalogs.valueType." + parsed.reason)];
     return [item.localId];
   }) : [];
-  const itemErrorPathsStamp = JSON.stringify(itemErrorPaths);
+  const invalidFieldValues = draft ? knownItems.flatMap(item => item.isActive ? draft.fields.flatMap(field => {
+    if (!field.id || !field.isActive) return [];
+    const result = parseCatalogFieldValue(field, item.fields?.[field.id], draft.culture);
+    if (result.valid) return [];
+    (itemErrors[item.localId] ??= {})["fields." + field.id] = [t("catalogs.fields." + result.reason)];
+    return [item.localId];
+  }) : []) : [];
+  const itemErrorPathsStamp = JSON.stringify([...itemErrorPaths, ...definitionErrorPaths]);
   const currentName = draft?.name[scope.culture] || t("catalogs.new");
   useBreadcrumbLeaf(currentName);
   useEffect(() => {
     const error = editor.error ?? items.error;
     if (!error) { dismissNotification(feedbackId); return; }
-    const feedback = errorFeedback(error, { writing: !!editor.error, fields: ["name.es", "name.en", "description.es", "description.en", ...JSON.parse(itemErrorPathsStamp) as string[]], conflictCodes: ["Forms.Catalog.RevisionConflict"] });
+    const feedback = errorFeedback(error, { writing: !!editor.error, fields: ["name.es", "name.en", "description.es", "description.en", "fields", "presentation", "presentation.title", "presentation.description", ...JSON.parse(itemErrorPathsStamp) as string[]], conflictCodes: ["Forms.Catalog.RevisionConflict"] });
     if (["cancelled", "session", "forbidden", "fields", "conflict"].includes(feedback.kind)) return;
     notify({ id: feedbackId, kind: "error", message: editor.error ? operationalErrorMessage(error, t, "save") : readErrorMessage(error, t) });
   }, [editor.error, items.error, feedbackId, t, itemErrorPathsStamp]);
@@ -141,7 +159,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     }
   }
   const save = async () => {
-    if (!editor.canSave || invalidValues.length || localProblems.length) return;
+    if (!editor.canSave || invalidValues.length || invalidFieldValues.length || localProblems.length) return;
     const saved = await editor.save();
     if (!saved || !active.current) return;
     setExpanded(null);
@@ -156,18 +174,19 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   };
   const generateCodes = () => generateMissingCatalogCodes(knownItems).forEach((item, index) => { if (knownItems[index]!.code !== item.code) editor.changeItem(item); });
   const generateCode = (localId: string) => generateMissingCatalogCodes(knownItems).filter(item => item.localId === localId).forEach(editor.changeItem);
-  const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item, draft.valueType, draft.culture))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
+  const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item, draft.valueType, draft.culture, draft.fields))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
   if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
-    actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly || invalidValues.length > 0 || localProblems.length > 0} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
+    actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly || invalidValues.length > 0 || invalidFieldValues.length > 0 || localProblems.length > 0} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
     <div className="flex flex-col gap-4">
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button></Surface> : null}
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} /></div><div className="xl:sticky xl:top-4"><CatalogPreview items={rowItems} name={draft.name[culture] || currentName} culture={culture} /></div></div>
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} /><CatalogPresentationSection value={draft.presentation} fields={draft.fields} items={rowItems} valueType={draft.valueType} culture={culture} readOnly={readOnly} errors={fields} inputCulture={draft.culture} titleTooLongCount={!editor.dirty ? (editor.saved?.catalog ?? initial)?.presentationCheck?.titleTooLongCount : undefined} examples={!editor.dirty ? (editor.saved?.catalog ?? initial)?.presentationCheck?.examples : undefined} onChange={editor.changePresentation} /></div><div className="xl:sticky xl:top-4"><CatalogPreview items={rowItems} fields={draft.fields} presentation={draft.presentation} valueType={draft.valueType} inputCulture={draft.culture} name={draft.name[culture] || currentName} culture={culture} /></div></div>
+      <CatalogFieldsSection fields={draft.fields} culture={culture} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} rootErrors={fields.fields} onChange={editor.changeFields} />
       {draft.sortAlphabetically ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.actions.sortPending")}</p><Button variant="outline" disabled={readOnly} onClick={() => editor.changeSort(false)}>{t("catalogs.actions.clearSort")}</Button></div></Surface> : null}
       {localProblems.length ? <p className="text-sm text-[var(--color-danger)]">{t("catalogs.items.reviewInvalid")}</p> : null}
       {draft.moves.length ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.items.movesPending", { count: draft.moves.length })}</p><Button variant="outline" disabled={readOnly} onClick={editor.clearMoves}>{t("catalogs.items.clearMoves")}</Button></div></Surface> : null}
-      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor sortPending={draft.sortAlphabetically} warnings={itemWarnings} onGenerateCode={item => generateCode(item.localId)} actions={<CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} />} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
+      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor fields={draft.fields} scope={scope} sortPending={draft.sortAlphabetically} warnings={itemWarnings} onGenerateCode={item => generateCode(item.localId)} actions={<CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} />} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
         filters={draft.id ? <div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={pagination.setSearch} /></div> : undefined}
         pagination={items.data} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
     </div>
