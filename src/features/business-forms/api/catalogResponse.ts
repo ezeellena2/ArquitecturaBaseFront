@@ -1,3 +1,4 @@
+import type { FormCatalogPresentation } from "../model";
 import { catalogValueTypes } from "../catalogValues";
 import { z } from "zod";
 import type { PagedResult } from "@/shared/api/pagedResult";
@@ -82,7 +83,7 @@ export type CatalogDetail = z.infer<typeof catalog>;
 export type CatalogItem = z.infer<typeof item>;
 export type CatalogSave = z.infer<typeof saved>;
 export type CatalogField = z.infer<typeof catalogField>;
-export type CatalogPresentation = z.infer<typeof presentation>;
+export type CatalogPresentation = FormCatalogPresentation;
 
 export const readCatalogFilterOptions = (value: unknown) => read(filterOptions, value);
 export const readCatalogFilterPreview = (value: unknown) => read(filterPreview, value);

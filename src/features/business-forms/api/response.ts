@@ -9,8 +9,13 @@ const text = z.record(z.string().refine(value => value === "es" || value === "en
 const nameText = text.refine(map => Object.values(map).every(value => value.length <= 120 && value === value.trim()));
 const helpText = text.refine(map => Object.keys(map).length > 0 && Object.values(map).every(value => !!value.trim()));
 const choice = z.strictObject({ choiceId: guid, label: text });
+const presentationPart = z.union([z.enum(["text", "code", "detail", "value"]), guid]);
+const catalogPresentation = z.strictObject({ title: z.array(presentationPart).min(1).max(24), description: z.array(presentationPart).max(24) });
+const catalogMatch = z.union([z.strictObject({ fieldId: guid, value: z.string().min(1).max(300) }), z.strictObject({ fieldId: guid, personAttributeId: guid })]);
+export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, match: z.array(catalogMatch).min(1).max(20).nullish(), presentation: catalogPresentation.nullish() })
+  .refine(source => !source.match || new Set(source.match.map(item => item.fieldId.toLowerCase())).size === source.match.length);
 export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document"]),
-  label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullish(), source: z.strictObject({ catalog: guid }).nullish(),
+  label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullish(), source: canonicalCatalogSourceSchema.nullish(),
   files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullish() }).optional(),
   selection: z.strictObject({ minSelected: z.number().int().min(0).max(20), maxSelected: z.number().int().min(1).max(20) }).optional(),
 }).superRefine((value, context) => {
@@ -109,13 +114,15 @@ export type FormRecovery = ReturnType<typeof readFormRecovery>;
 const publicationCompatibility = z.enum(["Blocked", "LocallyValidated", "Unavailable"]);
 const publicationIssue = z.strictObject({ channelId: z.string().nullable(), fieldId: guid.nullable(), choiceId: guid.nullable(),
   path: z.string(), code: z.string(), message: z.string(), limit: z.number().int().nullable(), culture: z.enum(["es", "en"]).nullable() });
+const warningCount = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
+const publicationWarning = z.strictObject({ fieldId: guid.nullable(), path: z.string(), code: z.string(), message: z.string(), limit: warningCount.optional(), maximum: warningCount.optional(), maximumLabel: z.string().optional(), count: warningCount.optional(), people: z.array(z.string()).max(5).optional() });
 const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: revision, nextVersionNumber: revision, compatibility: publicationCompatibility,
   canAccept: z.boolean(), acceptanceAvailability: z.enum(["Available", "Unavailable", "InProgress"]),
   checkToken: z.string().min(1).nullable(), checkExpiresAtUtc: utc.nullable(),
   channels: z.array(z.strictObject({ channelId: z.string().min(1), profileRevision: z.string().min(1),
     compatibility: publicationCompatibility, externalEvidence: z.literal("Pending"), cultures: z.array(z.enum(["es", "en"])) })),
   cultures: z.array(z.strictObject({ culture: z.enum(["es", "en"]), isOriginal: z.boolean(), isComplete: z.boolean(), missing: z.array(publicationIssue) })),
-  issues: z.array(publicationIssue),
+  issues: z.array(publicationIssue), warnings: z.array(publicationWarning),
   diff: z.strictObject({ baseVersionId: guid.nullable(), added: z.array(guid), changed: z.array(guid), removed: z.array(guid),
     addedCultures: z.array(z.enum(["es", "en"])), removedCultures: z.array(z.enum(["es", "en"])) }),
 });
@@ -126,6 +133,7 @@ export function readFormPublicationCheck(value: unknown, definitionId: string, e
     const field = fields.find(item => item.fieldId?.toLowerCase() === issue.fieldId?.toLowerCase());
     return !field || issue.choiceId !== null && (field.type !== "choice" && field.type !== "multiChoice" || !field.options?.some(option => option.choiceId?.toLowerCase() === issue.choiceId?.toLowerCase()));
   })) throw new UnsupportedFormResponse();
+  if (checked.warnings.some(warning => warning.fieldId !== null && !fields.some(field => field.fieldId?.toLowerCase() === warning.fieldId?.toLowerCase()))) throw new UnsupportedFormResponse();
   const hasTicket = checked.checkToken !== null && checked.checkExpiresAtUtc !== null;
   if (checked.canAccept ? !hasTicket || checked.compatibility !== "LocallyValidated" || checked.acceptanceAvailability !== "Available" || checked.issues.length !== 0 : checked.checkToken !== null || checked.checkExpiresAtUtc !== null) throw new UnsupportedFormResponse();
   if (checked.definitionId.toLowerCase() !== definitionId.toLowerCase() || checked.draftRevision !== expectedRevision) throw new UnsupportedFormResponse();

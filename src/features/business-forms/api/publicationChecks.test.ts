@@ -12,7 +12,7 @@ const body = { ...value, expectedRevision: definition.revision };
 const checked = { definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: 1, compatibility: "Blocked", canAccept: false,
   acceptanceAvailability: "Unavailable", checkToken: null, checkExpiresAtUtc: null, channels: [], issues: [{ channelId: null, fieldId: definition.draft.fields[0]!.fieldId, choiceId: null,
     path: "draft.fields[0].help.es", code: "Forms.Publication.MissingTranslation", message: "Completá el original.", limit: null, culture: "es" }],
-  cultures: [{ culture: "es" as const, isOriginal: true, isComplete: false, missing: [] }, { culture: "en" as const, isOriginal: false, isComplete: true, missing: [] }], diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [], addedCultures: [], removedCultures: [] } };
+  cultures: [{ culture: "es" as const, isOriginal: true, isComplete: false, missing: [] }, { culture: "en" as const, isOriginal: false, isComplete: true, missing: [] }], warnings: [], diff: { baseVersionId: null, added: definition.draft.fields.map(q => q.fieldId), changed: [], removed: [], addedCultures: [], removedCultures: [] } };
 afterEach(resetHttpClient);
 describe("publication checks", () => {
   it("checks only the saved localized body without a draft UUID or external effects", async () => {

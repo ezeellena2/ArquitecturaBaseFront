@@ -76,7 +76,7 @@ it("accepts a known multi option diagnostic but rejects a foreign ChoiceId", () 
     canAccept: false, acceptanceAvailability: "Unavailable", checkToken: null, checkExpiresAtUtc: null,
     channels: [{ channelId: "phone", profileRevision: "flow-static-7.3-r9", compatibility: "Blocked", externalEvidence: "Pending", cultures: ["es", "en"] }],
     cultures: [{ culture: "es", isOriginal: true, isComplete: true, missing: [] }, { culture: "en", isOriginal: false, isComplete: true, missing: [] }],
-    issues: [issue], diff: { baseVersionId: null, added: [fieldId], changed: [], removed: [], addedCultures: [], removedCultures: [] } };
+    issues: [issue], warnings: [], diff: { baseVersionId: null, added: [fieldId], changed: [], removed: [], addedCultures: [], removedCultures: [] } };
   expect(readFormPublicationCheck(checked, saved.id, saved.revision, fields).issues).toEqual([issue]);
   expect(() => readFormPublicationCheck({ ...checked, issues: [{ ...issue, choiceId: catalogId }] }, saved.id, saved.revision, fields))
     .toThrow("Unsupported form response.");
