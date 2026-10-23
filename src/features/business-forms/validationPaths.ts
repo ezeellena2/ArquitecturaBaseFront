@@ -1,15 +1,54 @@
 import type { DraftEditorValue, DraftWriteBody } from "./model";
 
+export function parseValidationPath(path: string): readonly (string | number)[] | null {
+  const segments: (string | number)[] = [];
+  for (const part of path.split(".")) {
+    const match = /^([^\s.\[\]]+)((?:\[(?:0|[1-9]\d*)\])*)$/.exec(part);
+    if (!match) return null;
+    segments.push(match[1]!);
+    for (const index of match[2]!.matchAll(/\[(\d+)\]/g)) {
+      const value = Number(index[1]);
+      if (!Number.isSafeInteger(value)) return null;
+      segments.push(value);
+    }
+  }
+  return segments;
+}
+
+function validationPath(segments: readonly (string | number)[]): string {
+  return segments.map((segment, index) => typeof segment === "number" ? `[${segment}]` : `${index ? "." : ""}${segment}`).join("");
+}
+
+export interface IndexedValidationIssue {
+  readonly path: string;
+  readonly relativePath: string;
+  readonly localId: string;
+  readonly messages: readonly string[];
+}
+
+// Resolve the submitted index once; later reordering must not reinterpret the server's error.
+export function indexedValidationIssues(items: readonly { readonly localId: string }[], errors: Readonly<Record<string, readonly string[]>> | undefined, collection: string): readonly IndexedValidationIssue[] {
+  return Object.entries(errors ?? {}).flatMap(([path, messages]) => {
+    const segments = parseValidationPath(path);
+    const index = segments?.[1];
+    const item = segments?.[0] === collection && typeof index === "number" ? items[index] : undefined;
+    return item && segments.length > 2 ? [{ path, relativePath: validationPath(segments.slice(2)), localId: item.localId, messages: [...messages] }] : [];
+  });
+}
+
 export interface DraftFieldIssue { readonly path: string; readonly messages: readonly string[]; readonly fieldLocalId?: string; readonly choiceLocalId?: string }
 export function draftFieldIssues(body: DraftWriteBody, errors: Record<string, string[]> | undefined): readonly DraftFieldIssue[] {
   return Object.entries(errors ?? {}).flatMap(([path, messages]): DraftFieldIssue[] => {
-    if (/^(name(?:\.(es|en))?|prefix|offerWhen|draft\.(format|culture|fields|submitLabel(\.(es|en))?))$/.test(path)) return [{ path, messages: [...messages] }];
-    const match = /^draft\.fields\[(\d+)\]\.(localId|fieldId|replacesFieldId|type|required|maxLength|selection(?:\.(?:minSelected|maxSelected))?|files(?:\.(?:minFiles|maxFiles|photoSource))?|source(?:\.catalog)?|label(?:\.(?:es|en))?|help(?:\.(?:es|en))?|options(?:\[(\d+)\]\.(localId|choiceId|label(?:\.(?:es|en))?))?)$/.exec(path);
-    const field = match && body.draft.fields[Number(match[1])];
+    const segments = parseValidationPath(path);
+    if (!segments) return [];
+    if (segments[0] === "name" || segments[0] === "prefix" || segments[0] === "offerWhen" || segments[0] === "draft" && segments.length <= 2) return [{ path, messages: [...messages] }];
+    if (segments[0] === "draft" && segments[1] === "submitLabel") return [{ path, messages: [...messages] }];
+    const index = segments[2];
+    const field = segments[0] === "draft" && segments[1] === "fields" && typeof index === "number" ? body.draft.fields[index] : undefined;
     if (!field) return [];
-    const index = match?.[3];
-    if (index !== undefined) {
-      const option = (field.type === "choice" || field.type === "multiChoice") && !field.source && field.options[Number(index)];
+    const optionIndex = segments[4];
+    if (segments[3] === "options" && typeof optionIndex === "number") {
+      const option = (field.type === "choice" || field.type === "multiChoice") && !field.source && field.options[optionIndex];
       return option ? [{ path, messages: [...messages], fieldLocalId: field.localId, choiceLocalId: option.localId }] : [];
     }
     return [{ path, messages: [...messages], fieldLocalId: field.localId }];

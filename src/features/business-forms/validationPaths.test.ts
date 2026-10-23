@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { publicationFieldIssues, draftFieldIssues } from "./validationPaths";
+import { publicationFieldIssues, draftFieldIssues, indexedValidationIssues, parseValidationPath } from "./validationPaths";
 import { openDraftSession } from "./draftSession";
 import { fixtureDefinition } from "@/test/visual/formFixtures";
 
@@ -33,4 +33,30 @@ it("attaches multi selection errors to the frozen question and options to stable
   const reordered = { ...body, draft: { ...body.draft, fields: [{ ...multiple, options: [...multiple.options].reverse() }] } };
   expect(publicationFieldIssues(reordered, [{ fieldId: multiple.fieldId, choiceId: multiple.options[1]!.choiceId, path: "draft.fields[0].options[1].label.en", culture: "en", message: "Traducí esta opción." }]))
     .toEqual([{ path: "draft.fields[0].options[1].label.en", fieldLocalId: multiple.localId, choiceLocalId: multiple.options[1]!.localId, messages: ["Traducí esta opción."] }]);
+});
+
+describe("structured validation paths", () => {
+  it("parses property and safe index segments without a fixed set of field names", () => {
+    expect(parseValidationPath("items[12].fields.019fe134-2950-7000-a000-123456789012")).toEqual(["items", 12, "fields", "019fe134-2950-7000-a000-123456789012"]);
+    expect(parseValidationPath("draft.fields[0].source.match[2].fieldId")).toEqual(["draft", "fields", 0, "source", "match", 2, "fieldId"]);
+    for (const path of ["", "items[-1].text", "items[1.5].text", "items[9007199254740992].text", "items[0]text", "items..text", "items[0].", "items[0", "items[00].text"]) expect(parseValidationPath(path)).toBeNull();
+  });
+
+  it("binds item values and field definitions to the submitted local identity", () => {
+    const items = [{ localId: "first" }, { localId: "second" }];
+    const errors = { "items[1].fields.extra-id": ["Revisá el valor."], "items[2].code": ["Ausente."], "fields[0].required": ["Faltan 3 valores."] };
+    const itemIssues = indexedValidationIssues(items, errors, "items");
+    expect(itemIssues).toEqual([{ localId: "second", path: "items[1].fields.extra-id", relativePath: "fields.extra-id", messages: ["Revisá el valor."] }]);
+    expect(indexedValidationIssues([{ localId: "new-field" }], errors, "fields")).toEqual([{ localId: "new-field", path: "fields[0].required", relativePath: "required", messages: ["Faltan 3 valores."] }]);
+    items.reverse();
+    expect(itemIssues[0]?.localId).toBe("second");
+  });
+
+  it("attaches new source settings diagnostics to the frozen question without a property whitelist", () => {
+    const original = openDraftSession({ actorId: "actor", editorId: "editor" }, fixtureDefinition()).value;
+    const body = { ...original, requestId: "request" };
+    const path = "draft.fields[0].source.match[0].personAttributeId";
+    expect(draftFieldIssues(body, { [path]: ["Revisá el dato."], "draft.fields[999].source.presentation.title": ["Ausente."] }))
+      .toEqual([{ path, fieldLocalId: body.draft.fields[0]!.localId, messages: ["Revisá el dato."] }]);
+  });
 });

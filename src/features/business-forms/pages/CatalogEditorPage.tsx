@@ -1,4 +1,5 @@
 import { catalogItemProblems, duplicateCatalogTexts, generateMissingCatalogCodes } from "../catalogEditing";
+import { indexedValidationIssues } from "../validationPaths";
 import { CatalogImportDialog } from "../components/CatalogImportDialog";
 import { CatalogPreview } from "../components/CatalogPreview";
 import { CatalogOptionsActions } from "../components/CatalogOptionsActions";
@@ -100,10 +101,9 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const changedItems = draft ? catalogItemChanges(draft.items) : [];
   const itemErrors: Record<string, Record<string, readonly string[]>> = {};
   const itemErrorPaths: string[] = [];
-  for (const [key, messages] of Object.entries(fields)) {
-    const match = /^items\[(\d+)\]\.(value|code|text\.(?:es|en)|detail\.(?:es|en))$/.exec(key);
-    const item = match ? changedItems[Number(match[1])] : undefined;
-    if (item && match) { (itemErrors[item.localId] ??= {})[match[2]!] = messages; itemErrorPaths.push(key); }
+  for (const issue of indexedValidationIssues(changedItems, fields, "items")) {
+    (itemErrors[issue.localId] ??= {})[issue.relativePath] = issue.messages;
+    itemErrorPaths.push(issue.path);
   }
   const knownItems = draft ? [...Object.values(draft.items.originals).map(item => currentCatalogItem(draft.items, item)), ...changedItems.filter(item => item.itemId === null)] : [];
   const itemWarnings: Record<string, string> = {};
