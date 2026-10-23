@@ -463,6 +463,8 @@
       "pastedRows": "Pegá las filas con encabezados",
       "pasteHint": "Copiá Código, Texto y las demás columnas con sus encabezados desde Excel. Pegar agrega o actualiza por código.",
       "fileError": "Elegí un archivo XLSX o CSV de hasta 10 MB.",
+      "missingColumn": "Falta la columna «{{column}}». Agregala y revisá de nuevo.",
+      "duplicateColumn": "La columna «{{column}}» está repetida. Dejá una sola y revisá de nuevo.",
       "sheetError": "Hoja «{{sheet}}»: {{message}}",
       "pasteError": {
         "format": "Revisá las comillas y los encabezados de las filas pegadas.",

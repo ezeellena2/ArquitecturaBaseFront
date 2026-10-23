@@ -29,6 +29,17 @@ function fresh(owner: string, revision: number, source: "file" | "paste") {
 export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId, focusFallback, onClose, onApplied, onObserved, onTemplate }: CatalogImportDialogProps) {
   const { t, i18n } = useTranslation("forms");
   const owner = JSON.stringify([scope.actorId, scope.culture, [...scope.permissions].sort(), catalog.id]);
+  const fields = (catalog.fields ?? []).filter(field => field.isActive).sort((a, b) => a.position - b.position);
+  const columnLabel = (column: string) => fields.find(field => field.id === column)?.name[scope.culture]
+    || fields.find(field => field.id === column)?.name.es || t("catalogs.import.columns." + column, { defaultValue: column });
+  const displayColumn = (column: string, value: string | null | undefined, text?: string) => {
+    if (value === null || value === undefined) return "—";
+    const type = fields.find(field => field.id === column)?.type;
+    if (type === "catalog") return text ?? "—";
+    if (type === "boolean") return t(value === "true" ? "yes" : "no");
+    if (type === "integer" || type === "decimal" || type === "date") return formatCatalogValue(type === "integer" ? "Integer" : type === "decimal" ? "Decimal" : "Date", value, scope.culture);
+    return column === "value" ? formatCatalogValue(catalog.valueType, value, scope.culture) : value;
+  };
   const allowed = !!scope.actorId && scope.permissions.includes("formcatalogs.read") && scope.permissions.includes("formcatalogs.manage");
   const [state, setState] = useState(() => fresh(owner, catalog.revision, initialSource));
   if (state.owner !== owner) setState(fresh(owner, catalog.revision, initialSource));
@@ -42,6 +53,10 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
   const failure = (error: unknown, controller: AbortController, writing: boolean) => {
     if (!accepts(controller)) return;
     if (error instanceof ApiError && error.status === 403) { setState(value => ({ ...fresh(owner, value.revision, value.source), forbidden: true })); return; }
+    if (error instanceof ApiError && ["Forms.CatalogImport.MissingColumn", "Forms.CatalogImport.DuplicateColumn"].includes(error.code ?? "") && typeof error.problem.column === "string") {
+      setState(value => ({ ...value, busy: null, fileError: t(error.code === "Forms.CatalogImport.MissingColumn" ? "catalogs.import.missingColumn" : "catalogs.import.duplicateColumn", { column: columnLabel(error.problem.column as string) }) }));
+      return;
+    }
     const conflict = error instanceof ApiError && error.status === 409;
     const fileError = error instanceof ApiError ? error.errors?.file?.join(" ") : undefined;
     setState(value => ({ ...value, busy: null, conflict, fileError: fileError ?? null }));
@@ -84,8 +99,6 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
     } catch (error) { failure(error, controller, true); }
     finally { if (operation.current === controller) { operation.current = null; if (active.current) setState(value => ({ ...value, busy: null })); } }
   };
-  const columnLabel = (column: string) => t("catalogs.import.columns." + column, { defaultValue: column });
-  const displayValue = (value: string | null) => value === null ? "—" : formatCatalogValue(catalog.valueType, value, scope.culture);
   const close = () => { if (state.busy === "apply") return; operation.current?.abort(); operation.current = null; setState(fresh(owner, state.revision, state.source)); onClose(); };
   const changeSource = (source: string) => { if (!state.busy && (source === "file" || source === "paste")) setState(fresh(owner, state.revision, source)); };
   return <Dialog open onOpenChange={open => { if (!open && state.busy !== "apply") close(); }}><DialogContent mobileFullscreen className="flex flex-col sm:max-w-3xl" showCloseButton={state.busy !== "apply"} onCloseAutoFocus={restoreFocus}>
@@ -103,8 +116,8 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
         {preview.alreadyAppliedAtUtc ? <Banner>{t("catalogs.import.alreadyApplied", { date: formatDateTimeInZone(preview.alreadyAppliedAtUtc, i18n.language, timeZoneId) })}</Banner> : null}
         <Tabs defaultValue={preview.issues.length ? "issues" : "added"}><TabsList>{["issues", "added", "changed", "deactivated"].map(key => <TabsTrigger key={key} value={key}>{t("catalogs.import.tabs." + key)}</TabsTrigger>)}</TabsList>
           <TabsContent value="issues"><Table><TableHeader><TableRow><TableHead>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.severity")}</TableHead><TableHead>{t("catalogs.import.column")}</TableHead><TableHead>{t("catalogs.import.what")}</TableHead></TableRow></TableHeader><TableBody>{preview.issues.map((issue, index) => <TableRow key={index}><TableCell>{issue.row}</TableCell><TableCell><Badge variant={issue.severity === "Error" ? "danger" : "warning"}>{t("catalogs.import." + (issue.severity === "Error" ? "error" : "warning"))}</Badge></TableCell><TableCell>{issue.code === "Forms.CatalogImport.UnknownColumn" ? issue.column : columnLabel(issue.column)}</TableCell><TableCell className="whitespace-normal">{issue.message}{issue.relatedRow !== null ? <span className="block text-xs text-[var(--color-content-muted)]">{t("catalogs.import.relatedRow", { row: issue.relatedRow })}</span> : null}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
-          <TabsContent value="added"><Table><TableHeader><TableRow><TableHead>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.columns.code")}</TableHead><TableHead>{t("catalogs.import.columns.text")}</TableHead>{catalog.valueType !== "Text" ? <TableHead>{t("catalogs.import.columns.value")}</TableHead> : null}</TableRow></TableHeader><TableBody>{preview.added.map(item => <TableRow key={item.row}><TableCell>{item.row}</TableCell><TableCell>{item.code}</TableCell><TableCell>{item.text}</TableCell>{catalog.valueType !== "Text" ? <TableCell>{displayValue(item.value)}</TableCell> : null}</TableRow>)}</TableBody></Table></TabsContent>
-          <TabsContent value="changed"><Table><TableHeader><TableRow><TableHead>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.columns.code")}</TableHead><TableHead>{t("catalogs.import.tabs.changed")}</TableHead></TableRow></TableHeader><TableBody>{preview.changed.map(item => <TableRow key={item.itemId}><TableCell>{item.row}</TableCell><TableCell>{item.code}</TableCell><TableCell className="whitespace-normal">{item.changes.map((change, index) => <p key={index}>{columnLabel(change.column)}: {change.column === "value" ? displayValue(change.before) : change.before ?? "—"} → {change.column === "value" ? displayValue(change.after) : change.after ?? "—"}</p>)}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
+          <TabsContent value="added"><Table scrollLabel={t("catalogs.import.tabs.added")}><TableHeader><TableRow><TableHead>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.columns.code")}</TableHead>{fields.map(field => <TableHead key={field.id}>{columnLabel(field.id)}</TableHead>)}<TableHead>{t("catalogs.import.columns.text")}</TableHead>{catalog.valueType !== "Text" ? <TableHead>{t("catalogs.import.columns.value")}</TableHead> : null}</TableRow></TableHeader><TableBody>{preview.added.map(item => <TableRow key={item.row}><TableCell>{item.row}</TableCell><TableCell>{item.code}</TableCell>{fields.map(field => <TableCell key={field.id}>{displayColumn(field.id, item.fields?.[field.id], item.fieldTexts?.[field.id])}</TableCell>)}<TableCell>{item.text}</TableCell>{catalog.valueType !== "Text" ? <TableCell>{displayColumn("value", item.value)}</TableCell> : null}</TableRow>)}</TableBody></Table></TabsContent>
+          <TabsContent value="changed"><Table><TableHeader><TableRow><TableHead>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.columns.code")}</TableHead><TableHead>{t("catalogs.import.tabs.changed")}</TableHead></TableRow></TableHeader><TableBody>{preview.changed.map(item => <TableRow key={item.itemId}><TableCell>{item.row}</TableCell><TableCell>{item.code}</TableCell><TableCell className="whitespace-normal">{item.changes.map((change, index) => <p key={index}>{columnLabel(change.column)}: {displayColumn(change.column, change.before, change.beforeText)} → {displayColumn(change.column, change.after, change.afterText)}</p>)}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
           <TabsContent value="deactivated"><Table><TableHeader><TableRow><TableHead>{t("catalogs.import.columns.code")}</TableHead><TableHead>{t("catalogs.import.columns.text")}</TableHead></TableRow></TableHeader><TableBody>{preview.deactivated.map(item => <TableRow key={item.itemId}><TableCell>{item.code}</TableCell><TableCell>{item.text}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
         </Tabs>
         {preview.listsTruncated ? <p className="text-sm">{t("catalogs.import.truncated")}</p> : null}

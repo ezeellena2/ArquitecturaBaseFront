@@ -463,6 +463,8 @@
       "pastedRows": "Paste rows with headers",
       "pasteHint": "Copy Code, Text and the other columns with their headers from Excel. Pasting adds or updates by code.",
       "fileError": "Choose an XLSX or CSV file up to 10 MB.",
+      "missingColumn": "The “{{column}}” column is missing. Add it and review again.",
+      "duplicateColumn": "The “{{column}}” column is repeated. Keep one and review again.",
       "sheetError": "Sheet “{{sheet}}”: {{message}}",
       "pasteError": {
         "format": "Check the quotes and headers in the pasted rows.",

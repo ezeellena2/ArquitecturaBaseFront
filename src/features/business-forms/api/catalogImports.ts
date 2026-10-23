@@ -10,8 +10,8 @@ const previewSchema = z.strictObject({
   sheetSha256: z.string().regex(/^[a-fA-F0-9]{64}$/), sheetName: z.string(), rowsRead: count,
   counts: z.strictObject({ added: count, changed: count, deactivated: count, reactivated: count, unchanged: count, errorRows: count, warnings: count }),
   issues: z.array(z.strictObject({ row: count, column: z.string(), severity: z.enum(["Error", "Warning"]), code: z.string(), message: z.string(), relatedRow: count.nullable(), length: count.nullable() })),
-  added: z.array(z.strictObject({ row: count, code: z.string(), text: z.string(), value: z.string().nullable() })).max(100),
-  changed: z.array(z.strictObject({ row: count, itemId: guid, code: z.string(), changes: z.array(z.strictObject({ column: z.string(), before: z.string().nullable(), after: z.string().nullable() })) })).max(100),
+  added: z.array(z.strictObject({ row: count, code: z.string(), text: z.string(), value: z.string().nullable(), fields: z.record(guid, z.string().max(300).nullable()).optional(), fieldTexts: z.record(guid, z.string().max(200)).optional() })).max(100),
+  changed: z.array(z.strictObject({ row: count, itemId: guid, code: z.string(), changes: z.array(z.strictObject({ column: z.string(), before: z.string().nullable(), after: z.string().nullable(), beforeText: z.string().max(200).optional(), afterText: z.string().max(200).optional() })) })).max(100),
   deactivated: z.array(z.strictObject({ itemId: guid, code: z.string(), text: z.string() })).max(100),
   listsTruncated: z.boolean(), confirmations: z.strictObject({ deactivations: count, emptySheet: z.boolean(), manyErrors: z.boolean() }),
   alreadyAppliedAtUtc: z.iso.datetime().nullable(),
@@ -33,7 +33,9 @@ export async function previewCatalogImport(id: string, body: CatalogImportFile, 
   return readCatalogImportPreview(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/import-previews", formData(body), { signal, cache: "no-store" }), id, body.expectedRevision, body.mode);
 }
 export async function applyCatalogImport(id: string, body: CatalogImportApply, signal?: AbortSignal) {
-  return readCatalogSave(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/imports", formData(body), { signal, cache: "no-store" }), [], id, body.expectedRevision);
+  const saved = readCatalogSave(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/imports", formData(body), { signal, cache: "no-store" }), [], id);
+  if (saved.catalog.revision < body.expectedRevision) throw new UnsupportedCatalogResponse();
+  return saved;
 }
 export async function exportCatalog(id: string, template: boolean, signal?: AbortSignal): Promise<ApiFile> {
   const file = await api.file("/api/forms/catalogs/" + catalogId(id) + "/export?template=" + template, { signal, headers: { accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } });

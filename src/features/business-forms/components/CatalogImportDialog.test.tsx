@@ -9,9 +9,9 @@ import { ApiError } from "@/shared/api/ApiError";
 import { catalogImportPreviewFixture } from "@/test/catalogImportFixtures";
 import * as imports from "../api/catalogImports";
 import * as catalogs from "../api/catalogs";
-import type { CatalogDetail } from "../api/catalogResponse";
+import type { CatalogDetail, CatalogField } from "../api/catalogResponse";
 import { CatalogImportDialog } from "./CatalogImportDialog";
-const catalog: CatalogDetail = { valueType: "Text", proposal: null, id: catalogImportPreviewFixture().catalogId, key: catalogImportPreviewFixture().catalogId.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 2, usageCount: null, unavailableReasonCode: null, filters: null };
+const catalog: CatalogDetail = { valueType: "Text", proposal: null, id: catalogImportPreviewFixture().catalogId, key: catalogImportPreviewFixture().catalogId.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 2, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
 const scope = { actorId: "actor", culture: "es" as const, permissions: ["formcatalogs.read", "formcatalogs.manage"] };
 afterEach(async () => { cleanup(); vi.restoreAllMocks(); queryClient.clear(); await i18n.changeLanguage("es"); });
 async function mount(initialSource: "file" | "paste" = "paste") {
@@ -24,7 +24,7 @@ async function mount(initialSource: "file" | "paste" = "paste") {
 it("reviews pasted rows through Append preview without saving, then requires the server confirmations before one explicit apply", async () => {
   const preview = { ...catalogImportPreviewFixture(), mode: "Append" as const, counts: { ...catalogImportPreviewFixture().counts, deactivated: 0 }, deactivated: [], confirmations: { deactivations: 0, emptySheet: false, manyErrors: true } };
   const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue(preview);
-  const apply = vi.spyOn(imports, "applyCatalogImport").mockResolvedValue({ catalog: { ...catalog, revision: 8 }, itemIdentityMap: {} });
+  const apply = vi.spyOn(imports, "applyCatalogImport").mockResolvedValue({ catalog: { ...catalog, revision: 8 }, itemIdentityMap: {}, fieldIdentityMap: {} });
   const { user, onApplied } = await mount();
   await user.type(screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
@@ -72,7 +72,7 @@ it("aborts a private preview on close and refuses a late result after permission
 it("keeps an already applied file as information and allows restoring it at the current revision", async () => {
   const base=catalogImportPreviewFixture();
   vi.spyOn(imports,"previewCatalogImport").mockResolvedValue({...base,mode:"Append",alreadyAppliedAtUtc:"2026-10-22T08:00:00Z",counts:{...base.counts,errorRows:0,deactivated:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});
-  const apply=vi.spyOn(imports,"applyCatalogImport").mockResolvedValue({catalog:{...catalog,revision:8},itemIdentityMap:{}});
+  const apply=vi.spyOn(imports,"applyCatalogImport").mockResolvedValue({catalog:{...catalog,revision:8},itemIdentityMap:{}, fieldIdentityMap: {}});
   const {user}=await mount();
   await user.type(screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button",{name:"Revisar"}));
@@ -84,7 +84,7 @@ it("keeps an already applied file as information and allows restoring it at the 
 
 it("reviews a file in Replace mode and requires both empty-sheet and exact deactivation confirmations",async()=>{
  const base=catalogImportPreviewFixture();vi.spyOn(imports,"previewCatalogImport").mockResolvedValue({...base,rowsRead:0,counts:{...base.counts,added:0,errorRows:0},added:[],issues:[],confirmations:{deactivations:1,emptySheet:true,manyErrors:false}});
- const apply=vi.spyOn(imports,"applyCatalogImport").mockResolvedValue({catalog:{...catalog,revision:8},itemIdentityMap:{}});
+ const apply=vi.spyOn(imports,"applyCatalogImport").mockResolvedValue({catalog:{...catalog,revision:8},itemIdentityMap:{}, fieldIdentityMap: {}});
  const {user}=await mount("file");const file=new File(["Code,Text"],"Vacia.csv",{type:"text/csv"});
  await user.upload(screen.getByLabelText("Archivo",{exact:true}),file);await user.click(screen.getByRole("button",{name:"Revisar"}));
  const button=await screen.findByRole("button",{name:"Aplicar"});expect(button).toBeDisabled();
@@ -251,4 +251,90 @@ it.each([
   expect(headers()).toEqual([english ? "Row" : "Fila", english ? "Code" : "Código", english ? "Changes" : "Cambios"]);
   await user.click(screen.getByRole("tab", { name: english ? "Deactivated" : "Bajas" }));
   expect(headers()).toEqual([english ? "Code" : "Código", english ? "Text" : "Texto"]);
+});
+
+const extraId = "01990000-0000-7000-8000-000000000121";
+const extraField: CatalogField = { id: extraId, key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "integer", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: true, usedBy: [] };
+it.each([
+  ["es", "MissingColumn", "code", "Falta la columna «Código». Agregala y revisá de nuevo."],
+  ["en", "MissingColumn", "code", "The “Code” column is missing. Add it and review again."],
+  ["es", "DuplicateColumn", extraId, "La columna «Plazo» está repetida. Dejá una sola y revisá de nuevo."],
+  ["en", "DuplicateColumn", extraId, "The “Term” column is repeated. Keep one and review again."],
+] as const)("keeps the %s %s header error next to the pasted rows without a toast or lost input", async (culture, code, column, message) => {
+  await i18n.changeLanguage(culture);
+  const notice = vi.spyOn(notifications, "notify");
+  const check = vi.spyOn(imports, "previewCatalogImport").mockRejectedValue(new ApiError(400, { code: "Forms.CatalogImport." + code, detail: "Generic server detail", column }));
+  const user = userEvent.setup();
+  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, fields: [extraField] }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
+  const input = screen.getByRole("textbox");
+  fireEvent.change(input, { target: { value: "Code\tText\nN\tNorte" } });
+  await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(message);
+  expect(input).toHaveAttribute("aria-invalid", "true");
+  expect(input).toHaveAccessibleDescription(message);
+  expect(input).toHaveValue("Code\tText\nN\tNorte");
+  expect(notice).not.toHaveBeenCalled();
+  expect(check).toHaveBeenCalledOnce();
+});
+it("keeps a missing header next to the selected file and can review it again", async () => {
+  const notice = vi.spyOn(notifications, "notify");
+  const check = vi.spyOn(imports, "previewCatalogImport").mockRejectedValueOnce(new ApiError(400, { code: "Forms.CatalogImport.MissingColumn", column: "text" })).mockResolvedValue(catalogImportPreviewFixture());
+  const { user } = await mount("file");
+  const file = new File(["Code\nN"], "catalog.csv", { type: "text/csv" });
+  const input = screen.getByLabelText("Archivo", { exact: true });
+  await user.upload(input, file);
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Falta la columna «Texto». Agregala y revisá de nuevo.");
+  expect(input).toHaveAccessibleDescription("Falta la columna «Texto». Agregala y revisá de nuevo.");
+  expect(notice).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await screen.findByRole("tab", { name: "Altas" });
+  expect(check.mock.calls[1]![1].file).toBe(file);
+});
+it.each(["es", "en"] as const)("shows extra columns and their typed canonical values and names in every %s preview list", async culture => {
+  await i18n.changeLanguage(culture);
+  const fields: CatalogField[] = [extraField,
+    { ...extraField, id: "01990000-0000-7000-8000-000000000122", key: "amount", name: { es: "Importe" }, type: "decimal", position: 2 },
+    { ...extraField, id: "01990000-0000-7000-8000-000000000123", key: "confirmed", name: { es: "Confirmado", en: "Confirmed" }, type: "boolean", position: 3 },
+    { ...extraField, id: "01990000-0000-7000-8000-000000000124", key: "retired", name: { es: "Retirado" }, isActive: false, position: 4 }];
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", deactivated: [],
+    issues: [{ row: 3, column: extraId, severity: "Error", code: "Forms.CatalogField.ValueInvalid", message: "Invalid value", relatedRow: null, length: null }],
+    added: [{ ...base.added[0]!, fields: { [extraId]: "900719925474099301", [fields[1]!.id]: "0.001", [fields[2]!.id]: "false" } }],
+    changed: [{ row: 4, itemId: base.deactivated[0]!.itemId, code: "S", changes: [{ column: extraId, before: "1", after: "900719925474099301" }] }],
+    counts: { ...base.counts, changed: 1, deactivated: 0 }, confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
+  const user = userEvent.setup();
+  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, fields }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tpayment_days\nN\tNorte\t1" } });
+  await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
+  const name = culture === "en" ? "Term" : "Plazo", integer = culture === "en" ? "900,719,925,474,099,301" : "900.719.925.474.099.301";
+  expect(await screen.findByRole("cell", { name })).toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: culture === "en" ? "New" : "Altas" }));
+  const panel = within(screen.getByRole("tabpanel"));
+  expect(panel.getAllByRole("columnheader").map(node => node.textContent)).toEqual([culture === "en" ? "Row" : "Fila", culture === "en" ? "Code" : "Código", name, "Importe", culture === "en" ? "Confirmed" : "Confirmado", culture === "en" ? "Text" : "Texto"]);
+  expect(panel.getByRole("cell", { name: integer })).toBeInTheDocument();
+  expect(panel.getByRole("cell", { name: culture === "en" ? "0.001" : "0,001" })).toBeInTheDocument();
+  expect(panel.getByRole("cell", { name: "No" })).toBeInTheDocument();
+  expect(screen.queryByRole("columnheader", { name: "Retirado" })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: culture === "en" ? "Changes" : "Cambios" }));
+  expect(within(screen.getByRole("tabpanel")).getByText(`${name}: 1 → ${integer}`)).toBeInTheDocument();
+});
+
+it("shows the source option labels rather than their identities for added and changed catalog values", async () => {
+  const sourceId = "01990000-0000-7000-8000-000000000221", optionId = "01990000-0000-7000-8000-000000000222";
+  const field: CatalogField = { ...extraField, type: "catalog", sourceCatalogId: sourceId, name: { es: "Zona" } };
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", issues: [], deactivated: [],
+    added: [{ ...base.added[0]!, fields: { [extraId]: optionId }, fieldTexts: { [extraId]: "Centro" } }],
+    changed: [{ row: 4, itemId: base.deactivated[0]!.itemId, code: "S", changes: [{ column: extraId, before: sourceId, beforeText: "Norte", after: optionId, afterText: "Centro" }] }],
+    counts: { ...base.counts, changed: 1, deactivated: 0, errorRows: 0 }, confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
+  const user = userEvent.setup();
+  await act(async () => { renderWithProviders(<CatalogImportDialog scope={scope} catalog={{ ...catalog, fields: [field] }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tzone\nN\tNorte\tCentro" } });
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  expect(await screen.findByRole("cell", { name: "Centro" })).toBeInTheDocument();
+  expect(screen.queryByText(optionId)).not.toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: "Cambios" }));
+  expect(screen.getByText("Zona: Norte → Centro")).toBeInTheDocument();
+  expect(screen.queryByText(new RegExp(sourceId))).not.toBeInTheDocument();
 });
