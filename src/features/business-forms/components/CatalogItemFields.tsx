@@ -1,5 +1,6 @@
 import type { CatalogValueType } from "../catalogValues";
-import { useEffect, useRef } from "react";
+import { catalogItemColumns } from "../catalogColumns";
+import { Fragment, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
@@ -17,21 +18,26 @@ export function CatalogItemFields({ item, culture, valueType, readOnly, errors, 
 }) {
   const { t } = useTranslation("forms");
   const textRef = useRef<HTMLInputElement>(null);
+  const columns = catalogItemColumns(valueType, culture);
   useEffect(() => { textRef.current?.focus(); }, []);
   return <Surface padded>
     <div className="grid gap-4 sm:grid-cols-2">
-      <FormField label={<span className="flex w-full justify-between gap-3"><span>{t("catalogs.items.text")}</span><span aria-hidden="true" className="text-xs text-[var(--color-content-muted)]">{(item.label[culture] ?? "").length}/30</span></span>} required={culture === "es"} error={errors?.["text." + culture]?.join(" ")} hint={warning ?? (culture === "en" ? t("catalogs.items.englishHint") : undefined)}>
+      {columns.map(column => {
+        const error = errors?.[column.errorPath]?.join(" ");
+        switch (column.id) {
+        case "text": return <FormField key={column.id} label={<span className="flex w-full justify-between gap-3"><span>{t(column.editorLabelKey)}</span><span aria-hidden="true" className="text-xs text-[var(--color-content-muted)]">{(item.label[culture] ?? "").length}/{column.maxLength}</span></span>} required={column.required} error={error} hint={warning ?? (culture === "en" ? t("catalogs.items.englishHint") : undefined)}>
         <Input ref={textRef} readOnly={readOnly} value={item.label[culture] ?? ""} onChange={event => onChange({ ...item, label: { ...item.label, [culture]: event.target.value } })} />
-      </FormField>
-      <FormField label={t("catalogs.items.code")} required error={errors?.code?.join(" ")} hint={t("catalogs.items.codeHint")}>
-        <Input maxLength={80} readOnly={readOnly} value={item.code} onChange={event => onChange({ ...item, code: event.target.value })} />
-      </FormField>
-      {valueType !== "Text" ? <FormField label={t("catalogs.valueType.valueLabel", { type: t("catalogs.valueTypes." + valueType) })} required error={errors?.value?.join(" ")} hint={t("catalogs.valueType.inputHint." + valueType)}><Input type={valueType === "Date" ? "date" : "text"} inputMode={valueType === "Integer" ? "numeric" : valueType === "Decimal" ? "decimal" : undefined} maxLength={64} readOnly={readOnly} value={item.value ?? ""} onChange={event => onChange({ ...item, value: event.target.value || null })} /></FormField> : null}
-      <FormField label={t("catalogs.items.detail")} error={errors?.["detail." + culture]?.join(" ")} hint={t("optional")}>
-        <Textarea maxLength={300} readOnly={readOnly} value={item.detail[culture] ?? ""} onChange={event => onChange({ ...item, detail: { ...item.detail, [culture]: event.target.value || null } })} />
-      </FormField>
-      {onGenerateCode && !item.code.trim() && !readOnly ? <Button type="button" variant="outline" onClick={onGenerateCode}>{t("catalogs.items.generateCode")}</Button> : null}
-      <CheckboxField label={t("catalogs.items.active")} description={t("catalogs.items.activeHint")} checked={item.isActive} disabled={readOnly} onCheckedChange={isActive => onChange({ ...item, isActive })} />
+      </FormField>;
+        case "code": return <FormField key={column.id} label={t(column.editorLabelKey)} required={column.required} error={error} hint={t("catalogs.items.codeHint")}>
+          <Input maxLength={column.maxLength} readOnly={readOnly} value={item.code} onChange={event => onChange({ ...item, code: event.target.value })} />
+        </FormField>;
+        case "value": return <FormField key={column.id} label={t(column.editorLabelKey, { type: t("catalogs.valueTypes." + valueType) })} required={column.required} error={error} hint={t("catalogs.valueType.inputHint." + valueType)}><Input type={column.inputType} inputMode={column.inputMode} maxLength={column.maxLength} readOnly={readOnly} value={item.value ?? ""} onChange={event => onChange({ ...item, value: event.target.value || null })} /></FormField>;
+        case "detail": return <FormField key={column.id} label={t(column.editorLabelKey)} error={error} hint={t("optional")}>
+          <Textarea maxLength={column.maxLength} readOnly={readOnly} value={item.detail[culture] ?? ""} onChange={event => onChange({ ...item, detail: { ...item.detail, [culture]: event.target.value || null } })} />
+        </FormField>;
+        case "isActive": return <Fragment key={column.id}>{onGenerateCode && !item.code.trim() && !readOnly ? <Button type="button" variant="outline" onClick={onGenerateCode}>{t("catalogs.items.generateCode")}</Button> : null}<CheckboxField label={t(column.editorLabelKey)} description={t("catalogs.items.activeHint")} checked={item.isActive} disabled={readOnly} onCheckedChange={isActive => onChange({ ...item, isActive })} /></Fragment>;
+        }
+      })}
     </div>
     <div className="flex justify-end"><Button type="button" variant="outline" onClick={onDone}>{t("done")}</Button></div>
   </Surface>;

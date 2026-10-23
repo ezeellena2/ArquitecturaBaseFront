@@ -47,4 +47,9 @@ describe("Manual catalog edits across partial pages", () => {
     source.detail.es = "Changed outside the editor";
     expect(catalogItemChanges(state)).toEqual([{ ...first, code: "LOCAL" }]);
   });
+  it("does not stage unchanged text maps when their property order differs", () => {
+    const state = mergeCatalogItemPage(newCatalogItemEdits(), [first]);
+    const reordered = { ...first, label: { en: "", es: "Pérez Hnos." }, detail: { en: null, es: "Av. Colón 1234" } };
+    expect(catalogItemChanges(stageCatalogItem(state, reordered))).toEqual([]);
+  });
 });
