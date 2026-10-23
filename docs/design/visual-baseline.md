@@ -361,7 +361,7 @@ Sin elección; no se implementan sin ella.
 | Formularios por WhatsApp | `/formularios`, respuestas, aprobación, diseño PDF y chat | [Diseño y estado de calificación](formularios-whatsapp.md) |
 | Casos del asistente | Pantalla Asistente del panel de WhatsApp y el chat | [Tableros elegidos, por programar](asistente-casos.md) |
 | Mejoras de catálogos | Editor de catálogos, «Elegir de un catálogo» y las respuestas | [E1 implementado y recorrido local](catalogos-mejoras.md#recorrido-local-de-e1--2026-10-22) |
-| Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [Tableros elegidos, por programar](catalogos-campos-extra.md) |
+| Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [E2 implementado; alcance y evidencia](catalogos-campos-extra.md) |
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
@@ -408,3 +408,8 @@ Al verificar el arnés compilado se comprobó que la optimización de Tailwind t
 ## Menú y detalle de formularios — 2026-10-21
 
 MF1 y DC0/DC1 ajustado de la versión 96 están implementados junto con D2 como vista rápida. El [cierre visual y su evidencia](formularios-whatsapp.md#cierre-local-de-menú-y-detalle--2026-10-21) conserva es/en a 1440/390/320, la distinción Read/Decide y el alcance del visor PDF; las referencias elegidas se mantienen. El piloto real con Meta espera el code review propio.
+
+
+## Catálogos E2 — 2026-10-23
+
+CE1, CE2, CE3-B, CE4-A y CE5 están implementados según los ajustes elegidos. El [cierre visual](catalogos-campos-extra.md#cierre-local-de-e2--2026-10-23) registra la VRT 719/719, el recorrido es/en a 390/320, datos de personas con extensión neutral, presentación por pregunta y campos históricos. Las referencias elegidas se conservan; CE6 es la guía del circuito y el piloto con Meta espera el review de E2.

@@ -1,7 +1,7 @@
 # Mejoras de catálogos: tableros elegidos
 
 Fecha: **2026-10-21**. **Elegidos CA1-A y CA2–CA6** de la versión 102 del lienzo; la 110 suma el ajuste de claridad de
-la vista previa (abajo). E1 implementado y verificado localmente; el code review y el piloto real siguen pendientes.
+la vista previa (abajo). E1 implementado y verificado localmente, con code review cerrado; el piloto real se reúne con E2 después de su review.
 
 Origen: la sección «Catálogos» de la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
@@ -52,8 +52,8 @@ varias.
 
 ## Lo que no entra
 
-- Filtrar por persona con «Proveedores de mi zona», que muestra el prototipo en el recorrido 5: es de la etapa siguiente,
-  con sus tableros elegidos en [campos extra](catalogos-campos-extra.md) (CE4-A), donde el filtro va en la pregunta.
+- Filtrar por persona con «Proveedores de mi zona» no entraba en E1. Se implementó después en E2, según los
+  tableros elegidos de [campos extra](catalogos-campos-extra.md) (CE4-A), donde el filtro va en la pregunta.
 
 ## Recorrido local de E1 — 2026-10-22
 
@@ -95,3 +95,8 @@ El recorrido visible verificó CA1-A, CA2, CA3 y la tarjeta CA5 en es/en a 390 y
 Los PNG es320 con letras recortadas se contrastaron en el navegador: [planilla](evidence/catalogos-mejoras/e1-review-ca5-sheet-es-320.jpg) y [detalle](evidence/catalogos-mejoras/e1-review-ca5-detail-es-320.jpg) muestran sus cabeceras completas y la tabla desplaza su contenido dentro del contenedor. La validación de Valor se llevó al viewport para ver el campo y su mensaje completos.
 
 El transporte y los datos son sintéticos; CA6 encadena escenas independientes y no acredita propagación ni entrega a Meta. La escena del chat no contiene catálogo ni detalles: la presentación de esos metadatos se acredita con sus tests unitarios. El piloto real sigue pendiente. Se cerraron la pestaña y el servidor propios, se restableció el viewport y se ejecutó aspire stop.
+
+
+## Convivencia con E2 — 2026-10-23
+
+E2 conserva CA1-A y CA2–CA6 y suma los [campos extra, la presentación y el filtro por persona](catalogos-campos-extra.md#cierre-local-de-e2--2026-10-23). La última VRT conjunta aprobó 719/719 pruebas, incluidos los recorridos de E1, sin reescribir sus referencias elegidas. La evidencia física pendiente de ambos se reúne en el [único piloto posterior al review de E2](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-único-con-meta-después-de-e2).

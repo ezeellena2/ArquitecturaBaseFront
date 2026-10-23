@@ -1,13 +1,12 @@
 # Campos extra de los catálogos: tableros elegidos
 
 Fecha: **2026-10-21**. **Elegidos CE1, CE2, CE3-B, CE4-A, CE5 y CE6** de la versión 106 del lienzo; la 107 los marca y
-suma a CE4-A la nota del módulo, la 108, el ajuste de la evaluación de impacto, y la 110, el de claridad (abajo). Por
-programar.
+suma a CE4-A la nota del módulo, la 108, el ajuste de la evaluación de impacto, y la 110, el de claridad (abajo). Implementado en E2; el review y el piloto real conservan su comprobación separada.
 
 Origen: la sección «Catálogos · campos extra, qué viaja a WhatsApp y filtrar por persona» de la página «Formularios por
 WhatsApp» del Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el
 Artifact es privado y puede cambiar fuera de Git, este documento y sus capturas congelan lo elegido. El alcance, el modelo de
-datos y las decisiones están en el [plan](../../../ArquitecturaBase/docs/plans/formularios/catalogos-campos-extra.md); las
+datos y las decisiones están en las [reglas vigentes](../../../ArquitecturaBase/docs/features/formularios.md#catálogos-con-campos-extra-y-filtros-por-persona--e2-2026-10-23); las
 pantallas, los textos y los estados salen de acá. Para recorrerlo tocando, el
 [prototipo navegable](https://claude.ai/artifact/2noVifPc2MX33UnNvT2jhY) tiene seis recorridos en su sección «Campos extra».
 
@@ -75,3 +74,19 @@ ve también la lista, como al tocarlo.
 «Datos de las personas» se ve en Administración y en «Editar usuario», pero lo maneja el módulo de formularios: la pantalla y
 la sección «Datos» las aporta el módulo por un punto de extensión, y sin el módulo no aparecen. El núcleo de usuarios no sabe
 de formularios. CE4-A lo dice en una nota.
+
+
+## Cierre local de E2 — 2026-10-23
+
+CE1, CE2, CE3-B, CE4-A y CE5 quedaron implementados con las rutas y controles productivos. La última corrida visual aprobó 719/719 pruebas; el navegador recorrió es/en a 390 y 320 px y se inspeccionó también evidencia de escritorio. Las capturas elegidas de arriba conservan sus bytes y no se actualizaron goldens para aceptar diferencias.
+
+| Recorrido | Evidencia del comportamiento |
+| --- | --- |
+| CE1/CE2 | [Campos y valores](../../src/test/visual/catalogExtraFields.spec.ts): nuevo campo opcional con carga apagada hasta guardar, claves, tipos, fuente en otro catálogo, error por celda, menú Campos, foco y desplazamiento contenido; editor de opción en móvil. |
+| CE4-A · Datos | [Datos de personas](../../src/test/visual/personData.spec.ts): tablas y sección reales, opciones sin CatalogsRead, foco y guardado parcial que conserva el diálogo y sus cambios. |
+| CE3-B/CE4-A · Pregunta | [Presentación y destinatario](../../src/test/visual/catalogQuestionFields.spec.ts): heredar o elegir presentación propia; Juan ve 14 opciones y Pablo, sin el dato, no ve opciones. El estado y los avisos quedan visibles. |
+| CE5 | [Campos históricos](../../src/test/visual/catalogResponseFields.spec.ts): subcolumnas por papel, nombres y tipos sellados, orden entre opciones, detalle y exportación sólo de las columnas visibles, incluso ocultando la pregunta base. |
+
+Los controles se revisaron con teclado y a 320 px sin recortes; dos botones usan el ajuste responsive del Button compartido. El transporte y los datos del navegador son sintéticos. CE6 conserva la referencia del circuito, sin convertir escenas independientes en una prueba física de propagación. Los PDF y XLSX reales, migraciones, SQL y contratos tienen su [verificación del backend](../../../ArquitecturaBase/docs/features/formularios.md#verificación-local-de-e2--2026-10-23).
+
+Se cerraron pestaña y servidores propios y se restauró el viewport. Aspire stop confirmó que no había AppHost en ejecución. El [piloto único con Meta](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-único-con-meta-después-de-e2) queda para después del review de E2; no se hizo en este desarrollo.
