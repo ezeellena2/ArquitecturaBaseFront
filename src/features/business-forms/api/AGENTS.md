@@ -37,6 +37,11 @@ Familias:
 - `catalogImports` envía File/modo/revisión por FormData al preview y Apply; el preview es privado y exige id, revisión y modo coincidentes. Cada alta trae `value` nullable requerido y puede sumar `fields` por GUID con strings canónicos exactos/null; las columnas extra se rotulan por nombre y tipo, sin convertir números por `Number`. Las etiquetas de campos catálogo llegan en `fieldTexts` y `beforeText/afterText`, localizadas por el productor. Apply acepta sólo mapas vacíos y una revisión igual o mayor a la capturada: sin diferencias conserva revisión; el PUT sigue exigiendo una mayor; exportar usa GET binario con nombre del servidor. Las capturas reales se califican después del export, sin completar propiedades.
 - Manual manda metadatos, delta de ítems y movimientos; Filters, nombre, descripción y filtros. Al actualizar suman `expectedRevision` e `isActive` para dar de baja o reactivar. La persona de ejemplo sólo viaja a la prueba y a la aprobación de una propuesta.
 
+### Datos de personas
+
+- `personData.ts` cierra metadatos, tabla sin correo, valores por GUID y opciones exclusivas id/text. La fuente Catalog exige identidad; Text, null. Nombres sólo es obligatorio. Revisión inicial null, primera escritura1 y edición exactamente siguiente con misma persona/atributo; no retiene issues. Todas las llamadas son no-store y cancelables, sin MutationCache.
+- PUT de datos envía delta: ausente conserva, null limpia; los valores inactivos no se devuelven. El selector paginado de opciones no requiere CatalogsRead. `personDataHttpContract` consume los cuerpos intactos de la cohorte `personData` de la corrida conjunta.
+
 ### Respuestas, reglas, PDF, workflow y faltantes
 
 - La planilla valida que cada fila tenga una celda por columna con su tipo y una versión declarada; la celda distingue NotAsked, Unanswered y Answered. MultiChoice conserva la lista histórica en orden (hasta 20 identidades distintas): Answered no vacía, Unanswered null o [], NotAsked null; no acepta archivos. La columna multi no ordena y sus filtros usan anyOf; single conserva in. El anclaje de navegación usa POST sobre la respuesta y el mismo cuerpo de búsqueda: devuelve sólo sus vecinos, posición desde uno y total del conjunto, con guard estricto que exige límites coherentes e identidad esperada. No busca páginas de valores ni agrega filtros privados a la URL.
