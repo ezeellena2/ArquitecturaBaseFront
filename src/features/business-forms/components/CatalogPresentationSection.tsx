@@ -1,0 +1,39 @@
+import { useTranslation } from "react-i18next";
+import { useId } from "react";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Label } from "@/shared/ui/label";
+import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Surface } from "@/shared/ui/Surface";
+import type { CatalogPresentation } from "../api/catalogResponse";
+import type { CatalogFieldDraft } from "../catalogFields";
+import type { CatalogManualItemValue } from "../catalogItemEdits";
+import { catalogOptionPresentation } from "../catalogPresentation";
+import type { CatalogValueType } from "../catalogValues";
+import { localizedValue } from "../editorModel";
+import type { FormCulture } from "../model";
+
+export function CatalogPresentationSection({ value, fields, items, valueType, culture, readOnly, titleTooLongCount = 0, examples = [], inputCulture = culture, errors = {}, onChange }: { value: CatalogPresentation | null; fields: readonly CatalogFieldDraft[]; items: readonly CatalogManualItemValue[]; valueType: CatalogValueType; culture: FormCulture; readOnly: boolean; titleTooLongCount?: number; examples?: readonly { itemId: string; title: string }[]; inputCulture?: FormCulture; errors?: Readonly<Record<string, readonly string[]>>; onChange: (value: CatalogPresentation | null) => void }) {
+  const { t } = useTranslation("forms");
+  const labelId = useId();
+  const selected = value ?? { title: ["text"], description: ["detail"] };
+  const choices = [...["text", "code", "detail", ...(valueType === "Text" ? [] : ["value"])].map(key => ({ key, label: t("catalogs.items." + key), disabled: false })), ...fields.filter(field => field.isActive).map(field => ({ key: field.id ?? field.localId, label: localizedValue(field.name, culture, "es"), disabled: field.id === null }))];
+  const name = (key: string) => choices.find(choice => choice.key === key)?.label ?? fields.find(field => field.id === key)?.name[culture] ?? fields.find(field => field.id === key)?.name.es ?? t("catalogs.presentation.unavailable");
+  const update = (part: "title" | "description", keys: readonly string[]) => { if (!readOnly) onChange({ title: [...selected.title], description: [...selected.description], [part]: [...keys] }); };
+  const example = items.find(item => item.isActive);
+  const booleanLabels = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
+  const shown = example ? catalogOptionPresentation(example, value, fields, valueType, culture, booleanLabels, inputCulture) : null;
+  const hidden = fields.filter(field => field.isActive && ![...selected.title, ...selected.description].includes(field.id ?? field.localId)).map(field => localizedValue(field.name, culture, "es"));
+  const localTooLong = items.filter(item => item.isActive && catalogOptionPresentation(item, value, fields, valueType, culture, booleanLabels, inputCulture).title.length > 30).length;
+  return <Surface title={t("catalogs.presentation.title")} padded><div className="space-y-4">
+    {(["title", "description"] as const).map(part => {
+      const id = labelId + "-" + part, error = (errors["presentation." + part] ?? errors.presentation)?.join(" ");
+      return <div key={part} className="space-y-2"><Label htmlFor={id}>{t("catalogs.presentation." + (part === "title" ? "heading" : "description"))}</Label><div className="flex flex-wrap items-center gap-2">{selected[part].map(key => <Badge key={key} variant="outline"><span>{name(key)}</span><Button type="button" size="inline" variant="ghost" disabled={readOnly || part === "title" && selected.title.length === 1} aria-label={t("catalogs.presentation.remove", { name: name(key), part: t("catalogs.presentation." + (part === "title" ? "heading" : "description")) })} onClick={() => update(part, selected[part].filter(value => value !== key))}>×</Button></Badge>)}<NativeSelect id={id} value="" disabled={readOnly} aria-invalid={!!error} aria-describedby={error ? id + "-error" : undefined} onChange={event => { if (event.target.value) update(part, [...selected[part], event.target.value]); }}><option value="" disabled>{t("catalogs.presentation.add")}</option>{choices.filter(choice => !selected[part].includes(choice.key)).map(choice => <option key={choice.key} value={choice.key} disabled={choice.disabled}>{choice.label}{choice.disabled ? " · " + t("catalogs.fields.savedFirst") : ""}</option>)}</NativeSelect></div>{error ? <p id={id + "-error"} role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}</div>;
+    })}
+    {shown ? <div className="space-y-1"><p className="text-xs font-semibold uppercase">{t("catalogs.presentation.example")}</p><div className="rounded-md border border-[var(--color-border)] p-3"><p className="break-words text-sm">{shown.title}</p>{shown.description ? <p className="break-words text-xs text-[var(--color-content-muted)]">{shown.description}</p> : null}</div></div> : null}
+    {Math.max(titleTooLongCount, localTooLong) ? <p role="status" className="text-sm text-[var(--color-warning-700)]">{t("catalogs.presentation.tooLong", { count: Math.max(titleTooLongCount, localTooLong) })}</p> : null}
+    {examples.length && titleTooLongCount ? <ul className="list-inside list-disc text-sm">{examples.map(example => <li key={example.itemId}>{example.title}</li>)}</ul> : null}
+    {hidden.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.presentation.hidden", { fields: hidden.join(", ") })}</p> : null}
+    <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.presentation.hint")}</p>
+  </div></Surface>;
+}

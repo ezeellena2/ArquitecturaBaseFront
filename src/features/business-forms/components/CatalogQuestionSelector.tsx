@@ -13,10 +13,10 @@ import { Spinner } from "@/shared/ui/Spinner";
 import { useCatalogDetail, useCatalogPage } from "../hooks/useCatalogQueries";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 
-export function CatalogQuestionSelector({ scope, value, readOnly, error, onChange }: { scope: CatalogReadScope; value: string; readOnly: boolean; error?: string; onChange: (id: string) => void }) {
+export function CatalogQuestionSelector({ scope, value, readOnly, error, onChange, manualOnly = false }: { scope: CatalogReadScope; value: string; readOnly: boolean; error?: string; onChange: (id: string) => void; manualOnly?: boolean }) {
   const { t } = useTranslation("forms");
   const [search, setSearch] = useState(""); const [page, setPage] = useState(1);
-  const query = { page, pageSize: 20, sort: "name" as const, search };
+  const query = { page, pageSize: 20, sort: "name" as const, search, ...(manualOnly ? { kind: "Manual" as const } : {}) };
   const list = useCatalogPage(scope, query, "global");
   const rows = list.data?.items ?? [];
   const currentRow = rows.find(row => row.id === value);
@@ -34,10 +34,10 @@ export function CatalogQuestionSelector({ scope, value, readOnly, error, onChang
     <FormField label={t("catalogQuestion.catalog")} required error={error} hint={!canRead ? t("catalogQuestion.requiresRead") : selectedDescription ?? t("catalogQuestion.hint")}>
       <NativeSelect data-question-control="catalog" value={canRead ? value : ""} disabled={readOnly || !canRead || list.isPending} onChange={event => {
         if (readOnly || !canRead) return;
-        if (rows.some(row => row.id === event.target.value && row.state === "Active")) onChange(event.target.value);
+        if (rows.some(row => row.id === event.target.value && row.state === "Active" && (!manualOnly || row.origin === "Manual"))) onChange(event.target.value);
       }}><option value="" disabled>{t("select")}</option>
         {canRead && value && !currentRow ? <option value={value} disabled={!detail.data || detailState !== "Active"}>{detail.data ? label(selectedName, detail.data.valueType, detail.data.kind, null, detailState, detail.data.unavailableReasonCode) : selectedName}</option> : null}
-        {canRead ? rows.map(row => <option key={row.id} value={row.id} disabled={row.state !== "Active"}>{label(row.name, row.valueType, row.origin, row.optionsCount, row.state, row.stateReason)}</option>) : null}
+        {canRead ? rows.map(row => <option key={row.id} value={row.id} disabled={row.state !== "Active" || manualOnly && row.origin !== "Manual"}>{label(row.name, row.valueType, row.origin, row.optionsCount, row.state, row.stateReason)}</option>) : null}
       </NativeSelect>
     </FormField>
     {canRead && !readOnly ? <SearchInput value={search} label={t("catalogQuestion.search")} onChange={next => { setSearch(next); setPage(1); }} /> : null}

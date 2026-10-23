@@ -255,6 +255,31 @@
   "questionLimit": "You can add up to {{count}} questions. Remove one to add another.",
   "savingLeave": "We are saving the draft. Wait for the result before leaving.",
   "catalogs": {
+    "fields": {
+      "title": "Fields", "field": "Field", "key": "Key", "type": "Type", "rules": "Rules", "role": "Role",
+      "add": "Add field", "edit": "Edit fields", "view": "View fields", "new": "New field", "unsaved": "New, unsaved",
+      "empty": "There are no extra fields yet.", "fixed": "Fixed: code, text and details. Extra:",
+      "englishName": "Name in English", "keyHint": "Used by the template, imports and stored data. It does not change after saving.",
+      "optionalFirst": "A new field starts optional: every active option needs a value before it can be required.",
+      "typeReview": "Saving checks every value. If any cannot convert, the change is not saved.",
+      "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values",
+      "removeTitle": "Remove “{{name}}”", "remove": "Remove field", "removeHint": "Removed from the table, template and Excel. Responses that already captured it keep it.",
+      "confirmRemoval": "Yes, remove the field and its values", "inUse": "This field is in use. Remove those uses before removing it.",
+      "columns": "Fields", "valueLabel": "Row {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Clear", "viewNamed": "View {{name}}", "clearValue": "Clear {{name}}",
+      "invalid": "Review this value: it does not match the field type.", "required": "The required value is missing.", "range": "The value is outside the field minimum or maximum.", "length": "The text exceeds the allowed length.",
+      "missingValues_one": "Values are missing from 1 active option.", "missingValues_other": "Values are missing from {{count}} active options.",
+      "invalidValues_one": "1 option has a value that cannot convert.", "invalidValues_other": "{{count}} options have values that cannot convert.",
+      "convertedValues_one": "1 value can convert.", "convertedValues_other": "{{count}} values can convert.", "invalidCodes": "Review options with these codes: {{codes}}.",
+      "roles": { "filter": "Filter", "data": "Data" },
+      "roleHint": { "filter": "Show each person their own options, or use a fixed question filter.", "data": "Captured with the selected option and included in the response." },
+      "types": { "text": "Text", "integer": "Whole number", "decimal": "Decimal", "date": "Date", "boolean": "Yes or no", "catalog": "Pick from a catalog" }
+    },
+    "presentation": {
+      "title": "In WhatsApp", "heading": "Title · up to 30 characters", "description": "Description · up to 300", "add": "Add field", "example": "For example",
+      "hint": "Changes apply to new sends: existing sends and saved responses keep what was shown.",
+      "hidden": "Not shared outside the system: {{fields}}.", "tooLong_one": "1 option exceeds 30 characters. You can save; review the title before publishing.", "tooLong_other": "{{count}} options exceed 30 characters. You can save; review the title before publishing.",
+      "remove": "Remove {{name}} from {{part}}", "yes": "Yes", "no": "No", "unavailable": "Unavailable field"
+    },
     "lifecycle": {
       "deactivate": "Deactivate",
       "reactivate": "Reactivate",
