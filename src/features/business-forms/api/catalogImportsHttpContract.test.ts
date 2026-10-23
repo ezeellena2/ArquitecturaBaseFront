@@ -10,7 +10,7 @@ import { readCatalogSave } from "./catalogResponse";
 // Every response and workbook comes unchanged from the joint backend export.
 const cohort = httpCohort("catalogImports");
 const cultures = ["es", "en"] as const;
-const names = ["replace-preview.json", "append-preview.json", "already-applied.json", "empty-preview.json", "applied.json", "conflict.json", "confirmation-required.json", "round-trip-preview.json", "export.xlsx", "export.http.json", "template.xlsx", "template.http.json"];
+const names = ["replace-preview.json", "append-preview.json", "already-applied.json", "empty-preview.json", "applied.json", "conflict.json", "confirmation-required.json", "round-trip-preview.json", "export.xlsx", "export.http.json", "template.xlsx", "template.http.json", "extra-source-preview.json", "extra-source-applied.json", "extra-source-unchanged.json"];
 const csv = "Code,Text,Active\nA,Uno cambiado,Yes\nNEW,Nueva,Yes\nBAD," + "x".repeat(31) + ",Yes\n";
 const sha256 = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 const capture = (culture: typeof cultures[number], name: string) => culture + "/" + name;
@@ -22,15 +22,31 @@ function preview(culture: typeof cultures[number], name: string, revision: numbe
   return result;
 }
 
-it("qualifies the twenty-four intact import captures and their actual producers", () => {
+it("qualifies the intact import captures and their actual producers", () => {
   const provenance = cohort.verify();
   expect(provenance.captures.map(item => item.name).sort()).toEqual(cultures.flatMap(culture => names.map(name => capture(culture, name))).sort());
-  for (const source of ["FormCatalogImportHttpTests.cs", "FormCatalogEndpointsTests.cs", "FormCatalogImportContractCapture.cs", "FormCatalogImportModels.cs", "FormCatalogImportTemplate.cs", "Catalogs.resx", "Catalogs.en.resx"]) {
+  for (const source of ["FormCatalogImportHttpTests.cs", "FormCatalogImportFieldsHttpTests.cs", "FormCatalogEndpointsTests.cs", "FormCatalogImportContractCapture.cs", "FormCatalogImportModels.cs", "FormCatalogImportTemplate.cs", "Catalogs.resx", "Catalogs.en.resx"]) {
     expect(provenance.sources.some(item => item.path.endsWith("/" + source))).toBe(true);
   }
 });
 
 for (const culture of cultures) {
+  it("reads the real " + culture + " source field labels and an import receipt with no revision change", () => {
+    const plan = preview(culture, "extra-source-preview.json", 2, "Append");
+    expect(plan.issues).toEqual([]);
+    const added = plan.added[0]!;
+    const change = plan.changed[0]!.changes[0]!;
+    const fieldId = change.column;
+    expect(added.fields?.[fieldId]).toBe(change.before);
+    expect(added.fieldTexts?.[fieldId]).toBe(culture === "en" ? "Central" : "Centro");
+    expect(change.beforeText).toBe(added.fieldTexts?.[fieldId]);
+    expect(change.afterText).toBe("Sur");
+    const applied = readCatalogSave(cohort.json(capture(culture, "extra-source-applied.json")), [], plan.catalogId, 2);
+    expect(applied.catalog.revision).toBe(3);
+    expect(applied.fieldIdentityMap).toEqual({});
+    const unchanged = readCatalogSave(cohort.json(capture(culture, "extra-source-unchanged.json")), [], plan.catalogId);
+    expect(unchanged.catalog.revision).toBe(applied.catalog.revision);
+  });
   it("reads the real " + culture + " preview revisions counts issues and workbook round trip", () => {
     const replace = preview(culture, "replace-preview.json", 1, "Replace");
     const id = replace.catalogId;
