@@ -1,0 +1,26 @@
+import { act, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { expect, it, vi } from "vitest";
+import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { currentUser } from "@/test/mocks/handlers";
+import { server } from "@/test/mocks/server";
+import type { UserDataSaveState } from "@/shared/hooks/userDataSectionContext";
+import { PersonDataSection } from "./PersonDataSection";
+vi.mock("react-oidc-context", async () => { const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"); return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }; });
+it("selects source options with UsersManage alone and reports a failed independent save in Data", async () => {
+ const id = "01990000-0000-7000-8000-000000000001", userId = "01990000-0000-7000-8000-000000000002", source = "01990000-0000-7000-8000-000000000003", center = "01990000-0000-7000-8000-000000000004", north = "01990000-0000-7000-8000-000000000005";
+ const writes: unknown[] = []; let catalogReads = 0;
+ server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["users.manage"] })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [{ id, key: "zone", name: { es: "Zona" }, type: "Catalog", sourceCatalogId: source, sourceCatalogName: "Zonas", position: 0, isActive: true, revision: 1, usedBy: [] }] })), http.get(`/api/forms/person-data/${userId}`, () => HttpResponse.json({ userId, revision: 3, values: { [id]: { value: center, text: "Centro" } } })), http.get(`/api/forms/person-attributes/${id}/options`, () => HttpResponse.json({ items: [{ id: center, text: "Centro" }, { id: north, text: "Norte" }], page: 1, pageSize: 20, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false })), http.get("/api/forms/catalogs", () => { catalogReads++; return new HttpResponse(null, { status: 403 }); }), http.put(`/api/forms/person-data/${userId}`, async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ code: "Unexpected.Error", traceId: "test" }, { status: 500 }); }));
+ let state: UserDataSaveState | null = null;
+ await act(async () => { renderWithProviders(<PersonDataSection userId={userId} disabled={false} userSaved onState={next => { state = next; }} />); });
+ const combo = await screen.findByRole("combobox", { name: "Zona" });
+ await waitFor(() => expect(combo).toHaveValue("Centro"));
+ await userEvent.click(combo);
+ await userEvent.click(await screen.findByRole("option", { name: "Norte" }));
+ await waitFor(() => expect(state?.dirty).toBe(true));
+ await act(async () => expect(await state!.save()).toBe(false));
+ expect(writes).toEqual([{ expectedRevision: 3, values: { [id]: north } }]);
+ expect(screen.getByRole("alert")).toHaveTextContent("No se pudieron guardar los datos. Probá de nuevo. El resto del usuario ya se guardó.");
+ expect(catalogReads).toBe(0);
+});
