@@ -191,6 +191,8 @@ export function createResponseVisualFixtures(
   const exports: unknown[] = [];
   if (scenario === "responses-catalog-fields") {
     sheet.name = en ? "Request a spare part" : "Pedir repuesto";
+    sheet.columns = sheet.columns.filter(column => column.type !== "photo" && column.type !== "document");
+    for (const row of sheet.records.items) row.cells = row.cells.filter(cell => cell.type !== "photo" && cell.type !== "document");
     const column = sheet.columns[4];
     column.label = en ? "Suppliers to contact" : "Proveedores a consultar";
     column.type = "multiChoice";
