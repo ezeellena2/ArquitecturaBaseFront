@@ -3,6 +3,8 @@ import { api } from "@/shared/api/httpClient";
 import { catalogId, readCatalog, readCatalogItems, readCatalogPage, readCatalogSave, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogFiltersSave, UnsupportedCatalogResponse } from "./catalogResponse";
 
 import type { CatalogFiltersBody } from "../catalogFilterDraft";
+import type { CatalogFieldBody } from "../catalogFields";
+import type { CatalogPresentation } from "./catalogResponse";
 
 export interface CatalogManualItemBody {
   readonly localId: string;
@@ -12,15 +14,18 @@ export interface CatalogManualItemBody {
   readonly text: Readonly<Record<string, string | null>>;
   readonly detail: Readonly<Record<string, string | null>>;
   readonly isActive: boolean;
+  readonly fields?: Readonly<Record<string, string | null>>;
 }
 export interface ManualCatalogBody {
   readonly name: Readonly<Record<"es" | "en", string>>;
   readonly description: Readonly<Record<"es" | "en", string>>;
   readonly items: readonly CatalogManualItemBody[];
+  readonly fields?: readonly CatalogFieldBody[];
+  readonly presentation?: CatalogPresentation | null;
 }
 export interface CreateManualCatalogBody extends ManualCatalogBody { readonly valueType?: CatalogValueType }
 export interface CatalogItemMove { readonly itemId: string; readonly direction: "up" | "down" }
-export interface UpdateManualCatalogBody extends ManualCatalogBody { readonly expectedRevision: number; readonly isActive?: boolean; readonly moves?: readonly CatalogItemMove[]; readonly sortAlphabetically?: boolean }
+export interface UpdateManualCatalogBody extends ManualCatalogBody { readonly expectedRevision: number; readonly isActive?: boolean; readonly moves?: readonly CatalogItemMove[]; readonly sortAlphabetically?: boolean; readonly confirmFieldRemovals?: readonly string[] }
 export interface CatalogItemsQuery {
   readonly page: number;
   readonly pageSize: number;
@@ -33,8 +38,8 @@ export const fetchCatalogItems = async (id: string, query: CatalogItemsQuery, si
   const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));
   return readCatalogItems(await api.get<unknown>(`/api/forms/catalogs/${catalogId(id)}/items?${params}`, { signal }));
 };
-export const createManualCatalog = async (body: CreateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.post<unknown>("/api/forms/catalogs", body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId));
-export const updateManualCatalog = async (id: string, body: UpdateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.put<unknown>(`/api/forms/catalogs/${catalogId(id)}`, body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId), id, body.expectedRevision);
+export const createManualCatalog = async (body: CreateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.post<unknown>("/api/forms/catalogs", body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId), undefined, undefined, body.fields?.filter(field => field.id === null).map(field => field.localId) ?? []);
+export const updateManualCatalog = async (id: string, body: UpdateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.put<unknown>(`/api/forms/catalogs/${catalogId(id)}`, body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId), id, body.expectedRevision, body.fields?.filter(field => field.id === null).map(field => field.localId) ?? []);
 
 export type CatalogSortField = "name" | "kind" | "revision" | "optionsCount" | "usageCount";
 export interface CatalogListQuery {
