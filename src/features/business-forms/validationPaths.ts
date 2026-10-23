@@ -3,7 +3,7 @@ import type { DraftEditorValue, DraftWriteBody } from "./model";
 export function parseValidationPath(path: string): readonly (string | number)[] | null {
   const segments: (string | number)[] = [];
   for (const part of path.split(".")) {
-    const match = /^([^\s.\[\]]+)((?:\[(?:0|[1-9]\d*)\])*)$/.exec(part);
+    const match = /^([^\s.[\]]+)((?:\[(?:0|[1-9]\d*)\])*)$/.exec(part);
     if (!match) return null;
     segments.push(match[1]!);
     for (const index of match[2]!.matchAll(/\[(\d+)\]/g)) {
@@ -30,8 +30,9 @@ export interface IndexedValidationIssue {
 export function indexedValidationIssues(items: readonly { readonly localId: string }[], errors: Readonly<Record<string, readonly string[]>> | undefined, collection: string): readonly IndexedValidationIssue[] {
   return Object.entries(errors ?? {}).flatMap(([path, messages]) => {
     const segments = parseValidationPath(path);
-    const index = segments?.[1];
-    const item = segments?.[0] === collection && typeof index === "number" ? items[index] : undefined;
+    if (!segments) return [];
+    const index = segments[1];
+    const item = segments[0] === collection && typeof index === "number" ? items[index] : undefined;
     return item && segments.length > 2 ? [{ path, relativePath: validationPath(segments.slice(2)), localId: item.localId, messages: [...messages] }] : [];
   });
 }
