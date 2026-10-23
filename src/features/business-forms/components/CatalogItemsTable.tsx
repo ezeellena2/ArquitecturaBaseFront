@@ -8,7 +8,8 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ChevronDownIcon, PencilIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
+import { WideTable } from "@/shared/ui/WideTable";
 import { localizedValue } from "../editorModel";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
@@ -35,7 +36,7 @@ export function CatalogItemsTable({ items, culture, valueType, canManage, busy, 
   const editing = inline && canManage;
   const columns = catalogTableColumns(catalogItemColumns(valueType, culture), editing);
   return (
-    <Table><TableHeader><TableRow>
+    <WideTable label={t("catalogs.items.title")}><TableHeader><TableRow>
       {canManage ? <TableHead scope="col"><Checkbox aria-label={t("catalogs.items.selectPage")} disabled={busy || !items.length} checked={selected.length === items.length && items.length > 0 ? true : selected.length ? "indeterminate" : false} onCheckedChange={value => onSelectAll(value === true)}/></TableHead> : null}
       <TableHead scope="col">#</TableHead>{columns.map(column => <TableHead key={column.id} scope="col">{t(column.tableLabelKey)}</TableHead>)}<TableHead scope="col" className="text-right">{t("actionsColumn")}</TableHead>
     </TableRow></TableHeader><TableBody>
@@ -67,6 +68,6 @@ export function CatalogItemsTable({ items, culture, valueType, canManage, busy, 
           </div> : null}</TableCell>
         </TableRow>{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
       })}
-    </TableBody></Table>
+    </TableBody></WideTable>
   );
 }
