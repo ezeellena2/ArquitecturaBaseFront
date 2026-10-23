@@ -29,7 +29,8 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   const fields = useMemo(() => catalog?.fields ?? [], [catalog]);
   const attributes = usePersonAttributes(scope, !!onSourceChange && canRead && fields.some(field => field.isActive && field.role === "filter"));
   const items = useCatalogItems(scope, catalog?.kind === "Manual" ? catalog.id : "", catalog?.revision ?? null, { page: 1, pageSize: 20, isActive: true, sort: "text" });
-  const preview = useRecipientPreview({ ...scope, culture: contentCulture }, definitionId, questionId, type, source);
+  // Only a Manual catalog offers the per-person test: with any other one no person stays chosen and no samples are read.
+  const preview = useRecipientPreview({ ...scope, culture: contentCulture }, catalog?.kind === "Manual" ? definitionId : null, questionId, type, source);
   const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState("");
   useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
   const samples = useRecipientSamples(scope, { page: 1, pageSize: 20, search: settled }, preview.available);
