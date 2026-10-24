@@ -178,6 +178,43 @@ describe("SettingsPage", () => {
     await waitFor(() => expect(writes).toEqual([{ expectedRevision: 1, defaultPageSize: 50 }, { expectedRevision: 2, defaultPageSize: 50 }]));
   });
 
+  it("keeps the settings header without an unsaved status while the draft changes", async () => {
+    renderRouteWithProviders("/configuracion");
+    const size = await screen.findByRole("combobox", { name: "Filas por página" });
+    const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
+    expect(within(header).getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+
+    await userEvent.selectOptions(size, "50");
+
+    // Guardar habilitado ya dice que hay cambios: la banda tiene el título y sus acciones, sin estado del borrador.
+    expect(within(header).getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+    expect(header.textContent).toBe("ConfiguraciónDescartarGuardar cambios");
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+  });
+
+  it("puts the conflict choices in the comparison header", async () => {
+    server.use(http.patch("/api/settings", async ({ request }) => {
+      writes.push(await request.json());
+      settings = { ...settings, defaultPageSize: 100, revision: 2 };
+      return HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 });
+    }));
+    renderRouteWithProviders("/configuracion/listados");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    // Revisar actúa sobre toda la pantalla: va en la banda de Page, antes de Descartar y Guardar.
+    const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
+    const reviewAction = await within(header).findByRole("button", { name: "Revisar valores actuales" });
+    expect(within(header).getAllByRole("button").map(button => button.textContent)).toEqual(["Revisar valores actuales", "Descartar", "Guardar cambios"]);
+    await userEvent.click(reviewAction);
+
+    // Las elecciones del conflicto van al borde derecho de la banda de la comparación, no debajo de la tabla.
+    const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
+    const band = within(comparison).getByRole("heading", { level: 2, name: "Revisar cambios" }).parentElement as HTMLElement;
+    expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Usar valores actuales", "Conservar mis cambios"]);
+    expect(within(comparison).getAllByRole("button")).toHaveLength(2);
+  });
+
   it("does not repeat a write that was committed before a 500 response", async () => {
     server.use(http.patch("/api/settings", async ({ request }) => {
       writes.push(await request.json()); settings = { ...settings, defaultPageSize: 50, revision: 2 };

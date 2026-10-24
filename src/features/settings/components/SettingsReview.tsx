@@ -10,7 +10,11 @@ export function SettingsReview({ current, draft, disabled, onAccept }: {
   const { t } = useTranslation("settings");
   const display = (field: SettingField, value: string | number) => field === "defaultCulture"
     ? t(`common:language.${value}`) : field === "registrationMode" ? t(`registration.${value}Label`) : String(value).replaceAll("_", " ");
-  return <Surface title={t("review.title")} padded>
+  // Las elecciones resuelven toda la comparación: van al borde derecho de su banda, a la altura del título.
+  return <Surface title={t("review.title")} padded actions={<>
+    <Button variant="outline" disabled={disabled} onClick={() => onAccept(false)}>{t("review.useCurrent")}</Button>
+    <Button disabled={disabled} onClick={() => onAccept(true)}>{t("review.keepMine")}</Button>
+  </>}>
     <Table>
       <TableHeader><TableRow><TableHead scope="col" className="whitespace-normal">{t("review.setting")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("review.current")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("review.mine")}</TableHead></TableRow></TableHeader>
       <TableBody>{settingFields.map(field => <TableRow key={field}>
@@ -19,9 +23,5 @@ export function SettingsReview({ current, draft, disabled, onAccept }: {
         <TableCell className="break-all whitespace-normal">{display(field, draft[field])}</TableCell>
       </TableRow>)}</TableBody>
     </Table>
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" disabled={disabled} onClick={() => onAccept(false)}>{t("review.useCurrent")}</Button>
-      <Button disabled={disabled} onClick={() => onAccept(true)}>{t("review.keepMine")}</Button>
-    </div>
   </Surface>;
 }

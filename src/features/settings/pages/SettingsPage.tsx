@@ -111,12 +111,14 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
     setNeedsReview(false); setReview(undefined); setErrors({}); dismissNotification(noticeId);
   }
   const save = () => mutation.mutate({ changes, baseline });
-  return <Page title={t("title")} status={dirty ? <span className="text-sm text-[var(--color-content-muted)]">{t("dirty")}</span> : undefined}
-    actions={<><Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={discard}>{t("discard")}</Button>
+  // La banda lleva solo el título y las acciones: Guardar habilitado ya dice que hay cambios. Revisar actúa sobre
+  // toda la pantalla y aparece en la banda mientras un conflicto o un guardado incierto lo piden.
+  return <Page title={t("title")}
+    actions={<>{needsReview ? <Button variant="outline" disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
+      <Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={discard}>{t("discard")}</Button>
       <Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); if (changes.registrationMode) setConfirm(true); else save(); }}>{t(mutation.isPending ? "saving" : "save")}</Button></>}>
     <div className="flex flex-col gap-4">
       <SettingsForm draft={draft} errors={errors} disabled={disabled} onChange={changeDraft} />
-      {needsReview ? <div><Button variant="outline" disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button></div> : null}
       {review ? <SettingsReview current={review} draft={draft} disabled={disabled} onAccept={acceptReview} /> : null}
     </div>
     <ConfirmDialog open={confirm} onOpenChange={setConfirm} title={t(draft.registrationMode === "Open" ? "confirm.openTitle" : "confirm.inviteOnlyTitle")}
