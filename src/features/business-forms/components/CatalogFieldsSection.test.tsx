@@ -80,6 +80,23 @@ it("allows reading the full field definition without offering changes", async ()
   expect(screen.queryByRole("button", { name: "Quitar CUIT" })).not.toBeInTheDocument();
 });
 
+it("moves a field past a hidden removed field in one step", async () => {
+  const first: CatalogFieldDraft = { ...newCatalogField("first", 1), id: "01990000-0000-7000-8000-000000000011", key: "alpha", name: { es: "Alfa" } };
+  const removed: CatalogFieldDraft = { ...newCatalogField("removed", 2), id: "01990000-0000-7000-8000-000000000012", key: "beta", name: { es: "Beta" }, isActive: false };
+  const last: CatalogFieldDraft = { ...newCatalogField("last", 3), id: "01990000-0000-7000-8000-000000000013", key: "gamma", name: { es: "Gama" } };
+  let changed: readonly CatalogFieldDraft[] = [];
+  function Ordering() {
+    const [values, setValues] = useState<readonly CatalogFieldDraft[]>([first, removed, last]);
+    return <CatalogFieldsSection fields={values} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} confirmedRemovals={[]} onChange={next => { changed = next; setValues(next); }} />;
+  }
+  await act(async () => { renderWithProviders(<MemoryRouter><Ordering /></MemoryRouter>); });
+  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
+  await userEvent.click(screen.getByRole("button", { name: "Bajar Alfa" }));
+  expect(changed.filter(value => value.isActive).map(value => value.localId)).toEqual(["last", "first"]);
+  expect(screen.getAllByRole("button", { name: /^Editar (Alfa|Gama)$/ }).map(button => button.getAttribute("aria-label"))).toEqual(["Editar Gama", "Editar Alfa"]);
+  expect(screen.getByRole("button", { name: "Subir Gama" })).toBeDisabled();
+});
+
 it("shows a removed field rejected by a concurrent use and restores its identity without losing other edits", async () => {
   const other: CatalogFieldDraft = { ...newCatalogField("other", 2), name: { es: "Otro cambio" }, key: "other" };
   let savedFields: readonly CatalogFieldDraft[] = [field, other], confirmed: readonly string[] = [];
