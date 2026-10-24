@@ -7,7 +7,8 @@ import type { DraftQuestionSource, FormQuestionSource } from "../model";
 import { formScopeKey, type FormReadScope } from "./useFormQueries";
 import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
 
-const canPreview = (scope: FormReadScope) => scope.actorId !== null && scope.permissions.includes("formtemplates.read") && scope.permissions.includes("formtemplates.manage");
+// The server serves samples and previews only with formtemplates.read + manage + formcatalogs.read.
+const canPreview = (scope: FormReadScope) => scope.actorId !== null && ["formtemplates.read", "formtemplates.manage", "formcatalogs.read"].every(permission => scope.permissions.includes(permission));
 export function useRecipientSamples(scope: FormReadScope, query: RecipientSamplesQuery, enabled = true) {
   const root = [...formScopeKey(scope), "recipient-samples"] as const;
   useUnobservedQueryCleanup(root);
