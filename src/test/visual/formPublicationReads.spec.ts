@@ -37,18 +37,18 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  await expect(page.getByRole("table").getByText(es?"No se pudo publicar":"Could not publish",{exact:true})).toBeVisible();
  });
  test(`official preview explicit culture and expiry ${lang} at ${width}px`,async({page})=>{
- const es=lang==="es";const cultures:string[]=[];
+ // It starts in the menu language; the other published language is requested explicitly.
+ const es=lang==="es";const other=es?"en":"es";const cultures:string[]=[];const title={es:"Registrar visita",en:"Register visit"};const language={es:es?"Español":"Spanish",en:es?"Inglés":"English"};
  await page.route("https://www.facebook.com/whatsapp/flows/preview/fixture**",async route=>{const culture=new URL(route.request().url()).searchParams.get("culture")!;cultures.push(culture);await route.fulfill({contentType:"text/html",body:`<!doctype html><html lang="${culture}"><body><p>Simulated official preview</p><h1>${culture==="es"?"Registrar visita":"Register visit"}</h1><label>${culture==="es"?"Contacto":"Contact"}<input></label><button>${culture==="es"?"Confirmar visita":"Confirm visit"}</button></body></html>`});});
  await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-preview&lang=${lang}`);
- await page.getByRole("button",{name:/^Español/}).click();
  const trigger=page.getByRole("button",{name:es?"Ver vista oficial":"View official preview",exact:true});await trigger.click();
  const dialog=page.getByRole("dialog");await expect(dialog.locator("iframe")).toBeVisible();await expect.poll(()=>cultures.length).toBe(1);
- await expect(page.frameLocator("iframe").getByRole("heading",{name:"Registrar visita",exact:true})).toBeVisible();
- await dialog.getByRole("button",{name:es?"Inglés":"English",exact:true}).click();await expect(dialog.locator("iframe")).toHaveCount(0);expect(cultures).toEqual(["es"]);
- await dialog.getByRole("button",{name:es?"Cargar vista":"Load preview",exact:true}).click();await expect(page.frameLocator("iframe").getByRole("heading",{name:"Register visit",exact:true})).toBeVisible();expect(cultures).toEqual(["es","en"]);
+ await expect(page.frameLocator("iframe").getByRole("heading",{name:title[lang],exact:true})).toBeVisible();
+ await dialog.getByRole("button",{name:language[other],exact:true}).click();await expect(dialog.locator("iframe")).toHaveCount(0);expect(cultures).toEqual([lang]);
+ await dialog.getByRole("button",{name:es?"Cargar vista":"Load preview",exact:true}).click();await expect(page.frameLocator("iframe").getByRole("heading",{name:title[other],exact:true})).toBeVisible();expect(cultures).toEqual([lang,other]);
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
  await page.screenshot({path:`test-results/forms-official-preview-${lang}-${width}.png`,fullPage:true});
- await expect(dialog.locator("iframe")).toHaveCount(0,{timeout:8000});await expect(dialog.getByRole("link")).toHaveCount(0);expect(cultures).toEqual(["es","en"]);
+ await expect(dialog.locator("iframe")).toHaveCount(0,{timeout:8000});await expect(dialog.getByRole("link")).toHaveCount(0);expect(cultures).toEqual([lang,other]);
  await dialog.getByRole("button",{name:es?"Volver a pedir la vista":"Request a new preview",exact:true}).click();await expect(dialog.locator("iframe")).toBeVisible();await expect.poll(()=>cultures.length).toBe(3);
  await dialog.press("Escape");await expect(trigger).toBeFocused();
  });
