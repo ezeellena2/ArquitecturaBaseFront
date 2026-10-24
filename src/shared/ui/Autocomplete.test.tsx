@@ -16,6 +16,16 @@ describe("Autocomplete", () => {
     expect(await screen.findByRole("listbox")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Options" })).not.toContainElement(screen.getByRole("listbox"));
   });
+  it("keeps the list open when the field is tapped again", async () => {
+    render(<Autocomplete aria-label="Zone" value="" onValueChange={() => {}}
+      options={[{ id: "north", label: "North" }, { id: "south", label: "South" }]} onSelect={() => {}} />);
+    const input = screen.getByRole("combobox", { name: "Zone" });
+    await userEvent.click(input);
+    expect(await screen.findByRole("listbox")).toBeInTheDocument();
+    await userEvent.click(input);
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-expanded", "true");
+  });
   it("selects with the pointer and closes only the list with Escape inside a modal dialog", async () => {
     const select = vi.fn(), openChange = vi.fn();
     renderWithProviders(<Dialog open onOpenChange={openChange}><DialogContent>
