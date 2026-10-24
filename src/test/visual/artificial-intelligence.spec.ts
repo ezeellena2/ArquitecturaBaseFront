@@ -26,6 +26,8 @@ for (const language of ["es", "en"] as const) {
       await expect(tested).toBeVisible();
       await page.getByRole("button", { name: language === "es" ? "Cargar modelos" : "Load models", exact: true }).click();
       await expect(model).toBeVisible();
+      // Con el mouse encima, Sonner pausa el vencimiento del aviso: sólo el cambio del borrador puede quitarlo.
+      await tested.hover();
       await model.selectOption("fictional-next-model");
       await expect(tested).toHaveCount(0);
       await page.getByRole("button", { name: language === "es" ? "Guardar cambios" : "Save changes", exact: true }).click();
