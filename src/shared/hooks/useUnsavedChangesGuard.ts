@@ -18,6 +18,15 @@ export interface UnsavedChangesGuard {
   readonly allowNextNavigation: () => void;
 }
 
+// Las guardas montadas que tienen cambios sin guardar. Cambiar el idioma del menú no pasa por el router, pero
+// vuelve a montar los editores: el menú pregunta con `hasUnsavedChanges` antes de cambiarlo.
+const dirtyGuards = new Set<object>();
+
+/// Si alguna pantalla montada tiene cambios sin guardar. La usa el menú del usuario antes de cambiar el idioma.
+export function hasUnsavedChanges(): boolean {
+  return dirtyGuards.size > 0;
+}
+
 /// Frena la salida de una pantalla con cambios sin guardar. Las del router (un enlace, las migas, el menú, el
 /// Atrás del navegador) las frena `useBlocker` y la pantalla pregunta con su `ConfirmDialog`; recargar o
 /// cerrar la pestaña no pasan por el router, así que ahí pregunta el navegador (`useBeforeUnload`).
@@ -59,6 +68,19 @@ export function useUnsavedChangesGuard(
       leavingRef.current = false;
     }
   }, [blocker.state]);
+
+  useEffect(() => {
+    if (!isDirty) {
+      return;
+    }
+
+    const guard = {};
+    dirtyGuards.add(guard);
+
+    return () => {
+      dirtyGuards.delete(guard);
+    };
+  }, [isDirty]);
 
   useBeforeUnload(
     useCallback(

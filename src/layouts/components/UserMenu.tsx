@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "react-oidc-context";
@@ -8,7 +9,9 @@ import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { beginSignOut, cancelSignOut } from "@/auth/signOutStatus";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useLanguagePreference } from "@/auth/useLanguagePreference";
-import { isSupportedLanguage, supportedLanguages } from "@/shared/i18n";
+import { hasUnsavedChanges } from "@/shared/hooks/useUnsavedChangesGuard";
+import { isSupportedLanguage, supportedLanguages, type SupportedLanguage } from "@/shared/i18n";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +32,9 @@ import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 /// El idioma se cambia acá porque es un atajo que se usa seguido, y desde la Fase 4 **también se guarda en la
 /// cuenta**: lo hace `useLanguagePreference`, que lo aplica en el acto y lo devuelve atrás si el guardado
 /// falla. El mismo idioma se puede cambiar desde `/perfil`, junto con el resto del perfil.
+///
+/// Los editores se vuelven a montar en el idioma nuevo, que es como se traduce el contenido: si una pantalla
+/// tiene cambios sin guardar, antes de cambiarlo pregunta con el mismo «¿Descartar los cambios?» de la salida.
 export function UserMenu() {
   const { t, i18n } = useTranslation();
   const auth = useAuth();
@@ -36,6 +42,8 @@ export function UserMenu() {
   const queryClient = useQueryClient();
   const { data: user, isPending } = useCurrentUser();
   const { change: changeLanguage } = useLanguagePreference();
+  const [pendingLanguage, setPendingLanguage] = useState<SupportedLanguage | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   if (!user) {
     // El menú necesita el nombre para poder nombrarse, así que hasta que llega no hay menú: queda el bloque
@@ -68,9 +76,10 @@ export function UserMenu() {
   }
 
   return (
+    <>
     <DropdownMenu>
       <ActionTooltip label={t("layout.userMenu.trigger", { name: displayName })}>
-      <DropdownMenuTrigger className="flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+      <DropdownMenuTrigger ref={triggerRef} className="flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
         <span
           aria-hidden="true"
           className="flex size-6 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-xs font-bold text-[var(--color-brand-ink)]"
@@ -107,7 +116,13 @@ export function UserMenu() {
           value={i18n.language}
           onValueChange={(value) => {
             // El grupo informa un string cualquiera; acá solo hay idiomas de los que existen.
-            if (isSupportedLanguage(value)) {
+            if (!isSupportedLanguage(value)) {
+              return;
+            }
+
+            if (hasUnsavedChanges()) {
+              setPendingLanguage(value);
+            } else {
               void changeLanguage(value);
             }
           }}
@@ -127,5 +142,24 @@ export function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <ConfirmDialog
+      open={pendingLanguage !== null}
+      onOpenChange={(open) => {
+        if (!open) {
+          setPendingLanguage(null);
+        }
+      }}
+      title={t("settings:leave.title")}
+      description={t("settings:leave.description")}
+      confirmLabel={t("settings:leave.confirm")}
+      cancelLabel={t("settings:leave.cancel")}
+      focusFallback={triggerRef}
+      onConfirm={() => {
+        if (pendingLanguage !== null) {
+          void changeLanguage(pendingLanguage);
+        }
+      }}
+    />
+    </>
   );
 }

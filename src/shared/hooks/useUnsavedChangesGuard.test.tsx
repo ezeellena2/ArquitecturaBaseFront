@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { Link, RouterProvider, createMemoryRouter, useNavigate } from "react-router";
 import { describe, expect, it } from "vitest";
-import { useUnsavedChangesGuard } from "./useUnsavedChangesGuard";
+import { hasUnsavedChanges, useUnsavedChangesGuard } from "./useUnsavedChangesGuard";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
@@ -179,5 +179,19 @@ describe("useUnsavedChangesGuard", () => {
     const whileDirty = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(whileDirty);
     expect(whileDirty.defaultPrevented).toBe(true);
+  });
+
+  it("reports unsaved changes outside the screen only while a guarded editor has them", async () => {
+    // Cambiar el idioma del menú no pasa por el router y vuelve a montar los editores: el menú pregunta con esto.
+    const router = createMemoryRouter([{ path: "/roles/:roleId", element: <Editor /> }], { initialEntries: ["/roles/abc"] });
+    const { unmount } = renderWithProviders(<RouterProvider router={router} />);
+    await screen.findByRole("button", { name: "Cambiar algo" });
+    expect(hasUnsavedChanges()).toBe(false);
+
+    await makeAChange();
+    expect(hasUnsavedChanges()).toBe(true);
+
+    unmount();
+    expect(hasUnsavedChanges()).toBe(false);
   });
 });

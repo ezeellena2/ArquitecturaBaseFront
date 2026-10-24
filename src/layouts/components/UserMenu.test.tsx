@@ -1,10 +1,11 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router";
 import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UserMenu } from "./UserMenu";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import i18n, { changeLanguage, languageStorageKey } from "@/shared/i18n";
 import { phoneOnlyUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
@@ -113,6 +114,44 @@ describe("UserMenu", () => {
 
     // Las dos cosas, no una sola: la interfaz cambia y la cuenta queda guardada. El perfil viaja entero
     // porque el PUT lo reemplaza.
+    await waitFor(() => expect(i18n.language).toBe("en"));
+    await waitFor(() =>
+      expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires" }]),
+    );
+  });
+
+  it("asks before changing the menu language while a page has unsaved changes", async () => {
+    // Los editores se vuelven a montar en el idioma nuevo: cambiarlo sin preguntar perdería lo escrito.
+    const saved: unknown[] = [];
+    server.use(
+      http.put("/api/me", async ({ request }) => {
+        saved.push(await request.json());
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    function DirtyEditor() {
+      useUnsavedChangesGuard(true);
+
+      return <h1>Editor con cambios</h1>;
+    }
+    const router = createMemoryRouter([{ path: "/", element: <><UserMenu /><DirtyEditor /></> }]);
+    renderWithProviders(<RouterProvider router={router} />);
+
+    await openMenu();
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
+
+    const dialog = await screen.findByRole("dialog", { name: "¿Descartar los cambios?" });
+    expect(i18n.language).toBe("es");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Seguir editando" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(i18n.language).toBe("es");
+    expect(saved).toEqual([]);
+
+    await openMenu();
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
+    await userEvent.click(within(await screen.findByRole("dialog", { name: "¿Descartar los cambios?" })).getByRole("button", { name: "Descartar cambios" }));
+
     await waitFor(() => expect(i18n.language).toBe("en"));
     await waitFor(() =>
       expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires" }]),

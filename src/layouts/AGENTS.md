@@ -11,7 +11,7 @@ Define layouts de acceso, inicio y aplicación autenticada, además de barra, me
 - Al cerrar sesión, HomeLayout conserva la transición de AppLayout aunque OIDC ya haya quitado el usuario. UserMenu confirma `/login` con `flushSync` antes de liberarla: un cierre voluntario nunca guarda la ruta privada anterior como destino del próximo ingreso. Playwright lo verifica desde Inicio, Usuarios y Configuración.
 - `AppLayout` tiene alto `h-svh` y scroll en `main`, con posición relativa y espacio de scroll para el encabezado adherido. Preservá impresión y foco visible.
 - No agregar scroll de página que rompa `Page`; un cambio de geometría se verifica en navegador porque jsdom no maqueta.
-- Los controles usan `ActionTooltip` e `IconButton` compartidos y textos traducidos. La preferencia de idioma se sincroniza con la cuenta.
+- Los controles usan `ActionTooltip` e `IconButton` compartidos y textos traducidos. La preferencia de idioma se sincroniza con la cuenta; cambiarla con cambios sin guardar pide confirmación, porque los editores se vuelven a montar en el idioma nuevo.
 
 ## Referencias
 

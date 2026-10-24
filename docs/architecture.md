@@ -164,7 +164,8 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
 - **Formulario con ruta propia:** `useUnsavedChangesGuard` frena enlaces, migas, menú y Atrás (recargar lo pregunta el
   navegador). El `reset()` de `useBlocker` pisa `"proceeding"` y `ConfirmDialog` llama `onConfirm` y `onOpenChange(false)`
   en el mismo clic: `stay()` no hace nada tras `leave()`. Guarda apagada con `isDirty && !mutation.isPending`; la vuelta
-  al listado va en el `onSuccess` de `mutate(...)`, no de `useMutation`.
+  al listado va en el `onSuccess` de `mutate(...)`, no de `useMutation`. Cambiar el idioma del menú no pasa por el router
+  pero vuelve a montar los editores: con una guarda con cambios (`hasUnsavedChanges`), `UserMenu` pregunta antes.
 - **Errores por `code`:** `errors.ts` de cada feature hace `switch` sobre `ApiError.code` para los códigos con texto propio
   (`Users.LastAdmin`) y deja pasar el `detail`. `Roles.Role.HasUsers` arma el texto con `userCount` (`ApiError.problem`);
   `{{count}}` necesita `_one` y `_other`.
