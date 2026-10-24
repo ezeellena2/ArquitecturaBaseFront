@@ -41,8 +41,8 @@ function renderOwnPresentation(answer: (call: number) => Response) {
   server.use(
     http.get("/api/forms/catalogs", () => HttpResponse.json({ filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } }, ...page([{ id: ownCatalogId, name: "Proveedores", description: null, origin: "Manual", valueType: "Text", optionsCount: 60, usageCount: 0, state: "Active", stateReason: null, canEdit: true }]) })),
     http.get("/api/forms/catalogs/:id", () => HttpResponse.json({ ...detail(ownCatalogId, "Manual"), name: { es: "Proveedores", en: "Suppliers" }, itemsCount: 60 })),
-    // Only the first 20 short options are loaded: a count of this page alone would find nothing too long.
-    http.get("/api/forms/catalogs/:id/items", () => HttpResponse.json({ ...page(Array.from({ length: 20 }, (_, index) => ownOption(index + 1))), totalCount: 60, totalPages: 3, hasNext: true })),
+    // Only the first 20 options are loaded and one composes a long title: a count of this page alone would find just that one.
+    http.get("/api/forms/catalogs/:id/items", () => HttpResponse.json({ ...page(Array.from({ length: 20 }, (_, index) => index === 19 ? { ...ownOption(20), text: { es: "Opción 20 con un nombre bastante largo", en: null } } : ownOption(index + 1))), totalCount: 60, totalPages: 3, hasNext: true })),
     http.post("/api/forms/catalogs/:id/presentation-checks", async ({ request }) => { bodies.push(await request.json()); return answer(bodies.length); }));
   renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage", "formcatalogs.read"] }} source={{ catalog: ownCatalogId, presentation: ownPresentation }} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()} /></MemoryRouter>);
   return bodies;
@@ -63,7 +63,10 @@ it("offers to retry the server check of an own presentation when it fails", asyn
   const bodies = renderOwnPresentation(call => call === 1 ? HttpResponse.json({ title: "Error", status: 500 }, { status: 500 }) : longTitles());
   const alert = await screen.findByRole("alert");
   expect(alert).toHaveTextContent("No pudimos revisar el largo de las opciones.");
-  expect(screen.queryByText(/41 opciones/)).not.toBeInTheDocument();
+  expect(await screen.findByText("C1 · Opción 1")).toBeInTheDocument();
+  // Without the server check nothing is counted from the 20 loaded options, although one of them is too long.
+  expect(screen.queryByText(/superan? los 30/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Podés guardar/)).not.toBeInTheDocument();
   await userEvent.click(within(alert).getByRole("button", { name: "Reintentar" }));
   expect(await screen.findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
