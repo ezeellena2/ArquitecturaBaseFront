@@ -15,12 +15,12 @@ vi.mock("@/shared/ui/notifications", () => ({
   dismissNotification: vi.fn(),
 }));
 const accepted = {
-  conversationId: "c1",
-  requestId: "r1",
+  conversationId: "0199a0c0-0000-7000-8000-000000000111",
+  requestId: "0199a0c0-0000-7000-8000-000000000333",
   conversationRevision: 1,
   turnRevision: 1,
   state: "pending" as const,
-  stage: null,
+  stage: "pending" as const,
   submittedAtUtc: "2026-10-04T12:00:00Z",
   serverNowUtc: "2026-10-04T12:00:00Z",
   pollingAfterSeconds: 2,
@@ -156,16 +156,19 @@ describe("durable assistant acceptance", () => {
     await act(async () => {
       release({
         ...accepted,
-        turnId: "t1",
+        turnId: "0199a0c0-0000-7000-8000-000000000222",
         ordinal: 1,
         state: "canceled",
+        stage: "finished",
         contentAccess: "allowed",
         question: "private",
         answer: null,
         evidences: [],
         failure: null,
+        usage: null,
         culture: "es",
         timeZoneId: "UTC",
+        cancelRequestedAtUtc: null,
       });
       expect(await cancel).toBe(false);
     });

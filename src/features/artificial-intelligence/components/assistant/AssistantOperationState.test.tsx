@@ -18,6 +18,7 @@ const turn: AssistantTurn = {
   answer: null,
   evidences: [],
   failure: null,
+  usage: null,
   culture: "es",
   timeZoneId: "UTC",
   submittedAtUtc: "2026-10-04T12:00:00Z",

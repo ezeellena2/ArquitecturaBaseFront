@@ -14,7 +14,7 @@ const base = {
   conversationRevision: 2,
   turnRevision: 3,
   state: "completed",
-  stage: null,
+  stage: "finished",
   submittedAtUtc: "2026-10-04T12:00:00Z",
   serverNowUtc: "2026-10-04T12:00:00Z",
   pollingAfterSeconds: 2,
@@ -23,8 +23,10 @@ const base = {
   answer: { kind: "answer", text: "Three.", evidenceIds: [] },
   evidences: [],
   failure: null,
+  usage: null,
   culture: "en",
   timeZoneId: "UTC",
+  cancelRequestedAtUtc: null,
 } satisfies AssistantTurn;
 describe("assistant confirmed state", () => {
   it("projects stable message identifiers and never exposes blocked content", () => {

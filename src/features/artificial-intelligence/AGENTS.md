@@ -25,4 +25,10 @@ la confirmación durable; navegación no cancela por desmontaje. Contenido block
 Todos los textos usan assistant es/en y fechas el perfil/formatters comunes; cooldown usa useCountdown.
 La UI compartida está en shared/ui/assistant. Las fuentes sólo abren destinos lógicos admitidos con permiso.
 
+api/assistant valida cada respuesta con zod estricto y deriva sus tipos con z.infer; un cuerpo fuera del contrato
+lanza «Invalid assistant contract.». state (pending, running, completed, failed, uncertain, canceled, expired) y
+stage viajan en minúsculas como el DTO, y las comparaciones usan la unión AssistantState. usage, stage (nunca null),
+cancelRequestedAtUtc y configurationDestination son requeridos. El contrato son el DTO y los ejemplos exportados
+en test/fixtures/ai-assistant-http; los dobles de comportamiento no lo acreditan.
+
 El panel interno usa useAssistantConversationList con usePagination/QueryCache privado (cuenta, idioma y revisión de permisos), 20 filas por defecto y GET acotados. conversationGroups recibe ahora UTC y zona del perfil; se recalcula al abrir/reanudar, sin timer paralelo. RuntimeProvider aísla la API experimental de threadList fijada en 0.15.23; callbacks sólo piden la navegación autorizada de AiAssistantPage. Nueva conversación no escribe hasta la aceptación; list/detail son autoridad de títulos. El borrado confirmado retira título y turnos del caché y luego invalida la página.

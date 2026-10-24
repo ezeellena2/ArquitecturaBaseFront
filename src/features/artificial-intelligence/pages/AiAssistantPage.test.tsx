@@ -19,7 +19,11 @@ import { queryClient } from "@/shared/api/queryClient";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
-import type { AssistantTurn, AssistantSubmit } from "../api/assistant";
+import type {
+  AssistantAccepted,
+  AssistantTurn,
+  AssistantSubmit,
+} from "../api/assistant";
 // Draft recovery/navigation checks need a complete value; keyboard behavior has its own case below.
 async function pasteText(control: HTMLElement, text: string) {
   const user = userEvent.setup();
@@ -49,13 +53,25 @@ const pageOf = (items: unknown[]) => ({
   hasPrevious: false,
   hasNext: false,
 });
+const acceptedOf = (value: AssistantTurn): AssistantAccepted => ({
+  conversationId: value.conversationId,
+  requestId: value.requestId,
+  conversationRevision: value.conversationRevision,
+  turnRevision: value.turnRevision,
+  state: value.state,
+  stage: value.stage,
+  submittedAtUtc: value.submittedAtUtc,
+  serverNowUtc: value.serverNowUtc,
+  pollingAfterSeconds: value.pollingAfterSeconds,
+});
+const evidenceId = "0199a0c0-0000-7000-8000-000000000444";
 beforeEach(() => {
   queryClient.clear();
   writes = [];
   access = "allowed";
   turn = {
-    turnId: "turn1",
-    requestId: "request1",
+    turnId: "0199a0c0-0000-7000-8000-000000000222",
+    requestId: "0199a0c0-0000-7000-8000-000000000333",
     conversationId,
     ordinal: 1,
     conversationRevision: 2,
@@ -67,11 +83,11 @@ beforeEach(() => {
     answer: {
       kind: "answer",
       text: "Hay tres usuarios activos.",
-      evidenceIds: ["e1"],
+      evidenceIds: [evidenceId],
     },
     evidences: [
       {
-        id: "e1",
+        id: evidenceId,
         sourceId: "users.summary",
         sourceVersion: 1,
         observedAtUtc: "2026-10-04T12:00:00Z",
@@ -83,11 +99,13 @@ beforeEach(() => {
       },
     ],
     failure: null,
+    usage: null,
     culture: "es",
     timeZoneId: "UTC",
     submittedAtUtc: "2026-10-04T12:00:00Z",
     serverNowUtc: "2026-10-04T12:00:00Z",
     pollingAfterSeconds: 2,
+    cancelRequestedAtUtc: null,
   };
   server.use(
     http.get("/api/me", () =>
@@ -141,7 +159,7 @@ beforeEach(() => {
       const body = (await request.json()) as AssistantSubmit;
       writes.push(body);
       turn = { ...turn, requestId: body.requestId, question: body.question };
-      return HttpResponse.json(turn, { status: 202 });
+      return HttpResponse.json(acceptedOf(turn), { status: 202 });
     }),
     http.post("/api/ai/assistant/turns/:id/cancel", () => {
       turn = { ...turn, state: "canceled", turnRevision: 3 };
@@ -226,7 +244,7 @@ describe("authenticated assistant", () => {
       failure: {
         code: "Ai.Assistant.ProviderRejected",
         detail: "El proveedor rechazó la consulta.",
-        recovery: "newRequest",
+        recovery: "newAttempt",
       },
     };
     await act(async () => {
@@ -254,7 +272,7 @@ describe("authenticated assistant", () => {
           failure: {
             code: "Ai.Assistant.Canceled",
             detail: "Cancelación confirmada.",
-            recovery: "newRequest",
+            recovery: "newAttempt",
           },
         };
         return HttpResponse.json(turn);
@@ -322,20 +340,7 @@ describe("authenticated assistant", () => {
           evidences: [],
           pollingAfterSeconds: 1,
         };
-        return HttpResponse.json(
-          {
-            conversationId: turn.conversationId,
-            requestId: turn.requestId,
-            conversationRevision: turn.conversationRevision,
-            turnRevision: turn.turnRevision,
-            state: turn.state,
-            stage: turn.stage,
-            submittedAtUtc: turn.submittedAtUtc,
-            serverNowUtc: turn.serverNowUtc,
-            pollingAfterSeconds: turn.pollingAfterSeconds,
-          },
-          { status: 202 },
-        );
+        return HttpResponse.json(acceptedOf(turn), { status: 202 });
       }),
       http.get("/api/ai/assistant/turns/:id", () => {
         turnReads++;

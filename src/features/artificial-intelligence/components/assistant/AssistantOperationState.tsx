@@ -34,7 +34,7 @@ export function AssistantOperationState({
       {active ? <Spinner decorative /> : null}
       <span>
         {active
-          ? t(`stages.${turn.stage || "pending"}`)
+          ? t(`stages.${turn.stage}`)
           : t(`states.${turn.state}`)}
       </span>
       {active ? (

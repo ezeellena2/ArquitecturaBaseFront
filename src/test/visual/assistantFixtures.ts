@@ -2,6 +2,7 @@ import type {
   AssistantAccepted,
   AssistantBootstrap,
   AssistantConversation,
+  AssistantConversationSummary,
   AssistantSubmit,
   AssistantTurn,
 } from "@/features/artificial-intelligence/api/assistant";
@@ -10,6 +11,20 @@ declare global {
 }
 export const assistantFixtureConversationId =
   "0199a0c0-0000-7000-8000-000000000111";
+const fixtureId = (group: number, index: number) =>
+  `0199a0c0-0000-7000-800${group}-${String(index).padStart(12, "0")}`;
+const evidenceId = "0199a0c0-0000-7000-8000-000000000444";
+const acceptedOf = (value: AssistantTurn): AssistantAccepted => ({
+  conversationId: value.conversationId,
+  requestId: value.requestId,
+  conversationRevision: value.conversationRevision,
+  turnRevision: value.turnRevision,
+  state: value.state,
+  stage: value.stage,
+  submittedAtUtc: value.submittedAtUtc,
+  serverNowUtc: value.serverNowUtc,
+  pollingAfterSeconds: value.pollingAfterSeconds,
+});
 export function createAssistantVisualFixtures(
   language: "es" | "en",
   scenario: string,
@@ -88,11 +103,11 @@ export function createAssistantVisualFixtures(
       text: en
         ? "There are 3 active users and 1 inactive user. The counts cover all accounts your access permits."
         : "Hay 3 usuarios activos y 1 inactivo. El conteo abarca todas las cuentas que tu acceso permite consultar.",
-      evidenceIds: ["e1"],
+      evidenceIds: [evidenceId],
     },
     evidences: [
       {
-        id: "e1",
+        id: evidenceId,
         sourceId: "users.summary",
         sourceVersion: 1,
         observedAtUtc: date,
@@ -112,6 +127,7 @@ export function createAssistantVisualFixtures(
       },
     ],
     failure: null,
+    usage: null,
     culture: language,
     timeZoneId: "America/Argentina/Buenos_Aires",
     submittedAtUtc: date,
@@ -130,7 +146,8 @@ export function createAssistantVisualFixtures(
               detail: en
                 ? "The provider response could not be confirmed."
                 : "No pudimos confirmar la respuesta del proveedor.",
-              recovery: "newRequest",
+              recovery:
+                turn.state === "uncertain" ? "reviewUncertainty" : "newAttempt",
             }
           : null,
     };
@@ -147,6 +164,10 @@ export function createAssistantVisualFixtures(
         : null,
     lastActivityAtUtc: date,
   });
+  const summary = (): AssistantConversationSummary => {
+    const { activeRequestId: _, ...value } = conversation();
+    return value;
+  };
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), {
       status,
@@ -166,8 +187,8 @@ export function createAssistantVisualFixtures(
     scenario === "assistant-scroll"
       ? Array.from({ length: 10 }, (_, index): AssistantTurn => ({
           ...turn,
-          turnId: `older-${index}`,
-          requestId: `older-request-${index}`,
+          turnId: fixtureId(1, index),
+          requestId: fixtureId(2, index),
           ordinal: index + 1,
           state: "completed",
           question: `Earlier question ${index + 1}`,
@@ -191,7 +212,7 @@ export function createAssistantVisualFixtures(
         ? json({ code: "Unexpected", traceId: "assistant-visual" }, 500)
         : json(bootstrap);
     if (path.endsWith("/conversations") && scenario === "assistant-history") {
-      const all = Array.from({ length: 24 }, (_, index) => ({ ...conversation(), conversationId: index === 0 ? assistantFixtureConversationId : `history-${index}`,
+      const all = Array.from({ length: 24 }, (_, index) => ({ ...summary(), conversationId: index === 0 ? assistantFixtureConversationId : fixtureId(3, index),
         title: index === 0 ? bootstrap.suggestions[0].question : `${index + 1}. ${bootstrap.suggestions[index % 5].question}`,
         lastActivityAtUtc: index < 2 ? date : index < 4 ? "2026-10-03T12:00:00Z" : "2026-09-30T12:00:00Z",
       }));
@@ -203,7 +224,7 @@ export function createAssistantVisualFixtures(
     if (path.endsWith("/conversations"))
       return json(
         pageOf(
-          removed || scenario === "assistant-empty" ? [] : [conversation()],
+          removed || scenario === "assistant-empty" ? [] : [summary()],
         ),
       );
     if (path.endsWith("/turns") && request.method === "POST") {
@@ -229,7 +250,7 @@ export function createAssistantVisualFixtures(
       };
       if (scenario === "assistant-acceptance")
         throw new TypeError("Simulated lost acceptance");
-      return json(turn satisfies AssistantAccepted, 202);
+      return json(acceptedOf(turn), 202);
     }
     if (path.endsWith("/cancel")) {
       turn = {

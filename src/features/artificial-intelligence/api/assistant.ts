@@ -1,94 +1,132 @@
+import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
-import type { PagedResult } from "@/shared/api/pagedResult";
-export type AssistantState =
-  | "pending"
-  | "running"
-  | "completed"
-  | "failed"
-  | "uncertain"
-  | "canceled"
-  | "expired";
-export type ContentAccess = "allowed" | "blocked" | "expired";
-export interface AssistantEvidence {
-  readonly id: string;
-  readonly sourceId: string;
-  readonly sourceVersion: number;
-  readonly observedAtUtc: string;
-  readonly revision: number | null;
-  readonly destination: string | null;
-  readonly requiredPermissions: readonly string[];
-  readonly rows: readonly {
-    id: string | null;
-    values: readonly {
-      label: string;
-      value: string;
-    }[];
-  }[];
-  readonly isComplete: boolean;
-}
-export interface AssistantAccepted {
-  readonly conversationId: string;
-  readonly requestId: string;
-  readonly conversationRevision: number;
-  readonly turnRevision: number;
-  readonly state: AssistantState;
-  readonly stage: string | null;
-  readonly submittedAtUtc: string;
-  readonly serverNowUtc: string;
-  readonly pollingAfterSeconds: number;
-}
-export interface AssistantTurn extends AssistantAccepted {
-  readonly turnId: string;
-  readonly ordinal: number;
-  readonly cancelRequestedAtUtc?: string | null;
-  readonly contentAccess: ContentAccess;
-  readonly question: string | null;
-  readonly answer: {
-    readonly kind: string;
-    readonly text: string;
-    readonly evidenceIds: readonly string[];
-  } | null;
-  readonly evidences: readonly AssistantEvidence[];
-  readonly failure: {
-    readonly code: string;
-    readonly detail: string;
-    readonly recovery: string;
-  } | null;
-  readonly culture: string;
-  readonly timeZoneId: string;
-}
-export interface AssistantConversation {
-  readonly conversationId: string;
-  readonly revision: number;
-  readonly title: string;
-  readonly contentAccess: ContentAccess;
-  readonly activeRequestId: string | null;
-  readonly lastActivityAtUtc: string;
-}
-export interface AssistantConversationSummary {
-  readonly conversationId: string;
-  readonly revision: number;
-  readonly title: string;
-  readonly contentAccess: ContentAccess;
-  readonly lastActivityAtUtc: string;
-}
-export interface AssistantBootstrap {
-  readonly availability:
-    | "available"
-    | "paused"
-    | "notConfigured"
-    | "modelNotQualified"
-    | "capacityLimited";
-  readonly connectionRevision: number;
-  readonly suggestions: readonly {
-    id: string;
-    question: string;
-  }[];
-  readonly limits: {
-    questionMaxLength: number;
-  };
-  readonly configurationDestination?: string | null;
-}
+const id = z.string().uuid();
+const utc = z.iso.datetime();
+const revision = z.number().int().nonnegative();
+const count = z.number().int().nonnegative();
+const assistantStateSchema = z.enum([
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "uncertain",
+  "canceled",
+  "expired",
+]);
+const stage = z.enum([
+  "pending",
+  "preparing",
+  "consulting",
+  "composing",
+  "verifying",
+  "finished",
+]);
+const contentAccess = z.enum(["allowed", "blocked", "expired"]);
+const evidence = z.strictObject({
+  id,
+  sourceId: z.string(),
+  sourceVersion: z.number().int().positive(),
+  observedAtUtc: utc,
+  revision: revision.nullable(),
+  destination: z.string().nullable(),
+  requiredPermissions: z.array(z.string()),
+  rows: z.array(
+    z.strictObject({
+      id: id.nullable(),
+      values: z.array(z.strictObject({ label: z.string(), value: z.string() })),
+    }),
+  ),
+  isComplete: z.boolean(),
+});
+const acceptedFields = {
+  conversationId: id,
+  requestId: id,
+  conversationRevision: revision,
+  turnRevision: revision,
+  state: assistantStateSchema,
+  stage,
+  submittedAtUtc: utc,
+  serverNowUtc: utc,
+  pollingAfterSeconds: z.number().int().positive(),
+};
+const accepted = z.strictObject(acceptedFields);
+const turn = z.strictObject({
+  ...acceptedFields,
+  turnId: id,
+  ordinal: z.number().int().positive(),
+  contentAccess,
+  question: z.string().nullable(),
+  answer: z
+    .strictObject({
+      kind: z.string(),
+      text: z.string(),
+      evidenceIds: z.array(id),
+    })
+    .nullable(),
+  evidences: z.array(evidence),
+  failure: z
+    .strictObject({
+      code: z.string(),
+      detail: z.string(),
+      recovery: z.enum(["reviewUncertainty", "newAttempt"]),
+    })
+    .nullable(),
+  usage: z
+    .strictObject({
+      inputTokens: z.number().int().nullable(),
+      outputTokens: z.number().int().nullable(),
+      audioSeconds: z.number().nullable(),
+    })
+    .nullable(),
+  culture: z.enum(["es", "en"]),
+  timeZoneId: z.string().min(1),
+  cancelRequestedAtUtc: utc.nullable(),
+});
+const bootstrap = z.strictObject({
+  availability: z.enum([
+    "available",
+    "paused",
+    "notConfigured",
+    "modelNotQualified",
+    "capacityLimited",
+  ]),
+  connectionRevision: revision,
+  suggestions: z.array(z.strictObject({ id: z.string(), question: z.string() })),
+  limits: z.strictObject({ questionMaxLength: z.number().int().positive() }),
+  configurationDestination: z.literal("aiConfiguration").nullable(),
+});
+const summaryFields = {
+  conversationId: id,
+  revision,
+  title: z.string(),
+  lastActivityAtUtc: utc,
+  contentAccess,
+};
+const conversationSummary = z.strictObject(summaryFields);
+const conversation = z.strictObject({
+  ...summaryFields,
+  activeRequestId: id.nullable(),
+});
+const page = <T extends z.ZodType>(item: T) =>
+  z.strictObject({
+    items: z.array(item),
+    page: z.number().int().positive(),
+    pageSize: z.number().int().positive(),
+    totalCount: count,
+    totalPages: count,
+    hasPrevious: z.boolean(),
+    hasNext: z.boolean(),
+  });
+const conversationPage = page(conversationSummary);
+const turnPage = page(turn);
+export type AssistantState = z.infer<typeof assistantStateSchema>;
+export type ContentAccess = z.infer<typeof contentAccess>;
+export type AssistantEvidence = z.infer<typeof evidence>;
+export type AssistantAccepted = z.infer<typeof accepted>;
+export type AssistantTurn = z.infer<typeof turn>;
+export type AssistantConversation = z.infer<typeof conversation>;
+export type AssistantConversationSummary = z.infer<typeof conversationSummary>;
+export type AssistantBootstrap = z.infer<typeof bootstrap>;
 export interface AssistantSubmit {
   readonly requestId: string;
   readonly conversationId: string | null;
@@ -96,11 +134,16 @@ export interface AssistantSubmit {
   readonly expectedConnectionRevision: number;
   readonly question: string;
 }
+function read<T>(schema: z.ZodType<T>, body: unknown): T {
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) throw new Error("Invalid assistant contract.");
+  return parsed.data;
+}
 const base = "/api/ai/assistant";
 export const assistantApi = {
-  bootstrap: (signal?: AbortSignal) =>
-    api.get<AssistantBootstrap>(`${base}/bootstrap`, { signal }),
-  conversations: (
+  bootstrap: async (signal?: AbortSignal) =>
+    read(bootstrap, await api.get<unknown>(`${base}/bootstrap`, { signal })),
+  conversations: async (
     parameters: {
       page: number;
       pageSize: number;
@@ -108,31 +151,45 @@ export const assistantApi = {
     },
     signal?: AbortSignal,
   ) =>
-    api.get<PagedResult<AssistantConversationSummary>>(
-      `${base}/conversations?${new URLSearchParams({ page: String(parameters.page), pageSize: String(parameters.pageSize), ...(parameters.sort ? { sort: parameters.sort } : {}) })}`,
-      { signal },
+    read(
+      conversationPage,
+      await api.get<unknown>(
+        `${base}/conversations?${new URLSearchParams({ page: String(parameters.page), pageSize: String(parameters.pageSize), ...(parameters.sort ? { sort: parameters.sort } : {}) })}`,
+        { signal },
+      ),
     ),
-  conversation: (id: string, signal?: AbortSignal) =>
-    api.get<AssistantConversation>(
-      `${base}/conversations/${encodeURIComponent(id)}`,
-      { signal },
+  conversation: async (id: string, signal?: AbortSignal) =>
+    read(
+      conversation,
+      await api.get<unknown>(`${base}/conversations/${encodeURIComponent(id)}`, {
+        signal,
+      }),
     ),
-  turns: (id: string, page = 1, signal?: AbortSignal) =>
-    api.get<PagedResult<AssistantTurn>>(
-      `${base}/conversations/${encodeURIComponent(id)}/turns?page=${page}&pageSize=20&sort=-ordinal`,
-      { signal },
+  turns: async (id: string, page = 1, signal?: AbortSignal) =>
+    read(
+      turnPage,
+      await api.get<unknown>(
+        `${base}/conversations/${encodeURIComponent(id)}/turns?page=${page}&pageSize=20&sort=-ordinal`,
+        { signal },
+      ),
     ),
-  submit: (body: AssistantSubmit, signal?: AbortSignal) =>
-    api.post<AssistantAccepted>(`${base}/turns`, body, { signal }),
-  turn: (requestId: string, signal?: AbortSignal) =>
-    api.get<AssistantTurn>(`${base}/turns/${encodeURIComponent(requestId)}`, {
-      signal,
-    }),
-  cancel: (requestId: string, signal?: AbortSignal) =>
-    api.post<AssistantTurn>(
-      `${base}/turns/${encodeURIComponent(requestId)}/cancel`,
-      undefined,
-      { signal },
+  submit: async (body: AssistantSubmit, signal?: AbortSignal) =>
+    read(accepted, await api.post<unknown>(`${base}/turns`, body, { signal })),
+  turn: async (requestId: string, signal?: AbortSignal) =>
+    read(
+      turn,
+      await api.get<unknown>(`${base}/turns/${encodeURIComponent(requestId)}`, {
+        signal,
+      }),
+    ),
+  cancel: async (requestId: string, signal?: AbortSignal) =>
+    read(
+      turn,
+      await api.post<unknown>(
+        `${base}/turns/${encodeURIComponent(requestId)}/cancel`,
+        undefined,
+        { signal },
+      ),
     ),
   remove: (id: string, signal?: AbortSignal) =>
     api.delete<void>(`${base}/conversations/${encodeURIComponent(id)}`, {
