@@ -58,9 +58,9 @@ const capturedCatalogFields = z.array(catalogFieldSnapshot).max(20).refine(field
 const choice = z.strictObject({
   choiceId: guid,
   label: z.string(),
-  catalogId: guid.nullish(),
-  catalogName: z.string().nullish(),
-  detail: z.string().nullish(),
+  catalogId: guid.optional(),
+  catalogName: z.string().optional(),
+  detail: z.string().optional(),
   value: z.string().optional(),
   valueType: z.enum(catalogValueTypes).exclude(["Text"]).optional(),
   fields: capturedCatalogFields.optional(),

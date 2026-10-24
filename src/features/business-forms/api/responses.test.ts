@@ -56,6 +56,14 @@ it("retains a sealed canonical catalog value without accepting half a pair or ch
   }
 });
 
+it("rejects a captured choice with null catalog metadata", () => {
+  const captured = { choiceId: "01990000-0000-7000-8000-000000000021", label: "Tarifa histórica" };
+  const cell = { fieldId: captured.choiceId, type: "choice", state: "Answered", value: captured };
+  expect(responseCellSchema.safeParse(cell).success).toBe(true);
+  for (const metadata of [{ catalogId: null }, { catalogName: null }, { detail: null }])
+    expect(responseCellSchema.safeParse({ ...cell, value: { ...captured, ...metadata } }).success).toBe(false);
+});
+
 it("reads the sealed catalog type on a choice column even without rows and rejects unknown or misplaced types", () => {
   const sheet = responseSheetFixture();
   const choice = sheet.columns.find(column => column.type === "choice")!;

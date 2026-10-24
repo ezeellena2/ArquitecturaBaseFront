@@ -34,3 +34,12 @@ it("reads an anyOf condition without replacing it with the single-choice operato
   expect(readRuleSet(body).rules[0].conditions).toEqual([condition]);
   expect(() => readRuleSet({ ...body, rules: [{ ...body.rules[0], conditions: [{ ...condition, operator: "anyUnknown" }] }] })).toThrow("Invalid form rules contract.");
 });
+
+it("rejects a rule condition without values", () => {
+  const answered = { fieldId: definitionId, operator: "answered", values: null };
+  const body = { id: definitionId, definitionId, revision: 1, originalCulture: "es", rules: [{
+    id: definitionId, event: "Received", conditions: [answered], actions: [newRuleAction("GeneratePdf")],
+  }], createdAtUtc: "2026-10-22T12:00:00Z", author: null };
+  expect(readRuleSet(body).rules[0].conditions).toEqual([answered]);
+  expect(() => readRuleSet({ ...body, rules: [{ ...body.rules[0], conditions: [{ fieldId: definitionId, operator: "answered" }] }] })).toThrow("Invalid form rules contract.");
+});

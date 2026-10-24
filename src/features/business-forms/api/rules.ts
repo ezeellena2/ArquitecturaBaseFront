@@ -5,7 +5,7 @@ import { ruleActionKinds, ruleEvents, type FormRule } from "../rules";
 const guid = z.string().uuid();
 const text = z.record(z.string().refine(value => value === "es" || value === "en"), z.string());
 const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
-const condition = z.strictObject({ fieldId: guid, operator: z.enum(["in", "anyOf", "contains", "equals", "gte", "lte", "answered", "unanswered", "notAsked"]), values: z.array(z.string()).nullish() });
+const condition = z.strictObject({ fieldId: guid, operator: z.enum(["in", "anyOf", "contains", "equals", "gte", "lte", "answered", "unanswered", "notAsked"]), values: z.array(z.string()).nullable() });
 const action = z.strictObject({ id: guid, kind: z.enum(ruleActionKinds), roleId: guid.nullable(), text: text.nullable(), includePdf: z.boolean() });
 const rule = z.strictObject({ id: guid, event: z.enum(ruleEvents), conditions: z.array(condition), actions: z.array(action) });
 const ruleSet = z.strictObject({ id: guid.nullable(), definitionId: guid, revision: z.number().int().nonnegative(), originalCulture: z.enum(["es", "en"]), rules: z.array(rule), createdAtUtc: z.iso.datetime().nullable(), author: author.nullable() });

@@ -78,9 +78,6 @@ export function responseSheetFixture(): ResponseSheet {
                 ? {
                     choiceId: id(40),
                     label: "Opción histórica",
-                    catalogId: null,
-                    catalogName: null,
-                    detail: null,
                   }
                 : null,
     })),

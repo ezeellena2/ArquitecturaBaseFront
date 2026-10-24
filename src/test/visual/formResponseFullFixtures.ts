@@ -32,7 +32,7 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
   const multipleFieldId = id(34);
   const choiceLabels = en ? ["Cold", "Noise", "Counter refrigeration", "Noise in main compressor", "Water leak in pipe"]
     : ["Frío", "Ruido", "Refrigeración del mostrador", "Ruido en compresor principal", "Pérdida de agua en caño"];
-  const choices = choiceLabels.map((label, index) => ({ choiceId: id(401 + index), label, catalogId: null, catalogName: null, detail: null }));
+  const choices = choiceLabels.map((label, index) => ({ choiceId: id(401 + index), label }));
   const capturedChoices = (recordId: string) => recordId === responseRecordId ? choices.slice(0, 2) : choices.slice(2);
   async function multipleSheet(request: Request, query: ResponseQuery): Promise<ResponseSheet> {
     const conditions = query.conditions?.filter(condition => condition.fieldId !== multipleFieldId);

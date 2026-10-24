@@ -204,13 +204,13 @@ export function createResponseVisualFixtures(
     const row = sheet.records.items[0];
     row.cells[4] = {
       fieldId: column.fieldId, type: "multiChoice", state: "Answered", value: [
-        { choiceId: id(40), label: "Frío Norte SRL", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores", detail: null,
+        { choiceId: id(40), label: "Frío Norte SRL", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores",
           fields: [
             { fieldId: id(301), label: "CUIT", type: "text", role: "data", value: "30-71234567-8" },
             { fieldId: id(302), label: en ? "Zone" : "Zona", type: "catalog", role: "filter", value: id(320), text: en ? "Center" : "Centro" },
             { fieldId: id(303), label: en ? "Payment terms" : "Plazo de pago", type: "integer", role: "data", value: "30" },
           ] },
-        { choiceId: id(41), label: "Repuestos Sur", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores", detail: null,
+        { choiceId: id(41), label: "Repuestos Sur", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores",
           fields: [
             { fieldId: id(301), label: "CUIT", type: "text", role: "data", value: "30-65432109-7" },
             { fieldId: id(302), label: en ? "Zone" : "Zona", type: "catalog", role: "filter", value: id(320), text: en ? "Center" : "Centro" },
@@ -219,7 +219,7 @@ export function createResponseVisualFixtures(
       ],
     };
     sheet.records.items[1].cells[4] = { fieldId: column.fieldId, type: "multiChoice", state: "Answered", value: [
-      { choiceId: id(42), label: en ? "Previous supplier" : "Proveedor anterior", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores", detail: null },
+      { choiceId: id(42), label: en ? "Previous supplier" : "Proveedor anterior", catalogId: id(310), catalogName: en ? "Suppliers" : "Proveedores" },
     ] };
   }
   return {
