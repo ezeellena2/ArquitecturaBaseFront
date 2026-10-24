@@ -335,6 +335,9 @@
       "title": "En WhatsApp", "heading": "Título · hasta 30 caracteres", "description": "Descripción · hasta 300", "add": "Agregar campo", "example": "Por ejemplo",
       "hint": "Un cambio vale para los envíos nuevos: lo ya enviado y las respuestas guardadas conservan lo que se mostró.",
       "hidden": "No salen del sistema: {{fields}}.", "tooLong_one": "1 opción supera los 30 caracteres. Podés guardar; revisá el título antes de publicar.", "tooLong_other": "{{count}} opciones superan los 30 caracteres. Podés guardar; revisá el título antes de publicar.",
+      "titleTooLongIn_one": "En {{language}}: 1 opción supera los 30 caracteres del título.", "titleTooLongIn_other": "En {{language}}: {{count}} opciones superan los 30 caracteres del título.",
+      "descriptionTooLongIn_one": "En {{language}}: 1 opción supera los 300 caracteres de la descripción.", "descriptionTooLongIn_other": "En {{language}}: {{count}} opciones superan los 300 caracteres de la descripción.",
+      "more_one": "y {{count}} más", "more_other": "y {{count}} más",
       "remove": "Quitar {{name}} de {{part}}", "yes": "Sí", "no": "No", "unavailable": "Campo no disponible"
     },
     "lifecycle": {

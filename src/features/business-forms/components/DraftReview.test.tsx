@@ -77,7 +77,7 @@ it("names catalog questions consistently when reviewing a source replacement", a
   const catalog: CatalogDetail = { id: "01990000-0000-7000-8000-000000000091", key: "01990000000070008000000000000091",
     name: { es: "Proveedores", en: "Suppliers" }, description: { es: "Personas disponibles", en: "Available people" },
     kind: "Manual", valueType: "Text", revision: 1, isActive: true, itemsCount: 0, usageCount: null,
-    unavailableReasonCode: null, filters: null, proposal: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
+    unavailableReasonCode: null, filters: null, proposal: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
   server.use(http.get("/api/forms/catalogs/:id",({params})=>{ return HttpResponse.json({...catalog,id:params.id,key:String(params.id).replaceAll("-","")}); }));
   await act(async () => { renderWithProviders(<DraftReview catalogScope={{actorId:"actor",culture:"es",permissions:["formcatalogs.read"]}} value={mine} definition={current} culture="es" open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
   expect(within(screen.getByRole("dialog")).queryAllByText(/Elegir de un catálogo/)).toHaveLength(2);

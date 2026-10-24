@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogItems, readCatalogPage } from "./catalogResponse";
+import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogItems, readCatalogPage, readCatalogPresentationCheck } from "./catalogResponse";
 
 // Synthetic responses from the current .NET DTOs; real K4 exports qualify the contract at closure.
 const id = "01990000-0000-7000-8000-000000000020";
 const filters = { textColumn: "name", detailColumn: null, conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000601" }], excludeRecipient: true, sortColumn: "name", sortDescending: false };
-const catalog = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Responsables", en: "Assignees" }, description: { es: "Personas disponibles", en: "Available people" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
+const catalog = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Responsables", en: "Assignees" }, description: { es: "Personas disponibles", en: "Available people" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
 const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: "01990000-0000-7000-8000-000000000601", label: "Operario" }] }];
 
  describe("Current catalog response DTO", () => {
@@ -44,6 +44,27 @@ it("uses the server's origin facets, independent of the current page length", ()
   expect(readCatalogPage(response)).toEqual(response);
   const previous = { items: response.items, page: response.page, pageSize: response.pageSize, totalCount: response.totalCount, totalPages: response.totalPages, hasPrevious: response.hasPrevious, hasNext: response.hasNext };
   expect(() => readCatalogPage(previous)).toThrow("Unsupported catalog response.");
+});
+
+it("rejects a presentation check with repeated languages or more examples than problems", () => {
+  const example = (n: number) => ({ itemId: "01990000-0000-7000-8000-00000000004" + n, title: "Opción " + n });
+  const es = { culture: "es", titleTooLongCount: 5, titleExamples: [example(1), example(2), example(3)], descriptionTooLongCount: 1, descriptionExamples: [example(4)] };
+  const en = { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] };
+  const detail = (presentationCheck: unknown) => ({ ...catalog, filters: null, presentationCheck });
+  expect(readCatalog(detail({ cultures: [es, en] })).presentationCheck).toEqual({ cultures: [es, en] });
+  expect(readCatalogPresentationCheck({ cultures: [en] })).toEqual({ cultures: [en] });
+  for (const invalid of [
+    { cultures: [es, { ...es }] },
+    { cultures: [{ ...en, titleExamples: [example(1)] }] },
+    { cultures: [{ ...es, descriptionTooLongCount: 2 }] },
+    { cultures: [{ ...es, titleExamples: [example(1), example(2), example(3), example(5)] }] },
+    { cultures: [] },
+    { cultures: [{ ...en, culture: "fr" }] },
+    { titleTooLongCount: 0, examples: [] },
+  ]) {
+    expect(() => readCatalog(detail(invalid))).toThrow("Unsupported catalog response.");
+    expect(() => readCatalogPresentationCheck(invalid)).toThrow("Unsupported catalog response.");
+  }
 });
 
 it("accepts field uses without form names only as a complete stage-only entry", () => {

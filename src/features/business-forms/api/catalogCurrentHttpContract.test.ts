@@ -47,7 +47,7 @@ it("reads the actual extra-field receipts, source labels and preserved inactive 
   const removed = readCatalogSave(cohort.json("fields-removed.json"), []);
   expect(removed.catalog.fields?.[0]).toMatchObject({ isActive: false, name: { es: "Field" } });
   const presentation = readCatalogSave(cohort.json("fields-presentation.json"), []);
-  expect(presentation.catalog.presentationCheck?.titleTooLongCount).toBe(1);
+  expect(presentation.catalog.presentationCheck?.cultures.map(entry => [entry.culture, entry.titleTooLongCount, entry.descriptionTooLongCount])).toEqual([["es", 1, 0], ["en", 1, 0]]);
   const source = readCatalogItems(cohort.json("fields-source-items.json"));
   const sourceField = presentation.catalog.fields![0]!.id;
   expect(source.items[0]?.fieldTexts?.[sourceField]?.es).toBe("A source choice");

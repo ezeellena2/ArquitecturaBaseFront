@@ -23,7 +23,13 @@ const catalogField = z.strictObject({ id: guid, key: z.string().regex(/^[a-z][a-
   .refine(value => value.type === "catalog" ? value.sourceCatalogId !== null : value.sourceCatalogId === null);
 function textMapForField() { return z.strictObject({ es: z.string().min(1).max(120), en: z.string().min(1).max(120).optional() }); }
 const presentation = z.strictObject({ title: z.array(z.string().min(1)).min(1).max(24), description: z.array(z.string().min(1)).max(24) });
-const presentationCheck = z.strictObject({ titleTooLongCount: count, examples: z.array(z.strictObject({ itemId: guid, title: z.string() })).max(3) });
+// One entry per catalog language (es, en): titles over 30 and descriptions over 300 among every active option, with
+// up to three examples each.
+const presentationExample = z.strictObject({ itemId: guid, title: z.string() });
+const presentationCultureCheck = z.strictObject({ culture: z.enum(["es", "en"]), titleTooLongCount: count, titleExamples: z.array(presentationExample).max(3), descriptionTooLongCount: count, descriptionExamples: z.array(presentationExample).max(3) })
+  .refine(value => value.titleExamples.length === Math.min(value.titleTooLongCount, 3) && value.descriptionExamples.length === Math.min(value.descriptionTooLongCount, 3));
+export const catalogPresentationCheckSchema = z.strictObject({ cultures: z.array(presentationCultureCheck).min(1).max(2) })
+  .refine(value => new Set(value.cultures.map(entry => entry.culture)).size === value.cultures.length);
 const filters = z.strictObject({
   textColumn: z.string(), detailColumn: z.string().nullable(),
   conditions: z.array(z.strictObject({ column: z.string(), operator: z.string(), value: z.string() })),
@@ -42,7 +48,7 @@ const filterColumn = z.strictObject({ key: z.string(), dataType: z.string(), can
 const sampleUsers = z.strictObject({ items: z.array(z.strictObject({ id: guid, name: z.string() })), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() });
 const filterOptions = z.strictObject({ source: z.literal("users"), columns: z.array(filterColumn), sampleUsers: sampleUsers.nullable() });
 const filterPreview = z.strictObject({ items: z.array(z.strictObject({ id: guid, text: z.string(), detail: z.string().nullable(), canSend: z.boolean() })), totalCount: count, exceedsLimit: z.boolean() });
-const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), kind: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable(), fields: z.array(catalogField).max(20).nullable(), presentation: presentation.nullable(), presentationCheck: presentationCheck.nullable() })
+const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), kind: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable(), fields: z.array(catalogField).max(20).nullable(), presentation: presentation.nullable(), presentationCheck: catalogPresentationCheckSchema.nullable() })
   .refine(value => value.proposal ? value.kind === "Filters" && value.filters !== null && !!value.name[value.proposal.originalCulture]?.trim() && !!value.description[value.proposal.originalCulture]?.trim() && (value.proposal.state === "Approved" || !value.isActive) : requiredText(120).safeParse(value.name).success && requiredText(1000).safeParse(value.description).success)
   .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase())
   .refine(value => value.kind !== "Filters" || value.valueType === "Text")
@@ -72,6 +78,7 @@ export function readCatalog(value: unknown, id?: string) {
   return result;
 }
 export const readCatalogItems = (value: unknown): PagedResult<z.infer<typeof item>> => read(itemPage, value);
+export const readCatalogPresentationCheck = (value: unknown) => read(catalogPresentationCheckSchema, value);
 export function readCatalogSave(value: unknown, newLocalIds: readonly string[], id?: string, expectedRevision?: number, newFieldLocalIds: readonly string[] = []) {
   const result = read(saved, value);
   const map = result.itemIdentityMap;
@@ -92,6 +99,7 @@ export type CatalogItem = z.infer<typeof item>;
 export type CatalogSave = z.infer<typeof saved>;
 export type CatalogField = z.infer<typeof catalogField>;
 export type CatalogPresentation = FormCatalogPresentation;
+export type CatalogPresentationCheck = z.infer<typeof catalogPresentationCheckSchema>;
 
 export const readCatalogFilterOptions = (value: unknown) => read(filterOptions, value);
 export const readCatalogFilterPreview = (value: unknown) => read(filterPreview, value);

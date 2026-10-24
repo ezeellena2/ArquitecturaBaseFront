@@ -11,7 +11,7 @@ import * as imports from "../api/catalogImports";
 import * as catalogs from "../api/catalogs";
 import type { CatalogDetail, CatalogField } from "../api/catalogResponse";
 import { CatalogImportDialog } from "./CatalogImportDialog";
-const catalog: CatalogDetail = { valueType: "Text", proposal: null, id: catalogImportPreviewFixture().catalogId, key: catalogImportPreviewFixture().catalogId.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 2, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
+const catalog: CatalogDetail = { valueType: "Text", proposal: null, id: catalogImportPreviewFixture().catalogId, key: catalogImportPreviewFixture().catalogId.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 2, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
 const scope = { actorId: "actor", culture: "es" as const, permissions: ["formcatalogs.read", "formcatalogs.manage"] };
 afterEach(async () => { cleanup(); vi.restoreAllMocks(); queryClient.clear(); await i18n.changeLanguage("es"); });
 async function mount(initialSource: "file" | "paste" = "paste") {

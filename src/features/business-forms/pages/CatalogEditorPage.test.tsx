@@ -25,7 +25,7 @@ async function pasteText(user: ReturnType<typeof userEvent.setup>, control: HTML
 }
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
-const initial = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { titleTooLongCount: 0, examples: [] } };
+const initial = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
 const option = { value: null, id: itemId, code: "C1", text: { es: "Pérez", en: null }, detail: { es: null, en: null }, position: 1, isActive: true, fields: {}, fieldTexts: {} };
 function setup(permissions = ["formcatalogs.read", "formcatalogs.manage"], culture: "es" | "en" = "es") {
   server.use(http.get("/api/me", () => HttpResponse.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false, culture, timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(initial)), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [option], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
@@ -708,20 +708,23 @@ it("imports with the fields saved in this session instead of the ones loaded on 
 });
 it("warns about long titles with the check of the applied import instead of the one loaded on entry", async () => {
   setup(); const entryTitle = "Pérez · Distribuidora del Litoral Norte", importedTitle = "Norte · Ferretería Industrial del Centro";
-  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, presentationCheck: { titleTooLongCount: 1, examples: [{ itemId, title: entryTitle }] } })));
+  const english = { culture: "en" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] };
+  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 1, titleExamples: [{ itemId, title: entryTitle }], descriptionTooLongCount: 0, descriptionExamples: [] }, english] } })));
   const base = catalogImportPreviewFixture();
   vi.spyOn(catalogImports, "previewCatalogImport").mockResolvedValue({ ...base, revision: 1, mode: "Append", counts: { ...base.counts, errorRows: 0, deactivated: 0 }, issues: [], deactivated: [], confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
-  vi.spyOn(catalogImports, "applyCatalogImport").mockResolvedValue({ catalog: { ...initial, kind: "Manual", revision: 2, presentationCheck: { titleTooLongCount: 4, examples: [{ itemId, title: importedTitle }] } }, itemIdentityMap: {}, fieldIdentityMap: {} });
+  const importedExamples = [{ itemId, title: importedTitle }, { itemId: "01990000-0000-7000-8000-0000000007a1", title: "Sur · Ferretería Industrial del Centro" }, { itemId: "01990000-0000-7000-8000-0000000007a2", title: "Oeste · Ferretería Industrial del Centro" }];
+  vi.spyOn(catalogImports, "applyCatalogImport").mockResolvedValue({ catalog: { ...initial, kind: "Manual", revision: 2, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 4, titleExamples: importedExamples, descriptionTooLongCount: 0, descriptionExamples: [] }, english] } }, itemIdentityMap: {}, fieldIdentityMap: {} });
   await mount("/catalogos/" + id); const user = userEvent.setup();
-  expect(await screen.findByText("1 opción supera los 30 caracteres. Podés guardar; revisá el título antes de publicar.")).toBeInTheDocument();
+  expect(await screen.findByText("En español: 1 opción supera los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.getByText(entryTitle)).toBeInTheDocument();
   await user.click(await screen.findByRole("button", { name: "Pegar desde Excel" }));
   await pasteText(user, screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await user.click(await screen.findByRole("button", { name: "Aplicar" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-  expect(await screen.findByText("4 opciones superan los 30 caracteres. Podés guardar; revisá el título antes de publicar.")).toBeInTheDocument();
+  expect(await screen.findByText("En español: 4 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.getByText(importedTitle)).toBeInTheDocument();
+  expect(screen.getByText("y 1 más")).toBeInTheDocument();
   expect(screen.queryByText(entryTitle)).not.toBeInTheDocument();
 });
 
