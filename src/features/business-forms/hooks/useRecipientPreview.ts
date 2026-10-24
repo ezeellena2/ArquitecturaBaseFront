@@ -13,7 +13,14 @@ const canPreview = (scope: FormReadScope) => scope.actorId !== null && ["formtem
 export function useRecipientSamples(scope: FormReadScope, query: RecipientSamplesQuery, enabled = true) {
   const root = [...formScopeKey(scope), "recipient-samples"] as const;
   useUnobservedQueryCleanup(root);
-  return useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchRecipientSamples(query, signal), enabled: enabled && canPreview(scope), staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
+  // The samples share the forms read limit: a 429 starts its Retry-After (60 s without one) before the error shows, and Retry waits it.
+  const cooldown = useCountdown(0);
+  const { restart } = cooldown;
+  const samples = useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchRecipientSamples(query, signal).catch((error: unknown) => {
+    if (error instanceof ApiError && error.status === 429) restart(error.retryAfterSeconds ?? 60);
+    throw error;
+  }), enabled: enabled && canPreview(scope), staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
+  return { ...samples, waitSeconds: samples.isError && cooldown.isRunning ? cooldown.seconds : 0 };
 }
 export function useRecipientPreview(scope: FormReadScope, definitionId: string | null, questionId: string, type: "choice" | "multiChoice", source: DraftQuestionSource) {
   const owner = JSON.stringify([...formScopeKey(scope), definitionId, questionId]);

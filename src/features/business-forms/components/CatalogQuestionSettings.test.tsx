@@ -142,3 +142,15 @@ it("retries the recipient samples after they fail", async () => {
   await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
   expect(requests.samples).toBe(2);
 });
+
+it("keeps Retry disabled during the wait of a 429 on the recipient samples", async () => {
+  const requests = serveRecipientPreview();
+  server.use(http.get("/api/forms/recipient-samples", () => { requests.samples++; return HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 5 }, { status: 429 }); }));
+  renderWithProviders(settings(manualId));
+  const failed = await screen.findByRole("alert");
+  expect(failed).toHaveTextContent("No se pudo preparar la vista previa.");
+  const retry = within(failed).getByRole("button", { name: "Reintentar" });
+  expect(retry).toBeDisabled();
+  expect(retry).toHaveAccessibleDescription("Esperá 5 segundos para volver a intentar.");
+  expect(requests.samples).toBe(1);
+});
