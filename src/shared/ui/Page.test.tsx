@@ -86,7 +86,7 @@ describe("Page", () => {
           <Page
             title="Editar el rol Soporte"
             backTo={{ to: "/roles", label: "Volver a Roles y permisos" }}
-            status={<span>· Cambios sin guardar</span>}
+            status={<span>Dado de baja</span>}
           >
             <p>contenido</p>
           </Page>
@@ -94,9 +94,9 @@ describe("Page", () => {
       );
 
       const titulo = screen.getByRole("heading", { level: 1, name: "Editar el rol Soporte" });
-      const estado = screen.getByText("· Cambios sin guardar");
+      const estado = screen.getByText("Dado de baja");
 
-      // Al lado, no adentro: si fuera parte del h1, el nombre de la pantalla cambiaría con cada tecla.
+      // Al lado, no adentro: si fuera parte del h1, el nombre de la pantalla cambiaría con el estado del objeto.
       expect(titulo).not.toContainElement(estado);
       expect(titulo.parentElement).toContainElement(estado);
     });

@@ -256,7 +256,7 @@ crecen todos a 44 px en móvil.
 ### Configuración general (2026-09-30)
 
 - `/configuracion`: tres `Surface` con título y margen (Preferencias regionales, Listados, Registro de cuentas) y una
-  `Page` con estado del borrador y Guardar/Descartar. Las cuatro URLs anteriores redirigen.
+  `Page` con Guardar/Descartar. Las cuatro URLs anteriores redirigen.
 - Selectores nativos para idioma, zona y tamaño; `RadioGroupField` para el registro, con confirmación de su efecto.
 - Un conflicto muestra una tabla de los cuatro ajustes (actual y borrador), con scroll contenido en móvil. Conservar
   cambios incorpora valores ajenos de campos no tocados. Un resultado incierto se consulta antes de otro envío o descarte.

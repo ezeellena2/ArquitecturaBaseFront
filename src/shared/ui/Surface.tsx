@@ -11,6 +11,7 @@ interface SurfaceProps {
 
 // La caja y su banda se definen acá: las features solo deciden el contenido.
 // Una banda crece con el texto; un título largo no queda recortado en móvil.
+// Las acciones van al borde derecho de la banda, a la altura del título; si no entran, bajan de renglón y siguen a la derecha.
 export function Surface({ title, titleRef, headingLevel = 2, padded = false, actions, children }: SurfaceProps) {
   const id = useId();
   const Heading = headingLevel === 3 ? "h3" : "h2";
@@ -19,7 +20,7 @@ export function Surface({ title, titleRef, headingLevel = 2, padded = false, act
       {title ? (
         <div className="flex min-h-10 flex-wrap items-center justify-between gap-2 border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4 py-2">
           <Heading id={id} ref={titleRef} tabIndex={titleRef ? -1 : undefined} className="text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase text-[var(--color-surface-header-foreground)] outline-none">{title}</Heading>
-          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{actions}</div> : null}
         </div>
       ) : null}
       {padded ? <div className="flex flex-col gap-4 p-4">{children}</div> : children}

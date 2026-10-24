@@ -17,9 +17,10 @@ import { ActionTooltip } from "./ActionTooltip";
 /// No tiene estado expandido ni descripción (fundamento visual, "Encabezados").
 ///
 /// Una pantalla hija (el rol en `/roles/{id}`) pasa `backTo`: delante del título va el enlace para volver a
-/// la sección de la que cuelga. Y `status` es lo que acompaña al título sin ser parte de él ("Del sistema",
-/// "· Cambios sin guardar"): va al lado del `h1` y no adentro, para que el nombre de la pantalla no cambie
-/// con cada tecla.
+/// la sección de la que cuelga. Y `status` es el estado del objeto que acompaña al título sin ser parte de él
+/// ("Activo", "Dado de baja"): va al lado del `h1` y no adentro, para que el nombre de la pantalla no cambie
+/// con el estado. No muestra "Cambios sin guardar" ni números de revisión: Guardar habilitado ya dice que hay
+/// cambios, y las revisiones quedan en los historiales.
 export function Page({
   title,
   backTo,

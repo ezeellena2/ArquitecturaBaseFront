@@ -71,6 +71,31 @@ test("English fits at 390px without changing control dimensions", async ({ page 
   await expect(page).toHaveScreenshot("catalog-en-390.png", { fullPage: true });
 });
 
+test("surface actions stay on the right edge of their header when they wrap", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await openScreen(page, "/catalogo");
+  const surface = page.getByRole("region", { name: "Modales y tooltips", exact: true });
+  const title = surface.getByRole("heading", { name: "Modales y tooltips", exact: true });
+  const header = title.locator("..");
+  const last = surface.getByRole("button", { name: "Exportar ejemplo", exact: true });
+  await last.scrollIntoViewIfNeeded();
+  const measure = async () => {
+    const [band, heading, action] = await Promise.all([header.boundingBox(), title.boundingBox(), last.boundingBox()]);
+    return { right: band!.x + band!.width - (action!.x + action!.width), titleBottom: heading!.y + heading!.height,
+      titleCenter: heading!.y + heading!.height / 2, actionTop: action!.y, actionCenter: action!.y + action!.height / 2 };
+  };
+  // A 320 las acciones bajan de renglón y siguen al borde derecho: el mismo margen de 16 px que el título a la izquierda.
+  const narrow = await measure();
+  expect(narrow.actionTop).toBeGreaterThanOrEqual(narrow.titleBottom);
+  expect(Math.abs(narrow.right - 16)).toBeLessThanOrEqual(1);
+  // A 1440 entran en el renglón del título, al borde derecho y a su altura.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await last.scrollIntoViewIfNeeded();
+  const wide = await measure();
+  expect(Math.abs(wide.right - 16)).toBeLessThanOrEqual(1);
+  expect(Math.abs(wide.actionCenter - wide.titleCenter)).toBeLessThanOrEqual(1);
+});
+
 test("listing and editor share actual header typography and row sizes", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   for (const screen of ["/usuarios", "/roles", "/roles/support"]) {

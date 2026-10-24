@@ -115,12 +115,13 @@ export function Catalog() {
           <TabsContent value="pdf"><Button type="button" variant="outline">{english ? "Open PDF" : "Abrir PDF"}</Button></TabsContent>
         </Tabs>
       </Surface> : null}
-      <Surface title={pieces.dialogs} padded>
+      <Surface title={pieces.dialogs} padded actions={<>
+        <Button variant="outline" onClick={() => setFormOpen(true)}>{pieces.modal}</Button>
+        <DisabledReason reason={pieces.reason}><Button variant="outline" disabled>{pieces.export}</Button></DisabledReason>
+      </>}>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setFormOpen(true)}>{pieces.modal}</Button>
           <IconButton label={pieces.edit} onClick={() => setFormOpen(true)}><PencilIcon className="size-4" /></IconButton>
           <IconButton label={pieces.disabled} disabledLabel={pieces.reason} disabled><PencilIcon className="size-4" /></IconButton>
-          <DisabledReason reason={pieces.reason}><Button variant="outline" disabled>{pieces.export}</Button></DisabledReason>
         </div>
       </Surface>
       <section aria-label={text.tables}>
