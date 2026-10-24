@@ -24,6 +24,13 @@ it.each(["es", "en"] as const)("starts closed, opens single-choice options and c
   expect(screen.getByText(/200/)).toBeInTheDocument(); expect(items[0]!.label.es).toBe("Norte");
   expect(screen.queryByText("1500.5")).not.toBeInTheDocument();
 });
+it("lists an option written only in the other language with that text", async () => {
+  const english: readonly CatalogManualItemValue[] = [{ localId: "n", itemId: "n", code: "N", value: null, position: 1, label: { en: "North" }, detail: { en: "North side" }, isActive: true }];
+  await act(async () => { renderWithProviders(<CatalogPreview items={english} name="Zonas" culture="es"/>); });
+  await userEvent.click(screen.getByRole("button", { name: "Elegí una opción" }));
+  expect(screen.getByRole("radio", { name: "North" })).toBeInTheDocument();
+  expect(screen.getByText("North side")).toBeInTheDocument();
+});
 it("switches only the illustrative preview to checkboxes while leaving catalog data untouched", async () => {
   await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture="es"/>); });
   await userEvent.click(screen.getByRole("button", { name: "Varias" }));

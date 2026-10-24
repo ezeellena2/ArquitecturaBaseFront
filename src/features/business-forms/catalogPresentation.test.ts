@@ -15,6 +15,13 @@ it("names fixed and extra presentation parts in order", () => {
   expect(presentationPartNames(null, fields, "es", fixed, "Campo no disponible")).toEqual({ title: ["Texto"], description: ["Detalle"] });
 });
 
+it("names a field written only in the other language by that name", () => {
+  const fields: CatalogFieldDraft[] = [{ ...newCatalogField("region", 1), id: "region", name: { en: "Region" } }];
+  const fixed = (key: string) => ({ text: "Texto" })[key] ?? "?";
+  expect(presentationPartNames({ title: ["text"], description: ["region"] }, fields, "es", fixed, "Campo no disponible"))
+    .toEqual({ title: ["Texto"], description: ["Region"] });
+});
+
 it("takes removed fields out of the presentation and falls back to the text title", () => {
   expect(withoutPresentationFields(null, ["zone"])).toBeNull();
   expect(withoutPresentationFields({ title: ["zone"], description: ["tax", "zone", "detail"] }, ["zone"])).toEqual({ title: ["text"], description: ["tax", "detail"] });
@@ -28,6 +35,11 @@ it("keeps the usual text/detail presentation when no override is configured", ()
 });
 it("joins only selected nonempty fields and uses source option labels without leaking other values", () => {
   expect(catalogOptionPresentation(item, { title: ["text", "code"], description: ["tax", "zone", "empty"] }, [], "Text", "en")).toEqual({ title: "South Cooling · NORTH", description: "30-71234567-8 · Central" });
+});
+it("shows an option written only in the other language in that language", () => {
+  const english = { ...item, label: { en: "North" }, detail: { en: "North side" }, fieldTexts: { zone: { en: "Central" } } };
+  expect(catalogOptionPresentation(english, null, [], "Text", "es")).toEqual({ title: "North", description: "North side" });
+  expect(catalogOptionPresentation(english, { title: ["text"], description: ["detail", "zone"] }, [], "Text", "es")).toEqual({ title: "North", description: "North side · Central" });
 });
 it("matches the sent scalar presentation with the shared screen format", () => {
   const fields = [
