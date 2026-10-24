@@ -19,13 +19,13 @@ export function PersonAttributeDialog({ scope, attribute, onClose }: { scope: Pe
  const [key, setKey] = useState(attribute?.key ?? ""), [name, setName] = useState({ es: attribute?.name.es ?? "", en: attribute?.name.en ?? "" });
  const [type, setType] = useState<PersonAttribute["type"]>(attribute?.type ?? "Catalog"), [sourceCatalogId, setSource] = useState(attribute?.sourceCatalogId ?? null), [isActive, setActive] = useState(attribute?.isActive ?? true);
  const [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null), [confirmValues, setConfirmValues] = useState(false);
+ // The server counts the people holding a value only when the type or source changes; once that 400 arrives the confirmation stays for the life of the dialog, so a later save never sends it unseen.
+ const [removalCount, setRemovalCount] = useState<number | null>(null);
  const mounted = useRef(true), operation = useRef<AbortController | null>(null), nameRef = useRef<HTMLInputElement>(null);
  const restoreFocus = useRestoreFocusOnClose();
  useEffect(() => { mounted.current = true; nameRef.current?.focus(); return () => { mounted.current = false; operation.current?.abort(); }; }, []);
  const errors = error instanceof ApiError ? error.errors ?? {} : {}, message = (path: string) => errors[path]?.join(" ");
  const inUse = (attribute?.usedBy.length ?? 0) > 0;
- // The server counts the people holding a value only when the type or source changes; the confirmation follows that 400.
- const removalCount = error instanceof ApiError && error.code === "Forms.PersonAttribute.ValueRemovalNotConfirmed" ? Number(error.problem.count) : null;
  const changeType = (next: PersonAttribute["type"]) => { setType(next); setConfirmValues(false); };
  const changeSource = (next: string) => { setSource(next); setConfirmValues(false); };
  const canReadCatalogs = scope.permissions.includes("formcatalogs.read");
@@ -39,7 +39,11 @@ export function PersonAttributeDialog({ scope, attribute, onClose }: { scope: Pe
    if (!mounted.current || controller.signal.aborted) return;
    await client.invalidateQueries({ queryKey: personDataScopeKey(scope) });
    if (mounted.current) onClose();
-  } catch (failure) { if (mounted.current && !controller.signal.aborted) setError(failure); }
+  } catch (failure) {
+   if (!mounted.current || controller.signal.aborted) return;
+   setError(failure);
+   if (failure instanceof ApiError && failure.code === "Forms.PersonAttribute.ValueRemovalNotConfirmed") setRemovalCount(Number(failure.problem.count));
+  }
   finally { if (operation.current === controller) operation.current = null; if (mounted.current) setBusy(false); }
  }
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent onCloseAutoFocus={restoreFocus}><DialogHeader><DialogTitle>{t(attribute ? "personData.editAttribute" : "personData.addAttribute")}</DialogTitle><DialogDescription>{t("personData.attributeHint")}</DialogDescription></DialogHeader><div className="space-y-4">

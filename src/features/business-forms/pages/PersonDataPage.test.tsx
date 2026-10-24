@@ -74,3 +74,37 @@ it("asks to confirm clearing stored values when the type changes and resends wit
   { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true, confirmValueRemoval: true },
  ]);
 });
+it("keeps the value removal confirmation visible while the confirmed save runs and after it fails", async () => {
+ const zone = { ...attribute, type: "Catalog", sourceCatalogId: "01990000-0000-7000-8000-000000000004", sourceCatalogName: "Zonas" };
+ const notConfirmed = "Confirmá que querés cambiar el dato y borrar los valores que tienen cargados las personas.";
+ const bodies: unknown[] = [];
+ let release!: () => void;
+ const gate = new Promise<void>(resolve => { release = resolve; });
+ await mount(["formpersondata.manage"], [zone]);
+ server.use(http.put(`/api/forms/person-attributes/${id}`, async ({ request }) => {
+  bodies.push(await request.json());
+  if (bodies.length === 1) return HttpResponse.json({ status: 400, detail: notConfirmed, code: "Forms.PersonAttribute.ValueRemovalNotConfirmed", traceId: "trace", errors: { type: [notConfirmed] }, count: 3 }, { status: 400 });
+  if (bodies.length === 2) { await gate; return HttpResponse.json({ status: 500, title: "Failed save", code: "General.Unexpected", traceId: "trace" }, { status: 500 }); }
+  return HttpResponse.json({ ...zone, type: "Text", sourceCatalogId: null, sourceCatalogName: null, revision: 2 });
+ }));
+ await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
+ await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ const confirmName = "Sí, cambiar el dato y borrar los valores de 3 personas";
+ await userEvent.click(await dialog.findByRole("checkbox", { name: confirmName }));
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ await waitFor(() => expect(bodies).toHaveLength(2));
+ expect(dialog.getByRole("checkbox", { name: confirmName })).toBeDisabled();
+ expect(dialog.getByRole("checkbox", { name: confirmName })).toBeChecked();
+ release();
+ await waitFor(() => expect(dialog.getByRole("button", { name: "Guardar" })).toBeEnabled());
+ expect(dialog.getByRole("checkbox", { name: confirmName })).toBeEnabled();
+ expect(dialog.getByRole("checkbox", { name: confirmName })).toBeChecked();
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar dato" })).not.toBeInTheDocument());
+ expect(bodies.slice(1)).toEqual([
+  { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true, confirmValueRemoval: true },
+  { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true, confirmValueRemoval: true },
+ ]);
+});
