@@ -16,8 +16,11 @@ const preview = z.strictObject({ recipient, state: z.enum(["Ready", "RecipientDa
   .refine(value => value.exceedsLimit === (value.optionCount > value.limit) && value.options.length === Math.min(value.optionCount, value.limit))
   .refine(value => value.state === "Ready" || value.optionCount === 0)
   .refine(value => new Set(value.options.map(option => option.id.toLowerCase())).size === value.options.length && new Set(value.recipient.values.map(value => value.attributeId.toLowerCase())).size === value.recipient.values.length);
+// The most options one person can get from a question's filters; the label names the largest group's person values (null with only fixed filters).
+const maximum = z.strictObject({ maximum: count, maximumLabel: z.string().min(1).nullable() });
 export type RecipientSample = z.infer<typeof sample>;
 export type RecipientPreview = z.infer<typeof preview>;
+export type RecipientMaximum = z.infer<typeof maximum>;
 export interface RecipientSamplesQuery { readonly page: number; readonly pageSize: number; readonly search?: string }
 export interface RecipientPreviewBody { readonly type: "choice" | "multiChoice"; readonly source: FormQuestionSource; readonly sampleUserId: string; readonly culture: FormCulture }
 export class UnsupportedRecipientPreviewResponse extends Error { constructor() { super("Unsupported recipient preview response."); this.name = "UnsupportedRecipientPreviewResponse"; } }
@@ -28,6 +31,7 @@ function read<T>(schema: z.ZodType<T>, value: unknown): T {
   return parsed.data;
 }
 export const readRecipientSamples = (value: unknown): PagedResult<RecipientSample> => read(samples, value);
+export const readRecipientMaximum = (value: unknown): RecipientMaximum => read(maximum, value);
 export function readRecipientPreview(value: unknown, body?: RecipientPreviewBody): RecipientPreview {
   const result = read(preview, value);
   if (body) {
@@ -46,4 +50,8 @@ export async function previewRecipient(definitionId: string, body: RecipientPrev
   read(canonicalCatalogSourceSchema, body.source);
   read(guid, body.sampleUserId);
   return readRecipientPreview(await api.post<unknown>(`/api/forms/definitions/${id}/recipient-previews`, body, { signal, cache: "no-store" }), body);
+}
+export async function fetchRecipientMaximum(source: FormQuestionSource, signal?: AbortSignal) {
+  read(canonicalCatalogSourceSchema, source);
+  return readRecipientMaximum(await api.post<unknown>("/api/forms/recipient-maximums", { source }, { signal, cache: "no-store" }));
 }

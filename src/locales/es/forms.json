@@ -708,6 +708,19 @@
       "exceeds": "Supera el límite de {{limit}} opciones de esta pregunta.",
       "noOptions": "No hay opciones para esta persona."
     },
+    "maximum": {
+      "perPerson_one": "Como mucho {{count}} por persona ({{group}}, la más grande): {{fit}}.",
+      "perPerson_other": "Como mucho {{count}} por persona ({{group}}, la más grande): {{fit}}.",
+      "perPersonUngrouped_one": "Como mucho {{count}} por persona: {{fit}}.",
+      "perPersonUngrouped_other": "Como mucho {{count}} por persona: {{fit}}.",
+      "shared_one": "Todos ven la misma opción: {{fit}}.",
+      "shared_other": "Todos ven las mismas {{count}}: {{fit}}.",
+      "fitsMultiple": "entra en una pregunta de varias ({{limit}})",
+      "exceedsMultiple": "no entra en una pregunta de varias ({{limit}})",
+      "fitsChoice": "entra en el desplegable ({{limit}})",
+      "exceedsChoice": "no entra en el desplegable ({{limit}})",
+      "failed": "No pudimos calcular cuántas opciones ve cada persona."
+    },
     "review": {
       "changedValue": "Cambió el valor elegido",
       "noFilters": "Sin filtros de opciones"

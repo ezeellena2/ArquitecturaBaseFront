@@ -4,11 +4,11 @@ import { httpCohort } from "@/test/httpCohort";
 import { server } from "@/test/mocks/server";
 import { openDraftSession } from "../draftSession";
 import { readFormCommit, readFormPublicationCheck } from "./response";
-import { fetchRecipientSamples, previewRecipient, readRecipientPreview, readRecipientSamples, type RecipientPreviewBody } from "./recipientPreview";
+import { fetchRecipientMaximum, fetchRecipientSamples, previewRecipient, readRecipientMaximum, readRecipientPreview, readRecipientSamples, type RecipientPreviewBody } from "./recipientPreview";
 
-// These twelve bodies remain unmodified in the existing forms cohort from the joint export.
+// These sixteen bodies remain unmodified in the existing forms cohort from the joint export.
 const cohort = httpCohort("forms");
-const names = ["source-draft", "recipient-samples", "recipient-ready", "recipient-missing", "recipient-unavailable", "source-check-warnings"];
+const names = ["source-draft", "recipient-samples", "recipient-ready", "recipient-missing", "recipient-unavailable", "source-check-warnings", "recipient-maximum-person", "recipient-maximum-fixed"];
 it("qualifies the recipient filter captures and their real HTTP producer", () => {
   const provenance = cohort.verify();
   for (const culture of ["es", "en"]) for (const name of names) expect(provenance.captures.some(capture => capture.name === "recipient-filters/" + name + "-" + culture + ".json")).toBe(true);
@@ -39,5 +39,15 @@ for (const culture of ["es", "en"] as const) {
     server.use(http.get("*/api/forms/recipient-samples", () => cohort.response(file("recipient-samples"))), http.post("*/api/forms/definitions/:id/recipient-previews", () => cohort.response(file("recipient-ready"))));
     expect(await fetchRecipientSamples({ page: 1, pageSize: 20, search: "Juan" })).toEqual(cohort.json(file("recipient-samples")));
     expect(await previewRecipient(saved.definition.id, body)).toEqual(ready);
+  });
+  it("reads the intact " + culture + " maximum per person and the shared count with only fixed filters", async () => {
+    const file = (name: string) => "recipient-filters/" + name + "-" + culture + ".json";
+    const perPerson = readRecipientMaximum(cohort.json(file("recipient-maximum-person")));
+    expect(perPerson).toEqual({ maximum: 2, maximumLabel: culture === "es" ? "Centro" : "Central" });
+    expect(readRecipientMaximum(cohort.json(file("recipient-maximum-fixed")))).toEqual({ maximum: 2, maximumLabel: null });
+    const question = readFormCommit(cohort.json(file("source-draft"))).definition.draft.fields[0]!;
+    if ((question.type !== "choice" && question.type !== "multiChoice") || !question.source) throw new Error("The exported source question is missing.");
+    server.use(http.post("*/api/forms/recipient-maximums", () => cohort.response(file("recipient-maximum-person"))));
+    expect(await fetchRecipientMaximum(question.source)).toEqual(perPerson);
   });
 }

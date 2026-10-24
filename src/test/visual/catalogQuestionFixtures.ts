@@ -1,7 +1,7 @@
 import type { CatalogDetail, CatalogField, CatalogItem } from "@/features/business-forms/api/catalogResponse";
 import type { PersonAttribute } from "@/features/business-forms/api/personData";
-import type { RecipientPreview, RecipientPreviewBody } from "@/features/business-forms/api/recipientPreview";
-import type { FormCulture, FormDefinitionSnapshot } from "@/features/business-forms/model";
+import type { RecipientMaximum, RecipientPreview, RecipientPreviewBody } from "@/features/business-forms/api/recipientPreview";
+import type { FormCulture, FormDefinitionSnapshot, FormQuestionSource } from "@/features/business-forms/model";
 import { createFormFixtureStore, fixtureFormId } from "./formFixtures";
 
 const id = (value: number) => "01990000-0000-7000-8000-" + String(value).padStart(12, "0");
@@ -47,6 +47,20 @@ export function createCatalogQuestionVisualFixtures(culture: FormCulture, _scena
     // Every composed title of these options fits: the server check of an own presentation reports nothing in either language.
     if (path === "/api/forms/catalogs/" + ids.suppliers + "/presentation-checks" && request.method === "POST") return json({ cultures: (["es", "en"] as const).map(entry => ({ culture: entry, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] })) });
     if (path === "/api/forms/person-attributes") return json({ items: [attribute] });
+    // The largest group of what the fixed filters leave, grouped by the person filters, labelled in the menu language like the server.
+    if (path === "/api/forms/recipient-maximums" && request.method === "POST") {
+      const { source } = await request.json() as { source: FormQuestionSource };
+      const fixed = (source.match ?? []).flatMap(match => "value" in match ? [match] : []);
+      const byPerson = (source.match ?? []).flatMap(match => "personAttributeId" in match ? [match.fieldId] : []);
+      const groups = new Map<string, CatalogItem[]>();
+      for (const item of items.filter(item => fixed.every(match => item.fields?.[match.fieldId] === match.value))) {
+        const key = JSON.stringify(byPerson.map(field => item.fields?.[field] ?? null));
+        groups.set(key, [...(groups.get(key) ?? []), item]);
+      }
+      const largest = [...groups.values()].sort((left, right) => right.length - left.length)[0] ?? [], first = largest[0];
+      const result: RecipientMaximum = { maximum: largest.length, maximumLabel: byPerson.length && first ? byPerson.map(field => first.fieldTexts?.[field]?.[culture] ?? "").join(" · ") : null };
+      return json(result);
+    }
     if (path === "/api/forms/recipient-samples") return json(page(samples.filter(sample => sample.name.toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase())), url.searchParams));
     if (path === "/api/forms/definitions/" + definition.id + "/recipient-previews" && request.method === "POST") {
       const body = await request.json() as RecipientPreviewBody;

@@ -62,7 +62,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(description).toBeDisabled();
     await recipient(page, editor, language, "Juan Gómez");
     await expect(editor.getByText(label("14 opciones", "14 options"), { exact: true })).toBeVisible();
-    const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
+    await expect(editor.getByText(label("Como mucho 14 por persona (Centro, la más grande): entra en una pregunta de varias (20).", "At most 14 per person (Center, the largest): fits in a multiple-choice question (20)."), { exact: true })).toBeVisible();
+    const preview =page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
     const suppliers = preview.getByRole("group", { name: label("Proveedores a consultar", "Suppliers to contact"), exact: true });
     await expect(suppliers.getByRole("checkbox")).toHaveCount(14);
     await expect(suppliers.getByText("30-71234567-8 · " + label("Centro", "Center"), { exact: true })).toBeVisible();
@@ -88,6 +89,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const fixed = editor.getByRole("textbox", { name: label("Valor fijo", "Fixed value"), exact: true });
     await fixed.fill("Frío");
     await expect(editor.getByText(label("7 opciones", "7 options"), { exact: true })).toBeVisible();
+    await expect(editor.getByText(label("Como mucho 7 por persona (Centro, la más grande): entra en una pregunta de varias (20).", "At most 7 per person (Center, the largest): fits in a multiple-choice question (20)."), { exact: true })).toBeVisible();
     await expect(suppliers.getByRole("checkbox")).toHaveCount(7);
     await fixed.scrollIntoViewIfNeeded();
     await contained(page, editor, width);

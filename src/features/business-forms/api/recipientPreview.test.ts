@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { api } from "@/shared/api/httpClient";
-import { fetchRecipientSamples, previewRecipient, readRecipientPreview, readRecipientSamples } from "./recipientPreview";
+import { fetchRecipientMaximum, fetchRecipientSamples, previewRecipient, readRecipientMaximum, readRecipientPreview, readRecipientSamples } from "./recipientPreview";
 
 // Synthetic E2-3 DTOs; the final joint HTTP export qualifies the real producer separately.
 const guid = (value: number) => "01990000-0000-7000-8000-" + String(value).padStart(12, "0");
@@ -9,6 +9,22 @@ const body = { type: "choice" as const, source: { catalog: catalogId, match: [{ 
 const preview = { recipient: { id: personId, name: "Juan Gómez", values: [{ attributeId, name: "Zona", text: "Centro" }] }, state: "Ready", optionCount: 1, limit: 200, exceedsLimit: false, options: [{ id: optionId, title: "Proveedor", description: null }] };
 const page = { items: [{ id: personId, name: "Juan Gómez" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false };
 afterEach(() => vi.restoreAllMocks());
+it("reads a closed recipient maximum and rejects extra or null-shaped data", async () => {
+  const perPerson = { maximum: 18, maximumLabel: "Zona Sur" }, shared = { maximum: 180, maximumLabel: null };
+  expect(readRecipientMaximum(perPerson)).toEqual(perPerson);
+  expect(readRecipientMaximum(shared)).toEqual(shared);
+  for (const invalid of [null, {}, { maximum: 18 }, { maximumLabel: null }, { maximum: null, maximumLabel: null }, { maximum: "18", maximumLabel: null }, { maximum: -1, maximumLabel: null }, { maximum: 1.5, maximumLabel: null }, { maximum: 18, maximumLabel: "" }, { ...perPerson, limit: 20 }, { ...perPerson, private: "PRIVATE" }]) {
+    expect(() => readRecipientMaximum(invalid)).toThrow("Unsupported recipient preview response.");
+  }
+  try { readRecipientMaximum({ ...perPerson, private: "PRIVATE" }); } catch (error) { expect(JSON.stringify(error)).not.toContain("PRIVATE"); expect(error).not.toHaveProperty("issues"); }
+  // Only the filters travel: no person, form or presentation.
+  const signal = new AbortController().signal, source = { catalog: catalogId, match: body.source.match };
+  const post = vi.spyOn(api, "post").mockResolvedValue(perPerson);
+  expect(await fetchRecipientMaximum(source, signal)).toEqual(perPerson);
+  expect(post).toHaveBeenCalledExactlyOnceWith("/api/forms/recipient-maximums", { source }, { signal, cache: "no-store" });
+  await expect(fetchRecipientMaximum({ ...source, catalog: "not-an-id" })).rejects.toThrow("Unsupported recipient preview response.");
+  expect(post).toHaveBeenCalledTimes(1);
+});
 it("reads a closed sample page without accepting user internals or invalid identities", () => {
   expect(readRecipientSamples(page)).toEqual(page);
   for (const invalid of [{ ...page, items: [{ ...page.items[0], email: "PRIVATE" }] }, { ...page, items: [{ id: "invalid", name: "PRIVATE" }] }, { ...page, private: "PRIVATE" }]) expect(() => readRecipientSamples(invalid)).toThrow("Unsupported recipient preview response.");

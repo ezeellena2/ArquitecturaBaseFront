@@ -4,9 +4,10 @@ import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "@/shared/api/ApiError";
 import { createQueryClient } from "@/shared/api/queryClient";
-import { previewRecipient } from "../api/recipientPreview";
-import { useRecipientPreview } from "./useRecipientPreview";
-vi.mock("../api/recipientPreview", () => ({ previewRecipient: vi.fn() }));
+import { fetchRecipientMaximum, previewRecipient } from "../api/recipientPreview";
+import type { DraftQuestionSource } from "../model";
+import { useRecipientMaximum, useRecipientPreview } from "./useRecipientPreview";
+vi.mock("../api/recipientPreview", () => ({ previewRecipient: vi.fn(), fetchRecipientMaximum: vi.fn() }));
 const scope = { actorId: "actor", culture: "es" as const, permissions: ["formtemplates.read", "formtemplates.manage", "formcatalogs.read"] };
 const source = { catalog: "catalog", match: [{ fieldId: "branch", personAttributeId: "attribute" }] };
 const data = (name: string) => ({ recipient: { id: name, name, values: [] }, state: "Ready" as const, optionCount: 1, limit: 200 as const, exceedsLimit: false, options: [{ id: "option", title: name, description: null }] });
@@ -32,3 +33,61 @@ it("does not show the wait of a 429 on a later preview that cannot be retried", 
  vi.mocked(previewRecipient).mockRejectedValueOnce(new ApiError(429, {})); act(() => result.current.select({ id: "Ana", name: "Ana" })); await waitFor(() => expect(result.current.error).toBeInstanceOf(ApiError)); expect(result.current).toMatchObject({ canRetry: false, waitSeconds: 60 });
  vi.mocked(previewRecipient).mockRejectedValueOnce(new ApiError(409, { code: "Forms.Catalog.FilterUnavailable" })); act(() => result.current.select({ id: "Luis", name: "Luis" })); await waitFor(() => expect((result.current.error as ApiError | null)?.status).toBe(409));
  expect(result.current).toMatchObject({ canRetry: false, waitSeconds: 0 }); expect(previewRecipient).toHaveBeenCalledTimes(2); });
+
+const shared = (maximum: number) => ({ maximum, maximumLabel: null });
+const fixed = (value: string | null): DraftQuestionSource => ({ catalog: "catalog", match: [{ fieldId: "kind", value }] });
+function mountMaximum(initial: DraftQuestionSource | null, permissions = scope.permissions) {
+  return renderHook(({ value, actorId }) => useRecipientMaximum({ ...scope, actorId, permissions }, value), { initialProps: { value: initial, actorId: "actor" } });
+}
+it("reads the maximum only for complete filters with the three permissions, without the presentation or a body cache", async () => {
+  vi.mocked(fetchRecipientMaximum).mockImplementation(body => Promise.resolve(shared(body.match?.length ?? 0)));
+  const denied = mountMaximum(source, ["formtemplates.read", "formtemplates.manage"]);
+  const { result, rerender } = mountMaximum(fixed(null));
+  rerender({ value: { catalog: "catalog", match: [] }, actorId: "actor" });
+  await act(async () => {});
+  expect(denied.result.current.result).toBeNull();
+  expect(result.current.result).toBeNull();
+  expect(fetchRecipientMaximum).not.toHaveBeenCalled();
+  rerender({ value: { ...source, presentation: { title: ["code"], description: [] } }, actorId: "actor" });
+  await waitFor(() => expect(result.current.result).toEqual(shared(1)));
+  expect(fetchRecipientMaximum).toHaveBeenCalledExactlyOnceWith(source, expect.any(AbortSignal));
+  // The presentation does not change the maximum: choosing another one reads nothing again.
+  rerender({ value: { ...source, presentation: { title: ["text"], description: [] } }, actorId: "actor" });
+  expect(result.current.result).toEqual(shared(1));
+  // Another owner drops the answer at once; losing the filters aborts its read.
+  let signal!: AbortSignal;
+  vi.mocked(fetchRecipientMaximum).mockImplementationOnce((_body, abort) => { signal = abort!; return new Promise(() => {}); });
+  rerender({ value: source, actorId: "other" });
+  expect(result.current.result).toBeNull();
+  await waitFor(() => expect(fetchRecipientMaximum).toHaveBeenCalledTimes(2));
+  rerender({ value: null, actorId: "other" });
+  expect(signal.aborted).toBe(true);
+});
+it("retries a failed maximum only by explicit action and waits the Retry-After of a 429", async () => {
+  vi.mocked(fetchRecipientMaximum).mockReset().mockRejectedValueOnce(new ApiError(500, { traceId: "trace" })).mockResolvedValue(shared(18));
+  const { result, rerender } = mountMaximum(source);
+  await waitFor(() => expect(result.current.failed).toBe(true));
+  expect(result.current).toMatchObject({ result: null, canRetry: true, waitSeconds: 0 });
+  act(() => result.current.retry());
+  await waitFor(() => expect(result.current.result).toEqual(shared(18)));
+  expect(result.current.failed).toBe(false);
+  expect(fetchRecipientMaximum).toHaveBeenCalledTimes(2);
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+  vi.mocked(fetchRecipientMaximum).mockRejectedValueOnce(new ApiError(429, { retryAfter: 2 }));
+  rerender({ value: fixed("cold"), actorId: "actor" });
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(result.current).toMatchObject({ result: null, failed: true, canRetry: false, waitSeconds: 2 });
+  act(() => result.current.retry());
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  expect(result.current).toMatchObject({ failed: true, canRetry: true, waitSeconds: 0 });
+  expect(fetchRecipientMaximum).toHaveBeenCalledTimes(3);
+  act(() => result.current.retry());
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(result.current.result).toEqual(shared(18));
+  expect(fetchRecipientMaximum).toHaveBeenCalledTimes(4);
+  // Rejected filters are not a failure to retry: the filters themselves say what is wrong.
+  vi.mocked(fetchRecipientMaximum).mockRejectedValueOnce(new ApiError(400, { code: "Forms.Publication.MatchInvalid" }));
+  rerender({ value: fixed("other"), actorId: "actor" });
+  await act(() => vi.advanceTimersByTimeAsync(0));
+  expect(result.current).toMatchObject({ result: null, failed: false, canRetry: false, waitSeconds: 0 });
+});

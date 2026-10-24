@@ -6,6 +6,7 @@ import { expect, it, vi } from "vitest";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { CatalogQuestionSettings } from "./CatalogQuestionSettings";
+import type { DraftQuestionSource } from "../model";
 
 it("keeps a catalog reference readonly without reading catalogs when the author lacks permission", async () => {
   const onCatalogChange = vi.fn();
@@ -153,4 +154,44 @@ it("keeps Retry disabled during the wait of a 429 on the recipient samples", asy
   expect(retry).toBeDisabled();
   expect(retry).toHaveAccessibleDescription("Esperá 5 segundos para volver a intentar.");
   expect(requests.samples).toBe(1);
+});
+
+const maximumCatalog = "01990000-0000-7000-8000-0000000000a1", zones = "01990000-0000-7000-8000-0000000000a2", zone = "01990000-0000-7000-8000-0000000000a3", category = "01990000-0000-7000-8000-0000000000a4", attribute = "01990000-0000-7000-8000-0000000000a5";
+const filterField = (id: string, key: string, es: string, type: "catalog" | "text", position: number) => ({ id, key, name: { es, en: es }, type, sourceCatalogId: type === "catalog" ? zones : null, required: false, unique: false, min: null, max: null, maxLength: type === "text" ? 80 : null, role: "filter", position, isActive: true, valuesCount: 3, usedBy: [] });
+type MaximumBody = { source: { match: { personAttributeId?: string }[] } };
+function serveMaximum(answer: (body: MaximumBody, call: number) => Response) {
+  const bodies: MaximumBody[] = [];
+  server.use(
+    http.get("/api/forms/catalogs", () => HttpResponse.json({ filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } }, ...page([{ id: maximumCatalog, name: "Proveedores", description: null, origin: "Manual", valueType: "Text", optionsCount: 200, usageCount: 0, state: "Active", stateReason: null, canEdit: true }]) })),
+    http.get("/api/forms/catalogs/:id", () => HttpResponse.json({ ...detail(maximumCatalog, "Manual"), name: { es: "Proveedores", en: "Suppliers" }, itemsCount: 200, fields: [filterField(zone, "zone", "Zona", "catalog", 1), filterField(category, "category", "Rubro", "text", 2)] })),
+    http.get("/api/forms/catalogs/:id/items", () => HttpResponse.json(page([]))),
+    http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [{ id: attribute, key: "zone", name: { es: "Zona", en: "Zone" }, type: "Catalog", sourceCatalogId: zones, sourceCatalogName: "Zonas", position: 0, isActive: true, revision: 1, usedBy: [] }] })),
+    http.post("/api/forms/recipient-maximums", async ({ request }) => { const body = await request.json() as MaximumBody; bodies.push(body); return answer(body, bodies.length); }));
+  return bodies;
+}
+// No person is chosen and the form is not saved: the maximum depends only on the filters.
+const maximumQuestion = (type: "choice" | "multiChoice", match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} type={type} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
+
+it("tells the maximum per person and that everyone sees the same options with only fixed filters", async () => {
+  const bodies = serveMaximum(body => HttpResponse.json(body.source.match.some(match => match.personAttributeId) ? { maximum: 18, maximumLabel: "Zona Sur" } : { maximum: 180, maximumLabel: null }));
+  const view = renderWithProviders(maximumQuestion("multiChoice", [{ fieldId: zone, personAttributeId: attribute }]));
+  expect(await screen.findByText("Como mucho 18 por persona (Zona Sur, la más grande): entra en una pregunta de varias (20).")).toBeInTheDocument();
+  view.rerender(maximumQuestion("choice", [{ fieldId: category, value: "Frío" }]));
+  expect(await screen.findByText("Todos ven las mismas 180: entra en el desplegable (200).")).toBeInTheDocument();
+  expect(screen.queryByText(/Como mucho/)).not.toBeInTheDocument();
+  view.rerender(maximumQuestion("multiChoice", [{ fieldId: category, value: "Frío" }]));
+  expect(await screen.findByText("Todos ven las mismas 180: no entra en una pregunta de varias (20).")).toBeInTheDocument();
+  // The limit comes from the question type: changing only the type reads nothing again.
+  expect(bodies).toEqual([{ source: { catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }] } }, { source: { catalog: maximumCatalog, match: [{ fieldId: category, value: "Frío" }] } }]);
+});
+
+it("offers Retry when the maximum per person cannot be read", async () => {
+  const bodies = serveMaximum((_body, call) => call === 1 ? HttpResponse.json({ title: "Error", status: 500, traceId: "trace" }, { status: 500 }) : HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  renderWithProviders(maximumQuestion("multiChoice", [{ fieldId: zone, personAttributeId: attribute }]));
+  const failed = await screen.findByRole("alert");
+  expect(failed).toHaveTextContent("No pudimos calcular cuántas opciones ve cada persona.");
+  await userEvent.click(within(failed).getByRole("button", { name: "Reintentar" }));
+  expect(await screen.findByText("Como mucho 18 por persona (Zona Sur, la más grande): entra en una pregunta de varias (20).")).toBeInTheDocument();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(bodies).toHaveLength(2);
 });
