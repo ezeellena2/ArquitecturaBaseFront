@@ -21,7 +21,7 @@ export type PersonData = z.infer<typeof data>;
 export type PersonDataRow = z.infer<typeof row>;
 export type PersonAttributeOption = z.infer<typeof option>;
 export interface PersonAttributeBody { readonly key: string; readonly name: Readonly<{ es: string; en?: string }>; readonly type: "Catalog" | "Text"; readonly sourceCatalogId: string | null }
-export interface UpdatePersonAttributeBody extends Omit<PersonAttributeBody, "key"> { readonly expectedRevision: number; readonly position: number; readonly isActive: boolean }
+export interface UpdatePersonAttributeBody extends Omit<PersonAttributeBody, "key"> { readonly expectedRevision: number; readonly position: number; readonly isActive: boolean; readonly confirmValueRemoval?: true }
 export interface PersonDataBody { readonly expectedRevision: number | null; readonly values: Readonly<Record<string, string | null>> }
 export interface PersonDataPageQuery { readonly page: number; readonly pageSize: number; readonly sort?: "displayName" | "-displayName"; readonly search?: string }
 export interface PersonAttributeOptionsQuery { readonly page: number; readonly pageSize: number; readonly sort?: "text" | "-text"; readonly search?: string }

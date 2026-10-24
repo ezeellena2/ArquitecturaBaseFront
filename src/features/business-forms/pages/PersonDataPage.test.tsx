@@ -11,9 +11,9 @@ vi.mock("react-oidc-context", async () => { const actual = await vi.importActual
 const id = "01990000-0000-7000-8000-000000000001", userId = "01990000-0000-7000-8000-000000000002";
 const attribute = { id, key: "branch", name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, sourceCatalogName: null, position: 1, isActive: true, revision: 1, usedBy: [] };
 const people = { items: [{ userId, displayName: "Juan Gómez", values: { [id]: { value: "Centro", text: "Centro" } } }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false };
-async function mount(permissions: string[]) {
+async function mount(permissions: string[], items: unknown[] = [attribute]) {
  let reads = 0;
- server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [attribute] })), http.get("/api/forms/person-data", () => { reads++; return HttpResponse.json(people); }));
+ server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items })), http.get("/api/forms/person-data", () => { reads++; return HttpResponse.json(people); }));
  await act(async () => { renderWithProviders(<MemoryRouter><PersonDataPage /></MemoryRouter>); });
  return () => reads;
 }
@@ -43,4 +43,34 @@ it("creates a text attribute with an immutable key and without reading catalogs"
  await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  await waitFor(() => expect(bodies).toEqual([{ key: "site", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
+});
+it("asks to confirm clearing stored values when the type changes and resends with the confirmation", async () => {
+ const zone = { ...attribute, type: "Catalog", sourceCatalogId: "01990000-0000-7000-8000-000000000004", sourceCatalogName: "Zonas" };
+ const notConfirmed = "Confirmá que querés cambiar el dato y borrar los valores que tienen cargados las personas.";
+ const bodies: unknown[] = [];
+ await mount(["formpersondata.manage"], [zone]);
+ server.use(http.put(`/api/forms/person-attributes/${id}`, async ({ request }) => {
+  bodies.push(await request.json());
+  return bodies.length === 1
+   ? HttpResponse.json({ status: 400, detail: notConfirmed, code: "Forms.PersonAttribute.ValueRemovalNotConfirmed", traceId: "trace", errors: { type: [notConfirmed] }, count: 3 }, { status: 400 })
+   : HttpResponse.json({ ...zone, type: "Text", sourceCatalogId: null, sourceCatalogName: null, revision: 2 });
+ }));
+ await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
+ await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ const confirm = await dialog.findByRole("checkbox", { name: "Sí, cambiar el dato y borrar los valores de 3 personas" });
+ expect(dialog.getByText(notConfirmed)).toBeInTheDocument();
+ await userEvent.click(confirm);
+ expect(confirm).toBeChecked();
+ await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Catalog");
+ await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
+ expect(confirm).not.toBeChecked();
+ await userEvent.click(confirm);
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar dato" })).not.toBeInTheDocument());
+ expect(bodies).toEqual([
+  { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true },
+  { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true, confirmValueRemoval: true },
+ ]);
 });

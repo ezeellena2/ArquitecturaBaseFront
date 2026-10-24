@@ -7,7 +7,7 @@ import { fetchPersonAttributes, fetchPersonAttributeOptions, fetchPersonData, fe
 
 // Raw bodies from the joint backend export are read unchanged.
 const cohort = httpCohort("personData");
-const names = ["attribute-created", "person-options", "person-data-empty", "person-data-saved", "person-data", "people", "conflict", "invalid-value", "attribute-updated", "attributes", "forbidden", "source-in-use"];
+const names = ["attribute-created", "person-options", "person-data-empty", "person-data-saved", "person-data", "people", "conflict", "invalid-value", "attribute-updated", "attributes", "forbidden", "source-in-use", "attribute-value-removal-confirmation"];
 it("qualifies all person data captures and their actual HTTP producer", () => {
   const provenance = cohort.verify();
   expect(provenance.captures.map(item => item.name).sort()).toEqual(["es", "en"].flatMap(culture => names.map(name => name + "-" + culture + ".json")).sort());
@@ -44,5 +44,7 @@ for (const culture of ["es", "en"]) {
       expect(error.parse(cohort.json(file + "-" + culture + ".json")).code).toBe(code);
     }
     expect(z.object({ status: z.literal(403) }).parse(cohort.json("forbidden-" + culture + ".json")).status).toBe(403);
+    const removal = z.object({ code: z.literal("Forms.PersonAttribute.ValueRemovalNotConfirmed"), errors: z.object({ type: z.array(z.string()).min(1) }), count: z.number().int().min(1) }).parse(cohort.json("attribute-value-removal-confirmation-" + culture + ".json"));
+    expect(removal.count).toBe(1);
   });
 }

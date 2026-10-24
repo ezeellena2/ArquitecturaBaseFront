@@ -43,6 +43,7 @@ Familias:
 ### Datos de personas
 
 - `personData.ts` cierra metadatos, tabla sin correo, valores por GUID y opciones exclusivas id/text. La fuente Catalog exige identidad; Text, null. Del nombre, sólo el español es obligatorio. Revisión inicial null, primera escritura 1 y edición exactamente siguiente con misma persona/atributo; no retiene issues. Todas las llamadas son no-store y cancelables, sin MutationCache.
+- El PUT de un atributo suma `confirmValueRemoval: true` sólo para confirmar el borrado de los valores cargados al cambiar tipo o fuente; si no, se omite.
 - PUT de datos envía delta: ausente conserva, null limpia; los valores inactivos no se devuelven. El selector paginado de opciones no requiere CatalogsRead. `personDataHttpContract` consume los cuerpos intactos de la cohorte `personData` de la corrida conjunta.
 
 ### Vista previa por persona

@@ -270,6 +270,8 @@
     "editAttribute": "Edit attribute",
     "attributeActive": "Active attribute",
     "inUse": "Used in these forms. While in use, its type and source cannot change and it cannot be deactivated.",
+    "confirmValueRemoval_one": "Yes, change the attribute and delete the value one person has",
+    "confirmValueRemoval_other": "Yes, change the attribute and delete the values of {{count}} people",
     "people": "People",
     "person": "Person",
     "noAttributes": "No attributes have been defined yet.",
