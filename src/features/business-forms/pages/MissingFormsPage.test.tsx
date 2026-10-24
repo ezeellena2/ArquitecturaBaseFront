@@ -78,10 +78,20 @@ it("does not apply an old actor's discard result or retain its query data",async
 });
 it("does not replace an already edited new draft with a later navigation seed",async()=>{
  setup(["formtemplates.manage","formtemplates.read"]);
- const {router}=renderRouteWithProviders("/formularios/nuevo",{state:{formSeed:{ownerActorId:"actor",name:"Tema original",originalCulture:"es"}}});
+ const {router}=renderRouteWithProviders("/formularios/nuevo",{state:{formSeed:{ownerActorId:"actor",name:"Tema original"}}});
  const name=await screen.findByLabelText("Nombre");await userEvent.type(name," editado");
- await act(async()=>{await router.navigate("/formularios/nuevo",{replace:true,state:{formSeed:{ownerActorId:"actor",name:"Otra semilla",originalCulture:"es"}}});});
+ await act(async()=>{await router.navigate("/formularios/nuevo",{replace:true,state:{formSeed:{ownerActorId:"actor",name:"Otra semilla"}}});});
  expect(screen.getByLabelText("Nombre")).toHaveValue("Tema original editado");
+});
+
+// The form is written in the menu language, which is its original, whatever the topic's language.
+it("creates the form for a topic in the other language with its name and prefix in the menu language",async()=>{
+ setup(["formtemplates.manage","formtemplates.read"]);
+ renderRouteWithProviders("/formularios/nuevo",{state:{formSeed:{ownerActorId:"actor",name:"Customer complaints"}}});
+ const name=await screen.findByLabelText("Nombre");expect(name).toHaveValue("Customer complaints");
+ await userEvent.click(name);await userEvent.paste(" del local");
+ const prefix=screen.getByLabelText("Prefijo de numeración");expect(prefix).not.toHaveAttribute("readonly");expect(prefix).not.toHaveValue("");
+ await userEvent.clear(prefix);await userEvent.type(prefix,"REC");expect(prefix).toHaveValue("REC");
 });
 
 it("recovers a throttled refresh explicitly while retaining the previously loaded rows",async()=>{
