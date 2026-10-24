@@ -34,11 +34,18 @@ it("keeps recipient warnings nonblocking, including a maximum below the limit", 
   const warnings = [{ fieldId: id(1), path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh", message: "Como mucho 18 de 20.", limit: 20, maximum: 18, maximumLabel: "Norte" }, { fieldId: id(1), path: "draft.fields[0].source.match", code: "Forms.Publication.RecipientsWithoutData", message: "Faltan datos.", count: 2, people: ["Ana", "Luis"] }];
   expect(readFormPublicationCheck({ ...checked, warnings }, id(8), 1, [question])).toMatchObject({ canAccept: true, warnings });
 });
-it.each([undefined, null, [{ fieldId: id(99), path: "source", code: "x", message: "x" }], [{ fieldId: id(1), path: "source", code: "x", message: "x", people: Array(6).fill("person") }]])("rejects missing or foreign warning metadata", warnings => {
-  expect(() => readFormPublicationCheck({ ...checked, warnings }, id(8), 1, [question])).toThrow("Unsupported form response.");
-});
 const maximumWarning = { fieldId: id(1), path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh", message: "Revisá el máximo.", limit: 20, maximum: 1 };
 const missingDataWarning = { fieldId: id(1), path: "draft.fields[0].source.match", code: "Forms.Publication.RecipientsWithoutData", message: "Faltan datos.", count: 1, people: [] };
+it.each([
+  undefined,
+  null,
+  [{ ...missingDataWarning, fieldId: id(99) }],
+  [{ ...missingDataWarning, people: Array(6).fill("person") }],
+  [{ ...maximumWarning, maximumLabel: "" }],
+  [{ ...missingDataWarning, people: [""] }],
+])("rejects missing, foreign, unbounded or empty warning metadata: %j", warnings => {
+  expect(() => readFormPublicationCheck({ ...checked, warnings }, id(8), 1, [question])).toThrow("Unsupported form response.");
+});
 it("accepts each warning code with only its own details, including people without a name", () => {
   expect(readFormPublicationCheck({ ...checked, warnings: [maximumWarning, missingDataWarning] }, id(8), 1, [question]).warnings).toEqual([maximumWarning, missingDataWarning]);
 });
