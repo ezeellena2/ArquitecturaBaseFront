@@ -74,9 +74,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // On the phone the option editor gives each typed field its type and range.
     if (width < 640) await expect(payment).toHaveAccessibleDescription(es ? "Entero, de 0 a 180." : "Whole number, from 0 to 180.");
     await payment.fill(es ? "treinta" : "thirty"); await expect(payment).toHaveAttribute("aria-invalid", "true");
-    // The value and its reason; in the table, on a line under the row that names the row and the field.
+    // The value and its reason; in the table, on a line under the row that names the row and the field. On the phone the
+    // read-only table above also marks its cell, so the editor's control is what says it.
     const problem = es ? "«treinta» no es un número entero." : "“thirty” is not a whole number.";
-    await expect(page.getByText(width < 640 ? problem : (es ? "Fila 1 · " : "Row 1 · ") + term + ": " + problem, { exact: true })).toBeVisible();
+    if (width < 640) await expect(payment).toHaveAccessibleDescription(problem);
+    else await expect(page.getByText((es ? "Fila 1 · " : "Row 1 · ") + term + ": " + problem, { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeDisabled();
     await payment.scrollIntoViewIfNeeded(); await contained(page, payment, width);
     await page.screenshot({ path: info.outputPath("ce2-invalid-typed-value.png"), fullPage: true });
