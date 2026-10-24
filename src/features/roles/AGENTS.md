@@ -4,7 +4,7 @@ Contiene catálogo/listado, alta y edición en ruta propia y selector de permiso
 
 ## Al modificar
 
-- Las páginas de edición usan `backTo`, guarda de cambios y hoja de migas; durante guardado desactivan la guarda.
+- Las páginas de edición usan `backTo`, guarda de cambios y hoja de migas; durante guardado desactivan la guarda. Guardar se habilita solo con cambios y se deshabilita mientras guarda: el encabezado no dice «Cambios sin guardar».
 - Los datos del rol viven en `Surface padded`, separados de `FilterBar` y la superficie de permisos.
 - El selector agrupa filas con nombres accesibles. No usar `fieldset` dentro de una tabla ni perder etiquetas al plegar áreas.
 - Un único Button outline alterna Expandir todo/Contraer todo según las áreas visibles; actúa sobre el catálogo completo, incluidos módulos opcionales. Sólo cambia la vista, también en Admin, sin tocar selección ni estado de guardado. Cada búsqueda/filtro nuevo abre resultados; después se pueden plegar explícitamente. Sin resultados se deshabilita; conservar aria-expanded/aria-controls y foco de teclado.

@@ -247,6 +247,7 @@ crecen todos a 44 px en móvil.
 - Editor: datos en `Surface padded`, Descripción debajo de Nombre (672 px máximo), sin insignia para Admin y User;
   búsqueda y filtro Elegidos en una barra como `UsersFilterBar`. Una tabla con encabezados Permiso, Descripción y Asignado una vez; cada
   área es un `tbody` con `aria-labelledby`, abierto o cerrado. En móvil, 520 px mínimos con scroll contenido.
+- Cancelar y Guardar en la banda de `Page`. Guardar se habilita solo con cambios, sin «Cambios sin guardar» junto al título.
 - El check de sección admite vacío, parcial y completo; actúa sobre toda el área, aun cerrada o filtrada, y no toca otras.
   Admin ve los checks deshabilitados.
 - Encabezados de área con `TableRow tone="section"` (derivado de la cabecera de Apariencia), igual abiertos o cerrados.

@@ -407,7 +407,12 @@ describe("RoleEditorPage", () => {
 
     renderRouteWithProviders("/roles/nuevo");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Guardar" }));
+    // Un rol nuevo sin nada cargado no tiene qué guardar; elegir un permiso ya es un cambio, y el nombre se pide al
+    // intentar guardarlo.
+    const save = await screen.findByRole("button", { name: "Guardar" });
+    expect(save).toBeDisabled();
+    await userEvent.click(screen.getByRole("checkbox", { name: "Ver usuarios" }));
+    await userEvent.click(save);
 
     const name = screen.getByRole("textbox", { name: "Nombre" });
     expect(await screen.findByText("Poné un nombre.")).toBeInTheDocument();
@@ -731,25 +736,29 @@ describe("RoleEditorPage", () => {
     await waitFor(() => expect(currentCrumb()?.textContent).toBe("Mesa de ayuda"));
   });
 
-  it("says there are unsaved changes, until they are undone", async () => {
+  it("enables Save only while there are changes and shows no unsaved status", async () => {
     server.use(...editorHandlers());
 
     await renderSupport();
 
-    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+    // Guardar habilitado ya dice que hay cambios: el encabezado no lo repite al lado del título.
+    const save = screen.getByRole("button", { name: "Guardar" });
+    expect(save).toBeDisabled();
 
     await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
-    expect(screen.getByText("Cambios sin guardar")).toBeInTheDocument();
+    expect(save).toBeEnabled();
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
 
     // Volver a lo que estaba no es un cambio, aunque se haya tocado.
     await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
-    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+    expect(save).toBeDisabled();
 
     await userEvent.type(screen.getByRole("textbox", { name: "Descripción" }), "!");
-    expect(screen.getByText("Cambios sin guardar")).toBeInTheDocument();
+    expect(save).toBeEnabled();
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByRole("textbox", { name: "Descripción" }), "{Backspace}");
-    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+    expect(save).toBeDisabled();
   });
 
   it("goes straight back to the listing on Cancel when there is nothing to lose", async () => {

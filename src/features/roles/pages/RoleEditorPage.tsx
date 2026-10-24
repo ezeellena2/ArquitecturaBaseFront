@@ -327,13 +327,6 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     );
   }
 
-  const status = isDirty ? (
-    <span className="text-xs text-[var(--color-content-muted)]">
-      <span aria-hidden="true">· </span>
-      {t("editor.unsaved")}
-    </span>
-  ) : undefined;
-
   const actions = !isReady ? undefined : isAdmin ? (
     // Admin no se cambia: en lugar de los botones, lo que tiene.
     <span className="text-xs text-[var(--color-content-muted)]">{t("editor.allPermissions")}</span>
@@ -342,15 +335,16 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
       <Button asChild variant="outline">
         <Link to="/roles">{t("common:actions.cancel")}</Link>
       </Button>
-      {/* Está en la banda, afuera del formulario: `form` lo ata a él, y así Enter en el nombre también guarda. */}
-      <Button type="submit" form={formId} disabled={mutation.isPending}>
+      {/* Está en la banda, afuera del formulario: `form` lo ata a él, y así Enter en el nombre también guarda.
+          Sin cambios se deshabilita: habilitado ya dice que hay algo que guardar, sin un «Cambios sin guardar». */}
+      <Button type="submit" form={formId} disabled={mutation.isPending || !isDirty}>
         {mutation.isPending ? t("editor.saving") : t("form.submit")}
       </Button>
     </>
   );
 
   return (
-    <Page backTo={{ to: "/roles", label: t("editor.back") }} title={title} status={status} actions={actions}>
+    <Page backTo={{ to: "/roles", label: t("editor.back") }} title={title} actions={actions}>
       {loadError ? (
         <EmptyState
           title={t("editor.loadError")}
