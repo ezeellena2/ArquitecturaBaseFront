@@ -134,3 +134,14 @@ it("shows read-only typed values with one format per type", () => {
   expect(screen.getByRole("cell", { name: "16/03/2027" })).toBeInTheDocument();
   expect(screen.getByRole("cell", { name: "1.500,5" })).toBeInTheDocument();
 });
+it("shows the read-only value of a number catalog with the shared format, not as written", () => {
+  renderWithProviders(<CatalogManualItemsEditor items={[{ ...first, value: "1500,5" }]} scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} culture="es" valueType="Decimal" canManage={false} expandedKey={null} onExpand={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />);
+  expect(screen.getByRole("cell", { name: "1.500,5" })).toBeInTheDocument();
+});
+it("formats read-only typed values in the draft culture while the texts are shown in another language", () => {
+  const day = { ...newCatalogField("day", 1), id: "01990000-0000-7000-8000-000000000002", type: "date" as const, name: { es: "Entrega" } };
+  const row: CatalogManualItemValue = { ...first, value: "2027-03-15", fields: { [day.id]: "2027-03-16" } };
+  renderWithProviders(<CatalogManualItemsEditor items={[row]} fields={[day]} scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} culture="en" valueType="Date" canManage={false} expandedKey={null} onExpand={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />);
+  expect(screen.getByRole("cell", { name: "15/03/2027" })).toBeInTheDocument();
+  expect(screen.getByRole("cell", { name: "16/03/2027" })).toBeInTheDocument();
+});
