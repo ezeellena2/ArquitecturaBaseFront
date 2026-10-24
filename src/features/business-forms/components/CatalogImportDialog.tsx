@@ -19,7 +19,7 @@ import { fetchCatalog } from "../api/catalogs";
 import { applyCatalogImport, previewCatalogImport, type CatalogImportPreview } from "../api/catalogImports";
 import type { CatalogDetail } from "../api/catalogResponse";
 import { parseCatalogPaste } from "../catalogPaste";
-import { formatCatalogValue } from "../catalogValues";
+import { catalogScalarText, catalogTypedValueTypes } from "../catalogValues";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 
 export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; initialSource: "file" | "paste"; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void }
@@ -36,9 +36,8 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
     if (value === null || value === undefined) return "—";
     const type = fields.find(field => field.id === column)?.type;
     if (type === "catalog") return text ?? "—";
-    if (type === "boolean") return t(value === "true" ? "yes" : "no");
-    if (type === "integer" || type === "decimal" || type === "date") return formatCatalogValue(type === "integer" ? "Integer" : type === "decimal" ? "Decimal" : "Date", value, scope.culture);
-    return column === "value" ? formatCatalogValue(catalog.valueType, value, scope.culture) : value;
+    if (type === "boolean" || type === "integer" || type === "decimal" || type === "date") return catalogScalarText(type, value, scope.culture, { yes: t("yes"), no: t("no") });
+    return column === "value" && catalog.valueType !== "Text" ? catalogScalarText(catalogTypedValueTypes[catalog.valueType], value, scope.culture) : value;
   };
   const allowed = !!scope.actorId && scope.permissions.includes("formcatalogs.read") && scope.permissions.includes("formcatalogs.manage");
   const [state, setState] = useState(() => fresh(owner, catalog.revision, initialSource));

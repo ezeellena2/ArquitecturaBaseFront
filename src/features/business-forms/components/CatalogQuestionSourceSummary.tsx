@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { ApiError } from "@/shared/api/ApiError";
 import { useTranslation } from "react-i18next";
-import { formatDateOnly } from "@/shared/lib/dateTime";
 import type { CatalogField } from "../api/catalogResponse";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItemsById } from "../hooks/useCatalogQueries";
 import { usePersonAttributes } from "../hooks/usePersonData";
 import { localizedValue } from "../editorModel";
+import { catalogScalarText } from "../catalogValues";
 import type { DraftQuestionSource } from "../model";
 
 // The chosen option is read by id, so its label shows even beyond the first page or once it is inactive, never its GUID.
@@ -27,7 +27,7 @@ export function CatalogQuestionSourceSummary({ scope, source, compared }: { scop
     const peer = compared?.match?.find(item => item.fieldId === condition.fieldId);
     let value: ReactNode;
     if ("personAttributeId" in condition) value = localizedValue(attributes.data?.items.find(attribute => attribute.id === condition.personAttributeId)?.name ?? {}, scope.culture, "es") || t("catalogQuestion.filter.personData");
-    else value = field?.type === "catalog" ? condition.value ? <FixedCatalogValue scope={scope} field={field} value={condition.value}/> : t("translationPending") : field?.type === "boolean" ? t(condition.value === "true" ? "yes" : condition.value === "false" ? "no" : "translationPending") : field?.type === "decimal" && scope.culture === "es" ? (condition.value ?? "").replace(".", ",") : field?.type === "date" && condition.value ? formatDateOnly(condition.value, scope.culture, "numeric") ?? condition.value : condition.value ?? t("translationPending");
+    else value = field?.type === "catalog" ? condition.value ? <FixedCatalogValue scope={scope} field={field} value={condition.value}/> : t("translationPending") : condition.value === null ? t("translationPending") : field && field.type !== "text" ? catalogScalarText(field.type, condition.value, scope.culture, { yes: t("yes"), no: t("no") }) : condition.value;
     const changed = field?.type === "catalog" && "value" in condition && (!peer || !("value" in peer) || condition.value !== peer.value);
     return <span className="block" key={condition.fieldId}>{name(condition.fieldId)}: {value}{changed ? " · " + t("catalogQuestion.review.changedValue") : ""}</span>;
   })}

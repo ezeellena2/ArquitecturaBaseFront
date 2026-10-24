@@ -4,7 +4,8 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { CatalogQuestionSourceSummary } from "./CatalogQuestionSourceSummary";
 const field = vi.hoisted(() => ({ id: "field", name: { es: "Sucursal" }, type: "catalog", sourceCatalogId: "branches", isActive: true }));
 const south = vi.hoisted(() => ({ id: "01990000-0000-7000-8000-000000000077", code: "S", text: { es: "Sur", en: "South" }, detail: {}, value: null, position: 37, isActive: false, fields: {}, fieldTexts: {} }));
-vi.mock("../hooks/useCatalogQueries", () => ({ useCatalogDetail: () => ({ data: { fields: [field] } }), useCatalogItemsById: (_scope: unknown, catalogId: string, itemIds: readonly string[]) => ({ data: catalogId === "branches" && itemIds.includes(south.id) ? { items: [south] } : undefined }) }));
+const typedFields = vi.hoisted(() => [{ id: "amount", name: { es: "Importe" }, type: "decimal", sourceCatalogId: null, isActive: true }, { id: "units", name: { es: "Unidades" }, type: "integer", sourceCatalogId: null, isActive: true }]);
+vi.mock("../hooks/useCatalogQueries", () => ({ useCatalogDetail: () => ({ data: { fields: [field, ...typedFields] } }), useCatalogItemsById: (_scope: unknown, catalogId: string, itemIds: readonly string[]) => ({ data: catalogId === "branches" && itemIds.includes(south.id) ? { items: [south] } : undefined }) }));
 vi.mock("../hooks/usePersonData", () => ({ usePersonAttributes: () => ({ data: { items: [] } }) }));
 beforeEach(() => { field.type = "catalog"; });
 it("explains changed catalog values and selected presentation without exposing option identities", async () => {
@@ -18,3 +19,9 @@ it("explains changed catalog values and selected presentation without exposing o
 });
 
 it("does not call an incomplete boolean filter No", async () => { field.type = "boolean"; await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} source={{ catalog: "catalog", match: [{ fieldId: "field", value: null }] }}/>); }); expect(document.body).not.toHaveTextContent("Sucursal: No"); });
+
+it("shows fixed typed filter values with the shared format", async () => {
+  await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} source={{ catalog: "catalog", match: [{ fieldId: "amount", value: "1500.5" }, { fieldId: "units", value: "15000" }] }}/>); });
+  expect(screen.getByText("Importe: 1.500,5")).toBeInTheDocument();
+  expect(screen.getByText("Unidades: 15.000")).toBeInTheDocument();
+});

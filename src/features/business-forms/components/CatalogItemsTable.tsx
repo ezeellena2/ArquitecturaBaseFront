@@ -1,6 +1,6 @@
 import { Checkbox } from "@/shared/ui/checkbox";
 import { CatalogInlineInput } from "./CatalogInlineInput";
-import { formatCatalogValue, type CatalogValueType } from "../catalogValues";
+import { catalogScalarText, catalogTypedValueTypes, type CatalogValueType } from "../catalogValues";
 import { catalogItemColumns, catalogTableColumns } from "../catalogColumns";
 import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,7 +16,6 @@ import type { FormCulture } from "../model";
 import { unconvertedFieldValue, type CatalogFieldDraft } from "../catalogFields";
 import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
-import { formatDateOnly } from "@/shared/lib/dateTime";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
 export function CatalogItemsTable({ items, culture, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, sortPending, onExpand, onChange, onMove, onActionRef }: {
@@ -41,6 +40,8 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
   const readOnly = !canManage || busy;
   const editing = inline && canManage;
   const columns = catalogTableColumns(catalogItemColumns(valueType, culture, fields), editing).filter(column => !column.field || !visibleFieldIds || visibleFieldIds.includes(column.field.localId));
+  // Typed values are read and shown in the draft's culture, the one its editable text was written in.
+  const valueCulture = scope?.culture ?? culture, yesNo = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   return (
     <WideTable label={t("catalogs.items.title")}><TableHeader><TableRow>
       {canManage ? <TableHead scope="col"><Checkbox aria-label={t("catalogs.items.selectPage")} disabled={busy || !items.length} checked={selected.length === items.length && items.length > 0 ? true : selected.length ? "indeterminate" : false} onCheckedChange={value => onSelectAll(value === true)}/></TableHead> : null}
@@ -61,14 +62,14 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
               const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key];
               if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} error={error} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} />;
               else {
-                const shown = value === null || value === undefined ? "—" : field.type === "catalog" && texts ? localizedValue(texts, culture, "es") : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "boolean" ? t(value === "true" ? "catalogs.presentation.yes" : "catalogs.presentation.no") : field.type === "date" ? formatDateOnly(value, culture, "numeric") ?? value : value);
+                const shown = value === null || value === undefined ? "—" : field.type === "catalog" && texts ? localizedValue(texts, culture, "es") : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "text" ? value : catalogScalarText(field.type, value, valueCulture, yesNo, valueCulture));
                 // The text cell (below 640 px or without Manage) keeps its mark, such as a value the new type does not take.
                 content = error ? <><p>{shown}</p><p className="whitespace-normal text-xs text-[var(--color-danger)]">{error}</p></> : shown;
               }
             } else switch (column.id) {
               case "text": content = editing ? <CatalogInlineInput label={t("catalogs.items.inlineText", { number })} value={item.label[culture] ?? ""} readOnly={readOnly} count error={error} warning={warnings?.[item.localId]} onChange={value => onChange({ ...item, label: { ...item.label, [culture]: value } })}/> : <><p>{name}</p><p className="text-xs text-[var(--color-content-muted)]">{item.code}</p></>; break;
               case "code": content = <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineCode", { number })} value={item.code} readOnly={readOnly} error={error} onChange={code => onChange({ ...item, code })}/>; break;
-              case "value": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineValue", { number })} value={item.value ?? ""} readOnly={readOnly} type={column.inputType} inputMode={column.inputMode} error={error} onChange={value => onChange({ ...item, value: value || null })}/> : valueType === "Date" ? formatCatalogValue(valueType, item.value, culture) : item.value || "—"; break;
+              case "value": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineValue", { number })} value={item.value ?? ""} readOnly={readOnly} type={column.inputType} inputMode={column.inputMode} error={error} onChange={value => onChange({ ...item, value: value || null })}/> : valueType === "Text" || !item.value ? item.value || "—" : catalogScalarText(catalogTypedValueTypes[valueType], item.value, valueCulture, yesNo, valueCulture); break;
               case "detail": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineDetail", { number })} value={item.detail[culture] ?? ""} readOnly={readOnly} error={error} onChange={value => onChange({ ...item, detail: { ...item.detail, [culture]: value || null } })}/> : localizedValue(item.detail, culture, "es") || "—"; break;
               case "isActive": content = editing ? <Checkbox aria-label={t("catalogs.items.activeNamed", { name })} checked={item.isActive} disabled={readOnly} onCheckedChange={value => onChange({ ...item, isActive: value === true })}/> : <Badge variant="outline">{t(item.isActive ? "catalogs.items.active" : "catalogs.state.Inactive")}</Badge>; break;
             }

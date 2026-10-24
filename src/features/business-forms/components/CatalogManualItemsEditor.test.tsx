@@ -125,3 +125,12 @@ it("lets an inactive option clear a required boolean from its table cell", async
   await userEvent.click(screen.getByRole("button", { name: "Limpiar Fila 1 · Confirmado" }));
   expect(change).toHaveBeenLastCalledWith(expect.objectContaining({ localId: "first", fields: { [confirmed.id]: null } }));
 });
+it("shows read-only typed values with one format per type", () => {
+  const day = { ...newCatalogField("day", 1), id: "01990000-0000-7000-8000-000000000002", type: "date" as const, name: { es: "Entrega" } };
+  const amount = { ...newCatalogField("amount", 2), id: "01990000-0000-7000-8000-000000000003", type: "decimal" as const, name: { es: "Importe" } };
+  const row: CatalogManualItemValue = { ...first, value: "2027-03-15", fields: { [day.id]: "2027-03-16", [amount.id]: "1500,5" } };
+  renderWithProviders(<CatalogManualItemsEditor items={[row]} fields={[day, amount]} scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} culture="es" valueType="Date" canManage={false} expandedKey={null} onExpand={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />);
+  expect(screen.getByRole("cell", { name: "15/03/2027" })).toBeInTheDocument();
+  expect(screen.getByRole("cell", { name: "16/03/2027" })).toBeInTheDocument();
+  expect(screen.getByRole("cell", { name: "1.500,5" })).toBeInTheDocument();
+});

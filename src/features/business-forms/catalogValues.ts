@@ -49,12 +49,12 @@ export function isCanonicalCatalogValue(type: CatalogValueType, value: string | 
   return canonicalNumber(value, type === "Integer") === value;
 }
 
-const typedValueTypes: Record<Exclude<CatalogValueType, "Text">, TypedValueType> = { Integer: "integer", Decimal: "decimal", Date: "date" };
+export const catalogTypedValueTypes: Record<Exclude<CatalogValueType, "Text">, TypedValueType> = { Integer: "integer", Decimal: "decimal", Date: "date" };
 
 export function formatCatalogValue(type: CatalogValueType, value: string | null, culture: string): string {
   if (value === null) return "";
   if (type === "Text") return value;
-  return formatTypedValue(typedValueTypes[type], value, culture) ?? value;
+  return formatTypedValue(catalogTypedValueTypes[type], value, culture) ?? value;
 }
 
 /** Screen text of a typed value with the shared format; the draft's editable text is read in `inputCulture` first, and what does not parse is shown as written. */
