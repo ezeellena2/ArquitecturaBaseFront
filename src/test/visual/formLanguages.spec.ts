@@ -8,7 +8,7 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     const version = state === "add" ? 2 : state === "remove" ? 3 : 1;
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "&scenario=forms-languages-" + state + "&lang=" + language);
-    await page.getByRole("heading", { name: "Registrar visita", level: 1, exact: true }).waitFor({ state: "visible" });
+    await page.getByRole("heading", { name: es ? "Registrar visita" : "Register visit", level: 1, exact: true }).waitFor({ state: "visible" });
     await page.evaluate(() => {
       const fixture = window as typeof window & { formLanguageWrites: string[] };
       fixture.formLanguageWrites = [];

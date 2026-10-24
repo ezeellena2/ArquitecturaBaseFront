@@ -41,7 +41,7 @@ import { FormLifecycleNotice } from "../components/FormLifecycleNotice";
 import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
 import { DraftReview, DraftReviewChanges } from "../components/DraftReview";
 import { localizedIssue, localizedIssueMessage, publicationFieldIssues } from "../validationPaths";
-import { missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
+import { localizedValue, missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
 import { formActorKey, formDetailKey, useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
 import type { FormDeactivation, FormDetail, FormPublicationCheck } from "../api/response";
@@ -187,7 +187,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const readOnly = !editor.canSave;
   const knownDeleted = editor.issue?.kind === "read" && editor.issue.code === "Forms.Definition.NotFound";
   const originalName = value?.name[value.draft.culture] ?? "";
-  useBreadcrumbLeaf(originalName || t("new"));
+  // The title and the breadcrumb show the name in the menu language and, without a translation, the original.
+  const displayName = value ? localizedValue(value.name, contentCulture, value.draft.culture) : "";
+  useBreadcrumbLeaf(displayName || t("new"));
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
   useEffect(() => {
     if (!editor.issue) { dismissNotification(feedbackId); return; }
@@ -280,7 +282,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     change({ ...value!, draft: { ...value!.draft, fields: value!.draft.fields.filter(q => q.localId !== localId) } });
     if (!removeId) requestAnimationFrame(() => removalFocus.current?.focus());
   }
-  return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : dirty || frozen || publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
+  return <div ref={host}><Page title={displayName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : dirty || frozen || publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!editor.canSave || hasInvalidFileCounts(value.draft.fields) || hasInvalidSelectionCounts(value.draft.fields)} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
     {canPublish && session.confirmed ? <Button ref={publicationAction} type="button" disabled={knownDeleted || deactivated && !lifecycle?.canReactivate || frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => openPublication(publicationAction.current)}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button> : null}

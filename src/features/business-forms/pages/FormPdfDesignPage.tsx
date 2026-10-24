@@ -143,7 +143,7 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
     const reference = (text: LocalizedText | null) => { const value = contentReference(text, culture, original); return value ? t("originalText", { language: t("cultures." + original), text: value }) : undefined; };
     const selectedUnknown = [...new Set([...baseline.design.questionIds, ...draft.questionIds])].filter(id => !options.questions.some(question => question.fieldId === id));
     const blocked = busy || review;
-    return <Page title={draft.name[original] || t("pdf.title")} status={t("pdf.status", { name: localizedValue(options.name, scope.culture, original) }) + (dirty ? " · " + t("dirty") : "")} backTo={{ to: back, label: t("pdf.back") }} actions={<Button variant="outline" disabled={busy} onClick={() => { if (dirty)
+    return <Page title={localizedValue(draft.name, culture, original) || t("pdf.title")} status={t("pdf.status", { name: localizedValue(options.name, scope.culture, original) }) + (dirty ? " · " + t("dirty") : "")} backTo={{ to: back, label: t("pdf.back") }} actions={<Button variant="outline" disabled={busy} onClick={() => { if (dirty)
         setDiscard(true);
     else
         void navigate(back); }}>{t("discard")}</Button>}>

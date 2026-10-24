@@ -37,6 +37,18 @@ it("edits the form in the menu language without a content language selector", as
   expect(name).toHaveAccessibleDescription("Original (Spanish): Registrar visita");
 });
 
+it("titles the form in the menu language and falls back to the original when it has no translation", async () => {
+  await setup("en");
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  const name = await screen.findByRole("textbox", { name: "Name" });
+  expect(name).toHaveValue("Register visit");
+  expect(screen.getByRole("heading", { level: 1, name: "Register visit" })).toBeVisible();
+  expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getAllByRole("listitem").at(-1)).toHaveTextContent(/^Register visit$/);
+  await userEvent.clear(name);
+  expect(screen.getByRole("heading", { level: 1, name: "Registrar visita" })).toBeVisible();
+  expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getAllByRole("listitem").at(-1)).toHaveTextContent(/^Registrar visita$/);
+});
+
 it("shows a save error of the other language under the visible field", async () => {
   await setup("es");
   server.use(http.put("/api/forms/definitions/:id/draft", () => HttpResponse.json({ code: "Validation.Failed", errors: { "name.en": ["Usá hasta 120 caracteres."] } }, { status: 400 })));

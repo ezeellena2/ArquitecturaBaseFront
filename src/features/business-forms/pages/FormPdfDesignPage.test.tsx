@@ -89,6 +89,18 @@ it("shows an error of the original under the translated field with its language"
   expect(notify).not.toHaveBeenCalled();
 });
 
+it("titles the PDF design in the menu language and falls back to the original when it has no translation", async () => {
+  setup();
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions: ["formrules.manage"] })), http.get("/api/forms/definitions/:id/pdf-design", () => HttpResponse.json({ ...pdfDesignFixture(), design: { ...pdfDesignFixture().design, name: { es: "Comprobante de visita", en: "Visit receipt" } } })));
+  await act(async () => { await i18n.changeLanguage("en"); });
+  renderRouteWithProviders("/formularios/" + responseFormId + "/pdf");
+  const name = await screen.findByRole("textbox", { name: "PDF name" });
+  expect(name).toHaveValue("Visit receipt");
+  expect(screen.getByRole("heading", { level: 1, name: "Visit receipt" })).toBeVisible();
+  await userEvent.clear(name);
+  expect(screen.getByRole("heading", { level: 1, name: "Comprobante de visita" })).toBeVisible();
+});
+
 it("names the confirmed form in PDF breadcrumbs without linking a forbidden template", async () => {
   setup();
   renderRouteWithProviders("/formularios/" + responseFormId + "/pdf");
