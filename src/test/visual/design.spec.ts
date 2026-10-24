@@ -77,17 +77,28 @@ test("surface actions stay on the right edge of their header when they wrap", as
   const surface = page.getByRole("region", { name: "Modales y tooltips", exact: true });
   const title = surface.getByRole("heading", { name: "Modales y tooltips", exact: true });
   const header = title.locator("..");
+  const first = surface.getByRole("button", { name: "Abrir formulario", exact: true });
   const last = surface.getByRole("button", { name: "Exportar ejemplo", exact: true });
   await last.scrollIntoViewIfNeeded();
   const measure = async () => {
-    const [band, heading, action] = await Promise.all([header.boundingBox(), title.boundingBox(), last.boundingBox()]);
+    const [band, heading, start, action] = await Promise.all([header.boundingBox(), title.boundingBox(), first.boundingBox(), last.boundingBox()]);
     return { right: band!.x + band!.width - (action!.x + action!.width), titleBottom: heading!.y + heading!.height,
-      titleCenter: heading!.y + heading!.height / 2, actionTop: action!.y, actionCenter: action!.y + action!.height / 2 };
+      titleCenter: heading!.y + heading!.height / 2, firstTop: start!.y, actionTop: action!.y, actionCenter: action!.y + action!.height / 2 };
   };
-  // A 320 las acciones bajan de renglón y siguen al borde derecho: el mismo margen de 16 px que el título a la izquierda.
+  // A 320 las acciones bajan de renglón y no entran juntas en una fila: la última sigue al borde derecho, con el
+  // mismo margen de 16 px que el título a la izquierda (lo resuelve justify-end).
   const narrow = await measure();
-  expect(narrow.actionTop).toBeGreaterThanOrEqual(narrow.titleBottom);
+  expect(narrow.firstTop).toBeGreaterThanOrEqual(narrow.titleBottom);
+  expect(narrow.actionTop).toBeGreaterThan(narrow.firstTop);
   expect(Math.abs(narrow.right - 16)).toBeLessThanOrEqual(1);
+  // A 390 el bloque no entra al lado del título pero sí entero en su propia fila: queda al borde derecho y no a la
+  // izquierda, donde lo dejaría justify-between (lo resuelve ml-auto).
+  await page.setViewportSize({ width: 390, height: 900 });
+  await last.scrollIntoViewIfNeeded();
+  const whole = await measure();
+  expect(whole.firstTop).toBeGreaterThanOrEqual(whole.titleBottom);
+  expect(whole.actionTop).toBe(whole.firstTop);
+  expect(Math.abs(whole.right - 16)).toBeLessThanOrEqual(1);
   // A 1440 entran en el renglón del título, al borde derecho y a su altura.
   await page.setViewportSize({ width: 1440, height: 900 });
   await last.scrollIntoViewIfNeeded();
