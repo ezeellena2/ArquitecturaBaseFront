@@ -1,17 +1,18 @@
+import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { settingFields, type SettingField, type SettingsDraft, type SystemSettings } from "../api/settings";
 import { Button } from "@/shared/ui/button";
 import { Surface } from "@/shared/ui/Surface";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell, TableRowHeader } from "@/shared/ui/table";
 
-export function SettingsReview({ current, draft, disabled, onAccept }: {
-  current: SystemSettings; draft: SettingsDraft; disabled: boolean; onAccept: (keepDraft: boolean) => void;
+export function SettingsReview({ current, draft, disabled, titleRef, onAccept }: {
+  current: SystemSettings; draft: SettingsDraft; disabled: boolean; titleRef: Ref<HTMLHeadingElement>; onAccept: (keepDraft: boolean) => void;
 }) {
   const { t } = useTranslation("settings");
   const display = (field: SettingField, value: string | number) => field === "defaultCulture"
     ? t(`common:language.${value}`) : field === "registrationMode" ? t(`registration.${value}Label`) : String(value).replaceAll("_", " ");
   // Las elecciones resuelven toda la comparación: van al borde derecho de su banda, a la altura del título.
-  return <Surface title={t("review.title")} padded actions={<>
+  return <Surface title={t("review.title")} titleRef={titleRef} padded actions={<>
     <Button variant="outline" disabled={disabled} onClick={() => onAccept(false)}>{t("review.useCurrent")}</Button>
     <Button disabled={disabled} onClick={() => onAccept(true)}>{t("review.keepMine")}</Button>
   </>}>

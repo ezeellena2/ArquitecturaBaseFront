@@ -262,7 +262,8 @@ crecen todos a 44 px en móvil.
 - Un conflicto muestra una tabla de los cuatro ajustes (actual y borrador), con scroll contenido en móvil. Conservar
   cambios incorpora valores ajenos de campos no tocados. Un resultado incierto se consulta antes de otro envío o descarte.
   «Revisar valores actuales» va en la banda de `Page`, antes de Descartar; Usar valores actuales y Conservar mis
-  cambios, en el encabezado de la comparación.
+  cambios, en el encabezado de la comparación. La comparación aparece al final del contenido: cada lectura lleva el
+  foco a su título, que la deja a la vista y pone las elecciones en el siguiente Tab.
 - Evidencia: [guardado incierto](evidence/2026-09-30-configuracion-error.jpg) y [320 px](evidence/2026-09-30-configuracion-movil.jpg).
 
 ### Apariencia (2026-10-01)
@@ -272,7 +273,8 @@ local, Guardar/Descartar y Restaurar colores iniciales (Campo) como borrador. Gu
 `expectedRevision`; la proyección pública los aplica al ingreso y a los portales. Texto, hover, enlaces y foco se derivan
 para conservar contraste; success, warning y danger no cambian. Restaurar va en el encabezado de «Colores del sistema»;
 `Page` no muestra estado del borrador y, tras un conflicto, «Revisar valores actuales» va en su banda, antes de
-Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de la comparación. Recorridos:
+Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de la comparación; como en
+`/configuracion`, cada lectura lleva el foco al título de la comparación. Recorridos:
 `src/test/visual/appearance.spec.ts`.
 
 ### Inteligencia artificial

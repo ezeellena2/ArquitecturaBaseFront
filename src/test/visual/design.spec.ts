@@ -262,6 +262,10 @@ test("a settings conflict uses the common comparison table", async ({ page }) =>
   await page.getByRole("button", { name: "Revisar valores actuales", exact: true }).first().click();
   await expect(page.getByRole("table")).toBeVisible();
   await expect(page.getByRole("rowheader")).toHaveCount(4);
+  // Revisar está en la banda y la comparación, al final: la lectura lleva el foco a su título y la deja a la vista.
+  const title = page.getByRole("heading", { level: 2, name: "Revisar cambios", exact: true });
+  await expect(title).toBeFocused();
+  await expect(title).toBeInViewport();
   await page.getByRole("table").scrollIntoViewIfNeeded();
   await expect(page).toHaveScreenshot("settings-review-320.png", { fullPage: true });
 });

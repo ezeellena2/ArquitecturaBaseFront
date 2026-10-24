@@ -20,7 +20,8 @@ Muestra y modifica los ajustes funcionales publicados por el backend.
 `/configuracion` reúne cuatro ajustes en tres `Surface`: preferencias regionales, listados y registro.
 Las cuatro rutas anteriores redirigen acá. Page comparte Guardar/Descartar, sin «Cambios sin guardar»
 junto al título; tras un 409 o un guardado incierto, «Revisar valores actuales» va en la misma banda,
-antes de Descartar, y las elecciones de `SettingsReview` van en el encabezado de su Surface. El PATCH
+antes de Descartar, y las elecciones de `SettingsReview` van en el encabezado de su Surface. Cada lectura
+lleva el foco al título de la comparación (`titleRef` de Surface), que aparece al final del contenido. El PATCH
 manda solo campos cambiados y expectedRevision, en un pedido atómico. Confirmar si cambia el registro.
 `SettingsForm` compone los campos, `SettingsReview` la comparación y la página coordina el flujo.
 Antes de abrir el editor, esperar la lectura fresca; luego un refetch no reemplaza el borrador.

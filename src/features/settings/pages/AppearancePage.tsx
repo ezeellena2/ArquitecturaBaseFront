@@ -45,8 +45,12 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
   const [review, setReview] = useState<SystemSettings>();
   const [reading, setReading] = useState(false);
   const active = useRef(true);
+  const reviewTitle = useRef<HTMLHeadingElement>(null);
   const noticeId = "settings:appearance";
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(noticeId); }; }, []);
+  // Revisar está en la banda y la comparación aparece después de los colores y la vista previa: cada lectura lleva el
+  // foco a su título, que la deja a la vista y pone las elecciones en el siguiente Tab.
+  useEffect(() => { if (review) reviewTitle.current?.focus(); }, [review]);
   const dirty = !samePalette(draft, baseline.appearance);
   async function readCurrent() {
     setReading(true);
@@ -108,7 +112,7 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
         <p className="max-w-3xl text-sm text-[var(--color-content-muted)]">{t("appearance.contrast")}</p>
       </Surface>
       <AppearancePreview appearance={draft} labels={{ title: t("appearance.preview"), home: t("common:navigation.dashboard"), administration: t("common:navigation.administration"), name: t("appearance.name"), role: t("appearance.role"), search: t("appearance.search"), newUser: t("appearance.newUser") }} />
-      {review ? <Surface title={t("review.title")} padded actions={<><Button variant="outline" disabled={disabled} onClick={() => acceptReview(false)}>{t("review.useCurrent")}</Button><Button disabled={disabled} onClick={() => acceptReview(true)}>{t("review.keepMine")}</Button></>}>
+      {review ? <Surface title={t("review.title")} titleRef={reviewTitle} padded actions={<><Button variant="outline" disabled={disabled} onClick={() => acceptReview(false)}>{t("review.useCurrent")}</Button><Button disabled={disabled} onClick={() => acceptReview(true)}>{t("review.keepMine")}</Button></>}>
         <DataTable columns={[{ id: "setting", header: t("review.setting"), cell: row => t(`appearance.fields.${row.field}`) },
           { id: "current", header: t("review.current"), cell: row => review.appearance[row.field].toUpperCase() },
           { id: "mine", header: t("review.mine"), cell: row => draft[row.field].toUpperCase() }]} rows={fields.map(field => ({ field }))} rowKey={row => row.field} />

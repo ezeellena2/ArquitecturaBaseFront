@@ -117,8 +117,14 @@ describe("AppearancePage", () => {
     expect(within(header).getAllByRole("button").map(button => button.textContent)).toEqual(["Revisar valores actuales", "Descartar", "Guardar cambios"]);
     await userEvent.click(within(header).getByRole("button", { name: "Revisar valores actuales" }));
     const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
-    const band = within(comparison).getByRole("heading", { level: 2, name: "Revisar cambios" }).parentElement as HTMLElement;
+    const title = within(comparison).getByRole("heading", { level: 2, name: "Revisar cambios" });
+    const band = title.parentElement as HTMLElement;
     expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Usar valores actuales", "Conservar mis cambios"]);
+    // La comparación aparece después de los colores y la vista previa: el foco va a su título, y el siguiente Tab,
+    // a las elecciones.
+    expect(title).toHaveFocus();
+    await userEvent.tab();
+    expect(within(band).getByRole("button", { name: "Usar valores actuales" })).toHaveFocus();
     await userEvent.click(within(band).getByRole("button", { name: "Conservar mis cambios" }));
     expect(screen.getByLabelText("Botones y enlaces")).toHaveValue("#335f85");
     server.use(http.patch("/api/settings", async ({ request }) => { writes.push(await request.json() as Record<string, unknown>); return new HttpResponse(null, { status: 204 }); }));

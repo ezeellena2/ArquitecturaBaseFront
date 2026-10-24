@@ -210,9 +210,16 @@ describe("SettingsPage", () => {
 
     // Las elecciones del conflicto van al borde derecho de la banda de la comparación, no debajo de la tabla.
     const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
-    const band = within(comparison).getByRole("heading", { level: 2, name: "Revisar cambios" }).parentElement as HTMLElement;
+    const title = within(comparison).getByRole("heading", { level: 2, name: "Revisar cambios" });
+    const band = title.parentElement as HTMLElement;
     expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Usar valores actuales", "Conservar mis cambios"]);
     expect(within(comparison).getAllByRole("button")).toHaveLength(2);
+
+    // Revisar está arriba y la comparación aparece al final: el foco va a su título, y el siguiente Tab, a las
+    // elecciones, sin recorrer antes todo el formulario.
+    expect(title).toHaveFocus();
+    await userEvent.tab();
+    expect(within(band).getByRole("button", { name: "Usar valores actuales" })).toHaveFocus();
   });
 
   it("does not repeat a write that was committed before a 500 response", async () => {

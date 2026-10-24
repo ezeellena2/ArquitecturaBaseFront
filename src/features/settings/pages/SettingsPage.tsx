@@ -44,8 +44,12 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
   const [review, setReview] = useState<SystemSettings>();
   const [reading, setReading] = useState(false);
   const active = useRef(true);
+  const reviewTitle = useRef<HTMLHeadingElement>(null);
   const noticeId = "settings:general";
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(noticeId); }; }, []);
+  // Revisar está en la banda y la comparación aparece al final del contenido, a veces fuera de la vista: cada lectura
+  // lleva el foco a su título, que la deja a la vista y pone las elecciones en el siguiente Tab.
+  useEffect(() => { if (review) reviewTitle.current?.focus(); }, [review]);
   const changes = changesFrom(draft, baseline);
   const dirty = Object.keys(changes).length > 0;
 
@@ -119,7 +123,7 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
       <Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); if (changes.registrationMode) setConfirm(true); else save(); }}>{t(mutation.isPending ? "saving" : "save")}</Button></>}>
     <div className="flex flex-col gap-4">
       <SettingsForm draft={draft} errors={errors} disabled={disabled} onChange={changeDraft} />
-      {review ? <SettingsReview current={review} draft={draft} disabled={disabled} onAccept={acceptReview} /> : null}
+      {review ? <SettingsReview current={review} draft={draft} disabled={disabled} titleRef={reviewTitle} onAccept={acceptReview} /> : null}
     </div>
     <ConfirmDialog open={confirm} onOpenChange={setConfirm} title={t(draft.registrationMode === "Open" ? "confirm.openTitle" : "confirm.inviteOnlyTitle")}
       description={t(draft.registrationMode === "Open" ? "confirm.openDescription" : "confirm.inviteOnlyDescription")} confirmLabel={t("save")} onConfirm={save} />
