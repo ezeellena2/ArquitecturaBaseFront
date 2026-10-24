@@ -40,6 +40,8 @@ La indisponibilidad se comunica desde el consumidor con el Toaster único y una 
 Autocomplete compone Input/tokens comunes, sin red ni proveedor. Admite teclado, Escape,
 selección sin submit y foco conservado con puntero. El consumidor controla consultas,
 atribución (footer no seleccionable y visible en el desplegable), carga/vacío, permisos y mensajes.
+La lista vive en un portal (Radix Popover anclado al campo), así no la recorta una tabla ni un diálogo con scroll;
+el foco sigue en el campo y Escape cierra solo la lista.
 
 - [Biblioteca y decisiones visuales](../../../docs/design/visual-baseline.md).
 - [Reglas de componentes y accesibilidad](../../../docs/architecture.md).

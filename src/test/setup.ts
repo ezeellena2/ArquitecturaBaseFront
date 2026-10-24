@@ -51,6 +51,16 @@ if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
 
+// jsdom no maqueta: toda caja, y también el viewport, mide 0×0 en el origen. El middleware `hide` de Floating UI
+// (`hideWhenDetached` de Radix, que usa la lista de Autocomplete) lo lee como un ancla recortada fuera de la vista y
+// oculta el popover con visibility:hidden y pointer-events:none. El viewport toma el tamaño de la ventana y cada
+// elemento, una caja que lo cubre. La geometría real se verifica en Playwright.
+Object.defineProperties(document.documentElement, {
+  clientWidth: { configurable: true, get: () => window.innerWidth },
+  clientHeight: { configurable: true, get: () => window.innerHeight },
+});
+Element.prototype.getBoundingClientRect = () => new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+
 // Sonner usa captura del puntero al interactuar con una notificación; jsdom no implementa estas APIs.
 if (!Element.prototype.setPointerCapture) {
   Element.prototype.setPointerCapture = () => {};

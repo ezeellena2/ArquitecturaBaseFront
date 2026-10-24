@@ -9,7 +9,7 @@
 - fixtures/forms-http y fixtures/whatsapp-forms-http conservan bytes sintéticos de respuestas reales de ApiFactory con SHA256/procedencia. Los consumidores de contrato leen FORMS_HTTP_CONTRACT_INPUT y WHATSAPP_FORMS_HTTP_CONTRACT_INPUT, respectivamente, para validar una salida nueva del productor backend. Las páginas de WhatsApp sirven los cuerpos crudos, incluido el hilo previo al envío, sin fabricar tarjetas ni quitar operaciones. No serializar DTOs a mano como prueba de contrato real; los dobles complementan comportamiento y no acreditan Meta.
 - Consultá por rol, texto accesible y comportamiento. Para páginas lazy esperá `findBy` o `waitFor`.
 - Radix se abre por teclado en tests; revisá stubs de jsdom antes de cambiar producto para corregir una limitación del entorno.
-- Layout, scroll, sticky y foco ocluido necesitan navegador: una assertion de clases no demuestra geometría.
+- Layout, scroll, sticky y foco ocluido necesitan navegador: una assertion de clases no demuestra geometría. `setup.ts` da al viewport el tamaño de la ventana y a cada elemento una caja que lo cubre, solo para que `hideWhenDetached` no oculte los popovers en jsdom.
 - `architecture` comprueba dependencias entre features, independencia de shared y límites del sistema visual; `visual` tiene el catálogo con componentes reales y Playwright. Sus capturas y geometría completan Vitest; la entrada y los dobles son exclusivamente de pruebas.
 - Mensajes: verificar canal y cantidad, recuperación y borrador además del texto. Las pruebas
   del dueño global usan la política real de QueryCache; aislar caché o apagar retries no debe
