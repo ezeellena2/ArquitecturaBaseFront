@@ -67,4 +67,25 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: info.outputPath("ce2-table-contained.png"), fullPage: true });
     await noWrites(page);
   });
+  test("CE2 catalog cell list is not clipped by the wide table " + language + " " + width, async ({ page }, info) => {
+    const es = language === "es", north = es ? "Norte" : "North";
+    await page.setViewportSize({ width, height: 900 }); await open(page, language);
+    const region = page.locator(`[data-slot="table-container"][role="region"][aria-label="${es ? "Opciones" : "Options"}"]`);
+    if (width < 640) await page.getByRole("button", { name: es ? "Editar Compresores Unidos" : "Edit Compresores Unidos", exact: true }).click();
+    const zone = page.getByRole("combobox", { name: width < 640 ? (es ? "Zona" : "Zone") : (es ? "Fila 6 · Zona" : "Row 6 · Zone"), exact: true });
+    await zone.scrollIntoViewIfNeeded(); await zone.focus();
+    await expect(page.getByRole("listbox")).toBeVisible();
+    if (width >= 640) {
+      await expect(region.getByRole("listbox")).toHaveCount(0);
+      expect(await region.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(1);
+    }
+    const option = page.getByRole("option", { name: north, exact: true });
+    const bounds = (await option.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width + 1); expect(bounds.y + bounds.height).toBeLessThanOrEqual(900);
+    expect(await option.evaluate(node => { const box = node.getBoundingClientRect(); return document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2) === node; })).toBe(true);
+    await page.screenshot({ path: info.outputPath("ce2-catalog-cell-list.png") });
+    await option.click();
+    await expect(zone).toHaveValue(north); await expect(zone).toBeFocused();
+    await noWrites(page);
+  });
 }
