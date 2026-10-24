@@ -91,6 +91,14 @@ it.each([["maxLength", "text", "Máximo de caracteres"], ["min", "integer", "Mí
   expect(screen.getByLabelText(label)).toHaveAccessibleDescription(message);
   expect(screen.getAllByText(message)).toHaveLength(1);
 });
+it("counts the values of a rule change as not meeting the field rules, and only a type change as not converting", async () => {
+  let rendered!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { rendered = renderWithProviders(<MemoryRouter><Harness initial={[field]} errors={{ saved: { maxLength: ["Hay valores que no cumplen las reglas del campo."] } }} feedback={{ invalidCount: 2 }} /></MemoryRouter>); });
+  expect(screen.getByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
+  expect(screen.queryByText(/no convierten/)).not.toBeInTheDocument();
+  await act(async () => { rendered.rerender(<MemoryRouter><Harness initial={[field]} errors={{ saved: { type: ["Hay valores que no se convierten al tipo nuevo."] } }} feedback={{ convertedCount: 0, invalidCount: 2 }} /></MemoryRouter>); });
+  expect(screen.getByText("2 opciones tienen valores que no convierten.")).toBeInTheDocument();
+});
 it("opens the failed field and shows missing counts from the complete server validation", async () => {
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[field]} errors={{ saved: { required: ["Completá las opciones activas."] } }} feedback={{ missingCount: 12 }} /></MemoryRouter>); });
   expect(screen.getByText("Completá las opciones activas.")).toBeInTheDocument();

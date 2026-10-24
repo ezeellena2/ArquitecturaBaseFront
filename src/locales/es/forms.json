@@ -310,6 +310,7 @@
       "invalid": "Revisá el valor: no corresponde al tipo del campo.", "required": "Falta el valor obligatorio.", "range": "El valor está fuera del mínimo o máximo del campo.", "length": "El texto supera el largo permitido.",
       "missingValues_one": "Faltan valores en 1 opción activa.", "missingValues_other": "Faltan valores en {{count}} opciones activas.",
       "invalidValues_one": "1 opción tiene un valor que no convierte.", "invalidValues_other": "{{count}} opciones tienen valores que no convierten.",
+      "incompatibleValues_one": "1 opción tiene un valor que no cumple las reglas del campo.", "incompatibleValues_other": "{{count}} opciones tienen valores que no cumplen las reglas del campo.",
       "convertedValues_one": "1 valor puede convertirse.", "convertedValues_other": "{{count}} valores pueden convertirse.",
       "roles": { "filter": "Filtro", "data": "Dato" },
       "roleHint": { "filter": "Para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta.", "data": "Se guarda con la opción y viaja con la respuesta." },
