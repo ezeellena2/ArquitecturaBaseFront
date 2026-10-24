@@ -9,7 +9,7 @@ import { createManualCatalog, fetchCatalogPage, fetchCatalog, updateManualCatalo
 // Current producer cohort, separate from the immutable pre-K4 fixtures.
 const cohort=httpCohort("manualCatalogs");
 const raw=(name:string)=>cohort.bytes(name).toString("utf8");
-const fieldCaptures = ["fields-create.request.json", "fields-update.request.json", "fields-created.json", "fields-required-error.json", "fields-values-saved.json", "fields-conversion-error.json", "fields-unique-error.json", "fields-detail.json", "fields-items.json", "fields-removal-confirmation.json", "fields-removed.json", "fields-presentation.json", "fields-source-items.json", "fields-source-in-use.json"];
+const fieldCaptures = ["fields-create.request.json", "fields-update.request.json", "fields-created.json", "fields-required-error.json", "fields-values-saved.json", "fields-conversion-error.json", "fields-unique-error.json", "fields-detail.json", "fields-items.json", "fields-removal-confirmation.json", "fields-removed.json", "fields-presentation.json", "fields-source-items.json", "fields-source-in-use.json", "fields-rules-error-es.json", "fields-rules-error-en.json"];
 it("verifies the exact current Manual and field captures from the common run", () => {
  const provenance=cohort.verify();
  expect(provenance.sources.some(source=>source.path.endsWith("FormCatalogEndpointsTests.cs"))).toBe(true);
@@ -56,7 +56,7 @@ it("reads the actual extra-field receipts, source labels and preserved inactive 
 it("passes untouched field rejections through the current Manual client", async () => {
   const created = readCatalogSave(cohort.json("fields-created.json"), ["one"], undefined, undefined, ["field"]);
   const body = cohort.json("fields-update.request.json") as UpdateManualCatalogBody;
-  const errors = [["fields-required-error.json", 400, "Forms.Catalog.FieldValuesMissing"], ["fields-conversion-error.json", 400, "Forms.Catalog.FieldTypeNotConvertible"], ["fields-unique-error.json", 400, "Forms.Catalog.FieldValueDuplicate"], ["fields-removal-confirmation.json", 400, "Forms.Catalog.FieldRemovalNotConfirmed"], ["fields-source-in-use.json", 409, "Forms.Catalog.SourceInUse"]] as const;
+  const errors = [["fields-required-error.json", 400, "Forms.Catalog.FieldValuesMissing"], ["fields-conversion-error.json", 400, "Forms.Catalog.FieldTypeNotConvertible"], ["fields-unique-error.json", 400, "Forms.Catalog.FieldValueDuplicate"], ["fields-rules-error-es.json", 400, "Forms.Catalog.FieldValuesIncompatible"], ["fields-rules-error-en.json", 400, "Forms.Catalog.FieldValuesIncompatible"],["fields-removal-confirmation.json", 400, "Forms.Catalog.FieldRemovalNotConfirmed"], ["fields-source-in-use.json", 409, "Forms.Catalog.SourceInUse"]] as const;
   for (const [name, status, code] of errors) {
     server.use(http.put("/api/forms/catalogs/" + created.catalog.id, () => cohort.response(name, status, { "content-type": "application/problem+json" })));
     await expect(updateManualCatalog(created.catalog.id, body)).rejects.toMatchObject({ status, code, problem: cohort.json(name) });
@@ -65,4 +65,10 @@ it("passes untouched field rejections through the current Manual client", async 
 it("reads the row, attempted value and reason of a type change that does not convert", () => {
   const conversion = cohort.json("fields-conversion-error.json") as { invalidRows: { itemId: string }[] };
   expect(readCatalogFieldFeedback(conversion)).toEqual({ convertedCount: 0, invalidCount: 1, invalidRows: [{ itemId: conversion.invalidRows[0]!.itemId, code: "ONE", row: 1, value: "1", reason: "invalid" }] });
+});
+for (const culture of ["es", "en"] as const) it("reads every value a lower maxLength leaves out, on its control, in " + culture, () => {
+  const problem = cohort.json("fields-rules-error-" + culture + ".json") as { errors: Record<string, string[]>; invalidRows: { itemId: string }[] };
+  expect(Object.keys(problem.errors)).toEqual(["fields[0].maxLength"]);
+  const [first, third] = problem.invalidRows;
+  expect(readCatalogFieldFeedback(problem)).toEqual({ invalidCount: 2, invalidRows: [{ itemId: first!.itemId, code: "ONE", row: 1, value: "abcdef", reason: "length" }, { itemId: third!.itemId, code: "THREE", row: 3, value: "abcdefgh", reason: "length" }] });
 });

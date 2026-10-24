@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { MemoryRouter } from "react-router";
-import { act, screen, within } from "@testing-library/react";
+import { act, cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -69,6 +69,27 @@ it("offers removing a field used only by its own catalog presentation", async ()
   await userEvent.click(within(dialog).getByRole("checkbox"));
   await userEvent.click(within(dialog).getByRole("button", { name: "Quitar el campo" }));
   expect(screen.queryByRole("button", { name: "Editar CUIT" })).not.toBeInTheDocument();
+});
+it("shows the restore error of an active field next to it", async () => {
+  const message = "Hay valores que no cumplen las reglas del campo.";
+  for (const desktop of [true, false]) {
+    const media = vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: desktop && query === "(min-width: 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }) as MediaQueryList);
+    try {
+      await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[field]} errors={{ saved: { isActive: [message] } }} feedback={{ invalidCount: 2 }} /></MemoryRouter>); });
+      const row = desktop ? screen.getAllByRole("row").find(element => within(element).queryByText("CUIT"))! : screen.getByText("CUIT").parentElement!;
+      expect(within(row).getByRole("alert")).toHaveTextContent(message);
+      expect(screen.getAllByText(message)).toHaveLength(1);
+    } finally {
+      cleanup();
+      media.mockRestore();
+    }
+  }
+});
+it.each([["maxLength", "text", "Máximo de caracteres"], ["min", "integer", "Mínimo"], ["max", "integer", "Máximo"], ["unique", "text", "Único"]] as const)("shows incompatible values of a %s change on that control", async (path, type, label) => {
+  const message = "Hay valores que no cumplen las reglas del campo.";
+  await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[{ ...field, type }]} errors={{ saved: { [path]: [message] } }} feedback={{ invalidCount: 2 }} /></MemoryRouter>); });
+  expect(screen.getByLabelText(label)).toHaveAccessibleDescription(message);
+  expect(screen.getAllByText(message)).toHaveLength(1);
 });
 it("opens the failed field and shows missing counts from the complete server validation", async () => {
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[field]} errors={{ saved: { required: ["Completá las opciones activas."] } }} feedback={{ missingCount: 12 }} /></MemoryRouter>); });
