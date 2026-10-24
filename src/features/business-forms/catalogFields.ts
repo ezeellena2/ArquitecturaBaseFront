@@ -79,17 +79,18 @@ export function catalogFieldRowReason(control: string, field: Pick<CatalogFieldD
   return reason === "invalid" && field.unique && (control === "unique" || control === "isActive") ? "repeated" : reason;
 }
 
-/** What is wrong with a field value, quoting the value as entered (cut at 40 characters) and the reason for the field type. */
-export function catalogFieldProblemText(t: TFunction<"forms">, field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">, value: string | null, reason: CatalogFieldProblemReason | "repeated"): string {
+/**
+ * What is wrong with a field value, quoting the value as entered (cut at 40 characters) and the reason for the field type.
+ * A range is worded like the field's help, with the draft's bounds read and formatted in `culture`.
+ */
+export function catalogFieldProblemText(t: TFunction<"forms">, field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">, value: string | null, reason: CatalogFieldProblemReason | "repeated", culture: FormCulture): string {
   if (reason === "required") return t("catalogs.fields.problem.required");
   const characters = [...(value?.trim() ?? "")];
   const shown = characters.length > 40 ? characters.slice(0, 40).join("") + "…" : characters.join("");
   if (reason === "repeated") return t("catalogs.fields.problem.repeated", { value: shown });
   if (reason === "invalid") return t("catalogs.fields.problem.invalid." + field.type, { value: shown });
   if (reason === "length") return t("catalogs.fields.problem.length", { value: shown, count: field.maxLength ?? textMaxLength });
-  const min = field.min?.trim(), max = field.max?.trim();
-  const rule = min && max ? t("catalogs.fields.problem.rule.between", { min, max }) : min ? t("catalogs.fields.problem.rule.from", { min }) : t("catalogs.fields.problem.rule.to", { max });
-  return t("catalogs.fields.problem.range", { value: shown, rule });
+  return t("catalogs.fields.problem.range", { value: shown, rule: catalogFieldRange(field, culture, t, "catalogs.fields.problem.rule") });
 }
 
 /**

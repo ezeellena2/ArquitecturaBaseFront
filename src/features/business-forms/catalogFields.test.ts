@@ -44,25 +44,25 @@ describe("catalog extra field values", () => {
   it("describes a field problem with its value and the reason for its type", async () => {
     await i18n.loadLanguages("en");
     const es = i18n.getFixedT("es", "forms"), en = i18n.getFixedT("en", "forms");
-    expect(catalogFieldProblemText(es, field, null, "required")).toBe("Falta: es obligatorio.");
-    expect(catalogFieldProblemText(es, { ...field, type: "integer" }, " 30 días ", "invalid")).toBe("«30 días» no es un número entero.");
-    expect(catalogFieldProblemText(es, field, "treinta", "invalid")).toBe("«treinta» no es un número.");
-    expect(catalogFieldProblemText(es, { ...field, type: "date", min: null, max: null }, "mañana", "invalid")).toBe("«mañana» no es una fecha.");
-    expect(catalogFieldProblemText(es, { ...field, type: "boolean", min: null, max: null }, "quizás", "invalid")).toBe("«quizás» no es sí o no.");
-    expect(catalogFieldProblemText(es, { ...field, type: "catalog", min: null, max: null }, "Centro", "invalid")).toBe("«Centro» no es una opción del catálogo.");
-    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null }, "a\u0000b", "invalid")).toBe("«a\u0000b» tiene caracteres que no se pueden guardar.");
-    expect(catalogFieldProblemText(es, field, "181", "range")).toBe("«181» está fuera del rango: de 0 a 180.");
-    expect(catalogFieldProblemText(es, { ...field, max: null }, "-1", "range")).toBe("«-1» está fuera del rango: desde 0.");
-    expect(catalogFieldProblemText(es, { ...field, min: null }, "181", "range")).toBe("«181» está fuera del rango: hasta 180.");
-    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null, maxLength: 13 }, "20-12345678-90", "length")).toBe("«20-12345678-90» supera los 13 caracteres.");
-    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null, maxLength: 1 }, "AB", "length")).toBe("«AB» supera 1 carácter.");
-    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null, maxLength: null }, "x".repeat(301), "length")).toBe("«" + "x".repeat(40) + "…» supera los 300 caracteres.");
-    expect(catalogFieldProblemText(en, { ...field, type: "integer" }, "30 days", "invalid")).toBe("“30 days” is not a whole number.");
-    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null }, "a\u0000b", "invalid")).toBe("“a\u0000b” has characters that cannot be saved.");
-    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null, maxLength: 1 }, "AB", "length")).toBe("“AB” is longer than 1 character.");
-    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null, maxLength: 13 }, "20-12345678-90", "length")).toBe("“20-12345678-90” is longer than 13 characters.");
-    expect(catalogFieldProblemText(en, field, "181", "range")).toBe("“181” is out of range: from 0 to 180.");
-    expect(catalogFieldProblemText(en, field, null, "required")).toBe("Missing: it is required.");
+    expect(catalogFieldProblemText(es, field, null, "required", "es")).toBe("Falta: es obligatorio.");
+    expect(catalogFieldProblemText(es, { ...field, type: "integer" }, " 30 días ", "invalid", "es")).toBe("«30 días» no es un número entero.");
+    expect(catalogFieldProblemText(es, field, "treinta", "invalid", "es")).toBe("«treinta» no es un número.");
+    expect(catalogFieldProblemText(es, { ...field, type: "date", min: null, max: null }, "mañana", "invalid", "es")).toBe("«mañana» no es una fecha.");
+    expect(catalogFieldProblemText(es, { ...field, type: "boolean", min: null, max: null }, "quizás", "invalid", "es")).toBe("«quizás» no es sí o no.");
+    expect(catalogFieldProblemText(es, { ...field, type: "catalog", min: null, max: null }, "Centro", "invalid", "es")).toBe("«Centro» no es una opción del catálogo.");
+    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null }, "a\u0000b", "invalid", "es")).toBe("«a\u0000b» tiene caracteres que no se pueden guardar.");
+    expect(catalogFieldProblemText(es, field, "181", "range", "es")).toBe("«181» está fuera del rango: de 0 a 180.");
+    expect(catalogFieldProblemText(es, { ...field, max: null }, "-1", "range", "es")).toBe("«-1» está fuera del rango: desde 0.");
+    expect(catalogFieldProblemText(es, { ...field, min: null }, "181", "range", "es")).toBe("«181» está fuera del rango: hasta 180.");
+    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null, maxLength: 13 }, "20-12345678-90", "length", "es")).toBe("«20-12345678-90» supera los 13 caracteres.");
+    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null, maxLength: 1 }, "AB", "length", "es")).toBe("«AB» supera 1 carácter.");
+    expect(catalogFieldProblemText(es, { ...field, type: "text", min: null, max: null, maxLength: null }, "x".repeat(301), "length", "es")).toBe("«" + "x".repeat(40) + "…» supera los 300 caracteres.");
+    expect(catalogFieldProblemText(en, { ...field, type: "integer" }, "30 days", "invalid", "en")).toBe("“30 days” is not a whole number.");
+    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null }, "a\u0000b", "invalid", "en")).toBe("“a\u0000b” has characters that cannot be saved.");
+    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null, maxLength: 1 }, "AB", "length", "en")).toBe("“AB” is longer than 1 character.");
+    expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null, maxLength: 13 }, "20-12345678-90", "length", "en")).toBe("“20-12345678-90” is longer than 13 characters.");
+    expect(catalogFieldProblemText(en, field, "181", "range", "en")).toBe("“181” is out of range: from 0 to 180.");
+    expect(catalogFieldProblemText(en, field, null, "required", "en")).toBe("Missing: it is required.");
   });
   it("summarizes a field's range or length", async () => {
     await i18n.loadLanguages("en");
@@ -92,6 +92,16 @@ describe("catalog extra field values", () => {
     expect(catalogFieldInputHint({ ...field, type: "date", min: "2026-01-02", max: null }, "en", en)).toBe("Date, from 01/02/2026.");
     for (const type of ["text", "boolean", "catalog"] as const) expect(catalogFieldInputHint({ ...field, type }, "es", es)).toBeNull();
   });
+  it("words an out-of-range value with the bounds of its help, in the draft culture", async () => {
+    await i18n.loadLanguages("en");
+    const es = i18n.getFixedT("es", "forms"), en = i18n.getFixedT("en", "forms");
+    const due = { ...field, type: "date" as const, min: null, max: "2026-12-31" };
+    expect(catalogFieldInputHint(due, "es", es)).toBe("Fecha, hasta 31/12/2026.");
+    expect(catalogFieldProblemText(es, due, "1/1/2027", "range", "es")).toBe("«1/1/2027» está fuera del rango: hasta 31/12/2026.");
+    expect(catalogFieldProblemText(es, { ...field, min: "1500,5", max: null }, "2", "range", "es")).toBe("«2» está fuera del rango: desde 1.500,5.");
+    expect(catalogFieldProblemText(en, { ...due, min: "2026-01-02", max: null }, "2025-12-31", "range", "en")).toBe("“2025-12-31” is out of range: from 01/02/2026.");
+    expect(catalogFieldProblemText(en, { ...field, min: "1,500.5", max: "2500" }, "3000", "range", "en")).toBe("“3000” is out of range: from 1,500.5 to 2,500.");
+  });
   it("says a value is repeated when «único» is switched on or a unique field is restored", async () => {
     await i18n.loadLanguages("en");
     const es = i18n.getFixedT("es", "forms"), en = i18n.getFixedT("en", "forms");
@@ -101,8 +111,8 @@ describe("catalog extra field values", () => {
     expect(catalogFieldRowReason("isActive", unique, "length")).toBe("length");
     expect(catalogFieldRowReason("isActive", { ...unique, unique: false }, "invalid")).toBe("invalid");
     expect(catalogFieldRowReason("type", unique, "invalid")).toBe("invalid");
-    expect(catalogFieldProblemText(es, unique, " 30 días ", "repeated")).toBe("«30 días» se repite en otra opción activa.");
-    expect(catalogFieldProblemText(en, unique, "30 days", "repeated")).toBe("“30 days” is repeated in another active option.");
+    expect(catalogFieldProblemText(es, unique, " 30 días ", "repeated", "es")).toBe("«30 días» se repite en otra opción activa.");
+    expect(catalogFieldProblemText(en, unique, "30 days", "repeated", "en")).toBe("“30 days” is repeated in another active option.");
   });
   it("groups the draft and active uses of one question and keeps the catalog's own use apart", () => {
     const form = "01990000-0000-7000-8000-000000000002", supplier = "01990000-0000-7000-8000-000000000004", zone = "01990000-0000-7000-8000-000000000005";

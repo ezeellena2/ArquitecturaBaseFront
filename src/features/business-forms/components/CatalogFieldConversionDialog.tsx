@@ -6,12 +6,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import type { CatalogInvalidFieldRow } from "../api/catalogFieldFeedback";
 import { catalogFieldProblemText, type CatalogFieldDraft, type CatalogFieldType } from "../catalogFields";
+import type { FormCulture } from "../model";
 
 const shownRows = 5;
 
 /** CE1 «Cambiar el tipo»: the server's rows that do not convert, with the way to show them in the table. */
-export function CatalogFieldConversionDialog({ name, from, field, convertedCount, invalidCount, rows, onClose, onShowRows }: {
+export function CatalogFieldConversionDialog({ name, from, field, culture, convertedCount, invalidCount, rows, onClose, onShowRows }: {
   name: string; from: CatalogFieldType; field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">;
+  /** The draft's culture, in which its bounds are written. */
+  culture: FormCulture;
   convertedCount: number; invalidCount: number; rows: readonly CatalogInvalidFieldRow[];
   onClose: () => void; onShowRows: () => void;
 }) {
@@ -26,7 +29,7 @@ export function CatalogFieldConversionDialog({ name, from, field, convertedCount
       <DialogDescription>{t("catalogs.fields.conversion.reviewed", { count: convertedCount + invalidCount, converted: t("catalogs.fields.conversion.converted", { count: convertedCount }), invalid: t("catalogs.fields.conversion.invalid", { count: invalidCount }) })}</DialogDescription>
     </DialogHeader>
     <Table><TableHeader><TableRow><TableHead scope="col">{t("catalogs.fields.conversion.row")}</TableHead><TableHead scope="col">{t("catalogs.fields.conversion.what")}</TableHead></TableRow></TableHeader>
-      <TableBody>{shown.map(row => <TableRow key={row.itemId}><TableCell>{row.row}</TableCell><TableCell className="whitespace-normal">{catalogFieldProblemText(t, field, row.value, row.reason)}</TableCell></TableRow>)}</TableBody></Table>
+      <TableBody>{shown.map(row => <TableRow key={row.itemId}><TableCell>{row.row}</TableCell><TableCell className="whitespace-normal">{catalogFieldProblemText(t, field, row.value, row.reason, culture)}</TableCell></TableRow>)}</TableBody></Table>
     {more > 0 ? <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.fields.conversion.more", { count: more })}</p> : null}
     <Banner>{t("catalogs.fields.conversion.hint")}</Banner>
     <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" onClick={onShowRows}>{t("catalogs.fields.conversion.show", { count: rows.length })}</Button></DialogFooter>

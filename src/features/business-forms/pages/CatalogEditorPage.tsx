@@ -153,7 +153,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     const issues = catalogItemFieldIssues(draft, item);
     for (const issue of issues) {
       const field = draft.fields.find(field => field.id === issue.fieldId)!;
-      (itemErrors[item.localId] ??= {})["fields." + issue.fieldId] = [catalogFieldProblemText(t, field, item.fields?.[issue.fieldId] ?? null, issue.reason)];
+      (itemErrors[item.localId] ??= {})["fields." + issue.fieldId] = [catalogFieldProblemText(t, field, item.fields?.[issue.fieldId] ?? null, issue.reason, draft.culture)];
     }
     return issues.length ? [item.localId] : [];
   }) : [];
@@ -164,7 +164,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     for (const row of errorRows.rows) {
       const original = draft.items.originals["item:" + row.itemId];
       if (original && editedFieldIds(draft, currentCatalogItem(draft.items, original)).includes(fieldId)) continue;
-      (itemErrors[row.itemId] ??= {})["fields." + fieldId] ??= [catalogFieldProblemText(t, errorField, row.value, catalogFieldRowReason(errorRows.control, errorField, row.reason))];
+      (itemErrors[row.itemId] ??= {})["fields." + fieldId] ??= [catalogFieldProblemText(t, errorField, row.value, catalogFieldRowReason(errorRows.control, errorField, row.reason), draft.culture)];
     }
   }
   const itemErrorPathsStamp = JSON.stringify([...itemErrorPaths, ...definitionErrorPaths]);
@@ -230,7 +230,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
         pagination={rowFilter ? undefined : items.data} totalCount={rowFilter ? errorRows?.totalCount : undefined} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
     </div>
     {importSource && draft.id && canManage ? <CatalogImportDialog scope={scope} catalog={editor.confirmed ?? initial!} initialSource={importSource} timeZoneId={timeZoneId} focusFallback={importFocus} onClose={() => setImportSource(null)} onObserved={editor.observeCatalog} onApplied={catalog => { editor.observeCatalog(catalog); setExpanded(null); }} onTemplate={() => void exported.download(true)} /> : null}
-    {errorRows?.open && errorField ? <CatalogFieldConversionDialog name={localizedValue(errorField.name, culture, "es") || t("catalogs.fields.new")} from={errorRows.from} field={errorField} convertedCount={errorRows.convertedCount} invalidCount={errorRows.invalidCount} rows={errorRows.rows} onClose={() => setErrorRows(current => current && { ...current, open: false })} onShowRows={showErrorRows} /> : null}
+    {errorRows?.open && errorField ? <CatalogFieldConversionDialog name={localizedValue(errorField.name, culture, "es") || t("catalogs.fields.new")} from={errorRows.from} field={errorField} culture={draft.culture}convertedCount={errorRows.convertedCount} invalidCount={errorRows.invalidCount} rows={errorRows.rows} onClose={() => setErrorRows(current => current && { ...current, open: false })} onShowRows={showErrorRows} /> : null}
     <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("stay")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
     <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent onCloseAutoFocus={restoreReviewFocus} className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.value ? <><p className="text-sm">{entry.value.name.es}</p><p className="text-sm">{entry.value.name.en}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.es}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.en}</p></> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</Surface>)}</div>
