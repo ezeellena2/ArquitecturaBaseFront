@@ -311,7 +311,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [taxId] })), http.put("/api/forms/catalogs/" + id, async ({ request }) => {
       const body = await request.json() as typeof bodies[number]; bodies.push(body);
       return bodies.length === 1
-        ? HttpResponse.json({ code: "Forms.Catalog.FieldInUse", detail: message, errors: { "fields[0].isActive": [message] }, uses: [{ definitionId: "01990000-0000-7000-8000-000000000032", formName: "Pedir repuesto", question: "Proveedor", stage: "Active" }] }, { status: 409 })
+        ? HttpResponse.json({ code: "Forms.Catalog.FieldInUse", detail: message, errors: { "fields[0].isActive": [message] }, uses: [{ definitionId: "01990000-0000-7000-8000-000000000032", formName: "Pedir repuesto", question: "Proveedor", questionId: "01990000-0000-7000-8000-000000000033", stage: "Active" }] }, { status: 409 })
         : HttpResponse.json({ catalog: { ...initial, revision: 2, name: { es: body.name.es, en: "Customers" }, fields: [taxId] }, itemIdentityMap: {}, fieldIdentityMap: {} });
     }));
     await mount("/catalogos/" + id); const user = userEvent.setup();

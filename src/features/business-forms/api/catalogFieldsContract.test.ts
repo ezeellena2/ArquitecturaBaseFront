@@ -33,8 +33,18 @@ describe("catalog extra field boundary", () => {
     expect(() => readCatalogSave({ ...receipt, fieldIdentityMap: { "new-field": itemId } }, [], id, 1, ["new-field"])).toThrow(UnsupportedCatalogResponse);
   });
   it("preserves a reference from this catalog's own WhatsApp presentation", () => {
-    const usedBy = [{ definitionId: null, formName: "Proveedores", question: null, stage: "Catalog" }];
+    const usedBy = [{ definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" }];
     expect(readCatalog({ ...catalog, fields: [{ ...field, usedBy }] }).fields?.[0]?.usedBy).toEqual(usedBy);
+  });
+  it("reads the question identity of draft and active field uses and rejects a form use without it", () => {
+    const formId = "01990000-0000-7000-8000-000000000004", questionId = "01990000-0000-7000-8000-000000000005";
+    const active = { definitionId: formId, formName: "Pedir repuesto", question: "Proveedor", questionId, stage: "Active" };
+    const usedBy = [active, { ...active, stage: "Draft" }];
+    expect(readCatalog({ ...catalog, fields: [{ ...field, usedBy }] }).fields?.[0]?.usedBy).toEqual(usedBy);
+    const { questionId: _questionId, ...withoutIdentity } = active;
+    const own = { definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" };
+    for (const use of [withoutIdentity, { ...active, questionId: null }, { ...own, questionId }])
+      expect(() => readCatalog({ ...catalog, fields: [{ ...field, usedBy: [use] }] })).toThrow(UnsupportedCatalogResponse);
   });
 });
 

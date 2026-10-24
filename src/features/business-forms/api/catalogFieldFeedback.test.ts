@@ -12,8 +12,8 @@ it("keeps the failure counts and up to 50 rows with number, attempted value and 
 });
 it("keeps the uses of a field in use with the strict usage shape", () => {
   const uses = [
-    { definitionId: "01990000-0000-7000-8000-000000000002", formName: "Pedir repuesto", question: "Proveedor", stage: "Active" },
-    { definitionId: null, formName: "Proveedores", question: null, stage: "Catalog" },
+    { definitionId: "01990000-0000-7000-8000-000000000002", formName: "Pedir repuesto", question: "Proveedor", questionId: "01990000-0000-7000-8000-000000000004", stage: "Active" },
+    { definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" },
   ];
   expect(readCatalogFieldFeedback({ code: "Forms.Catalog.FieldInUse", detail: "El campo está en uso.", uses })).toEqual({ uses });
   expect(readCatalogFieldFeedback({ uses: [{ ...uses[0], definitionId: null }] })).toBeNull();

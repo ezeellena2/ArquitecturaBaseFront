@@ -9,8 +9,9 @@ const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const nullableText = (limit: number) => z.record(z.string().refine((key): boolean => key === "es" || key === "en"), z.string().max(limit).nullable());
 const requiredText = (limit: number) => z.strictObject({ es: z.string().min(1).max(limit).refine(value => !!value.trim()), en: z.string().min(1).max(limit).refine(value => !!value.trim()) });
 export const catalogFieldTypes = ["text", "integer", "decimal", "date", "boolean", "catalog"] as const;
-export const catalogFieldUsageSchema = z.strictObject({ definitionId: guid.nullable(), formName: z.string(), question: z.string().nullable(), stage: z.enum(["Draft", "Active", "Catalog"]) })
-  .refine(value => value.stage === "Catalog" ? value.definitionId === null && value.question === null : value.definitionId !== null && value.question !== null);
+// A form use (Draft or Active) names the form, the question and its identity; the catalog's own presentation use has none.
+export const catalogFieldUsageSchema = z.strictObject({ definitionId: guid.nullable(), formName: z.string(), question: z.string().nullable(), questionId: guid.nullable(), stage: z.enum(["Draft", "Active", "Catalog"]) })
+  .refine(value => [value.definitionId, value.question, value.questionId].every(part => value.stage === "Catalog" ? part === null : part !== null));
 export type CatalogFieldUsage = z.infer<typeof catalogFieldUsageSchema>;
 const catalogField = z.strictObject({ id: guid, key: z.string().regex(/^[a-z][a-z0-9_]{0,39}$/), name: textMapForField(), type: z.enum(catalogFieldTypes), sourceCatalogId: guid.nullable(), required: z.boolean(), unique: z.boolean(), min: z.string().nullable(), max: z.string().nullable(), maxLength: z.number().int().min(1).max(300).nullable(), role: z.enum(["filter", "data"]), position: z.number().int().min(0).max(2147483647), isActive: z.boolean(), hasValues: z.boolean(), usedBy: z.array(catalogFieldUsageSchema) })
   .refine(value => value.type === "catalog" ? value.sourceCatalogId !== null : value.sourceCatalogId === null);

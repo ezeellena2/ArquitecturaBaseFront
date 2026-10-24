@@ -40,14 +40,14 @@ it("keeps a saved key immutable and requires a checked confirmation before remov
   expect(screen.queryByRole("button", { name: "Editar CUIT" })).not.toBeInTheDocument();
 });
 it("shows where an in-use field is referenced and never offers to confirm its removal", async () => {
-  await mount([{ ...field, usedBy: [{ definitionId: "01990000-0000-7000-8000-000000000002", formName: "Pedir repuesto", question: "Proveedor", stage: "Active" }] }]);
+  await mount([{ ...field, usedBy: [{ definitionId: "01990000-0000-7000-8000-000000000002", formName: "Pedir repuesto", question: "Proveedor", questionId: "01990000-0000-7000-8000-000000000004", stage: "Active" }] }]);
   await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
   expect(within(screen.getByRole("dialog")).getByText(/Pedir repuesto/)).toBeInTheDocument();
   expect(within(screen.getByRole("dialog")).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
 });
 it("offers removing a field used only by its own catalog presentation", async () => {
-  await mount([{ ...field, usedBy: [{ definitionId: null, formName: "Proveedores", question: null, stage: "Catalog" }] }]);
+  await mount([{ ...field, usedBy: [{ definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" }] }]);
   await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
   const dialog = screen.getByRole("dialog");
@@ -65,7 +65,7 @@ it("opens the failed field and shows missing counts from the complete server val
 it.each(["role", "type", "sourceCatalogId"])("shows the uses next to an in-use %s error inside the editor of that field", async path => {
   const filter: CatalogFieldDraft = { ...field, role: "filter", type: path === "sourceCatalogId" ? "catalog" : "text", sourceCatalogId: path === "sourceCatalogId" ? "01990000-0000-7000-8000-000000000009" : null };
   const other: CatalogFieldDraft = { ...newCatalogField("other", 2), id: "01990000-0000-7000-8000-000000000003", key: "zone", name: { es: "Zona" } };
-  const uses = [{ definitionId: "01990000-0000-7000-8000-000000000002", formName: "Pedir repuesto", question: "Proveedor", stage: "Active" as const }];
+  const uses = [{ definitionId: "01990000-0000-7000-8000-000000000002", formName: "Pedir repuesto", question: "Proveedor", questionId: "01990000-0000-7000-8000-000000000004", stage: "Active" as const }];
   server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: "01990000-0000-7000-8000-000000000009", name: "Proveedores", description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })));
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[filter, other]} errors={{ saved: { [path]: ["El campo está en uso."] } }} feedback={{ uses }} /></MemoryRouter>); });
   expect(screen.getByText("El campo está en uso.")).toBeInTheDocument();
