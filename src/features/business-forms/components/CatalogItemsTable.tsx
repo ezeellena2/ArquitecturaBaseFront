@@ -2,11 +2,11 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { CatalogInlineInput } from "./CatalogInlineInput";
 import { catalogScalarText, catalogTypedValueTypes, type CatalogValueType } from "../catalogValues";
 import { catalogItemColumns, catalogTableColumns } from "../catalogColumns";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { ChevronDownIcon, PencilIcon } from "@/shared/ui/icons";
+import { AlertTriangleIcon, ChevronDownIcon, PencilIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { WideTable, WideTableCell, WideTableHead } from "@/shared/ui/WideTable";
@@ -39,7 +39,9 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
   const { t } = useTranslation("forms");
   const readOnly = !canManage || busy;
   const editing = inline && canManage;
-  const columns = catalogTableColumns(catalogItemColumns(valueType, culture, fields), editing).filter(column => !column.field || !visibleFieldIds || visibleFieldIds.includes(column.field.localId));
+  const allColumns = catalogTableColumns(catalogItemColumns(valueType, culture, fields), editing);
+  const columns = allColumns.filter(column => !column.field || !visibleFieldIds || visibleFieldIds.includes(column.field.localId));
+  const problemId = useId();
   // Typed values are read and shown in the draft's culture, the one its editable text was written in.
   const valueCulture = scope?.culture ?? culture, yesNo = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   return (
@@ -53,6 +55,12 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
         const messages = errors?.[item.localId];
         const expanded = expandedKey === item.localId;
         const rememberAction = (button: HTMLButtonElement | null) => onActionRef(item.localId, button);
+        // While editing, a field value's error goes on its own line under the row, «Fila N · Campo: motivo», which the cell
+        // refers to; a hidden column still says it there.
+        const problems = editing ? allColumns.flatMap(column => {
+          const message = column.field ? messages?.[column.errorPath]?.join(" ") : undefined;
+          return column.field && message ? [{ columnId: column.id, id: problemId + item.localId + column.id, text: t("catalogs.fields.rowProblem", { row: number, field: localizedValue(column.field.name, culture, "es"), message }) }] : [];
+        }) : [];
         return <Fragment key={item.localId}><TableRow>
           {canManage ? <TableCell><Checkbox aria-label={t("catalogs.items.selectNamed", { name })} checked={selected.includes(item.localId)} disabled={busy} onCheckedChange={value => onSelect(item.localId, value === true)}/></TableCell> : null}
           <TableCell>{item.itemId === null ? "—" : item.position}</TableCell>{columns.map(column => {
@@ -60,7 +68,8 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
             let content: ReactNode;
             if (column.field) {
               const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key];
-              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} error={error} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} />;
+              const problem = problems.find(problem => problem.columnId === column.id);
+              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} />;
               else {
                 const shown = value === null || value === undefined ? "—" : field.type === "catalog" && texts ? localizedValue(texts, culture, "es") : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "text" ? value : catalogScalarText(field.type, value, valueCulture, yesNo, valueCulture));
                 // The text cell (below 640 px or without Manage) keeps its mark, such as a value the new type does not take.
@@ -81,7 +90,7 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
             {item.isActive || expanded ? <IconButton ref={rememberAction} size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} aria-expanded={expanded} onClick={() => onExpand(expanded ? null : item.localId)}><PencilIcon className="size-4" /></IconButton>
               : <Button ref={rememberAction} type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
           </div> : null}</WideTableCell>
-        </TableRow>{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
+        </TableRow>{problems.length ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{problems.map(problem => <p key={problem.id} id={problem.id} role="alert" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</TableCell></TableRow> : null}{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
       })}
     </TableBody></WideTable>
   );

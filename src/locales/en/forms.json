@@ -314,7 +314,7 @@
         "presentation": "It's also removed from this catalog's “In WhatsApp”."
       },
       "columns": "Fields", "valueLabel": "Row {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Clear", "viewNamed": "View {{name}}", "clearValue": "Clear {{name}}",
-      "invalid": "Review this value: it does not match the field type.", "required": "The required value is missing.", "range": "The value is outside the field minimum or maximum.", "length": "The text exceeds the allowed length.",
+      "rowProblem": "Row {{row}} · {{field}}: {{message}}",
       "missingValues_one": "Values are missing from 1 active option.", "missingValues_other": "Values are missing from {{count}} active options.",
       "invalidValues_one": "1 option has a value that cannot convert.", "invalidValues_other": "{{count}} options have values that cannot convert.",
       "incompatibleValues_one": "1 option has a value that doesn't meet the field rules.", "incompatibleValues_other": "{{count}} options have values that don't meet the field rules.",

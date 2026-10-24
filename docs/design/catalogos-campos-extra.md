@@ -97,6 +97,11 @@ ve también la lista, como al tocarlo.
   «Campos», con «Ver los N en la tabla» a la derecha, que deja en la tabla solo esas opciones con el mismo chip. Cada celda
   queda marcada con su motivo hasta que se la edita; un valor repetido dice que se repite en otra opción activa.
 
+- **El error de un valor en la tabla (CE2).** Como en el tablero, la celda queda marcada y una línea debajo de su fila
+  dice la fila, el campo, el valor y el motivo: «Fila 3 · Plazo de pago (días): «30 días» no es un número entero.». Vale
+  para un valor mal escrito antes de guardar y para las filas que devuelve el servidor; en el celular, el mismo motivo va
+  bajo el campo del editor de la opción.
+
 ## Lo que no se ve en las pantallas
 
 «Datos de las personas» se ve en Administración y en «Editar usuario», pero lo maneja el módulo de formularios: la pantalla y

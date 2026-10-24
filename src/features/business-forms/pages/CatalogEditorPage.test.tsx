@@ -169,6 +169,15 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     expect(screen.getByRole("combobox", { name: "Zona" })).toHaveValue("Sur");
   });
+  it("says on the row which edited value is wrong and why, before saving", async () => {
+    viewport(true); fieldSetup(savedField({ key: "term", name: "Plazo", type: "integer" }), { [fieldId]: "30" }, () => HttpResponse.json({}, { status: 500 }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    const cell = await screen.findByRole("textbox", { name: "Fila 1 · Plazo" });
+    await user.clear(cell); await pasteText(user, cell, "30 días");
+    expect(cell).toBeInvalid();
+    expect(cell).toHaveAccessibleDescription("Fila 1 · Plazo: «30 días» no es un número entero.");
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+  });
   const secondItemId = "01990000-0000-7000-8000-000000000022";
   const termRows = [{ ...option, fields: { [fieldId]: "30 días" } }, { ...option, id: secondItemId, code: "C2", text: { es: "Gómez", en: null }, position: 2, fields: { [fieldId]: "60 días" } }];
   function viewport(desktop: boolean) {
@@ -219,7 +228,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(requests.at(-1)?.get("sort")).toBe("position");
     const cell = screen.getByRole("textbox", { name: "Fila 1 · Plazo" });
     expect(cell).toBeInvalid();
-    expect(cell).toHaveAccessibleDescription("«30 días» no es un número entero.");
+    expect(cell).toHaveAccessibleDescription("Fila 1 · Plazo: «30 días» no es un número entero.");
     expect(screen.getByText("Con error · 1 fila")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Quitar el filtro" }));
     expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
@@ -299,9 +308,9 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
     expect(screen.getByRole("spinbutton", { name: "Máximo de caracteres" })).toHaveAccessibleDescription("Hay valores que no cumplen las reglas del campo.");
     expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeInvalid();
-    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toHaveAccessibleDescription("«30 días» supera los 5 caracteres.");
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toHaveAccessibleDescription("Fila 1 · Plazo: «30 días» supera los 5 caracteres.");
     expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo" })).toBeInvalid();
-    expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo" })).toHaveAccessibleDescription("«60 días» supera los 5 caracteres.");
+    expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo" })).toHaveAccessibleDescription("Fila 2 · Plazo: «60 días» supera los 5 caracteres.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByText(/^De texto a/)).not.toBeInTheDocument();
     expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
@@ -322,7 +331,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
-    for (const name of ["Fila 1 · Plazo", "Fila 2 · Plazo"]) expect(screen.getByRole("textbox", { name })).toHaveAccessibleDescription("«30 días» se repite en otra opción activa.");
+    for (const name of ["Fila 1 · Plazo", "Fila 2 · Plazo"]) expect(screen.getByRole("textbox", { name })).toHaveAccessibleDescription(name + ": «30 días» se repite en otra opción activa.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
   it("retains a conflicted draft through reread and requires an explicit adoption without a second write", async () => {

@@ -12,12 +12,14 @@ it("keeps an unsaved field unavailable and explains why", async () => {
   expect(screen.getByRole("textbox", { name: "CUIT" })).toBeDisabled();
   expect(screen.getByText("Guardá para cargar valores")).toBeInTheDocument();
 });
-it("preserves invalid typed input and reports an error on that cell without numeric coercion", async () => {
+it("preserves invalid typed input and is described by the error its owner shows, without numeric coercion", async () => {
   const change = vi.fn();
-  await act(async () => { renderWithProviders(<CatalogExtraFieldInput field={{ ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", type: "integer" }} label="Fila 1 · Plazo" value="30 días" culture="es" error="No es un número entero." readOnly={false} onChange={change} />); });
+  await act(async () => { renderWithProviders(<><CatalogExtraFieldInput field={{ ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", type: "integer" }} label="Fila 1 · Plazo" value="30 días" culture="es" aria-invalid aria-describedby="row-problem" readOnly={false} onChange={change} /><p id="row-problem">Fila 1 · Plazo: «30 días» no es un número entero.</p></>); });
   const input = screen.getByRole("textbox", { name: "Fila 1 · Plazo" });
   expect(input).toHaveValue("30 días");
   expect(input).toHaveAttribute("aria-invalid", "true");
+  expect(input).toHaveAccessibleDescription("Fila 1 · Plazo: «30 días» no es un número entero.");
+  expect(screen.getAllByText(/no es un número entero/)).toHaveLength(1);
   await userEvent.type(input, "x");
   expect(change).toHaveBeenLastCalledWith("30 díasx");
 });

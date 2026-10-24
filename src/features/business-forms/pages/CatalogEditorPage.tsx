@@ -151,7 +151,10 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   }) : [];
   const invalidFieldValues = draft ? changedItems.flatMap(item => {
     const issues = catalogItemFieldIssues(draft, item);
-    for (const issue of issues) (itemErrors[item.localId] ??= {})["fields." + issue.fieldId] = [t("catalogs.fields." + issue.reason)];
+    for (const issue of issues) {
+      const field = draft.fields.find(field => field.id === issue.fieldId)!;
+      (itemErrors[item.localId] ??= {})["fields." + issue.fieldId] = [catalogFieldProblemText(t, field, item.fields?.[issue.fieldId] ?? null, issue.reason)];
+    }
     return issues.length ? [item.localId] : [];
   }) : [];
   const errorField = errorRows ? draft?.fields.find(field => field.localId === errorRows.field.localId) : undefined;

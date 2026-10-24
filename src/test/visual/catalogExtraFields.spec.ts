@@ -65,6 +65,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     if (width < 640) await edit.click();
     const payment = page.getByRole("textbox", { name: width < 640 ? term : (es ? "Fila 1 · " : "Row 1 · ") + term, exact: true });
     await payment.fill(es ? "treinta" : "thirty"); await expect(payment).toHaveAttribute("aria-invalid", "true");
+    // The value and its reason; in the table, on a line under the row that names the row and the field.
+    const problem = es ? "«treinta» no es un número entero." : "“thirty” is not a whole number.";
+    await expect(page.getByText(width < 640 ? problem : (es ? "Fila 1 · " : "Row 1 · ") + term + ": " + problem, { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeDisabled();
     await payment.scrollIntoViewIfNeeded(); await contained(page, payment, width);
     await page.screenshot({ path: info.outputPath("ce2-invalid-typed-value.png"), fullPage: true });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { act, cleanup, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
@@ -144,4 +144,18 @@ it("formats read-only typed values in the draft culture while the texts are show
   renderWithProviders(<CatalogManualItemsEditor items={[row]} fields={[day]} scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} culture="en" valueType="Date" canManage={false} expandedKey={null} onExpand={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />);
   expect(screen.getByRole("cell", { name: "15/03/2027" })).toBeInTheDocument();
   expect(screen.getByRole("cell", { name: "16/03/2027" })).toBeInTheDocument();
+});
+it("describes a cell error on its row with the row, field, value and reason", () => {
+  vi.mocked(useMediaQuery).mockReturnValue(true);
+  const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo de pago (días)" } };
+  const row: CatalogManualItemValue = { ...first, fields: { [term.id]: "30 días" } };
+  renderWithProviders(<CatalogManualItemsEditor items={[row, second]} fields={[term]} errors={{ first: { ["fields." + term.id]: ["«30 días» no es un número entero."] } }} culture="es" valueType="Text" canManage expandedKey={null} onExpand={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />);
+  const line = "Fila 1 · Plazo de pago (días): «30 días» no es un número entero.";
+  const cell = screen.getByRole("textbox", { name: "Fila 1 · Plazo de pago (días)" });
+  expect(cell).toBeInvalid();
+  expect(cell).toHaveAccessibleDescription(line);
+  const rows = screen.getAllByRole("row");
+  expect(within(rows[2]!).getByRole("alert")).toHaveTextContent(line);
+  expect(screen.getAllByText(/no es un número entero/)).toHaveLength(1);
+  expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo de pago (días)" })).toBeValid();
 });

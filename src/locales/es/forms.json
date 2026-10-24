@@ -314,7 +314,7 @@
         "presentation": "También se saca de «En WhatsApp» de este catálogo."
       },
       "columns": "Campos", "valueLabel": "Fila {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Limpiar", "viewNamed": "Ver {{name}}", "clearValue": "Limpiar {{name}}",
-      "invalid": "Revisá el valor: no corresponde al tipo del campo.", "required": "Falta el valor obligatorio.", "range": "El valor está fuera del mínimo o máximo del campo.", "length": "El texto supera el largo permitido.",
+      "rowProblem": "Fila {{row}} · {{field}}: {{message}}",
       "missingValues_one": "Faltan valores en 1 opción activa.", "missingValues_other": "Faltan valores en {{count}} opciones activas.",
       "invalidValues_one": "1 opción tiene un valor que no convierte.", "invalidValues_other": "{{count}} opciones tienen valores que no convierten.",
       "incompatibleValues_one": "1 opción tiene un valor que no cumple las reglas del campo.", "incompatibleValues_other": "{{count}} opciones tienen valores que no cumplen las reglas del campo.",
