@@ -885,7 +885,7 @@
     "currentDesign": "Armar el PDF con el diseño vigente.",
     "viewDesign": "Ver el diseño",
     "message": "Mensaje",
-    "messageHint": "El idioma original ({{language}}) es obligatorio; el otro es opcional. Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta.",
+    "messageHint": "Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta.",
     "includePdf": "Adjuntar el PDF",
     "upAction": "Subir acción {{number}}",
     "downAction": "Bajar acción {{number}}",

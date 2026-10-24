@@ -10,6 +10,7 @@ import { queryClient } from "@/shared/api/queryClient";
 import { server } from "@/test/mocks/server";
 import { httpCohort } from "@/test/httpCohort";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import i18n from "@/shared/i18n";
 import { FormRulesSection } from "./FormRulesSection";
 import { newRuleAction, type FormRule } from "../rules";
 const id = "0199a0c0-0000-7000-8000-000000000010";
@@ -31,7 +32,7 @@ it("saves rules independently using only the original language and records the n
     return HttpResponse.json({ ...initial(), id: crypto.randomUUID(), revision: 1, rules: body.rules, createdAtUtc: "2026-10-16T12:00:00Z", author: { userId: actor, displayName: "Ana" } });
   }));
   const dirty = vi.fn();
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={dirty} />);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={dirty} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "NotifyAuthor");
@@ -44,7 +45,7 @@ it("saves rules independently using only the original language and records the n
 it("retains edits on a revision conflict and adopts the reread revision only explicitly", async () => {
   setup();
   server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Forms.Rules.RevisionConflict", detail: "Cambió la revisión." }, { status: 409 })));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()} />);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "NotifyAuthor");
@@ -63,7 +64,7 @@ it("does not request rules without their own permission", async () => {
   setup();
   const requested = vi.fn();
   server.use(http.get("/api/forms/definitions/:id/rules", () => { requested(); return HttpResponse.json(initial()); }));
-  await act(async () => { renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={{ ...scope, permissions: ["formtemplates.read"] }} contentCulture="es" onDirtyChange={vi.fn()} />); });
+  await act(async () => { renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={{ ...scope, permissions: ["formtemplates.read"] }} onDirtyChange={vi.fn()} />); });
   expect(requested).not.toHaveBeenCalled();
   expect(within(document.body).queryByRole("button", { name: "Guardar reglas" })).not.toBeInTheDocument();
 });
@@ -75,7 +76,7 @@ it("edits catalog choice conditions from rule metadata without catalog or respon
   server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "choice", label: { es: "Cliente" }, help: null, required: true, maxLength: null, options: null, source: { catalog: actor } }], conditionChoices: { [fieldId]: [{ id: choiceId, label: "Cliente elegido" }] }, roles: [] })));
   const writes = vi.fn();
   server.use(http.post("/api/forms/definitions/:id/rules", async ({ request }) => { const body = await request.json() as {rules: FormRule[]}; writes(body); return HttpResponse.json({...initial(), id:actor, revision:1, rules:body.rules, createdAtUtc:"2026-10-17T12:00:00Z"}); }));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()} />);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "in");
@@ -99,7 +100,7 @@ it("opens an immutable historical revision without adopting it", async () => {
   server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: historyId, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", author: { userId: actor, displayName: "Ana" }, hasApproval: false, changes: { addedRules: 1, updatedRules: 0, removedRules: 0, orderChanged: false } }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
     http.get("/api/forms/definitions/:id/rules/revisions/:revision", () => HttpResponse.json({ ...initial(), id: historyId, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", rules: [{ id: crypto.randomUUID(), event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Mensaje histórico" } }] }] })));
   const dirty = vi.fn();
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={dirty} />);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={dirty} />);
   const trigger = await screen.findByRole("button", { name: "Revisión 1" });
   await userEvent.click(trigger);
   const dialog = await screen.findByRole("dialog", { name: "Revisión 1" });
@@ -117,7 +118,7 @@ it("removes rule text, history, and editor state after the server revokes rule a
     http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Forms.Rules.Forbidden" }, { status: 403 })));
   let client: QueryClient | undefined;
   function CacheProbe() { const current = useQueryClient(); useEffect(() => { client = current; }, [current]); return null; }
-  renderWithProviders(<><CacheProbe /><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()} /></>);
+  renderWithProviders(<><CacheProbe /><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} /></>);
   expect(await screen.findByText(new RegExp(privateText))).toBeInTheDocument();
   expect(client?.getQueryCache().getAll().some(query => JSON.stringify(query.state.data)?.includes(privateText))).toBe(true);
   await userEvent.click(screen.getByRole("button", { name: "Editar regla 1" }));
@@ -131,14 +132,14 @@ it("removes rule text, history, and editor state after the server revokes rule a
 it("refreshes saved question options while preserving unsaved rules after the draft revision changes", async () => {
   setup();
   const dirty = vi.fn();
-  const rendered = renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={dirty} />);
+  const rendered = renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={dirty} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
   await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), "Reglas todavía sin guardar");
   expect(screen.getByRole("button", { name: "Agregar condición" })).toBeDisabled();
   const fieldId = "0199a0c0-0000-7000-8000-000000000030";
   server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "decimal", label: { es: "Pregunta guardada" }, help: null, required: false, maxLength: null, options: null }], conditionChoices: {}, roles: [] })));
-  rendered.rerender(<FormRulesSection definitionId={id} definitionRevision={2} scope={scope} contentCulture="es" onDirtyChange={dirty} />);
+  rendered.rerender(<FormRulesSection definitionId={id} definitionRevision={2} scope={scope} onDirtyChange={dirty} />);
   await waitFor(() => expect(screen.getByRole("button", { name: "Agregar condición" })).toBeEnabled());
   expect(screen.getByRole("textbox", { name: "Mensaje" })).toHaveValue("Reglas todavía sin guardar");
   expect(dirty).toHaveBeenLastCalledWith(true);
@@ -151,7 +152,7 @@ vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typ
 it("notifies one rules save failure while retaining the editable draft", async () => {
   setup();
   server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Test.Save", detail: "No pudimos guardar estas reglas." }, { status: 400 })));
-  const view = renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()} />);
+  const view = renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
   await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), "Mi regla conservada");
@@ -168,7 +169,7 @@ it("notifies one rules save failure while retaining the editable draft", async (
 it.each(["rules", "rules/revisions"])("uses the common notification owner for failed %s reads", async path => {
   setup();
   server.use(http.get("/api/forms/definitions/:id/" + path, () => HttpResponse.json({ code: "Test.Read", detail: "La lectura de reglas falló." }, { status: 400 })));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()} />);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
   await waitFor(() => expect(notify).toHaveBeenCalledOnce());
   expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "La lectura de reglas falló." });
   expect(screen.queryByText("La lectura de reglas falló.")).not.toBeInTheDocument();
@@ -186,7 +187,7 @@ it("binds the unchanged exported role validation to its rule and focuses the mar
   server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ ...initial(), id: crypto.randomUUID(), revision: 1, rules, createdAtUtc: "2026-10-16T12:00:00Z" })),
     http.post("/api/forms/definitions/:id/rules", async ({ request }) => { writes(await request.json()); return cohort.response("role-unavailable-es.json", 400, { "content-type": "application/problem+json" }); }));
   const dirty = vi.fn();
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={dirty}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={dirty}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Editar regla 2" }));
   await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
@@ -212,7 +213,7 @@ function serveRules(rules: readonly FormRule[], revision = 1) {
 }
 it("explains unchanged and invalid rules beside the disabled save control", async () => {
   setup();
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const save = await screen.findByRole("button", { name: "Guardar reglas" });
   expect(save).toBeDisabled();
   expect(save).toHaveAccessibleDescription("No hay cambios para guardar.");
@@ -233,7 +234,7 @@ it("keeps the whole own rules draft after rereading a conflict and saves it expl
       if (writes.length === 1) { revision = 2; return HttpResponse.json({ code: "Forms.Rules.RevisionConflict" }, { status: 409 }); }
       return HttpResponse.json({ ...initial(), id: actor, revision: 3, rules: body.rules, createdAtUtc: "2026-10-17T13:00:00Z" });
     }));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
   await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
@@ -251,7 +252,7 @@ it("keeps the whole own rules draft after rereading a conflict and saves it expl
 });
 it("returns focus from Done to the same rule and from removal to its surviving neighbor", async () => {
   setup(); serveRules([storedRule("Primera"), storedRule("Segunda")]);
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const edit = await screen.findByRole("button", { name: "Editar regla 1" });
   const neighbor = screen.getByRole("button", { name: "Editar regla 2" });
   await userEvent.click(edit);
@@ -264,7 +265,7 @@ it("returns focus from Done to the same rule and from removal to its surviving n
 });
 it("keeps focus on a moved action identity and announces its new position", async () => {
   setup(); const first = storedRule(); const rule = { ...first, actions: [...first.actions, { ...newRuleAction("NotifyAuthor"), text: { es: "Segundo aviso" } }] }; serveRules([rule]);
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
   await userEvent.click(screen.getByRole("button", { name: "Bajar acción 1" }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Subir acción 2" })).toHaveFocus());
@@ -275,14 +276,14 @@ it("summarizes saved rule conditions with their shared readable values and opera
   setup(); const fieldId = crypto.randomUUID(); const choiceId = crypto.randomUUID(); const rule = { ...storedRule(), conditions: [{ fieldId, operator: "in", values: [choiceId] }] };
   serveRules([rule]);
   server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "choice", label: { es: "Cliente" }, help: null, required: true, maxLength: null, options: null, source: { catalog: actor } }], conditionChoices: { [fieldId]: [{ id: choiceId, label: "Cliente elegido" }] }, roles: [] })));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   expect(await screen.findByText("Si: Cliente: Cliente elegido")).toBeVisible();
 });
 it("shows rule history change counts and order without loading each revision", async () => {
   setup(); let details = 0;
   server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: actor, revision: 2, createdAtUtc: "2026-10-17T12:00:00Z", author: null, hasApproval: false, changes: { addedRules: 1, updatedRules: 2, removedRules: 1, orderChanged: true } }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
     http.get("/api/forms/definitions/:id/rules/revisions/:revision", () => { details++; return HttpResponse.json(initial()); }));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await screen.findByRole("button", { name: "Revisión 2" });
   expect(screen.getByText(/1 regla agregada/)).toBeVisible(); expect(screen.getByText(/2 reglas actualizadas/)).toBeVisible(); expect(screen.getByText(/1 regla quitada/)).toBeVisible(); expect(screen.getByText(/Cambió el orden/)).toBeVisible();
   expect(details).toBe(0);
@@ -291,7 +292,7 @@ it("shows rule history change counts and order without loading each revision", a
 it("clears an attached PDF when changing the event and saves the remaining notice without that attachment", async () => {
   setup(); const notice = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aviso" } }; const rule: FormRule = { id: actor, event: "Approved", conditions: [], actions: [newRuleAction("GeneratePdf"), notice] }; serveRules([rule]);
   const writes = vi.fn(); server.use(http.post("/api/forms/definitions/:id/rules", async ({request}) => { const body = await request.json() as {rules:FormRule[]}; writes(body); return HttpResponse.json({...initial(),id:actor,revision:2,rules:body.rules,createdAtUtc:"2026-10-17T12:00:00Z"}); }));
-  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/></MemoryRouter>);
+  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
   expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeChecked();
   await userEvent.selectOptions(screen.getByRole("combobox",{name:"Cuándo"}),"Rejected");
@@ -304,7 +305,7 @@ it("clears an attached PDF when changing the event and saves the remaining notic
 });
 it("returns focus from action removal to a neighbor and then to Add action", async () => {
   setup();const first=storedRule();const rule={...first,actions:[...first.actions,{...newRuleAction("NotifyAuthor"),text:{es:"Segundo aviso"}}]};serveRules([rule]);
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
   const next=screen.getByRole("combobox",{name:"Acción 2"});
   await userEvent.click(screen.getByRole("button",{name:"Quitar acción 1"}));
@@ -316,7 +317,7 @@ it("returns focus from action removal to a neighbor and then to Add action", asy
 it("focuses the next remaining condition and then Add condition after removing the last one", async () => {
   setup();const first=crypto.randomUUID();const second=crypto.randomUUID();const rule={...storedRule(),conditions:[{fieldId:first,operator:"answered",values:[]},{fieldId:second,operator:"answered",values:[]}]};serveRules([rule]);
   server.use(http.get("/api/forms/definitions/:id/rules/options",()=>HttpResponse.json({definitionId:id,name:{es:"Visita"},originalCulture:"es",questions:[first,second].map((fieldId,index)=>({fieldId,key:"field_"+fieldId.replaceAll("-",""),type:"decimal",label:{es:index===0?"Primera pregunta":"Segunda pregunta"},help:null,required:false,maxLength:null,options:null})),conditionChoices:{},roles:[]})));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
   await userEvent.click(screen.getByRole("button",{name:"Quitar condición 1"}));
   const remaining=screen.getByRole("combobox",{name:"Pregunta"});expect(remaining).toHaveValue(second);
@@ -326,7 +327,7 @@ it("focuses the next remaining condition and then Add condition after removing t
 });
 it.each(["remove","move"] as const)("clears orphaned PDF attachments when their generator changes: %s", async kind => {
   setup();const notice={...newRuleAction("NotifyAuthor"),includePdf:true,text:{es:"Aviso"}};const pdf=newRuleAction("GeneratePdf");const rule:FormRule={...storedRule(),event:"Approved",actions:[pdf,notice]};serveRules([rule]);
-  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/></MemoryRouter>);
+  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
   await userEvent.click(screen.getByRole("button",{name:kind==="remove"?"Quitar acción 1":"Bajar acción 1"}));
   expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).not.toBeChecked();
@@ -335,7 +336,7 @@ it.each(["remove","move"] as const)("clears orphaned PDF attachments when their 
 it("requires a new reread after a second conflict instead of reusing the previous current revision", async () => {
   setup();const mine=storedRule();let revision=1;const writes:unknown[]=[];
   server.use(http.get("/api/forms/definitions/:id/rules",()=>HttpResponse.json({...initial(),id:actor,revision,rules:revision===1?[mine]:[storedRule("Actual")],createdAtUtc:"2026-10-17T12:00:00Z"})),http.post("/api/forms/definitions/:id/rules",async({request})=>{writes.push(await request.json());revision++;return HttpResponse.json({code:"Forms.Rules.RevisionConflict"},{status:409});}));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));await userEvent.type(screen.getByRole("textbox",{name:"Mensaje"})," propio");
   await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));await userEvent.click(await screen.findByRole("button",{name:"Releer reglas"}));await userEvent.click(await screen.findByRole("button",{name:"Conservar mis cambios"}));
   await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));await screen.findByRole("button",{name:"Releer reglas"});
@@ -348,7 +349,7 @@ it("requires a new reread after a second conflict instead of reusing the previou
 it("explains an in-flight save and its server cooldown once without discarding the draft", async () => {
   setup();serveRules([storedRule()]);let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});
   server.use(http.post("/api/forms/definitions/:id/rules",async()=>{await pending;return HttpResponse.json({code:"RateLimit.Exceeded",detail:"Esperá antes de volver a guardar.",retryAfter:60},{status:429});}));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));await userEvent.type(screen.getByRole("textbox",{name:"Mensaje"})," propio");
   await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));
   expect(screen.getByRole("button",{name:"Guardando reglas…"})).toHaveAccessibleDescription("Esperá a que termine la operación.");
@@ -368,7 +369,7 @@ it("clears the previous condition values when changing its question and saves on
   ], conditionChoices: {}, roles: [] })));
   const writes = vi.fn();
   server.use(http.post("/api/forms/definitions/:id/rules", async ({ request }) => { const body = await request.json() as { rules: FormRule[] }; writes(body); return HttpResponse.json({ ...initial(), id: actor, revision: 2, rules: body.rules, createdAtUtc: "2026-10-17T12:00:00Z" }); }));
-  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} contentCulture="es" onDirtyChange={vi.fn()}/>);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
   expect(screen.getByRole("textbox", { name: "Valor" })).toHaveValue("12");
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), textId);
@@ -379,4 +380,36 @@ it("clears the previous condition values when changing its question and saves on
   await userEvent.type(screen.getByRole("textbox", { name: "Valor" }), "nueva nota");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
   await waitFor(() => expect(writes).toHaveBeenCalledWith(expect.objectContaining({ rules: [expect.objectContaining({ conditions: [{ fieldId: textId, operator: "contains", values: ["nueva nota"] }] })] })));
+});
+it("edits a rule message in the menu language with the original as reference", async () => {
+  setup(); serveRules([storedRule("Hola")]);
+  const writes = vi.fn();
+  server.use(http.post("/api/forms/definitions/:id/rules", async ({ request }) => { const body = await request.json() as { rules: FormRule[] }; writes(body); return HttpResponse.json({ ...initial(), id: actor, revision: 2, rules: body.rules, createdAtUtc: "2026-10-17T12:00:00Z" }); }));
+  await act(async () => { await i18n.changeLanguage("en"); });
+  try {
+    renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={{ ...scope, culture: "en" }} onDirtyChange={vi.fn()}/>);
+    await userEvent.click(await screen.findByRole("button", { name: "Edit rule 1" }));
+    const message = screen.getByRole("textbox", { name: "Message" });
+    expect(message).toHaveValue("");
+    expect(message).toHaveAccessibleDescription("Original (Spanish): Hola");
+    expect(message).toHaveAttribute("placeholder", "Untranslated");
+    await userEvent.type(message, "Hello");
+    await userEvent.click(screen.getByRole("button", { name: "Save rules" }));
+    await waitFor(() => expect(writes).toHaveBeenCalledWith(expect.objectContaining({ rules: [expect.objectContaining({ actions: [expect.objectContaining({ text: { es: "Hola", en: "Hello" } })] })] })));
+  } finally { await act(async () => { await i18n.changeLanguage("es"); }); }
+});
+it("shows a save error of the translation under the original message, with its language", async () => {
+  setup(); serveRules([storedRule("Hola")]);
+  server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "General.Validation", errors: { "rules[0].actions[0].text.en": ["El texto es demasiado largo."] } }, { status: 400 })));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  const message = screen.getByRole("textbox", { name: "Mensaje" });
+  expect(message).toHaveAccessibleDescription("Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta.");
+  expect(message).not.toHaveAttribute("placeholder");
+  await userEvent.type(message, ", ¿cómo estás?");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await waitFor(() => expect(message).toHaveAttribute("aria-invalid", "true"));
+  expect(message).toHaveAccessibleDescription("En inglés: El texto es demasiado largo.");
+  await waitFor(() => expect(message).toHaveFocus());
+  expect(notify).not.toHaveBeenCalled();
 });

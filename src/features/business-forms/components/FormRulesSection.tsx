@@ -24,11 +24,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/di
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormRules, fetchRuleHistory, fetchRuleOptions, fetchRuleRevision, saveFormRules, type FormRuleSet } from "../api/rules";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
-import { localizedValue, moveItem } from "../editorModel";
+import { contentReference, localizedValue, moveItem } from "../editorModel";
 import { newRule, newRuleAction, clearUnavailablePdfAttachments, prepareRules, ruleFieldErrors, ruleActionKinds, ruleEvents, type FormRule, type RuleActionKind } from "../rules";
-import type { FormCulture } from "../model";
 import { responseFilterLabels, type ResponseColumn } from "../responses";
-interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; scope: FormReadScope; contentCulture: FormCulture; onDirtyChange: (dirty: boolean) => void }
+import { localizedIssue, localizedIssueMessage } from "../validationPaths";
+interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; scope: FormReadScope; onDirtyChange: (dirty: boolean) => void }
 export function FormRulesSection(props: Props) {
   const { t } = useTranslation("forms");
   const owner = JSON.stringify([...formScopeKey(props.scope), props.definitionId]);
@@ -38,8 +38,10 @@ export function FormRulesSection(props: Props) {
   if (deniedOwner === owner) return <Surface title={t("rules.title")} padded><p>{t("rules.noPermission")}</p></Surface>;
   return <RulesEditor key={owner} {...props} onDenied={onDenied} />;
 }
-function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, timeZoneId, onDirtyChange, onDenied }: Props & { onDenied: () => void }) {
+function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDirtyChange, onDenied }: Props & { onDenied: () => void }) {
   const { t, i18n } = useTranslation("forms");
+  // Messages are edited in the menu language; the original is shown as a reference, never copied.
+  const culture = scope.culture;
   const root = [...formScopeKey(scope), "rules", definitionId];
   const notificationRoot = "forms:rules:" + JSON.stringify(root);
   const pendingNotices = useRef(new Set<string>());
@@ -84,7 +86,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
   const dirty = rules !== null && baseline !== null && JSON.stringify(rules) !== JSON.stringify(baseline.rules);
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
   const options = query.data?.options;
-  const columns: ResponseColumn[] = options?.questions.map(field => ({ fieldId: field.fieldId, type: field.type, label: localizedValue(field.label, contentCulture, options.originalCulture), introducedInVersion: 1, options: options.conditionChoices[field.fieldId] ?? (field.options ?? []).map(option => ({ id: option.choiceId, label: localizedValue(option.label, contentCulture, options.originalCulture) })) })) ?? [];
+  const columns: ResponseColumn[] = options?.questions.map(field => ({ fieldId: field.fieldId, type: field.type, label: localizedValue(field.label, culture, options.originalCulture), introducedInVersion: 1, options: options.conditionChoices[field.fieldId] ?? (field.options ?? []).map(option => ({ id: option.choiceId, label: localizedValue(option.label, culture, options.originalCulture) })) })) ?? [];
   const prepared = prepareRules(rules ?? [], options?.originalCulture ?? "es", columns);
   const conflict = needsReview;
   const blocked = busy || cooldown.isRunning;
@@ -97,7 +99,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
     setBusy(true); setError(null); dismissNotification(notificationRoot + ":" + kind); pendingNotices.current.delete(kind);
     try { await action(controller.signal); } catch (failure) {
       if (!active.current || errorFeedback(failure).kind === "cancelled") return;
-      const validation = kind === "save" ? ruleFieldErrors(failure instanceof ApiError ? failure.errors ?? {} : {}, rules ?? [], contentCulture, options?.originalCulture ?? "es") : null;
+      const validation = kind === "save" ? ruleFieldErrors(failure instanceof ApiError ? failure.errors ?? {} : {}, rules ?? []) : null;
       const normalizedFailure = validation && failure instanceof ApiError && failure.errors ? new ApiError(failure.status, { ...failure.problem, errors: validation.errors }, failure.isNetworkError) : failure;
       if (kind === "save") setError(normalizedFailure);
       if (kind === "save" && failure instanceof ApiError && failure.status === 409) { setNeedsReview(true); setCurrent(null); }
@@ -114,6 +116,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
     const local = prepared.issues.find(issue => issue.path === path);
     return (error instanceof ApiError ? error.errors?.[path]?.[0] : undefined) ?? (local ? t("rules.errors." + local.key) : undefined);
   };
+  const textError = (path: string) => localizedIssueMessage(localizedIssue(Object.fromEntries([path, path + ".es", path + ".en"].flatMap(key => { const message = fieldError(key); return message ? [[key, [message]]] : []; })), path, culture), culture, t);
   if (query.isPending || !baseline || rules === null || !options) return <Surface title={t("rules.title")} padded>{query.isPending ? <Spinner /> : <EmptyState embedded title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Surface>;
   const saveReason = busy ? t("rules.saveBusy") : cooldown.isRunning ? t("responses.wait", { count: cooldown.seconds }) : conflict ? t("rules.saveConflict") : prepared.issues.length ? t("rules.saveInvalid") : !dirty ? t("rules.saveUnchanged") : null;
   const resolveConflict = (keepMine: boolean) => {
@@ -123,7 +126,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
     setCurrent(null); setNeedsReview(false); setError(null);
     pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save");
   };
-  const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, i18n.language, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, contentCulture, options.originalCulture) : ""}</li>)}</ol></>;
+  const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, i18n.language, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, culture, options.originalCulture) : ""}</li>)}</ol></>;
   return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
     <Surface title={t("rules.title")} actions={<>{dirty ? <Badge variant="outline">{t("dirty")}</Badge> : <span className="text-xs">{t("rules.revision", { revision: baseline.revision })}</span>}<Button aria-describedby={saveReason ? saveHintId : undefined} disabled={!!saveReason} onClick={() => void run("save", async signal => {
       const saved = await saveFormRules(definitionId, { expectedRevision: baseline.revision, rules: prepared.rules }, signal);
@@ -146,12 +149,13 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
           <FormConditionsEditor heading={t("rules.ifOptional")} conditions={rule.conditions} columns={columns} blocked={blocked} error={fieldError("rules." + index + ".conditions")} onChange={conditions => changeRule(index, { ...rule, conditions })}/>
           <div className="space-y-3"><h3 className="text-sm font-medium">{t("rules.doInOrder")}</h3>{rule.actions.map((action, actionIndex) => {
             const actionPath = "rules." + index + ".actions." + actionIndex;
+            const reference = contentReference(action.text, culture, options.originalCulture);
             return <Surface key={action.id} padded>
               <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-start"><div className="min-w-0 flex-1"><FormField label={<><span aria-hidden="true" className="min-w-0 sm:hidden">{t("rules.action", { number: actionIndex + 1 })}: {t("rules.actions." + action.kind)}</span><span className="sr-only sm:not-sr-only">{t("rules.action", { number: actionIndex + 1 })}</span></>} error={fieldError(actionPath)}><NativeSelect data-action-editor={action.id} disabled={blocked} value={action.kind} onChange={event => changeRule(index, clearUnavailablePdfAttachments({ ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...newRuleAction(event.target.value as RuleActionKind), id: item.id } : item) }))}>{ruleActionKinds.map(kind => <option key={kind} value={kind}>{t("rules.actions." + kind)}</option>)}</NativeSelect></FormField></div>
               <div className="flex justify-end sm:mt-6">{[-1, 1].map(delta => <IconButton key={delta} data-move-item={action.id} data-move-delta={delta} label={t(delta < 0 ? "rules.upAction" : "rules.downAction", { number: actionIndex + 1 })} disabled={blocked || actionIndex + delta < 0 || actionIndex + delta >= rule.actions.length} onClick={() => { pendingFocus.current = { actionId: action.id, delta }; setAnnouncement(t("position", { name: t("rules.action", { number: actionIndex + delta + 1 }), position: actionIndex + delta + 1, total: rule.actions.length })); changeRule(index, clearUnavailablePdfAttachments({ ...rule, actions: moveItem(rule.actions, actionIndex, delta) })); }}><ChevronDownIcon className={"size-4 " + (delta < 0 ? "rotate-180" : "")} /></IconButton>)}<IconButton label={t("rules.removeAction", { number: actionIndex + 1 })} disabled={blocked} onClick={() => { const neighbor = rule.actions[actionIndex + 1] ?? rule.actions[actionIndex - 1]; pendingFocus.current = { selector: neighbor ? '[data-action-editor="' + neighbor.id + '"]' : '[data-add-action="' + rule.id + '"]' }; changeRule(index, clearUnavailablePdfAttachments({ ...rule, actions: rule.actions.filter(item => item.id !== action.id) })); }}><TrashIcon className="size-4" /></IconButton></div></div>
               {action.kind === "RequestApproval" || action.kind === "NotifyRole" ? <FormField label={t("rules.role")} error={fieldError(actionPath + ".roleId")}><NativeSelect disabled={blocked} value={action.roleId ?? ""} onChange={event => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, roleId: event.target.value || null } : item) })}><option value="">{t("rules.chooseRole")}</option>{action.roleId && !options.roles.some(role => role.id === action.roleId) ? <option value={action.roleId}>{t("rules.unavailableRole")}</option> : null}{options.roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</NativeSelect></FormField> : null}
               {action.kind === "GeneratePdf" ? <div className="space-y-2 text-sm"><p>{t("rules.currentDesign")}</p><Button asChild variant="link"><Link to={"/formularios/" + definitionId + "/pdf"}>{t("rules.viewDesign")}</Link></Button></div> : null}
-              {action.text ? <><FormField label={t("rules.message")} hint={t("rules.messageHint", { language: t("cultures." + options.originalCulture) })} error={fieldError(actionPath + ".text." + contentCulture) ?? fieldError(actionPath + ".text." + options.originalCulture)}><Textarea disabled={blocked} maxLength={action.includePdf ? 1024 : 4096} value={action.text[contentCulture] ?? ""} onChange={event => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, text: { ...item.text, [contentCulture]: event.target.value } } : item) })} /></FormField>{action.kind === "NotifyAuthor" ? <CheckboxField error={fieldError(actionPath + ".includePdf")} checked={action.includePdf} disabled={blocked || rule.event !== "Approved"} onCheckedChange={checked => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, includePdf: checked } : item) })} label={t("rules.includePdf")} /> : null}</> : null}
+              {action.text ? <><FormField label={t("rules.message")} hint={reference ? t("originalText", { language: t("cultures." + options.originalCulture), text: reference }) : t("rules.messageHint")} error={textError(actionPath + ".text")}><Textarea disabled={blocked} maxLength={action.includePdf ? 1024 : 4096} placeholder={culture !== options.originalCulture ? t("missingText") : undefined} value={action.text[culture] ?? ""} onChange={event => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, text: { ...item.text, [culture]: event.target.value } } : item) })} /></FormField>{action.kind === "NotifyAuthor" ? <CheckboxField error={fieldError(actionPath + ".includePdf")} checked={action.includePdf} disabled={blocked || rule.event !== "Approved"} onCheckedChange={checked => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, includePdf: checked } : item) })} label={t("rules.includePdf")} /> : null}</> : null}
             </Surface>;
           })}{fieldError("rules." + index + ".actions") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{fieldError("rules." + index + ".actions")}</p> : null}<Button data-add-action={rule.id} variant="outline" disabled={blocked || rule.actions.length >= 10 || rule.actions.at(-1)?.kind === "RequestApproval"} onClick={() => changeRule(index, { ...rule, actions: [...rule.actions, newRuleAction("NotifyAuthor")] })}>{t("rules.addAction")}</Button></div>
           <div className="flex justify-end"><Button variant="outline" disabled={blocked} onClick={() => { pendingFocus.current = { selector: '[data-edit-rule="' + rule.id + '"]' }; setExpanded(null); }}>{t("done")}</Button></div>

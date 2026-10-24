@@ -38,7 +38,8 @@ export function prepareRules(rules: readonly FormRule[], original: FormCulture, 
   return { rules: prepared, issues };
 }
 
-export function ruleFieldErrors(source: Readonly<Record<string, readonly string[]>>, rules: readonly FormRule[], culture: FormCulture, original: FormCulture) {
+// A message error of either language is bound to its rule: the one not on screen is shown under the same field.
+export function ruleFieldErrors(source: Readonly<Record<string, readonly string[]>>, rules: readonly FormRule[]) {
   const errors: Record<string, string[]> = {};
   for (const [key, messages] of Object.entries(source)) {
     const path = /^rules(?:\[|\.)/.test(key) ? key.replace(/\[(\d+)\]/g, ".$1") : key;
@@ -46,7 +47,7 @@ export function ruleFieldErrors(source: Readonly<Record<string, readonly string[
   }
   const fields = rules.flatMap((rule, index) => ["rules." + index + ".conditions", "rules." + index + ".actions", ...rule.actions.flatMap((action, position) => {
     const path = "rules." + index + ".actions." + position;
-    return [path, ...(action.kind === "RequestApproval" || action.kind === "NotifyRole" ? [path + ".roleId"] : []), ...(action.text ? [path + ".text." + culture, path + ".text." + original] : []), ...(action.kind === "NotifyAuthor" ? [path + ".includePdf"] : [])];
+    return [path, ...(action.kind === "RequestApproval" || action.kind === "NotifyRole" ? [path + ".roleId"] : []), ...(action.text ? [path + ".text.es", path + ".text.en"] : []), ...(action.kind === "NotifyAuthor" ? [path + ".includePdf"] : [])];
   })]);
   const first = Object.keys(errors).find(path => errors[path].length > 0 && fields.includes(path));
   const index = first ? /^rules\.(\d+)\./.exec(first)?.[1] : undefined;

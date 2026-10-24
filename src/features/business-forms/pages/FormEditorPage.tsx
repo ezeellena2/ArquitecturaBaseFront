@@ -313,8 +313,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
       </div>
       <FormPreview key={session.scope.editorId} value={value} culture={contentCulture} catalogPreviews={catalogPreviews.owner === previewOwner ? catalogPreviews.items : {}} />
     </div>
-    {session.confirmed && scope.permissions.includes("formsuggestions.manage") ? <Suspense fallback={<Spinner />}><FormSuggestionsSection publishedVersionId={projection?.activeVersion?.versionId??null} timeZoneId={timeZoneId} definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} contentCulture={contentCulture} onDirtyChange={setSuggestionsDirty} /></Suspense> : null}
-    {session.confirmed && scope.permissions.includes("formrules.manage") ? <Suspense fallback={<Spinner />}><FormRulesSection timeZoneId={timeZoneId} definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} contentCulture={contentCulture} onDirtyChange={setRulesDirty} /></Suspense> : null}
+    {session.confirmed && scope.permissions.includes("formsuggestions.manage") ? <Suspense fallback={<Spinner />}><FormSuggestionsSection publishedVersionId={projection?.activeVersion?.versionId??null} timeZoneId={timeZoneId} definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} onDirtyChange={setSuggestionsDirty} /></Suspense> : null}
+    {session.confirmed && scope.permissions.includes("formrules.manage") ? <Suspense fallback={<Spinner />}><FormRulesSection timeZoneId={timeZoneId} definitionId={session.confirmed.id} definitionRevision={session.confirmed.revision} scope={scope} onDirtyChange={setRulesDirty} /></Suspense> : null}
     </div>
   </Page>
 

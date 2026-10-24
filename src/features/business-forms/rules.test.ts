@@ -45,7 +45,7 @@ it("normalizes numeric bracket indexes and binds the first known rule error to i
   const first = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Recibimos." } }] };
   const second = { ...newRule(), actions: [{ ...newRuleAction("RequestApproval"), roleId: crypto.randomUUID() }] };
   const source = { "rules[1].actions[0].roleId": ["Elegí otro rol."], "rules.0.actions.0.text.es": ["Revisá este mensaje."] };
-  const result = ruleFieldErrors(source, [first, second], "es", "es");
+  const result = ruleFieldErrors(source, [first, second]);
   expect(result.errors).toEqual({ "rules.1.actions.0.roleId": ["Elegí otro rol."], "rules.0.actions.0.text.es": ["Revisá este mensaje."] });
   expect(result.firstRuleId).toBe(second.id);
   expect(result.fields).toContain("rules.1.actions.0.roleId");
@@ -53,7 +53,7 @@ it("normalizes numeric bracket indexes and binds the first known rule error to i
 });
 it.each(["rules[5].actions[0].roleId", "rules[0].actions[2].roleId", "rules[0].unknown", "rules[0].actions[0].roleId"])("preserves unbound validation %s without targeting a different rule", path => {
   const rule = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Recibimos." } }] };
-  const result = ruleFieldErrors({ [path]: ["Revisá la configuración."] }, [rule], "es", "es");
+  const result = ruleFieldErrors({ [path]: ["Revisá la configuración."] }, [rule]);
   expect(result.firstRuleId).toBeNull();
   const normalized = path.replace(/\[(\d+)\]/g, ".$1");
   expect(result.errors[normalized]).toEqual(["Revisá la configuración."]);
@@ -61,8 +61,14 @@ it.each(["rules[5].actions[0].roleId", "rules[0].actions[2].roleId", "rules[0].u
 });
 it("keeps every message when both index notations name the same field", () => {
   const rule = { ...newRule(), actions: [{ ...newRuleAction("RequestApproval"), roleId: crypto.randomUUID() }] };
-  const result = ruleFieldErrors({ "rules[0].actions[0].roleId": ["Primer motivo."], "rules.0.actions.0.roleId": ["Segundo motivo."] }, [rule], "es", "es");
+  const result = ruleFieldErrors({ "rules[0].actions[0].roleId": ["Primer motivo."], "rules.0.actions.0.roleId": ["Segundo motivo."] }, [rule]);
   expect(result.errors["rules.0.actions.0.roleId"]).toEqual(["Primer motivo.", "Segundo motivo."]);
+});
+it("binds a message error of either language to its rule", () => {
+  const rule = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Recibimos." } }] };
+  const result = ruleFieldErrors({ "rules[0].actions[0].text.en": ["Demasiado largo."] }, [rule]);
+  expect(result.fields).toEqual(expect.arrayContaining(["rules.0.actions.0.text.es", "rules.0.actions.0.text.en"]));
+  expect(result.firstRuleId).toBe(rule.id);
 });
 
 it("preserves a selected PDF only while a prior generator still applies without mutating the source", () => {

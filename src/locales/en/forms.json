@@ -885,7 +885,7 @@
     "currentDesign": "Generate the PDF using the current design.",
     "viewDesign": "View design",
     "message": "Message",
-    "messageHint": "The original language ({{language}}) is required; the other is optional. Use {número} and a question name in braces to fill in response values.",
+    "messageHint": "Use {número} and a question name in braces to fill in response values.",
     "includePdf": "Attach PDF",
     "upAction": "Move action {{number}} up",
     "downAction": "Move action {{number}} down",
