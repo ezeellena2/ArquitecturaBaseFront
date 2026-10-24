@@ -117,7 +117,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     const items = previous.owner === previewOwner ? previous.items : {};
     return JSON.stringify(items[questionId] ?? null) === JSON.stringify(preview) && previous.owner === previewOwner ? previous : { owner: previewOwner, items: { ...items, [questionId]: preview } };
   }), [previewOwner]);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  // Arriving from a catalog field's uses opens that question of the draft; a use left only in the active version opens none.
+  const [expanded, setExpanded] = useState<string | null>(() => openQuestionFieldId ? editor.session?.value.draft.fields.find(q => q.fieldId === openQuestionFieldId)?.localId ?? null : null);
   const [prefixTouched, setPrefixTouched] = useState("definition" in initial);
   const [removeId, setRemoveId] = useState<string | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -149,23 +150,20 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const feedbackId = `forms:editor:${editor.session?.scope.editorId}`;
   const session = editor.session;
   const value = session?.value;
-  // Expands a question and, once it is drawn, focuses the control `control` picks inside it.
-  const revealQuestion = useCallback((localId: string, control: (container: HTMLElement | undefined) => HTMLElement | null | undefined) => {
-    setExpanded(localId);
-    requestAnimationFrame(() => {
-      if (!active.current) return;
-      control([...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === localId))?.focus();
-    });
-  }, []);
-  // Arriving from a catalog field's uses opens that question of the draft on its catalog control (its label while the
-  // catalog cannot be chosen yet). A use left only in the active version opens the editor without expanding anything.
-  const openedQuestion = useRef<string | null>(null);
+  // Once a question is drawn, focuses the control `control` picks inside it.
+  const focusQuestion = useCallback((localId: string, control: (container: HTMLElement | undefined) => HTMLElement | null | undefined) => requestAnimationFrame(() => {
+    if (!active.current) return;
+    control([...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === localId))?.focus();
+  }), []);
+  const revealQuestion = useCallback((localId: string, control: (container: HTMLElement | undefined) => HTMLElement | null | undefined) => { setExpanded(localId); focusQuestion(localId, control); }, [focusQuestion]);
+  // The question opened on arrival takes the focus on its catalog control (its label while the catalog cannot be chosen yet).
+  const arrivalQuestion = useRef(expanded);
   useEffect(() => {
-    if (!openQuestionFieldId || openedQuestion.current === openQuestionFieldId || !value) return;
-    openedQuestion.current = openQuestionFieldId;
-    const question = value.draft.fields.find(q => q.fieldId === openQuestionFieldId);
-    if (question) revealQuestion(question.localId, container => container?.querySelector<HTMLElement>('[data-question-control="catalog"]:not(:disabled)') ?? container?.querySelector<HTMLElement>('[data-question-control="label"]'));
-  }, [openQuestionFieldId, value, revealQuestion]);
+    const localId = arrivalQuestion.current;
+    if (!localId) return;
+    const frame = focusQuestion(localId, container => container?.querySelector<HTMLElement>('[data-question-control="catalog"]:not(:disabled)') ?? container?.querySelector<HTMLElement>('[data-question-control="label"]'));
+    return () => cancelAnimationFrame(frame);
+  }, [focusQuestion]);
   const dirty = !!session && JSON.stringify(session.value) !== JSON.stringify(session.baseline);
   const frozen = !!session && session.phase !== "Editing";
   const publicationPending = ["Accepting", "Unconfirmed"].includes(publication.phase);
