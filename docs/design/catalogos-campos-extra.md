@@ -101,6 +101,9 @@ ve también la lista, como al tocarlo.
   dice la fila, el campo, el valor y el motivo: «Fila 3 · Plazo de pago (días): «30 días» no es un número entero.». Vale
   para un valor mal escrito antes de guardar y para las filas que devuelve el servidor; en el celular, el mismo motivo va
   bajo el campo del editor de la opción.
+- **Más columnas a la derecha (CE2).** Mientras la tabla de opciones tiene columnas sin ver a la derecha, arriba a la
+  derecha dice «La tabla se desplaza de costado: hay más columnas a la derecha.»; al llegar al final el texto se oculta sin
+  mover la tabla, y una tabla que entra entera no lo muestra.
 
 ## Lo que no se ve en las pantallas
 

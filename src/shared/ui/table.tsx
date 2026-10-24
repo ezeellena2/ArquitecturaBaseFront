@@ -1,13 +1,15 @@
 import * as React from "react"
 import { cn } from "cn"
 
-function Table({ className, scrollLabel, ...props }: React.ComponentProps<"table"> & { scrollLabel?: string }) {
+function Table({ className, scrollLabel, scrollRef, scrollDescribedBy, ...props }: React.ComponentProps<"table"> & { scrollLabel?: string; scrollRef?: React.Ref<HTMLDivElement>; scrollDescribedBy?: string }) {
   return (
     <div
+      ref={scrollRef}
       data-slot="table-container"
       className={cn("relative w-full overflow-x-auto", scrollLabel && "min-w-0 max-w-full")}
       role={scrollLabel ? "region" : undefined}
       aria-label={scrollLabel}
+      aria-describedby={scrollDescribedBy}
       tabIndex={scrollLabel ? 0 : undefined}
     >
       <table

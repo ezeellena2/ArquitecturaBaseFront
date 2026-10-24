@@ -52,9 +52,16 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const region = page.locator(`[data-slot="table-container"][role="region"][aria-label="${es ? "Opciones" : "Options"}"]`);
     await contained(page, region, width);
     expect(await region.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
+    // Columns left to see on the right are announced above the table; at its end the text hides without moving the table.
+    const more = page.getByText(es ? "La tabla se desplaza de costado: hay más columnas a la derecha." : "The table scrolls sideways: there are more columns to the right.", { exact: true });
+    await expect(more).toBeVisible(); await contained(page, more, width);
+    const top = (await region.boundingBox())!.y;
     await region.evaluate(node => { node.scrollLeft = node.scrollWidth; });
     expect(await region.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
+    await expect(more).toBeHidden();
+    expect((await region.boundingBox())!.y).toBe(top);
     await region.evaluate(node => { node.scrollLeft = 0; });
+    await expect(more).toBeVisible();
     const menu = page.getByRole("button", { name: es ? "Campos" : "Fields", exact: true });
     await menu.click(); await page.getByRole("menuitemcheckbox", { name: "CUIT", exact: true }).click();
     await expect(page.getByRole("columnheader", { name: "CUIT", exact: true })).toHaveCount(0);

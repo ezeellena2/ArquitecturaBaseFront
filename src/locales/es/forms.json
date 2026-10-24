@@ -431,7 +431,8 @@
       "duplicateTextNew": "Otra opción nueva tiene el mismo texto: en WhatsApp se verán iguales.",
       "textTooLong": "WhatsApp muestra hasta 30 caracteres.",
       "reviewInvalid": "Revisá las opciones marcadas antes de guardar.",
-      "errorRows_one": "Con error · 1 fila", "errorRows_other": "Con error · {{count}} filas", "clearErrorRows": "Quitar el filtro"
+      "errorRows_one": "Con error · 1 fila", "errorRows_other": "Con error · {{count}} filas", "clearErrorRows": "Quitar el filtro",
+      "moreColumns": "La tabla se desplaza de costado: hay más columnas a la derecha."
     },
     "filters": {
       "title": "De dónde salen: la base, con filtros",

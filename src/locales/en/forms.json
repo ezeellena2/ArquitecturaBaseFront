@@ -431,7 +431,8 @@
       "duplicateTextNew": "Another new option has the same text: they will look the same in WhatsApp.",
       "textTooLong": "WhatsApp shows up to 30 characters.",
       "reviewInvalid": "Review the marked options before saving.",
-      "errorRows_one": "With errors · 1 row", "errorRows_other": "With errors · {{count}} rows", "clearErrorRows": "Remove the filter"
+      "errorRows_one": "With errors · 1 row", "errorRows_other": "With errors · {{count}} rows", "clearErrorRows": "Remove the filter",
+      "moreColumns": "The table scrolls sideways: there are more columns to the right."
     },
     "filters": {
       "title": "Where options come from: database with filters",
