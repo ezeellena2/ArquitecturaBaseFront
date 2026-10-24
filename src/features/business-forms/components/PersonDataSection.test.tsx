@@ -24,3 +24,11 @@ it("selects source options with UsersManage alone and reports a failed independe
  expect(screen.getByRole("alert")).toHaveTextContent("No se pudieron guardar los datos. Probá de nuevo. El resto del usuario ya se guardó.");
  expect(catalogReads).toBe(0);
 });
+it("names the values of attributes named only in the other language with that name", async () => {
+ const zone = "01990000-0000-7000-8000-000000000001", branch = "01990000-0000-7000-8000-000000000006", userId = "01990000-0000-7000-8000-000000000002", source = "01990000-0000-7000-8000-000000000003";
+ const attribute = { originalCulture: "en", isActive: true, revision: 1, usedBy: [] };
+ server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["users.manage"] })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [{ ...attribute, id: zone, key: "zone", name: { en: "Zone" }, type: "Catalog", sourceCatalogId: source, sourceCatalogName: "Zones", position: 0 }, { ...attribute, id: branch, key: "branch", name: { en: "Branch" }, type: "Text", sourceCatalogId: null, sourceCatalogName: null, position: 1 }] })), http.get(`/api/forms/person-data/${userId}`, () => HttpResponse.json({ userId, revision: 1, values: {} })), http.get(`/api/forms/person-attributes/${zone}/options`, () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })));
+ await act(async () => { renderWithProviders(<PersonDataSection userId={userId} disabled={false} userSaved={false} onState={vi.fn()} />); });
+ expect(await screen.findByRole("combobox", { name: "Zone" })).toBeInTheDocument();
+ expect(screen.getByRole("textbox", { name: "Branch" })).toBeInTheDocument();
+});

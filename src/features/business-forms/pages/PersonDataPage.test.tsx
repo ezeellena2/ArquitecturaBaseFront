@@ -35,6 +35,14 @@ it("summarizes how many people match and how many lack each attribute used by a 
  expect(await within(table).findByText("6 personas · 2 sin Zona")).toBeInTheDocument();
  expect(within(table).queryByText(/sin Sucursal/)).not.toBeInTheDocument();
 });
+it("shows an attribute named only in the other language with that name in both tables", async () => {
+ await mount(["formpersondata.manage", "users.read"], [{ ...attribute, name: { en: "Zone" }, originalCulture: "en" }]);
+ const definitions = (await screen.findByRole("heading", { name: "Datos" })).closest("section")!;
+ expect(await within(definitions).findByRole("cell", { name: "Zone" })).toBeInTheDocument();
+ expect(within(definitions).getByRole("button", { name: "Editar Zone" })).toBeInTheDocument();
+ const table = (await screen.findByRole("heading", { name: "Personas" })).closest("section")!;
+ expect(await within(table).findByRole("columnheader", { name: "Zone" })).toBeInTheDocument();
+});
 it("keeps attribute administration available without requesting people who cannot be read", async () => {
  const reads = await mount(["formpersondata.manage"]);
  expect(await screen.findByText("Sucursal")).toBeInTheDocument();

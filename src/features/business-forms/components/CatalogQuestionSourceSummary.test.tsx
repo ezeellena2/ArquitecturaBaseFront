@@ -1,13 +1,14 @@
-import { act, screen } from "@testing-library/react";
+import { act, cleanup, screen } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { CatalogQuestionSourceSummary } from "./CatalogQuestionSourceSummary";
-const field = vi.hoisted(() => ({ id: "field", name: { es: "Sucursal" }, type: "catalog", sourceCatalogId: "branches", isActive: true }));
-const south = vi.hoisted(() => ({ id: "01990000-0000-7000-8000-000000000077", code: "S", text: { es: "Sur", en: "South" }, detail: {}, value: null, position: 37, isActive: false, fields: {}, fieldTexts: {} }));
+const field = vi.hoisted(() => ({ id: "field", name: { es: "Sucursal" } as Readonly<Record<string, string>>, type: "catalog", sourceCatalogId: "branches", isActive: true }));
+const south = vi.hoisted(() => ({ id: "01990000-0000-7000-8000-000000000077", code: "S", text: { es: "Sur", en: "South" } as Readonly<Record<string, string>>, detail: {}, value: null, position: 37, isActive: false, fields: {}, fieldTexts: {} }));
 const typedFields = vi.hoisted(() => [{ id: "amount", name: { es: "Importe" }, type: "decimal", sourceCatalogId: null, isActive: true }, { id: "units", name: { es: "Unidades" }, type: "integer", sourceCatalogId: null, isActive: true }]);
 vi.mock("../hooks/useCatalogQueries", () => ({ useCatalogDetail: () => ({ data: { fields: [field, ...typedFields] } }), useCatalogItemsById: (_scope: unknown, catalogId: string, itemIds: readonly string[]) => ({ data: catalogId === "branches" && itemIds.includes(south.id) ? { items: [south] } : undefined }) }));
-vi.mock("../hooks/usePersonData", () => ({ usePersonAttributes: () => ({ data: { items: [] } }) }));
-beforeEach(() => { field.type = "catalog"; });
+const attributes = vi.hoisted(() => ({ items: [] as unknown[] }));
+vi.mock("../hooks/usePersonData", () => ({ usePersonAttributes: () => ({ data: attributes }) }));
+beforeEach(() => { field.type = "catalog"; field.name = { es: "Sucursal" }; south.text = { es: "Sur", en: "South" }; attributes.items = []; });
 it("explains changed catalog values and selected presentation without exposing option identities", async () => {
   const id = south.id;
   await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} source={{ catalog: "catalog", match: [{ fieldId: "field", value: id }], presentation: { title: ["text"], description: ["field"] } }} compared={{ catalog: "catalog", match: [{ fieldId: "field", value: "other" }] }}/>); });
@@ -24,4 +25,14 @@ it("shows fixed typed filter values with the shared format", async () => {
   await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} source={{ catalog: "catalog", match: [{ fieldId: "amount", value: "1500.5" }, { fieldId: "units", value: "15000" }] }}/>); });
   expect(screen.getByText("Importe: 1.500,5")).toBeInTheDocument();
   expect(screen.getByText("Unidades: 15.000")).toBeInTheDocument();
+});
+
+it("names a field, its fixed option and the person data written only in the other language", async () => {
+  field.name = { en: "Branch" }; south.text = { en: "South" }; attributes.items = [{ id: "zone", name: { en: "Customer branch" } }];
+  const scope = { actorId: "actor", culture: "es" as const, permissions: ["formcatalogs.read"] };
+  await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={scope} source={{ catalog: "catalog", match: [{ fieldId: "field", value: south.id }] }} compared={{ catalog: "catalog", match: [{ fieldId: "field", value: south.id }] }}/>); });
+  expect(screen.getByText("Branch: South")).toBeInTheDocument();
+  cleanup();
+  await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={scope} source={{ catalog: "catalog", match: [{ fieldId: "field", personAttributeId: "zone" }] }}/>); });
+  expect(screen.getByText("Branch: Customer branch")).toBeInTheDocument();
 });

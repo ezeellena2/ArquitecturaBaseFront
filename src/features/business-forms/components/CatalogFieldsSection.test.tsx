@@ -77,6 +77,18 @@ it("translates a field name with the original as reference and shows an error of
     await i18n.changeLanguage("es");
   }
 });
+it("shows a field named only in the other language with that name in the table and its actions", async () => {
+  const media = vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(min-width: 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }) as MediaQueryList);
+  try {
+    const phone: CatalogFieldDraft = { ...field, name: { en: "Phone" } };
+    await act(async () => { renderWithProviders(<MemoryRouter><CatalogFieldsSection fields={[phone]} presentation={null} culture="es" original="en" scope={{ actorId: "author", culture: "es", permissions: catalogPermissions }} readOnly={false} confirmedRemovals={[]} onChange={vi.fn()} /></MemoryRouter>); });
+    await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
+    expect(within(screen.getByRole("table")).getByRole("cell", { name: "Phone" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Editar Phone" })).toBeInTheDocument();
+  } finally {
+    media.mockRestore();
+  }
+});
 it("keeps a saved key immutable and requires a checked confirmation before removing values", async () => {
   await mount([field]);
   await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
