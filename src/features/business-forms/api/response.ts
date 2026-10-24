@@ -16,7 +16,7 @@ export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, matc
   .refine(source => !source.match || new Set(source.match.map(item => item.fieldId.toLowerCase())).size === source.match.length);
 export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document"]),
   label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullable(), source: canonicalCatalogSourceSchema.optional(),
-  files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullish() }).optional(),
+  files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullable() }).optional(),
   selection: z.strictObject({ minSelected: z.number().int().min(0).max(20), maxSelected: z.number().int().min(1).max(20) }).optional(),
 }).superRefine((value, context) => {
   const fileType = value.type === "photo" || value.type === "document";

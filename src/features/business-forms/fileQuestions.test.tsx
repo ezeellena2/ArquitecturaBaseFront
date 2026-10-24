@@ -21,6 +21,16 @@ it("starts photo questions with camera or gallery and preserves file settings af
   expect(openDraftSession({ actorId: "actor", editorId: "reload" }, saved).value.draft.fields[0]).toMatchObject({ files: { minFiles: 1, maxFiles: 4, photoSource: "camera" } });
 });
 
+it("reads a saved document with photoSource null and rejects one without it, which the server always writes", () => {
+  const fieldId = "01990000-0000-7000-8000-000000000112";
+  const withFiles = (files: object) => ({ ...detail, definition: { ...detail.definition, offerWhen: null, draft: { ...detail.definition.draft, fields: [{
+    fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "document", label: { es: "Remito", en: "Delivery note" }, help: null,
+    required: false, maxLength: null, options: null, files,
+  }] } } });
+  expect(readFormDetail(withFiles({ minFiles: 0, maxFiles: 1, photoSource: null })).definition.draft.fields[0]).toMatchObject({ files: { minFiles: 0, maxFiles: 1, photoSource: null } });
+  expect(() => readFormDetail(withFiles({ minFiles: 0, maxFiles: 1 }))).toThrow("Unsupported form response.");
+});
+
 it("shows disabled photo and document choices when storage is unavailable", async () => {
   await act(async () => { renderWithProviders(<QuestionEditor question={newQuestion("shortText", "es", "a")} position={1} total={1} culture="es" original="es" expanded readOnly={false} issues={[]} onChange={() => {}} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
   expect(screen.getByRole("option", { name: /Foto/ })).toBeDisabled();
