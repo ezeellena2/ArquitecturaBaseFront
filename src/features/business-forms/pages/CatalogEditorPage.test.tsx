@@ -719,8 +719,7 @@ it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invali
     http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json({ catalog: { ...typed, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
   await mount("/catalogos/" + id + "?valueType=Date");
   const user = userEvent.setup();
-  const type = await screen.findByRole("textbox", { name: language === "es" ? "Tipo de valor" : "Value type" });
-  expect(type).toHaveValue("Decimal"); expect(type).toHaveAttribute("readonly");
+  expect(await screen.findByText(language === "es" ? "Escritas a mano · Decimal" : "Written manually · Decimal", { exact: true })).toBeInTheDocument();
   await user.click(await screen.findByRole("button", { name: language === "es" ? "Editar Pérez" : "Edit Pérez" }));
   const value = screen.getByRole("textbox", { name: language === "es" ? "Valor · Decimal" : "Value · Decimal" });
   expect(value).toHaveValue(language === "es" ? "9.007.199.254.740.993,0123" : "9,007,199,254,740,993.0123");

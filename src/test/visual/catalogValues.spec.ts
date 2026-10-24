@@ -10,8 +10,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + visualCatalogId, lang: language, scenario: "catalogs-typed" }));
     await expect(page.getByRole("heading", { name: label("Recargo por zona", "Zone surcharge"), exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    const type = page.getByRole("textbox", { name: label("Tipo de valor", "Value type"), exact: true });
-    await expect(type).toHaveValue("Decimal"); await expect(type).toHaveAttribute("readonly", "");
+    // Origin and value type are a read-only line above the name, without a box or an explanation.
+    await expect(page.getByText(label("Escritas a mano · Decimal", "Written manually · Decimal"), { exact: true })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: label("Tipo de valor", "Value type"), exact: true })).toHaveCount(0);
     await expect(page.getByRole("columnheader", { name: label("Valor", "Value"), exact: true })).toBeVisible();
     // Option labels follow the selected Spanish content culture, independently from the UI.
     await page.getByRole("button", { name: label("Editar Interior", "Edit Interior"), exact: true }).click();

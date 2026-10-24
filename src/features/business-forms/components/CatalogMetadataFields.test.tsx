@@ -33,6 +33,21 @@ describe("Bilingual catalog metadata", () => {
     expect(screen.getByRole("textbox", { name: nameLabel })).toHaveValue("Customers");
     expect(screen.getByRole("textbox", { name: descriptionLabel })).toHaveValue("Visits");
   });
+  it("shows origin and value type as one read-only line above name and an optional description", async () => {
+    const view = await act(async () => renderWithProviders(<CatalogMetadataFields valueType="Text" name={{ es: "Clientes", en: "" }} description={{ es: "", en: "" }} culture="es" canManage onCultureChange={() => {}} onChange={() => {}} />));
+    const line = screen.getByText("Escritas a mano · Texto", { exact: true });
+    expect(line.tagName).toBe("P");
+    expect(line.compareDocumentPosition(screen.getByRole("textbox", { name: "Nombre" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("textbox", { name: "De dónde salen" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Tipo de valor" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/no se puede cambiar/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Nombre", { selector: "label" })).toHaveTextContent(/^Nombre \*$/);
+    expect(screen.getByText("Descripción", { selector: "label" })).toHaveTextContent(/^Descripción$/);
+    expect(screen.getByRole("textbox", { name: "Descripción" })).not.toHaveAttribute("aria-required");
+    view.unmount();
+    await act(async () => { renderWithProviders(<CatalogMetadataFields valueType="Text" origin="Filters" name={{ es: "Responsables", en: "" }} description={{ es: "", en: "" }} culture="es" canManage onCultureChange={() => {}} onChange={() => {}} />); });
+    expect(screen.getByText("De la base · Texto", { exact: true })).toBeInTheDocument();
+  });
   it("keeps fields read-only without Manage and binds translated field errors", async () => {
     await act(async () => { renderWithProviders(<CatalogMetadataFields valueType="Text" name={{ es: "Clientes", en: "Customers" }} description={{ es: "Visitas", en: "Visits" }} culture="es" canManage={false} onCultureChange={() => {}} onChange={() => {}} errors={{ "name.es": ["Revisá el nombre"] }} />); });
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");

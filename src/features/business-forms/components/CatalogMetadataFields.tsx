@@ -21,15 +21,14 @@ export function CatalogMetadataFields({ name, description, culture, canManage, b
       <div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("contentLanguage")} options={(["es", "en"] as const).map(language => ({ key: language, label: t("cultures." + language), pressed: culture === language, onSelect: () => onCultureChange(language) }))} /></div>
       <p className="text-xs text-[var(--color-content-muted)]">{originalCulture ? t("catalogs.proposal.languagesHint", { language: t("cultures." + originalCulture) }) : t("catalogs.metadata.languagesHint")}</p>
     </div></Surface>
-    <Surface title={t("catalogs.metadata.title")} padded><div className="grid gap-4 sm:grid-cols-2">
+    <Surface title={t("catalogs.metadata.title")} padded><div className="grid w-full max-w-2xl grid-cols-1 gap-4">
+      <p className="text-sm text-[var(--color-content-muted)]">{[t(origin === "Manual" ? "catalogs.source.manual" : "catalogs.source.database"), t("catalogs.valueTypes." + valueType)].join(" · ")}</p>
       <FormField label={t("name")} required={!originalCulture || culture === originalCulture} error={errors["name." + culture]?.join(" ")}>
         <Input readOnly={readOnly} maxLength={120} value={name[culture]} onChange={event => onChange({ name: { ...name, [culture]: event.target.value } })} />
       </FormField>
-      <FormField label={t("catalogs.columns.origin")} hint={t("catalogs.origin.fixedHint")}><Input readOnly value={t(origin === "Manual" ? "catalogs.source.manual" : "catalogs.source.database")} /></FormField>
-      <div className="sm:col-span-2"><FormField label={t("catalogs.valueType.label")} hint={t("catalogs.valueType.fixedHint")}><Input readOnly value={t("catalogs.valueTypes." + valueType)} /></FormField></div>
-      <div className="sm:col-span-2"><FormField label={t("catalogs.metadata.description")} required={!originalCulture || culture === originalCulture} hint={t("catalogs.metadata.descriptionHint")} error={errors["description." + culture]?.join(" ")}>
+      <FormField label={t("catalogs.metadata.description")} hint={t("catalogs.metadata.descriptionHint")} error={errors["description." + culture]?.join(" ")}>
         <Textarea readOnly={readOnly} maxLength={1000} value={description[culture]} onChange={event => onChange({ description: { ...description, [culture]: event.target.value } })} />
-      </FormField></div>
+      </FormField>
     </div></Surface>
   </>;
 }
