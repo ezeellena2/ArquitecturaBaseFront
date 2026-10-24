@@ -136,7 +136,8 @@ Escala compacta para administración; el acceso público usa controles de 44/46 
 Tres niveles: **pantalla** (uno por ruta, título y acción primaria, sin ícono), **superficie** (abre tabla, formulario,
 diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del menú). La pantalla usa `Page`:
 
-- Banda de **48 px mínimos**, `--color-page-header` y borde inferior, adherida en escritorio. En móvil no se adhiere y
+- Banda de **48 px mínimos**, `--color-page-header` y borde inferior, adherida en escritorio. Si título y acciones no
+  entran en un renglón, las acciones bajan al borde derecho y el título queda entero. En móvil no se adhiere y
   título, estado y acciones pueden ocupar varias filas. Sin estado expandido, antetítulo, descripción ni ícono.
 - Título de la pantalla abierta y su acción primaria a la derecha.
 - Pantalla hija: `backTo`, caja de 24 px con flecha de 14 px, tooltip, sin borde permanente y nombre accesible que dice

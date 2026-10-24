@@ -270,6 +270,33 @@ test("a settings conflict uses the common comparison table", async ({ page }) =>
   await expect(page).toHaveScreenshot("settings-review-320.png", { fullPage: true });
 });
 
+// Con el menú y el panel de Administración abiertos, Revisar, Descartar y Guardar no entran al lado del título: bajan de
+// renglón, al borde derecho de la banda, y el título queda entero. A 800 px también se reparten en dos renglones.
+for (const width of [1024, 800]) {
+  test(`a settings conflict keeps the whole title with its actions on the right at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await openScreen(page, "/configuracion", "es", "conflict");
+    await page.getByRole("combobox", { name: "Filas por página", exact: true }).selectOption("100");
+    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+    const title = page.getByRole("heading", { level: 1, name: "Configuración", exact: true });
+    const header = page.locator("header").filter({ has: title });
+    await expect(header.getByRole("button", { name: "Revisar valores actuales", exact: true })).toBeVisible();
+    const geometry = await header.evaluate(band => {
+      const heading = band.querySelector("h1")!;
+      const edge = band.getBoundingClientRect().right - parseFloat(getComputedStyle(band).paddingRight);
+      const buttons = [...band.querySelectorAll("button")].map(button => button.getBoundingClientRect());
+      return {
+        cut: heading.scrollWidth > heading.clientWidth,
+        inside: buttons.every(box => box.left >= band.getBoundingClientRect().left && box.right <= edge + 1),
+        rightGap: Math.round(edge - Math.max(...buttons.map(box => box.right))),
+        overflow: document.querySelector("main")!.scrollWidth > document.querySelector("main")!.clientWidth,
+      };
+    });
+    expect(geometry).toEqual({ cut: false, inside: true, rightGap: 0, overflow: false });
+    await page.screenshot({ path: testInfo.outputPath(`settings-conflict-header-${width}.png`) });
+  });
+}
+
 for (const language of ["es", "en"]) {
   test(`unified settings preserves the draft when confirmation closes in ${language}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 320, height: 740 });

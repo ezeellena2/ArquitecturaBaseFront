@@ -10,7 +10,9 @@ import { ActionTooltip } from "./ActionTooltip";
 /// acordarse de poner es exactamente el tipo de criterio que el fundamento visual existe para evitar. Acá no
 /// hay forma de dibujar una pantalla sin su encabezado ni de olvidarse el margen del contenido.
 ///
-/// El título comparte la línea con las acciones, sobre el tono suave del encabezado de pantalla de Jade.
+/// El título comparte la línea con las acciones, sobre el tono suave del encabezado de pantalla de Jade. Si no
+/// entran juntos (con el menú y el panel de Administración abiertos, o con una acción de más, como Revisar tras
+/// un conflicto), las acciones bajan de renglón y siguen al borde derecho: el título no se recorta por ellas.
 /// No lleva ícono de sección: el título y el menú ya dicen dónde estás.
 ///
 /// Queda adherido arriba: en un listado largo, el título y la acción primaria no se van de pantalla.
@@ -38,7 +40,7 @@ export function Page({
 }): ReactNode {
   const content = (
     <>
-      <header className="sticky top-0 z-20 flex min-h-12 flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-page-header)] px-5 py-2 sm:flex-nowrap sm:py-0 max-sm:static">
+      <header className="sticky top-0 z-20 flex min-h-12 flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-page-header)] px-5 py-2 sm:py-1.5 max-sm:static">
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1 sm:flex-nowrap max-sm:basis-full">
           {backTo ? (
             <ActionTooltip label={backTo.label}>
@@ -54,7 +56,7 @@ export function Page({
           <h1 className="min-w-0 truncate text-2xl font-semibold tracking-normal text-[var(--color-content)] max-sm:whitespace-normal max-sm:break-words">{title}</h1>
           {status ? <span className="flex shrink-0 items-center gap-2 max-sm:basis-full">{status}</span> : null}
         </span>
-        {actions ? <span className="flex shrink-0 items-center gap-2 max-sm:ml-auto max-sm:w-full max-sm:flex-wrap max-sm:justify-end">{actions}</span> : null}
+        {actions ? <span className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-2 max-sm:w-full">{actions}</span> : null}
       </header>
 
       <div className={viewport ? "flex min-h-0 flex-1 flex-col px-5 py-4" : "px-5 py-4"}>{children}</div>
