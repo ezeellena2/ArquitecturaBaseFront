@@ -156,13 +156,26 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     control([...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === localId))?.focus();
   }), []);
   const revealQuestion = useCallback((localId: string, control: (container: HTMLElement | undefined) => HTMLElement | null | undefined) => { setExpanded(localId); focusQuestion(localId, control); }, [focusQuestion]);
-  // The question opened on arrival takes the focus on its catalog control (its label while the catalog cannot be chosen yet).
+  // The question opened on arrival takes the focus on its catalog control. While the catalog cannot be chosen (its list is still loading)
+  // the label holds the focus, and the catalog takes it as soon as it is enabled, unless the focus already left the label.
   const arrivalQuestion = useRef(expanded);
   useEffect(() => {
     const localId = arrivalQuestion.current;
     if (!localId) return;
-    const frame = focusQuestion(localId, container => container?.querySelector<HTMLElement>('[data-question-control="catalog"]:not(:disabled)') ?? container?.querySelector<HTMLElement>('[data-question-control="label"]'));
-    return () => cancelAnimationFrame(frame);
+    let catalogWait: MutationObserver | undefined;
+    const frame = focusQuestion(localId, container => {
+      const label = container?.querySelector<HTMLElement>('[data-question-control="label"]');
+      const catalog = container?.querySelector<HTMLSelectElement>('[data-question-control="catalog"]');
+      if (!catalog?.disabled) return catalog ?? label;
+      catalogWait = new MutationObserver(() => {
+        if (catalog.disabled) return;
+        catalogWait?.disconnect();
+        if (document.activeElement === label) catalog.focus();
+      });
+      catalogWait.observe(catalog, { attributes: true, attributeFilter: ["disabled"] });
+      return label;
+    });
+    return () => { cancelAnimationFrame(frame); catalogWait?.disconnect(); };
   }, [focusQuestion]);
   const dirty = !!session && JSON.stringify(session.value) !== JSON.stringify(session.baseline);
   const frozen = !!session && session.phase !== "Editing";
