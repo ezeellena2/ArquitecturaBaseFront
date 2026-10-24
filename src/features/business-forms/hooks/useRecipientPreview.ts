@@ -58,6 +58,6 @@ export function useRecipientPreview(scope: FormReadScope, definitionId: string |
   const retryable = error instanceof ApiError && (error.isNetworkError || error.status >= 500 || error.status === 429);
   const canRetry = retryable && !cooldown.isRunning;
   return { person, result: current?.result ?? null, error, busy: stamp !== null && !current, denied, complete, available: canPreview(scope) && !denied && !!definitionId,
-    canRetry, waitSeconds: cooldown.isRunning ? cooldown.seconds : 0, retry: () => { if (canRetry) setAttempt(value => value + 1); },
+    canRetry, waitSeconds: retryable && cooldown.isRunning ? cooldown.seconds : 0, retry: () => { if (canRetry) setAttempt(value => value + 1); },
     select: (person: { id: string; name: string } | null) => { if (canPreview(scope) && !denied) setSelected(person ? { owner, person } : null); } };
 }

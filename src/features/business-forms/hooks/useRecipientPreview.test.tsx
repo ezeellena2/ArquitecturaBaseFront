@@ -28,3 +28,7 @@ it("retries a failed preview only by explicit action and waits the Retry-After o
  await act(() => vi.advanceTimersByTimeAsync(1000)); expect(result.current).toMatchObject({ canRetry: false, waitSeconds: 1 });
  await act(() => vi.advanceTimersByTimeAsync(1000)); expect(result.current).toMatchObject({ canRetry: true, waitSeconds: 0 }); expect(previewRecipient).toHaveBeenCalledTimes(3);
  act(() => result.current.retry()); await act(() => vi.advanceTimersByTimeAsync(0)); expect(result.current.result?.recipient.id).toBe("Luis"); expect(previewRecipient).toHaveBeenCalledTimes(4); });
+it("does not show the wait of a 429 on a later preview that cannot be retried", async () => { const { result } = mount();
+ vi.mocked(previewRecipient).mockRejectedValueOnce(new ApiError(429, {})); act(() => result.current.select({ id: "Ana", name: "Ana" })); await waitFor(() => expect(result.current.error).toBeInstanceOf(ApiError)); expect(result.current).toMatchObject({ canRetry: false, waitSeconds: 60 });
+ vi.mocked(previewRecipient).mockRejectedValueOnce(new ApiError(409, { code: "Forms.Catalog.FilterUnavailable" })); act(() => result.current.select({ id: "Luis", name: "Luis" })); await waitFor(() => expect((result.current.error as ApiError | null)?.status).toBe(409));
+ expect(result.current).toMatchObject({ canRetry: false, waitSeconds: 0 }); expect(previewRecipient).toHaveBeenCalledTimes(2); });
