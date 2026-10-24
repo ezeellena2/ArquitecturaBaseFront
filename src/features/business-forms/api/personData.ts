@@ -15,11 +15,15 @@ const data = z.strictObject({ userId: guid, revision: revision.nullable(), value
 const row = z.strictObject({ userId: guid, displayName: z.string().nullable(), values });
 const option = z.strictObject({ id: guid, text: z.string().max(200) });
 const page = <T extends z.ZodType>(item: T) => z.strictObject({ items: z.array(item).max(100), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() });
+// The server counts the whole filtered set, one entry per active attribute: the page never counts its own rows.
+const missing = z.array(z.strictObject({ attributeId: guid, count })).max(20).refine(value => new Set(value.map(item => item.attributeId.toLowerCase())).size === value.length);
+const peoplePage = page(row).extend({ missing });
 
 export type PersonAttribute = z.infer<typeof attribute>;
 export type PersonData = z.infer<typeof data>;
 export type PersonDataRow = z.infer<typeof row>;
 export type PersonAttributeOption = z.infer<typeof option>;
+export interface PersonDataPage extends PagedResult<PersonDataRow> { readonly missing: readonly { readonly attributeId: string; readonly count: number }[] }
 export interface PersonAttributeBody { readonly key: string; readonly name: Readonly<{ es: string; en?: string }>; readonly type: "Catalog" | "Text"; readonly sourceCatalogId: string | null }
 export interface UpdatePersonAttributeBody extends Omit<PersonAttributeBody, "key"> { readonly expectedRevision: number; readonly position: number; readonly isActive: boolean; readonly confirmValueRemoval?: true }
 export interface PersonDataBody { readonly expectedRevision: number | null; readonly values: Readonly<Record<string, string | null>> }
@@ -44,7 +48,7 @@ export function readPersonData(value: unknown, expectedUserId?: string, expected
   if (expectedUserId && parsed.userId.toLowerCase() !== expectedUserId.toLowerCase() || expectedRevision !== undefined && parsed.revision !== (expectedRevision ?? 0) + 1) throw new UnsupportedPersonDataResponse();
   return parsed;
 }
-export const readPersonDataPage = (value: unknown): PagedResult<PersonDataRow> => read(page(row), value);
+export const readPersonDataPage = (value: unknown): PersonDataPage => read(peoplePage, value);
 export const readPersonAttributeOptions = (value: unknown): PagedResult<PersonAttributeOption> => read(page(option), value);
 const queryString = (query: PersonDataPageQuery | PersonAttributeOptionsQuery) => new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));
 export const fetchPersonAttributes = async (signal?: AbortSignal) => readPersonAttributes(await api.get<unknown>("/api/forms/person-attributes", { signal, cache: "no-store" }));

@@ -66,7 +66,9 @@ export function createPersonDataVisualFixtures(language: "es" | "en", scenario: 
       const search = (url.searchParams.get("search") ?? "").toLocaleLowerCase(language);
       const rows: PersonDataRow[] = users.filter(user => (user.displayName ?? "").toLocaleLowerCase(language).includes(search)).map(user => ({ userId: user.id, displayName: user.displayName, values: records.get(user.id)!.values }));
       if (url.searchParams.get("sort") === "-displayName") rows.reverse();
-      return Response.json(page(rows, Number(url.searchParams.get("page") ?? 1), Number(url.searchParams.get("pageSize") ?? 20)));
+      // Like the server: per active attribute, the people of the whole filtered set without a value.
+      const missing = attributes.filter(attribute => attribute.isActive).map(attribute => ({ attributeId: attribute.id, count: rows.filter(row => !row.values[attribute.id]?.value).length }));
+      return Response.json({ ...page(rows, Number(url.searchParams.get("page") ?? 1), Number(url.searchParams.get("pageSize") ?? 20)), missing });
     }
     if (path.startsWith("/api/forms/person-data/")) return Response.json(records.get(path.split("/").at(-1)!)!);
     const user = users.find(user => path === "/api/users/" + user.id);

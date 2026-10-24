@@ -30,6 +30,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     for (const region of await regions.all()) await contained(region, page, width);
     if (width < 640) expect(await regions.first().evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
     await expect(page.getByRole("table").last().getByRole("row")).toHaveCount(7);
+    await expect(page.getByText(es ? "6 personas · 2 sin Zona" : "6 people · 2 without Zone", { exact: true })).toBeVisible();
     await page.screenshot({ path: "test-results/person-data-table-" + language + "-" + width + ".png", fullPage: true });
     const add = page.getByRole("button", { name: es ? "Agregar dato" : "Add attribute", exact: true });
     await add.click();

@@ -21,10 +21,12 @@ it("reads private person values and a nullable initial revision while checking t
     expect(() => readPersonData(body, userId)).toThrow("Unsupported person data response.");
   }
 });
-it("reads the people table with a nullable display name and only declared private columns", () => {
-  const row = { userId, displayName: null, values: person.values };
-  expect(readPersonDataPage(page([row]))).toEqual(page([row]));
-  expect(() => readPersonDataPage(page([{ ...row, email: "private@example.invalid" }]))).toThrow("Unsupported person data response.");
+it("reads the people table with a nullable display name, only declared private columns and one missing count per attribute", () => {
+  const row = { userId, displayName: null, values: person.values }, missing = [{ attributeId: id, count: 2 }];
+  expect(readPersonDataPage({ ...page([row]), missing })).toEqual({ ...page([row]), missing });
+  for (const body of [{ ...page([{ ...row, email: "private@example.invalid" }]), missing }, page([row]), { ...page([row]), missing: [...missing, { attributeId: id, count: 1 }] }, { ...page([row]), missing: [{ attributeId: id, count: -1 }] }, { ...page([row]), missing: [{ ...missing[0], userId }] }]) {
+    expect(() => readPersonDataPage(body)).toThrow("Unsupported person data response.");
+  }
 });
 it("sends a private delta with the captured revision and validates its own commit without another person or a stale response", async () => {
   const signal = new AbortController().signal, body = { expectedRevision: 1, values: { [id]: null } };
@@ -65,7 +67,7 @@ it("reads metadata and private values with no-store and cancellation and rejects
   expect(get).toHaveBeenLastCalledWith("/api/forms/person-attributes", { signal, cache: "no-store" });
   get.mockResolvedValue(person); await fetchPersonData(userId, signal);
   expect(get).toHaveBeenLastCalledWith("/api/forms/person-data/" + userId, { signal, cache: "no-store" });
-  get.mockResolvedValue(page([])); await fetchPersonDataPage({ page: 1, pageSize: 20, sort: "displayName" }, signal);
+  get.mockResolvedValue({ ...page([]), missing: [] }); await fetchPersonDataPage({ page: 1, pageSize: 20, sort: "displayName" }, signal);
   expect(get).toHaveBeenLastCalledWith("/api/forms/person-data?page=1&pageSize=20&sort=displayName", { signal, cache: "no-store" });
   const calls = get.mock.calls.length;
   await expect(fetchPersonData("not-an-id", signal)).rejects.toThrow("Unsupported person data response.");

@@ -11,7 +11,7 @@ import { PersonDataPage } from "./PersonDataPage";
 vi.mock("react-oidc-context", async () => { const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"); return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }; });
 const id = "01990000-0000-7000-8000-000000000001", userId = "01990000-0000-7000-8000-000000000002";
 const attribute = { id, key: "branch", name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, sourceCatalogName: null, position: 1, isActive: true, revision: 1, usedBy: [] };
-const people = { items: [{ userId, displayName: "Juan Gómez", values: { [id]: { value: "Centro", text: "Centro" } } }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false };
+const people = { items: [{ userId, displayName: "Juan Gómez", values: { [id]: { value: "Centro", text: "Centro" } } }], page: 1, pageSize: 20, totalCount: 1, missing: [{ attributeId: id, count: 0 }], totalPages: 1, hasPrevious: false, hasNext: false };
 async function mount(permissions: string[], items: unknown[] = [attribute]) {
  let reads = 0;
  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items })), http.get("/api/forms/person-data", () => { reads++; return HttpResponse.json(people); }));
@@ -24,6 +24,15 @@ it("shows the dedicated people table with field values when both read permission
  expect(await within(table).findByText("Juan Gómez")).toBeInTheDocument();
  expect(within(table).getByText("Centro")).toBeInTheDocument();
  expect(screen.getByRole("button", { name: "Agregar dato" })).toBeEnabled();
+});
+it("summarizes how many people match and how many lack each attribute used by a filter", async () => {
+ const zoneId = "01990000-0000-7000-8000-000000000007";
+ const zone = { ...attribute, id: zoneId, key: "zone", name: { es: "Zona", en: "Zone" }, position: 0, usedBy: [{ definitionId: "01990000-0000-7000-8000-000000000008", name: "Pedir repuesto" }] };
+ server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formpersondata.manage", "users.read"] })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [zone, attribute] })), http.get("/api/forms/person-data", () => HttpResponse.json({ ...people, totalCount: 6, missing: [{ attributeId: zoneId, count: 2 }, { attributeId: id, count: 1 }] })));
+ await act(async () => { renderWithProviders(<MemoryRouter><PersonDataPage /></MemoryRouter>); });
+ const table = (await screen.findByRole("heading", { name: "Personas" })).closest("section")!;
+ expect(await within(table).findByText("6 personas · 2 sin Zona")).toBeInTheDocument();
+ expect(within(table).queryByText(/sin Sucursal/)).not.toBeInTheDocument();
 });
 it("keeps attribute administration available without requesting people who cannot be read", async () => {
  const reads = await mount(["formpersondata.manage"]);
