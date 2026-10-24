@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -86,13 +86,40 @@ describe("AppearancePage", () => {
     await waitFor(() => expect(document.documentElement.style.getPropertyValue("--primary")).toBe("#335f85"));
   });
 
+  it("keeps the header without an unsaved status after picking a color", async () => {
+    renderRouteWithProviders("/configuracion/apariencia"); await edit();
+    const header = screen.getByRole("heading", { level: 1, name: "Apariencia" }).closest("header") as HTMLElement;
+    // Guardar habilitado ya dice que hay cambios: la banda tiene el título y sus acciones, sin estado del borrador.
+    expect(within(header).getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+    expect(header.textContent).toBe("AparienciaDescartarGuardar cambios");
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+  });
+
+  it("offers restoring the initial colors from the colors header", async () => {
+    settings.appearance = { ...initialAppearance, primaryColor: "#335F85" };
+    renderRouteWithProviders("/configuracion/apariencia");
+    const colors = await screen.findByRole("region", { name: "Colores del sistema" });
+    // Restaurar actúa sobre los cuatro colores: va al borde derecho de su banda, no al pie de la superficie.
+    const band = within(colors).getByRole("heading", { level: 2, name: "Colores del sistema" }).parentElement as HTMLElement;
+    expect(within(colors).getAllByRole("button")).toEqual([within(band).getByRole("button", { name: "Restaurar colores iniciales" })]);
+    await userEvent.click(within(band).getByRole("button", { name: "Restaurar colores iniciales" }));
+    expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+    expect(writes).toEqual([]);
+  });
+
   it("keeps the draft after a conflict and rereads the revision before retrying", async () => {
     server.use(http.patch("/api/settings", () => { settings = { ...settings, revision: 8, appearance: { ...initialAppearance, menuColor: "#243B53" } }; return HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 }); }));
     renderRouteWithProviders("/configuracion/apariencia"); await edit();
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled());
-    await userEvent.click(screen.getAllByRole("button", { name: "Revisar valores actuales" })[0]);
-    await userEvent.click(await screen.findByRole("button", { name: "Conservar mis cambios" }));
+    // Revisar va en la banda de Page, antes de Descartar; las elecciones, en el encabezado de la comparación.
+    const header = screen.getByRole("heading", { level: 1, name: "Apariencia" }).closest("header") as HTMLElement;
+    expect(within(header).getAllByRole("button").map(button => button.textContent)).toEqual(["Revisar valores actuales", "Descartar", "Guardar cambios"]);
+    await userEvent.click(within(header).getByRole("button", { name: "Revisar valores actuales" }));
+    const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
+    const band = within(comparison).getByRole("heading", { level: 2, name: "Revisar cambios" }).parentElement as HTMLElement;
+    expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Usar valores actuales", "Conservar mis cambios"]);
+    await userEvent.click(within(band).getByRole("button", { name: "Conservar mis cambios" }));
     expect(screen.getByLabelText("Botones y enlaces")).toHaveValue("#335f85");
     server.use(http.patch("/api/settings", async ({ request }) => { writes.push(await request.json() as Record<string, unknown>); return new HttpResponse(null, { status: 204 }); }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));

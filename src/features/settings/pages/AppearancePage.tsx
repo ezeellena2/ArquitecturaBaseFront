@@ -93,25 +93,25 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
     if (!keepDraft) setDraft(review.appearance);
     setBaseline(review); setReview(undefined); setNeedsReview(false); setErrors({}); dismissNotification(noticeId);
   }
-  return <Page title={t("appearance.title")} status={dirty ? <span className="text-sm text-[var(--color-content-muted)]">{t("dirty")}</span> : undefined}
-    actions={<><Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={() => { setDraft(baseline.appearance); setErrors({}); dismissNotification(noticeId); }}>{t("discard")}</Button>
+  // La banda lleva solo el título y las acciones: Guardar habilitado ya dice que hay cambios. Revisar actúa sobre
+  // toda la pantalla y aparece en la banda mientras un conflicto o un guardado incierto lo piden.
+  return <Page title={t("appearance.title")}
+    actions={<>{needsReview ? <Button variant="outline" disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
+      <Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={() => { setDraft(baseline.appearance); setErrors({}); dismissNotification(noticeId); }}>{t("discard")}</Button>
       <Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); mutation.mutate({ appearance: draft, revision: baseline.revision }); }}>{t(mutation.isPending ? "saving" : "save")}</Button></>}>
     <div className="flex flex-col gap-5">
-      <Surface title={t("appearance.colors")} padded>
+      <Surface title={t("appearance.colors")} padded actions={<Button variant="outline" disabled={disabled} onClick={() => { setDraft(initialAppearance); setErrors({}); }}>{t("appearance.reset")}</Button>}>
         <p className="text-sm text-[var(--color-content-muted)]">{t("appearance.hint")}</p>
         <div className="grid max-w-3xl gap-5 sm:grid-cols-2">{fields.map(field => <FormField key={field} label={t(`appearance.fields.${field}`)} hint={draft[field].toUpperCase()} error={errors[`appearance.${field}`]}>
           <Input type="color" value={draft[field]} disabled={disabled} onChange={event => { setDraft(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [`appearance.${field}`]: "" })); }} />
         </FormField>)}</div>
         <p className="max-w-3xl text-sm text-[var(--color-content-muted)]">{t("appearance.contrast")}</p>
-        <div><Button variant="outline" disabled={disabled} onClick={() => { setDraft(initialAppearance); setErrors({}); }}>{t("appearance.reset")}</Button></div>
       </Surface>
       <AppearancePreview appearance={draft} labels={{ title: t("appearance.preview"), home: t("common:navigation.dashboard"), administration: t("common:navigation.administration"), name: t("appearance.name"), role: t("appearance.role"), search: t("appearance.search"), newUser: t("appearance.newUser") }} />
-      {needsReview ? <div><Button variant="outline" disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button></div> : null}
-      {review ? <Surface title={t("review.title")} padded>
+      {review ? <Surface title={t("review.title")} padded actions={<><Button variant="outline" disabled={disabled} onClick={() => acceptReview(false)}>{t("review.useCurrent")}</Button><Button disabled={disabled} onClick={() => acceptReview(true)}>{t("review.keepMine")}</Button></>}>
         <DataTable columns={[{ id: "setting", header: t("review.setting"), cell: row => t(`appearance.fields.${row.field}`) },
           { id: "current", header: t("review.current"), cell: row => review.appearance[row.field].toUpperCase() },
           { id: "mine", header: t("review.mine"), cell: row => draft[row.field].toUpperCase() }]} rows={fields.map(field => ({ field }))} rowKey={row => row.field} />
-        <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={disabled} onClick={() => acceptReview(false)}>{t("review.useCurrent")}</Button><Button disabled={disabled} onClick={() => acceptReview(true)}>{t("review.keepMine")}</Button></div>
       </Surface> : null}
     </div>
     <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("common:unsavedChanges.title")} description={t("common:unsavedChanges.description")} confirmLabel={t("common:unsavedChanges.confirm")} cancelLabel={t("common:unsavedChanges.cancel")} onConfirm={guard.leave} />

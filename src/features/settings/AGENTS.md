@@ -5,7 +5,7 @@ Muestra y modifica los ajustes funcionales publicados por el backend.
 ## Al modificar
 
 - La ruta y navegación requieren `settings.manage`; la autorización definitiva es del servidor.
-- Cada zona de campos usa `Surface padded`, sin repetir el título de Page. Apariencia tiene ruta `/configuracion/apariencia` y vista previa en la UI compartida; guarda los cuatro colores juntos con revisión.
+- Cada zona de campos usa `Surface padded`, sin repetir el título de Page. Apariencia tiene ruta `/configuracion/apariencia` y vista previa en la UI compartida; guarda los cuatro colores juntos con revisión. «Restaurar colores iniciales» va en el encabezado de «Colores del sistema»; el estado del borrador no se muestra y la revisión de un conflicto se ubica como en `/configuracion`.
 - Conservá nombres de enum y validación del contrato; los defaults de configuración no reemplazan la política persistida.
 - La mutación invalida la consulta correspondiente y muestra éxito o error traducido. No escribir reglas de registro solo en el front.
 

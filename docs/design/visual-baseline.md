@@ -270,7 +270,10 @@ crecen todos a 44 px en móvil.
 `/configuracion/apariencia` (`settings.manage`) edita botones/enlaces, menú, encabezados y filas alternadas con vista previa
 local, Guardar/Descartar y Restaurar colores iniciales (Campo) como borrador. Guarda los cuatro `#RRGGBB` juntos con
 `expectedRevision`; la proyección pública los aplica al ingreso y a los portales. Texto, hover, enlaces y foco se derivan
-para conservar contraste; success, warning y danger no cambian. Recorridos: `src/test/visual/appearance.spec.ts`.
+para conservar contraste; success, warning y danger no cambian. Restaurar va en el encabezado de «Colores del sistema»;
+`Page` no muestra estado del borrador y, tras un conflicto, «Revisar valores actuales» va en su banda, antes de
+Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de la comparación. Recorridos:
+`src/test/visual/appearance.spec.ts`.
 
 ### Inteligencia artificial
 
