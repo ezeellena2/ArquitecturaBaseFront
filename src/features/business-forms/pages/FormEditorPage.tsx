@@ -81,6 +81,8 @@ export function FormEditorPage() {
 
 function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactivateOnOpen, openQuestionFieldId }: { reactivateOnOpen: boolean; openQuestionFieldId: string | null; scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {
   const { t } = useTranslation("forms");
+  // The preview falls back to the original's texts: they load with the editor, not while a translation is being typed.
+  useTranslation("forms", { lng: "definition" in initial ? initial.definition.draft.culture : initial.draft.culture });
   const [rulesDirty, setRulesDirty] = useState(false);
   const [suggestionsDirty, setSuggestionsDirty] = useState(false);
   // No content language selector: the form is edited in the menu language, and the editor remounts when it changes.

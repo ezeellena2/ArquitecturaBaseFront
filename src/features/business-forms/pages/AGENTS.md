@@ -51,6 +51,6 @@ Cada ruta exige sólo su permiso: respuestas no dependen de leer plantillas ni c
 
 ## Referencias
 
-- Tests de página: `FormsPage.test.tsx`, `FormLifecycle.test.tsx`, `FormEditorLanguage.test.tsx`, `FormEditorQuestionNavigation.test.tsx`, `FormDeletion.test.tsx`, `FormPublicationBudgetHttp.test.tsx` (cuerpos HTTP reales del presupuesto de publicación), `FormResponsesPage.test.tsx`, `ResponsePanel.test.tsx`, `FormResponseFullPage.test.tsx`, `FormPendingApprovals.test.tsx`, `FormPendingApprovals.regressions.test.tsx`, `FormSuggestionsRoute.test.tsx`, `CatalogProposalPage.test.tsx`, `MissingFormsPage.test.tsx`.
+- Tests de página: `FormsPage.test.tsx`, `FormLifecycle.test.tsx`, `FormEditorLanguage.test.tsx`, `FormEditorOriginalPreview.test.tsx`, `FormEditorQuestionNavigation.test.tsx`, `FormDeletion.test.tsx`, `FormPublicationBudgetHttp.test.tsx` (cuerpos HTTP reales del presupuesto de publicación), `FormResponsesPage.test.tsx`, `ResponsePanel.test.tsx`, `FormResponseFullPage.test.tsx`, `FormPendingApprovals.test.tsx`, `FormPendingApprovals.regressions.test.tsx`, `FormSuggestionsRoute.test.tsx`, `CatalogProposalPage.test.tsx`, `MissingFormsPage.test.tsx`.
 - Escenas: `src/test/visual/forms.spec.ts`, `formLifecycle.spec.ts`, `catalogFilters.spec.ts`, `responses.spec.ts`, `formApprovals.spec.ts`, `forms-missing.spec.ts`.
 - [Premisas de pantallas](../../../../docs/guides/premisas-de-desarrollo.md#modales-y-formularios-con-ruta-propia) y [tableros](../../../../docs/design/formularios-whatsapp.md#los-tableros).
