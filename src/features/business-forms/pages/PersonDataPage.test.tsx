@@ -43,6 +43,39 @@ it("refreshes the people table after the user editor closes", async () => {
  await act(async () => { opened[0].onClosed?.(); });
  expect(await screen.findByText("Juan Carlos Gómez")).toBeInTheDocument();
 });
+it("reloads an attribute after a revision conflict and saves with the current revision", async () => {
+ const conflict = "Otra persona cambió el dato. Volvé a cargarlo.";
+ const saved = { ...attribute, name: { es: "Zona de atención", en: "Branch" }, revision: 2 };
+ const bodies: unknown[] = [];
+ let current: unknown = attribute;
+ await mount(["formpersondata.manage"]);
+ server.use(
+  http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [current] })),
+  http.put(`/api/forms/person-attributes/${id}`, async ({ request }) => {
+   bodies.push(await request.json());
+   if (bodies.length === 1) { current = saved; return HttpResponse.json({ type: "https://tools.ietf.org/html/rfc9110#section-15.5.10", title: "Conflict", status: 409, detail: conflict, traceId: "trace", code: "Forms.PersonAttribute.RevisionConflict" }, { status: 409 }); }
+   return HttpResponse.json({ ...saved, revision: 3 });
+  }));
+ await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
+ const name = dialog.getByRole("textbox", { name: "Nombre" });
+ await userEvent.clear(name);
+ await userEvent.type(name, "Sucursal central");
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ expect(await dialog.findByRole("alert")).toHaveTextContent(conflict);
+ expect(dialog.getByRole("button", { name: "Guardar" })).toBeDisabled();
+ await userEvent.click(dialog.getByRole("button", { name: "Volver a cargar el dato" }));
+ const reloaded = () => within(screen.getByRole("dialog", { name: "Editar dato" }));
+ await waitFor(() => expect(reloaded().getByRole("textbox", { name: "Nombre" })).toHaveValue("Zona de atención"));
+ expect(reloaded().queryByRole("alert")).not.toBeInTheDocument();
+ await userEvent.click(reloaded().getByRole("button", { name: "Guardar" }));
+ await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar dato" })).not.toBeInTheDocument());
+ expect(bodies).toEqual([
+  { expectedRevision: 1, name: { es: "Sucursal central", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true },
+  { expectedRevision: 2, name: { es: "Zona de atención", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true },
+ ]);
+ await waitFor(() => expect(screen.getByRole("button", { name: "Editar Zona de atención" })).toHaveFocus());
+});
 it("creates a text attribute with an immutable key and without reading catalogs", async () => {
  const bodies: unknown[] = [];
  await mount(["formpersondata.manage"]);

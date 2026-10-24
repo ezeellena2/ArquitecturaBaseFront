@@ -14,7 +14,7 @@ import { createPersonAttribute, updatePersonAttribute, type PersonAttribute } fr
 import { personDataScopeKey, type PersonDataScope } from "../hooks/usePersonData";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 
-export function PersonAttributeDialog({ scope, attribute, onClose }: { scope: PersonDataScope; attribute: PersonAttribute | null; onClose: () => void }) {
+export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: { scope: PersonDataScope; attribute: PersonAttribute | null; onClose: () => void; onReload: () => Promise<void> }) {
  const { t } = useTranslation("forms"), client = useQueryClient();
  const [key, setKey] = useState(attribute?.key ?? ""), [name, setName] = useState({ es: attribute?.name.es ?? "", en: attribute?.name.en ?? "" });
  const [type, setType] = useState<PersonAttribute["type"]>(attribute?.type ?? "Catalog"), [sourceCatalogId, setSource] = useState(attribute?.sourceCatalogId ?? null), [isActive, setActive] = useState(attribute?.isActive ?? true);
@@ -24,8 +24,14 @@ export function PersonAttributeDialog({ scope, attribute, onClose }: { scope: Pe
  const mounted = useRef(true), operation = useRef<AbortController | null>(null), nameRef = useRef<HTMLInputElement>(null);
  const restoreFocus = useRestoreFocusOnClose();
  useEffect(() => { mounted.current = true; nameRef.current?.focus(); return () => { mounted.current = false; operation.current?.abort(); }; }, []);
+ // A reload after a revision conflict brings the saved attribute: the draft starts again from it in this same dialog (not a remount), so closing still returns the focus to the row that opened it.
+ const [loaded, setLoaded] = useState(attribute);
+ if (attribute !== loaded) { setLoaded(attribute); setName({ es: attribute?.name.es ?? "", en: attribute?.name.en ?? "" }); setType(attribute?.type ?? "Catalog"); setSource(attribute?.sourceCatalogId ?? null); setActive(attribute?.isActive ?? true); setError(null); setConfirmValues(false); setRemovalCount(null); }
  const errors = error instanceof ApiError ? error.errors ?? {} : {}, message = (path: string) => errors[path]?.join(" ");
  const inUse = (attribute?.usedBy.length ?? 0) > 0;
+ // Someone else saved this attribute: saving again needs the current revision, so only reloading (or cancelling) goes on.
+ const conflict = error instanceof ApiError && error.code === "Forms.PersonAttribute.RevisionConflict";
+ const reload = () => void onReload().then(() => nameRef.current?.focus());
  const changeType = (next: PersonAttribute["type"]) => { setType(next); setConfirmValues(false); };
  const changeSource = (next: string) => { setSource(next); setConfirmValues(false); };
  const canReadCatalogs = scope.permissions.includes("formcatalogs.read");
@@ -54,6 +60,6 @@ export function PersonAttributeDialog({ scope, attribute, onClose }: { scope: Pe
   {removalCount !== null ? <CheckboxField label={t("personData.confirmValueRemoval", { count: removalCount })} checked={confirmValues} disabled={busy} onCheckedChange={setConfirmValues} /> : null}
   {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} error={message("isActive")} onCheckedChange={setActive} /> : null}
   {inUse ? <div className="text-sm"><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{attribute?.usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></div> : null}
-  {error && !Object.keys(errors).length ? <p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}</p> : null}
- </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" disabled={busy || !name.es.trim() || !key.trim() || type === "Catalog" && !sourceCatalogId} onClick={() => void save()}>{t("common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;
+  {error && !Object.keys(errors).length ? <div className="space-y-2"><p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}</p>{conflict ? <Button type="button" variant="outline" disabled={busy} onClick={reload}>{t("personData.reloadAttribute")}</Button> : null}</div> : null}
+ </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" disabled={busy || conflict || !name.es.trim() || !key.trim() || type === "Catalog" && !sourceCatalogId} onClick={() => void save()}>{t("common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;
 }

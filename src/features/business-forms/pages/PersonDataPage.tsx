@@ -51,6 +51,8 @@ function PersonDataWorkspace({ scope }: { scope: PersonDataScope }) {
  const list = attributes.data?.items ?? [], active = list.filter(attribute => attribute.isActive), canReadPeople = scope.permissions.includes("users.read") && !peopleDenied && !lostPeople;
  const title = (attribute: PersonAttribute) => localizedValue(attribute.name, scope.culture, "es");
  const canEditPeople = !!extension && scope.permissions.includes("users.manage");
+ // After a revision conflict the dialog continues from the saved attribute; closing it meanwhile keeps it closed.
+ const reloadEditing = async () => { const result = await attributes.refetch(); setEditing(current => current && current !== "new" ? result.data?.items.find(item => item.id === current.id) ?? null : current); };
  return <Page title={t("personData.title")}><div className="flex flex-col gap-4">
   <Surface title={t("personData.section")} actions={<Button type="button" variant="outline" disabled={!attributes.isSuccess || list.length >= 20} onClick={() => setEditing("new")}><PlusIcon className="size-4" />{t("personData.addAttribute")}</Button>}>
    <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("personData.attributeHint")}</p>
@@ -60,5 +62,5 @@ function PersonDataWorkspace({ scope }: { scope: PersonDataScope }) {
    {people.isPending ? <Spinner /> : people.error && !people.data ? <EmptyState embedded title={readErrorMessage(people.error, t)} action={<Button variant="outline" onClick={() => void people.refetch()}>{t("common:actions.retry")}</Button>} /> : !people.data?.items.length ? <EmptyState embedded title={t("personData.noPeople")} /> : <WideTable label={t("personData.people")}><TableHeader><TableRow><TableHead scope="col">{t("personData.person")}</TableHead>{active.map(attribute => <TableHead scope="col" key={attribute.id}>{title(attribute)}</TableHead>)}{canEditPeople ? <TableHead scope="col">{t("actionsColumn")}</TableHead> : null}</TableRow></TableHeader><TableBody>{people.data.items.map(person => <TableRow key={person.userId}><TableCell>{person.displayName ?? t("personData.unnamed")}</TableCell>{active.map(attribute => <TableCell key={attribute.id}>{person.values[attribute.id]?.text || "—"}</TableCell>)}{canEditPeople ? <TableCell><IconButton label={t("personData.editPerson", { name: person.displayName ?? t("personData.unnamed") })} size="icon-sm" onClick={() => extension.openUser(person.userId, () => void client.invalidateQueries({ queryKey: [...privateKey, "page"] }))}><PencilIcon className="size-4" /></IconButton></TableCell> : null}</TableRow>)}</TableBody></WideTable>}
    {people.data ? <Pagination {...people.data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} /> : null}
   </Surface> : <p className="text-sm text-[var(--color-content-muted)]">{t("personData.requiresUsersRead")}</p>}
- </div>{editing ? <PersonAttributeDialog scope={scope} attribute={editing === "new" ? null : editing} onClose={() => setEditing(null)} /> : null}</Page>;
+ </div>{editing ? <PersonAttributeDialog scope={scope} attribute={editing === "new" ? null : editing} onReload={reloadEditing} onClose={() => setEditing(null)} /> : null}</Page>;
 }

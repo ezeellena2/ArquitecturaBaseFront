@@ -292,7 +292,8 @@
     "userSaved": "El resto del usuario ya se guardó.",
     "conflict": "Los datos cambiaron. Volvé a cargarlos para revisar.",
     "reload": "Volver a cargar los datos",
-    "reloadHint": "Se reemplazan tus cambios en Datos por lo guardado ahora. El resto del usuario se conserva."
+    "reloadHint": "Se reemplazan tus cambios en Datos por lo guardado ahora. El resto del usuario se conserva.",
+    "reloadAttribute": "Volver a cargar el dato"
   },
   "catalogs": {
     "fields": {

@@ -292,7 +292,8 @@
     "userSaved": "The rest of the account has already been saved.",
     "conflict": "The data changed. Reload it to review.",
     "reload": "Reload data",
-    "reloadHint": "Your changes in Data will be replaced with the current saved values. The rest of the account is preserved."
+    "reloadHint": "Your changes in Data will be replaced with the current saved values. The rest of the account is preserved.",
+    "reloadAttribute": "Reload the attribute"
   },
   "catalogs": {
     "fields": {
