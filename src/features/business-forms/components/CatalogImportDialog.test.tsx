@@ -150,6 +150,27 @@ it.each([["es", "Supervisor"], ["en", "Supervisor"], ["es", "textEn"], ["en", "t
   expect(apply).not.toHaveBeenCalled();
 });
 
+it.each(["es", "en"] as const)("labels the Spanish translation columns of an English original catalog in %s", async culture => {
+  await i18n.changeLanguage(culture);
+  const base = catalogImportPreviewFixture(), english = culture === "en";
+  const text = english ? "Spanish text" : "Texto en español", detail = english ? "Spanish detail" : "Detalle en español";
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", deactivated: [],
+    issues: [{ row: 3, column: "textEs", severity: "Error", code: "Forms.CatalogImport.TextTooLong", message: "Too long", relatedRow: null, length: 31 }],
+    changed: [{ row: 2, itemId: base.deactivated[0]!.itemId, code: "N", changes: [{ column: "textEs", before: "Norte", after: "Norte cambiado" }, { column: "detailEs", before: null, after: "Zona norte" }] }],
+    counts: { ...base.counts, changed: 1, deactivated: 0 }, confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
+  const user = userEvent.setup();
+  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, originalCulture: "en", name: { en: "List" } }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
+  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\t" + text + "\nN\tNorth\tNorte cambiado" } });
+  await user.click(screen.getByRole("button", { name: english ? "Review" : "Revisar" }));
+  const errorRow = (await screen.findByText("Too long")).closest("tr")!;
+  expect(within(errorRow).getByRole("cell", { name: text })).toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: english ? "Changes" : "Cambios" }));
+  const panel = within(screen.getByRole("tabpanel"));
+  expect(panel.getByText(`${text}: Norte → Norte cambiado`)).toBeInTheDocument();
+  expect(panel.getByText(`${detail}: — → Zona norte`)).toBeInTheDocument();
+  expect(screen.queryByText(/textEs|detailEs/)).not.toBeInTheDocument();
+});
+
 it("preserves the file after a preview conflict and rereads only on explicit review", async () => {
   const check = vi.spyOn(imports, "previewCatalogImport")
     .mockRejectedValueOnce(new ApiError(409, { code: "Forms.Catalog.RevisionConflict" }))

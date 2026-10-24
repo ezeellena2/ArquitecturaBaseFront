@@ -606,8 +606,10 @@
         "code": "Código",
         "text": "Texto",
         "textEn": "Texto en inglés",
+        "textEs": "Texto en español",
         "detail": "Detalle",
         "detailEn": "Detalle en inglés",
+        "detailEs": "Detalle en español",
         "active": "Activa",
         "value": "Valor"
       },

@@ -606,8 +606,10 @@
         "code": "Code",
         "text": "Text",
         "textEn": "English text",
+        "textEs": "Spanish text",
         "detail": "Detail",
         "detailEn": "English detail",
+        "detailEs": "Spanish detail",
         "active": "Active",
         "value": "Value"
       },
