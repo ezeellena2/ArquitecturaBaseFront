@@ -109,3 +109,33 @@ it("reads no recipient samples for a Filters catalog of a saved form", async () 
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(requests.samples).toBe(0);
 });
+
+it("offers Retry after a failed recipient preview and keeps it disabled during a 429 wait", async () => {
+  const requests = serveRecipientPreview();
+  server.use(http.post("/api/forms/definitions/:id/recipient-previews", () => { requests.previews.push(manualId); return requests.previews.length === 1 ? HttpResponse.json({ title: "Error", status: 500, traceId: "trace" }, { status: 500 }) : HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 5 }, { status: 429 }); }));
+  renderWithProviders(settings(manualId));
+  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  await waitFor(() => expect(input).toBeEnabled());
+  await userEvent.click(input); await userEvent.click(await screen.findByRole("option", { name: "Juan" }));
+  const failed = await screen.findByRole("alert");
+  expect(failed).toHaveTextContent("No se pudo preparar la vista previa.");
+  await userEvent.click(within(failed).getByRole("button", { name: "Reintentar" }));
+  await waitFor(() => expect(requests.previews).toHaveLength(2));
+  const waiting = await screen.findByRole("button", { name: "Reintentar" });
+  await waitFor(() => expect(waiting).toBeDisabled());
+  // The wait is the button's reason (tooltip and description), not a text beside it; the state keeps saying it failed.
+  expect(waiting).toHaveAccessibleDescription("Esperá 5 segundos para volver a intentar.");
+  expect(screen.getByRole("alert")).toHaveTextContent("No se pudo preparar la vista previa.");
+  expect(requests.previews).toHaveLength(2);
+});
+
+it("retries the recipient samples after they fail", async () => {
+  const requests = serveRecipientPreview();
+  server.use(http.get("/api/forms/recipient-samples", () => { requests.samples++; return requests.samples === 1 ? HttpResponse.json({ title: "Error", status: 500, traceId: "trace" }, { status: 500 }) : HttpResponse.json(page([{ id: juan, name: "Juan" }])); }));
+  renderWithProviders(settings(manualId));
+  const failed = await screen.findByRole("alert");
+  expect(failed).toHaveTextContent("No se pudo preparar la vista previa.");
+  await userEvent.click(within(failed).getByRole("button", { name: "Reintentar" }));
+  await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+  expect(requests.samples).toBe(2);
+});
