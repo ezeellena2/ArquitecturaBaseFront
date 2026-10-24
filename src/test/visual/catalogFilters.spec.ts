@@ -82,10 +82,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click(); await page.getByRole("button", { name: label("Revisar", "Review"), exact: true }).click();
     await page.getByRole("button", { name: label("Releer", "Reread"), exact: true }).click();
     const dialog = page.getByRole("dialog", { name: label("Revisión del catálogo", "Catalog review"), exact: true });
-    await expect(dialog.getByText("Mi borrador", { exact: true })).toBeVisible(); await expect(dialog.getByText("Personas actuales", { exact: true })).toBeVisible();
+    // The review shows each revision in the menu language.
+    await expect(dialog.getByText("Mi borrador", { exact: true })).toBeVisible(); await expect(dialog.getByText(label("Personas actuales", "Current people"), { exact: true })).toBeVisible();
     await geometry(); await page.screenshot({ path: info.outputPath("filters-conflict.png"), fullPage: true });
     await dialog.getByRole("button", { name: label("Usar la revisión actual", "Use the current revision"), exact: true }).click();
-    await expect(page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true })).toHaveValue("Personas actuales");
+    await expect(page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true })).toHaveValue(label("Personas actuales", "Current people"));
     await enter("/catalogos/" + visualCatalogId, "catalogs-filters-limit"); await sample(); await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
     await expect(page.getByText(label("Hay más de 200 opciones. Ajustá los filtros antes de guardar.", "There are more than 200 options. Adjust the filters before saving."), { exact: true })).toBeVisible();
     expect(await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: unknown[] } }).catalogsFixture.writes)).toHaveLength(0);
