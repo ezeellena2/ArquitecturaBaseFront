@@ -281,6 +281,14 @@ describe("Filters catalog editor", () => {
     expect(writes[0]).not.toHaveProperty("sampleUserId"); expect(writes[0]).not.toHaveProperty("items"); expect(JSON.stringify(writes)).not.toContain("private-row");
     expect(result.current.draft!.revision).toBe(2); expect(result.current.dirty).toBe(false); expect(h.client.getMutationCache().getAll()).toEqual([]);
   });
+  it("omits a blank description from the Filters save body", async () => {
+    const writes: unknown[] = [];
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json(previewResult)), http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: { ...filterInitial, description: {}, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, filterInitial), harness());
+    act(() => result.current.changeMetadata({ description: { es: " ", en: "" } }));
+    await act(() => result.current.save(itemId));
+    expect(writes).toHaveLength(1); expect((writes[0] as { description: unknown }).description).toEqual({});
+  });
   it("requires an explicit sample and does not save an oversized preview", async () => {
     let previews = 0; let writes = 0;
     server.use(http.post("/api/forms/catalog-previews", () => { previews++; return HttpResponse.json({ items: [], totalCount: 201, exceedsLimit: true }); }), http.put("/api/forms/catalogs/" + id + "/filters", () => { writes++; return HttpResponse.json({}); }));

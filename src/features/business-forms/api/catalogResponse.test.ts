@@ -13,6 +13,13 @@ const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: t
     expect(() => readCatalog(catalog)).toThrow("Unsupported catalog response.");
     expect(readCatalog({ ...catalog, kind: "Filters", filters, fields: null, presentation: null, presentationCheck: null }).filters).toEqual(filters);
   });
+  it("accepts a manual catalog without description", () => {
+    for (const description of [{}, { en: "Available people" }])
+      expect(readCatalog({ ...catalog, filters: null, description }).description).toEqual(description);
+    const proposal = { state: "Pending", originalCulture: "es", requestedBy: { userId: id, displayName: null }, requestedAtUtc: "2026-10-23T12:00:00Z", decidedBy: null, decidedAtUtc: null, provenance: { modelProfileId: "default", modelProfileVersion: 1, instructionsId: "default", instructionsVersion: 1, occurredAtUtc: "2026-10-23T12:00:00Z", channelId: "whatsapp-assistant" }, originalProposal: { metadataReadOrdinal: 1, name: "Responsables", description: "Personas disponibles", filters, limitations: [] } };
+    expect(readCatalog({ ...catalog, kind: "Filters", filters, isActive: false, proposal, description: {}, fields: null, presentation: null, presentationCheck: null }).description).toEqual({});
+    expect(() => readCatalog({ ...catalog, filters: null, description: { es: " " } })).toThrow("Unsupported catalog response.");
+  });
   it("keeps a definition that became unavailable after a migration for editing", () => {
     const unavailable = { ...catalog, kind: "Filters", filters: { ...filters, textColumn: "retiredColumn" }, unavailableReasonCode: "Forms.Catalog.FilterInvalid", fields: null, presentation: null, presentationCheck: null };
     expect(readCatalog(unavailable)).toEqual(unavailable);

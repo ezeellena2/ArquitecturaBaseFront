@@ -32,6 +32,12 @@ describe("Catalog draft body by identity", () => {
     const changed = stageCatalogDraftItem(empty, { value: null, localId: "new-one", itemId: null, label: { es: "Cliente", en: null }, detail: {}, code: "C1", isActive: false, position: 1 });
     expect(catalogDraftBody(changed).items[0]).toMatchObject({ itemId: null, text: { es: "Cliente", en: null }, isActive: false });
   });
+  it("omits a blank description from the save body", () => {
+    expect(catalogDraftBody(openCatalogDraft()).description).toEqual({});
+    const described = { ...openCatalogDraft(catalog), description: { es: "  Visitas  ", en: " " } };
+    expect(catalogDraftBody(described).description).toEqual({ es: "Visitas" });
+    expect(catalogDraftUpdateBody(described).description).toEqual({ es: "Visitas" });
+  });
   it("freezes the write body independently of later input changes", () => {
     const loaded = loadCatalogDraftItems(openCatalogDraft(catalog), [item]);
     const option = { ...Object.values(loaded.items.originals)[0]!, label: { es: "Otro", en: null } };
