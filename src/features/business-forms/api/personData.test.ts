@@ -3,16 +3,24 @@ import { api } from "@/shared/api/httpClient";
 import { createPersonAttribute, fetchPersonAttributeOptions, fetchPersonData, fetchPersonDataPage, fetchPersonAttributes, readPersonAttribute, readPersonAttributes, readPersonData, readPersonDataPage, savePersonData, updatePersonAttribute } from "./personData";
 // Synthetic responses matching the E2 DTO source; real HTTP bodies are qualified by the final joint export.
 const id = "01990000-0000-7000-8000-000000000121", userId = "01990000-0000-7000-8000-000000000122", sourceId = "01990000-0000-7000-8000-000000000123";
-const attribute = { id, key: "zone", name: { es: "Zona" }, type: "Catalog", sourceCatalogId: sourceId, sourceCatalogName: "Zonas", position: 0, isActive: true, revision: 1, usedBy: [] };
+const attribute = { id, key: "zone", name: { es: "Zona" }, originalCulture: "es", type: "Catalog", sourceCatalogId: sourceId, sourceCatalogName: "Zonas", position: 0, isActive: true, revision: 1, usedBy: [] };
 const person = { userId, revision: 1, values: { [id]: { value: sourceId, text: "Centro" } } };
 const page = <T,>(items: T[]) => ({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: items.length ? 1 : 0, hasPrevious: false, hasNext: false });
 afterEach(() => vi.restoreAllMocks());
 it("reads original-only attribute names and rejects unsupported definitions without retaining zod issues", () => {
   expect(readPersonAttributes({ items: [attribute] })).toEqual({ items: [attribute] });
-  for (const value of [{ ...attribute, private: "PRIVATE" }, { ...attribute, type: "Other" }, { ...attribute, type: "Text" }, { ...attribute, sourceCatalogId: null }, { ...attribute, revision: 0 }, { ...attribute, name: { en: "Zone" } }]) {
+  for (const value of [{ ...attribute, private: "PRIVATE" }, { ...attribute, type: "Other" }, { ...attribute, type: "Text" }, { ...attribute, sourceCatalogId: null }, { ...attribute, revision: 0 }]) {
     expect(() => readPersonAttribute(value)).toThrow("Unsupported person data response.");
   }
   try { readPersonAttribute({ ...attribute, private: "PRIVATE" }); } catch (error) { expect(JSON.stringify(error)).not.toContain("PRIVATE"); expect(error).not.toHaveProperty("issues"); }
+});
+it("accepts a person attribute named only in English", () => {
+  const english = { ...attribute, type: "Text", sourceCatalogId: null, sourceCatalogName: null, name: { en: "Branch" }, originalCulture: "en" };
+  expect(readPersonAttribute(english)).toEqual(english);
+  expect(readPersonAttributes({ items: [english] })).toEqual({ items: [english] });
+  const withoutOriginal = Object.fromEntries(Object.entries(english).filter(([key]) => key !== "originalCulture"));
+  for (const value of [withoutOriginal, { ...english, originalCulture: "fr" }, { ...english, name: {} }, { ...english, name: { en: " " } }])
+    expect(() => readPersonAttribute(value)).toThrow("Unsupported person data response.");
 });
 it("reads private person values and a nullable initial revision while checking the expected identity", () => {
   expect(readPersonData(person, userId)).toEqual(person);

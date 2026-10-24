@@ -4,7 +4,7 @@ import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview, readCa
 // Synthetic responses from the current .NET DTOs; real K4 exports qualify the contract at closure.
 const id = "01990000-0000-7000-8000-000000000020";
 const filters = { textColumn: "name", detailColumn: null, conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000601" }], excludeRecipient: true, sortColumn: "name", sortDescending: false };
-const catalog = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Responsables", en: "Assignees" }, description: { es: "Personas disponibles", en: "Available people" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
+const catalog = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Responsables", en: "Assignees" }, description: { es: "Personas disponibles", en: "Available people" }, originalCulture: "es", kind: "Manual", revision: 1, isActive: true, itemsCount: 0, usageCount: null, unavailableReasonCode: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
 const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: true, canSort: true, operators: ["has"], choices: [{ key: "01990000-0000-7000-8000-000000000601", label: "Operario" }] }];
 
  describe("Current catalog response DTO", () => {
@@ -34,6 +34,21 @@ const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: t
     expect(readCatalogFilterPreview(response)).toEqual(response);
     expect(readCatalogFilterPreview({ items: [], totalCount: 201, exceedsLimit: true })).toEqual({ items: [], totalCount: 201, exceedsLimit: true });
   });
+});
+
+it("accepts a catalog, its options and its fields written only in English and requires its original culture", () => {
+  const fieldId = "01990000-0000-7000-8000-000000000030";
+  const option = { id, code: "N", text: { es: null, en: "North" }, detail: { es: null, en: null }, value: null, position: 1, isActive: true, fields: { [fieldId]: id }, fieldTexts: { [fieldId]: { en: "Branch" } } };
+  const page = (items: unknown[]) => ({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
+  expect(readCatalogItems(page([option]))).toEqual(page([option]));
+  for (const invalid of [{ ...option, text: { es: null, en: null } }, { ...option, text: { es: "", en: "North" } }, { ...option, fieldTexts: { [fieldId]: {} } }, { ...option, fieldTexts: { [fieldId]: { en: "" } } }])
+    expect(() => readCatalogItems(page([invalid]))).toThrow("Unsupported catalog response.");
+  const field = { id: fieldId, key: "branch", name: { en: "Branch" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 0, isActive: true, valuesCount: 1, usedBy: [] };
+  const english = { ...catalog, filters: null, name: { en: "Assignees" }, description: {}, originalCulture: "en", fields: [field] };
+  expect(readCatalog(english)).toEqual(english);
+  const withoutOriginal = Object.fromEntries(Object.entries(english).filter(([key]) => key !== "originalCulture"));
+  for (const invalid of [withoutOriginal,{ ...english, originalCulture: "fr" }, { ...english, name: {} }, { ...english, fields: [{ ...field, name: {} }] }, { ...english, fields: [{ ...field, name: { en: "" } }] }])
+    expect(() => readCatalog(invalid)).toThrow("Unsupported catalog response.");
 });
 
 it("rejects a catalog item page with null field maps", () => {

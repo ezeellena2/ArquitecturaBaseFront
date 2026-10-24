@@ -14,8 +14,8 @@ export function createPersonDataVisualFixtures(language: "es" | "en", scenario: 
   const zones = [{ id: ids.center, text: en ? "Central" : "Centro" }, { id: ids.north, text: en ? "North" : "Norte" }, { id: ids.west, text: en ? "West" : "Oeste" }];
   const branches = zones.map((zone, index) => ({ ...zone, id: guid(451 + index) }));
   const attributes: PersonAttribute[] = [
-    { id: ids.zone, key: "zone", name: { es: "Zona", en: "Zone" }, type: "Catalog", sourceCatalogId: guid(431), sourceCatalogName: en ? "Zones" : "Zonas", position: 0, isActive: true, revision: 1, usedBy: [{ definitionId: guid(441), name: en ? "Request spare part" : "Pedir repuesto" }] },
-    { id: ids.branch, key: "branch", name: { es: "Sucursal", en: "Branch" }, type: "Catalog", sourceCatalogId: guid(432), sourceCatalogName: en ? "Branches" : "Sucursales", position: 1, isActive: true, revision: 1, usedBy: [] },
+    { id: ids.zone, key: "zone", name: { es: "Zona", en: "Zone" }, originalCulture: "es", type: "Catalog", sourceCatalogId: guid(431), sourceCatalogName: en ? "Zones" : "Zonas", position: 0, isActive: true, revision: 1, usedBy: [{ definitionId: guid(441), name: en ? "Request spare part" : "Pedir repuesto" }] },
+    { id: ids.branch, key: "branch", name: { es: "Sucursal", en: "Branch" }, originalCulture: "es", type: "Catalog", sourceCatalogId: guid(432), sourceCatalogName: en ? "Branches" : "Sucursales", position: 1, isActive: true, revision: 1, usedBy: [] },
   ];
   const users: UserDetail[] = ["Ana Pérez", "Juan Gómez", "Laura Ríos Fernández", "Carla Paz", "Pablo Sosa", "Marta Ruiz"].map((displayName, index) => ({
     id: guid(411 + index), displayName, email: ["ana", "juan", "laura", "carla", "pablo", "marta"][index] + "@example.invalid", emailConfirmed: true,

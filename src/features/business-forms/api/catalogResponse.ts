@@ -6,8 +6,10 @@ import type { PagedResult } from "@/shared/api/pagedResult";
 const guid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).refine(value => !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(value));
 const revision = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
-const nullableText = (limit: number) => z.record(z.string().refine((key): boolean => key === "es" || key === "en"), z.string().max(limit).nullable());
-const requiredText = (limit: number) => z.strictObject({ es: z.string().min(1).max(limit).refine(value => !!value.trim()), en: z.string().min(1).max(limit).refine(value => !!value.trim()) });
+const cultureKey = z.string().refine((key): boolean => key === "es" || key === "en");
+const nullableText = (limit: number) => z.record(cultureKey, z.string().max(limit).nullable());
+// A text written in at least one language: the catalog's original is required and the other one is an optional translation.
+const anyText = (value: Readonly<Record<string, string | null | undefined>>) => Object.values(value).some(text => !!text?.trim());
 export const catalogFieldTypes = ["text", "integer", "decimal", "date", "boolean", "catalog"] as const;
 // A form use (Draft or Active) names the form, the question and their identities, or none of them for a reader without
 // formtemplates.read; the catalog's own presentation use names only the catalog.
@@ -21,7 +23,7 @@ export const catalogFieldUsageSchema = z.strictObject({ definitionId: guid.nulla
 export type CatalogFieldUsage = z.infer<typeof catalogFieldUsageSchema>;
 const catalogField = z.strictObject({ id: guid, key: z.string().regex(/^[a-z][a-z0-9_]{0,39}$/), name: textMapForField(), type: z.enum(catalogFieldTypes), sourceCatalogId: guid.nullable(), required: z.boolean(), unique: z.boolean(), min: z.string().nullable(), max: z.string().nullable(), maxLength: z.number().int().min(1).max(300).nullable(), role: z.enum(["filter", "data"]), position: z.number().int().min(0).max(2147483647), isActive: z.boolean(), valuesCount: z.number().int().nonnegative(), usedBy: z.array(catalogFieldUsageSchema) })
   .refine(value => value.type === "catalog" ? value.sourceCatalogId !== null : value.sourceCatalogId === null);
-function textMapForField() { return z.strictObject({ es: z.string().min(1).max(120), en: z.string().min(1).max(120).optional() }); }
+function textMapForField() { return z.strictObject({ es: z.string().min(1).max(120).optional(), en: z.string().min(1).max(120).optional() }).refine(anyText); }
 const presentation = z.strictObject({ title: z.array(z.string().min(1)).min(1).max(24), description: z.array(z.string().min(1)).max(24) });
 // One entry per catalog language (es, en): titles over 30 and descriptions over 300 among every active option, with
 // up to three examples each.
@@ -48,13 +50,13 @@ const filterColumn = z.strictObject({ key: z.string(), dataType: z.string(), can
 const sampleUsers = z.strictObject({ items: z.array(z.strictObject({ id: guid, name: z.string() })), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() });
 const filterOptions = z.strictObject({ source: z.literal("users"), columns: z.array(filterColumn), sampleUsers: sampleUsers.nullable() });
 const filterPreview = z.strictObject({ items: z.array(z.strictObject({ id: guid, text: z.string(), detail: z.string().nullable(), canSend: z.boolean() })), totalCount: count, exceedsLimit: z.boolean() });
-const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), kind: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable(), fields: z.array(catalogField).max(20).nullable(), presentation: presentation.nullable(), presentationCheck: catalogPresentationCheckSchema.nullable() })
-  .refine(value => value.proposal ? value.kind === "Filters" && value.filters !== null && !!value.name[value.proposal.originalCulture]?.trim() && (value.proposal.state === "Approved" || !value.isActive) : requiredText(120).safeParse(value.name).success)
+const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), originalCulture: z.enum(["es", "en"]), kind: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable(), fields: z.array(catalogField).max(20).nullable(), presentation: presentation.nullable(), presentationCheck: catalogPresentationCheckSchema.nullable() })
+  .refine(value => value.proposal ? value.kind === "Filters" && value.filters !== null && !!value.name[value.proposal.originalCulture]?.trim() && (value.proposal.state === "Approved" || !value.isActive) : anyText(value.name))
   .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase())
   .refine(value => value.kind !== "Filters" || value.valueType === "Text")
   .refine(value => value.kind !== "Manual" || value.fields !== null && value.presentationCheck !== null)
   .refine(value => !value.fields || new Set(value.fields.map(field => field.id.toLowerCase())).size === value.fields.length && new Set(value.fields.map(field => field.key)).size === value.fields.length);
-const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: nullableText(200).refine(value => !!value.es?.trim()), detail: nullableText(500), value: z.string().max(64).nullable(), position: z.number().int().min(1).max(10000), isActive: z.boolean(), fields: z.record(guid, z.string().max(300)), fieldTexts: z.record(guid, textMap(200).refine(value => !!value.es)) });
+const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: z.record(cultureKey, z.string().min(1).max(200).nullable()).refine(anyText), detail: nullableText(500), value: z.string().max(64).nullable(), position: z.number().int().min(1).max(10000), isActive: z.boolean(), fields: z.record(guid, z.string().max(300)), fieldTexts: z.record(guid, textMap(200).refine(anyText)) });
 const itemPage = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
   .refine(value => new Set(value.items.map(row => row.id.toLowerCase())).size === value.items.length);
 const listItem = z.strictObject({ id: guid, name: z.string().min(1), description: z.string().nullable(), origin: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), optionsCount: count.nullable(), usageCount: count.nullable(), state: z.enum(["Active", "Inactive", "Unavailable"]), stateReason: z.string().nullable(), canEdit: z.boolean() }).refine(value => value.origin !== "Filters" || value.valueType === "Text");

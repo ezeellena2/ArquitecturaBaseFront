@@ -62,7 +62,7 @@ it("asks to confirm removing the field and its values with their count", async (
 it("numbers the active fields and shows each type's detail", async () => {
   const source = "01990000-0000-7000-8000-000000000009";
   const cultures = [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }];
-  server.use(http.get("/api/forms/catalogs/" + source, () => HttpResponse.json({ id: source, key: source.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" }, description: { es: "Zonas de reparto", en: "Delivery zones" }, kind: "Manual", valueType: "Text", revision: 1, isActive: true, itemsCount: 72, usageCount: 1, unavailableReasonCode: null, filters: null, proposal: null, fields: [], presentation: null, presentationCheck: { cultures } })));
+  server.use(http.get("/api/forms/catalogs/" + source, () => HttpResponse.json({ id: source, key: source.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" }, description: { es: "Zonas de reparto", en: "Delivery zones" }, kind: "Manual", valueType: "Text", revision: 1, isActive: true, itemsCount: 72, usageCount: 1, originalCulture: "es", unavailableReasonCode: null, filters: null, proposal: null, fields: [], presentation: null, presentationCheck: { cultures } })));
   const saved = (localId: string, number: number, values: Partial<CatalogFieldDraft>): CatalogFieldDraft => ({ ...newCatalogField(localId, number), id: "01990000-0000-7000-8000-0000000001" + String(number).padStart(2, "0"), key: localId, name: { es: localId }, ...values });
   const fields = [
     saved("cuit", 1, { name: { es: "CUIT" }, maxLength: 13 }),

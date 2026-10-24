@@ -2,6 +2,7 @@ import type { TFunction } from "i18next";
 import type { CatalogField, CatalogFieldUsage } from "./api/catalogResponse";
 import { catalogScalarText, formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
 import type { FormCulture } from "./model";
+import { ownTexts } from "./editorModel";
 
 export type CatalogFieldType = CatalogField["type"];
 export interface CatalogFieldDraft extends Omit<CatalogField, "id"> { readonly id: string | null; readonly localId: string }
@@ -133,6 +134,6 @@ export function catalogFieldsBody(fields: readonly CatalogFieldDraft[], culture:
       const result = type ? parseCatalogValue(type, input, culture) : null;
       return result?.valid ? result.value : input;
     };
-    return { ...field, name: { es: field.name.es.trim(), ...(field.name.en?.trim() ? { en: field.name.en.trim() } : {}) }, min: bound(field.min), max: bound(field.max), position: index + 1 };
+    return { ...field, name: ownTexts(field.name), min: bound(field.min), max: bound(field.max), position: index + 1 };
   });
 }

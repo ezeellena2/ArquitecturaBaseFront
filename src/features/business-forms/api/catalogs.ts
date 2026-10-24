@@ -18,7 +18,7 @@ export interface CatalogManualItemBody {
   readonly fields?: Readonly<Record<string, string | null>>;
 }
 export interface ManualCatalogBody {
-  readonly name: Readonly<Record<"es" | "en", string>>;
+  readonly name: Readonly<Partial<Record<FormCulture, string>>>;
   readonly description: Readonly<Partial<Record<FormCulture, string>>>;
   readonly items: readonly CatalogManualItemBody[];
   readonly fields?: readonly CatalogFieldBody[];
@@ -60,7 +60,7 @@ export async function fetchCatalogPage(query: CatalogListQuery, signal?: AbortSi
 }
 
 export interface CatalogFilterOptionsQuery { readonly page: number; readonly pageSize: number; readonly search?: string; readonly sort?: "name" | "-name" }
-export interface FiltersCatalogBody { readonly name: Readonly<Record<"es" | "en", string>>; readonly description: Readonly<Partial<Record<FormCulture, string>>>; readonly filters: CatalogFiltersBody }
+export interface FiltersCatalogBody { readonly name: Readonly<Partial<Record<FormCulture, string>>>; readonly description: Readonly<Partial<Record<FormCulture, string>>>; readonly filters: CatalogFiltersBody }
 export interface CatalogFilterPreviewBody { readonly sampleUserId: string; readonly filters: CatalogFiltersBody }
 export async function fetchCatalogFilterOptions(query: CatalogFilterOptionsQuery, signal?: AbortSignal) {
   const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));

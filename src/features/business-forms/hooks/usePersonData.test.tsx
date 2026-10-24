@@ -7,7 +7,7 @@ import { createQueryClient } from "@/shared/api/queryClient";
 import { fetchPersonAttributes, fetchPersonData, savePersonData } from "../api/personData";
 import { usePersonData } from "./usePersonData";
 vi.mock("../api/personData", () => ({ fetchPersonAttributes: vi.fn(), fetchPersonData: vi.fn(), savePersonData: vi.fn() }));
-const attribute = { id: "01990000-0000-7000-8000-000000000001", key: "branch", name: { es: "Sucursal" }, type: "Text" as const, sourceCatalogId: null, sourceCatalogName: null, position: 1, isActive: true, revision: 1, usedBy: [] };
+const attribute = { id: "01990000-0000-7000-8000-000000000001", key: "branch", name: { es: "Sucursal" }, originalCulture: "es" as const, type: "Text" as const, sourceCatalogId: null, sourceCatalogName: null, position: 1, isActive: true, revision: 1, usedBy: [] };
 const userId = "01990000-0000-7000-8000-000000000002";
 const initial = { userId, revision: 3, values: { [attribute.id]: { value: "Centro", text: "Centro" }, "01990000-0000-7000-8000-000000000003": { value: "sin tocar", text: "sin tocar" } } };
 beforeEach(() => { vi.clearAllMocks(); vi.mocked(fetchPersonAttributes).mockResolvedValue({ items: [attribute, { ...attribute, id: "01990000-0000-7000-8000-000000000003", key: "other", name: { es: "Otro dato" }, position: 2 }] }); vi.mocked(fetchPersonData).mockResolvedValue(initial); });

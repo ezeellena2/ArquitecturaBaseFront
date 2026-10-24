@@ -10,7 +10,7 @@ import { UserDataSectionContext } from "@/shared/hooks/userDataSectionContext";
 import { PersonDataPage } from "./PersonDataPage";
 vi.mock("react-oidc-context", async () => { const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"); return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }; });
 const id = "01990000-0000-7000-8000-000000000001", userId = "01990000-0000-7000-8000-000000000002";
-const attribute = { id, key: "branch", name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, sourceCatalogName: null, position: 1, isActive: true, revision: 1, usedBy: [] };
+const attribute = { id, key: "branch", name: { es: "Sucursal", en: "Branch" }, originalCulture: "es", type: "Text", sourceCatalogId: null, sourceCatalogName: null, position: 1, isActive: true, revision: 1, usedBy: [] };
 const people = { items: [{ userId, displayName: "Juan Gómez", values: { [id]: { value: "Centro", text: "Centro" } } }], page: 1, pageSize: 20, totalCount: 1, missing: [{ attributeId: id, count: 0 }], totalPages: 1, hasPrevious: false, hasNext: false };
 async function mount(permissions: string[], items: unknown[] = [attribute]) {
  let reads = 0;

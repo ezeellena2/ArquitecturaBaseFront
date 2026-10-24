@@ -11,12 +11,13 @@ it.each(["Pending", "Approved", "Discarded"])("reads the immutable %s proposal a
  expect(readCatalog(response)).toEqual(response);
  expect(readCatalog(response).name).not.toHaveProperty("en");
 });
-it("requires the nullable proposal property while preserving the bilingual contract of ordinary catalogs", () => {
+it("requires the nullable proposal property and a name in at least one language of ordinary catalogs", () => {
  const response = { ...proposalCatalog(), proposal: null, name: { es: "Personas", en: "People" }, description: { es: "Personas activas", en: "Active people" } };
  expect(readCatalog(response)).toEqual(response);
  const { proposal: _removed, ...missing } = response;
  expect(() => readCatalog(missing)).toThrow("Unsupported catalog response.");
- expect(() => readCatalog({ ...response, name: { es: "Personas" } })).toThrow("Unsupported catalog response.");
+ expect(readCatalog({ ...response, name: { es: "Personas" } }).name).toEqual({ es: "Personas" });
+ expect(() => readCatalog({ ...response, name: {} })).toThrow("Unsupported catalog response.");
 });
 it.each([
  { proposal: { ...proposalEvidence, state: "Unknown" } },

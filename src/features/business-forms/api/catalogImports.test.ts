@@ -28,7 +28,7 @@ it("sends the same file and captured revision as private multipart and keeps app
     expect(init).toEqual({ signal, cache: "no-store" });
     expect(data).toBeInstanceOf(FormData); expect((data as FormData).get("file")).toBe(body.file);
     expect((data as FormData).get("expectedRevision")).toBe("7");
-    const catalog = { valueType: "Text", proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 8, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
+    const catalog = { valueType: "Text", proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 8, isActive: true, itemsCount: 1, usageCount: 0, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
     post.mockResolvedValue({ catalog, itemIdentityMap: {}, fieldIdentityMap: {} });
     await applyCatalogImport(id, { ...body, sheetSha256: preview.sheetSha256, confirmDeactivations: 1, confirmEmpty: false, confirmErrors: true }, signal);
     const apply = post.mock.calls[1]!;
@@ -53,7 +53,7 @@ it("preserves exact nullable canonical extra values and refuses a non-string val
   }
 });
 it("accepts an import without differences at the captured revision while a catalog edit still requires a newer revision", async () => {
-  const catalog = { valueType: "Text", proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
+  const catalog = { valueType: "Text", proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 1, usageCount: 0, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
   const receipt = { catalog, itemIdentityMap: {}, fieldIdentityMap: {} };
   const post = vi.spyOn(api, "post").mockResolvedValue(receipt);
   const body = { file: new File(["Code,Text"], "unchanged.csv"), expectedRevision: 7, mode: "Append" as const, sheetSha256: preview.sheetSha256, confirmDeactivations: 0, confirmEmpty: false, confirmErrors: false };
