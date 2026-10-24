@@ -85,12 +85,22 @@ it("keeps a new catalog's unavailable menu actions keyboard reachable with their
 });
 
 it("blocks dirty import without disabling the saved catalog's export", async () => {
-  const value = props({ importDisabledReason: "Guardá o descartá los cambios antes de importar." });
+  const reason = "Guardá o descartá los cambios antes de importar.";
+  const value = props({ importDisabledReason: reason });
   await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup();
-  const file = await screen.findByRole("button", { name: "Importar" });
-  expect(file).toBeDisabled(); expect(file).toHaveAccessibleDescription(value.importDisabledReason!);
+  const paste = await screen.findByRole("button", { name: "Pegar desde Excel" });
+  const file = screen.getByRole("button", { name: "Importar" });
+  for (const button of [paste, file]) { expect(button).toBeDisabled(); expect(button).toHaveAccessibleDescription(reason); }
+  // El mismo motivo que en un catálogo nuevo: como ayuda, nunca escrito debajo de los botones.
+  for (const text of screen.queryAllByText(reason)) expect(text).not.toBeVisible();
+  await user.hover(file); expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+  await user.keyboard("{Escape}"); await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+  await user.tab(); await user.tab(); expect(file.parentElement).toHaveFocus();
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
   await user.click(file); expect(value.onImport).not.toHaveBeenCalled();
-  await user.click(screen.getByRole("button", { name: "Exportar" })); expect(value.onExport).toHaveBeenCalledWith(false);
+  const exportButton = screen.getByRole("button", { name: "Exportar" });
+  expect(exportButton).toHaveAccessibleDescription("");
+  await user.click(exportButton); expect(value.onExport).toHaveBeenCalledWith(false);
 });
 
 it.each(["moves", "sortPending"])("explains and prevents unavailable sorting for %s", async state => {
