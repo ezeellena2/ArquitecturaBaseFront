@@ -39,6 +39,7 @@ import { notify } from "@/shared/ui/notifications";
 import {
   assistantApi,
   type AssistantAccepted,
+  type AssistantState,
   type AssistantTurn,
 } from "../api/assistant";
 import { assistantKey, isActiveTurn } from "../assistant/model";
@@ -51,6 +52,11 @@ import { AssistantOperationState } from "../components/assistant/AssistantOperat
 import { AssistantConversationPanel } from "../components/assistant/AssistantConversationPanel";
 import { AssistantWorkspace } from "@/shared/ui/assistant/AssistantWorkspace";
 import { useAssistantConversationList } from "../hooks/useAssistantConversationList";
+const announcedStates: readonly AssistantState[] = [
+  "failed",
+  "uncertain",
+  "expired",
+];
 const MessageContext = createContext<{
   turns: readonly AssistantTurn[];
   permissions: readonly string[];
@@ -194,16 +200,16 @@ export function AiAssistantPage() {
     [client, userId],
   );
   const announced = useRef(new Set<string>());
-  const observedStates = useRef(new Map<string, string>());
+  const observedStates = useRef(new Map<string, AssistantState>());
   useEffect(() => {
     for (const turn of data.turns) {
       const previous = observedStates.current.get(turn.requestId);
       observedStates.current.set(turn.requestId, turn.state);
       if (
         !turn.failure ||
-        !["Failed", "Uncertain", "Expired"].includes(turn.state) ||
+        !announcedStates.includes(turn.state) ||
         isActiveTurn(turn) ||
-        (!isActiveTurn({ state: previous ?? "" }) &&
+        (!isActiveTurn(previous ? { state: previous } : undefined) &&
           accepted?.requestId !== turn.requestId)
       )
         continue;
@@ -212,10 +218,10 @@ export function AiAssistantPage() {
       announced.current.add(id);
       notify({
         id,
-        kind: turn.state === "Uncertain" ? "warning" : "error",
+        kind: turn.state === "uncertain" ? "warning" : "error",
         message: turn.failure.detail,
         action:
-          turn.state === "Uncertain"
+          turn.state === "uncertain"
             ? {
                 label: t("checkStatus"),
                 onClick: () => {
@@ -407,8 +413,8 @@ export function AiAssistantPage() {
                           aria-live="polite"
                           aria-atomic="true"
                         >
-                          {data.turn.data?.state === "Completed"
-                            ? t("states.Completed")
+                          {data.turn.data?.state === "completed"
+                            ? t("states.completed")
                             : ""}
                         </span>
                         {data.history.hasNextPage ? (
@@ -424,7 +430,7 @@ export function AiAssistantPage() {
                           </Button>
                         ) : null}
                         {data.turns
-                          .filter((turn) => turn.state !== "Completed")
+                          .filter((turn) => turn.state !== "completed")
                           .map((turn) => (
                             <AssistantOperationState
                               key={turn.requestId}

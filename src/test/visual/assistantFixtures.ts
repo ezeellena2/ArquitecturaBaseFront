@@ -72,12 +72,12 @@ export function createAssistantVisualFixtures(
       scenario === "assistant-running" ||
       scenario === "assistant-cancel-requested" ||
       scenario === "assistant-scroll"
-        ? "Running"
+        ? "running"
         : scenario === "assistant-uncertain"
-          ? "Uncertain"
+          ? "uncertain"
           : scenario === "assistant-failed"
-            ? "Failed"
-            : "Completed",
+            ? "failed"
+            : "completed",
     stage: "consulting",
     cancelRequestedAtUtc:
       scenario === "assistant-cancel-requested" ? date : null,
@@ -118,13 +118,13 @@ export function createAssistantVisualFixtures(
     serverNowUtc: date,
     pollingAfterSeconds: 2,
   };
-  if (turn.state !== "Completed")
+  if (turn.state !== "completed")
     turn = {
       ...turn,
       answer: null,
       evidences: [],
       failure:
-        turn.state === "Uncertain" || turn.state === "Failed"
+        turn.state === "uncertain" || turn.state === "failed"
           ? {
               code: "Ai.Assistant.ProviderUnavailable",
               detail: en
@@ -142,7 +142,7 @@ export function createAssistantVisualFixtures(
     revision: turn.conversationRevision,
     contentAccess: turn.contentAccess,
     activeRequestId:
-      turn.state === "Running" || turn.state === "Pending"
+      turn.state === "running" || turn.state === "pending"
         ? turn.requestId
         : null,
     lastActivityAtUtc: date,
@@ -169,7 +169,7 @@ export function createAssistantVisualFixtures(
           turnId: `older-${index}`,
           requestId: `older-request-${index}`,
           ordinal: index + 1,
-          state: "Completed",
+          state: "completed",
           question: `Earlier question ${index + 1}`,
           answer: {
             kind: "answer",
@@ -234,7 +234,7 @@ export function createAssistantVisualFixtures(
     if (path.endsWith("/cancel")) {
       turn = {
         ...turn,
-        state: "Canceled",
+        state: "canceled",
         answer: null,
         evidences: [],
         turnRevision: turn.turnRevision + 1,
@@ -257,7 +257,7 @@ export function createAssistantVisualFixtures(
       if (scenario === "assistant-scroll" && ++turnReads >= 3)
         turn = {
           ...turn,
-          state: "Completed",
+          state: "completed",
           answer: {
             kind: "answer",
             text: "New confirmed result. ".repeat(80),

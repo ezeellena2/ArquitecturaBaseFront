@@ -60,7 +60,7 @@ beforeEach(() => {
     ordinal: 1,
     conversationRevision: 2,
     turnRevision: 2,
-    state: "Completed",
+    state: "completed",
     stage: "verifying",
     contentAccess: "allowed",
     question: "Consulta anterior",
@@ -129,7 +129,7 @@ beforeEach(() => {
         revision: 2,
         title: "Conversación",
         contentAccess: access,
-        activeRequestId: turn.state === "Running" ? turn.requestId : null,
+        activeRequestId: turn.state === "running" ? turn.requestId : null,
         lastActivityAtUtc: turn.submittedAtUtc,
       }),
     ),
@@ -144,7 +144,7 @@ beforeEach(() => {
       return HttpResponse.json(turn, { status: 202 });
     }),
     http.post("/api/ai/assistant/turns/:id/cancel", () => {
-      turn = { ...turn, state: "Canceled", turnRevision: 3 };
+      turn = { ...turn, state: "canceled", turnRevision: 3 };
       return HttpResponse.json(turn);
     }),
     http.delete(
@@ -206,7 +206,7 @@ describe("authenticated assistant", () => {
   });
   it("announces a terminal transition once in StrictMode across repeated GETs", async () => {
     const error = vi.spyOn(toast, "error");
-    turn = { ...turn, state: "Running", answer: null, evidences: [] };
+    turn = { ...turn, state: "running", answer: null, evidences: [] };
     const router = createMemoryRouter(routes, {
       initialEntries: [`/?conversacion=${conversationId}`],
     });
@@ -222,7 +222,7 @@ describe("authenticated assistant", () => {
     });
     turn = {
       ...turn,
-      state: "Failed",
+      state: "failed",
       failure: {
         code: "Ai.Assistant.ProviderRejected",
         detail: "El proveedor rechazó la consulta.",
@@ -245,12 +245,12 @@ describe("authenticated assistant", () => {
   });
   it("does not notify expected durable cancellation as an operational error", async () => {
     const error = vi.spyOn(toast, "error");
-    turn = { ...turn, state: "Running", answer: null, evidences: [] };
+    turn = { ...turn, state: "running", answer: null, evidences: [] };
     server.use(
       http.post("/api/ai/assistant/turns/:id/cancel", () => {
         turn = {
           ...turn,
-          state: "Canceled",
+          state: "canceled",
           failure: {
             code: "Ai.Assistant.Canceled",
             detail: "Cancelación confirmada.",
@@ -304,6 +304,77 @@ describe("authenticated assistant", () => {
     await waitFor(() => expect(writes).toHaveLength(2));
     expect(writes[1]).toMatchObject({ conversationId, expectedRevision: 2 });
     expect(writes[1].requestId).not.toBe(writes[0].requestId);
+  });
+  it("polls a pending acceptance until the turn completes and shows the answer", async () => {
+    const completed = turn;
+    let turnReads = 0;
+    server.use(
+      http.post("/api/ai/assistant/turns", async ({ request }) => {
+        const body = (await request.json()) as AssistantSubmit;
+        writes.push(body);
+        turn = {
+          ...completed,
+          requestId: body.requestId,
+          question: body.question,
+          state: "pending",
+          stage: "pending",
+          answer: null,
+          evidences: [],
+          pollingAfterSeconds: 1,
+        };
+        return HttpResponse.json(
+          {
+            conversationId: turn.conversationId,
+            requestId: turn.requestId,
+            conversationRevision: turn.conversationRevision,
+            turnRevision: turn.turnRevision,
+            state: turn.state,
+            stage: turn.stage,
+            submittedAtUtc: turn.submittedAtUtc,
+            serverNowUtc: turn.serverNowUtc,
+            pollingAfterSeconds: turn.pollingAfterSeconds,
+          },
+          { status: 202 },
+        );
+      }),
+      http.get("/api/ai/assistant/turns/:id", () => {
+        turnReads++;
+        if (turnReads > 1)
+          turn = {
+            ...turn,
+            state: "completed",
+            stage: "finished",
+            answer: completed.answer,
+            evidences: completed.evidences,
+            turnRevision: turn.turnRevision + 1,
+          };
+        return HttpResponse.json(turn);
+      }),
+      http.get("/api/ai/assistant/conversations/:id", () =>
+        HttpResponse.json({
+          conversationId,
+          revision: turn.conversationRevision,
+          title: "Conversación",
+          contentAccess: "allowed",
+          activeRequestId: turn.state === "pending" ? turn.requestId : null,
+          lastActivityAtUtc: turn.submittedAtUtc,
+        }),
+      ),
+    );
+    renderRouteWithProviders("/");
+    await pasteText(
+      await screen.findByRole("textbox", { name: "Tu pregunta" }),
+      "¿Cuántos usuarios activos hay?",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(
+      await screen.findByText("Hay tres usuarios activos.", undefined, {
+        timeout: 3000,
+      }),
+    ).toBeInTheDocument();
+    expect(turnReads).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText(/^states\./)).not.toBeInTheDocument();
+    expect(writes).toHaveLength(1);
   });
   it("keeps Enter as newline and respects IME before Ctrl+Enter", async () => {
     renderRouteWithProviders("/");
@@ -445,7 +516,7 @@ describe("authenticated assistant", () => {
     expect(writes).toHaveLength(0);
   });
   it("shows the durable cancellation request while the running operation remains active", async () => {
-    turn = { ...turn, state: "Running", answer: null, evidences: [] };
+    turn = { ...turn, state: "running", answer: null, evidences: [] };
     server.use(
       http.post("/api/ai/assistant/turns/:id/cancel", () => {
         turn = { ...turn, cancelRequestedAtUtc: "2026-10-04T12:00:02Z" };
@@ -473,15 +544,15 @@ describe("authenticated assistant", () => {
         name: "Cancelación solicitada",
       }),
     ).toBeDisabled();
-    expect(turn.state).toBe("Running");
+    expect(turn.state).toBe("running");
     expect(writes).toHaveLength(0);
   });
   it("publishes the confirmed completion when cancellation loses its race", async () => {
     const answer = turn.answer;
-    turn = { ...turn, state: "Running", answer: null };
+    turn = { ...turn, state: "running", answer: null };
     server.use(
       http.post("/api/ai/assistant/turns/:id/cancel", () => {
-        turn = { ...turn, state: "Completed", answer };
+        turn = { ...turn, state: "completed", answer };
         return HttpResponse.json(turn);
       }),
     );

@@ -1,13 +1,13 @@
 import { api } from "@/shared/api/httpClient";
 import type { PagedResult } from "@/shared/api/pagedResult";
 export type AssistantState =
-  | "Pending"
-  | "Running"
-  | "Completed"
-  | "Failed"
-  | "Uncertain"
-  | "Canceled"
-  | "Expired";
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "uncertain"
+  | "canceled"
+  | "expired";
 export type ContentAccess = "allowed" | "blocked" | "expired";
 export interface AssistantEvidence {
   readonly id: string;

@@ -57,13 +57,13 @@
     "verifying": "Verificando las fuentes"
   },
   "states": {
-    "Pending": "Consulta pendiente",
-    "Running": "Consulta en curso",
-    "Completed": "Respuesta verificada",
-    "Failed": "No se completó la consulta",
-    "Uncertain": "Resultado incierto",
-    "Canceled": "Consulta cancelada",
-    "Expired": "Consulta vencida"
+    "pending": "Consulta pendiente",
+    "running": "Consulta en curso",
+    "completed": "Respuesta verificada",
+    "failed": "No se completó la consulta",
+    "uncertain": "Resultado incierto",
+    "canceled": "Consulta cancelada",
+    "expired": "Consulta vencida"
   },
   "sourceNames": {
     "users.summary": "Usuarios",

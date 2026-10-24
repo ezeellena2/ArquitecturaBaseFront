@@ -1,14 +1,18 @@
 import type { ThreadMessageLike } from "@assistant-ui/react";
-import type { AssistantSubmit, AssistantTurn } from "../api/assistant";
+import type {
+  AssistantState,
+  AssistantSubmit,
+  AssistantTurn,
+} from "../api/assistant";
 export function isActiveTurn(
   turn:
     | {
-        readonly state: string;
+        readonly state: AssistantState;
       }
     | null
     | undefined,
 ) {
-  return turn?.state === "Pending" || turn?.state === "Running";
+  return turn?.state === "pending" || turn?.state === "running";
 }
 export function createSubmission(
   requestId: string,
@@ -41,7 +45,7 @@ export function projectMessages(
         createdAt: new Date(turn.submittedAtUtc),
         metadata: { custom: { requestId: turn.requestId } },
       });
-    if (turn.state === "Completed" && turn.answer)
+    if (turn.state === "completed" && turn.answer)
       result.push({
         id: `${turn.turnId}:assistant`,
         role: "assistant",

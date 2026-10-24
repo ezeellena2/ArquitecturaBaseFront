@@ -57,13 +57,13 @@
     "verifying": "Verifying sources"
   },
   "states": {
-    "Pending": "Query pending",
-    "Running": "Query in progress",
-    "Completed": "Verified answer",
-    "Failed": "The query did not complete",
-    "Uncertain": "Uncertain result",
-    "Canceled": "Query canceled",
-    "Expired": "Query expired"
+    "pending": "Query pending",
+    "running": "Query in progress",
+    "completed": "Verified answer",
+    "failed": "The query did not complete",
+    "uncertain": "Uncertain result",
+    "canceled": "Query canceled",
+    "expired": "Query expired"
   },
   "sourceNames": {
     "users.summary": "Users",

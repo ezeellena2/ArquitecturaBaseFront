@@ -13,7 +13,7 @@ const base = {
   conversationId: "c1",
   conversationRevision: 2,
   turnRevision: 3,
-  state: "Completed",
+  state: "completed",
   stage: null,
   submittedAtUtc: "2026-10-04T12:00:00Z",
   serverNowUtc: "2026-10-04T12:00:00Z",
@@ -38,7 +38,7 @@ describe("assistant confirmed state", () => {
   });
   it("does not fabricate an assistant response for operational failure", () => {
     expect(
-      projectMessages([{ ...base, state: "Uncertain", answer: null }]).map(
+      projectMessages([{ ...base, state: "uncertain", answer: null }]).map(
         (x) => x.role,
       ),
     ).toEqual(["user"]);
@@ -65,7 +65,9 @@ describe("assistant confirmed state", () => {
     ).toBeUndefined();
   });
   it("polls only pending and running operations", () => {
-    expect(isActiveTurn({ state: "Running" })).toBe(true);
-    expect(isActiveTurn({ state: "Uncertain" })).toBe(false);
+    expect(isActiveTurn({ state: "pending" })).toBe(true);
+    expect(isActiveTurn({ state: "running" })).toBe(true);
+    expect(isActiveTurn({ state: "completed" })).toBe(false);
+    expect(isActiveTurn({ state: "uncertain" })).toBe(false);
   });
 });

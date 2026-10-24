@@ -2,7 +2,13 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/Spinner";
 import { isActiveTurn } from "../../assistant/model";
-import type { AssistantTurn } from "../../api/assistant";
+import type { AssistantState, AssistantTurn } from "../../api/assistant";
+const repeatable: readonly AssistantState[] = [
+  "failed",
+  "uncertain",
+  "expired",
+  "canceled",
+];
 export function AssistantOperationState({
   turn,
   busy,
@@ -41,7 +47,7 @@ export function AssistantOperationState({
         >
           {t(turn.cancelRequestedAtUtc ? "cancelRequested" : "cancel")}
         </Button>
-      ) : turn.state === "Uncertain" ? (
+      ) : turn.state === "uncertain" ? (
         <Button
           size="touch"
           variant="outline"
@@ -52,8 +58,7 @@ export function AssistantOperationState({
           {t("checkStatus")}
         </Button>
       ) : null}
-      {["Failed", "Uncertain", "Expired", "Canceled"].includes(turn.state) &&
-      turn.question ? (
+      {repeatable.includes(turn.state) && turn.question ? (
         <Button
           size="touch"
           variant="outline"
