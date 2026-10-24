@@ -75,6 +75,10 @@ ve también la lista, como al tocarlo.
   quitarlo, sale también del título y de la descripción de «En WhatsApp» del borrador, y si el título queda vacío vuelve
   al texto de la opción. Los usos en el borrador o la versión activa de un formulario lo siguen impidiendo y se listan.
   «Restaurar el campo» lo devuelve a su lugar en «En WhatsApp» si la presentación no se editó después de quitarlo.
+- **«En uso» como en CE1.** Cada pregunta que usa el campo aparece una vez y dice dónde: «Proveedor» en Pedir repuesto,
+  en el borrador, en la versión activa o en la versión activa y en el borrador. Quien puede ver formularios tiene «Ir a la
+  pregunta», que abre el formulario. El uso de «En WhatsApp» del propio catálogo no se muestra como un
+  formulario: «También se saca de «En WhatsApp» de este catálogo.». Lo mismo vale para los usos de un guardado rechazado.
 - **Usos de un campo sin permiso para ver formularios (CE1).** El formulario y la pregunta que usan un campo se nombran
   sólo a quien puede ver formularios (`formtemplates.read`). Sin ese permiso, cada formulario que lo usa se lista por su
   etapa, «La versión activa de un formulario» o «El borrador de un formulario», y el campo sigue sin poder quitarse.

@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import type { CatalogField } from "./api/catalogResponse";
+import type { CatalogField, CatalogFieldUsage } from "./api/catalogResponse";
 import { formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
 import type { FormCulture } from "./model";
 
@@ -22,6 +22,26 @@ export const newCatalogField = (localId: string, position: number): CatalogField
 export const openCatalogField = (field: CatalogField, culture: FormCulture = "es"): CatalogFieldDraft => ({ ...field, localId: field.id, name: { ...field.name }, min: field.min === null ? null : formatCatalogFieldValue(field, field.min, culture), max: field.max === null ? null : formatCatalogFieldValue(field, field.max, culture), usedBy: field.usedBy.map(use => ({ ...use })) });
 function valueType(type: CatalogFieldType): CatalogValueType | null {
   return type === "integer" ? "Integer" : type === "decimal" ? "Decimal" : type === "date" ? "Date" : null;
+}
+
+export type CatalogFieldFormStage = Exclude<CatalogFieldUsage["stage"], "Catalog">;
+export interface CatalogFieldQuestionUse extends Omit<CatalogFieldUsage, "stage"> { readonly stages: readonly CatalogFieldFormStage[] }
+const formStages: readonly CatalogFieldFormStage[] = ["Active", "Draft"];
+/**
+ * One entry per question, in arrival order, with its stages once and in a fixed order (active version, then draft).
+ * The catalog's own presentation use is not a form: it only sets `catalog`. A use without identity (a form the reader
+ * cannot see) cannot be matched with another and stays on its own.
+ */
+export function groupCatalogFieldUses(uses: readonly CatalogFieldUsage[]): { readonly questions: readonly CatalogFieldQuestionUse[]; readonly catalog: boolean } {
+  const groups = new Map<string, { readonly use: Omit<CatalogFieldUsage, "stage">; readonly stages: Set<CatalogFieldFormStage> }>();
+  uses.forEach(({ stage, ...use }, index) => {
+    if (stage === "Catalog") return;
+    const key = use.definitionId && use.questionId ? use.definitionId + "/" + use.questionId : "hidden/" + index;
+    const group = groups.get(key) ?? { use, stages: new Set<CatalogFieldFormStage>() };
+    group.stages.add(stage);
+    groups.set(key, group);
+  });
+  return { questions: [...groups.values()].map(({ use, stages }) => ({ ...use, stages: formStages.filter(stage => stages.has(stage)) })), catalog: uses.some(use => use.stage === "Catalog") };
 }
 
 function compareDecimal(left: string, right: string): number {

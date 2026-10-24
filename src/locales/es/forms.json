@@ -306,6 +306,12 @@
       "removeTitle": "Quitar «{{name}}»", "remove": "Quitar el campo", "removeHint": "Se quita de la tabla, de la plantilla y del Excel. Las respuestas que ya lo guardaron lo conservan.",
       "confirmRemoval": "Sí, quitar el campo y sus valores", "inUse": "El campo está en uso. Sacá esos usos para poder quitarlo.",
       "hiddenUse": { "Draft": "El borrador de un formulario", "Active": "La versión activa de un formulario" },
+      "usage": {
+        "question": "«{{question}}» en {{form}}, {{stage}}",
+        "stage": { "Draft": "en el borrador", "Active": "en la versión activa", "both": "en la versión activa y en el borrador" },
+        "goTo": "Ir a la pregunta", "goToNamed": "Ir a la pregunta «{{question}}» de {{form}}",
+        "presentation": "También se saca de «En WhatsApp» de este catálogo."
+      },
       "columns": "Campos", "valueLabel": "Fila {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Limpiar", "viewNamed": "Ver {{name}}", "clearValue": "Limpiar {{name}}",
       "invalid": "Revisá el valor: no corresponde al tipo del campo.", "required": "Falta el valor obligatorio.", "range": "El valor está fuera del mínimo o máximo del campo.", "length": "El texto supera el largo permitido.",
       "missingValues_one": "Faltan valores en 1 opción activa.", "missingValues_other": "Faltan valores en {{count}} opciones activas.",

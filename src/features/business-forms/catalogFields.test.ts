@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n";
-import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, type CatalogFieldDraft } from "./catalogFields";
+import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
+import type { CatalogFieldUsage } from "./api/catalogResponse";
 
 const field: CatalogFieldDraft = { localId: "field", id: "01990000-0000-7000-8000-000000000001", key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "decimal", sourceCatalogId: null, required: false, unique: false, min: "0", max: "180", maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
 
@@ -74,5 +75,28 @@ describe("catalog extra field values", () => {
     expect(catalogFieldRowReason("type", unique, "invalid")).toBe("invalid");
     expect(catalogFieldProblemText(es, unique, " 30 días ", "repeated")).toBe("«30 días» se repite en otra opción activa.");
     expect(catalogFieldProblemText(en, unique, "30 days", "repeated")).toBe("“30 days” is repeated in another active option.");
+  });
+  it("groups the draft and active uses of one question and keeps the catalog's own use apart", () => {
+    const form = "01990000-0000-7000-8000-000000000002", supplier = "01990000-0000-7000-8000-000000000004", zone = "01990000-0000-7000-8000-000000000005";
+    const hidden = { definitionId: null, formName: null, question: null, questionId: null };
+    const uses: readonly CatalogFieldUsage[] = [
+      { definitionId: form, formName: "Pedir repuesto", question: "Proveedor", questionId: supplier, stage: "Draft" },
+      { definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" },
+      { definitionId: form, formName: "Pedir repuesto", question: "Proveedor", questionId: supplier, stage: "Active" },
+      { definitionId: form, formName: "Pedir repuesto", question: "Zona", questionId: zone, stage: "Active" },
+      { definitionId: form, formName: "Pedir repuesto", question: "Proveedor", questionId: supplier, stage: "Draft" },
+      { ...hidden, stage: "Active" },
+      { ...hidden, stage: "Active" },
+    ];
+    expect(groupCatalogFieldUses(uses)).toEqual({
+      questions: [
+        { definitionId: form, questionId: supplier, formName: "Pedir repuesto", question: "Proveedor", stages: ["Active", "Draft"] },
+        { definitionId: form, questionId: zone, formName: "Pedir repuesto", question: "Zona", stages: ["Active"] },
+        { ...hidden, stages: ["Active"] },
+        { ...hidden, stages: ["Active"] },
+      ],
+      catalog: true,
+    });
+    expect(groupCatalogFieldUses(uses.filter(use => use.stage !== "Catalog")).catalog).toBe(false);
   });
 });

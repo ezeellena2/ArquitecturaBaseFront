@@ -372,12 +372,12 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(screen.getByRole("button", { name: "Quitar CUIT" }));
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Quitar el campo" }));
     await user.click(screen.getByRole("button", { name: "Guardar" }));
-    expect(await screen.findByText("Pedir repuesto · Proveedor")).toBeInTheDocument();
+    expect(await screen.findByText("«Proveedor» en Pedir repuesto, en la versión activa")).toBeInTheDocument();
     expect(screen.getByText(message)).toBeInTheDocument();
     expect(screen.queryByText("Revisión del catálogo")).not.toBeInTheDocument();
     expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
     await user.click(screen.getByRole("button", { name: "Restaurar el campo" }));
-    expect(screen.queryByText("Pedir repuesto · Proveedor")).not.toBeInTheDocument();
+    expect(screen.queryByText("«Proveedor» en Pedir repuesto, en la versión activa")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(bodies).toHaveLength(2));
     expect(bodies[0]).toMatchObject({ name: { es: "Mi catálogo" }, fields: [{ id: fieldId, isActive: false }] });

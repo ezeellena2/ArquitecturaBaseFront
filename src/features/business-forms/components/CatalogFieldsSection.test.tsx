@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router";
 import { act, cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
@@ -9,12 +9,14 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { newCatalogField, type CatalogFieldDraft } from "../catalogFields";
 import { CatalogFieldsSection } from "./CatalogFieldsSection";
 import type { CatalogFieldFeedback } from "../api/catalogFieldFeedback";
+import type { CatalogPresentation } from "../api/catalogResponse";
 
 const field: CatalogFieldDraft = { ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", key: "tax_id", name: { es: "CUIT" }, hasValues: true };
-function Harness({ initial = [] as readonly CatalogFieldDraft[], readOnly = false, errors = {} as Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>, feedback = null as CatalogFieldFeedback | null }) {
+const catalogPermissions = ["formcatalogs.read", "formcatalogs.manage"] as const;
+function Harness({ initial = [] as readonly CatalogFieldDraft[], readOnly = false, errors = {} as Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>, feedback = null as CatalogFieldFeedback | null, permissions = catalogPermissions as readonly string[], presentation = null as CatalogPresentation | null }) {
   const [fields, setFields] = useState(initial);
   const [confirmedRemovals, setConfirmedRemovals] = useState<readonly string[]>([]);
-  return <CatalogFieldsSection fields={fields} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={readOnly} errors={errors} feedback={feedback} confirmedRemovals={confirmedRemovals} onChange={(next, confirmed) => { setFields(next); setConfirmedRemovals(confirmed); }} />;
+  return <CatalogFieldsSection fields={fields} presentation={presentation} culture="es" scope={{ actorId: "author", culture: "es", permissions }} readOnly={readOnly} errors={errors} feedback={feedback} confirmedRemovals={confirmedRemovals} onChange={(next, confirmed) => { setFields(next); setConfirmedRemovals(confirmed); }} />;
 }
 async function mount(initial?: readonly CatalogFieldDraft[], readOnly = false) {
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={initial} readOnly={readOnly} /></MemoryRouter>); });
@@ -39,12 +41,36 @@ it("keeps a saved key immutable and requires a checked confirmation before remov
   await userEvent.click(within(dialog).getByRole("button", { name: "Quitar el campo" }));
   expect(screen.queryByRole("button", { name: "Editar CUIT" })).not.toBeInTheDocument();
 });
-it("shows where an in-use field is referenced and never offers to confirm its removal", async () => {
-  await mount([{ ...field, usedBy: [{ definitionId: "01990000-0000-7000-8000-000000000002", formName: "Pedir repuesto", question: "Proveedor", questionId: "01990000-0000-7000-8000-000000000004", stage: "Active" }] }]);
-  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
-  await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
-  expect(within(screen.getByRole("dialog")).getByText(/Pedir repuesto/)).toBeInTheDocument();
-  expect(within(screen.getByRole("dialog")).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
+it("names the stage of each form use once and links to its question", async () => {
+  const form = "01990000-0000-7000-8000-000000000002", question = "01990000-0000-7000-8000-000000000004";
+  const use = { definitionId: form, formName: "Pedir repuesto", question: "Proveedor", questionId: question };
+  const used: CatalogFieldDraft = { ...field, usedBy: [{ ...use, stage: "Active" }, { ...use, stage: "Draft" }] };
+  for (const canOpenForms of [false, true]) {
+    const router = createMemoryRouter([
+      { path: "/catalogos/proveedores", element: <Harness initial={[used]} permissions={canOpenForms ? [...catalogPermissions, "formtemplates.read"] : catalogPermissions} /> },
+      { path: "/formularios/:id", element: <p>Formulario</p> },
+    ], { initialEntries: ["/catalogos/proveedores"] });
+    await act(async () => { renderWithProviders(<RouterProvider router={router} />); });
+    await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
+    await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
+    const dialog = screen.getByRole("dialog");
+    const items = within(dialog).getAllByRole("listitem");
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent("«Proveedor» en Pedir repuesto, en la versión activa y en el borrador");
+    expect(within(dialog).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
+    if (!canOpenForms) {
+      expect(within(dialog).queryByRole("link")).not.toBeInTheDocument();
+      cleanup();
+      continue;
+    }
+    const link = within(dialog).getByRole("link", { name: "Ir a la pregunta «Proveedor» de Pedir repuesto" });
+    expect(link).toHaveTextContent("Ir a la pregunta");
+    expect(link).toHaveAttribute("href", "/formularios/" + form);
+    await userEvent.click(link);
+    expect(router.state.location.pathname).toBe("/formularios/" + form);
+    expect(router.state.location.state).toEqual({ questionFieldId: question });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  }
 });
 it("shows the stage of uses whose form the reader cannot see and still blocks removal", async () => {
   const hidden = { definitionId: null, formName: null, question: null, questionId: null };
@@ -60,12 +86,14 @@ it("shows the stage of a field-in-use conflict whose form the reader cannot see"
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[{ ...field, isActive: false }]} errors={{ saved: { isActive: ["El campo está en uso."] } }} feedback={{ uses }} /></MemoryRouter>); });
   expect(screen.getByRole("alert")).toHaveTextContent("El borrador de un formulario");
 });
-it("offers removing a field used only by its own catalog presentation", async () => {
-  await mount([{ ...field, usedBy: [{ definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" }] }]);
+it("shows the catalog's own WhatsApp use as part of this catalog instead of a form", async () => {
+  const used: CatalogFieldDraft = { ...field, usedBy: [{ definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" }] };
+  await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[used]} presentation={{ title: ["text"], description: ["detail", field.id!] }} /></MemoryRouter>); });
   await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
   const dialog = screen.getByRole("dialog");
-  expect(within(dialog).queryByText("Proveedores")).not.toBeInTheDocument();
+  expect(within(dialog).queryByText(/Proveedores/)).not.toBeInTheDocument();
+  expect(within(dialog).getByText("También se saca de «En WhatsApp» de este catálogo.")).toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("checkbox"));
   await userEvent.click(within(dialog).getByRole("button", { name: "Quitar el campo" }));
   expect(screen.queryByRole("button", { name: "Editar CUIT" })).not.toBeInTheDocument();
@@ -112,7 +140,7 @@ it.each(["role", "type", "sourceCatalogId"])("shows the uses next to an in-use %
   server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: "01990000-0000-7000-8000-000000000009", name: "Proveedores", description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })));
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[filter, other]} errors={{ saved: { [path]: ["El campo está en uso."] } }} feedback={{ uses }} /></MemoryRouter>); });
   expect(screen.getByText("El campo está en uso.")).toBeInTheDocument();
-  expect(screen.getAllByText("Pedir repuesto · Proveedor")).toHaveLength(1);
+  expect(screen.getAllByText("«Proveedor» en Pedir repuesto, en la versión activa")).toHaveLength(1);
   expect(screen.getByRole("textbox", { name: "Clave" })).toHaveValue("tax_id");
 });
 
@@ -130,7 +158,7 @@ it("moves a field down and up past a hidden removed field in one step and leaves
   let changed: readonly CatalogFieldDraft[] = [];
   function Ordering() {
     const [values, setValues] = useState<readonly CatalogFieldDraft[]>([first, removed, last]);
-    return <CatalogFieldsSection fields={values} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} confirmedRemovals={[]} onChange={next => { changed = next; setValues(next); }} />;
+    return <CatalogFieldsSection fields={values} presentation={null} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} confirmedRemovals={[]} onChange={next => { changed = next; setValues(next); }} />;
   }
   await act(async () => { renderWithProviders(<MemoryRouter><Ordering /></MemoryRouter>); });
   await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
@@ -151,7 +179,7 @@ it("shows a removed field rejected by a concurrent use and restores its identity
   function Recovery({ errors = {} as Readonly<Record<string, Readonly<Record<string, readonly string[]>>>> }) {
     const [values, setValues] = useState<readonly CatalogFieldDraft[]>([field, other]);
     const [removals, setRemovals] = useState<readonly string[]>([]);
-    return <CatalogFieldsSection fields={values} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} errors={errors} confirmedRemovals={removals} onChange={(next, nextRemovals) => { savedFields = next; confirmed = nextRemovals; setValues(next); setRemovals(nextRemovals); }} />;
+    return <CatalogFieldsSection fields={values} presentation={null} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} errors={errors} confirmedRemovals={removals} onChange={(next, nextRemovals) => { savedFields = next; confirmed = nextRemovals; setValues(next); setRemovals(nextRemovals); }} />;
   }
   let rendered!: ReturnType<typeof renderWithProviders>;
   await act(async () => { rendered = renderWithProviders(<MemoryRouter><Recovery /></MemoryRouter>); });
