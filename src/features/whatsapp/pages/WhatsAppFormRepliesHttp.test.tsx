@@ -51,7 +51,7 @@ for (const culture of ['es', 'en'] as const) describe('received forms in real pa
     expect(within(card).getByText('Equipo de prueba')).toBeInTheDocument();
     expect(within(card).getByText('Sin respuesta')).toBeInTheDocument();
     expect(within(card).getByText('12.345.678.901.234.567.890,12345678')).toBeInTheDocument();
-    expect(within(card).getByText('11 oct 2026')).toBeInTheDocument();
+    expect(within(card).getByText('11/10/2026')).toBeInTheDocument();
     expect(within(card).getByText('No')).toBeInTheDocument();
     expect(within(card).getByText(culture === 'es' ? 'Preventiva' : 'Preventive')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Usar este texto en el borrador' })).not.toBeInTheDocument();

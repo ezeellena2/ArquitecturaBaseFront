@@ -1,6 +1,5 @@
 import type { PrivateFormFile } from "@/shared/api/formFiles";
-import { formatDateOnly } from "@/shared/lib/dateTime";
-import { formatExactDecimal } from "@/shared/lib/decimal";
+import { formatTypedValue, formatYesNo } from "@/shared/lib/typedValue";
 
 // Presentation input only, not a wire DTO. Choice text is the authorized historical label.
 export type FormReplyDisplayValue =
@@ -17,9 +16,9 @@ export function formatFormReplyValue(answer: FormReplyDisplayValue, language: st
   if (answer.value === null) return labels.missing;
   if (answer.type === "multiChoice") return answer.value.length ? answer.value.map(choice => choice.label).join(", ") : labels.missing;
   switch (answer.type) {
-    case "decimal": return formatExactDecimal(answer.value, language);
-    case "date": return formatDateOnly(answer.value, language);
-    case "boolean": return answer.value ? labels.yes : labels.no;
+    case "decimal":
+    case "date": return formatTypedValue(answer.type, answer.value, language);
+    case "boolean": return formatYesNo(answer.value, labels);
     default: return typeof answer.value === "string" ? answer.value : null;
   }
 }

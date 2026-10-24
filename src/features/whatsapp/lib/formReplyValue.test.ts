@@ -14,8 +14,11 @@ describe("form reply value presentation", () => {
     expect(formatFormReplyValue({ type: "boolean", value: true }, "en", en)).toBe("Yes");
     expect(formatFormReplyValue({ type: "shortText", value: "All good, the client signed." }, "es", es)).toBe("All good, the client signed.");
     expect(formatFormReplyValue({ type: "longText", value: "  First line\nSecond line  " }, "es", es)).toBe("  First line\nSecond line  ");
-    expect(formatFormReplyValue({ type: "date", value: "2026-10-08" }, "es", es)).toBe("8 oct 2026");
+    expect(formatFormReplyValue({ type: "date", value: "2026-10-08" }, "es", es)).toBe("08/10/2026");
     expect(formatFormReplyValue({ type: "decimal", value: "125500.00" }, "es", es)).toBe("125.500,00");
+  });
+  it("groups a decimal below five digits with the shared format", () => {
+    expect(formatFormReplyValue({ type: "decimal", value: "1500.5" }, "es", es)).toBe("1.500,5");
   });
   it("uses the historical choice label supplied by the authorized snapshot", () => {
     expect(formatFormReplyValue({ type: "choice", value: "Distribuidora Norte" }, "es", es)).toBe("Distribuidora Norte");

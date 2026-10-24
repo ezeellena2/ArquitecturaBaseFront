@@ -17,7 +17,7 @@ describe("FormReplyValues presentation", () => {
   it("shows three answers before expanding and preserves every historical value", () => {
     renderWithProviders(<FormReplyValues rows={rows} />);
     expect(screen.getByText("Distribuidora Norte")).toBeInTheDocument();
-    expect(screen.getByText("8 oct 2026")).toBeInTheDocument();
+    expect(screen.getByText("08/10/2026")).toBeInTheDocument();
     expect(screen.getByText("All good, the client signed.")).toBeInTheDocument();
     expect(screen.queryByText("125.500,00")).not.toBeInTheDocument();
     const toggle = screen.getByRole("button", { name: "Ver las 7 respuestas" });
