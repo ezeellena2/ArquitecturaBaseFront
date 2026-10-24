@@ -138,7 +138,7 @@ it("prepares recipient catalogs and shows their counts before sending", async ()
 
 it.each([
   ["CatalogEmpty","Cliente: no tiene opciones y la pregunta es obligatoria."],
-  ["RecipientDataMissing","Cliente: a esta persona le falta un dato para recibir estas opciones. Cargalo en Editar usuario y volvé a mandar."],
+  ["RecipientDataMissing","No se puede mandar: Juan no tiene Zona, y «Cliente» muestra las opciones según ese dato. Cargáselo en «Editar usuario» y volvé a mandarlo."],
   ["CatalogFilterUnavailable","Cliente: el filtro no se puede usar. Avisale a quien administra el formulario."],
   ["CatalogTooLarge","Cliente: supera las 200 opciones que admite WhatsApp. Ajustá el catálogo antes de mandar."],
   ["CatalogUnavailable","Cliente: el catálogo no se puede usar. Avisale a quien lo administra."],
@@ -147,7 +147,7 @@ it.each([
   options[0] = {...options[0], hasCatalogQuestions:true};
   server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => HttpResponse.json({
     culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:false,catalogs:[],issues:[{
-      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record."+reason,catalogName:"Clientes",invalidOptionCount:reason==="CatalogOptionInvalid"?2:null,
+      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record."+reason,catalogName:"Clientes",invalidOptionCount:reason==="CatalogOptionInvalid"?2:null,missingData:reason==="RecipientDataMissing"?"Zona":null,
     }]},
   })));
   const dialog = await openForm();
@@ -196,7 +196,7 @@ it("explains how many options do not fit and names only their catalog", async ()
   options[0] = {...options[0],hasCatalogQuestions:true};
   server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", () => HttpResponse.json({
     culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:false,catalogs:[],issues:[{
-      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record.CatalogOptionInvalid",catalogName:"Clientes",invalidOptionCount:2,
+      fieldId:"019abcde-1000-7000-8000-000000000020",label:"Cliente",code:"Forms.Record.CatalogOptionInvalid",catalogName:"Clientes",invalidOptionCount:2,missingData:null,
     }]},
   })));
   const dialog = await openForm();

@@ -195,7 +195,7 @@
       "loadFailed": "No pudimos cargar las opciones del catálogo.",
       "options_one": "{{label}}: {{count}} opción",
       "options_other": "{{label}}: {{count}} opciones",
-      "recipientDataMissing": "{{label}}: a esta persona le falta un dato para recibir estas opciones. Cargalo en Editar usuario y volvé a mandar.",
+      "recipientDataMissing": "No se puede mandar: {{name}} no tiene {{data}}, y «{{label}}» muestra las opciones según ese dato. Cargáselo en «Editar usuario» y volvé a mandarlo.",
       "filterUnavailable": "{{label}}: el filtro no se puede usar. Avisale a quien administra el formulario.",
       "unavailable": "{{label}}: el catálogo no se puede usar. Avisale a quien lo administra.",
       "tooLarge": "{{label}}: supera las 200 opciones que admite WhatsApp. Ajustá el catálogo antes de mandar.",

@@ -195,7 +195,7 @@
       "loadFailed": "The catalog options could not be loaded.",
       "options_one": "{{label}}: {{count}} option",
       "options_other": "{{label}}: {{count}} options",
-      "recipientDataMissing": "{{label}}: this person is missing data required to receive these options. Add it in Edit user and send again.",
+      "recipientDataMissing": "Cannot send: {{name}} has no {{data}}, and “{{label}}” shows its options based on that data. Add it in “Edit user” and send it again.",
       "filterUnavailable": "{{label}}: the filter cannot be used. Tell the person who manages the form.",
       "unavailable": "{{label}}: the catalog is unavailable. Notify its administrator.",
       "tooLarge": "{{label}}: exceeds the 200 options supported by WhatsApp. Adjust the catalog before sending.",

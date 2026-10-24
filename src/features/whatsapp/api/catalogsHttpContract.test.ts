@@ -26,6 +26,7 @@ for(const culture of ["es","en"])describe("captured catalog HTTP "+culture,()=>{
       expect(prepared.preparation.catalogs).toEqual([]);
       expect(prepared.preparation.issues).toHaveLength(1);
       expect(prepared.preparation.issues[0]!.code).toBe(code);
+      expect(prepared.preparation.issues[0]!.missingData).toBe(code==="Forms.Record.RecipientDataMissing"?(culture==="es"?"Zona":"Zone"):null);
       expect(Object.keys(prepared.preparation).sort()).toEqual(["canSend","catalogs","issues"]);
     }
   });

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { resetHttpClient } from "@/shared/api/httpClient";
-import { parseChatForms, parseFormOutgoing, readFormMetadata, sendFormMessage, recoverFormMessage } from "./forms";
+import { parseChatFormPreparation, parseChatForms, parseFormOutgoing, readFormMetadata, sendFormMessage, recoverFormMessage } from "./forms";
 const contactId = "019abcde-1000-7000-8000-000000000010";
 const definitionId = "019abcde-1000-7000-8000-000000000001";
 const versionId = "019abcde-1000-7000-8000-000000000002";
@@ -24,6 +24,15 @@ describe("Chat forms DTO contract", () => {
   });
   it.each([undefined, null, "Manual", "FormAction", "Assistant"])("rejects a missing or non-manual receipt origin %#", origin => {
     expect(() => parseFormOutgoing({ ...receipt, origin }, request, "actor", contactId)).toThrow("Unsupported chat form response.");
+  });
+  it("reads the missing person datum only on the recipient data block", () => {
+    const issue = { fieldId: definitionId, label: "Proveedor", code: "Forms.Record.RecipientDataMissing", catalogName: null, invalidOptionCount: null, missingData: "Zona" };
+    const prepared = (value: typeof issue | Record<string, unknown>) => ({ culture: "es", recipientContextRevision: "context", preparation: { catalogs: [], issues: [value], canSend: false } });
+    expect(parseChatFormPreparation(prepared(issue)).preparation.issues[0]!.missingData).toBe("Zona");
+    expect(parseChatFormPreparation(prepared({ ...issue, code: "Forms.Record.CatalogTooLarge", missingData: null })).preparation.issues[0]!.missingData).toBeNull();
+    for (const invalid of [{ ...issue, missingData: null }, { ...issue, missingData: "" }, { ...issue, code: "Forms.Record.CatalogTooLarge" }, { fieldId: definitionId, label: "Proveedor", code: "Forms.Record.CatalogTooLarge", catalogName: null, invalidOptionCount: null }]) {
+      expect(() => parseChatFormPreparation(prepared(invalid))).toThrow("Unsupported chat form response.");
+    }
   });
   it("preserves the complete sealed text maps and recipient language", () => {
     expect(parseChatForms(forms)).toEqual(forms);
