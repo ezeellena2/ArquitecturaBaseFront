@@ -922,10 +922,7 @@
       "tooMany": "The limit has been reached.",
       "tooLong": "The message exceeds the allowed length."
     },
-    "saveUnchanged": "There are no changes to save.",
-    "saveInvalid": "Check the marked fields before saving.",
     "saveConflict": "Reload and choose what to keep before saving.",
-    "saveBusy": "Wait for the current operation to finish.",
     "chooseValues": "Choose values",
     "historyAdded_one": "{{count}} rule added",
     "historyAdded_other": "{{count}} rules added",
@@ -1130,7 +1127,6 @@
     "inactive": "Inactive",
     "conflict": "Suggestions changed. Reread them and choose what to keep.",
     "reread": "Reread suggestions",
-    "keepMineHint": "Keep your complete draft. The next Save will replace the suggestions from revision {{revision}}.",
     "history": "Suggestion history",
     "historyHint": "Every save keeps a copy. Viewing a revision does not change the draft.",
     "historyAdded_one": "{{count}} suggestion added",

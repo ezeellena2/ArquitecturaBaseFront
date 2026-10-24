@@ -922,10 +922,7 @@
       "tooMany": "Se alcanzó el límite.",
       "tooLong": "El mensaje supera el límite permitido."
     },
-    "saveUnchanged": "No hay cambios para guardar.",
-    "saveInvalid": "Revisá los datos marcados antes de guardar.",
     "saveConflict": "Releé y elegí qué conservar antes de guardar.",
-    "saveBusy": "Esperá a que termine la operación.",
     "chooseValues": "Elegí los valores",
     "historyAdded_one": "{{count}} regla agregada",
     "historyAdded_other": "{{count}} reglas agregadas",
@@ -1130,7 +1127,6 @@
     "inactive": "Inactiva",
     "conflict": "Las sugerencias cambiaron. Releelas y elegí qué conservar.",
     "reread": "Releer sugerencias",
-    "keepMineHint": "Conservá tu borrador completo. El próximo Guardar reemplazará las sugerencias de la revisión {{revision}}.",
     "history": "Historial de sugerencias",
     "historyHint": "Cada guardado conserva una copia. Ver una revisión no cambia el borrador.",
     "historyAdded_one": "{{count}} sugerencia agregada",

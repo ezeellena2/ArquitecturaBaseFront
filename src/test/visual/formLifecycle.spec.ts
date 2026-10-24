@@ -86,6 +86,7 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
   await expect(row.getByRole("button")).toHaveCount(1);
   await expect(row.getByText(es?"Dado de baja":"Deactivated",{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:es?"Guardar sugerencias":"Save suggestions",exact:true})).toBeDisabled();
+  await expect(page.getByRole("button",{name:es?"Guardar sugerencias":"Save suggestions",exact:true})).toHaveAccessibleDescription(es?"Este formulario está dado de baja. Quitá la sugerencia para guardar.":"This form is deactivated. Remove the suggestion to save.");
   await assertContained(page,width);await page.screenshot({path:"test-results/form-lifecycle-ba6-"+language+"-"+width+".png",fullPage:true});
   await row.getByRole("button",{name:es?"Quitar sugerencia 2":"Remove suggestion 2",exact:true}).click();
   await expect(page.getByRole("button",{name:es?"Editar sugerencia 1":"Edit suggestion 1",exact:true})).toBeFocused();

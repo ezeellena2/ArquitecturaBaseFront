@@ -34,6 +34,56 @@ it("views a fixed historical suggestion without relabeling its old destination o
 it("opens the stable suggestion of a nested HTTP field error and focuses the marked source without losing the other draft",async()=>{setup();server.use(http.post("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({code:"Forms.Suggestion.ContentInvalid",detail:"Revisá los datos marcados.",errors:{"suggestions[0].mappings[0].source":["La pregunta de origen cambió."]}},{status:400})));renderWithProviders(<FormSuggestionsSection {...props()}/>);await add();await userEvent.click(screen.getByRole("button",{name:"Agregar dato"}));await userEvent.selectOptions(screen.getByRole("combobox",{name:"Pregunta de destino 1"}),targetId);await userEvent.click(screen.getByRole("button",{name:"Listo"}));await add();await userEvent.type(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})," segundo borrador");await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));const first=within(screen.getByRole("region",{name:"Sugerencia 1"}));await waitFor(()=>expect(first.getByRole("button",{name:"Editar sugerencia 1"})).toHaveAttribute("aria-expanded","true"),{timeout:1000});const control=first.getByRole("combobox",{name:"Dato de origen 1"});expect(control).toHaveAttribute("aria-invalid","true");expect(control).toHaveAccessibleDescription("La pregunta de origen cambió.");await waitFor(()=>expect(control).toHaveFocus());expect(within(screen.getByRole("region",{name:"Sugerencia 2"})).getByText(/Cuando pide factura segundo borrador/)).toBeVisible();expect(notify).not.toHaveBeenCalled();});
 it("keeps one general notification for an unknown HTTP validation path instead of dropping its message",async()=>{setup();server.use(http.post("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({code:"Forms.Suggestion.ContentInvalid",detail:"Cambió una parte de la configuración que hay que revisar.",errors:{"unknown.field":["No se reconoce este dato."]}},{status:400})));renderWithProviders(<FormSuggestionsSection {...props()}/>);await add();await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));await waitFor(()=>expect(notify).toHaveBeenCalledOnce());expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({kind:"error",message:"Cambió una parte de la configuración que hay que revisar."});expect(screen.queryByText("Cambió una parte de la configuración que hay que revisar.")).not.toBeInTheDocument();expect(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})).toHaveValue("Cuando pide factura");await waitFor(()=>expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toBeEnabled());});
 
+it("keeps the suggestions header to Add and Save without draft state or revision", async () => {
+  setup();
+  const row = {id:version,destinationDefinitionId:destinationId,destinationVersionId:version,mode:"Assistant",when:"Cuando pide factura",isActive:true,conditions:[],mappings:[]};
+  server.use(http.get("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({...current(),id:version,sourceVersionId:version,revision:3,suggestions:[row],createdAtUtc:"2026-10-17T12:00:00Z"})));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  const save = await screen.findByRole("button",{name:"Guardar sugerencias"});
+  const band = screen.getByRole("heading",{name:"Qué sugerir después"}).parentElement!;
+  expect(within(band).getAllByRole("button").map(button=>button.textContent)).toEqual(["Agregar sugerencia","Guardar sugerencias"]);
+  expect(band).toHaveTextContent(/^Qué sugerir despuésAgregar sugerenciaGuardar sugerencias$/);
+  expect(save).toBeDisabled();
+  expect(save).not.toHaveAccessibleDescription();
+  await userEvent.click(screen.getByRole("button",{name:"Editar sugerencia 1"}));
+  await userEvent.type(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})," propio");
+  expect(band).toHaveTextContent(/^Qué sugerir despuésAgregar sugerenciaGuardar sugerencias$/);
+  expect(save).toBeEnabled();
+  expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+  expect(screen.queryByText(/revisión 3/i)).not.toBeInTheDocument();
+  const group = screen.getByRole("heading",{name:"Datos que pasan"});
+  expect(group.nextElementSibling).toHaveTextContent("Solo se unen preguntas del mismo tipo. El resto lo completa la persona; siempre revisa los datos antes de confirmar.");
+  expect(group.parentElement!.lastElementChild).toBe(screen.getByRole("button",{name:"Agregar dato"}));
+});
+it("marks a new suggestion without destination only after trying to save", async () => {
+  setup();
+  const writes = vi.fn();
+  server.use(http.post("/api/forms/definitions/:id/suggestions",()=>{writes();return HttpResponse.json(current());}));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  await userEvent.click(await screen.findByRole("button",{name:"Agregar sugerencia"}));
+  const region = within(screen.getByRole("region",{name:"Sugerencia 1"}));
+  expect(region.getByRole("combobox",{name:"Formulario a sugerir"})).not.toHaveAttribute("aria-invalid");
+  expect(region.queryByText("Elegí un formulario publicado disponible.")).not.toBeInTheDocument();
+  expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
+  await userEvent.click(region.getByRole("button",{name:"Listo"}));
+  const save = screen.getByRole("button",{name:"Guardar sugerencias"});
+  expect(save).toBeEnabled();
+  await userEvent.click(save);
+  expect(screen.getByRole("button",{name:"Editar sugerencia 1"})).toHaveAttribute("aria-expanded","true");
+  const target = region.getByRole("combobox",{name:"Formulario a sugerir"});
+  expect(target).toHaveAttribute("aria-invalid","true");
+  expect(target).toHaveAccessibleDescription("Elegí un formulario publicado disponible.");
+  await waitFor(()=>expect(target).toHaveFocus());
+  const when = region.getByRole("textbox",{name:"Cuándo sugerirlo"});
+  expect(when).toHaveAccessibleDescription("Completá este dato.");
+  await userEvent.selectOptions(target,destinationId);
+  expect(target).not.toHaveAttribute("aria-invalid");
+  await userEvent.type(when,"Cuando pide factura");
+  expect(when).not.toHaveAttribute("aria-invalid");
+  expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
+  expect(save).toBeEnabled();
+  expect(writes).not.toHaveBeenCalled();
+});
 it.each(["Deactivated", "Deleted"] as const)("keeps a %s target named and removable only, blocking save until it is removed and restoring focus", async state => {
  setup();
  const otherId = "0199a0c0-0000-7000-8000-000000000021";
@@ -50,6 +100,7 @@ it.each(["Deactivated", "Deleted"] as const)("keeps a %s target named and remova
  expect(first.queryByRole("button",{name:/Editar/})).not.toBeInTheDocument();
  expect(first.getAllByRole("button")).toHaveLength(1);
  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toHaveAccessibleDescription(state === "Deleted" ? "Este formulario fue eliminado. Quitá la sugerencia para guardar." : "Este formulario está dado de baja. Quitá la sugerencia para guardar.");
  await userEvent.click(first.getByRole("button",{name:"Quitar sugerencia 1"}));
  await waitFor(()=>expect(screen.getByRole("button",{name:"Quitar sugerencia 1"})).toHaveFocus());
  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toBeDisabled();
