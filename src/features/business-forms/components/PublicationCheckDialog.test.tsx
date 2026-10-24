@@ -16,12 +16,13 @@ const checked: FormPublicationCheck = { definitionId: definition.id, draftRevisi
   diff: { baseVersionId: "previous", added: [definition.draft.fields[0]!.fieldId], changed: [definition.draft.fields[1]!.fieldId], removed: ["retired"], addedCultures: [], removedCultures: [] } };
 let result = checked;
 vi.mock("../hooks/useFormPublicationCheck", () => ({ useFormPublicationCheck: () => ({ result, busy: false, error: null, check: vi.fn() }) }));
-beforeEach(async () => { await i18n.changeLanguage("es"); result = structuredClone(checked); onGoToIssue.mockClear(); });
+beforeEach(async () => { await i18n.changeLanguage("es"); result = structuredClone(checked); onGoToIssue.mockClear(); onCompleteTranslation.mockClear(); });
 const onGoToIssue = vi.fn();
+const onCompleteTranslation = vi.fn();
 // The scope carries the menu language, as in the editor.
 async function mount(permissions = ["formtemplates.read", "formtemplates.publish"], editorValue = value) { await act(async () => { renderWithProviders(<PublicationCheckDialog scope={{ actorId: "actor", culture: i18n.language.startsWith("en") ? "en" : "es", permissions }}
   id={definition.id} revision={1} value={editorValue} dirty={false} canSave accepting={false} savedAt="2026-10-10 15:20" prefixLocked baseVersionId="previous" baseVersionNumber={1}
-  onAccept={vi.fn()} onOpenChange={vi.fn()} onSave={vi.fn()} onConflict={vi.fn()} onGoToIssue={onGoToIssue} />); }); }
+  onAccept={vi.fn()} onOpenChange={vi.fn()} onSave={vi.fn()} onConflict={vi.fn()} onGoToIssue={onGoToIssue} onCompleteTranslation={onCompleteTranslation} />); }); }
 describe("Chosen publication boards I2/I3", () => {
   it("shows the checked next version, previous diff and saved draft without locking the prefix again", async () => {
     await mount();
@@ -70,7 +71,8 @@ for (const original of ["es", "en"] as const) {
     expect(screen.getByText(texts.help)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: texts.publish })).toBeEnabled();
     await userEvent.click(screen.getByRole("button", { name: texts.complete[secondary] }));
-    expect(onGoToIssue).toHaveBeenLastCalledWith(missing);
+    expect(onCompleteTranslation).toHaveBeenLastCalledWith(missing);
+    expect(onGoToIssue).not.toHaveBeenCalled();
   });
 }
 it("shows optional omissions without a completion action for Publish-only", async () => {
@@ -145,7 +147,7 @@ for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as c
     const complete = within(notice).getByRole("button", { name: ui === "es" ? "Completar el " + languages[secondary] : "Complete " + languages[secondary] });
     expect(complete.closest("p")).toBeNull();
     await userEvent.click(complete);
-    expect(onGoToIssue).toHaveBeenCalledExactlyOnceWith(missing[0]);
+    expect(onCompleteTranslation).toHaveBeenCalledExactlyOnceWith(missing[0]);
   });
 }
 it("keeps one removal warning and its omissions without an editing action for Publish-only", async () => {
@@ -170,7 +172,7 @@ it("offers to complete a translation only when the menu is in that language", as
   await mount(["formtemplates.read", "formtemplates.publish", "formtemplates.manage"]);
   expect(screen.getByText("English is not published.")).toBeInTheDocument();
   await userEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Complete English" }));
-  expect(onGoToIssue).toHaveBeenCalledExactlyOnceWith(missing[0]);
+  expect(onCompleteTranslation).toHaveBeenCalledExactlyOnceWith(missing[0]);
 });
 
 it("shows recipient diagnostics without disabling an otherwise publishable version", async () => {

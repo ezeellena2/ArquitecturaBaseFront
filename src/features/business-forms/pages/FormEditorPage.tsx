@@ -130,6 +130,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const [previewOpen, setPreviewOpen] = useState(false);
   const [deactivationOpen, setDeactivationOpen] = useState(false);
   const [deletionOpen, setDeletionOpen] = useState(false);
+  // A blocking problem located from the check stays under its field, with its language, until the next change, save or check.
+  const [locatedIssue, setLocatedIssue] = useState<FormPublicationCheck["issues"][number] | null>(null);
   useEffect(() => {
     const error = publication.error;
     if (error instanceof ApiError && ["Forms.Draft.RevisionConflict", "Forms.Publication.DraftMustBeSaved"].includes(error.code ?? "")) {
@@ -211,6 +213,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   }, [editor.issue, feedbackId, t, session?.phase, restartCooldown]);
   async function operate(action: () => Promise<FormDefinitionSnapshot | undefined>) {
     if (action === editor.save && value && (hasInvalidFileCounts(value.draft.fields) || hasInvalidSelectionCounts(value.draft.fields))) return;
+    setLocatedIssue(null);
     const saved = await action();
     if (!saved || !active.current) return;
     setRetainedReview(null);
@@ -223,7 +226,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     void editor.readCurrent().then(success => { if (success && active.current) setReviewOpen(true); });
   }
   if (!value || !session) return <ForbiddenPage />;
-  const visibleIssues = [...(editor.issue?.fields ?? []), ...publicationFieldIssues(value, publication.status?.issues ?? [])];
+  const visibleIssues = [...(editor.issue?.fields ?? []), ...publicationFieldIssues(value, [...publication.status?.issues ?? [], ...locatedIssue ? [locatedIssue] : []])];
   const errorFor = (path: string) => visibleIssues.find(issue => issue.path === path || path !== "draft.fields" && issue.path.startsWith(`${path}.`))?.messages[0];
   // The name and the final button show an error of either language under the visible field.
   const formTextIssues = Object.fromEntries(visibleIssues.filter(issue => !issue.fieldLocalId).reverse().map(issue => [issue.path, issue.messages]));
@@ -233,13 +236,19 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const publicationVersion = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
   const publicationLabel = publication.phase === "Accepting" ? "publication.accepting" : publication.phase === "Unconfirmed" || publicationState === "Uncertain" ? "publication.unconfirmed" : publicationState ? publicationLabelKey(publicationState) : null;
   const firstInvalid = editor.issue?.fields?.find(issue => issue.fieldLocalId)?.fieldLocalId;
-  const change = (next: DraftEditorValue) => { dismissNotification(feedbackId); editor.change(next); };
+  const change = (next: DraftEditorValue) => { dismissNotification(feedbackId); setLocatedIssue(null); editor.change(next); };
+  const openPublication = (returnFocus: HTMLElement | null) => { publicationReturnFocus.current = returnFocus; setLocatedIssue(null); publication.resetRejected(); setPublicationOpen(true); };
   const leave = () => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/formularios"); } };
   const updateQuestion = (localId: string, question: typeof value.draft.fields[number]) => {
     change({ ...value, draft: { ...value.draft, fields: value.draft.fields.map(q => q.localId === localId ? question : q) } });
     if (question.localId !== localId) setExpanded(question.localId);
   };
+  // Completing a translation only locates its control; a problem also stays under it.
   function goToPublicationIssue(issue: FormPublicationCheck["issues"][number]) {
+    setLocatedIssue(issue);
+    locatePublicationIssue(issue);
+  }
+  function locatePublicationIssue(issue: FormPublicationCheck["issues"][number]) {
     setPublicationOpen(false);
     const question = value!.draft.fields.find(q => q.fieldId === issue.fieldId);
     if (!question) {
@@ -272,8 +281,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   return <div ref={host}><Page title={originalName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : dirty || frozen || publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t(session.phase === "Unconfirmed" ? "uncertain" : dirty ? "dirty" : "draft")}</Badge>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!editor.canSave || hasInvalidFileCounts(value.draft.fields) || hasInvalidSelectionCounts(value.draft.fields)} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button> : null}
-    {canPublish && session.confirmed ? <Button ref={publicationAction} type="button" disabled={knownDeleted || deactivated && !lifecycle?.canReactivate || frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => { publicationReturnFocus.current = publicationAction.current; publication.resetRejected(); setPublicationOpen(true); }}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button> : null}
-    {lifecycle && (scope.permissions.includes("formtemplates.publish") || scope.permissions.includes("formtemplates.manage")) ? <FormLifecycleMenu canManage={scope.permissions.includes("formtemplates.manage")} canPublish={canPublish} onDelete={() => { deletionFallback.current = lifecycleAction.current; setDeletionOpen(true); }} triggerRef={lifecycleAction} lifecycle={lifecycle} blocked={knownDeleted || frozen || editor.busy || publicationPending} onDeactivate={() => setDeactivationOpen(true)} onReactivate={() => { publicationReturnFocus.current = lifecycleAction.current; publication.resetRejected(); setPublicationOpen(true); }} /> : null}
+    {canPublish && session.confirmed ? <Button ref={publicationAction} type="button" disabled={knownDeleted || deactivated && !lifecycle?.canReactivate || frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => openPublication(publicationAction.current)}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button> : null}
+    {lifecycle && (scope.permissions.includes("formtemplates.publish") || scope.permissions.includes("formtemplates.manage")) ? <FormLifecycleMenu canManage={scope.permissions.includes("formtemplates.manage")} canPublish={canPublish} onDelete={() => { deletionFallback.current = lifecycleAction.current; setDeletionOpen(true); }} triggerRef={lifecycleAction} lifecycle={lifecycle} blocked={knownDeleted || frozen || editor.busy || publicationPending} onDeactivate={() => setDeactivationOpen(true)} onReactivate={() => openPublication(lifecycleAction.current)} /> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
   </>}>
     <div className="flex flex-col gap-4">
@@ -317,7 +326,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   }} onOpenChange={setPublicationOpen} onSave={() => {
     setPublicationOpen(false);
     void operate(editor.save).then(saved => { if (saved && active.current) setPublicationOpen(true); });
-  }} onConflict={error => { setPublicationOpen(false); editor.requireReview(error); }} onGoToIssue={goToPublicationIssue} /> : null}
+  }} onConflict={error => { setPublicationOpen(false); editor.requireReview(error); }} onGoToIssue={goToPublicationIssue} onCompleteTranslation={locatePublicationIssue} /> : null}
   <ConfirmDialog open={(discardOpen || guard.isBlocked) && !frozen && !publicationPending} onOpenChange={open => { setDiscardOpen(open); if (!open) guard.stay(); }} title={t("discardTitle")} description={t("discardDescription")} cancelLabel={t("stay")} confirmLabel={t("discard")} destructive onConfirm={leave} />
   {guard.isBlocked && publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("publication.unconfirmed")} description={t("publication.unconfirmedHint")} cancelLabel={t("stay")} confirmLabel={t("publication.consult")} onConfirm={() => { guard.stay(); void publication.consult(); }} /> : null}
   {guard.isBlocked && session.phase === "Saving" && !publicationPending ? <Dialog open onOpenChange={() => guard.stay()}><DialogContent><DialogHeader><DialogTitle>{t("saving")}</DialogTitle><DialogDescription>{t("savingLeave")}</DialogDescription></DialogHeader><DialogFooter><Button type="button" variant="outline" onClick={() => guard.stay()}>{t("stay")}</Button></DialogFooter></DialogContent></Dialog> : null}

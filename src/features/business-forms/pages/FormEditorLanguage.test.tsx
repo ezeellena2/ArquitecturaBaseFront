@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -8,17 +8,18 @@ import { notify } from "@/shared/ui/notifications";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { createFormFixtureStore, fixtureFormId } from "@/test/visual/formFixtures";
+import type { FormPublicationCheck } from "../api/response";
 import type { FormCulture } from "../model";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
 
 // There is no content language selector: the form is edited in the menu language, and the other language is the optional translation.
-async function setup(culture: FormCulture) {
+async function setup(culture: FormCulture, permissions = ["formtemplates.read", "formtemplates.manage"]) {
   await act(() => i18n.changeLanguage(culture));
   const store = createFormFixtureStore("es");
   server.use(http.all("/api/forms/*", ({ request }) => store.handle(request)),
     http.get("/api/me", () => HttpResponse.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false,
-      culture, timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions: ["formtemplates.read", "formtemplates.manage"] })));
+      culture, timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })));
   return store;
 }
 beforeEach(() => { queryClient.clear(); vi.mocked(notify).mockClear(); });
@@ -48,4 +49,44 @@ it("shows a save error of the other language under the visible field", async () 
   await waitFor(() => expect(name).toHaveFocus());
   expect(name).toHaveValue("Registrar visita editado");
   expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
+});
+
+// The check blocks on texts of each language; locating one of the language not on screen shows it under the field the menu edits.
+async function openBlockedCheck(issues: (store: ReturnType<typeof createFormFixtureStore>) => FormPublicationCheck["issues"]) {
+  const store = await setup("es", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+  server.use(http.post("/api/forms/definitions/:id/publication-checks", async ({ request }) => {
+    const checked = await (await store.handle(request)).json() as FormPublicationCheck;
+    return HttpResponse.json({ ...checked, compatibility: "Blocked", canAccept: false, acceptanceAvailability: "Unavailable", checkToken: null, checkExpiresAtUtc: null, issues: issues(store) });
+  }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByRole("textbox", { name: "Nombre" });
+  await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+  return await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
+}
+const tooLong = { channelId: null, code: "WhatsApp.Flow.TextTooLong", message: "Usá hasta 30 caracteres.", limit: 30, culture: "en" } as const;
+
+it("shows a blocking check problem of the other language under the option it locates, until the next change", async () => {
+  const dialog = await openBlockedCheck(store => {
+    const customer = store.definitions.get(fixtureFormId)!.draft.fields[0]!;
+    if (customer.type !== "choice" || !customer.options) throw new Error("The fixture's first question has its own options.");
+    return [{ ...tooLong, fieldId: customer.fieldId, choiceId: customer.options[1]!.choiceId, path: "draft.fields[0].options[1].label.en" }];
+  });
+  await userEvent.click(await within(dialog).findByRole("button", { name: "Ir a la pregunta" }));
+  const option = await screen.findByRole("textbox", { name: "Opción 2" });
+  await waitFor(() => expect(option).toHaveFocus());
+  expect(option).toHaveValue("Distribuidora Norte");
+  expect(option).toHaveAttribute("aria-invalid", "true");
+  expect(option).toHaveAccessibleDescription("En inglés: Usá hasta 30 caracteres.");
+  await userEvent.paste(" S.A.");
+  expect(option).not.toHaveAttribute("aria-invalid", "true");
+  expect(option).not.toHaveAccessibleDescription(/En inglés/);
+});
+
+it("shows a blocking check problem of the other language under the form text it locates", async () => {
+  const dialog = await openBlockedCheck(() => [{ ...tooLong, fieldId: null, choiceId: null, path: "name.en" }]);
+  await userEvent.click(await within(dialog).findByRole("button", { name: "Ir al texto" }));
+  const name = screen.getByRole("textbox", { name: "Nombre" });
+  await waitFor(() => expect(name).toHaveFocus());
+  expect(name).toHaveAttribute("aria-invalid", "true");
+  expect(name).toHaveAccessibleDescription("En inglés: Usá hasta 30 caracteres.");
 });

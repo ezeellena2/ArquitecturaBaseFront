@@ -20,12 +20,12 @@ import type { FormPublicationCheck } from "../api/response";
 
 type PublicationIssue = FormPublicationCheck["issues"][number];
 type PublicationWarning = FormPublicationCheck["warnings"][number];
-export function PublicationCheckDialog({ scope, id, revision, value, dirty, canSave, onAccept, accepting, onOpenChange, onSave, onConflict, onGoToIssue, savedAt, prefixLocked, baseVersionId, baseVersionNumber, reactivation, onCloseAutoFocus: restoreExternalFocus }: {
+export function PublicationCheckDialog({ scope, id, revision, value, dirty, canSave, onAccept, accepting, onOpenChange, onSave, onConflict, onGoToIssue, onCompleteTranslation, savedAt, prefixLocked, baseVersionId, baseVersionNumber, reactivation, onCloseAutoFocus: restoreExternalFocus }: {
   reactivation?: { name: string; nextRecordNumber: string | null };
   onCloseAutoFocus?: (event: Event) => void;
   scope: FormReadScope; id: string; revision: number; value: DraftEditorValue; dirty: boolean; canSave: boolean; savedAt?: string; prefixLocked: boolean; baseVersionId?: string; baseVersionNumber?: number;
   onAccept: (body: DraftEditorValue & { expectedRevision: number }, checked: FormPublicationCheck) => void; accepting: boolean;
-  onOpenChange: (open: boolean) => void; onSave: () => void; onConflict: (error: unknown) => void; onGoToIssue: (issue: PublicationIssue) => void;
+  onOpenChange: (open: boolean) => void; onSave: () => void; onConflict: (error: unknown) => void; onGoToIssue: (issue: PublicationIssue) => void; onCompleteTranslation: (missing: PublicationIssue) => void;
 }) {
   const { t } = useTranslation("forms");
   const check = useFormPublicationCheck(scope);
@@ -96,7 +96,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
           const firstMissing = missing[0];
           const language = t("cultureNamesInText." + culture);
           // A translation is edited with the menu in its language: elsewhere the notice only lists what is missing.
-          return <Banner key={culture} tone={removed ? "warning" : "info"} action={canComplete && firstMissing && culture === scope.culture ? <Button type="button" variant="link" size="inline" onClick={() => { locatingIssue.current = true; onGoToIssue(firstMissing); }}>{t("publication.completeCulture", { language })}</Button> : undefined}>
+          return <Banner key={culture} tone={removed ? "warning" : "info"} action={canComplete && firstMissing && culture === scope.culture ? <Button type="button" variant="link" size="inline" onClick={() => { locatingIssue.current = true; onCompleteTranslation(firstMissing); }}>{t("publication.completeCulture", { language })}</Button> : undefined}>
             <span className="flex flex-col gap-2">
               <span><strong>{t(removed ? "publication.cultureRemoved" : "publication.cultureNotPublished", { language })}</strong> {removed ? t("publication.cultureRemovedHint", { version: check.result!.nextVersionNumber, language, original: t("cultureNamesInText." + value.draft.culture) }) : t("publication.optionalMissing", { count: missing.length })}</span>
               {removed && missing.length ? <span>{t("publication.optionalMissing", { count: missing.length })}</span> : null}
