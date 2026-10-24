@@ -126,17 +126,19 @@ describe("Forms routes", () => {
   });
 
   it("allows the original with Read and Publish without offering translation editing", async () => {
-    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.publish"]);
+    // With the menu in English, only the missing Manage permission withholds the completion action.
+    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.publish"], "en");
+    await act(() => i18n.changeLanguage("en"));
     const current = store.definitions.get(fixtureFormId)!;
     store.definitions.set(current.id, { ...current, draft: { ...current.draft, fields: current.draft.fields.map(field => field.type === "longText" ? { ...field, help: { es: "Contá lo que pasó." } } : field) } });
     renderRouteWithProviders("/formularios/" + fixtureFormId);
-    await screen.findByLabelText("Nombre");
-    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
-    const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
-    expect(await within(dialog).findByText("El inglés no se publica.")).toBeInTheDocument();
-    expect(within(dialog).getByText("Observaciones · la ayuda")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Publicar versión 1" })).toBeEnabled();
-    expect(within(dialog).queryByRole("button", { name: "Completar el inglés" })).not.toBeInTheDocument();
+    await screen.findByLabelText("Name");
+    await userEvent.click(screen.getByRole("button", { name: "Publish on WhatsApp" }));
+    const dialog = await screen.findByRole("dialog", { name: "Publish version 1 on WhatsApp" });
+    expect(await within(dialog).findByText("English is not published.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Notes · help")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Publish version 1" })).toBeEnabled();
+    expect(within(dialog).queryByRole("button", { name: "Complete English" })).not.toBeInTheDocument();
     expect(store.calls.filter(call => call.path.endsWith("/publication-checks"))).toHaveLength(1);
     expect(store.writes).toHaveLength(0);
   });

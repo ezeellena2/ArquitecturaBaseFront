@@ -1,7 +1,7 @@
 import userEvent from "@testing-library/user-event";
 import i18n from "@/shared/i18n";
 import type { FormPublicationCheck } from "../api/response";
-import { act, screen, within } from "@testing-library/react";
+import { act, cleanup, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { fixtureDefinition } from "@/test/visual/formFixtures";
@@ -18,7 +18,8 @@ let result = checked;
 vi.mock("../hooks/useFormPublicationCheck", () => ({ useFormPublicationCheck: () => ({ result, busy: false, error: null, check: vi.fn() }) }));
 beforeEach(async () => { await i18n.changeLanguage("es"); result = structuredClone(checked); onGoToIssue.mockClear(); });
 const onGoToIssue = vi.fn();
-async function mount(permissions = ["formtemplates.read", "formtemplates.publish"], editorValue = value) { await act(async () => { renderWithProviders(<PublicationCheckDialog scope={{ actorId: "actor", culture: "es", permissions }}
+// The scope carries the menu language, as in the editor.
+async function mount(permissions = ["formtemplates.read", "formtemplates.publish"], editorValue = value) { await act(async () => { renderWithProviders(<PublicationCheckDialog scope={{ actorId: "actor", culture: i18n.language.startsWith("en") ? "en" : "es", permissions }}
   id={definition.id} revision={1} value={editorValue} dirty={false} canSave accepting={false} savedAt="2026-10-10 15:20" prefixLocked baseVersionId="previous" baseVersionNumber={1}
   onAccept={vi.fn()} onOpenChange={vi.fn()} onSave={vi.fn()} onConflict={vi.fn()} onGoToIssue={onGoToIssue} />); }); }
 describe("Chosen publication boards I2/I3", () => {
@@ -51,27 +52,35 @@ describe("Chosen publication boards I2/I3", () => {
   });
 });
 
+// Completing a translation is offered with the menu in that language, the one it is edited in.
+const completionTexts = {
+  es: { published: { es: "En WhatsApp, en español", en: "En WhatsApp, en inglés" }, notPublished: { es: "El español no se publica.", en: "El inglés no se publica." }, help: "Cliente · la ayuda", publish: "Publicar versión 3", complete: { es: "Completar el español", en: "Completar el inglés" } },
+  en: { published: { es: "On WhatsApp, in Spanish", en: "On WhatsApp, in English" }, notPublished: { es: "Spanish is not published.", en: "English is not published." }, help: "Customer · help", publish: "Publish version 3", complete: { es: "Complete Spanish", en: "Complete English" } },
+} as const;
 for (const original of ["es", "en"] as const) {
   const secondary = original === "es" ? "en" : "es";
-  const language = secondary === "en" ? "inglés" : "español";
+  const texts = completionTexts[secondary];
   it("allows publication with incomplete " + secondary + " and offers completion only to Manage", async () => {
+    await i18n.changeLanguage(secondary);
     const missing: FormPublicationCheck["issues"][number] = { channelId: null, fieldId: definition.draft.fields[0]!.fieldId, choiceId: null, path: "draft.fields[0].help." + secondary, code: "Forms.Publication.MissingTranslation", message: "Completá la ayuda.", limit: null, culture: secondary };
     result = { ...result, channels: [{ ...checked.channels[0]!, cultures: [original] }], cultures: [{ culture: original, isOriginal: true, isComplete: true, missing: [] }, { culture: secondary, isOriginal: false, isComplete: false, missing: [missing] }] };
     await mount(["formtemplates.read", "formtemplates.publish", "formtemplates.manage"], { ...value, draft: { ...value.draft, culture: original } });
-    expect(screen.getByText("En WhatsApp, en " + (original === "es" ? "español" : "inglés"))).toBeInTheDocument();
-    expect(screen.getByText("El " + language + " no se publica.")).toBeInTheDocument();
-    expect(screen.getByText("Cliente · la ayuda")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
-    await userEvent.click(screen.getByRole("button", { name: "Completar el " + language }));
+    expect(screen.getByText(texts.published[original])).toBeInTheDocument();
+    expect(screen.getByText(texts.notPublished[secondary])).toBeInTheDocument();
+    expect(screen.getByText(texts.help)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: texts.publish })).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: texts.complete[secondary] }));
     expect(onGoToIssue).toHaveBeenLastCalledWith(missing);
   });
 }
 it("shows optional omissions without a completion action for Publish-only", async () => {
+  // The menu is in the missing language, so only the permission withholds the action.
+  await i18n.changeLanguage("en");
   result = { ...result, cultures: [{ ...checked.cultures[0]! }, { culture: "en", isOriginal: false, isComplete: false, missing: [{ channelId: null, fieldId: null, choiceId: null, path: "name.en", code: "Forms.Publication.MissingTranslation", message: "Completá el nombre.", limit: null, culture: "en" }] }] };
   await mount();
-  expect(screen.getByText("El inglés no se publica.")).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Completar el inglés" })).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
+  expect(screen.getByText("English is not published.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Complete English" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Publish version 3" })).toBeEnabled();
 });
 it("announces a complete bilingual publication using the checked channels", async () => {
   await mount();
@@ -107,13 +116,14 @@ function incompleteReport(count: number, original: "es" | "en", removed: boolean
   return missing;
 }
 it.each([1, 3, 4, 8])("shows at most three optional omissions and the remaining count for %s texts", async count => {
-  incompleteReport(count, "es", false);
-  await mount(["formtemplates.read", "formtemplates.publish", "formtemplates.manage"]);
+  // English original with the menu in Spanish, the language that can be completed.
+  incompleteReport(count, "en", false);
+  await mount(["formtemplates.read", "formtemplates.publish", "formtemplates.manage"], { ...value, draft: { ...value.draft, culture: "en" } });
   const notice = screen.getByRole("status");
   expect(within(notice).getAllByRole("listitem")).toHaveLength(Math.min(count, 3));
   if (count > 3) expect(within(notice).getByText("y " + (count - 3) + " más")).toBeInTheDocument();
   else expect(within(notice).queryByText(/^y .* más$/)).not.toBeInTheDocument();
-  const complete = within(notice).getByRole("button", { name: "Completar el inglés" });
+  const complete = within(notice).getByRole("button", { name: "Completar el español" });
   expect(complete.closest("p")).toBeNull();
   expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
 });
@@ -130,6 +140,8 @@ for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as c
     expect(within(notice).getAllByRole("listitem")).toHaveLength(3);
     expect(within(notice).getByText(ui === "es" ? "y 5 más" : "and 5 more")).toBeInTheDocument();
     expect(screen.queryByText(ui === "es" ? "El " + languages[secondary] + " no se publica." : languages[secondary] + " is not published.")).not.toBeInTheDocument();
+    // Only with the menu in the removed language does the warning offer to complete it.
+    if (ui !== secondary) { expect(within(notice).queryByRole("button")).not.toBeInTheDocument(); return; }
     const complete = within(notice).getByRole("button", { name: ui === "es" ? "Completar el " + languages[secondary] : "Complete " + languages[secondary] });
     expect(complete.closest("p")).toBeNull();
     await userEvent.click(complete);
@@ -137,13 +149,28 @@ for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as c
   });
 }
 it("keeps one removal warning and its omissions without an editing action for Publish-only", async () => {
-  incompleteReport(4, "es", true);
-  await mount();
+  // English original with the menu in Spanish, the removed language: only the permission withholds the action.
+  incompleteReport(4, "en", true);
+  await mount(undefined, { ...value, draft: { ...value.draft, culture: "en" } });
   const notice = screen.getByRole("status");
-  expect(within(notice).getByText("El inglés deja de publicarse.")).toBeInTheDocument();
+  expect(within(notice).getByText("El español deja de publicarse.")).toBeInTheDocument();
   expect(within(notice).getAllByRole("listitem")).toHaveLength(3);
   expect(within(notice).queryByRole("button")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
+});
+
+it("offers to complete a translation only when the menu is in that language", async () => {
+  const missing = incompleteReport(2, "es", false);
+  await mount(["formtemplates.read", "formtemplates.publish", "formtemplates.manage"]);
+  expect(screen.getByText("El inglés no se publica.")).toBeInTheDocument();
+  expect(within(screen.getByRole("status")).getAllByRole("listitem")).toHaveLength(2);
+  expect(screen.queryByRole("button", { name: "Completar el inglés" })).not.toBeInTheDocument();
+  cleanup();
+  await i18n.changeLanguage("en");
+  await mount(["formtemplates.read", "formtemplates.publish", "formtemplates.manage"]);
+  expect(screen.getByText("English is not published.")).toBeInTheDocument();
+  await userEvent.click(within(screen.getByRole("status")).getByRole("button", { name: "Complete English" }));
+  expect(onGoToIssue).toHaveBeenCalledExactlyOnceWith(missing[0]);
 });
 
 it("shows recipient diagnostics without disabling an otherwise publishable version", async () => {

@@ -32,7 +32,9 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
       else await expect(dialog.getByText(es ? "El inglés no se publica." : "English is not published.", { exact: true })).toHaveCount(0);
       await expect(dialog.getByRole("status")).toHaveCount(1);
       await expect(dialog.getByRole("status").getByRole("listitem")).toHaveCount(3);
-      await expect(dialog.getByRole("button", { name: es ? "Completar el inglés" : "Complete English", exact: true })).toBeEnabled();
+      // Completing English is offered only with the menu in English, the language it is edited in.
+      if (es) await expect(dialog.getByRole("button", { name: "Completar el inglés", exact: true })).toHaveCount(0);
+      else await expect(dialog.getByRole("button", { name: "Complete English", exact: true })).toBeEnabled();
     }
     if (state === "add") await expect(dialog.getByText(es ? "Se suma el inglés." : "English is added.", { exact: true })).toBeVisible();
     if (state === "remove") await expect(dialog.getByText(es ? "El inglés deja de publicarse." : "English will no longer be published.", { exact: true })).toBeVisible();
@@ -40,14 +42,15 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     if (incomplete) {
       const notice = dialog.getByRole("status");
       const copy = notice.locator("p");
-      const action = notice.getByRole("button", { name: es ? "Completar el inglés" : "Complete English", exact: true });
       const noticeBounds = (await notice.boundingBox())!;
       const copyBounds = (await copy.boundingBox())!;
-      const actionBounds = (await action.boundingBox())!;
       expect(copyBounds.width).toBeGreaterThanOrEqual(noticeBounds.width * 0.6);
-      expect(actionBounds.y).toBeGreaterThanOrEqual(copyBounds.y + copyBounds.height);
-      expect(actionBounds.x).toBeGreaterThanOrEqual(noticeBounds.x);
-      expect(actionBounds.x + actionBounds.width).toBeLessThanOrEqual(noticeBounds.x + noticeBounds.width);
+      if (!es) {
+        const actionBounds = (await notice.getByRole("button", { name: "Complete English", exact: true }).boundingBox())!;
+        expect(actionBounds.y).toBeGreaterThanOrEqual(copyBounds.y + copyBounds.height);
+        expect(actionBounds.x).toBeGreaterThanOrEqual(noticeBounds.x);
+        expect(actionBounds.x + actionBounds.width).toBeLessThanOrEqual(noticeBounds.x + noticeBounds.width);
+      }
       expect(await copy.evaluate(node => node.scrollWidth)).toBeLessThanOrEqual(await copy.evaluate(node => node.clientWidth));
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
@@ -58,12 +61,12 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     const cancel = dialog.getByRole("button", { name: es ? "Cancelar" : "Cancel", exact: true });
     await cancel.focus(); await cancel.press("Enter");
     await expect(dialog).toHaveCount(0); await expect(trigger).toBeFocused();
-    if (state === "original") {
+    if (state === "original" && !es) {
       await trigger.press("Enter");
-      const complete = dialog.getByRole("button", { name: es ? "Completar el inglés" : "Complete English", exact: true });
+      const complete = dialog.getByRole("button", { name: "Complete English", exact: true });
       await complete.focus(); await complete.press("Enter");
       await expect(dialog).toHaveCount(0);
-      await expect(page.getByRole("textbox", { name: es ? "Opción 1" : "Option 1", exact: true })).toBeFocused();
+      await expect(page.getByRole("textbox", { name: "Option 1", exact: true })).toBeFocused();
     }
     expect(await page.evaluate(() => (window as typeof window & { formLanguageWrites: string[] }).formLanguageWrites)).toEqual([]);
   });

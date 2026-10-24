@@ -95,7 +95,8 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
           const missing = untranslated.find(item => item.culture === culture)?.missing ?? [];
           const firstMissing = missing[0];
           const language = t("cultureNamesInText." + culture);
-          return <Banner key={culture} tone={removed ? "warning" : "info"} action={canComplete && firstMissing ? <Button type="button" variant="link" size="inline" onClick={() => { locatingIssue.current = true; onGoToIssue(firstMissing); }}>{t("publication.completeCulture", { language })}</Button> : undefined}>
+          // A translation is edited with the menu in its language: elsewhere the notice only lists what is missing.
+          return <Banner key={culture} tone={removed ? "warning" : "info"} action={canComplete && firstMissing && culture === scope.culture ? <Button type="button" variant="link" size="inline" onClick={() => { locatingIssue.current = true; onGoToIssue(firstMissing); }}>{t("publication.completeCulture", { language })}</Button> : undefined}>
             <span className="flex flex-col gap-2">
               <span><strong>{t(removed ? "publication.cultureRemoved" : "publication.cultureNotPublished", { language })}</strong> {removed ? t("publication.cultureRemovedHint", { version: check.result!.nextVersionNumber, language, original: t("cultureNamesInText." + value.draft.culture) }) : t("publication.optionalMissing", { count: missing.length })}</span>
               {removed && missing.length ? <span>{t("publication.optionalMissing", { count: missing.length })}</span> : null}
