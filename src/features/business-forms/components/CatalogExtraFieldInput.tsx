@@ -15,9 +15,11 @@ interface Props {
   culture: FormCulture; label: string; readOnly: boolean; error?: string; scope?: CatalogReadScope;
   id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string;
   onChange: (value: string | null, texts?: Readonly<Record<string, string>>) => void;
+  /** Leaving the control, which the page counts as having touched it. */
+  onBlur?: () => void;
 }
 
-function SourceOptionInput({ field, value, texts, culture, label, readOnly, error: _error, scope, onChange, ...aria }: Props) {
+function SourceOptionInput({ field, value, texts, culture, label, readOnly, error: _error, scope, onChange, onBlur, ...aria }: Props) {
   const { t } = useTranslation("forms");
   const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState("");
   useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
@@ -28,7 +30,7 @@ function SourceOptionInput({ field, value, texts, culture, label, readOnly, erro
   // A cleared value shows no option, even while the caller still holds the texts of the previous one.
   const currentText = !value ? "" : texts ? localizedValue(texts, culture, "es") : items.data?.items.find(item => item.id === value)?.text[culture] ?? items.data?.items.find(item => item.id === value)?.text.es ?? unconvertedFieldValue("catalog", value) ?? "";
   const options = sourceActive ? (items.data?.items ?? []).filter(item => item.isActive).map(item => ({ id: item.id, label: localizedValue(item.text, culture, "es") })) : [];
-  return <div className="min-w-32"><Autocomplete {...aria} aria-label={label} disabled={readOnly || !sourceActive} value={search ?? currentText} options={options} onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => setSearch(null)} onSelect={id => { const option = items.data?.items.find(item => item.id === id); if (option) { onChange(id, Object.fromEntries(Object.entries(option.text).filter((entry): entry is [string, string] => typeof entry[1] === "string"))); setSearch(null); } }} footer={items.data?.hasNext ? t("catalogQuestion.search") : undefined} />{detail.isError || items.isError ? <Button type="button" variant="link" onClick={() => { void detail.refetch(); void items.refetch(); }}>{t("common:actions.retry")}</Button> : null}</div>;
+  return <div className="min-w-32"><Autocomplete {...aria} aria-label={label} disabled={readOnly || !sourceActive} value={search ?? currentText} options={options} onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => { setSearch(null); onBlur?.(); }} onSelect={id => { const option = items.data?.items.find(item => item.id === id); if (option) { onChange(id, Object.fromEntries(Object.entries(option.text).filter((entry): entry is [string, string] => typeof entry[1] === "string"))); setSearch(null); } }} footer={items.data?.hasNext ? t("catalogQuestion.search") : undefined} />{detail.isError || items.isError ? <Button type="button" variant="link" onClick={() => { void detail.refetch(); void items.refetch(); }}>{t("common:actions.retry")}</Button> : null}</div>;
 }
 
 export function CatalogExtraFieldInput(props: Props) {

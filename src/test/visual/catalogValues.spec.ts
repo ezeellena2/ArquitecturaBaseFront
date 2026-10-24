@@ -18,14 +18,16 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const value = page.getByRole("textbox", { name: label("Valor · Decimal", "Value · Decimal"), exact: true });
     await value.fill("mil");
     await expect(value).toHaveAttribute("aria-invalid", "true");
-    await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeDisabled();
     await value.scrollIntoViewIfNeeded();
     const bounds = await value.boundingBox(); expect(bounds).not.toBeNull();
     expect(bounds!.x).toBeGreaterThanOrEqual(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: info.outputPath("catalog-typed-invalid.png"), fullPage: true });
+    // Save stays enabled: trying it with the invalid value keeps the input marked and writes nothing (checked at the end).
+    await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
+    await expect(value).toHaveValue("mil"); await expect(value).toHaveAttribute("aria-invalid", "true");
     await value.fill(english ? "3,200.00" : "3.200,00");
-    await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeEnabled();
+    await expect(value).not.toHaveAttribute("aria-invalid", "true");
     await page.screenshot({ path: info.outputPath("catalog-typed-valid.png"), fullPage: true });
     expect(await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: unknown[] } }).catalogsFixture.writes)).toEqual([]);
   });

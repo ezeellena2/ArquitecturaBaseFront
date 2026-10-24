@@ -172,6 +172,20 @@ it("announces a row's value error without interrupting, since its text changes w
   expect(line).toHaveTextContent("Fila 1 · Plazo de pago (días): «30 dí» no es un número entero.");
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
+it("reports leaving a control of the table or of the option editor by its option and error path", async () => {
+  vi.mocked(useMediaQuery).mockReturnValue(true); const left = vi.fn(); const user = userEvent.setup();
+  const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo" } };
+  renderWithProviders(<CatalogManualItemsEditor items={[first, second]} fields={[term]} scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} culture="es" valueType="Text" canManage expandedKey="first" onExpand={vi.fn()} onChange={vi.fn()} onFieldBlur={left} onAdd={vi.fn()} />);
+  // The option editor opens with the cursor in its text: leaving it before typing does not count.
+  await waitFor(() => expect(screen.getByRole("textbox", { name: "Texto" })).toHaveFocus());
+  await user.click(screen.getByRole("textbox", { name: "Código de la opción 2" }));
+  expect(left).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("textbox", { name: "Fila 2 · Plazo" }));
+  await user.click(screen.getByRole("textbox", { name: "Plazo" }));
+  await user.click(screen.getByRole("textbox", { name: "Código" }));
+  await user.click(screen.getByRole("textbox", { name: "Texto de la opción 1" }));
+  expect(left.mock.calls).toEqual([["second", "code"], ["second", "fields." + term.id], ["first", "fields." + term.id], ["first", "code"]]);
+});
 it("shows the type and range of an extra field in the option editor", () => {
   const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo de pago (días)" }, min: "0", max: "180" };
   const due = { ...newCatalogField("due", 2), id: "01990000-0000-7000-8000-000000000005", type: "date" as const, name: { es: "Vence" }, max: "2027-03-15" };

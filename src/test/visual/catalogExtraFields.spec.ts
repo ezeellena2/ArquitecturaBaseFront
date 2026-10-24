@@ -79,12 +79,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const problem = es ? "«treinta» no es un número entero." : "“thirty” is not a whole number.";
     if (width < 640) await expect(payment).toHaveAccessibleDescription(problem);
     else await expect(page.getByText((es ? "Fila 1 · " : "Row 1 · ") + term + ": " + problem, { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeDisabled();
     await payment.scrollIntoViewIfNeeded(); await contained(page, payment, width);
     await page.screenshot({ path: info.outputPath("ce2-invalid-typed-value.png"), fullPage: true });
-    await payment.fill("45");
-    if (width < 640) { await page.getByRole("button", { name: es ? "Listo" : "Done", exact: true }).click(); await expect(edit).toBeFocused(); }
-    await expect(page.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeEnabled();
+    // Save stays enabled: trying it writes nothing, keeps the mark and opens the option (on 640 and wider, under its row).
+    await page.getByRole("button", { name: es ? "Guardar" : "Save", exact: true }).click();
+    await noWrites(page); await expect(payment).toHaveAttribute("aria-invalid", "true");
+    await payment.fill("45"); await expect(payment).not.toHaveAttribute("aria-invalid", "true");
+    await page.getByRole("button", { name: es ? "Listo" : "Done", exact: true }).click(); await expect(edit).toBeFocused();
     await page.screenshot({ path: info.outputPath("ce2-table-contained.png"), fullPage: true });
     await noWrites(page);
   });

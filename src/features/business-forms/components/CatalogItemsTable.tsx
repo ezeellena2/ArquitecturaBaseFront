@@ -18,7 +18,7 @@ import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-export function CatalogItemsTable({ items, culture, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, sortPending, onExpand, onChange, onMove, onActionRef }: {
+export function CatalogItemsTable({ items, culture, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, sortPending, onExpand, onChange, onFieldBlur, onMove, onActionRef }: {
   items: readonly CatalogManualItemValue[];
   inline: boolean; selected: readonly string[]; onSelect: (id: string, selected: boolean) => void; onSelectAll: (selected: boolean) => void;
   errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; warnings?: Readonly<Record<string, string>>; sortPending?: boolean;
@@ -32,6 +32,8 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
   expandedContent?: ReactNode;
   onExpand: (key: string | null) => void;
   onChange: (item: CatalogManualItemValue) => void;
+  /** Leaving a control of an option, by its error path: the page then marks it if it is empty. */
+  onFieldBlur?: (localId: string, path: string) => void;
   onMove?: (item: CatalogManualItemValue, delta: -1 | 1) => void;
   onActionRef: (key: string, button: HTMLButtonElement | null) => void;
   fields?: readonly CatalogFieldDraft[]; scope?: CatalogReadScope; visibleFieldIds?: readonly string[];
@@ -66,20 +68,21 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
           {canManage ? <TableCell><Checkbox aria-label={t("catalogs.items.selectNamed", { name })} checked={selected.includes(item.localId)} disabled={busy} onCheckedChange={value => onSelect(item.localId, value === true)}/></TableCell> : null}
           <TableCell>{item.itemId === null ? "—" : item.position}</TableCell>{columns.map(column => {
             const error = messages?.[column.errorPath]?.join(" ");
+            const blur = () => onFieldBlur?.(item.localId, column.errorPath);
             let content: ReactNode;
             if (column.field) {
               const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key];
               const problem = problems.find(problem => problem.columnId === column.id);
-              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} />;
+              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: localizedValue(field.name, culture, "es") })} value={value} texts={texts} culture={culture} readOnly={readOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />;
               else {
                 const shown = value === null || value === undefined ? "—" : field.type === "catalog" && texts ? localizedValue(texts, culture, "es") : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "text" ? value : catalogScalarText(field.type, value, valueCulture, yesNo, valueCulture));
                 // The text cell (below 640 px or without Manage) keeps its mark, such as a value the new type does not take.
                 content = error ? <><p>{shown}</p><p className="whitespace-normal text-xs text-[var(--color-danger)]">{error}</p></> : shown;
               }
             } else switch (column.id) {
-              case "text": content = editing ? <CatalogInlineInput label={t("catalogs.items.inlineText", { number })} value={item.label[culture] ?? ""} readOnly={readOnly} count error={error} warning={warnings?.[item.localId]} onChange={value => onChange({ ...item, label: { ...item.label, [culture]: value } })}/> : <><p>{name}</p><p className="text-xs text-[var(--color-content-muted)]">{item.code}</p></>; break;
-              case "code": content = <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineCode", { number })} value={item.code} readOnly={readOnly} error={error} onChange={code => onChange({ ...item, code })}/>; break;
-              case "value": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineValue", { number })} value={item.value ?? ""} readOnly={readOnly} type={column.inputType} inputMode={column.inputMode} error={error} onChange={value => onChange({ ...item, value: value || null })}/> : valueType === "Text" || !item.value ? item.value || "—" : catalogScalarText(catalogTypedValueTypes[valueType], item.value, valueCulture, yesNo, valueCulture); break;
+              case "text": content = editing ? <CatalogInlineInput label={t("catalogs.items.inlineText", { number })} value={item.label[culture] ?? ""} readOnly={readOnly} count error={error} warning={warnings?.[item.localId]} onChange={value => onChange({ ...item, label: { ...item.label, [culture]: value } })} onBlur={blur}/> : <><p>{name}</p><p className="text-xs text-[var(--color-content-muted)]">{item.code}</p></>; break;
+              case "code": content = <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineCode", { number })} value={item.code} readOnly={readOnly} error={error} onChange={code => onChange({ ...item, code })} onBlur={blur}/>; break;
+              case "value": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineValue", { number })} value={item.value ?? ""} readOnly={readOnly} type={column.inputType} inputMode={column.inputMode} error={error} onChange={value => onChange({ ...item, value: value || null })} onBlur={blur}/> : valueType === "Text" || !item.value ? item.value || "—" : catalogScalarText(catalogTypedValueTypes[valueType], item.value, valueCulture, yesNo, valueCulture); break;
               case "detail": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineDetail", { number })} value={item.detail[culture] ?? ""} readOnly={readOnly} error={error} onChange={value => onChange({ ...item, detail: { ...item.detail, [culture]: value || null } })}/> : localizedValue(item.detail, culture, "es") || "—"; break;
               case "isActive": content = editing ? <Checkbox aria-label={t("catalogs.items.activeNamed", { name })} checked={item.isActive} disabled={readOnly} onCheckedChange={value => onChange({ ...item, isActive: value === true })}/> : <Badge variant="outline">{t(item.isActive ? "catalogs.items.active" : "catalogs.state.Inactive")}</Badge>; break;
             }

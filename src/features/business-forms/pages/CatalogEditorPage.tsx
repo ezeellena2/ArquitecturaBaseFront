@@ -58,6 +58,7 @@ interface FieldErrorRows {
 const conversionKeys = ["isActive", "type", "sourceCatalogId"] as const;
 const ruleKeys = [...conversionKeys, "maxLength", "min", "max", "unique"] as const;
 const incompatibleControls = ["isActive", "maxLength", "min", "max", "unique"];
+const touchedKey = (localId: string, path: string) => localId + "\u0000" + path;
 
 export function CatalogEditorPage() {
   const { t, i18n } = useTranslation("forms");
@@ -104,6 +105,9 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const importFocus = useRef<HTMLButtonElement>(null);
   const [handledValidation, setHandledValidation] = useState<unknown>(null);
   const [errorRows, setErrorRows] = useState<FieldErrorRows | null>(null);
+  // The options that were in the draft when Save was tried, and the controls left (`touchedKey`): where an empty value shows.
+  const [attempted, setAttempted] = useState<ReadonlySet<string>>(() => new Set());
+  const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
   const active = useRef(true);
   const feedbackId = "catalogs:editor:" + useId();
   const presentation = useSystemPresentation();
@@ -137,26 +141,23 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   }
   const knownItems = draft ? [...Object.values(draft.items.originals).map(item => currentCatalogItem(draft.items, item)), ...changedItems.filter(item => item.itemId === null)] : [];
   const itemWarnings: Record<string, string> = {};
-  const localProblems = catalogItemProblems(knownItems);
-  for (const issue of localProblems) {
+  // What the editor finds wrong in the options before saving. An empty control (`required`) is marked only after Save was
+  // tried with that option in the draft or after leaving that control; the rest show while typing.
+  const itemProblems: { localId: string; path: string; required: boolean; message: string }[] = [];
+  for (const issue of catalogItemProblems(knownItems)) {
     const key = issue.kind === "duplicateCode" ? issue.otherPosition ? "duplicateCode" : "duplicateCodeNew" : issue.kind;
-    (itemErrors[issue.localId] ??= {})[issue.field] = [t("catalogs.items." + key, { row: issue.otherPosition })];
+    itemProblems.push({ localId: issue.localId, path: issue.field, required: issue.kind === "required", message: t("catalogs.items." + key, { row: issue.otherPosition }) });
   }
   for (const [localId, duplicate] of Object.entries(duplicateCatalogTexts(knownItems, culture))) itemWarnings[localId] = t("catalogs.items." + (duplicate ? "duplicateText" : "duplicateTextNew"), { row: duplicate });
-  const invalidValues = draft ? changedItems.flatMap(item => {
+  if (draft) for (const item of changedItems) {
     const parsed = parseCatalogValue(draft.valueType, item.value, draft.culture);
-    if (parsed.valid) return [];
-    (itemErrors[item.localId] ??= {}).value = [t("catalogs.valueType." + parsed.reason)];
-    return [item.localId];
-  }) : [];
-  const invalidFieldValues = draft ? changedItems.flatMap(item => {
-    const issues = catalogItemFieldIssues(draft, item);
-    for (const issue of issues) {
+    if (!parsed.valid) itemProblems.push({ localId: item.localId, path: "value", required: parsed.reason === "required", message: t("catalogs.valueType." + parsed.reason) });
+    for (const issue of catalogItemFieldIssues(draft, item)) {
       const field = draft.fields.find(field => field.id === issue.fieldId)!;
-      (itemErrors[item.localId] ??= {})["fields." + issue.fieldId] = [catalogFieldProblemText(t, field, item.fields?.[issue.fieldId] ?? null, issue.reason, draft.culture)];
+      itemProblems.push({ localId: item.localId, path: "fields." + issue.fieldId, required: issue.reason === "required", message: catalogFieldProblemText(t, field, item.fields?.[issue.fieldId] ?? null, issue.reason, draft.culture) });
     }
-    return issues.length ? [item.localId] : [];
-  }) : [];
+  }
+  for (const problem of itemProblems) if (!problem.required || attempted.has(problem.localId) || touched.has(touchedKey(problem.localId, problem.path))) (itemErrors[problem.localId] ??= {})[problem.path] = [problem.message];
   const errorField = errorRows ? draft?.fields.find(field => field.localId === errorRows.field.localId) : undefined;
   if (errorRows && (!errorField || (errorRows.control === "type" ? conversionKeys : ruleKeys).some(key => errorField[key] !== errorRows.field[key]))) setErrorRows(null);
   if (draft && errorRows && errorField?.id) {
@@ -195,10 +196,22 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     }
   }
   const save = async () => {
-    if (!editor.canSave || invalidValues.length || invalidFieldValues.length || localProblems.length) return;
+    if (!editor.canSave) return;
+    if (itemProblems.length) {
+      // Trying to save marks what is empty in every option of the draft, which then validates as it is corrected, and opens
+      // the first option with a problem, in the language of its text when that is what fails. Nothing is sent.
+      setAttempted(new Set(knownItems.map(item => item.localId)));
+      const failing = new Set(itemProblems.map(problem => problem.localId));
+      const first = [...changedItems, ...knownItems].find(item => failing.has(item.localId))!.localId;
+      setExpanded(first);
+      const text = itemProblems.find(problem => problem.localId === first && problem.path.startsWith("text."));
+      if (text) setCulture(text.path.slice("text.".length) as FormCulture);
+      return;
+    }
     setErrorRows(null);
     const saved = await editor.save();
     if (!saved || !active.current) return;
+    setAttempted(new Set()); setTouched(new Set());
     setExpanded(null);
     notify({ id: feedbackId, kind: "success", message: t("catalogs.saved") });
     if (!initial) { guard.allowNextNavigation(); void navigate("/catalogos/" + saved.catalog.id, { replace: true }); }
@@ -217,15 +230,14 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const showErrorRows = () => { setExpanded(null); setErrorRows(current => current && { ...current, open: false, showRows: true, totalCount: items.data?.totalCount }); };
   if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
-    actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly || invalidValues.length > 0 || invalidFieldValues.length > 0 || localProblems.length > 0} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
+    actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
     <div className="flex flex-col gap-4">
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button></Surface> : null}
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} /><CatalogPresentationSection value={draft.presentation} fields={draft.fields} items={rowItems} valueType={draft.valueType} culture={culture} readOnly={readOnly} errors={fields} inputCulture={draft.culture} check={!editor.dirty ? (editor.confirmed ?? initial)?.presentationCheck : undefined} onChange={editor.changePresentation} /></div><div className="xl:sticky xl:top-4"><CatalogPreview items={rowItems} fields={draft.fields} presentation={draft.presentation} valueType={draft.valueType} inputCulture={draft.culture} name={draft.name[culture] || currentName} culture={culture} /></div></div>
       <CatalogFieldsSection fields={draft.fields} presentation={draft.presentation} culture={culture} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} rootErrors={fields.fields} errorRows={errorRows && errorRows.control !== "type" && !errorRows.showRows ? { count: errorRows.rows.length, onShow: showErrorRows } : undefined} onChange={editor.changeFields} />
       {draft.sortAlphabetically ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.actions.sortPending")}</p><Button variant="outline" disabled={readOnly} onClick={() => editor.changeSort(false)}>{t("catalogs.actions.clearSort")}</Button></div></Surface> : null}
-      {localProblems.length ? <p className="text-sm text-[var(--color-danger)]">{t("catalogs.items.reviewInvalid")}</p> : null}
       {draft.moves.length ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.items.movesPending", { count: draft.moves.length })}</p><Button variant="outline" disabled={readOnly} onClick={editor.clearMoves}>{t("catalogs.items.clearMoves")}</Button></div></Surface> : null}
-      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor fields={draft.fields} scope={scope} sortPending={draft.sortAlphabetically} warnings={itemWarnings} onGenerateCode={item => generateCode(item.localId)} actions={<CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} />} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
+      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor fields={draft.fields} scope={scope} sortPending={draft.sortAlphabetically} warnings={itemWarnings} onGenerateCode={item => generateCode(item.localId)} actions={<CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} />} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onFieldBlur={(localId, path) => setTouched(current => current.has(touchedKey(localId, path)) ? current : new Set(current).add(touchedKey(localId, path)))} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
         filters={draft.id ? <><div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={search => { hideErrorRows(); pagination.setSearch(search); }} /></div>{rowFilter ? <FilterChip removeLabel={t("catalogs.items.clearErrorRows")} onRemove={hideErrorRows}>{t("catalogs.items.errorRows", { count: rowFilter.length })}</FilterChip> : null}</> : undefined}
         pagination={rowFilter ? undefined : items.data} totalCount={rowFilter ? errorRows?.totalCount : undefined} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
     </div>
@@ -234,7 +246,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("stay")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
     <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent onCloseAutoFocus={restoreReviewFocus} className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.value ? <><p className="text-sm">{entry.value.name.es}</p><p className="text-sm">{entry.value.name.en}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.es}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.en}</p></> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</Surface>)}</div>
-      <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setErrorRows(null); setExpanded(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
+      <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setErrorRows(null); setAttempted(new Set()); setTouched(new Set()); setExpanded(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
     </DialogContent></Dialog>
   </Page>;
 }

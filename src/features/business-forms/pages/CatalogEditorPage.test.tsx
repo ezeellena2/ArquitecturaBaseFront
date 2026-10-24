@@ -40,17 +40,21 @@ beforeEach(async () => { queryClient.clear(); vi.mocked(notify).mockClear(); awa
 afterEach(() => { cleanup(); vi.restoreAllMocks(); queryClient.clear(); });
 describe("Manual catalog page with synthetic current DTO responses", () => {
   it("preserves a text beyond WhatsApp length and blocks saving until corrected", async () => {
-    setup(); await mount("/catalogos/" + id); const user = userEvent.setup();
+    setup(); const bodies: unknown[] = [];
+    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", {name:"Editar Pérez"}));
     const text = screen.getByRole("textbox", {name:"Texto"});
     await user.clear(text); await pasteText(user, text, "123456789012345678901234567890X");
     expect(text).toHaveValue("123456789012345678901234567890X");
     expect(screen.getByText("31/30")).toBeInTheDocument();
     expect(text).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("button",{name:"Guardar"})).toBeDisabled();
+    await user.click(screen.getByRole("button",{name:"Guardar"}));
+    expect(bodies).toEqual([]); expect(text).toHaveValue("123456789012345678901234567890X");
     expect(screen.getByRole("textbox", {name:"Detalle"})).toHaveAttribute("maxlength", "300");
     await user.clear(text); await pasteText(user, text, "Texto corregido");
-    expect(screen.getByRole("button",{name:"Guardar"})).toBeEnabled();
+    await user.click(screen.getByRole("button",{name:"Guardar"}));
+    await waitFor(() => expect(bodies).toHaveLength(1));
   });
 
   it("creates bilingual metadata and one item in a single request and reloads its canonical identity", async () => {
@@ -73,6 +77,40 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(bodies[0]).toMatchObject({ name: initial.name, description: initial.description, items: [{ itemId: null, code: "C1", text: { es: "Pérez", en: null }, isActive: true }] });
     expect(bodies[0]).not.toHaveProperty("requestId");
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "success")).toHaveLength(1);
+  });
+  it("does not mark a new option's empty fields until saving is attempted, then validates live", async () => {
+    setup(); const bodies: unknown[] = [];
+    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
+    const text = screen.getByRole("textbox", { name: "Texto" }), code = screen.getByRole("textbox", { name: "Código" });
+    expect(screen.queryByText("Completá este campo.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Revisá las opciones marcadas antes de guardar.")).not.toBeInTheDocument();
+    expect(text).not.toHaveAttribute("aria-invalid", "true"); expect(code).not.toHaveAttribute("aria-invalid", "true");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(text).toHaveAttribute("aria-invalid", "true"); expect(text).toHaveAccessibleDescription("Completá este campo.");
+    expect(code).toHaveAttribute("aria-invalid", "true"); expect(code).toHaveAccessibleDescription("Completá este campo.");
+    expect(bodies).toEqual([]);
+    await pasteText(user, text, "Norte");
+    expect(text).not.toHaveAttribute("aria-invalid", "true");
+    expect(code).toHaveAccessibleDescription("Completá este campo.");
+    // Another option added after the attempt starts unmarked too.
+    await user.click(screen.getByRole("button", { name: "Agregar opción" }));
+    expect(screen.getByRole("textbox", { name: "Texto" })).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("textbox", { name: "Código" })).not.toHaveAttribute("aria-invalid", "true");
+    expect(bodies).toEqual([]);
+  });
+  it("marks an empty field when leaving it after touching it", async () => {
+    setup(); await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
+    const code = screen.getByRole("textbox", { name: "Código" });
+    await user.click(code);
+    expect(code).not.toHaveAttribute("aria-invalid", "true");
+    await user.tab();
+    expect(code).toHaveAttribute("aria-invalid", "true"); expect(code).toHaveAccessibleDescription("Completá este campo.");
+    // The editor put the cursor in Texto when it opened; leaving it without typing is not touching it.
+    expect(screen.getByRole("textbox", { name: "Texto" })).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryAllByText("Completá este campo.")).toHaveLength(1);
   });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
     setup(); const bodies: unknown[] = []; let savedOption = option;
@@ -170,13 +208,14 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.getByRole("combobox", { name: "Zona" })).toHaveValue("Sur");
   });
   it("says on the row which edited value is wrong and why, before saving", async () => {
-    viewport(true); fieldSetup(savedField({ key: "term", name: "Plazo", type: "integer" }), { [fieldId]: "30" }, () => HttpResponse.json({}, { status: 500 }));
+    viewport(true); const bodies = fieldSetup(savedField({ key: "term", name: "Plazo", type: "integer" }), { [fieldId]: "30" }, () => HttpResponse.json({}, { status: 500 }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     const cell = await screen.findByRole("textbox", { name: "Fila 1 · Plazo" });
     await user.clear(cell); await pasteText(user, cell, "30 días");
     expect(cell).toBeInvalid();
     expect(cell).toHaveAccessibleDescription("Fila 1 · Plazo: «30 días» no es un número entero.");
-    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(bodies).toEqual([]); expect(cell).toBeInvalid();
   });
   const secondItemId = "01990000-0000-7000-8000-000000000022";
   const termRows = [{ ...option, fields: { [fieldId]: "30 días" } }, { ...option, id: secondItemId, code: "C2", text: { es: "Gómez", en: null }, position: 2, fields: { [fieldId]: "60 días" } }];
@@ -660,9 +699,10 @@ it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invali
   await user.clear(value); await pasteText(user, value, "mil");
   expect(value).toHaveValue("mil"); expect(value).toHaveAttribute("aria-invalid", "true");
   const save = screen.getByRole("button", { name: language === "es" ? "Guardar" : "Save" });
-  expect(save).toBeDisabled(); expect(value).not.toHaveAttribute("readonly"); expect(bodies).toEqual([]);
+  await user.click(save);
+  expect(value).toHaveValue("mil"); expect(value).not.toHaveAttribute("readonly"); expect(bodies).toEqual([]);
   await user.clear(value); await pasteText(user, value, language === "es" ? "1.500,50" : "1,500.50");
-  expect(save).toBeEnabled(); await user.click(save);
+  await user.click(save);
   await waitFor(() => expect(bodies).toHaveLength(1));
   expect(bodies[0]).not.toHaveProperty("valueType");
   expect(bodies[0]).toMatchObject({ expectedRevision: 1, items: [{ itemId, value: "1500.5", code: "C1" }] });
@@ -690,19 +730,21 @@ it("sends the chosen type only on creation and binds a value error to its unchan
 
 
 it("blocks a duplicate code on either row but keeps duplicate labels as a warning", async () => {
-  setup(); const other = { ...option, id:"01990000-0000-7000-8000-000000000022", code:"C2", text:{es:"Otro",en:null},position:2 };
-  server.use(http.get("/api/forms/catalogs/"+id+"/items",()=>HttpResponse.json({items:[option,other],page:1,pageSize:20,totalCount:2,totalPages:1,hasNext:false,hasPrevious:false})));
+  setup(); const other = { ...option, id:"01990000-0000-7000-8000-000000000022", code:"C2", text:{es:"Otro",en:null},position:2 }; const bodies: unknown[] = [];
+  server.use(http.get("/api/forms/catalogs/"+id+"/items",()=>HttpResponse.json({items:[option,other],page:1,pageSize:20,totalCount:2,totalPages:1,hasNext:false,hasPrevious:false})), http.put("/api/forms/catalogs/"+id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2, itemsCount: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
   await mount("/catalogos/"+id); const user=userEvent.setup();
   await user.click(await screen.findByRole("button",{name:"Editar Otro"}));
   const code=screen.getByRole("textbox",{name:"Código"}); await user.clear(code); await pasteText(user,code,"c1");
   expect(code).toHaveAttribute("aria-invalid","true");
   expect(code).toHaveAccessibleDescription(expect.stringContaining("fila 1"));
-  expect(screen.getByRole("button",{name:"Guardar"})).toBeDisabled();
+  await user.click(screen.getByRole("button",{name:"Guardar"}));
+  expect(bodies).toEqual([]);
   await user.clear(code);await pasteText(user,code,"C2");
   const text=screen.getByRole("textbox",{name:"Texto"});await user.clear(text);await pasteText(user,text,"Pérez");
   expect(text).toHaveAccessibleDescription(expect.stringContaining("fila 1"));
   expect(text).not.toHaveAttribute("aria-invalid","true");
-  expect(screen.getByRole("button",{name:"Guardar"})).toBeEnabled();
+  await user.click(screen.getByRole("button",{name:"Guardar"}));
+  await waitFor(() => expect(bodies).toHaveLength(1));
 });
 
 
