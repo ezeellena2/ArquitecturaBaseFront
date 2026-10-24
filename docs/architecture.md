@@ -151,7 +151,9 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   PascalCase. Al regenerar, conservar las traducciones de `dialog.tsx` y `sonner.tsx` y `theme="light"` sin `next-themes`
   (`dialog.i18n`, `sonner.i18n` y `sonner.theme` tests). `.oxlintrc.json` apaga `react/only-export-components` solo en generados.
 - Fechas: además de los formateadores de las premisas, `formatTimeInZone` (hora de un mensaje) y `calendarDateInZone`
-  (agrupar por día) en `shared/lib/dateTime`.
+  (agrupar por día) en `shared/lib/dateTime`. Un valor tipado (entero, decimal, fecha sin hora, sí/no) se muestra sólo con
+  `shared/lib/typedValue`, igual en tablas, importación, resúmenes, respuestas y el chat; las fechas con hora siguen con
+  `formatDateInZone`/`formatDateTimeInZone`.
 - `IconButton` incluye `ActionTooltip` y usa `disabledLabel` con un motivo concreto. En `RowActions`, sin permiso se pasa
   `hidden`: un botón deshabilitado no recibe foco. Un control con texto deshabilitado por un motivo que no es obvio usa
   `DisabledReason`: tooltip sobre un span enfocable y descripción accesible; dentro de `FormField` reenvía `id`,
