@@ -296,6 +296,9 @@ Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de
 ### Información del negocio
 
 - `/configuracion/negocio`, con menú, permisos, editor y persistencia propios; Guardar persiste con revisión y comprobante.
+- `Page` muestra solo «Sólo lectura» o «Guardado por revisar», sin estado del borrador; revisar, reintentar y elegir van
+  en el encabezado de la superficie de recuperación. Horarios y demás datos se marcan al intentar guardar y después en
+  vivo; Confirmar de una fecha especial queda habilitado y valida al tocarlo.
 - Ubicación: `Autocomplete` sobre `Input` (nombre/ciudad → sugerencia → enlace a la ficha), sin modal pequeño de
   coordenadas. Dirección manual antes de buscar; elegir prepara el borrador y Guardar confirma el PlaceId. Atribución de
   Google Maps junto al contenido. Pendientes por instalación: [operación](../../../ArquitecturaBase/docs/guides/configurar-google-places.md).

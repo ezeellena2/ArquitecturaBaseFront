@@ -28,7 +28,9 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await expect(page.getByRole("textbox",{name:es?"Enlace de la ubicación":"Location link",exact:true})).toHaveValue(/query_place_id=ChIJ_fictionalClinic$/);
     await expect(page.getByRole("link", { name: es ? "Ver ubicación" : "View location", exact: true })).toHaveAttribute("href", /query_place_id=ChIJ_fictionalClinic$/);
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(0);
-    await end.selectOption("08:00");await page.getByRole("button",{name:es?"Guardar":"Save",exact:true}).click();
+    // El horario se marca al intentar guardar, no mientras se elige; después sigue en vivo.
+    await end.selectOption("08:00");await expect(page.getByRole("alert")).toHaveCount(0);
+    await page.getByRole("button",{name:es?"Guardar":"Save",exact:true}).click();
     await expect(page.getByRole("alert")).toContainText(es?"El cierre debe ser posterior":"Closing must be after");
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(0);
     await end.selectOption("18:00");await expect(page.getByRole("alert")).toHaveCount(0);

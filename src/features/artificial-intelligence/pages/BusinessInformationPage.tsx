@@ -61,15 +61,20 @@ function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; 
       {multiline ? <Textarea {...props} rows={name === "faq" ? 4 : 2} /> : <Input {...props} />}
     </FormField>;
   }
-  return <Page title={t("title")} status={!canManage || uncertain || editor.changed ? <span className="text-xs text-[var(--color-content-muted)]">{t(!canManage ? "readonly" : uncertain ? "pending" : "dirty")}</span> : undefined}
+  // El estado es el del objeto (sólo lectura o un guardado por revisar): Guardar habilitado ya dice que hay cambios.
+  return <Page title={t("title")} status={!canManage || uncertain ? <span className="text-xs text-[var(--color-content-muted)]">{t(!canManage ? "readonly" : "pending")}</span> : undefined}
     actions={canManage ? <><Button variant="outline" disabled={!editor.changed || locked} onClick={() => setDiscarding(true)}>{t("discard")}</Button>
       <Button disabled={!editor.changed || locked} onClick={() => void editor.save()}>{editor.busy ? <Spinner decorative /> : null}{t(editor.busy ? "saving" : "save")}</Button></> : undefined}>
     <div className="flex flex-col gap-5">
       <p className="max-w-3xl text-sm text-[var(--color-content-muted)]">{t(!canManage ? "readonlyHint" : "intro")}</p>
-      {editor.recovery !== "none" ? <Surface title={t(editor.recovery === "conflict" ? "reviewTitle" : "pending")} padded>
+      {/* El cuerpo explica el estado del guardado; revisar, reintentar y elegir van en la banda. */}
+      {editor.recovery !== "none" ? <Surface title={t(editor.recovery === "conflict" ? "reviewTitle" : "pending")} padded actions={<>
+        <Button variant="outline" disabled={editor.busy} onClick={() => void editor.recover()}>{t(editor.recovery === "conflict" ? "review" : "verify")}</Button>
+        {editor.recovery === "missing" ? <Button disabled={editor.busy} onClick={() => void editor.save(true)}>{t("retrySame")}</Button> : null}
+        {editor.review ? <><Button variant="outline" disabled={editor.busy} onClick={() => editor.acceptReview(false)}>{t("useCurrent")}</Button>
+          <Button disabled={editor.busy} onClick={() => editor.acceptReview(true)}>{t("keepMine")}</Button></> : null}
+      </>}>
         <p className="max-w-3xl text-sm">{t(editor.recovery === "conflict" ? "conflictMessage" : editor.recovery === "missing" ? "missingReceipt" : "uncertainHint")}</p>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={editor.busy} onClick={() => void editor.recover()}>{t(editor.recovery === "conflict" ? "review" : "verify")}</Button>
-          {editor.recovery === "missing" ? <Button disabled={editor.busy} onClick={() => void editor.save(true)}>{t("retrySame")}</Button> : null}</div>
         {editor.review ? <>
           <p className="text-sm text-[var(--color-content-muted)]">{t("reviewHint")}</p>
           <Table><TableHeader><TableRow><TableHead scope="col">{t("field")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("current")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("mine")}</TableHead></TableRow></TableHeader>
@@ -77,7 +82,6 @@ function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; 
               <TableRowHeader className="whitespace-normal">{t(name === "details.location" ? "locationSection" : name === "details.openingHours" ? "hoursSection" : name === "details.faq" ? "answers" : name)}</TableRowHeader><TableCell className="min-w-48 max-w-sm whitespace-pre-wrap break-words">{editor.review && reviewText(name, editor.review) || t("noValue")}</TableCell><TableCell className="min-w-48 max-w-sm whitespace-pre-wrap break-words">{reviewText(name, { ...editor.draft, revision: editor.baseline.revision }) || t("noValue")}</TableCell>
             </TableRow>)}</TableBody>
           </Table>
-          <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={editor.busy} onClick={() => editor.acceptReview(false)}>{t("useCurrent")}</Button><Button disabled={editor.busy} onClick={() => editor.acceptReview(true)}>{t("keepMine")}</Button></div>
         </> : null}
       </Surface> : null}
       <Surface title={t("basics")} padded><div className="grid gap-4 sm:grid-cols-2">{field("name")}{field("description", true)}</div></Surface>

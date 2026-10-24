@@ -18,7 +18,9 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
   const navigate = useNavigate();
   const [baseline, setBaseline] = useState(initial);
   const [draft, setDraft] = useState(() => businessDraftFrom(initial));
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+  // Se valida al intentar guardar; después del primer intento fallido, en vivo mientras se corrige.
+  const [attempted, setAttempted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [recovery, setRecovery] = useState<Recovery>("none");
   const [review, setReview] = useState<BusinessInformation>();
@@ -26,18 +28,22 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
   const inFlight = useRef<AbortController | null>(null);
   const pending = useRef<BusinessSaveRequest | null>(null);
   const changed = !detailsEqual(draft, businessDraftFrom(baseline));
+  const errors = { ...serverErrors, ...(attempted ? localErrors(draft) : {}) };
   const guard = useUnsavedChangesGuard(changed || recovery !== "none" || busy);
   useEffect(() => {
     active.current = true;
     return () => { active.current = false; inFlight.current?.abort(); pending.current = null; dismissNotification(noticeId); };
   }, []);
+  function localErrors(value: BusinessDraft) {
+    return Object.fromEntries(Object.entries(businessValidation(value)).map(([field, key]) => [field, t(key, { count: businessLimits[field as keyof typeof businessLimits] })]));
+  }
   function change(next: Partial<BusinessDraft>) {
     setDraft(previous => ({ ...previous, ...next }));
-    setErrors(previous => Object.fromEntries(Object.entries(previous).filter(([field]) => !(field in next) && !("details" in next && field.startsWith("details.")))));
+    setServerErrors(previous => Object.fromEntries(Object.entries(previous).filter(([field]) => !(field in next) && !("details" in next && field.startsWith("details.")))));
   }
   function reset(current: BusinessInformation) {
     pending.current = null;
-    setBaseline(current); setDraft(businessDraftFrom(current)); setErrors({}); setRecovery("none"); setReview(undefined);
+    setBaseline(current); setDraft(businessDraftFrom(current)); setServerErrors({}); setAttempted(false); setRecovery("none"); setReview(undefined);
     client.setQueryData(businessInformationQueryKey, current); dismissNotification(noticeId);
   }
   function denied(error: unknown) {
@@ -71,10 +77,9 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
   async function save(retry = false) {
     if (!retry) {
       if (recovery !== "none" || !changed) return;
-      const validation = businessValidation(draft);
-      setErrors(Object.fromEntries(Object.entries(validation).map(([field, key]) => [field, t(key, { count: businessLimits[field as keyof typeof businessLimits] })])));
-      const invalid = Object.keys(validation)[0];
-      if (invalid) { document.getElementById(`business-${invalid}`)?.focus(); return; }
+      setServerErrors({});
+      const invalid = Object.keys(businessValidation(draft))[0];
+      if (invalid) { setAttempted(true); document.getElementById(`business-${invalid}`)?.focus(); return; }
     } else if (recovery !== "missing" || !pending.current) return;
     const controller = begin(); if (!controller) return;
     if (!retry) pending.current = { ...normalizeBusinessDraft(draft), expectedRevision: baseline.revision, requestId: crypto.randomUUID() };
@@ -86,7 +91,7 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
     } catch (error) {
       if (!active.current || denied(error)) return;
       const feedback = errorFeedback(error, { writing: true, fields: [...businessFields, ...businessDetailFields], conflictCodes: ["Ai.BusinessInformation.RevisionConflict", "Ai.BusinessInformation.RequestConflict"] });
-      setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([key, value]) => [key, value.join(" ")])));
+      setServerErrors(Object.fromEntries(Object.entries(feedback.fields).map(([key, value]) => [key, value.join(" ")])));
       if (feedback.kind === "uncertain") {
         setRecovery("uncertain");
         notify({ id: noticeId, kind: "warning", message: t("uncertainMessage"), description: feedback.traceId ? t("common:errors.traceId", { traceId: feedback.traceId }) : undefined });

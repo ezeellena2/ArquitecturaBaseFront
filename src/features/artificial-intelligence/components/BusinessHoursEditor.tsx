@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
@@ -18,11 +18,10 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
   const { t } = useTranslation("businessInformation");
   const [special, setSpecial] = useState<SpecialDate | null>(null);
   const zones = useMemo(() => Array.from(new Set([value.timeZoneId, "UTC", ...Intl.supportedValuesOf("timeZone")])).sort(), [value.timeZoneId]);
-  const validation = validateBusinessDetails({ ...emptyBusinessDetails(value.timeZoneId), openingHours: value })["details.openingHours"];
-  const message = error ?? (validation ? t(validation) : undefined);
   const disabled = !editable || locked;
   function changeDay(next: OpeningDay) { onChange({ ...value, days: value.days.map(day => day.weekday === next.weekday ? next : day) }); }
-  return <Surface title={t("hoursSection")} padded><div className="@container space-y-4" id="business-details.openingHours" tabIndex={-1} role="group" aria-label={t("hoursSection")} aria-invalid={!!message} aria-describedby={message ? "business-hours-error" : undefined}>
+  // El error llega del editor: aparece al intentar guardar y después sigue en vivo, no al abrir un día.
+  return <Surface title={t("hoursSection")} padded><div className="@container space-y-4" id="business-details.openingHours" tabIndex={-1} role="group" aria-label={t("hoursSection")} aria-invalid={!!error} aria-describedby={error ? "business-hours-error" : undefined}>
     <p className="text-sm text-[var(--color-content-muted)]">{t("hoursHint")}</p>
     <div className="divide-y divide-[var(--color-border)]">{value.days.map(day => {
       const label = t(`days.${weekdays[day.weekday]}`);
@@ -32,7 +31,7 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
         {day.status === "open" ? <div className="col-span-2 space-y-3 @min-[424px]:col-span-1"><OpeningPeriods periods={day.periods} label={label} disabled={disabled} onChange={periods => changeDay({ ...day, periods })} /></div> : null}
       </div>;
     })}</div>
-    {message ? <p id="business-hours-error" role="alert" className="text-sm text-[var(--color-danger)]">{message}</p> : null}
+    {error ? <p id="business-hours-error" role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}
     {editable ? <Button variant="outline" disabled={locked} onClick={() => onChange({ ...value, days: value.days.map(day => day.weekday < 5 ? { ...structuredClone(value.days[0]), weekday: day.weekday } : day) })}>{t("copyWeek")}</Button> : null}
     <FormField label={t("timeZoneLabel")} hint={t("timeZoneHint")}><NativeSelect value={value.timeZoneId} disabled={disabled} onChange={event => onChange({ ...value, timeZoneId: event.target.value })}>{zones.map(zone => <option key={zone}>{zone}</option>)}</NativeSelect></FormField>
     <div className="space-y-3 border-t border-[var(--color-border)] pt-3"><p className="text-sm font-medium">{t("exceptions")}</p>
@@ -68,19 +67,28 @@ function SpecialDateDialog({ initial, hours, onCancel, onConfirm }: { initial: S
   const { t } = useTranslation("businessInformation");
   const restore = useRestoreFocusOnClose();
   const [value,setValue] = useState(initial);
-  const [error,setError] = useState<string>();
-  const periodError = validateHours([{ ...value,weekday:0 }],false);
+  // Confirmar valida al tocarlo; después del primer intento, los errores siguen en vivo mientras se corrigen.
+  const [attempted,setAttempted] = useState(false);
+  const dateId = useId();
+  function problems(next: SpecialDate): { date?: string; periods?: string } {
+    const periods = validateHours([{ ...next,weekday:0 }],false);
+    const nextHours = { ...hours, exceptions: [...hours.exceptions.filter(item => item.date !== initial.date),next] };
+    const date = !next.date ? "specialDateRequired" : periods ? undefined : validateBusinessDetails({ ...emptyBusinessDetails(hours.timeZoneId),openingHours:nextHours })["details.openingHours"];
+    return { date, periods: periods ? `hourErrors.${periods}` : undefined };
+  }
+  const shown: ReturnType<typeof problems> = attempted ? problems(value) : {};
   function confirm() {
-    const nextHours = { ...hours, exceptions: [...hours.exceptions.filter(item => item.date !== initial.date),value] };
-    const validation = validateBusinessDetails({ ...emptyBusinessDetails(hours.timeZoneId),openingHours:nextHours })["details.openingHours"];
-    if (validation) { setError(t(validation)); return; } onConfirm(value);
+    const found = problems(value);
+    if (!found.date && !found.periods) { onConfirm(value); return; }
+    setAttempted(true);
+    if (found.date) document.getElementById(dateId)?.focus();
   }
   return <Dialog open onOpenChange={open => { if (!open) onCancel(); }}><DialogContent onCloseAutoFocus={restore}>
     <DialogHeader><DialogTitle>{t("specialTitle")}</DialogTitle><DialogDescription>{t("specialHint")}</DialogDescription></DialogHeader>
-    <FormField label={t("specialDate")} error={error}><Input type="date" min="1900-01-01" max="9998-12-31" value={value.date} onChange={event => { setValue({ ...value,date:event.target.value });setError(undefined); }} /></FormField>
-    <OpeningStatusSelect label={t("specialDate")} status={value.status} disabled={false} onChange={status => { setValue({ ...value,status,periods:status === "open" ? [emptyPeriod()] : [] });setError(undefined); }} />
-    {value.status === "open" ? <OpeningPeriods periods={value.periods} label={t("specialDate")} disabled={false} onChange={periods => { setValue({ ...value,periods });setError(undefined); }} /> : null}
-    {periodError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t(`hourErrors.${periodError}`)}</p> : null}
-    <DialogFooter><Button variant="outline" onClick={onCancel}>{t("cancel")}</Button><Button disabled={!value.date || !!periodError} onClick={confirm}>{t("confirmDate")}</Button></DialogFooter>
+    <FormField label={t("specialDate")} error={shown.date ? t(shown.date) : undefined}><Input id={dateId} type="date" min="1900-01-01" max="9998-12-31" value={value.date} onChange={event => setValue({ ...value,date:event.target.value })} /></FormField>
+    <OpeningStatusSelect label={t("specialDate")} status={value.status} disabled={false} onChange={status => setValue({ ...value,status,periods:status === "open" ? [emptyPeriod()] : [] })} />
+    {value.status === "open" ? <OpeningPeriods periods={value.periods} label={t("specialDate")} disabled={false} onChange={periods => setValue({ ...value,periods })} /> : null}
+    {shown.periods ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t(shown.periods)}</p> : null}
+    <DialogFooter><Button variant="outline" onClick={onCancel}>{t("cancel")}</Button><Button onClick={confirm}>{t("confirmDate")}</Button></DialogFooter>
   </DialogContent></Dialog>;
 }

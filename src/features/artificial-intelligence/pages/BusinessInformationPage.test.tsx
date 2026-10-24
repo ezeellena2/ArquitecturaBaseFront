@@ -78,6 +78,81 @@ describe("business information editor", () => {
     expect(writes).toHaveLength(0);
     expect(screen.getByRole("group", { name: "Horario de atención" })).toHaveFocus();
   });
+  it("marks an incomplete opening day only after trying to save and then updates it live", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    renderRouteWithProviders("/configuracion/negocio");
+    await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "open");
+    const hours = screen.getByRole("group", { name: "Horario de atención" });
+    // Abrir un día deja su franja por completar: no es un error hasta intentar guardar.
+    expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
+    expect(hours).toHaveAttribute("aria-invalid", "false");
+    await userEvent.click(save());
+    expect(within(hours).getByRole("alert")).toHaveTextContent("Elegí apertura y cierre para cada franja.");
+    expect(hours).toHaveFocus();
+    expect(writes).toHaveLength(0);
+    // Después del primer intento, el mensaje sigue lo que se corrige sin volver a tocar Guardar.
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes 1 · Desde" }), "18:00");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes 1 · Hasta" }), "09:00");
+    expect(within(hours).getByRole("alert")).toHaveTextContent("El cierre debe ser posterior");
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes 1 · Hasta" }), "20:00");
+    expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
+    expect(hours).toHaveAttribute("aria-invalid", "false");
+    expect(writes).toHaveLength(0);
+  });
+  it("lets Confirm validate a special date instead of disabling it", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    renderRouteWithProviders("/configuracion/negocio");
+    await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    await userEvent.click(screen.getByRole("button", { name: "Agregar fecha especial" }));
+    const dialog = await screen.findByRole("dialog");
+    const confirm = within(dialog).getByRole("button", { name: "Agregar fecha" });
+    const date = within(dialog).getByLabelText("Fecha");
+    await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Fecha · Atención" }), "open");
+    // Confirmar está habilitado y la franja recién abierta no se marca antes de tocarlo.
+    expect(confirm).toBeEnabled();
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+    await userEvent.click(confirm);
+    expect(screen.getByRole("dialog")).toBe(dialog);
+    expect(date).toHaveAccessibleDescription("Elegí la fecha.");
+    expect(date).toHaveFocus();
+    expect(within(dialog).getByText("Elegí apertura y cierre para cada franja.")).toHaveAttribute("role", "alert");
+    // Después del intento, cada error se va mientras se corrige.
+    await userEvent.type(date, "2026-10-10");
+    expect(date).not.toHaveAccessibleDescription("Elegí la fecha.");
+    await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Fecha 1 · Desde" }), "09:00");
+    await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Fecha 1 · Hasta" }), "13:00");
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+    await userEvent.click(confirm);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("2026-10-10 · Abierto · 09:00–13:00")).toBeInTheDocument();
+    expect(writes).toHaveLength(0);
+  });
+  it("keeps the business header without an unsaved status", async () => {
+    renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");
+    const header = screen.getByRole("heading", { level: 1, name: "Información del negocio" }).closest("header") as HTMLElement;
+    // Guardar habilitado ya dice que hay cambios: la banda tiene el título y sus acciones, sin estado del borrador.
+    expect(within(header).getByRole("button", { name: "Guardar" })).toBeEnabled();
+    expect(header.textContent).toBe("Información del negocioDescartarGuardar");
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+  });
+  it("puts the recovery actions at the edge of their surface band", async () => {
+    server.use(http.put("/api/ai/business-information", async ({ request }) => {
+      writes.push(await request.json() as BusinessSaveRequest); current = { ...current, hours: "10–17", revision: 2 };
+      return HttpResponse.json({ code: "Ai.BusinessInformation.RevisionConflict" }, { status: 409 });
+    }));
+    renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");
+    await userEvent.click(save());
+    const review = await screen.findByRole("region", { name: "Revisar cambios de otro administrador" });
+    // Revisar y elegir actúan sobre toda la recuperación: van en la banda de su superficie; el cuerpo explica el estado.
+    const band = within(review).getByRole("heading", { level: 2, name: "Revisar cambios de otro administrador" }).parentElement as HTMLElement;
+    await userEvent.click(within(band).getByRole("button", { name: "Revisar cambios" }));
+    expect(await within(band).findByRole("button", { name: "Conservar mis cambios" })).toBeEnabled();
+    expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Revisar cambios", "Usar información actual", "Conservar mis cambios"]);
+    expect(within(review).getAllByRole("button")).toEqual(within(band).getAllByRole("button"));
+  });
   it("keeps structured facts frozen when an uncertain save is retried", async () => {
     current.details = emptyBusinessDetails("UTC");
     server.use(http.put("/api/ai/business-information", async ({ request }) => { writes.push(await request.json() as BusinessSaveRequest); return HttpResponse.error(); }),
