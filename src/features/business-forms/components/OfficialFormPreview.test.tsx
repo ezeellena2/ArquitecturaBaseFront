@@ -18,13 +18,13 @@ describe("Official preview dialog",()=>{
   vi.mocked(fetchFormPreview).mockResolvedValue({url,expiresAtUtc:"2099-10-10T12:00:00Z"});
   const published=renderPreview({cultures:["es","en"],culture:"en",originalCulture:"es"});
   await screen.findByTitle("Vista oficial del formulario en WhatsApp");
-  expect(screen.queryByRole("group",{name:"Textos en"})).not.toBeInTheDocument();
+  expect(screen.queryAllByRole("button",{name:/^(Español|Inglés|Spanish|English)\b/})).toHaveLength(0);
   expect(fetchFormPreview).toHaveBeenCalledTimes(1);
   expect(fetchFormPreview).toHaveBeenLastCalledWith("d","v","en",expect.any(AbortSignal));
   published.unmount();vi.mocked(fetchFormPreview).mockClear();
   renderPreview({cultures:["es"],culture:"en",originalCulture:"es"});
   await screen.findByTitle("Vista oficial del formulario en WhatsApp");
-  expect(screen.queryByRole("group",{name:"Textos en"})).not.toBeInTheDocument();
+  expect(screen.queryAllByRole("button",{name:/^(Español|Inglés|Spanish|English)\b/})).toHaveLength(0);
   expect(fetchFormPreview).toHaveBeenCalledTimes(1);
   expect(fetchFormPreview).toHaveBeenLastCalledWith("d","v","es",expect.any(AbortSignal));
  });

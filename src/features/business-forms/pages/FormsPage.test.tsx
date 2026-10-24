@@ -585,7 +585,7 @@ it("edits a form whose original is English in Spanish as its optional translatio
   store.definitions.set(fixtureFormId, { ...original, name: { ...original.name, es: "" }, draft: { ...original.draft, culture: "en" } });
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const name = await screen.findByLabelText("Nombre");
-  expect(screen.queryByRole("group", { name: "Textos en" })).not.toBeInTheDocument();
+  expect(screen.queryAllByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveLength(0);
   expect(name).toHaveValue("");
   expect(name).toHaveAttribute("placeholder", "Sin traducir");
   expect(name).toHaveAccessibleDescription("Original (Inglés): Register visit");

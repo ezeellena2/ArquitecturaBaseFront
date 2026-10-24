@@ -31,7 +31,7 @@ it("edits the form in the menu language without a content language selector", as
   store.definitions.set(fixtureFormId, { ...original, name: { es: "Registrar visita", en: "" } });
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const name = await screen.findByRole("textbox", { name: "Name" });
-  expect(screen.queryByRole("group", { name: "Content language" })).not.toBeInTheDocument();
+  expect(screen.queryAllByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveLength(0);
   expect(name).toHaveValue("");
   expect(name).toHaveAttribute("placeholder", "Untranslated");
   expect(name).toHaveAccessibleDescription("Original (Spanish): Registrar visita");

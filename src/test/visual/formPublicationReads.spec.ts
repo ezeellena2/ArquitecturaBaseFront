@@ -44,7 +44,7 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  const trigger=page.getByRole("button",{name:es?"Ver vista oficial":"View official preview",exact:true});await trigger.click();
  const dialog=page.getByRole("dialog");await expect(dialog.locator("iframe")).toBeVisible();await expect.poll(()=>cultures.length).toBe(1);
  await expect(page.frameLocator("iframe").getByRole("heading",{name:title[lang],exact:true})).toBeVisible();expect(cultures).toEqual([lang]);
- await expect(dialog.getByRole("group",{name:es?"Textos en":"Content language",exact:true})).toHaveCount(0);
+ await expect(dialog.getByRole("button",{name:/^(Español|Inglés|Spanish|English)\b/})).toHaveCount(0);
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
  await page.screenshot({path:`test-results/forms-official-preview-${lang}-${width}.png`,fullPage:true});
  await expect(dialog.locator("iframe")).toHaveCount(0,{timeout:8000});await expect(dialog.getByRole("link")).toHaveCount(0);expect(cultures).toEqual([lang]);

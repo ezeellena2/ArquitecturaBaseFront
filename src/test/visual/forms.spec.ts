@@ -85,7 +85,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-translations&lang=${language}`);
     await page.getByRole("heading", { name: es ? "El formulario" : "The form", level: 2, exact: true }).waitFor({ state: "visible" });
     // There is no content language selector: the menu language decides what is edited.
-    await expect(page.getByRole("group", { name: es ? "Textos en" : "Content language", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveCount(0);
     const name = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true });
     const prefix = page.getByRole("textbox", { name: es ? "Prefijo de numeración" : "Numbering prefix", exact: true });
     const preview = page.getByRole("region", { name: es ? "Vista previa" : "Preview", exact: true });
