@@ -225,7 +225,7 @@ mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre l
 
 | Captura | Qué define |
 | --- | --- |
-| [I1 · El editor con la traducción opcional](evidence/formularios-whatsapp/idi-i1-editor.png) | «Textos en» con el original obligatorio y el inglés opcional. Lo que falta se cuenta como «3 sin traducir», en gris, y cada texto dice «Sin traducir», sin alerta. La vista previa muestra lo que recibe una cuenta en inglés: entero en español mientras falte algo y entero en inglés al completarlo, nunca mezclado. |
+| [I1 · El editor con la traducción opcional](evidence/formularios-whatsapp/idi-i1-editor.png) | «Textos en» con el original obligatorio y el inglés opcional. Lo que falta se cuenta como «3 sin traducir», en gris, y cada texto dice «Sin traducir», sin alerta. La vista previa muestra lo que recibe una cuenta en inglés: entero en español mientras falte algo y entero en inglés al completarlo, nunca mezclado. **Desde el 2026-10-24 (punto 35 del review de Catálogos E2) no hay «Textos en»:** se edita en el idioma del menú; con el menú en el otro idioma cada texto es la traducción, con «Sin traducir», el original como referencia y los faltantes contados por pregunta. Un error del otro idioma se ve bajo el mismo campo («En inglés: …»). |
 | [I2 · Publicar con la traducción incompleta](evidence/formularios-whatsapp/idi-i2-publicar.png) | La comprobación no frena por una traducción que falta: dice «En WhatsApp, en español» y avisa «El inglés no se publica», con lo que le falta y «Completar el inglés». A Meta van solo los idiomas completos; sumar el inglés después es la versión siguiente. |
 | [I3 · Los idiomas al publicar](evidence/formularios-whatsapp/idi-i3-idiomas.png) | La confirmación con la traducción incompleta o completa, y una versión nueva que suma el inglés o lo pierde, con aviso. |
 
@@ -287,7 +287,8 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
     no quiere simplemente no se abre.
 11. **Idiomas.** La elección del 2026-10-10 exigía español e inglés completos al publicar y guardado con traducciones
     pendientes. **I1–I3, elegidos el 2026-10-18, sustituyen ese requisito:** sólo el original es obligatorio para guardar
-    y publicar. La preview muestra todo en el original mientras falte una traducción y todo en el secundario al completarse.
+    y publicar. Desde el 2026-10-24 (decisión del punto 35) no hay selector de idioma: se escribe en el idioma del menú
+    y, para traducir, se cambia el idioma del menú y se edita lo mismo. La preview muestra todo en el original mientras falte una traducción y todo en el secundario al completarse.
     El envío fija una cultura preparada para el formulario, la apertura predeterminada, «Abrir formulario», los avisos y el PDF;
     conserva la apertura editada por el operador. El texto y detalle de cada ítem de catálogo conservan su respaldo individual
     al original, sin cambiar el idioma del formulario ni la validación bilingüe de catálogos comunes. La

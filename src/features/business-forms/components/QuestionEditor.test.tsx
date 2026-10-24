@@ -145,6 +145,20 @@ it("marks untranslated secondary text neutrally and preserves the original refer
   expect(onChange).not.toHaveBeenCalled();
 });
 
+it("shows a label error of the other language with its language name", async () => {
+  const question: DraftQuestion = { ...first, help: { es: "Elegí un cliente." } };
+  const issues: readonly DraftFieldIssue[] = [
+    { path: "draft.fields[0].label.en", messages: ["Usá hasta 200 caracteres."], fieldLocalId: "a" },
+    { path: "draft.fields[0].help.en", messages: ["Usá hasta 500 caracteres."], fieldLocalId: "a" },
+    { path: "draft.fields[0].options[1].label.en", messages: ["Usá hasta 30 caracteres."], fieldLocalId: "a", choiceLocalId: "south" }];
+  await act(async () => { renderWithProviders(<QuestionEditor question={question} position={1} total={1} culture="es" original="es" expanded readOnly={false} issues={issues} onChange={vi.fn()} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
+  expect(screen.getByLabelText("Pregunta")).toHaveAccessibleDescription("En inglés: Usá hasta 200 caracteres.");
+  expect(screen.getByLabelText("Pregunta")).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getByLabelText("Ayuda para el empleado")).toHaveAccessibleDescription("En inglés: Usá hasta 500 caracteres.");
+  expect(screen.getByLabelText("Opción 2")).toHaveAccessibleDescription("En inglés: Usá hasta 30 caracteres.");
+  expect(screen.getByLabelText("Opción 1")).not.toHaveAttribute("aria-invalid");
+});
+
 // CA4 characterization, applied only after the closed model accepts multiChoice.
 it("requires an explicit decision before replacing a saved question and every own option identity", async () => {
   const onChange = vi.fn();

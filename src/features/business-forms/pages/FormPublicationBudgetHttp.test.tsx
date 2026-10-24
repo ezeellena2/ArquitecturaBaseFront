@@ -92,7 +92,7 @@ for (const culture of ["es", "en"] as const) describe("publication response budg
       expect(getWrites()).toBe(0);
     });
 
-    it("locates a captured question in its own content language without publishing", async () => {
+    it("locates a captured question of the other content language in the menu language without publishing", async () => {
       const { dialog, getPublications, getWrites } = page;
       const firstFieldId = definition.draft.fields[0]!.fieldId;
       const issueIndex = captured.issues.findIndex(issue => issue.fieldId === firstFieldId && issue.culture !== culture);
@@ -102,7 +102,7 @@ for (const culture of ["es", "en"] as const) describe("publication response budg
       await userEvent.click(jumps[issueIndex]!);
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       const question = screen.getByLabelText(text.question);
-      expect(question).toHaveValue(captured.issues[issueIndex]!.culture === "en" ? "Response 0" : "Respuesta 0");
+      expect(question).toHaveValue(culture === "en" ? "Response 0" : "Respuesta 0");
       await waitFor(() => expect(question).toHaveFocus());
       expect(screen.getByLabelText(text.maxLength)).toHaveValue(10000);
       expect(getPublications()).toBe(0);

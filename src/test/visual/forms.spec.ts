@@ -79,73 +79,58 @@ test("readonly preview keeps absence, exact decimals and date-only values", asyn
 });
 
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
-  test(`content language is independent of the SPA ${language} at ${width}px`, async ({ page }) => {
+  test(`content is edited in the menu language ${language} at ${width}px`, async ({ page }) => {
     const es = language === "es";
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-translations&lang=${language}`);
     await page.getByRole("heading", { name: es ? "El formulario" : "The form", level: 2, exact: true }).waitFor({ state: "visible" });
+    // There is no content language selector: the menu language decides what is edited.
+    await expect(page.getByRole("group", { name: es ? "Textos en" : "Content language", exact: true })).toHaveCount(0);
     const name = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true });
-    await expect(name).toHaveValue("Registrar visita");
-    const english = page.getByRole("button", { name: /^English/ });
-    await english.focus();
-    await page.keyboard.press("Enter");
-    await expect(english).toHaveAttribute("aria-pressed", "true");
-    await expect(name).toHaveValue("Register visit");
-    await expect(page.getByRole("textbox", { name: es ? "Prefijo de numeración" : "Numbering prefix", exact: true })).toHaveAttribute("readonly", "");
-    await expect(english).toContainText(es ? "English · 3 sin traducir" : "English · 3 untranslated");
-    const languageBounds = await page.getByRole("group", { name: es ? "Textos en" : "Content language", exact: true }).evaluate(group => {
-      const bounds = group.getBoundingClientRect();
-      const container = group.parentElement!.getBoundingClientRect();
-      return { left: bounds.left, right: bounds.right, containerLeft: container.left, containerRight: container.right, options: [...group.querySelectorAll("button")].map(button => {
-        const option = button.getBoundingClientRect();
-        return { clientWidth: button.clientWidth, scrollWidth: button.scrollWidth, clientHeight: button.clientHeight, scrollHeight: button.scrollHeight, left: option.left, right: option.right, texts: [...button.querySelectorAll("span")].flatMap(span => [...span.getClientRects()].map(rect => ({ left: rect.left, right: rect.right }))) };
-      }) };
-    });
-    expect(languageBounds.left).toBeGreaterThanOrEqual(languageBounds.containerLeft);
-    expect(languageBounds.right).toBeLessThanOrEqual(languageBounds.containerRight);
-    for (const option of languageBounds.options) {
-      expect(option.scrollWidth).toBeLessThanOrEqual(option.clientWidth);
-      expect(option.scrollHeight).toBeLessThanOrEqual(option.clientHeight);
-      for (const text of option.texts) {
-        expect(text.left).toBeGreaterThanOrEqual(option.left);
-        expect(text.right).toBeLessThanOrEqual(option.right);
-      }
+    const prefix = page.getByRole("textbox", { name: es ? "Prefijo de numeración" : "Numbering prefix", exact: true });
+    const preview = page.getByRole("region", { name: es ? "Vista previa" : "Preview", exact: true });
+    if (es) {
+      // Spanish is the original: it is edited as written, without translation marks.
+      await expect(name).toHaveValue("Registrar visita");
+      await expect(prefix).not.toHaveAttribute("readonly", "");
+      await expect(page.getByText(/\d+ sin traducir/)).toHaveCount(0);
+      await expect(preview.getByRole("radio", { name: "Sí", exact: true })).toHaveCount(1);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await page.screenshot({ path: `test-results/forms-translations-${language}-${width}.png`, fullPage: true });
+      return;
     }
-    await page.getByRole("button", { name: es ? "Editar Importe cobrado" : "Edit Importe cobrado", exact: true }).click();
-    const question = page.getByRole("textbox", { name: es ? "Pregunta" : "Question", exact: true }).first();
+    // With the menu in English, the optional translation is edited and the original is the reference.
+    await expect(name).toHaveValue("Register visit");
+    await expect(prefix).toHaveAttribute("readonly", "");
+    await page.getByRole("button", { name: "Edit Importe cobrado", exact: true }).click();
+    const question = page.getByRole("textbox", { name: "Question", exact: true }).first();
     await expect(question).toHaveValue("");
     await expect(question).toBeFocused();
-    await expect(page.getByText(es ? "Original (Español): Importe cobrado" : "Original (Spanish): Importe cobrado", { exact: true })).toBeVisible();
-    const preview = page.getByRole("region", { name: es ? "Vista previa" : "Preview", exact: true });
+    await expect(page.getByText("Original (Spanish): Importe cobrado", { exact: true })).toBeVisible();
     await expect(preview.getByRole("radio", { name: "Sí", exact: true })).toHaveCount(1);
     await expect(preview.getByRole("radio", { name: "Yes", exact: true })).toHaveCount(0);
     await expect(preview.getByRole("textbox", { name: "Importe cobrado", exact: true })).toHaveCount(1);
-    await expect(preview.getByText(es ? "Se muestra en español: faltan 3 textos en inglés." : "Shown in Spanish: 3 texts are untranslated in English.", { exact: true })).toBeVisible();
+    await expect(preview.getByText("Shown in Spanish: 3 texts are untranslated in English.", { exact: true })).toBeVisible();
     await question.fill("Collected amount");
     await name.fill("Visit record");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: `test-results/forms-translations-${language}-${width}.png`, fullPage: true });
     await preview.scrollIntoViewIfNeeded();
     await preview.screenshot({ path: `test-results/forms-translations-preview-${language}-${width}.png` });
-    await page.getByRole("button", { name: es ? "Guardar borrador" : "Save draft", exact: true }).click();
+    await page.getByRole("button", { name: "Save draft", exact: true }).click();
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(1);
-    await page.getByRole("button", { name: /^Español/ }).click();
-    await expect(name).toHaveValue("Registrar visita");
-    await page.getByRole("button", { name: /^English/ }).click();
     await expect(name).toHaveValue("Visit record");
     await expect(preview.getByRole("option", { name: "Pérez Hnos.", exact: true })).toHaveCount(1);
-    await page.getByRole("link", { name: es ? "Diseñar formularios" : "Design forms", exact: true }).last().click();
-    await page.getByRole("table").getByRole("link", { name: es ? "Registrar visita" : "Visit record", exact: true }).click();
-    await expect(name).toHaveValue("Registrar visita");
-    await page.getByRole("button", { name: /^English/ }).click();
+    await page.getByRole("link", { name: "Design forms", exact: true }).last().click();
+    await page.getByRole("table").getByRole("link", { name: "Visit record", exact: true }).click();
     await expect(name).toHaveValue("Visit record");
     await expect(preview.getByRole("textbox", { name: "Importe cobrado", exact: true })).toHaveCount(1);
     await expect(preview.getByRole("option", { name: "Pérez Hnos.", exact: true })).toHaveCount(1);
-    await page.getByRole("button", { name: es ? "Editar Customer" : "Edit Customer", exact: true }).click();
-    await page.getByRole("textbox", { name: es ? "Opción 1" : "Option 1", exact: true }).fill("Perez brothers");
-    await page.getByRole("button", { name: es ? "Editar Notes" : "Edit Notes", exact: true }).click();
-    await page.getByRole("textbox", { name: es ? "Ayuda para el empleado" : "Help for the employee", exact: true }).fill("Tell us what happened.");
-    await expect(english).toContainText(es ? "English · completo" : "English · complete");
+    await page.getByRole("button", { name: "Edit Customer", exact: true }).click();
+    await page.getByRole("textbox", { name: "Option 1", exact: true }).fill("Perez brothers");
+    await page.getByRole("button", { name: "Edit Notes", exact: true }).click();
+    await page.getByRole("textbox", { name: "Help for the employee", exact: true }).fill("Tell us what happened.");
+    await expect(page.getByText(/\d+ untranslated/)).toHaveCount(0);
     await expect(preview.getByRole("radio", { name: "Yes", exact: true })).toHaveCount(1);
     await expect(preview.getByRole("radio", { name: "Sí", exact: true })).toHaveCount(0);
     await expect(preview.getByRole("textbox", { name: "Collected amount", exact: true })).toHaveCount(1);

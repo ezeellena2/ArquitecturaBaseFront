@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { publicationFieldIssues, draftFieldIssues, indexedValidationIssues, parseValidationPath, localizedIssue } from "./validationPaths";
+import i18n from "@/shared/i18n";
+import { publicationFieldIssues, draftFieldIssues, indexedValidationIssues, parseValidationPath, localizedIssue, localizedIssueMessage } from "./validationPaths";
 import { openDraftSession } from "./draftSession";
 import { fixtureDefinition } from "@/test/visual/formFixtures";
 
@@ -69,5 +70,12 @@ describe("localized issues", () => {
     expect(localizedIssue(errors, "items[0].text", "en")).toEqual({ messages: ["Required."], culture: null });
     expect(localizedIssue(errors, "description", "es")).toBeUndefined();
     expect(localizedIssue(undefined, "name", "es")).toBeUndefined();
+  });
+  it("names the language of an error that is not on screen", () => {
+    const t = i18n.getFixedT("es", "forms");
+    expect(localizedIssueMessage({ messages: ["Too long."], culture: "en" }, "es", t)).toBe("En inglés: Too long.");
+    expect(localizedIssueMessage({ messages: ["Required."], culture: "es" }, "es", t)).toBe("Required.");
+    expect(localizedIssueMessage({ messages: ["Required."], culture: null }, "en", t)).toBe("Required.");
+    expect(localizedIssueMessage(undefined, "es", t)).toBeUndefined();
   });
 });

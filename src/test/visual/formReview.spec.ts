@@ -46,7 +46,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: es ? "Ir a la pregunta" : "Go to the question", exact: true }).click();
     const label = page.getByRole("textbox", { name: es ? "Pregunta" : "Question", exact: true });
     await expect(label).toBeFocused(); await expect(label).toHaveAttribute("aria-invalid", "true");
-    await expect(page.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true");
+    // No language selector: the English error shows under the visible field, naming its language when the menu is in Spanish.
+    await expect(label).toHaveAccessibleDescription(es ? "En inglés: Completá este texto para publicar en ese idioma." : "Complete this text to publish in that language.");
     const writes = await page.evaluate(() => (globalThis as unknown as { formsFixture: { calls: { method: string }[] } }).formsFixture.calls.filter(call => call.method !== "GET"));
     expect(writes).toEqual([]);
     await page.evaluate(() => document.fonts.ready);

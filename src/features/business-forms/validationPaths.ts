@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { DraftEditorValue, DraftWriteBody, FormCulture } from "./model";
 
 export interface LocalizedIssue { readonly messages: readonly string[]; readonly culture: FormCulture | null }
@@ -9,6 +10,12 @@ export function localizedIssue(errors: Readonly<Record<string, readonly string[]
   }
   const messages = errors?.[path];
   return messages?.length ? { messages, culture: null } : undefined;
+}
+/** The message under the field: an error of the language not on screen names that language («En inglés: …»). */
+export function localizedIssueMessage(issue: LocalizedIssue | undefined, culture: FormCulture, t: TFunction<"forms">): string | undefined {
+  if (!issue) return undefined;
+  const message = issue.messages[0];
+  return issue.culture && issue.culture !== culture ? t("otherLanguageError", { language: t("cultureNamesInText." + issue.culture), message }) : message;
 }
 
 export function parseValidationPath(path: string): readonly (string | number)[] | null {

@@ -43,7 +43,6 @@ it("opens a normal new form seeded by the actor-owned original topic name withou
  expect(screen.getByRole("link",{name:"Formularios que faltan"})).toHaveAttribute("aria-current","page");
  await userEvent.click(screen.getByRole("link",{name:"Crear formulario Reclamos de clientes"}));
  expect(await screen.findByLabelText("Nombre")).toHaveValue(topic.name);expect(router.state.location.pathname).toBe("/formularios/nuevo");expect(router.state.location.search).toBe("");expect(posts).toBe(0);
- await userEvent.click(screen.getByRole("button",{name:/English/}));expect(screen.getByLabelText("Nombre")).toHaveValue("");
 });
 it("uses server discarded counts and history, without claiming that no one has ever asked for a form",async()=>{
  setup();const queries:URLSearchParams[]=[];

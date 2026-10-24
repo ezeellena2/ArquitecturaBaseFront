@@ -63,7 +63,6 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
       const complete = dialog.getByRole("button", { name: es ? "Completar el inglés" : "Complete English", exact: true });
       await complete.focus(); await complete.press("Enter");
       await expect(dialog).toHaveCount(0);
-      await expect(page.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true");
       await expect(page.getByRole("textbox", { name: es ? "Opción 1" : "Option 1", exact: true })).toBeFocused();
     }
     expect(await page.evaluate(() => (window as typeof window & { formLanguageWrites: string[] }).formLanguageWrites)).toEqual([]);

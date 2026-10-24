@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { PencilIcon, ChevronDownIcon, TrashIcon } from "@/shared/ui/icons";
 import { localizedValue, missingQuestionTexts, moveItem, replaceQuestionType, questionEditorType, changeQuestionCatalog, type QuestionEditorType } from "../editorModel";
 import type { CatalogQuestionPreview, DraftQuestion, FormCulture } from "../model";
-import type { DraftFieldIssue } from "../validationPaths";
+import { localizedIssue, localizedIssueMessage, type DraftFieldIssue } from "../validationPaths";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogQuestionName } from "./CatalogQuestionName";
 import { FileQuestionSettings } from "./FileQuestionSettings";
@@ -37,8 +37,13 @@ export function QuestionEditor({ question, position, total, culture, original, e
   const [confirmation, setConfirmation] = useState<{ type: QuestionEditorType } | { option: string } | { catalog: string } | { multiple: boolean } | null>(null);
   const label = localizedValue(question.label, culture, original) || t("question");
   const reference = (text: Readonly<Record<string, string | null>> | null) => culture !== original && text?.[original] ? t("originalText", { language: t("cultures." + original), text: text[original] }) : undefined;
-  const languageIssues = issues.filter(issue => !/\.(es|en)$/.test(issue.path) || issue.path.endsWith("." + culture));
-  const fieldError = (name: string) => languageIssues.find(issue => !issue.choiceLocalId && new RegExp(`\\.${name}(\\.(es|en))?$`).test(issue.path))?.messages[0];
+  // Without a language selector, an error of the other language is shown under the same field, naming its language.
+  const localizedError = (matches: (issue: DraftFieldIssue) => boolean) => {
+    const found = issues.filter(matches);
+    const path = found[0]?.path.replace(/\.(es|en)$/, "");
+    return path === undefined ? undefined : localizedIssueMessage(localizedIssue(Object.fromEntries([...found].reverse().map(issue => [issue.path, issue.messages])), path, culture), culture, t);
+  };
+  const fieldError = (name: string) => localizedError(issue => !issue.choiceLocalId && new RegExp(`\\.${name}(\\.(es|en))?$`).test(issue.path));
   useEffect(() => { if (expanded) inputRef.current?.focus(); }, [expanded]);
   useLayoutEffect(() => {
     const pending = pendingFocus.current;
@@ -104,7 +109,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
         </div>
       </div>
       {question.type === "photo" || question.type === "document" ? <FileQuestionSettings question={question} readOnly={readOnly} error={fieldError("files")} onChange={onChange} /> : null}
-      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} type={question.type} questionId={question.localId} definitionId={definitionId} contentCulture={previewCulture} onPreviewChange={onPreviewChange} onSourceChange={source => onChange({ ...question, source })} errors={Object.fromEntries(languageIssues.filter(issue => issue.path.includes(".source.") && !issue.choiceLocalId).map(issue => [issue.path.split(".source.")[1]!, issue.messages]))} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
+      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} type={question.type} questionId={question.localId} definitionId={definitionId} contentCulture={previewCulture} onPreviewChange={onPreviewChange} onSourceChange={source => onChange({ ...question, source })} errors={Object.fromEntries(issues.filter(issue => issue.path.includes(".source.") && !issue.choiceLocalId).map(issue => [issue.path.split(".source.")[1]!, issue.messages]))} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
         if (catalogId === question.source?.catalog) return;
         if (question.fieldId) setConfirmation({ catalog: catalogId });
         else onChange(changeQuestionCatalog(question, catalogId, question.localId));
@@ -113,7 +118,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
       {(question.type === "choice" || question.type === "multiChoice") && !question.source ? <div className="flex flex-col gap-3">
         {optionError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{optionError}</p> : null}
         {question.options.map((option, index) => <div key={option.localId} className="flex flex-wrap items-end gap-2">
-          <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={languageIssues.find(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))?.messages[0]}><Input data-choice-local-id={option.localId} readOnly={readOnly} placeholder={culture !== original ? t("missingText") : undefined} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>
+          <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={localizedError(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))}><Input data-choice-local-id={option.localId} readOnly={readOnly} placeholder={culture !== original ? t("missingText") : undefined} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>
           {!readOnly ? <div className="flex gap-1">
             <IconButton size="icon-sm" label={t("up", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === 0} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={-1} onClick={() => moveOption(index, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
             <IconButton size="icon-sm" label={t("down", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === question.options.length - 1} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={1} onClick={() => moveOption(index, 1)}><ChevronDownIcon className="size-4" /></IconButton>

@@ -127,7 +127,6 @@
     "en": "Inglés"
   },
   "contentLanguage": "Textos en",
-  "languageOriginal": "original",
   "prefixOriginal": "El prefijo es compartido. Editalo desde el idioma original.",
   "originalText": "Original ({{language}}): {{text}}",
   "missingText": "Sin traducir",
@@ -1197,8 +1196,6 @@
     "requestCount_one": "{{count}} pedido",
     "requestCount_other": "{{count}} pedidos"
   },
-  "languageComplete": "completo",
-  "contentLanguageHint": "El original ({{language}}) es obligatorio; el otro idioma es opcional. Mientras le falte algo, el formulario sale entero en el original.",
   "previewForAccount": "Vista previa para una cuenta en {{language}}",
   "previewFallback_one": "Se muestra en {{actual}}: falta {{count}} texto en {{requested}}.",
   "previewFallback_other": "Se muestra en {{actual}}: faltan {{count}} textos en {{requested}}.",

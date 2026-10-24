@@ -24,7 +24,6 @@ import { Page } from "@/shared/ui/Page";
 import { LockIcon } from "@/shared/ui/icons";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Spinner } from "@/shared/ui/Spinner";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { QuestionEditor } from "../components/QuestionEditor";
@@ -41,12 +40,12 @@ import { FormLifecycleMenu } from "../components/FormLifecycleMenu";
 import { FormLifecycleNotice } from "../components/FormLifecycleNotice";
 import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
 import { DraftReview, DraftReviewChanges } from "../components/DraftReview";
-import { publicationFieldIssues } from "../validationPaths";
+import { localizedIssue, localizedIssueMessage, publicationFieldIssues } from "../validationPaths";
 import { missingFormTexts, moveItem, newQuestion, suggestedPrefix } from "../editorModel";
 import { formActorKey, formDetailKey, useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
 import type { FormDeactivation, FormDetail, FormPublicationCheck } from "../api/response";
-import type { CatalogQuestionPreview, DraftEditorValue, FormCulture, FormDefinitionSnapshot } from "../model";
+import type { CatalogQuestionPreview, DraftEditorValue, FormDefinitionSnapshot } from "../model";
 
 import { missingFormInitial } from "../missingFormSeed";
 
@@ -81,12 +80,11 @@ export function FormEditorPage() {
 }
 
 function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactivateOnOpen, openQuestionFieldId }: { reactivateOnOpen: boolean; openQuestionFieldId: string | null; scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {
-  const { t, i18n } = useTranslation("forms");
-  useTranslation("forms", { lng: "en" });
-  useTranslation("forms", { lng: "es" });
+  const { t } = useTranslation("forms");
   const [rulesDirty, setRulesDirty] = useState(false);
   const [suggestionsDirty, setSuggestionsDirty] = useState(false);
-  const [contentCulture, setContentCulture] = useState<FormCulture>("definition" in initial ? initial.definition.draft.culture : initial.draft.culture);
+  // No content language selector: the form is edited in the menu language, and the editor remounts when it changes.
+  const contentCulture = scope.culture;
   const navigate = useNavigate();
   const editor = useFormDraftEditor(scope, initial);
   const presentation = useSystemPresentation();
@@ -195,10 +193,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     const feedback = errorFeedback(issue.error, { writing: session?.phase === "Unconfirmed", fields: visiblePaths });
     if (issue.kind === "validation" && visiblePaths.length) {
       const first = issue.fields?.find(field => visiblePaths.includes(field.path));
-      const language = first?.path.match(/\.(es|en)$/)?.[1] as FormCulture | undefined;
       requestAnimationFrame(() => {
         if (!active.current) return;
-        if (language) setContentCulture(language);
         if (first?.fieldLocalId) setExpanded(first.fieldLocalId);
         requestAnimationFrame(() => host.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus());
       });
@@ -229,6 +225,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   if (!value || !session) return <ForbiddenPage />;
   const visibleIssues = [...(editor.issue?.fields ?? []), ...publicationFieldIssues(value, publication.status?.issues ?? [])];
   const errorFor = (path: string) => visibleIssues.find(issue => issue.path === path || path !== "draft.fields" && issue.path.startsWith(`${path}.`))?.messages[0];
+  // The name and the final button show an error of either language under the visible field.
+  const formTextIssues = Object.fromEntries(visibleIssues.filter(issue => !issue.fieldLocalId).reverse().map(issue => [issue.path, issue.messages]));
+  const textError = (path: "name" | "draft.submitLabel") => localizedIssueMessage(localizedIssue(formTextIssues, path, contentCulture), contentCulture, t);
   const prefixLocked = (session.confirmed?.prefixLocked ?? false) || ["Accepting", "Unconfirmed"].includes(publication.phase);
   const publicationState = publication.status?.state ?? publication.receipt?.state ?? publication.aggregate?.state ?? projection?.currentOperation?.state ?? (projection?.activeVersion ? "Published" : undefined);
   const publicationVersion = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
@@ -242,7 +241,6 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   };
   function goToPublicationIssue(issue: FormPublicationCheck["issues"][number]) {
     setPublicationOpen(false);
-    if (issue.culture) setContentCulture(issue.culture);
     const question = value!.draft.fields.find(q => q.fieldId === issue.fieldId);
     if (!question) {
       requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLInputElement>(issue.path.startsWith("name") ? '[data-form-text="name"]' : '[data-form-text="submitLabel"]')?.focus(); });
@@ -288,10 +286,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-4">
 
-        <Surface padded><div className="flex flex-col gap-3"><p className="text-sm font-medium">{t("contentLanguage")}</p><div className="flex flex-wrap gap-2"><SegmentedControl wrapLabels aria-label={t("contentLanguage")} options={(["es", "en"] as const).map(language => ({ key: language, pressed: contentCulture === language, onSelect: () => setContentCulture(language), label: <span>{i18n.getFixedT(language, "forms")("cultures." + language)}{" "}{language === value.draft.culture ? <span className="text-xs">· {t("languageOriginal")}</span> : <span className="text-xs text-[var(--color-content-muted)]">· {missingFormTexts(value, language) ? t("languageMissing", { count: missingFormTexts(value, language) }) : t("languageComplete")}</span>}</span> }))} /></div><p className="text-xs text-[var(--color-content-muted)]">{t("contentLanguageHint", { language: t("cultureNamesInText." + value.draft.culture) })}</p></div></Surface>
         <Surface title={t("form")} padded><div className="grid gap-4 sm:grid-cols-2">
-          <FormField label={t("name")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: originalName }) : undefined} error={errorFor("name." + contentCulture)}><Input readOnly={readOnly} maxLength={120} placeholder={contentCulture !== value.draft.culture ? t("missingText") : undefined} data-form-text="name" value={value.name[contentCulture] ?? ""} onChange={e => change({ ...value, name: { ...value.name, [contentCulture]: e.target.value }, prefix: prefixTouched || contentCulture !== value.draft.culture ? value.prefix : suggestedPrefix(e.target.value) })} /></FormField>
-          <FormField label={t("submitLabel")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: value.draft.submitLabel[value.draft.culture] }) : t("submitHint")} error={errorFor("draft.submitLabel." + contentCulture)}><Input readOnly={readOnly} placeholder={contentCulture !== value.draft.culture ? t("missingText") : undefined} data-form-text="submitLabel" value={value.draft.submitLabel[contentCulture] ?? ""} onChange={e => change({ ...value, draft: { ...value.draft, submitLabel: { ...value.draft.submitLabel, [contentCulture]: e.target.value } } })} /></FormField>
+          <FormField label={t("name")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: originalName }) : undefined} error={textError("name")}><Input readOnly={readOnly} maxLength={120} placeholder={contentCulture !== value.draft.culture ? t("missingText") : undefined} data-form-text="name" value={value.name[contentCulture] ?? ""} onChange={e => change({ ...value, name: { ...value.name, [contentCulture]: e.target.value }, prefix: prefixTouched || contentCulture !== value.draft.culture ? value.prefix : suggestedPrefix(e.target.value) })} /></FormField>
+          <FormField label={t("submitLabel")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: value.draft.submitLabel[value.draft.culture] }) : t("submitHint")} error={textError("draft.submitLabel")}><Input readOnly={readOnly} placeholder={contentCulture !== value.draft.culture ? t("missingText") : undefined} data-form-text="submitLabel" value={value.draft.submitLabel[contentCulture] ?? ""} onChange={e => change({ ...value, draft: { ...value.draft, submitLabel: { ...value.draft.submitLabel, [contentCulture]: e.target.value } } })} /></FormField>
           <FormField label={<span className="inline-flex items-center gap-1">{t("prefix")}{prefixLocked || contentCulture !== value.draft.culture ? <LockIcon className="size-3.5" /> : null}</span>} error={errorFor("prefix") ?? (editor.issue?.code === "Forms.Definition.PrefixTaken" ? t("prefixTaken") : undefined)} hint={publicationPending ? t("publication.prefixPending") : prefixLocked ? t("prefixLocked") : contentCulture !== value.draft.culture ? t("prefixOriginal") : t("prefixHint", { prefix: value.prefix || "…" })}><Input readOnly={readOnly || prefixLocked || contentCulture !== value.draft.culture} value={value.prefix} onChange={e => { setPrefixTouched(true); change({ ...value, prefix: e.target.value }); }} /></FormField>
           <div className="sm:col-span-2"><FormField label={t("offerWhen")} hint={t("offerWhenHint")} error={errorFor("offerWhen")}><Textarea readOnly={readOnly} maxLength={1000} value={value.offerWhen ?? ""} onChange={event => change({ ...value, offerWhen: event.target.value || null })} /></FormField></div>
         </div><p className="text-xs text-[var(--color-content-muted)]">{t("translations")}</p></Surface>

@@ -18,17 +18,14 @@ export interface SegmentedOption {
 ///
 /// `fullWidth` lo estira al ancho de su contenedor, en partes iguales: es la forma que tiene en una tarjeta
 /// angosta, como la del ingreso, donde el segmentado encabeza el formulario. Sin eso, mide lo que sus textos.
-/// `wrapLabels` permite que etiquetas largas ocupen varias líneas dentro del ancho disponible, conservando el alto mínimo.
 export function SegmentedControl({
   options,
   fullWidth = false,
-  wrapLabels = false,
   appearance = "compact",
   "aria-label": label,
 }: {
   options: readonly SegmentedOption[];
   fullWidth?: boolean;
-  wrapLabels?: boolean;
   appearance?: "compact" | "public";
   "aria-label": string;
 }): ReactNode {
@@ -37,7 +34,7 @@ export function SegmentedControl({
       role="group"
       aria-label={label}
       className={cn(
-        appearance === "public" ? "access-channel" : cn("shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]", wrapLabels ? "max-w-full min-h-[var(--height-control)]" : "h-[var(--height-control)]"),
+        appearance === "public" ? "access-channel" : cn("shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] h-[var(--height-control)]"),
         appearance === "public" ? undefined : fullWidth ? "flex w-full" : "inline-flex",
       )}
     >
@@ -50,7 +47,7 @@ export function SegmentedControl({
           onClick={option.onSelect}
           className={cn(
             // El contorno de foco va hacia adentro: el grupo recorta lo que sale de su borde.
-            appearance === "public" ? undefined : cn("px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)]", wrapLabels ? "min-w-0 whitespace-normal py-1" : "whitespace-nowrap"),
+            appearance === "public" ? undefined : cn("px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)] whitespace-nowrap"),
             fullWidth ? "flex-1" : "",
             appearance === "public" ? undefined : option.pressed
               ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"

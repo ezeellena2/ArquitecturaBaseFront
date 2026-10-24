@@ -127,7 +127,6 @@
     "en": "English"
   },
   "contentLanguage": "Content language",
-  "languageOriginal": "original",
   "prefixOriginal": "The prefix is shared. Edit it in the original language.",
   "originalText": "Original ({{language}}): {{text}}",
   "missingText": "Untranslated",
@@ -1197,8 +1196,6 @@
     "requestCount_one": "{{count}} request",
     "requestCount_other": "{{count}} requests"
   },
-  "languageComplete": "complete",
-  "contentLanguageHint": "The original ({{language}}) is required; the other language is optional. While any text is untranslated, the entire form uses the original language.",
   "previewForAccount": "Preview for an account using {{language}}",
   "previewFallback_one": "Shown in {{actual}}: {{count}} text is untranslated in {{requested}}.",
   "previewFallback_other": "Shown in {{actual}}: {{count}} texts are untranslated in {{requested}}.",

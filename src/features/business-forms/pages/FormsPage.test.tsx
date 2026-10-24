@@ -4,7 +4,8 @@ import realFailedStatus from "@/test/fixtures/forms-http/failed/status-es.json";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import i18n from "@/shared/i18n";
 import { queryClient } from "@/shared/api/queryClient";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { server } from "@/test/mocks/server";
@@ -20,15 +21,17 @@ async function pasteText(control: HTMLElement, text: string) {
   await user.click(control);
   await user.paste(text);
 }
-function setup(scenario = "", permissions = ["formtemplates.read", "formtemplates.manage"]) {
+// The menu language is the account's: a translation is edited with the menu in that language.
+function setup(scenario = "", permissions = ["formtemplates.read", "formtemplates.manage"], culture: "es" | "en" = "es") {
   const store = createFormFixtureStore("es", scenario);
   server.use(http.all("/api/forms/*", ({ request }) => store.handle(request)),
     http.get("/api/me", () => Response.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true,
       phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false,
-      culture: "es", timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })));
+      culture, timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })));
   return store;
 }
 beforeEach(() => { queryClient.clear(); vi.mocked(notify).mockClear(); });
+afterEach(async () => { await act(() => i18n.changeLanguage("es")); });
 describe("Forms routes", () => {
   it("closes confirmation as acceptance starts and shows progress instead of a misleading Cancel action", async () => {
     const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
@@ -137,19 +140,20 @@ describe("Forms routes", () => {
     expect(store.calls.filter(call => call.path.endsWith("/publication-checks"))).toHaveLength(1);
     expect(store.writes).toHaveLength(0);
   });
-  it("returns from optional translation completion to its exact control without changing the draft", async () => {
-    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.publish", "formtemplates.manage"]);
+  it("returns from optional translation completion to its exact control in the menu language without changing the draft", async () => {
+    const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.publish", "formtemplates.manage"], "en");
+    await act(() => i18n.changeLanguage("en"));
     const current = store.definitions.get(fixtureFormId)!;
     store.definitions.set(current.id, { ...current, draft: { ...current.draft, fields: current.draft.fields.map(field => field.type === "longText" ? { ...field, help: { es: "Contá lo que pasó." } } : field) } });
     renderRouteWithProviders("/formularios/" + fixtureFormId);
-    await screen.findByLabelText("Nombre");
-    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    await screen.findByLabelText("Name");
+    await userEvent.click(screen.getByRole("button", { name: "Publish on WhatsApp" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(await within(dialog).findByRole("button", { name: "Completar el inglés" }));
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Complete English" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true");
-    await waitFor(() => expect(screen.getByLabelText("Ayuda para el empleado")).toHaveFocus());
-    expect(screen.getByLabelText("Ayuda para el empleado")).toHaveValue("");
+    await waitFor(() => expect(screen.getByLabelText("Help for the employee")).toHaveFocus());
+    expect(screen.getByLabelText("Help for the employee")).toHaveValue("");
+    expect(screen.getByLabelText("Help for the employee")).toHaveAccessibleDescription("Original (Spanish): Contá lo que pasó.");
     expect(store.writes).toHaveLength(0);
     expect(store.definitions.get(current.id)?.revision).toBe(current.revision);
   });
@@ -168,26 +172,25 @@ describe("Forms routes", () => {
     expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita editado");
   });
 
-  it("edits the selected content language without substituting original text or changing identities", async () => {
-    const store = setup();
+  it("edits the translation in the menu language without substituting original text or changing identities", async () => {
+    const store = setup("", undefined, "en");
+    await act(() => i18n.changeLanguage("en"));
     const original = store.definitions.get(fixtureFormId)!;
     store.definitions.set(fixtureFormId, { ...original, name: { es: original.name.es, en: "" }, draft: { ...original.draft, fields: original.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : q) } });
     renderRouteWithProviders("/formularios/" + fixtureFormId);
-    await screen.findByLabelText("Nombre");
-    await userEvent.click(screen.getByRole("button", { name: /^English/ }));
-    expect(screen.getByLabelText("Nombre")).toHaveValue("");
-    expect(screen.getByLabelText("Nombre")).toHaveAttribute("placeholder", "Sin traducir");
-    expect(screen.getByRole("button", { name: "Español · original" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "English · 3 sin traducir" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
-    await userEvent.click(screen.getByRole("button", { name: "Editar Importe cobrado" }));
-    expect(screen.getByLabelText("Pregunta")).toHaveValue("");
-    expect(screen.getByText("Original (Español): Importe cobrado")).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "Vista previa" })).getByRole("radio", { name: "No" })).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "Vista previa" })).getByRole("radio", { name: "Sí" })).toBeInTheDocument();
-    expect(within(screen.getByRole("region", { name: "Vista previa" })).queryByRole("radio", { name: "Yes" })).not.toBeInTheDocument();
-    await pasteText(screen.getByLabelText("Nombre"), "Visit report");
-    await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    const name = await screen.findByLabelText("Name");
+    expect(name).toHaveValue("");
+    expect(name).toHaveAttribute("placeholder", "Untranslated");
+    expect(screen.getByLabelText("Numbering prefix")).toHaveAttribute("readonly");
+    expect(screen.getByText(/Number with decimals · Required · 1 untranslated/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Edit Importe cobrado" }));
+    expect(screen.getByLabelText("Question")).toHaveValue("");
+    expect(screen.getByText("Original (Spanish): Importe cobrado")).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Preview" })).getByRole("radio", { name: "No" })).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Preview" })).getByRole("radio", { name: "Sí" })).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Preview" })).queryByRole("radio", { name: "Yes" })).not.toBeInTheDocument();
+    await pasteText(name, "Visit report");
+    await userEvent.click(screen.getByRole("button", { name: "Save draft" }));
     await waitFor(() => expect(store.definitions.get(fixtureFormId)?.revision).toBe(2));
     const saved = store.definitions.get(fixtureFormId)!;
     expect(saved.name).toEqual({ es: "Registrar visita", en: "Visit report" });
@@ -195,19 +198,17 @@ describe("Forms routes", () => {
     expect(saved.draft.fields.find(q => q.type === "decimal")?.label).toEqual({ es: "Importe cobrado", en: "" });
     expect(saved.draft.fields.find(q => q.type === "longText")?.help).toEqual({ es: "Contá lo que pasó." });
     expect(saved.draft.fields.map(q => q.fieldId)).toEqual(original.draft.fields.map(q => q.fieldId));
-    await userEvent.click(screen.getByRole("button", { name: /^Español/ }));
-    expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita");
   });
-  it("selects the language of a validation error and focuses its control without an extra toast", async () => {
-    setup();
+  it("shows an error of the original under the translated field, with focus and without an extra toast", async () => {
+    setup("", undefined, "en");
+    await act(() => i18n.changeLanguage("en"));
     server.use(http.put("/api/forms/definitions/:id/draft", () => Response.json({ code: "Validation.Failed", errors: { "name.es": ["Ingresá un nombre original."] } }, { status: 400 })));
     renderRouteWithProviders("/formularios/" + fixtureFormId);
-    await screen.findByLabelText("Nombre");
-    await userEvent.click(screen.getByRole("button", { name: /^English/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
-    expect(await screen.findByText("Ingresá un nombre original.")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByLabelText("Nombre")).toHaveFocus());
-    expect(screen.getByRole("button", { name: /^Español/ })).toHaveAttribute("aria-pressed", "true");
+    const name = await screen.findByLabelText("Name");
+    await userEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() => expect(name).toHaveAccessibleDescription("In Spanish: Ingresá un nombre original."));
+    await waitFor(() => expect(name).toHaveFocus());
+    expect(name).toHaveValue("Register visit");
     expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
   });
   it("keeps visible validation at the field and reports an unmapped error once with its trace", async () => {
@@ -423,7 +424,7 @@ it("shows Published with its version from an actual backend list response", asyn
   renderRouteWithProviders("/formularios");
   await screen.findByText("Publicado · versión 1", { exact: true });
 });
-it("marks the affected question and focuses the correct language from actual Failed HTTP diagnostics", async () => {
+it("marks the affected question and names the language of its error from actual Failed HTTP diagnostics", async () => {
   setup("", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
   const { definitionId, requestId } = realFailedStatus;
   server.use(http.get("/api/forms/definitions/" + definitionId, () => Response.json(realFailedDetail)),
@@ -431,11 +432,10 @@ it("marks the affected question and focuses the correct language from actual Fai
   renderRouteWithProviders("/formularios/" + definitionId);
   await screen.findByRole("heading", { name: "No se pudo publicar · versión 1" });
   await userEvent.click(await screen.findByRole("button", { name: "Ir a la pregunta" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: /^English/ })).toHaveAttribute("aria-pressed", "true"));
-  const label = screen.getByLabelText("Pregunta");
-  expect(label).toHaveFocus();
+  const label = await screen.findByLabelText("Pregunta");
+  await waitFor(() => expect(label).toHaveFocus());
   expect(label).toHaveAttribute("aria-invalid", "true");
-  expect(document.getElementById(label.getAttribute("aria-describedby")!)).toHaveTextContent(realFailedStatus.issues[0]!.message);
+  expect(label).toHaveAccessibleDescription("En inglés: " + realFailedStatus.issues[0]!.message);
 });
 
 it("preserves unsaved text and focus when a detail refresh fails", async () => {
@@ -524,7 +524,7 @@ it("keeps rule changes under the editor's existing leave guard without changing 
   expect(draftWrites).not.toHaveBeenCalled();
 });
 
-it("saves one monolingual offer instruction without changing content language or publishing", async () => {
+it("saves one monolingual offer instruction without publishing", async () => {
   const store = setup();
   const writes: Record<string, unknown>[] = [];
   server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => {
@@ -533,8 +533,6 @@ it("saves one monolingual offer instruction without changing content language or
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const offer = await screen.findByRole("textbox", { name: "Cuándo lo ofrece el asistente" });
   await pasteText(offer, "Cuando visita a un cliente");
-  await userEvent.click(screen.getByRole("button", { name: /^English/ }));
-  expect(offer).toHaveValue("Cuando visita a un cliente");
   await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
   await waitFor(() => expect(writes).toHaveLength(1));
   expect(writes[0]).toMatchObject({ offerWhen: "Cuando visita a un cliente", expectedRevision: 1 });
@@ -579,15 +577,17 @@ it("keeps offer validation at its monolingual field, with focus and without a du
   expect(vi.mocked(notify)).not.toHaveBeenCalled();
 });
 
-it("uses the chosen I1 labels when English is the original and Spanish is untranslated", async () => {
+it("edits a form whose original is English in Spanish as its optional translation", async () => {
   const store = setup();
   const original = store.definitions.get(fixtureFormId)!;
   store.definitions.set(fixtureFormId, { ...original, name: { ...original.name, es: "" }, draft: { ...original.draft, culture: "en" } });
   renderRouteWithProviders("/formularios/" + fixtureFormId);
-  await screen.findByLabelText("Nombre");
-  expect(screen.getByRole("button", { name: "English · original" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByRole("button", { name: "Español · 1 sin traducir" })).toBeInTheDocument();
-  expect(screen.getByText("El original (inglés) es obligatorio; el otro idioma es opcional. Mientras le falte algo, el formulario sale entero en el original.")).toBeInTheDocument();
+  const name = await screen.findByLabelText("Nombre");
+  expect(screen.queryByRole("group", { name: "Textos en" })).not.toBeInTheDocument();
+  expect(name).toHaveValue("");
+  expect(name).toHaveAttribute("placeholder", "Sin traducir");
+  expect(name).toHaveAccessibleDescription("Original (Inglés): Register visit");
+  expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
 });
 
  it("labels the default lifecycle scope as Active and offers the deactivated scope", async () => {
