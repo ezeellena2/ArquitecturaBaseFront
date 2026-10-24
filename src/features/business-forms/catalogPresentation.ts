@@ -1,8 +1,7 @@
 import type { CatalogPresentation } from "./api/catalogResponse";
 import type { CatalogFieldDraft } from "./catalogFields";
 import type { CatalogValueType } from "./catalogValues";
-import { parseCatalogValue } from "./catalogValues";
-import { formatDateOnly } from "@/shared/lib/dateTime";
+import { catalogScalarText } from "./catalogValues";
 import { localizedValue } from "./editorModel";
 import type { CatalogManualItemValue } from "./catalogItemEdits";
 import type { FormCulture } from "./model";
@@ -17,15 +16,8 @@ export function withoutPresentationFields(presentation: CatalogPresentation | nu
 
 export function catalogOptionPresentation(item: CatalogManualItemValue, presentation: CatalogPresentation | null, fields: readonly CatalogFieldDraft[], valueType: CatalogValueType, culture: FormCulture, booleanLabels?: { readonly yes: string; readonly no: string }, inputCulture: FormCulture = culture): { title: string; description: string } {
   const selected = presentation ?? { title: ["text"], description: ["detail"] };
-  const scalar = (type: CatalogFieldDraft["type"], input: string | null | undefined): string => {
-    if (!input) return "";
-    if (type === "boolean") return input === "true" ? booleanLabels?.yes ?? input : input === "false" ? booleanLabels?.no ?? input : input;
-    const numericType = type === "integer" ? "Integer" : type === "decimal" ? "Decimal" : type === "date" ? "Date" : null;
-    if (!numericType) return input;
-    const canonical = parseCatalogValue(numericType, input, inputCulture);
-    if (!canonical.valid || canonical.value === null) return input;
-    return type === "date" ? formatDateOnly(canonical.value, culture, "numeric") ?? input : type === "decimal" && culture === "es" ? canonical.value.replace(".", ",") : canonical.value;
-  };
+  const scalar = (type: CatalogFieldDraft["type"], input: string | null | undefined): string =>
+    input ? (type === "text" || type === "catalog" ? input : catalogScalarText(type, input, culture, booleanLabels, inputCulture)) : "";
   const part = (key: string): string => {
     if (key === "text") return localizedValue(item.label, culture, "es");
     if (key === "code") return item.code;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
+import { catalogScalarText, formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
 
 describe("catalog value presentation and exact canonical input", () => {
   it.each<[CatalogValueType, string | null, string, string | null]>([
@@ -24,8 +24,16 @@ describe("catalog value presentation and exact canonical input", () => {
   it("formats exact numbers and date-only values in the interface language", () => {
     expect(formatCatalogValue("Decimal", "9007199254740993.0123", "es")).toBe("9.007.199.254.740.993,0123");
     expect(formatCatalogValue("Integer", "1500", "en")).toBe("1,500");
-    expect(formatCatalogValue("Date", "2026-10-22", "es")).toBe("22 oct 2026");
+    expect(formatCatalogValue("Date", "2026-10-22", "es")).toBe("22/10/2026");
     expect(formatCatalogValue("Text", null, "es")).toBe("");
+  });
+  it("shows editor text and canonical values with the shared format", () => {
+    const labels = { yes: "Sí", no: "No" };
+    expect(catalogScalarText("decimal", "1500,5", "es", labels, "es")).toBe("1.500,5");
+    expect(catalogScalarText("integer", "1500", "en", labels)).toBe("1,500");
+    expect(catalogScalarText("date", "2027-03-15", "es", labels)).toBe("15/03/2027");
+    expect(catalogScalarText("boolean", "false", "es", labels)).toBe("No");
+    expect(catalogScalarText("decimal", "treinta", "es", labels, "es")).toBe("treinta");
   });
   it("accepts only canonical captured values and keeps null exclusive to Text", () => {
     expect(isCanonicalCatalogValue("Text", null)).toBe(true);

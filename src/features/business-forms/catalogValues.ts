@@ -1,5 +1,5 @@
-import { formatExactDecimal } from "@/shared/lib/decimal";
 import { formatDateOnly } from "@/shared/lib/dateTime";
+import { formatTypedValue, formatYesNo, type TypedValueType, type YesNoLabels } from "@/shared/lib/typedValue";
 
 export const catalogValueTypes = ["Text", "Integer", "Decimal", "Date"] as const;
 export type CatalogValueType = typeof catalogValueTypes[number];
@@ -49,8 +49,21 @@ export function isCanonicalCatalogValue(type: CatalogValueType, value: string | 
   return canonicalNumber(value, type === "Integer") === value;
 }
 
+const typedValueTypes: Record<Exclude<CatalogValueType, "Text">, TypedValueType> = { Integer: "integer", Decimal: "decimal", Date: "date" };
+
 export function formatCatalogValue(type: CatalogValueType, value: string | null, culture: string): string {
   if (value === null) return "";
   if (type === "Text") return value;
-  return (type === "Date" ? formatDateOnly(value, culture) : formatExactDecimal(value, culture.startsWith("es") ? "es-AR" : culture)) ?? value;
+  return formatTypedValue(typedValueTypes[type], value, culture) ?? value;
+}
+
+/** Screen text of a typed value with the shared format; the draft's editable text is read in `inputCulture` first, and what does not parse is shown as written. */
+export function catalogScalarText(type: TypedValueType | "boolean", value: string, culture: string, labels?: YesNoLabels, inputCulture?: string): string {
+  if (type === "boolean") return labels ? formatYesNo(value, labels) ?? value : value;
+  let canonical: string | null = value;
+  if (inputCulture) {
+    const parsed = parseCatalogValue(type === "integer" ? "Integer" : type === "decimal" ? "Decimal" : "Date", value, inputCulture);
+    canonical = parsed.valid ? parsed.value : null;
+  }
+  return canonical === null ? value : formatTypedValue(type, canonical, culture) ?? value;
 }

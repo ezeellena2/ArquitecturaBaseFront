@@ -16,7 +16,7 @@ it("keeps the usual text/detail presentation when no override is configured", ()
 it("joins only selected nonempty fields and uses source option labels without leaking other values", () => {
   expect(catalogOptionPresentation(item, { title: ["text", "code"], description: ["tax", "zone", "empty"] }, [], "Text", "en")).toEqual({ title: "South Cooling · NORTH", description: "30-71234567-8 · Central" });
 });
-it("matches the sent scalar presentation without grouping and uses numeric dates and translated booleans", () => {
+it("matches the sent scalar presentation with the shared screen format", () => {
   const fields = [
     { ...newCatalogField("amount", 1), id: "amount", type: "decimal" as const },
     { ...newCatalogField("day", 2), id: "day", type: "date" as const },
@@ -24,7 +24,7 @@ it("matches the sent scalar presentation without grouping and uses numeric dates
   ];
   const row = { ...item, value: "1.500,5", fields: { amount: "2.500,75", day: "2026-10-08", enabled: "false" } };
   expect(catalogOptionPresentation(row, { title: ["value"], description: ["amount", "day", "enabled"] }, fields, "Decimal", "es", { yes: "Sí", no: "No" }))
-    .toEqual({ title: "1500,5", description: "2500,75 · 08/10/2026 · No" });
+    .toEqual({ title: "1.500,5", description: "2.500,75 · 08/10/2026 · No" });
 });
 it("uses the new field type after changing away from a catalog source", () => {
   const field = { ...newCatalogField("zone", 1), id: "zone", type: "text" as const };
@@ -34,5 +34,5 @@ it("uses the new field type after changing away from a catalog source", () => {
 it("formats the selected language without reparsing input in that language", () => {
   const field = { ...newCatalogField("amount", 1), id: "amount", type: "decimal" as const };
   const row = { ...item, fields: { amount: "1.234,5" } };
-  expect(catalogOptionPresentation(row, { title: ["amount"], description: [] }, [field], "Text", "en", undefined, "es").title).toBe("1234.5");
+  expect(catalogOptionPresentation(row, { title: ["amount"], description: [] }, [field], "Text", "en", undefined, "es").title).toBe("1,234.5");
 });

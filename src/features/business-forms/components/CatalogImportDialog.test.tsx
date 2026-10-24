@@ -104,8 +104,8 @@ it("removes the pasted text and review on a forbidden write without retrying",as
 it.each([
   ["Decimal", "es", "1500.5", "1.500,5", "2500.75", "2.500,75"],
   ["Decimal", "en", "1500.5", "1,500.5", "2500.75", "2,500.75"],
-  ["Date", "es", "2026-04-03", "3 abr 2026", "2026-05-04", "4 may 2026"],
-  ["Date", "en", "2026-04-03", "Apr 3, 2026", "2026-05-04", "May 4, 2026"],
+  ["Date", "es", "2026-04-03", "03/04/2026", "2026-05-04", "04/05/2026"],
+  ["Date", "en", "2026-04-03", "04/03/2026", "2026-05-04", "05/04/2026"],
 ] as const)("shows normalized %s values for added and changed rows in %s before applying", async (valueType, culture, before, shownBefore, after, shownAfter) => {
   await i18n.changeLanguage(culture);
   const base = catalogImportPreviewFixture();
