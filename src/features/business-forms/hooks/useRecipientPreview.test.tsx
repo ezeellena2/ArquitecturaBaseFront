@@ -9,7 +9,7 @@ import { useRecipientPreview } from "./useRecipientPreview";
 vi.mock("../api/recipientPreview", () => ({ previewRecipient: vi.fn() }));
 const scope = { actorId: "actor", culture: "es" as const, permissions: ["formtemplates.read", "formtemplates.manage"] };
 const source = { catalog: "catalog", match: [{ fieldId: "branch", personAttributeId: "attribute" }] };
-const data = (name: string) => ({ recipient: { id: name, name, values: [] }, state: "Ready" as const, optionCount: 1, limit: 200 as const, exceedsLimit: false, options: [{ id: "option", title: name, description: null }], presentationCheck: { titleTooLongCount: 0, examples: [] } });
+const data = (name: string) => ({ recipient: { id: name, name, values: [] }, state: "Ready" as const, optionCount: 1, limit: 200 as const, exceedsLimit: false, options: [{ id: "option", title: name, description: null }] });
 function mount() { const client = createQueryClient(); function Wrapper({ children }: PropsWithChildren) { return <QueryClientProvider client={client}>{children}</QueryClientProvider>; }
  const hook = renderHook(({ actorId, catalog }) => useRecipientPreview({ ...scope, actorId }, "form", "question", "choice", { ...source, catalog }), { wrapper: Wrapper, initialProps: { actorId: "actor", catalog: "catalog" } }); return { ...hook, client }; }
 beforeEach(() => { vi.clearAllMocks(); vi.mocked(previewRecipient).mockImplementation((_id, body) => Promise.resolve(data(body.sampleUserId))); });

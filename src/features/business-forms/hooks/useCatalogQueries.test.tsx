@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { createQueryClient } from "@/shared/api/queryClient";
-import { catalogScopeKey, useCatalogDetail, useCatalogItems, useCatalogItemsById, useCatalogFilterOptions } from "./useCatalogQueries";
+import { catalogScopeKey, useCatalogDetail, useCatalogItems, useCatalogItemsById, useCatalogFilterOptions, useCatalogPresentationCheck } from "./useCatalogQueries";
 
 import options from "@/test/fixtures/catalogs-http/filters/options.json";
 
@@ -79,4 +79,26 @@ it("retains filter metadata only within the same actor, culture and permissions"
   expect(result.current.data).toBeUndefined();
   rerender({ actorId: "actor-b", permissions: [] });
   expect(result.current.data).toBeUndefined();
+});
+
+it("checks an own presentation only with catalog read, keyed by revision and presentation, and leaves its error to the question", async () => {
+  const bodies: unknown[] = [];
+  const check = { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] };
+  server.use(http.post("/api/forms/catalogs/:id/presentation-checks", async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json(check); }));
+  const own = { title: ["code", "text"], description: [] };
+  const h = harness();
+  const { result, rerender } = renderHook(({ permissions, presentation }: { permissions: string[]; presentation: typeof own | null }) => useCatalogPresentationCheck({ ...scope, permissions }, id, 1, presentation), { ...h, initialProps: { permissions: ["formcatalogs.manage"], presentation: own as typeof own | null } });
+  await act(async () => { await Promise.resolve(); });
+  rerender({ permissions: ["formcatalogs.read"], presentation: null });
+  await act(async () => { await Promise.resolve(); });
+  expect(bodies).toHaveLength(0);
+  rerender({ permissions: ["formcatalogs.read"], presentation: own });
+  await waitFor(() => expect(result.current.data).toEqual(check));
+  expect(bodies).toEqual([{ presentation: own }]);
+  const query = h.client.getQueryCache().getAll().find(entry => entry.state.data !== undefined)!;
+  expect(query.queryKey).toEqual([...catalogScopeKey(scope), "presentation-check", id, 1, JSON.stringify(own)]);
+  expect(query.meta?.errorOwner).toBe("local");
+  rerender({ permissions: [], presentation: own });
+  await waitFor(() => expect(result.current.data).toBeUndefined());
+  expect(h.client.getQueryCache().getAll().some(entry => entry.state.data !== undefined)).toBe(false);
 });

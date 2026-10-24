@@ -680,7 +680,8 @@
       "inherit": "As in the catalog",
       "inheritHint": "Changes when the catalog changes.",
       "own": "Own for this question",
-      "ownHint": "Other fields, only for this form."
+      "ownHint": "Other fields, only for this form.",
+      "checkFailed": "We couldn't check the option lengths."
     },
     "preview": {
       "asRecipient": "As if received by",

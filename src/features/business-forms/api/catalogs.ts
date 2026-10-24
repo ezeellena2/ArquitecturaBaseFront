@@ -1,6 +1,6 @@
 import type { CatalogValueType } from "../catalogValues";
 import { api } from "@/shared/api/httpClient";
-import { catalogId, readCatalog, readCatalogItems, readCatalogPage, readCatalogSave, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogFiltersSave, UnsupportedCatalogResponse } from "./catalogResponse";
+import { catalogId, readCatalog, readCatalogItems, readCatalogPage, readCatalogPresentationCheck, readCatalogSave, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogFiltersSave, UnsupportedCatalogResponse } from "./catalogResponse";
 
 import type { CatalogFiltersBody } from "../catalogFilterDraft";
 import type { CatalogFieldBody } from "../catalogFields";
@@ -39,6 +39,8 @@ export const fetchCatalogItems = async (id: string, query: CatalogItemsQuery, si
   const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).flatMap(([key, value]) => Array.isArray(value) ? value.map(item => [key, String(item)]) : [[key, String(value)]]));
   return readCatalogItems(await api.get<unknown>(`/api/forms/catalogs/${catalogId(id)}/items?${params}`, { signal }));
 };
+// A question's own presentation, checked by the server over every active option of the catalog, in each catalog language.
+export const checkCatalogPresentation = async (id: string, presentation: CatalogPresentation, signal?: AbortSignal) => readCatalogPresentationCheck(await api.post<unknown>(`/api/forms/catalogs/${catalogId(id)}/presentation-checks`, { presentation }, { signal }));
 export const createManualCatalog = async (body: CreateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.post<unknown>("/api/forms/catalogs", body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId), undefined, undefined, body.fields?.filter(field => field.id === null).map(field => field.localId) ?? []);
 export const updateManualCatalog = async (id: string, body: UpdateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.put<unknown>(`/api/forms/catalogs/${catalogId(id)}`, body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId), id, body.expectedRevision, body.fields?.filter(field => field.id === null).map(field => field.localId) ?? []);
 

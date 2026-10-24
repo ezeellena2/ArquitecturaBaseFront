@@ -11,11 +11,10 @@ const samples = z.strictObject({ items: z.array(sample).max(100), page: z.number
 const recipient = z.strictObject({ id: guid, name: z.string(), values: z.array(z.strictObject({ attributeId: guid, name: z.string().max(120), text: z.string().max(300) })).max(20) });
 // A preview must represent invalid channel text so the editor can show its diagnostic.
 const option = z.strictObject({ id: guid, title: z.string(), description: z.string().nullable() });
-const check = z.strictObject({ titleTooLongCount: z.number().int().min(0).max(201), examples: z.array(z.strictObject({ itemId: guid, title: z.string() })).max(3) });
-const preview = z.strictObject({ recipient, state: z.enum(["Ready", "RecipientDataMissing", "FilterUnavailable"]), optionCount: z.number().int().min(0).max(201), limit: z.union([z.literal(20), z.literal(200)]), exceedsLimit: z.boolean(), options: z.array(option).max(200), presentationCheck: check })
+// The long-title warning is not per person: it comes from the question's source (catalog detail or presentation-checks).
+const preview = z.strictObject({ recipient, state: z.enum(["Ready", "RecipientDataMissing", "FilterUnavailable"]), optionCount: z.number().int().min(0).max(201), limit: z.union([z.literal(20), z.literal(200)]), exceedsLimit: z.boolean(), options: z.array(option).max(200) })
   .refine(value => value.exceedsLimit === (value.optionCount > value.limit) && value.options.length === Math.min(value.optionCount, value.limit))
   .refine(value => value.state === "Ready" || value.optionCount === 0)
-  .refine(value => value.presentationCheck.titleTooLongCount <= value.optionCount && value.presentationCheck.examples.length === Math.min(value.presentationCheck.titleTooLongCount, 3))
   .refine(value => new Set(value.options.map(option => option.id.toLowerCase())).size === value.options.length && new Set(value.recipient.values.map(value => value.attributeId.toLowerCase())).size === value.recipient.values.length);
 export type RecipientSample = z.infer<typeof sample>;
 export type RecipientPreview = z.infer<typeof preview>;

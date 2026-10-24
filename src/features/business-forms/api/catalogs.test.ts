@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { configureHttpClient, resetHttpClient } from "@/shared/api/httpClient";
-import { createManualCatalog, fetchCatalog, fetchCatalogItems, updateManualCatalog } from "./catalogs";
+import { checkCatalogPresentation, createManualCatalog, fetchCatalog, fetchCatalogItems, updateManualCatalog } from "./catalogs";
 
 // Synthetic values matching current DTO source. Raw backend exports will qualify this adapter later.
 const id = "01990000-0000-7000-8000-000000000020";
@@ -80,4 +80,16 @@ describe("Manual catalog adapter against current DTO source", () => {
     expect((await updateManualCatalog(id, { ...body, expectedRevision: 1, items: [] })).catalog.usageCount).toBeNull();
   });
 
+});
+
+it("posts only a question's own presentation to the presentation check and reads the closed per-language result", async () => {
+  const presentation = { title: ["code", "text"], description: [] };
+  const check = { cultures: [{ culture: "es", titleTooLongCount: 1, titleExamples: [{ itemId, title: "C-001 · Pérez Hnos. y Asociados" }], descriptionTooLongCount: 0, descriptionExamples: [] }] };
+  const received: unknown[] = [];
+  server.use(http.post("/api/forms/catalogs/" + id + "/presentation-checks", async ({ request }) => { received.push(await request.json()); return HttpResponse.json(received.length === 1 ? check : { ...check, private: "PRIVATE" }); }));
+  expect(await checkCatalogPresentation(id, presentation)).toEqual(check);
+  expect(received).toEqual([{ presentation }]);
+  await expect(checkCatalogPresentation(id, presentation)).rejects.toThrow("Unsupported catalog response.");
+  await expect(checkCatalogPresentation("not-an-id", presentation)).rejects.toThrow("Unsupported catalog response.");
+  expect(received).toHaveLength(2);
 });

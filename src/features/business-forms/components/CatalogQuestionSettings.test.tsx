@@ -1,5 +1,5 @@
 import { MemoryRouter } from "react-router";
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { expect, it, vi } from "vitest";
@@ -32,6 +32,44 @@ it("offers neither filters nor its own presentation for a Filters catalog", asyn
   expect(screen.queryByRole("radio", { name: /Propio de esta pregunta/ })).not.toBeInTheDocument();
 });
 
+const ownCatalogId = "01990000-0000-7000-8000-000000000098";
+const ownOption = (index: number) => ({ id: "01990000-0000-7000-8000-0000000009" + String(index).padStart(2, "0"), code: "C" + index, text: { es: "Opción " + index, en: null }, detail: {}, value: null, position: index, isActive: true, fields: {}, fieldTexts: {} });
+const ownExamples = ["C1 · Distribuidora del Litoral Norte", "C2 · Ferretería Industrial del Centro", "C3 · Repuestos y Servicios del Oeste"].map((title, index) => ({ itemId: ownOption(index + 1).id, title }));
+const ownPresentation = { title: ["code", "text"], description: [] };
+function renderOwnPresentation(answer: (call: number) => Response) {
+  const bodies: unknown[] = [];
+  server.use(
+    http.get("/api/forms/catalogs", () => HttpResponse.json({ filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } }, ...page([{ id: ownCatalogId, name: "Proveedores", description: null, origin: "Manual", valueType: "Text", optionsCount: 60, usageCount: 0, state: "Active", stateReason: null, canEdit: true }]) })),
+    http.get("/api/forms/catalogs/:id", () => HttpResponse.json({ ...detail(ownCatalogId, "Manual"), name: { es: "Proveedores", en: "Suppliers" }, itemsCount: 60 })),
+    // Only the first 20 short options are loaded: a count of this page alone would find nothing too long.
+    http.get("/api/forms/catalogs/:id/items", () => HttpResponse.json({ ...page(Array.from({ length: 20 }, (_, index) => ownOption(index + 1))), totalCount: 60, totalPages: 3, hasNext: true })),
+    http.post("/api/forms/catalogs/:id/presentation-checks", async ({ request }) => { bodies.push(await request.json()); return answer(bodies.length); }));
+  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage", "formcatalogs.read"] }} source={{ catalog: ownCatalogId, presentation: ownPresentation }} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()} /></MemoryRouter>);
+  return bodies;
+}
+const longTitles = () => HttpResponse.json({ cultures: [{ culture: "es", titleTooLongCount: 41, titleExamples: ownExamples, descriptionTooLongCount: 0, descriptionExamples: [] }] });
+
+it("shows the server title check of an own presentation over every catalog option", async () => {
+  const bodies = renderOwnPresentation(longTitles);
+  expect(await screen.findByRole("radio", { name: /Propio de esta pregunta/ })).toBeChecked();
+  expect(await screen.findByText("C1 · Opción 1")).toBeInTheDocument();
+  expect(await screen.findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
+  for (const example of ownExamples) expect(screen.getByText(example.title)).toBeInTheDocument();
+  expect(screen.getByText("y 38 más")).toBeInTheDocument();
+  expect(bodies).toEqual([{ presentation: ownPresentation }]);
+});
+
+it("offers to retry the server check of an own presentation when it fails", async () => {
+  const bodies = renderOwnPresentation(call => call === 1 ? HttpResponse.json({ title: "Error", status: 500 }, { status: 500 }) : longTitles());
+  const alert = await screen.findByRole("alert");
+  expect(alert).toHaveTextContent("No pudimos revisar el largo de las opciones.");
+  expect(screen.queryByText(/41 opciones/)).not.toBeInTheDocument();
+  await userEvent.click(within(alert).getByRole("button", { name: "Reintentar" }));
+  expect(await screen.findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(bodies).toHaveLength(2);
+});
+
 const manualId = "01990000-0000-7000-8000-000000000093", filtersId = "01990000-0000-7000-8000-000000000094", formId = "01990000-0000-7000-8000-000000000095";
 const itemId = "01990000-0000-7000-8000-000000000096", juan = "01990000-0000-7000-8000-000000000097";
 const previewScope = { actorId: "author", culture: "es" as const, permissions: ["formtemplates.read", "formtemplates.manage", "formcatalogs.read"] };
@@ -44,7 +82,7 @@ function serveRecipientPreview() {
     http.get("/api/forms/catalogs/:id", ({ params }) => HttpResponse.json(detail(String(params.id), params.id === manualId ? "Manual" : "Filters"))),
     http.get("/api/forms/catalogs/:id/items", () => HttpResponse.json(page([{ id: itemId, code: "A", text: { es: "Equipo A", en: null }, detail: {}, value: null, position: 1, isActive: true, fields: {}, fieldTexts: {} }]))),
     http.get("/api/forms/recipient-samples", () => { requests.samples++; return HttpResponse.json(page([{ id: juan, name: "Juan" }])); }),
-    http.post("/api/forms/definitions/:id/recipient-previews", async ({ request }) => { const body = await request.json() as { source: { catalog: string } }; requests.previews.push(body.source.catalog); return HttpResponse.json({ recipient: { id: juan, name: "Juan", values: [] }, state: "Ready", optionCount: 1, limit: 200, exceedsLimit: false, options: [{ id: itemId, title: "Equipo A", description: null }], presentationCheck: { titleTooLongCount: 0, examples: [] } }); }));
+    http.post("/api/forms/definitions/:id/recipient-previews", async ({ request }) => { const body = await request.json() as { source: { catalog: string } }; requests.previews.push(body.source.catalog); return HttpResponse.json({ recipient: { id: juan, name: "Juan", values: [] }, state: "Ready", optionCount: 1, limit: 200, exceedsLimit: false, options: [{ id: itemId, title: "Equipo A", description: null }] }); }));
   return requests;
 }
 const settings = (catalog: string, onPreviewChange = vi.fn()) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog }} questionId="q" definitionId={formId} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()} onPreviewChange={onPreviewChange}/></MemoryRouter>;

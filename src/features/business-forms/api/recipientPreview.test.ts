@@ -6,7 +6,7 @@ import { fetchRecipientSamples, previewRecipient, readRecipientPreview, readReci
 const guid = (value: number) => "01990000-0000-7000-8000-" + String(value).padStart(12, "0");
 const personId = guid(501), catalogId = guid(502), fieldId = guid(503), attributeId = guid(504), optionId = guid(505), definitionId = guid(506);
 const body = { type: "choice" as const, source: { catalog: catalogId, match: [{ fieldId, personAttributeId: attributeId }], presentation: { title: ["text"], description: [] } }, sampleUserId: personId, culture: "es" as const };
-const preview = { recipient: { id: personId, name: "Juan Gómez", values: [{ attributeId, name: "Zona", text: "Centro" }] }, state: "Ready", optionCount: 1, limit: 200, exceedsLimit: false, options: [{ id: optionId, title: "Proveedor", description: null }], presentationCheck: { titleTooLongCount: 0, examples: [] } };
+const preview = { recipient: { id: personId, name: "Juan Gómez", values: [{ attributeId, name: "Zona", text: "Centro" }] }, state: "Ready", optionCount: 1, limit: 200, exceedsLimit: false, options: [{ id: optionId, title: "Proveedor", description: null }] };
 const page = { items: [{ id: personId, name: "Juan Gómez" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false };
 afterEach(() => vi.restoreAllMocks());
 it("reads a closed sample page without accepting user internals or invalid identities", () => {
@@ -16,10 +16,15 @@ it("reads a closed sample page without accepting user internals or invalid ident
 it("reads the selected presentation and lets preview diagnostics describe titles longer than WhatsApp permits", () => {
   expect(readRecipientPreview(preview, body)).toEqual(preview);
   const long = "x".repeat(31);
-  const warning = { ...preview, options: [{ id: optionId, title: long, description: "Visible detail" }], presentationCheck: { titleTooLongCount: 1, examples: [{ itemId: optionId, title: long }] } };
+  const warning = { ...preview, options: [{ id: optionId, title: long, description: "Visible detail" }] };
   expect(readRecipientPreview(warning, body)).toEqual(warning);
   const empty = { ...preview, options: [{ id: optionId, title: "", description: "d".repeat(301) }] };
   expect(readRecipientPreview(empty, body)).toEqual(empty);
+});
+it("rejects a preview that still carries a presentation check", () => {
+  // The long-title warning belongs to the question's source, checked over every active option; a person's preview no longer counts it.
+  expect(readRecipientPreview(preview, body)).toEqual(preview);
+  expect(() => readRecipientPreview({ ...preview, presentationCheck: { titleTooLongCount: 0, examples: [] } }, body)).toThrow("Unsupported recipient preview response.");
 });
 it("keeps missing person data and unavailable filters as distinct closed states with no offered options", () => {
   for (const state of ["RecipientDataMissing", "FilterUnavailable"]) {

@@ -44,6 +44,8 @@ export function createCatalogQuestionVisualFixtures(culture: FormCulture, _scena
     }
     if (path === "/api/forms/catalogs/" + ids.suppliers) return json(catalog);
     if (path === "/api/forms/catalogs/" + ids.suppliers + "/items") return json(page(items, url.searchParams));
+    // Every composed title of these options fits: the server check of an own presentation reports nothing in either language.
+    if (path === "/api/forms/catalogs/" + ids.suppliers + "/presentation-checks" && request.method === "POST") return json({ cultures: (["es", "en"] as const).map(entry => ({ culture: entry, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] })) });
     if (path === "/api/forms/person-attributes") return json({ items: [attribute] });
     if (path === "/api/forms/recipient-samples") return json(page(samples.filter(sample => sample.name.toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase())), url.searchParams));
     if (path === "/api/forms/definitions/" + definition.id + "/recipient-previews" && request.method === "POST") {
@@ -56,7 +58,7 @@ export function createCatalogQuestionVisualFixtures(culture: FormCulture, _scena
       const part = (item: CatalogItem, field: string): string => field === "text" ? item.text[body.culture] ?? item.text.es! : field === "code" ? item.code : field === "detail" ? item.detail[body.culture] ?? item.detail.es ?? "" : item.fieldTexts?.[field]?.[body.culture] ?? item.fields?.[field] ?? "";
       const limit = body.type === "multiChoice" ? 20 : 200;
       const result: RecipientPreview = { recipient: { id: sample.id, name: sample.name, values: missing ? [] : [{ attributeId: ids.attribute, name: names("Zona", "Zone"), text: names("Centro", "Center") }] }, state: missing ? "RecipientDataMissing" : "Ready", optionCount: matched.length, limit, exceedsLimit: matched.length > limit,
-        options: matched.slice(0, limit).map(item => ({ id: item.id, title: selected.title.map(field => part(item, field)).filter(Boolean).join(" · "), description: selected.description.map(field => part(item, field)).filter(Boolean).join(" · ") || null })), presentationCheck: { titleTooLongCount: 0, examples: [] } };
+        options: matched.slice(0, limit).map(item => ({ id: item.id, title: selected.title.map(field => part(item, field)).filter(Boolean).join(" · "), description: selected.description.map(field => part(item, field)).filter(Boolean).join(" · ") || null })) };
       return json(result);
     }
     return undefined;

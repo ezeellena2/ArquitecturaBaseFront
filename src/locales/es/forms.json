@@ -680,7 +680,8 @@
       "inherit": "Como en el catálogo",
       "inheritHint": "Cambia si cambia el catálogo.",
       "own": "Propio de esta pregunta",
-      "ownHint": "Otros campos, solo para este formulario."
+      "ownHint": "Otros campos, solo para este formulario.",
+      "checkFailed": "No pudimos revisar el largo de las opciones."
     },
     "preview": {
       "asRecipient": "Como si lo recibiera",

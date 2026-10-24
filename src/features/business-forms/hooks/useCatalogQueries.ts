@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { fetchCatalog, fetchCatalogItems, fetchCatalogPage, type CatalogItemsQuery, type CatalogListQuery, fetchCatalogFilterOptions, type CatalogFilterOptionsQuery } from "../api/catalogs";
+import { checkCatalogPresentation, fetchCatalog, fetchCatalogItems, fetchCatalogPage, type CatalogItemsQuery, type CatalogListQuery, fetchCatalogFilterOptions, type CatalogFilterOptionsQuery } from "../api/catalogs";
+import type { CatalogPresentation } from "../api/catalogResponse";
 import type { CatalogReadScope } from "./useCatalogDraftEditor";
 import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
 
@@ -21,6 +22,12 @@ export function useCatalogItemsById(scope: CatalogReadScope, id: string, itemIds
   const root = [...catalogScopeKey(scope), "items-by-id", id, itemIds] as const;
   useUnobservedQueryCleanup(root);
   return useQuery({ queryKey: root, queryFn: ({ signal }) => fetchCatalogItems(id, { page: 1, pageSize: itemIds.length, ids: itemIds }, signal), enabled: canRead(scope) && id !== "" && itemIds.length > 0, staleTime: 0, gcTime: 0, meta: { errorOwner } });
+}
+// The server's length check of a question's own presentation over every active option of the catalog revision.
+export function useCatalogPresentationCheck(scope: CatalogReadScope, id: string, revision: number | null, presentation: CatalogPresentation | null) {
+  const root = [...catalogScopeKey(scope), "presentation-check", id, revision] as const;
+  useUnobservedQueryCleanup(root);
+  return useQuery({ queryKey: [...root, JSON.stringify(presentation)], queryFn: ({ signal }) => checkCatalogPresentation(id, presentation!, signal), enabled: canRead(scope) && id !== "" && revision !== null && presentation !== null, gcTime: 0, meta: { errorOwner: "local" } });
 }
 
 export function useCatalogPage(scope: CatalogReadScope, query: CatalogListQuery, errorOwner: "local" | "global" = "local") {
