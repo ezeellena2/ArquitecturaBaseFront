@@ -136,6 +136,11 @@ it("describes a decimal condition typed with a comma, a plus sign or leading zer
   expect(label("12,")).toBe("Amount: responses.from 12,");
 });
 
+it("describes a yes/no condition with the shared yes and no labels", () => {
+  const column: ResponseColumn = { fieldId: "paid", type: "boolean", label: "Paid", options: [], introducedInVersion: 1 };
+  expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "paid", operator: "in", values: ["true", "false"] }] }, [column], key => key, "es")).toEqual([{ key: "paid", label: "Paid: responses.yes, responses.no" }]);
+});
+
 it("uses the supplied media type to label a document format", async()=>{ const {responseDocumentFormat}=await import("./responses");expect(responseDocumentFormat("application/pdf")).toBe("PDF");expect(responseDocumentFormat("text/plain")).toBe("TXT");expect(responseDocumentFormat("application/octet-stream")).toBeNull();});
 
 

@@ -134,7 +134,7 @@ export function responseValueText(
 ): string {
   if (cell.state === "NotAsked") return "—";
   if (cell.state === "Unanswered") return unanswered;
-  if (typeof cell.value === "boolean") return cell.value ? yes : no;
+  if (typeof cell.value === "boolean") return formatYesNo(cell.value, { yes, no }) ?? "—";
   if (typeof cell.value === "string") return cell.value;
   return selectedResponseChoices(cell).map(choice => choice.label).join(", ");
 }
@@ -192,7 +192,7 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
   for (const fieldId of new Set(query.conditions?.map(item => item.fieldId) ?? [])) {
     const column = columns.find(item => item.fieldId === fieldId);
     const parts = query.conditions?.filter(item => item.fieldId === fieldId).map(item => {
-      const values = item.values?.map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? t(value === "true" ? "responses.yes" : "responses.no") : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, column.type === "decimal" ? canonicalDecimalCondition(value) : value, language) ?? value : value).join(", ");
+      const values = item.values?.map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? formatYesNo(value, { yes: t("responses.yes"), no: t("responses.no") }) ?? value : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, column.type === "decimal" ? canonicalDecimalCondition(value) : value, language) ?? value : value).join(", ");
       const operator = ({ anyOf: "anyOf", gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
       return [operator ? t("responses." + operator) : "", values].filter(Boolean).join(" ");
     });
