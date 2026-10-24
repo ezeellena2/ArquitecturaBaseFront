@@ -5,7 +5,6 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { EmbeddedPreview } from "@/shared/ui/EmbeddedPreview";
 import { Spinner } from "@/shared/ui/Spinner";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
@@ -14,13 +13,11 @@ import { ExpiredFormPreview, type readFormPreview } from "../api/response";
 import type { FormCulture } from "../model";
 
 // The expiring official URL stays in this dialog. It never enters QueryCache or storage.
-export function OfficialFormPreview({ definitionId, versionId, versionNumber, initialCulture, cultures, onClose }: { cultures: readonly FormCulture[]; definitionId: string; versionId: string; versionNumber: number; initialCulture: FormCulture; onClose: () => void }) {
+// It shows the menu language when that version published it and, otherwise, the original.
+export function OfficialFormPreview({ definitionId, versionId, versionNumber, culture: menuCulture, originalCulture, cultures, onClose }: { cultures: readonly FormCulture[]; definitionId: string; versionId: string; versionNumber: number; culture: FormCulture; originalCulture: FormCulture; onClose: () => void }) {
   const { t } = useTranslation("forms");
   const restoreFocus = useRestoreFocusOnClose(true);
-  const startingCulture = cultures.includes(initialCulture) ? initialCulture : cultures[0]!;
-  const [selectedCulture,setCulture] = useState(startingCulture);
-  const culture = cultures.includes(selectedCulture) ? selectedCulture : startingCulture;
-  const culturesKey = cultures.join(":");
+  const culture = cultures.includes(menuCulture) ? menuCulture : cultures.includes(originalCulture) ? originalCulture : cultures[0]!;
   const [preview,setPreview] = useState<ReturnType<typeof readFormPreview> | null>(null);
   const [busy,setBusy] = useState(false);
   const [expired,setExpired] = useState(false);
@@ -51,14 +48,13 @@ export function OfficialFormPreview({ definitionId, versionId, versionNumber, in
   const loadCurrent = useRef(() => load(culture));
   const generation = useRef(0);
   useEffect(() => { loadCurrent.current = () => load(culture); }, [load,culture]);
-  useEffect(()=>{active.current=true;const epoch=++generation.current;queueMicrotask(()=>{if(active.current&&generation.current===epoch)void loadCurrent.current();});return()=>{active.current=false;flight.current?.abort();dismissNotification(noticeId);};},[definitionId,versionId,startingCulture,culturesKey,noticeId]);
+  useEffect(()=>{active.current=true;const epoch=++generation.current;queueMicrotask(()=>{if(active.current&&generation.current===epoch)void loadCurrent.current();});return()=>{active.current=false;flight.current?.abort();dismissNotification(noticeId);};},[definitionId,versionId,culture,noticeId]);
   useEffect(()=>{const timer=window.setInterval(()=>setNow(Date.now()),1000);return()=>window.clearInterval(timer);},[]);
   if (preview && Date.parse(preview.expiresAtUtc)<=now) {setPreview(null);setExpired(true);}
   const live = preview && Date.parse(preview.expiresAtUtc)>now ? preview : null;
   return <Dialog open onOpenChange={open=>{if(!open)onClose();}}>
     <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={restoreFocus}>
       <DialogHeader><DialogTitle>{t("publication.previewTitle",{version:versionNumber})}</DialogTitle><DialogDescription>{t("publication.previewDescription")}</DialogDescription></DialogHeader>
-      <SegmentedControl aria-label={t("contentLanguage")} options={cultures.map(value=>({key:value,label:t("common:language."+value),pressed:culture===value,onSelect:()=>{if(value!==culture){flight.current?.abort();flight.current=null;setBusy(false);setCulture(value);setPreview(null);setExpired(false);setFailed(false);dismissNotification(noticeId);}}}))} />
       {busy ? <div role="status" className="flex min-h-60 items-center justify-center gap-2"><Spinner /><p>{t("publication.previewLoading")}</p></div> : live ? <EmbeddedPreview url={live.url} title={t("publication.previewFrame")} /> : <p className="min-h-32 text-sm text-[var(--color-content-muted)]">{t(denied?"publication.previewNoPermission":expired?"publication.previewExpired":failed?"publication.previewUnavailable":"publication.previewChoose")}</p>}
       {live ? <p className="text-xs text-[var(--color-content-muted)]">{t("publication.previewFallback")}</p> : null}
       <DialogFooter><Button variant="outline" onClick={onClose}>{t("common:actions.close")}</Button>
