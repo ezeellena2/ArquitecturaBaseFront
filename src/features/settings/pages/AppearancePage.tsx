@@ -114,6 +114,6 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
         <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={disabled} onClick={() => acceptReview(false)}>{t("review.useCurrent")}</Button><Button disabled={disabled} onClick={() => acceptReview(true)}>{t("review.keepMine")}</Button></div>
       </Surface> : null}
     </div>
-    <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("leave.title")} description={t("leave.description")} confirmLabel={t("leave.confirm")} cancelLabel={t("leave.cancel")} onConfirm={guard.leave} />
+    <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("common:unsavedChanges.title")} description={t("common:unsavedChanges.description")} confirmLabel={t("common:unsavedChanges.confirm")} cancelLabel={t("common:unsavedChanges.cancel")} onConfirm={guard.leave} />
   </Page>;
 }

@@ -54,6 +54,12 @@
     "en": "Inglés",
     "saveFailed": "No pudimos guardar el idioma en tu perfil. Probá de nuevo."
   },
+  "unsavedChanges": {
+    "title": "¿Descartar los cambios?",
+    "description": "Los cambios todavía no están guardados.",
+    "confirm": "Descartar cambios",
+    "cancel": "Seguir editando"
+  },
   "phone": {
     "label": "Número de WhatsApp",
     "country": "País: {{country}}",

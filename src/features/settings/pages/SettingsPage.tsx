@@ -121,7 +121,7 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
     </div>
     <ConfirmDialog open={confirm} onOpenChange={setConfirm} title={t(draft.registrationMode === "Open" ? "confirm.openTitle" : "confirm.inviteOnlyTitle")}
       description={t(draft.registrationMode === "Open" ? "confirm.openDescription" : "confirm.inviteOnlyDescription")} confirmLabel={t("save")} onConfirm={save} />
-    <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("leave.title")} description={t("leave.description")}
-      confirmLabel={t("leave.confirm")} cancelLabel={t("leave.cancel")} onConfirm={guard.leave} />
+    <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("common:unsavedChanges.title")} description={t("common:unsavedChanges.description")}
+      confirmLabel={t("common:unsavedChanges.confirm")} cancelLabel={t("common:unsavedChanges.cancel")} onConfirm={guard.leave} />
   </Page>;
 }

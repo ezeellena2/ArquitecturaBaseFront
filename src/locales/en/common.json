@@ -54,6 +54,12 @@
     "en": "English",
     "saveFailed": "We couldn't save the language in your profile. Try again."
   },
+  "unsavedChanges": {
+    "title": "Discard changes?",
+    "description": "These changes have not been saved yet.",
+    "confirm": "Discard changes",
+    "cancel": "Keep editing"
+  },
   "phone": {
     "label": "WhatsApp number",
     "country": "Country: {{country}}",

@@ -150,10 +150,10 @@ export function UserMenu() {
           setPendingLanguage(null);
         }
       }}
-      title={t("settings:leave.title")}
-      description={t("settings:leave.description")}
-      confirmLabel={t("settings:leave.confirm")}
-      cancelLabel={t("settings:leave.cancel")}
+      title={t("unsavedChanges.title")}
+      description={t("unsavedChanges.description")}
+      confirmLabel={t("unsavedChanges.confirm")}
+      cancelLabel={t("unsavedChanges.cancel")}
       focusFallback={triggerRef}
       onConfirm={() => {
         if (pendingLanguage !== null) {

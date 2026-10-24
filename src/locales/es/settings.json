@@ -70,12 +70,6 @@
     "useCurrent": "Usar valores actuales",
     "keepMine": "Conservar mis cambios"
   },
-  "leave": {
-    "title": "¿Descartar los cambios?",
-    "description": "Los cambios todavía no están guardados.",
-    "confirm": "Descartar cambios",
-    "cancel": "Seguir editando"
-  },
   "appearance": {
     "title": "Apariencia",
     "colors": "Colores del sistema",

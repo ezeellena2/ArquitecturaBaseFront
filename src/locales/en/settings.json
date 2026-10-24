@@ -70,12 +70,6 @@
     "useCurrent": "Use current values",
     "keepMine": "Keep my changes"
   },
-  "leave": {
-    "title": "Discard changes?",
-    "description": "These changes have not been saved yet.",
-    "confirm": "Discard changes",
-    "cancel": "Keep editing"
-  },
   "appearance": {
     "title": "Appearance",
     "colors": "System colors",
