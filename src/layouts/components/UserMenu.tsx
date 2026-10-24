@@ -115,8 +115,9 @@ export function UserMenu() {
         <DropdownMenuRadioGroup
           value={i18n.language}
           onValueChange={(value) => {
-            // El grupo informa un string cualquiera; acá solo hay idiomas de los que existen.
-            if (!isSupportedLanguage(value)) {
+            // El grupo informa un string cualquiera; acá solo hay idiomas de los que existen. También avisa al
+            // elegir el que ya está marcado: ahí no hay nada que cambiar ni que descartar.
+            if (!isSupportedLanguage(value) || value === i18n.language) {
               return;
             }
 

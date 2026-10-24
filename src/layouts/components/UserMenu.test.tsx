@@ -158,6 +158,33 @@ describe("UserMenu", () => {
     );
   });
 
+  it("does nothing when the chosen language is the one the menu already has, even with unsaved changes", async () => {
+    // Radix avisa también al elegir el ítem que ya está marcado: no hay idioma que cambiar ni cambios que descartar.
+    const saved: unknown[] = [];
+    server.use(
+      http.put("/api/me", async ({ request }) => {
+        saved.push(await request.json());
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    function DirtyEditor() {
+      useUnsavedChangesGuard(true);
+
+      return <h1>Editor con cambios</h1>;
+    }
+    const router = createMemoryRouter([{ path: "/", element: <><UserMenu /><DirtyEditor /></> }]);
+    renderWithProviders(<RouterProvider router={router} />);
+
+    await openMenu();
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: /español/i }));
+
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(i18n.language).toBe("es");
+    expect(saved).toEqual([]);
+  });
+
   it("goes back to the previous language when the profile can't be saved", async () => {
     const toastError = vi.spyOn(toast, "error");
     server.use(
