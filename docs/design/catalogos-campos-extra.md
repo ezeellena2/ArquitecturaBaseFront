@@ -75,6 +75,9 @@ ve también la lista, como al tocarlo.
   quitarlo, sale también del título y de la descripción de «En WhatsApp» del borrador, y si el título queda vacío vuelve
   al texto de la opción. Los usos en el borrador o la versión activa de un formulario lo siguen impidiendo y se listan.
   «Restaurar el campo» lo devuelve a su lugar en «En WhatsApp» si la presentación no se editó después de quitarlo.
+- **Usos de un campo sin permiso para ver formularios (CE1).** El formulario y la pregunta que usan un campo se nombran
+  sólo a quien puede ver formularios (`formtemplates.read`). Sin ese permiso, cada formulario que lo usa se lista por su
+  etapa, «La versión activa de un formulario» o «El borrador de un formulario», y el campo sigue sin poder quitarse.
 - **Cambiar el tipo de un campo cargado (CE1 y CE2).** El editor ya no frena Guardar por el cambio: lo revisa el servidor
   sobre los valores guardados. Si alguno no convierte, se abre «Cambiar el tipo» como en CE1, armado con las filas que
   devuelve el servidor (hasta 50, con número, valor y motivo): muestra cinco y «Y N más.». «Ver los N en la tabla» deja en

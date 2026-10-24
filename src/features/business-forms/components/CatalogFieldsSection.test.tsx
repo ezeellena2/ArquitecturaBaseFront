@@ -46,6 +46,20 @@ it("shows where an in-use field is referenced and never offers to confirm its re
   expect(within(screen.getByRole("dialog")).getByText(/Pedir repuesto/)).toBeInTheDocument();
   expect(within(screen.getByRole("dialog")).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
 });
+it("shows the stage of uses whose form the reader cannot see and still blocks removal", async () => {
+  const hidden = { definitionId: null, formName: null, question: null, questionId: null };
+  await mount([{ ...field, usedBy: [{ ...hidden, stage: "Active" }, { ...hidden, stage: "Draft" }] }]);
+  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
+  await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
+  const dialog = screen.getByRole("dialog");
+  expect(within(dialog).getAllByRole("listitem").map(item => item.textContent)).toEqual(["La versión activa de un formulario", "El borrador de un formulario"]);
+  expect(within(dialog).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
+});
+it("shows the stage of a field-in-use conflict whose form the reader cannot see", async () => {
+  const uses = [{ definitionId: null, formName: null, question: null, questionId: null, stage: "Draft" as const }];
+  await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[{ ...field, isActive: false }]} errors={{ saved: { isActive: ["El campo está en uso."] } }} feedback={{ uses }} /></MemoryRouter>); });
+  expect(screen.getByRole("alert")).toHaveTextContent("El borrador de un formulario");
+});
 it("offers removing a field used only by its own catalog presentation", async () => {
   await mount([{ ...field, usedBy: [{ definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" }] }]);
   await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));

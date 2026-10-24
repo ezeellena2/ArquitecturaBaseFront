@@ -45,3 +45,14 @@ it("uses the server's origin facets, independent of the current page length", ()
   const previous = { items: response.items, page: response.page, pageSize: response.pageSize, totalCount: response.totalCount, totalPages: response.totalPages, hasPrevious: response.hasPrevious, hasNext: response.hasNext };
   expect(() => readCatalogPage(previous)).toThrow("Unsupported catalog response.");
 });
+
+it("accepts field uses without form names only as a complete stage-only entry", () => {
+  const field = { id: "01990000-0000-7000-8000-000000000031", key: "zone", name: { es: "Zona" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "filter", position: 1, isActive: true, hasValues: true, usedBy: [] };
+  const detail = (usedBy: unknown[]) => ({ ...catalog, filters: null, fields: [{ ...field, usedBy }] });
+  const hidden = { definitionId: null, formName: null, question: null, questionId: null, stage: "Draft" };
+  const named = { definitionId: "01990000-0000-7000-8000-000000000032", formName: "Pedir repuesto", question: "Zona", questionId: "01990000-0000-7000-8000-000000000033", stage: "Active" };
+  const usedBy = [{ ...hidden, stage: "Active" }, hidden];
+  expect(readCatalog(detail(usedBy)).fields?.[0]?.usedBy).toEqual(usedBy);
+  for (const partial of [{ ...named, definitionId: null, formName: null }, { ...named, formName: null }, { ...hidden, questionId: named.questionId }, { ...hidden, stage: "Catalog" }])
+    expect(() => readCatalog(detail([partial]))).toThrow("Unsupported catalog response.");
+});

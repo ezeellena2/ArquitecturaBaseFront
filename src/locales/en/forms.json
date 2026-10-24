@@ -305,6 +305,7 @@
       "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values",
       "removeTitle": "Remove “{{name}}”", "remove": "Remove field", "removeHint": "Removed from the table, template and Excel. Responses that already captured it keep it.",
       "confirmRemoval": "Yes, remove the field and its values", "inUse": "This field is in use. Remove those uses before removing it.",
+      "hiddenUse": { "Draft": "A form's draft", "Active": "A form's active version" },
       "columns": "Fields", "valueLabel": "Row {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Clear", "viewNamed": "View {{name}}", "clearValue": "Clear {{name}}",
       "invalid": "Review this value: it does not match the field type.", "required": "The required value is missing.", "range": "The value is outside the field minimum or maximum.", "length": "The text exceeds the allowed length.",
       "missingValues_one": "Values are missing from 1 active option.", "missingValues_other": "Values are missing from {{count}} active options.",
