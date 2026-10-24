@@ -180,13 +180,19 @@ export function replaceResponseCondition(
     : others;
 }
 
+// A decimal that normalizeResponseQuery accepts (draft rules and suggestions, or the URL) in the canonical form typedValue formats.
+function canonicalDecimalCondition(value: string): string {
+  const match = /^([-+]?)0*(\d+(?:[.,]\d+)?)$/.exec(value.trim());
+  return match ? (match[1] === "-" ? "-" : "") + match[2].replace(",", ".") : value;
+}
+
 export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: (key: string, options?: Record<string, unknown>) => string, language: string, zone = "UTC", versions: readonly { id: string; number: number }[] = []) {
   const labels: { key: string; label: string }[] = [];
   const day = (valueUtc: string) => { const date = calendarDateInZone(valueUtc, zone); return formatTypedValue("date", date, language) ?? date; };
   for (const fieldId of new Set(query.conditions?.map(item => item.fieldId) ?? [])) {
     const column = columns.find(item => item.fieldId === fieldId);
     const parts = query.conditions?.filter(item => item.fieldId === fieldId).map(item => {
-      const values = item.values?.map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? t(value === "true" ? "responses.yes" : "responses.no") : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, value, language) ?? value : value).join(", ");
+      const values = item.values?.map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? t(value === "true" ? "responses.yes" : "responses.no") : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, column.type === "decimal" ? canonicalDecimalCondition(value) : value, language) ?? value : value).join(", ");
       const operator = ({ anyOf: "anyOf", gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
       return [operator ? t("responses." + operator) : "", values].filter(Boolean).join(" ");
     });

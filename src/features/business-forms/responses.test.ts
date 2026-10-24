@@ -126,6 +126,16 @@ it("describes decimal and date conditions and the received range with the shared
   expect(responseFilterLabels({ page: 1, pageSize: 20, receivedFromUtc: "2026-10-16T03:00:00.000Z" }, [], key => key, "es", "America/Argentina/Buenos_Aires")).toEqual([{ key: "received", label: "responses.received · 16/10/2026 – …" }]);
 });
 
+it("describes a decimal condition typed with a comma, a plus sign or leading zeros like its canonical value", () => {
+  const columns: ResponseColumn[] = [{ fieldId: "amount", type: "decimal", label: "Amount", options: [], introducedInVersion: 1 }];
+  const label = (value: string) => responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "amount", operator: "gte", values: [value] }] }, columns, key => key, "es")[0].label;
+  expect(label(" 1500,5 ")).toBe("Amount: responses.from 1.500,5");
+  expect(label("+1500")).toBe("Amount: responses.from 1.500");
+  expect(label("-01500,50")).toBe("Amount: responses.from -1.500,50");
+  expect(label("1500.5")).toBe("Amount: responses.from 1.500,5");
+  expect(label("12,")).toBe("Amount: responses.from 12,");
+});
+
 it("uses the supplied media type to label a document format", async()=>{ const {responseDocumentFormat}=await import("./responses");expect(responseDocumentFormat("application/pdf")).toBe("PDF");expect(responseDocumentFormat("text/plain")).toBe("TXT");expect(responseDocumentFormat("application/octet-stream")).toBeNull();});
 
 
