@@ -378,7 +378,7 @@ describe("RoleEditorPage", () => {
     await renderSupport();
 
     // Tampoco cuenta como un cambio: la pantalla arranca sin nada que guardar.
-    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
 
     await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
@@ -974,6 +974,7 @@ describe("RoleEditorPage", () => {
         name: "Administrar la configuración",
       }),
     ).toBeChecked();
-    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+    // Lo sembrado del rol nuevo es su punto de partida: llega sin nada que guardar.
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
   });
 });
