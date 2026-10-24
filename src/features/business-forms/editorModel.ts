@@ -3,7 +3,16 @@ import { openDraftSession } from "./draftSession";
 import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture, FormDefinitionSnapshot, LocalizedText } from "./model";
 
 export const localizedValue = (text: LocalizedText | Readonly<Record<string, string | null>> | null, culture: FormCulture, original: FormCulture) => text?.[culture]?.trim() ? text[culture]! : text?.[original] ?? "";
-export const administrativeName = (name: LocalizedText, culture: FormCulture) => name[culture]?.trim() ? name[culture]! : name[culture === "es" ? "en" : "es"] ?? "";
+type ContentTexts = Readonly<Record<string, string | null | undefined>> | null | undefined;
+const otherCulture = (culture: FormCulture): FormCulture => culture === "es" ? "en" : "es";
+export const administrativeName = (name: ContentTexts, culture: FormCulture) => name?.[culture]?.trim() ? name[culture]! : name?.[otherCulture(culture)] ?? "";
+/** The original's text, shown as a hint (never copied) while the menu is in the other language. */
+export const contentReference = (text: ContentTexts, culture: FormCulture, original: FormCulture) => culture !== original && text?.[original]?.trim() ? text[original]! : undefined;
+/** Only the original is required; the other language is an optional translation. */
+export const contentRequired = (_text: ContentTexts, culture: FormCulture, original: FormCulture) => original === culture;
+/** The trimmed languages that have text: a blank translation is not sent. */
+export const ownTexts = (text: ContentTexts): Partial<Record<FormCulture, string>> =>
+  Object.fromEntries((["es", "en"] as const).flatMap(culture => text?.[culture]?.trim() ? [[culture, text[culture]!.trim()]] : []));
 export const suggestedPrefix = (name: string) => (name.trim().split(/\s+/).at(-1) ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
 export function emptyForm(culture: FormCulture): DraftEditorValue {
   return { name: { [culture]: "" }, prefix: "", offerWhen: null, draft: { format: 1, culture, submitLabel: { [culture]: culture === "es" ? "Enviar" : "Submit" }, fields: [] } };

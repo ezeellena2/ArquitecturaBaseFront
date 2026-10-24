@@ -131,6 +131,7 @@
   "prefixOriginal": "El prefijo es compartido. Editalo desde el idioma original.",
   "originalText": "Original ({{language}}): {{text}}",
   "missingText": "Sin traducir",
+  "otherLanguageError": "En {{language}}: {{message}}",
   "translationPending": "Sin traducir",
   "localizedChange": "{{name}} · {{language}}",
   "reviewFieldText": "{{question}} · {{field}}",

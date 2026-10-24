@@ -131,6 +131,7 @@
   "prefixOriginal": "The prefix is shared. Edit it in the original language.",
   "originalText": "Original ({{language}}): {{text}}",
   "missingText": "Untranslated",
+  "otherLanguageError": "In {{language}}: {{message}}",
   "translationPending": "Untranslated",
   "localizedChange": "{{name}} · {{language}}",
   "reviewFieldText": "{{question}} · {{field}}",

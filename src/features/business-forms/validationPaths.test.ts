@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { publicationFieldIssues, draftFieldIssues, indexedValidationIssues, parseValidationPath } from "./validationPaths";
+import { publicationFieldIssues, draftFieldIssues, indexedValidationIssues, parseValidationPath, localizedIssue } from "./validationPaths";
 import { openDraftSession } from "./draftSession";
 import { fixtureDefinition } from "@/test/visual/formFixtures";
 
@@ -58,5 +58,16 @@ describe("structured validation paths", () => {
     const path = "draft.fields[0].source.match[0].personAttributeId";
     expect(draftFieldIssues(body, { [path]: ["Revisá el dato."], "draft.fields[999].source.presentation.title": ["Ausente."] }))
       .toEqual([{ path, fieldLocalId: body.draft.fields[0]!.localId, messages: ["Revisá el dato."] }]);
+  });
+});
+
+describe("localized issues", () => {
+  it("returns the error of the other language with its culture", () => {
+    const errors = { "name.en": ["Too long."], "items[0].text": ["Required."] };
+    expect(localizedIssue(errors, "name", "es")).toEqual({ messages: ["Too long."], culture: "en" });
+    expect(localizedIssue({ ...errors, "name.es": ["Required."] }, "name", "es")).toEqual({ messages: ["Required."], culture: "es" });
+    expect(localizedIssue(errors, "items[0].text", "en")).toEqual({ messages: ["Required."], culture: null });
+    expect(localizedIssue(errors, "description", "es")).toBeUndefined();
+    expect(localizedIssue(undefined, "name", "es")).toBeUndefined();
   });
 });

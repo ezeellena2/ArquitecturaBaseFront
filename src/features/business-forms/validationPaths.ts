@@ -1,4 +1,15 @@
-import type { DraftEditorValue, DraftWriteBody } from "./model";
+import type { DraftEditorValue, DraftWriteBody, FormCulture } from "./model";
+
+export interface LocalizedIssue { readonly messages: readonly string[]; readonly culture: FormCulture | null }
+// Without a language selector, an error of the language not on screen is shown under the same field, with its culture.
+export function localizedIssue(errors: Readonly<Record<string, readonly string[]>> | undefined, path: string, culture: FormCulture): LocalizedIssue | undefined {
+  for (const candidate of [culture, culture === "es" ? "en" : "es"] as const) {
+    const messages = errors?.[path + "." + candidate];
+    if (messages?.length) return { messages, culture: candidate };
+  }
+  const messages = errors?.[path];
+  return messages?.length ? { messages, culture: null } : undefined;
+}
 
 export function parseValidationPath(path: string): readonly (string | number)[] | null {
   const segments: (string | number)[] = [];

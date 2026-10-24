@@ -8,6 +8,7 @@ import type { CatalogDetail, CatalogItem, CatalogSave, CatalogFilterPreview } fr
 import { catalogDraftBody, catalogDraftUpdateBody, catalogItemFieldIssues, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
 import { catalogItemChanges, type CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
+import { ownTexts } from "../editorModel";
 
 import { catalogFiltersBody } from "../catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "../components/CatalogFiltersEditor";
@@ -122,9 +123,8 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
         if (previewResult.exceedsLimit) return;
       }
       writing = true;
-      const filledTexts = (texts: Readonly<Record<"es" | "en", string>>) => Object.fromEntries(Object.entries(texts).filter(([, text]) => !!text.trim()));
       const saved = pendingProposal && captured.filters && captured.id && captured.revision !== null
-        ? await approveCatalogProposal(captured.id, { expectedRevision: captured.revision, name: filledTexts(captured.name), description: filledTexts(captured.description), filters: catalogFiltersBody(captured.filters), sampleUserId: sampleUserId! }, controller.signal)
+        ? await approveCatalogProposal(captured.id, { expectedRevision: captured.revision, name: ownTexts(captured.name), description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters), sampleUserId: sampleUserId! }, controller.signal)
         : captured.filters
         ? captured.id && captured.revision !== null
           ? await updateFiltersCatalog(captured.id, { name: captured.name, description: captured.description, filters: catalogFiltersBody(captured.filters), expectedRevision: captured.revision, isActive: captured.isActive }, controller.signal)

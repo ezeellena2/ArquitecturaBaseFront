@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedValue, newQuestion, missingFormTexts, changeQuestionCatalog } from "./editorModel";
+import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedValue, newQuestion, missingFormTexts, changeQuestionCatalog, administrativeName, contentReference, contentRequired, ownTexts } from "./editorModel";
 import { openDraftSession } from "./draftSession";
 import type { FormDefinitionSnapshot } from "./model";
 
@@ -138,4 +138,31 @@ it("counts each missing own multi-choice translation and keeps range-only confli
   expect(resolveDraftReview(review, keepMine)?.draft.fields[0]).toHaveProperty("selection.maxSelected", 2);
   expect(resolveDraftReview(review, keepCurrent)?.draft.fields[0]).toHaveProperty("selection.maxSelected", 3);
   expect(mine.draft.fields[0]).toHaveProperty("selection.maxSelected", 2);
+});
+
+describe("content language", () => {
+  it("shows the original as reference only while the menu is in the other language", () => {
+    expect(contentReference({ es: "Cliente", en: null }, "en", "es")).toBe("Cliente");
+    expect(contentReference({ es: "Cliente", en: "Customer" }, "en", "es")).toBe("Cliente");
+    expect(contentReference({ es: "Cliente", en: "Customer" }, "es", "es")).toBeUndefined();
+    expect(contentReference({ en: "Customer" }, "en", "en")).toBeUndefined();
+    expect(contentReference({ es: "  ", en: "Customer" }, "en", "es")).toBeUndefined();
+    expect(contentReference(null, "en", "es")).toBeUndefined();
+  });
+  it("requires the menu language only when it is the original", () => {
+    expect(contentRequired({ es: "Cliente" }, "es", "es")).toBe(true);
+    expect(contentRequired({ es: "Cliente" }, "en", "es")).toBe(false);
+    expect(contentRequired({}, "en", "en")).toBe(true);
+    expect(contentRequired({ en: "Customer" }, "es", "en")).toBe(false);
+  });
+  it("keeps only the languages with text", () => {
+    expect(ownTexts({ es: " Cliente ", en: "  " })).toEqual({ es: "Cliente" });
+    expect(ownTexts({ es: null, en: "Customer" })).toEqual({ en: "Customer" });
+    expect(ownTexts(null)).toEqual({});
+  });
+  it("shows the menu language and, without it, the other one, also from maps without texts", () => {
+    expect(administrativeName({ es: null, en: "Customers" }, "es")).toBe("Customers");
+    expect(administrativeName({ es: "Clientes", en: "Customers" }, "en")).toBe("Customers");
+    expect(administrativeName(null, "es")).toBe("");
+  });
 });
