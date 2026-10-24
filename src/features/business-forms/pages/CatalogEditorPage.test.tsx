@@ -112,6 +112,19 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.getByRole("textbox", { name: "Texto" })).not.toHaveAttribute("aria-invalid", "true");
     expect(screen.queryAllByText("Completá este campo.")).toHaveLength(1);
   });
+  it("takes the focus to the first marked control of an option that was already open when saving fails", async () => {
+    setup(); const bodies: unknown[] = [];
+    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
+    await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Norte");
+    // Save is in the header, away from the open option: the attempt does not reopen it, but it takes the focus to what it marks.
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    const code = screen.getByRole("textbox", { name: "Código" });
+    expect(code).toHaveAccessibleDescription("Completá este campo.");
+    expect(code).toHaveFocus();
+    expect(bodies).toEqual([]);
+  });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
     setup(); const bodies: unknown[] = []; let savedOption = option;
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));

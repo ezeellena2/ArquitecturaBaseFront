@@ -33,7 +33,8 @@ export function CatalogItemFields({ item, culture, valueType, fields = [], scope
   const valueCulture = scope?.culture ?? culture;
   useEffect(() => { if (textRef.current) { textAutoFocused.current = true; textRef.current.focus(); } }, []);
   return <Surface padded>
-    <div className="grid gap-4 sm:grid-cols-2">
+    {/* The page looks for the option's first marked control here after a failed Save. */}
+    <div data-catalog-option={item.localId} className="grid gap-4 sm:grid-cols-2">
       {columns.map(column => {
         const error = errors?.[column.errorPath]?.join(" ");
         const blur = () => onFieldBlur?.(column.errorPath);

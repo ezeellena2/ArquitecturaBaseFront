@@ -108,6 +108,9 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   // The options that were in the draft when Save was tried, and the controls left (`touchedKey`): where an empty value shows.
   const [attempted, setAttempted] = useState<ReadonlySet<string>>(() => new Set());
   const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
+  // The option a failed Save opened: its first marked control takes the focus, even when it was already open.
+  const [focusOption, setFocusOption] = useState<{ localId: string } | null>(null);
+  const host = useRef<HTMLDivElement>(null);
   const active = useRef(true);
   const feedbackId = "catalogs:editor:" + useId();
   const presentation = useSystemPresentation();
@@ -199,11 +202,13 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     if (!editor.canSave) return;
     if (itemProblems.length) {
       // Trying to save marks what is empty in every option of the draft, which then validates as it is corrected, and opens
-      // the first option with a problem, in the language of its text when that is what fails. Nothing is sent.
+      // the first option with a problem, in the language of its text when that is what fails, with the focus on the first
+      // control it marks. Nothing is sent.
       setAttempted(new Set(knownItems.map(item => item.localId)));
       const failing = new Set(itemProblems.map(problem => problem.localId));
       const first = [...changedItems, ...knownItems].find(item => failing.has(item.localId))!.localId;
       setExpanded(first);
+      setFocusOption({ localId: first });
       const text = itemProblems.find(problem => problem.localId === first && problem.path.startsWith("text."));
       if (text) setCulture(text.path.slice("text.".length) as FormCulture);
       return;
@@ -226,12 +231,15 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const generateCode = (localId: string) => generateMissingCatalogCodes(knownItems).filter(item => item.localId === localId).forEach(editor.changeItem);
   const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item, draft.valueType, draft.culture, draft.savedFields))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
+  // Runs after the option editor's own effect, which puts the cursor in Texto when it opens, so the marked control keeps the
+  // focus; focusing it also scrolls it into view.
+  useEffect(() => { if (focusOption) host.current?.querySelector<HTMLElement>('[data-catalog-option="' + focusOption.localId + '"] [aria-invalid="true"]')?.focus(); }, [focusOption]);
   const hideErrorRows = () => setErrorRows(current => current && { ...current, showRows: false });
   const showErrorRows = () => { setExpanded(null); setErrorRows(current => current && { ...current, open: false, showRows: true, totalCount: items.data?.totalCount }); };
   if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
     actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
-    <div className="flex flex-col gap-4">
+    <div ref={host} className="flex flex-col gap-4">
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button></Surface> : null}
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} /><CatalogPresentationSection value={draft.presentation} fields={draft.fields} items={rowItems} valueType={draft.valueType} culture={culture} readOnly={readOnly} errors={fields} inputCulture={draft.culture} check={!editor.dirty ? (editor.confirmed ?? initial)?.presentationCheck : undefined} onChange={editor.changePresentation} /></div><div className="xl:sticky xl:top-4"><CatalogPreview items={rowItems} fields={draft.fields} presentation={draft.presentation} valueType={draft.valueType} inputCulture={draft.culture} name={draft.name[culture] || currentName} culture={culture} /></div></div>
       <CatalogFieldsSection fields={draft.fields} presentation={draft.presentation} culture={culture} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} rootErrors={fields.fields} errorRows={errorRows && errorRows.control !== "type" && !errorRows.showRows ? { count: errorRows.rows.length, onShow: showErrorRows } : undefined} onChange={editor.changeFields} />

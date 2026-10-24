@@ -24,8 +24,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: info.outputPath("catalog-typed-invalid.png"), fullPage: true });
     // Save stays enabled: trying it with the invalid value keeps the input marked and writes nothing (checked at the end).
+    // The option was already open, so the attempt takes the focus back to the marked value and brings it into view.
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
     await expect(value).toHaveValue("mil"); await expect(value).toHaveAttribute("aria-invalid", "true");
+    await expect(value).toBeFocused(); await expect(value).toBeInViewport();
     await value.fill(english ? "3,200.00" : "3.200,00");
     await expect(value).not.toHaveAttribute("aria-invalid", "true");
     await page.screenshot({ path: info.outputPath("catalog-typed-valid.png"), fullPage: true });
