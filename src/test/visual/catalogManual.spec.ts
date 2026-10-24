@@ -26,7 +26,29 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("textbox", { name: english ? "Text" : "Texto", exact: true }).fill("Central");
     await page.getByRole("textbox", { name: english ? "Code" : "Código", exact: true }).fill("D1");
     await expect(page.getByRole("button", { name: /Central.*(Guardá|Save)/ }).first()).toBeDisabled();
+    // Las acciones de «Opciones» van al borde derecho de la sección (1 px de borde y 16 de margen, como el título a la
+    // izquierda) y, en escritorio, a la altura del título. El motivo de las apagadas no va escrito debajo.
+    // La sección, no la región de la tabla que lleva el mismo nombre.
+    const options = page.getByRole("region", { name: english ? "Options" : "Opciones", exact: true }).and(page.locator("section"));
+    const optionsTitle = options.getByRole("heading", { name: english ? "Options" : "Opciones", exact: true });
+    const moreActions = options.getByRole("button", { name: english ? "More option actions" : "Más acciones de opciones", exact: true });
+    const [region, heading, menu] = await Promise.all([options.boundingBox(), optionsTitle.boundingBox(), moreActions.boundingBox()]);
+    expect(Math.abs(region!.x + region!.width - (menu!.x + menu!.width) - 17)).toBeLessThanOrEqual(1);
+    const reason = english ? "Save the catalog first." : "Guardá el catálogo antes.";
+    await expect(options.getByText(reason).filter({ visible: true })).toHaveCount(0);
     await page.screenshot({ path: info.outputPath("manual-new.png"), fullPage: true });
+    if (width >= 640) {
+      const named = (english ? ["Add option", "Paste from Excel", "Import", "Export"] : ["Agregar opción", "Pegar desde Excel", "Importar", "Exportar"])
+        .map(name => options.getByRole("button", { name, exact: true }));
+      for (const action of [...named, moreActions]) {
+        const box = (await action.boundingBox())!;
+        expect(Math.abs(box.y + box.height / 2 - (heading!.y + heading!.height / 2))).toBeLessThanOrEqual(1);
+      }
+      // El botón apagado no recibe el puntero: lo recibe su envoltorio, que muestra el motivo como ayuda.
+      await named[2]!.locator("..").hover();
+      await expect(page.getByRole("tooltip")).toHaveText(reason);
+      await page.screenshot({ path: info.outputPath("manual-new-reason.png"), fullPage: true });
+    }
     await page.getByRole("button", { name: english ? "Save" : "Guardar", exact: true }).click();
     await expect(page.getByRole("button", { name: english ? "Edit Central" : "Editar Central", exact: true })).toBeVisible();
     await page.getByRole("button", { name: english ? "Edit Central" : "Editar Central", exact: true }).click();
