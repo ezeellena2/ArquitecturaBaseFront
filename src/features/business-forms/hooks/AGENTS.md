@@ -24,7 +24,7 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 - `confirmRevision` acepta sólo la revisión siguiente de una baja propia y conserva valor y baseline; `lockPrefix` fija el prefijo al confirmarse una publicación.
 
 - `catalogQuestionSource` copia colecciones, ordena filtros por FieldId y omite ajustes null/vacíos; null en controles pendientes sigue siendo inválido. El cuerpo congelado y el recibo comparan toda la fuente, sin renovar identidad por filtros o presentación.
-- `useRecipientPreview` prueba una persona por dueño y fuente, sin caché de cuerpos ni MutationCache. Cambiar persona, fuente, idioma o permisos retira opciones anteriores y aborta la lectura; las muestras paginadas tienen su propia limpieza.
+- `useRecipientPreview` prueba una persona por dueño y fuente, sin caché de cuerpos ni MutationCache. Cambiar persona, fuente, idioma o permisos retira opciones anteriores y aborta la lectura; las muestras paginadas tienen su propia limpieza. Un fallo de red, 5xx o 429 se repite sólo con `retry` (nunca solo); un 429 lo deshabilita durante su `retryAfter` (60 s sin dato) y expone esa espera en `waitSeconds`. 400, 404, 401 y 403 no se reintentan.
 
 ### Publicación
 
