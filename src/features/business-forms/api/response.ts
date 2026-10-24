@@ -115,7 +115,11 @@ const publicationCompatibility = z.enum(["Blocked", "LocallyValidated", "Unavail
 const publicationIssue = z.strictObject({ channelId: z.string().nullable(), fieldId: guid.nullable(), choiceId: guid.nullable(),
   path: z.string(), code: z.string(), message: z.string(), limit: z.number().int().nullable(), culture: z.enum(["es", "en"]).nullable() });
 const warningCount = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
-const publicationWarning = z.strictObject({ fieldId: guid.nullable(), path: z.string(), code: z.string(), message: z.string(), limit: warningCount.optional(), maximum: warningCount.optional(), maximumLabel: z.string().optional(), count: warningCount.optional(), people: z.array(z.string()).max(5).optional() });
+const warningTarget = { fieldId: guid, path: z.string(), message: z.string() };
+const publicationWarning = z.discriminatedUnion("code", [
+  z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.OptionsPerRecipientHigh"), limit: z.union([z.literal(20), z.literal(200)]), maximum: warningCount, maximumLabel: z.string().min(1).optional() }),
+  z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.RecipientsWithoutData"), count: warningCount.min(1), people: z.array(z.string().min(1)).max(5) }),
+]);
 const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: revision, nextVersionNumber: revision, compatibility: publicationCompatibility,
   canAccept: z.boolean(), acceptanceAvailability: z.enum(["Available", "Unavailable", "InProgress"]),
   checkToken: z.string().min(1).nullable(), checkExpiresAtUtc: utc.nullable(),
@@ -133,7 +137,7 @@ export function readFormPublicationCheck(value: unknown, definitionId: string, e
     const field = fields.find(item => item.fieldId?.toLowerCase() === issue.fieldId?.toLowerCase());
     return !field || issue.choiceId !== null && (field.type !== "choice" && field.type !== "multiChoice" || !field.options?.some(option => option.choiceId?.toLowerCase() === issue.choiceId?.toLowerCase()));
   })) throw new UnsupportedFormResponse();
-  if (checked.warnings.some(warning => warning.fieldId !== null && !fields.some(field => field.fieldId?.toLowerCase() === warning.fieldId?.toLowerCase()))) throw new UnsupportedFormResponse();
+  if (checked.warnings.some(warning => !fields.some(field => field.fieldId?.toLowerCase() === warning.fieldId.toLowerCase()))) throw new UnsupportedFormResponse();
   const hasTicket = checked.checkToken !== null && checked.checkExpiresAtUtc !== null;
   if (checked.canAccept ? !hasTicket || checked.compatibility !== "LocallyValidated" || checked.acceptanceAvailability !== "Available" || checked.issues.length !== 0 : checked.checkToken !== null || checked.checkExpiresAtUtc !== null) throw new UnsupportedFormResponse();
   if (checked.definitionId.toLowerCase() !== definitionId.toLowerCase() || checked.draftRevision !== expectedRevision) throw new UnsupportedFormResponse();

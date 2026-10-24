@@ -154,3 +154,11 @@ it("shows recipient diagnostics without disabling an otherwise publishable versi
   expect(screen.getByText("Ana, Luis")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
 });
+
+it("says one option, not «1 opciones», for a maximum of one", async () => {
+  const warning = { fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh", message: "Revisá el máximo.", limit: 20, maximum: 1 } as const;
+  result = { ...checked, warnings: [warning, { ...warning, maximum: 2, maximumLabel: "Norte" }] };
+  await mount();
+  expect(screen.getByText("Como mucho 1 opción por persona, de un límite de 20.")).toBeInTheDocument();
+  expect(screen.getByText("Como mucho 2 opciones por persona (Norte), de un límite de 20.")).toBeInTheDocument();
+});

@@ -29,3 +29,20 @@ it("keeps recipient warnings nonblocking, including a maximum below the limit", 
 it.each([undefined, null, [{ fieldId: id(99), path: "source", code: "x", message: "x" }], [{ fieldId: id(1), path: "source", code: "x", message: "x", people: Array(6).fill("person") }]])("rejects missing or foreign warning metadata", warnings => {
   expect(() => readFormPublicationCheck({ ...checked, warnings }, id(8), 1, [question])).toThrow("Unsupported form response.");
 });
+const maximumWarning = { fieldId: id(1), path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh", message: "Revisá el máximo.", limit: 20, maximum: 1 };
+const missingDataWarning = { fieldId: id(1), path: "draft.fields[0].source.match", code: "Forms.Publication.RecipientsWithoutData", message: "Faltan datos.", count: 1, people: [] };
+it("accepts each warning code with only its own details, including people without a name", () => {
+  expect(readFormPublicationCheck({ ...checked, warnings: [maximumWarning, missingDataWarning] }, id(8), 1, [question]).warnings).toEqual([maximumWarning, missingDataWarning]);
+});
+it.each([
+  { ...maximumWarning, code: "x" },
+  { ...maximumWarning, fieldId: null },
+  { ...missingDataWarning, fieldId: null },
+  Object.fromEntries(Object.entries(maximumWarning).filter(([key]) => key !== "maximum")),
+  { ...maximumWarning, limit: 50 },
+  { ...maximumWarning, count: 1 },
+  { ...missingDataWarning, limit: 20 },
+  { ...missingDataWarning, count: 0 },
+])("rejects a warning with an unknown code, a null question or details of another code: %j", warning => {
+  expect(() => readFormPublicationCheck({ ...checked, warnings: [warning] }, id(8), 1, [question])).toThrow("Unsupported form response.");
+});

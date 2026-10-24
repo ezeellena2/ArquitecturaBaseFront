@@ -244,8 +244,10 @@
     "blockingIssues": "Problemas · frenan",
     "nonBlockingWarnings": "Avisos · no frenan",
     "noDiagnostics": "Ninguno.",
-    "recipientMaximum": "Como mucho {{maximum}} opciones por persona, de un límite de {{limit}}.",
-    "recipientMaximumForGroup": "Como mucho {{maximum}} opciones por persona ({{group}}), de un límite de {{limit}}.",
+    "recipientMaximum_one": "Como mucho {{count}} opción por persona, de un límite de {{limit}}.",
+    "recipientMaximum_other": "Como mucho {{count}} opciones por persona, de un límite de {{limit}}.",
+    "recipientMaximumForGroup_one": "Como mucho {{count}} opción por persona ({{group}}), de un límite de {{limit}}.",
+    "recipientMaximumForGroup_other": "Como mucho {{count}} opciones por persona ({{group}}), de un límite de {{limit}}.",
     "recipientsMissingData_one": "{{count}} persona no tiene el dato necesario para recibirlo.",
     "recipientsMissingData_other": "{{count}} personas no tienen el dato necesario para recibirlo."
   },

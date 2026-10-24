@@ -19,6 +19,7 @@ import type { DraftEditorValue } from "../model";
 import type { FormPublicationCheck } from "../api/response";
 
 type PublicationIssue = FormPublicationCheck["issues"][number];
+type PublicationWarning = FormPublicationCheck["warnings"][number];
 export function PublicationCheckDialog({ scope, id, revision, value, dirty, canSave, onAccept, accepting, onOpenChange, onSave, onConflict, onGoToIssue, savedAt, prefixLocked, baseVersionId, baseVersionNumber, reactivation, onCloseAutoFocus: restoreExternalFocus }: {
   reactivation?: { name: string; nextRecordNumber: string | null };
   onCloseAutoFocus?: (event: Event) => void;
@@ -74,6 +75,14 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
     return option ? t("publication.missingChoice", { name, option: localizedValue(option.label, scope.culture, value.draft.culture) })
       : t(issue.path.includes(".help") ? "publication.missingHelp" : "publication.missingQuestion", { name });
   };
+  const warningDetails = (warning: PublicationWarning) => {
+    switch (warning.code) {
+      case "Forms.Publication.OptionsPerRecipientHigh":
+        return <p className="text-[var(--color-content-muted)]">{t(warning.maximumLabel ? "publication.recipientMaximumForGroup" : "publication.recipientMaximum", { count: warning.maximum, limit: warning.limit, group: warning.maximumLabel })}</p>;
+      case "Forms.Publication.RecipientsWithoutData":
+        return <><p className="text-[var(--color-content-muted)]">{t("publication.recipientsMissingData", { count: warning.count })}</p>{warning.people.length ? <p>{warning.people.join(", ")}</p> : null}</>;
+    }
+  };
   const currentNames = (ids: readonly string[]) => value.draft.fields.filter(q => q.fieldId && ids.includes(q.fieldId)).map(q => localizedValue(q.label, scope.culture, value.draft.culture)).join(", ");
   const content = <>{dirty ? <p className="text-sm">{t("publication.savedOnly")}</p> : check.busy || !check.result && !check.error ? <div role="status" className="flex items-center gap-2"><Spinner /><p className="text-sm">{t("publication.checking")}</p></div>
       : check.error ? <EmptyState title={t(check.error instanceof ApiError && check.error.status === 403 ? "publication.noPermission" : "publication.pending")} action={check.error instanceof ApiError && check.error.status === 403 ? undefined : <Button type="button" variant="outline" disabled={cooldown.isRunning} onClick={() => void check.check(id, body)}>{t("common:actions.retry")}</Button>} />
@@ -111,9 +120,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
               <div className="flex min-w-0 flex-col gap-1 text-sm">
                 {question ? <p className="font-medium">{localizedValue(question.label, scope.culture, value.draft.culture)}</p> : null}
                 <p>{warning.message}</p>
-                {warning.maximum !== undefined && warning.limit !== undefined ? <p className="text-[var(--color-content-muted)]">{t(warning.maximumLabel ? "publication.recipientMaximumForGroup" : "publication.recipientMaximum", { maximum: warning.maximum, limit: warning.limit, group: warning.maximumLabel })}</p> : null}
-                {warning.count !== undefined ? <p className="text-[var(--color-content-muted)]">{t("publication.recipientsMissingData", { count: warning.count })}</p> : null}
-                {warning.people?.length ? <p>{warning.people.join(", ")}</p> : null}
+                {warningDetails(warning)}
               </div>
             </li>;
           })}</ul> : <p className="flex items-center gap-2 text-sm text-[var(--color-success-700)]"><CheckIcon aria-hidden="true" className="size-4 shrink-0" />{t("publication.noDiagnostics")}</p>}
