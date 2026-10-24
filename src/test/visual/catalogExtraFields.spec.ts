@@ -1,8 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { catalogExtraFieldFixtureIds } from "./catalogExtraFieldsFixtures";
 
-async function open(page: Page, language: "es" | "en") {
-  await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + catalogExtraFieldFixtureIds.catalog, scenario: "catalogs-extra-fields", lang: language }));
+async function open(page: Page, language: "es" | "en", scenario = "catalogs-extra-fields") {
+  await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + catalogExtraFieldFixtureIds.catalog, scenario, lang: language }));
   await expect(page.getByRole("heading", { name: language === "es" ? "Proveedores" : "Suppliers", exact: true })).toBeVisible();
   if (language === "en") await page.getByRole("button", { name: "English", exact: true }).click();
   await page.evaluate(() => document.fonts.ready);
@@ -86,6 +86,45 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: info.outputPath("ce2-catalog-cell-list.png") });
     await option.click();
     await expect(zone).toHaveValue(north); await expect(zone).toBeFocused();
+    await noWrites(page);
+  });
+}
+for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
+  test("CE1 field in use names its stage and links to the question " + language + " " + width, async ({ page }, info) => {
+    const es = language === "es", form = es ? "Pedir repuesto" : "Request a spare part", question = es ? "Proveedores a consultar" : "Suppliers to ask";
+    await page.setViewportSize({ width, height: 900 }); await open(page, language, "catalogs-extra-fields-in-use");
+    await page.getByRole("button", { name: es ? "Editar campos" : "Edit fields", exact: true }).click();
+    const remove = async (name: string) => {
+      await page.getByRole("button", { name: (es ? "Quitar " : "Remove ") + name, exact: true }).click();
+      const dialog = page.getByRole("dialog", { name: es ? `Quitar «${name}»` : `Remove “${name}”`, exact: true });
+      await expect(dialog).toBeVisible();
+      return dialog;
+    };
+    // One line for the question used by the active version and the draft, its link and no removal.
+    const zone = await remove(es ? "Zona" : "Zone");
+    await expect(zone.getByRole("listitem")).toHaveCount(1);
+    await expect(zone.getByRole("listitem")).toContainText(es ? `«${question}» en ${form}, en la versión activa y en el borrador` : `“${question}” in ${form}, in the active version and the draft`);
+    const link = zone.getByRole("link", { name: es ? `Ir a la pregunta «${question}» de ${form}` : `Go to the question “${question}” in ${form}`, exact: true });
+    await expect(link).toHaveText(es ? "Ir a la pregunta" : "Go to the question");
+    await expect(link).toHaveAttribute("href", "/formularios/" + catalogExtraFieldFixtureIds.form);
+    await expect(zone.getByRole("button", { name: es ? "Quitar el campo" : "Remove field", exact: true })).toHaveCount(0);
+    await contained(page, zone, width);
+    await page.screenshot({ path: info.outputPath("ce1-field-in-use.png"), fullPage: true });
+    await expect(zone).toHaveScreenshot(`catalog-field-in-use-${language}-${width}.png`);
+    await page.keyboard.press("Escape");
+    // A use left only in the active version says so.
+    const term = await remove(es ? "Plazo de pago (días)" : "Payment term (days)");
+    await expect(term.getByRole("listitem")).toContainText(es ? `«${question}» en ${form}, en la versión activa` : `“${question}” in ${form}, in the active version`);
+    await expect(term.getByRole("listitem")).not.toContainText(es ? "borrador" : "draft");
+    await page.keyboard.press("Escape");
+    // The catalog's own «En WhatsApp» is part of this catalog, not a form: it does not block and is not named.
+    const cuit = await remove("CUIT");
+    await expect(cuit.getByText(es ? "También se saca de «En WhatsApp» de este catálogo." : "It's also removed from this catalog's “In WhatsApp”.", { exact: true })).toBeVisible();
+    await expect(cuit.getByText(es ? "Proveedores" : "Suppliers", { exact: true })).toHaveCount(0);
+    await expect(cuit.getByRole("listitem")).toHaveCount(0);
+    await expect(cuit.getByRole("button", { name: es ? "Quitar el campo" : "Remove field", exact: true })).toBeVisible();
+    await page.screenshot({ path: info.outputPath("ce1-field-own-presentation.png"), fullPage: true });
+    await page.keyboard.press("Escape");
     await noWrites(page);
   });
 }
