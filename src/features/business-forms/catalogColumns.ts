@@ -18,7 +18,7 @@ export interface CatalogItemColumn {
 // Both presentations describe the same option; only the compact readonly table folds code into text.
 export function catalogItemColumns(valueType: CatalogValueType, culture: FormCulture, fields: readonly CatalogFieldDraft[] = []): readonly CatalogItemColumn[] {
   return [
-    { id: "text", tableLabelKey: "catalogs.items.text", editorLabelKey: "catalogs.items.text", errorPath: "text." + culture, required: culture === "es", maxLength: 30 },
+    { id: "text", tableLabelKey: "catalogs.items.text", editorLabelKey: "catalogs.items.text", errorPath: "text." + culture, required: true, maxLength: 30 },
     { id: "code", tableLabelKey: "catalogs.items.code", editorLabelKey: "catalogs.items.code", errorPath: "code", required: true, maxLength: 80 },
     ...fields.filter(field => field.isActive).map((field): CatalogItemColumn => ({ id: `field:${field.id ?? field.localId}`, tableLabelKey: "", editorLabelKey: "", errorPath: "fields." + (field.id ?? field.localId), required: field.required, field })),
     ...(valueType === "Text" ? [] : [{ id: "value" as const, tableLabelKey: "catalogs.items.value", editorLabelKey: "catalogs.valueType.valueLabel", errorPath: "value", required: true, maxLength: 64,

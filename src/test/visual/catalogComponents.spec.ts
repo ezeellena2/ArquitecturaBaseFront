@@ -34,6 +34,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const text = page.getByRole("textbox", { name: es ? "Texto" : "Text", exact: true });
     await expect(text).toBeFocused();
     await expect(text).toHaveValue(es ? "Pérez Hnos." : "");
+    if (!es) await expect(text).toHaveAccessibleDescription("Original (Spanish): Pérez Hnos.");
     await text.scrollIntoViewIfNeeded();
     const box = await text.boundingBox();
     expect(box).not.toBeNull();

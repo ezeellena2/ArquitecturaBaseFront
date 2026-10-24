@@ -20,6 +20,7 @@ import { applyCatalogImport, previewCatalogImport, type CatalogImportPreview } f
 import type { CatalogDetail } from "../api/catalogResponse";
 import { parseCatalogPaste } from "../catalogPaste";
 import { catalogScalarText, catalogTypedValueTypes } from "../catalogValues";
+import { administrativeName } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 
 export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; initialSource: "file" | "paste"; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void }
@@ -30,8 +31,7 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
   const { t, i18n } = useTranslation("forms");
   const owner = JSON.stringify([scope.actorId, scope.culture, [...scope.permissions].sort(), catalog.id]);
   const fields = (catalog.fields ?? []).filter(field => field.isActive).sort((a, b) => a.position - b.position);
-  const columnLabel = (column: string) => fields.find(field => field.id === column)?.name[scope.culture]
-    || fields.find(field => field.id === column)?.name.es || t("catalogs.import.columns." + column, { defaultValue: column });
+  const columnLabel = (column: string) => administrativeName(fields.find(field => field.id === column)?.name, scope.culture) || t("catalogs.import.columns." + column, { defaultValue: column });
   const displayColumn = (column: string, value: string | null | undefined, text?: string) => {
     if (value === null || value === undefined) return "—";
     const type = fields.find(field => field.id === column)?.type;
@@ -101,7 +101,7 @@ export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId,
   const close = () => { if (state.busy === "apply") return; operation.current?.abort(); operation.current = null; setState(fresh(owner, state.revision, state.source)); onClose(); };
   const changeSource = (source: string) => { if (!state.busy && (source === "file" || source === "paste")) setState(fresh(owner, state.revision, source)); };
   return <Dialog open onOpenChange={open => { if (!open && state.busy !== "apply") close(); }}><DialogContent mobileFullscreen className="flex flex-col sm:max-w-3xl" showCloseButton={state.busy !== "apply"} onCloseAutoFocus={restoreFocus}>
-    <DialogHeader><DialogTitle className="pr-6">{t("catalogs.import.title", { name: catalog.name[scope.culture] || catalog.name.es })}</DialogTitle><DialogDescription>{t("catalogs.import.description")}</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle className="pr-6">{t("catalogs.import.title", { name: administrativeName(catalog.name, scope.culture) })}</DialogTitle><DialogDescription>{t("catalogs.import.description")}</DialogDescription></DialogHeader>
     <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
       <ol className="flex flex-wrap gap-4 text-sm">{["fileStep", "reviewStep", "applyStep"].map((step, index) => <li key={step} aria-current={index === (preview ? 1 : 0) ? "step" : undefined}>{index + 1} · {t("catalogs.import." + (state.source === "paste" && step === "fileStep" ? "pasteStep" : step))}</li>)}</ol>
       {!owned || state.forbidden ? <p>{t("catalogs.import.forbidden")}</p> : !preview ? <Tabs value={state.source} onValueChange={changeSource}>

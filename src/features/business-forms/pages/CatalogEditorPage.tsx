@@ -57,7 +57,9 @@ interface FieldErrorRows {
 const conversionKeys = ["isActive", "type", "sourceCatalogId"] as const;
 const ruleKeys = [...conversionKeys, "maxLength", "min", "max", "unique"] as const;
 const incompatibleControls = ["isActive", "maxLength", "min", "max", "unique"];
-const touchedKey = (localId: string, path: string) => localId + "\u0000" + path;
+// An option has one text control, in the menu language: leaving it touches the option's text in either language, so a
+// missing original shows under it too.
+const touchedKey = (localId: string, path: string) => localId + "\u0000" + (path.startsWith("text.") ? "text" : path);
 
 export function CatalogEditorPage() {
   const { t, i18n } = useTranslation("forms");
@@ -149,7 +151,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   // What the editor finds wrong in the options before saving. An empty control (`required`) is marked only after Save was
   // tried with that option in the draft or after leaving that control; the rest show while typing.
   const itemProblems: { localId: string; path: string; required: boolean; message: string }[] = [];
-  for (const issue of catalogItemProblems(knownItems)) {
+  for (const issue of catalogItemProblems(knownItems, original)) {
     const key = issue.kind === "duplicateCode" ? issue.otherPosition ? "duplicateCode" : "duplicateCodeNew" : issue.kind;
     itemProblems.push({ localId: issue.localId, path: issue.field, required: issue.kind === "required", message: t("catalogs.items." + key, { row: issue.otherPosition }) });
   }
@@ -217,7 +219,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const addItem = () => {
     if (!editor.canSave || !draft) return;
     const localId = crypto.randomUUID();
-    editor.changeItem({ localId, itemId: null, label: { es: "", en: null }, detail: { es: null, en: null }, code: "", value: null, isActive: true, position: null });
+    editor.changeItem({ localId, itemId: null, label: { es: null, en: null }, detail: { es: null, en: null }, code: "", value: null, isActive: true, position: null });
     setExpanded(localId);
   };
   const generateCodes = () => generateMissingCatalogCodes(knownItems).forEach((item, index) => { if (knownItems[index]!.code !== item.code) editor.changeItem(item); });
@@ -238,7 +240,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
       <CatalogFieldsSection fields={draft.fields} presentation={draft.presentation} culture={culture} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} rootErrors={fields.fields} errorRows={errorRows && errorRows.control !== "type" && !errorRows.showRows ? { count: errorRows.rows.length, onShow: showErrorRows } : undefined} onChange={editor.changeFields} />
       {draft.sortAlphabetically ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.actions.sortPending")}</p><Button variant="outline" disabled={readOnly} onClick={() => editor.changeSort(false)}>{t("catalogs.actions.clearSort")}</Button></div></Surface> : null}
       {draft.moves.length ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.items.movesPending", { count: draft.moves.length })}</p><Button variant="outline" disabled={readOnly} onClick={editor.clearMoves}>{t("catalogs.items.clearMoves")}</Button></div></Surface> : null}
-      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor fields={draft.fields} scope={scope} sortPending={draft.sortAlphabetically} warnings={itemWarnings} onGenerateCode={item => generateCode(item.localId)} actions={<CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} />} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onFieldBlur={(localId, path) => setTouched(current => current.has(touchedKey(localId, path)) ? current : new Set(current).add(touchedKey(localId, path)))} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
+      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /> : <CatalogManualItemsEditor fields={draft.fields} scope={scope} sortPending={draft.sortAlphabetically} warnings={itemWarnings} onGenerateCode={item => generateCode(item.localId)} actions={<CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} />} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} original={original} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onFieldBlur={(localId, path) => setTouched(current => current.has(touchedKey(localId, path)) ? current : new Set(current).add(touchedKey(localId, path)))} onAdd={addItem} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
         filters={draft.id ? <><div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={search => { hideErrorRows(); pagination.setSearch(search); }} /></div>{rowFilter ? <FilterChip removeLabel={t("catalogs.items.clearErrorRows")} onRemove={hideErrorRows}>{t("catalogs.items.errorRows", { count: rowFilter.length })}</FilterChip> : null}</> : undefined}
         pagination={rowFilter ? undefined : items.data} totalCount={rowFilter ? errorRows?.totalCount : undefined} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
     </div>

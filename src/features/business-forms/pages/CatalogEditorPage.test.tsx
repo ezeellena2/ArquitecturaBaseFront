@@ -148,6 +148,35 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(code).toHaveFocus();
     expect(bodies).toEqual([]);
   });
+  it("creates an option written only in the menu language", async () => {
+    setup(undefined, "en"); await i18n.changeLanguage("en"); const bodies: Record<string, unknown>[] = [];
+    server.use(http.post("/api/forms/catalogs", async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json({ catalog: { ...initial, name: { en: "Warehouses" }, description: {}, originalCulture: "en" }, itemIdentityMap: {}, fieldIdentityMap: {} }, { status: 201 }); }));
+    await mount("/catalogos/nuevo"); const user = userEvent.setup();
+    await pasteText(user, await screen.findByRole("textbox", { name: "Name" }), "Warehouses");
+    await user.click(screen.getByRole("button", { name: "Add option" }));
+    await pasteText(user, screen.getByRole("textbox", { name: "Text" }), "Central");
+    await pasteText(user, screen.getByRole("textbox", { name: "Code" }), "D1");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]!.items).toEqual([expect.objectContaining({ itemId: null, code: "D1", text: { es: null, en: "Central" } })]);
+  });
+  it("marks a new option that lacks the catalog's original text under its text, with that language", async () => {
+    setup(); const bodies: unknown[] = [];
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, name: { en: "Customers" }, description: { en: "Visits" }, originalCulture: "en" })),
+      http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, text: { es: null, en: "Perez" } }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+      http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
+    const text = screen.getByRole("textbox", { name: "Texto" });
+    await pasteText(user, text, "Norte");
+    await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "N");
+    // Leaving the only text control touches the option's text in either language.
+    expect(text).toHaveAccessibleDescription("En inglés: Completá este campo.");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(text).toHaveAccessibleDescription("En inglés: Completá este campo.");
+    expect(text).toHaveFocus();
+    expect(bodies).toEqual([]);
+  });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
     setup(); const bodies: unknown[] = []; let savedOption = option;
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));

@@ -10,7 +10,7 @@ import type { CatalogFieldDraft } from "../catalogFields";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import { catalogOptionPresentation, presentationPartNames } from "../catalogPresentation";
 import type { CatalogValueType } from "../catalogValues";
-import { localizedValue } from "../editorModel";
+import { administrativeName } from "../editorModel";
 import type { FormCulture } from "../model";
 
 // `check` is the server's count over every active option, per catalog language. Without it (an editor with unsaved
@@ -20,13 +20,13 @@ export function CatalogPresentationSection({ embedded = false, value, fields, it
   const { t } = useTranslation("forms");
   const labelId = useId();
   const selected = value ?? { title: ["text"], description: ["detail"] };
-  const choices = [...["text", "code", "detail", ...(valueType === "Text" ? [] : ["value"])].map(key => ({ key, label: t("catalogs.items." + key), disabled: false })), ...fields.filter(field => field.isActive).map(field => ({ key: field.id ?? field.localId, label: localizedValue(field.name, culture, "es"), disabled: field.id === null }))];
+  const choices = [...["text", "code", "detail", ...(valueType === "Text" ? [] : ["value"])].map(key => ({ key, label: t("catalogs.items." + key), disabled: false })), ...fields.filter(field => field.isActive).map(field => ({ key: field.id ?? field.localId, label: administrativeName(field.name, culture), disabled: field.id === null }))];
   const names = presentationPartNames(selected, fields, culture, key => t("catalogs.items." + key), t("catalogs.presentation.unavailable"));
   const update = (part: "title" | "description", keys: readonly string[]) => { if (!readOnly) onChange({ title: [...selected.title], description: [...selected.description], [part]: [...keys] }); };
   const example = items.find(item => item.isActive);
   const booleanLabels = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   const shown = example ? catalogOptionPresentation(example, value, fields, valueType, culture, booleanLabels, inputCulture) : null;
-  const hidden = fields.filter(field => field.isActive && ![...selected.title, ...selected.description].includes(field.id ?? field.localId)).map(field => localizedValue(field.name, culture, "es"));
+  const hidden = fields.filter(field => field.isActive && ![...selected.title, ...selected.description].includes(field.id ?? field.localId)).map(field => administrativeName(field.name, culture));
   const localTooLong = check === undefined ? items.filter(item => item.isActive && catalogOptionPresentation(item, value, fields, valueType, culture, booleanLabels, inputCulture).title.length > 30).length : 0;
   const problems = (check?.cultures ?? []).flatMap(entry => [
     { culture: entry.culture, part: "title", count: entry.titleTooLongCount, examples: entry.titleExamples },

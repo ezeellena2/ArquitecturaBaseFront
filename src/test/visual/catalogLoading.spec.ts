@@ -30,9 +30,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const table = page.locator('[data-slot="table-container"]').first();
     const tableBox = (await table.boundingBox())!;
     expect(tableBox.x).toBeGreaterThanOrEqual(0); expect(tableBox.x + tableBox.width).toBeLessThanOrEqual(width);
-    // The texts are edited in the menu language: with the menu in English, the Spanish options have no translation yet.
+    // The texts are edited in the menu language: with the menu in English, the Spanish options have no translation yet and
+    // their original is the reference, never copied.
     if (width >= 640) {
       await expect(page.getByRole("textbox", { name: label("Texto de la opción 1", "Option 1 text"), exact: true })).toHaveValue(en ? "" : "Pérez");
+      if (en) await expect(page.getByRole("textbox", { name: "Option 1 text", exact: true })).toHaveAttribute("placeholder", "Pérez");
       await expect(page.getByRole("textbox", { name: label("Código de la opción 1", "Option 1 code"), exact: true })).toHaveValue("C1");
       await expect(page.getByText(en ? "0/30" : "5/30", { exact: true }).first()).toBeVisible();
     } else {
@@ -40,6 +42,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await page.getByRole("button", { name: label("Editar Pérez", "Edit Pérez"), exact: true }).click();
       const text = page.getByRole("textbox", { name: label("Texto", "Text"), exact: true });
       await expect(text).toHaveValue(en ? "" : "Pérez"); await text.scrollIntoViewIfNeeded();
+      if (en) await expect(text).toHaveAccessibleDescription("Original (Spanish): Pérez");
       const box = (await text.boundingBox())!; expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width);
       await page.getByRole("button", { name: label("Listo", "Done"), exact: true }).click();
       await expect(page.getByRole("button", { name: label("Editar Pérez", "Edit Pérez"), exact: true })).toBeFocused();

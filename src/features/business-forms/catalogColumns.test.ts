@@ -7,7 +7,7 @@ describe("catalog option columns", () => {
     const columns = catalogItemColumns("Decimal", "en");
     expect(columns.map(column => column.id)).toEqual(["text", "code", "value", "detail", "isActive"]);
     expect(catalogTableColumns(columns, true).map(column => column.id)).toEqual(columns.map(column => column.id));
-    expect(columns.find(column => column.id === "text")).toMatchObject({ errorPath: "text.en", maxLength: 30 });
+    expect(columns.find(column => column.id === "text")).toMatchObject({ errorPath: "text.en", required: true, maxLength: 30 });
     expect(columns.find(column => column.id === "value")).toMatchObject({ inputMode: "decimal", inputType: "text", required: true });
   });
 

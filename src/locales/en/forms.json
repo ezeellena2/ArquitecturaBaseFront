@@ -402,7 +402,6 @@
       "code": "Code",
       "textAndCode": "Text and code",
       "codeHint": "The code is for the business: it is not shown in WhatsApp.",
-      "englishHint": "Leave the English text blank to use the Spanish text.",
       "active": "Active",
       "activeHint": "Inactive options are not offered in new sends. Existing answers retain the option they selected.",
       "reactivate": "Reactivate",

@@ -402,7 +402,6 @@
       "code": "Código",
       "textAndCode": "Texto y código",
       "codeHint": "El código es para la empresa: no se muestra en WhatsApp.",
-      "englishHint": "Si no completás el texto en inglés, se usa el de español.",
       "active": "Activa",
       "activeHint": "Una opción dada de baja deja de ofrecerse en los envíos nuevos. Las respuestas que ya la eligieron siguen mostrándola.",
       "reactivate": "Reactivar",

@@ -4,12 +4,23 @@ import type { CatalogManualItemValue } from "./catalogItemEdits";
 const row: CatalogManualItemValue = { localId: "a", itemId: "saved", position: 2, label: { es: "De urgencia", en: null }, code: "URG", value: null, detail: {}, isActive: true };
 it("blocks duplicate codes case-insensitively even for an inactive row, but only warns about repeated text", () => {
   const rows = [row, { ...row, localId: "b", itemId: "other", position: 4, code: " urg ", isActive: false }];
-  expect(catalogItemProblems(rows)).toEqual([{ localId: "a", field: "code", kind: "duplicateCode", otherPosition: 4 }, { localId: "b", field: "code", kind: "duplicateCode", otherPosition: 2 }]);
+  expect(catalogItemProblems(rows, "es")).toEqual([{ localId: "a", field: "code", kind: "duplicateCode", otherPosition: 4 }, { localId: "b", field: "code", kind: "duplicateCode", otherPosition: 2 }]);
   expect(duplicateCatalogTexts(rows, "es")).toEqual({a:4,b:2});
-  expect(catalogItemProblems([{ ...row, label: { es: "Correctivo" } }, { ...row, localId: "b", code: "CORR", label: { es: "Correctivo" } }])).toEqual([]);
+  expect(catalogItemProblems([{ ...row, label: { es: "Correctivo" } }, { ...row, localId: "b", code: "CORR", label: { es: "Correctivo" } }], "es")).toEqual([]);
 });
 it("preserves overlong pasted text and reports the exact language instead of truncating it", () => {
-  expect(catalogItemProblems([{ ...row, label: { es: "x".repeat(31), en: "y".repeat(32) } }])).toEqual([{ localId: "a", field: "text.es", kind: "textTooLong" }, { localId: "a", field: "text.en", kind: "textTooLong" }]);
+  expect(catalogItemProblems([{ ...row, label: { es: "x".repeat(31), en: "y".repeat(32) } }], "es")).toEqual([{ localId: "a", field: "text.es", kind: "textTooLong" }, { localId: "a", field: "text.en", kind: "textTooLong" }]);
+});
+it("accepts an option written only in the menu language and marks a missing original text", () => {
+  const north: CatalogManualItemValue = { ...row, localId: "north", code: "N", label: { es: null, en: "North" } };
+  // A catalog created with the menu in English: its original is English and Spanish is the optional translation.
+  expect(catalogItemProblems([north], "en")).toEqual([]);
+  expect(catalogItemProblems([{ ...north, label: { es: null, en: " " } }], "en")).toEqual([{ localId: "north", field: "text.en", kind: "required" }]);
+  // In a Spanish catalog the same option lacks its original text, whatever language it was written in.
+  expect(catalogItemProblems([north], "es")).toEqual([{ localId: "north", field: "text.es", kind: "required" }]);
+});
+it("generates the missing code from the text in any language", () => {
+  expect(generateMissingCatalogCodes([{ ...row, localId: "north", itemId: null, code: "", label: { es: null, en: "North side" } }]).map(item => item.code)).toEqual(["NORTH-SIDE"]);
 });
 it("generates only missing codes from Spanish text, keeps identity and values, and disambiguates known codes without changing them", () => {
   const rows = [row, { ...row, localId: "b", code: "DE-URGENCIA" }, { ...row, localId: "c", itemId: null, code: "", value: "1500.5" }, { ...row, localId: "d", itemId: null, code: "", label: { es: "Árbol / Norte" } }];
