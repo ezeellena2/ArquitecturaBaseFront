@@ -6,6 +6,7 @@ import { usePermissions } from "@/auth/usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
@@ -52,7 +53,8 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
   const selectingModel = !manualModel && !!catalog.models?.length;
   const error = (field: string) => editor.errors[field] ?? probe.errors[field] ?? catalog.errors[field];
   function provider(next: AiProvider) { editor.change(changeProvider(draft, next)); setNextProvider(null); setManualModel(false); }
-  return <Page title={t("title")} status={editor.changed ? <span className="text-sm text-[var(--color-content-muted)]">{t("dirty")}</span> : undefined}
+  // La banda lleva solo el título y las acciones: Guardar habilitado ya dice que hay cambios.
+  return <Page title={t("title")}
     actions={canManage ? <><Button variant="outline" disabled={!editor.changed || locked} onClick={editor.discard}>{t("discard")}</Button>
       <Button disabled={!editor.changed || locked} onClick={() => void editor.save()}>{t(editor.busy ? "saving" : "save")}</Button></> : undefined}>
     <div className="flex flex-col gap-5">
@@ -72,41 +74,49 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
                 {catalog.models?.map(model => <option key={model.id} value={model.id}>{model.displayName === model.id ? model.id : `${model.displayName} (${model.id})`}</option>)}
               </NativeSelect> : <Input name="ai-provider-model" value={draft.model} maxLength={150} disabled={locked} autoComplete="off" spellCheck={false} autoCapitalize="none" onChange={event => editor.change({ model: event.target.value })} />}
             </FormField>
+            {/* La espera de un 429 es el motivo del botón deshabilitado, no un texto debajo. */}
             {canManage ? <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" disabled={locked || catalog.busy || !catalog.canLoad} onClick={() => void catalog.load()}>
-                {catalog.busy ? <Spinner decorative /> : null}{t(catalog.busy ? "loadingModels" : catalog.models ? "refreshModels" : "loadModels")}
-              </Button>
+              <DisabledReason reason={catalog.cooldown ? t("modelsCooldown", { count: catalog.cooldown }) : null}>
+                <Button variant="outline" disabled={locked || catalog.busy || !catalog.canLoad} onClick={() => void catalog.load()}>
+                  {catalog.busy ? <Spinner decorative /> : null}{t(catalog.busy ? "loadingModels" : catalog.models ? "refreshModels" : "loadModels")}
+                </Button>
+              </DisabledReason>
               {catalog.models?.length ? <Button variant="muted-link" disabled={locked} onClick={() => setManualModel(previous => !previous)}>{t(manualModel ? "chooseFromCatalog" : "manualModel")}</Button> : null}
             </div> : null}
-            {catalog.cooldown ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("modelsCooldown", { count: catalog.cooldown })}</p> : null}
           </div>
         </div>
       </Surface>
-      <Surface title={t("credentialSection")} padded>
-        <div className="flex max-w-3xl flex-wrap items-start justify-between gap-3">
-          <div><p className="text-sm font-medium">{t(savedCredential ? "configuredKey" : "absentKey")}</p><p className="mt-1 text-sm text-[var(--color-content-muted)]">{t("credentialHint")}</p></div>
-          {savedCredential && canManage ? <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled={locked} onClick={() => editor.change({ replacing: !draft.replacing, apiKey: "", credentialChange: draft.replacing ? "Keep" : "Replace" })}>{t(draft.replacing ? "cancelReplace" : "replace")}</Button>
-            <Button variant="muted-link" disabled={locked} onClick={() => setRemoving(true)}>{t("remove")}</Button>
-          </div> : null}
-        </div>
+      {/* Probar, Reemplazar y Quitar actúan sobre toda la superficie: van en su banda. El resultado de la prueba va
+          al Toaster y la espera de un 429 es el motivo del botón, sin textos al lado. */}
+      <Surface title={t("credentialSection")} padded actions={canManage ? <>
+        <DisabledReason reason={probe.cooldown ? t("cooldown", { count: probe.cooldown }) : null}>
+          <Button variant="outline" disabled={locked || !credential || !draft.model.trim() || probe.cooldown > 0} onClick={() => void probe.test()}>
+            {probe.busy ? <Spinner decorative /> : null}{t(probe.busy ? "testing" : "test")}</Button>
+        </DisabledReason>
+        {savedCredential ? <>
+          <Button variant="outline" disabled={locked} onClick={() => editor.change({ replacing: !draft.replacing, apiKey: "", credentialChange: draft.replacing ? "Keep" : "Replace" })}>{t(draft.replacing ? "cancelReplace" : "replace")}</Button>
+          <Button variant="muted-link" disabled={locked} onClick={() => setRemoving(true)}>{t("remove")}</Button>
+        </> : null}
+      </> : undefined}>
+        <div className="max-w-3xl"><p className="text-sm font-medium">{t(savedCredential ? "configuredKey" : "absentKey")}</p><p className="mt-1 text-sm text-[var(--color-content-muted)]">{t("credentialHint")}</p></div>
         {!savedCredential || draft.replacing ? <div className="max-w-3xl"><FormField label={t(savedCredential ? "newKey" : "key")} hint={t("keyHint")} error={error("apiKey")}>
           <Input name="ai-provider-api-key" type="password" value={draft.apiKey} autoComplete="new-password" spellCheck={false} autoCapitalize="none" maxLength={4096} disabled={locked} onChange={event => editor.change({ apiKey: event.target.value, credentialChange: event.target.value ? "Replace" : savedCredential ? "Replace" : "Remove" })} />
         </FormField></div> : error("apiKey") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{error("apiKey")}</p> : null}
-        {canManage ? <div className="flex flex-wrap items-center gap-3"><Button variant="outline" disabled={locked || !credential || !draft.model.trim() || probe.cooldown > 0} onClick={() => void probe.test()}>
-          {probe.busy ? <Spinner decorative /> : null}{t(probe.busy ? "testing" : "test")}</Button><p role="status" className="text-sm text-[var(--color-content-muted)]">{probe.cooldown ? t("cooldown", { count: probe.cooldown }) : t(probe.tested ? "verified" : "unverified")}</p></div> : null}
         <p className="max-w-3xl text-sm text-[var(--color-content-muted)]">{t("testHint")}</p>
       </Surface>
       <Surface title={t("availabilitySection")} padded>
         <RadioGroupField label={t("availability")} value={draft.enabled ? "on" : "off"} onValueChange={value => editor.change({ enabled: value === "on" })} error={error("enabled")}
           options={[{ value: "on", label: t("available"), description: t("availableHint"), disabled: locked || !credential }, { value: "off", label: t("paused"), description: t("pausedHint"), disabled: locked }]} />
       </Surface>
-      {editor.recovery !== "none" ? <Surface title={t("reviewSection")} padded>
+      {/* El cuerpo explica el estado del guardado; consultar, reintentar y elegir van en la banda. */}
+      {editor.recovery !== "none" ? <Surface title={t("reviewSection")} padded actions={<>
+        <Button variant="outline" disabled={busy} onClick={() => void editor.recover()}>{t(editor.recovery === "conflict" ? "readCurrent" : "consultSave")}</Button>
+        {editor.recovery === "missing" ? <Button disabled={busy} onClick={() => void editor.save(true)}>{t("retrySame")}</Button> : null}
+        {editor.review ? <><Button variant="outline" disabled={busy} onClick={() => editor.acceptReview(false)}>{t("useCurrent")}</Button>
+          <Button disabled={busy} onClick={() => editor.acceptReview(true)}>{t("keepDraft")}</Button></> : null}
+      </>}>
         <p className="text-sm">{t(editor.recovery === "conflict" ? "conflict" : editor.recovery === "missing" ? "missingReceipt" : "uncertain")}</p>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => void editor.recover()}>{t(editor.recovery === "conflict" ? "readCurrent" : "consultSave")}</Button>
-          {editor.recovery === "missing" ? <Button disabled={busy} onClick={() => void editor.save(true)}>{t("retrySame")}</Button> : null}</div>
-        {editor.review ? <><p className="text-sm">{t("currentSummary", { provider: editor.review.provider, model: editor.review.model, revision: editor.review.revision, credential: t(editor.review.hasCredential ? "configuredKey" : "absentKey"), availability: t(editor.review.enabled ? "available" : "paused") })}</p>
-          <div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => editor.acceptReview(true)}>{t("keepDraft")}</Button><Button variant="outline" disabled={busy} onClick={() => editor.acceptReview(false)}>{t("useCurrent")}</Button></div></> : null}
+        {editor.review ? <p className="text-sm">{t("currentSummary", { provider: editor.review.provider, model: editor.review.model, credential: t(editor.review.hasCredential ? "configuredKey" : "absentKey"), availability: t(editor.review.enabled ? "available" : "paused") })}</p> : null}
       </Surface> : null}
     </div>
     <ConfirmDialog open={removing} onOpenChange={setRemoving} title={t("removeTitle")} description={t("removeHint")} confirmLabel={t("remove")} destructive onConfirm={() => editor.change({ credentialChange: "Remove", apiKey: "", replacing: false, enabled: false })} />

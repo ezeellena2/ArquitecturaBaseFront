@@ -1,6 +1,5 @@
 {
   "title": "Inteligencia artificial",
-  "dirty": "Cambios sin guardar",
   "save": "Guardar cambios",
   "saving": "Guardando…",
   "discard": "Descartar",
@@ -32,8 +31,6 @@
   "remove": "Quitar clave",
   "test": "Probar conexión",
   "testing": "Probando…",
-  "verified": "Probada para este borrador",
-  "unverified": "Sin prueba vigente",
   "testHint": "La prueba envía un pedido breve al proveedor y puede tener costo. No guarda cambios; una prueba exitosa tampoco se conserva como verificación permanente.",
   "testSuccess": "La conexión respondió correctamente.",
   "availabilitySection": "Disponibilidad",
@@ -66,7 +63,7 @@
   "retrySame": "Reintentar el mismo guardado",
   "keepDraft": "Revisar con mi borrador",
   "useCurrent": "Usar configuración actual",
-  "currentSummary": "Revisión {{revision}}: {{provider}}, {{model}}. {{credential}}. {{availability}}.",
+  "currentSummary": "{{provider}}, {{model}}. {{credential}}. {{availability}}.",
   "cooldown_one": "Esperá {{count}} segundo antes de probar otra vez.",
   "cooldown_other": "Esperá {{count}} segundos antes de probar otra vez.",
   "providerErrors": {

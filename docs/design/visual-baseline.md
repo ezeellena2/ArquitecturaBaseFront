@@ -277,8 +277,12 @@ Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de
 
 ### Inteligencia artificial
 
-- `/configuracion/ia`: `Page` con Guardar/Descartar y tres `Surface` (proveedor/modelo, clave/prueba, disponibilidad).
-  No configura conocimiento del negocio ni respuestas. Capturas `ai-*.png`.
+- `/configuracion/ia`: `Page` con Guardar/Descartar, sin estado del borrador, y tres `Surface` (proveedor/modelo,
+  clave/prueba, disponibilidad). No configura conocimiento del negocio ni respuestas. Capturas `ai-*.png`.
+- Probar conexión, Reemplazar y Quitar clave van en el encabezado de «Clave y prueba de conexión»; el resultado de la
+  prueba va al Toaster, sin estado al lado del botón. La espera de un 429 es el motivo de Cargar modelos y de Probar
+  conexión (`DisabledReason`). «Revisión del guardado» lleva consultar, reintentar y elegir en su encabezado, y su
+  resumen de la configuración actual no muestra el número de revisión.
 - Modelo con `autocomplete="off"` y clave nueva con `autocomplete="new-password"`, con nombres técnicos propios; sin
   configurar, ambos vacíos. Modelos de OpenAI y Anthropic en `NativeSelect`, con Cargar/Actualizar y entrada manual; la
   lista no elige por defecto ni cambia un modelo guardado fuera del catálogo. Probar conexión verifica el ID elegido.

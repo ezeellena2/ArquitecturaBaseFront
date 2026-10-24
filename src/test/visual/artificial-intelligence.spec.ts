@@ -21,11 +21,13 @@ for (const language of ["es", "en"] as const) {
       await expect(key).toHaveAttribute("autocomplete", "new-password");
       await key.fill("fictional-private-key");
       await page.getByRole("button", { name: language === "es" ? "Probar conexión" : "Test connection", exact: true }).click();
-      await expect(page.getByText(language === "es" ? "Probada para este borrador" : "Tested for this draft", { exact: true })).toBeVisible();
+      // El resultado de la prueba va al Toaster, no al lado del botón, y cambiar el borrador lo retira.
+      const tested = page.getByText(language === "es" ? "La conexión respondió correctamente." : "The connection responded successfully.", { exact: true });
+      await expect(tested).toBeVisible();
       await page.getByRole("button", { name: language === "es" ? "Cargar modelos" : "Load models", exact: true }).click();
       await expect(model).toBeVisible();
       await model.selectOption("fictional-next-model");
-      await expect(page.getByText(language === "es" ? "Probada para este borrador" : "Tested for this draft", { exact: true })).toHaveCount(0);
+      await expect(tested).toHaveCount(0);
       await page.getByRole("button", { name: language === "es" ? "Guardar cambios" : "Save changes", exact: true }).click();
       await expect(key).toHaveCount(0);
       await expect(model).toHaveValue("fictional-next-model");

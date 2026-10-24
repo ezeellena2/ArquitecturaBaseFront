@@ -40,9 +40,6 @@ describe("AI settings", () => {
     await waitFor(() => expect(tests).toHaveLength(1));
     expect(tests[0]).toMatchObject({ provider: "OpenAI", model: "next-model", apiKey: null });
     expect(writes).toHaveLength(0);
-    expect(await screen.findByText("Probada para este borrador")).toBeInTheDocument();
-    await userEvent.selectOptions(model, "fictional-model");
-    expect(screen.queryByText("Probada para este borrador")).not.toBeInTheDocument();
   });
   it("lists with a candidate key before choosing a model without retaining secrets in caches", async () => {
     current = { ...current, model: "", hasCredential: false, enabled: false, revision: 0 };
@@ -120,8 +117,13 @@ describe("AI settings", () => {
     let catalogs = 0;
     server.use(http.post("/api/ai/connection/models", () => { catalogs++; return HttpResponse.json({ code: "Ai.Provider.RateLimited", retryAfter: 60 }, { status: 429 }); }));
     const view = renderRouteWithProviders("/configuracion/ia");
-    expect(await screen.findByText("Esperá 60 segundos antes de consultar los modelos otra vez.")).toBeInTheDocument();
+    const reason = "Esperá 60 segundos antes de consultar los modelos otra vez.";
+    await waitFor(() => expect(screen.getByRole("button", { name: "Cargar modelos" })).toHaveAccessibleDescription(reason));
     expect(screen.getByRole("button", { name: "Cargar modelos" })).toBeDisabled();
+    // La espera es el motivo del botón deshabilitado: tooltip y descripción accesible, sin texto debajo.
+    for (const text of screen.queryAllByText(reason)) expect(text).not.toBeVisible();
+    await userEvent.hover(screen.getByRole("button", { name: "Cargar modelos" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
     expect(catalogs).toBe(1);
     view.unmount(); queryClient.clear();
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.read"] })));
@@ -175,7 +177,7 @@ describe("AI settings", () => {
   it("says one second, not «1 segundos», for a one-second cooldown", async () => {
     server.use(http.post("/api/ai/connection/models", () => HttpResponse.json({ code: "Ai.Provider.RateLimited", retryAfter: 1 }, { status: 429 })));
     const view = renderRouteWithProviders("/configuracion/ia");
-    expect(await screen.findByText("Esperá 1 segundo antes de consultar los modelos otra vez.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Cargar modelos" })).toHaveAccessibleDescription("Esperá 1 segundo antes de consultar los modelos otra vez."));
     view.unmount(); queryClient.clear();
     server.use(http.post("/api/ai/connection/models", () => HttpResponse.json({ provider: current.provider, revision: current.revision, models: [] })),
       http.post("/api/ai/connection/test", () => HttpResponse.json({ code: "Ai.Provider.RateLimited", retryAfter: 1 }, { status: 429 })));
@@ -183,7 +185,7 @@ describe("AI settings", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Reemplazar clave" }));
     await userEvent.type(keyField(), "fictional-private-key");
     await userEvent.click(screen.getByRole("button", { name: "Probar conexión" }));
-    expect(await screen.findByText("Esperá 1 segundo antes de probar otra vez.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Probar conexión" })).toHaveAccessibleDescription("Esperá 1 segundo antes de probar otra vez."));
   });
   it("blocks repeated tests during a provider cooldown and preserves the candidate", async () => {
     server.use(http.post("/api/ai/connection/test", () => HttpResponse.json({ code: "Ai.Provider.RateLimited", retryAfter: 60 }, { status: 429 })));
@@ -191,8 +193,13 @@ describe("AI settings", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Reemplazar clave" }));
     await userEvent.type(keyField(), "fictional-private-key");
     await userEvent.click(screen.getByRole("button", { name: "Probar conexión" }));
-    expect(await screen.findByText(/Esperá 60 segundos/)).toBeInTheDocument();
+    const reason = "Esperá 60 segundos antes de probar otra vez.";
+    await waitFor(() => expect(screen.getByRole("button", { name: "Probar conexión" })).toHaveAccessibleDescription(reason));
     expect(screen.getByRole("button", { name: "Probar conexión" })).toBeDisabled();
+    // La espera es el motivo del botón deshabilitado: tooltip y descripción accesible, sin texto al lado.
+    for (const text of screen.queryAllByText(reason)) expect(text).not.toBeVisible();
+    await userEvent.hover(screen.getByRole("button", { name: "Probar conexión" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
     expect(keyField()).toHaveValue("fictional-private-key");
   });
   it("saves a candidate key without retaining it in QueryCache or MutationCache", async () => {
@@ -208,14 +215,18 @@ describe("AI settings", () => {
     expect(JSON.stringify(queryClient.getQueryCache().getAll().map(x => x.state.data))).not.toContain("fictional-private-key");
     expect(JSON.stringify(queryClient.getMutationCache().getAll().map(x => x.state.variables))).not.toContain("fictional-private-key");
   });
-  it("tests the draft without saving and invalidates the result when the model changes", async () => {
+  it("tests the draft without saving and withdraws the result when the model changes", async () => {
+    const success = vi.spyOn(toast, "success");
+    const dismiss = vi.spyOn(toast, "dismiss");
     renderRouteWithProviders("/configuracion/ia");
     await userEvent.click(await screen.findByRole("button", { name: "Probar conexión" }));
-    expect(await screen.findByText("Probada para este borrador")).toBeInTheDocument();
+    await waitFor(() => expect(success).toHaveBeenCalledWith("La conexión respondió correctamente.", expect.objectContaining({ id: "ai:test" })));
     expect(writes).toHaveLength(0);
     expect(tests).toHaveLength(1);
+    dismiss.mockClear();
+    // El resultado vale para el borrador probado: al cambiarlo, la notificación se retira.
     await userEvent.type(screen.getByRole("textbox", { name: "Modelo" }), "-next");
-    expect(screen.queryByText("Probada para este borrador")).not.toBeInTheDocument();
+    expect(dismiss).toHaveBeenCalledWith("ai:test");
   });
   it("preserves the candidate on field errors and uses no duplicate toast", async () => {
     const error = vi.spyOn(toast, "error");
@@ -257,6 +268,49 @@ describe("AI settings", () => {
     expect(await screen.findByRole("textbox", { name: "Modelo" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Probar conexión" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Guardar cambios" })).not.toBeInTheDocument();
+  });
+  it("reports a connection test through the notification without a status beside the button", async () => {
+    const success = vi.spyOn(toast, "success");
+    renderRouteWithProviders("/configuracion/ia");
+    const credential = await screen.findByRole("region", { name: "Clave y prueba de conexión" });
+    await userEvent.click(within(credential).getByRole("button", { name: "Probar conexión" }));
+    await waitFor(() => expect(success).toHaveBeenCalledWith("La conexión respondió correctamente.", expect.anything()));
+    // El resultado va al Toaster: al lado del botón no queda un estado de la prueba que cambie con cada acción.
+    expect(screen.queryByText("Probada para este borrador")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sin prueba vigente")).not.toBeInTheDocument();
+    expect(within(credential).queryByRole("status")).not.toBeInTheDocument();
+    // Probar, Reemplazar y Quitar actúan sobre toda la superficie: van al borde derecho de su banda, no en el cuerpo.
+    const band = within(credential).getByRole("heading", { level: 2, name: "Clave y prueba de conexión" }).parentElement as HTMLElement;
+    expect(within(credential).getAllByRole("button")).toEqual(within(band).getAllByRole("button"));
+    expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Probar conexión", "Reemplazar clave", "Quitar clave"]);
+  });
+  it("keeps the AI header without an unsaved status", async () => {
+    renderRouteWithProviders("/configuracion/ia");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Modelo" }), "-next");
+    const header = screen.getByRole("heading", { level: 1, name: "Inteligencia artificial" }).closest("header") as HTMLElement;
+    // Guardar habilitado ya dice que hay cambios: la banda tiene el título y sus acciones, sin estado del borrador.
+    expect(within(header).getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+    expect(header.textContent).toBe("Inteligencia artificialDescartarGuardar cambios");
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+  });
+  it("summarizes the current connection without its revision number", async () => {
+    server.use(http.put("/api/ai/connection", async ({ request }) => {
+      writes.push(await request.json() as AiSaveRequest);
+      current = { ...current, provider: "Anthropic", model: "remote-model", revision: 2 };
+      return HttpResponse.json({ code: "Ai.Connection.RevisionConflict" }, { status: 409 });
+    }));
+    renderRouteWithProviders("/configuracion/ia");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Modelo" }), "-next");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    const review = await screen.findByRole("region", { name: "Revisión del guardado" });
+    // Las acciones de la recuperación van al borde derecho de su banda; el cuerpo explica el estado.
+    const band = within(review).getByRole("heading", { level: 2, name: "Revisión del guardado" }).parentElement as HTMLElement;
+    await userEvent.click(within(band).getByRole("button", { name: "Leer configuración actual" }));
+    expect(await within(review).findByText("Anthropic, remote-model. Clave configurada. Disponible.")).toBeInTheDocument();
+    // El número de revisión queda en los historiales, no en el resumen de la configuración actual.
+    expect(within(review).queryByText(/Revisión 2/)).not.toBeInTheDocument();
+    expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Leer configuración actual", "Usar configuración actual", "Revisar con mi borrador"]);
+    expect(within(review).getAllByRole("button")).toEqual(within(band).getAllByRole("button"));
   });
   it("confirms provider changes and clears the candidate key", async () => {
     renderRouteWithProviders("/configuracion/ia");

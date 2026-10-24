@@ -11,7 +11,6 @@ export function useAiConnectionTest(draft: AiDraft, draftVersion: number, curren
   const { t } = useTranslation("artificialIntelligence");
   const signature = `${draftVersion}:${current.revision}:${observedRevision}`;
   const [busyFor, setBusyFor] = useState<string>();
-  const [testedFor, setTestedFor] = useState<string>();
   const [errorState, setErrorState] = useState<{ signature: string; fields: Record<string, string> }>();
   const [cooldown, setCooldown] = useState(0);
   const active = useRef(true);
@@ -26,12 +25,13 @@ export function useAiConnectionTest(draft: AiDraft, draftVersion: number, curren
   async function test() {
     if (controller.current || cooldown) return;
     const abort = new AbortController(); controller.current = abort; const startedVersion = version.current;
-    setBusyFor(signature); setErrorState(undefined); setTestedFor(undefined);
+    setBusyFor(signature); setErrorState(undefined);
     const { enabled: _enabled, requestId: _requestId, ...request } = saveRequest(draft, current.revision, "");
     try {
       await testAiConnection(request, abort.signal);
       if (!active.current || startedVersion !== version.current) return;
-      setTestedFor(signature); notify({ id: "ai:test", kind: "success", message: t("testSuccess") });
+      // El resultado vale para este borrador y va solo al Toaster; cambiar el borrador lo retira (efecto de arriba).
+      notify({ id: "ai:test", kind: "success", message: t("testSuccess") });
     } catch (error) {
       if (!active.current || startedVersion !== version.current || abort.signal.aborted) return;
       const feedback = errorFeedback(error, { fields: ["provider", "model", "apiKey"] });
@@ -46,5 +46,5 @@ export function useAiConnectionTest(draft: AiDraft, draftVersion: number, curren
       if (active.current && startedVersion === version.current) setBusyFor(undefined);
     }
   }
-  return { busy: busyFor === signature, tested: testedFor === signature, errors: errorState?.signature === signature ? errorState.fields : {}, cooldown, test };
+  return { busy: busyFor === signature, errors: errorState?.signature === signature ? errorState.fields : {}, cooldown, test };
 }

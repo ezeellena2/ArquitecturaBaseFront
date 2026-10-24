@@ -1,6 +1,5 @@
 {
   "title": "Artificial intelligence",
-  "dirty": "Unsaved changes",
   "save": "Save changes",
   "saving": "Saving…",
   "discard": "Discard",
@@ -32,8 +31,6 @@
   "remove": "Remove key",
   "test": "Test connection",
   "testing": "Testing…",
-  "verified": "Tested for this draft",
-  "unverified": "No current test",
   "testHint": "The test sends a short request to the provider and may incur a charge. It does not save changes; a successful test is not kept as permanent verification.",
   "testSuccess": "The connection responded successfully.",
   "availabilitySection": "Availability",
@@ -66,7 +63,7 @@
   "retrySame": "Retry the same save",
   "keepDraft": "Review with my draft",
   "useCurrent": "Use current configuration",
-  "currentSummary": "Revision {{revision}}: {{provider}}, {{model}}. {{credential}}. {{availability}}.",
+  "currentSummary": "{{provider}}, {{model}}. {{credential}}. {{availability}}.",
   "cooldown_one": "Wait {{count}} second before testing again.",
   "cooldown_other": "Wait {{count}} seconds before testing again.",
   "providerErrors": {
