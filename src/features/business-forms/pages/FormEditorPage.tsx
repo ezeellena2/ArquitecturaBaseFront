@@ -60,6 +60,8 @@ export function FormEditorPage() {
   const navigate = useNavigate();
   const navigationState = location.state;
   const reactivateOnOpen = navigationState !== null && typeof navigationState === "object" && "reactivateFormId" in navigationState && navigationState.reactivateFormId === formId;
+  // «Ir a la pregunta» from a catalog field's uses names the question to open.
+  const openQuestionFieldId = navigationState !== null && typeof navigationState === "object" && "questionFieldId" in navigationState && typeof navigationState.questionFieldId === "string" ? navigationState.questionFieldId : null;
   const { data: user } = useCurrentUser();
   const scope: FormReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
   const detail = useFormDefinition(scope, formId);
@@ -75,10 +77,10 @@ export function FormEditorPage() {
   if (!user || formId && (detail.isPending || reactivateOnOpen && !detail.isFetchedAfterMount)) return <Page title={t(formId ? "title" : "new")}><Spinner /></Page>;
   if (!scope.permissions.includes("formtemplates.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
   if (formId && (!detail.data || reactivateOnOpen && detail.isError)) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
-  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} reactivateOnOpen={reactivateOnOpen} timeZoneId={user.timeZoneId} initial={detail.data ?? missingFormInitial(scope, formId, navigationState)} onPublicationChanged={() => { void detail.refetch(); }} />;
+  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} reactivateOnOpen={reactivateOnOpen} openQuestionFieldId={openQuestionFieldId} timeZoneId={user.timeZoneId} initial={detail.data ?? missingFormInitial(scope, formId, navigationState)} onPublicationChanged={() => { void detail.refetch(); }} />;
 }
 
-function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactivateOnOpen }: { reactivateOnOpen: boolean; scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {
+function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactivateOnOpen, openQuestionFieldId }: { reactivateOnOpen: boolean; openQuestionFieldId: string | null; scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {
   const { t, i18n } = useTranslation("forms");
   useTranslation("forms", { lng: "en" });
   useTranslation("forms", { lng: "es" });
@@ -147,6 +149,23 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const feedbackId = `forms:editor:${editor.session?.scope.editorId}`;
   const session = editor.session;
   const value = session?.value;
+  // Expands a question and, once it is drawn, focuses the control `control` picks inside it.
+  const revealQuestion = useCallback((localId: string, control: (container: HTMLElement | undefined) => HTMLElement | null | undefined) => {
+    setExpanded(localId);
+    requestAnimationFrame(() => {
+      if (!active.current) return;
+      control([...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === localId))?.focus();
+    });
+  }, []);
+  // Arriving from a catalog field's uses opens that question of the draft on its catalog control (its label while the
+  // catalog cannot be chosen yet). A use left only in the active version opens the editor without expanding anything.
+  const openedQuestion = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openQuestionFieldId || openedQuestion.current === openQuestionFieldId || !value) return;
+    openedQuestion.current = openQuestionFieldId;
+    const question = value.draft.fields.find(q => q.fieldId === openQuestionFieldId);
+    if (question) revealQuestion(question.localId, container => container?.querySelector<HTMLElement>('[data-question-control="catalog"]:not(:disabled)') ?? container?.querySelector<HTMLElement>('[data-question-control="label"]'));
+  }, [openQuestionFieldId, value, revealQuestion]);
   const dirty = !!session && JSON.stringify(session.value) !== JSON.stringify(session.baseline);
   const frozen = !!session && session.phase !== "Editing";
   const publicationPending = ["Accepting", "Unconfirmed"].includes(publication.phase);
@@ -214,15 +233,15 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     setPublicationOpen(false);
     if (issue.culture) setContentCulture(issue.culture);
     const question = value!.draft.fields.find(q => q.fieldId === issue.fieldId);
-    if (question) setExpanded(question.localId);
-    requestAnimationFrame(() => {
-      if (!active.current) return;
-      if (!question) { host.current?.querySelector<HTMLInputElement>(issue.path.startsWith("name") ? '[data-form-text="name"]' : '[data-form-text="submitLabel"]')?.focus(); return; }
-      const container = [...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === question.localId);
+    if (!question) {
+      requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLInputElement>(issue.path.startsWith("name") ? '[data-form-text="name"]' : '[data-form-text="submitLabel"]')?.focus(); });
+      return;
+    }
+    revealQuestion(question.localId, container => {
       const option = (question.type === "choice" || question.type === "multiChoice") && !question.source ? question.options.find(o => o.choiceId === issue.choiceId) : undefined;
       const optionInput = option ? [...(container?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(element => element.dataset.choiceLocalId === option.localId) : undefined;
       const selectionInput = issue.path.includes(".selection") ? container?.querySelectorAll<HTMLInputElement>('[data-question-control="selection"] input')[issue.path.endsWith(".maxSelected") ? 1 : 0] : undefined;
-      (optionInput ?? selectionInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".source") ? '[data-question-control="catalog"]' : issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]'))?.focus();
+      return optionInput ?? selectionInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".source") ? '[data-question-control="catalog"]' : issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]');
     });
   }
   async function confirmDeactivation(result: FormDeactivation, expectedRevision: number) {
