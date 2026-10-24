@@ -12,7 +12,7 @@ import { Input } from "@/shared/ui/input";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import type { PersonAttribute } from "../api/personData";
-import { localizedValue } from "../editorModel";
+import { administrativeName } from "../editorModel";
 import { usePersonAttributeOptions, usePersonData, type PersonDataScope } from "../hooks/usePersonData";
 
 function PersonCatalogValue({ attribute, scope, value, text, disabled, onChange, ...aria }: { attribute: PersonAttribute; scope: PersonDataScope; value: string | null; text: string; disabled: boolean; onChange: (id: string | null) => void; id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }) {
@@ -21,7 +21,7 @@ function PersonCatalogValue({ attribute, scope, value, text, disabled, onChange,
  useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
  const options = usePersonAttributeOptions(scope, attribute.id, settled, !disabled);
  const current = options.data?.items.find(option => option.id === value)?.text ?? (selected?.id === value ? selected.text : text);
- return <div><Autocomplete {...aria} aria-label={localizedValue(attribute.name, scope.culture, "es")} value={search ?? current} disabled={disabled || options.isError} options={(options.data?.items ?? []).map(option => ({ id: option.id, label: option.text }))} onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => setSearch(null)} onSelect={id => { const option = options.data?.items.find(option => option.id === id); if (option) { setSelected(option); onChange(id); setSearch(null); } }} footer={options.data?.hasNext ? t("personData.searchMore") : undefined} />{options.error ? <div className="space-y-1"><p className="text-sm text-[var(--color-danger)]">{readErrorMessage(options.error, t)}</p><Button type="button" variant="link" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button></div> : null}</div>;
+ return <div><Autocomplete {...aria} aria-label={administrativeName(attribute.name, scope.culture)} value={search ?? current} disabled={disabled || options.isError} options={(options.data?.items ?? []).map(option => ({ id: option.id, label: option.text }))} onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => setSearch(null)} onSelect={id => { const option = options.data?.items.find(option => option.id === id); if (option) { setSelected(option); onChange(id); setSearch(null); } }} footer={options.data?.hasNext ? t("personData.searchMore") : undefined} />{options.error ? <div className="space-y-1"><p className="text-sm text-[var(--color-danger)]">{readErrorMessage(options.error, t)}</p><Button type="button" variant="link" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button></div> : null}</div>;
 }
 
 export function PersonDataSection({ userId, disabled, userSaved, onState }: UserDataSectionProps) {
@@ -38,7 +38,7 @@ export function PersonDataSection({ userId, disabled, userSaved, onState }: User
  const fieldErrors = data.error instanceof ApiError ? data.error.errors ?? {} : {};
  return <Surface title={t("personData.section")} headingLevel={3} padded>
   {!data.ready && !data.error ? <Spinner /> : <div className="grid gap-4 sm:grid-cols-2">{attributes.map(attribute => {
-   const label = localizedValue(attribute.name, scope.culture, "es"), error = fieldErrors["values." + attribute.id]?.join(" ");
+   const label = administrativeName(attribute.name, scope.culture), error = fieldErrors["values." + attribute.id]?.join(" ");
    const value = data.values?.[attribute.id] ?? null;
    return <FormField key={JSON.stringify([userId, scope.actorId, scope.culture, scope.permissions, attribute.id])} label={label} error={error}>{attribute.type === "Catalog" ? <PersonCatalogValue attribute={attribute} scope={scope} value={value} text={value ? data.baseline?.values[attribute.id]?.text ?? "" : ""} disabled={disabled || data.busy || !data.ready} onChange={id => data.changeValue(attribute.id, id)} /> : <Input maxLength={300} disabled={disabled || data.busy || !data.ready} value={value ?? ""} onChange={event => data.changeValue(attribute.id, event.target.value || null)} />}</FormField>;
   })}</div>}

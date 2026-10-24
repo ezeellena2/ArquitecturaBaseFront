@@ -3,6 +3,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { expect, it, vi } from "vitest";
+import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
@@ -97,6 +98,69 @@ it("creates a text attribute with an immutable key and without reading catalogs"
  await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  await waitFor(() => expect(bodies).toEqual([{ key: "site", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
+});
+it("creates a person attribute named only in the menu language", async () => {
+ const zones = "01990000-0000-7000-8000-000000000004";
+ const bodies: unknown[] = [];
+ server.use(
+  http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions: ["formpersondata.manage", "formcatalogs.read"] })),
+  http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [attribute] })),
+  http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: zones, name: "Zones", description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })),
+  http.post("/api/forms/person-attributes", async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ ...attribute, id: "01990000-0000-7000-8000-000000000003", key: "zone", name: { en: "Zone" }, originalCulture: "en", type: "Catalog", sourceCatalogId: zones, sourceCatalogName: "Zones", revision: 1 }); }));
+ await i18n.changeLanguage("en");
+ try {
+  await act(async () => { renderWithProviders(<MemoryRouter><PersonDataPage /></MemoryRouter>); });
+  await screen.findByText("Branch");
+  await userEvent.click(screen.getByRole("button", { name: "Add attribute" }));
+  const dialog = within(screen.getByRole("dialog", { name: "Add attribute" }));
+  expect(dialog.queryByRole("textbox", { name: "Name in English" })).not.toBeInTheDocument();
+  await userEvent.type(dialog.getByRole("textbox", { name: "Name" }), "Zone");
+  await userEvent.type(dialog.getByRole("textbox", { name: "Key" }), "zone");
+  const catalog = dialog.getByRole("combobox", { name: "Catalog" });
+  await waitFor(() => expect(catalog).toBeEnabled());
+  await userEvent.selectOptions(catalog, zones);
+  await userEvent.click(dialog.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(bodies).toEqual([{ key: "zone", name: { en: "Zone" }, type: "Catalog", sourceCatalogId: zones }]));
+ } finally {
+  await i18n.changeLanguage("es");
+ }
+});
+it("translates a person attribute name with its original as reference and keeps the original", async () => {
+ const spanish = { ...attribute, name: { es: "Sucursal" } };
+ const bodies: unknown[] = [];
+ server.use(
+  http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions: ["formpersondata.manage"] })),
+  http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [spanish] })),
+  http.put(`/api/forms/person-attributes/${id}`, async ({ request }) => {
+   bodies.push(await request.json());
+   return bodies.length === 1
+    ? HttpResponse.json({ status: 400, detail: "Invalid", code: "Forms.PersonAttribute.AttributeInvalid", traceId: "trace", errors: { "name.es": ["Enter the name."] } }, { status: 400 })
+    : HttpResponse.json({ ...spanish, name: { es: "Sucursal", en: "Branch" }, revision: 2 });
+  }));
+ await i18n.changeLanguage("en");
+ try {
+  await act(async () => { renderWithProviders(<MemoryRouter><PersonDataPage /></MemoryRouter>); });
+  // Without a translation the name shows in its original.
+  await userEvent.click(await screen.findByRole("button", { name: "Edit Sucursal" }));
+  const dialog = within(screen.getByRole("dialog", { name: "Edit attribute" }));
+  const name = dialog.getByRole("textbox", { name: "Name" });
+  expect(dialog.getByText("Name", { selector: "label" })).toHaveTextContent(/^Name$/);
+  expect(name).toHaveValue("");
+  expect(name).toHaveAttribute("placeholder", "Untranslated");
+  expect(name).toHaveAccessibleDescription("Original (Spanish): Sucursal");
+  await userEvent.type(name, "Branch");
+  await userEvent.click(dialog.getByRole("button", { name: "Save" }));
+  // An error of the original shows under the same field, naming its language.
+  await waitFor(() => expect(dialog.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription("In Spanish: Enter the name."));
+  await userEvent.click(dialog.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Edit attribute" })).not.toBeInTheDocument());
+  expect(bodies).toEqual([
+   { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true },
+   { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true },
+  ]);
+ } finally {
+  await i18n.changeLanguage("es");
+ }
 });
 it("asks to confirm clearing stored values when the type changes and resends with the confirmation", async () => {
  const zone = { ...attribute, type: "Catalog", sourceCatalogId: "01990000-0000-7000-8000-000000000004", sourceCatalogName: "Zonas" };

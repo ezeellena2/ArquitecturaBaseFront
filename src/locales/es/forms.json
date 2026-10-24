@@ -303,7 +303,7 @@
       "title": "Campos", "field": "Campo", "key": "Clave", "type": "Tipo", "rules": "Reglas", "role": "Papel",
       "add": "Agregar campo", "edit": "Editar campos", "view": "Ver campos", "new": "Nuevo campo", "unsaved": "Nuevo, sin guardar",
       "empty": "Todavía no hay campos extra.", "fixed": "Fijos: código, texto y detalle. Extra:",
-      "englishName": "Nombre en inglés", "keyHint": "La usan la plantilla, la importación y lo guardado. No cambia después de guardar.",
+      "keyHint": "La usan la plantilla, la importación y lo guardado. No cambia después de guardar.",
       "optionalFirst": "Un campo nuevo nace opcional: para hacerlo obligatorio, todas las opciones activas necesitan un valor.",
       "typeReview": "Al guardar se revisan todos los valores. Si alguno no convierte, el cambio no se guarda.",
       "unique": "Único", "requiredLabel": "Obligatorio", "min": "Mínimo", "max": "Máximo", "savedFirst": "Guardá para cargar valores",

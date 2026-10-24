@@ -37,6 +37,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const dialog = page.getByRole("dialog", { name: es ? "Agregar dato" : "Add attribute", exact: true });
     const name = dialog.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true });
     await expect(name).toBeFocused();
+    // One name in the menu language, where a new attribute is born: no separate English name.
+    await expect(dialog.getByRole("textbox", { name: es ? "Nombre en inglés" : "Name in English", exact: true })).toHaveCount(0);
     await name.fill(es ? "Región" : "Region");
     await expect(dialog.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeDisabled();
     await page.screenshot({ path: "test-results/person-data-attribute-" + language + "-" + width + ".png", fullPage: true });

@@ -21,7 +21,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared
 import { WideTable } from "@/shared/ui/WideTable";
 import type { PersonAttribute } from "../api/personData";
 import { PersonAttributeDialog } from "../components/PersonAttributeDialog";
-import { localizedValue } from "../editorModel";
+import { administrativeName } from "../editorModel";
 import { personDataForbidden, personDataScopeKey, usePersonAttributes, usePersonDataPage, type PersonDataScope } from "../hooks/usePersonData";
 
 export function PersonDataPage() {
@@ -49,7 +49,7 @@ function PersonDataWorkspace({ scope }: { scope: PersonDataScope }) {
  }, [denied, peopleDenied, client, privateKey]);
  if (denied || lostAttributes) return <ForbiddenPage />;
  const list = attributes.data?.items ?? [], active = list.filter(attribute => attribute.isActive), canReadPeople = scope.permissions.includes("users.read") && !peopleDenied && !lostPeople;
- const title = (attribute: PersonAttribute) => localizedValue(attribute.name, scope.culture, "es");
+ const title = (attribute: PersonAttribute) => administrativeName(attribute.name, scope.culture);
  const canEditPeople = !!extension && scope.permissions.includes("users.manage");
  // The server counts the whole filtered set; only the attributes a filter uses are summarized, as in CE4-A.
  const summary = people.data ? [t("personData.peopleCount", { count: people.data.totalCount }), ...active.filter(attribute => attribute.usedBy.length > 0).flatMap(attribute => { const entry = people.data.missing.find(item => item.attributeId === attribute.id); return entry ? [t("personData.missingCount", { count: entry.count, name: title(attribute) })] : []; })].join(" · ") : null;

@@ -303,7 +303,7 @@
       "title": "Fields", "field": "Field", "key": "Key", "type": "Type", "rules": "Rules", "role": "Role",
       "add": "Add field", "edit": "Edit fields", "view": "View fields", "new": "New field", "unsaved": "New, unsaved",
       "empty": "There are no extra fields yet.", "fixed": "Fixed: code, text and details. Extra:",
-      "englishName": "Name in English", "keyHint": "Used by the template, imports and stored data. It does not change after saving.",
+      "keyHint": "Used by the template, imports and stored data. It does not change after saving.",
       "optionalFirst": "A new field starts optional: every active option needs a value before it can be required.",
       "typeReview": "Saving checks every value. If any cannot convert, the change is not saved.",
       "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values",

@@ -11,12 +11,19 @@ import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { createPersonAttribute, updatePersonAttribute, type PersonAttribute } from "../api/personData";
+import { contentReference, contentRequired, ownTexts } from "../editorModel";
 import { personDataScopeKey, type PersonDataScope } from "../hooks/usePersonData";
+import type { FormCulture } from "../model";
+import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 
+type Names = Readonly<Partial<Record<FormCulture, string>>>;
+// The name is one field in the menu language: a new attribute is born in it, and outside the attribute's original it is the
+// optional translation, with the original as a reference that is never copied. The draft keeps both languages.
 export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: { scope: PersonDataScope; attribute: PersonAttribute | null; onClose: () => void; onReload: () => Promise<void> }) {
  const { t } = useTranslation("forms"), client = useQueryClient();
- const [key, setKey] = useState(attribute?.key ?? ""), [name, setName] = useState({ es: attribute?.name.es ?? "", en: attribute?.name.en ?? "" });
+ const culture = scope.culture, original = attribute?.originalCulture ?? scope.culture;
+ const [key, setKey] = useState(attribute?.key ?? ""), [name, setName] = useState<Names>({ ...attribute?.name });
  const [type, setType] = useState<PersonAttribute["type"]>(attribute?.type ?? "Catalog"), [sourceCatalogId, setSource] = useState(attribute?.sourceCatalogId ?? null), [isActive, setActive] = useState(attribute?.isActive ?? true);
  const [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null), [confirmValues, setConfirmValues] = useState(false);
  // The server counts the people holding a value only when the type or source changes; once that 400 arrives the confirmation stays for the life of the dialog, so a later save never sends it unseen.
@@ -26,7 +33,7 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
  useEffect(() => { mounted.current = true; nameRef.current?.focus(); return () => { mounted.current = false; operation.current?.abort(); }; }, []);
  // A reload after a revision conflict brings the saved attribute: the draft starts again from it in this same dialog (not a remount), so closing still returns the focus to the row that opened it.
  const [loaded, setLoaded] = useState(attribute);
- if (attribute !== loaded) { setLoaded(attribute); setName({ es: attribute?.name.es ?? "", en: attribute?.name.en ?? "" }); setType(attribute?.type ?? "Catalog"); setSource(attribute?.sourceCatalogId ?? null); setActive(attribute?.isActive ?? true); setError(null); setConfirmValues(false); setRemovalCount(null); }
+ if (attribute !== loaded) { setLoaded(attribute); setName({ ...attribute?.name }); setType(attribute?.type ?? "Catalog"); setSource(attribute?.sourceCatalogId ?? null); setActive(attribute?.isActive ?? true); setError(null); setConfirmValues(false); setRemovalCount(null); }
  const errors = error instanceof ApiError ? error.errors ?? {} : {}, message = (path: string) => errors[path]?.join(" ");
  const inUse = (attribute?.usedBy.length ?? 0) > 0;
  // Someone else saved this attribute: saving again needs the current revision, so only reloading (or cancelling) goes on.
@@ -35,10 +42,11 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
  const changeType = (next: PersonAttribute["type"]) => { setType(next); setConfirmValues(false); };
  const changeSource = (next: string) => { setSource(next); setConfirmValues(false); };
  const canReadCatalogs = scope.permissions.includes("formcatalogs.read");
+ // Only the languages with text travel: an existing translation is kept, a blank one is not sent.
+ const names = ownTexts(name), reference = contentReference(name, culture, original);
  async function save() {
   if (operation.current || !scope.permissions.includes("formpersondata.manage")) return;
   const controller = new AbortController(); operation.current = controller; setBusy(true); setError(null);
-  const names = { es: name.es.trim(), ...(name.en.trim() ? { en: name.en.trim() } : {}) };
   try {
    if (attribute) await updatePersonAttribute(attribute.id, { expectedRevision: attribute.revision, name: names, type, sourceCatalogId: type === "Catalog" ? sourceCatalogId : null, position: attribute.position, isActive, ...(confirmValues ? { confirmValueRemoval: true as const } : {}) }, controller.signal);
    else await createPersonAttribute({ key: key.trim(), name: names, type, sourceCatalogId: type === "Catalog" ? sourceCatalogId : null }, controller.signal);
@@ -53,7 +61,7 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
   finally { if (operation.current === controller) operation.current = null; if (mounted.current) setBusy(false); }
  }
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent onCloseAutoFocus={restoreFocus}><DialogHeader><DialogTitle>{t(attribute ? "personData.editAttribute" : "personData.addAttribute")}</DialogTitle><DialogDescription>{t("personData.attributeHint")}</DialogDescription></DialogHeader><div className="space-y-4">
-  <div className="grid gap-4 sm:grid-cols-2"><FormField label={t("name")} required error={message("name.es") ?? message("name")}><Input ref={nameRef} value={name.es} disabled={busy} maxLength={120} onChange={event => setName({ ...name, es: event.target.value })} /></FormField><FormField label={t("catalogs.fields.englishName")} error={message("name.en")}><Input value={name.en} disabled={busy} maxLength={120} onChange={event => setName({ ...name, en: event.target.value })} /></FormField></div>
+  <FormField label={t("name")} required={contentRequired(name, culture, original)} hint={reference ? t("originalText", { language: t("cultures." + original), text: reference }) : undefined} error={localizedIssueMessage(localizedIssue(errors, "name", culture), culture, t)}><Input ref={nameRef} value={name[culture] ?? ""} disabled={busy} maxLength={120} placeholder={culture !== original ? t("missingText") : undefined} onChange={event => setName({ ...name, [culture]: event.target.value })} /></FormField>
   <FormField label={t("catalogs.fields.key")} required error={message("key")} hint={t("catalogs.fields.keyHint")}><Input value={key} readOnly={!!attribute} disabled={busy} maxLength={40} onChange={event => setKey(event.target.value)} /></FormField>
   <FormField label={t("personData.type")} required error={message("type")}><NativeSelect value={type} disabled={busy || inUse} onChange={event => changeType(event.target.value as PersonAttribute["type"])}><option value="Catalog">{t("catalogs.fields.types.catalog")}</option><option value="Text">{t("catalogs.fields.types.text")}</option></NativeSelect></FormField>
   {type === "Catalog" ? canReadCatalogs ? <CatalogQuestionSelector scope={scope} manualOnly value={sourceCatalogId ?? ""} readOnly={busy || inUse} error={message("sourceCatalogId")} onChange={changeSource} /> : <FormField label={t("catalogQuestion.catalog")} required hint={t("catalogQuestion.requiresRead")} error={message("sourceCatalogId")}><Input readOnly value={attribute?.sourceCatalogName ?? ""} /></FormField> : null}
@@ -61,5 +69,5 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
   {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} error={message("isActive")} onCheckedChange={setActive} /> : null}
   {inUse ? <div className="text-sm"><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{attribute?.usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></div> : null}
   {error && !Object.keys(errors).length ? <div className="space-y-2"><p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}</p>{conflict ? <Button type="button" variant="outline" disabled={busy} onClick={reload}>{t("personData.reloadAttribute")}</Button> : null}</div> : null}
- </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" disabled={busy || conflict || !name.es.trim() || !key.trim() || type === "Catalog" && !sourceCatalogId} onClick={() => void save()}>{t("common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;
+ </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" disabled={busy || conflict || !Object.keys(names).length || !key.trim() || type === "Catalog" && !sourceCatalogId} onClick={() => void save()}>{t("common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;
 }
