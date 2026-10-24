@@ -16,7 +16,6 @@ import { FormField } from "@/shared/ui/FormField";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Spinner } from "@/shared/ui/Spinner";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -25,9 +24,10 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
 import { fetchPdfDesign, savePdfDesign, previewPdfDesign, type FormPdfDesign } from "../api/pdf";
 import { fetchRuleOptions } from "../api/rules";
-import { localizedValue } from "../editorModel";
+import { contentReference, contentRequired, localizedValue } from "../editorModel";
 import { preparePdfDesign, type PdfDesign } from "../pdfDesign";
-import type { FormCulture } from "../model";
+import type { LocalizedText } from "../model";
+import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 import { FormPdfPreview } from "../components/FormPdfPreview";
 type PdfEditorProps = {
     definitionId: string;
@@ -63,11 +63,9 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
     const [review, setReview] = useState(false);
     const [current, setCurrent] = useState<FormPdfDesign | null>(null);
     const [discard, setDiscard] = useState(false);
-    const [culture, setCulture] = useState<FormCulture>(scope.culture);
-    const [preview, setPreview] = useState<{
-        design: PdfDesign;
-        culture: FormCulture;
-    } | null>(null);
+    // No language selector: the texts are edited, and the preview asked for, in the menu language. Changing it remounts the editor.
+    const culture = scope.culture;
+    const [preview, setPreview] = useState<PdfDesign | null>(null);
     const active = useRef(true);
     const request = useRef<AbortController | null>(null);
     const cooldown = useCountdown(0);
@@ -82,7 +80,7 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
     const guard = useUnsavedChangesGuard(dirty || busy, { remountsOnLanguageChange: true });
     const back = scope.permissions.includes("formtemplates.read") ? "/formularios/" + definitionId : "/";
     useBreadcrumbLeaf(t("pdf.title"), query.data ? localizedValue(query.data.options.name, scope.culture, query.data.options.originalCulture) : undefined);
-    const loadPreview = useCallback((signal: AbortSignal) => previewPdfDesign(definitionId, preview!.design, preview!.culture, signal), [definitionId, preview]);
+    const loadPreview = useCallback((signal: AbortSignal) => previewPdfDesign(definitionId, preview!, culture, signal), [definitionId, preview, culture]);
     const change = (next: PdfDesign) => { setDraft(next); setPreview(null); setError(null); };
     const save = async () => { if (!draft || !baseline || busy || review || cooldown.isRunning)
         return; const prepared = preparePdfDesign(draft, baseline.originalCulture); setValidation(true); if (!prepared.design)
@@ -137,10 +135,12 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
     if (query.isPending || !baseline || !draft)
         return <Page title={t("pdf.title")}>{query.error ? <EmptyState title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>}/> : <Spinner />}</Page>;
     const original = baseline.originalCulture;
-    const other: FormCulture = original === "es" ? "en" : "es";
     const options = query.data!.options;
     const prepared = preparePdfDesign(draft, original);
     const fieldError = (path: string) => validation && prepared.errors[path] ? t("pdf.errors." + prepared.errors[path]) : error instanceof ApiError ? error.errors?.["design." + path]?.[0] : undefined;
+    // An error of the language not on screen (the original's, for instance) is shown under the same field, with its language.
+    const textError = (path: "name" | "footer") => localizedIssueMessage(localizedIssue(Object.fromEntries((["es", "en"] as const).flatMap(language => { const message = fieldError(path + "." + language); return message ? [[path + "." + language, [message]]] : []; })), path, culture), culture, t);
+    const reference = (text: LocalizedText | null) => { const value = contentReference(text, culture, original); return value ? t("originalText", { language: t("cultures." + original), text: value }) : undefined; };
     const selectedUnknown = [...new Set([...baseline.design.questionIds, ...draft.questionIds])].filter(id => !options.questions.some(question => question.fieldId === id));
     const blocked = busy || review;
     return <Page title={draft.name[original] || t("pdf.title")} status={t("pdf.status", { name: localizedValue(options.name, scope.culture, original) }) + (dirty ? " · " + t("dirty") : "")} backTo={{ to: back, label: t("pdf.back") }} actions={<Button variant="outline" disabled={busy} onClick={() => { if (dirty)
@@ -150,16 +150,16 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
   {review ? <Surface title={t("pdf.conflict")} padded><p>{t("pdf.conflictHint")}</p><div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => void reread()}>{t("pdf.reread")}</Button>{current ? <Button disabled={busy} onClick={() => { setBaseline(current); setDraft(current.design); setReview(false); setCurrent(null); setError(null); setValidation(false); setPreview(null); pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save"); }}>{t("pdf.useCurrent")}</Button> : null}</div></Surface> : null}
   <div className="grid items-start gap-4 xl:grid-cols-[3fr_2fr]">
    <Surface title={t("pdf.receipt")} padded actions={<Button disabled={blocked || cooldown.isRunning || !dirty && baseline.revision > 0} onClick={() => void save()}>{t("pdf.save")}</Button>}>
-    <div className="space-y-5"><div className="grid gap-4 sm:grid-cols-2"><FormField label={t("pdf.name")} required error={fieldError("name." + original)}><Input maxLength={160} value={draft.name[original] ?? ""} disabled={blocked} onChange={event => change({ ...draft, name: { ...draft.name, [original]: event.target.value } })}/></FormField><FormField label={t("pdf.translation", { language: t("cultures." + other) })} hint={t("pdf.optionalTranslation")} error={fieldError("name." + other)}><Input maxLength={160} value={draft.name[other] ?? ""} disabled={blocked} onChange={event => change({ ...draft, name: { ...draft.name, [other]: event.target.value } })}/></FormField></div>
+    <div className="space-y-5"><FormField label={t("pdf.name")} required={contentRequired(draft.name, culture, original)} hint={reference(draft.name)} error={textError("name")}><Input maxLength={160} placeholder={culture !== original ? t("missingText") : undefined} value={draft.name[culture] ?? ""} disabled={blocked} onChange={event => change({ ...draft, name: { ...draft.name, [culture]: event.target.value } })}/></FormField>
     <fieldset className="space-y-2"><legend className="mb-2 text-sm font-medium">{t("pdf.questions")}</legend>{[...options.questions.map(question => ({ id: question.fieldId, label: localizedValue(question.label, scope.culture, original) })), ...selectedUnknown.map(id => ({ id, label: t("pdf.retiredQuestion") }))].map(question => <CheckboxField key={question.id} label={question.label} checked={draft.questionIds.includes(question.id)} disabled={blocked} onCheckedChange={checked => change({ ...draft, questionIds: checked ? [...draft.questionIds, question.id] : draft.questionIds.filter(id => id !== question.id) })}/>)}</fieldset>
     <CheckboxField label={t("pdf.includePhotos")} description={t("pdf.photosHint")} checked={draft.includePhotos} disabled={blocked} onCheckedChange={checked => change({ ...draft, includePhotos: checked })}/>
     <CheckboxField label={t("pdf.includeApproval")} description={t("pdf.approvalHint")} checked={draft.includeApproval} disabled={blocked} onCheckedChange={checked => change({ ...draft, includeApproval: checked })}/>
-    <div className="grid gap-4 sm:grid-cols-2"><FormField label={t("pdf.footer")} hint={t("pdf.footerHint")} error={fieldError("footer." + original)}><Textarea maxLength={1000} rows={3} disabled={blocked} value={draft.footer?.[original] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [original]: event.target.value } })}/></FormField><FormField label={t("pdf.footerTranslation", { language: t("cultures." + other) })} hint={t("pdf.optionalTranslation")} error={fieldError("footer." + other)}><Textarea maxLength={1000} rows={3} disabled={blocked} value={draft.footer?.[other] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [other]: event.target.value } })}/></FormField></div>
+    <FormField label={t("pdf.footer")} hint={reference(draft.footer) ?? t("pdf.footerHint")} error={textError("footer")}><Textarea maxLength={1000} rows={3} disabled={blocked} placeholder={culture !== original && draft.footer?.[original]?.trim() ? t("missingText") : undefined} value={draft.footer?.[culture] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [culture]: event.target.value } })}/></FormField>
     {cooldown.isRunning ? <p role="status">{t("wait", { count: cooldown.seconds })}</p> : null}
     <p className="text-xs text-[var(--color-content-muted)]">{baseline.revision ? t("pdf.revision", { revision: baseline.revision, date: baseline.createdAtUtc ? formatDateTimeInZone(baseline.createdAtUtc, i18n.language, timeZoneId) : "" }) : t("pdf.noRevision")}</p><p className="text-xs text-[var(--color-content-muted)]">{t("pdf.fixedHint")}</p>
    </div></Surface>
-   <Surface title={t("pdf.preview")} padded actions={<SegmentedControl aria-label={t("pdf.previewLanguage")} options={(["es", "en"] as const).map(value => ({ key: value, label: value === "es" ? "Español" : "English", pressed: culture === value, onSelect: () => { setCulture(value); setPreview(null); } }))}/>}><div className="space-y-4"><Button variant="outline" disabled={blocked || !prepared.design} onClick={() => { if (prepared.design)
-        setPreview({ design: prepared.design, culture }); }}>{t("pdf.preview")}</Button>{preview ? <FormPdfPreview operationId={notificationRoot + ":preview"} load={loadPreview} onForbidden={onDenied} requestedCulture={preview.culture} example/> : <p className="text-sm text-[var(--color-content-muted)]">{t("pdf.previewHint")}</p>}</div></Surface>
+   <Surface title={t("pdf.preview")} padded><div className="space-y-4"><Button variant="outline" disabled={blocked || !prepared.design} onClick={() => { if (prepared.design)
+        setPreview(prepared.design); }}>{t("pdf.preview")}</Button>{preview ? <FormPdfPreview operationId={notificationRoot + ":preview"} load={loadPreview} onForbidden={onDenied} requestedCulture={culture} example/> : <p className="text-sm text-[var(--color-content-muted)]">{t("pdf.previewHint")}</p>}</div></Surface>
   </div>
   <ConfirmDialog open={discard || guard.isBlocked} onOpenChange={open => { if (!open) {
         setDiscard(false);

@@ -6,17 +6,20 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const en = language === "en";
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "/pdf&scenario=forms-pdf&lang=" + language);
-    await expect(page.getByRole("textbox", { name: en ? "PDF name" : "Nombre del PDF", exact: true })).toBeVisible();
+    // No language selector: the name is edited in the menu language; in English it is the translation, with the original as a reference.
+    const name = page.getByRole("textbox", { name: en ? "PDF name" : "Nombre del PDF", exact: true });
+    await expect(name).toBeVisible();
+    await expect(name).toHaveValue(en ? "" : "Comprobante de visita");
+    if (en) await expect(name).toHaveAccessibleDescription("Original (Spanish): Comprobante de visita");
     await page.evaluate(() => {
       const revoke = URL.revokeObjectURL.bind(URL);
       const revoked: string[] = [];
       Object.assign(window, { pdfRevokedUrls: revoked });
       URL.revokeObjectURL = url => { revoked.push(url); revoke(url); };
     });
-    await page.getByRole("button", { name: "English", exact: true }).click();
     const preview = page.getByRole("region", { name: en ? "Preview" : "Vista previa", exact: true });
     await preview.getByRole("button", { name: en ? "Preview" : "Vista previa", exact: true }).click();
-    await expect(preview.getByText(en ? /The preview uses all content in Spanish/ : /usa todo el contenido en Español/)).toBeVisible();
+    await expect(preview.getByText(en ? "English is incomplete. The preview uses all content in Spanish." : "Contenido en Español", { exact: true })).toBeVisible();
     const frame = preview.locator("iframe");
     await expect(frame).toHaveAttribute("src", /^blob:/);
     await expect(frame).not.toHaveAttribute("sandbox");
@@ -38,14 +41,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await preview.getByRole("button", { name: en ? "Preview" : "Vista previa", exact: true }).click();
     await expect(frame).toHaveAttribute("src", /^blob:/);
     await expect(frame).not.toHaveAttribute("sandbox");
-    const savedUrl = await frame.getAttribute("src");
     await page.evaluate(() => document.fonts.ready);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: "test-results/pdf-design-" + language + "-" + width + ".png", fullPage: true });
-    await page.getByRole("button", { name: "Español", exact: true }).click();
-    await expect(frame).toHaveCount(0);
-    await expect(preview.getByRole("link", { name: en ? "Download" : "Descargar", exact: true })).toHaveCount(0);
-    expect(await page.evaluate(() => (window as unknown as { pdfRevokedUrls: string[] }).pdfRevokedUrls)).toContain(savedUrl);
   });
   test("issued PDF fixed copy " + language + " at " + width, async ({ page }) => {
     const en = language === "en";
