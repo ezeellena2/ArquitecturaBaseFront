@@ -128,6 +128,35 @@ describe("business information editor", () => {
     expect(screen.getByText("2026-10-10 · Abierto · 09:00–13:00")).toBeInTheDocument();
     expect(writes).toHaveLength(0);
   });
+  it("adds a special date over an incomplete weekly day and leaves that day for Save", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    renderRouteWithProviders("/configuracion/negocio");
+    await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "open");
+    await userEvent.click(screen.getByRole("button", { name: "Agregar fecha especial" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.type(within(dialog).getByLabelText("Fecha"), "2026-10-10");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Agregar fecha" }));
+    // La franja vacía del lunes no es de esta fecha: el diálogo no la marca y la fecha cerrada entra.
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("2026-10-10 · Cerrado")).toBeInTheDocument();
+    const hours = screen.getByRole("group", { name: "Horario de atención" });
+    expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
+    // Lo que sí trae una fecha, como repetirla, se sigue marcando en el diálogo aunque el lunes siga incompleto.
+    await userEvent.click(screen.getByRole("button", { name: "Agregar fecha especial" }));
+    const repeated = await screen.findByRole("dialog");
+    const repeatedDate = within(repeated).getByLabelText("Fecha");
+    await userEvent.type(repeatedDate, "2026-10-10");
+    await userEvent.click(within(repeated).getByRole("button", { name: "Agregar fecha" }));
+    expect(repeatedDate).toHaveAccessibleDescription("Revisá las fechas especiales: no pueden repetirse y se admiten hasta 32.");
+    await userEvent.click(within(repeated).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await userEvent.click(save());
+    expect(within(hours).getByRole("alert")).toHaveTextContent("Elegí apertura y cierre para cada franja.");
+    expect(hours).toHaveFocus();
+    expect(writes).toHaveLength(0);
+  });
   it("keeps the business header without an unsaved status", async () => {
     renderRouteWithProviders("/configuracion/negocio");
     await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");

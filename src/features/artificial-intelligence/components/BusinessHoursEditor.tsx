@@ -72,9 +72,12 @@ function SpecialDateDialog({ initial, hours, onCancel, onConfirm }: { initial: S
   const dateId = useId();
   function problems(next: SpecialDate): { date?: string; periods?: string } {
     const periods = validateHours([{ ...next,weekday:0 }],false);
-    const nextHours = { ...hours, exceptions: [...hours.exceptions.filter(item => item.date !== initial.date),next] };
-    const date = !next.date ? "specialDateRequired" : periods ? undefined : validateBusinessDetails({ ...emptyBusinessDetails(hours.timeZoneId),openingHours:nextHours })["details.openingHours"];
-    return { date, periods: periods ? `hourErrors.${periods}` : undefined };
+    if (!next.date || periods) return { date: next.date ? undefined : "specialDateRequired", periods: periods ? `hourErrors.${periods}` : undefined };
+    // Solo es de la fecha el error que aparece con ella: el que el horario ya tenía sin ella, como un día semanal incompleto, se marca al guardar.
+    const others = hours.exceptions.filter(item => item.date !== initial.date);
+    const scheduleError = (exceptions: SpecialDate[]) => validateBusinessDetails({ ...emptyBusinessDetails(hours.timeZoneId),openingHours:{ ...hours,exceptions } })["details.openingHours"];
+    const withDate = scheduleError([...others,next]);
+    return { date: withDate !== scheduleError(others) ? withDate : undefined };
   }
   const shown: ReturnType<typeof problems> = attempted ? problems(value) : {};
   function confirm() {
