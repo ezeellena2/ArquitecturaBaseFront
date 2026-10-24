@@ -785,8 +785,6 @@
     "export": "Exportar a Excel",
     "exportTitle": "Exportar respuestas a Excel",
     "exportDescription": "Se exportan las respuestas que coinciden con los filtros aplicados.",
-    "exportSummary_one": "{{count}} respuesta · {{filters}} filtros aplicados",
-    "exportSummary_other": "{{count}} respuestas · {{filters}} filtros aplicados",
     "exportColumns": "Columnas a exportar",
     "allColumns_one": "Todas las preguntas ({{count}} columna)",
     "allColumns_other": "Todas las preguntas ({{count}} columnas)",

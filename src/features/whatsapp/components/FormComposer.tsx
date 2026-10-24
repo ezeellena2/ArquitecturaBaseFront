@@ -60,7 +60,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
             {assistant.proposal.fields.map(field => <CheckboxField key={field.fieldId} label={field.label} description={field.displayValue} checked={assistant.selected.includes(field.fieldId)} disabled={assistant.busy || Boolean(assistant.attempt)} onCheckedChange={checked => assistant.setSelected(current => checked ? [...current, field.fieldId] : current.filter(id => id !== field.fieldId))} />)}
           </fieldset> : null}
           <p className="text-sm text-[var(--color-content-muted)]">{t("assistant.prefilledHelp", { name })}</p>
-          {assistant.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint", { seconds: assistant.waitSeconds })}</p> : null}
+          {assistant.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint", { count: assistant.waitSeconds })}</p> : null}
           <DialogFooter>
             <Button variant="outline" disabled={assistant.busy} onClick={() => assistant.setOpen(false)}>{t("forms.cancel")}</Button>
             {assistant.attempt && assistant.recovery === "consult" ? <Button variant="outline" disabled={assistant.busy || assistant.waiting} onClick={() => void assistant.consult()}>{t("send.check")}</Button> : <Button disabled={assistant.busy || assistant.waiting || Boolean(state.disabledReason) || Boolean(draft.attempt)} onClick={() => void assistant.send()}>{t(assistant.busy ? "forms.saving" : assistant.attempt ? "send.retry" : "forms.action")}</Button>}
@@ -82,7 +82,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         {!state.contextChanged&&!state.denied ? <p className="text-xs text-[var(--color-content-muted)]">{t("forms.deadline",{deadline:formatDateTimeInZone(deadline,language,timeZone)})}</p> : null}
         {state.blockedReason ? <p className="text-sm text-[var(--color-content-muted)]">{t(state.blockedReason)}</p> : null}
         {state.versionChanged ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.formUnavailable")}</p> : null}
-        {state.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint",{seconds:state.waitSeconds})}</p> : null}
+        {state.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint",{count:state.waitSeconds})}</p> : null}
         <DialogFooter>
           <Button variant="outline" disabled={state.sending} onClick={()=>state.setOpen(false)}>{t("forms.cancel")}</Button>
           {frozen&&!form?.notStored&&!state.sending ? <Button variant="outline" disabled={state.checking||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : <Button disabled={state.sending||state.checking||Boolean(state.blockedReason)||state.versionChanged||state.waiting||state.forms.isError||state.forms.isFetching||state.preparationBlocked||(!form?.notStored&&!selected)||form?.blocked==="formUnavailable"} onClick={()=>void state.submit()}>{t(state.sending?"forms.saving":form?.notStored?"send.retry":"forms.action")}</Button>}

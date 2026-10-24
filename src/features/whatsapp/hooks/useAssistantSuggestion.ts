@@ -108,7 +108,7 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
       setAttemptState(undefined);
     }
     if (action === "request" || action === "discard") setRecoveryState("consult");
-    notify({ id: noticeId, kind: "error", message: feedback.kind === "wait" ? t("forms.waitingHint", { seconds: feedback.retryAfterSeconds ?? 30 }) : readErrorMessage(error, t), action: { label: t("send.check"), onClick: () => void consult() } });
+    notify({ id: noticeId, kind: "error", message: feedback.kind === "wait" ? t("forms.waitingHint", { count: feedback.retryAfterSeconds ?? 30 }) : readErrorMessage(error, t), action: { label: t("send.check"), onClick: () => void consult() } });
   }
   async function run(action: "request" | "consult" | "discard" | "send", work: (signal: AbortSignal) => Promise<void>) {
     if (!enabledRef.current || !active.current || currentOwner.current !== owner || deniedRef.current || operation.current || Date.now() < deadline.current) return;

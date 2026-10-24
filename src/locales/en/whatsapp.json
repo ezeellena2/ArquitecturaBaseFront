@@ -157,7 +157,8 @@
     "inactive": "inactive",
     "cardDescription": "Form · version {{version}} · “{{cta}}” button",
     "failed": "The form did not reach the recipient. You can send a new one using “Send form”.",
-    "waitingHint": "Wait {{seconds}} seconds before checking or sending again.",
+    "waitingHint_one": "Wait {{count}} second before checking or sending again.",
+    "waitingHint_other": "Wait {{count}} seconds before checking or sending again.",
     "reply": {
       "answers": "Form answers",
       "missing": "No answer",

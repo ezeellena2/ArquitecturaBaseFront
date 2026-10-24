@@ -157,7 +157,8 @@
     "inactive": "inactiva",
     "cardDescription": "Formulario · versión {{version}} · botón «{{cta}}»",
     "failed": "El formulario no le llegó. Podés mandarlo de nuevo con «Enviar formulario».",
-    "waitingHint": "Esperá {{seconds}} segundos antes de volver a consultar o enviar.",
+    "waitingHint_one": "Esperá {{count}} segundo antes de volver a consultar o enviar.",
+    "waitingHint_other": "Esperá {{count}} segundos antes de volver a consultar o enviar.",
     "reply": {
       "answers": "Respuestas del formulario",
       "missing": "Sin respuesta",

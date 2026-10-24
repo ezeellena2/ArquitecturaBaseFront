@@ -172,6 +172,19 @@ describe("AI settings", () => {
     await waitFor(() => expect(writes).toHaveLength(1));
     expect(writes[0]).toMatchObject({ credentialChange: "Remove", apiKey: null, enabled: false });
   });
+  it("says one second, not «1 segundos», for a one-second cooldown", async () => {
+    server.use(http.post("/api/ai/connection/models", () => HttpResponse.json({ code: "Ai.Provider.RateLimited", retryAfter: 1 }, { status: 429 })));
+    const view = renderRouteWithProviders("/configuracion/ia");
+    expect(await screen.findByText("Esperá 1 segundo antes de consultar los modelos otra vez.")).toBeInTheDocument();
+    view.unmount(); queryClient.clear();
+    server.use(http.post("/api/ai/connection/models", () => HttpResponse.json({ provider: current.provider, revision: current.revision, models: [] })),
+      http.post("/api/ai/connection/test", () => HttpResponse.json({ code: "Ai.Provider.RateLimited", retryAfter: 1 }, { status: 429 })));
+    renderRouteWithProviders("/configuracion/ia");
+    await userEvent.click(await screen.findByRole("button", { name: "Reemplazar clave" }));
+    await userEvent.type(keyField(), "fictional-private-key");
+    await userEvent.click(screen.getByRole("button", { name: "Probar conexión" }));
+    expect(await screen.findByText("Esperá 1 segundo antes de probar otra vez.")).toBeInTheDocument();
+  });
   it("blocks repeated tests during a provider cooldown and preserves the candidate", async () => {
     server.use(http.post("/api/ai/connection/test", () => HttpResponse.json({ code: "Ai.Provider.RateLimited", retryAfter: 60 }, { status: 429 })));
     renderRouteWithProviders("/configuracion/ia");

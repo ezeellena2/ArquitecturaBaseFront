@@ -78,7 +78,7 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
               </Button>
               {catalog.models?.length ? <Button variant="muted-link" disabled={locked} onClick={() => setManualModel(previous => !previous)}>{t(manualModel ? "chooseFromCatalog" : "manualModel")}</Button> : null}
             </div> : null}
-            {catalog.cooldown ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("modelsCooldown", { seconds: catalog.cooldown })}</p> : null}
+            {catalog.cooldown ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("modelsCooldown", { count: catalog.cooldown })}</p> : null}
           </div>
         </div>
       </Surface>
@@ -94,7 +94,7 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
           <Input name="ai-provider-api-key" type="password" value={draft.apiKey} autoComplete="new-password" spellCheck={false} autoCapitalize="none" maxLength={4096} disabled={locked} onChange={event => editor.change({ apiKey: event.target.value, credentialChange: event.target.value ? "Replace" : savedCredential ? "Replace" : "Remove" })} />
         </FormField></div> : error("apiKey") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{error("apiKey")}</p> : null}
         {canManage ? <div className="flex flex-wrap items-center gap-3"><Button variant="outline" disabled={locked || !credential || !draft.model.trim() || probe.cooldown > 0} onClick={() => void probe.test()}>
-          {probe.busy ? <Spinner decorative /> : null}{t(probe.busy ? "testing" : "test")}</Button><p role="status" className="text-sm text-[var(--color-content-muted)]">{probe.cooldown ? t("cooldown", { seconds: probe.cooldown }) : t(probe.tested ? "verified" : "unverified")}</p></div> : null}
+          {probe.busy ? <Spinner decorative /> : null}{t(probe.busy ? "testing" : "test")}</Button><p role="status" className="text-sm text-[var(--color-content-muted)]">{probe.cooldown ? t("cooldown", { count: probe.cooldown }) : t(probe.tested ? "verified" : "unverified")}</p></div> : null}
         <p className="max-w-3xl text-sm text-[var(--color-content-muted)]">{t("testHint")}</p>
       </Surface>
       <Surface title={t("availabilitySection")} padded>

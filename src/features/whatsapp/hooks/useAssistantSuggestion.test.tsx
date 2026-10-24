@@ -1,6 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
+import { toast } from "sonner";
 import { afterEach, expect, it, vi } from "vitest";
 import { createQueryClient } from "@/shared/api/queryClient";
 import { ApiError } from "@/shared/api/ApiError";
@@ -29,4 +30,15 @@ it("pauses pending consultation after 429 and resumes only on an explicit read a
   expect(read).toHaveBeenCalledTimes(2);
   expect(request).toHaveBeenCalledOnce();
   hook.unmount();
+});
+
+it("says one second, not «1 segundos», for a one-second wait", async () => {
+  vi.spyOn(assistantApi, "requestAssistantSuggestion").mockRejectedValue(new ApiError(429, { retryAfter: 1 }));
+  const client = createQueryClient();
+  function Wrapper({ children }: PropsWithChildren) { return <QueryClientProvider client={client}>{children}</QueryClientProvider>; }
+  const hook = renderHook(() => useAssistantSuggestion("chat", 7, { sourceMessageId: "source", pointer: null, owner: "operator:chat:source", available: true }, true, true, true), { wrapper: Wrapper });
+  await act(async () => {});
+  expect(toast.getToasts().map(item => "title" in item ? item.title : null)).toContain("Esperá 1 segundo antes de volver a consultar o enviar.");
+  hook.unmount();
+  toast.dismiss();
 });
