@@ -15,6 +15,10 @@ it("formats each value by its captured type and never uses a catalog option ID a
  expect(responseCatalogFieldText({ ...base, type: "catalog", value: "private-guid", text: "Centro histórico" }, "es", "Sí", "No")).toBe("Centro histórico");
  expect(responseCatalogFieldText({ ...base, type: "catalog", value: "private-guid" }, "es", "Sí", "No")).toBe("—");
 });
+it("groups a captured integer with the shared format", () => {
+ const base = { fieldId: "field", label: "Campo", role: "data" as const };
+ expect(responseCatalogFieldText({ ...base, type: "integer", value: "1500" }, "es", "Sí", "No")).toBe("1.500");
+});
 it("keeps multi-choice order, missing positions and historical absence", () => {
  const cell: ResponseCell = { fieldId: "supplier", type: "multiChoice", state: "Answered", value: [{ choiceId: "one", label: "Primero", fields: [{ fieldId: "tax", label: "CUIT", type: "text", role: "data", value: "30-1" }] }, { choiceId: "two", label: "Segundo" }, { choiceId: "three", label: "Tercero", fields: [{ fieldId: "tax", label: "CUIT", type: "text", role: "data", value: "30-3" }] }] };
  expect(responseCatalogFieldCellText(cell, "tax", "es", "Sí", "No")).toBe("30-1, —, 30-3");

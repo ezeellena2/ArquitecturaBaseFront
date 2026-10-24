@@ -174,7 +174,7 @@ export function FormResponsesPage() {
         />,
     })),
   ];
-  const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, scope.user?.timeZoneId, data?.versions);
+  const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, i18n.language, scope.user?.timeZoneId, data?.versions);
   const firstChoice = data?.columns.find((column) => column.type === "choice" || column.type === "multiChoice");
   const sort = route.query.sort?.replace(
     "field",

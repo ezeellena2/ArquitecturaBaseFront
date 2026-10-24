@@ -116,7 +116,14 @@ describe("response filters", () => {
 
 it("describes the applied values without exposing option IDs", () => {
   const column: ResponseColumn = { fieldId: "choice", type: "choice", label: "Mode", options: [{ id: "private-choice", label: "Visit" }], introducedInVersion: 1 };
-  expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "choice", operator: "in", values: ["private-choice"] }], search: "Notes" }, [column], key => key)).toEqual([{ key: "choice", label: "Mode: Visit" }, { key: "search", label: "responses.search: Notes" }]);
+  expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "choice", operator: "in", values: ["private-choice"] }], search: "Notes" }, [column], key => key, "es")).toEqual([{ key: "choice", label: "Mode: Visit" }, { key: "search", label: "responses.search: Notes" }]);
+});
+
+it("describes decimal and date conditions and the received range with the shared format", () => {
+  const columns: ResponseColumn[] = [{ fieldId: "amount", type: "decimal", label: "Amount", options: [], introducedInVersion: 1 }, { fieldId: "visit", type: "date", label: "Visit", options: [], introducedInVersion: 1 }];
+  const conditions = [{ fieldId: "amount", operator: "gte", values: ["1500.5"] }, { fieldId: "visit", operator: "lte", values: ["2027-03-15"] }];
+  expect(responseFilterLabels({ page: 1, pageSize: 20, conditions }, columns, key => key, "es")).toEqual([{ key: "amount", label: "Amount: responses.from 1.500,5" }, { key: "visit", label: "Visit: responses.to 15/03/2027" }]);
+  expect(responseFilterLabels({ page: 1, pageSize: 20, receivedFromUtc: "2026-10-16T03:00:00.000Z" }, [], key => key, "es", "America/Argentina/Buenos_Aires")).toEqual([{ key: "received", label: "responses.received · 16/10/2026 – …" }]);
 });
 
 it("uses the supplied media type to label a document format", async()=>{ const {responseDocumentFormat}=await import("./responses");expect(responseDocumentFormat("application/pdf")).toBe("PDF");expect(responseDocumentFormat("text/plain")).toBe("TXT");expect(responseDocumentFormat("application/octet-stream")).toBeNull();});
@@ -125,7 +132,7 @@ it("uses the supplied media type to label a document format", async()=>{ const {
 it.each(["Received", "PendingApproval", "Approved", "Rejected"] as const)("keeps the private %s state filter during normalization and describes it with static translations", state => {
   const query = normalizeResponseQuery({ page: 1, pageSize: 20, state, search: "  visit  " }, []);
   expect(query).toMatchObject({ state, search: "visit" });
-  expect(responseFilterLabels(query!, [], key => key)).toEqual([
+  expect(responseFilterLabels(query!, [], key => key, "es")).toEqual([
     { key: "state", label: "approvals.state: approvals.states." + state },
     { key: "search", label: "responses.search: visit" },
   ]);
@@ -133,8 +140,8 @@ it.each(["Received", "PendingApproval", "Approved", "Rejected"] as const)("keeps
 it("treats null or absent response state as no applied state filter", () => {
   const query = { page: 1, pageSize: 20, state: null };
   expect(normalizeResponseQuery(query, [])?.state).toBeNull();
-  expect(responseFilterLabels(query, [], key => key)).toEqual([]);
-  expect(responseFilterLabels({ page: 1, pageSize: 20 }, [], key => key)).toEqual([]);
+  expect(responseFilterLabels(query, [], key => key, "es")).toEqual([]);
+  expect(responseFilterLabels({ page: 1, pageSize: 20 }, [], key => key, "es")).toEqual([]);
 });
 
 
@@ -196,6 +203,6 @@ it("keeps option arrays out of file readers and formats multi-choice filter labe
   expect(selectedResponseChoices({ ...multiple, type: "document", value: [file] })).toEqual([]);
   const column: ResponseColumn = { fieldId: "faults", type: "multiChoice", label: "Faults", options: [{ id: "cold", label: "Cold" }, { id: "noise", label: "Noise" }], introducedInVersion: 1 };
   const query = { page: 1, pageSize: 20, conditions: [{ fieldId: "faults", operator: "anyOf", values: ["noise", "cold"] }] };
-  expect(responseFilterLabels(query, [column], key => key)[0].label).toBe("Faults: responses.anyOf Noise, Cold");
-  expect(responseFilterLabels(query, [column], key => key)[0].label).not.toMatch(/noise|cold/);
+  expect(responseFilterLabels(query, [column], key => key, "es")[0].label).toBe("Faults: responses.anyOf Noise, Cold");
+  expect(responseFilterLabels(query, [column], key => key, "es")[0].label).not.toMatch(/noise|cold/);
 });

@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
-import { formatDateOnly } from "@/shared/lib/dateTime";
-import { formatExactDecimal } from "@/shared/lib/decimal";
+import { formatTypedValue } from "@/shared/lib/typedValue";
 import { responseCatalogFieldText, responseDocumentFormat, responseFiles, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 function CapturedFields({ choice, culture, yes, no }: { choice: ResponseChoice; culture: string; yes: string; no: string }) {
@@ -94,16 +93,14 @@ export function ResponseValue({
       </div>)}
     </div>;
   const text =
-    typeof cell.value === "string" && cell.type === "decimal"
-      ? (formatExactDecimal(cell.value, i18n.language) ?? cell.value)
-      : typeof cell.value === "string" && cell.type === "date"
-        ? (formatDateOnly(cell.value, i18n.language) ?? cell.value)
-        : responseValueText(
-            cell,
-            t("responses.unanswered"),
-            t("responses.yes"),
-            t("responses.no"),
-          );
+    typeof cell.value === "string" && (cell.type === "decimal" || cell.type === "date")
+      ? (formatTypedValue(cell.type, cell.value, i18n.language) ?? cell.value)
+      : responseValueText(
+          cell,
+          t("responses.unanswered"),
+          t("responses.yes"),
+          t("responses.no"),
+        );
   const choice = cell.type === "choice" ? choices[0] : undefined;
   return (
     <div

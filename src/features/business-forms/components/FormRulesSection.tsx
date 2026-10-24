@@ -39,7 +39,7 @@ export function FormRulesSection(props: Props) {
   return <RulesEditor key={owner} {...props} onDenied={onDenied} />;
 }
 function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, timeZoneId, onDirtyChange, onDenied }: Props & { onDenied: () => void }) {
-  const { t } = useTranslation("forms");
+  const { t, i18n } = useTranslation("forms");
   const root = [...formScopeKey(scope), "rules", definitionId];
   const notificationRoot = "forms:rules:" + JSON.stringify(root);
   const pendingNotices = useRef(new Set<string>());
@@ -123,7 +123,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, contentCulture, 
     setCurrent(null); setNeedsReview(false); setError(null);
     pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save");
   };
-  const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, contentCulture, options.originalCulture) : ""}</li>)}</ol></>;
+  const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, i18n.language, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, contentCulture, options.originalCulture) : ""}</li>)}</ol></>;
   return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
     <Surface title={t("rules.title")} actions={<>{dirty ? <Badge variant="outline">{t("dirty")}</Badge> : <span className="text-xs">{t("rules.revision", { revision: baseline.revision })}</span>}<Button aria-describedby={saveReason ? saveHintId : undefined} disabled={!!saveReason} onClick={() => void run("save", async signal => {
       const saved = await saveFormRules(definitionId, { expectedRevision: baseline.revision, rules: prepared.rules }, signal);

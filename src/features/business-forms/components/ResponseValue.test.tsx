@@ -38,6 +38,13 @@ it.each([false, true])("shows every historical multi-choice label without numeri
   expect(screen.queryByRole("button", { name: /Descargar|Ver foto/ })).not.toBeInTheDocument();
 });
 
+it("shows decimal and date answers with the shared format", async () => {
+  const cells: ResponseCell[] = [{ fieldId: "amount", type: "decimal", state: "Answered", value: "1500.5" }, { fieldId: "visit", type: "date", state: "Answered", value: "2027-03-15" }];
+  await act(async () => { renderWithProviders(<>{cells.map(cell => <ResponseValue key={cell.fieldId} cell={cell} actor="reader" recordId="record" number="VIS-1" label={cell.fieldId} detailLink="" onForbidden={() => undefined} onError={() => undefined}/>)}</>); });
+  expect(screen.getByText("1.500,5", { exact: true })).toBeVisible();
+  expect(screen.getByText("15/03/2027", { exact: true })).toBeVisible();
+});
+
 it.each(["choice", "multiChoice"] as const)("shows every sealed extra field only in the %s detail", async type => {
   const choice = { choiceId: "historic", label: "Proveedor histórico", fields: [{ fieldId: "tax", label: "CUIT histórico", type: "text" as const, role: "data" as const, value: "30-71234567-8" }, { fieldId: "zone", label: "Zona histórica", type: "catalog" as const, role: "filter" as const, value: "private-option-id", text: "Centro de entonces" }, { fieldId: "days", label: "Plazo", type: "integer" as const, role: "data" as const, value: "900719925474099123" }] };
   const cell: ResponseCell = { fieldId: "supplier", type, state: "Answered", value: type === "choice" ? choice : [choice] };

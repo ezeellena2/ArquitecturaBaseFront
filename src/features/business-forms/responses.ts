@@ -1,8 +1,7 @@
 import type { CatalogFieldType } from "./catalogFields";
 import type { CatalogValueType } from "./catalogValues";
-import { formatExactDecimal } from "@/shared/lib/decimal";
-import { formatDateOnly } from "@/shared/lib/dateTime";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
+import { formatTypedValue, formatYesNo } from "@/shared/lib/typedValue";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 export type ResponseType =
   | "shortText"
@@ -104,9 +103,8 @@ export function responseColumnSelection(columns: readonly ResponseColumn[], ids:
 }
 export function responseCatalogFieldText(field: ResponseCapturedCatalogField, culture: string, yes: string, no: string): string {
   if (field.type === "catalog") return field.text?.trim() ? field.text : "—";
-  if (field.type === "boolean") return field.value === "true" ? yes : field.value === "false" ? no : "—";
-  if (field.type === "integer" || field.type === "decimal") return formatExactDecimal(field.value, culture) ?? field.value;
-  if (field.type === "date") return formatDateOnly(field.value, culture, "numeric") ?? field.value;
+  if (field.type === "boolean") return formatYesNo(field.value, { yes, no }) ?? "—";
+  if (field.type === "integer" || field.type === "decimal" || field.type === "date") return formatTypedValue(field.type, field.value, culture) ?? field.value;
   return field.value || "—";
 }
 export function responseCatalogFieldCellText(cell: ResponseCell, fieldId: string, culture: string, yes: string, no: string): string {
@@ -182,12 +180,13 @@ export function replaceResponseCondition(
     : others;
 }
 
-export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: (key: string, options?: Record<string, unknown>) => string, zone = "UTC", versions: readonly { id: string; number: number }[] = []) {
+export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: (key: string, options?: Record<string, unknown>) => string, language: string, zone = "UTC", versions: readonly { id: string; number: number }[] = []) {
   const labels: { key: string; label: string }[] = [];
+  const day = (valueUtc: string) => { const date = calendarDateInZone(valueUtc, zone); return formatTypedValue("date", date, language) ?? date; };
   for (const fieldId of new Set(query.conditions?.map(item => item.fieldId) ?? [])) {
     const column = columns.find(item => item.fieldId === fieldId);
     const parts = query.conditions?.filter(item => item.fieldId === fieldId).map(item => {
-      const values = item.values?.map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? t(value === "true" ? "responses.yes" : "responses.no") : value).join(", ");
+      const values = item.values?.map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? t(value === "true" ? "responses.yes" : "responses.no") : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, value, language) ?? value : value).join(", ");
       const operator = ({ anyOf: "anyOf", gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
       return [operator ? t("responses." + operator) : "", values].filter(Boolean).join(" ");
     });
@@ -196,7 +195,7 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
   if (query.state) labels.push({ key: "state", label: t("approvals.state") + ": " + t("approvals.states." + query.state) });
   if (query.actorIds?.length) labels.push({ key: "actor", label: t("responses.people") + " · " + query.actorIds.length });
   if (query.versionIds?.length) labels.push({ key: "version", label: t("responses.version") + " · " + query.versionIds.map(id => versions.find(item => item.id === id)?.number ?? "—").join(", ") });
-  if (query.receivedFromUtc || query.receivedToUtc) labels.push({ key: "received", label: t("responses.received") + " · " + [query.receivedFromUtc ? calendarDateInZone(query.receivedFromUtc, zone) : "…", query.receivedToUtc ? calendarDateInZone(new Date(Date.parse(query.receivedToUtc) - 1).toISOString(), zone) : "…"].join(" – ") });
+  if (query.receivedFromUtc || query.receivedToUtc) labels.push({ key: "received", label: t("responses.received") + " · " + [query.receivedFromUtc ? day(query.receivedFromUtc) : "…", query.receivedToUtc ? day(new Date(Date.parse(query.receivedToUtc) - 1).toISOString()) : "…"].join(" – ") });
   if (query.search) labels.push({ key: "search", label: t("responses.search") + ": " + query.search });
   return labels;
 }
