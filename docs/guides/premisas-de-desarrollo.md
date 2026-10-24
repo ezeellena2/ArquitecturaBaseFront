@@ -141,7 +141,9 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   corresponde a un ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo.
   Configuración usa guardado explícito: Registro usa radios; Idioma, Zona horaria y Listados usan
   `NativeSelect`. No convertir esos borradores en guardados automáticos.
-- Un control deshabilitado mantiene el valor legible y, cuando no es evidente, la razón visible.
+- Un control deshabilitado mantiene el valor legible. Si el motivo no es evidente, `DisabledReason`
+  lo muestra como tooltip al pasar el mouse o con el foco y como descripción accesible, sin textos
+  al lado ni debajo del control.
   Los estados de validación no dependen solo del color.
 - Una mutación conserva el borrador ante un fallo. Mostrar que está guardando y evitar envíos
   duplicados; anunciar éxito solo después de la respuesta. Invalidar las consultas afectadas,
@@ -157,6 +159,8 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   Una acción que modifica o abre un diálogo es un botón.
 - Un botón solo con ícono usa `IconButton` con nombre accesible. Los tooltips usan `ActionTooltip`
   y funcionan con foco de teclado y portales; no usar el atributo `title` como única explicación.
+- Un control con texto deshabilitado por un motivo que no es obvio se envuelve en `DisabledReason`.
+  No se usa mientras la acción trabaja ni en ítems de menú, que muestran su motivo adentro.
 - Los permisos se piden en la ruta y se reflejan en las acciones y el menú. La seguridad la decide
   el backend; la interfaz no inventa permisos ni usa roles como sustituto de ellos.
 

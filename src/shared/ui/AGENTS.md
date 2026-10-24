@@ -5,7 +5,8 @@ Reúne primitivas generadas por shadcn y componentes propios de formularios, tab
 ## Al modificar
 
 - Los archivos en minúscula son generados y se editan lo mínimo; los propios usan PascalCase. Al regenerar, preservá traducciones y tema claro de Dialog y Sonner.
-- Usá `Page`, `RowActions`, `ActionTooltip`, `IconButton`, `FilterBar` y campos comunes. No agregar variantes locales de un mismo control.
+- Usá `Page`, `RowActions`, `ActionTooltip`, `IconButton`, `DisabledReason`, `FilterBar` y campos comunes. No agregar variantes locales de un mismo control.
+- `DisabledReason` explica un control deshabilitado cuyo motivo no es obvio: tooltip al pasar el mouse o con el foco sobre un span enfocable y descripción accesible del control. Sin motivo devuelve el control solo; dentro de `FormField` reenvía `id`, `aria-invalid` y `aria-describedby`. No se usa en ítems de menú ni mientras la acción trabaja, y no agrega textos al lado ni debajo del control.
 - `ForbiddenPage` presenta el estado compartido de falta de permiso: lo usan la ruta `/sin-permiso` y las áreas que reciben un 403. Conservá la misma traducción y presentación en todos sus consumidores.
 - Conservá Public Sans y las formas actuales al refinar consumidores; desde el 2026-10-02 los colores iniciales son Campo, sin cambios de medidas ni componentes. `icons` es el punto común del set; expone también los dibujos Lucide ya aprobados para el acceso público, sin cambiar su apariencia. El catálogo muestra los campos, selección, modales y tooltips reales.
 - Listados y tablas especiales usan `Surface`; las superficies con banda también se componen allí. `TableHead` define tipografía y `TableRow` la densidad. Los filtros usan `FilterMenuTrigger` y `FilterChip`; las secciones, `TableSectionToggle`. Cambiá la biblioteca y sus consumidores juntos.

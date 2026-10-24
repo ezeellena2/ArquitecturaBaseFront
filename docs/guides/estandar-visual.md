@@ -39,6 +39,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Casillas y alternativas | `CheckboxField`, `RadioGroupField`, `Checkbox` para tablas | Opciones, estado y validación |
 | Íconos y acciones | `shared/ui/icons`, `IconButton`, `RowActions` | Nombre traducido, permiso y operación |
 | Ayuda contextual | `ActionTooltip` | Texto y control alcanzable con teclado; sin `title` nativo |
+| Motivo de un deshabilitado | `DisabledReason` | Motivo traducido, solo si no es obvio; sin textos al lado ni debajo del control |
 | Conversación | `MessageHistory`, `MessageBubble`, `MessageDateDivider` | Orden/origen de los mensajes, día del perfil, formato común, estado confirmado y acciones permitidas |
 
 `Surface` no recibe clases ni estilos de apariencia. Su banda puede crecer con el título en móvil.
@@ -107,7 +108,8 @@ Su entrada, datos ficticios y sesión simulada viven en `src/test/visual`; no se
 del build ni agregan rutas productivas. No requiere una API ni hace escrituras reales.
 Muestra los componentes reales con sus variantes, campos normales e inválidos, carga, vacío y recuperación.
 Incluye Input, Textarea, NativeSelect, Select, MultiSelect, radios, checks, búsqueda y segmentados,
-además de botones con ícono, tooltips de acciones deshabilitadas y un formulario corto en Dialog.
+además de botones con ícono, tooltips de acciones deshabilitadas (con ícono y con texto, `DisabledReason`)
+y un formulario corto en Dialog.
 La variante `?scenario=mobile-dialog` muestra `mobileFullscreen`: al abrir el formulario, el cuerpo se desplaza y el pie conserva sus acciones en móvil.
 Los diálogos de baja, reactivación y eliminación de formularios aplican esta variante en móvil, con el cuerpo desplazable y el pie fuera del scroll.
 También permite revisar rutas existentes con `?screen=/usuarios`, `?screen=/roles/support` o `?screen=/perfil`.

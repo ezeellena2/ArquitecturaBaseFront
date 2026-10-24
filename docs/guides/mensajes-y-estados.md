@@ -30,7 +30,7 @@ como excepciones permanentes. Un desarrollo nuevo cumple el contrato desde su pr
 | Hay que decidir antes de actuar | ConfirmDialog, con consecuencia y acción concreta | Eliminar; abrir registro; descartar cambios |
 | El contenido no pudo cargarse | Estado de recuperación de DataTable/EmptyState con Reintentar; una notificación explica la causa | No pudimos cargar los usuarios |
 | Falla una actualización de datos ya visibles | Conservar los datos y el borrador; notificación de error | No pudimos actualizar la lista |
-| Hay una condición de negocio que sigue vigente | Dato, estado del flujo o ayuda junto a la acción afectada | Único medio de ingreso; código agotado; cuenta deshabilitada |
+| Hay una condición de negocio que sigue vigente | Dato, estado del flujo o motivo de la acción deshabilitada como tooltip (`DisabledReason`) | Único medio de ingreso; código agotado; cuenta deshabilitada |
 | No hay sesión, permiso o ruta | Flujo de sesión o página correspondiente | Ingresar; Sin permiso; Página inexistente |
 
 **Error** significa que la operación no pudo completarse o confirmarse. **Warning** advierte
@@ -87,8 +87,9 @@ contexto necesario para explicar qué operación terminó, sin reabrir el editor
 **Reintentar no es un botón universal.** Una lectura puede repetirse. Para una escritura cuyo
 resultado es incierto, primero se consulta el estado actual; no enviar de nuevo a ciegas ni
 afirmar que no se guardó. La regla vale también para operaciones que pueden consumir códigos,
-enlaces o invitaciones. Los 429 respetan el plazo del servidor y el control mantiene visible
-la espera después de cerrar la notificación; no se habilita un reintento prematuro.
+enlaces o invitaciones. Los 429 respetan el plazo del servidor: el control queda deshabilitado y,
+después de cerrar la notificación, la espera sigue como su motivo con `DisabledReason`, sin un texto
+al lado del botón; no se habilita un reintento prematuro.
 
 Con un Dialog abierto, el aviso debe anunciarse y su recuperación debe poder completarse
 con teclado. Se prueba la interacción del Toaster con el foco y los portales del diálogo en

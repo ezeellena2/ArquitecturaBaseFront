@@ -70,7 +70,7 @@ de `features/users/columns.tsx`; avatar de cuenta en `Sidebar.tsx` y `UserMenu.t
 explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `Surface`, `FilterChip`, `FilterMenuTrigger`,
 `TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `SegmentedControl` (`fullWidth`,
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
-`error`, `Spinner decorative`, `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+`error`, `Spinner decorative`, `DisabledReason`, `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
 `CheckCheck`, `Send`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
@@ -171,7 +171,8 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
 - SVG decorativo (`aria-hidden="true"`); el botón lleva el nombre contextual (“Eliminar a ana@ejemplo.com”).
 - Toda acción sin texto usa `ActionTooltip`: hover y foco, Escape, el puntero puede pasar a la ayuda, se ajusta a los
   bordes y vive en un portal. Un solo `TooltipProvider`; se monta solo abierto; textos del namespace del módulo, también
-  en botones deshabilitados. Un botón con texto visible no repite tooltip.
+  en botones deshabilitados. Un botón con texto visible no repite su nombre en un tooltip; si está deshabilitado por un
+  motivo que no es obvio, `DisabledReason` lo muestra como tooltip y descripción accesible.
 - En una fila, inocuas primero y destructiva última; el rojo aparece al interactuar. Sin permiso, no se renderiza.
 
 ## Listados y filtros
@@ -198,7 +199,7 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
   - no se agregan textos debajo ni al costado, como «No hay cambios para guardar», «Revisá los datos marcados antes de
     guardar» o «Guardá … antes»;
   - los botones no cambian de lugar ni de forma con cada acción;
-  - si el motivo de un deshabilitado no es obvio, va como tooltip al pasar el mouse o con el foco;
+  - si el motivo de un deshabilitado no es obvio, va como tooltip al pasar el mouse o con el foco (`DisabledReason`);
   - los errores se marcan en sus campos.
 - **Las acciones de una superficie van al borde derecho de su encabezado,** a la altura del título.
 - Breve y contextual: diálogo. Largo, seccionado o compartible: ruta propia. Un único valor puede editarse en línea.

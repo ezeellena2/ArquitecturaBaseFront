@@ -22,6 +22,7 @@ import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { IconButton } from "@/shared/ui/IconButton";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormIcon, PencilIcon } from "@/shared/ui/icons";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
@@ -48,8 +49,8 @@ export function Catalog() {
     : { title: "Catálogo de UI", actions: "Acciones", controls: "Campos", tables: "Tabla", states: "Estados", name: "Nombre", hint: "Usá un nombre que las personas reconozcan.", invalid: "Ingresá un nombre.", status: "Estado", empty: "Todavía no hay registros", problem: "No pudimos cargar el contenido", notice: "Guardamos los cambios", chip: "Activos", remove: "Quitar filtro de estado", badgeSuccess: "Éxito", badgeWarning: "Atención", badgeDanger: "Problema" };
   const columns = [{ id: "name", header: text.name, cell: (row: { id: string; name: string }) => row.name }];
   const pieces = english
-    ? { description: "Description", role: "Role", roles: "Roles", choose: "Choose roles", registration: "Account registration", invited: "Invitation only", open: "Open registration", checkbox: "Send an invitation", disabled: "Unavailable action", reason: "This example is read-only.", edit: "Edit example", modal: "Open form", modalTitle: "Example form", modalDescription: "A short form using the shared dialog.", search: "Search by name", status: "Filter by status", all: "All", active: "Active", filters: "Filters", selection: "Selection", dialogs: "Dialogs and tooltips" }
-    : { description: "Descripción", role: "Rol", roles: "Roles", choose: "Elegí roles", registration: "Registro de cuentas", invited: "Solo por invitación", open: "Registro abierto", checkbox: "Mandar una invitación", disabled: "Acción no disponible", reason: "Este ejemplo es de solo lectura.", edit: "Editar ejemplo", modal: "Abrir formulario", modalTitle: "Formulario de ejemplo", modalDescription: "Un formulario corto con el diálogo compartido.", search: "Buscar por nombre", status: "Filtrar por estado", all: "Todos", active: "Activos", filters: "Filtros", selection: "Selección", dialogs: "Modales y tooltips" };
+    ? { description: "Description", role: "Role", roles: "Roles", choose: "Choose roles", registration: "Account registration", invited: "Invitation only", open: "Open registration", checkbox: "Send an invitation", disabled: "Unavailable action", reason: "This example is read-only.", export: "Export example", edit: "Edit example", modal: "Open form", modalTitle: "Example form", modalDescription: "A short form using the shared dialog.", search: "Search by name", status: "Filter by status", all: "All", active: "Active", filters: "Filters", selection: "Selection", dialogs: "Dialogs and tooltips" }
+    : { description: "Descripción", role: "Rol", roles: "Roles", choose: "Elegí roles", registration: "Registro de cuentas", invited: "Solo por invitación", open: "Registro abierto", checkbox: "Mandar una invitación", disabled: "Acción no disponible", reason: "Este ejemplo es de solo lectura.", export: "Exportar ejemplo", edit: "Editar ejemplo", modal: "Abrir formulario", modalTitle: "Formulario de ejemplo", modalDescription: "Un formulario corto con el diálogo compartido.", search: "Buscar por nombre", status: "Filtrar por estado", all: "Todos", active: "Activos", filters: "Filtros", selection: "Selección", dialogs: "Modales y tooltips" };
   return <Page title={text.title} actions={<Button onClick={() => notify({ id: "catalog:notice", kind: "success", message: text.notice })}>{text.notice}</Button>}>
     <div className="flex flex-col gap-5">
       <Surface title={text.actions} padded>
@@ -119,6 +120,7 @@ export function Catalog() {
           <Button variant="outline" onClick={() => setFormOpen(true)}>{pieces.modal}</Button>
           <IconButton label={pieces.edit} onClick={() => setFormOpen(true)}><PencilIcon className="size-4" /></IconButton>
           <IconButton label={pieces.disabled} disabledLabel={pieces.reason} disabled><PencilIcon className="size-4" /></IconButton>
+          <DisabledReason reason={pieces.reason}><Button variant="outline" disabled>{pieces.export}</Button></DisabledReason>
         </div>
       </Surface>
       <section aria-label={text.tables}>

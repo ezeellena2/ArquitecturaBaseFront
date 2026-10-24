@@ -153,7 +153,9 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
 - Fechas: además de los formateadores de las premisas, `formatTimeInZone` (hora de un mensaje) y `calendarDateInZone`
   (agrupar por día) en `shared/lib/dateTime`.
 - `IconButton` incluye `ActionTooltip` y usa `disabledLabel` con un motivo concreto. En `RowActions`, sin permiso se pasa
-  `hidden`: un botón deshabilitado no recibe foco.
+  `hidden`: un botón deshabilitado no recibe foco. Un control con texto deshabilitado por un motivo que no es obvio usa
+  `DisabledReason`: tooltip sobre un span enfocable y descripción accesible; dentro de `FormField` reenvía `id`,
+  `aria-invalid` y `aria-describedby` al control.
 - **`AppLayout`** usa `h-svh` y scrollea `<main>`, `relative` (un `sr-only` estira el documento) y con `scroll-pt-14` (más que
   la banda de 48 px: el foco no queda tapado, WCAG 2.4.11). Al imprimir, `print:h-auto` y `print:overflow-visible`. jsdom no
   maqueta: un cambio del caparazón se mira en el navegador.
