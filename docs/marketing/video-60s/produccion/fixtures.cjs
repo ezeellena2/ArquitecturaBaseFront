@@ -138,18 +138,24 @@ const assistantBootstrap = {
   ],
 };
 
+// Mismo contrato que valida src/features/artificial-intelligence/api/assistant.ts: estados y etapas en minúsculas,
+// identificadores UUID y el POST que devuelve solo la aceptación.
+const assistantEvidenceIds = ["0199a0c0-0000-7000-8000-00000000a003", "0199a0c0-0000-7000-8000-00000000a004"];
+const acceptedOf = ({ conversationId, requestId, conversationRevision, turnRevision, state, stage, submittedAtUtc, serverNowUtc, pollingAfterSeconds }) =>
+  ({ conversationId, requestId, conversationRevision, turnRevision, state, stage, submittedAtUtc, serverNowUtc, pollingAfterSeconds });
+
 function assistantAnswer(question, requestId, base) {
   return {
-    ...base, state: "Completed", stage: null, turnRevision: base.turnRevision + 1,
-    answer: { kind: "answer", evidenceIds: ["e1", "e2"], text:
+    ...base, state: "completed", stage: "finished", turnRevision: base.turnRevision + 1,
+    answer: { kind: "answer", evidenceIds: assistantEvidenceIds, text:
       "Atienden WhatsApp 3 personas: Diego Romero y Camila Torres, con el rol Atención al cliente, y Valeria Ortiz, como administradora. " +
       "El sábado el local abre de 9 a 13 h." },
     evidences: [
-      { id: "e1", sourceId: "roles.permissions", sourceVersion: 1, observedAtUtc: ago(0), revision: null, destination: "roles",
+      { id: assistantEvidenceIds[0], sourceId: "roles.permissions", sourceVersion: 1, observedAtUtc: ago(0), revision: null, destination: "roles",
         requiredPermissions: ["roles.read"], isComplete: true, rows: [
           { id: null, values: [{ label: "Rol", value: "Atención al cliente" }, { label: "Personas", value: "2" }, { label: "Permiso", value: "Responder chats" }] },
         ] },
-      { id: "e2", sourceId: "business.information", sourceVersion: 1, observedAtUtc: ago(0), revision: 4, destination: "business.information",
+      { id: assistantEvidenceIds[1], sourceId: "business.information", sourceVersion: 1, observedAtUtc: ago(0), revision: 4, destination: "business.information",
         requiredPermissions: ["ai.business.read"], isComplete: true, rows: [
           { id: null, values: [{ label: "Horario", value: business.hours }] },
         ] },
@@ -242,20 +248,20 @@ async function installMarketingRoutes(page, origin, options = {}) {
         assistant.polls = 0;
         assistant.turn = {
           turnId: "0199a0c0-0000-7000-8000-00000000a002", requestId: body.requestId, conversationId: assistantConversationId,
-          ordinal: 1, conversationRevision: 1, turnRevision: 1, state: "Running", stage: "consulting", cancelRequestedAtUtc: null,
-          contentAccess: "allowed", question: body.question, answer: null, evidences: [], failure: null, culture: "es",
+          ordinal: 1, conversationRevision: 1, turnRevision: 1, state: "running", stage: "consulting", cancelRequestedAtUtc: null,
+          contentAccess: "allowed", question: body.question, answer: null, evidences: [], failure: null, usage: null, culture: "es",
           timeZoneId: "America/Argentina/Buenos_Aires", submittedAtUtc: ago(0), serverNowUtc: ago(0), pollingAfterSeconds: 1,
         };
-        return json(assistant.turn, 202);
+        return json(acceptedOf(assistant.turn), 202);
       }
       if (path.includes("/turns/") && method === "GET") {
-        if (assistant.turn && assistant.turn.state === "Running" && ++assistant.polls >= (options.assistantPolls ?? 2))
+        if (assistant.turn && assistant.turn.state === "running" && ++assistant.polls >= (options.assistantPolls ?? 2))
           assistant.turn = assistantAnswer(assistant.turn.question, assistant.turn.requestId, assistant.turn);
         return assistant.turn ? json(assistant.turn) : json({}, 404);
       }
       if (path.includes("/conversations/") && path.endsWith("/turns")) return json(pageOf(assistant.turn ? [assistant.turn] : []));
       if (path.includes("/conversations/")) return assistant.turn ? json({ conversationId: assistantConversationId, revision: assistant.turn.conversationRevision,
-        title: assistant.turn.question, contentAccess: "allowed", activeRequestId: assistant.turn.state === "Running" ? assistant.turn.requestId : null,
+        title: assistant.turn.question, contentAccess: "allowed", activeRequestId: assistant.turn.state === "running" ? assistant.turn.requestId : null,
         lastActivityAtUtc: ago(0) }) : json({}, 404);
     }
 
