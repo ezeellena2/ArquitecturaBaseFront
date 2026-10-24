@@ -6,6 +6,7 @@ import { expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
+import { UserDataSectionContext } from "@/shared/hooks/userDataSectionContext";
 import { PersonDataPage } from "./PersonDataPage";
 vi.mock("react-oidc-context", async () => { const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"); return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }; });
 const id = "01990000-0000-7000-8000-000000000001", userId = "01990000-0000-7000-8000-000000000002";
@@ -30,6 +31,17 @@ it("keeps attribute administration available without requesting people who canno
  expect(screen.getByText("Para ver las personas necesitás Ver usuarios.")).toBeInTheDocument();
  expect(reads()).toBe(0);
  expect(screen.queryByText("Juan Gómez")).not.toBeInTheDocument();
+});
+it("refreshes the people table after the user editor closes", async () => {
+ const opened: { userId: string; onClosed?: () => void }[] = [];
+ let reads = 0;
+ server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formpersondata.manage", "users.read", "users.manage"] })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [attribute] })), http.get("/api/forms/person-data", () => HttpResponse.json({ ...people, items: [{ ...people.items[0], displayName: reads++ === 0 ? "Juan Gómez" : "Juan Carlos Gómez" }] })));
+ const extension = { Section: () => null, openUser: (opener: string, onClosed?: () => void) => { opened.push({ userId: opener, onClosed }); } };
+ await act(async () => { renderWithProviders(<MemoryRouter><UserDataSectionContext.Provider value={extension}><PersonDataPage /></UserDataSectionContext.Provider></MemoryRouter>); });
+ await userEvent.click(await screen.findByRole("button", { name: "Editar a Juan Gómez" }));
+ expect(opened.map(entry => entry.userId)).toEqual([userId]);
+ await act(async () => { opened[0].onClosed?.(); });
+ expect(await screen.findByText("Juan Carlos Gómez")).toBeInTheDocument();
 });
 it("creates a text attribute with an immutable key and without reading catalogs", async () => {
  const bodies: unknown[] = [];

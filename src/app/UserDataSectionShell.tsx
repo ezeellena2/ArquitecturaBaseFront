@@ -38,8 +38,10 @@ export function UserDataSectionShell({ children }: { children: ReactNode }) {
  const enabled = presentation?.installedFeatures?.includes("forms") === true && user?.permissions.includes("users.manage") === true;
  const canOpen = user?.permissions.includes("users.read") === true;
  const [target, setTarget] = useState<{ owner: string; userId: string } | null>(null);
- const close = useCallback(() => setTarget(null), []);
- const openUser = useCallback((userId: string) => { if (enabled && canOpen) setTarget({ owner, userId }); }, [enabled, canOpen, owner]);
+ // The opener's notice belongs to the open editor; it is taken before calling it, so a second close never repeats it.
+ const closed = useRef<(() => void) | undefined>(undefined);
+ const close = useCallback(() => { const notify = closed.current; closed.current = undefined; setTarget(null); notify?.(); }, []);
+ const openUser = useCallback((userId: string, onClosed?: () => void) => { if (enabled && canOpen) { closed.current = onClosed; setTarget({ owner, userId }); } }, [enabled, canOpen, owner]);
  const value = useMemo(() => enabled ? { Section, openUser } : null, [enabled, openUser]);
  return <UserDataSectionContext.Provider value={value}>{children}{enabled && target?.owner === owner ? <Target key={owner + target.userId} userId={target.userId} onClose={close} /> : null}</UserDataSectionContext.Provider>;
 }

@@ -14,7 +14,8 @@ export interface UserDataSectionProps {
 }
 export interface UserDataSectionExtension {
   readonly Section: ComponentType<UserDataSectionProps>;
-  readonly openUser: (userId: string) => void;
+  /** `onClosed` runs once when that editor closes, saved or cancelled, so the opener can refresh what it shows. */
+  readonly openUser: (userId: string, onClosed?: () => void) => void;
 }
 /** App composes optional data. Account editing never imports a module. */
 export const UserDataSectionContext = createContext<UserDataSectionExtension | null>(null);
