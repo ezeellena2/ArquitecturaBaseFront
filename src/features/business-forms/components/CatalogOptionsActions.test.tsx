@@ -57,13 +57,27 @@ it.each([false, true])("offers only export and template to a read-only user on m
   expect(value.onExport).toHaveBeenCalledWith(true); expect(value.onImport).not.toHaveBeenCalled();
 });
 
-it("keeps a new catalog's reason visible and its unavailable menu actions keyboard reachable", async () => {
+it("shows a new catalog's reason only on hover or keyboard focus and to screen readers", async () => {
   const value = props({ saved: false }); await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup();
-  const file = await screen.findByRole("button", { name: "Importar" });
-  expect(file).toBeDisabled(); expect(file).toHaveAccessibleDescription("Guardá el catálogo antes.");
-  expect(screen.getByRole("button", { name: "Pegar desde Excel" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Exportar" })).toBeDisabled();
+  const reason = "Guardá el catálogo antes.";
+  const paste = await screen.findByRole("button", { name: "Pegar desde Excel" });
+  const file = screen.getByRole("button", { name: "Importar" });
+  for (const button of [paste, file, screen.getByRole("button", { name: "Exportar" })]) {
+    expect(button).toBeDisabled(); expect(button).toHaveAccessibleDescription(reason);
+  }
+  // Nada debajo de los botones, que los desalinearía: el motivo no se ve hasta pasar el mouse o llegar con el teclado.
+  for (const text of screen.queryAllByText(reason)) expect(text).not.toBeVisible();
+  await user.hover(file); expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+  await user.keyboard("{Escape}"); await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+  // Un botón deshabilitado no recibe foco: lo recibe su envoltorio, que abre el mismo motivo.
+  await user.tab(); expect(paste.parentElement).toHaveFocus();
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+});
+
+it("keeps a new catalog's unavailable menu actions keyboard reachable with their reason inside", async () => {
+  const value = props({ saved: false }); await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup();
   const { menu } = await more(user); const template = within(menu).getByRole("menuitem", { name: /Descargar la plantilla/ });
+  expect(template).toHaveTextContent("Guardá el catálogo antes.");
   await user.keyboard("{Home}"); expect(template).toHaveFocus(); expect(template).toHaveAttribute("aria-disabled", "true");
   await user.keyboard("{Enter}"); expect(value.onExport).not.toHaveBeenCalled(); expect(menu).toBeVisible();
   const generate = within(menu).getByRole("menuitem", { name: "Generar los códigos que faltan" });
@@ -93,6 +107,14 @@ it("prevents duplicate operations while its owner is busy", async () => {
   const buttons = await screen.findAllByRole("button"); expect(buttons).toHaveLength(4);
   for (const button of buttons) expect(button).toBeDisabled();
   expect(value.onImport).not.toHaveBeenCalled(); expect(value.onExport).not.toHaveBeenCalled();
+});
+
+it("does not explain the disabled actions while its owner is busy", async () => {
+  await mount(<CatalogOptionsActions {...props({ busy: true, saved: false })} />);
+  for (const name of ["Pegar desde Excel", "Importar", "Exportar"]) {
+    const button = await screen.findByRole("button", { name });
+    expect(button).toBeDisabled(); expect(button).toHaveAccessibleDescription("");
+  }
 });
 
 it("hands menu focus to the dialog without restoring it to More", async () => {
