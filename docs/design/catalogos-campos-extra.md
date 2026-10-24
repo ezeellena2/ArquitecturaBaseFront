@@ -104,6 +104,9 @@ ve también la lista, como al tocarlo.
 - **Más columnas a la derecha (CE2).** Mientras la tabla de opciones tiene columnas sin ver a la derecha, arriba a la
   derecha dice «La tabla se desplaza de costado: hay más columnas a la derecha.»; al llegar al final el texto se oculta sin
   mover la tabla, y una tabla que entra entera no lo muestra.
+- **Ayudas de tipo y rango en el celular (CE2).** En el editor de la opción, cada campo entero, decimal o fecha dice su
+  tipo y su rango debajo, con el formato común: «Entero, de 0 a 180.», «Fecha, hasta 31/12/2026.» o «Número decimal.» si
+  no tiene rango. Un error del valor ocupa ese renglón.
 
 ## Lo que no se ve en las pantallas
 

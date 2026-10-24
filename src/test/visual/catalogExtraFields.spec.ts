@@ -71,6 +71,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const edit = page.getByRole("button", { name: es ? "Editar Frío Sur S.A." : "Edit Frío Sur S.A.", exact: true });
     if (width < 640) await edit.click();
     const payment = page.getByRole("textbox", { name: width < 640 ? term : (es ? "Fila 1 · " : "Row 1 · ") + term, exact: true });
+    // On the phone the option editor gives each typed field its type and range.
+    if (width < 640) await expect(payment).toHaveAccessibleDescription(es ? "Entero, de 0 a 180." : "Whole number, from 0 to 180.");
     await payment.fill(es ? "treinta" : "thirty"); await expect(payment).toHaveAttribute("aria-invalid", "true");
     // The value and its reason; in the table, on a line under the row that names the row and the field.
     const problem = es ? "«treinta» no es un número entero." : "“thirty” is not a whole number.";

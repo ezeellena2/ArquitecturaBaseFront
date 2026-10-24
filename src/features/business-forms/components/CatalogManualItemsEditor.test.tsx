@@ -159,3 +159,12 @@ it("describes a cell error on its row with the row, field, value and reason", ()
   expect(screen.getAllByText(/no es un número entero/)).toHaveLength(1);
   expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo de pago (días)" })).toBeValid();
 });
+it("shows the type and range of an extra field in the option editor", () => {
+  const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo de pago (días)" }, min: "0", max: "180" };
+  const due = { ...newCatalogField("due", 2), id: "01990000-0000-7000-8000-000000000005", type: "date" as const, name: { es: "Vence" }, max: "2027-03-15" };
+  const amount = { ...newCatalogField("amount", 3), id: "01990000-0000-7000-8000-000000000006", type: "decimal" as const, name: { es: "Importe" } };
+  renderWithProviders(<CatalogManualItemsEditor items={[first]} fields={[term, due, amount]} scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} culture="es" valueType="Text" canManage expandedKey="first" onExpand={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />);
+  expect(screen.getByRole("textbox", { name: "Plazo de pago (días)" })).toHaveAccessibleDescription("Entero, de 0 a 180.");
+  expect(screen.getByLabelText("Vence")).toHaveAccessibleDescription("Fecha, hasta 15/03/2027.");
+  expect(screen.getByRole("textbox", { name: "Importe" })).toHaveAccessibleDescription("Número decimal.");
+});

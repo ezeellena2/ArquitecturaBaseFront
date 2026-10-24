@@ -98,11 +98,24 @@ export function catalogFieldProblemText(t: TFunction<"forms">, field: Pick<Catal
  */
 export function catalogFieldRuleSummary(field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">, culture: FormCulture, t: TFunction<"forms">): string | null {
   if (field.type === "text") return field.maxLength === null ? null : t("catalogs.fields.detail.length", { count: field.maxLength });
+  return catalogFieldRange(field, culture, t, "catalogs.fields.detail");
+}
+
+/** The help under an integer, decimal or date value: its type and, when it has one, its range («Entero, de 0 a 180.»). */
+export function catalogFieldInputHint(field: Pick<CatalogFieldDraft, "type" | "min" | "max">, culture: FormCulture, t: TFunction<"forms">): string | null {
+  if (field.type !== "integer" && field.type !== "decimal" && field.type !== "date") return null;
+  const type = t("catalogs.fields.inputHint." + field.type), rule = catalogFieldRange(field, culture, t, "catalogs.fields.problem.rule");
+  return rule ? t("catalogs.fields.inputHint.range", { type, rule }) : t("catalogs.fields.inputHint.plain", { type });
+}
+
+// The range of an integer, decimal or date field with the shared typed-value format, worded as a title (`detail`) or
+// inside a sentence (`problem.rule`); null without bounds or for another type.
+function catalogFieldRange(field: Pick<CatalogFieldDraft, "type" | "min" | "max">, culture: FormCulture, t: TFunction<"forms">, keys: "catalogs.fields.detail" | "catalogs.fields.problem.rule"): string | null {
   if (field.type !== "integer" && field.type !== "decimal" && field.type !== "date") return null;
   const type = field.type;
   const bound = (value: string | null) => value?.trim() ? catalogScalarText(type, value.trim(), culture, undefined, culture) : null;
   const min = bound(field.min), max = bound(field.max);
-  return min && max ? t("catalogs.fields.detail.between", { min, max }) : min ? t("catalogs.fields.detail.from", { min }) : max ? t("catalogs.fields.detail.to", { max }) : null;
+  return min && max ? t(keys + ".between", { min, max }) : min ? t(keys + ".from", { min }) : max ? t(keys + ".to", { max }) : null;
 }
 
 export function formatCatalogFieldValue(field: Pick<CatalogFieldDraft, "type">, value: string | null | undefined, culture: FormCulture): string {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n";
-import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, catalogFieldRuleSummary, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
+import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, catalogFieldRuleSummary, catalogFieldInputHint, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
 import type { CatalogFieldUsage } from "./api/catalogResponse";
 
 const field: CatalogFieldDraft = { localId: "field", id: "01990000-0000-7000-8000-000000000001", key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "decimal", sourceCatalogId: null, required: false, unique: false, min: "0", max: "180", maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
@@ -80,6 +80,17 @@ describe("catalog extra field values", () => {
     for (const empty of [{ ...field, min: null, max: " " }, { ...field, type: "text", min: null, max: null, maxLength: null }, { ...field, type: "boolean", min: null, max: null }, { ...field, type: "catalog", min: null, max: null }] as const) {
       expect(catalogFieldRuleSummary(empty, "es", es)).toBeNull();
     }
+  });
+  it("gives an integer, decimal or date value its type and range as help", async () => {
+    await i18n.loadLanguages("en");
+    const es = i18n.getFixedT("es", "forms"), en = i18n.getFixedT("en", "forms");
+    expect(catalogFieldInputHint({ ...field, type: "integer" }, "es", es)).toBe("Entero, de 0 a 180.");
+    expect(catalogFieldInputHint({ ...field, min: "1.500,5", max: null }, "es", es)).toBe("Número decimal, desde 1.500,5.");
+    expect(catalogFieldInputHint({ ...field, type: "date", min: null, max: "2026-12-31" }, "es", es)).toBe("Fecha, hasta 31/12/2026.");
+    expect(catalogFieldInputHint({ ...field, type: "integer", min: null, max: null }, "es", es)).toBe("Entero.");
+    expect(catalogFieldInputHint({ ...field, type: "integer" }, "en", en)).toBe("Whole number, from 0 to 180.");
+    expect(catalogFieldInputHint({ ...field, type: "date", min: "2026-01-02", max: null }, "en", en)).toBe("Date, from 01/02/2026.");
+    for (const type of ["text", "boolean", "catalog"] as const) expect(catalogFieldInputHint({ ...field, type }, "es", es)).toBeNull();
   });
   it("says a value is repeated when «único» is switched on or a unique field is restored", async () => {
     await i18n.loadLanguages("en");

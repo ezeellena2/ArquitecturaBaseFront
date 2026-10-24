@@ -10,7 +10,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import { withCatalogFieldValue, type CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
-import type { CatalogFieldDraft } from "../catalogFields";
+import { catalogFieldInputHint, type CatalogFieldDraft } from "../catalogFields";
 import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { localizedValue } from "../editorModel";
@@ -25,6 +25,8 @@ export function CatalogItemFields({ item, culture, valueType, fields = [], scope
   const { t } = useTranslation("forms");
   const textRef = useRef<HTMLInputElement>(null);
   const columns = catalogItemColumns(valueType, culture, fields);
+  // Typed values, and so their ranges, are read in the draft's culture, the one its editable text was written in.
+  const valueCulture = scope?.culture ?? culture;
   useEffect(() => { textRef.current?.focus(); }, []);
   return <Surface padded>
     <div className="grid gap-4 sm:grid-cols-2">
@@ -32,7 +34,8 @@ export function CatalogItemFields({ item, culture, valueType, fields = [], scope
         const error = errors?.[column.errorPath]?.join(" ");
         if (column.field) {
           const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, label = localizedValue(field.name, culture, "es");
-          return <FormField key={column.id} label={label} required={field.required} error={error}><CatalogExtraFieldInput field={field} scope={scope} label={label} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} culture={culture} readOnly={readOnly} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} /></FormField>;
+          // A field that cannot take values before it is saved says so instead.
+          return <FormField key={column.id} label={label} required={field.required} error={error} hint={field.id ? catalogFieldInputHint(field, valueCulture, t) ?? undefined : undefined}><CatalogExtraFieldInput field={field} scope={scope} label={label} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} culture={culture} readOnly={readOnly} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} /></FormField>;
         }
         switch (column.id) {
         case "text": return <FormField key={column.id} label={<span className="flex w-full justify-between gap-3"><span>{t(column.editorLabelKey)}</span><span aria-hidden="true" className="text-xs text-[var(--color-content-muted)]">{(item.label[culture] ?? "").length}/{column.maxLength}</span></span>} required={column.required} error={error} hint={warning ?? (culture === "en" ? t("catalogs.items.englishHint") : undefined)}>
