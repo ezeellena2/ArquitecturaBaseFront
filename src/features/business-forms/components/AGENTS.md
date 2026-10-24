@@ -58,7 +58,7 @@ Tableros con shared/ui; su dueño posee datos y avisos.
 - `ResponseDocuments` abre/descarga copias fijas por DocumentId; el dueño visual posee y revoca blobs/URLs. Full compone `ResponseDocumentPreview` en la acción exacta de Al aprobarla (`documents.runId == action.id`): lee al abrir Actividad por primera vez y reutiliza blob/URL al plegar o ampliar. D2 mantiene PDF explícito sin ese loader en Actividad. Full lista también los archivos cargados. `ResponseAssistance` pliega propuestas con inclusión, corrección y mapeo; sólo enlaza registros confirmados y oculta el enlace anterior mientras carga otro.
 - `ApprovalDecisionPanel`: rechazar exige motivo de 1 a 500 caracteres recortado (`prepareApprovalDecision`), sólo en memoria. POST con revisión leída; 409 relee la decisión vigente. Un solo editor tras resolver o 409; el resultado recibe foco y el portal ubica los controles abajo en celular.
 
-- `ResponseValue` presenta todos los campos capturados por opción sólo en detalle; el formato usa el tipo, nombre y texto del snapshot. Columnas muestra datos por defecto y filtros optativos; cada subcolumna es independiente de la pregunta. Exportar sólo visibles conserva esos pares exactos.
+- `ResponseValue` presenta todos los campos capturados por opción sólo en detalle; el formato usa el tipo, nombre y texto del snapshot. Columnas muestra datos por defecto y filtros optativos; cada subcolumna es independiente de la pregunta. Su disparador (`ResponseColumnsMenu`) dice cuántas quedan ocultas, «Columnas · N ocultas», contando preguntas y subcolumnas de catálogo, no las fijas; sin ocultas, «Columnas». Exportar sólo visibles conserva esos pares exactos.
 
 ### Reglas, PDF y sugerencias
 

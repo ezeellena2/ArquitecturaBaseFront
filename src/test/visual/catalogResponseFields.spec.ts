@@ -31,7 +31,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await extraHeader.scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath("ce5-default-data-fields.png"), fullPage: true });
 
-    const columns = page.getByRole("button", { name: label("Columnas", "Columns"), exact: true });
+    // Zona, a filter field, starts hidden; showing it and hiding the question keeps one hidden.
+    const columns = page.getByRole("button", { name: label("Columnas · 1 oculta", "Columns · 1 hidden"), exact: true });
     await columns.focus(); await columns.press("Enter");
     await page.getByRole("menuitemcheckbox", { name: zone + " · " + label("filtro", "filter"), exact: true }).click();
     await page.getByRole("menuitemcheckbox", { name: question, exact: true }).click();

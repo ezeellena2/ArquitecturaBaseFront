@@ -768,6 +768,8 @@
     "received": "Received",
     "actor": "Submitted by",
     "columns": "Columns",
+    "columnsHidden_one": "Columns · {{count}} hidden",
+    "columnsHidden_other": "Columns · {{count}} hidden",
     "fixedColumns": "Always visible",
     "search": "Search long text answers",
     "filters": "More filters",

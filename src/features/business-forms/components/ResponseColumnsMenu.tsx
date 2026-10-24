@@ -21,6 +21,8 @@ export function ResponseColumnsMenu({
 }) {
   const { t } = useTranslation("forms");
   const selected = new Set([...visible.map(column => column.fieldId), ...visibleCatalogFields.map(field => responseCatalogColumnId(field.questionId, field.fieldId))]);
+  // Questions and catalog subcolumns; the fixed columns are always shown.
+  const hidden = responseColumnDescriptors(columns).filter(column => !selected.has(column.id)).length;
   const toggle = (id: string, checked: boolean) => {
     const next = new Set(selected);
     if (checked) next.add(id); else next.delete(id);
@@ -28,7 +30,7 @@ export function ResponseColumnsMenu({
   };
   return (
     <DropdownMenu>
-      <FilterMenuTrigger>{t("responses.columns")}</FilterMenuTrigger>
+      <FilterMenuTrigger>{t(hidden ? "responses.columnsHidden" : "responses.columns", { count: hidden })}</FilterMenuTrigger>
       <DropdownMenuContent align="end" className="max-h-96 overflow-y-auto">
         <DropdownMenuLabel>{t("responses.fixedColumns")}</DropdownMenuLabel>
         {["number", "received", "actor"].map((key) => (

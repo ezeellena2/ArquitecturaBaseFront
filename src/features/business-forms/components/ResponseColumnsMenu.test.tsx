@@ -10,10 +10,23 @@ it("keeps the base question and extra-field selections independent", async () =>
   const changed = vi.fn();
   function Harness() { const [ids, setIds] = useState<readonly string[]>(["supplier", "supplier:tax"]); return <ResponseColumnsMenu columns={[column]} visible={ids.includes("supplier") ? [column] : []} visibleCatalogFields={column.fields!.filter(field => ids.includes("supplier:" + field.fieldId)).map(field => ({ questionId: "supplier", fieldId: field.fieldId }))} onChange={next => { setIds(next); changed(next); }}/>; }
   await act(async () => { renderWithProviders(<Harness/>); });
-  await userEvent.click(screen.getByRole("button", { name: "Columnas" }));
+  await userEvent.click(screen.getByRole("button", { name: "Columnas · 1 oculta" }));
   const zone = screen.getByRole("menuitemcheckbox", { name: "Zona · filtro" }); expect(zone).not.toBeChecked();
   await userEvent.click(zone); expect(changed).toHaveBeenLastCalledWith(["supplier", "supplier:tax", "supplier:zone"]); expect(zone).toBeChecked();
   await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "Proveedores" })); expect(changed).toHaveBeenLastCalledWith(["supplier:tax", "supplier:zone"]);
   expect(screen.getByRole("menuitemcheckbox", { name: "CUIT · dato" })).toBeChecked();
   await userEvent.keyboard("{Escape}");
+});
+it("names how many columns are hidden in the trigger", async () => {
+  function Harness() { const [ids, setIds] = useState<readonly string[]>(["supplier", "supplier:tax"]); return <ResponseColumnsMenu columns={[column]} visible={ids.includes("supplier") ? [column] : []} visibleCatalogFields={column.fields!.filter(field => ids.includes("supplier:" + field.fieldId)).map(field => ({ questionId: "supplier", fieldId: field.fieldId }))} onChange={setIds}/>; }
+  await act(async () => { renderWithProviders(<Harness/>); });
+  const open = async (name: string) => { screen.getByRole("button", { name }).focus(); await userEvent.keyboard("{Enter}"); };
+  await open("Columnas · 1 oculta");
+  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: "Proveedores" }));
+  await userEvent.keyboard("{Escape}");
+  await open("Columnas · 2 ocultas");
+  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: "Proveedores" }));
+  await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "Zona · filtro" }));
+  await userEvent.keyboard("{Escape}");
+  expect(screen.getByRole("button", { name: "Columnas" })).toBeInTheDocument();
 });

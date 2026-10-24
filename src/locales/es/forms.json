@@ -768,6 +768,8 @@
     "received": "Recibida",
     "actor": "Cargó",
     "columns": "Columnas",
+    "columnsHidden_one": "Columnas · {{count}} oculta",
+    "columnsHidden_other": "Columnas · {{count}} ocultas",
     "fixedColumns": "Siempre visibles",
     "search": "Buscar en textos largos",
     "filters": "Más filtros",

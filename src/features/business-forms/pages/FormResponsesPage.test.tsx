@@ -718,6 +718,7 @@ describe("response sheet", () => {
       await screen.findByRole("menuitemcheckbox", { name: "Observaciones" }),
     );
     await userEvent.keyboard("{Escape}");
+    expect(screen.getByRole("button", { name: "Columnas · 1 oculta" })).toBeInTheDocument();
     expect(
       within(screen.getByRole("table")).queryByRole("columnheader", {
         name: /Observaciones/,
