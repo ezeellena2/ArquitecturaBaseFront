@@ -74,6 +74,41 @@ it("asks to confirm clearing stored values when the type changes and resends wit
   { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true, confirmValueRemoval: true },
  ]);
 });
+it("asks to confirm clearing stored values under the catalog when only the source changes and unchecks it on another catalog", async () => {
+ const zones = "01990000-0000-7000-8000-000000000004", regions = "01990000-0000-7000-8000-000000000005", branches = "01990000-0000-7000-8000-000000000006";
+ const zone = { ...attribute, type: "Catalog", sourceCatalogId: zones, sourceCatalogName: "Zonas" };
+ const notConfirmed = "Confirmá que querés cambiar el dato y borrar los valores que tienen cargados las personas.";
+ const row = (catalogId: string, name: string) => ({ valueType: "Text", id: catalogId, name, description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: true });
+ const bodies: unknown[] = [];
+ await mount(["formpersondata.manage", "formcatalogs.read"], [zone]);
+ server.use(
+  http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [row(zones, "Zonas"), row(regions, "Regiones"), row(branches, "Sucursales")], page: 1, pageSize: 20, totalCount: 3, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 3, manual: 3, filters: 0 } } })),
+  http.put(`/api/forms/person-attributes/${id}`, async ({ request }) => {
+   bodies.push(await request.json());
+   return bodies.length === 1
+    ? HttpResponse.json({ status: 400, detail: notConfirmed, code: "Forms.PersonAttribute.ValueRemovalNotConfirmed", traceId: "trace", errors: { sourceCatalogId: [notConfirmed] }, count: 1 }, { status: 400 })
+    : HttpResponse.json({ ...zone, sourceCatalogId: branches, sourceCatalogName: "Sucursales", revision: 2 });
+  }));
+ await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
+ const catalog = dialog.getByRole("combobox", { name: "Catálogo" });
+ await waitFor(() => expect(catalog).toBeEnabled());
+ await userEvent.selectOptions(catalog, regions);
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ const confirm = await dialog.findByRole("checkbox", { name: "Sí, cambiar el dato y borrar el valor que tiene cargado una persona" });
+ expect(catalog).toHaveAccessibleDescription(notConfirmed);
+ await userEvent.click(confirm);
+ expect(confirm).toBeChecked();
+ await userEvent.selectOptions(catalog, branches);
+ expect(confirm).not.toBeChecked();
+ await userEvent.click(confirm);
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar dato" })).not.toBeInTheDocument());
+ expect(bodies).toEqual([
+  { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Catalog", sourceCatalogId: regions, position: 1, isActive: true },
+  { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Catalog", sourceCatalogId: branches, position: 1, isActive: true, confirmValueRemoval: true },
+ ]);
+});
 it("keeps the value removal confirmation visible while the confirmed save runs and after it fails", async () => {
  const zone = { ...attribute, type: "Catalog", sourceCatalogId: "01990000-0000-7000-8000-000000000004", sourceCatalogName: "Zonas" };
  const notConfirmed = "Confirmá que querés cambiar el dato y borrar los valores que tienen cargados las personas.";
