@@ -5,7 +5,7 @@ import type { FormCulture } from "./model";
 
 export type CatalogFieldType = CatalogField["type"];
 export interface CatalogFieldDraft extends Omit<CatalogField, "id"> { readonly id: string | null; readonly localId: string }
-export type CatalogFieldBody = Omit<CatalogFieldDraft, "hasValues" | "usedBy">;
+export type CatalogFieldBody = Omit<CatalogFieldDraft, "valuesCount" | "usedBy">;
 export type CatalogFieldValueResult = { readonly valid: true; readonly value: string | null } | { readonly valid: false; readonly reason: "required" | "invalid" | "range" | "length" };
 export type CatalogFieldProblemReason = Extract<CatalogFieldValueResult, { valid: false }>["reason"];
 const textMaxLength = 300;
@@ -18,7 +18,7 @@ export function unconvertedFieldValue(type: CatalogFieldType, value: string | nu
   return fits ? null : value;
 }
 
-export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: { es: "" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, hasValues: false, usedBy: [] });
+export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: { es: "" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, valuesCount: 0, usedBy: [] });
 export const openCatalogField = (field: CatalogField, culture: FormCulture = "es"): CatalogFieldDraft => ({ ...field, localId: field.id, name: { ...field.name }, min: field.min === null ? null : formatCatalogFieldValue(field, field.min, culture), max: field.max === null ? null : formatCatalogFieldValue(field, field.max, culture), usedBy: field.usedBy.map(use => ({ ...use })) });
 function valueType(type: CatalogFieldType): CatalogValueType | null {
   return type === "integer" ? "Integer" : type === "decimal" ? "Decimal" : type === "date" ? "Date" : null;
@@ -99,7 +99,7 @@ export function formatCatalogFieldValue(field: Pick<CatalogFieldDraft, "type">, 
 }
 
 export function catalogFieldsBody(fields: readonly CatalogFieldDraft[], culture: FormCulture = "es"): readonly CatalogFieldBody[] {
-  return fields.map(({ hasValues: _hasValues, usedBy: _usedBy, ...field }, index) => {
+  return fields.map(({ valuesCount: _valuesCount, usedBy: _usedBy, ...field }, index) => {
     const type = valueType(field.type);
     const bound = (input: string | null) => {
       if (!input?.trim()) return null;

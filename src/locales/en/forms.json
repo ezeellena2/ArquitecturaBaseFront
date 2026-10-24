@@ -305,7 +305,7 @@
       "typeReview": "Saving checks every value. If any cannot convert, the change is not saved.",
       "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values",
       "removeTitle": "Remove “{{name}}”", "remove": "Remove field", "removeHint": "Removed from the table, template and Excel. Responses that already captured it keep it.",
-      "confirmRemoval": "Yes, remove the field and its values", "inUse": "This field is in use. Remove those uses before removing it.",
+      "confirmRemoval_one": "Yes, remove the field and its value", "confirmRemoval_other": "Yes, remove the field and its {{count, number(useGrouping: always)}} values", "inUse": "This field is in use. Remove those uses before removing it.",
       "hiddenUse": { "Draft": "A form's draft", "Active": "A form's active version" },
       "usage": {
         "question": "“{{question}}” in {{form}}, {{stage}}",

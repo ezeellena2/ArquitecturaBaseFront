@@ -41,7 +41,7 @@ it("reads the actual extra-field receipts, source labels and preserved inactive 
   const saved = readCatalogSave(cohort.json("fields-values-saved.json"), [], created.catalog.id, 1);
   expect(saved.catalog.revision).toBe(2);
   const detail = readCatalog(cohort.json("fields-detail.json"), created.catalog.id);
-  expect(detail.fields?.[0]).toMatchObject({ id: fieldId, type: "integer", required: true, unique: true, hasValues: true });
+  expect(detail.fields?.[0]).toMatchObject({ id: fieldId, type: "integer", required: true, unique: true, valuesCount: 1 });
   const items = readCatalogItems(cohort.json("fields-items.json"));
   expect(items.items[0]?.fields?.[fieldId]).toBe("1");
   const removed = readCatalogSave(cohort.json("fields-removed.json"), []);

@@ -254,7 +254,7 @@ it.each([
 });
 
 const extraId = "01990000-0000-7000-8000-000000000121";
-const extraField: CatalogField = { id: extraId, key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "integer", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: true, usedBy: [] };
+const extraField: CatalogField = { id: extraId, key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "integer", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 1, usedBy: [] };
 it.each([
   ["es", "MissingColumn", "code", "Falta la columna «Código». Agregala y revisá de nuevo."],
   ["en", "MissingColumn", "code", "The “Code” column is missing. Add it and review again."],

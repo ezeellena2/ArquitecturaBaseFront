@@ -5,7 +5,7 @@ import { readCatalog, readCatalogItems, readCatalogSave, UnsupportedCatalogRespo
 const id = "01990000-0000-7000-8000-000000000001";
 const fieldId = "01990000-0000-7000-8000-000000000002";
 const itemId = "01990000-0000-7000-8000-000000000003";
-const field = { id: fieldId, key: "tax_id", name: { es: "CUIT", en: "Tax ID" }, type: "text", sourceCatalogId: null, required: true, unique: true, min: null, max: null, maxLength: 30, role: "data", position: 1, isActive: true, hasValues: true, usedBy: [] };
+const field = { id: fieldId, key: "tax_id", name: { es: "CUIT", en: "Tax ID" }, type: "text", sourceCatalogId: null, required: true, unique: true, min: null, max: null, maxLength: 30, role: "data", position: 1, isActive: true, valuesCount: 3, usedBy: [] };
 const catalog = { id, key: id.replaceAll("-", ""), name: { es: "Proveedores", en: "Suppliers" }, description: { es: "Proveedores activos", en: "Active suppliers" }, kind: "Manual", valueType: "Text", revision: 2, isActive: true, itemsCount: 1, usageCount: 0, unavailableReasonCode: null, filters: null, proposal: null, fields: [field], presentation: { title: ["text"], description: [fieldId] }, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
 const item = { id: itemId, code: "NORTH", text: { es: "Proveedor Norte" }, detail: {}, value: null, position: 1, isActive: true, fields: { [fieldId]: "30-71234567-8" }, fieldTexts: {} };
 

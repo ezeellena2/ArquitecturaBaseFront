@@ -71,7 +71,7 @@ describe("Manual catalog editor ownership", () => {
   });
   it("removing a field also removes it from the draft presentation and the saved body", async () => {
     const fieldId = "01990000-0000-7000-8000-000000000031"; const bodies: unknown[] = [];
-    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position: 1, isActive: true, hasValues: false, usedBy: [{ definitionId: null, formName: "Clientes", question: null, questionId: null, stage: "Catalog" as const }] };
+    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position: 1, isActive: true, valuesCount: 0, usedBy: [{ definitionId: null, formName: "Clientes", question: null, questionId: null, stage: "Catalog" as const }] };
     const catalog: CatalogDetail = { ...initial, fields: [taxId], presentation: { title: ["text", fieldId], description: [fieldId] } };
     server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...catalog, revision: 2, fields: [{ ...taxId, isActive: false, usedBy: [] }], presentation: { title: ["text"], description: [] } }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     const { result } = renderHook(() => useCatalogDraftEditor(scope, catalog), harness());
@@ -82,7 +82,7 @@ describe("Manual catalog editor ownership", () => {
     expect(bodies[0]).toMatchObject({ presentation: { title: ["text"], description: [] }, fields: [{ id: fieldId, isActive: false }] });
   });
   it("restoring a removed field puts it back in the draft presentation unless the author edited the presentation", () => {
-    const field = (id: string, key: string, position: number) => ({ id, key, name: { es: key }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position, isActive: true, hasValues: false, usedBy: [{ definitionId: null, formName: "Clientes", question: null, questionId: null, stage: "Catalog" as const }] });
+    const field = (id: string, key: string, position: number) => ({ id, key, name: { es: key }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position, isActive: true, valuesCount: 0, usedBy: [{ definitionId: null, formName: "Clientes", question: null, questionId: null, stage: "Catalog" as const }] });
     const taxId = "01990000-0000-7000-8000-000000000031", zone = "01990000-0000-7000-8000-000000000032";
     const catalog: CatalogDetail = { ...initial, fields: [field(taxId, "tax_id", 1), field(zone, "zone", 2)], presentation: { title: [taxId], description: [zone] } };
     const { result } = renderHook(() => useCatalogDraftEditor(scope, catalog), harness());
@@ -328,7 +328,7 @@ it("adopts an import baseline only while clean and keeps a concurrent local edit
 });
 it("exposes the confirmed catalog after saving, importing or adopting", async () => {
   const fieldId = "01990000-0000-7000-8000-000000000031";
-  const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position: 1, isActive: true, hasValues: false, usedBy: [] };
+  const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position: 1, isActive: true, valuesCount: 0, usedBy: [] };
   const saved: CatalogDetail = { ...initial, revision: 2, fields: [taxId] };
   const imported: CatalogDetail = { ...saved, revision: 3, itemsCount: 2 };
   const current: CatalogDetail = { ...imported, revision: 4, name: { es: "Actual", en: "Current" } };

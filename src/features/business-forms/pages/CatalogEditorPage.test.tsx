@@ -89,7 +89,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   });
   it("saves an edited inactive option that lacks a required value, as the server allows", async () => {
     setup(); const fieldId = "01990000-0000-7000-8000-000000000031"; const bodies: { items: { itemId: string; text: { es: string }; isActive: boolean }[] }[] = [];
-    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: true, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
+    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: true, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [taxId] })), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, isActive: false }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => {
       bodies.push(await request.json() as typeof bodies[number]);
       return HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [taxId] }, itemIdentityMap: {}, fieldIdentityMap: {} });
@@ -105,7 +105,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(bodies[0]).toMatchObject({ items: [{ itemId, text: { es: "Pérez Norte" }, isActive: false }] });
   });
   const fieldId = "01990000-0000-7000-8000-000000000031";
-  const savedField = (values: { key: string; name: string; type: string }) => ({ id: fieldId, key: values.key, name: { es: values.name }, type: values.type, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: true, usedBy: [] });
+  const savedField = (values: { key: string; name: string; type: string }) => ({ id: fieldId, key: values.key, name: { es: values.name }, type: values.type, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 1, usedBy: [] });
   function fieldSetup(field: ReturnType<typeof savedField>, values: Record<string, string>, answer: () => Response) {
     setup(); const bodies: { fields: Record<string, unknown>[]; items: Record<string, unknown>[] }[] = [];
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [field] })), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, fields: values }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as typeof bodies[number]); return answer(); }));
@@ -358,7 +358,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   });
   it("shows the uses of a field that became in use and restores it without discarding the draft", async () => {
     setup(); const fieldId = "01990000-0000-7000-8000-000000000031"; const bodies: { name: { es: string }; fields: { id: string | null; isActive: boolean }[] }[] = [];
-    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
+    const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
     const message = "El campo está en uso. Sacá esos usos para quitarlo.";
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [taxId] })), http.put("/api/forms/catalogs/" + id, async ({ request }) => {
       const body = await request.json() as typeof bodies[number]; bodies.push(body);
@@ -735,7 +735,7 @@ it("applies an explicitly reviewed paste and adopts the returned clean baseline 
 });
 it("imports with the fields saved in this session instead of the ones loaded on entry", async () => {
   setup(); const fieldId = "01990000-0000-7000-8000-000000000031";
-  const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
+  const taxId = { id: fieldId, key: "tax_id", name: { es: "CUIT" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
   server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => {
     const body = await request.json() as { fields: { localId: string }[] };
     return HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [taxId] }, itemIdentityMap: {}, fieldIdentityMap: { [body.fields[0]!.localId]: fieldId } });

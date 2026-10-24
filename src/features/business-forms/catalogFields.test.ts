@@ -3,7 +3,7 @@ import i18n from "@/shared/i18n";
 import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
 import type { CatalogFieldUsage } from "./api/catalogResponse";
 
-const field: CatalogFieldDraft = { localId: "field", id: "01990000-0000-7000-8000-000000000001", key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "decimal", sourceCatalogId: null, required: false, unique: false, min: "0", max: "180", maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
+const field: CatalogFieldDraft = { localId: "field", id: "01990000-0000-7000-8000-000000000001", key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "decimal", sourceCatalogId: null, required: false, unique: false, min: "0", max: "180", maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
 
 describe("catalog extra field values", () => {
   it("creates an optional unsaved field with an independent identity", () => {
@@ -26,7 +26,7 @@ describe("catalog extra field values", () => {
   });
   it("writes definitions without presentation-only usage metadata and without mutating names", () => {
     const body = catalogFieldsBody([field]);
-    expect(body[0]).not.toHaveProperty("hasValues");
+    expect(body[0]).not.toHaveProperty("valuesCount");
     expect(body[0]).not.toHaveProperty("usedBy");
     expect(body[0]).toMatchObject({ id: field.id, key: "payment_days", name: field.name, type: "decimal" });
     expect(body[0]?.name).not.toBe(field.name);

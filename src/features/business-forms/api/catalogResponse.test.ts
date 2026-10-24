@@ -68,7 +68,7 @@ it("rejects a presentation check with repeated languages or more examples than p
 });
 
 it("accepts field uses without form names only as a complete stage-only entry", () => {
-  const field = { id: "01990000-0000-7000-8000-000000000031", key: "zone", name: { es: "Zona" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "filter", position: 1, isActive: true, hasValues: true, usedBy: [] };
+  const field = { id: "01990000-0000-7000-8000-000000000031", key: "zone", name: { es: "Zona" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "filter", position: 1, isActive: true, valuesCount: 2, usedBy: [] };
   const detail = (usedBy: unknown[]) => ({ ...catalog, filters: null, fields: [{ ...field, usedBy }] });
   const hidden = { definitionId: null, formName: null, question: null, questionId: null, stage: "Draft" };
   const named = { definitionId: "01990000-0000-7000-8000-000000000032", formName: "Pedir repuesto", question: "Zona", questionId: "01990000-0000-7000-8000-000000000033", stage: "Active" };

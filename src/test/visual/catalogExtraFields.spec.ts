@@ -122,6 +122,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     await expect(cuit.getByText(es ? "También se saca de «En WhatsApp» de este catálogo." : "It's also removed from this catalog's “In WhatsApp”.", { exact: true })).toBeVisible();
     await expect(cuit.getByText(es ? "Proveedores" : "Suppliers", { exact: true })).toHaveCount(0);
     await expect(cuit.getByRole("listitem")).toHaveCount(0);
+    await expect(cuit.getByRole("checkbox", { name: es ? "Sí, quitar el campo y sus 6 valores" : "Yes, remove the field and its 6 values", exact: true })).toBeVisible();
     await expect(cuit.getByRole("button", { name: es ? "Quitar el campo" : "Remove field", exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath("ce1-field-own-presentation.png"), fullPage: true });
     await page.keyboard.press("Escape");

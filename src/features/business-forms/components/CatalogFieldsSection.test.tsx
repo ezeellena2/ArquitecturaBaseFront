@@ -11,7 +11,7 @@ import { CatalogFieldsSection } from "./CatalogFieldsSection";
 import type { CatalogFieldFeedback } from "../api/catalogFieldFeedback";
 import type { CatalogPresentation } from "../api/catalogResponse";
 
-const field: CatalogFieldDraft = { ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", key: "tax_id", name: { es: "CUIT" }, hasValues: true };
+const field: CatalogFieldDraft = { ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", key: "tax_id", name: { es: "CUIT" }, valuesCount: 2 };
 const catalogPermissions = ["formcatalogs.read", "formcatalogs.manage"] as const;
 function Harness({ initial = [] as readonly CatalogFieldDraft[], readOnly = false, errors = {} as Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>, feedback = null as CatalogFieldFeedback | null, permissions = catalogPermissions as readonly string[], presentation = null as CatalogPresentation | null }) {
   const [fields, setFields] = useState(initial);
@@ -40,6 +40,24 @@ it("keeps a saved key immutable and requires a checked confirmation before remov
   await userEvent.click(within(dialog).getByRole("checkbox"));
   await userEvent.click(within(dialog).getByRole("button", { name: "Quitar el campo" }));
   expect(screen.queryByRole("button", { name: "Editar CUIT" })).not.toBeInTheDocument();
+});
+it("asks to confirm removing the field and its values with their count", async () => {
+  const open = async (initial: CatalogFieldDraft) => {
+    await mount([initial]);
+    await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
+    await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
+    return screen.getByRole("dialog");
+  };
+  for (const [valuesCount, label] of [[1200, "Sí, quitar el campo y sus 1.200 valores"], [1, "Sí, quitar el campo y su valor"]] as const) {
+    const dialog = await open({ ...field, valuesCount });
+    expect(within(dialog).getByRole("button", { name: "Quitar el campo" })).toBeDisabled();
+    await userEvent.click(within(dialog).getByRole("checkbox", { name: label }));
+    expect(within(dialog).getByRole("button", { name: "Quitar el campo" })).toBeEnabled();
+    cleanup();
+  }
+  const empty = await open({ ...field, valuesCount: 0 });
+  expect(within(empty).queryByRole("checkbox")).not.toBeInTheDocument();
+  expect(within(empty).getByRole("button", { name: "Quitar el campo" })).toBeEnabled();
 });
 it("names the stage of each form use once and links to its question", async () => {
   const form = "01990000-0000-7000-8000-000000000002", question = "01990000-0000-7000-8000-000000000004";
