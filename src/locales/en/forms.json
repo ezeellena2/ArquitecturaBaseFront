@@ -927,7 +927,6 @@
     "saveConflict": "Reload and choose what to keep before saving.",
     "saveBusy": "Wait for the current operation to finish.",
     "chooseValues": "Choose values",
-    "keepMineHint": "You can keep your whole draft. Saving it will replace the rules in revision {{revision}}.",
     "historyAdded_one": "{{count}} rule added",
     "historyAdded_other": "{{count}} rules added",
     "historyUpdated_one": "{{count}} rule updated",

@@ -11,6 +11,7 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
@@ -67,7 +68,9 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
   const cooldown = useCountdown(0);
   const active = useRef(true);
   const host = useRef<HTMLDivElement | null>(null);
-  const saveHintId = useId();
+  const errorId = useId();
+  // Local problems show after the first try to save, and then live while they are corrected; a successful save clears it.
+  const [attempted, setAttempted] = useState(false);
   const pendingFocus = useRef<{ selector: string } | { actionId: string; delta: number } | null>(null);
   const [announcement, setAnnouncement] = useState("");
   useLayoutEffect(() => {
@@ -113,12 +116,32 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
     } finally { if (active.current) setBusy(false); }
   };
   const fieldError = (path: string) => {
-    const local = prepared.issues.find(issue => issue.path === path);
+    const local = attempted ? prepared.issues.find(issue => issue.path === path) : undefined;
     return (error instanceof ApiError ? error.errors?.[path]?.[0] : undefined) ?? (local ? t("rules.errors." + local.key) : undefined);
   };
   const textError = (path: string) => localizedIssueMessage(localizedIssue(Object.fromEntries([path, path + ".es", path + ".en"].flatMap(key => { const message = fieldError(key); return message ? [[key, [message]]] : []; })), path, culture), culture, t);
   if (query.isPending || !baseline || rules === null || !options) return <Surface title={t("rules.title")} padded>{query.isPending ? <Spinner /> : <EmptyState embedded title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Surface>;
-  const saveReason = busy ? t("rules.saveBusy") : cooldown.isRunning ? t("responses.wait", { count: cooldown.seconds }) : conflict ? t("rules.saveConflict") : prepared.issues.length ? t("rules.saveInvalid") : !dirty ? t("rules.saveUnchanged") : null;
+  // Without changes or while saving, a disabled Save is obvious; a wait or a conflict is told as its reason.
+  const saveDisabledReason = busy ? null : cooldown.isRunning ? t("responses.wait", { count: cooldown.seconds }) : conflict ? t("rules.saveConflict") : null;
+  const save = () => {
+    const issue = prepared.issues[0];
+    if (!issue) {
+      void run("save", async signal => {
+        const saved = await saveFormRules(definitionId, { expectedRevision: baseline.revision, rules: prepared.rules }, signal);
+        if (!active.current) return;
+        setBaseline(saved); setRules(saved.rules); setCurrent(null); setAttempted(false);
+        void history.refetch();
+        notify({ id: notificationRoot + ":save", kind: "success", message: t("rules.saved") });
+      });
+      return;
+    }
+    // Trying with problems marks them, opens the first rule with one and focuses its first marked control. Nothing is sent.
+    const ruleId = rules[Number(/^rules\.(\d+)/.exec(issue.path)?.[1])]?.id;
+    setAttempted(true);
+    if (!ruleId) return;
+    setExpanded(ruleId);
+    requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLElement>('[data-rule-id="' + ruleId + '"] [aria-invalid="true"]')?.focus(); });
+  };
   const resolveConflict = (keepMine: boolean) => {
     if (!current || blocked) return;
     setBaseline(current);
@@ -128,15 +151,12 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
   };
   const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, i18n.language, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, culture, options.originalCulture) : ""}</li>)}</ol></>;
   return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-    <Surface title={t("rules.title")} actions={<>{dirty ? <Badge variant="outline">{t("dirty")}</Badge> : <span className="text-xs">{t("rules.revision", { revision: baseline.revision })}</span>}<Button aria-describedby={saveReason ? saveHintId : undefined} disabled={!!saveReason} onClick={() => void run("save", async signal => {
-      const saved = await saveFormRules(definitionId, { expectedRevision: baseline.revision, rules: prepared.rules }, signal);
-      if (!active.current) return;
-      setBaseline(saved); setRules(saved.rules); setCurrent(null);
-      void history.refetch();
-      notify({ id: notificationRoot + ":save", kind: "success", message: t("rules.saved") });
-    })}>{t(busy ? "rules.saving" : "rules.save")}</Button>{saveReason ? <p id={saveHintId} role={busy || cooldown.isRunning ? "status" : undefined} className="basis-full text-xs text-[var(--color-content-muted)]">{saveReason}</p> : null}</>}>
+    <Surface title={t("rules.title")} actions={<>
+      <Button data-add-rule variant="outline" disabled={blocked || rules.length >= 20} onClick={() => { const rule = newRule(); change([...rules, rule]); setExpanded(rule.id); }}>{t("rules.addRule")}</Button>
+      <DisabledReason reason={saveDisabledReason}><Button disabled={blocked || conflict || !dirty} onClick={save}>{t(busy ? "rules.saving" : "rules.save")}</Button></DisabledReason>
+    </>}>
       <p className="border-b border-[var(--color-border)] p-4 text-sm">{t("rules.independent")}</p>
-      {conflict ? <div className="space-y-2 border-b border-[var(--color-border)] p-4"><p role="alert">{t("rules.conflict")}</p>{conflict ? <><Button variant="outline" disabled={blocked} onClick={() => void run("reread", async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t("rules.reread")}</Button>{current ? <><p className="text-sm text-[var(--color-content-muted)]">{t("rules.keepMineHint", { revision: current.revision })}</p><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(false)}>{t("rules.useCurrent")}</Button><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(true)}>{t("keepMine")}</Button></> : null}</> : null}</div> : null}
+      {conflict ? <div className="space-y-2 border-b border-[var(--color-border)] p-4"><p role="alert">{t("rules.conflict")}</p>{conflict ? <><Button variant="outline" disabled={blocked} onClick={() => void run("reread", async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t("rules.reread")}</Button>{current ? <><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(false)}>{t("rules.useCurrent")}</Button><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(true)}>{t("keepMine")}</Button></> : null}</> : null}</div> : null}
 
       {rules.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("rules.empty")}</p> : null}
       {rules.map((rule, index) => <section key={rule.id} data-rule-id={rule.id} aria-label={t("rules.rule", { number: index + 1 })} className="border-b border-[var(--color-border)] p-4">
@@ -146,7 +166,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
         </div></div>
         {expanded === rule.id ? <div className="mt-3 space-y-5">
           <FormField label={t("rules.when")}><NativeSelect disabled={blocked} value={rule.event} onChange={event => changeRule(index, clearUnavailablePdfAttachments({ ...rule, event: event.target.value as FormRule["event"] }))}>{ruleEvents.map(event => <option key={event} value={event}>{t("rules.events." + event)}</option>)}</NativeSelect></FormField>
-          <FormConditionsEditor heading={t("rules.ifOptional")} conditions={rule.conditions} columns={columns} blocked={blocked} error={fieldError("rules." + index + ".conditions")} onChange={conditions => changeRule(index, { ...rule, conditions })}/>
+          <FormConditionsEditor heading={t("rules.ifOptional")} fieldPath={"rules." + index + ".conditions"} conditions={rule.conditions} columns={columns} blocked={blocked} error={fieldError("rules." + index + ".conditions")} onChange={conditions => changeRule(index, { ...rule, conditions })}/>
           <div className="space-y-3"><h3 className="text-sm font-medium">{t("rules.doInOrder")}</h3>{rule.actions.map((action, actionIndex) => {
             const actionPath = "rules." + index + ".actions." + actionIndex;
             const reference = contentReference(action.text, culture, options.originalCulture);
@@ -157,11 +177,10 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
               {action.kind === "GeneratePdf" ? <div className="space-y-2 text-sm"><p>{t("rules.currentDesign")}</p><Button asChild variant="link"><Link to={"/formularios/" + definitionId + "/pdf"}>{t("rules.viewDesign")}</Link></Button></div> : null}
               {action.text ? <><FormField label={t("rules.message")} hint={reference ? t("originalText", { language: t("cultures." + options.originalCulture), text: reference }) : t("rules.messageHint")} error={textError(actionPath + ".text")}><Textarea disabled={blocked} maxLength={action.includePdf ? 1024 : 4096} placeholder={culture !== options.originalCulture ? t("missingText") : undefined} value={action.text[culture] ?? ""} onChange={event => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, text: { ...item.text, [culture]: event.target.value } } : item) })} /></FormField>{action.kind === "NotifyAuthor" ? <CheckboxField error={fieldError(actionPath + ".includePdf")} checked={action.includePdf} disabled={blocked || rule.event !== "Approved"} onCheckedChange={checked => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, includePdf: checked } : item) })} label={t("rules.includePdf")} /> : null}</> : null}
             </Surface>;
-          })}{fieldError("rules." + index + ".actions") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{fieldError("rules." + index + ".actions")}</p> : null}<Button data-add-action={rule.id} variant="outline" disabled={blocked || rule.actions.length >= 10 || rule.actions.at(-1)?.kind === "RequestApproval"} onClick={() => changeRule(index, { ...rule, actions: [...rule.actions, newRuleAction("NotifyAuthor")] })}>{t("rules.addAction")}</Button></div>
+          })}{fieldError("rules." + index + ".actions") ? <p id={errorId + "-actions-" + rule.id} role="alert" className="text-sm text-[var(--color-danger)]">{fieldError("rules." + index + ".actions")}</p> : null}<Button data-add-action={rule.id} aria-invalid={fieldError("rules." + index + ".actions") ? true : undefined} aria-describedby={fieldError("rules." + index + ".actions") ? errorId + "-actions-" + rule.id : undefined} variant="outline" disabled={blocked || rule.actions.length >= 10 || rule.actions.at(-1)?.kind === "RequestApproval"} onClick={() => changeRule(index, { ...rule, actions: [...rule.actions, newRuleAction("NotifyAuthor")] })}>{t("rules.addAction")}</Button></div>
           <div className="flex justify-end"><Button variant="outline" disabled={blocked} onClick={() => { pendingFocus.current = { selector: '[data-edit-rule="' + rule.id + '"]' }; setExpanded(null); }}>{t("done")}</Button></div>
         </div> : null}
       </section>)}
-      <div className="p-4"><Button data-add-rule variant="outline" disabled={blocked || rules.length >= 20} onClick={() => { const rule = newRule(); change([...rules, rule]); setExpanded(rule.id); }}>{t("rules.addRule")}</Button></div>
     </Surface>
     <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</span>
     <Surface title={t("rules.history")} padded>{history.isPending ? <Spinner /> : history.error && !history.data ? <EmptyState embedded title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void history.refetch()}>{t("common:actions.retry")}</Button>} /> : <><ol className="space-y-3">{history.data?.items.map(revision => <li key={revision.id} className="border-b border-[var(--color-border)] pb-3"><Button variant="link" disabled={blocked} onClick={event => { revisionTrigger.current = event.currentTarget; void run("revision", async signal => { const view = await fetchRuleRevision(definitionId, revision.revision, signal); if (active.current) setRevisionView(view); }); }}>{t("rules.revision", { revision: revision.revision })}</Button>{baseline.revision === revision.revision ? <Badge variant="outline">{t("rules.current")}</Badge> : null}<p className="text-xs">{formatDateTimeInZone(revision.createdAtUtc, scope.culture, timeZoneId)} · {revision.author?.displayName ?? t("responses.unknownPerson")}</p><p className="mt-1 text-xs text-[var(--color-content-muted)]">{[revision.changes.addedRules ? t("rules.historyAdded", { count: revision.changes.addedRules }) : null, revision.changes.updatedRules ? t("rules.historyUpdated", { count: revision.changes.updatedRules }) : null, revision.changes.removedRules ? t("rules.historyRemoved", { count: revision.changes.removedRules }) : null, revision.changes.orderChanged ? t("rules.historyOrderChanged") : null].filter(Boolean).join(" · ") || t("rules.historyUnchanged")}</p></li>)}</ol>{history.data && history.data.totalPages > 1 ? <Pagination {...history.data} onPageChange={setHistoryPage} /> : null}<p className="text-xs text-[var(--color-content-muted)]">{t("rules.historyHint")}</p></>}</Surface>

@@ -11,12 +11,19 @@ for (const language of ["es", "en"] as const)
       await page.getByRole("button", { name: en ? "Add action" : "Agregar acción", exact: true }).click();
       const message = en ? "We received {número}." : "Recibimos {número}.";
       await page.getByRole("textbox", { name: en ? "Message" : "Mensaje", exact: true }).fill(message);
+      // The header keeps Add rule and Save at its right edge, without draft state or revision.
+      const band = page.getByRole("heading", { name: en ? "When a response arrives" : "Cuando llega una respuesta", exact: true }).locator("..");
+      const headerButtons = [en ? "Add rule" : "Agregar regla", en ? "Save rules" : "Guardar reglas"];
+      await expect(band.getByRole("button")).toHaveText(headerButtons);
+      await expect(band).not.toContainText(en ? "Unsaved changes" : "Cambios sin guardar");
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       await page.screenshot({ path: "test-results/rules-g1-" + language + "-" + width + ".png", fullPage: true });
       await page.getByRole("button", { name: en ? "Save rules" : "Guardar reglas", exact: true }).click();
       const revision = page.getByRole("button", { name: en ? "Revision 1" : "Revisión 1", exact: true });
       await expect(revision).toBeVisible();
+      await expect(band.getByRole("button")).toHaveText(headerButtons);
+      await expect(band).not.toContainText(en ? "Revision" : "Revisión");
       const saved = await page.evaluate(language => {
         const store = (window as unknown as { formsFixture: { writes: unknown[]; ruleWrites: { expectedRevision: number; rules: { actions: { text: Record<string, string> }[] }[] }[] } }).formsFixture;
         return { draftWrites: store.writes.length, revision: store.ruleWrites[0].expectedRevision, original: store.ruleWrites[0].rules[0].actions[0].text[language], optional: store.ruleWrites[0].rules[0].actions[0].text[language === "es" ? "en" : "es"] };

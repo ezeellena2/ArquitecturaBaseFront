@@ -211,16 +211,63 @@ function storedRule(message = "Mensaje guardado"): FormRule {
 function serveRules(rules: readonly FormRule[], revision = 1) {
   server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ ...initial(), id: actor, revision, rules, createdAtUtc: "2026-10-17T12:00:00Z" })));
 }
-it("explains unchanged and invalid rules beside the disabled save control", async () => {
-  setup();
+it("keeps the rules header to Add and Save without draft state, revision or explanations", async () => {
+  setup(); serveRules([storedRule()], 3);
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const save = await screen.findByRole("button", { name: "Guardar reglas" });
+  const band = screen.getByRole("heading", { name: "Cuando llega una respuesta" }).parentElement!;
+  expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Agregar regla", "Guardar reglas"]);
+  expect(band).toHaveTextContent(/^Cuando llega una respuestaAgregar reglaGuardar reglas$/);
   expect(save).toBeDisabled();
-  expect(save).toHaveAccessibleDescription("No hay cambios para guardar.");
-  expect(screen.getByText("No hay cambios para guardar.")).toBeVisible();
-  await userEvent.click(screen.getByRole("button", { name: "Agregar regla" }));
-  expect(save).toBeDisabled();
-  expect(save).toHaveAccessibleDescription("Revisá los datos marcados antes de guardar.");
+  expect(save).not.toHaveAccessibleDescription();
+  await userEvent.click(screen.getByRole("button", { name: "Editar regla 1" }));
+  await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
+  expect(band).toHaveTextContent(/^Cuando llega una respuestaAgregar reglaGuardar reglas$/);
+  expect(save).toBeEnabled();
+  expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+  expect(screen.queryByText(/revisión 3/i)).not.toBeInTheDocument();
+});
+it("marks an incomplete new rule only after trying to save and then corrects it live without a request", async () => {
+  setup();
+  const writes = vi.fn();
+  server.use(http.post("/api/forms/definitions/:id/rules", () => { writes(); return HttpResponse.json(initial()); }));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  const region = within(screen.getByRole("region", { name: "Regla 1" }));
+  expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
+  expect(region.getByRole("button", { name: "Agregar acción" })).not.toHaveAttribute("aria-invalid");
+  await userEvent.click(region.getByRole("button", { name: "Listo" }));
+  const save = screen.getByRole("button", { name: "Guardar reglas" });
+  expect(save).toBeEnabled();
+  await userEvent.click(save);
+  expect(screen.getByRole("button", { name: "Editar regla 1" })).toHaveAttribute("aria-expanded", "true");
+  const addAction = region.getByRole("button", { name: "Agregar acción" });
+  expect(addAction).toHaveAttribute("aria-invalid", "true");
+  expect(addAction).toHaveAccessibleDescription("Completá este dato.");
+  await waitFor(() => expect(addAction).toHaveFocus());
+  await userEvent.click(addAction);
+  const message = region.getByRole("textbox", { name: "Mensaje" });
+  expect(message).toHaveAttribute("aria-invalid", "true");
+  expect(message).toHaveAccessibleDescription("Completá este dato.");
+  await userEvent.type(message, "Recibimos tu respuesta.");
+  expect(message).not.toHaveAttribute("aria-invalid");
+  expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
+  expect(save).toBeEnabled();
+  expect(writes).not.toHaveBeenCalled();
+});
+it("focuses the first question of conditions to review after trying to save", async () => {
+  setup(); const fieldId = crypto.randomUUID();
+  serveRules([storedRule()]);
+  server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "decimal", label: { es: "Importe" }, help: null, required: false, maxLength: null, options: null }], conditionChoices: {}, roles: [] })));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "gte");
+  expect(screen.queryByText("Revisá los valores de las condiciones.")).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  const question = screen.getByRole("combobox", { name: "Pregunta" });
+  expect(question).toHaveAccessibleDescription("Revisá los valores de las condiciones.");
+  await waitFor(() => expect(question).toHaveFocus());
 });
 it("keeps the whole own rules draft after rereading a conflict and saves it explicitly over the current revision", async () => {
   setup();
@@ -241,7 +288,7 @@ it("keeps the whole own rules draft after rereading a conflict and saves it expl
   await userEvent.click(await screen.findByRole("button", { name: "Releer reglas" }));
   const keep = await screen.findByRole("button", { name: "Conservar mis cambios" });
   expect(screen.getByRole("button", {name:"Guardar reglas"})).toHaveAccessibleDescription("Releé y elegí qué conservar antes de guardar.");
-  expect(screen.getByText(/reemplazará las reglas de la revisión 2/)).toBeVisible();
+  expect(screen.queryByText(/revisión 2/i)).not.toBeInTheDocument();
   await userEvent.click(keep);
   expect(screen.getByRole("textbox", { name: "Mensaje" })).toHaveValue("Mensaje guardado propio");
   expect(writes).toHaveLength(1);
@@ -342,17 +389,17 @@ it("requires a new reread after a second conflict instead of reusing the previou
   await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));await screen.findByRole("button",{name:"Releer reglas"});
   expect(screen.queryByRole("button",{name:"Conservar mis cambios"})).not.toBeInTheDocument();expect(screen.queryByRole("button",{name:"Usar la revisión actual"})).not.toBeInTheDocument();
   expect(screen.getByRole("textbox",{name:"Mensaje"})).toHaveValue("Mensaje guardado propio");
-  await userEvent.click(screen.getByRole("button",{name:"Releer reglas"}));await screen.findByText(/reemplazará las reglas de la revisión 3/);
+  await userEvent.click(screen.getByRole("button",{name:"Releer reglas"}));await screen.findByRole("button",{name:"Conservar mis cambios"});
   expect(writes).toEqual([{expectedRevision:1,rules:[{...mine,actions:[{...mine.actions[0],text:{es:"Mensaje guardado propio"}}]}]},{expectedRevision:2,rules:[{...mine,actions:[{...mine.actions[0],text:{es:"Mensaje guardado propio"}}]}]}]);
 });
 
-it("explains an in-flight save and its server cooldown once without discarding the draft", async () => {
+it("tells the server cooldown, not an in-flight save, as the disabled reason once without discarding the draft", async () => {
   setup();serveRules([storedRule()]);let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});
   server.use(http.post("/api/forms/definitions/:id/rules",async()=>{await pending;return HttpResponse.json({code:"RateLimit.Exceeded",detail:"Esperá antes de volver a guardar.",retryAfter:60},{status:429});}));
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));await userEvent.type(screen.getByRole("textbox",{name:"Mensaje"})," propio");
   await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));
-  expect(screen.getByRole("button",{name:"Guardando reglas…"})).toHaveAccessibleDescription("Esperá a que termine la operación.");
+  const saving=screen.getByRole("button",{name:"Guardando reglas…"});expect(saving).toBeDisabled();expect(saving).not.toHaveAccessibleDescription();
   await act(async()=>{release();});const save=await screen.findByRole("button",{name:"Guardar reglas"});
   expect(save).toBeDisabled();expect(save).toHaveAccessibleDescription(/Esperá [0-9]+ segundos para volver a intentar./);
   expect(screen.getAllByText(/Esperá [0-9]+ segundos para volver a intentar./)).toHaveLength(1);
