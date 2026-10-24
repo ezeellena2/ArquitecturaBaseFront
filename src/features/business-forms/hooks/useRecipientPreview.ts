@@ -79,14 +79,16 @@ export function useRecipientMaximum(scope: FormReadScope, source: DraftQuestionS
     const controller = new AbortController();
     let active = true;
     const [, body] = JSON.parse(stamp) as [unknown, FormQuestionSource, number];
-    void fetchRecipientMaximum(body, controller.signal).then(result => {
+    // A fixed value changes the filters on every key and the route shares the forms write limit with Guardar: the read waits
+    // 300 ms after the last change, like the person search; meanwhile only an answer for these same filters shows.
+    const timer = setTimeout(() => void fetchRecipientMaximum(body, controller.signal).then(result => {
       if (active) setSettled({ stamp, result, error: null });
     }, error => {
       if (!active || controller.signal.aborted) return;
       if (error instanceof ApiError && error.status === 429) restart(error.retryAfterSeconds ?? 60);
       setSettled({ stamp, result: null, error });
-    });
-    return () => { active = false; controller.abort(); };
+    }), 300);
+    return () => { active = false; clearTimeout(timer); controller.abort(); };
   }, [restart, stamp]);
   const current = stamp !== null && settled?.stamp === stamp ? settled : null;
   // Rejected filters (400) or a lost permission are not a failure to retry: the filters and the permissions say what happens.
