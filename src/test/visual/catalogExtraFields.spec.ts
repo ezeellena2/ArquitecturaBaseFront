@@ -21,6 +21,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.setViewportSize({ width, height: 900 }); await open(page, language);
     await page.getByRole("button", { name: es ? "Editar campos" : "Edit fields", exact: true }).click();
     await expect(page.getByRole("button", { name: es ? "Editar CUIT" : "Edit CUIT", exact: true })).toBeVisible();
+    if (width >= 640) {
+      // The table numbers the fields and gives each type its detail: the length, the source with its options, the range.
+      const table = page.getByRole("table").filter({ has: page.getByRole("columnheader", { name: es ? "Clave" : "Key", exact: true }) });
+      await expect(table.getByRole("columnheader").first()).toHaveText("#");
+      await expect(table.getByRole("row").nth(1).getByRole("cell").first()).toHaveText("1");
+      for (const detail of es ? ["13 caracteres", "Zonas · 3 opciones", "De 0 a 180"] : ["13 characters", "Zones · 3 options", "From 0 to 180"]) await expect(table.getByText(detail, { exact: true })).toBeVisible();
+    }
     const add = page.getByRole("button", { name: es ? "Agregar campo" : "Add field", exact: true });
     await add.click();
     const name = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true }).last();

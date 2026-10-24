@@ -59,6 +59,38 @@ it("asks to confirm removing the field and its values with their count", async (
   expect(within(empty).queryByRole("checkbox")).not.toBeInTheDocument();
   expect(within(empty).getByRole("button", { name: "Quitar el campo" })).toBeEnabled();
 });
+it("numbers the active fields and shows each type's detail", async () => {
+  const source = "01990000-0000-7000-8000-000000000009";
+  const cultures = [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }];
+  server.use(http.get("/api/forms/catalogs/" + source, () => HttpResponse.json({ id: source, key: source.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" }, description: { es: "Zonas de reparto", en: "Delivery zones" }, kind: "Manual", valueType: "Text", revision: 1, isActive: true, itemsCount: 72, usageCount: 1, unavailableReasonCode: null, filters: null, proposal: null, fields: [], presentation: null, presentationCheck: { cultures } })));
+  const saved = (localId: string, number: number, values: Partial<CatalogFieldDraft>): CatalogFieldDraft => ({ ...newCatalogField(localId, number), id: "01990000-0000-7000-8000-0000000001" + String(number).padStart(2, "0"), key: localId, name: { es: localId }, ...values });
+  const fields = [
+    saved("cuit", 1, { name: { es: "CUIT" }, maxLength: 13 }),
+    saved("gone", 2, { name: { es: "Viejo" }, isActive: false }),
+    saved("zone", 3, { name: { es: "Zona" }, type: "catalog", sourceCatalogId: source }),
+    saved("days", 4, { name: { es: "Plazo" }, type: "integer", min: "0", max: "180" }),
+    saved("amount", 5, { name: { es: "Monto" }, type: "decimal", min: "1.500,5" }),
+    saved("due", 6, { name: { es: "Vence" }, type: "date", max: "2026-12-31" }),
+    saved("gps", 7, { name: { es: "GPS" }, type: "boolean" }),
+  ];
+  const media = vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(min-width: 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }) as MediaQueryList);
+  try {
+    await mount(fields);
+    await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
+    expect(screen.getAllByRole("columnheader")[0]).toHaveTextContent(/^#$/);
+    expect(await screen.findByText("Zonas · 72 opciones")).toBeInTheDocument();
+    const cells = (name: string) => within(screen.getAllByRole("row").find(row => within(row).queryByText(name))!).getAllByRole("cell");
+    for (const [name, number, type, detail] of [["CUIT", "1", "Texto", "13 caracteres"], ["Zona", "2", "Elegir de un catálogo", "Zonas · 72 opciones"], ["Plazo", "3", "Entero", "De 0 a 180"], ["Monto", "4", "Decimal", "Desde 1.500,5"], ["Vence", "5", "Fecha", "Hasta 31/12/2026"], ["GPS", "6", "Sí o no", null]] as const) {
+      const row = cells(name);
+      expect(row[0]).toHaveTextContent(new RegExp("^" + number + "$"));
+      expect(row[3]).toHaveTextContent(new RegExp("^" + type + (detail ?? "") + "$"));
+      if (detail) expect(within(row[3]!).getByText(detail)).toBeInTheDocument();
+    }
+    expect(screen.queryByText("Viejo")).not.toBeInTheDocument();
+  } finally {
+    media.mockRestore();
+  }
+});
 it("names the stage of each form use once and links to its question", async () => {
   const form = "01990000-0000-7000-8000-000000000002", question = "01990000-0000-7000-8000-000000000004";
   const use = { definitionId: form, formName: "Pedir repuesto", question: "Proveedor", questionId: question };

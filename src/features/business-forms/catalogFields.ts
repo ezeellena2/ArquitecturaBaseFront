@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import type { CatalogField, CatalogFieldUsage } from "./api/catalogResponse";
-import { formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
+import { catalogScalarText, formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
 import type { FormCulture } from "./model";
 
 export type CatalogFieldType = CatalogField["type"];
@@ -90,6 +90,19 @@ export function catalogFieldProblemText(t: TFunction<"forms">, field: Pick<Catal
   const min = field.min?.trim(), max = field.max?.trim();
   const rule = min && max ? t("catalogs.fields.problem.rule.between", { min, max }) : min ? t("catalogs.fields.problem.rule.from", { min }) : t("catalogs.fields.problem.rule.to", { max });
   return t("catalogs.fields.problem.range", { value: shown, rule });
+}
+
+/**
+ * The detail under a field's type: its range with the shared typed-value format, or the length of a text; null without
+ * either. The draft's bounds are editable text in `culture`; what does not parse is shown as written.
+ */
+export function catalogFieldRuleSummary(field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">, culture: FormCulture, t: TFunction<"forms">): string | null {
+  if (field.type === "text") return field.maxLength === null ? null : t("catalogs.fields.detail.length", { count: field.maxLength });
+  if (field.type !== "integer" && field.type !== "decimal" && field.type !== "date") return null;
+  const type = field.type;
+  const bound = (value: string | null) => value?.trim() ? catalogScalarText(type, value.trim(), culture, undefined, culture) : null;
+  const min = bound(field.min), max = bound(field.max);
+  return min && max ? t("catalogs.fields.detail.between", { min, max }) : min ? t("catalogs.fields.detail.from", { min }) : max ? t("catalogs.fields.detail.to", { max }) : null;
 }
 
 export function formatCatalogFieldValue(field: Pick<CatalogFieldDraft, "type">, value: string | null | undefined, culture: FormCulture): string {

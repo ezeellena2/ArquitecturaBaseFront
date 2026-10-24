@@ -305,7 +305,7 @@
       "typeReview": "Al guardar se revisan todos los valores. Si alguno no convierte, el cambio no se guarda.",
       "unique": "Único", "requiredLabel": "Obligatorio", "min": "Mínimo", "max": "Máximo", "savedFirst": "Guardá para cargar valores",
       "removeTitle": "Quitar «{{name}}»", "remove": "Quitar el campo", "removeHint": "Se quita de la tabla, de la plantilla y del Excel. Las respuestas que ya lo guardaron lo conservan.",
-      "confirmRemoval_one": "Sí, quitar el campo y su valor", "confirmRemoval_other": "Sí, quitar el campo y sus {{count, number(useGrouping: always)}} valores", "inUse": "El campo está en uso. Sacá esos usos para poder quitarlo.",
+      "confirmRemoval_one": "Sí, quitar el campo y su valor", "confirmRemoval_other": "Sí, quitar el campo y sus {{count, number(useGrouping: always)}} valores", "detail": { "between": "De {{min}} a {{max}}", "from": "Desde {{min}}", "to": "Hasta {{max}}", "length_one": "{{count}} carácter", "length_other": "{{count}} caracteres", "source_one": "{{name}} · 1 opción", "source_other": "{{name}} · {{count, number(useGrouping: always)}} opciones" }, "inUse": "El campo está en uso. Sacá esos usos para poder quitarlo.",
       "hiddenUse": { "Draft": "El borrador de un formulario", "Active": "La versión activa de un formulario" },
       "usage": {
         "question": "«{{question}}» en {{form}}, {{stage}}",

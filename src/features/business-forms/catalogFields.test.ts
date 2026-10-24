@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n";
-import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
+import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, catalogFieldRuleSummary, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
 import type { CatalogFieldUsage } from "./api/catalogResponse";
 
 const field: CatalogFieldDraft = { localId: "field", id: "01990000-0000-7000-8000-000000000001", key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "decimal", sourceCatalogId: null, required: false, unique: false, min: "0", max: "180", maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
@@ -63,6 +63,23 @@ describe("catalog extra field values", () => {
     expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null, maxLength: 13 }, "20-12345678-90", "length")).toBe("“20-12345678-90” is longer than 13 characters.");
     expect(catalogFieldProblemText(en, field, "181", "range")).toBe("“181” is out of range: from 0 to 180.");
     expect(catalogFieldProblemText(en, field, null, "required")).toBe("Missing: it is required.");
+  });
+  it("summarizes a field's range or length", async () => {
+    await i18n.loadLanguages("en");
+    const es = i18n.getFixedT("es", "forms"), en = i18n.getFixedT("en", "forms");
+    expect(catalogFieldRuleSummary({ ...field, type: "integer" }, "es", es)).toBe("De 0 a 180");
+    expect(catalogFieldRuleSummary({ ...field, min: "1.500,5", max: null }, "es", es)).toBe("Desde 1.500,5");
+    expect(catalogFieldRuleSummary({ ...field, type: "date", min: null, max: "2026-12-31" }, "es", es)).toBe("Hasta 31/12/2026");
+    expect(catalogFieldRuleSummary({ ...field, min: "abc", max: null }, "es", es)).toBe("Desde abc");
+    expect(catalogFieldRuleSummary({ ...field, type: "text", min: null, max: null, maxLength: 13 }, "es", es)).toBe("13 caracteres");
+    expect(catalogFieldRuleSummary({ ...field, type: "text", min: null, max: null, maxLength: 1 }, "es", es)).toBe("1 carácter");
+    expect(catalogFieldRuleSummary({ ...field, min: "1,500.5", max: "2500" }, "en", en)).toBe("From 1,500.5 to 2,500");
+    expect(catalogFieldRuleSummary({ ...field, type: "date", min: "2026-01-02", max: null }, "en", en)).toBe("From 01/02/2026");
+    expect(catalogFieldRuleSummary({ ...field, min: null, max: "180" }, "en", en)).toBe("Up to 180");
+    expect(catalogFieldRuleSummary({ ...field, type: "text", min: null, max: null, maxLength: 13 }, "en", en)).toBe("13 characters");
+    for (const empty of [{ ...field, min: null, max: " " }, { ...field, type: "text", min: null, max: null, maxLength: null }, { ...field, type: "boolean", min: null, max: null }, { ...field, type: "catalog", min: null, max: null }] as const) {
+      expect(catalogFieldRuleSummary(empty, "es", es)).toBeNull();
+    }
   });
   it("says a value is repeated when «único» is switched on or a unique field is restored", async () => {
     await i18n.loadLanguages("en");
