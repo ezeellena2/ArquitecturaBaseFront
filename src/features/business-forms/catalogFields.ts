@@ -54,11 +54,17 @@ export function parseCatalogFieldValue(field: Pick<CatalogFieldDraft, "type" | "
   return { valid: true, value: field.type === "catalog" ? text.toLowerCase() : text };
 }
 
+/** A server row's reason, or `repeated`: a value repeated when «único» is switched on or a unique field is restored arrives as `invalid`. */
+export function catalogFieldRowReason(control: string, field: Pick<CatalogFieldDraft, "unique">, reason: CatalogFieldProblemReason): CatalogFieldProblemReason | "repeated" {
+  return reason === "invalid" && field.unique && (control === "unique" || control === "isActive") ? "repeated" : reason;
+}
+
 /** What is wrong with a field value, quoting the value as entered (cut at 40 characters) and the reason for the field type. */
-export function catalogFieldProblemText(t: TFunction<"forms">, field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">, value: string | null, reason: CatalogFieldProblemReason): string {
+export function catalogFieldProblemText(t: TFunction<"forms">, field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">, value: string | null, reason: CatalogFieldProblemReason | "repeated"): string {
   if (reason === "required") return t("catalogs.fields.problem.required");
   const characters = [...(value?.trim() ?? "")];
   const shown = characters.length > 40 ? characters.slice(0, 40).join("") + "…" : characters.join("");
+  if (reason === "repeated") return t("catalogs.fields.problem.repeated", { value: shown });
   if (reason === "invalid") return t("catalogs.fields.problem.invalid." + field.type, { value: shown });
   if (reason === "length") return t("catalogs.fields.problem.length", { value: shown, count: field.maxLength ?? textMaxLength });
   const min = field.min?.trim(), max = field.max?.trim();

@@ -319,6 +319,7 @@
         "required": "Falta: es obligatorio.",
         "invalid": { "text": "«{{value}}» tiene caracteres que no se pueden guardar.", "integer": "«{{value}}» no es un número entero.", "decimal": "«{{value}}» no es un número.", "date": "«{{value}}» no es una fecha.", "boolean": "«{{value}}» no es sí o no.", "catalog": "«{{value}}» no es una opción del catálogo." },
         "range": "«{{value}}» está fuera del rango: {{rule}}.",
+        "repeated": "«{{value}}» se repite en otra opción activa.",
         "rule": { "between": "de {{min}} a {{max}}", "from": "desde {{min}}", "to": "hasta {{max}}" },
         "length_one": "«{{value}}» supera {{count}} carácter.", "length_other": "«{{value}}» supera los {{count}} caracteres."
       },

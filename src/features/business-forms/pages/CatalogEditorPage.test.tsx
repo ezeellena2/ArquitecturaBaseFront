@@ -273,6 +273,58 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
     expect(requests.at(-1)?.getAll("ids")).toEqual([]);
   });
+  // «Plazo» keeps its type and narrows a rule: the Save comes back with every saved value that breaks it, on that control.
+  function rulesSetup(control: "maxLength" | "unique", reason: "length" | "invalid", rows = termRows) {
+    const term = savedField({ key: "term", name: "Plazo", type: "text" });
+    const message = "Hay valores que no cumplen las reglas del campo.";
+    const requests: URLSearchParams[] = [];
+    setup();
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, itemsCount: 2, fields: [term] })),
+      http.get("/api/forms/catalogs/" + id + "/items", ({ request }) => {
+        const query = new URL(request.url).searchParams; requests.push(query);
+        const ids = query.getAll("ids"), items = ids.length ? rows.filter(row => ids.includes(row.id)) : rows;
+        return HttpResponse.json({ items, page: 1, pageSize: Number(query.get("pageSize")), totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
+      }),
+      http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.FieldValuesIncompatible", title: "Datos inválidos", detail: message, errors: { [`fields[0].${control}`]: [message] }, invalidCount: rows.length, invalidRows: rows.map(row => ({ itemId: row.id, code: row.code, row: row.position, value: row.fields[fieldId], reason })) }, { status: 400, headers: { "content-type": "application/problem+json" } })));
+    return requests;
+  }
+  it("marks every saved value that breaks a narrowed rule and filters the table to them without the type change dialog", async () => {
+    viewport(true); const requests = rulesSetup("maxLength", "length"); const user = userEvent.setup();
+    await mount("/catalogos/" + id);
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
+    await pasteText(user, screen.getByRole("spinbutton", { name: "Máximo de caracteres" }), "5");
+    await screen.findByRole("button", { name: "Editar Gómez" });
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton", { name: "Máximo de caracteres" })).toHaveAccessibleDescription("Hay valores que no cumplen las reglas del campo.");
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeInvalid();
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toHaveAccessibleDescription("«30 días» supera los 5 caracteres.");
+    expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo" })).toBeInvalid();
+    expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo" })).toHaveAccessibleDescription("«60 días» supera los 5 caracteres.");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^De texto a/)).not.toBeInTheDocument();
+    expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Ver los 2 en la tabla" }));
+    expect(await screen.findByText("Con error · 2 filas")).toBeInTheDocument();
+    await waitFor(() => expect(requests.at(-1)?.getAll("ids")).toEqual([itemId, secondItemId]));
+    expect(screen.queryByRole("button", { name: "Ver los 2 en la tabla" })).not.toBeInTheDocument();
+    await user.clear(screen.getByRole("spinbutton", { name: "Máximo de caracteres" }));
+    await waitFor(() => expect(screen.queryByText("Con error · 2 filas")).not.toBeInTheDocument());
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeValid();
+  });
+  it("says that a value is repeated when switching on «único» finds it in several options", async () => {
+    viewport(true); rulesSetup("unique", "invalid", termRows.map(row => ({ ...row, fields: { [fieldId]: "30 días" } }))); const user = userEvent.setup();
+    await mount("/catalogos/" + id);
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
+    await user.click(screen.getByRole("checkbox", { name: "Único" }));
+    await screen.findByRole("button", { name: "Editar Gómez" });
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
+    for (const name of ["Fila 1 · Plazo", "Fila 2 · Plazo"]) expect(screen.getByRole("textbox", { name })).toHaveAccessibleDescription("«30 días» se repite en otra opción activa.");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
   it("retains a conflicted draft through reread and requires an explicit adoption without a second write", async () => {
     setup(); let writes = 0;
     server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 }); }));

@@ -87,6 +87,11 @@ ve también la lista, como al tocarlo.
   se guarda, un valor que el control del tipo nuevo no admite se ve tal cual: en catálogo, en el buscador; en Sí/No y
   fecha, en un campo de sólo lectura con «Limpiar», que lo vacía para cargarlo con la casilla o la fecha. La lista de códigos
   que mostraba la sección «Campos» se retira.
+- **Bajar el largo, cambiar el mínimo o el máximo, activar «Único» o restaurar un campo (CE1 y CE2).** El servidor revisa
+  todos los valores guardados y devuelve el conteo y hasta 50 filas, como en un cambio de tipo, pero no se abre «Cambiar el
+  tipo» ni se dice «De … a …». El mensaje va en el control que cambió (o junto a la fila del campo restaurado); el conteo, en
+  «Campos», con «Ver los N en la tabla» a la derecha, que deja en la tabla solo esas opciones con el mismo chip. Cada celda
+  queda marcada con su motivo hasta que se la edita; un valor repetido dice que se repite en otra opción activa.
 
 ## Lo que no se ve en las pantallas
 

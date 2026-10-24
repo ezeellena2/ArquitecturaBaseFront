@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n";
-import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, type CatalogFieldDraft } from "./catalogFields";
+import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, type CatalogFieldDraft } from "./catalogFields";
 
 const field: CatalogFieldDraft = { localId: "field", id: "01990000-0000-7000-8000-000000000001", key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "decimal", sourceCatalogId: null, required: false, unique: false, min: "0", max: "180", maxLength: null, role: "data", position: 1, isActive: true, hasValues: false, usedBy: [] };
 
@@ -62,5 +62,17 @@ describe("catalog extra field values", () => {
     expect(catalogFieldProblemText(en, { ...field, type: "text", min: null, max: null, maxLength: 13 }, "20-12345678-90", "length")).toBe("“20-12345678-90” is longer than 13 characters.");
     expect(catalogFieldProblemText(en, field, "181", "range")).toBe("“181” is out of range: from 0 to 180.");
     expect(catalogFieldProblemText(en, field, null, "required")).toBe("Missing: it is required.");
+  });
+  it("says a value is repeated when «único» is switched on or a unique field is restored", async () => {
+    await i18n.loadLanguages("en");
+    const es = i18n.getFixedT("es", "forms"), en = i18n.getFixedT("en", "forms");
+    const unique = { ...field, type: "text" as const, min: null, max: null, unique: true };
+    expect(catalogFieldRowReason("unique", unique, "invalid")).toBe("repeated");
+    expect(catalogFieldRowReason("isActive", unique, "invalid")).toBe("repeated");
+    expect(catalogFieldRowReason("isActive", unique, "length")).toBe("length");
+    expect(catalogFieldRowReason("isActive", { ...unique, unique: false }, "invalid")).toBe("invalid");
+    expect(catalogFieldRowReason("type", unique, "invalid")).toBe("invalid");
+    expect(catalogFieldProblemText(es, unique, " 30 días ", "repeated")).toBe("«30 días» se repite en otra opción activa.");
+    expect(catalogFieldProblemText(en, unique, "30 days", "repeated")).toBe("“30 days” is repeated in another active option.");
   });
 });
