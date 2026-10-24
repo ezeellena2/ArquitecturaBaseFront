@@ -19,6 +19,14 @@ describe("catalog source response contract", () => {
   ])("rejects ambiguous, incomplete or unbounded source configuration: %j", invalid => {
     expect(canonicalFormFieldSchema.safeParse({ ...field, source: invalid }).success).toBe(false);
   });
+  it.each([
+    { ...field, source: { ...source, match: null } },
+    { ...field, source: { ...source, presentation: null } },
+    { ...field, options: [{ choiceId: id(6), label: { es: "Norte" } }], source: null },
+    Object.fromEntries(Object.entries({ ...field, source }).filter(([key]) => key !== "options")),
+  ])("rejects a null the server omits and a question without its options: %j", invalid => {
+    expect(canonicalFormFieldSchema.safeParse(invalid).success).toBe(false);
+  });
 });
 const question = { ...field, type: "choice" as const, localId: "q", replacesFieldId: null, source };
 const checked = { definitionId: id(8), draftRevision: 1, nextVersionNumber: 1, compatibility: "LocallyValidated", canAccept: true, acceptanceAvailability: "Available", checkToken: "ticket", checkExpiresAtUtc: "2099-10-10T16:00:00Z", channels: [], cultures: [], issues: [], warnings: [], diff: { baseVersionId: null, added: [], changed: [], removed: [], addedCultures: [], removedCultures: [] } };

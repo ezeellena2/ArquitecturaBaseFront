@@ -35,7 +35,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
   const samples = useRecipientSamples(scope, { page: 1, pageSize: 20, search: settled }, preview.available);
   const draftFields = useMemo(() => fields.map(field => openCatalogField(field, "en")), [fields]);
-  const draftItems = useMemo(() => (items.data?.items ?? []).map(item => ({ localId: item.id, itemId: item.id, label: item.text, detail: item.detail, code: item.code, value: item.value, isActive: item.isActive, position: item.position, fields: item.fields ?? {}, fieldTexts: item.fieldTexts ?? {} })), [items.data]);
+  const draftItems = useMemo(() => (items.data?.items ?? []).map(item => ({ localId: item.id, itemId: item.id, label: item.text, detail: item.detail, code: item.code, value: item.value, isActive: item.isActive, position: item.position, fields: item.fields, fieldTexts: item.fieldTexts })), [items.data]);
   const sourceStamp = JSON.stringify(normalizeCatalogQuestionSource(source));
   const shown = useMemo<CatalogQuestionPreview | null>(() => {
     if (preview.result) return { source: JSON.parse(sourceStamp) as DraftQuestionSource, culture: contentCulture, state: preview.result.state, options: preview.result.options };

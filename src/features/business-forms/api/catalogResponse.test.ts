@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogPage } from "./catalogResponse";
+import { readCatalog, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogItems, readCatalogPage } from "./catalogResponse";
 
 // Synthetic responses from the current .NET DTOs; real K4 exports qualify the contract at closure.
 const id = "01990000-0000-7000-8000-000000000020";
@@ -27,6 +27,16 @@ const columns = [{ key: "role", dataType: "text", canDisplay: true, canFilter: t
     expect(readCatalogFilterPreview(response)).toEqual(response);
     expect(readCatalogFilterPreview({ items: [], totalCount: 201, exceedsLimit: true })).toEqual({ items: [], totalCount: 201, exceedsLimit: true });
   });
+});
+
+it("rejects a catalog item page with null field maps", () => {
+  const fieldId = "01990000-0000-7000-8000-000000000030";
+  const option = { id, code: "N", text: { es: "Norte" }, detail: {}, value: null, position: 1, isActive: true, fields: { [fieldId]: "x" }, fieldTexts: { [fieldId]: { es: "Equis" } } };
+  const page = (items: unknown[]) => ({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
+  expect(readCatalogItems(page([option]))).toEqual(page([option]));
+  expect(readCatalogItems(page([{ ...option, fields: {}, fieldTexts: {} }])).items[0]).toMatchObject({ fields: {}, fieldTexts: {} });
+  for (const invalid of [{ ...option, fields: null }, { ...option, fieldTexts: null }, { ...option, fields: { [fieldId]: null } }])
+    expect(() => readCatalogItems(page([invalid]))).toThrow("Unsupported catalog response.");
 });
 
 it("uses the server's origin facets, independent of the current page length", () => {
