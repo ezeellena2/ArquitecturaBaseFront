@@ -5,7 +5,7 @@ import type { CatalogField } from "../api/catalogResponse";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItemsById } from "../hooks/useCatalogQueries";
 import { usePersonAttributes } from "../hooks/usePersonData";
-import { localizedValue } from "../editorModel";
+import { administrativeName } from "../editorModel";
 import { presentationPartNames } from "../catalogPresentation";
 import { catalogScalarText } from "../catalogValues";
 import type { DraftQuestionSource } from "../model";
@@ -13,7 +13,7 @@ import type { DraftQuestionSource } from "../model";
 // The chosen option is read by id, so its label shows even beyond the first page or once it is inactive, never its GUID.
 function FixedCatalogValue({ scope, field, value }: { scope: CatalogReadScope; field: CatalogField; value: string }) {
   const option = useCatalogItemsById(scope, field.sourceCatalogId ?? "", [value]).data?.items.find(item => item.id === value);
-  return option ? localizedValue(option.text, scope.culture, "es") : null;
+  return option ? administrativeName(option.text, scope.culture) : null;
 }
 
 export function CatalogQuestionSourceSummary({ scope, source, compared }: { scope: CatalogReadScope; source: DraftQuestionSource; compared?: DraftQuestionSource | null }) {
@@ -23,13 +23,13 @@ export function CatalogQuestionSourceSummary({ scope, source, compared }: { scop
   if (!scope.actorId || !scope.permissions.includes("formcatalogs.read") || !detail.data || detail.error instanceof ApiError && [401, 403].includes(detail.error.status)) return null;
   const fields = detail.data.fields ?? [];
   const unavailable = t("catalogQuestion.filter.unavailable");
-  const name = (id: string) => localizedValue(fields.find(field => field.id === id)?.name ?? {}, scope.culture, "es") || unavailable;
+  const name = (id: string) => administrativeName(fields.find(field => field.id === id)?.name, scope.culture) || unavailable;
   const parts = source.presentation ? presentationPartNames(source.presentation, fields, scope.culture, key => t("catalogs.items." + key), unavailable) : null;
   return <span className="mt-1 block space-y-1 text-xs text-[var(--color-content-muted)]">{(source.match ?? []).map(condition => {
     const field = fields.find(field => field.id === condition.fieldId);
     const peer = compared?.match?.find(item => item.fieldId === condition.fieldId);
     let value: ReactNode;
-    if ("personAttributeId" in condition) value = localizedValue(attributes.data?.items.find(attribute => attribute.id === condition.personAttributeId)?.name ?? {}, scope.culture, "es") || t("catalogQuestion.filter.personData");
+    if ("personAttributeId" in condition) value = administrativeName(attributes.data?.items.find(attribute => attribute.id === condition.personAttributeId)?.name, scope.culture) || t("catalogQuestion.filter.personData");
     else value = field?.type === "catalog" ? condition.value ? <FixedCatalogValue scope={scope} field={field} value={condition.value}/> : t("translationPending") : condition.value === null ? t("translationPending") : field && field.type !== "text" ? catalogScalarText(field.type, condition.value, scope.culture, { yes: t("yes"), no: t("no") }) : condition.value;
     const changed = field?.type === "catalog" && "value" in condition && (!peer || !("value" in peer) || condition.value !== peer.value);
     return <span className="block" key={condition.fieldId}>{name(condition.fieldId)}: {value}{changed ? " · " + t("catalogQuestion.review.changedValue") : ""}</span>;

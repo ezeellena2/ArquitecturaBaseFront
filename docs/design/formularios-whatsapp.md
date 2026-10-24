@@ -294,6 +294,7 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
     El diseño del PDF (G2) tampoco tiene selector: nombre y pie son un solo campo en el idioma del menú, con el original como referencia, y la vista previa pide el idioma del menú.
     «El catálogo» (K3, K4 y la revisión de H4) tampoco tiene selector: nombre y descripción son un solo campo en el idioma del menú. Un catálogo nuevo nace en ese idioma, que es su original; con el menú en el otro idioma se edita la traducción, con el original del catálogo como referencia.
     Las opciones de un catálogo escrito a mano (CA1-A) siguen la misma regla: texto y detalle se escriben en el idioma del menú y sólo el texto en el original del catálogo es obligatorio. Con el menú en el otro idioma, la tabla muestra el original como texto de ayuda de la celda y el editor de la opción como referencia («Original (…): …»); lo que falta del original se marca bajo el texto, con su idioma.
+    Los campos de un catálogo (CE1) también: cada uno tiene un solo «Nombre» en el idioma del menú, obligatorio sólo en el original del catálogo; con el menú en el otro idioma es la traducción, con el original como referencia.
     El envío fija una cultura preparada para el formulario, la apertura predeterminada, «Abrir formulario», los avisos y el PDF;
     conserva la apertura editada por el operador. El texto y detalle de cada ítem de catálogo conservan su respaldo individual
     al original, sin cambiar el idioma del formulario ni la validación bilingüe de catálogos comunes. La

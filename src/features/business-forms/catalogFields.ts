@@ -19,7 +19,7 @@ export function unconvertedFieldValue(type: CatalogFieldType, value: string | nu
   return fits ? null : value;
 }
 
-export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: { es: "" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, valuesCount: 0, usedBy: [] });
+export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: {}, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, valuesCount: 0, usedBy: [] });
 export const openCatalogField = (field: CatalogField, culture: FormCulture = "es"): CatalogFieldDraft => ({ ...field, localId: field.id, name: { ...field.name }, min: field.min === null ? null : formatCatalogFieldValue(field, field.min, culture), max: field.max === null ? null : formatCatalogFieldValue(field, field.max, culture), usedBy: field.usedBy.map(use => ({ ...use })) });
 function valueType(type: CatalogFieldType): CatalogValueType | null {
   return type === "integer" ? "Integer" : type === "decimal" ? "Decimal" : type === "date" ? "Date" : null;

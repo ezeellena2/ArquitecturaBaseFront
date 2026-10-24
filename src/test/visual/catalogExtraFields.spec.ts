@@ -30,7 +30,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const add = page.getByRole("button", { name: es ? "Agregar campo" : "Add field", exact: true });
     await add.click();
     const name = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true }).last();
-    await expect(name).toBeFocused(); await name.fill("Teléfono");
+    await expect(name).toBeFocused();
+    // One name in the menu language: in English it is the optional translation of this Spanish catalog.
+    await expect(page.getByRole("textbox", { name: es ? "Nombre en inglés" : "Name in English", exact: true })).toHaveCount(0);
+    if (!es) await expect(name).toHaveAttribute("placeholder", "Untranslated");
+    await name.fill("Teléfono");
     await page.getByRole("textbox", { name: es ? "Clave" : "Key", exact: true }).fill("phone");
     await expect(page.getByRole("checkbox", { name: es ? "Obligatorio" : "Required", exact: true })).toBeDisabled();
     await contained(page, name, width);

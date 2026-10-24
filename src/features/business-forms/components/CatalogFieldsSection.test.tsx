@@ -4,9 +4,10 @@ import { act, cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
+import i18n from "@/shared/i18n";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
-import { newCatalogField, type CatalogFieldDraft } from "../catalogFields";
+import { catalogFieldsBody, newCatalogField, type CatalogFieldDraft } from "../catalogFields";
 import { CatalogFieldsSection } from "./CatalogFieldsSection";
 import type { CatalogFieldFeedback } from "../api/catalogFieldFeedback";
 import type { CatalogPresentation } from "../api/catalogResponse";
@@ -16,7 +17,7 @@ const catalogPermissions = ["formcatalogs.read", "formcatalogs.manage"] as const
 function Harness({ initial = [] as readonly CatalogFieldDraft[], readOnly = false, errors = {} as Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>, feedback = null as CatalogFieldFeedback | null, permissions = catalogPermissions as readonly string[], presentation = null as CatalogPresentation | null }) {
   const [fields, setFields] = useState(initial);
   const [confirmedRemovals, setConfirmedRemovals] = useState<readonly string[]>([]);
-  return <CatalogFieldsSection fields={fields} presentation={presentation} culture="es" scope={{ actorId: "author", culture: "es", permissions }} readOnly={readOnly} errors={errors} feedback={feedback} confirmedRemovals={confirmedRemovals} onChange={(next, confirmed) => { setFields(next); setConfirmedRemovals(confirmed); }} />;
+  return <CatalogFieldsSection fields={fields} presentation={presentation} culture="es" original="es" scope={{ actorId: "author", culture: "es", permissions }} readOnly={readOnly} errors={errors} feedback={feedback} confirmedRemovals={confirmedRemovals} onChange={(next, confirmed) => { setFields(next); setConfirmedRemovals(confirmed); }} />;
 }
 async function mount(initial?: readonly CatalogFieldDraft[], readOnly = false) {
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={initial} readOnly={readOnly} /></MemoryRouter>); });
@@ -28,6 +29,53 @@ it("adds an optional field and keeps the new column unavailable until its identi
   expect(screen.getByRole("checkbox", { name: "Obligatorio" })).not.toBeChecked();
   expect(screen.getByRole("textbox", { name: "Clave" })).not.toHaveAttribute("readonly");
   expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveFocus();
+});
+it("edits the field name in the menu language with a single name field", async () => {
+  await i18n.changeLanguage("en");
+  try {
+    let changed: readonly CatalogFieldDraft[] = [];
+    function English() {
+      const [values, setValues] = useState<readonly CatalogFieldDraft[]>([]);
+      return <CatalogFieldsSection fields={values} presentation={null} culture="en" original="en" scope={{ actorId: "author", culture: "en", permissions: catalogPermissions }} readOnly={false} confirmedRemovals={[]} onChange={next => { changed = next; setValues(next); }} />;
+    }
+    await act(async () => { renderWithProviders(<MemoryRouter><English /></MemoryRouter>); });
+    await userEvent.click(screen.getByRole("button", { name: "Add field" }));
+    expect(screen.queryByRole("textbox", { name: "Name in English" })).not.toBeInTheDocument();
+    const name = screen.getByRole("textbox", { name: "Name" });
+    expect(screen.getByText("Name", { selector: "label" })).toHaveTextContent(/^Name \*$/);
+    expect(name).not.toHaveAttribute("placeholder");
+    await userEvent.type(name, "Zone");
+    expect(changed[0]?.name).toEqual({ en: "Zone" });
+    expect(catalogFieldsBody(changed)[0]?.name).toEqual({ en: "Zone" });
+  } finally {
+    await i18n.changeLanguage("es");
+  }
+});
+it("translates a field name with the original as reference and shows an error of the original under it", async () => {
+  await i18n.changeLanguage("en");
+  try {
+    let changed: readonly CatalogFieldDraft[] = [];
+    function Translation({ errors = {} }: { errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>> }) {
+      const [values, setValues] = useState<readonly CatalogFieldDraft[]>([field]);
+      return <CatalogFieldsSection fields={values} presentation={null} culture="en" original="es" scope={{ actorId: "author", culture: "en", permissions: catalogPermissions }} readOnly={false} confirmedRemovals={[]} errors={errors} onChange={next => { changed = next; setValues(next); }} />;
+    }
+    let rendered!: ReturnType<typeof renderWithProviders>;
+    await act(async () => { rendered = renderWithProviders(<MemoryRouter><Translation /></MemoryRouter>); });
+    await userEvent.click(screen.getByRole("button", { name: "Edit fields" }));
+    await userEvent.click(screen.getByRole("button", { name: "Edit CUIT" }));
+    const name = screen.getByRole("textbox", { name: "Name" });
+    expect(screen.getByText("Name", { selector: "label" })).toHaveTextContent(/^Name$/);
+    expect(name).toHaveValue("");
+    expect(name).toHaveAttribute("placeholder", "Untranslated");
+    expect(name).toHaveAccessibleDescription("Original (Spanish): CUIT");
+    await userEvent.type(name, "Tax ID");
+    expect(changed[0]?.name).toEqual({ es: "CUIT", en: "Tax ID" });
+    await act(async () => { rendered.rerender(<MemoryRouter><Translation errors={{ saved: { "name.es": ["Enter the name."] } }} /></MemoryRouter>); });
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription("In Spanish: Enter the name.");
+  } finally {
+    await i18n.changeLanguage("es");
+  }
 });
 it("keeps a saved key immutable and requires a checked confirmation before removing values", async () => {
   await mount([field]);
@@ -208,7 +256,7 @@ it("moves a field down and up past a hidden removed field in one step and leaves
   let changed: readonly CatalogFieldDraft[] = [];
   function Ordering() {
     const [values, setValues] = useState<readonly CatalogFieldDraft[]>([first, removed, last]);
-    return <CatalogFieldsSection fields={values} presentation={null} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} confirmedRemovals={[]} onChange={next => { changed = next; setValues(next); }} />;
+    return <CatalogFieldsSection fields={values} presentation={null} culture="es" original="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} confirmedRemovals={[]} onChange={next => { changed = next; setValues(next); }} />;
   }
   await act(async () => { renderWithProviders(<MemoryRouter><Ordering /></MemoryRouter>); });
   await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
@@ -229,7 +277,7 @@ it("shows a removed field rejected by a concurrent use and restores its identity
   function Recovery({ errors = {} as Readonly<Record<string, Readonly<Record<string, readonly string[]>>>> }) {
     const [values, setValues] = useState<readonly CatalogFieldDraft[]>([field, other]);
     const [removals, setRemovals] = useState<readonly string[]>([]);
-    return <CatalogFieldsSection fields={values} presentation={null} culture="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} errors={errors} confirmedRemovals={removals} onChange={(next, nextRemovals) => { savedFields = next; confirmed = nextRemovals; setValues(next); setRemovals(nextRemovals); }} />;
+    return <CatalogFieldsSection fields={values} presentation={null} culture="es" original="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} errors={errors} confirmedRemovals={removals} onChange={(next, nextRemovals) => { savedFields = next; confirmed = nextRemovals; setValues(next); setRemovals(nextRemovals); }} />;
   }
   let rendered!: ReturnType<typeof renderWithProviders>;
   await act(async () => { rendered = renderWithProviders(<MemoryRouter><Recovery /></MemoryRouter>); });

@@ -10,7 +10,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
-import { localizedValue, moveItem } from "../editorModel";
+import { administrativeName, moveItem } from "../editorModel";
 import { catalogFieldRuleSummary, newCatalogField, type CatalogFieldDraft } from "../catalogFields";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import type { FormCulture } from "../model";
@@ -25,7 +25,8 @@ const inUsePaths = ["isActive", "role", "type", "sourceCatalogId"];
 
 // `presentation` is the draft's «En WhatsApp»: it says whether removing the field also takes it out of there.
 // `errorRows` offers to list in the options table the rows a rule change rejected (a type change offers it in its dialog).
-export function CatalogFieldsSection({ fields, presentation, culture, scope, readOnly, confirmedRemovals, errors = {}, feedback, rootErrors, errorRows, onChange }: { fields: readonly CatalogFieldDraft[]; presentation: CatalogPresentation | null; culture: FormCulture; scope: CatalogReadScope; readOnly: boolean; confirmedRemovals: readonly string[]; errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; feedback?: CatalogFieldFeedback | null; rootErrors?: readonly string[]; errorRows?: { readonly count: number; readonly onShow: () => void }; onChange: (fields: readonly CatalogFieldDraft[], confirmed: readonly string[]) => void }) {
+// Names are edited in the menu language (`culture`); only the catalog's original (`original`) is required.
+export function CatalogFieldsSection({ fields, presentation, culture, original, scope, readOnly, confirmedRemovals, errors = {}, feedback, rootErrors, errorRows, onChange }: { fields: readonly CatalogFieldDraft[]; presentation: CatalogPresentation | null; culture: FormCulture; original: FormCulture; scope: CatalogReadScope; readOnly: boolean; confirmedRemovals: readonly string[]; errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; feedback?: CatalogFieldFeedback | null; rootErrors?: readonly string[]; errorRows?: { readonly count: number; readonly onShow: () => void }; onChange: (fields: readonly CatalogFieldDraft[], confirmed: readonly string[]) => void }) {
   const { t } = useTranslation("forms");
   const [open, setOpen] = useState(false), [expanded, setExpanded] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null), [confirmValues, setConfirmValues] = useState(false);
@@ -49,7 +50,7 @@ export function CatalogFieldsSection({ fields, presentation, culture, scope, rea
   // The saved values it takes away (the server's count of options with a value): removing them asks for the checkbox.
   const removedValues = selected?.valuesCount ?? 0;
   const canOpenForms = scope.permissions.includes("formtemplates.read");
-  const title = (field: CatalogFieldDraft) => localizedValue(field.name, culture, "es") || t("catalogs.fields.new");
+  const title = (field: CatalogFieldDraft) => administrativeName(field.name, culture) || t("catalogs.fields.new");
   // Under the type, its detail: the source catalog and its options, the range or the length (the draft's text is in the interface language).
   const typeDetail = (field: CatalogFieldDraft) => {
     const className = "text-xs text-[var(--color-content-muted)]";
@@ -60,7 +61,7 @@ export function CatalogFieldsSection({ fields, presentation, culture, scope, rea
   const change = (next: readonly CatalogFieldDraft[], confirmed = confirmedRemovals) => { if (!readOnly) onChange(next, confirmed); };
   const feedbackCounts = !!feedback && (feedback.missingCount !== undefined || feedback.invalidCount !== undefined || feedback.convertedCount !== undefined);
   const fieldUses = (field: CatalogFieldDraft) => feedback?.uses?.length && inUsePaths.some(path => errors[field.localId]?.[path]) ? <CatalogFieldUses uses={feedback.uses} canOpenForms={canOpenForms} /> : null;
-  const editor = (field: CatalogFieldDraft) => <CatalogFieldEditor field={field} scope={scope} readOnly={readOnly} errors={errors[field.localId]} uses={fieldUses(field)} onChange={next => change(fields.map(value => value.localId === next.localId ? next : value))} onDone={() => setExpanded(null)} />;
+  const editor = (field: CatalogFieldDraft) => <CatalogFieldEditor field={field} culture={culture} original={original} scope={scope} readOnly={readOnly} errors={errors[field.localId]} uses={fieldUses(field)} onChange={next => change(fields.map(value => value.localId === next.localId ? next : value))} onDone={() => setExpanded(null)} />;
   const add = () => { if (readOnly || fields.length >= 20) return; const field = newCatalogField(crypto.randomUUID(), fields.length + 1); change([...fields, field]); setOpen(true); setExpanded(field.localId); };
   const restore = (field: CatalogFieldDraft) => {
     change(fields.map(value => value.localId === field.localId ? { ...value, isActive: true } : value), confirmedRemovals.filter(id => id !== field.id));
