@@ -125,6 +125,21 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(code).toHaveFocus();
     expect(bodies).toEqual([]);
   });
+  it("switches «Textos en» to the language of the missing text when saving fails on it", async () => {
+    setup(); const bodies: unknown[] = [];
+    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Inglés" }));
+    // The English content waits for its texts before the page shows again.
+    await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
+    expect(screen.getByRole("textbox", { name: "Texto" })).toHaveAccessibleDescription("Si no completás el texto en inglés, se usa el de español.");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByRole("button", { name: "Español" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Inglés" })).toHaveAttribute("aria-pressed", "false");
+    const text = screen.getByRole("textbox", { name: "Texto" });
+    expect(text).toHaveAttribute("aria-invalid", "true"); expect(text).toHaveAccessibleDescription("Completá este campo.");
+    expect(bodies).toEqual([]);
+  });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
     setup(); const bodies: unknown[] = []; let savedOption = option;
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
