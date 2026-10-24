@@ -22,16 +22,17 @@ import { CatalogQuestionFilters } from "./CatalogQuestionFilters";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 
 // CE4-A: the most options one person gets from the filters, against the limit of the question type (20 or 200); with only
-// fixed filters everyone sees the same ones. A failed read offers Retry, disabled during the wait of a 429.
+// fixed filters everyone sees the same ones. With 0 no one sees any option, which is a warning, not a fit. A failed read
+// offers Retry, disabled during the wait of a 429.
 function RecipientMaximumState({ maximum, type, byPerson }: { maximum: ReturnType<typeof useRecipientMaximum>; type: "choice" | "multiChoice"; byPerson: boolean }) {
   const { t } = useTranslation("forms");
   if (maximum.failed) return <div role="alert"><p className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.maximum.failed")}</p><DisabledReason reason={maximum.canRetry ? null : t("wait", { count: maximum.waitSeconds })}><Button type="button" variant="link" disabled={!maximum.canRetry} onClick={maximum.retry}>{t("common:actions.retry")}</Button></DisabledReason></div>;
   if (!maximum.result) return null;
-  const { maximum: count, maximumLabel: group } = maximum.result, limit = type === "multiChoice" ? 20 : 200, fits = count <= limit;
+  const { maximum: count, maximumLabel: group } = maximum.result, limit = type === "multiChoice" ? 20 : 200, fits = count <= limit, ok = count > 0 && fits;
   const fit = t("catalogQuestion.maximum." + (fits ? "fits" : "exceeds") + (type === "multiChoice" ? "Multiple" : "Choice"), { limit });
-  const text = !byPerson ? t("catalogQuestion.maximum.shared", { count, fit }) : group ? t("catalogQuestion.maximum.perPerson", { count, group, fit }) : t("catalogQuestion.maximum.perPersonUngrouped", { count, fit });
-  const Icon = fits ? CheckIcon : AlertTriangleIcon;
-  return <p role="status" className={cn("flex items-start gap-2 text-sm", fits ? "text-[var(--color-success-700)]" : "text-[var(--color-warning-700)]")}><Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0"/><span>{text}</span></p>;
+  const text = count === 0 ? t("catalogQuestion.maximum.none") : !byPerson ? t("catalogQuestion.maximum.shared", { count, fit }) : group ? t("catalogQuestion.maximum.perPerson", { count, group, fit }) : t("catalogQuestion.maximum.perPersonUngrouped", { count, fit });
+  const Icon = ok ? CheckIcon : AlertTriangleIcon;
+  return <p role="status" className={cn("flex items-start gap-2 text-sm", ok ? "text-[var(--color-success-700)]" : "text-[var(--color-warning-700)]")}><Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0"/><span>{text}</span></p>;
 }
 
 export function CatalogQuestionSettings({ scope, source, type = "choice", questionId = "catalog", definitionId = null, contentCulture = scope.culture, readOnly, error, errors = {}, onCatalogChange, onSourceChange, onPreviewChange, children }: {

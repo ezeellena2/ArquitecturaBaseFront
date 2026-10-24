@@ -715,6 +715,7 @@
       "perPersonUngrouped_other": "Como mucho {{count}} por persona: {{fit}}.",
       "shared_one": "Todos ven la misma opción: {{fit}}.",
       "shared_other": "Todos ven las mismas {{count}}: {{fit}}.",
+      "none": "Con estos filtros nadie ve ninguna opción.",
       "fitsMultiple": "entra en una pregunta de varias ({{limit}})",
       "exceedsMultiple": "no entra en una pregunta de varias ({{limit}})",
       "fitsChoice": "entra en el desplegable ({{limit}})",

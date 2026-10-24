@@ -715,6 +715,7 @@
       "perPersonUngrouped_other": "At most {{count}} per person: {{fit}}.",
       "shared_one": "Everyone sees the same option: {{fit}}.",
       "shared_other": "Everyone sees the same {{count}}: {{fit}}.",
+      "none": "With these filters no one sees any option.",
       "fitsMultiple": "fits in a multiple-choice question ({{limit}})",
       "exceedsMultiple": "does not fit in a multiple-choice question ({{limit}})",
       "fitsChoice": "fits in the drop-down list ({{limit}})",

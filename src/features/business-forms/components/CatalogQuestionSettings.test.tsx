@@ -185,6 +185,18 @@ it("tells the maximum per person and that everyone sees the same options with on
   expect(bodies).toEqual([{ source: { catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }] } }, { source: { catalog: maximumCatalog, match: [{ fieldId: category, value: "Frío" }] } }]);
 });
 
+it("warns instead of confirming the limit when the filters leave no option for anyone", async () => {
+  // A fixed value that matches no option, or one still being typed («Frí» before «Frío»), gives a maximum of 0.
+  serveMaximum(() => HttpResponse.json({ maximum: 0, maximumLabel: null }));
+  const view = renderWithProviders(maximumQuestion("choice", [{ fieldId: category, value: "Frí" }]));
+  const none = await screen.findByText("Con estos filtros nadie ve ninguna opción.");
+  expect(none.closest("[role=status]")).toHaveClass("text-[var(--color-warning-700)]");
+  expect(screen.queryByText(/entra en/)).not.toBeInTheDocument();
+  view.rerender(maximumQuestion("multiChoice", [{ fieldId: zone, personAttributeId: attribute }]));
+  await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Con estos filtros nadie ve ninguna opción."));
+  expect(screen.queryByText(/Como mucho/)).not.toBeInTheDocument();
+});
+
 it("offers Retry when the maximum per person cannot be read", async () => {
   const bodies = serveMaximum((_body, call) => call === 1 ? HttpResponse.json({ title: "Error", status: 500, traceId: "trace" }, { status: 500 }) : HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
   renderWithProviders(maximumQuestion("multiChoice", [{ fieldId: zone, personAttributeId: attribute }]));
