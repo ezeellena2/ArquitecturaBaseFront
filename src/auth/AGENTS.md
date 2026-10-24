@@ -10,6 +10,7 @@ Contiene configuración y proveedor OIDC, sesión actual, renovación, guards, p
 - La transición de cierre dura hasta confirmar `/login`: los guards no convierten el cierre voluntario en una recuperación hacia la pantalla de la cuenta anterior. El próximo ingreso usa Inicio; una visita anónima a una ruta privada conserva su destino.
 - Los permisos del front controlan la experiencia; el backend vuelve a autorizar cada petición. `PermissionRequirement` comparte la regla entre menú y guard: un permiso exige ese valor; una lista permite cualquiera de sus alternativas y una lista vacía no autoriza.
 - Cuenta sin correo y sincronización del idioma tienen helpers comunes; no duplicar fallbacks en el menú o las pantallas.
+- `useProfileLanguageSync` aplica cada idioma que trae el perfil una sola vez y, si difiere del de la interfaz, espera a que ningún editor que se reinicia con el idioma tenga cambios sin guardar (`useHasUnsavedChanges`): aplicarlo antes perdería lo escrito sin preguntar.
 - `components/AccountRecoveryNotice` comparte el aviso duradero de cuenta sin correo entre los dos inicios autenticados, con la misma sesión/identidad y textos auth.
 
 ## Referencias

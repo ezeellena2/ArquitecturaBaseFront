@@ -137,7 +137,7 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
 - **Idioma en dos niveles.** Sin sesión, `PublicPresentationDefaults` (en `AuthLayout`) aplica el idioma general salvo una
   elección guardada con `changePublicLanguage` en `arquitecturabase.public-language` (no decide la cuenta anterior). Con sesión,
   `useLanguagePreference().change` lo guarda en el perfil y, si falla, vuelve atrás y avisa. Si difieren, gana la cuenta
-  (`useProfileLanguageSync` en `AppLayout`). `changeLanguage` no registra una elección pública. Viaja en
+  (`useProfileLanguageSync` en `AppLayout`), cuando ningún editor que se reinicia con el idioma tiene cambios sin guardar. `changeLanguage` no registra una elección pública. Viaja en
   `Accept-Language`; `lang` sigue a `languageChanged`. Configurar la instalación no cambia la sesión actual.
 - Datos con TanStack Query, sin `useEffect` con `fetch`; HTTP solo por `shared/api/httpClient` (token, idioma, `ApiError`).
   Tokens en memoria. Los permisos del front son experiencia; decide el backend.

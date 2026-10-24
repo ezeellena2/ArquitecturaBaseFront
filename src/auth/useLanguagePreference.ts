@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useHasUnsavedChanges } from "@/shared/hooks/useUnsavedChangesGuard";
 import { notify } from "@/shared/ui/notifications";
 import { currentUserQueryKey, useCurrentUser } from "./useCurrentUser";
 import { updateProfile } from "@/shared/api/profile";
@@ -16,20 +17,39 @@ import i18n, { changeLanguage, isSupportedLanguage, type SupportedLanguage } fro
 /// así que si los dos valores no coinciden es porque el de la cuenta se cambió en otro navegador, o porque el
 /// de acá se eligió antes de ingresar, en la pantalla de ingreso, que es la única que sigue guardando solo en
 /// el navegador.
+///
+/// Aplicarlo vuelve a montar los editores cuya clave lleva la cultura. Si uno tiene cambios sin guardar (el idioma
+/// se cambió en otra pestaña y el perfil se volvió a leer), espera a que no los tenga: se guardaron, se
+/// descartaron o se salió del editor.
 export function useProfileLanguageSync(): void {
   const { data: user } = useCurrentUser();
   const culture = user?.culture;
+  const unsavedChanges = useHasUnsavedChanges();
+  // El último idioma de la cuenta que se aplicó (o que ya coincidía).
+  const applied = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    // Depende solo del `culture` que trae el perfil, a propósito. Si dependiera también del idioma actual,
-    // volvería a pisarlo apenas alguien lo cambia desde el menú, antes de que termine el guardado.
-    // `i18n.language` se lee del módulo (no de `useTranslation`) para no suscribir a este hook a cada cambio.
-    if (!isSupportedLanguage(culture) || culture === i18n.language) {
+    // Cada idioma que trae el perfil se aplica una sola vez, no cada vez que los editores se quedan sin cambios: si
+    // no, apenas se descartan los cambios para cambiarlo desde el menú, el perfil todavía viejo lo pisaría antes de
+    // que termine el guardado. `i18n.language` se lee del módulo (no de `useTranslation`) para no suscribir a este
+    // hook a cada cambio.
+    if (culture === applied.current) {
       return;
     }
 
+    if (!isSupportedLanguage(culture) || culture === i18n.language) {
+      applied.current = culture;
+
+      return;
+    }
+
+    if (unsavedChanges) {
+      return;
+    }
+
+    applied.current = culture;
     void changeLanguage(culture);
-  }, [culture]);
+  }, [culture, unsavedChanges]);
 }
 
 /// Cambiar el idioma desde una pantalla con sesión: se aplica en la interfaz y se guarda en la cuenta.

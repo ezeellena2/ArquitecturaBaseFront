@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import {
   type BlockerFunction,
   useBeforeUnload,
@@ -33,11 +33,33 @@ const noQueryKeys: readonly string[] = [];
 // Las guardas montadas con cambios sin guardar cuyo editor se vuelve a montar con el idioma. Cambiar el idioma del
 // menú no pasa por el router: el menú pregunta con `hasUnsavedChanges` antes de cambiarlo.
 const dirtyGuards = new Set<object>();
+const dirtyGuardListeners = new Set<() => void>();
+
+function subscribeToUnsavedChanges(listener: () => void): () => void {
+  dirtyGuardListeners.add(listener);
+
+  return () => {
+    dirtyGuardListeners.delete(listener);
+  };
+}
+
+function updateDirtyGuards(change: () => void): void {
+  change();
+  for (const listener of dirtyGuardListeners) {
+    listener();
+  }
+}
 
 /// Si alguna pantalla montada perdería cambios sin guardar al cambiar el idioma del menú. La usa el menú del
 /// usuario antes de cambiarlo.
 export function hasUnsavedChanges(): boolean {
   return dirtyGuards.size > 0;
+}
+
+/// `hasUnsavedChanges` como estado: vuelve a renderizar cuando cambia. Con él la sincronización con el idioma de
+/// la cuenta espera a que no haya nada que perder.
+export function useHasUnsavedChanges(): boolean {
+  return useSyncExternalStore(subscribeToUnsavedChanges, hasUnsavedChanges);
 }
 
 /// Frena la salida de una pantalla con cambios sin guardar. Las del router (un enlace, las migas, el menú, el
@@ -87,10 +109,10 @@ export function useUnsavedChangesGuard(
     }
 
     const guard = {};
-    dirtyGuards.add(guard);
+    updateDirtyGuards(() => dirtyGuards.add(guard));
 
     return () => {
-      dirtyGuards.delete(guard);
+      updateDirtyGuards(() => dirtyGuards.delete(guard));
     };
   }, [isDirty, remountsOnLanguageChange]);
 
