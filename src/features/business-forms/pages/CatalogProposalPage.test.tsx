@@ -50,7 +50,7 @@ it("marks a pending assistant proposal in the existing Filters editor with captu
 it("reviews a proposal in the menu language with its original as reference", async () => {
  await mount(undefined, "en");
  await screen.findByRole("button", { name: "Approve and activate" });
- expect(screen.queryByRole("group", { name: "Content language" })).not.toBeInTheDocument();
+ expect(screen.queryAllByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveLength(0);
  const name = screen.getByRole("textbox", { name: "Name" }), description = screen.getByRole("textbox", { name: "Description" });
  expect(name).toHaveValue(""); expect(name).toHaveAttribute("placeholder", "Untranslated");
  expect(name).toHaveAccessibleDescription("Original (Spanish): Supervisores activos");

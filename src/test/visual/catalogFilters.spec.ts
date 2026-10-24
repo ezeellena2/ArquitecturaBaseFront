@@ -27,7 +27,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: label("Continuar", "Continue"), exact: true }).click();
     await page.getByRole("heading", { name: label("Nuevo catálogo", "New catalog"), exact: true }).waitFor();
     // No language selector: the catalog is written in the menu language, which is its original.
-    await expect(page.getByRole("group", { name: label("Textos en", "Content language"), exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveCount(0);
     await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill(label("Responsables", "Assignees"));
     await page.getByRole("textbox", { name: label("Descripción", "Description"), exact: true }).fill(label("Personas disponibles", "Available people"));
     await sample(); await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();

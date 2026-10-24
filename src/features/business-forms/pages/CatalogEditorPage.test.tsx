@@ -86,7 +86,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(bodies[0]!.name).toEqual({ en: "Customers" });
     expect(bodies[0]!.description).toEqual({ en: "Visits" });
     await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
-    expect(screen.queryByRole("group", { name: "Content language" })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveLength(0);
   });
   it("shows a name error of the other language under Name", async () => {
     setup(undefined, "en"); await i18n.changeLanguage("en");
@@ -98,7 +98,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await waitFor(() => expect(screen.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription("In Spanish: Complete the name."));
     expect(screen.getByRole("textbox", { name: "Name" })).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Clients");
-    expect(screen.queryByRole("group", { name: "Content language" })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveLength(0);
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
   });
   it("does not mark a new option's empty fields until saving is attempted, then validates live", async () => {

@@ -16,9 +16,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: english ? "New catalog" : "Nuevo catálogo", exact: true }).click();
     await expect(page.getByRole("radio", { name: english ? "Write a query" : "Escribir una consulta" })).toHaveCount(0);
     await page.getByRole("button", { name: english ? "Continue" : "Continuar", exact: true }).click();
-    // No language selector: the catalog is written in the menu language, which is its original.
-    await expect(page.getByRole("group", { name: english ? "Content language" : "Textos en", exact: true })).toHaveCount(0);
     await page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true }).fill(english ? "Warehouses" : "Depósitos");
+    // No language selector: the catalog is written in the menu language, which is its original.
+    await expect(page.getByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveCount(0);
     await page.getByRole("textbox", { name: english ? "Description" : "Descripción", exact: true }).fill(english ? "Where to store" : "Dónde guardar");
     await page.getByRole("button", { name: english ? "Add option" : "Agregar opción", exact: true }).click();
     await page.getByRole("textbox", { name: english ? "Text" : "Texto", exact: true }).fill("Central");
