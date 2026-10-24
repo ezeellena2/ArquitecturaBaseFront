@@ -9,9 +9,9 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
 /// Una pantalla de edición mínima, que monta el `ConfirmDialog` como lo va a hacer la del rol: abierto
 /// mientras la guarda frena una salida, "Descartar" sale y cerrarlo de cualquier otra forma se queda.
-function Editor() {
+function Editor({ remountsOnLanguageChange = false }: { remountsOnLanguageChange?: boolean }) {
   const [dirty, setDirty] = useState(false);
-  const guard = useUnsavedChangesGuard(dirty);
+  const guard = useUnsavedChangesGuard(dirty, { remountsOnLanguageChange });
   const navigate = useNavigate();
 
   return (
@@ -181,9 +181,9 @@ describe("useUnsavedChangesGuard", () => {
     expect(whileDirty.defaultPrevented).toBe(true);
   });
 
-  it("reports unsaved changes outside the screen only while a guarded editor has them", async () => {
+  it("reports unsaved changes outside the screen only while an editor that remounts with the language has them", async () => {
     // Cambiar el idioma del menú no pasa por el router y vuelve a montar los editores: el menú pregunta con esto.
-    const router = createMemoryRouter([{ path: "/roles/:roleId", element: <Editor /> }], { initialEntries: ["/roles/abc"] });
+    const router = createMemoryRouter([{ path: "/roles/:roleId", element: <Editor remountsOnLanguageChange /> }], { initialEntries: ["/roles/abc"] });
     const { unmount } = renderWithProviders(<RouterProvider router={router} />);
     await screen.findByRole("button", { name: "Cambiar algo" });
     expect(hasUnsavedChanges()).toBe(false);
@@ -192,6 +192,14 @@ describe("useUnsavedChangesGuard", () => {
     expect(hasUnsavedChanges()).toBe(true);
 
     unmount();
+    expect(hasUnsavedChanges()).toBe(false);
+  });
+
+  it("does not report the unsaved changes of a screen that keeps them when the language changes", async () => {
+    // Su borrador sigue ahí con el idioma nuevo: el menú no tiene nada que descartar.
+    renderEditor();
+    await makeAChange();
+
     expect(hasUnsavedChanges()).toBe(false);
   });
 });

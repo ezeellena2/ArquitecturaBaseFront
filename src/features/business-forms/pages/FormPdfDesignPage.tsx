@@ -79,7 +79,7 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
         setDraft(query.data.current.design);
     }
     const dirty = !!draft && !!baseline && JSON.stringify(draft) !== JSON.stringify(baseline.design);
-    const guard = useUnsavedChangesGuard(dirty || busy);
+    const guard = useUnsavedChangesGuard(dirty || busy, { remountsOnLanguageChange: true });
     const back = scope.permissions.includes("formtemplates.read") ? "/formularios/" + definitionId : "/";
     useBreadcrumbLeaf(t("pdf.title"), query.data ? localizedValue(query.data.options.name, scope.culture, query.data.options.originalCulture) : undefined);
     const loadPreview = useCallback((signal: AbortSignal) => previewPdfDesign(definitionId, preview!.design, preview!.culture, signal), [definitionId, preview]);

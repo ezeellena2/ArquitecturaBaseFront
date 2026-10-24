@@ -154,7 +154,7 @@ export function AiAssistantPage() {
   });
   const navigation = useUnsavedChangesGuard(
     !!draft.trim() || actions.uncertain,
-    ["conversacion"],
+    { queryKeys: ["conversacion"] },
   );
   useEffect(() => {
     return () => {

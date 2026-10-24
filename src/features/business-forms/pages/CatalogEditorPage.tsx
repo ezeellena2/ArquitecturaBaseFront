@@ -124,7 +124,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const loadItems = editor.loadItems;
   useEffect(() => { if (items.data) loadItems(items.data.items, draft?.revision ?? null); }, [items.data, loadItems, draft?.revision]);
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
-  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, ["kind", "valueType"]);
+  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind", "valueType"], remountsOnLanguageChange: true });
   const canManage = scope.permissions.includes("formcatalogs.manage") && (initial?.kind ?? "Manual") === "Manual";
   const readOnly = !editor.canSave;
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};

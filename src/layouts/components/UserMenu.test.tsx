@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
 import { HttpResponse, http } from "msw";
 import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router";
 import { toast } from "sonner";
@@ -31,6 +32,34 @@ function renderMenu() {
       <UserMenu />
     </MemoryRouter>,
   );
+}
+
+// Una pantalla con cambios sin guardar junto al menú. `remountsOnLanguageChange` es la de un editor cuya clave
+// lleva la cultura, que pierde lo escrito al cambiar el idioma.
+function DirtyScreen({ remountsOnLanguageChange }: { remountsOnLanguageChange: boolean }) {
+  useUnsavedChangesGuard(true, { remountsOnLanguageChange });
+
+  return <h1>Pantalla con cambios</h1>;
+}
+
+function renderMenuWith(page: ReactElement) {
+  const router = createMemoryRouter([{ path: "/", element: <><UserMenu />{page}</> }]);
+
+  return renderWithProviders(<RouterProvider router={router} />);
+}
+
+// Los perfiles que el menú guarda con PUT /api/me.
+function captureProfileSaves(): unknown[] {
+  const saved: unknown[] = [];
+  server.use(
+    http.put("/api/me", async ({ request }) => {
+      saved.push(await request.json());
+
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+
+  return saved;
 }
 
 // Abrimos el menú con teclado (Enter sobre el trigger enfocado) en vez de con userEvent.click: es lo que pide
@@ -120,23 +149,11 @@ describe("UserMenu", () => {
     );
   });
 
-  it("asks before changing the menu language while a page has unsaved changes", async () => {
-    // Los editores se vuelven a montar en el idioma nuevo: cambiarlo sin preguntar perdería lo escrito.
-    const saved: unknown[] = [];
-    server.use(
-      http.put("/api/me", async ({ request }) => {
-        saved.push(await request.json());
-
-        return new HttpResponse(null, { status: 204 });
-      }),
-    );
-    function DirtyEditor() {
-      useUnsavedChangesGuard(true);
-
-      return <h1>Editor con cambios</h1>;
-    }
-    const router = createMemoryRouter([{ path: "/", element: <><UserMenu /><DirtyEditor /></> }]);
-    renderWithProviders(<RouterProvider router={router} />);
+  it("asks before changing the menu language while an editor that remounts with it has unsaved changes", async () => {
+    // Los editores cuya clave lleva la cultura se vuelven a montar en el idioma nuevo: cambiarlo sin preguntar
+    // perdería lo escrito.
+    const saved = captureProfileSaves();
+    renderMenuWith(<DirtyScreen remountsOnLanguageChange />);
 
     await openMenu();
     await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
@@ -158,23 +175,25 @@ describe("UserMenu", () => {
     );
   });
 
+  it("changes the language without asking when the screen with unsaved changes keeps them in the new language", async () => {
+    // Roles, Configuración o el chat no se vuelven a montar con el idioma: lo escrito sigue ahí, no hay nada que descartar.
+    const saved = captureProfileSaves();
+    renderMenuWith(<DirtyScreen remountsOnLanguageChange={false} />);
+
+    await openMenu();
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
+
+    await waitFor(() => expect(i18n.language).toBe("en"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires" }]),
+    );
+  });
+
   it("does nothing when the chosen language is the one the menu already has, even with unsaved changes", async () => {
     // Radix avisa también al elegir el ítem que ya está marcado: no hay idioma que cambiar ni cambios que descartar.
-    const saved: unknown[] = [];
-    server.use(
-      http.put("/api/me", async ({ request }) => {
-        saved.push(await request.json());
-
-        return new HttpResponse(null, { status: 204 });
-      }),
-    );
-    function DirtyEditor() {
-      useUnsavedChangesGuard(true);
-
-      return <h1>Editor con cambios</h1>;
-    }
-    const router = createMemoryRouter([{ path: "/", element: <><UserMenu /><DirtyEditor /></> }]);
-    renderWithProviders(<RouterProvider router={router} />);
+    const saved = captureProfileSaves();
+    renderMenuWith(<DirtyScreen remountsOnLanguageChange />);
 
     await openMenu();
     await userEvent.click(await screen.findByRole("menuitemradio", { name: /español/i }));

@@ -178,7 +178,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const dirty = !!session && JSON.stringify(session.value) !== JSON.stringify(session.baseline);
   const frozen = !!session && session.phase !== "Editing";
   const publicationPending = ["Accepting", "Unconfirmed"].includes(publication.phase);
-  const guard = useUnsavedChangesGuard(dirty || rulesDirty || suggestionsDirty || frozen || publicationPending);
+  const guard = useUnsavedChangesGuard(dirty || rulesDirty || suggestionsDirty || frozen || publicationPending, { remountsOnLanguageChange: true });
   const reviewRequired = session?.phase === "ReviewRequired";
   const readOnly = !editor.canSave;
   const knownDeleted = editor.issue?.kind === "read" && editor.issue.code === "Forms.Definition.NotFound";

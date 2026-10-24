@@ -18,11 +18,24 @@ export interface UnsavedChangesGuard {
   readonly allowNextNavigation: () => void;
 }
 
-// Las guardas montadas que tienen cambios sin guardar. Cambiar el idioma del menú no pasa por el router, pero
-// vuelve a montar los editores: el menú pregunta con `hasUnsavedChanges` antes de cambiarlo.
+export interface UnsavedChangesGuardOptions {
+  /// Claves de la query que, además de `pathname`, implican perder el editor (la identidad de una conversación),
+  /// sin frenar cambios de paginado o filtros.
+  readonly queryKeys?: readonly string[];
+  /// El editor se vuelve a montar al cambiar el idioma del menú (su clave lleva la cultura) y pierde lo escrito.
+  /// Sólo esas guardas cuentan en `hasUnsavedChanges`: una pantalla que conserva su borrador al cambiar el idioma
+  /// no tiene nada que descartar.
+  readonly remountsOnLanguageChange?: boolean;
+}
+
+const noQueryKeys: readonly string[] = [];
+
+// Las guardas montadas con cambios sin guardar cuyo editor se vuelve a montar con el idioma. Cambiar el idioma del
+// menú no pasa por el router: el menú pregunta con `hasUnsavedChanges` antes de cambiarlo.
 const dirtyGuards = new Set<object>();
 
-/// Si alguna pantalla montada tiene cambios sin guardar. La usa el menú del usuario antes de cambiar el idioma.
+/// Si alguna pantalla montada perdería cambios sin guardar al cambiar el idioma del menú. La usa el menú del
+/// usuario antes de cambiarlo.
 export function hasUnsavedChanges(): boolean {
   return dirtyGuards.size > 0;
 }
@@ -31,11 +44,10 @@ export function hasUnsavedChanges(): boolean {
 /// Atrás del navegador) las frena `useBlocker` y la pantalla pregunta con su `ConfirmDialog`; recargar o
 /// cerrar la pestaña no pasan por el router, así que ahí pregunta el navegador (`useBeforeUnload`).
 ///
-/// Por defecto sólo frena `pathname`. `queryKeys` permite frenar la identidad de una conversación
-/// en la misma ruta sin bloquear cambios de paginado o filtros.
+/// Por defecto sólo frena `pathname`; las opciones suman claves de la query y el cambio de idioma del menú.
 export function useUnsavedChangesGuard(
   isDirty: boolean,
-  queryKeys: readonly string[] = [],
+  { queryKeys = noQueryKeys, remountsOnLanguageChange = false }: UnsavedChangesGuardOptions = {},
 ): UnsavedChangesGuard {
   const allowNextRef = useRef(false);
   const leavingRef = useRef(false);
@@ -70,7 +82,7 @@ export function useUnsavedChangesGuard(
   }, [blocker.state]);
 
   useEffect(() => {
-    if (!isDirty) {
+    if (!isDirty || !remountsOnLanguageChange) {
       return;
     }
 
@@ -80,7 +92,7 @@ export function useUnsavedChangesGuard(
     return () => {
       dirtyGuards.delete(guard);
     };
-  }, [isDirty]);
+  }, [isDirty, remountsOnLanguageChange]);
 
   useBeforeUnload(
     useCallback(

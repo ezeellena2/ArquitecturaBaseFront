@@ -56,7 +56,7 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
   }, [proposal?.state]);
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
   const feedbackId = "catalogs:filters:" + useId(); const active = useRef(true);
-  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, ["kind"]);
+  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind"], remountsOnLanguageChange: true });
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen, proposalResult);
   const currentName = draft && administrativeName(draft.name, scope.culture) || t("catalogs.new"); useBreadcrumbLeaf(currentName);
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
