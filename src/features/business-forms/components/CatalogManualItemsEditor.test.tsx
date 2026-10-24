@@ -155,9 +155,22 @@ it("describes a cell error on its row with the row, field, value and reason", ()
   expect(cell).toBeInvalid();
   expect(cell).toHaveAccessibleDescription(line);
   const rows = screen.getAllByRole("row");
-  expect(within(rows[2]!).getByRole("alert")).toHaveTextContent(line);
+  expect(within(rows[2]!).getByRole("status")).toHaveTextContent(line);
   expect(screen.getAllByText(/no es un número entero/)).toHaveLength(1);
   expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo de pago (días)" })).toBeValid();
+});
+it("announces a row's value error without interrupting, since its text changes with each keystroke", () => {
+  vi.mocked(useMediaQuery).mockReturnValue(true);
+  const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo de pago (días)" } };
+  const errors = (value: string) => ({ first: { ["fields." + term.id]: [`«${value}» no es un número entero.`] } });
+  const props = { items: [{ ...first, fields: { [term.id]: "30 d" } }], fields: [term], culture: "es" as const, valueType: "Text" as const, canManage: true, expandedKey: null, onExpand: vi.fn(), onChange: vi.fn(), onAdd: vi.fn() };
+  const { rerender } = renderWithProviders(<CatalogManualItemsEditor {...props} errors={errors("30 d")} />);
+  const line = screen.getByRole("status");
+  expect(line).toHaveTextContent("Fila 1 · Plazo de pago (días): «30 d» no es un número entero.");
+  rerender(<CatalogManualItemsEditor {...props} items={[{ ...first, fields: { [term.id]: "30 dí" } }]} errors={errors("30 dí")} />);
+  expect(screen.getByRole("status")).toBe(line);
+  expect(line).toHaveTextContent("Fila 1 · Plazo de pago (días): «30 dí» no es un número entero.");
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 it("shows the type and range of an extra field in the option editor", () => {
   const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo de pago (días)" }, min: "0", max: "180" };

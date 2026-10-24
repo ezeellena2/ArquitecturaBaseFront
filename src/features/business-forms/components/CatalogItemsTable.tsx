@@ -56,7 +56,8 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
         const expanded = expandedKey === item.localId;
         const rememberAction = (button: HTMLButtonElement | null) => onActionRef(item.localId, button);
         // While editing, a field value's error goes on its own line under the row, «Fila N · Campo: motivo», which the cell
-        // refers to; a hidden column still says it there.
+        // refers to; a hidden column still says it there. It quotes the value and changes with each keystroke, so it is a
+        // polite status, not an alert that interrupts the typing.
         const problems = editing ? allColumns.flatMap(column => {
           const message = column.field ? messages?.[column.errorPath]?.join(" ") : undefined;
           return column.field && message ? [{ columnId: column.id, id: problemId + item.localId + column.id, text: t("catalogs.fields.rowProblem", { row: number, field: localizedValue(column.field.name, culture, "es"), message }) }] : [];
@@ -90,7 +91,7 @@ export function CatalogItemsTable({ items, culture, valueType, fields = [], scop
             {item.isActive || expanded ? <IconButton ref={rememberAction} size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} aria-expanded={expanded} onClick={() => onExpand(expanded ? null : item.localId)}><PencilIcon className="size-4" /></IconButton>
               : <Button ref={rememberAction} type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
           </div> : null}</WideTableCell>
-        </TableRow>{problems.length ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{problems.map(problem => <p key={problem.id} id={problem.id} role="alert" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</TableCell></TableRow> : null}{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
+        </TableRow>{problems.length ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{problems.map(problem => <p key={problem.id} id={problem.id} role="status" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</TableCell></TableRow> : null}{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
       })}
     </TableBody></WideTable>
   );
