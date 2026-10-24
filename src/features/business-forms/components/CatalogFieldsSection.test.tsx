@@ -80,7 +80,7 @@ it("allows reading the full field definition without offering changes", async ()
   expect(screen.queryByRole("button", { name: "Quitar CUIT" })).not.toBeInTheDocument();
 });
 
-it("moves a field past a hidden removed field in one step", async () => {
+it("moves a field down and up past a hidden removed field in one step and leaves the removed field in its place", async () => {
   const first: CatalogFieldDraft = { ...newCatalogField("first", 1), id: "01990000-0000-7000-8000-000000000011", key: "alpha", name: { es: "Alfa" } };
   const removed: CatalogFieldDraft = { ...newCatalogField("removed", 2), id: "01990000-0000-7000-8000-000000000012", key: "beta", name: { es: "Beta" }, isActive: false };
   const last: CatalogFieldDraft = { ...newCatalogField("last", 3), id: "01990000-0000-7000-8000-000000000013", key: "gamma", name: { es: "Gama" } };
@@ -92,9 +92,13 @@ it("moves a field past a hidden removed field in one step", async () => {
   await act(async () => { renderWithProviders(<MemoryRouter><Ordering /></MemoryRouter>); });
   await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Bajar Alfa" }));
-  expect(changed.filter(value => value.isActive).map(value => value.localId)).toEqual(["last", "first"]);
+  expect(changed.map(value => value.localId)).toEqual(["last", "removed", "first"]);
   expect(screen.getAllByRole("button", { name: /^Editar (Alfa|Gama)$/ }).map(button => button.getAttribute("aria-label"))).toEqual(["Editar Gama", "Editar Alfa"]);
   expect(screen.getByRole("button", { name: "Subir Gama" })).toBeDisabled();
+  await userEvent.click(screen.getByRole("button", { name: "Subir Alfa" }));
+  expect(changed.map(value => value.localId)).toEqual(["first", "removed", "last"]);
+  expect(screen.getAllByRole("button", { name: /^Editar (Alfa|Gama)$/ }).map(button => button.getAttribute("aria-label"))).toEqual(["Editar Alfa", "Editar Gama"]);
+  expect(screen.getByRole("button", { name: "Subir Alfa" })).toBeDisabled();
 });
 
 it("shows a removed field rejected by a concurrent use and restores its identity without losing other edits", async () => {
