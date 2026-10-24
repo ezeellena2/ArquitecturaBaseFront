@@ -689,7 +689,7 @@
     "presentation": {
       "mode": "What goes to WhatsApp",
       "inherit": "As in the catalog",
-      "inheritHint": "Changes when the catalog changes.",
+      "inheritFields": "{{fields}}. Changes when the catalog changes.",
       "own": "Own for this question",
       "ownHint": "Other fields, only for this form.",
       "checkFailed": "We couldn't check the option lengths."

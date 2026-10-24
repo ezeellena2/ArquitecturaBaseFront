@@ -689,7 +689,7 @@
     "presentation": {
       "mode": "Qué viaja a WhatsApp",
       "inherit": "Como en el catálogo",
-      "inheritHint": "Cambia si cambia el catálogo.",
+      "inheritFields": "{{fields}}. Cambia si cambia el catálogo.",
       "own": "Propio de esta pregunta",
       "ownHint": "Otros campos, solo para este formulario.",
       "checkFailed": "No pudimos revisar el largo de las opciones."

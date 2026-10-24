@@ -6,6 +6,19 @@ import { localizedValue } from "./editorModel";
 import type { CatalogManualItemValue } from "./catalogItemEdits";
 import type { FormCulture } from "./model";
 
+const fixedParts = ["text", "code", "detail", "value"];
+
+/** Names the parts of a presentation in order: fixed ones with their label, extra fields by name; null is the usual text and detail. */
+export function presentationPartNames(presentation: CatalogPresentation | null, fields: readonly { readonly id: string | null; readonly localId?: string; readonly name: Parameters<typeof localizedValue>[0] }[], culture: FormCulture, fixedName: (key: string) => string, unavailable: string): { title: string[]; description: string[] } {
+  const selected = presentation ?? { title: ["text"], description: ["detail"] };
+  const name = (key: string) => {
+    if (fixedParts.includes(key)) return fixedName(key);
+    const field = fields.find(field => field.id === key || field.localId === key);
+    return (field ? localizedValue(field.name, culture, "es") : "") || unavailable;
+  };
+  return { title: selected.title.map(name), description: selected.description.map(name) };
+}
+
 /** A removed field leaves the presentation; an empty title falls back to the option text, the default. */
 export function withoutPresentationFields(presentation: CatalogPresentation | null, keys: readonly string[]): CatalogPresentation | null {
   if (!presentation) return null;

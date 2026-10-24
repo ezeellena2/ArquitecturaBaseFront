@@ -1,6 +1,19 @@
 import { expect, it } from "vitest";
-import { catalogOptionPresentation, withoutPresentationFields } from "./catalogPresentation";
-import { newCatalogField } from "./catalogFields";
+import { catalogOptionPresentation, presentationPartNames, withoutPresentationFields } from "./catalogPresentation";
+import { newCatalogField, type CatalogFieldDraft } from "./catalogFields";
+
+it("names fixed and extra presentation parts in order", () => {
+  const fields: CatalogFieldDraft[] = [
+    { ...newCatalogField("tax", 1), id: "tax", name: { es: "CUIT", en: "Tax ID" } },
+    { ...newCatalogField("zone-local", 2), name: { es: "Zona" } },
+    { ...newCatalogField("old", 3), id: "old", name: { es: "Rubro", en: "Category" }, isActive: false },
+  ];
+  const fixed = (key: string) => ({ text: "Texto", code: "Código", detail: "Detalle", value: "Valor" })[key] ?? "?";
+  expect(presentationPartNames({ title: ["code", "text"], description: ["tax", "zone-local", "old", "missing", "value"] }, fields, "en", fixed, "Campo no disponible"))
+    .toEqual({ title: ["Código", "Texto"], description: ["Tax ID", "Zona", "Category", "Campo no disponible", "Valor"] });
+  // Without its own presentation a catalog shows its text and detail.
+  expect(presentationPartNames(null, fields, "es", fixed, "Campo no disponible")).toEqual({ title: ["Texto"], description: ["Detalle"] });
+});
 
 it("takes removed fields out of the presentation and falls back to the text title", () => {
   expect(withoutPresentationFields(null, ["zone"])).toBeNull();

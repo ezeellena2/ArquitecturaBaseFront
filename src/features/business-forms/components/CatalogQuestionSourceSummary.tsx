@@ -6,6 +6,7 @@ import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItemsById } from "../hooks/useCatalogQueries";
 import { usePersonAttributes } from "../hooks/usePersonData";
 import { localizedValue } from "../editorModel";
+import { presentationPartNames } from "../catalogPresentation";
 import { catalogScalarText } from "../catalogValues";
 import type { DraftQuestionSource } from "../model";
 
@@ -21,7 +22,9 @@ export function CatalogQuestionSourceSummary({ scope, source, compared }: { scop
   const attributes = usePersonAttributes(scope, (source.match ?? []).some(condition => "personAttributeId" in condition));
   if (!scope.actorId || !scope.permissions.includes("formcatalogs.read") || !detail.data || detail.error instanceof ApiError && [401, 403].includes(detail.error.status)) return null;
   const fields = detail.data.fields ?? [];
-  const name = (id: string) => ["text", "code", "detail", "value"].includes(id) ? t("catalogs.items." + id) : localizedValue(fields.find(field => field.id === id)?.name ?? {}, scope.culture, "es") || t("catalogQuestion.filter.unavailable");
+  const unavailable = t("catalogQuestion.filter.unavailable");
+  const name = (id: string) => localizedValue(fields.find(field => field.id === id)?.name ?? {}, scope.culture, "es") || unavailable;
+  const parts = source.presentation ? presentationPartNames(source.presentation, fields, scope.culture, key => t("catalogs.items." + key), unavailable) : null;
   return <span className="mt-1 block space-y-1 text-xs text-[var(--color-content-muted)]">{(source.match ?? []).map(condition => {
     const field = fields.find(field => field.id === condition.fieldId);
     const peer = compared?.match?.find(item => item.fieldId === condition.fieldId);
@@ -33,6 +36,6 @@ export function CatalogQuestionSourceSummary({ scope, source, compared }: { scop
   })}
     {!(source.match?.length) ? <span className="block">{t("catalogQuestion.review.noFilters")}</span> : null}
     <span className="block">{t(source.presentation ? "catalogQuestion.presentation.own" : "catalogQuestion.presentation.inherit")}</span>
-    {source.presentation ? <><span className="block">{t("catalogs.presentation.heading")}: {source.presentation.title.map(name).join(" · ")}</span><span className="block">{t("catalogs.presentation.description")}: {source.presentation.description.map(name).join(" · ") || "—"}</span></> : null}
+    {parts ? <><span className="block">{t("catalogs.presentation.heading")}: {parts.title.join(" · ")}</span><span className="block">{t("catalogs.presentation.description")}: {parts.description.join(" · ") || "—"}</span></> : null}
   </span>;
 }
