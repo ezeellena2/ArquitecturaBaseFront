@@ -126,7 +126,6 @@
     "es": "Spanish",
     "en": "English"
   },
-  "contentLanguage": "Content language",
   "prefixOriginal": "The prefix is shared. Edit it in the original language.",
   "originalText": "Original ({{language}}): {{text}}",
   "missingText": "Untranslated",
@@ -490,8 +489,7 @@
     "metadata": {
       "title": "The catalog",
       "description": "Description",
-      "descriptionHint": "People read it to know when to use this catalog.",
-      "languagesHint": "Complete the name and description in Spanish and English. English option text is optional."
+      "descriptionHint": "People read it to know when to use this catalog."
     },
     "title": "Catalogs",
     "saved": "Catalog saved.",
@@ -522,7 +520,6 @@
       "requested": "Requested by {{name}} via WhatsApp on {{date}}.",
       "decided": "Resolved by {{name}} on {{date}}.",
       "unsupportedColumn": "Could not filter by “{{criterion}}”: that field does not exist in the Users view.",
-      "languagesHint": "The original ({{language}}) is required; the other language is optional.",
       "states": {
         "Pending": "Assistant proposal",
         "Approved": "Proposal approved",

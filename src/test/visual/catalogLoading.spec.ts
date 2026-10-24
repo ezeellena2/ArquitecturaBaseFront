@@ -30,31 +30,32 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const table = page.locator('[data-slot="table-container"]').first();
     const tableBox = (await table.boundingBox())!;
     expect(tableBox.x).toBeGreaterThanOrEqual(0); expect(tableBox.x + tableBox.width).toBeLessThanOrEqual(width);
+    // The texts are edited in the menu language: with the menu in English, the Spanish options have no translation yet.
     if (width >= 640) {
-      await expect(page.getByRole("textbox", { name: label("Texto de la opción 1", "Option 1 text"), exact: true })).toHaveValue("Pérez");
+      await expect(page.getByRole("textbox", { name: label("Texto de la opción 1", "Option 1 text"), exact: true })).toHaveValue(en ? "" : "Pérez");
       await expect(page.getByRole("textbox", { name: label("Código de la opción 1", "Option 1 code"), exact: true })).toHaveValue("C1");
-      await expect(page.getByText("5/30", { exact: true }).first()).toBeVisible();
+      await expect(page.getByText(en ? "0/30" : "5/30", { exact: true }).first()).toBeVisible();
     } else {
       expect(await table.evaluate(node => node.scrollWidth)).toBeGreaterThan(await table.evaluate(node => node.clientWidth));
       await page.getByRole("button", { name: label("Editar Pérez", "Edit Pérez"), exact: true }).click();
       const text = page.getByRole("textbox", { name: label("Texto", "Text"), exact: true });
-      await expect(text).toHaveValue("Pérez"); await text.scrollIntoViewIfNeeded();
+      await expect(text).toHaveValue(en ? "" : "Pérez"); await text.scrollIntoViewIfNeeded();
       const box = (await text.boundingBox())!; expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width);
       await page.getByRole("button", { name: label("Listo", "Done"), exact: true }).click();
       await expect(page.getByRole("button", { name: label("Editar Pérez", "Edit Pérez"), exact: true })).toBeFocused();
     }
     await contained(page, width);
     await page.screenshot({ path: info.outputPath("catalog-options-editor.png"), fullPage: true });
-    // Content starts in original Spanish even when the surrounding UI is English.
+    // The preview is in the menu language; an option without a translation shows its original.
     const preview = page.getByRole("region", { name: label("Así lo ve el empleado", "How the employee sees it"), exact: true });
     await expect(preview.getByRole("radio")).toHaveCount(0);
-    await preview.getByRole("button", { name: "Elegí una opción", exact: true }).click();
+    await preview.getByRole("button", { name: label("Elegí una opción", "Choose an option"), exact: true }).click();
     await expect(preview.getByRole("radio")).toHaveCount(3);
     await preview.getByRole("radio", { name: "Pérez", exact: true }).click();
     await expect(preview.getByRole("radio")).toHaveCount(0);
     await expect(preview.getByRole("button", { name: "Pérez", exact: true })).toBeVisible();
     await preview.getByRole("button", { name: label("Varias", "Multiple"), exact: true }).click();
-    await expect(preview.getByText("Elegí hasta 3", { exact: true })).toBeVisible();
+    await expect(preview.getByText(label("Elegí hasta 3", "Choose up to 3"), { exact: true })).toBeVisible();
     for (const name of ["Pérez", "López", "Ríos"]) await preview.getByText(name, { exact: true }).click();
     await expect(preview.getByRole("checkbox", { checked: true })).toHaveCount(3);
     await preview.scrollIntoViewIfNeeded(); await page.screenshot({ path: info.outputPath("catalog-options-preview.png"), fullPage: true });

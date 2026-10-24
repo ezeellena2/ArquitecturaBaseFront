@@ -292,6 +292,7 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
     La vista oficial de WhatsApp tampoco tiene selector: pide el idioma del menú si la versión activa lo publicó y, si no, el original.
     Los mensajes de las reglas también se escriben en el idioma del menú, con el original como referencia.
     El diseño del PDF (G2) tampoco tiene selector: nombre y pie son un solo campo en el idioma del menú, con el original como referencia, y la vista previa pide el idioma del menú.
+    «El catálogo» (K3, K4 y la revisión de H4) tampoco tiene selector: nombre y descripción son un solo campo en el idioma del menú. Un catálogo nuevo nace en ese idioma, que es su original; con el menú en el otro idioma se edita la traducción, con el original del catálogo como referencia.
     El envío fija una cultura preparada para el formulario, la apertura predeterminada, «Abrir formulario», los avisos y el PDF;
     conserva la apertura editada por el operador. El texto y detalle de cada ítem de catálogo conservan su respaldo individual
     al original, sin cambiar el idioma del formulario ni la validación bilingüe de catálogos comunes. La

@@ -127,8 +127,8 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
         ? await approveCatalogProposal(captured.id, { expectedRevision: captured.revision, name: ownTexts(captured.name), description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters), sampleUserId: sampleUserId! }, controller.signal)
         : captured.filters
         ? captured.id && captured.revision !== null
-          ? await updateFiltersCatalog(captured.id, { name: captured.name, description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters), expectedRevision: captured.revision, isActive: captured.isActive }, controller.signal)
-          : await createFiltersCatalog({ name: captured.name, description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters) }, controller.signal)
+          ? await updateFiltersCatalog(captured.id, { name: ownTexts(captured.name), description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters), expectedRevision: captured.revision, isActive: captured.isActive }, controller.signal)
+          : await createFiltersCatalog({ name: ownTexts(captured.name), description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters) }, controller.signal)
         : captured.id && captured.revision !== null
           ? await updateManualCatalog(captured.id, catalogDraftUpdateBody(captured), controller.signal)
           : await createManualCatalog(catalogDraftBody(captured), controller.signal);

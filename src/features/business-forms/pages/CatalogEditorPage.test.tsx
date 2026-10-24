@@ -57,16 +57,12 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await waitFor(() => expect(bodies).toHaveLength(1));
   });
 
-  it("creates bilingual metadata and one item in a single request and reloads its canonical identity", async () => {
+  it("creates the metadata in the menu language and one item in a single request and reloads its canonical identity", async () => {
     setup(); const bodies: Record<string, unknown>[] = [];
     server.use(http.post("/api/forms/catalogs", async ({ request }) => { const body = await request.json() as Record<string, unknown>; bodies.push(body); const items = body.items as { localId: string }[]; return HttpResponse.json({ catalog: initial, itemIdentityMap: { [items[0]!.localId]: itemId }, fieldIdentityMap: {} }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo"); const user = userEvent.setup();
     await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes");
     await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
-    await user.click(screen.getByRole("button", { name: "Inglés" }));
-    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Customers");
-    await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
-    await user.click(screen.getByRole("button", { name: "Español" }));
     await user.click(screen.getByRole("button", { name: "Agregar opción" }));
     await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Pérez");
     await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "C1");
@@ -74,9 +70,36 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
     await screen.findByRole("button", { name: "Editar Pérez" });
     expect(bodies).toHaveLength(1);
-    expect(bodies[0]).toMatchObject({ name: initial.name, description: initial.description, items: [{ itemId: null, code: "C1", text: { es: "Pérez", en: null }, isActive: true }] });
+    expect(bodies[0]).toMatchObject({ name: { es: "Clientes" }, description: { es: "Visitas" }, items: [{ itemId: null, code: "C1", text: { es: "Pérez", en: null }, isActive: true }] });
+    expect(bodies[0]!.name).not.toHaveProperty("en");
     expect(bodies[0]).not.toHaveProperty("requestId");
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "success")).toHaveLength(1);
+  });
+  it("creates a catalog in the menu language without a language selector", async () => {
+    setup(undefined, "en"); await i18n.changeLanguage("en"); const bodies: Record<string, unknown>[] = [];
+    server.use(http.post("/api/forms/catalogs", async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json({ catalog: { ...initial, name: { en: "Customers" }, description: { en: "Visits" }, originalCulture: "en" }, itemIdentityMap: {}, fieldIdentityMap: {} }, { status: 201 }); }));
+    const router = await mount("/catalogos/nuevo"); const user = userEvent.setup();
+    await pasteText(user, await screen.findByRole("textbox", { name: "Name" }), "Customers");
+    await pasteText(user, screen.getByRole("textbox", { name: "Description" }), "Visits");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]!.name).toEqual({ en: "Customers" });
+    expect(bodies[0]!.description).toEqual({ en: "Visits" });
+    await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
+    expect(screen.queryByRole("group", { name: "Content language" })).not.toBeInTheDocument();
+  });
+  it("shows a name error of the other language under Name", async () => {
+    setup(undefined, "en"); await i18n.changeLanguage("en");
+    server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.ContentInvalid", errors: { "name.es": ["Complete the name."] } }, { status: 400 })));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    const name = await screen.findByRole("textbox", { name: "Name" });
+    await user.clear(name); await pasteText(user, name, "Clients");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription("In Spanish: Complete the name."));
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Clients");
+    expect(screen.queryByRole("group", { name: "Content language" })).not.toBeInTheDocument();
+    expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
   });
   it("does not mark a new option's empty fields until saving is attempted, then validates live", async () => {
     setup(); const bodies: unknown[] = [];
@@ -123,21 +146,6 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const code = screen.getByRole("textbox", { name: "Código" });
     expect(code).toHaveAccessibleDescription("Completá este campo.");
     expect(code).toHaveFocus();
-    expect(bodies).toEqual([]);
-  });
-  it("switches «Textos en» to the language of the missing text when saving fails on it", async () => {
-    setup(); const bodies: unknown[] = [];
-    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
-    await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Inglés" }));
-    // The English content waits for its texts before the page shows again.
-    await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
-    expect(screen.getByRole("textbox", { name: "Texto" })).toHaveAccessibleDescription("Si no completás el texto en inglés, se usa el de español.");
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
-    expect(await screen.findByRole("button", { name: "Español" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Inglés" })).toHaveAttribute("aria-pressed", "false");
-    const text = screen.getByRole("textbox", { name: "Texto" });
-    expect(text).toHaveAttribute("aria-invalid", "true"); expect(text).toHaveAccessibleDescription("Completá este campo.");
     expect(bodies).toEqual([]);
   });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
@@ -481,11 +489,10 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     server.use(http.post("/api/forms/catalogs", async ({ request }) => { calls++; const body = await request.json() as { items: { localId: string }[] }; return calls === 1 ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json({ catalog: { ...initial, itemsCount: 0 }, itemIdentityMap: Object.fromEntries(body.items.map(item => [item.localId, itemId])), fieldIdentityMap: {} }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo"); const user = userEvent.setup();
     await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
-    await user.click(screen.getByRole("button", { name: "Inglés" })); await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(calls).toBe(1));
     await waitFor(() => expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled());
-    expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Customers");
+    expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Clientes");
     expect(screen.queryByRole("button", { name: "Revisar" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Releer" })).not.toBeInTheDocument();
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(1);
@@ -581,9 +588,9 @@ describe("Filters editor connected to current DTOs", () => {
     filterSetup(); const writes: unknown[] = [];
     server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })), http.post("/api/forms/catalogs/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: filtersDetail, itemIdentityMap: {}, fieldIdentityMap: {} }, { status: 201 }); }));
     const router = await mount("/catalogos/nuevo?kind=Filters"); const user = userEvent.setup();
-    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas"); await user.click(screen.getByRole("button", { name: "Inglés" })); await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), "Customers"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visits");
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), "Clientes"); await pasteText(user, screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
     await selectSample(); await user.click(screen.getByRole("button", { name: "Guardar" })); await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
-    expect(writes).toHaveLength(1); expect(writes[0]).toMatchObject({ name: initial.name, description: initial.description }); expect(writes[0]).not.toHaveProperty("expectedRevision");
+    expect(writes).toHaveLength(1); expect(writes[0]).toMatchObject({ name: { es: "Clientes" }, description: { es: "Visitas" } }); expect((writes[0] as { name: object }).name).not.toHaveProperty("en"); expect(writes[0]).not.toHaveProperty("expectedRevision");
     await screen.findByRole("button", { name: "Agregar condición" }); expect(screen.queryByRole("button", { name: "Agregar opción" })).not.toBeInTheDocument();
   });
   it("renders permitted configuration read-only without sample identities or preview writes", async () => {

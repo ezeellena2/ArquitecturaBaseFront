@@ -34,14 +34,13 @@ import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import type { CatalogDetail } from "../api/catalogResponse";
 import { catalogItemFieldIssues, catalogItemValue, editedFieldIds } from "../catalogDraft";
 import { catalogFieldProblemText, catalogFieldRowReason, type CatalogFieldDraft, type CatalogFieldType } from "../catalogFields";
-import { localizedValue } from "../editorModel";
+import { administrativeName, localizedValue } from "../editorModel";
 import { catalogItemChanges, currentCatalogItem } from "../catalogItemEdits";
 import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor";
 import { CatalogStateAction } from "../components/CatalogStateAction";
 import { CatalogMetadataFields } from "../components/CatalogMetadataFields";
 import { useCatalogDraftEditor, type CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
-import type { FormCulture } from "../model";
 
 import { CatalogFiltersEditorPage } from "./CatalogFiltersEditorPage";
 
@@ -97,7 +96,10 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const { t } = useTranslation("forms");
   const navigate = useNavigate();
   const editor = useCatalogDraftEditor(scope, initial, "Manual", valueType);
-  const [culture, setCulture] = useState<FormCulture>("es");
+  // No language selector: the texts are edited in the menu language, which is the original of a new catalog. Changing the
+  // menu language remounts the editor.
+  const culture = scope.culture;
+  const original = initial?.originalCulture ?? scope.culture;
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -172,7 +174,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     }
   }
   const itemErrorPathsStamp = JSON.stringify([...itemErrorPaths, ...definitionErrorPaths]);
-  const currentName = draft?.name[scope.culture] || t("catalogs.new");
+  const currentName = administrativeName(draft?.name, scope.culture) || t("catalogs.new");
   useBreadcrumbLeaf(currentName);
   useEffect(() => {
     const error = editor.error ?? items.error;
@@ -183,9 +185,6 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   }, [editor.error, items.error, feedbackId, t, itemErrorPathsStamp]);
   if (editor.error !== handledValidation) {
     setHandledValidation(editor.error);
-    const keys = Object.keys(editor.error instanceof ApiError ? editor.error.errors ?? {} : {});
-    if (keys.some(key => key === "name.en" || key === "description.en")) setCulture("en");
-    else if (keys.some(key => key === "name.es" || key === "description.es")) setCulture("es");
     const code = editor.error instanceof ApiError ? editor.error.code : null;
     const controls = code === "Forms.Catalog.FieldTypeNotConvertible" ? ["type"] : code === "Forms.Catalog.FieldValuesIncompatible" ? incompatibleControls : [];
     const failed = draft?.fields.flatMap(field => controls.filter(control => definitionErrors[field.localId]?.[control]).map(control => ({ field, control })))[0];
@@ -193,24 +192,18 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     if (fieldFeedback?.invalidRows?.length && failed && savedType)
       setErrorRows({ control: failed.control, field: failed.field, from: savedType, convertedCount: fieldFeedback.convertedCount ?? 0, invalidCount: fieldFeedback.invalidCount ?? fieldFeedback.invalidRows.length, rows: fieldFeedback.invalidRows, open: failed.control === "type", showRows: false });
     const invalidItem = changedItems.find(item => itemErrors[item.localId]);
-    if (invalidItem) {
-      setExpanded(invalidItem.localId);
-      setCulture(Object.keys(itemErrors[invalidItem.localId]!).some(key => key.endsWith(".en")) ? "en" : "es");
-    }
+    if (invalidItem) setExpanded(invalidItem.localId);
   }
   const save = async () => {
     if (!editor.canSave) return;
     if (itemProblems.length) {
       // Trying to save marks what is empty in every option of the draft, which then validates as it is corrected, and opens
-      // the first option with a problem, in the language of its text when that is what fails, with the focus on the first
-      // control it marks. Nothing is sent.
+      // the first option with a problem, with the focus on the first control it marks. Nothing is sent.
       setAttempted(new Set(knownItems.map(item => item.localId)));
       const failing = new Set(itemProblems.map(problem => problem.localId));
       const first = [...changedItems, ...knownItems].find(item => failing.has(item.localId))!.localId;
       setExpanded(first);
       setFocusOption({ localId: first });
-      const text = itemProblems.find(problem => problem.localId === first && problem.path.startsWith("text."));
-      if (text) setCulture(text.path.slice("text.".length) as FormCulture);
       return;
     }
     setErrorRows(null);
@@ -241,7 +234,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     actions={canManage ? <>{draft.id ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button disabled={readOnly} onClick={() => void save()}>{t("common:actions.save")}</Button></> : undefined}>
     <div ref={host} className="flex flex-col gap-4">
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button></Surface> : null}
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onCultureChange={setCulture} onChange={editor.changeMetadata} /><CatalogPresentationSection value={draft.presentation} fields={draft.fields} items={rowItems} valueType={draft.valueType} culture={culture} readOnly={readOnly} errors={fields} inputCulture={draft.culture} check={!editor.dirty ? (editor.confirmed ?? initial)?.presentationCheck : undefined} onChange={editor.changePresentation} /></div><div className="xl:sticky xl:top-4"><CatalogPreview items={rowItems} fields={draft.fields} presentation={draft.presentation} valueType={draft.valueType} inputCulture={draft.culture} name={draft.name[culture] || currentName} culture={culture} /></div></div>
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} original={original} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onChange={editor.changeMetadata} /><CatalogPresentationSection value={draft.presentation} fields={draft.fields} items={rowItems} valueType={draft.valueType} culture={culture} readOnly={readOnly} errors={fields} inputCulture={draft.culture} check={!editor.dirty ? (editor.confirmed ?? initial)?.presentationCheck : undefined} onChange={editor.changePresentation} /></div><div className="xl:sticky xl:top-4"><CatalogPreview items={rowItems} fields={draft.fields} presentation={draft.presentation} valueType={draft.valueType} inputCulture={draft.culture} name={currentName} culture={culture} /></div></div>
       <CatalogFieldsSection fields={draft.fields} presentation={draft.presentation} culture={culture} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} rootErrors={fields.fields} errorRows={errorRows && errorRows.control !== "type" && !errorRows.showRows ? { count: errorRows.rows.length, onShow: showErrorRows } : undefined} onChange={editor.changeFields} />
       {draft.sortAlphabetically ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.actions.sortPending")}</p><Button variant="outline" disabled={readOnly} onClick={() => editor.changeSort(false)}>{t("catalogs.actions.clearSort")}</Button></div></Surface> : null}
       {draft.moves.length ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.items.movesPending", { count: draft.moves.length })}</p><Button variant="outline" disabled={readOnly} onClick={editor.clearMoves}>{t("catalogs.items.clearMoves")}</Button></div></Surface> : null}
@@ -253,7 +246,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     {errorRows?.open && errorField ? <CatalogFieldConversionDialog name={localizedValue(errorField.name, culture, "es") || t("catalogs.fields.new")} from={errorRows.from} field={errorField} culture={draft.culture}convertedCount={errorRows.convertedCount} invalidCount={errorRows.invalidCount} rows={errorRows.rows} onClose={() => setErrorRows(current => current && { ...current, open: false })} onShowRows={showErrorRows} /> : null}
     <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("stay")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
     <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent onCloseAutoFocus={restoreReviewFocus} className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
-      <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.value ? <><p className="text-sm">{entry.value.name.es}</p><p className="text-sm">{entry.value.name.en}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.es}</p><p className="text-xs text-[var(--color-content-muted)]">{entry.value.description.en}</p></> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</Surface>)}</div>
+      <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.value ? <><p className="text-sm">{administrativeName(entry.value.name, culture)}</p><p className="text-xs text-[var(--color-content-muted)]">{administrativeName(entry.value.description, culture)}</p></> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</Surface>)}</div>
       <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setErrorRows(null); setAttempted(new Set()); setTouched(new Set()); setExpanded(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
     </DialogContent></Dialog>
   </Page>;

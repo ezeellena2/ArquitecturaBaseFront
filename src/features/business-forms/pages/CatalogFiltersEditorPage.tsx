@@ -29,18 +29,19 @@ import { CatalogStateAction } from "../components/CatalogStateAction";
 import { CatalogMetadataFields } from "../components/CatalogMetadataFields";
 import { useCatalogDraftEditor, type CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogFilterOptions } from "../hooks/useCatalogQueries";
-import type { FormCulture } from "../model";
 
 export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope: CatalogReadScope; initial?: CatalogDetail; timeZoneId?: string }) {
   const { t } = useTranslation("forms"); const navigate = useNavigate();
   const editor = useCatalogDraftEditor(scope, initial, "Filters");
-  const [culture, setCulture] = useState<FormCulture>(initial?.proposal?.originalCulture ?? "es");
+  // No language selector: the texts are edited in the menu language. The catalog's original (a new one's is the menu
+  // language) is the only required one and, with the menu in the other language, the reference.
+  const culture = scope.culture;
+  const original = initial?.originalCulture ?? scope.culture;
   const [sample, setSample] = useState<{ id: string; name: string } | null>(null);
   const [sampleName, setSampleName] = useState(""); const [search, setSearch] = useState(""); const [samplePage, setSamplePage] = useState(1);
   const [settledSearch, setSettledSearch] = useState("");
   useEffect(() => { if (search === settledSearch) return; const timer = setTimeout(() => { setSettledSearch(search); setSamplePage(1); }, 300); return () => clearTimeout(timer); }, [search, settledSearch]);
   const [previousManage, setPreviousManage] = useState(scope.permissions.includes("formcatalogs.manage"));
-  const [handledValidation, setHandledValidation] = useState<unknown>(null);
   const [reviewOpen, setReviewOpen] = useState(false); const [discardOpen, setDiscardOpen] = useState(false);
   const [discardProposalOpen, setDiscardProposalOpen] = useState(false);
   const proposalResult = useRef<HTMLDivElement>(null);
@@ -74,11 +75,6 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
     notify({ id: feedbackId, kind: "error", message: editor.error ? operationalErrorMessage(error, t, "save") : readErrorMessage(error, t) });
   }, [editor.error, options.error, fieldPathsStamp, feedbackId, t]);
   useEffect(() => { if (editor.previewResult?.exceedsLimit) notify({ id: feedbackId, kind: "warning", message: t("catalogs.filters.exceedsLimit") }); }, [editor.previewResult, feedbackId, t]);
-  if (handledValidation !== editor.error) {
-    setHandledValidation(editor.error);
-    if (fields["name.en"] || fields["description.en"]) setCulture("en");
-    else if (fields["name.es"] || fields["description.es"]) setCulture("es");
-  }
   const columns = options.data?.columns.map(column => ({ ...column, label: t("catalogs.filters.columnLabels." + column.key),
     operators: column.operators.map(key => ({ key, label: t("catalogs.filters.operatorLabels." + key) })),
     choices: column.choices ?? undefined })) ?? [];
@@ -105,7 +101,7 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
     {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><div><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("review")}</Button></div></Surface> : null}
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">
-        <CatalogMetadataFields valueType="Text" name={draft.name} description={draft.description} culture={culture} onCultureChange={setCulture} canManage={canManage && !editor.requiresReview} busy={editor.busy} origin="Filters" originalCulture={proposal?.originalCulture} errors={fields} onChange={editor.changeMetadata} />
+        <CatalogMetadataFields valueType="Text" name={draft.name} description={draft.description} culture={culture} original={original} canManage={canManage && !editor.requiresReview} busy={editor.busy} origin="Filters" errors={fields} onChange={editor.changeMetadata} />
         {!options.data && options.isPending ? <Spinner /> : options.data ? <CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={canManage && !editor.requiresReview} busy={editor.busy} errors={fields} onChange={editor.changeFilters} /> : <EmptyState title={t("catalogs.filters.optionsFailed")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} />}
       </div>
       <Surface title={t("catalogs.filters.previewTitle")} padded>
@@ -126,7 +122,7 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
       </Surface>
     </div>
     <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent className="sm:max-w-4xl" onCloseAutoFocus={restoreReviewFocus}><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
-      <div className="grid gap-4 sm:grid-cols-2"><div><p className="text-sm font-medium">{t("catalogs.review.mine")}</p><p className="text-sm">{draft.name[culture]}</p><p className="text-sm">{draft.description[culture]}</p><CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={false} onChange={() => {}} /></div><div><p className="text-sm font-medium">{t("catalogs.review.current")}</p><p className="text-sm">{editor.current?.name[culture]}</p><p className="text-sm">{editor.current?.description[culture]}</p>{editor.current?.filters ? <CatalogFiltersEditor view={view} columns={columns} value={openCatalogFilters(editor.current.filters)} canManage={false} onChange={() => {}} /> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</div></div>
+      <div className="grid gap-4 sm:grid-cols-2"><div><p className="text-sm font-medium">{t("catalogs.review.mine")}</p><p className="text-sm">{administrativeName(draft.name, culture)}</p><p className="text-sm">{administrativeName(draft.description, culture)}</p><CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={false} onChange={() => {}} /></div><div><p className="text-sm font-medium">{t("catalogs.review.current")}</p><p className="text-sm">{administrativeName(editor.current?.name, culture)}</p><p className="text-sm">{administrativeName(editor.current?.description, culture)}</p>{editor.current?.filters ? <CatalogFiltersEditor view={view} columns={columns} value={openCatalogFilters(editor.current.filters)} canManage={false} onChange={() => {}} /> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</div></div>
       <DialogFooter><Button variant="outline" disabled={editor.busy} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
     </DialogContent></Dialog>
     <ConfirmDialog open={discardProposalOpen} onOpenChange={setDiscardProposalOpen} focusFallback={proposalResult} title={t("catalogs.proposal.discardTitle")} description={t("catalogs.proposal.discardHint")} confirmLabel={t("catalogs.proposal.discard")} destructive onConfirm={() => void discardProposal()} />

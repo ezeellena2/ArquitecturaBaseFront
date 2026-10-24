@@ -126,7 +126,6 @@
     "es": "Español",
     "en": "Inglés"
   },
-  "contentLanguage": "Textos en",
   "prefixOriginal": "El prefijo es compartido. Editalo desde el idioma original.",
   "originalText": "Original ({{language}}): {{text}}",
   "missingText": "Sin traducir",
@@ -490,8 +489,7 @@
     "metadata": {
       "title": "El catálogo",
       "description": "Descripción",
-      "descriptionHint": "La leen las personas para saber cuándo usarlo.",
-      "languagesHint": "Completá el nombre y la descripción en español e inglés. En las opciones, el inglés es opcional."
+      "descriptionHint": "La leen las personas para saber cuándo usarlo."
     },
     "title": "Catálogos",
     "saved": "Catálogo guardado.",
@@ -522,7 +520,6 @@
       "requested": "La pidió {{name}} por WhatsApp el {{date}}.",
       "decided": "La resolvió {{name}} el {{date}}.",
       "unsupportedColumn": "No se pudo filtrar por «{{criterion}}»: ese dato no existe en la vista Usuarios.",
-      "languagesHint": "El original ({{language}}) es obligatorio; el otro idioma es opcional.",
       "states": {
         "Pending": "Propuesta del asistente",
         "Approved": "Propuesta aprobada",

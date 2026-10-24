@@ -25,7 +25,7 @@ describe("Catalog draft body by identity", () => {
       expect(catalogDraftBody(fresh).items).toEqual([]);
     }
   });
-  it("does not fill required bilingual metadata or optional item English from Spanish", () => {
+  it("does not fill a missing language of the metadata or of an item from the other", () => {
     const empty = openCatalogDraft();
     expect(empty.name).toEqual({ es: "", en: "" });
     expect(empty.description).toEqual({ es: "", en: "" });
@@ -37,6 +37,12 @@ describe("Catalog draft body by identity", () => {
     const described = { ...openCatalogDraft(catalog), description: { es: "  Visitas  ", en: " " } };
     expect(catalogDraftBody(described).description).toEqual({ es: "Visitas" });
     expect(catalogDraftUpdateBody(described).description).toEqual({ es: "Visitas" });
+  });
+  it("sends the name in the languages it has, keeping the existing translation", () => {
+    expect(catalogDraftBody({ ...openCatalogDraft(undefined, "Manual", "Text", "en"), name: { es: "", en: " Customers " } }).name).toEqual({ en: "Customers" });
+    const translated = { ...openCatalogDraft(catalog, "Manual", "Text", "en"), name: { es: "Clientes", en: "Our customers" } };
+    expect(catalogDraftUpdateBody(translated).name).toEqual({ es: "Clientes", en: "Our customers" });
+    expect(catalogDraftUpdateBody({ ...translated, name: { es: "Clientes", en: "" } }).name).toEqual({ es: "Clientes" });
   });
   it("freezes the write body independently of later input changes", () => {
     const loaded = loadCatalogDraftItems(openCatalogDraft(catalog), [item]);

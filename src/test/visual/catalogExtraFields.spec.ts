@@ -4,7 +4,6 @@ import { catalogExtraFieldFixtureIds } from "./catalogExtraFieldsFixtures";
 async function open(page: Page, language: "es" | "en", scenario = "catalogs-extra-fields") {
   await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + catalogExtraFieldFixtureIds.catalog, scenario, lang: language }));
   await expect(page.getByRole("heading", { name: language === "es" ? "Proveedores" : "Suppliers", exact: true })).toBeVisible();
-  if (language === "en") await page.getByRole("button", { name: "English", exact: true }).click();
   await page.evaluate(() => document.fonts.ready);
 }
 async function contained(page: Page, locator: Locator, width: number) {

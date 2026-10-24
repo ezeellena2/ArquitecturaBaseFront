@@ -26,11 +26,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("radio", { name: label("Tomarlas de la base, con filtros", "Use database options with filters"), exact: true }).click();
     await page.getByRole("button", { name: label("Continuar", "Continue"), exact: true }).click();
     await page.getByRole("heading", { name: label("Nuevo catálogo", "New catalog"), exact: true }).waitFor();
-    await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill("Responsables");
-    await page.getByRole("textbox", { name: label("Descripción", "Description"), exact: true }).fill("Personas disponibles");
-    await page.getByRole("button", { name: label("Inglés", "English"), exact: true }).click();
-    await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill("Assignees");
-    await page.getByRole("textbox", { name: label("Descripción", "Description"), exact: true }).fill("Available people");
+    // No language selector: the catalog is written in the menu language, which is its original.
+    await expect(page.getByRole("group", { name: label("Textos en", "Content language"), exact: true })).toHaveCount(0);
+    await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill(label("Responsables", "Assignees"));
+    await page.getByRole("textbox", { name: label("Descripción", "Description"), exact: true }).fill(label("Personas disponibles", "Available people"));
     await sample(); await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
     await page.getByRole("heading", { name: label("Responsables", "Assignees"), exact: true }).waitFor();
     await geometry(); await page.screenshot({ path: info.outputPath("filters-created.png"), fullPage: true });

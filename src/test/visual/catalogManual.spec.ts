@@ -16,12 +16,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: english ? "New catalog" : "Nuevo catálogo", exact: true }).click();
     await expect(page.getByRole("radio", { name: english ? "Write a query" : "Escribir una consulta" })).toHaveCount(0);
     await page.getByRole("button", { name: english ? "Continue" : "Continuar", exact: true }).click();
-    await page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true }).fill("Depósitos");
-    await page.getByRole("textbox", { name: english ? "Description" : "Descripción", exact: true }).fill("Dónde guardar");
-    await page.getByRole("button", { name: english ? "English" : "Inglés", exact: true }).click();
-    await page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true }).fill("Warehouses");
-    await page.getByRole("textbox", { name: english ? "Description" : "Descripción", exact: true }).fill("Where to store");
-    await page.getByRole("button", { name: english ? "Spanish" : "Español", exact: true }).click();
+    // No language selector: the catalog is written in the menu language, which is its original.
+    await expect(page.getByRole("group", { name: english ? "Content language" : "Textos en", exact: true })).toHaveCount(0);
+    await page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true }).fill(english ? "Warehouses" : "Depósitos");
+    await page.getByRole("textbox", { name: english ? "Description" : "Descripción", exact: true }).fill(english ? "Where to store" : "Dónde guardar");
     await page.getByRole("button", { name: english ? "Add option" : "Agregar opción", exact: true }).click();
     await page.getByRole("textbox", { name: english ? "Text" : "Texto", exact: true }).fill("Central");
     await page.getByRole("textbox", { name: english ? "Code" : "Código", exact: true }).fill("D1");
@@ -105,11 +103,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: english ? "Review" : "Revisar", exact: true }).click();
     await page.getByRole("button", { name: english ? "Reread" : "Releer", exact: true }).click();
     const reviewDialog = page.getByRole("dialog", { name: english ? "Catalog review" : "Revisión del catálogo", exact: true });
-    await expect(reviewDialog.getByText("Clientes actuales", { exact: true })).toBeVisible();
+    // The review shows each revision in the menu language.
+    await expect(reviewDialog.getByText(english ? "Current customers" : "Clientes actuales", { exact: true })).toBeVisible();
     await expect(reviewDialog.getByText("Mi borrador", { exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath("manual-conflict.png"), fullPage: true });
     await page.getByRole("button", { name: english ? "Use the current revision" : "Usar la revisión actual", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true })).toHaveValue("Clientes actuales");
+    await expect(page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true })).toHaveValue(english ? "Current customers" : "Clientes actuales");
   });
   test("Manual catalog permissions " + language + " " + width, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });

@@ -42,10 +42,25 @@ it("marks a pending assistant proposal in the existing Filters editor with captu
  expect(screen.getByRole("heading", { name: "Supervisores activos" })).toBeInTheDocument();
  expect(screen.getByText(/Ana Pérez.*requested|requested.*Ana Pérez/i)).toBeInTheDocument();
  expect(screen.getByText(/zona norte/)).toBeInTheDocument();
- expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Supervisores activos");
+ expect(screen.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription("Original (Spanish): Supervisores activos");
  expect(screen.queryByText("catalog-profile")).not.toBeInTheDocument();
  expect(screen.queryByText("catalog-instructions")).not.toBeInTheDocument();
  expect(screen.queryByRole("button", { name: "Reactivate" })).not.toBeInTheDocument();
+});
+it("reviews a proposal in the menu language with its original as reference", async () => {
+ await mount(undefined, "en");
+ await screen.findByRole("button", { name: "Approve and activate" });
+ expect(screen.queryByRole("group", { name: "Content language" })).not.toBeInTheDocument();
+ const name = screen.getByRole("textbox", { name: "Name" }), description = screen.getByRole("textbox", { name: "Description" });
+ expect(name).toHaveValue(""); expect(name).toHaveAttribute("placeholder", "Untranslated");
+ expect(name).toHaveAccessibleDescription("Original (Spanish): Supervisores activos");
+ expect(screen.getByText("Name", { selector: "label" })).toHaveTextContent(/^Name$/);
+ expect(description).toHaveValue(""); expect(description).toHaveAccessibleDescription("Original (Spanish): Supervisores disponibles");
+ await userEvent.click(name); await userEvent.paste("Active supervisors");
+ await userEvent.click(await screen.findByRole("combobox", { name: "As if received by" })); await userEvent.click(await screen.findByRole("option", { name: "Ana Pérez" }));
+ await userEvent.click(screen.getByRole("button", { name: "Approve and activate" }));
+ await waitFor(() => expect(writes).toHaveLength(1));
+ expect(writes[0]).toEqual({ expectedRevision: 1, name: { es: "Supervisores activos", en: "Active supervisors" }, description: { es: "Supervisores disponibles" }, filters: current.filters, sampleUserId: actor });
 });
 it("approves edited original-language metadata and filters with one revision command and no normal PUT", async () => {
  let normalWrites = 0;

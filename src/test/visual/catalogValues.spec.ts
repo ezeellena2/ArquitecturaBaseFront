@@ -14,7 +14,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByText(label("Escritas a mano · Decimal", "Written manually · Decimal"), { exact: true })).toBeVisible();
     await expect(page.getByRole("textbox", { name: label("Tipo de valor", "Value type"), exact: true })).toHaveCount(0);
     await expect(page.getByRole("columnheader", { name: label("Valor", "Value"), exact: true })).toBeVisible();
-    // Option labels follow the selected Spanish content culture, independently from the UI.
+    // Option labels are shown in the menu language and, without a translation, in the original.
     await page.getByRole("button", { name: label("Editar Interior", "Edit Interior"), exact: true }).click();
     const value = page.getByRole("textbox", { name: label("Valor · Decimal", "Value · Decimal"), exact: true });
     await value.fill("mil");

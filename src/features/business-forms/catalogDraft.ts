@@ -78,7 +78,7 @@ function editedFieldValues(draft: CatalogDraft, item: CatalogManualItemValue): R
   }));
 }
 export function catalogDraftBody(draft: CatalogDraft): CreateManualCatalogBody {
-  return { valueType: draft.valueType, name: { ...draft.name }, description: ownTexts(draft.description), fields: catalogFieldsBody(draft.fields, draft.culture), presentation: draft.presentation ? { title: [...draft.presentation.title], description: [...draft.presentation.description] } : null, items: catalogItemChanges(draft.items).map(item => {
+  return { valueType: draft.valueType, name: ownTexts(draft.name), description: ownTexts(draft.description), fields: catalogFieldsBody(draft.fields, draft.culture), presentation: draft.presentation ? { title: [...draft.presentation.title], description: [...draft.presentation.description] } : null, items: catalogItemChanges(draft.items).map(item => {
     const fields = editedFieldValues(draft, item);
     return { value: canonicalItemValue(draft, item), localId: item.localId, itemId: item.itemId, code: item.code, text: { ...item.label }, detail: { ...item.detail }, isActive: item.isActive, ...(Object.keys(fields).length ? { fields } : {}) };
   }) };
