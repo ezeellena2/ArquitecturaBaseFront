@@ -300,6 +300,7 @@
     "reload": "Reload data",
     "reloadHint": "Your changes in Data will be replaced with the current saved values. The rest of the account is preserved.",
     "reloadAttribute": "Reload the attribute",
+    "required": "Fill in this field.",
     "limit_one": "You can define up to {{count}} attribute.",
     "limit_other": "You can define up to {{count}} attributes."
   },

@@ -135,6 +135,33 @@ it("creates a text attribute with an immutable key and without reading catalogs"
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  await waitFor(() => expect(bodies).toEqual([{ key: "site", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
 });
+// Saving validates on the attempt and then live (decision V28): Save is not turned off by empty fields.
+it("marks the empty fields of a new attribute when saving and clears each one as it is filled", async () => {
+ const bodies: unknown[] = [];
+ await mount(["formpersondata.manage"]);
+ server.use(http.post("/api/forms/person-attributes", async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ ...attribute, id: "01990000-0000-7000-8000-000000000003", key: "site", name: { es: "Sede" }, revision: 1 }); }));
+ await screen.findByText("Sucursal");
+ await userEvent.click(screen.getByRole("button", { name: "Agregar dato" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Agregar dato" }));
+ const save = dialog.getByRole("button", { name: "Guardar" });
+ expect(save).toBeEnabled();
+ const name = dialog.getByRole("textbox", { name: "Nombre" }), key = dialog.getByRole("textbox", { name: "Clave" });
+ expect(name).not.toHaveAttribute("aria-invalid", "true");
+ await userEvent.click(save);
+ expect(bodies).toEqual([]);
+ for (const control of [name, key, dialog.getByRole("textbox", { name: "Catálogo" })]) {
+  expect(control).toHaveAttribute("aria-invalid", "true");
+  expect(control).toHaveAccessibleDescription(expect.stringContaining("Completá este campo."));
+ }
+ expect(name).toHaveFocus();
+ await userEvent.type(name, "Sede");
+ expect(name).not.toHaveAttribute("aria-invalid", "true");
+ expect(key).toHaveAttribute("aria-invalid", "true");
+ await userEvent.type(key, "site");
+ await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
+ await userEvent.click(save);
+ await waitFor(() => expect(bodies).toEqual([{ key: "site", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
+});
 it("creates a person attribute named only in the menu language", async () => {
  const zones = "01990000-0000-7000-8000-000000000004";
  const bodies: unknown[] = [];

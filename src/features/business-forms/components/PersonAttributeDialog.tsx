@@ -60,8 +60,16 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
  const canReadCatalogs = scope.permissions.includes("formcatalogs.read");
  // Only the languages with text travel: an existing translation is kept, a blank one is not sent.
  const names = ownTexts(name), reference = contentReference(name, culture, original);
+ // Saving validates on the attempt and then live: the name in the attribute's original, a new attribute's key and the catalog
+ // of a Catalog attribute. Save is not turned off by them; the first marked control takes the focus.
+ const [attempted, setAttempted] = useState(false), [focusMarked, setFocusMarked] = useState<object | null>(null), fieldsRef = useRef<HTMLDivElement>(null);
+ const missing = { name: !names[original], key: !attribute && !key.trim(), sourceCatalogId: type === "Catalog" && !sourceCatalogId };
+ const required = (path: keyof typeof missing) => attempted && missing[path] ? t("personData.required") : undefined;
+ useEffect(() => { if (focusMarked) fieldsRef.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus(); }, [focusMarked]);
  async function save() {
   if (operation.current || !scope.permissions.includes("formpersondata.manage")) return;
+  setAttempted(true);
+  if (Object.values(missing).some(Boolean)) { setFocusMarked({}); return; }
   const controller = new AbortController(); operation.current = controller; setBusy(true); setError(null);
   try {
    if (attribute) await updatePersonAttribute(attribute.id, { expectedRevision: attribute.revision, name: names, type, sourceCatalogId: type === "Catalog" ? sourceCatalogId : null, position: attribute.position, isActive, ...(confirmValues ? { confirmValueRemoval: true as const } : {}) }, controller.signal);
@@ -76,14 +84,14 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
   }
   finally { if (operation.current === controller) operation.current = null; if (mounted.current) setBusy(false); }
  }
- return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent onCloseAutoFocus={restoreFocus}><DialogHeader><DialogTitle>{t(attribute ? "personData.editAttribute" : "personData.addAttribute")}</DialogTitle><DialogDescription>{t("personData.attributeHint")}</DialogDescription></DialogHeader><div className="space-y-4">
-  <FormField label={t("name")} required={contentRequired(name, culture, original)} hint={reference ? t("originalText", { language: t("cultures." + original), text: reference }) : undefined} error={localizedIssueMessage(localizedIssue(errors, "name", culture), culture, t)}><Input ref={nameRef} value={name[culture] ?? ""} disabled={busy} maxLength={120} placeholder={culture !== original ? t("missingText") : undefined} onChange={event => setName({ ...name, [culture]: event.target.value })} /></FormField>
-  <FormField label={t("catalogs.fields.key")} required error={message("key")} hint={t("catalogs.fields.keyHint")}><Input value={key} readOnly={!!attribute} disabled={busy} maxLength={40} onChange={event => setKey(event.target.value)} /></FormField>
+ return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent onCloseAutoFocus={restoreFocus}><DialogHeader><DialogTitle>{t(attribute ? "personData.editAttribute" : "personData.addAttribute")}</DialogTitle><DialogDescription>{t("personData.attributeHint")}</DialogDescription></DialogHeader><div ref={fieldsRef} className="space-y-4">
+  <FormField label={t("name")} required={contentRequired(name, culture, original)} hint={reference ? t("originalText", { language: t("cultures." + original), text: reference }) : undefined} error={localizedIssueMessage(localizedIssue(errors, "name", culture), culture, t) ?? required("name")}><Input ref={nameRef} value={name[culture] ?? ""} disabled={busy} maxLength={120} placeholder={culture !== original ? t("missingText") : undefined} onChange={event => setName({ ...name, [culture]: event.target.value })} /></FormField>
+  <FormField label={t("catalogs.fields.key")} required error={message("key") ?? required("key")} hint={t("catalogs.fields.keyHint")}><Input value={key} readOnly={!!attribute} disabled={busy} maxLength={40} onChange={event => setKey(event.target.value)} /></FormField>
   <FormField label={t("personData.type")} required error={message("type")}><NativeSelect value={type} disabled={busy || inUse} onChange={event => changeType(event.target.value as PersonAttribute["type"])}><option value="Catalog">{t("catalogs.fields.types.catalog")}</option><option value="Text">{t("catalogs.fields.types.text")}</option></NativeSelect></FormField>
-  {type === "Catalog" ? canReadCatalogs ? <CatalogQuestionSelector scope={scope} manualOnly value={sourceCatalogId ?? ""} readOnly={busy || inUse} error={message("sourceCatalogId")} onChange={changeSource} /> : <FormField label={t("catalogQuestion.catalog")} required hint={t("catalogQuestion.requiresRead")} error={message("sourceCatalogId")}><Input readOnly value={attribute?.sourceCatalogName ?? ""} /></FormField> : null}
+  {type === "Catalog" ? canReadCatalogs ? <CatalogQuestionSelector scope={scope} manualOnly value={sourceCatalogId ?? ""} readOnly={busy || inUse} error={message("sourceCatalogId") ?? required("sourceCatalogId")} onChange={changeSource} /> : <FormField label={t("catalogQuestion.catalog")} required hint={t("catalogQuestion.requiresRead")} error={message("sourceCatalogId") ?? required("sourceCatalogId")}><Input readOnly value={attribute?.sourceCatalogName ?? ""} /></FormField> : null}
   {removalCount !== null && removalPending ? <CheckboxField label={t("personData.confirmValueRemoval", { count: removalCount })} checked={confirmValues} disabled={busy} onCheckedChange={setConfirmValues} /> : null}
   {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} error={message("isActive")} onCheckedChange={setActive} /> : null}
   {inUse ? <div className="text-sm">{namedUses ? <><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></> : <p>{t("personData.inUseCount", { count: usedBy.length })}</p>}</div> : null}
   {error && !Object.keys(errors).length ? <div className="space-y-2"><p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}{reloadError ? " " + readErrorMessage(reloadError, t) : null}</p>{conflict ? <Button type="button" variant="outline" disabled={busy || reloading} onClick={reload}>{t("personData.reloadAttribute")}</Button> : null}</div> : null}
- </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" disabled={busy || conflict || !Object.keys(names).length || !key.trim() || type === "Catalog" && !sourceCatalogId} onClick={() => void save()}>{t("common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;
+ </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" disabled={busy || conflict} onClick={() => void save()}>{t("common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;
 }
