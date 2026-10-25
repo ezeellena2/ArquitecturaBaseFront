@@ -69,7 +69,8 @@ export function CatalogEditorPage() {
   const { data: user } = useCurrentUser();
   const scope: CatalogReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
   const detail = useCatalogDetail(scope, catalogId);
-  const detailOwner = JSON.stringify([scope.actorId, scope.culture, catalogId]);
+  // The menu language is not part of the owner: changing it keeps the editor and its draft while the detail is read again.
+  const detailOwner = JSON.stringify([scope.actorId, catalogId]);
   const canRead = scope.actorId !== null && scope.permissions.includes("formcatalogs.read");
   const [mountedDetail, setMountedDetail] = useState<{ owner: string; detail: CatalogDetail } | null>(null);
   // A permitted metadata refetch never replaces or unmounts the current draft. Losing Read drops the baseline.
@@ -92,7 +93,7 @@ export function CatalogEditorPage() {
   if ((initial?.kind ?? searchParams.get("kind")) === "Filters") return <CatalogFiltersEditorPage key={detailOwner} scope={scope} initial={initial} timeZoneId={user.timeZoneId} />;
   const requestedType = searchParams.get("valueType");
   const valueType = isCatalogValueType(requestedType) ? requestedType : "Text";
-  return <ManualCatalogEditor key={JSON.stringify([scope.actorId, scope.culture, catalogId, initial?.valueType ?? valueType])} scope={scope} initial={initial} valueType={valueType} timeZoneId={user.timeZoneId} />;
+  return <ManualCatalogEditor key={JSON.stringify([scope.actorId, catalogId, initial?.valueType ?? valueType])} scope={scope} initial={initial} valueType={valueType} timeZoneId={user.timeZoneId} />;
 }
 
 function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope: CatalogReadScope; initial?: CatalogDetail; valueType: CatalogValueType; timeZoneId: string }) {
@@ -100,7 +101,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const navigate = useNavigate();
   const editor = useCatalogDraftEditor(scope, initial, "Manual", valueType);
   // No language selector: the texts are edited in the menu language, which is the original of a new catalog. Changing the
-  // menu language remounts the editor.
+  // menu language keeps the draft and shows its other translation.
   const culture = scope.culture;
   const original = initial?.originalCulture ?? scope.culture;
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -129,7 +130,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const loadItems = editor.loadItems;
   useEffect(() => { if (items.data) loadItems(items.data.items, draft?.revision ?? null); }, [items.data, loadItems, draft?.revision]);
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
-  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind", "valueType"], remountsOnLanguageChange: true });
+  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind", "valueType"] });
   const canManage = scope.permissions.includes("formcatalogs.manage") && (initial?.kind ?? "Manual") === "Manual";
   const readOnly = !editor.canSave;
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};

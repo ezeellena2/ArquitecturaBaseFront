@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
 import { queryClient } from "@/shared/api/queryClient";
 import { notify } from "@/shared/ui/notifications";
+import { hasUnsavedChanges } from "@/shared/hooks/useUnsavedChangesGuard";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { createFormFixtureStore, fixtureFormId } from "@/test/visual/formFixtures";
@@ -35,6 +36,31 @@ it("edits the form in the menu language without a content language selector", as
   expect(name).toHaveValue("");
   expect(name).toHaveAttribute("placeholder", "Untranslated");
   expect(name).toHaveAccessibleDescription("Original (Spanish): Registrar visita");
+});
+
+// Translating is changing the menu language and editing the same draft: nothing unsaved is lost, so the menu does not ask.
+it("keeps the unsaved draft when the menu language changes and shows the other translation", async () => {
+  const store = await setup("es", ["formtemplates.read", "formtemplates.manage", "formrules.manage"]);
+  const saved = vi.fn();
+  server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => { saved(await request.clone().json()); return store.handle(request); }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await userEvent.click(await screen.findByRole("textbox", { name: "Nombre" }));
+  await userEvent.paste(" editado");
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  const rules = screen.getAllByRole("region", { name: /^Regla \d+$/ }).length;
+  expect(hasUnsavedChanges()).toBe(false);
+  await act(() => i18n.changeLanguage("en"));
+  const name = await screen.findByRole("textbox", { name: "Name" });
+  expect(await screen.findAllByRole("region", { name: /^Rule \d+$/ })).toHaveLength(rules);
+  expect(screen.getByRole("button", { name: "Save rules" })).toBeEnabled();
+  expect(name).toHaveValue("Register visit");
+  expect(name).toHaveAccessibleDescription("Original (Spanish): Registrar visita editado");
+  await userEvent.click(name);
+  await userEvent.paste(" again");
+  await act(() => i18n.changeLanguage("es"));
+  expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveValue("Registrar visita editado");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  await waitFor(() => expect(saved).toHaveBeenCalledWith(expect.objectContaining({ name: { es: "Registrar visita editado", en: "Register visit again" } })));
 });
 
 it("titles the form in the menu language and falls back to the original when it has no translation", async () => {

@@ -33,8 +33,8 @@ import { useCatalogFilterOptions } from "../hooks/useCatalogQueries";
 export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope: CatalogReadScope; initial?: CatalogDetail; timeZoneId?: string }) {
   const { t } = useTranslation("forms"); const navigate = useNavigate();
   const editor = useCatalogDraftEditor(scope, initial, "Filters");
-  // No language selector: the texts are edited in the menu language. The catalog's original (a new one's is the menu
-  // language) is the only required one and, with the menu in the other language, the reference.
+  // No language selector: the texts are edited in the menu language, and changing it keeps the draft. The catalog's original
+  // (a new one's is the menu language) is the only required one and, with the menu in the other language, the reference.
   const culture = scope.culture;
   const original = initial?.originalCulture ?? scope.culture;
   const [sample, setSample] = useState<{ id: string; name: string } | null>(null);
@@ -59,7 +59,7 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
   }, [proposal?.state]);
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
   const feedbackId = "catalogs:filters:" + useId(); const active = useRef(true);
-  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind"], remountsOnLanguageChange: true });
+  const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind"] });
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen, proposalResult);
   const currentName = draft && administrativeName(draft.name, scope.culture) || t("catalogs.new"); useBreadcrumbLeaf(currentName);
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);

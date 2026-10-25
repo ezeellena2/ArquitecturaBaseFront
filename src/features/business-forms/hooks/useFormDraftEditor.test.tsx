@@ -129,17 +129,32 @@ describe("nonvisual form draft coordination", () => {
     expect(result.current.session?.value.draft.fields).toMatchObject([{ localId: "q", options: [{ localId: "option", choiceId }] }, { localId: "r", options: [{ localId: "option", choiceId: secondChoiceId }] }]);
   });
 
-  it.each(["actor", "read", "culture", "unmount"])("clears private data and ignores a late commit after %s changes", async change => {
+  it.each(["actor", "read", "unmount"])("clears private data and ignores a late commit after %s changes", async change => {
     const h = harness(); const gate = deferred(); let received = false;
     server.use(http.post("/api/forms/definitions", async ({ request }) => { const { requestId } = await request.json() as { requestId: string }; received = true; await gate.promise; return HttpResponse.json(receipt(requestId)); }));
     const hook = renderHook(({ context }) => useFormDraftEditor(context, initial), { ...h, initialProps: { context: scope } });
     let operation!: Promise<unknown>;
     act(() => { operation = hook.result.current.save(); }); await waitFor(() => expect(received).toBe(true));
     if (change === "unmount") hook.unmount();
-    else hook.rerender({ context: { ...scope, ...(change === "actor" ? { actorId: "actor-b" } : change === "read" ? { permissions: [] } : { culture: "en" as const }) } });
+    else hook.rerender({ context: { ...scope, ...(change === "actor" ? { actorId: "actor-b" } : { permissions: [] }) } });
     await act(async () => { gate.resolve(); await operation; });
     if (change !== "unmount") expect(hook.result.current.session).toBeNull();
     expect(h.client.getQueryCache().getAll()).toEqual([]);
+  });
+
+  // Translating is changing the menu language and editing the same draft: the language is not part of its owner.
+  it("keeps the draft and its save in flight when the menu language changes", async () => {
+    const gate = deferred(); let received = false;
+    server.use(http.post("/api/forms/definitions", async ({ request }) => { const { requestId } = await request.json() as { requestId: string }; received = true; await gate.promise; return HttpResponse.json(receipt(requestId)); }));
+    const hook = renderHook(({ context }) => useFormDraftEditor(context, initial), { ...harness(), initialProps: { context: scope } });
+    act(() => hook.result.current.change({ ...hook.result.current.session!.value, name: { es: "Encuesta", en: "Survey" } }));
+    let operation!: Promise<unknown>;
+    act(() => { operation = hook.result.current.save(); }); await waitFor(() => expect(received).toBe(true));
+    hook.rerender({ context: { ...scope, culture: "en" } });
+    expect(hook.result.current.session?.value.name).toEqual({ es: "Encuesta", en: "Survey" });
+    await act(async () => { gate.resolve(); await operation; });
+    expect(hook.result.current.session?.confirmed?.id).toBe(id);
+    expect(hook.result.current.canSave).toBe(true);
   });
 
   it("revoking manage prevents new writes but allows the actor's pending recovery with read", async () => {

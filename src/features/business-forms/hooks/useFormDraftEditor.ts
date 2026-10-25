@@ -20,7 +20,8 @@ const conflictReasons = {
   "Forms.Draft.RevisionConflict": "RevisionConflict", "Forms.Draft.IdentityRetired": "IdentityRetired",
   "Forms.Definition.PrefixLocked": "PrefixLocked", "Forms.Draft.RequestConflict": "RequestConflict",
 } as const;
-const contextKey = (scope: FormReadScope) => JSON.stringify([scope.actorId, scope.culture]);
+// The draft belongs to the actor: the menu language only changes which translation is edited, so it is not part of the owner.
+const contextKey = (scope: FormReadScope) => JSON.stringify([scope.actorId]);
 
 // Private writes deliberately bypass MutationCache. The frozen attempt belongs only to this mount;
 // reads/invalidation use the application's QueryClient and all transport uses its HTTP client.

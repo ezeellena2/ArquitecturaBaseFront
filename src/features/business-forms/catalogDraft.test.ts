@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogDetail } from "./api/catalogResponse";
-import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, pendingFieldTexts, stageCatalogDraftItem, stageCatalogDraftMove } from "./catalogDraft";
+import { catalogDraftBody, catalogDraftInCulture, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, pendingFieldTexts, stageCatalogDraftItem, stageCatalogDraftMove } from "./catalogDraft";
 import { withCatalogFieldValue } from "./catalogItemEdits";
 
 const catalog: CatalogDetail = { valueType: "Text" as const, proposal: null, id: "01990000-0000-7000-8000-000000000020", key: "01990000000070008000000000000020", kind: "Manual", name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, revision: 1, isActive: true, itemsCount: 3, usageCount: 0, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
@@ -113,4 +113,25 @@ it("sends alphabetical ordering as one explicit command without reconstructing t
   const draft = { ...openCatalogDraft(catalog), sortAlphabetically: true };
   expect(catalogDraftUpdateBody(draft)).toMatchObject({ sortAlphabetically: true, items: [] });
   expect(catalogDraftUpdateBody(draft)).not.toHaveProperty("moves");
+});
+
+// Changing the menu language keeps the draft: its integers and decimals are written in the new language with the same value.
+it("writes the typed values of the draft in another culture without changing what travels", () => {
+  const amount = { id: "01990000-0000-7000-8000-000000000033", key: "amount", name: { es: "Importe" }, type: "decimal" as const, sourceCatalogId: null, required: false, unique: false, min: "0.5", max: "2500", maxLength: null, role: "data" as const, position: 1, isActive: true, valuesCount: 1, usedBy: [] };
+  const other = { ...item, id: "01990000-0000-7000-8000-000000000022", code: "C2", position: 2 };
+  const loaded = loadCatalogDraftItems(openCatalogDraft({ ...catalog, valueType: "Decimal", fields: [amount] }, "Manual", "Decimal", "es"),
+    [{ ...item, value: "1500.5", fields: { [amount.id]: "1200.25" } }, { ...other, value: "7", fields: { [amount.id]: "3" } }]);
+  const [first, second] = Object.values(loaded.items.originals);
+  const edited = stageCatalogDraftItem(stageCatalogDraftItem(loaded, { ...first!, value: "2.500,75" }), { ...second!, value: "mil", fields: { [amount.id]: "1.000,5" } });
+  const english = catalogDraftInCulture(edited, "en");
+  expect(english.culture).toBe("en");
+  expect(english.fields[0]).toMatchObject({ min: "0.5", max: "2,500" });
+  expect(Object.values(english.items.originals).map(option => [option.value, option.fields])).toEqual([["1,500.5", { [amount.id]: "1,200.25" }], ["7", { [amount.id]: "3" }]]);
+  expect(Object.values(english.items.changes).map(option => [option.value, option.fields])).toEqual([["2,500.75", { [amount.id]: "1,200.25" }], ["mil", { [amount.id]: "1,000.5" }]]);
+  const body = (draft: typeof edited) => catalogDraftUpdateBody(draft);
+  expect(() => body(english)).toThrow();
+  const valid = stageCatalogDraftItem(english, { ...Object.values(english.items.changes)[1]!, value: "8" });
+  expect(body(valid)).toEqual(body(catalogDraftInCulture(valid, "es")));
+  expect(body(valid).items).toMatchObject([{ value: "2500.75" }, { value: "8", fields: { [amount.id]: "1000.5" } }]);
+  expect(body(valid).items[0]).not.toHaveProperty("fields");
 });

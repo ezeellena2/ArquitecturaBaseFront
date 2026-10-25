@@ -32,7 +32,8 @@ import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; scope: FormReadScope; onDirtyChange: (dirty: boolean) => void }
 export function FormRulesSection(props: Props) {
   const { t } = useTranslation("forms");
-  const owner = JSON.stringify([...formScopeKey(props.scope), props.definitionId]);
+  // The menu language is not part of the owner: changing it keeps the rules being edited.
+  const owner = JSON.stringify([props.scope.actorId, [...new Set(props.scope.permissions)].sort().join(","), props.definitionId]);
   const [deniedOwner, setDeniedOwner] = useState<string | null>(null);
   const onDenied = useCallback(() => setDeniedOwner(owner), [owner]);
   if (!props.scope.actorId || !props.scope.permissions.includes("formrules.manage")) return null;

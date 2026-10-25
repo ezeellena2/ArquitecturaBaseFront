@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import type { CatalogField, CatalogFieldUsage } from "./api/catalogResponse";
-import { catalogScalarText, formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
+import { catalogScalarText, formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, relocalizeCatalogValue, type CatalogValueType } from "./catalogValues";
 import type { FormCulture } from "./model";
 import { ownTexts } from "./editorModel";
 import { formatYesNo, type YesNoLabels } from "@/shared/lib/typedValue";
@@ -22,6 +22,14 @@ export function unconvertedFieldValue(type: CatalogFieldType, value: string | nu
 
 export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: {}, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, valuesCount: 0, usedBy: [] });
 export const openCatalogField = (field: CatalogField, culture: FormCulture = "es"): CatalogFieldDraft => ({ ...field, localId: field.id, name: { ...field.name }, min: field.min === null ? null : formatCatalogFieldValue(field, field.min, culture), max: field.max === null ? null : formatCatalogFieldValue(field, field.max, culture), usedBy: field.usedBy.map(use => ({ ...use })) });
+/** A field value written in `from`, written in `to` with the same value: only integers and decimals change. */
+export function relocalizeCatalogFieldValue(type: CatalogFieldType, input: string | null, from: FormCulture, to: FormCulture): string | null {
+  const typed = valueType(type);
+  return typed ? relocalizeCatalogValue(typed, input, from, to) : input;
+}
+/** The field's editable bounds written in `to`. */
+export const relocalizeCatalogField = (field: CatalogFieldDraft, from: FormCulture, to: FormCulture): CatalogFieldDraft =>
+  ({ ...field, min: relocalizeCatalogFieldValue(field.type, field.min, from, to), max: relocalizeCatalogFieldValue(field.type, field.max, from, to) });
 function valueType(type: CatalogFieldType): CatalogValueType | null {
   return type === "integer" ? "Integer" : type === "decimal" ? "Decimal" : type === "date" ? "Date" : null;
 }

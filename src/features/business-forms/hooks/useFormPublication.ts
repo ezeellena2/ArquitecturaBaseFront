@@ -12,7 +12,8 @@ type ResumeReference = NonNullable<FormPublicationProjection["currentOperation"]
 interface PublicationSession { phase: Phase; attempt: Attempt | null; reference: ResumeReference | null; receipt: FormPublicationReceipt | null;
   status: FormPublicationStatus | null; error: unknown; busy: boolean; canReplay: boolean }
 const empty = (): PublicationSession => ({ phase: "Idle", attempt: null, reference: null, receipt: null, status: null, error: null, busy: false, canReplay: false });
-const stampFor = (scope: FormReadScope) => JSON.stringify([scope.actorId, scope.culture]);
+// The attempt belongs to the actor's editor, which keeps it when the menu language changes.
+const stampFor = (scope: FormReadScope) => JSON.stringify([scope.actorId]);
 const rejectedCodes = new Set(["Forms.Publication.CheckExpired", "Forms.Publication.InProgress", "Forms.Publication.DraftMustBeSaved", "Forms.Draft.RevisionConflict"]);
 // Request body and bearer ticket live only in this editor owner. No mutation cache, storage, URL, or automatic POST retry.
 export function useFormPublication(scope: FormReadScope) {

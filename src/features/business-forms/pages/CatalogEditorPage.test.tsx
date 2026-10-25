@@ -10,6 +10,7 @@ import { queryClient } from "@/shared/api/queryClient";
 import i18n from "@/shared/i18n";
 import { server } from "@/test/mocks/server";
 import { notify } from "@/shared/ui/notifications";
+import { hasUnsavedChanges } from "@/shared/hooks/useUnsavedChangesGuard";
 import capturedOptionsRaw from "@/test/fixtures/catalogs-http/filters/options.json?raw";
 import { readCatalogFilterOptions } from "../api/catalogResponse";
 import * as catalogImports from "../api/catalogImports";
@@ -821,6 +822,23 @@ describe("Filters editor connected to current DTOs", () => {
     expect(writes).toHaveLength(1); expect(writes[0]).toMatchObject({ name: { es: "Clientes" }, description: { es: "Visitas" } }); expect((writes[0] as { name: object }).name).not.toHaveProperty("en"); expect(writes[0]).not.toHaveProperty("expectedRevision");
     await screen.findByRole("button", { name: "Agregar condición" }); expect(screen.queryByRole("button", { name: "Agregar opción" })).not.toBeInTheDocument();
   });
+  it("keeps the unsaved conditions and texts when the menu language changes", async () => {
+    filterSetup(); const writes: unknown[] = [];
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })),
+      http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: { ...filtersDetail, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), " editado");
+    await user.click(screen.getByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición 1" }), "role");
+    expect(hasUnsavedChanges()).toBe(false);
+    await act(() => i18n.changeLanguage("en"));
+    const name = await screen.findByRole("textbox", { name: "Name" });
+    expect(name).toHaveValue("Customers");
+    expect(name).toHaveAccessibleDescription("Original (Spanish): Clientes editado");
+    expect(await screen.findByRole("combobox", { name: "Column for condition 1" })).toHaveValue("role");
+    await user.click(await screen.findByRole("combobox", { name: "As if received by" })); await user.click(await screen.findByRole("option", { name: "Ana" }));
+    await user.click(screen.getByRole("button", { name: "Save" })); await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toMatchObject({ name: { es: "Clientes editado", en: "Customers" }, filters: { conditions: [{ column: "role", operator: "has" }] } });
+  });
   it("renders permitted configuration read-only without sample identities or preview writes", async () => {
     filterSetup(["formcatalogs.read"]); await mount("/catalogos/" + id);
     expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeDisabled(); expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
@@ -1018,6 +1036,32 @@ it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invali
   await waitFor(() => expect(bodies).toHaveLength(1));
   expect(bodies[0]).not.toHaveProperty("valueType");
   expect(bodies[0]).toMatchObject({ expectedRevision: 1, items: [{ itemId, value: "1500.5", code: "C1" }] });
+});
+
+// Translating is changing the menu language and editing the same catalog: what is unsaved stays, with its values written in
+// the new language's format, and the menu does not ask.
+it("keeps the unsaved catalog when the menu language changes and shows the other translation", async () => {
+  setup();
+  const typed = { ...initial, valueType: "Decimal" };
+  const bodies: Record<string, unknown>[] = [];
+  server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(typed)),
+    http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, value: "1500.5" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+    http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json({ catalog: { ...typed, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+  await mount("/catalogos/" + id); const user = userEvent.setup();
+  const name = await screen.findByRole("textbox", { name: "Nombre" });
+  await user.clear(name); await pasteText(user, name, "Clientes editado");
+  await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
+  const value = screen.getByRole("textbox", { name: "Valor · Decimal" });
+  await user.clear(value); await pasteText(user, value, "2.500,75");
+  expect(hasUnsavedChanges()).toBe(false);
+  await act(() => i18n.changeLanguage("en"));
+  const english = await screen.findByRole("textbox", { name: "Name" });
+  expect(english).toHaveValue("Customers");
+  expect(english).toHaveAccessibleDescription("Original (Spanish): Clientes editado");
+  expect(await screen.findByRole("textbox", { name: "Value · Decimal" })).toHaveValue("2,500.75");
+  await user.click(screen.getByRole("button", { name: "Save" }));
+  await waitFor(() => expect(bodies).toHaveLength(1));
+  expect(bodies[0]).toMatchObject({ name: { es: "Clientes editado", en: "Customers" }, items: [{ itemId, value: "2500.75" }] });
 });
 
 it("sends the chosen type only on creation and binds a value error to its unchanged item identity", async () => {

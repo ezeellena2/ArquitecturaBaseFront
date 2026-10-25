@@ -65,6 +65,12 @@ export function FormEditorPage() {
   const { data: user } = useCurrentUser();
   const scope: FormReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
   const detail = useFormDefinition(scope, formId);
+  // Changing the menu language reads the detail again under its own key. Meanwhile, or if that read fails, the editor keeps
+  // the last one of the same actor, permissions and form, and its draft: translating is editing the same form.
+  const detailOwner = JSON.stringify([scope.actorId, [...scope.permissions].sort(), formId]);
+  const [mountedDetail, setMountedDetail] = useState<{ owner: string; detail: FormDetail } | null>(null);
+  if (detail.data && (mountedDetail?.owner !== detailOwner || mountedDetail.detail !== detail.data)) setMountedDetail({ owner: detailOwner, detail: detail.data });
+  const loaded = detail.data ?? (mountedDetail?.owner === detailOwner ? mountedDetail.detail : undefined);
   const detailFeedbackId = `forms:detail:${scope.actorId}:${scope.culture}:${formId}`;
   useEffect(() => () => { dismissNotification(detailFeedbackId); }, [detailFeedbackId]);
   useEffect(() => {
@@ -74,10 +80,11 @@ export function FormEditorPage() {
     notify({ id: detailFeedbackId, kind: "error", message: readErrorMessage(detail.error, t) });
   }, [detail.error, detailFeedbackId, t]);
   useEffect(() => { if (reactivateOnOpen && detail.data && detail.isFetchedAfterMount && !detail.isError) void navigate(location.pathname + location.search, { replace: true, state: null }); }, [reactivateOnOpen, detail.data, detail.isFetchedAfterMount, detail.isError, navigate, location.pathname, location.search]);
-  if (!user || formId && (detail.isPending || reactivateOnOpen && !detail.isFetchedAfterMount)) return <Page title={t(formId ? "title" : "new")}><Spinner /></Page>;
+  if (!user || formId && (detail.isPending && !loaded || reactivateOnOpen && !detail.isFetchedAfterMount)) return <Page title={t(formId ? "title" : "new")}><Spinner /></Page>;
   if (!scope.permissions.includes("formtemplates.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
-  if (formId && (!detail.data || reactivateOnOpen && detail.isError)) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
-  return <FormEditor key={`${scope.actorId}:${scope.culture}:${formId}`} scope={scope} reactivateOnOpen={reactivateOnOpen} openQuestionFieldId={openQuestionFieldId} timeZoneId={user.timeZoneId} initial={detail.data ?? missingFormInitial(scope, formId, navigationState)} onPublicationChanged={() => { void detail.refetch(); }} />;
+  if (formId && (!loaded || reactivateOnOpen && detail.isError)) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
+  // The menu language is not part of the key: the editor shows the same draft in the new language.
+  return <FormEditor key={`${scope.actorId}:${formId}`} scope={scope} reactivateOnOpen={reactivateOnOpen} openQuestionFieldId={openQuestionFieldId} timeZoneId={user.timeZoneId} initial={loaded ?? missingFormInitial(scope, formId, navigationState)} onPublicationChanged={() => { void detail.refetch(); }} />;
 }
 
 function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactivateOnOpen, openQuestionFieldId }: { reactivateOnOpen: boolean; openQuestionFieldId: string | null; scope: FormReadScope; initial: FormDetail | DraftEditorValue; timeZoneId?: string; onPublicationChanged: () => void }) {
@@ -86,7 +93,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   useTranslation("forms", { lng: "definition" in initial ? initial.definition.draft.culture : initial.draft.culture });
   const [rulesDirty, setRulesDirty] = useState(false);
   const [suggestionsDirty, setSuggestionsDirty] = useState(false);
-  // No content language selector: the form is edited in the menu language, and the editor remounts when it changes.
+  // No content language selector: the form is edited in the menu language. Changing it keeps the draft and shows its other
+  // translation, with the original as the reference.
   const contentCulture = scope.culture;
   const navigate = useNavigate();
   const editor = useFormDraftEditor(scope, initial);
@@ -186,7 +194,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const dirty = !!session && JSON.stringify(session.value) !== JSON.stringify(session.baseline);
   const frozen = !!session && session.phase !== "Editing";
   const publicationPending = ["Accepting", "Unconfirmed"].includes(publication.phase);
-  const guard = useUnsavedChangesGuard(dirty || rulesDirty || suggestionsDirty || frozen || publicationPending, { remountsOnLanguageChange: true });
+  const guard = useUnsavedChangesGuard(dirty || rulesDirty || suggestionsDirty || frozen || publicationPending);
   const reviewRequired = session?.phase === "ReviewRequired";
   const readOnly = !editor.canSave;
   // An enabled Save says there are changes. A new form has nothing saved yet, so it can be saved as it is (validated on the attempt).

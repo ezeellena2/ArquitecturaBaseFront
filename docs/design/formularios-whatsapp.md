@@ -291,7 +291,7 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
 11. **Idiomas.** La elección del 2026-10-10 exigía español e inglés completos al publicar y guardado con traducciones
     pendientes. **I1–I3, elegidos el 2026-10-18, sustituyen ese requisito:** sólo el original es obligatorio para guardar
     y publicar. Desde el 2026-10-23 (decisión del punto 35) no hay selector de idioma: se escribe en el idioma del menú
-    y, para traducir, se cambia el idioma del menú y se edita lo mismo; si el editor tiene cambios sin guardar, el menú pide confirmación antes de descartarlos. La preview muestra todo en el original mientras falte una traducción y todo en el secundario al completarse.
+    y, para traducir, se cambia el idioma del menú y se edita lo mismo: el editor conserva los cambios sin guardar y muestra la otra traducción (sólo el diseño del PDF se reinicia y pide confirmación antes de descartarlos). La preview muestra todo en el original mientras falte una traducción y todo en el secundario al completarse.
     Un error de guardado o de la comprobación de publicación en el otro idioma se ve bajo el mismo campo, con su idioma («En inglés: …»): no se cambia de idioma para mostrarlo.
     La vista oficial de WhatsApp tampoco tiene selector: pide el idioma del menú si la versión activa lo publicó y, si no, el original.
     Los mensajes de las reglas también se escriben en el idioma del menú, con el original como referencia.
@@ -566,8 +566,9 @@ idioma (nombre y pie del PDF, nombre de un campo del catálogo y de un dato de l
   menú en ese idioma.
 - Un error de guardado o de la comprobación en el otro idioma se ve bajo el mismo campo, con su idioma
   («En inglés: …»), sin cambiar de idioma; lo que no tiene control conserva su aviso.
-- Cambiar el idioma del menú con cambios sin guardar en un editor que se reinicia con el idioma pide confirmación antes
-  de descartarlos.
+- Cambiar el idioma del menú con cambios sin guardar los conserva en el editor del formulario y en los de catálogos (punto 41
+  del review de E2): es el mismo objeto en la otra traducción. Sólo el diseño del PDF se reinicia con el idioma y pide
+  confirmación antes de descartarlos.
 - La regla alcanza a los catálogos (nombre, descripción, opciones y campos, con el `originalCulture` del catálogo) y a los
   datos de las personas (con el suyo), y retira la excepción bilingüe del alta común de catálogos.
 

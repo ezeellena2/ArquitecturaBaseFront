@@ -5,14 +5,14 @@ import { ApiError } from "@/shared/api/ApiError";
 import type { CatalogItemMove } from "../api/catalogs";
 import { createManualCatalog, fetchCatalog, updateManualCatalog, createFiltersCatalog, updateFiltersCatalog, previewCatalogFilters, approveCatalogProposal, discardCatalogProposal } from "../api/catalogs";
 import type { CatalogDetail, CatalogItem, CatalogSave, CatalogFilterPreview } from "../api/catalogResponse";
-import { catalogDraftBody, catalogDraftUpdateBody, catalogItemFieldIssues, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
+import { catalogDraftBody, catalogDraftInCulture, catalogDraftUpdateBody, catalogItemFieldIssues, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
 import { catalogItemChanges, type CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 import { ownTexts } from "../editorModel";
 
 import { catalogFiltersBody } from "../catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "../components/CatalogFiltersEditor";
-import { catalogFieldsBody, type CatalogFieldDraft } from "../catalogFields";
+import { catalogFieldsBody, relocalizeCatalogField, type CatalogFieldDraft } from "../catalogFields";
 import type { CatalogPresentation } from "../api/catalogResponse";
 import { withoutPresentationFields } from "../catalogPresentation";
 
@@ -39,7 +39,8 @@ function fresh(owner: string, initial?: CatalogDetail, kind: CatalogDraft["kind"
 }
 export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text") {
   const client = useQueryClient();
-  const owner = JSON.stringify([scope.actorId, scope.culture, initial?.id ?? null, initial?.kind ?? kind, initial?.valueType ?? valueType]);
+  // The menu language is not part of the owner: changing it keeps the draft, which is the same catalog in another translation.
+  const owner = JSON.stringify([scope.actorId, initial?.id ?? null, initial?.kind ?? kind, initial?.valueType ?? valueType]);
   const canRead = scope.actorId !== null && scope.permissions.includes("formcatalogs.read");
   const canManage = canRead && scope.permissions.includes("formcatalogs.manage");
   const ownerRef = useRef(owner);
@@ -50,12 +51,17 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   const [state, setState] = useState(() => fresh(owner, initial, kind, valueType, scope.culture));
   const stateRef = useRef(state);
   useLayoutEffect(() => { ownerRef.current = owner; permissionsRef.current = { canRead, canManage }; initialRef.current = initial; stateRef.current = state; }, [owner, canRead, canManage, initial, state]);
+  const cultureRef = useRef(scope.culture);
+  useLayoutEffect(() => { cultureRef.current = scope.culture; }, [scope.culture]);
   useEffect(() => {
     active.current = true;
-    setState(fresh(owner, canRead ? initialRef.current : undefined, kind, valueType, scope.culture));
+    setState(fresh(owner, canRead ? initialRef.current : undefined, kind, valueType, cultureRef.current));
     return () => { active.current = false; operation.current?.abort(); operation.current = null; };
-  }, [owner, canRead, kind, valueType, scope.culture]);
+  }, [owner, canRead, kind, valueType]);
   const owned = state.owner === owner && canRead;
+  // The typed values (integers, decimals, bounds) are written in the menu language: a new one rewrites them with the same values.
+  if (owned && state.draft.culture !== scope.culture) setState(value => ({ ...value, draft: catalogDraftInCulture(value.draft, scope.culture),
+    baseline: { ...value.baseline, fields: value.baseline.fields.map(field => relocalizeCatalogField(field, value.draft.culture, scope.culture)) } }));
   const isCurrentOwner = useCallback(() => active.current && ownerRef.current === owner && permissionsRef.current.canRead
     && stateRef.current.epoch === state.epoch, [owner, state.epoch]);
   const accepts = useCallback((capturedOwner: string, controller: AbortController) => isCurrentOwner() && ownerRef.current === capturedOwner

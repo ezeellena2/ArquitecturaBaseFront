@@ -165,8 +165,9 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   navegador). El `reset()` de `useBlocker` pisa `"proceeding"` y `ConfirmDialog` llama `onConfirm` y `onOpenChange(false)`
   en el mismo clic: `stay()` no hace nada tras `leave()`. Guarda apagada con `isDirty && !mutation.isPending`; la vuelta
   al listado va en el `onSuccess` de `mutate(...)`, no de `useMutation`. Cambiar el idioma del menú no pasa por el router
-  pero vuelve a montar los editores cuya clave lleva la cultura: su guarda pasa `remountsOnLanguageChange` y, con cambios
-  (`hasUnsavedChanges`), `UserMenu` pregunta antes. Las pantallas que conservan el borrador con el idioma no la pasan.
+  pero vuelve a montar los editores cuya clave lleva la cultura (hoy, el diseño del PDF): su guarda pasa
+  `remountsOnLanguageChange` y, con cambios (`hasUnsavedChanges`), `UserMenu` pregunta antes. Las pantallas que conservan el
+  borrador con el idioma (el editor de formularios y los de catálogos, entre otras) no la pasan.
 - **Errores por `code`:** `errors.ts` de cada feature hace `switch` sobre `ApiError.code` para los códigos con texto propio
   (`Users.LastAdmin`) y deja pasar el `detail`. `Roles.Role.HasUsers` arma el texto con `userCount` (`ApiError.problem`);
   `{{count}}` necesita `_one` y `_other`.

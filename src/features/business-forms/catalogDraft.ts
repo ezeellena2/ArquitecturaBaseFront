@@ -1,4 +1,4 @@
-import { formatCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
+import { formatCatalogValue, parseCatalogValue, relocalizeCatalogValue, type CatalogValueType } from "./catalogValues";
 import type { FormCulture } from "./model";
 import type { CatalogItemMove, CreateManualCatalogBody, UpdateManualCatalogBody } from "./api/catalogs";
 import type { CatalogDetail, CatalogItem } from "./api/catalogResponse";
@@ -6,7 +6,7 @@ import { catalogItemChanges, mergeCatalogItemPage, newCatalogItemEdits, stageCat
 
 import { openCatalogFilters } from "./catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "./components/CatalogFiltersEditor";
-import { catalogFieldsBody, formatCatalogFieldValue, openCatalogField, parseCatalogFieldValue, type CatalogFieldDraft, type CatalogFieldValueResult } from "./catalogFields";
+import { catalogFieldsBody, formatCatalogFieldValue, openCatalogField, parseCatalogFieldValue, relocalizeCatalogField, relocalizeCatalogFieldValue, type CatalogFieldDraft, type CatalogFieldType, type CatalogFieldValueResult } from "./catalogFields";
 import type { CatalogPresentation } from "./api/catalogResponse";
 import { administrativeName, ownTexts } from "./editorModel";
 import { formatYesNo, type YesNoLabels } from "@/shared/lib/typedValue";
@@ -41,6 +41,26 @@ export function catalogItemValue(item: CatalogItem, valueType: CatalogValueType,
   return { value: valueType === "Text" ? null : valueType === "Date" ? item.value : formatCatalogValue(valueType, item.value, culture), localId: item.id, itemId: item.id, label: { ...item.text }, detail: { ...item.detail }, code: item.code, position: item.position, isActive: item.isActive, fields: Object.fromEntries(Object.entries(item.fields).map(([id, value]) => { const field = fields.find(field => field.id === id); return [id, field ? formatCatalogFieldValue(field, value, culture) || null : value]; })), fieldTexts: Object.fromEntries(Object.entries(item.fieldTexts).map(([id, text]) => [id, { ...text }])) };
 }
 export const loadCatalogDraftItems = (draft: CatalogDraft, items: readonly CatalogItem[]): CatalogDraft => ({ ...draft, items: mergeCatalogItemPage(draft.items, items.map(item => catalogItemValue(item, draft.valueType, draft.culture, draft.savedFields))) });
+/**
+ * The same draft with its integers and decimals written in `culture`, the new menu language, with the same values: options,
+ * their field values and the bounds of the fields. A loaded value, and an unedited one, follow the saved field type they
+ * were formatted with; an edited one, the draft's. What does not parse stays as written, and the body does not change.
+ */
+export function catalogDraftInCulture(draft: CatalogDraft, culture: FormCulture): CatalogDraft {
+  const from = draft.culture;
+  if (from === culture) return draft;
+  const savedType = (id: string) => draft.savedFields.find(field => field.id === id)?.type;
+  const draftType = (id: string) => draft.fields.find(field => field.id === id)?.type;
+  const option = (item: CatalogManualItemValue, typeOf: (id: string) => CatalogFieldType | undefined): CatalogManualItemValue => ({
+    ...item, value: relocalizeCatalogValue(draft.valueType, item.value, from, culture),
+    ...(item.fields ? { fields: Object.fromEntries(Object.entries(item.fields).map(([id, value]) => { const type = typeOf(id); return [id, type ? relocalizeCatalogFieldValue(type, value, from, culture) : value]; })) } : {}) });
+  const originals = Object.fromEntries(Object.entries(draft.items.originals).map(([key, item]) => [key, option(item, savedType)]));
+  const changes = Object.fromEntries(Object.entries(draft.items.changes).map(([key, item]) => {
+    const original = draft.items.originals[key];
+    return [key, option(item, id => original && (original.fields?.[id] ?? null) === (item.fields?.[id] ?? null) ? savedType(id) : draftType(id))];
+  }));
+  return { ...draft, culture, items: { originals, changes }, fields: draft.fields.map(field => relocalizeCatalogField(field, from, culture)), savedFields: draft.savedFields.map(field => relocalizeCatalogField(field, from, culture)) };
+}
 export const stageCatalogDraftItem = (draft: CatalogDraft, item: CatalogManualItemValue): CatalogDraft => ({ ...draft, items: stageCatalogItem(draft.items, item) });
 function canonicalItemValue(draft: CatalogDraft, item: CatalogManualItemValue): string | null {
   const parsed = parseCatalogValue(draft.valueType, item.value, draft.culture);

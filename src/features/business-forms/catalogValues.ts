@@ -42,6 +42,13 @@ export function parseCatalogValue(type: CatalogValueType, input: string | null, 
   return value === null ? { valid: false, reason: "invalid" } : { valid: true, value };
 }
 
+/** An integer or decimal written in `from`, written in `to` with the same value. A date is canonical, and what does not parse stays as written. */
+export function relocalizeCatalogValue(type: CatalogValueType, input: string | null, from: string, to: string): string | null {
+  if (type !== "Integer" && type !== "Decimal" || !input?.trim() || from === to) return input;
+  const parsed = parseCatalogValue(type, input, from);
+  return parsed.valid && parsed.value !== null ? formatCatalogValue(type, parsed.value, to) : input;
+}
+
 export function isCanonicalCatalogValue(type: CatalogValueType, value: string | null): boolean {
   if (type === "Text") return value === null;
   if (value === null || value.length > 64) return false;

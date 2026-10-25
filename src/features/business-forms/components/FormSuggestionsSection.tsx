@@ -31,7 +31,8 @@ import { mappingTargets,newSuggestion,prepareSuggestions,suggestionFieldErrors,t
 export interface FormSuggestionsSectionProps { readonly definitionId:string;readonly definitionRevision:number;readonly publishedVersionId?:string|null;readonly scope:FormReadScope;readonly timeZoneId?:string;readonly onDirtyChange:(dirty:boolean)=>void }
 export function FormSuggestionsSection(props:FormSuggestionsSectionProps) {
   const {t}=useTranslation("forms");
-  const owner=JSON.stringify([...formScopeKey(props.scope),props.definitionId]);
+  // The menu language is not part of the owner: changing it keeps the suggestions being edited.
+  const owner=JSON.stringify([props.scope.actorId,[...new Set(props.scope.permissions)].sort().join(","),props.definitionId]);
   const [denied,setDenied]=useState<string|null>(null);
   const onDenied=useCallback(()=>setDenied(owner),[owner]);
   if(!props.scope.actorId||!props.scope.permissions.includes("formsuggestions.manage"))return null;
