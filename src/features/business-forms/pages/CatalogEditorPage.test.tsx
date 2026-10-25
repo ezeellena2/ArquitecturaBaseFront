@@ -408,6 +408,23 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
     expect(requests.at(-1)?.getAll("ids")).toEqual([]);
   });
+  it("keeps the focus where the person types after a type change marks an option already changed in the draft", async () => {
+    viewport(true); conversionSetup(); const user = userEvent.setup();
+    await mount("/catalogos/" + id);
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(await screen.findByRole("button", { name: "Editar Plazo" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
+    const text = await screen.findByRole("textbox", { name: "Texto de la opción 1" });
+    await user.clear(text); await pasteText(user, text, "Pérez Norte");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Cambiar el tipo de «Plazo»" })).getByRole("button", { name: "Cancelar" }));
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeInvalid();
+    const code = screen.getByRole("textbox", { name: "Código de la opción 1" });
+    await user.type(code, "XY");
+    expect(code).toHaveFocus();
+    expect(code).toHaveValue("C1XY");
+    expect(screen.queryByRole("textbox", { name: "Texto" })).not.toBeInTheDocument();
+  });
   // «Plazo» keeps its type and narrows a rule: the Save comes back with every saved value that breaks it, on that control.
   function rulesSetup(control: "maxLength" | "unique", reason: "length" | "invalid", rows = termRows) {
     const term = savedField({ key: "term", name: "Plazo", type: "text" });

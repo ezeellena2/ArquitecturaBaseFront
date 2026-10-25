@@ -193,7 +193,9 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     const savedType = draft?.savedFields.find(field => field.id === failed?.field.id)?.type;
     if (fieldFeedback?.invalidRows?.length && failed && savedType)
       setErrorRows({ control: failed.control, field: failed.field, from: savedType, convertedCount: fieldFeedback.convertedCount ?? 0, invalidCount: fieldFeedback.invalidCount ?? fieldFeedback.invalidRows.length, rows: fieldFeedback.invalidRows, open: failed.control === "type", showRows: false });
-    const invalidItem = changedItems.find(item => itemErrors[item.localId]);
+    // Only a new error opens its option. Any edit clears the error, and by then the server rows already mark options:
+    // opening one of them would take the focus from where the person types.
+    const invalidItem = editor.error ? changedItems.find(item => itemErrors[item.localId]) : undefined;
     if (invalidItem) setExpanded(invalidItem.localId);
   }
   const save = async () => {

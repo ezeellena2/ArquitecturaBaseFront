@@ -21,7 +21,10 @@ export function CatalogFieldEditor({ field, culture, original, scope, errors = {
   const nameRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const errorStamp = JSON.stringify(errors);
-  useEffect(() => { (rootRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ?? nameRef.current)?.focus(); }, [field.localId, errorStamp]);
+  // Opening the editor puts the cursor in its first marked control, or in Nombre; a new error moves it to its control. Errors
+  // clear with any edit, also one elsewhere on the page, and that leaves the focus where the person types.
+  useEffect(() => { (rootRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ?? nameRef.current)?.focus(); }, [field.localId]);
+  useEffect(() => { if (errorStamp !== "{}") rootRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(); }, [errorStamp]);
   const error = (path: string) => errors[path]?.join(" ");
   const range = ["integer", "decimal", "date"].includes(field.type);
   const reference = contentReference(field.name, culture, original);
