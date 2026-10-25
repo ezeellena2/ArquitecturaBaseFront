@@ -20,11 +20,18 @@ it("accepts an option written only in the menu language and marks a missing orig
   expect(catalogItemProblems([north], "es")).toEqual([{ localId: "north", field: "text.es", kind: "required" }]);
 });
 it("generates the missing code from the text in any language", () => {
-  expect(generateMissingCatalogCodes([{ ...row, localId: "north", itemId: null, code: "", label: { es: null, en: "North side" } }]).map(item => item.code)).toEqual(["NORTH-SIDE"]);
+  expect(generateMissingCatalogCodes([{ ...row, localId: "north", itemId: null, code: "", label: { es: null, en: "North side" } }], "es").map(item => item.code)).toEqual(["NORTH-SIDE"]);
+});
+// The code comes from the text in the menu language and, without it, from the other one: never from Spanish first.
+it("generates the missing code from the text in the menu language before the other one", () => {
+  const north: CatalogManualItemValue = { ...row, localId: "north", itemId: null, code: "", label: { es: "Norte", en: "North" } };
+  expect(generateMissingCatalogCodes([north], "en").map(item => item.code)).toEqual(["NORTH"]);
+  expect(generateMissingCatalogCodes([north], "es").map(item => item.code)).toEqual(["NORTE"]);
+  expect(generateMissingCatalogCodes([{ ...north, label: { es: "Norte", en: null } }], "en").map(item => item.code)).toEqual(["NORTE"]);
 });
 it("generates only missing codes from Spanish text, keeps identity and values, and disambiguates known codes without changing them", () => {
   const rows = [row, { ...row, localId: "b", code: "DE-URGENCIA" }, { ...row, localId: "c", itemId: null, code: "", value: "1500.5" }, { ...row, localId: "d", itemId: null, code: "", label: { es: "Árbol / Norte" } }];
-  const generated = generateMissingCatalogCodes(rows);
+  const generated = generateMissingCatalogCodes(rows, "es");
   expect(generated.map(item => item.code)).toEqual(["URG", "DE-URGENCIA", "DE-URGENCIA-2", "ARBOL-NORTE"]);
   expect(generated[2]).toMatchObject({ localId: "c", itemId: null, value: "1500.5" });
   expect(rows[2].code).toBe("");

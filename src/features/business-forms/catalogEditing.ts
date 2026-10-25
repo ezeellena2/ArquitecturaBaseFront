@@ -23,11 +23,12 @@ export function catalogItemProblems(items: readonly CatalogManualItemValue[], or
   }
   return problems;
 }
-export function generateMissingCatalogCodes(items: readonly CatalogManualItemValue[]): readonly CatalogManualItemValue[] {
+// A missing code comes from the text in the menu language and, without it, from the other one (the catalog's original).
+export function generateMissingCatalogCodes(items: readonly CatalogManualItemValue[], culture: FormCulture): readonly CatalogManualItemValue[] {
   const used = new Set(items.filter(item => item.code.trim()).map(item => folded(item.code)));
   return items.map(item => {
     if (item.code.trim()) return item;
-    const base = administrativeName(item.label, "es").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+    const base = administrativeName(item.label, culture).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
     if (!base) return item;
     let code = base, suffix = 1;
     while (used.has(folded(code))) { const tail = "-" + ++suffix; code = base.slice(0, 80 - tail.length) + tail; }

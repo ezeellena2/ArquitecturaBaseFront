@@ -237,8 +237,8 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     editor.changeItem({ localId, itemId: null, label: { es: null, en: null }, detail: { es: null, en: null }, code: "", value: null, isActive: true, position: null });
     setExpanded(localId);
   };
-  const generateCodes = () => generateMissingCatalogCodes(knownItems).forEach((item, index) => { if (knownItems[index]!.code !== item.code) editor.changeItem(item); });
-  const generateCode = (localId: string) => generateMissingCatalogCodes(knownItems).filter(item => item.localId === localId).forEach(editor.changeItem);
+  const generateCodes = () => generateMissingCatalogCodes(knownItems, culture).forEach((item, index) => { if (knownItems[index]!.code !== item.code) editor.changeItem(item); });
+  const generateCode = (localId: string) => generateMissingCatalogCodes(knownItems, culture).filter(item => item.localId === localId).forEach(editor.changeItem);
   const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item, draft.valueType, draft.culture, draft.savedFields))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   // While a type change is pending, an unedited option or yes/no keeps what it showed: in the table, its editor and the preview.
   const pendingTexts = draft ? Object.fromEntries([...rowItems, ...changedItems].map(item => [item.localId, pendingFieldTexts(draft, item, culture, yesNo)])) : {};
