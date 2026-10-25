@@ -116,7 +116,9 @@ Incremento 4 de la Etapa 1, la respuesta llega al chat (2026-10-10). Variantes d
 
 Etapa 2, catálogos (2026-10-10), sobre los
 [resumen de la Etapa 2](../../../ArquitecturaBase/docs/plans/formularios/etapa-2-catalogos.md). Decidido el
-mismo día: el inglés de las opciones de un catálogo es opcional (si falta, se usa el español); cambiar el catálogo de una
+mismo día: el inglés de las opciones de un catálogo es opcional (si falta, se usa el español; desde el 2026-10-23, la
+traducción opcional es el idioma que no es el original del catálogo y, si falta, se usa el original, según el
+[idioma del menú](#idioma-del-menú-sin-selector--2026-10-23)); cambiar el catálogo de una
 pregunta publicada la convierte en pregunta nueva; si la opción elegida se dio de baja antes de responder, no se guarda,
 se avisa al operador y se ofrece mandarlo de nuevo. **Decisión del 2026-10-11:** Query/K5 se posterga hasta que una lista no pueda expresarse con Filters. El alta K2 muestra sólo Manual y Filters; no ofrece «con una consulta», tampoco deshabilitada. Las capturas K2/K5 se conservan como evidencia histórica del diseño anterior.
 
@@ -443,7 +445,9 @@ Los consumidores usan 19 cohortes, 295 capturas —64 de WhatsApp— y 53 fuente
 
 I1–I3 conservan el original obligatorio, el secundario opcional y sus marcas neutras. La preview elige una cultura
 para todo el formulario; la publicación informa los idiomas completos y los cambios de una versión a otra. El selector
-común permite envolver sus etiquetas sólo en I1, manteniendo visible el conteo en móvil. Las culturas de la vista oficial
+común permitía envolver sus etiquetas sólo en I1, manteniendo visible el conteo en móvil; con la
+[decisión del 2026-10-23](#idioma-del-menú-sin-selector--2026-10-23) se retiraron ese selector de I1 y, con él, la
+variante `wrapLabels`. Las culturas de la vista oficial
 y del aviso de publicación proceden de las copias confirmadas del servidor. La
 [regla funcional](../../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19) fija también la cultura preparada de envío y el respaldo individual de cada ítem de catálogo.
 
