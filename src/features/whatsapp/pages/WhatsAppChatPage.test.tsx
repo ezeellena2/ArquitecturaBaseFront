@@ -200,6 +200,18 @@ describe("WhatsAppChatPage", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/sin-permiso"));
     expect(list).not.toHaveBeenCalled();
   });
+  it("keeps the visible inbox when a refresh fails and tells it only in a notification, not next to the title", async () => {
+    const errors = vi.spyOn(toast, "error");
+    renderRouteWithProviders("/whatsapp/chat");
+    await screen.findByRole("button", { name: "Ana" });
+    server.use(http.get("/api/whatsapp/chats", () => HttpResponse.json({ code: "General.Unexpected" }, { status: 500 })));
+    await userEvent.click(screen.getByRole("button", { name: "Actualizar" }));
+    await waitFor(() => expect(errors).toHaveBeenCalledTimes(1));
+    // Page.status shows only the state of the object; the conversations stay as they were.
+    expect(screen.queryByText("No se pudo actualizar. Se conserva el historial visible.")).not.toBeInTheDocument();
+    expect(screen.queryByText("No se pudo cargar el chat.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ana" })).toBeVisible();
+  });
   it("requires confirmation to review its own uncertainty without repeating or marking it delivered", async () => {
     thread.outgoing = [{ ...pending("request-review", "Resultado externo incierto"), state: "Uncertain" }];
     const reviews: string[] = [];

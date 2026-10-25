@@ -49,7 +49,9 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
     },
     refetchInterval: query => query.state.error instanceof ApiError && query.state.error.status === 403 ? false : visible ? 5000 : false });
   return (
-    <Page title={t("title")} status={list.isError ? <span className="text-xs text-[var(--color-content-muted)]">{t("stale")}</span> : undefined}
+    // Un refresco fallido conserva la bandeja visible y lo avisa la notificación común de la consulta (QueryCache):
+    // `status` muestra sólo el estado del objeto, y el cuerpo dice que no se pudo cargar sólo si no hay nada que mostrar.
+    <Page title={t("title")}
       actions={<Button variant="outline" size="sm" onClick={() => void list.refetch()}>{t("refreshAction")}</Button>}>
       <Surface>
         <div className="grid h-[calc(100svh-10rem)] min-h-[30rem] grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)]">
@@ -62,7 +64,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto" aria-label={t("conversations")}>
               {list.isPending ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("loading")}</p> : null}
-              {list.isError ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
+              {list.isError && !list.data ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
               {list.data?.page.items.map(chat => <div key={chat.id} className={cn("border-b border-[var(--color-border)] p-2", selected === chat.id ? "bg-[var(--color-surface-muted)]" : "")}>
                 <Button variant="ghost" className="w-full justify-start text-left" aria-label={chat.profileName ?? chat.phoneNumber ?? t("unnamed")} aria-pressed={selected === chat.id} onClick={() => setSelected(chat.id)}>
                   <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="min-w-0 flex-1 truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.mode === "Assistant" ? <Badge variant="outline">{t("mode.Assistant")}</Badge> : null}{chat.unreadCount ? <span className="text-xs">{chat.unreadCount}</span> : null}</span>
