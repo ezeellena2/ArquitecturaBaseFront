@@ -148,6 +148,23 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(code).toHaveFocus();
     expect(bodies).toEqual([]);
   });
+  it("keeps Generate code in place while a code is typed", async () => {
+    setup(); await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
+    await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Norte");
+    const generate = screen.getByRole("button", { name: "Generar desde el texto" });
+    expect(generate).toBeEnabled();
+    const code = screen.getByRole("textbox", { name: "Código" });
+    await pasteText(user, code, "N");
+    // The button does not appear or disappear while typing: with a code it stays in its place, only disabled.
+    expect(screen.getByRole("button", { name: "Generar desde el texto" })).toBe(generate);
+    expect(generate).toBeDisabled();
+    await user.clear(code);
+    expect(generate).toBeEnabled();
+    await user.click(generate);
+    expect(code).not.toHaveValue("");
+    expect(generate).toBeDisabled();
+  });
   it("creates an option written only in the menu language", async () => {
     setup(undefined, "en"); await i18n.changeLanguage("en"); const bodies: Record<string, unknown>[] = [];
     server.use(http.post("/api/forms/catalogs", async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json({ catalog: { ...initial, name: { en: "Warehouses" }, description: {}, originalCulture: "en" }, itemIdentityMap: {}, fieldIdentityMap: {} }, { status: 201 }); }));
