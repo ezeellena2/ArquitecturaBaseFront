@@ -106,6 +106,49 @@ it("drops the recipient chosen for a Manual catalog when the question moves to a
   expect(onPreviewChange).toHaveBeenLastCalledWith("q", null);
 });
 
+it("explains why a person cannot be tried before saving only on hover or focus", async () => {
+  serveRecipientPreview();
+  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: manualId }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
+  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  const reason = "Guardá el formulario para probar con una persona.";
+  expect(input).toBeDisabled();
+  // No hint under the field: the reason is its description and its tooltip, on hover or on keyboard focus.
+  expect(input).toHaveAccessibleDescription(reason);
+  expect(screen.getAllByText(reason).every(node => node.closest("[hidden]"))).toBe(true);
+  await userEvent.hover(input);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+  await userEvent.unhover(input);
+  const wrapper = input.closest<HTMLElement>("[tabindex='0']")!;
+  act(() => wrapper.focus());
+  expect(wrapper).toHaveFocus();
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+});
+
+it("offers filter additions in the section header", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  const onSourceChange = vi.fn();
+  const view = renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={onSourceChange}/></MemoryRouter>);
+  const band = async () => within(await screen.findByRole("region", { name: "Qué opciones ve cada persona" })).getByRole("heading", { name: "Qué opciones ve cada persona" }).parentElement!;
+  // Both additions act on the whole section, so they go in its band beside the title.
+  const person = within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" });
+  await waitFor(() => expect(person).toBeEnabled());
+  const fixed = within(await band()).getByRole("button", { name: "Agregar filtro fijo" });
+  expect(fixed).toBeEnabled();
+  await userEvent.click(fixed);
+  expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog, match: [{ fieldId: zone, value: null }] });
+  view.unmount();
+  // A catalog without filter fields keeps them in the band, disabled, with the reason as tooltip and description, not below.
+  serveRecipientPreview();
+  renderWithProviders(settings(manualId));
+  const reason = "Este catálogo no tiene campos de filtro disponibles.";
+  for (const name of ["Agregar filtro según quien lo recibe", "Agregar filtro fijo"]) {
+    const button = within(await band()).getByRole("button", { name });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleDescription(reason);
+  }
+  expect(screen.getAllByText(reason).every(node => node.closest("[hidden]"))).toBe(true);
+});
+
 it("reads no recipient samples for a Filters catalog of a saved form", async () => {
   const requests = serveRecipientPreview();
   renderWithProviders(settings(filtersId));

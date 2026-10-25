@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { formatCatalogFieldValue, openCatalogField, parseCatalogFieldValue } from "../catalogFields";
@@ -30,15 +31,28 @@ function FixedValue({ field, value, scope, readOnly, error, onChange }: { field:
     onChange(next);
   }} />;
 }
-export function CatalogQuestionFilters({ source, fields, attributes, scope, readOnly, errors = {}, onChange }: { source: DraftQuestionSource; fields: readonly CatalogField[]; attributes: readonly PersonAttribute[]; scope: CatalogReadScope; readOnly: boolean; errors?: Readonly<Record<string, readonly string[]>>; onChange: (source: DraftQuestionSource) => void }) {
-  const { t } = useTranslation("forms");
+// The filter fields a question can use and the person data that can match each one, shared by the conditions and the
+// additions in the section header.
+function filterChoices(source: DraftQuestionSource, fields: readonly CatalogField[], attributes: readonly PersonAttribute[]) {
   const match = source.match ?? [];
   const eligible = fields.filter(field => field.isActive && field.role === "filter");
   const compatible = (field: CatalogField) => attributes.filter(attribute => attribute.isActive && attribute.type === "Catalog" && field.type === "catalog" && field.sourceCatalogId === attribute.sourceCatalogId);
   const available = eligible.filter(field => !match.some(condition => condition.fieldId === field.id));
+  return { match, eligible, compatible, available };
+}
+// Both additions act on the whole section, so they go in its header; without filter fields, the reason is their tooltip.
+export function CatalogQuestionFilterActions({ source, fields, attributes, onChange }: { source: DraftQuestionSource; fields: readonly CatalogField[]; attributes: readonly PersonAttribute[]; onChange: (source: DraftQuestionSource) => void }) {
+  const { t } = useTranslation("forms");
+  const { match, eligible, compatible, available } = filterChoices(source, fields, attributes);
+  const reason = eligible.length ? null : t("catalogQuestion.filter.noFields");
+  const add = (person: boolean) => { const field = available.find(field => !person || compatible(field).length > 0); if (field) onChange(normalizeCatalogQuestionSource({ ...source, match: [...match, person ? { fieldId: field.id, personAttributeId: null } : { fieldId: field.id, value: null }] })); };
+  return <><DisabledReason reason={reason}><Button type="button" variant="outline" size="sm-wrap" disabled={!available.some(field => compatible(field).length > 0)} onClick={() => add(true)}>{t("catalogQuestion.filter.addPerson")}</Button></DisabledReason><DisabledReason reason={reason}><Button type="button" variant="outline" size="sm-wrap" disabled={available.length === 0} onClick={() => add(false)}>{t("catalogQuestion.filter.addFixed")}</Button></DisabledReason></>;
+}
+export function CatalogQuestionFilters({ source, fields, attributes, scope, readOnly, errors = {}, onChange }: { source: DraftQuestionSource; fields: readonly CatalogField[]; attributes: readonly PersonAttribute[]; scope: CatalogReadScope; readOnly: boolean; errors?: Readonly<Record<string, readonly string[]>>; onChange: (source: DraftQuestionSource) => void }) {
+  const { t } = useTranslation("forms");
+  const { match, eligible, compatible, available } = filterChoices(source, fields, attributes);
   const update = (conditions: readonly FormCatalogMatch<string | null>[]) => onChange(normalizeCatalogQuestionSource({ ...source, match: conditions }));
   const change = (index: number, condition: FormCatalogMatch<string | null>) => update(match.map((item, position) => position === index ? condition : item));
-  const add = (person: boolean) => { const field = available.find(field => !person || compatible(field).length > 0); if (!readOnly && field) update([...match, person ? { fieldId: field.id, personAttributeId: null } : { fieldId: field.id, value: null }]); };
   return <div className="space-y-3"><p className="text-xs text-[var(--color-content-muted)]">{t("catalogQuestion.filter.hint")}</p>
     {match.map((condition, index) => {
       const field = fields.find(field => field.id === condition.fieldId);
@@ -52,7 +66,5 @@ export function CatalogQuestionFilters({ source, fields, attributes, scope, read
         {!readOnly ? <Button type="button" variant="outline" aria-label={t("catalogQuestion.filter.remove", { number: index + 1 })} onClick={() => update(match.filter((_, position) => position !== index))}>×</Button> : null}
       </div></fieldset>;
     })}
-    {!readOnly ? <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm-wrap" disabled={!available.some(field => compatible(field).length > 0)} onClick={() => add(true)}>{t("catalogQuestion.filter.addPerson")}</Button><Button type="button" variant="outline" size="sm-wrap" disabled={available.length === 0} onClick={() => add(false)}>{t("catalogQuestion.filter.addFixed")}</Button></div> : null}
-    {!eligible.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogQuestion.filter.noFields")}</p> : null}
   </div>;
 }
