@@ -4,6 +4,7 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { PrivateAudio } from "@/shared/ui/PrivateAudio";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchChatAudio, type ChatAudio as Audio } from "../api/audio";
@@ -37,8 +38,7 @@ export function ChatAudio({ owner, contactId, messageId, audio, body, onForbidde
  if (playback && playback.scope !== scope) setPlayback(undefined);
  const blob = audio.canPlay && playback?.scope === scope ? playback.blob : undefined;
  return <section className="min-w-0 space-y-2" aria-label={t("kind.Audio")}>
-  {blob ? <PrivateAudio blob={blob} label={t("audio.received")} playOnLoad/> : audio.canPlay ? <Button size="sm" variant="outline" disabled={loading || cooldown.isRunning} onClick={() => void listen()}>{t(loading ? "audio.loading" : "audio.listen")}</Button> : null}
-  {cooldown.isRunning ? <p className="text-xs text-[var(--color-content-muted)]">{t("audio.waiting", { count: cooldown.seconds })}</p> : null}
+  {blob ? <PrivateAudio blob={blob} label={t("audio.received")} playOnLoad/> : audio.canPlay ? <DisabledReason reason={cooldown.isRunning && !loading ? t("audio.waiting", { count: cooldown.seconds }) : null}><Button size="sm" variant="outline" disabled={loading || cooldown.isRunning} onClick={() => void listen()}>{t(loading ? "audio.loading" : "audio.listen")}</Button></DisabledReason> : null}
   {audio.state === "Completed" && body !== null ? <div className="border-t border-[var(--color-border)] pt-2"><p className="text-xs font-medium text-[var(--color-content-muted)]">{t("audio.transcription")}</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{body}</p></div> : <p className="text-sm text-[var(--color-content-muted)]">{t(audio.state === "Pending" || audio.state === "Transcribing" ? "audio.transcribing" : audio.state === "Expired" ? "audio.expired" : audio.reasonCode === "tooLarge" ? "audio.tooLarge" : audio.state === "Unavailable" && !audio.canPlay ? "audio.unavailable" : audio.canPlay ? "audio.failed" : "audio.noTranscript")}</p>}
  </section>;
 }

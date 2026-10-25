@@ -67,6 +67,18 @@ it("keeps the playback action paused after 429 without retrying when its wait ex
  expect(reads).toBe(1);
 });
 
+it("gives the wait after a 429 as the reason of Escuchar audio, with no text below it", async () => {
+ server.use(http.get("/api/whatsapp/chats/chat-1/messages/audio-1/audio", () => HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 60 }, { status: 429 })));
+ renderWithProviders(view()); await userEvent.click(screen.getByRole("button", { name: "Escuchar audio" }));
+ const wait = "Esperá 60 segundos para volver a escuchar.";
+ await waitFor(() => expect(screen.getByRole("button", { name: "Escuchar audio" })).toHaveAccessibleDescription(wait));
+ const listen = screen.getByRole("button", { name: "Escuchar audio" });
+ expect(listen).toBeDisabled();
+ for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
+ await userEvent.hover(listen);
+ expect(await screen.findByRole("tooltip")).toHaveTextContent(wait);
+});
+
 it("keeps a stored audio playable when transcription is unavailable", async () => {
  await act(async () => { renderWithProviders(view("Unavailable", true)); });
  expect(screen.getByRole("button", { name: "Escuchar audio" })).toBeEnabled();
