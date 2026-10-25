@@ -35,7 +35,9 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
  const [loaded, setLoaded] = useState(attribute);
  if (attribute !== loaded) { setLoaded(attribute); setName({ ...attribute?.name }); setType(attribute?.type ?? "Catalog"); setSource(attribute?.sourceCatalogId ?? null); setActive(attribute?.isActive ?? true); setError(null); setConfirmValues(false); setRemovalCount(null); }
  const errors = error instanceof ApiError ? error.errors ?? {} : {}, message = (path: string) => errors[path]?.join(" ");
- const inUse = (attribute?.usedBy.length ?? 0) > 0;
+ const usedBy = attribute?.usedBy ?? [], inUse = usedBy.length > 0;
+ // Without formtemplates.read the forms come unnamed: the dialog says only that it is blocked and by how many, without links.
+ const namedUses = usedBy.every(use => use.name !== null);
  // Someone else saved this attribute: saving again needs the current revision, so only reloading (or cancelling) goes on.
  const conflict = error instanceof ApiError && error.code === "Forms.PersonAttribute.RevisionConflict";
  const reload = () => void onReload().then(() => nameRef.current?.focus());
@@ -67,7 +69,7 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
   {type === "Catalog" ? canReadCatalogs ? <CatalogQuestionSelector scope={scope} manualOnly value={sourceCatalogId ?? ""} readOnly={busy || inUse} error={message("sourceCatalogId")} onChange={changeSource} /> : <FormField label={t("catalogQuestion.catalog")} required hint={t("catalogQuestion.requiresRead")} error={message("sourceCatalogId")}><Input readOnly value={attribute?.sourceCatalogName ?? ""} /></FormField> : null}
   {removalCount !== null ? <CheckboxField label={t("personData.confirmValueRemoval", { count: removalCount })} checked={confirmValues} disabled={busy} onCheckedChange={setConfirmValues} /> : null}
   {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} error={message("isActive")} onCheckedChange={setActive} /> : null}
-  {inUse ? <div className="text-sm"><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{attribute?.usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></div> : null}
+  {inUse ? <div className="text-sm">{namedUses ? <><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></> : <p>{t("personData.inUseCount", { count: usedBy.length })}</p>}</div> : null}
   {error && !Object.keys(errors).length ? <div className="space-y-2"><p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}</p>{conflict ? <Button type="button" variant="outline" disabled={busy} onClick={reload}>{t("personData.reloadAttribute")}</Button> : null}</div> : null}
  </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" disabled={busy || conflict || !Object.keys(names).length || !key.trim() || type === "Catalog" && !sourceCatalogId} onClick={() => void save()}>{t("common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;
 }

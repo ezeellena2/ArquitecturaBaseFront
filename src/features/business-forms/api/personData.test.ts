@@ -14,6 +14,13 @@ it("reads original-only attribute names and rejects unsupported definitions with
   }
   try { readPersonAttribute({ ...attribute, private: "PRIVATE" }); } catch (error) { expect(JSON.stringify(error)).not.toContain("PRIVATE"); expect(error).not.toHaveProperty("issues"); }
 });
+// Without formtemplates.read the server does not name the forms: each use comes with both properties null, never half named.
+it("reads each use of an attribute named, or redacted with both properties null", () => {
+  const named = { definitionId: "01990000-0000-7000-8000-000000000124", name: "Pedir repuesto" }, redacted = { definitionId: null, name: null };
+  for (const usedBy of [[named], [redacted, redacted]]) expect(readPersonAttribute({ ...attribute, usedBy })).toEqual({ ...attribute, usedBy });
+  for (const use of [{ ...named, name: null }, { ...redacted, name: "Pedir repuesto" }, { ...named, definitionId: null }, { definitionId: named.definitionId }, { ...named, question: null }])
+    expect(() => readPersonAttribute({ ...attribute, usedBy: [use] })).toThrow("Unsupported person data response.");
+});
 it("accepts a person attribute named only in English", () => {
   const english = { ...attribute, type: "Text", sourceCatalogId: null, sourceCatalogName: null, name: { en: "Branch" }, originalCulture: "en" };
   expect(readPersonAttribute(english)).toEqual(english);

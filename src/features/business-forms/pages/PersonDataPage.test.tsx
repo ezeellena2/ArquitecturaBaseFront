@@ -279,3 +279,33 @@ it("explains the limit of attributes on the disabled Add attribute", async () =>
  await userEvent.hover(add);
  expect(await screen.findByRole("tooltip")).toHaveTextContent("Se pueden definir hasta 20 datos.");
 });
+// Point 11: without formtemplates.read the forms are not named; the attribute shows only that it is blocked and by how many.
+it.each([
+ ["named", [{ definitionId: "01990000-0000-7000-8000-000000000008", name: "Pedir repuesto" }, { definitionId: "01990000-0000-7000-8000-000000000009", name: "Control" }], "Pedir repuesto, Control"],
+ ["redacted", [{ definitionId: null, name: null }, { definitionId: null, name: null }], "En uso en 2 formularios"],
+] as const)("shows an attribute in use with %s forms in the table and in its dialog", async (variant, usedBy, usage) => {
+ await mount(["formpersondata.manage"], [{ ...attribute, usedBy }]);
+ const definitions = (await screen.findByRole("heading", { name: "Datos" })).closest("section")!;
+ expect(await within(definitions).findByRole("cell", { name: usage })).toBeInTheDocument();
+ await userEvent.click(within(definitions).getByRole("button", { name: "Editar Sucursal" }));
+ const dialog = await screen.findByRole("dialog", { name: "Editar dato" });
+ expect(within(dialog).getByRole("combobox", { name: "Tipo" })).toBeDisabled();
+ expect(within(dialog).getByRole("checkbox", { name: "Dato activo" })).toBeDisabled();
+ expect(within(dialog).queryByRole("link")).not.toBeInTheDocument();
+ if (variant === "named") {
+  expect(within(dialog).getByText("Se usa en estos formularios. Mientras se use, no se puede cambiar su tipo o catálogo ni darlo de baja.")).toBeInTheDocument();
+  expect(within(dialog).getAllByRole("listitem").map(item => item.textContent)).toEqual(["Pedir repuesto", "Control"]);
+ } else {
+  expect(within(dialog).getByText("En uso en 2 formularios. Mientras se use, no se puede cambiar su tipo o catálogo ni darlo de baja.")).toBeInTheDocument();
+  expect(within(dialog).queryByRole("listitem")).not.toBeInTheDocument();
+ }
+});
+it("counts a single redacted use in the singular in English", async () => {
+ await act(() => i18n.changeLanguage("en"));
+ try {
+  await mount(["formpersondata.manage"], [{ ...attribute, usedBy: [{ definitionId: null, name: null }] }]);
+  expect(await screen.findByRole("cell", { name: "In use in 1 form" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Edit Branch" }));
+  expect(await screen.findByText("In use in 1 form. While in use, its type and source cannot change and it cannot be deactivated.")).toBeInTheDocument();
+ } finally { await act(() => i18n.changeLanguage("es")); }
+});

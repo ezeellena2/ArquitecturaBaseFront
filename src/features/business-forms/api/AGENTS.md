@@ -45,6 +45,7 @@ Familias:
 ### Datos de personas
 
 - `personData.ts` cierra metadatos, tabla sin correo, valores por GUID y opciones exclusivas id/text. La página de la tabla suma `missing`: un `{ attributeId, count }` por dato activo, hasta 20 sin repetir, con las personas de todo el conjunto filtrado (no de la página) que no lo tienen. La fuente Catalog exige identidad; Text, null. Cada atributo trae `originalCulture` (es o en), el único idioma obligatorio del nombre: el guard exige el nombre en al menos un idioma y los cuerpos de alta y edición lo mandan parcial. Revisión inicial null, primera escritura 1 y edición exactamente siguiente con misma persona/atributo; no retiene issues. Todas las llamadas son no-store y cancelables, sin MutationCache.
+- Cada atributo trae `usedBy`, un uso por formulario: `{ definitionId, name }` con `formtemplates.read`; sin él el servidor no nombra el formulario y llegan los dos en null, juntos. El guard no acepta un uso a medio nombrar.
 - El PUT de un atributo suma `confirmValueRemoval: true` sólo para confirmar el borrado de los valores cargados al cambiar tipo o fuente; si no, se omite.
 - PUT de datos envía delta: ausente conserva, null limpia; los valores inactivos no se devuelven. El selector paginado de opciones no requiere CatalogsRead. `personDataHttpContract` consume los cuerpos intactos de la cohorte `personData` de la corrida conjunta.
 
