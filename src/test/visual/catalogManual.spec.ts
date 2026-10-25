@@ -130,3 +130,48 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(geometry.document).toBeLessThanOrEqual(geometry.viewport);
   });
 }
+
+// The menu in English over a catalog written in Spanish: each text is edited in English, its optional translation, with the
+// Spanish original as the reference, never copied. Saving the translation keeps the original. Evidence without golden.
+for (const width of [1440, 390, 320]) {
+  test("catalog editor in English shows the Spanish original as reference " + width, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + visualCatalogId, lang: "en", scenario: "catalogs-manage" }));
+    await page.getByRole("heading", { name: "Customers", level: 1, exact: true }).waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.getByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveCount(0);
+    await expect(page.getByText("Written manually · Text", { exact: true })).toBeVisible();
+    const name = page.getByRole("textbox", { name: "Name", exact: true });
+    const description = page.getByRole("textbox", { name: "Description", exact: true });
+    await expect(name).toHaveValue("Customers");
+    await expect(name).toHaveAccessibleDescription("Original (Spanish): Clientes");
+    // Only the original is required: the English name, a translation, has no asterisk.
+    await expect(page.locator("label[for='" + await name.getAttribute("id") + "']")).toHaveText("Name");
+    await expect(description).toHaveValue("Customers for visits");
+    await expect(description).toHaveAccessibleDescription("Original (Spanish): Clientes para las visitas");
+    // Without its translation the field stays empty and the page shows the original.
+    await name.fill("");
+    await expect(name).toHaveAttribute("placeholder", "Untranslated");
+    await expect(name).toHaveAccessibleDescription("Original (Spanish): Clientes");
+    await expect(page.getByRole("heading", { name: "Clientes", level: 1, exact: true })).toBeVisible();
+    await name.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath("manual-english-reference.png"), fullPage: true });
+    // The options were written only in Spanish: the English text is empty and the original is its reference.
+    const text = page.getByRole("textbox", { name: width >= 640 ? "Option 1 text" : "Text", exact: true });
+    if (width < 640) await page.getByRole("button", { name: "Edit Pérez", exact: true }).click();
+    await expect(text).toHaveValue("");
+    if (width >= 640) await expect(text).toHaveAttribute("placeholder", "Pérez");
+    else await expect(text).toHaveAccessibleDescription("Original (Spanish): Pérez");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await text.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath("manual-english-option-reference.png"), fullPage: true });
+    await text.fill("Pérez Bros.");
+    await name.fill("Clients");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Clients", level: 1, exact: true })).toBeVisible();
+    await expect(name).toHaveAccessibleDescription("Original (Spanish): Clientes");
+    const saved = await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: { method: string; body: { name: object; description: object; items: { text: object }[] } }[] } }).catalogsFixture.writes
+      .map(write => ({ method: write.method, name: write.body.name, description: write.body.description, texts: write.body.items.map(item => item.text) })));
+    expect(saved).toEqual([{ method: "PUT", name: { es: "Clientes", en: "Clients" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, texts: [{ es: "Pérez", en: "Pérez Bros." }] }]);
+  });
+}
