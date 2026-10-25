@@ -445,3 +445,54 @@ MF1 y DC0/DC1 ajustado de la versión 96 están implementados junto con D2 como 
 ## Catálogos E2 — 2026-10-23
 
 CE1, CE2, CE3-B, CE4-A y CE5 están implementados según los ajustes elegidos. El [cierre visual](catalogos-campos-extra.md#cierre-local-de-e2--2026-10-23) registra la VRT 719/719, el recorrido es/en a 390/320, datos de personas con extensión neutral, presentación por pregunta y campos históricos. Las referencias elegidas se conservan; CE6 es la guía del circuito y el piloto con Meta espera el review de E2.
+
+## Botones y estados — 2026-10-23
+
+La decisión del usuario del 2026-10-23 (puntos 37 y 38 del review de Catálogos E2) está aplicada en todo el front con
+las reglas de [Encabezados](#encabezados), [Íconos y acciones](#íconos-y-acciones) y
+[Formularios y diálogos](#formularios-y-diálogos). Piezas comunes: `DisabledReason` da el motivo de un control apagado
+como tooltip al pasar el mouse o con el foco y como descripción accesible, nunca en un ítem de menú, que lo conserva
+adentro; `Surface` lleva sus acciones al borde derecho de la banda, a la altura del título y también al bajar de renglón;
+`Page.status` muestra sólo el estado del objeto. Ninguna pantalla muestra «Cambios sin guardar» ni números de revisión
+fuera de los historiales, y una prueba de arquitectura impide que un locale vuelva a ofrecer ese estado; la guarda de
+salida sigue avisando. Se valida al intentar guardar y, después del primer error, en vivo.
+
+Se conservan, con su motivo: los motivos dentro de los menús «⋯», los estados del flujo con su acción (guardado sin
+confirmar, revisión pendiente), la espera del chat y de Inicio, los conteos de los encabezados, «Nuevo, sin guardar» de
+CE1, los pies de diálogo y la etiqueta «Guardando…» mientras trabaja ([premisas](../guides/premisas-de-desarrollo.md)).
+
+La corrida visual del cierre aprobó 741/741 pruebas. Se revisaron las 29 diferencias de la primera corrida y se actualizaron sólo
+esas referencias, todas por esta decisión: `ai-*` (Probar conexión, Reemplazar y Quitar clave en el encabezado de su
+superficie, sin estado de la prueba al lado), `appearance-*` (Restaurar en el encabezado de Colores), `editor-*` (Guardar
+del rol apagado sin cambios), `profile-*` (Guardar en el encabezado de «Datos del perfil»), `settings-review-320`
+(«Revisar valores actuales» en la banda de `Page` y las elecciones en el encabezado de la comparación), y `whatsapp-*`,
+`whatsapp-access-*` y `whatsapp-manual-390` (sin el motivo escrito debajo de «Enviar formulario», C1). Se sumaron las
+referencias nuevas de CE1 en uso (`catalog-field-in-use-*`). `catalog-*`, `business-information-*`, `settings-*` y
+`roles-*` pasaron sin actualizarse. Dos escenas de publicación se ajustaron sin cambiar producto: «Ir a la pregunta» abre la pregunta
+en el idioma del menú, y la prueba del tooltip de la espera mueve el puntero en pasos para que Radix lo cierre.
+
+| Vista | es · 1440 | en · 1440 | es · 390 | en · 390 | es · 320 | en · 320 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Reglas | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-en-320.jpg) |
+| Reglas al guardar | [Ver](evidence/botones-y-estados-2026-10-23/reglas-al-guardar-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-al-guardar-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-al-guardar-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-al-guardar-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-al-guardar-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-al-guardar-en-320.jpg) |
+| Sugerencias | [Ver](evidence/botones-y-estados-2026-10-23/sugerencias-motivo-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/sugerencias-motivo-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/sugerencias-motivo-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/sugerencias-motivo-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/sugerencias-motivo-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/sugerencias-motivo-en-320.jpg) |
+| PDF | [Ver](evidence/botones-y-estados-2026-10-23/pdf-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/pdf-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/pdf-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/pdf-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/pdf-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/pdf-en-320.jpg) |
+| IA | [Ver](evidence/botones-y-estados-2026-10-23/ia-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-en-320.jpg) |
+| Catálogo nuevo | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-en-320.jpg) |
+
+- **Reglas:** el encabezado tiene sólo «Agregar regla» y Guardar; agregar una regla y una acción no muestra errores.
+- **Reglas al guardar:** Guardar no envía, marca el mensaje vacío y le da el foco.
+- **Sugerencias:** Guardar apagado por un destino dado de baja (BA6), con el motivo como tooltip al enfocar su envoltorio.
+- **PDF:** con cambios, junto al título va sólo el formulario; Guardar en «El comprobante» y Vista previa en su superficie.
+- **IA:** con cambios, sin «Cambios sin guardar»; las acciones de la clave en el encabezado de su superficie.
+- **Catálogo nuevo:** las acciones de «Opciones» al borde derecho; en escritorio el motivo de Importar como tooltip y en
+  el celular dentro de los ítems de «⋯».
+
+Las capturas son JPEG nativos de Playwright sobre el catálogo visual, con rutas y componentes productivos, datos y
+transporte sintéticos y comprobaciones de geometría, foco y escrituras en cada paso. El recorrido en el navegador integrado,
+sobre el mismo catálogo, se hizo con teclado: en un catálogo nuevo a 1440, Tab llega al envoltorio de Pegar desde Excel,
+Importar y Exportar con su tooltip, Escape lo cierra sin mover el foco y «⋯» lista los motivos adentro y devuelve el foco
+al cerrarse; en Reglas, en inglés, Enter en «Add rule» no muestra errores y Enter en «Save rules» no envía, marca «Fill in
+this field.» y enfoca «Add action»; en Sugerencias a 390, Tab desde «Agregar sugerencia» llega a Guardar con el tooltip de
+BA6 y su descripción accesible; en IA a 320, en inglés, las tres acciones de la clave quedan al borde derecho sin
+desplazamiento horizontal. La biblioteca del Artifact sigue sin sincronizar (`DisabledReason` está en la deuda).
