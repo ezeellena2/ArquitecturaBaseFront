@@ -40,7 +40,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // One name in the menu language, where a new attribute is born: no separate English name.
     await expect(dialog.getByRole("textbox", { name: es ? "Nombre en inglés" : "Name in English", exact: true })).toHaveCount(0);
     await name.fill(es ? "Región" : "Region");
-    await expect(dialog.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeDisabled();
+    // Save is not turned off by the empty key or catalog: trying it marks them (decision V28).
+    await expect(dialog.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeEnabled();
     await page.screenshot({ path: "test-results/person-data-attribute-" + language + "-" + width + ".png", fullPage: true });
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
