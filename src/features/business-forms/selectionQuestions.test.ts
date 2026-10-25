@@ -35,6 +35,13 @@ it("rejects an impossible own-choice minimum but allows a larger maximum and def
  expect(discarded).toHaveLength(2);
  expect(hasInvalidSelectionCounts([{...catalog,source:{catalog:"catalog-id"},selection:{minSelected:20,maxSelected:20}}])).toBe(false);
 });
+it("checks only what the editor marks in the range and leaves the own option count to the server, as for a single choice",()=>{
+ const own={...saved,type:"multiChoice" as const,required:false,selection:{minSelected:0,maxSelected:3}};
+ expect(hasInvalidSelectionCounts([{...own,options:[]}])).toBe(false);
+ expect(hasInvalidSelectionCounts([{...own,options:Array.from({length:21},(_,index)=>({localId:"o"+index,choiceId:null,label:{es:"Opción "+index}}))}])).toBe(false);
+ expect(hasInvalidSelectionCounts([{...own,options:[],selection:{minSelected:null,maxSelected:3}}])).toBe(true);
+ expect(hasInvalidSelectionCounts([{...own,required:true,options:[],selection:{minSelected:1,maxSelected:3}}])).toBe(true);
+});
 
 it("keeps a no-op unchanged and removes the range when switching an unsaved multi question back", () => {
   expect(changeQuestionMultiplicity(saved, false, "unused", () => "unused")).toBe(saved);

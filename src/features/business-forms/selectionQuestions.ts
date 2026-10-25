@@ -7,11 +7,10 @@ export function validSelectionCounts(selection: DraftSelectionSettings): selecti
     && selection.minSelected >= 0 && selection.maxSelected >= 1 && selection.maxSelected <= 20
     && selection.minSelected <= selection.maxSelected;
 }
+// Only what the editor marks on the range controls: the own option count goes to the server, as for a single choice.
 export function hasInvalidSelectionCounts(questions: readonly DraftQuestion[]): boolean {
   return questions.some(question => question.type === "multiChoice"
-    && (!validSelectionCounts(question.selection)
-      || question.required !== (question.selection.minSelected > 0)
-      || !question.source && (question.options.length < 1 || question.options.length > 20 || question.selection.minSelected > question.options.length)));
+    && (!validSelectionCounts(question.selection) || !question.source && question.selection.minSelected > question.options.length));
 }
 export function changeQuestionMultiplicity(question: ChoiceQuestion, multiple: boolean,
   localId: string, nextChoiceLocalId: () => string): ChoiceQuestion {

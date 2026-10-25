@@ -349,6 +349,22 @@ describe("Forms routes", () => {
     expect(store.writes).toHaveLength(0);
     expect(store.calls.filter(call => call.method === "PUT")).toHaveLength(0);
   });
+  it("sends Save for an optional multiple question without options and shows the server error under its options", async () => {
+    setup();
+    let sent = 0;
+    server.use(http.post("/api/forms/definitions", () => { sent++; return HttpResponse.json({ code: "Validation.Failed", errors: { "draft.fields[0].options": ["Agregá entre 1 y 20 opciones."] } }, { status: 400 }); }));
+    renderRouteWithProviders("/formularios/nuevo");
+    await pasteText(await screen.findByLabelText("Nombre"), "Registrar entrega");
+    await userEvent.click(screen.getByRole("button", { name: "Agregar pregunta" }));
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Tipo de respuesta" }), "Elegir de una lista");
+    await userEvent.click(screen.getByRole("checkbox", { name: "Permitir elegir varias" }));
+    await userEvent.click(screen.getByRole("button", { name: "Quitar Opción 1" }));
+    expect(screen.queryByRole("textbox", { name: "Opción 1" })).not.toBeInTheDocument();
+    // The own option count is not a marked range: like a single choice without options, Save sends and the error stays under the options.
+    await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Agregá entre 1 y 20 opciones.");
+    expect(sent).toBe(1);
+  });
   it("tells the wait after a 429 as the reason of the disabled check, without a text above the page", async () => {
     setup();
     server.use(http.put("/api/forms/definitions/:id/draft", () => HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 30 }, { status: 429 })));
