@@ -7,6 +7,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { FormIcon } from "@/shared/ui/icons";
 import { useAssistantSuggestion, type AssistantComposerContext } from "../hooks/useAssistantSuggestion";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Textarea } from "@/shared/ui/textarea";
 import { chatKey, findOutgoing, sendText, type Chat, type Outgoing } from "../api/chat";
 import { replyDisabledReason } from "../lib/replyAvailability";
@@ -97,6 +98,8 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
   const canSendSuggestion = !replyDisabledReason(contact, canSend, outgoing, now) && contact.formEligibility?.status === "Eligible" && !draft.attempt && !draft.form?.attempt;
   const assistant = useAssistantSuggestion(contact.id, contact.modeRevision, assistantContext, canReviewSuggestion, canAnalyze, canSendSuggestion);
   const disabledReason = replyDisabledReason(contact, canSend, outgoing, now) ?? (draft.form?.attempt || assistant.attempt ? "send.pending" : undefined);
+  // La espera de un 429 es el motivo de «No, gracias» y «Revisar y enviar», como en el pie del diálogo.
+  const suggestionWait = assistant.waiting && !assistant.busy ? t("forms.waitingHint", { count: assistant.waitSeconds }) : null;
   return (
     <div className="border-t border-[var(--color-border)] p-3">
       {assistant.proposal ? <section aria-label={t(assistant.proposal.proposalId === null ? "assistant.configuredSuggestionLabel" : "assistant.suggestionLabel")} className="mb-2 flex flex-wrap items-start gap-2 rounded-[var(--radius-control)] border border-[var(--color-primary)] bg-[var(--color-surface-muted)] p-3">
@@ -104,8 +107,8 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
         <div className="min-w-0 flex-1"><p className="break-words text-sm font-medium">{t(assistant.proposal.proposalId === null ? "assistant.configuredSuggestion" : "assistant.suggestion", { name: assistant.proposal.name })}</p>
           {assistant.proposal.fields.length ? <p className="mt-1 break-words text-sm text-[var(--color-content-muted)]">{t("assistant.prefilledSummary", { fields: assistant.proposal.fields.map(field => field.label + ": " + field.displayValue).join(" · ") })}</p> : null}
         </div>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={assistant.busy || !!assistant.attempt || assistant.waiting} onClick={() => void assistant.discard()}>{t("assistant.discard")}</Button>
-          <Button size="sm" disabled={assistant.busy || assistant.waiting || !!draft.attempt || !!draft.form?.attempt} onClick={() => assistant.setOpen(true)}>{t("assistant.review")}</Button></div>
+        <div className="flex flex-wrap gap-2"><DisabledReason reason={suggestionWait}><Button variant="outline" size="sm" disabled={assistant.busy || !!assistant.attempt || assistant.waiting} onClick={() => void assistant.discard()}>{t("assistant.discard")}</Button></DisabledReason>
+          <DisabledReason reason={suggestionWait}><Button size="sm" disabled={assistant.busy || assistant.waiting || !!draft.attempt || !!draft.form?.attempt} onClick={() => assistant.setOpen(true)}>{t("assistant.review")}</Button></DisabledReason></div>
       </section> : null}
       {disabledReason ? <p className="mb-2 text-sm text-[var(--color-content-muted)]">{t(disabledReason)}</p> : null}
       <label htmlFor="chat-reply" className="sr-only">{t("send.label")}</label>

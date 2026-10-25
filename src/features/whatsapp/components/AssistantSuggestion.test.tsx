@@ -72,6 +72,22 @@ it("explains the wait of a suggested send as help of the footer action", async (
  expect(notice).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: expect.stringMatching(wait) }));
  expect(sends).toHaveLength(1);
 });
+// Outside the dialog the wait also turns off «No, gracias» and «Revisar y enviar»: it is their reason, not only the notification's.
+it("gives the wait of a 429 as the reason of the suggestion actions", async () => {
+ vi.spyOn(notifications, "notify").mockImplementation(() => "");
+ server.use(http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/discard", () => { discarded++; return HttpResponse.json({ code: "General.TooManyRequests" }, { status: 429, headers: { "Retry-After": "30" } }); }));
+ renderWithProviders(<Harness />);
+ await userEvent.click(await screen.findByRole("button", { name: "No, gracias" }));
+ const wait = /^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
+ for (const name of ["No, gracias", "Revisar y enviar"]) {
+  await waitFor(() => expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(wait));
+  expect(screen.getByRole("button", { name })).toBeDisabled();
+ }
+ for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
+ await userEvent.hover(screen.getByRole("button", { name: "Revisar y enviar" }));
+ expect(await screen.findByRole("tooltip")).toHaveTextContent(wait);
+ expect(discarded).toBe(1);
+});
 it("cancels without sending or discarding and returns focus to the exact suggestion trigger", async () => {
  const { dialog, action } = await openSuggestion();
  await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
