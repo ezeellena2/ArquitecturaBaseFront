@@ -27,7 +27,8 @@ export function withoutPresentationFields(presentation: CatalogPresentation | nu
   return { title: title.length ? title : ["text"], description: kept(presentation.description) };
 }
 
-export function catalogOptionPresentation(item: CatalogManualItemValue, presentation: CatalogPresentation | null, fields: readonly CatalogFieldDraft[], valueType: CatalogValueType, culture: FormCulture, booleanLabels?: { readonly yes: string; readonly no: string }, inputCulture: FormCulture = culture): { title: string; description: string } {
+/** `pendingTexts`: by field, what an unedited option or yes/no showed while a type change is pending (`pendingFieldTexts`). */
+export function catalogOptionPresentation(item: CatalogManualItemValue, presentation: CatalogPresentation | null, fields: readonly CatalogFieldDraft[], valueType: CatalogValueType, culture: FormCulture, booleanLabels?: { readonly yes: string; readonly no: string }, inputCulture: FormCulture = culture, pendingTexts: Readonly<Record<string, string>> = {}): { title: string; description: string } {
   const selected = presentation ?? { title: ["text"], description: ["detail"] };
   const scalar = (type: CatalogFieldDraft["type"], input: string | null | undefined): string =>
     input ? (type === "text" || type === "catalog" ? input : catalogScalarText(type, input, culture, booleanLabels, inputCulture)) : "";
@@ -40,6 +41,7 @@ export function catalogOptionPresentation(item: CatalogManualItemValue, presenta
     const field = fields.find(field => field.id === key || field.localId === key);
     const sourceText = item.fieldTexts?.[key];
     if (!value) return "";
+    if (pendingTexts[key]) return pendingTexts[key];
     if (sourceText && (!field || field.type === "catalog")) return administrativeName(sourceText, culture);
     return field ? scalar(field.type, value) : value ?? "";
   };

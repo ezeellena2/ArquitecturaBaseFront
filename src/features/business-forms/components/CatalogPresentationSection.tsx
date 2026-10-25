@@ -16,7 +16,7 @@ import type { FormCulture } from "../model";
 // `check` is the server's count over every active option, per catalog language. Without it (an editor with unsaved
 // changes) the loaded options are counted here in the shown language; null means the server count is not available,
 // so nothing is counted from a partial page.
-export function CatalogPresentationSection({ embedded = false, value, fields, items, valueType, culture, readOnly, check, inputCulture = culture, errors = {}, onChange }: { embedded?: boolean; value: CatalogPresentation | null; fields: readonly CatalogFieldDraft[]; items: readonly CatalogManualItemValue[]; valueType: CatalogValueType; culture: FormCulture; readOnly: boolean; check?: CatalogPresentationCheck | null; inputCulture?: FormCulture; errors?: Readonly<Record<string, readonly string[]>>; onChange: (value: CatalogPresentation | null) => void }) {
+export function CatalogPresentationSection({ embedded = false, value, fields, items, valueType, culture, readOnly, check, inputCulture = culture, pendingTexts, errors = {}, onChange }: { embedded?: boolean; value: CatalogPresentation | null; fields: readonly CatalogFieldDraft[]; items: readonly CatalogManualItemValue[]; valueType: CatalogValueType; culture: FormCulture; readOnly: boolean; check?: CatalogPresentationCheck | null; inputCulture?: FormCulture; pendingTexts?: Readonly<Record<string, Readonly<Record<string, string>>>>; errors?: Readonly<Record<string, readonly string[]>>; onChange: (value: CatalogPresentation | null) => void }) {
   const { t } = useTranslation("forms");
   const labelId = useId();
   const selected = value ?? { title: ["text"], description: ["detail"] };
@@ -25,9 +25,9 @@ export function CatalogPresentationSection({ embedded = false, value, fields, it
   const update = (part: "title" | "description", keys: readonly string[]) => { if (!readOnly) onChange({ title: [...selected.title], description: [...selected.description], [part]: [...keys] }); };
   const example = items.find(item => item.isActive);
   const booleanLabels = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
-  const shown = example ? catalogOptionPresentation(example, value, fields, valueType, culture, booleanLabels, inputCulture) : null;
+  const shown = example ? catalogOptionPresentation(example, value, fields, valueType, culture, booleanLabels, inputCulture, pendingTexts?.[example.localId]) : null;
   const hidden = fields.filter(field => field.isActive && ![...selected.title, ...selected.description].includes(field.id ?? field.localId)).map(field => administrativeName(field.name, culture));
-  const localTooLong = check === undefined ? items.filter(item => item.isActive && catalogOptionPresentation(item, value, fields, valueType, culture, booleanLabels, inputCulture).title.length > 30).length : 0;
+  const localTooLong = check === undefined ? items.filter(item => item.isActive && catalogOptionPresentation(item, value, fields, valueType, culture, booleanLabels, inputCulture, pendingTexts?.[item.localId]).title.length > 30).length : 0;
   const problems = (check?.cultures ?? []).flatMap(entry => [
     { culture: entry.culture, part: "title", count: entry.titleTooLongCount, examples: entry.titleExamples },
     { culture: entry.culture, part: "description", count: entry.descriptionTooLongCount, examples: entry.descriptionExamples },

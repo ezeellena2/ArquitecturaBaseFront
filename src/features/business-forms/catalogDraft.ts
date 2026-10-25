@@ -8,7 +8,8 @@ import { openCatalogFilters } from "./catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "./components/CatalogFiltersEditor";
 import { catalogFieldsBody, formatCatalogFieldValue, openCatalogField, parseCatalogFieldValue, type CatalogFieldDraft, type CatalogFieldValueResult } from "./catalogFields";
 import type { CatalogPresentation } from "./api/catalogResponse";
-import { ownTexts } from "./editorModel";
+import { administrativeName, ownTexts } from "./editorModel";
+import { formatYesNo, type YesNoLabels } from "@/shared/lib/typedValue";
 
 export interface CatalogDraft {
   readonly valueType: CatalogValueType;
@@ -53,6 +54,21 @@ export interface CatalogItemFieldIssue { readonly fieldId: string; readonly reas
 export function editedFieldIds(draft: Pick<CatalogDraft, "items">, item: CatalogManualItemValue): readonly string[] {
   const original = item.itemId === null ? undefined : draft.items.originals["item:" + item.itemId];
   return Object.keys(item.fields ?? {}).filter(id => !original || (item.fields?.[id] ?? null) !== (original.fields?.[id] ?? null));
+}
+/**
+ * While a type change is pending, what each unedited loaded value of a field saved as an option or a yes/no showed: the
+ * option's text or Sí/No in `culture`, by field id. The value itself stays as loaded and does not travel; clearing it is
+ * editing it. An option of a page the draft has not merged yet is still unedited.
+ */
+export function pendingFieldTexts(draft: Pick<CatalogDraft, "fields" | "savedFields" | "items">, item: CatalogManualItemValue, culture: FormCulture, labels: YesNoLabels): Readonly<Record<string, string>> {
+  if (item.itemId === null) return {};
+  const edited = draft.items.originals["item:" + item.itemId] ? editedFieldIds(draft, item) : [];
+  return Object.fromEntries(draft.fields.flatMap(field => {
+    const id = field.id, saved = id ? draft.savedFields.find(candidate => candidate.id === id) : undefined, value = id ? item.fields?.[id] : null;
+    if (!id || !saved || saved.type === field.type || !value || edited.includes(id)) return [];
+    const text = saved.type === "catalog" ? administrativeName(item.fieldTexts?.[id], culture) : saved.type === "boolean" ? formatYesNo(value, labels) : null;
+    return text ? [[id, text]] : [];
+  }));
 }
 // An edited value, and any value of a new option, follows the draft definition. An unedited one keeps the saved type,
 // range and length, and is required only when both definitions require it: the server reviews a type or required change

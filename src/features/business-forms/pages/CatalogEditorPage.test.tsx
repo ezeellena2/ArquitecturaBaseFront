@@ -233,7 +233,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(bodies[0]).toMatchObject({ items: [{ itemId, text: { es: "Pérez Norte" }, isActive: false }] });
   });
   const fieldId = "01990000-0000-7000-8000-000000000031";
-  const savedField = (values: { key: string; name: string; type: string }) => ({ id: fieldId, key: values.key, name: { es: values.name }, type: values.type, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 1, usedBy: [] });
+  const savedField = (values: { key: string; name: string; type: string; sourceCatalogId?: string }) => ({ id: fieldId, key: values.key, name: { es: values.name }, type: values.type, sourceCatalogId: values.sourceCatalogId ?? null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 1, usedBy: [] });
   function fieldSetup(field: ReturnType<typeof savedField>, values: Record<string, string>, answer: () => Response) {
     setup(); const bodies: { fields: Record<string, unknown>[]; items: Record<string, unknown>[] }[] = [];
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [field] })), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, fields: values }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as typeof bodies[number]); return answer(); }));
@@ -292,6 +292,49 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(within(await screen.findByRole("table")).getByText("Sur", { exact: true })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     expect(screen.getByRole("combobox", { name: "Zona" })).toHaveValue("Sur");
+  });
+  const sourceId = "01990000-0000-7000-8000-000000000040", southId = "01990000-0000-7000-8000-000000000041";
+  // Pérez's loaded value of a field saved as an option of «Zonas» or as a yes/no, shown in «En WhatsApp» after its text.
+  function savedTypeSetup(field: ReturnType<typeof savedField>, value: string, texts = {}) {
+    setup();
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [field], presentation: { title: ["text", fieldId], description: [] } })),
+      http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, fields: { [fieldId]: value }, fieldTexts: texts }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+      http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: sourceId, name: "Zonas", description: null, origin: "Manual", optionsCount: 1, usageCount: null, state: "Active", stateReason: null, canEdit: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })),
+      http.get("/api/forms/catalogs/" + sourceId, () => HttpResponse.json({ ...initial, id: sourceId, key: sourceId.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" } })),
+      http.get("/api/forms/catalogs/" + sourceId + "/items", () => HttpResponse.json({ items: [{ ...option, id: southId, code: "S", text: { es: "Sur", en: "South" } }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
+  }
+  it("shows the text of a saved option while a change to another type is pending, read-only with Clear", async () => {
+    viewport(true); savedTypeSetup(savedField({ key: "zone", name: "Zona", type: "catalog", sourceCatalogId: sourceId }), southId, { [fieldId]: { es: "Sur", en: "South" } });
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Zona" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
+    const cell = screen.getByRole("textbox", { name: "Fila 1 · Zona" });
+    expect(cell).toHaveValue("Sur");
+    expect(cell).toHaveAttribute("readonly");
+    await user.click(screen.getByRole("button", { name: "Elegí una opción" }));
+    expect(screen.getByRole("radio", { name: "Pérez · Sur" })).toBeInTheDocument();
+    expect(screen.getAllByText("Pérez · Sur").length).toBeGreaterThan(1);
+    expect(screen.queryByText(new RegExp(southId))).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue(southId)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Limpiar Fila 1 · Zona" }));
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Zona" })).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "Fila 1 · Zona" })).not.toHaveAttribute("readonly");
+  });
+  it("shows Sí or No for a saved yes/no while a change to another type is pending, in the row and in the option editor", async () => {
+    viewport(false); savedTypeSetup(savedField({ key: "gps", name: "Con GPS", type: "boolean" }), "true");
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar Con GPS" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
+    expect(within(screen.getByRole("row", { name: /Pérez/ })).getByText("Sí", { exact: true })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
+    const input = screen.getByRole("textbox", { name: "Con GPS" });
+    expect(input).toHaveValue("Sí");
+    expect(input).toHaveAttribute("readonly");
+    expect(screen.getByRole("button", { name: "Limpiar Con GPS" })).toBeInTheDocument();
+    expect(screen.getByText("Pérez · Sí")).toBeInTheDocument();
+    expect(screen.queryByText(/true/)).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue("true")).not.toBeInTheDocument();
   });
   it("says on the row which edited value is wrong and why, before saving", async () => {
     viewport(true); const bodies = fieldSetup(savedField({ key: "term", name: "Plazo", type: "integer" }), { [fieldId]: "30" }, () => HttpResponse.json({}, { status: 500 }));

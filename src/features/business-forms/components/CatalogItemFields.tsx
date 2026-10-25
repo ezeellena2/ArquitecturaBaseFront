@@ -17,11 +17,13 @@ import { administrativeName, contentReference, contentRequired } from "../editor
 import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-export function CatalogItemFields({ item, culture, original, valueType, fields = [], scope, readOnly, errors, warning, onGenerateCode, onChange, onFieldBlur, onDone }: {
+export function CatalogItemFields({ item, culture, original, valueType, fields = [], scope, readOnly, errors, warning, pendingTexts, onGenerateCode, onChange, onFieldBlur, onDone }: {
   item: CatalogManualItemValue; valueType: CatalogValueType; readOnly: boolean;
   /** The texts are edited in the menu language (`culture`); outside the catalog's original they are the optional translation. */
   culture: FormCulture; original: FormCulture;
   errors?: Readonly<Record<string, readonly string[]>>; warning?: string; onGenerateCode?: () => void;
+  /** By field, what an unedited option or yes/no showed while a type change is pending (`pendingFieldTexts`). */
+  pendingTexts?: Readonly<Record<string, string>>;
   onChange: (item: CatalogManualItemValue) => void; onDone: () => void;
   /** Leaving a control, by its error path: the page then marks it if it is empty. */
   onFieldBlur?: (path: string) => void;
@@ -46,7 +48,7 @@ export function CatalogItemFields({ item, culture, original, valueType, fields =
         if (column.field) {
           const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, label = administrativeName(field.name, culture);
           // A field that cannot take values before it is saved says so instead.
-          return <FormField key={column.id} label={label} required={field.required} error={error} hint={field.id ? catalogFieldInputHint(field, valueCulture, t) ?? undefined : undefined}><CatalogExtraFieldInput field={field} scope={scope} label={label} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} culture={culture} readOnly={readOnly} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} /></FormField>;
+          return <FormField key={column.id} label={label} required={field.required} error={error} hint={field.id ? catalogFieldInputHint(field, valueCulture, t) ?? undefined : undefined}><CatalogExtraFieldInput field={field} scope={scope} label={label} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} pendingText={pendingTexts?.[key]} culture={culture} readOnly={readOnly} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} /></FormField>;
         }
         switch (column.id) {
         case "text": return <FormField key={column.id} label={<span className="flex w-full justify-between gap-3"><span>{t(column.editorLabelKey)}</span><span aria-hidden="true" className="text-xs text-[var(--color-content-muted)]">{(item.label[culture] ?? "").length}/{column.maxLength}</span></span>} required={column.required && contentRequired(item.label, culture, original)} error={error} hint={warning ?? reference(item.label)}>

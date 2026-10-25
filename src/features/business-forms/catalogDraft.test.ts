@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CatalogDetail } from "./api/catalogResponse";
-import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove } from "./catalogDraft";
+import { catalogDraftBody, catalogDraftUpdateBody, loadCatalogDraftItems, openCatalogDraft, pendingFieldTexts, stageCatalogDraftItem, stageCatalogDraftMove } from "./catalogDraft";
+import { withCatalogFieldValue } from "./catalogItemEdits";
 
 const catalog: CatalogDetail = { valueType: "Text" as const, proposal: null, id: "01990000-0000-7000-8000-000000000020", key: "01990000000070008000000000000020", kind: "Manual", name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, revision: 1, isActive: true, itemsCount: 3, usageCount: 0, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
 const item = { value: null, id: "01990000-0000-7000-8000-000000000021", code: "C1", text: { es: "Cliente", en: null }, detail: { es: null, en: null }, position: 1, isActive: true, fields: {}, fieldTexts: {} };
@@ -91,6 +92,21 @@ it("keeps the chosen type immutable, formats loaded values and writes only canon
   const body = catalogDraftUpdateBody(changed);
   expect(body).not.toHaveProperty("valueType");
   expect(body.items[0]).toMatchObject({ itemId: item.id, value: "2500.75" });
+});
+
+it("keeps what an unedited saved option or yes/no showed while its field changes to another type", () => {
+  const zone = { id: "01990000-0000-7000-8000-000000000031", key: "zone", name: { es: "Zona" }, type: "catalog" as const, sourceCatalogId: "01990000-0000-7000-8000-000000000040", required: false, unique: false, min: null, max: null, maxLength: null, role: "data" as const, position: 1, isActive: true, valuesCount: 1, usedBy: [] };
+  const gps = { ...zone, id: "01990000-0000-7000-8000-000000000032", key: "gps", name: { es: "Con GPS" }, type: "boolean" as const, sourceCatalogId: null, position: 2 };
+  const saved = loadCatalogDraftItems(openCatalogDraft({ ...catalog, fields: [zone, gps] }), [{ ...item, fields: { [zone.id]: "01990000-0000-7000-8000-000000000041", [gps.id]: "true" }, fieldTexts: { [zone.id]: { es: "Sur", en: "South" } } }]);
+  const pending = { ...saved, fields: saved.fields.map(field => ({ ...field, type: "text" as const })) };
+  const option = Object.values(saved.items.originals)[0]!, labels = { yes: "Sí", no: "No" };
+  expect(pendingFieldTexts(pending, option, "es", labels)).toEqual({ [zone.id]: "Sur", [gps.id]: "Sí" });
+  expect(pendingFieldTexts(pending, option, "en", { yes: "Yes", no: "No" })).toEqual({ [zone.id]: "South", [gps.id]: "Yes" });
+  expect(pendingFieldTexts(saved, option, "es", labels)).toEqual({});
+  // Clearing a value, or writing another one, is editing it: it travels and shows as written.
+  expect(pendingFieldTexts(pending, withCatalogFieldValue(option, gps.id, null), "es", labels)).toEqual({ [zone.id]: "Sur" });
+  expect(pendingFieldTexts(pending, withCatalogFieldValue(option, gps.id, "false"), "es", labels)).toEqual({ [zone.id]: "Sur" });
+  expect(pendingFieldTexts(pending, { ...option, localId: "new", itemId: null }, "es", labels)).toEqual({});
 });
 
 it("sends alphabetical ordering as one explicit command without reconstructing thousands of moves", () => {

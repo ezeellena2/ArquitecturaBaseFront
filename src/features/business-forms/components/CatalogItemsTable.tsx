@@ -19,10 +19,12 @@ import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, sortPending, onExpand, onChange, onFieldBlur, onMove, onActionRef }: {
+export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onExpand, onChange, onFieldBlur, onMove, onActionRef }: {
   items: readonly CatalogManualItemValue[];
   inline: boolean; selected: readonly string[]; onSelect: (id: string, selected: boolean) => void; onSelectAll: (selected: boolean) => void;
   errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; warnings?: Readonly<Record<string, string>>; sortPending?: boolean;
+  /** By option and field, what an unedited option or yes/no showed while a type change is pending (`pendingFieldTexts`). */
+  pendingTexts?: Readonly<Record<string, Readonly<Record<string, string>>>>;
   /** The menu language, in which the texts are edited; outside the catalog's original, its text is the cell's placeholder. */
   culture: FormCulture; original: FormCulture;
   valueType: CatalogValueType;
@@ -73,11 +75,11 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
             const blur = () => onFieldBlur?.(item.localId, column.errorPath);
             let content: ReactNode;
             if (column.field) {
-              const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key];
+              const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key], pendingText = pendingTexts?.[item.localId]?.[key];
               const problem = problems.find(problem => problem.columnId === column.id);
-              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: administrativeName(field.name, culture) })} value={value} texts={texts} culture={culture} readOnly={readOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />;
+              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: administrativeName(field.name, culture) })} value={value} texts={texts} pendingText={pendingText} culture={culture} readOnly={readOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />;
               else {
-                const shown = value === null || value === undefined ? "—" : field.type === "catalog" && texts ? administrativeName(texts, culture) : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "text" ? value : catalogScalarText(field.type, value, valueCulture, yesNo, valueCulture));
+                const shown = value === null || value === undefined ? "—" : pendingText ?? (field.type === "catalog" && texts ? administrativeName(texts, culture) : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "text" ? value : catalogScalarText(field.type, value, valueCulture, yesNo, valueCulture)));
                 // The text cell (below 640 px or without Manage) keeps its mark, such as a value the new type does not take.
                 content = error ? <><p>{shown}</p><p className="whitespace-normal text-xs text-[var(--color-danger)]">{error}</p></> : shown;
               }

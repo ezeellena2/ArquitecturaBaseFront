@@ -13,11 +13,11 @@ import type { CatalogPresentation } from "../api/catalogResponse";
 import type { CatalogValueType } from "../catalogValues";
 import { catalogOptionPresentation } from "../catalogPresentation";
 
-export function CatalogPreview({ items, name, culture, fields = [], presentation = null, valueType = "Text", inputCulture = culture }: { items: readonly CatalogManualItemValue[]; name: string; culture: FormCulture; fields?: readonly CatalogFieldDraft[]; presentation?: CatalogPresentation | null; valueType?: CatalogValueType; inputCulture?: FormCulture }) {
+export function CatalogPreview({ items, name, culture, fields = [], presentation = null, valueType = "Text", inputCulture = culture, pendingTexts }: { items: readonly CatalogManualItemValue[]; name: string; culture: FormCulture; fields?: readonly CatalogFieldDraft[]; presentation?: CatalogPresentation | null; valueType?: CatalogValueType; inputCulture?: FormCulture; pendingTexts?: Readonly<Record<string, Readonly<Record<string, string>>>> }) {
   const { t } = useTranslation("forms"), { t: content } = useTranslation("forms", { lng: culture });
   const [mode, setMode] = useState<"one" | "many">("one"), [open, setOpen] = useState(false), [selected, setSelected] = useState(""), [many, setMany] = useState<string[]>([]);
   const options = items.filter(item => item.isActive && administrativeName(item.label, culture).trim());
-  const shown = (item: CatalogManualItemValue) => catalogOptionPresentation(item, presentation, fields, valueType, culture, { yes: content("catalogs.presentation.yes"), no: content("catalogs.presentation.no") }, inputCulture);
+  const shown = (item: CatalogManualItemValue) => catalogOptionPresentation(item, presentation, fields, valueType, culture, { yes: content("catalogs.presentation.yes"), no: content("catalogs.presentation.no") }, inputCulture, pendingTexts?.[item.localId]);
   const label = (item: CatalogManualItemValue) => shown(item).title;
   const chosen = options.find(item => item.localId === selected);
   return <section aria-label={t("catalogs.preview.title")} className="flex min-w-0 flex-col gap-3">
