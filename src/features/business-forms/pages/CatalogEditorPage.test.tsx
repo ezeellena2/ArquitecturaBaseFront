@@ -839,6 +839,17 @@ describe("Filters editor connected to current DTOs", () => {
     await user.click(screen.getByRole("button", { name: "Save" })); await waitFor(() => expect(writes).toHaveLength(1));
     expect(writes[0]).toMatchObject({ name: { es: "Clientes editado", en: "Customers" }, filters: { conditions: [{ column: "role", operator: "has" }] } });
   });
+  it("takes the focus to the first field the server marks after a failed save", async () => {
+    filterSetup();
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })),
+      http.put("/api/forms/catalogs/" + id + "/filters", () => HttpResponse.json({ code: "Validation.Failed", errors: { "name.es": ["Completá el nombre."] } }, { status: 400 })));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await pasteText(user, await screen.findByRole("textbox", { name: "Descripción" }), " editada");
+    await selectSample(); await user.click(screen.getByRole("button", { name: "Guardar" }));
+    const name = screen.getByRole("textbox", { name: "Nombre" });
+    await waitFor(() => expect(name).toHaveFocus());
+    expect(name).toHaveAttribute("aria-invalid", "true");
+  });
   it("renders permitted configuration read-only without sample identities or preview writes", async () => {
     filterSetup(["formcatalogs.read"]); await mount("/catalogos/" + id);
     expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeDisabled(); expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
@@ -1062,6 +1073,19 @@ it("keeps the unsaved catalog when the menu language changes and shows the other
   await user.click(screen.getByRole("button", { name: "Save" }));
   await waitFor(() => expect(bodies).toHaveLength(1));
   expect(bodies[0]).toMatchObject({ name: { es: "Clientes editado", en: "Customers" }, items: [{ itemId, value: "2500.75" }] });
+});
+
+// The page header is sticky: a save error under a field out of view must take the focus there, which also scrolls to it.
+it("takes the focus to the first field the server marks after a failed save", async () => {
+  setup();
+  server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Validation.Failed", errors: { "name.es": ["Completá el nombre."] } }, { status: 400 })));
+  await mount("/catalogos/" + id); const user = userEvent.setup();
+  await pasteText(user, await screen.findByRole("textbox", { name: "Descripción" }), " editada");
+  await user.click(screen.getByRole("button", { name: "Guardar" }));
+  const name = screen.getByRole("textbox", { name: "Nombre" });
+  await waitFor(() => expect(name).toHaveFocus());
+  expect(name).toHaveAttribute("aria-invalid", "true");
+  expect(name).toHaveAccessibleDescription("Completá el nombre.");
 });
 
 it("sends the chosen type only on creation and binds a value error to its unchanged item identity", async () => {

@@ -116,6 +116,8 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
   // The option a failed Save opened: its first marked control takes the focus, even when it was already open.
   const [focusOption, setFocusOption] = useState<{ localId: string } | null>(null);
+  // A new error of the server marks fields: the first one takes the focus, which also scrolls it into view under the sticky header.
+  const [focusMarked, setFocusMarked] = useState<object | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const active = useRef(true);
   const feedbackId = "catalogs:editor:" + useId();
@@ -205,6 +207,9 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     // opening one of them would take the focus from where the person types.
     const invalidItem = editor.error ? changedItems.find(item => itemErrors[item.localId]) : undefined;
     if (invalidItem) setExpanded(invalidItem.localId);
+    // «Cambiar el tipo» opens over the page and takes the focus itself.
+    const opensDialog = !!fieldFeedback?.invalidRows?.length && !!failed && !!savedType && failed.control === "type";
+    if (editor.error instanceof ApiError && Object.keys(editor.error.errors ?? {}).length && !opensDialog) setFocusMarked({});
   }
   const save = async () => {
     if (!editor.canSave) return;
@@ -243,6 +248,12 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   // Runs after the option editor's own effect, which puts the cursor in Texto when it opens, so the marked control keeps the
   // focus; focusing it also scrolls it into view.
   useEffect(() => { if (focusOption) host.current?.querySelector<HTMLElement>('[data-catalog-option="' + focusOption.localId + '"] [aria-invalid="true"]')?.focus(); }, [focusOption]);
+  // After the option or the field with the error opens (and the option editor puts the cursor in Texto), as in the form editor.
+  useEffect(() => {
+    if (!focusMarked) return;
+    const frame = requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus(); });
+    return () => cancelAnimationFrame(frame);
+  }, [focusMarked]);
   const hideErrorRows = () => setErrorRows(current => current && { ...current, showRows: false });
   const showErrorRows = () => { setExpanded(null); setErrorRows(current => current && { ...current, open: false, showRows: true, totalCount: items.data?.totalCount }); };
   // Removing the chip goes back to the list, also when reading only the rows with errors failed.

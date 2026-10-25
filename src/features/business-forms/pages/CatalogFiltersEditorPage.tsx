@@ -58,7 +58,13 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
     previousProposalState.current = proposal?.state;
   }, [proposal?.state]);
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
-  const feedbackId = "catalogs:filters:" + useId(); const active = useRef(true);
+  const feedbackId = "catalogs:filters:" + useId(); const active = useRef(true); const host = useRef<HTMLDivElement>(null);
+  // A new error of the server marks fields: the first one takes the focus, which also scrolls it into view under the sticky header.
+  useEffect(() => {
+    if (!(editor.error instanceof ApiError) || !Object.keys(editor.error.errors ?? {}).length) return;
+    const frame = requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus(); });
+    return () => cancelAnimationFrame(frame);
+  }, [editor.error]);
   const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind"] });
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen, proposalResult);
   const currentName = draft && administrativeName(draft.name, scope.culture) || t("catalogs.new"); useBreadcrumbLeaf(currentName);
@@ -103,7 +109,7 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
       {proposal.originalProposal.limitations.map((limitation, index) => <p key={index} className="break-words text-sm text-[var(--color-warning-700)]">{t("catalogs.proposal.unsupportedColumn", { criterion: limitation.criterion })}</p>)}
     </div> : null}
     {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded actions={<Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("review")}</Button>}><p className="text-sm">{t("catalogs.review.required")}</p></Surface> : null}
-    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+    <div ref={host} className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">
         <CatalogMetadataFields valueType="Text" name={draft.name} description={draft.description} culture={culture} original={original} canManage={canManage && !editor.requiresReview} busy={editor.busy} origin="Filters" errors={fields} onChange={editor.changeMetadata} />
         {!options.data && options.isPending ? <Spinner /> : options.data ? <CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={canManage && !editor.requiresReview} busy={editor.busy} errors={fields} onChange={editor.changeFilters} /> : <EmptyState title={t("catalogs.filters.optionsFailed")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} />}
