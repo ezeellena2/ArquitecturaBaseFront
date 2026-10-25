@@ -255,6 +255,23 @@ it("marks an incomplete new rule only after trying to save and then corrects it 
   expect(save).toBeEnabled();
   expect(writes).not.toHaveBeenCalled();
 });
+it("does not mark the empty message of a new action before trying to save and then focuses it", async () => {
+  setup();
+  const writes = vi.fn();
+  server.use(http.post("/api/forms/definitions/:id/rules", () => { writes(); return HttpResponse.json(initial()); }));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  const region = within(screen.getByRole("region", { name: "Regla 1" }));
+  await userEvent.click(region.getByRole("button", { name: "Agregar acción" }));
+  const message = region.getByRole("textbox", { name: "Mensaje" });
+  expect(message).not.toHaveAttribute("aria-invalid");
+  expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  expect(message).toHaveAttribute("aria-invalid", "true");
+  expect(message).toHaveAccessibleDescription("Completá este dato.");
+  await waitFor(() => expect(message).toHaveFocus());
+  expect(writes).not.toHaveBeenCalled();
+});
 it("focuses the first question of conditions to review after trying to save", async () => {
   setup(); const fieldId = crypto.randomUUID();
   serveRules([storedRule()]);

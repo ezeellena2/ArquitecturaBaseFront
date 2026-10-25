@@ -84,6 +84,24 @@ it("marks a new suggestion without destination only after trying to save", async
   expect(save).toBeEnabled();
   expect(writes).not.toHaveBeenCalled();
 });
+it("does not mark a new mapping before trying to save and then marks its destination question live", async () => {
+  setup();
+  const writes = vi.fn();
+  server.use(http.post("/api/forms/definitions/:id/suggestions",()=>{writes();return HttpResponse.json(current());}));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  await add();
+  await userEvent.click(screen.getByRole("button",{name:"Agregar dato"}));
+  const target = screen.getByRole("combobox",{name:"Pregunta de destino 1"});
+  expect(target).not.toHaveAttribute("aria-invalid");
+  expect(screen.queryByText("Elegí preguntas del mismo tipo.")).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));
+  expect(target).toHaveAttribute("aria-invalid","true");
+  expect(target).toHaveAccessibleDescription("Elegí preguntas del mismo tipo.");
+  await waitFor(()=>expect(target).toHaveFocus());
+  await userEvent.selectOptions(target,targetId);
+  expect(target).not.toHaveAttribute("aria-invalid");
+  expect(writes).not.toHaveBeenCalled();
+});
 it("puts a conflict in its own titled surface with reread and the choices at the right of its header", async () => {
   setup();
   let revision = 0;
