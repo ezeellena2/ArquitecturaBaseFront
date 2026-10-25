@@ -216,7 +216,11 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   Respuesta, Fotos, Actividad y PDF consumen hechos capturados. La aprobación sin RecordsRead conserva sólo metadata.
   Reglas, diseño PDF y sugerencias tienen guardado/revisión propios; OfferWhen usa el borrador existente sin publicarse.
   La publicación requiere el original completo y admite traducción secundaria opcional; la preview y el envío usan
-  una cultura para el formulario entero, según la [regla funcional](../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19). Los catálogos propuestos se revisan con original obligatorio; el contrato de los catálogos y
+  una cultura para el formulario entero. Ninguna pantalla elige el idioma del contenido: cada texto es un solo campo en
+  el idioma del menú (`scope.culture`), que es el original de lo nuevo; en el otro idioma es la traducción, con el
+  original como referencia (`contentReference`) y sin copiarlo, y un error del otro idioma va bajo el mismo campo
+  (`localizedIssue`). Fuera de los editores se muestra en el idioma del menú y, si falta, en el original
+  (`administrativeName`), según la [regla funcional](../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19). Los catálogos propuestos se revisan con original obligatorio; el contrato de los catálogos y
   de los datos de las personas trae su `originalCulture` y exige sólo ese idioma. Los faltantes agregados requieren Manage; crear conserva Read+Manage y sólo siembra
   el nombre en un alta nueva. Actor, cultura y permisos particionan consultas y limpiezas; un 403 retira el alcance que leyó.
   Los consumidores HTTP sirven bytes exportados sin modificarlos; `src/test/httpCohort` reúne las familias y sus variables

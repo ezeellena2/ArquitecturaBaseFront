@@ -226,8 +226,8 @@ mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre l
 
 | Captura | Qué define |
 | --- | --- |
-| [I1 · El editor con la traducción opcional](evidence/formularios-whatsapp/idi-i1-editor.png) | «Textos en» con el original obligatorio y el inglés opcional. Lo que falta se cuenta como «3 sin traducir», en gris, y cada texto dice «Sin traducir», sin alerta. La vista previa muestra lo que recibe una cuenta en inglés: entero en español mientras falte algo y entero en inglés al completarlo, nunca mezclado. **Desde el 2026-10-24 (punto 35 del review de Catálogos E2) no hay «Textos en»:** se edita en el idioma del menú; con el menú en el otro idioma cada texto es la traducción, con «Sin traducir», el original como referencia y los faltantes contados por pregunta. Un error del otro idioma, de guardado o ubicado desde la comprobación de publicación, se ve bajo el mismo campo («En inglés: …»). |
-| [I2 · Publicar con la traducción incompleta](evidence/formularios-whatsapp/idi-i2-publicar.png) | La comprobación no frena por una traducción que falta: dice «En WhatsApp, en español» y avisa «El inglés no se publica», con lo que le falta y «Completar el inglés». A Meta van solo los idiomas completos; sumar el inglés después es la versión siguiente. Desde el 2026-10-24, «Completar el inglés» se ofrece sólo con el menú en inglés, el idioma en que se edita; con el menú en español el aviso sólo lista lo que falta. La fecha del borrador guardado va en la descripción del diálogo, no junto a los botones del pie, y la espera de un 429 es la ayuda de Reintentar (decisión del 2026-10-23). |
+| [I1 · El editor con la traducción opcional](evidence/formularios-whatsapp/idi-i1-editor.png) | «Textos en» con el original obligatorio y el inglés opcional. Lo que falta se cuenta como «3 sin traducir», en gris, y cada texto dice «Sin traducir», sin alerta. La vista previa muestra lo que recibe una cuenta en inglés: entero en español mientras falte algo y entero en inglés al completarlo, nunca mezclado. **Desde el 2026-10-23 (decisión del punto 35 del review de Catálogos E2) no hay «Textos en»:** se edita en el idioma del menú; con el menú en el otro idioma cada texto es la traducción, con «Sin traducir», el original como referencia y los faltantes contados por pregunta. Un error del otro idioma, de guardado o ubicado desde la comprobación de publicación, se ve bajo el mismo campo («En inglés: …»). Para traducir se cambia el idioma del menú; con cambios sin guardar, el menú pide confirmación antes de descartarlos. |
+| [I2 · Publicar con la traducción incompleta](evidence/formularios-whatsapp/idi-i2-publicar.png) | La comprobación no frena por una traducción que falta: dice «En WhatsApp, en español» y avisa «El inglés no se publica», con lo que le falta y «Completar el inglés». A Meta van solo los idiomas completos; sumar el inglés después es la versión siguiente. Desde el 2026-10-23, «Completar el inglés» se ofrece sólo con el menú en inglés, el idioma en que se edita; con el menú en español el aviso sólo lista lo que falta. La fecha del borrador guardado va en la descripción del diálogo, no junto a los botones del pie, y la espera de un 429 es la ayuda de Reintentar (decisión del 2026-10-23). |
 | [I3 · Los idiomas al publicar](evidence/formularios-whatsapp/idi-i3-idiomas.png) | La confirmación con la traducción incompleta o completa, y una versión nueva que suma el inglés o lo pierde, con aviso. |
 
 Dar de baja, reactivar y eliminar (2026-10-20, versión 88 del lienzo), con las reglas de
@@ -288,8 +288,9 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
     no quiere simplemente no se abre.
 11. **Idiomas.** La elección del 2026-10-10 exigía español e inglés completos al publicar y guardado con traducciones
     pendientes. **I1–I3, elegidos el 2026-10-18, sustituyen ese requisito:** sólo el original es obligatorio para guardar
-    y publicar. Desde el 2026-10-24 (decisión del punto 35) no hay selector de idioma: se escribe en el idioma del menú
-    y, para traducir, se cambia el idioma del menú y se edita lo mismo. La preview muestra todo en el original mientras falte una traducción y todo en el secundario al completarse.
+    y publicar. Desde el 2026-10-23 (decisión del punto 35) no hay selector de idioma: se escribe en el idioma del menú
+    y, para traducir, se cambia el idioma del menú y se edita lo mismo; si el editor tiene cambios sin guardar, el menú pide confirmación antes de descartarlos. La preview muestra todo en el original mientras falte una traducción y todo en el secundario al completarse.
+    Un error de guardado o de la comprobación de publicación en el otro idioma se ve bajo el mismo campo, con su idioma («En inglés: …»): no se cambia de idioma para mostrarlo.
     La vista oficial de WhatsApp tampoco tiene selector: pide el idioma del menú si la versión activa lo publicó y, si no, el original.
     Los mensajes de las reglas también se escriben en el idioma del menú, con el original como referencia.
     El diseño del PDF (G2) tampoco tiene selector: nombre y pie son un solo campo en el idioma del menú, con el original como referencia, y la vista previa pide el idioma del menú.
@@ -299,7 +300,7 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
     Los datos de las personas (CE4-A) también: un dato nuevo nace en el idioma del menú, que es su original, con un solo «Nombre»; con el menú en el otro idioma se escribe la traducción, con el original del dato como referencia.
     El envío fija una cultura preparada para el formulario, la apertura predeterminada, «Abrir formulario», los avisos y el PDF;
     conserva la apertura editada por el operador. El texto y detalle de cada ítem de catálogo conservan su respaldo individual
-    al original, sin cambiar el idioma del formulario ni la validación bilingüe de catálogos comunes. La
+    al original, sin cambiar el idioma del formulario. Los catálogos comunes ya no tienen validación bilingüe: como los propuestos, exigen sólo su original. La
     [regla funcional](../../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19) fija la completitud y las copias capturadas.
 
 ## Etapa 1: el formulario y el chat de hoy
@@ -422,11 +423,11 @@ La sugerencia configurada Always usa la misma tarjeta y confirmación: el punter
 
 En el review de Etapa 5, el respaldo común se confirmó antes de enviar: si faltaba una traducción usada en el formulario, los catálogos, las reglas o el PDF, formulario, apertura predeterminada, avisos y PDF usaban enteros el original. C2 espera la preparación de toda selección, muestra ese idioma y conserva la apertura editada por el operador; la revisión H2 usa el idioma de la propuesta. La cultura real de la cuenta sigue controlando el contexto del destinatario. Ese corte no cambió la publicación bilingüe de las Etapas 1–3 ni implementó I1–I3. La [regla posterior](../../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19) fija la cultura preparada y exceptúa del respaldo global el texto y detalle de cada ítem de catálogo.
 
-OfferWhen se edita dentro de «El formulario» y usa el guardado, UUID y revisión del borrador existente. No integra el esquema publicado ni exige republicar. Las sugerencias s1–s3 guardan configuración e historial propios; muestran condiciones y mapeos por identidad y conservan el borrador ante errores o 409. Los textos nuevos requieren sólo el idioma original. En ese corte, la publicación y los catálogos comunes conservaron su contrato bilingüe; la publicación sigue ahora [I1–I3](#decisiones-de-diseño), mientras los catálogos comunes conservan esa validación.
+OfferWhen se edita dentro de «El formulario» y usa el guardado, UUID y revisión del borrador existente. No integra el esquema publicado ni exige republicar. Las sugerencias s1–s3 guardan configuración e historial propios; muestran condiciones y mapeos por identidad y conservan el borrador ante errores o 409. Los textos nuevos requieren sólo el idioma original. En ese corte, la publicación y los catálogos comunes conservaron su contrato bilingüe; la publicación sigue ahora [I1–I3](#decisiones-de-diseño) y, desde el 2026-10-23, los catálogos comunes también exigen sólo su original ([idioma del menú](#idioma-del-menú-sin-selector--2026-10-23)).
 
 H1–H3 y H5 conservan el chat elegido: Manual es el estado inicial; tomarlo requiere Send y activar Assistant requiere ConfigureAssistant. La disponibilidad y el posible envío iniciado vienen del servidor. El origen Assistant identifica al autor también en el historial, con operador nulo. En Manual, H2 muestra la sugerencia sobre el compositor y el diálogo C2 existente permite destildar datos; no permite editar valores propuestos ni remonta el borrador ordinario. Un resultado perdido se consulta por GET antes de repetir explícitamente. El historial muestra motivo, datos propuestos y títulos de opciones capturados; los detalles privados respetan RecordsRead y no se reconstruyen desde configuración actual. Interpretar no registra por sí solo una respuesta ni decide una aprobación.
 
-H4 se revisa en K4, con evidencia de quién pidió la propuesta por WhatsApp, sus límites y quién la resolvió. Aprobar y activar envía la edición y la persona de ejemplo en un comando; descartar conserva la propuesta original sin activarla. Ese catálogo conserva el original obligatorio al editarlo después; los catálogos comunes siguen bilingües. No se muestran identificadores técnicos del modelo.
+H4 se revisa en K4, con evidencia de quién pidió la propuesta por WhatsApp, sus límites y quién la resolvió. Aprobar y activar envía la edición y la persona de ejemplo en un comando; descartar conserva la propuesta original sin activarla. Ese catálogo conserva el original obligatorio al editarlo después; desde el 2026-10-23 los comunes siguen la misma regla, con el idioma del menú al crearlos como original. No se muestran identificadores técnicos del modelo.
 
 s4 usa la pestaña Respuesta de D2: datos propuestos plegables, marcas de inclusión/mapeo/corrección y cadena de respuestas confirmadas. Modo, motivo y operador pertenecen a la captura histórica. No se inventan eventos de apertura o aceptación ni registros por ofertas pendientes. Los enlaces y descargas del registro anterior se bloquean mientras se cambia de destino; decidir sin RecordsRead sigue limitado a metadata.
 
@@ -436,7 +437,7 @@ H7 usa temas y conteos agregados del servidor, con Pendientes/Descartados e hist
 
 El cierre local verificó lógica, permisos, recuperación, conservación de borradores y guards: 2.245/2.245 tests en 227 archivos, build sin errores ni advertencias y lint con 49/49 checks de arquitectura. La visual normal quedó 511/511 escenas en la pasada normal definitiva; se inspeccionaron las 36 capturas nuevas de H6/H7/s4 en es/en a 1440/390/320 contra los tableros elegidos. Las 126 referencias anteriores conservan sus SHA: 125 siguen comparándose y la de Bot se preserva como evidencia histórica de un estado retirado. La migración a Manual tiene una referencia nueva, inspeccionada contra H1, sin reemplazar aquella. Las comparaciones vigentes mantienen su tolerancia. El diseño vigente mantiene D2, G2/G5 versión 75, H1–H7 y s1–s4.
 
-Los consumidores usan 19 cohortes, 295 capturas —64 de WhatsApp— y 53 fuentes, con bytes y SHA idénticos al front. El recorrido AppPreview con ingreso normal por correo/código, PostgreSQL/Azurite y Meta/IA controlados acreditó Chrome e IAB: ingreso normal con código, D2 en planilla y Por aprobar, filtros/foco/URL/flechas/Escape, decisión con otra cuenta, PDF fijo con foto abierto y descargado, vista previa con respaldo completo al original, revisión manual, continuación Siempre, catálogo aprobado, tablero de pedidos faltantes y audio con permiso de lectura; móvil de 390×844; los hosts quedaron detenidos. El [cierre canónico](../../../ArquitecturaBase/docs/features/formularios.md#cierre-local-de-la-etapa-5-y-del-review-de-la-etapa-4) conserva resultados, procedencia y límites; la [calificación OpenAI](../../../ArquitecturaBase/docs/guides/configurar-ia.md#evidencia-para-habilitar-perfiles) es independiente del [piloto físico del asistente y audios](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-del-asistente-y-audios). En ese cierre se conservó la regla bilingüe de preguntas y catálogos de las Etapas 1–3. [I1–I3](#decisiones-de-diseño) sustituyen después el requisito de publicación del formulario; los catálogos comunes conservan su contrato bilingüe.
+Los consumidores usan 19 cohortes, 295 capturas —64 de WhatsApp— y 53 fuentes, con bytes y SHA idénticos al front. El recorrido AppPreview con ingreso normal por correo/código, PostgreSQL/Azurite y Meta/IA controlados acreditó Chrome e IAB: ingreso normal con código, D2 en planilla y Por aprobar, filtros/foco/URL/flechas/Escape, decisión con otra cuenta, PDF fijo con foto abierto y descargado, vista previa con respaldo completo al original, revisión manual, continuación Siempre, catálogo aprobado, tablero de pedidos faltantes y audio con permiso de lectura; móvil de 390×844; los hosts quedaron detenidos. El [cierre canónico](../../../ArquitecturaBase/docs/features/formularios.md#cierre-local-de-la-etapa-5-y-del-review-de-la-etapa-4) conserva resultados, procedencia y límites; la [calificación OpenAI](../../../ArquitecturaBase/docs/guides/configurar-ia.md#evidencia-para-habilitar-perfiles) es independiente del [piloto físico del asistente y audios](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-del-asistente-y-audios). En ese cierre se conservó la regla bilingüe de preguntas y catálogos de las Etapas 1–3. [I1–I3](#decisiones-de-diseño) sustituyen después el requisito de publicación del formulario, y desde el 2026-10-23 los catálogos comunes tampoco son bilingües.
 
 ## Cierre local de idioma original y traducción opcional — 2026-10-19
 
@@ -545,3 +546,28 @@ El atajo «Ver PDF» abre Actividad; la entrada ordinaria mantiene el plegado. E
 | [Pendientes completos, en, 320](evidence/formularios-whatsapp/menu-review-20261021/pending-full-en-320.png) | Interfaz en inglés; conserva el texto y el archivo históricos. |
 | [Atajo PDF, en, 390](evidence/formularios-whatsapp/menu-review-20261021/pdf-intent-en-390.png) | Actividad abierta y copia vinculada a Al aprobarla. |
 | [Sólo decisión, es, 320](evidence/formularios-whatsapp/menu-review-20261021/decide-only-es-320.png) | Metadata y decisión sin respuestas ni pantalla completa. |
+
+## Idioma del menú sin selector — 2026-10-23
+
+Decisión del usuario en el review de Catálogos E2 (punto 35): nadie está obligado a escribir en español ni en inglés y
+ninguna pantalla elige el idioma del contenido. Lo que se crea se escribe en el idioma del menú, que es su original y el
+único obligatorio; el otro idioma es una traducción opcional y se edita cambiando el idioma del menú. Se retiraron
+«Textos en» de I1, de «El catálogo» y de la vista oficial, el selector de la vista previa del PDF y los pares de campos por
+idioma (nombre y pie del PDF, nombre de un campo del catálogo y de un dato de las personas): cada texto es un solo campo.
+
+- Con el menú en el otro idioma, un texto sin traducción queda vacío, con «Sin traducir» y el original como referencia
+  («Original (Inglés): …»), sin copiarlo; en la tabla de opciones el original es el placeholder de la celda.
+- Fuera de los editores, cada texto se muestra en el idioma del menú y, si falta, en el original.
+- La comprobación de publicación sigue avisando lo que falta del original; «Completar el {idioma}» se ofrece sólo con el
+  menú en ese idioma.
+- Un error de guardado o de la comprobación en el otro idioma se ve bajo el mismo campo, con su idioma
+  («En inglés: …»), sin cambiar de idioma; lo que no tiene control conserva su aviso.
+- Cambiar el idioma del menú con cambios sin guardar en un editor que se reinicia con el idioma pide confirmación antes
+  de descartarlos.
+- La regla alcanza a los catálogos (nombre, descripción, opciones y campos, con el `originalCulture` del catálogo) y a los
+  datos de las personas (con el suyo), y retira la excepción bilingüe del alta común de catálogos.
+
+La [regla funcional](../../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19)
+fija el contrato. Las escenas visuales recorren editor, publicación, vista oficial, PDF, catálogos, campos y datos de las
+personas sin selector, y `catalogManual` suma el editor de catálogo en inglés sobre un original español, con la
+referencia; su corrida y la revisión de capturas quedan para el cierre conjunto del review.
