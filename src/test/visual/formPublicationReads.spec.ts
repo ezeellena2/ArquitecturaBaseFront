@@ -8,7 +8,8 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  await dialog.getByRole("button",{name:es?"Cancelar":"Cancel",exact:true}).click();await expect(trigger).toBeFocused();await trigger.click();
  await expect(dialog.getByRole("button",{name:es?"Publicar versión 1":"Publish version 1",exact:true})).toBeDisabled();await dialog.press("Escape");await expect(trigger).toBeFocused();await trigger.click();
  const jump=dialog.getByRole("button",{name:es?"Ir a la pregunta":"Go to the question",exact:true}).first();await jump.click();await expect(dialog).toHaveCount(0);
- const question=page.getByRole("textbox",{name:es?"Pregunta":"Question",exact:true});await expect(question).toHaveValue("Response 0");await expect(question).toBeFocused();
+ // No language selector: the question opens in the menu language, with the other language's problem under it.
+ const question=page.getByRole("textbox",{name:es?"Pregunta":"Question",exact:true});await expect(question).toHaveValue(es?"Respuesta 0":"Response 0");await expect(question).toBeFocused();
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:`test-results/forms-budget-located-${lang}-${width}.png`,fullPage:true});
  });
 
@@ -66,7 +67,8 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
   // The disabled button does not receive the pointer: its wrapper does, and shows the wait as help.
   await retry.locator("..").hover();await expect(page.getByRole("tooltip")).toHaveText(wait);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:"test-results/forms-publication-wait-normal-"+lang+"-"+width+".png",fullPage:true});
-  await page.mouse.move(0,0);await expect(page.getByRole("tooltip")).toHaveCount(0);
+  // Radix closes a hoverable tooltip on a pointer move outside its grace area, not on the move that leaves the trigger.
+  await page.mouse.move(0,0,{steps:4});await expect(page.getByRole("tooltip")).toHaveCount(0);
   await dialog.press("Escape");await expect(trigger).toBeFocused();
  });
 }
