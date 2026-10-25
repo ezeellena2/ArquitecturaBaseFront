@@ -19,6 +19,8 @@ interface FieldProps {
 /// El envoltorio toma el ancho de su control, como un botón. Un control que ocupa todo el ancho de su campo pasa
 /// `className="grid w-full"`, así no se achica al ancho propio del control cuando está deshabilitado: la grilla estira
 /// al control aunque tenga su propio contenedor (un `Autocomplete`), y `flex w-full` sólo alcanza con un `Input` directo.
+/// Un botón de un `DialogFooter`, que en el celular apila sus botones a todo el ancho, pasa `className="max-sm:*:flex-1"`:
+/// el envoltorio ya se estira con el pie, y así el botón conserva ese ancho.
 export function DisabledReason({ reason, className, children, ...field }: FieldProps & {
   reason?: string | null;
   className?: string;
