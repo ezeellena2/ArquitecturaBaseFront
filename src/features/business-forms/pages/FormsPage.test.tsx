@@ -365,6 +365,23 @@ describe("Forms routes", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Agregá entre 1 y 20 opciones.");
     expect(sent).toBe(1);
   });
+  it("offers Save in the publication dialog with an invalid file range and leads it to the marked control without a request", async () => {
+    const store = setup("forms-files", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await screen.findByLabelText("Nombre");
+    await userEvent.click(screen.getByRole("button", { name: "Editar Fotos de la obra" }));
+    await userEvent.clear(screen.getByRole("spinbutton", { name: "Máximo" }));
+    await userEvent.click(screen.getByRole("button", { name: "Listo" }));
+    await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+    const dialog = await screen.findByRole("dialog", { name: "Primero guardá los cambios" });
+    // Save is not hidden by the range: like the one in the header, it closes the dialog, opens the question and focuses its marked control.
+    await userEvent.click(within(dialog).getByRole("button", { name: "Guardar borrador" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    const minimum = await screen.findByRole("spinbutton", { name: "Mínimo" });
+    await waitFor(() => expect(minimum).toHaveFocus());
+    expect(minimum).toHaveAttribute("aria-invalid", "true");
+    expect(store.writes).toHaveLength(0);
+  });
   it("tells the wait after a 429 as the reason of the disabled check, without a text above the page", async () => {
     setup();
     server.use(http.put("/api/forms/definitions/:id/draft", () => HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 30 }, { status: 429 })));
