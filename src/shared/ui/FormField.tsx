@@ -8,11 +8,14 @@ interface FormFieldProps {
   hint?: string;
   error?: string;
   required?: boolean;
+  /// "polite": el error se anuncia como estado (role="status"), no como alerta. Para un mensaje que cambia con cada tecla,
+  /// como el que cita el valor escrito, que una alerta volvería a interrumpir en cada una.
+  liveError?: "polite";
   children: ReactElement<{ id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }>;
 }
 
 /// Etiqueta, control y mensaje de error, atados entre sí para lectores de pantalla (sección 7.4).
-export function FormField({ label, htmlFor, hint, error, required, children }: FormFieldProps): ReactNode {
+export function FormField({ label, htmlFor, hint, error, required, liveError, children }: FormFieldProps): ReactNode {
   const generatedId = useId();
   const controlId = htmlFor ?? children.props.id ?? generatedId;
   const messageId = `${controlId}-message`;
@@ -32,7 +35,7 @@ export function FormField({ label, htmlFor, hint, error, required, children }: F
       {message ? (
         <p
           id={messageId}
-          role={error ? "alert" : undefined}
+          role={error ? (liveError === "polite" ? "status" : "alert") : undefined}
           className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}
         >
           {message}

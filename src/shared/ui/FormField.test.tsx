@@ -27,6 +27,18 @@ describe("FormField", () => {
     expect(input).toHaveAccessibleDescription("Ingresá un correo válido.");
   });
 
+  it("announces an error that changes with each keystroke as a polite status when asked to", () => {
+    render(
+      <FormField label="Plazo" htmlFor="term" error="«30 d» no es un número entero." liveError="polite">
+        <Input id="term" />
+      </FormField>,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("«30 d» no es un número entero.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Plazo")).toHaveAccessibleDescription("«30 d» no es un número entero.");
+  });
+
   it("shows the hint when there is no error", () => {
     render(
       <FormField label="Código" htmlFor="code" hint="Te lo mandamos por email.">

@@ -47,8 +47,9 @@ export function CatalogItemFields({ item, culture, original, valueType, fields =
         const blur = () => onFieldBlur?.(column.errorPath);
         if (column.field) {
           const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, label = administrativeName(field.name, culture);
-          // A field that cannot take values before it is saved says so instead.
-          return <FormField key={column.id} label={label} required={field.required} error={error} hint={field.id ? catalogFieldInputHint(field, valueCulture, t) ?? undefined : undefined}><CatalogExtraFieldInput field={field} scope={scope} label={label} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} pendingText={pendingTexts?.[key]} culture={culture} readOnly={readOnly} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} /></FormField>;
+          // A field that cannot take values before it is saved says so instead. Its error quotes the value and changes with
+          // each keystroke, so it is a polite status, not an alert that interrupts the typing.
+          return <FormField key={column.id} label={label} required={field.required} error={error} liveError="polite" hint={field.id ? catalogFieldInputHint(field, valueCulture, t) ?? undefined : undefined}><CatalogExtraFieldInput field={field} scope={scope} label={label} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} pendingText={pendingTexts?.[key]} culture={culture} readOnly={readOnly} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} /></FormField>;
         }
         switch (column.id) {
         case "text": return <FormField key={column.id} label={<span className="flex w-full justify-between gap-3"><span>{t(column.editorLabelKey)}</span><span aria-hidden="true" className="text-xs text-[var(--color-content-muted)]">{(item.label[culture] ?? "").length}/{column.maxLength}</span></span>} required={column.required && contentRequired(item.label, culture, original)} error={error} hint={warning ?? reference(item.label)}>

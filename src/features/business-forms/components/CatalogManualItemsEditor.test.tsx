@@ -186,6 +186,20 @@ it("announces a row's value error without interrupting, since its text changes w
   expect(line).toHaveTextContent("Fila 1 · Plazo de pago (días): «30 dí» no es un número entero.");
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
+it("announces a value error in the phone's option editor without interrupting, since its text changes with each keystroke", () => {
+  vi.mocked(useMediaQuery).mockReturnValue(false);
+  const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo" } };
+  const errors = (value: string) => ({ first: { ["fields." + term.id]: [`«${value}» no es un número entero.`] } });
+  const props = { fields: [term], culture: "es" as const, original: "es" as const, valueType: "Text" as const, canManage: true, expandedKey: "first", onExpand: vi.fn(), onChange: vi.fn(), onAdd: vi.fn() };
+  const { rerender } = renderWithProviders(<CatalogManualItemsEditor {...props} items={[{ ...first, fields: { [term.id]: "30 d" } }]} errors={errors("30 d")} />);
+  const input = screen.getByRole("textbox", { name: "Plazo" });
+  expect(input).toHaveAccessibleDescription("«30 d» no es un número entero.");
+  rerender(<CatalogManualItemsEditor {...props} items={[{ ...first, fields: { [term.id]: "30 dí" } }]} errors={errors("30 dí")} />);
+  const message = document.getElementById(input.getAttribute("aria-describedby")!)!;
+  expect(message).toHaveTextContent("«30 dí» no es un número entero.");
+  expect(message).toHaveAttribute("role", "status");
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
 it("reports leaving a control of the table or of the option editor by its option and error path", async () => {
   vi.mocked(useMediaQuery).mockReturnValue(true); const left = vi.fn(); const user = userEvent.setup();
   const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo" } };
