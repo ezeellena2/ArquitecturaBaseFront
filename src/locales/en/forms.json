@@ -878,6 +878,7 @@
     "missingQuestion": "Question unavailable",
     "removeCondition": "Remove condition {{number}}",
     "addCondition": "Add condition",
+    "noQuestions": "The form has no questions yet.",
     "doInOrder": "Do, in this order",
     "action": "Action {{number}}",
     "role": "Role",

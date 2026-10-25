@@ -258,6 +258,30 @@ describe("business information editor", () => {
     expect(writes).toHaveLength(1);
     expect(save()).toBeEnabled();
   });
+  // El límite es el motivo de los controles apagados (tooltip y descripción accesible), sin textos al lado.
+  it("explains the limit of questions on the disabled ways to add one", async () => {
+    current.details = { ...emptyBusinessDetails("UTC"), faq: Array.from({ length: 20 }, (_, index) => ({ id: crypto.randomUUID(), question: `Pregunta ${index + 1}`, answer: "Sí" })) };
+    renderRouteWithProviders("/configuracion/negocio");
+    const custom = await screen.findByRole("button", { name: "Escribir otra pregunta" });
+    const preset = screen.getByRole("combobox", { name: "Agregar una pregunta predefinida" });
+    expect(custom).toBeDisabled();
+    expect(custom).toHaveAccessibleDescription("Podés agregar hasta 20 preguntas.");
+    expect(preset).toBeDisabled();
+    expect(preset).toHaveAccessibleDescription("Podés agregar hasta 20 preguntas.");
+    await userEvent.hover(custom);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Podés agregar hasta 20 preguntas.");
+  });
+  it("explains the limit of special dates on the disabled Add special date", async () => {
+    const details = emptyBusinessDetails("UTC");
+    const exceptions = Array.from({ length: 32 }, (_, index) => ({ date: new Date(Date.UTC(2026, 11, 1 + index)).toISOString().slice(0, 10), status: "closed" as const, periods: [] }));
+    current.details = { ...details, openingHours: { ...details.openingHours, exceptions } };
+    renderRouteWithProviders("/configuracion/negocio");
+    const add = await screen.findByRole("button", { name: "Agregar fecha especial" });
+    expect(add).toBeDisabled();
+    expect(add).toHaveAccessibleDescription("Podés agregar hasta 32 fechas especiales.");
+    await userEvent.hover(add);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Podés agregar hasta 32 fechas especiales.");
+  });
   it("read access shows facts without offering edit actions", async () => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.business.read"] })));
     renderRouteWithProviders("/configuracion/negocio");

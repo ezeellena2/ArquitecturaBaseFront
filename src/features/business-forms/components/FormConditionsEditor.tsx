@@ -1,6 +1,7 @@
 import { useId, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
 import { TrashIcon } from "@/shared/ui/icons";
@@ -57,6 +58,6 @@ export function FormConditionsEditor({ conditions, columns, blocked, error, onCh
     })}
     {error && (!fieldPath || !conditions.length) ? <p id={errorId} role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}
     <p className="text-xs text-[var(--color-content-muted)]">{t("rules.always")}</p>
-    <Button data-suggestion-field={!conditions.length ? fieldPath : undefined} aria-invalid={!!fieldPath && !!error && !conditions.length} aria-describedby={fieldPath && error && !conditions.length ? errorId : undefined} data-add-condition variant="outline" disabled={blocked || !columns.length || conditions.length >= 10} onClick={() => onChange([...conditions, { fieldId: columns[0].fieldId, operator: "answered", values: [] }])}>{t("rules.addCondition")}</Button>
+    <DisabledReason reason={blocked ? null : !columns.length ? t("rules.noQuestions") : conditions.length >= 10 ? t("rules.errors.tooMany") : null}><Button data-suggestion-field={!conditions.length ? fieldPath : undefined} aria-invalid={!!fieldPath && !!error && !conditions.length} aria-describedby={fieldPath && error && !conditions.length ? errorId : undefined} data-add-condition variant="outline" disabled={blocked || !columns.length || conditions.length >= 10} onClick={() => onChange([...conditions, { fieldId: columns[0].fieldId, operator: "answered", values: [] }])}>{t("rules.addCondition")}</Button></DisabledReason>
   </div>;
 }

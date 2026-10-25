@@ -524,3 +524,26 @@ it("explains the limits of rules and of actions in a rule", async () => {
   expect(addAction).toBeDisabled();
   expect(addAction).toHaveAccessibleDescription("Se alcanzó el límite.");
 });
+// «Agregar condición» (shared with suggestions) also gives its reason: a form without questions or the limit of conditions.
+it("explains why a condition cannot be added to a form without questions", async () => {
+  setup();
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  const addCondition = screen.getByRole("button", { name: "Agregar condición" });
+  expect(addCondition).toBeDisabled();
+  expect(addCondition).toHaveAccessibleDescription("El formulario todavía no tiene preguntas.");
+  await userEvent.hover(addCondition);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("El formulario todavía no tiene preguntas.");
+});
+it("explains the limit of conditions in a rule", async () => {
+  setup(); const fieldId = crypto.randomUUID();
+  serveRules([{ ...storedRule(), conditions: Array.from({ length: 10 }, () => ({ fieldId, operator: "answered", values: [] })) }]);
+  server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "decimal", label: { es: "Importe" }, help: null, required: false, maxLength: null, options: null }], conditionChoices: {}, roles: [] })));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  const addCondition = screen.getByRole("button", { name: "Agregar condición" });
+  expect(addCondition).toBeDisabled();
+  expect(addCondition).toHaveAccessibleDescription("Se alcanzó el límite.");
+  await userEvent.hover(addCondition);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Se alcanzó el límite.");
+});

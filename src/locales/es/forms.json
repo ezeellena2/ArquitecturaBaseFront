@@ -878,6 +878,7 @@
     "missingQuestion": "Pregunta no disponible",
     "removeCondition": "Quitar condición {{number}}",
     "addCondition": "Agregar condición",
+    "noQuestions": "El formulario todavía no tiene preguntas.",
     "doInOrder": "Hacer, en este orden",
     "action": "Acción {{number}}",
     "role": "Rol",

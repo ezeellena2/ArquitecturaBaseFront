@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
@@ -39,7 +40,7 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
         <p className="text-sm">{item.date} · {t(item.status)}{item.status === "open" ? ` · ${item.periods.map(period => `${period.start}–${period.end}${period.nextDay ? " (+1)" : ""}`).join(", ")}` : ""}</p>
         {editable ? <div className="flex items-center gap-2"><Button variant="muted-link" disabled={locked} onClick={() => setSpecial(structuredClone(item))}>{t("editDate")}</Button><IconButton label={t("removeDate", { date: item.date })} size="icon-sm" disabled={locked} onClick={() => onChange({ ...value, exceptions: value.exceptions.filter(previous => previous.date !== item.date) })}><TrashIcon className="size-4" /></IconButton></div> : null}
       </div>)}
-      {editable ? <Button variant="outline" disabled={locked || value.exceptions.length >= 32} onClick={() => setSpecial({ date: "", status: "closed", periods: [] })}>{t("addException")}</Button> : null}
+      {editable ? <DisabledReason reason={!locked && value.exceptions.length >= 32 ? t("exceptionsLimit", { count: 32 }) : null}><Button variant="outline" disabled={locked || value.exceptions.length >= 32} onClick={() => setSpecial({ date: "", status: "closed", periods: [] })}>{t("addException")}</Button></DisabledReason> : null}
     </div>
   </div>{legacy}
   {special && editable && !locked ? <SpecialDateDialog initial={special} hours={value} onCancel={() => setSpecial(null)} onConfirm={next => { onChange({ ...value, exceptions: [...value.exceptions.filter(item => item.date !== special.date), next].sort((a,b) => a.date.localeCompare(b.date)) }); setSpecial(null); }} /> : null}
