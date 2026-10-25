@@ -303,6 +303,23 @@ it("opens the failed field and shows missing counts from the complete server val
   expect(screen.getByText("Faltan valores en 12 opciones activas.")).toBeInTheDocument();
 });
 
+// The server's counts carry a thousands separator, as CE1 draws them («1.200») and as «Cambiar el tipo» shows them.
+it.each([
+  ["es", { missingCount: 1200 }, "Faltan valores en 1.200 opciones activas.", { saved: { required: ["Completá las opciones activas."] } }],
+  ["en", { missingCount: 1200 }, "Values are missing from 1,200 active options.", { saved: { required: ["Complete the active options."] } }],
+  ["es", { invalidCount: 1200 }, "1.200 opciones tienen valores que no cumplen las reglas del campo.", { saved: { maxLength: ["Hay valores que no cumplen las reglas del campo."] } }],
+  ["es", { convertedCount: 1188, invalidCount: 1200 }, "1.188 valores pueden convertirse.", { saved: { type: ["Hay valores que no se convierten al tipo nuevo."] } }],
+  ["en", { convertedCount: 1188, invalidCount: 1200 }, "1,200 options have values that cannot convert.", { saved: { type: ["Some values do not convert to the new type."] } }],
+] as const)("groups the thousands of a server count in %s: %j", async (language, feedback, text, errors) => {
+  await i18n.changeLanguage(language);
+  try {
+    await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[field]} errors={errors} feedback={feedback} /></MemoryRouter>); });
+    expect(screen.getByText(text)).toBeInTheDocument();
+  } finally {
+    await i18n.changeLanguage("es");
+  }
+});
+
 it.each(["role", "type", "sourceCatalogId"])("shows the uses next to an in-use %s error inside the editor of that field", async path => {
   const filter: CatalogFieldDraft = { ...field, role: "filter", type: path === "sourceCatalogId" ? "catalog" : "text", sourceCatalogId: path === "sourceCatalogId" ? "01990000-0000-7000-8000-000000000009" : null };
   const other: CatalogFieldDraft = { ...newCatalogField("other", 2), id: "01990000-0000-7000-8000-000000000003", key: "zone", name: { es: "Zona" } };
