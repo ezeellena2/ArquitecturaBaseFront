@@ -56,8 +56,14 @@ function PersonDataWorkspace({ scope }: { scope: PersonDataScope }) {
  const canEditPeople = !!extension && scope.permissions.includes("users.manage");
  // The server counts the whole filtered set; only the attributes a filter uses are summarized, as in CE4-A.
  const summary = people.data ? [t("personData.peopleCount", { count: people.data.totalCount }), ...active.filter(attribute => attribute.usedBy.length > 0).flatMap(attribute => { const entry = people.data.missing.find(item => item.attributeId === attribute.id); return entry ? [t("personData.missingCount", { count: entry.count, name: title(attribute) })] : []; })].join(" · ") : null;
- // After a revision conflict the dialog continues from the saved attribute; closing it meanwhile keeps it closed.
- const reloadEditing = async () => { const result = await attributes.refetch(); setEditing(current => current && current !== "new" ? result.data?.items.find(item => item.id === current.id) ?? null : current); };
+ // After a revision conflict the dialog continues from the saved attribute; closing it meanwhile keeps it closed. A failed read
+ // keeps the cached list, so it changes nothing and returns its error for the dialog to say.
+ const reloadEditing = async (): Promise<unknown> => {
+  const result = await attributes.refetch();
+  if (result.isError) return result.error;
+  setEditing(current => current && current !== "new" ? result.data?.items.find(item => item.id === current.id) ?? null : current);
+  return null;
+ };
  return <Page title={t("personData.title")}><div className="flex flex-col gap-4">
   <Surface title={t("personData.section")} actions={<DisabledReason reason={attributes.isSuccess && list.length >= 20 ? t("personData.limit", { count: 20 }) : null}><Button type="button" variant="outline" disabled={!attributes.isSuccess || list.length >= 20} onClick={() => setEditing("new")}><PlusIcon className="size-4" />{t("personData.addAttribute")}</Button></DisabledReason>}>
    <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("personData.attributeHint")}</p>

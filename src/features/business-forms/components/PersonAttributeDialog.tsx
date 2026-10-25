@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
-import { operationalErrorMessage } from "@/shared/api/errorFeedback";
+import { operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
@@ -20,12 +20,14 @@ import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 type Names = Readonly<Partial<Record<FormCulture, string>>>;
 // The name is one field in the menu language: a new attribute is born in it, and outside the attribute's original it is the
 // optional translation, with the original as a reference that is never copied. The draft keeps both languages.
-export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: { scope: PersonDataScope; attribute: PersonAttribute | null; onClose: () => void; onReload: () => Promise<void> }) {
+export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: { scope: PersonDataScope; attribute: PersonAttribute | null; onClose: () => void; onReload: () => Promise<unknown> }) {
  const { t } = useTranslation("forms"), client = useQueryClient();
  const culture = scope.culture, original = attribute?.originalCulture ?? scope.culture;
  const [key, setKey] = useState(attribute?.key ?? ""), [name, setName] = useState<Names>({ ...attribute?.name });
  const [type, setType] = useState<PersonAttribute["type"]>(attribute?.type ?? "Catalog"), [sourceCatalogId, setSource] = useState(attribute?.sourceCatalogId ?? null), [isActive, setActive] = useState(attribute?.isActive ?? true);
  const [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null), [confirmValues, setConfirmValues] = useState(false);
+ // Rereading after a conflict: the button waits for it and a failed read is said under the conflict, which stays.
+ const [reloading, setReloading] = useState(false), [reloadError, setReloadError] = useState<unknown>(null);
  // The server counts the people holding a value only when the type or source changes; once that 400 arrives the confirmation stays for the life of the dialog, so a later save never sends it unseen.
  const [removalCount, setRemovalCount] = useState<number | null>(null);
  const mounted = useRef(true), operation = useRef<AbortController | null>(null), nameRef = useRef<HTMLInputElement>(null);
@@ -33,14 +35,21 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
  useEffect(() => { mounted.current = true; nameRef.current?.focus(); return () => { mounted.current = false; operation.current?.abort(); }; }, []);
  // A reload after a revision conflict brings the saved attribute: the draft starts again from it in this same dialog (not a remount), so closing still returns the focus to the row that opened it.
  const [loaded, setLoaded] = useState(attribute);
- if (attribute !== loaded) { setLoaded(attribute); setName({ ...attribute?.name }); setType(attribute?.type ?? "Catalog"); setSource(attribute?.sourceCatalogId ?? null); setActive(attribute?.isActive ?? true); setError(null); setConfirmValues(false); setRemovalCount(null); }
+ if (attribute !== loaded) { setLoaded(attribute); setName({ ...attribute?.name }); setType(attribute?.type ?? "Catalog"); setSource(attribute?.sourceCatalogId ?? null); setActive(attribute?.isActive ?? true); setError(null); setReloadError(null); setConfirmValues(false); setRemovalCount(null); }
  const errors = error instanceof ApiError ? error.errors ?? {} : {}, message = (path: string) => errors[path]?.join(" ");
  const usedBy = attribute?.usedBy ?? [], inUse = usedBy.length > 0;
  // Without formtemplates.read the forms come unnamed: the dialog says only that it is blocked and by how many, without links.
  const namedUses = usedBy.every(use => use.name !== null);
  // Someone else saved this attribute: saving again needs the current revision, so only reloading (or cancelling) goes on.
  const conflict = error instanceof ApiError && error.code === "Forms.PersonAttribute.RevisionConflict";
- const reload = () => void onReload().then(() => nameRef.current?.focus());
+ const reload = () => {
+  setReloading(true); setReloadError(null);
+  void onReload().then(failure => {
+   if (!mounted.current) return;
+   setReloading(false);
+   if (failure) setReloadError(failure); else nameRef.current?.focus();
+  });
+ };
  const changeType = (next: PersonAttribute["type"]) => { setType(next); setConfirmValues(false); };
  const changeSource = (next: string) => { setSource(next); setConfirmValues(false); };
  const canReadCatalogs = scope.permissions.includes("formcatalogs.read");
@@ -70,6 +79,6 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
   {removalCount !== null ? <CheckboxField label={t("personData.confirmValueRemoval", { count: removalCount })} checked={confirmValues} disabled={busy} onCheckedChange={setConfirmValues} /> : null}
   {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} error={message("isActive")} onCheckedChange={setActive} /> : null}
   {inUse ? <div className="text-sm">{namedUses ? <><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></> : <p>{t("personData.inUseCount", { count: usedBy.length })}</p>}</div> : null}
-  {error && !Object.keys(errors).length ? <div className="space-y-2"><p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}</p>{conflict ? <Button type="button" variant="outline" disabled={busy} onClick={reload}>{t("personData.reloadAttribute")}</Button> : null}</div> : null}
+  {error && !Object.keys(errors).length ? <div className="space-y-2"><p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}{reloadError ? " " + readErrorMessage(reloadError, t) : null}</p>{conflict ? <Button type="button" variant="outline" disabled={busy || reloading} onClick={reload}>{t("personData.reloadAttribute")}</Button> : null}</div> : null}
  </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" disabled={busy || conflict || !Object.keys(names).length || !key.trim() || type === "Catalog" && !sourceCatalogId} onClick={() => void save()}>{t("common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;
 }

@@ -94,6 +94,34 @@ it("reloads an attribute after a revision conflict and saves with the current re
  ]);
  await waitFor(() => expect(screen.getByRole("button", { name: "Editar Zona de atención" })).toHaveFocus());
 });
+// Point 26: rereading the attribute after a conflict shows that it is working and, if it fails, says so in the dialog, keeps
+// the conflict and offers the reload again; the focus does not move to Name as if it had been reloaded.
+it("shows the wait and the failure of reloading an attribute after a revision conflict", async () => {
+ const conflict = "Otra persona cambió el dato. Volvé a cargarlo.";
+ let release!: () => void;
+ await mount(["formpersondata.manage"]);
+ const edit = await screen.findByRole("button", { name: "Editar Sucursal" });
+ server.use(
+  http.get("/api/forms/person-attributes", async () => {
+   await new Promise<void>(resolve => { release = resolve; });
+   return HttpResponse.json({ title: "Error", status: 500, traceId: "trace-reload" }, { status: 500 });
+  }),
+  http.put(`/api/forms/person-attributes/${id}`, () => HttpResponse.json({ title: "Conflict", status: 409, detail: conflict, traceId: "trace", code: "Forms.PersonAttribute.RevisionConflict" }, { status: 409 })));
+ await userEvent.click(edit);
+ const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
+ await userEvent.type(dialog.getByRole("textbox", { name: "Nombre" }), " central");
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ expect(await dialog.findByRole("alert")).toHaveTextContent(conflict);
+ const reload = dialog.getByRole("button", { name: "Volver a cargar el dato" });
+ await userEvent.click(reload);
+ await waitFor(() => expect(reload).toBeDisabled());
+ await act(async () => { release(); });
+ await waitFor(() => expect(dialog.getByRole("alert")).toHaveTextContent("Ocurrió un error inesperado. Si el problema continúa, informá el código trace-reload."));
+ expect(dialog.getByRole("button", { name: "Volver a cargar el dato" })).toBeEnabled();
+ expect(dialog.getByRole("button", { name: "Guardar" })).toBeDisabled();
+ expect(dialog.getByRole("textbox", { name: "Nombre" })).toHaveValue("Sucursal central");
+ expect(dialog.getByRole("textbox", { name: "Nombre" })).not.toHaveFocus();
+});
 it("creates a text attribute with an immutable key and without reading catalogs", async () => {
  const bodies: unknown[] = [];
  await mount(["formpersondata.manage"]);
