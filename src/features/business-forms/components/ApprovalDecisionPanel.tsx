@@ -8,6 +8,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Badge } from "@/shared/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
@@ -135,22 +136,23 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     const transientReadFailure = errorFeedback(query.error).network || query.error instanceof ApiError && (query.error.status >= 500 || query.error.status === 429);
     if (!task || query.error && !transientReadFailure)
         return <EmptyState embedded title={t("common:states.loadFailed")} action={!approvalForbidden(query.error) ? <Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button> : undefined}/>;
-    const controls = task.state === "Open" ? <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button><Button disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => void decide("Approved")}>{t("approvals.approve")}</Button></div> : null;
+    // Why Approve and Reject are disabled (an own response, the wait of a 429) is the help of each button, never a text under them.
+    const waitReason = cooldown.isRunning && !busy ? t("wait", { count: cooldown.seconds }) : null;
+    const decisionReason = busy ? null : task.cannotDecideReason === "OwnResponse" ? t("approvals.ownResponse") : waitReason;
+    const controls = task.state === "Open" ? <div className="flex flex-wrap gap-2"><DisabledReason reason={decisionReason}><Button variant="outline" disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button></DisabledReason><DisabledReason reason={decisionReason}><Button disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => void decide("Approved")}>{t("approvals.approve")}</Button></DisabledReason></div> : null;
     return <div ref={summary} aria-labelledby={statusId} tabIndex={-1} className="space-y-3 outline-none">
   <div className="flex flex-wrap items-center gap-3">{embedded ? null : <Badge variant={approvalStateVariant(task.state)}>{t("approvals.taskStates." + task.state)}</Badge>}<span className="text-sm">{task.role.name}</span></div>
   {task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(task.decidedAtUtc, i18n.language, scope.user?.timeZoneId) })}</p> : null}
   {task.reason ? <p className="text-sm whitespace-pre-wrap">{task.reason}</p> : null}
   {actionsTarget === undefined ? controls : actionsTarget ? createPortal(controls, actionsTarget) : null}
-  {task.cannotDecideReason === "OwnResponse" ? <p className="text-sm text-[var(--color-content-muted)]">{t("approvals.ownResponse")}</p> : null}
   {error instanceof ApiError && error.status === 409 ? <p role="status" className="text-sm">{t("approvals.conflict")}</p> : null}
-  {cooldown.isRunning ? <p role="status">{t("wait", { count: cooldown.seconds })}</p> : null}
-  {reject ? <RejectDialog number={task.number} reason={reason} setReason={value => { setReason(value); setError(null); }} fieldError={error instanceof ApiError ? error.errors?.reason?.[0] : undefined} busy={busy} onClose={() => { if (!busy) {
+  {reject ?<RejectDialog number={task.number} reason={reason} setReason={value => { setReason(value); setError(null); }} fieldError={error instanceof ApiError ? error.errors?.reason?.[0] : undefined} busy={busy} onClose={() => { if (!busy) {
         setReject(false);
         setReason("");
-    } }} onSubmit={() => void decide("Rejected")} disabled={disabled || cooldown.isRunning} fallback={summary} feedback={cooldown.isRunning ? t("wait", { count: cooldown.seconds }) : undefined}/> : null}
+    } }} onSubmit={() => void decide("Rejected")} disabled={disabled || cooldown.isRunning} fallback={summary} waitReason={waitReason}/> : null}
  </div>;
 }
-function RejectDialog({ number, reason, setReason, busy, onClose, onSubmit, disabled, fallback, feedback, fieldError }: {
+function RejectDialog({ number, reason, setReason, busy, onClose, onSubmit, disabled, fallback, waitReason, fieldError }: {
     number: string;
     reason: string;
     setReason: (value: string) => void;
@@ -159,7 +161,7 @@ function RejectDialog({ number, reason, setReason, busy, onClose, onSubmit, disa
     onSubmit: () => void;
     disabled: boolean;
     fallback: import("react").RefObject<HTMLElement | null>;
-    feedback?: string;
+    waitReason: string | null;
     fieldError?: string;
 }) {
     const { t } = useTranslation("forms");
@@ -167,5 +169,5 @@ function RejectDialog({ number, reason, setReason, busy, onClose, onSubmit, disa
     return <Dialog open onOpenChange={open => { if (!open)
         onClose(); }}><DialogContent showCloseButton={!busy} onCloseAutoFocus={restore} onEscapeKeyDown={event => { if (busy)
         event.preventDefault(); }} onPointerDownOutside={event => { if (busy)
-        event.preventDefault(); }}><DialogTitle>{t("approvals.rejectTitle", { number })}</DialogTitle><DialogDescription>{t("approvals.rejectHint")}</DialogDescription><FormField label={t("approvals.reason")} required error={fieldError} hint={t("approvals.reasonCount", { count: reason.length })}><Textarea maxLength={500} value={reason} onChange={event => setReason(event.target.value)} disabled={busy} rows={4}/></FormField>{feedback ? <p role="status" className="text-sm">{feedback}</p> : null}<DialogFooter><Button variant="outline" onClick={onClose} disabled={busy}>{t("common:actions.cancel")}</Button><Button variant="destructive" onClick={onSubmit} disabled={busy || disabled || !prepareApprovalDecision(1, "Rejected", reason)}>{t("approvals.reject")}</Button></DialogFooter></DialogContent></Dialog>;
+        event.preventDefault(); }}><DialogTitle>{t("approvals.rejectTitle", { number })}</DialogTitle><DialogDescription>{t("approvals.rejectHint")}</DialogDescription><FormField label={t("approvals.reason")} required error={fieldError} hint={t("approvals.reasonCount", { count: reason.length })}><Textarea maxLength={500} value={reason} onChange={event => setReason(event.target.value)} disabled={busy} rows={4}/></FormField><DialogFooter><Button variant="outline" onClick={onClose} disabled={busy}>{t("common:actions.cancel")}</Button>{/* On the phone the footer stacks its buttons at full width; the wrapper of a waiting one keeps that width. */}<DisabledReason reason={waitReason} className="max-sm:*:flex-1"><Button variant="destructive" onClick={onSubmit} disabled={busy || disabled || !prepareApprovalDecision(1, "Rejected", reason)}>{t("approvals.reject")}</Button></DisabledReason></DialogFooter></DialogContent></Dialog>;
 }

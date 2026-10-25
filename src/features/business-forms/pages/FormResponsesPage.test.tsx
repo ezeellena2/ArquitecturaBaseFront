@@ -1398,7 +1398,8 @@ it("keeps one workflow read notification in the detail without repeating its cau
     const header = within((await responseView.findByText("Supervisión")).closest("li")!);
     expect(await header.findByRole("button", { name: "Aprobar" })).toBeDisabled();
     expect(header.getByRole("button", { name: "Rechazar" })).toBeDisabled();
-    expect(screen.getByText("No podés aprobar ni rechazar tu propia respuesta.")).toBeInTheDocument();
+    // The reason is the help of each disabled button, not a text under them.
+    for (const name of ["Aprobar", "Rechazar"]) expect(header.getByRole("button", { name })).toHaveAccessibleDescription("No podés aprobar ni rechazar tu propia respuesta.");
     expect(fixture.writes).toEqual([]);
   });
   it("groups observed workflow moments with UTC ordered record events and one approval request", async () => {
