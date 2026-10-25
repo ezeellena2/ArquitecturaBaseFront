@@ -59,8 +59,9 @@ export function CatalogItemFields({ item, culture, original, valueType, fields =
         case "detail": return <FormField key={column.id} label={t(column.editorLabelKey)} error={error} hint={reference(item.detail) ?? t("optional")}>
           <Textarea maxLength={column.maxLength} readOnly={readOnly} placeholder={reference(item.detail) ? t("missingText") : undefined} value={item.detail[culture] ?? ""} onChange={event => onChange({ ...item, detail: { ...item.detail, [culture]: event.target.value || null } })} />
         </FormField>;
-        // Generating the code does not appear or disappear while typing: with a code it stays in its place, disabled.
-        case "isActive": return <Fragment key={column.id}>{onGenerateCode && !readOnly ? <Button type="button" variant="outline" disabled={!!item.code.trim()} onClick={onGenerateCode}>{t("catalogs.items.generateCode")}</Button> : null}<CheckboxField label={t(column.editorLabelKey)} description={t("catalogs.items.activeHint")} checked={item.isActive} disabled={readOnly} onCheckedChange={isActive => onChange({ ...item, isActive })} /></Fragment>;
+        // Generating the code follows the permission (`onGenerateCode` comes only with Manage): it does not appear or
+        // disappear while typing, saving or reviewing a conflict. With a code, or while the option is read-only, it is disabled.
+        case "isActive": return <Fragment key={column.id}>{onGenerateCode ? <Button type="button" variant="outline" disabled={readOnly || !!item.code.trim()} onClick={onGenerateCode}>{t("catalogs.items.generateCode")}</Button> : null}<CheckboxField label={t(column.editorLabelKey)} description={t("catalogs.items.activeHint")} checked={item.isActive} disabled={readOnly} onCheckedChange={isActive => onChange({ ...item, isActive })} /></Fragment>;
         }
       })}
     </div>

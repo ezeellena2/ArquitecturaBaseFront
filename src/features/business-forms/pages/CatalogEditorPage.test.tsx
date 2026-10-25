@@ -148,8 +148,10 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(code).toHaveFocus();
     expect(bodies).toEqual([]);
   });
-  it("keeps Generate code in place while a code is typed", async () => {
+  it("keeps Generate code in place while a code is typed and while the catalog saves", async () => {
     setup(); await mount("/catalogos/" + id); const user = userEvent.setup();
+    let saves = 0;
+    server.use(http.put("/api/forms/catalogs/" + id, () => { saves++; return new Promise<never>(() => undefined); }));
     await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
     await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Norte");
     const generate = screen.getByRole("button", { name: "Generar desde el texto" });
@@ -163,6 +165,12 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(generate).toBeEnabled();
     await user.click(generate);
     expect(code).not.toHaveValue("");
+    expect(generate).toBeDisabled();
+    // Saving does not take it away either: it follows the permission and is only disabled while the request is pending.
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(saves).toBe(1));
+    await waitFor(() => expect(code).toHaveAttribute("readonly"));
+    expect(screen.getByRole("button", { name: "Generar desde el texto" })).toBe(generate);
     expect(generate).toBeDisabled();
   });
   it("creates an option written only in the menu language", async () => {
