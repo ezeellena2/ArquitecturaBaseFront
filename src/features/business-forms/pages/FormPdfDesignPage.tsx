@@ -8,10 +8,10 @@ import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shar
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
-import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Page } from "@/shared/ui/Page";
 import { Surface } from "@/shared/ui/Surface";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { Input } from "@/shared/ui/input";
@@ -32,7 +32,6 @@ import { FormPdfPreview } from "../components/FormPdfPreview";
 type PdfEditorProps = {
     definitionId: string;
     scope: FormReadScope;
-    timeZoneId?: string;
     onDenied: () => void;
 };
 export function FormPdfDesignPage() {
@@ -43,11 +42,11 @@ export function FormPdfDesignPage() {
     const owner = JSON.stringify([...formScopeKey(scope), formId]);
     if (!scope.actorId || !scope.permissions.includes("formrules.manage"))
         return <ForbiddenPage />;
-    return <PdfDesignAccess key={owner} definitionId={formId} scope={scope} timeZoneId={user?.timeZoneId}/>;
+    return <PdfDesignAccess key={owner} definitionId={formId} scope={scope}/>;
 }
 function PdfDesignAccess(props: Omit<PdfEditorProps, "onDenied">) { const [denied, setDenied] = useState(false); const onDenied = useCallback(() => setDenied(true), []); return denied ? <ForbiddenPage /> : <PdfDesignEditor {...props} onDenied={onDenied}/>; }
-function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEditorProps) {
-    const { t, i18n } = useTranslation("forms");
+function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
+    const { t } = useTranslation("forms");
     const navigate = useNavigate();
     const root = [...formScopeKey(scope), "pdf-design", definitionId];
     const notificationRoot = "forms:pdf-design:" + JSON.stringify(root);
@@ -143,23 +142,25 @@ function PdfDesignEditor({ definitionId, scope, timeZoneId, onDenied }: PdfEdito
     const reference = (text: LocalizedText | null) => { const value = contentReference(text, culture, original); return value ? t("originalText", { language: t("cultures." + original), text: value }) : undefined; };
     const selectedUnknown = [...new Set([...baseline.design.questionIds, ...draft.questionIds])].filter(id => !options.questions.some(question => question.fieldId === id));
     const blocked = busy || review;
-    return <Page title={localizedValue(draft.name, culture, original) || t("pdf.title")} status={t("pdf.status", { name: localizedValue(options.name, scope.culture, original) }) + (dirty ? " · " + t("dirty") : "")} backTo={{ to: back, label: t("pdf.back") }} actions={<Button variant="outline" disabled={busy} onClick={() => { if (dirty)
+    // Without changes or while saving, a disabled Save is obvious; a wait or a conflict is told as its reason, with no text beside it.
+    const saveDisabledReason = busy ? null : cooldown.isRunning ? t("wait", { count: cooldown.seconds }) : review ? t("pdf.saveConflict") : null;
+    // Next to the title only what is designed: an enabled Save already says there are changes, and revisions are not shown here.
+    return <Page title={localizedValue(draft.name, culture, original) || t("pdf.title")} status={t("pdf.status", { name: localizedValue(options.name, scope.culture, original) })} backTo={{ to: back, label: t("pdf.back") }} actions={<Button variant="outline" disabled={busy} onClick={() => { if (dirty)
         setDiscard(true);
     else
         void navigate(back); }}>{t("discard")}</Button>}>
-  {review ? <Surface title={t("pdf.conflict")} padded><p>{t("pdf.conflictHint")}</p><div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => void reread()}>{t("pdf.reread")}</Button>{current ? <Button disabled={busy} onClick={() => { setBaseline(current); setDraft(current.design); setReview(false); setCurrent(null); setError(null); setValidation(false); setPreview(null); pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save"); }}>{t("pdf.useCurrent")}</Button> : null}</div></Surface> : null}
+  {review ? <Surface title={t("pdf.conflict")} padded actions={<><Button variant="outline" disabled={busy} onClick={() => void reread()}>{t("pdf.reread")}</Button>{current ? <Button disabled={busy} onClick={() => { setBaseline(current); setDraft(current.design); setReview(false); setCurrent(null); setError(null); setValidation(false); setPreview(null); pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save"); }}>{t("pdf.useCurrent")}</Button> : null}</>}><p>{t("pdf.conflictHint")}</p></Surface> : null}
   <div className="grid items-start gap-4 xl:grid-cols-[3fr_2fr]">
-   <Surface title={t("pdf.receipt")} padded actions={<Button disabled={blocked || cooldown.isRunning || !dirty && baseline.revision > 0} onClick={() => void save()}>{t("pdf.save")}</Button>}>
+   <Surface title={t("pdf.receipt")} padded actions={<DisabledReason reason={saveDisabledReason}><Button disabled={blocked || cooldown.isRunning || !dirty && baseline.revision > 0} onClick={() => void save()}>{t("pdf.save")}</Button></DisabledReason>}>
     <div className="space-y-5"><FormField label={t("pdf.name")} required={contentRequired(draft.name, culture, original)} hint={reference(draft.name)} error={textError("name")}><Input maxLength={160} placeholder={culture !== original ? t("missingText") : undefined} value={draft.name[culture] ?? ""} disabled={blocked} onChange={event => change({ ...draft, name: { ...draft.name, [culture]: event.target.value } })}/></FormField>
     <fieldset className="space-y-2"><legend className="mb-2 text-sm font-medium">{t("pdf.questions")}</legend>{[...options.questions.map(question => ({ id: question.fieldId, label: localizedValue(question.label, scope.culture, original) })), ...selectedUnknown.map(id => ({ id, label: t("pdf.retiredQuestion") }))].map(question => <CheckboxField key={question.id} label={question.label} checked={draft.questionIds.includes(question.id)} disabled={blocked} onCheckedChange={checked => change({ ...draft, questionIds: checked ? [...draft.questionIds, question.id] : draft.questionIds.filter(id => id !== question.id) })}/>)}</fieldset>
     <CheckboxField label={t("pdf.includePhotos")} description={t("pdf.photosHint")} checked={draft.includePhotos} disabled={blocked} onCheckedChange={checked => change({ ...draft, includePhotos: checked })}/>
     <CheckboxField label={t("pdf.includeApproval")} description={t("pdf.approvalHint")} checked={draft.includeApproval} disabled={blocked} onCheckedChange={checked => change({ ...draft, includeApproval: checked })}/>
     <FormField label={t("pdf.footer")} hint={reference(draft.footer) ?? t("pdf.footerHint")} error={textError("footer")}><Textarea maxLength={1000} rows={3} disabled={blocked} placeholder={culture !== original && draft.footer?.[original]?.trim() ? t("missingText") : undefined} value={draft.footer?.[culture] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [culture]: event.target.value } })}/></FormField>
-    {cooldown.isRunning ? <p role="status">{t("wait", { count: cooldown.seconds })}</p> : null}
-    <p className="text-xs text-[var(--color-content-muted)]">{baseline.revision ? t("pdf.revision", { revision: baseline.revision, date: baseline.createdAtUtc ? formatDateTimeInZone(baseline.createdAtUtc, i18n.language, timeZoneId) : "" }) : t("pdf.noRevision")}</p><p className="text-xs text-[var(--color-content-muted)]">{t("pdf.fixedHint")}</p>
+    <p className="text-xs text-[var(--color-content-muted)]">{t("pdf.fixedHint")}</p>
    </div></Surface>
-   <Surface title={t("pdf.preview")} padded><div className="space-y-4"><Button variant="outline" disabled={blocked || !prepared.design} onClick={() => { if (prepared.design)
-        setPreview(prepared.design); }}>{t("pdf.preview")}</Button>{preview ? <FormPdfPreview operationId={notificationRoot + ":preview"} load={loadPreview} onForbidden={onDenied} requestedCulture={culture} example/> : <p className="text-sm text-[var(--color-content-muted)]">{t("pdf.previewHint")}</p>}</div></Surface>
+   <Surface title={t("pdf.preview")} padded actions={<Button variant="outline" disabled={blocked || !prepared.design} onClick={() => { if (prepared.design)
+        setPreview(prepared.design); }}>{t("pdf.preview")}</Button>}>{preview ? <FormPdfPreview operationId={notificationRoot + ":preview"} load={loadPreview} onForbidden={onDenied} requestedCulture={culture} example/> : <p className="text-sm text-[var(--color-content-muted)]">{t("pdf.previewHint")}</p>}</Surface>
   </div>
   <ConfirmDialog open={discard || guard.isBlocked} onOpenChange={open => { if (!open) {
         setDiscard(false);

@@ -35,8 +35,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(photos).not.toBeChecked();
     await expect(frame).toHaveCount(0);
     expect(await page.evaluate(() => (window as unknown as { pdfRevokedUrls: string[] }).pdfRevokedUrls)).toContain(firstUrl);
-    await page.getByRole("button", { name: en ? "Save design" : "Guardar diseño", exact: true }).click();
-    await expect(page.getByText(en ? /Revision 1/ : /Revisión 1/)).toBeVisible();
+    // No revision number nor «Cambios sin guardar» on the page: once saved, Save is disabled because there are no changes.
+    const save = page.getByRole("button", { name: en ? "Save design" : "Guardar diseño", exact: true });
+    await save.click();
+    await expect(save).toBeDisabled();
+    await expect(page.getByText(en ? /Revision|Unsaved changes/ : /Revisión|Cambios sin guardar/)).toHaveCount(0);
     expect(await page.evaluate(() => (globalThis as unknown as { pdfsFixture: { writes: Array<{ design: { includePhotos: boolean } }> } }).pdfsFixture.writes.map(item => item.design.includePhotos))).toEqual([false]);
     await preview.getByRole("button", { name: en ? "Preview" : "Vista previa", exact: true }).click();
     await expect(frame).toHaveAttribute("src", /^blob:/);
