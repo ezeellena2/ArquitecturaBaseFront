@@ -93,3 +93,25 @@ it("explains the action wait as the reason of the recovery buttons and of the re
   }
   for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
 });
+
+// A background refetch (every 2 s while an action runs) is not the history working: the wait stays as the reason,
+// so the button is not remounted under the mouse or the keyboard focus.
+it("keeps the wait as the reason of Retry while a running action refetches the history", async () => {
+  const user = userEvent.setup();
+  const wait = /^Esperá [0-9]+ segundos para volver a intentar\.$/;
+  const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [action({ state: "Failed", canRetry: true, completedAtUtc: null }),
+    action({ id: id(5), kind: "NotifyRole", order: 1, state: "Running", completedAtUtc: null })] };
+  let reads = 0;
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrules.manage"] })),
+    http.get("/api/forms/records/:id/workflow", () => ++reads === 1 ? HttpResponse.json(workflow) : new Promise<never>(() => undefined)),
+    http.post("/api/forms/records/:id/actions/:runId/retry", () => HttpResponse.json({ code: "RateLimit.Exceeded", detail: "Esperá antes de reintentar.", retryAfter: 30 }, { status: 429 })));
+  renderWithProviders(<ActivityHarness />);
+  const effects = await screen.findByRole("listitem", { name: "Al recibirla" });
+  await user.click(within(effects).getByRole("button", { name: "Reintentar" }));
+  const retry = within(effects).getByRole("button", { name: "Reintentar" });
+  await waitFor(() => expect(retry).toHaveAccessibleDescription(wait));
+  await waitFor(() => expect(reads).toBe(2), { timeout: 3000 });
+  expect(within(effects).getByRole("button", { name: "Reintentar" })).toBe(retry);
+  expect(retry).toBeDisabled();
+  expect(retry).toHaveAccessibleDescription(wait);
+});

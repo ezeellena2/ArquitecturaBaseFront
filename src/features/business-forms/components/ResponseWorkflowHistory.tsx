@@ -28,8 +28,10 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
   const needsConsult = !!reviewTarget && sameWorkflowReviewTarget(workflow.needsConsultReview, reviewTarget);
   const restoreFocus = useRestoreFocusOnClose(reviewOpen, reviewFocus);
   const disabled = workflow.busy || workflow.query.isFetching || workflow.cooldown.isRunning;
-  // The wait of a 429 is the reason of each disabled action, not a text under the history or in the dialog.
-  const waitReason = workflow.busy || workflow.query.isFetching || !workflow.cooldown.isRunning ? null : t("wait", { count: workflow.cooldown.seconds });
+  // The wait of a 429 is the reason of each disabled action, not a text under the history or in the dialog. A background
+  // refetch (every 2 s while an action runs, or on focus) is not the history working: it keeps the reason, so the actions
+  // are not remounted under the mouse or the keyboard focus.
+  const waitReason = workflow.busy || !workflow.cooldown.isRunning ? null : t("wait", { count: workflow.cooldown.seconds });
   const closeReview = () => { setReviewTarget(null); setWasSent(undefined); };
   const renderEntry = (entry: WorkflowHistoryEntry) => {
         if (entry.type === "record") {
