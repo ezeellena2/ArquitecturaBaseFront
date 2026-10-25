@@ -52,7 +52,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
   const samples = useRecipientSamples(scope, { page: 1, pageSize: 20, search: settled }, preview.available);
   // The maximum depends only on the filters of a Manual catalog: no person and no saved form; its label is in the menu language.
-  const maximum = useRecipientMaximum(scope, catalog?.kind === "Manual" ? source : null);
+  const maximum = useRecipientMaximum(scope, catalog?.kind === "Manual" ? source : null, catalog?.revision ?? null);
   const draftFields = useMemo(() => fields.map(field => openCatalogField(field, "en")), [fields]);
   const draftItems = useMemo(() => (items.data?.items ?? []).map(item => ({ localId: item.id, itemId: item.id, label: item.text, detail: item.detail, code: item.code, value: item.value, isActive: item.isActive, position: item.position, fields: item.fields, fieldTexts: item.fieldTexts })), [items.data]);
   const sourceStamp = JSON.stringify(normalizeCatalogQuestionSource(source));

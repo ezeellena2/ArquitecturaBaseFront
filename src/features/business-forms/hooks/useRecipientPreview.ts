@@ -68,7 +68,7 @@ export function useRecipientPreview(scope: FormReadScope, definitionId: string |
 }
 // The most options one person can get from complete filters, without a person or a saved form. Like the preview it keeps
 // no bodies in a cache: changing filters, language or permissions aborts the read and drops the answer.
-export function useRecipientMaximum(scope: FormReadScope, source: DraftQuestionSource | null) {
+export function useRecipientMaximum(scope: FormReadScope, source: DraftQuestionSource | null, revision: number | null) {
   const catalog = source?.catalog ?? null, match = source?.match ?? [];
   const complete = !!catalog && match.length > 0 && match.every(item => "value" in item ? !!item.value : !!item.personAttributeId);
   // Like the preview, a failed read is repeated only with `retry`, and a 429 waits its Retry-After first.
@@ -76,13 +76,14 @@ export function useRecipientMaximum(scope: FormReadScope, source: DraftQuestionS
   const cooldown = useCountdown(0);
   const { restart } = cooldown;
   // Only the catalog and its filters travel: the presentation does not change the maximum, and the limit comes from the question type.
-  const stamp = canPreview(scope) && complete ? JSON.stringify([formScopeKey(scope), normalizeCatalogQuestionSource({ catalog, match }), attempt]) : null;
+  // The catalog's revision is in the stamp, as in the reads of its options: another revision is read again.
+  const stamp = canPreview(scope) && complete ? JSON.stringify([formScopeKey(scope), normalizeCatalogQuestionSource({ catalog, match }), attempt, revision]) : null;
   const [settled, setSettled] = useState<{ stamp: string; result: RecipientMaximum | null; error: unknown } | null>(null);
   useEffect(() => {
     if (!stamp) return;
     const controller = new AbortController();
     let active = true;
-    const [, body] = JSON.parse(stamp) as [unknown, FormQuestionSource, number];
+    const [, body] = JSON.parse(stamp) as [unknown, FormQuestionSource, number, number | null];
     // A fixed value changes the filters on every key and the route shares the forms write limit with Guardar: the read waits
     // 300 ms after the last change, like the person search; meanwhile only an answer for these same filters shows.
     const timer = setTimeout(() => void fetchRecipientMaximum(body, controller.signal).then(result => {

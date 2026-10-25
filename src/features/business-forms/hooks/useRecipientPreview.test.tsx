@@ -37,7 +37,9 @@ it("does not show the wait of a 429 on a later preview that cannot be retried", 
 const shared = (maximum: number) => ({ maximum, maximumLabel: null });
 const fixed = (value: string | null): DraftQuestionSource => ({ catalog: "catalog", match: [{ fieldId: "kind", value }] });
 function mountMaximum(initial: DraftQuestionSource | null, permissions = scope.permissions) {
-  return renderHook(({ value, actorId }) => useRecipientMaximum({ ...scope, actorId, permissions }, value), { initialProps: { value: initial, actorId: "actor" } });
+  type Props = { value: DraftQuestionSource | null; actorId: string; revision?: number };
+  const initialProps: Props = { value: initial, actorId: "actor" };
+  return renderHook(({ value, actorId, revision = 1 }: Props) => useRecipientMaximum({ ...scope, actorId, permissions }, value, revision), { initialProps });
 }
 it("reads the maximum only for complete filters with the three permissions, without the presentation or a body cache", async () => {
   vi.mocked(fetchRecipientMaximum).mockImplementation(body => Promise.resolve(shared(body.match?.length ?? 0)));
@@ -86,6 +88,21 @@ it("reads the maximum once, 300 ms after the last filter change, and shows nothi
   await act(() => vi.advanceTimersByTimeAsync(300));
   expect(fetchRecipientMaximum).toHaveBeenCalledTimes(2);
   expect(fetchRecipientMaximum).toHaveBeenLastCalledWith(fixed("Frío"), expect.any(AbortSignal));
+});
+// CE4-A: another revision of the catalog (edited in another tab, or an import) can change the options each person sees.
+it("reads the maximum again, 300 ms later, when the catalog revision changes", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+  vi.mocked(fetchRecipientMaximum).mockReset().mockResolvedValueOnce(shared(3)).mockResolvedValueOnce(shared(5));
+  const { result, rerender } = mountMaximum(fixed("Frío"));
+  await act(() => vi.advanceTimersByTimeAsync(300));
+  expect(result.current.result).toEqual(shared(3));
+  rerender({ value: fixed("Frío"), actorId: "actor", revision: 2 });
+  expect(result.current.result).toBeNull();
+  await act(() => vi.advanceTimersByTimeAsync(299));
+  expect(fetchRecipientMaximum).toHaveBeenCalledTimes(1);
+  await act(() => vi.advanceTimersByTimeAsync(1));
+  expect(fetchRecipientMaximum).toHaveBeenCalledTimes(2);
+  expect(result.current.result).toEqual(shared(5));
 });
 it("retries a failed maximum only by explicit action and waits the Retry-After of a 429", async () => {
   vi.mocked(fetchRecipientMaximum).mockReset().mockRejectedValueOnce(new ApiError(500, { traceId: "trace" })).mockResolvedValue(shared(18));
