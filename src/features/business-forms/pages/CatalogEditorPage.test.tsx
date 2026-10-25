@@ -451,6 +451,20 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
     expect(requests.at(-1)?.getAll("ids")).toEqual([]);
   });
+  it("keeps the way back to the whole list when reading the rows with errors fails", async () => {
+    viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
+    server.use(http.get("/api/forms/catalogs/" + id + "/items", ({ request }) => {
+      const query = new URL(request.url).searchParams; requests.push(query);
+      return query.getAll("ids").length ? HttpResponse.json({ code: "General.Unexpected", title: "Falló", status: 500 }, { status: 500 }) : HttpResponse.json({ items: termRows, page: 1, pageSize: 20, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false });
+    }));
+    await user.click(within(await saveTypeChange(user)).getByRole("button", { name: "Ver la fila en la tabla" }));
+    expect(await screen.findByText("No pudimos cargar las opciones.")).toBeInTheDocument();
+    expect(screen.getByText("Con error · 1 fila")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Quitar el filtro" }));
+    expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
+    expect(screen.queryByText("No pudimos cargar las opciones.")).not.toBeInTheDocument();
+    expect(requests.at(-1)?.getAll("ids")).toEqual([]);
+  });
   it("keeps the focus where the person types after a type change marks an option already changed in the draft", async () => {
     viewport(true); conversionSetup(); const user = userEvent.setup();
     await mount("/catalogos/" + id);
