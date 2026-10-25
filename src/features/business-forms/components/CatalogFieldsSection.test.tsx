@@ -124,6 +124,36 @@ it("keeps Edit fields and Add field in place after opening the fields table", as
     media.mockRestore();
   }
 });
+it("keeps the band's buttons in place while saving or a pending review makes the fields read-only for a Manage user", async () => {
+  const band = () => screen.getByRole("heading", { name: "Campos" }).parentElement!;
+  // On the phone: Add field stays in the band, turned off.
+  let phone!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { phone = renderWithProviders(<MemoryRouter><Harness initial={[field]} /></MemoryRouter>); });
+  const phoneAdd = within(band()).getByRole("button", { name: "Agregar campo" });
+  await act(async () => { phone.rerender(<MemoryRouter><Harness initial={[field]} readOnly /></MemoryRouter>); });
+  expect(within(band()).getByRole("button", { name: "Agregar campo" })).toBe(phoneAdd);
+  expect(phoneAdd).toBeDisabled();
+  cleanup();
+  const media = vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(min-width: 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }) as MediaQueryList);
+  try {
+    let view!: ReturnType<typeof renderWithProviders>;
+    await act(async () => { view = renderWithProviders(<MemoryRouter><Harness initial={[field]} /></MemoryRouter>); });
+    const toggle = within(band()).getByRole("button", { name: "Editar campos" });
+    const add = within(band()).getByRole("button", { name: "Agregar campo" });
+    // Saving or a pending review does not change the band: the same toggle with the same name, and Add field only turns off.
+    await act(async () => { view.rerender(<MemoryRouter><Harness initial={[field]} readOnly /></MemoryRouter>); });
+    expect(within(band()).getByRole("button", { name: "Editar campos" })).toBe(toggle);
+    expect(within(band()).getByRole("button", { name: "Agregar campo" })).toBe(add);
+    expect(toggle).toBeEnabled(); expect(add).toBeDisabled();
+    cleanup();
+    // Without Manage the toggle only shows the fields and there is nothing to add.
+    await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[field]} readOnly permissions={["formcatalogs.read"]} /></MemoryRouter>); });
+    expect(within(band()).getByRole("button", { name: "Ver campos" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Agregar campo" })).not.toBeInTheDocument();
+  } finally {
+    media.mockRestore();
+  }
+});
 it("keeps a saved key immutable and requires a checked confirmation before removing values", async () => {
   await mount([field]);
   await userEvent.click(screen.getByRole("button", { name: "Editar CUIT" }));
