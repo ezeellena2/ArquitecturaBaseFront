@@ -1,8 +1,9 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type JSX } from "react";
 import { useTranslation } from "react-i18next";
 import { Autocomplete } from "@/shared/ui/Autocomplete";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Input } from "@/shared/ui/input";
 import { unconvertedFieldValue, type CatalogFieldDraft } from "../catalogFields";
 import type { FormCulture } from "../model";
@@ -38,11 +39,13 @@ export function CatalogExtraFieldInput(props: Props) {
   const { t } = useTranslation("forms");
   const generatedId = useId(), id = aria.id ?? generatedId, messageId = id + "-message";
   const saved = field.id !== null;
-  const message = !saved ? t("catalogs.fields.savedFirst") : error;
-  const attributes = { ...aria, id, "aria-invalid": error ? true : aria["aria-invalid"], "aria-describedby": message ? messageId : aria["aria-describedby"] };
+  const attributes = { ...aria, id, "aria-invalid": error ? true : aria["aria-invalid"], "aria-describedby": error ? messageId : aria["aria-describedby"] };
   const disabled = readOnly || !saved;
+  // A field that is not saved yet cannot take values: its disabled control says why as a tooltip and its description,
+  // without a text under the cell.
+  const control = (element: JSX.Element, className?: string) => <DisabledReason reason={saved ? null : t("catalogs.fields.savedFirst")} className={className}>{element}</DisabledReason>;
   // A loaded value the draft type cannot hold yet (a type change pending save) shows as it is until it is edited.
   const unconverted = unconvertedFieldValue(field.type, value);
   const clear = <Button type="button" variant="ghost" size="inline" aria-label={t("catalogs.fields.clearValue", { name: label })} onClick={() => onChange(null)}>{t("catalogs.fields.clear")}</Button>;
-  return <div className="min-w-32">{field.type === "catalog" && saved && !readOnly ? <SourceOptionInput {...props} {...attributes} /> : unconverted && field.type !== "catalog" ? <div className="flex items-center gap-2"><Input {...attributes} aria-label={label} disabled={!saved} readOnly value={unconverted} />{disabled ? null : clear}</div> : field.type === "boolean" ? <div className="flex items-center gap-2"><Checkbox {...attributes} aria-label={label} disabled={disabled} checked={value === null || value === undefined ? "indeterminate" : value === "true"} onCheckedChange={checked => onChange(checked === true ? "true" : "false")} />{!field.required && value !== null && value !== undefined && !disabled ? clear : null}</div> : <Input {...attributes} aria-label={label} disabled={!saved} readOnly={readOnly} type={field.type === "date" ? "date" : "text"} inputMode={field.type === "integer" ? "numeric" : field.type === "decimal" ? "decimal" : undefined} maxLength={field.type === "text" ? field.maxLength ?? 300 : 64} value={field.type === "catalog" ? value && texts ? administrativeName(texts, culture) : unconverted ?? "" : value ?? ""} onChange={event => onChange(event.target.value || null)} />}{message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "whitespace-normal text-xs text-[var(--color-danger)]" : "whitespace-normal text-xs text-[var(--color-content-muted)]"}>{message}</p> : null}</div>;
+  return <div className="min-w-32">{field.type === "catalog" && saved && !readOnly ? <SourceOptionInput {...props} {...attributes} /> : unconverted && field.type !== "catalog" ? <div className="flex items-center gap-2">{control(<Input {...attributes} aria-label={label} disabled={!saved} readOnly value={unconverted} />, "flex w-full")}{disabled ? null : clear}</div> : field.type === "boolean" ? <div className="flex items-center gap-2">{control(<Checkbox {...attributes} aria-label={label} disabled={disabled} checked={value === null || value === undefined ? "indeterminate" : value === "true"} onCheckedChange={checked => onChange(checked === true ? "true" : "false")} />)}{!field.required && value !== null && value !== undefined && !disabled ? clear : null}</div> : control(<Input {...attributes} aria-label={label} disabled={!saved} readOnly={readOnly} type={field.type === "date" ? "date" : "text"} inputMode={field.type === "integer" ? "numeric" : field.type === "decimal" ? "decimal" : undefined} maxLength={field.type === "text" ? field.maxLength ?? 300 : 64} value={field.type === "catalog" ? value && texts ? administrativeName(texts, culture) : unconverted ?? "" : value ?? ""} onChange={event => onChange(event.target.value || null)} />, "flex w-full")}{error ? <p id={messageId} role="alert" className="whitespace-normal text-xs text-[var(--color-danger)]">{error}</p> : null}</div>;
 }

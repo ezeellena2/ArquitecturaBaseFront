@@ -7,10 +7,26 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { newCatalogField } from "../catalogFields";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-it("keeps an unsaved field unavailable and explains why", async () => {
-  await act(async () => { renderWithProviders(<CatalogExtraFieldInput field={newCatalogField("new", 1)} label="CUIT" value={null} culture="es" readOnly={false} onChange={vi.fn()} />); });
-  expect(screen.getByRole("textbox", { name: "CUIT" })).toBeDisabled();
-  expect(screen.getByText("Guardá para cargar valores")).toBeInTheDocument();
+it("explains an unsaved field as help of its disabled cell instead of a message below it", async () => {
+  await act(async () => { renderWithProviders(<><CatalogExtraFieldInput field={newCatalogField("new", 1)} label="CUIT" value={null} culture="es" readOnly={false} onChange={vi.fn()} /><CatalogExtraFieldInput field={{ ...newCatalogField("flag", 2), type: "boolean" }} label="Con GPS" value={null} culture="es" readOnly={false} onChange={vi.fn()} /></>); });
+  const input = screen.getByRole("textbox", { name: "CUIT" });
+  expect(input).toBeDisabled();
+  // No text under the cell: the reason is the control's description and its tooltip, on hover or on keyboard focus.
+  expect(input).toHaveAccessibleDescription("Guardá para cargar valores");
+  expect(screen.getAllByText("Guardá para cargar valores").every(node => node.closest("[hidden]"))).toBe(true);
+  await userEvent.hover(input);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Guardá para cargar valores");
+  await userEvent.unhover(input);
+  await userEvent.tab();
+  expect(input.parentElement).toHaveFocus();
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Guardá para cargar valores");
+  const checkbox = screen.getByRole("checkbox", { name: "Con GPS" });
+  expect(checkbox).toBeDisabled();
+  expect(checkbox).toHaveAccessibleDescription("Guardá para cargar valores");
+});
+it("keeps the description of an unsaved field's cell together with the one its owner gives", async () => {
+  await act(async () => { renderWithProviders(<><CatalogExtraFieldInput field={newCatalogField("new", 1)} label="Fila 1 · CUIT" value={null} culture="es" aria-describedby="row-note" readOnly={false} onChange={vi.fn()} /><p id="row-note">Fila 1 · CUIT: falta.</p></>); });
+  expect(screen.getByRole("textbox", { name: "Fila 1 · CUIT" })).toHaveAccessibleDescription("Fila 1 · CUIT: falta. Guardá para cargar valores");
 });
 it("preserves invalid typed input and is described by the error its owner shows, without numeric coercion", async () => {
   const change = vi.fn();

@@ -56,6 +56,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const value = page.getByRole("textbox", { name: width < 640 ? "Teléfono" : (es ? "Fila 1 · Teléfono" : "Row 1 · Teléfono"), exact: true });
     await expect(value).toBeDisabled(); await value.scrollIntoViewIfNeeded();
     await contained(page, value, width);
+    // Why it is disabled is the help of its cell, on hover or with the focus, and its description: no text under it.
+    const savedFirst = es ? "Guardá para cargar valores" : "Save to enter values";
+    await expect(value).toHaveAccessibleDescription(savedFirst);
+    // On the phone the unsaved field keeps the width of the option's other fields.
+    if (width < 640) expect(Math.abs((await value.boundingBox())!.width - (await page.getByRole("textbox", { name: "CUIT", exact: true }).boundingBox())!.width)).toBeLessThanOrEqual(1);
+    await value.locator("..").hover();
+    await expect(page.getByRole("tooltip")).toHaveText(savedFirst);
     await page.screenshot({ path: info.outputPath("ce1-column-before-save.png"), fullPage: true });
     await noWrites(page);
   });

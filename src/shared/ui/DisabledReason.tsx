@@ -1,4 +1,5 @@
 import { cloneElement, useId, type ReactElement, type ReactNode } from "react";
+import { cn } from "@/shared/lib/utils";
 import { ActionTooltip } from "./ActionTooltip";
 
 /// Lo que `FormField` le pone a su control; se reenvía al control envuelto.
@@ -14,8 +15,12 @@ interface FieldProps {
 /// Un control deshabilitado no recibe foco ni puntero; por eso lo envuelve un span enfocable, como `IconButton` con
 /// `disabledLabel`. El consumidor pasa `reason` solo cuando el control está deshabilitado por ese motivo: no mientras
 /// trabaja ni en ítems de menú, que muestran su motivo adentro. Sin motivo, devuelve el control solo.
-export function DisabledReason({ reason, children, ...field }: FieldProps & {
+///
+/// El envoltorio toma el ancho de su control, como un botón. Un control que ocupa todo el ancho de su campo (un `Input`)
+/// pasa `className="flex w-full"`, así no se achica al ancho propio del control cuando está deshabilitado.
+export function DisabledReason({ reason, className, children, ...field }: FieldProps & {
   reason?: string | null;
+  className?: string;
   children: ReactElement<FieldProps>;
 }): ReactNode {
   const reasonId = useId();
@@ -23,7 +28,7 @@ export function DisabledReason({ reason, children, ...field }: FieldProps & {
   const describedBy = [field["aria-describedby"] ?? children.props["aria-describedby"], reasonId].filter(Boolean).join(" ");
   return (
     <ActionTooltip label={reason}>
-      <span tabIndex={0} className="inline-flex max-w-full">
+      <span tabIndex={0} className={cn("inline-flex max-w-full", className)}>
         {cloneElement(children, { ...field, "aria-describedby": describedBy })}
         <span id={reasonId} hidden>{reason}</span>
       </span>
