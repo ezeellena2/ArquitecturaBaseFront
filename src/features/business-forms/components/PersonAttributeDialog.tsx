@@ -28,7 +28,7 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
  const [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null), [confirmValues, setConfirmValues] = useState(false);
  // Rereading after a conflict: the button waits for it and a failed read is said under the conflict, which stays.
  const [reloading, setReloading] = useState(false), [reloadError, setReloadError] = useState<unknown>(null);
- // The server counts the people holding a value only when the type or source changes; once that 400 arrives the confirmation stays for the life of the dialog, so a later save never sends it unseen.
+ // The server counts the people holding a value only when the type or source changes; once that 400 arrives the confirmation stays for the life of the dialog, shown while the type or source is changed, so a later save never sends it unseen.
  const [removalCount, setRemovalCount] = useState<number | null>(null);
  const mounted = useRef(true), operation = useRef<AbortController | null>(null), nameRef = useRef<HTMLInputElement>(null);
  const restoreFocus = useRestoreFocusOnClose();
@@ -36,7 +36,12 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
  // A reload after a revision conflict brings the saved attribute: the draft starts again from it in this same dialog (not a remount), so closing still returns the focus to the row that opened it.
  const [loaded, setLoaded] = useState(attribute);
  if (attribute !== loaded) { setLoaded(attribute); setName({ ...attribute?.name }); setType(attribute?.type ?? "Catalog"); setSource(attribute?.sourceCatalogId ?? null); setActive(attribute?.isActive ?? true); setError(null); setReloadError(null); setConfirmValues(false); setRemovalCount(null); }
- const errors = error instanceof ApiError ? error.errors ?? {} : {}, message = (path: string) => errors[path]?.join(" ");
+ // Changing the type or the source of a saved attribute is what can clear the values people have.
+ const removalPending = !!attribute && (type !== attribute.type || type === "Catalog" && sourceCatalogId !== attribute.sourceCatalogId);
+ // After the first error it validates live: checking the box answers the request to confirm, and back at the saved type and
+ // source nothing is cleared, so Tipo and Catálogo are no longer marked.
+ const removalAnswered = error instanceof ApiError && error.code === "Forms.PersonAttribute.ValueRemovalNotConfirmed" && (confirmValues || !removalPending);
+ const errors = error instanceof ApiError ? error.errors ?? {} : {}, message = (path: string) => removalAnswered && (path === "type" || path === "sourceCatalogId") ? undefined : errors[path]?.join(" ");
  const usedBy = attribute?.usedBy ?? [], inUse = usedBy.length > 0;
  // Without formtemplates.read the forms come unnamed: the dialog says only that it is blocked and by how many, without links.
  const namedUses = usedBy.every(use => use.name !== null);
@@ -76,7 +81,7 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
   <FormField label={t("catalogs.fields.key")} required error={message("key")} hint={t("catalogs.fields.keyHint")}><Input value={key} readOnly={!!attribute} disabled={busy} maxLength={40} onChange={event => setKey(event.target.value)} /></FormField>
   <FormField label={t("personData.type")} required error={message("type")}><NativeSelect value={type} disabled={busy || inUse} onChange={event => changeType(event.target.value as PersonAttribute["type"])}><option value="Catalog">{t("catalogs.fields.types.catalog")}</option><option value="Text">{t("catalogs.fields.types.text")}</option></NativeSelect></FormField>
   {type === "Catalog" ? canReadCatalogs ? <CatalogQuestionSelector scope={scope} manualOnly value={sourceCatalogId ?? ""} readOnly={busy || inUse} error={message("sourceCatalogId")} onChange={changeSource} /> : <FormField label={t("catalogQuestion.catalog")} required hint={t("catalogQuestion.requiresRead")} error={message("sourceCatalogId")}><Input readOnly value={attribute?.sourceCatalogName ?? ""} /></FormField> : null}
-  {removalCount !== null ? <CheckboxField label={t("personData.confirmValueRemoval", { count: removalCount })} checked={confirmValues} disabled={busy} onCheckedChange={setConfirmValues} /> : null}
+  {removalCount !== null && removalPending ? <CheckboxField label={t("personData.confirmValueRemoval", { count: removalCount })} checked={confirmValues} disabled={busy} onCheckedChange={setConfirmValues} /> : null}
   {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} error={message("isActive")} onCheckedChange={setActive} /> : null}
   {inUse ? <div className="text-sm">{namedUses ? <><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></> : <p>{t("personData.inUseCount", { count: usedBy.length })}</p>}</div> : null}
   {error && !Object.keys(errors).length ? <div className="space-y-2"><p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}{reloadError ? " " + readErrorMessage(reloadError, t) : null}</p>{conflict ? <Button type="button" variant="outline" disabled={busy || reloading} onClick={reload}>{t("personData.reloadAttribute")}</Button> : null}</div> : null}

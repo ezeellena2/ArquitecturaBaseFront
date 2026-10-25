@@ -217,10 +217,19 @@ it("asks to confirm clearing stored values when the type changes and resends wit
  expect(dialog.getByText(notConfirmed)).toBeInTheDocument();
  await userEvent.click(confirm);
  expect(confirm).toBeChecked();
+ // Checking it answers the request: Tipo is no longer marked (validated live after the first error, point 7).
+ expect(dialog.getByRole("combobox", { name: "Tipo" })).not.toHaveAttribute("aria-invalid", "true");
+ expect(dialog.queryByText(notConfirmed)).not.toBeInTheDocument();
+ // Back to the saved type nothing is cleared: neither the request nor the box stay.
  await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Catalog");
+ expect(dialog.queryByRole("checkbox", { name: "Sí, cambiar el dato y borrar los valores de 3 personas" })).not.toBeInTheDocument();
+ expect(dialog.queryByText(notConfirmed)).not.toBeInTheDocument();
+ // Changing it again shows the box unchecked, with the request until it is checked.
  await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
- expect(confirm).not.toBeChecked();
- await userEvent.click(confirm);
+ const again = dialog.getByRole("checkbox", { name: "Sí, cambiar el dato y borrar los valores de 3 personas" });
+ expect(again).not.toBeChecked();
+ expect(dialog.getByText(notConfirmed)).toBeInTheDocument();
+ await userEvent.click(again);
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar dato" })).not.toBeInTheDocument());
  expect(bodies).toEqual([
