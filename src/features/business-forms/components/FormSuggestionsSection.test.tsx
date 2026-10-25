@@ -63,7 +63,8 @@ it("marks a new suggestion without destination only after trying to save", async
   await userEvent.click(await screen.findByRole("button",{name:"Agregar sugerencia"}));
   const region = within(screen.getByRole("region",{name:"Sugerencia 1"}));
   expect(region.getByRole("combobox",{name:"Formulario a sugerir"})).not.toHaveAttribute("aria-invalid");
-  expect(region.queryByText("Elegí un formulario publicado disponible.")).not.toBeInTheDocument();
+  // Only the hidden reason of the disabled «Agregar dato» says it: no error is shown before trying.
+  expect(region.queryByText("Elegí un formulario publicado disponible.",{ignore:"script, style, [hidden]"})).not.toBeInTheDocument();
   expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
   await userEvent.click(region.getByRole("button",{name:"Listo"}));
   const save = screen.getByRole("button",{name:"Guardar sugerencias"});
@@ -189,4 +190,31 @@ it("omits multiple-choice questions from both mapping selectors while retaining 
   const target = screen.getByRole("combobox", { name: "Pregunta de destino 1" });
   expect(within(target).queryByRole("option", { name: "Fallas de destino" })).not.toBeInTheDocument();
   expect(within(target).getByRole("option", { name: "Entrega asociada" })).toBeInTheDocument();
+});
+// A limit or a missing destination is the reason of the disabled add button: tooltip and accessible description.
+it("explains why a suggestion without destination cannot take data", async () => {
+  setup();
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  await userEvent.click(await screen.findByRole("button",{name:"Agregar sugerencia"}));
+  const addMapping = screen.getByRole("button",{name:"Agregar dato"});
+  expect(addMapping).toBeDisabled();
+  expect(addMapping).toHaveAccessibleDescription("Elegí un formulario publicado disponible.");
+  await userEvent.hover(addMapping);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Elegí un formulario publicado disponible.");
+  await userEvent.selectOptions(screen.getByRole("combobox",{name:"Formulario a sugerir"}),destinationId);
+  expect(screen.getByRole("button",{name:"Agregar dato"})).toBeEnabled();
+  expect(screen.getByRole("button",{name:"Agregar dato"})).not.toHaveAccessibleDescription();
+});
+it("explains the limits of suggestions and of data in a suggestion", async () => {
+  setup();
+  const row = (mappings: number) => ({id:crypto.randomUUID(),destinationDefinitionId:destinationId,destinationVersionId:version,mode:"Assistant",when:"Cuando pide factura",isActive:true,conditions:[],mappings:Array.from({length:mappings},()=>({source:{kind:"RecordNumber",fieldId:null},destinationFieldId:targetId}))});
+  server.use(http.get("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({...current(),id:version,sourceVersionId:version,revision:1,suggestions:[row(40),...Array.from({length:19},()=>row(0))],createdAtUtc:"2026-10-17T12:00:00Z"})));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  const addSuggestion = await screen.findByRole("button",{name:"Agregar sugerencia"});
+  expect(addSuggestion).toBeDisabled();
+  expect(addSuggestion).toHaveAccessibleDescription("Superaste el límite permitido.");
+  await userEvent.click(screen.getByRole("button",{name:"Editar sugerencia 1"}));
+  const addMapping = screen.getByRole("button",{name:"Agregar dato"});
+  expect(addMapping).toBeDisabled();
+  expect(addMapping).toHaveAccessibleDescription("Superaste el límite permitido.");
 });

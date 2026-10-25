@@ -7,6 +7,7 @@ import { useSystemPresentation } from "@/shared/api/presentation";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { UserDataSectionContext } from "@/shared/hooks/userDataSectionContext";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -56,7 +57,7 @@ function PersonDataWorkspace({ scope }: { scope: PersonDataScope }) {
  // After a revision conflict the dialog continues from the saved attribute; closing it meanwhile keeps it closed.
  const reloadEditing = async () => { const result = await attributes.refetch(); setEditing(current => current && current !== "new" ? result.data?.items.find(item => item.id === current.id) ?? null : current); };
  return <Page title={t("personData.title")}><div className="flex flex-col gap-4">
-  <Surface title={t("personData.section")} actions={<Button type="button" variant="outline" disabled={!attributes.isSuccess || list.length >= 20} onClick={() => setEditing("new")}><PlusIcon className="size-4" />{t("personData.addAttribute")}</Button>}>
+  <Surface title={t("personData.section")} actions={<DisabledReason reason={attributes.isSuccess && list.length >= 20 ? t("personData.limit", { count: 20 }) : null}><Button type="button" variant="outline" disabled={!attributes.isSuccess || list.length >= 20} onClick={() => setEditing("new")}><PlusIcon className="size-4" />{t("personData.addAttribute")}</Button></DisabledReason>}>
    <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("personData.attributeHint")}</p>
    {attributes.isPending ? <Spinner /> : attributes.error && !attributes.data ? <EmptyState embedded title={readErrorMessage(attributes.error, t)} action={<Button variant="outline" onClick={() => void attributes.refetch()}>{t("common:actions.retry")}</Button>} /> : !list.length ? <EmptyState embedded title={t("personData.noAttributes")} /> : <WideTable label={t("personData.attributesTable")}><TableHeader><TableRow>{["attribute", "key", "type", "usage", "actions"].map(key => <TableHead scope="col" key={key}>{t("personData." + key)}</TableHead>)}</TableRow></TableHeader><TableBody>{list.map(attribute => <TableRow key={attribute.id}><TableCell>{title(attribute)}{!attribute.isActive ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.state.Inactive")}</p> : null}</TableCell><TableCell>{attribute.key}</TableCell><TableCell>{attribute.type === "Catalog" ? t("catalogs.fields.types.catalog") + (attribute.sourceCatalogName ? " · " + attribute.sourceCatalogName : "") : t("catalogs.fields.types.text")}</TableCell><TableCell>{attribute.usedBy.map(use => use.name).join(", ") || "—"}</TableCell><TableCell><IconButton label={t("catalogs.editNamed", { name: title(attribute) })} size="icon-sm" onClick={() => setEditing(attribute)}><PencilIcon className="size-4" /></IconButton></TableCell></TableRow>)}</TableBody></WideTable>}
   </Surface>

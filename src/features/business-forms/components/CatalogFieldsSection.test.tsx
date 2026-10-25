@@ -367,3 +367,16 @@ it("shows a removed field rejected by a concurrent use and restores its identity
   expect(confirmed).toEqual([]);
   expect(screen.getByRole("button", { name: "Quitar CUIT" })).toBeInTheDocument();
 });
+// The limit is the reason of the disabled Add field (tooltip and accessible description); saving or a review only turns it off.
+it("explains the limit of fields on the disabled Add field", async () => {
+  await mount(Array.from({ length: 20 }, (_, index) => ({ ...field, localId: "saved-" + index, id: "01990000-0000-7000-8000-0000000001" + String(index).padStart(2, "0"), key: "field_" + index, name: { es: "Campo " + index } })));
+  const add = screen.getByRole("button", { name: "Agregar campo" });
+  expect(add).toBeDisabled();
+  expect(add).toHaveAccessibleDescription("Un catálogo admite hasta 20 campos.");
+  await userEvent.hover(add);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Un catálogo admite hasta 20 campos.");
+  cleanup();
+  await mount([field], true);
+  expect(screen.getByRole("button", { name: "Agregar campo" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Agregar campo" })).not.toHaveAccessibleDescription();
+});

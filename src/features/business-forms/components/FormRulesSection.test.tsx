@@ -497,3 +497,30 @@ it("shows a save error of the translation under the original message, with its l
   await waitFor(() => expect(message).toHaveFocus());
   expect(notify).not.toHaveBeenCalled();
 });
+// A limit or a rule that is not obvious is the reason of the disabled add button: tooltip and accessible description.
+it("explains why no action can follow an approval request", async () => {
+  setup();
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "RequestApproval");
+  const addAction = screen.getByRole("button", { name: "Agregar acción" });
+  const reason = "Pedir aprobación tiene que ser la última acción. Lo que sigue va en «Se aprueba» o «Se rechaza».";
+  expect(addAction).toBeDisabled();
+  expect(addAction).toHaveAccessibleDescription(reason);
+  await userEvent.hover(addAction);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+});
+it("explains the limits of rules and of actions in a rule", async () => {
+  setup();
+  const full = { ...storedRule(), actions: Array.from({ length: 10 }, () => ({ ...newRuleAction("NotifyAuthor"), text: { es: "Hola" } })) };
+  serveRules([full, ...Array.from({ length: 19 }, () => storedRule())]);
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  const addRule = await screen.findByRole("button", { name: "Agregar regla" });
+  expect(addRule).toBeDisabled();
+  expect(addRule).toHaveAccessibleDescription("Se alcanzó el límite.");
+  await userEvent.click(screen.getByRole("button", { name: "Editar regla 1" }));
+  const addAction = screen.getByRole("button", { name: "Agregar acción" });
+  expect(addAction).toBeDisabled();
+  expect(addAction).toHaveAccessibleDescription("Se alcanzó el límite.");
+});

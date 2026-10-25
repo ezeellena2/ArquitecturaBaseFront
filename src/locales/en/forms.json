@@ -295,7 +295,9 @@
     "conflict": "The data changed. Reload it to review.",
     "reload": "Reload data",
     "reloadHint": "Your changes in Data will be replaced with the current saved values. The rest of the account is preserved.",
-    "reloadAttribute": "Reload the attribute"
+    "reloadAttribute": "Reload the attribute",
+    "limit_one": "You can define up to {{count}} attribute.",
+    "limit_other": "You can define up to {{count}} attributes."
   },
   "catalogs": {
     "fields": {
@@ -305,7 +307,7 @@
       "keyHint": "Used by the template, imports and stored data. It does not change after saving.",
       "optionalFirst": "A new field starts optional: every active option needs a value before it can be required.",
       "typeReview": "Saving checks every value. If any cannot convert, the change is not saved.",
-      "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values",
+      "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values", "limit_one": "A catalog can have up to {{count}} field.", "limit_other": "A catalog can have up to {{count}} fields.",
       "removeTitle": "Remove “{{name}}”", "remove": "Remove field", "removeHint": "Removed from the table, template and Excel. Responses that already captured it keep it.",
       "confirmRemoval_one": "Yes, remove the field and its value", "confirmRemoval_other": "Yes, remove the field and its {{count, number(useGrouping: always)}} values", "detail": { "between": "From {{min}} to {{max}}", "from": "From {{min}}", "to": "Up to {{max}}", "length_one": "{{count}} character", "length_other": "{{count}} characters", "source_one": "{{name}} · 1 option", "source_other": "{{name}} · {{count, number(useGrouping: always)}} options" }, "inUse": "This field is in use. Remove those uses before removing it.",
       "hiddenUse": { "Draft": "A form's draft", "Active": "A form's active version" },

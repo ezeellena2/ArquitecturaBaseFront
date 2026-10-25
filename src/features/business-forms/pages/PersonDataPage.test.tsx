@@ -269,3 +269,13 @@ it("keeps the value removal confirmation visible while the confirmed save runs a
   { expectedRevision: 1, name: { es: "Sucursal", en: "Branch" }, type: "Text", sourceCatalogId: null, position: 1, isActive: true, confirmValueRemoval: true },
  ]);
 });
+// The limit is the reason of the disabled Add attribute: tooltip and accessible description.
+it("explains the limit of attributes on the disabled Add attribute", async () => {
+ await mount(["formpersondata.manage"], Array.from({ length: 20 }, (_, index) => ({ ...attribute, id: "01990000-0000-7000-8000-0000000001" + String(index).padStart(2, "0"), key: "data_" + index, name: { es: "Dato " + index }, position: index })));
+ await screen.findByText("Dato 19");
+ const add = screen.getByRole("button", { name: "Agregar dato" });
+ expect(add).toBeDisabled();
+ expect(add).toHaveAccessibleDescription("Se pueden definir hasta 20 datos.");
+ await userEvent.hover(add);
+ expect(await screen.findByRole("tooltip")).toHaveTextContent("Se pueden definir hasta 20 datos.");
+});
