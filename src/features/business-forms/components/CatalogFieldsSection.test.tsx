@@ -24,7 +24,9 @@ async function mount(initial?: readonly CatalogFieldDraft[], readOnly = false) {
 }
 it("adds an optional field and keeps the new column unavailable until its identity is saved", async () => {
   await mount();
-  await userEvent.click(screen.getByRole("button", { name: "Agregar campo" }));
+  // The phone always lists the fields: its band has only Add field, without a toggle for a table it does not have.
+  expect(screen.queryByRole("button", { name: "Editar campos" })).not.toBeInTheDocument();
+  await userEvent.click(within(screen.getByRole("heading", { name: "Campos" }).parentElement!).getByRole("button", { name: "Agregar campo" }));
   expect(screen.getByText("Nuevo, sin guardar")).toBeInTheDocument();
   expect(screen.getByRole("checkbox", { name: "Obligatorio" })).not.toBeChecked();
   expect(screen.getByRole("textbox", { name: "Clave" })).not.toHaveAttribute("readonly");
@@ -61,7 +63,6 @@ it("translates a field name with the original as reference and shows an error of
     }
     let rendered!: ReturnType<typeof renderWithProviders>;
     await act(async () => { rendered = renderWithProviders(<MemoryRouter><Translation /></MemoryRouter>); });
-    await userEvent.click(screen.getByRole("button", { name: "Edit fields" }));
     await userEvent.click(screen.getByRole("button", { name: "Edit CUIT" }));
     const name = screen.getByRole("textbox", { name: "Name" });
     expect(screen.getByText("Name", { selector: "label" })).toHaveTextContent(/^Name$/);
@@ -89,9 +90,42 @@ it("shows a field named only in the other language with that name in the table a
     media.mockRestore();
   }
 });
+it("keeps Edit fields and Add field in place after opening the fields table", async () => {
+  const media = vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(min-width: 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }) as MediaQueryList);
+  try {
+    await mount([field]);
+    // Both actions live in the band beside the title: the toggle that opens the table and the one that adds a field.
+    const band = screen.getByRole("heading", { name: "Campos" }).parentElement!;
+    const toggle = within(band).getByRole("button", { name: "Editar campos" });
+    const add = within(band).getByRole("button", { name: "Agregar campo" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    await userEvent.click(toggle);
+    // Opening the table keeps the same two buttons, in the same place, and does not add another one in the body.
+    expect(toggle).toBeInTheDocument(); expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(within(band).getByRole("button", { name: "Editar campos" })).toBe(toggle);
+    expect(within(band).getByRole("button", { name: "Agregar campo" })).toBe(add);
+    expect(screen.getAllByRole("button", { name: "Agregar campo" })).toHaveLength(1);
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    // Adding a field from the band opens the table with it.
+    await userEvent.click(add);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Nuevo, sin guardar")).toBeInTheDocument();
+    cleanup();
+    // Without fields, Add field is still only in the band.
+    await mount([]);
+    const emptyBand = screen.getByRole("heading", { name: "Campos" }).parentElement!;
+    expect(within(emptyBand).getByRole("button", { name: "Editar campos" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getAllByRole("button", { name: "Agregar campo" })).toEqual([within(emptyBand).getByRole("button", { name: "Agregar campo" })]);
+  } finally {
+    media.mockRestore();
+  }
+});
 it("keeps a saved key immutable and requires a checked confirmation before removing values", async () => {
   await mount([field]);
-  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Editar CUIT" }));
   expect(screen.getByRole("textbox", { name: "Clave" })).toHaveAttribute("readonly");
   await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
@@ -104,7 +138,6 @@ it("keeps a saved key immutable and requires a checked confirmation before remov
 it("asks to confirm removing the field and its values with their count", async () => {
   const open = async (initial: CatalogFieldDraft) => {
     await mount([initial]);
-    await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
     await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
     return screen.getByRole("dialog");
   };
@@ -161,7 +194,6 @@ it("names the stage of each form use once and links to its question", async () =
       { path: "/formularios/:id", element: <p>Formulario</p> },
     ], { initialEntries: ["/catalogos/proveedores"] });
     await act(async () => { renderWithProviders(<RouterProvider router={router} />); });
-    await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
     await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
     const dialog = screen.getByRole("dialog");
     const items = within(dialog).getAllByRole("listitem");
@@ -185,7 +217,6 @@ it("names the stage of each form use once and links to its question", async () =
 it("shows the stage of uses whose form the reader cannot see and still blocks removal", async () => {
   const hidden = { definitionId: null, formName: null, question: null, questionId: null };
   await mount([{ ...field, usedBy: [{ ...hidden, stage: "Active" }, { ...hidden, stage: "Draft" }] }]);
-  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
   const dialog = screen.getByRole("dialog");
   expect(within(dialog).getAllByRole("listitem").map(item => item.textContent)).toEqual(["La versión activa de un formulario", "El borrador de un formulario"]);
@@ -199,7 +230,6 @@ it("shows the stage of a field-in-use conflict whose form the reader cannot see"
 it("shows the catalog's own WhatsApp use as part of this catalog instead of a form", async () => {
   const used: CatalogFieldDraft = { ...field, usedBy: [{ definitionId: null, formName: "Proveedores", question: null, questionId: null, stage: "Catalog" }] };
   await act(async () => { renderWithProviders(<MemoryRouter><Harness initial={[used]} presentation={{ title: ["text"], description: ["detail", field.id!] }} /></MemoryRouter>); });
-  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
   const dialog = screen.getByRole("dialog");
   expect(within(dialog).queryByText(/Proveedores/)).not.toBeInTheDocument();
@@ -271,7 +301,6 @@ it("moves a field down and up past a hidden removed field in one step and leaves
     return <CatalogFieldsSection fields={values} presentation={null} culture="es" original="es" scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} readOnly={false} confirmedRemovals={[]} onChange={next => { changed = next; setValues(next); }} />;
   }
   await act(async () => { renderWithProviders(<MemoryRouter><Ordering /></MemoryRouter>); });
-  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Bajar Alfa" }));
   expect(changed.map(value => value.localId)).toEqual(["last", "removed", "first"]);
   expect(screen.getAllByRole("button", { name: /^Editar (Alfa|Gama)$/ }).map(button => button.getAttribute("aria-label"))).toEqual(["Editar Gama", "Editar Alfa"]);
@@ -293,7 +322,6 @@ it("shows a removed field rejected by a concurrent use and restores its identity
   }
   let rendered!: ReturnType<typeof renderWithProviders>;
   await act(async () => { rendered = renderWithProviders(<MemoryRouter><Recovery /></MemoryRouter>); });
-  await userEvent.click(screen.getByRole("button", { name: "Editar campos" }));
   await userEvent.click(screen.getByRole("button", { name: "Quitar CUIT" }));
   const dialog = screen.getByRole("dialog");
   await userEvent.click(within(dialog).getByRole("checkbox"));

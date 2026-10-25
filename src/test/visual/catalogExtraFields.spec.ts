@@ -18,7 +18,18 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("CE1 fields and an optional unsaved column " + language + " " + width, async ({ page }, info) => {
     const es = language === "es";
     await page.setViewportSize({ width, height: 900 }); await open(page, language);
-    await page.getByRole("button", { name: es ? "Editar campos" : "Edit fields", exact: true }).click();
+    // The band of «Campos» keeps its buttons in place: from 640 px the toggle that opens the table, and always «Agregar campo».
+    const band = page.getByRole("heading", { name: es ? "Campos" : "Fields", exact: true }).locator("..");
+    const toggle = band.getByRole("button", { name: es ? "Editar campos" : "Edit fields", exact: true });
+    const add = band.getByRole("button", { name: es ? "Agregar campo" : "Add field", exact: true });
+    await expect(add).toBeVisible();
+    if (width >= 640) {
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      const before = await add.boundingBox();
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      expect(await add.boundingBox()).toEqual(before);
+    } else await expect(toggle).toHaveCount(0);
     await expect(page.getByRole("button", { name: es ? "Editar CUIT" : "Edit CUIT", exact: true })).toBeVisible();
     if (width >= 640) {
       // The table numbers the fields and gives each type its detail: the length, the source with its options, the range.
@@ -27,7 +38,6 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await expect(table.getByRole("row").nth(1).getByRole("cell").first()).toHaveText("1");
       for (const detail of es ? ["13 caracteres", "Zonas · 3 opciones", "De 0 a 180"] : ["13 characters", "Zones · 3 options", "From 0 to 180"]) await expect(table.getByText(detail, { exact: true })).toBeVisible();
     }
-    const add = page.getByRole("button", { name: es ? "Agregar campo" : "Add field", exact: true });
     await add.click();
     const name = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true }).last();
     await expect(name).toBeFocused();
@@ -122,7 +132,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
   test("CE1 field in use names its stage and links to the question " + language + " " + width, async ({ page }, info) => {
     const es = language === "es", form = es ? "Pedir repuesto" : "Request a spare part", question = es ? "Proveedores a consultar" : "Suppliers to ask";
     await page.setViewportSize({ width, height: 900 }); await open(page, language, "catalogs-extra-fields-in-use");
-    await page.getByRole("button", { name: es ? "Editar campos" : "Edit fields", exact: true }).click();
+    // The phone always lists the fields; from 640 px «Editar campos» opens their table.
+    if (width >= 640) await page.getByRole("button", { name: es ? "Editar campos" : "Edit fields", exact: true }).click();
     const remove = async (name: string) => {
       await page.getByRole("button", { name: (es ? "Quitar " : "Remove ") + name, exact: true }).click();
       const dialog = page.getByRole("dialog", { name: es ? `Quitar «${name}»` : `Remove “${name}”`, exact: true });

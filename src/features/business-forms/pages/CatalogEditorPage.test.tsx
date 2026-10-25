@@ -222,8 +222,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const term = savedField({ key: "term", name: "Plazo", type: "text" });
     const bodies = fieldSetup(term, { [fieldId]: "30 días" }, () => HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ ...term, type: "integer" }] }, itemIdentityMap: {}, fieldIdentityMap: {} }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
+    await user.click(await screen.findByRole("button", { name: "Editar Plazo" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
     await renameOption(user);
     expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
@@ -236,8 +235,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const message = "Completá el CUIT en las opciones activas.";
     const bodies = fieldSetup(savedField({ key: "tax_id", name: "CUIT", type: "text" }), {}, () => HttpResponse.json({ code: "Forms.Catalog.FieldValuesMissing", detail: message, errors: { "fields[0].required": [message] }, missingCount: 12 }, { status: 400 }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar CUIT" }));
+    await user.click(await screen.findByRole("button", { name: "Editar CUIT" }));
     await user.click(screen.getByRole("checkbox", { name: "Obligatorio" }));
     await renameOption(user);
     expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
@@ -252,8 +250,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const amount = savedField({ key: "amount", name: "Cantidad", type: "integer" });
     const bodies = fieldSetup(amount, { [fieldId]: "1500" }, () => HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ ...amount, type: "text" }] }, itemIdentityMap: {}, fieldIdentityMap: {} }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Cantidad" }));
+    await user.click(await screen.findByRole("button", { name: "Editar Cantidad" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
     await renameOption(user);
     expect(screen.getByRole("textbox", { name: "Cantidad" })).toHaveValue("1.500");
@@ -265,8 +262,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("shows a saved value that is not an option yet while a change to a catalog field is pending", async () => {
     fieldSetup(savedField({ key: "zone", name: "Zona", type: "text" }), { [fieldId]: "Sur" }, () => HttpResponse.json({}, { status: 500 }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Zona" }));
+    await user.click(await screen.findByRole("button", { name: "Editar Zona" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "catalog");
     expect(within(await screen.findByRole("table")).getByText("Sur", { exact: true })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
@@ -306,8 +302,9 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   }
   async function saveTypeChange(user: ReturnType<typeof userEvent.setup>) {
     await mount("/catalogos/" + id);
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
+    // The phone always lists the fields; on desktop «Editar campos» opens their table.
+    if (matchMedia("(min-width: 640px)").matches) await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(await screen.findByRole("button", { name: "Editar Plazo" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
@@ -481,7 +478,6 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     const name = await screen.findByRole("textbox", { name: "Nombre" }); await user.clear(name); await pasteText(user, name, "Mi catálogo");
-    await user.click(screen.getByRole("button", { name: "Editar campos" }));
     await user.click(screen.getByRole("button", { name: "Quitar CUIT" }));
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Quitar el campo" }));
     await user.click(screen.getByRole("button", { name: "Guardar" }));
