@@ -5,6 +5,7 @@ import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { useTranslation } from "react-i18next";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormIcon } from "@/shared/ui/icons";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
@@ -43,11 +44,16 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   const name = contact.profileName ?? contact.linkedAccount?.displayName ?? t("unnamed");
   const presentationCulture = state.presentationCulture;
   const cta = presentationCulture && state.presentationReady ? t("forms.openForm",{lng:presentationCulture}) : undefined;
+  // Why a form cannot be sent (the account, the forms) and the wait of a 429 are the help of the disabled button, never a text beside it.
+  // The reasons of the conversation (send.*) are told above the composer.
+  const accountReason = state.disabledReason?.startsWith("forms.") ? t(state.disabledReason) : null;
+  const waitReason = (working: boolean, waiting: boolean, seconds: number) => waiting && !working ? t("forms.waitingHint",{count:seconds}) : null;
+  // On the phone the footer stacks its buttons at full width; the wrapper of a waiting one keeps that width.
+  const footerReason = "max-sm:*:flex-1";
   return <>
     {canSend ? <div className="min-w-0">
-      <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" disabled={Boolean(state.disabledReason)||state.denied||frozen||state.sending||Boolean(assistant?.attempt)||assistantOpen} onClick={state.show}><FormIcon />{t("forms.action")}</Button>
+      <div className="flex flex-wrap gap-2"><DisabledReason reason={accountReason}><Button variant="outline" size="sm" disabled={Boolean(state.disabledReason)||state.denied||frozen||state.sending||Boolean(assistant?.attempt)||assistantOpen} onClick={state.show}><FormIcon />{t("forms.action")}</Button></DisabledReason>
       {frozen&&!state.open ? <Button variant="outline" size="sm" disabled={state.checking||state.sending||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : null}</div>
-      {state.disabledReason&&state.disabledReason.startsWith("forms.") ? <p className="mt-2 text-xs text-[var(--color-content-muted)]">{t(state.disabledReason)}</p> : null}
     </div> : null}
     <Dialog open={state.open || assistantOpen} onOpenChange={open=>{if(!busy){if(assistantOpen)assistant?.setOpen(open);else state.setOpen(open);}}}>
       <DialogContent onCloseAutoFocus={restoreFocus} className="sm:max-w-[600px]" showCloseButton={!busy} onEscapeKeyDown={event=>{if(busy)event.preventDefault();}} onPointerDownOutside={event=>{if(busy)event.preventDefault();}}>
@@ -60,10 +66,9 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
             {assistant.proposal.fields.map(field => <CheckboxField key={field.fieldId} label={field.label} description={field.displayValue} checked={assistant.selected.includes(field.fieldId)} disabled={assistant.busy || Boolean(assistant.attempt)} onCheckedChange={checked => assistant.setSelected(current => checked ? [...current, field.fieldId] : current.filter(id => id !== field.fieldId))} />)}
           </fieldset> : null}
           <p className="text-sm text-[var(--color-content-muted)]">{t("assistant.prefilledHelp", { name })}</p>
-          {assistant.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint", { count: assistant.waitSeconds })}</p> : null}
           <DialogFooter>
             <Button variant="outline" disabled={assistant.busy} onClick={() => assistant.setOpen(false)}>{t("forms.cancel")}</Button>
-            {assistant.attempt && assistant.recovery === "consult" ? <Button variant="outline" disabled={assistant.busy || assistant.waiting} onClick={() => void assistant.consult()}>{t("send.check")}</Button> : <Button disabled={assistant.busy || assistant.waiting || Boolean(state.disabledReason) || Boolean(draft.attempt)} onClick={() => void assistant.send()}>{t(assistant.busy ? "forms.saving" : assistant.attempt ? "send.retry" : "forms.action")}</Button>}
+            <DisabledReason reason={waitReason(assistant.busy, assistant.waiting, assistant.waitSeconds)} className={footerReason}>{assistant.attempt && assistant.recovery === "consult" ? <Button variant="outline" disabled={assistant.busy || assistant.waiting} onClick={() => void assistant.consult()}>{t("send.check")}</Button> : <Button disabled={assistant.busy || assistant.waiting || Boolean(state.disabledReason) || Boolean(draft.attempt)} onClick={() => void assistant.send()}>{t(assistant.busy ? "forms.saving" : assistant.attempt ? "send.retry" : "forms.action")}</Button>}</DisabledReason>
           </DialogFooter>
         </> : <>
         {state.mayReadOptions ? <div className="flex flex-col gap-3" ref={list}>
@@ -82,10 +87,9 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         {!state.contextChanged&&!state.denied ? <p className="text-xs text-[var(--color-content-muted)]">{t("forms.deadline",{deadline:formatDateTimeInZone(deadline,language,timeZone)})}</p> : null}
         {state.blockedReason ? <p className="text-sm text-[var(--color-content-muted)]">{t(state.blockedReason)}</p> : null}
         {state.versionChanged ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.formUnavailable")}</p> : null}
-        {state.waiting ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("forms.waitingHint",{count:state.waitSeconds})}</p> : null}
         <DialogFooter>
           <Button variant="outline" disabled={state.sending} onClick={()=>state.setOpen(false)}>{t("forms.cancel")}</Button>
-          {frozen&&!form?.notStored&&!state.sending ? <Button variant="outline" disabled={state.checking||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : <Button disabled={state.sending||state.checking||Boolean(state.blockedReason)||state.versionChanged||state.waiting||state.forms.isError||state.forms.isFetching||state.preparationBlocked||(!form?.notStored&&!selected)||form?.blocked==="formUnavailable"} onClick={()=>void state.submit()}>{t(state.sending?"forms.saving":form?.notStored?"send.retry":"forms.action")}</Button>}
+          <DisabledReason reason={waitReason(state.sending||state.checking, state.waiting, state.waitSeconds)} className={footerReason}>{frozen&&!form?.notStored&&!state.sending ? <Button variant="outline" disabled={state.checking||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : <Button disabled={state.sending||state.checking||Boolean(state.blockedReason)||state.versionChanged||state.waiting||state.forms.isError||state.forms.isFetching||state.preparationBlocked||(!form?.notStored&&!selected)||form?.blocked==="formUnavailable"} onClick={()=>void state.submit()}>{t(state.sending?"forms.saving":form?.notStored?"send.retry":"forms.action")}</Button>}</DisabledReason>
         </DialogFooter>
         </>}
       </DialogContent>

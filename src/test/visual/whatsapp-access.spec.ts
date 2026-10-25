@@ -17,8 +17,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await reply.focus();
     await expect(reply).toBeFocused();
     await reply.fill("Borrador de atención");
-    await expect(page.getByRole("button", { name: language === "es" ? "Enviar formulario" : "Send form", exact: true })).toBeDisabled();
-    await expect(page.getByText(language === "es" ? "Para mandar un formulario, el número tiene que estar vinculado a una cuenta." : "The number must be linked to an account before sending a form.", { exact: true })).toBeVisible();
+    // The reason is the help of the disabled button (tooltip and description), not a text under it (C1).
+    const formAction = page.getByRole("button", { name: language === "es" ? "Enviar formulario" : "Send form", exact: true });
+    const reason = language === "es" ? "Para mandar un formulario, el número tiene que estar vinculado a una cuenta." : "The number must be linked to an account before sending a form.";
+    await expect(formAction).toBeDisabled();
+    await expect(formAction).toHaveAccessibleDescription(reason);
+    await expect(page.getByText(reason, { exact: true })).toBeHidden();
     await page.evaluate(() => document.fonts.ready);
     await expect(page).toHaveScreenshot(`whatsapp-access-${language}-${width}.png`, { fullPage: true });
   });

@@ -43,6 +43,30 @@ it.each(["Failed","Uncertain","Reviewed"] as const)("keeps a %s form card in the
 
 it("respects Retry-After when checking a lost form send without repeating its POST",async()=>{let reads=0;server.use(http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{posts.push(await request.json() as FormMessageRequest);return HttpResponse.error();}),http.get("/api/whatsapp/chats/:id/outgoing/:requestId",()=>{reads++;return HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}});}));const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Pedido privado congelado"}});await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await userEvent.click(await within(dialog).findByRole("button",{name:"Consultar envío"}));await waitFor(()=>expect(reads).toBe(1));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Consultar envío"})).toBeDisabled());expect(message).toHaveValue("Pedido privado congelado");expect(message).toBeDisabled();for(const action of screen.getAllByRole("button",{name:"Consultar envío"}))fireEvent.click(action);expect(reads).toBe(1);expect(posts).toHaveLength(1);});
 
+// Why a form cannot be sent, and the wait of a 429, are not written under the buttons: they are the help (tooltip and description) of the disabled button.
+it("explains why a form cannot be sent as help of the button",async()=>{
+ contact.linkedAccount=null;contact.formEligibility={status:"NoLinkedAccount",recipientCulture:null,recipientContextRevision:null};
+ await openChat();
+ const reason="Para mandar un formulario, el número tiene que estar vinculado a una cuenta.";
+ const trigger=screen.getByRole("button",{name:"Enviar formulario"});
+ expect(trigger).toBeDisabled();
+ expect(trigger).toHaveAccessibleDescription(reason);
+ expect(screen.getAllByText(reason)).toHaveLength(1);
+ await userEvent.hover(trigger);
+ expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+});
+it("explains the wait of a form send as help of the footer action",async()=>{
+ server.use(http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{posts.push(await request.json() as FormMessageRequest);return HttpResponse.error();}),http.get("/api/whatsapp/chats/:id/outgoing/:requestId",()=>HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}})));
+ const dialog=await openForm();
+ await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));
+ await userEvent.click(await within(dialog).findByRole("button",{name:"Consultar envío"}));
+ const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
+ await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Consultar envío"})).toHaveAccessibleDescription(wait));
+ expect(within(dialog).getByRole("button",{name:"Consultar envío"})).toBeDisabled();
+ expect(within(dialog).getAllByText(wait)).toHaveLength(1);
+ expect(posts).toHaveLength(1);
+});
+
 it("keeps a request-conflict attempt frozen until its owned operation is checked", async () => {
   let reads = 0;
   server.use(http.post("/api/whatsapp/chats/:id/form-messages", async ({request}) => {

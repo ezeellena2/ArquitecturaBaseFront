@@ -100,7 +100,7 @@ estados que ya usa el chat (`src/locales/*/whatsapp.json`):
 
 | Captura | Qué define |
 | --- | --- |
-| [C1 · ¿Puede recibir un formulario?](evidence/formularios-whatsapp/e3-c1-cuenta.png) | Encabezado y botón según la cuenta vinculada: con correo, sin correo, sin vínculo, inactiva, sin formularios para esa persona y sin permiso de responder. El motivo va debajo del botón deshabilitado. |
+| [C1 · ¿Puede recibir un formulario?](evidence/formularios-whatsapp/e3-c1-cuenta.png) | Encabezado y botón según la cuenta vinculada: con correo, sin correo, sin vínculo, inactiva, sin formularios para esa persona y sin permiso de responder. El motivo del botón deshabilitado es su ayuda al pasar el mouse o con el foco (`DisabledReason`), sin texto debajo (decisión del 2026-10-23); la espera de un 429 es, igual, la ayuda del primario del pie. |
 | [C2 · Elegir el formulario](evidence/formularios-whatsapp/e3-c2-elegir.png) | Diálogo con búsqueda y paginado, el idioma en que le llega, el mensaje y los estados de la lista. |
 | [C3 · El mensaje y los dos botones](evidence/formularios-whatsapp/e3-c3-mensaje.png) | Mensaje obligatorio de hasta 1024 caracteres; «Abrir formulario» («Open form» en inglés) y el botón final del formulario. |
 | [C4 · Si algo cambia con el diálogo abierto](evidence/formularios-whatsapp/e3-c4-cambios.png) | Ventana cerrada, permiso revocado, fuera de atención manual, otro envío, vínculo cambiado y formulario no disponible, sin perder lo escrito. |

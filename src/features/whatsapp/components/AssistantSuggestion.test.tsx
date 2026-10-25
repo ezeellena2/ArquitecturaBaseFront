@@ -7,6 +7,7 @@ import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { server } from "@/test/mocks/server";
+import * as notifications from "@/shared/ui/notifications";
 import { ChatThread } from "./ChatThread";
 import type { AssistantSuggestionPointer } from "../api/assistant";
 import type { AssistantAvailability } from "../api/chat";
@@ -57,6 +58,19 @@ it("requests one shared suggestion and sends only explicitly included IDs throug
  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
  expect(await screen.findByLabelText("Respuesta al cliente")).toHaveValue("Borrador que se conserva");
  expect(screen.getByRole("heading", { name: "Juan" })).toHaveFocus();
+});
+// The wait of a 429 is not written above the footer: the notification tells it once and then it is the help of the disabled send.
+it("explains the wait of a suggested send as help of the footer action", async () => {
+ const notice = vi.spyOn(notifications, "notify").mockImplementation(() => "");
+ server.use(http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/send", async ({ request }) => { sends.push(await request.json() as typeof sends[number]); return HttpResponse.json({ code: "General.TooManyRequests" }, { status: 429, headers: { "Retry-After": "30" } }); }));
+ const { dialog } = await openSuggestion();
+ await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+ const wait = /^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
+ await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toHaveAccessibleDescription(wait));
+ expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeDisabled();
+ expect(within(dialog).getAllByText(wait)).toHaveLength(1);
+ expect(notice).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: expect.stringMatching(wait) }));
+ expect(sends).toHaveLength(1);
 });
 it("cancels without sending or discarding and returns focus to the exact suggestion trigger", async () => {
  const { dialog, action } = await openSuggestion();
