@@ -66,11 +66,12 @@ export function FormEditorPage() {
   const scope: FormReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
   const detail = useFormDefinition(scope, formId);
   // Changing the menu language reads the detail again under its own key. Meanwhile, or if that read fails, the editor keeps
-  // the last one of the same actor, permissions and form, and its draft: translating is editing the same form.
+  // the last one of the same actor, permissions and form read in the other language, and its draft: translating is editing
+  // the same form. In the same language nothing is retained: a removed detail (a deleted form) leaves the editor as before.
   const detailOwner = JSON.stringify([scope.actorId, [...scope.permissions].sort(), formId]);
-  const [mountedDetail, setMountedDetail] = useState<{ owner: string; detail: FormDetail } | null>(null);
-  if (detail.data && (mountedDetail?.owner !== detailOwner || mountedDetail.detail !== detail.data)) setMountedDetail({ owner: detailOwner, detail: detail.data });
-  const loaded = detail.data ?? (mountedDetail?.owner === detailOwner ? mountedDetail.detail : undefined);
+  const [mountedDetail, setMountedDetail] = useState<{ owner: string; culture: string; detail: FormDetail } | null>(null);
+  if (detail.data && (mountedDetail?.owner !== detailOwner || mountedDetail.culture !== scope.culture || mountedDetail.detail !== detail.data)) setMountedDetail({ owner: detailOwner, culture: scope.culture, detail: detail.data });
+  const loaded = detail.data ?? (mountedDetail?.owner === detailOwner && mountedDetail.culture !== scope.culture ? mountedDetail.detail : undefined);
   const detailFeedbackId = `forms:detail:${scope.actorId}:${scope.culture}:${formId}`;
   useEffect(() => () => { dismissNotification(detailFeedbackId); }, [detailFeedbackId]);
   useEffect(() => {
