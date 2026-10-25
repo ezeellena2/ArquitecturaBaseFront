@@ -212,9 +212,9 @@ it("explains the limits of suggestions and of data in a suggestion", async () =>
   renderWithProviders(<FormSuggestionsSection {...props()}/>);
   const addSuggestion = await screen.findByRole("button",{name:"Agregar sugerencia"});
   expect(addSuggestion).toBeDisabled();
-  expect(addSuggestion).toHaveAccessibleDescription("Superaste el límite permitido.");
+  expect(addSuggestion).toHaveAccessibleDescription("Se alcanzó el límite.");
   await userEvent.click(screen.getByRole("button",{name:"Editar sugerencia 1"}));
   const addMapping = screen.getByRole("button",{name:"Agregar dato"});
   expect(addMapping).toBeDisabled();
-  expect(addMapping).toHaveAccessibleDescription("Superaste el límite permitido.");
+  expect(addMapping).toHaveAccessibleDescription("Se alcanzó el límite.");
 });

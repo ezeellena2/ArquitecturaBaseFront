@@ -1146,7 +1146,7 @@
       "incompatible": "Elegí preguntas del mismo tipo.",
       "duplicateTarget": "Esta pregunta ya recibe otro dato.",
       "invalidConditions": "Revisá las condiciones.",
-      "tooMany": "Superaste el límite permitido."
+      "tooMany": "Se alcanzó el límite."
     },
     "historicalDestination": "Formulario de otra versión",
     "historyConditions_one": "{{count}} condición guardada",

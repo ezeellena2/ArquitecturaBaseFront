@@ -1146,7 +1146,7 @@
       "incompatible": "Choose questions of the same type.",
       "duplicateTarget": "This question already receives other data.",
       "invalidConditions": "Review the conditions.",
-      "tooMany": "The allowed limit was exceeded."
+      "tooMany": "The limit has been reached."
     },
     "historicalDestination": "Form from another version",
     "historyConditions_one": "{{count}} saved condition",
