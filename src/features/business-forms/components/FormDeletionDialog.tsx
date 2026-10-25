@@ -6,6 +6,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { deleteForm, fetchFormDefinition } from "../api/forms";
@@ -63,9 +64,8 @@ export function FormDeletionDialog({ id, name, prefix, hasPublishedVersion, revi
    {hasPublishedVersion ? <Banner tone="warning">{t("lifecycle.deletePublishedHint")}</Banner> : null}
    <p className="text-sm">{t("lifecycle.deleteHint")}</p>
    {blocked ? <p role="status" className="text-sm">{t(denied ? "lifecycle.noDeletePermission" : "lifecycle.deleteChanged")}</p> : null}
-   {cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: cooldown.seconds })}</p> : null}
    </div>
-   <DialogFooter className="shrink-0"><Button variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button variant="destructive" disabled={busy || blocked || cooldown.isRunning} onClick={() => void submit()}>{t(busy ? "lifecycle.deleting" : "lifecycle.delete")}</Button></DialogFooter>
+   <DialogFooter className="shrink-0"><Button variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button>{/* The wait of a 429 is the reason of the disabled Delete, not a text in the dialog. */}<DisabledReason reason={busy || blocked || !cooldown.isRunning ? null : t("wait", { count: cooldown.seconds })} className="max-sm:*:flex-1"><Button variant="destructive" disabled={busy || blocked || cooldown.isRunning} onClick={() => void submit()}>{t(busy ? "lifecycle.deleting" : "lifecycle.delete")}</Button></DisabledReason></DialogFooter>
   </DialogContent>
  </Dialog>;
 }

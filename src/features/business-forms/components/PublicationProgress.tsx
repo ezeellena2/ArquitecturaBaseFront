@@ -5,6 +5,7 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { FormPublicationProjection, FormPublicationCheck } from "../api/response";
@@ -54,7 +55,13 @@ export function PublicationProgress({ publication, feedbackId, onReplay, project
     : state === "Published" ? "publication.publishedHint" : state === "Failed" ? "publication.failedHint"
     : state === "Uncertain" ? "publication.reviewHint" : "publication.progressHint";
   const requiresReview = publication.status?.requiresReview ?? publication.aggregate?.requiresReview ?? projection?.currentOperation?.requiresReview;
-  return <Surface title={t(title, { version })} padded>
+  // Consulting and replaying act on the whole publication: they go in the header, with the wait of a 429 as their reason.
+  const waitReason = publication.busy || !cooldown.isRunning ? null : t("wait", { count: cooldown.seconds });
+  const actions = !forbidden && ["Accepted", "Unconfirmed"].includes(publication.phase) ? <>
+    <DisabledReason reason={waitReason}><Button type="button" variant="outline" disabled={publication.busy || cooldown.isRunning} onClick={() => void publication.consult()}>{t("publication.consult")}</Button></DisabledReason>
+    {publication.canReplay ? <DisabledReason reason={waitReason}><Button type="button" variant="outline" disabled={publication.busy || cooldown.isRunning} onClick={onReplay}>{t("publication.replay")}</Button></DisabledReason> : null}
+  </> : null;
+  return <Surface title={t(title, { version })} padded actions={actions}>
     <div className="flex flex-col gap-3">
       <p role={state === "Published" ? undefined : "status"} className="text-sm">{t(state === "Published" && publishedCultures.length ? "publication.languages" : hint, { version, languages })}</p>
       {publication.confirmed && state !== "Failed" ? <ol className="flex flex-col gap-1 text-sm">
@@ -65,11 +72,6 @@ export function PublicationProgress({ publication, feedbackId, onReplay, project
       {issues.length ? <ul className="flex flex-col gap-2 text-sm">{issues.map((issue,index) => <li key={index}><p>{issue.message}</p>{issue.culture ? <p className="text-xs text-[var(--color-content-muted)]">{t("common:language." + issue.culture)}</p> : null}{onGoToIssue && canLocateIssue?.(issue) ? <Button type="button" size="sm" variant="outline" onClick={() => onGoToIssue(issue)}>{t(issue.fieldId ? "publication.goToQuestion" : "publication.goToText")}</Button> : null}</li>)}</ul> : null}
       {projection?.activeVersion && state !== "Published" ? <p className="text-sm text-[var(--color-content-muted)]">{t("publication.previousActive", { version: projection.activeVersion.versionNumber })}</p> : null}
       {publication.error && publication.confirmed ? <p className="text-sm">{t("publication.statusFailed")}</p> : null}
-      {!forbidden && ["Accepted", "Unconfirmed"].includes(publication.phase) ? <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" disabled={publication.busy || cooldown.isRunning} onClick={() => void publication.consult()}>{t("publication.consult")}</Button>
-        {publication.canReplay ? <Button type="button" variant="outline" disabled={publication.busy || cooldown.isRunning} onClick={onReplay}>{t("publication.replay")}</Button> : null}
-      </div> : null}
-      {cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: cooldown.seconds })}</p> : null}
     </div>
   </Surface>;
 }

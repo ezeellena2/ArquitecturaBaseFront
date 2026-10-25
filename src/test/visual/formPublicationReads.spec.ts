@@ -54,14 +54,19 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
 }
 
 for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
- test("normal publication wait keeps useful separation after a 429 "+lang+" "+width,async({page})=>{
+ // The wait of a 429 is the reason of the disabled Retry (tooltip and description), not a text in the dialog.
+ test("normal publication wait is the reason of Retry after a 429 "+lang+" "+width,async({page})=>{
   const es=lang==="es";await page.setViewportSize({width,height:900});await page.goto("/src/test/visual/index.html?screen=/formularios/"+fixtureFormId+"&scenario=forms-publication-ready&lang="+lang);
   await page.getByRole("heading",{name:es?"Registrar visita":"Register visit",level:1,exact:true}).waitFor({state:"visible"});await page.evaluate(()=>document.fonts.ready);
   await page.evaluate(()=>{const previous=window.fetch;window.fetch=(input,init)=>{const request=input instanceof Request?input:new Request(new URL(String(input),location.origin),init);if(request.method==="POST"&&new URL(request.url).pathname.endsWith("/publication-checks"))return Promise.resolve(new Response(JSON.stringify({code:"General.RateLimited",retryAfter:60}),{status:429,headers:{"Content-Type":"application/problem+json","Retry-After":"60"}}));return previous(input,init);};});
   const trigger=page.getByRole("button",{name:es?"Publicar en WhatsApp":"Publish on WhatsApp",exact:true});await trigger.focus();await trigger.press("Enter");const dialog=page.getByRole("dialog");
-  const result=dialog.getByRole("heading",{name:es?"Comprobación pendiente":"Check pending",exact:true}).locator("..");await expect(result).toBeVisible();const wait=dialog.locator('p[role="status"]').filter({hasText:es?/^Esperá /:/^Wait /});await expect(wait).toBeVisible();
-  const resultBounds=(await result.boundingBox())!;const waitBounds=(await wait.boundingBox())!;const gap=await dialog.evaluate(node=>parseFloat(getComputedStyle(node).rowGap));expect(waitBounds.y-resultBounds.y-resultBounds.height).toBeGreaterThanOrEqual(gap);
-  await expect(dialog.getByRole("button",{name:es?"Reintentar":"Retry",exact:true})).toBeDisabled();expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:"test-results/forms-publication-wait-normal-"+lang+"-"+width+".png",fullPage:true});
+  const result=dialog.getByRole("heading",{name:es?"Comprobación pendiente":"Check pending",exact:true}).locator("..");await expect(result).toBeVisible();
+  const wait=es?/^Esperá \d+ segundos para volver a intentar\.$/:/^Wait \d+ seconds before trying again\.$/;const retry=dialog.getByRole("button",{name:es?"Reintentar":"Retry",exact:true});
+  await expect(retry).toBeDisabled();await expect(retry).toHaveAccessibleDescription(wait);await expect(dialog.locator('p[role="status"]').filter({hasText:wait})).toHaveCount(0);
+  // The disabled button does not receive the pointer: its wrapper does, and shows the wait as help.
+  await retry.locator("..").hover();await expect(page.getByRole("tooltip")).toHaveText(wait);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:"test-results/forms-publication-wait-normal-"+lang+"-"+width+".png",fullPage:true});
+  await page.mouse.move(0,0);await expect(page.getByRole("tooltip")).toHaveCount(0);
   await dialog.press("Escape");await expect(trigger).toBeFocused();
  });
 }

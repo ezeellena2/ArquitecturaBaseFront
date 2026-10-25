@@ -1,7 +1,8 @@
 import userEvent from "@testing-library/user-event";
 import i18n from "@/shared/i18n";
+import { ApiError } from "@/shared/api/ApiError";
 import type { FormPublicationCheck } from "../api/response";
-import { act, cleanup, screen, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { fixtureDefinition } from "@/test/visual/formFixtures";
@@ -15,8 +16,10 @@ const checked: FormPublicationCheck = { definitionId: definition.id, draftRevisi
   cultures: [{ culture: "es", isOriginal: true, isComplete: true, missing: [] }, { culture: "en", isOriginal: false, isComplete: true, missing: [] }],
   diff: { baseVersionId: "previous", added: [definition.draft.fields[0]!.fieldId], changed: [definition.draft.fields[1]!.fieldId], removed: ["retired"], addedCultures: [], removedCultures: [] } };
 let result = checked;
-vi.mock("../hooks/useFormPublicationCheck", () => ({ useFormPublicationCheck: () => ({ result, busy: false, error: null, check: vi.fn() }) }));
-beforeEach(async () => { await i18n.changeLanguage("es"); result = structuredClone(checked); onGoToIssue.mockClear(); onCompleteTranslation.mockClear(); });
+// A failed check has no result.
+let error: unknown = null;
+vi.mock("../hooks/useFormPublicationCheck", () => ({ useFormPublicationCheck: () => ({ result: error ? null : result, busy: false, error, check: vi.fn() }) }));
+beforeEach(async () => { await i18n.changeLanguage("es"); result = structuredClone(checked); error = null; onGoToIssue.mockClear(); onCompleteTranslation.mockClear(); });
 const onGoToIssue = vi.fn();
 const onCompleteTranslation = vi.fn();
 // The scope carries the menu language, as in the editor.
@@ -26,14 +29,20 @@ async function mount(permissions = ["formtemplates.read", "formtemplates.publish
 describe("Chosen publication boards I2/I3", () => {
   it("shows the checked next version, previous diff and saved draft without locking the prefix again", async () => {
     await mount();
-    expect(screen.getByRole("dialog", { name: "Publicar la versión 3 en WhatsApp" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Publicar la versión 3 en WhatsApp" })).toHaveAccessibleDescription(/Se publica el borrador guardado el 2026-10-10 15:20\.$/);
     expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Qué cambia respecto de la versión 1" })).toBeInTheDocument();
-    expect(screen.getByText("Se publica el borrador guardado el 2026-10-10 15:20.")).toBeInTheDocument();
     expect(screen.queryByText(/El prefijo VIS queda fijo al aceptar/)).not.toBeInTheDocument();
     expect(screen.getByText("Agregadas: Cliente")).toBeInTheDocument();
     expect(screen.getByText("Cambiadas: Contacto")).toBeInTheDocument();
     expect(screen.getByText("1 pregunta quitada")).toBeInTheDocument();
+  });
+  // The saved date says what is published: it goes in the description, not as a text beside the footer buttons.
+  it("keeps the saved date out of the footer", async () => {
+    await mount();
+    const dialog = screen.getByRole("dialog", { name: "Publicar la versión 3 en WhatsApp" });
+    expect(dialog).toHaveAccessibleDescription(/Se publica el borrador guardado el 2026-10-10 15:20\.$/);
+    expect(dialog.querySelector("[data-slot='dialog-footer']")).not.toHaveTextContent("2026-10-10 15:20");
   });
   it("does not label a newer diff with the stale active version number", async () => {
     result = { ...checked, diff: { ...checked.diff, baseVersionId: "newer-active" } };
@@ -190,4 +199,18 @@ it("says one option, not «1 opciones», for a maximum of one", async () => {
   await mount();
   expect(screen.getByText("Como mucho 1 opción por persona, de un límite de 20.")).toBeInTheDocument();
   expect(screen.getByText("Como mucho 2 opciones por persona (Norte), de un límite de 20.")).toBeInTheDocument();
+});
+
+// The wait of a 429 is not written in the dialog: it is the reason of the disabled Retry.
+it("explains the check wait as the reason of Retry", async () => {
+  const wait = "Esperá 30 segundos para volver a intentar.";
+  error = new ApiError(429, { code: "RateLimit.Exceeded", retryAfter: 30 });
+  await mount();
+  const retry = screen.getByRole("button", { name: "Reintentar" });
+  expect(retry).toBeDisabled();
+  expect(retry).toHaveAccessibleDescription(wait);
+  // The dialog may open with the focus on Retry, which shows its reason as a tooltip; without it, nothing shows the wait.
+  act(() => (document.activeElement as HTMLElement | null)?.blur());
+  await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+  for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
 });

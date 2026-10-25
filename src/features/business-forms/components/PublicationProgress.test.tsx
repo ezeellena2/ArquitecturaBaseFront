@@ -1,8 +1,9 @@
 import { notify } from "@/shared/ui/notifications";
-import { act, screen } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
+import { ApiError } from "@/shared/api/ApiError";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { useFormPublication } from "../hooks/useFormPublication";
 import { PublicationProgress } from "./PublicationProgress";
@@ -56,4 +57,18 @@ it("keeps the published English UI state static and announces the result only on
   expect(screen.getByText("On WhatsApp, in Spanish and English").closest('[role="status"], [role="alert"], [aria-live]')).toBeNull();
   expect(screen.getByRole("heading", { name: "Published · version 2" })).toBeInTheDocument();
   expect(notify).toHaveBeenCalledOnce();
+});
+
+// Consulting and replaying act on the whole publication: they go in the header of its surface, and the wait of a 429 is their reason.
+it("puts consult and replay in the header of the publication and explains the wait as their reason", async () => {
+  const wait = "Esperá 30 segundos para volver a intentar.";
+  const publication = { ...session("Publishing"), phase: "Unconfirmed" as const, canReplay: true, error: new ApiError(429, { code: "RateLimit.Exceeded", retryAfter: 30 }) };
+  await act(async () => { renderWithProviders(<PublicationProgress publication={publication} feedbackId="publication-wait" onReplay={vi.fn()} />); });
+  const band = within(screen.getByRole("region", { name: "Publicación sin confirmar" })).getByRole("heading", { name: "Publicación sin confirmar" }).parentElement!;
+  for (const name of ["Consultar publicación", "Repetir el mismo intento"]) {
+    const button = within(band).getByRole("button", { name });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleDescription(wait);
+  }
+  for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
 });

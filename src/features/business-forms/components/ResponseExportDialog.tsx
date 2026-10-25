@@ -16,6 +16,7 @@ import {
 } from "@/shared/ui/dialog";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { ResponseCatalogFieldSelection, ResponseColumn, ResponseQuery } from "../responses";
 export function ResponseExportDialog({
@@ -147,23 +148,25 @@ export function ResponseExportDialog({
           {prefix}-{new Date().toISOString().slice(0, 10).replaceAll("-", "")}
           .xlsx
         </p>
-        {total > 10000 ? <p>{t("responses.exportLimit")}</p> : null}
-        {cooldown.seconds > 0 ? (
-          <p>{t("responses.wait", { count: cooldown.seconds })}</p>
-        ) : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
             {t("common:actions.cancel")}
           </Button>
-          <Button
-            type="button"
-            disabled={!ready || pending || total > 10000 || cooldown.seconds > 0}
-            onClick={() => {
-              void download();
-            }}
+          {/* The limit and the wait are the reason of the disabled download, not a text above the footer. */}
+          <DisabledReason
+            reason={pending ? null : total > 10000 ? t("responses.exportLimit") : cooldown.seconds > 0 ? t("responses.wait", { count: cooldown.seconds }) : null}
+            className="max-sm:*:flex-1"
           >
-            {t(pending ? "responses.exporting" : "responses.export")}
-          </Button>
+            <Button
+              type="button"
+              disabled={!ready || pending || total > 10000 || cooldown.seconds > 0}
+              onClick={() => {
+                void download();
+              }}
+            >
+              {t(pending ? "responses.exporting" : "responses.export")}
+            </Button>
+          </DisabledReason>
         </DialogFooter>
       </DialogContent>
     </Dialog>

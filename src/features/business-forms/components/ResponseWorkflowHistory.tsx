@@ -7,6 +7,7 @@ import { ApiError } from "@/shared/api/ApiError";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Spinner } from "@/shared/ui/Spinner";
 import type { ResponseDetail } from "../api/responses";
 import type { useResponseWorkflow } from "../hooks/useResponseWorkflow";
@@ -27,6 +28,8 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
   const needsConsult = !!reviewTarget && sameWorkflowReviewTarget(workflow.needsConsultReview, reviewTarget);
   const restoreFocus = useRestoreFocusOnClose(reviewOpen, reviewFocus);
   const disabled = workflow.busy || workflow.query.isFetching || workflow.cooldown.isRunning;
+  // The wait of a 429 is the reason of each disabled action, not a text under the history or in the dialog.
+  const waitReason = workflow.busy || workflow.query.isFetching || !workflow.cooldown.isRunning ? null : t("wait", { count: workflow.cooldown.seconds });
   const closeReview = () => { setReviewTarget(null); setWasSent(undefined); };
   const renderEntry = (entry: WorkflowHistoryEntry) => {
         if (entry.type === "record") {
@@ -49,9 +52,9 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
               {recipient.deliveredAtUtc ? <p className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-content-muted)]"><Badge variant="outline">{t("workflow.delivered")}</Badge><time dateTime={recipient.deliveredAtUtc}>{date(recipient.deliveredAtUtc)}</time></p> : null}
               {recipient.readAtUtc ? <p className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-content-muted)]"><Badge variant="outline">{t("workflow.read")}</Badge><time dateTime={recipient.readAtUtc}>{date(recipient.readAtUtc)}</time></p> : null}
               {recipient.review ? <div className="space-y-1 text-xs text-[var(--color-content-muted)]"><p>{t(recipient.review.wasSent ? "workflow.reviewSent" : "workflow.reviewNotSent", { name: recipient.review.reviewedBy.displayName ?? t("responses.unknownPerson") })}</p><time dateTime={recipient.review.reviewedAtUtc}>{date(recipient.review.reviewedAtUtc)}</time><p>{t("workflow.humanReviewHint")}</p></div> : null}
-              {canManage && workflowCanReview(recipient) ? <Button variant="outline" size="sm" disabled={disabled} onClick={event => { reviewFocus.current = event.currentTarget.closest("li"); setWasSent(undefined); setReviewTarget({ runId: action.id, recipientUserId: recipient.user.userId, expectedRevision: action.revision }); }}>{t("workflow.review")}</Button> : null}
+              {canManage && workflowCanReview(recipient) ? <DisabledReason reason={waitReason}><Button variant="outline" size="sm" disabled={disabled} onClick={event => { reviewFocus.current = event.currentTarget.closest("li"); setWasSent(undefined); setReviewTarget({ runId: action.id, recipientUserId: recipient.user.userId, expectedRevision: action.revision }); }}>{t("workflow.review")}</Button></DisabledReason> : null}
             </li>)}</ul> : null}
-            {next ? <Button variant="outline" size="sm" disabled={disabled} onClick={() => void workflow.act(action.id)}>{t(workflow.busy ? "workflow.working" : next === "consult" ? "workflow.consult" : "common:actions.retry")}</Button> : null}
+            {next ? <DisabledReason reason={waitReason}><Button variant="outline" size="sm" disabled={disabled} onClick={() => void workflow.act(action.id)}>{t(workflow.busy ? "workflow.working" : next === "consult" ? "workflow.consult" : "common:actions.retry")}</Button></DisabledReason> : null}
           </div><Badge variant="outline" className="self-start">{t("workflow.states." + action.state)}</Badge>
         </li>;
   };
@@ -76,7 +79,6 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
     {workflow.query.isPending || !data && !workflow.query.isError ? <Spinner /> : null}
     {workflow.query.error ? <div className="space-y-2 text-sm"><p role="status">{t("common:states.loadFailed")}</p>{!(workflow.query.error instanceof ApiError && workflow.query.error.status === 404) ? <Button variant="outline" disabled={workflow.query.isFetching} onClick={() => void workflow.query.refetch()}>{t("common:actions.retry")}</Button> : null}</div> : null}
     {workflow.controlsDenied ? <p role="status" className="text-sm">{t("workflow.noManagePermission")}</p> : null}
-    {workflow.cooldown.isRunning && !reviewOpen ? <p role="status" className="text-sm">{t("wait", { count: workflow.cooldown.seconds })}</p> : null}
     <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.retryHint")}</p>
     <Dialog open={reviewOpen} onOpenChange={open => { if (!open && !workflow.busy) closeReview(); }}>
       <DialogContent onCloseAutoFocus={restoreFocus} showCloseButton={!workflow.busy} onEscapeKeyDown={event => { if (workflow.busy) event.preventDefault(); }} onPointerDownOutside={event => { if (workflow.busy) event.preventDefault(); }}>
@@ -86,9 +88,8 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
           { value: "true", label: t("workflow.sent"), description: t("workflow.sentHint"), disabled: workflow.busy || needsConsult },
           { value: "false", label: t("workflow.notSent"), description: t(reviewing?.kind === "NotifyRole" ? "workflow.notSentRoleHint" : "workflow.notSentHint"), disabled: workflow.busy || needsConsult },
         ]} />
-        {workflow.cooldown.isRunning ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("wait", { count: workflow.cooldown.seconds })}</p> : null}
         {needsConsult ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("workflow.reviewCheckRequired")}</p> : null}
-        <DialogFooter><Button variant="outline" disabled={workflow.busy} onClick={closeReview}>{t("common:actions.cancel")}</Button><Button disabled={disabled || !needsConsult && wasSent === undefined} onClick={async () => { if (!reviewTarget) return; const resolved = needsConsult ? await workflow.checkReview(reviewTarget) : wasSent !== undefined && await workflow.review(reviewTarget, wasSent); if (resolved) closeReview(); }}>{t(needsConsult ? "workflow.consult" : wasSent === undefined ? "workflow.confirmReview" : wasSent ? "workflow.confirmSent" : "workflow.confirmNotSent")}</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" disabled={workflow.busy} onClick={closeReview}>{t("common:actions.cancel")}</Button><DisabledReason reason={waitReason} className="max-sm:*:flex-1"><Button disabled={disabled || !needsConsult && wasSent === undefined} onClick={async () => { if (!reviewTarget) return; const resolved = needsConsult ? await workflow.checkReview(reviewTarget) : wasSent !== undefined && await workflow.review(reviewTarget, wasSent); if (resolved) closeReview(); }}>{t(needsConsult ? "workflow.consult" : wasSent === undefined ? "workflow.confirmReview" : wasSent ? "workflow.confirmSent" : "workflow.confirmNotSent")}</Button></DisabledReason></DialogFooter>
       </DialogContent>
     </Dialog>
   </>;

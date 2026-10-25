@@ -420,8 +420,9 @@ describe("response sheet", () => {
     const check = await dialog.findByRole("button", { name: "Consultar" });
     expect(dialog.getByRole("radio", { name: "Salió" })).toBeDisabled();
     expect(dialog.getByRole("radio", { name: "No salió" })).toBeDisabled();
-    if (failure === "rateLimit") { expect(check).toBeDisabled(); await waitFor(() => expect(check).toBeEnabled(), { timeout: 2000 }); }
-    await userEvent.click(check);
+    // The wait is the reason of the disabled check; when it ends the check is drawn again without its reason.
+    if (failure === "rateLimit") { expect(check).toBeDisabled(); expect(check).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar."); await waitFor(() => expect(dialog.getByRole("button", { name: "Consultar" })).toBeEnabled(), { timeout: 2000 }); }
+    await userEvent.click(dialog.getByRole("button", { name: "Consultar" }));
     await dialog.findByRole("button", { name: "Confirmar que no salió" });
     expect(reads).toBe(3);
     expect(posts).toEqual([{ recipientUserId, expectedRevision: 0, wasSent: false }]);
@@ -955,14 +956,17 @@ describe("response sheet", () => {
     const retry = within(dialog).getByRole("button", { name: "Reintentar" });
     expect(retry).toBeDisabled();
     expect(within(dialog).getByRole("button", { name: "Aplicar filtros" })).toBeEnabled();
-    expect(within(dialog).getByRole("status")).toHaveTextContent("1");
+    // The wait is the reason of the disabled Retry, not a text above it.
+    expect(retry).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar.");
+    expect(within(dialog).getByText("Esperá 1 segundo para volver a intentar.")).not.toBeVisible();
     act(() => dismissNotification(vi.mocked(notify).mock.calls[0][0].id));
     expect(retry).toBeDisabled();
-    expect(within(dialog).getByRole("status")).toHaveTextContent("1");
-    await waitFor(() => expect(retry).toBeEnabled());
+    expect(retry).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar.");
+    // When the wait ends, Retry is drawn again without its reason.
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Reintentar" })).toBeEnabled());
     expect(counts).toHaveBeenCalledTimes(1);
     recovered = true;
-    await userEvent.click(retry);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Reintentar" }));
     await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
     expect(counts).toHaveBeenCalledTimes(2);
     expect(notify).toHaveBeenCalledTimes(1);
@@ -990,14 +994,14 @@ describe("response sheet", () => {
     const apply = within(dialog).getByRole("button", { name: "Aplicar filtros" });
     expect(apply).toBeDisabled();
     await waitFor(() => expect(apply).toBeEnabled());
-    if (recovery === "apply") expect(within(dialog).getByRole("status")).toHaveTextContent("60");
+    if (recovery === "apply") expect(within(dialog).getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(/^Esperá [0-9]+ segundos para volver a intentar\.$/);
     expect(counts).toHaveBeenCalledTimes(1);
     if (recovery === "retry") {
-      const retry = within(dialog).getByRole("button", { name: "Reintentar" });
-      await waitFor(() => expect(retry).toBeEnabled());
+      const retry = () => within(dialog).getByRole("button", { name: "Reintentar" });
+      await waitFor(() => expect(retry()).toBeEnabled());
       expect(counts).toHaveBeenCalledTimes(1);
       recovered = true;
-      await userEvent.click(retry);
+      await userEvent.click(retry());
       await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
       expect(counts).toHaveBeenCalledTimes(2);
       expect(counts).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [expect.objectContaining({ values: ["12.5"] })] }));
@@ -1195,7 +1199,7 @@ describe("response sheet", () => {
     await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
     dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toBeDisabled();
-    expect(within(dialog).getByText(/Esperá .* segundos/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toHaveAccessibleDescription(/^Esperá [0-9]+ segundos para volver a intentar\.$/);
   });
   it("closes a denied export and preserves the readable sheet", async () => {
     setup();

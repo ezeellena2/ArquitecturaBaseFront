@@ -175,11 +175,20 @@ for (const [scenario, text] of [
     await page.goto(
       `/src/test/visual/index.html?screen=${screen}&scenario=${scenario}&lang=es`,
     );
-    if (scenario === "responses-limit")
+    if (scenario === "responses-limit") {
       await page
         .getByRole("button", { name: "Exportar a Excel", exact: true })
         .click();
-    await expect(page.getByText(text, { exact: false }).first()).toBeVisible();
+      // The limit is the reason of the disabled download (tooltip and description), not a text in the dialog;
+      // the disabled button does not receive the pointer, its wrapper does.
+      const download = page
+        .getByRole("dialog")
+        .getByRole("button", { name: "Exportar a Excel", exact: true });
+      await expect(download).toBeDisabled();
+      await download.locator("..").hover();
+      await expect(page.getByRole("tooltip")).toContainText(text);
+    } else
+      await expect(page.getByText(text, { exact: false }).first()).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(390);

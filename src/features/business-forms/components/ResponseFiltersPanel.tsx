@@ -9,6 +9,7 @@ import {
   DialogFooter,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Input } from "@/shared/ui/input";
 import { FormField } from "@/shared/ui/FormField";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
@@ -303,8 +304,8 @@ export function ResponseFiltersPanel({
             </section>
           ))}
         </div>
-        {count.cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: count.cooldown.seconds })}</p> : null}
-        {canRetryCount ? <Button type="button" variant="outline" disabled={count.cooldown.isRunning || !facetFilter || count.isFetching} onClick={count.retry}>{t("common:actions.retry")}</Button> : null}
+        {/* The wait of a 429 is the reason of the disabled Retry, not a text above it. */}
+        {canRetryCount ? <DisabledReason reason={count.cooldown.isRunning && !count.isFetching ? t("wait", { count: count.cooldown.seconds }) : null} className="*:flex-1"><Button type="button" variant="outline" disabled={count.cooldown.isRunning || !facetFilter || count.isFetching} onClick={count.retry}>{t("common:actions.retry")}</Button></DisabledReason> : null}
         <DialogFooter className="shrink-0">
           <Button
             type="button"

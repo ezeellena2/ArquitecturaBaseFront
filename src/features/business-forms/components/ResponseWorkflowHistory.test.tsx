@@ -68,3 +68,28 @@ it("preserves delivery, human review and recovery controls inside an effect mome
   await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
   await waitFor(() => expect(within(effects).getByRole("button", { name: "Resolver envío" })).toHaveFocus());
 });
+
+// The wait of a 429 is not written under the history nor in the dialog: it is the reason of each disabled action.
+it("explains the action wait as the reason of the recovery buttons and of the review confirmation", async () => {
+  const user = userEvent.setup();
+  const wait = /^Esperá [0-9]+ segundos para volver a intentar\.$/;
+  showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true,
+    recipients: [{ user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain", reasonCode: null, reason: null, canReview: true, deliveredAtUtc: null, readAtUtc: null, review: null }] })] });
+  server.use(http.post("/api/forms/records/:id/actions/:runId/review", () => HttpResponse.json({ code: "RateLimit.Exceeded", detail: "Esperá antes de resolver.", retryAfter: 30 }, { status: 429 })));
+  const effects = await screen.findByRole("listitem", { name: "Al recibirla" });
+  await user.click(within(effects).getByRole("button", { name: "Resolver envío" }));
+  const dialog = screen.getByRole("dialog", { name: "Resolver el envío" });
+  await user.click(within(dialog).getByRole("radio", { name: /Salió/ }));
+  await user.click(within(dialog).getByRole("button", { name: "Confirmar que salió" }));
+  const confirm = within(dialog).getByRole("button", { name: "Confirmar que salió" });
+  await waitFor(() => expect(confirm).toHaveAccessibleDescription(wait));
+  expect(confirm).toBeDisabled();
+  for (const text of within(dialog).getAllByText(wait)) expect(text).not.toBeVisible();
+  await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+  for (const name of ["Resolver envío", "Consultar"]) {
+    const button = within(effects).getByRole("button", { name });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleDescription(wait);
+  }
+  for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
+});
