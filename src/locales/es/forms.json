@@ -472,6 +472,7 @@
       "previewTitle": "Vista previa",
       "sample": "Como si lo recibiera",
       "sampleHint": "Elegí una persona de ejemplo. Esta prueba no cambia su identidad ni sus permisos.",
+      "sampleRequired": "Elegí una persona de ejemplo para guardar.",
       "test": "Probar",
       "chooseSample": "Elegí una persona para probar antes de guardar.",
       "empty": "No hay opciones con estos filtros.",

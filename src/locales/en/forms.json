@@ -472,6 +472,7 @@
       "previewTitle": "Preview",
       "sample": "As if received by",
       "sampleHint": "Choose a sample person. This test does not change their identity or permissions.",
+      "sampleRequired": "Choose a sample person to save.",
       "test": "Test",
       "chooseSample": "Choose a person to test before saving.",
       "empty": "No options match these filters.",

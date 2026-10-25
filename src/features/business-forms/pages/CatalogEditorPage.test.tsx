@@ -669,6 +669,51 @@ describe("Filters editor connected to current DTOs", () => {
     await mount("/catalogos/" + id); const user = userEvent.setup(); await user.click(await screen.findByRole("button", { name: "Agregar condición" })); await selectSample(); await user.click(screen.getByRole("button", { name: "Probar" }));
     const value = await screen.findByRole("textbox", { name: "Valor de la condición 1" }); await waitFor(() => expect(value).toHaveAccessibleDescription("Revisá la condición.")); expect(value).toHaveAttribute("aria-invalid", "true"); expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
   });
+  it("asks for a sample person when saving an active filters catalog instead of disabling save", async () => {
+    filterSetup(); const previews: unknown[] = []; const writes: unknown[] = [];
+    server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { previews.push(await request.json()); return HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false }); }),
+      http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: { ...filtersDetail, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    const sample = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+    await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), " editado");
+    // Without a sample person Save stays enabled: trying it marks the person and takes the focus there, sending nothing.
+    const save = screen.getByRole("button", { name: "Guardar" });
+    expect(save).toBeEnabled(); expect(sample).not.toHaveAttribute("aria-invalid");
+    await user.click(save);
+    await waitFor(() => expect(sample).toHaveFocus());
+    expect(sample).toHaveAttribute("aria-invalid", "true");
+    expect(sample).toHaveAccessibleDescription("Elegí una persona de ejemplo para guardar.");
+    expect(previews).toEqual([]); expect(writes).toEqual([]);
+    // From then on it validates live: choosing the person clears the mark, and Save tests and saves.
+    await user.click(await screen.findByRole("option", { name: "Ana" }));
+    expect(sample).not.toHaveAttribute("aria-invalid");
+    expect(sample).toHaveAccessibleDescription("Elegí una persona de ejemplo. Esta prueba no cambia su identidad ni sus permisos.");
+    await user.click(save); await waitFor(() => expect(writes).toHaveLength(1));
+    expect(previews).toHaveLength(1);
+  });
+  it("keeps only the catalog state beside the title and Review and Test in the bands of their surfaces", async () => {
+    filterSetup();
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })),
+      http.put("/api/forms/catalogs/" + id + "/filters", () => HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    const preview = await screen.findByRole("region", { name: "Vista previa" });
+    const previewBand = within(preview).getByRole("heading", { name: "Vista previa" }).parentElement!;
+    expect(within(previewBand).getByRole("button", { name: "Probar" })).toBeDisabled();
+    // Without changes Save is off; an edit turns it on, and that is what says there are changes.
+    const save = screen.getByRole("button", { name: "Guardar" });
+    expect(save).toBeDisabled();
+    await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), " editado");
+    expect(save).toBeEnabled();
+    const status = screen.getByRole("heading", { level: 1 }).parentElement!;
+    expect(status).toHaveTextContent("Activo"); expect(status).not.toHaveTextContent("Cambios sin guardar");
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
+    await selectSample(); expect(within(previewBand).getByRole("button", { name: "Probar" })).toBeEnabled();
+    await user.click(save);
+    const review = await screen.findByRole("region", { name: "Revisión del catálogo" });
+    const band = within(review).getByRole("heading", { name: "Revisión del catálogo" }).parentElement!;
+    expect(within(band).getByRole("button", { name: "Revisar" })).toBeInTheDocument();
+    expect(save).toBeDisabled();
+  });
 });
 
 it("edits fixed Users filters without source availability flags", async () => {
@@ -681,6 +726,8 @@ it("edits fixed Users filters without source availability flags", async () => {
   expect(screen.getByRole("button", { name: "Probar" })).toBeEnabled();
   await userEvent.setup().click(screen.getByRole("button", { name: "Probar" }));
   expect(await screen.findByText("Beatriz", { exact: true })).toBeInTheDocument();
+  // Save follows the changes, not the availability of the source.
+  await userEvent.setup().selectOptions(screen.getByRole("combobox", { name: "Detalle" }), "active");
   expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
 });
 

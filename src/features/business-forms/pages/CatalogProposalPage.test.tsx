@@ -66,8 +66,13 @@ it("approves edited original-language metadata and filters with one revision com
  let normalWrites = 0;
  server.use(http.put("/api/forms/catalogs/" + id + "/filters", () => { normalWrites++; return HttpResponse.json({}); }));
  await mount();
- expect(await screen.findByRole("button", { name: "Aprobar y activar" })).toBeDisabled();
- await rename("Supervisores revisados"); await chooseSample();
+ // Approving does not wait for the sample person: trying it without one marks the person and sends nothing.
+ const approve = await screen.findByRole("button", { name: "Aprobar y activar" });
+ expect(approve).toBeEnabled();
+ await rename("Supervisores revisados"); await userEvent.click(approve);
+ const sample = screen.getByRole("combobox", { name: "Como si lo recibiera" });
+ await waitFor(() => expect(sample).toHaveFocus()); expect(sample).toHaveAttribute("aria-invalid", "true"); expect(writes).toEqual([]);
+ await chooseSample();
  await userEvent.click(screen.getByRole("button", { name: "Aprobar y activar" }));
  await waitFor(() => expect(writes).toHaveLength(1));
  expect(writes[0]).toEqual({ expectedRevision: 1, name: { es: "Supervisores revisados" }, description: { es: "Supervisores disponibles" }, filters: current.filters, sampleUserId: actor });

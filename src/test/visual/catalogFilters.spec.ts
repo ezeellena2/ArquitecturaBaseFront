@@ -79,7 +79,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const sample = async () => { await page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).click(); await page.getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
     await enter("/catalogos/" + visualCatalogId, "catalogs-filters-conflict"); await sample();
     await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill("Mi borrador");
-    await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click(); await page.getByRole("button", { name: label("Revisar", "Review"), exact: true }).click();
+    await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
+    // Review goes in the band of the catalog review, beside its title.
+    await page.getByRole("region", { name: label("Revisión del catálogo", "Catalog review"), exact: true }).getByRole("button", { name: label("Revisar", "Review"), exact: true }).click();
     await page.getByRole("button", { name: label("Releer", "Reread"), exact: true }).click();
     const dialog = page.getByRole("dialog", { name: label("Revisión del catálogo", "Catalog review"), exact: true });
     // The review shows each revision in the menu language.
@@ -87,7 +89,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await geometry(); await page.screenshot({ path: info.outputPath("filters-conflict.png"), fullPage: true });
     await dialog.getByRole("button", { name: label("Usar la revisión actual", "Use the current revision"), exact: true }).click();
     await expect(page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true })).toHaveValue(label("Personas actuales", "Current people"));
-    await enter("/catalogos/" + visualCatalogId, "catalogs-filters-limit"); await sample(); await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
+    await enter("/catalogos/" + visualCatalogId, "catalogs-filters-limit");
+    // Save does not wait for the sample person: trying it without one marks the person and sends nothing.
+    await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill(label("Personas con límite", "People with a limit"));
+    await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
+    const person = page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
+    await expect(person).toBeFocused(); await expect(person).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByText(label("Elegí una persona de ejemplo para guardar.", "Choose a sample person to save."), { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { previews: unknown[] } }).catalogsFixture.previews)).toHaveLength(0);
+    await sample(); await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
     await expect(page.getByText(label("Hay más de 200 opciones. Ajustá los filtros antes de guardar.", "There are more than 200 options. Adjust the filters before saving."), { exact: true })).toBeVisible();
     expect(await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: unknown[] } }).catalogsFixture.writes)).toHaveLength(0);
     await page.screenshot({ path: info.outputPath("filters-limit.png"), fullPage: true });

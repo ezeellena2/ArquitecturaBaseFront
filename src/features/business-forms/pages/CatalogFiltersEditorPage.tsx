@@ -44,7 +44,9 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
   const [previousManage, setPreviousManage] = useState(scope.permissions.includes("formcatalogs.manage"));
   const [reviewOpen, setReviewOpen] = useState(false); const [discardOpen, setDiscardOpen] = useState(false);
   const [discardProposalOpen, setDiscardProposalOpen] = useState(false);
-  const proposalResult = useRef<HTMLDivElement>(null);
+  // Save does not wait for the sample person: trying it without one marks the person, and from then on it validates live.
+  const [attempted, setAttempted] = useState(false);
+  const proposalResult = useRef<HTMLDivElement>(null); const sampleInput = useRef<HTMLInputElement>(null);
   const options = useCatalogFilterOptions(scope, { page: samplePage, pageSize: 20, sort: "name", search: settledSearch });
   const canManage = scope.permissions.includes("formcatalogs.manage");
   const draft = editor.draft;
@@ -80,9 +82,11 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
     choices: column.choices ?? undefined })) ?? [];
   const view = { key: "users", label: t("catalogs.filters.users") };
   const save = async () => {
-    if (!editor.canSave || (needsSample && !sample)) return;
+    if (!editor.canSave) return;
+    if (needsSample && !sample) { setAttempted(true); sampleInput.current?.focus(); return; }
     const saved = await editor.save(sample?.id);
     if (!saved || !active.current) return;
+    setAttempted(false);
     notify({ id: feedbackId, kind: "success", message: t("catalogs.saved") });
     if (!initial) { guard.allowNextNavigation(); void navigate("/catalogos/" + saved.catalog.id, { replace: true }); }
   };
@@ -92,28 +96,27 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
   };
   if (!draft?.filters || [editor.error, options.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   const samples = options.data?.sampleUsers;
-  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{pendingProposal ? <Badge variant="outline" className="border-[var(--color-warning)] text-[var(--color-warning-700)]">{t("catalogs.proposal.title")}</Badge> : t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}{editor.dirty ? <> · <span>{t("dirty")}</span></> : null}</span>}
-    actions={canManage ? <>{pendingProposal ? <Button variant="outline" disabled={!editor.canSave} onClick={() => setDiscardProposalOpen(true)}>{t("catalogs.proposal.discard")}</Button> : <>{draft.id && (!proposal || proposal.state === "Approved") ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button></>}<Button key="catalog-save" disabled={!editor.canSave || (needsSample && !sample)} onClick={() => void save()}>{t(pendingProposal ? "catalogs.proposal.approve" : "common:actions.save")}</Button></> : undefined}>
+  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{pendingProposal ? <Badge variant="outline" className="border-[var(--color-warning)] text-[var(--color-warning-700)]">{t("catalogs.proposal.title")}</Badge> : t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}</span>}
+    actions={canManage ? <>{pendingProposal ? <Button variant="outline" disabled={!editor.canSave} onClick={() => setDiscardProposalOpen(true)}>{t("catalogs.proposal.discard")}</Button> : <>{draft.id && (!proposal || proposal.state === "Approved") ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button></>}<Button key="catalog-save" disabled={!editor.canSave || (!pendingProposal && !editor.dirty)} onClick={() => void save()}>{t(pendingProposal ? "catalogs.proposal.approve" : "common:actions.save")}</Button></> : undefined}>
     {proposal ? <div ref={proposalResult} tabIndex={-1} className="mb-4 flex flex-col gap-2">
       <Banner><strong>{t("catalogs.proposal.states." + proposal.state)}.</strong>{" "}{t("catalogs.proposal.requested", { name: proposal.requestedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.requestedAtUtc, scope.culture, timeZoneId) })}{" "}{pendingProposal ? t("catalogs.proposal.pendingHint") : proposal.decidedBy && proposal.decidedAtUtc ? t("catalogs.proposal.decided", { name: proposal.decidedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.decidedAtUtc, scope.culture, timeZoneId) }) : null}</Banner>
       {proposal.originalProposal.limitations.map((limitation, index) => <p key={index} className="break-words text-sm text-[var(--color-warning-700)]">{t("catalogs.proposal.unsupportedColumn", { criterion: limitation.criterion })}</p>)}
     </div> : null}
-    {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded><p className="text-sm">{t("catalogs.review.required")}</p><div><Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("review")}</Button></div></Surface> : null}
+    {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded actions={<Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("review")}</Button>}><p className="text-sm">{t("catalogs.review.required")}</p></Surface> : null}
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">
         <CatalogMetadataFields valueType="Text" name={draft.name} description={draft.description} culture={culture} original={original} canManage={canManage && !editor.requiresReview} busy={editor.busy} origin="Filters" errors={fields} onChange={editor.changeMetadata} />
         {!options.data && options.isPending ? <Spinner /> : options.data ? <CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={canManage && !editor.requiresReview} busy={editor.busy} errors={fields} onChange={editor.changeFilters} /> : <EmptyState title={t("catalogs.filters.optionsFailed")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} />}
       </div>
-      <Surface title={t("catalogs.filters.previewTitle")} padded>
+      <Surface title={t("catalogs.filters.previewTitle")} padded actions={canManage ? <Button variant="outline" disabled={!sample || editor.busy || editor.requiresReview} onClick={() => { if (sample) void editor.preview(sample.id); }}>{t("catalogs.filters.test")}</Button> : undefined}>
         {canManage ? <>
-          <FormField label={t("catalogs.filters.sample")} hint={t("catalogs.filters.sampleHint")} error={fields["sampleUserId"]?.join(" ")}>
-            <Autocomplete value={sampleName} aria-busy={options.isFetching} disabled={editor.busy || editor.requiresReview} options={samples?.items.map(person => ({ id: person.id, label: person.name })) ?? []}
+          <FormField label={t("catalogs.filters.sample")} hint={t("catalogs.filters.sampleHint")} error={fields["sampleUserId"]?.join(" ") ?? (attempted && needsSample && !sample ? t("catalogs.filters.sampleRequired") : undefined)}>
+            <Autocomplete ref={sampleInput} value={sampleName} aria-busy={options.isFetching} disabled={editor.busy || editor.requiresReview} options={samples?.items.map(person => ({ id: person.id, label: person.name })) ?? []}
               onValueChange={value => { setSampleName(value); setSearch(value); setSample(null); editor.clearPreview(); }}
               onSelect={id => { const person = samples?.items.find(person => person.id === id); if (person) { setSample(person); setSampleName(person.name); editor.clearPreview(); } }} />
           </FormField>
           {options.error && options.data ? <div><Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button></div> : null}
           {samples ? <Pagination {...samples} onPageChange={setSamplePage} /> : null}
-          <div><Button variant="outline" disabled={!sample || editor.busy || editor.requiresReview} onClick={() => { if (sample) void editor.preview(sample.id); }}>{t("catalogs.filters.test")}</Button></div>
           {editor.busy ? <Spinner /> : editor.previewResult && !editor.previewResult.exceedsLimit ? <>
             {editor.previewResult.items.length ? <ul className="divide-y divide-[var(--color-border)]">{editor.previewResult.items.map(item => <li key={item.id} className="flex flex-col gap-1 py-3"><span className="break-words text-sm">{item.text}</span>{item.detail ? <span className="break-words text-xs text-[var(--color-content-muted)]">{item.detail}</span> : null}{!item.canSend ? <span className="text-xs text-[var(--color-danger)]">{t("catalogs.filters.optionTooLong")}</span> : null}</li>)}</ul> : <p className="text-sm">{t("catalogs.filters.empty")}</p>}
             <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.filters.result", { count: editor.previewResult.totalCount })}</p>
