@@ -276,7 +276,9 @@ describe("Forms routes", () => {
     await userEvent.clear(await screen.findByLabelText("Nombre"));
     await pasteText(screen.getByLabelText("Nombre"), "Mis cambios");
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
-    await userEvent.click(await screen.findByRole("button", { name: "Revisar" }));
+    // The pending review is its own titled surface, with Review in its band.
+    const pending = await screen.findByRole("region", { name: "Revisión del borrador" });
+    await userEvent.click(within(within(pending).getByRole("heading", { name: "Revisión del borrador" }).parentElement!).getByRole("button", { name: "Revisar" }));
     const review = await screen.findByRole("dialog", { name: "Revisión del borrador" });
     expect(within(review).getByRole("cell", { name: "Mis cambios" })).toBeInTheDocument();
     expect(screen.getByLabelText("Nombre")).toHaveValue("Mis cambios");
@@ -309,6 +311,69 @@ describe("Forms routes", () => {
     await userEvent.click(screen.getByRole("button", { name: "Consultar guardado" }));
     await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.kind === "success")).toBe(true));
     expect(store.calls.filter(call => call.method === "POST")).toHaveLength(1);
+  });
+  it("keeps the editor status to the form state while there are unsaved changes", async () => {
+    setup("forms-uncertain");
+    renderRouteWithProviders("/formularios/nuevo");
+    await pasteText(await screen.findByLabelText("Nombre"), "Registrar entrega");
+    // The status beside the title is the form's state; unsaved changes and an unconfirmed save are not states of the form.
+    const status = () => screen.getByRole("heading", { level: 1, name: "Registrar entrega" }).parentElement!;
+    expect(status()).toHaveTextContent("Borrador");
+    expect(status()).not.toHaveTextContent("Cambios sin guardar");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    const unconfirmed = await screen.findByRole("region", { name: "Guardado sin confirmar" });
+    expect(status()).toHaveTextContent("Borrador");
+    expect(status()).not.toHaveTextContent("Guardado sin confirmar");
+    // The unconfirmed save is its own surface, with its actions in the band beside its title.
+    const band = within(unconfirmed).getByRole("heading", { name: "Guardado sin confirmar" }).parentElement!;
+    expect(within(band).getByRole("button", { name: "Consultar guardado" })).toBeInTheDocument();
+    expect(within(unconfirmed).getByText("No pudimos confirmar el guardado. Consultá antes de volver a guardar.")).toBeInTheDocument();
+  });
+  it("leads Save to an invalid file range without a request", async () => {
+    const store = setup("forms-files");
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await screen.findByLabelText("Nombre");
+    await userEvent.click(screen.getByRole("button", { name: "Editar Fotos de la obra" }));
+    await userEvent.clear(screen.getByRole("spinbutton", { name: "Máximo" }));
+    expect(screen.getByRole("spinbutton", { name: "Máximo" })).toHaveAttribute("aria-invalid", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Listo" }));
+    expect(screen.queryByRole("spinbutton", { name: "Máximo" })).not.toBeInTheDocument();
+    // Save stays enabled: trying it opens the question with the range and focuses its first marked control, without sending.
+    const save = screen.getByRole("button", { name: "Guardar borrador" });
+    expect(save).toBeEnabled();
+    await userEvent.click(save);
+    const minimum = await screen.findByRole("spinbutton", { name: "Mínimo" });
+    await waitFor(() => expect(minimum).toHaveFocus());
+    expect(minimum).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("spinbutton", { name: "Máximo" })).toHaveValue(null);
+    expect(store.writes).toHaveLength(0);
+    expect(store.calls.filter(call => call.method === "PUT")).toHaveLength(0);
+  });
+  it("tells the wait after a 429 as the reason of the disabled check, without a text above the page", async () => {
+    setup();
+    server.use(http.put("/api/forms/definitions/:id/draft", () => HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 30 }, { status: 429 })));
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await pasteText(await screen.findByLabelText("Nombre"), " editado");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    const check = await screen.findByRole("button", { name: "Consultar guardado" });
+    expect(check).toBeDisabled();
+    expect(check).toHaveAccessibleDescription(/^Esperá \d+ segundos para volver a intentar\.$/);
+    // The wait is only the reason of the control: nothing is drawn as a paragraph on the page.
+    expect(screen.getAllByText(/Esperá \d+ segundos para volver a intentar\./).every(node => node.closest("[hidden]"))).toBe(true);
+  });
+  it("tells the question limit as the reason of the disabled Add question, without a text under the list", async () => {
+    const store = setup();
+    const current = store.definitions.get(fixtureFormId)!;
+    const fieldId = (index: number) => "01990000-0000-7000-8000-" + String(100 + index).padStart(12, "0");
+    store.definitions.set(fixtureFormId, { ...current, draft: { ...current.draft, fields: Array.from({ length: 40 }, (_, index) => ({
+      fieldId: fieldId(index), key: "field_" + fieldId(index).replaceAll("-", ""), type: "shortText" as const,
+      label: { es: "Pregunta " + (index + 1), en: "Question " + (index + 1) }, help: null, required: false, maxLength: 80,
+    })) } });
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    const add = await screen.findByRole("button", { name: "Agregar pregunta" });
+    expect(add).toBeDisabled();
+    expect(add).toHaveAccessibleDescription("Podés agregar hasta 40 preguntas. Quitá una para agregar otra.");
+    expect(screen.getByText("Podés agregar hasta 40 preguntas. Quitá una para agregar otra.").closest("[hidden]")).not.toBeNull();
   });
   it("omits writes for read-only permissions while retaining the detail and preview", async () => {
     setup("forms-read", ["formtemplates.read"]);

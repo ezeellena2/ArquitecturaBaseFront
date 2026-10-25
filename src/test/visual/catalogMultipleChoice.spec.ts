@@ -42,10 +42,16 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const minimum = editor.getByRole("spinbutton", { name: label("Mínimo", "Minimum"), exact: true });
     const maximum = editor.getByRole("spinbutton", { name: label("Máximo", "Maximum"), exact: true });
     await expect(minimum).toHaveValue("1"); await expect(maximum).toHaveValue("3");
+    const save = page.getByRole("button", { name: label("Guardar borrador", "Save draft"), exact: true });
     await maximum.fill("0");
-    await expect(page.getByRole("button", { name: label("Guardar borrador", "Save draft"), exact: true })).toBeDisabled();
+    await expect(maximum).toHaveAttribute("aria-invalid", "true");
+    // Save stays enabled with the invalid range: trying it focuses the first marked control and sends nothing.
+    await expect(save).toBeEnabled();
+    await save.click();
+    await expect(minimum).toBeFocused();
     await maximum.fill("3");
-    await expect(page.getByRole("button", { name: label("Guardar borrador", "Save draft"), exact: true })).toBeEnabled();
+    await expect(maximum).not.toHaveAttribute("aria-invalid", "true");
+    await expect(save).toBeEnabled();
     for (const control of [minimum, maximum]) {
       const box = (await control.boundingBox())!;
       expect(box.width).toBeGreaterThan(40);

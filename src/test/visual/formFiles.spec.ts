@@ -32,11 +32,16 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   await page.screenshot({path:`test-results/form-files-editor-${lang}-${width}.png`,fullPage:true});
   await page.getByRole("button",{name:en?"Edit Site photos":"Editar Fotos de la obra",exact:true}).click();
+  const minimum=page.getByRole("spinbutton",{name:en?"Minimum":"Mínimo",exact:true});
   const maximum=page.getByRole("spinbutton",{name:en?"Maximum":"Máximo",exact:true});
   const save=page.getByRole("button",{name:en?"Save draft":"Guardar borrador",exact:true});
   await maximum.fill("");
-  await expect(maximum).toHaveValue("");await expect(maximum).toHaveAttribute("aria-invalid","true");await expect(save).toBeDisabled();
-  await maximum.fill("2.5");await expect(save).toBeDisabled();
+  await expect(maximum).toHaveValue("");await expect(maximum).toHaveAttribute("aria-invalid","true");await expect(save).toBeEnabled();
+  await maximum.fill("2.5");
+  // Save stays enabled: trying it with the question closed opens it and focuses its first marked control, without sending.
+  await page.getByRole("button",{name:en?"Done":"Listo",exact:true}).click();await expect(maximum).toHaveCount(0);
+  await save.click();await expect(minimum).toBeFocused();await expect(minimum).toHaveAttribute("aria-invalid","true");
+  expect(await page.evaluate(()=>(window as typeof window&{formsFixture:{writes:unknown[]}}).formsFixture.writes)).toEqual([]);
   await page.screenshot({path:`test-results/form-files-counts-invalid-${lang}-${width}.png`,fullPage:true});
   await maximum.fill("4");await expect(maximum).not.toHaveAttribute("aria-invalid","true");await expect(save).toBeEnabled();
 
