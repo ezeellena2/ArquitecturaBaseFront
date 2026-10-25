@@ -63,7 +63,8 @@ it("explains the wait of a form send as help of the footer action",async()=>{
  const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
  await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Consultar envío"})).toHaveAccessibleDescription(wait));
  expect(within(dialog).getByRole("button",{name:"Consultar envío"})).toBeDisabled();
- expect(within(dialog).getAllByText(wait)).toHaveLength(1);
+ // The wait is the reason of each control it turns off (the footer, the search, the forms, the pagination), never a visible text.
+ for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
  expect(posts).toHaveLength(1);
 });
 // A 429 of the list or of the preparation also turns off their Retry: the wait is its reason, with no text in the dialog.
@@ -90,6 +91,24 @@ it("explains the wait of a form preparation as help of its retry",async()=>{
  const retry=await within(dialog).findByRole("button",{name:"Reintentar"});
  await waitFor(()=>expect(retry).toHaveAccessibleDescription(wait));
  expect(retry).toBeDisabled();
+ for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
+});
+// The same wait also turns off the search, the form cards and the pagination of the loaded list: it is their reason too.
+it("explains the wait of a form preparation as help of the search, the forms and the pagination",async()=>{
+ server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}})));
+ await openChat();
+ await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
+ await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
+ const dialog=await screen.findByRole("dialog");
+ await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+ const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
+ await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Reintentar"})).toHaveAccessibleDescription(wait));
+ const search=within(dialog).getByRole("searchbox",{name:"Buscar por nombre"});
+ expect(search).toBeDisabled();
+ expect(search.closest("fieldset")).toHaveAccessibleDescription(wait);
+ expect(within(dialog).getByRole("radio",{name:"Registrar visita"})).toBeDisabled();
+ expect(within(dialog).getByRole("radiogroup",{name:"Formulario"}).closest("fieldset")).toHaveAccessibleDescription(wait);
+ expect(within(dialog).getByRole("navigation").closest("fieldset")).toHaveAccessibleDescription(wait);
  for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
 });
 // With the dialog closed, the check next to «Enviar formulario» tells the same wait as its reason.
