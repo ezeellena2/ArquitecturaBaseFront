@@ -207,6 +207,7 @@ describe("Forms routes", () => {
     server.use(http.put("/api/forms/definitions/:id/draft", () => Response.json({ code: "Validation.Failed", errors: { "name.es": ["Ingresá un nombre original."] } }, { status: 400 })));
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     const name = await screen.findByLabelText("Name");
+    await pasteText(screen.getByRole("textbox", { name: "When the assistant offers it" }), "When visiting a customer");
     await userEvent.click(screen.getByRole("button", { name: "Save draft" }));
     await waitFor(() => expect(name).toHaveAccessibleDescription("In Spanish: Ingresá un nombre original."));
     await waitFor(() => expect(name).toHaveFocus());
@@ -222,7 +223,7 @@ describe("Forms routes", () => {
       },
     }, { status: 400 })));
     renderRouteWithProviders("/formularios/" + fixtureFormId);
-    await screen.findByLabelText("Nombre");
+    await pasteText(await screen.findByLabelText("Nombre"), " editado");
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
     expect(await screen.findByText("Ingresá la pregunta.")).toBeInTheDocument();
     await waitFor(() => expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(1));
@@ -297,6 +298,8 @@ describe("Forms routes", () => {
     const prefix = await screen.findByLabelText("Prefijo de numeración");
     expect(prefix).toHaveAttribute("readonly"); expect(prefix).not.toBeDisabled();
     expect(screen.getByText("El prefijo quedó fijo cuando se aceptó la primera publicación, aunque después no se haya completado.")).toBeInTheDocument();
+    // The locked prefix does not lock the draft: the rest is still edited and saved.
+    await pasteText(screen.getByLabelText("Nombre"), " editado");
     expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeEnabled();
   });
   it("does not interpret a missing receipt as rollback and recovers without creating another form", async () => {
@@ -328,6 +331,24 @@ describe("Forms routes", () => {
     const band = within(unconfirmed).getByRole("heading", { name: "Guardado sin confirmar" }).parentElement!;
     expect(within(band).getByRole("button", { name: "Consultar guardado" })).toBeInTheDocument();
     expect(within(unconfirmed).getByText("No pudimos confirmar el guardado. Consultá antes de volver a guardar.")).toBeInTheDocument();
+  });
+  it("enables Save draft on a saved form only while it has changes, and on a new form from the start", async () => {
+    const store = setup();
+    const { unmount } = renderRouteWithProviders("/formularios/" + fixtureFormId);
+    const name = await screen.findByLabelText("Nombre");
+    // An enabled Save is what says there are unsaved changes: with nothing to save it stays off.
+    const save = () => screen.getByRole("button", { name: "Guardar borrador" });
+    expect(save()).toBeDisabled();
+    await pasteText(name, " editado");
+    expect(save()).toBeEnabled();
+    await userEvent.click(save());
+    await waitFor(() => expect(store.calls.filter(call => call.method === "PUT")).toHaveLength(1));
+    await waitFor(() => expect(save()).toBeDisabled());
+    unmount();
+    // Nothing exists before the first save, so a new form can be saved as it is (and is validated on the attempt).
+    renderRouteWithProviders("/formularios/nuevo");
+    await screen.findByLabelText("Nombre");
+    expect(save()).toBeEnabled();
   });
   it("leads Save to an invalid file range without a request", async () => {
     const store = setup("forms-files");
@@ -637,7 +658,8 @@ it("saves one monolingual offer instruction without publishing", async () => {
   await waitFor(() => expect(writes).toHaveLength(1));
   expect(writes[0]).toMatchObject({ offerWhen: "Cuando visita a un cliente", expectedRevision: 1 });
   expect(writes[0].draft).not.toHaveProperty("offerWhen");
-  await waitFor(() => expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeEnabled());
+  // Saved, nothing is left to save.
+  await waitFor(() => expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeDisabled());
   expect(offer).toHaveValue("Cuando visita a un cliente");
   expect(queryClient.getMutationCache().getAll().some(mutation => JSON.stringify(mutation.state.variables).includes("Cuando visita"))).toBe(false);
 });
