@@ -11,9 +11,12 @@ import { catalogScalarText } from "../catalogValues";
 import type { DraftQuestionSource } from "../model";
 
 // The chosen option is read by id, so its label shows even beyond the first page or once it is inactive, never its GUID.
+// While it loads the value shows «…»; a failed read, or a value that is not an option of the source, says it is unavailable.
 function FixedCatalogValue({ scope, field, value }: { scope: CatalogReadScope; field: CatalogField; value: string }) {
-  const option = useCatalogItemsById(scope, field.sourceCatalogId ?? "", [value]).data?.items.find(item => item.id === value);
-  return option ? administrativeName(option.text, scope.culture) : null;
+  const { t } = useTranslation("forms");
+  const read = useCatalogItemsById(scope, field.sourceCatalogId ?? "", [value]);
+  const option = read.data?.items.find(item => item.id === value);
+  return option ? administrativeName(option.text, scope.culture) : read.isLoading ? "…" : t("catalogQuestion.filter.unavailableValue");
 }
 
 export function CatalogQuestionSourceSummary({ scope, source, compared }: { scope: CatalogReadScope; source: DraftQuestionSource; compared?: DraftQuestionSource | null }) {

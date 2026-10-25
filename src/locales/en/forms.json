@@ -690,6 +690,7 @@
       "addFixed": "Add fixed filter",
       "noFields": "This catalog has no available filter fields.",
       "unavailable": "Field unavailable",
+      "unavailableValue": "Unavailable value",
       "invalidValue": "Check the value and the field type.",
       "dataFailed": "Could not read people’s data."
     },

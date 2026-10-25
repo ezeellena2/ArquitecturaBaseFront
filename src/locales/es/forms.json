@@ -690,6 +690,7 @@
       "addFixed": "Agregar filtro fijo",
       "noFields": "Este catálogo no tiene campos de filtro disponibles.",
       "unavailable": "Campo no disponible",
+      "unavailableValue": "Valor no disponible",
       "invalidValue": "Revisá el valor y el tipo del campo.",
       "dataFailed": "No se pudieron leer los datos de las personas."
     },

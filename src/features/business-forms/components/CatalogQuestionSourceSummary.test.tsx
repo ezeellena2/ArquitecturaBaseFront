@@ -5,10 +5,13 @@ import { CatalogQuestionSourceSummary } from "./CatalogQuestionSourceSummary";
 const field = vi.hoisted(() => ({ id: "field", name: { es: "Sucursal" } as Readonly<Record<string, string>>, type: "catalog", sourceCatalogId: "branches", isActive: true }));
 const south = vi.hoisted(() => ({ id: "01990000-0000-7000-8000-000000000077", code: "S", text: { es: "Sur", en: "South" } as Readonly<Record<string, string>>, detail: {}, value: null, position: 37, isActive: false, fields: {}, fieldTexts: {} }));
 const typedFields = vi.hoisted(() => [{ id: "amount", name: { es: "Importe" }, type: "decimal", sourceCatalogId: null, isActive: true }, { id: "units", name: { es: "Unidades" }, type: "integer", sourceCatalogId: null, isActive: true }]);
-vi.mock("../hooks/useCatalogQueries", () => ({ useCatalogDetail: () => ({ data: { fields: [field, ...typedFields] } }), useCatalogItemsById: (_scope: unknown, catalogId: string, itemIds: readonly string[]) => ({ data: catalogId === "branches" && itemIds.includes(south.id) ? { items: [south] } : undefined }) }));
+const byId = vi.hoisted(() => ({ read: "done" as "done" | "loading" | "failed" }));
+vi.mock("../hooks/useCatalogQueries", () => ({ useCatalogDetail: () => ({ data: { fields: [field, ...typedFields] } }), useCatalogItemsById: (_scope: unknown, catalogId: string, itemIds: readonly string[]) =>
+  byId.read === "loading" ? { data: undefined, isLoading: true, isError: false } : byId.read === "failed" ? { data: undefined, isLoading: false, isError: true }
+  : { data: catalogId === "branches" ? { items: itemIds.includes(south.id) ? [south] : [] } : undefined, isLoading: false, isError: false } }));
 const attributes = vi.hoisted(() => ({ items: [] as unknown[] }));
 vi.mock("../hooks/usePersonData", () => ({ usePersonAttributes: () => ({ data: attributes }) }));
-beforeEach(() => { field.type = "catalog"; field.name = { es: "Sucursal" }; south.text = { es: "Sur", en: "South" }; attributes.items = []; });
+beforeEach(() => { field.type = "catalog"; field.name = { es: "Sucursal" }; south.text = { es: "Sur", en: "South" }; attributes.items = []; byId.read = "done"; });
 it("explains changed catalog values and selected presentation without exposing option identities", async () => {
   const id = south.id;
   await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} source={{ catalog: "catalog", match: [{ fieldId: "field", value: id }], presentation: { title: ["text"], description: ["field"] } }} compared={{ catalog: "catalog", match: [{ fieldId: "field", value: "other" }] }}/>); });
@@ -35,4 +38,17 @@ it("names a field, its fixed option and the person data written only in the othe
   cleanup();
   await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={scope} source={{ catalog: "catalog", match: [{ fieldId: "field", personAttributeId: "zone" }] }}/>); });
   expect(screen.getByText("Branch: Customer branch")).toBeInTheDocument();
+});
+
+// A fixed option that is still loading, cannot be read or is not an option of the source never leaves «Sucursal:» empty,
+// which would read as no value chosen.
+it.each([
+  ["loading", "loading", "Sucursal: …"],
+  ["failed", "failed", "Sucursal: Valor no disponible"],
+  ["not an option of the source", "done", "Sucursal: Valor no disponible"],
+] as const)("names a fixed catalog value that is %s", async (_case, read, text) => {
+  byId.read = read;
+  await act(async () => { renderWithProviders(<CatalogQuestionSourceSummary scope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} source={{ catalog: "catalog", match: [{ fieldId: "field", value: "01990000-0000-7000-8000-000000000078" }] }}/>); });
+  expect(screen.getByText(new RegExp("^" + text))).toBeInTheDocument();
+  expect(document.body).not.toHaveTextContent("01990000-0000-7000-8000-000000000078");
 });
