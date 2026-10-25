@@ -20,7 +20,9 @@ it("keeps the uses of a field in use with the strict usage shape", () => {
   expect(readCatalogFieldFeedback({ code: "Forms.Catalog.FieldInUse", uses: redacted })).toEqual({ uses: redacted });
   expect(readCatalogFieldFeedback({ uses: [{ ...uses[0], definitionId: null }] })).toBeNull();
   expect(readCatalogFieldFeedback({ uses: [{ ...uses[0], value: "private" }] })).toBeNull();
-  expect(readCatalogFieldFeedback({ uses: Array.from({ length: 101 }, () => uses[0]) })).toBeNull();
+  // The contract has no cap: a field used by 51 forms, in their drafts and active versions, keeps its 102 uses.
+  const many = Array.from({ length: 102 }, (_, index) => ({ ...uses[0], stage: index % 2 ? "Draft" : "Active" }));
+  expect(readCatalogFieldFeedback({ code: "Forms.Catalog.FieldInUse", uses: many })).toEqual({ uses: many });
 });
 it("rejects malformed or unbounded row metadata", () => {
   const row = { itemId, code: "PRV", row: 1, value: "1", reason: "range" };
