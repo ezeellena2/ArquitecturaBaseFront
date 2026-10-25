@@ -25,6 +25,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(add).toBeVisible();
     if (width >= 640) {
       await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      // The band first comes into view, so clicking the toggle does not scroll and move the boxes being compared.
+      await band.scrollIntoViewIfNeeded();
       const before = await add.boundingBox();
       await toggle.click();
       await expect(toggle).toHaveAttribute("aria-expanded", "true");
