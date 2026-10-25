@@ -58,6 +58,9 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
       {items.map((item, index) => {
         const name = administrativeName(item.label, culture) || (item.itemId === null ? t("catalogs.items.new") : t("option", { number: item.position }));
         const number = item.position ?? index + 1;
+        // A new option has no row number yet: its value cells and their error lines go by its name, never by a number that
+        // can be another row's.
+        const valueLabel = (field: string) => t(item.itemId === null ? "catalogs.fields.optionValueLabel" : "catalogs.fields.valueLabel", { option: name, row: number, field });
         const messages = errors?.[item.localId];
         const expanded = expandedKey === item.localId;
         const rememberAction = (button: HTMLButtonElement | null) => onActionRef(item.localId, button);
@@ -66,7 +69,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
         // polite status, not an alert that interrupts the typing.
         const problems = editing ? allColumns.flatMap(column => {
           const message = column.field ? messages?.[column.errorPath]?.join(" ") : undefined;
-          return column.field && message ? [{ columnId: column.id, id: problemId + item.localId + column.id, text: t("catalogs.fields.rowProblem", { row: number, field: administrativeName(column.field.name, culture), message }) }] : [];
+          return column.field && message ? [{ columnId: column.id, id: problemId + item.localId + column.id, text: t(item.itemId === null ? "catalogs.fields.optionProblem" : "catalogs.fields.rowProblem", { option: name, row: number, field: administrativeName(column.field.name, culture), message }) }] : [];
         }) : [];
         return <Fragment key={item.localId}><TableRow>
           {canManage ? <TableCell><Checkbox aria-label={t("catalogs.items.selectNamed", { name })} checked={selected.includes(item.localId)} disabled={busy} onCheckedChange={value => onSelect(item.localId, value === true)}/></TableCell> : null}
@@ -77,7 +80,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
             if (column.field) {
               const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key], pendingText = pendingTexts?.[item.localId]?.[key];
               const problem = problems.find(problem => problem.columnId === column.id);
-              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={t("catalogs.fields.valueLabel", { row: number, field: administrativeName(field.name, culture) })} value={value} texts={texts} pendingText={pendingText} culture={culture} readOnly={readOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />;
+              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={valueLabel(administrativeName(field.name, culture))} value={value} texts={texts} pendingText={pendingText} culture={culture} readOnly={readOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />;
               else {
                 const shown = value === null || value === undefined ? "—" : pendingText ?? (field.type === "catalog" && texts ? administrativeName(texts, culture) : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "text" ? value : catalogScalarText(field.type, value, valueCulture, yesNo, valueCulture)));
                 // The text cell (below 640 px or without Manage) keeps its mark, such as a value the new type does not take.

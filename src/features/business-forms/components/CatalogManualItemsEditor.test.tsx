@@ -159,6 +159,20 @@ it("describes a cell error on its row with the row, field, value and reason", ()
   expect(screen.getAllByText(/no es un número entero/)).toHaveLength(1);
   expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo de pago (días)" })).toBeValid();
 });
+it("names a new option's cell and error line by its text, never by a row number that can be another row's", () => {
+  vi.mocked(useMediaQuery).mockReturnValue(true);
+  const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo" } };
+  // A later page whose first saved row is #2; the new options go after it, without a position.
+  const later: CatalogManualItemValue = { ...first, position: 2 };
+  const added: CatalogManualItemValue = { ...first, localId: "added", itemId: null, position: null, code: "", label: { es: "Centro", en: null }, fields: { [term.id]: "30 días" } };
+  const blank: CatalogManualItemValue = { ...added, localId: "blank", label: { es: null, en: null }, fields: { [term.id]: "x" } };
+  const errors = { added: { ["fields." + term.id]: ["«30 días» no es un número entero."] }, blank: { ["fields." + term.id]: ["«x» no es un número entero."] } };
+  renderWithProviders(<CatalogManualItemsEditor items={[later, added, blank]} fields={[term]} errors={errors} culture="es" original="es" valueType="Text" canManage expandedKey={null} onExpand={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />);
+  expect(screen.getAllByRole("status").map(line => line.textContent)).toEqual(["Centro · Plazo: «30 días» no es un número entero.", "Nueva opción · Plazo: «x» no es un número entero."]);
+  expect(screen.getByRole("textbox", { name: "Centro · Plazo" })).toHaveAccessibleDescription("Centro · Plazo: «30 días» no es un número entero.");
+  expect(screen.getByRole("textbox", { name: "Nueva opción · Plazo" })).toHaveAccessibleDescription("Nueva opción · Plazo: «x» no es un número entero.");
+  expect(screen.getAllByRole("textbox", { name: /^Fila \d+ · Plazo$/ }).map(cell => cell.getAttribute("aria-label"))).toEqual(["Fila 2 · Plazo"]);
+});
 it("announces a row's value error without interrupting, since its text changes with each keystroke", () => {
   vi.mocked(useMediaQuery).mockReturnValue(true);
   const term = { ...newCatalogField("term", 1), id: "01990000-0000-7000-8000-000000000004", type: "integer" as const, name: { es: "Plazo de pago (días)" } };
