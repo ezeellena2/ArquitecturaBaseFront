@@ -99,6 +99,8 @@
   "chooseTime": "Elegir",
   "addPeriod": "Agregar franja",
   "removePeriod": "Quitar franja",
+  "periodsLimit_one": "Podés agregar hasta {{count}} franja.",
+  "periodsLimit_other": "Podés agregar hasta {{count}} franjas.",
   "nextDay": "Cierra al día siguiente",
   "copyWeek": "Aplicar lunes a viernes",
   "exceptions": "Feriados y fechas especiales",

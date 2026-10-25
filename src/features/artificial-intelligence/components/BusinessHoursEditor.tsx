@@ -7,12 +7,13 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
-import { PlusIcon, TrashIcon } from "@/shared/ui/icons";
+import { TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Surface } from "@/shared/ui/Surface";
 import { emptyBusinessDetails, emptyPeriod, timeOptions, validateBusinessDetails, validateHours } from "../businessDetailsModel";
 import type { BusinessDetails, OpeningDay, OpeningPeriod, OpeningStatus, SpecialDate } from "../api/businessInformation";
+const maxPeriods = 4;
 const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 interface Props { value: BusinessDetails["openingHours"]; onChange: (value: BusinessDetails["openingHours"]) => void; editable: boolean; locked: boolean; error?: string; legacy: React.ReactNode }
 export function BusinessHoursEditor({ value, onChange, editable, locked, error, legacy }: Props) {
@@ -29,7 +30,7 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
       return <div key={day.weekday} className="grid grid-cols-[minmax(0,1fr)_112px] items-start gap-2 py-3 @min-[424px]:grid-cols-[80px_112px_minmax(0,1fr)]">
         <p className="pt-1.5 text-sm font-medium">{label}</p>
         <OpeningStatusSelect status={day.status} label={label} disabled={disabled} onChange={status => changeDay({ ...day, status, periods: status === "open" ? day.periods.length ? day.periods : [emptyPeriod()] : [] })} />
-        {day.status === "open" ? <div className="col-span-2 space-y-3 @min-[424px]:col-span-1"><OpeningPeriods periods={day.periods} label={label} disabled={disabled} onChange={periods => changeDay({ ...day, periods })} /></div> : null}
+        {day.status === "open" ? <div className="col-span-2 space-y-3 @min-[424px]:col-span-1"><OpeningPeriods periods={day.periods} label={label} editable={editable} disabled={disabled} onChange={periods => changeDay({ ...day, periods })} /></div> : null}
       </div>;
     })}</div>
     {error ? <p id="business-hours-error" role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}
@@ -50,19 +51,22 @@ function OpeningStatusSelect({ status, label, disabled, onChange }: { status: Op
   const { t } = useTranslation("businessInformation");
   return <NativeSelect aria-label={`${label} · ${t("attention")}`} value={status} disabled={disabled} onChange={event => onChange(event.target.value as OpeningStatus)}>{["unknown", "open", "closed", "allDay"].map(value => <option key={value} value={value}>{t(value)}</option>)}</NativeSelect>;
 }
-function OpeningPeriods({ periods, label, disabled, onChange }: { periods: OpeningPeriod[]; label: string; disabled: boolean; onChange: (periods: OpeningPeriod[]) => void }) {
+/// «Agregar franja» va siempre debajo de las franjas, con la misma forma: con cuatro se apaga con el límite como motivo
+/// (`DisabledReason`) y, mientras el editor está bloqueado, sólo se apaga. La papelera aparece en cada franja cuando hay
+/// más de una. Sin permiso para editar, ninguno de los dos se muestra.
+function OpeningPeriods({ periods, label, editable, disabled, onChange }: { periods: OpeningPeriod[]; label: string; editable: boolean; disabled: boolean; onChange: (periods: OpeningPeriod[]) => void }) {
   const { t } = useTranslation("businessInformation");
+  const full = periods.length >= maxPeriods;
   function update(index: number, next: OpeningPeriod) { onChange(periods.map((period,i) => i === index ? next : period)); }
   return <div className="space-y-3">{periods.map((period,index) => <div key={index} className="space-y-1.5">
     <div className="flex min-w-0 items-start gap-2">
       <NativeSelect className="w-20 shrink-0" aria-label={`${label} ${index+1} · ${t("from")}`} disabled={disabled} value={period.start} onChange={event => update(index,{ ...period, start:event.target.value })}><option value="">{t("chooseTime")}</option>{timeOptions.map(time => <option key={time}>{time}</option>)}</NativeSelect>
       <span className="pt-1 text-xs text-[var(--color-content-muted)]">–</span>
       <NativeSelect className="w-20 shrink-0" aria-label={`${label} ${index+1} · ${t("to")}`} disabled={disabled} value={period.end} onChange={event => update(index,{ ...period,end:event.target.value })}><option value="">{t("chooseTime")}</option>{timeOptions.map(time => <option key={time}>{time}</option>)}</NativeSelect>
-      {!disabled && periods.length > 1 ? <IconButton label={`${t("removePeriod")} · ${label} ${index+1}`} size="icon-sm" onClick={() => onChange(periods.filter((_,i) => i !== index))}><TrashIcon className="size-4" /></IconButton> : null}
-      {!disabled && periods.length === 1 ? <IconButton label={`${t("addPeriod")} · ${label}`} size="icon-sm" onClick={() => onChange([...periods,emptyPeriod()])}><PlusIcon className="size-4" /></IconButton> : null}
+      {editable && periods.length > 1 ? <IconButton label={`${t("removePeriod")} · ${label} ${index+1}`} size="icon-sm" disabled={disabled} onClick={() => onChange(periods.filter((_,i) => i !== index))}><TrashIcon className="size-4" /></IconButton> : null}
     </div>
     {period.nextDay || (period.start && period.end && period.end <= period.start) ? <label className="flex items-center gap-2 text-xs text-[var(--color-content-muted)]"><Checkbox disabled={disabled} checked={period.nextDay} onCheckedChange={checked => update(index,{ ...period,nextDay:checked === true })} />{t("nextDay")}</label> : null}
-  </div>)}{!disabled && periods.length > 1 && periods.length < 4 ? <Button variant="muted-link" size="sm" onClick={() => onChange([...periods,emptyPeriod()])}>{t("addPeriod")}</Button> : null}</div>;
+  </div>)}{editable ? <div className="flex"><DisabledReason reason={!disabled && full ? t("periodsLimit", { count: maxPeriods }) : null}><Button variant="muted-link" size="sm" aria-label={`${t("addPeriod")} · ${label}`} disabled={disabled || full} onClick={() => onChange([...periods,emptyPeriod()])}>{t("addPeriod")}</Button></DisabledReason></div> : null}</div>;
 }
 function SpecialDateDialog({ initial, hours, onCancel, onConfirm }: { initial: SpecialDate; hours: Props["value"]; onCancel: () => void; onConfirm: (value: SpecialDate) => void }) {
   const { t } = useTranslation("businessInformation");
@@ -91,7 +95,7 @@ function SpecialDateDialog({ initial, hours, onCancel, onConfirm }: { initial: S
     <DialogHeader><DialogTitle>{t("specialTitle")}</DialogTitle><DialogDescription>{t("specialHint")}</DialogDescription></DialogHeader>
     <FormField label={t("specialDate")} error={shown.date ? t(shown.date) : undefined}><Input id={dateId} type="date" min="1900-01-01" max="9998-12-31" value={value.date} onChange={event => setValue({ ...value,date:event.target.value })} /></FormField>
     <OpeningStatusSelect label={t("specialDate")} status={value.status} disabled={false} onChange={status => setValue({ ...value,status,periods:status === "open" ? [emptyPeriod()] : [] })} />
-    {value.status === "open" ? <OpeningPeriods periods={value.periods} label={t("specialDate")} disabled={false} onChange={periods => setValue({ ...value,periods })} /> : null}
+    {value.status === "open" ? <OpeningPeriods periods={value.periods} label={t("specialDate")} editable disabled={false} onChange={periods => setValue({ ...value,periods })} /> : null}
     {shown.periods ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t(shown.periods)}</p> : null}
     <DialogFooter><Button variant="outline" onClick={onCancel}>{t("cancel")}</Button><Button onClick={confirm}>{t("confirmDate")}</Button></DialogFooter>
   </DialogContent></Dialog>;

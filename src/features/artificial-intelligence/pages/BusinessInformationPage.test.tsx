@@ -100,6 +100,28 @@ describe("business information editor", () => {
     expect(hours).toHaveAttribute("aria-invalid", "false");
     expect(writes).toHaveLength(0);
   });
+  it("keeps «Agregar franja» in one place and gives its limit as the reason when there are four periods", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    renderRouteWithProviders("/configuracion/negocio");
+    await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "open");
+    const add = screen.getByRole("button", { name: "Agregar franja · Lunes" });
+    expect(add).toHaveTextContent("Agregar franja");
+    expect(screen.queryByRole("button", { name: /^Quitar franja · Lunes/ })).not.toBeInTheDocument();
+    // The same button, below the periods, with one, two and three of them: it neither moves nor changes its form.
+    await userEvent.click(add);
+    expect(screen.getByRole("button", { name: "Agregar franja · Lunes" })).toBe(add);
+    expect(screen.getAllByRole("button", { name: /^Quitar franja · Lunes/ })).toHaveLength(2);
+    await userEvent.click(add);
+    expect(screen.getByRole("button", { name: "Agregar franja · Lunes" })).toBe(add);
+    await userEvent.click(add);
+    const limited = screen.getByRole("button", { name: "Agregar franja · Lunes" });
+    expect(limited).toBeDisabled();
+    expect(limited).toHaveAccessibleDescription("Podés agregar hasta 4 franjas.");
+    expect(screen.getAllByRole("combobox", { name: /^Lunes \d · Desde$/ })).toHaveLength(4);
+    await userEvent.hover(limited);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Podés agregar hasta 4 franjas.");
+  });
   it("lets Confirm validate a special date instead of disabling it", async () => {
     current.details = emptyBusinessDetails("UTC");
     renderRouteWithProviders("/configuracion/negocio");

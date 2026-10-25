@@ -99,6 +99,8 @@
   "chooseTime": "Choose",
   "addPeriod": "Add time slot",
   "removePeriod": "Remove time slot",
+  "periodsLimit_one": "You can add up to {{count}} time slot.",
+  "periodsLimit_other": "You can add up to {{count}} time slots.",
   "nextDay": "Closes the following day",
   "copyWeek": "Apply Monday to Friday",
   "exceptions": "Holidays and special dates",
