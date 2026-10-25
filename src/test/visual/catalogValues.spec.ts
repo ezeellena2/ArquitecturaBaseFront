@@ -15,10 +15,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("textbox", { name: label("Tipo de valor", "Value type"), exact: true })).toHaveCount(0);
     await expect(page.getByRole("columnheader", { name: label("Valor", "Value"), exact: true })).toBeVisible();
     // Option labels are shown in the menu language and, without a translation, in the original.
-    await page.getByRole("button", { name: label("Editar Interior", "Edit Interior"), exact: true }).click();
+    await page.getByRole("button", { name: label("Editar Interior", "Edit Inland"), exact: true }).click();
     const value = page.getByRole("textbox", { name: label("Valor · Decimal", "Value · Decimal"), exact: true });
     await value.fill("mil");
     await expect(value).toHaveAttribute("aria-invalid", "true");
+    // Beside the title goes only the catalog's state, never «Cambios sin guardar»: an enabled Save says there are changes.
+    const header = page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) });
+    await expect(header).toContainText(label("Activo", "Active"));
+    await expect(header).not.toContainText(label("Cambios sin guardar", "Unsaved changes"));
+    await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeEnabled();
     await value.scrollIntoViewIfNeeded();
     const bounds = await value.boundingBox(); expect(bounds).not.toBeNull();
     expect(bounds!.x).toBeGreaterThanOrEqual(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);

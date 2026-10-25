@@ -580,13 +580,47 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "error")).toHaveLength(0);
   });
 
-  it.each(["es", "en"] as const)("translates the pending draft status in %s", async culture => {
+  it.each(["es", "en"] as const)("keeps the header without a pending draft status in %s", async culture => {
+    const label = (es: string, en: string) => culture === "es" ? es : en;
     setup(undefined, culture); await i18n.changeLanguage(culture);
+    server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    const name = await screen.findByRole("textbox", { name: culture === "es" ? "Nombre" : "Name" });
+    const name = await screen.findByRole("textbox", { name: label("Nombre", "Name") });
     await user.clear(name); await pasteText(user, name, "Borrador");
-    expect(screen.getByText(culture === "es" ? "Cambios sin guardar" : "Unsaved changes", { exact: true })).toBeInTheDocument();
-    expect(screen.queryByText("unsaved", { exact: true })).not.toBeInTheDocument();
+    // Beside the title goes only the catalog's state: an enabled Save already says there are changes.
+    const status = () => screen.getByRole("heading", { level: 1 }).parentElement!;
+    expect(status()).toHaveTextContent(label("Activo", "Active"));
+    expect(status()).not.toHaveTextContent(label("Cambios sin guardar", "Unsaved changes"));
+    expect(screen.queryByText(label("Cambios sin guardar", "Unsaved changes"))).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: label("Guardar", "Save") }));
+    // The catalog review is its own surface, with Review in its band beside the title, not in its body.
+    const review = await screen.findByRole("region", { name: label("Revisión del catálogo", "Catalog review") });
+    const band = within(review).getByRole("heading", { name: label("Revisión del catálogo", "Catalog review") }).parentElement!;
+    expect(within(band).getByRole("button", { name: label("Revisar", "Review") })).toBeInTheDocument();
+    expect(status()).not.toHaveTextContent(label("Cambios sin guardar", "Unsaved changes"));
+  });
+  it("lets Save mark an invalid typed value and open its option without a request", async () => {
+    setup(); const bodies: unknown[] = [];
+    const typed = { ...initial, valueType: "Decimal" };
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(typed)),
+      http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, value: "1500" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+      http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...typed, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
+    const value = screen.getByRole("textbox", { name: "Valor · Decimal" });
+    await user.clear(value); await pasteText(user, value, "mil");
+    expect(value).toHaveAttribute("aria-invalid", "true");
+    await user.click(screen.getByRole("button", { name: "Listo" }));
+    expect(screen.queryByRole("textbox", { name: "Valor · Decimal" })).not.toBeInTheDocument();
+    // Save stays enabled while the value is wrong: trying it opens the option and focuses the marked value, sending nothing.
+    const save = screen.getByRole("button", { name: "Guardar" });
+    expect(save).toBeEnabled();
+    await user.click(save);
+    const reopened = await screen.findByRole("textbox", { name: "Valor · Decimal" });
+    await waitFor(() => expect(reopened).toHaveFocus());
+    expect(reopened).toHaveValue("mil"); expect(reopened).toHaveAttribute("aria-invalid", "true");
+    expect(bodies).toEqual([]);
+    expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
   });
 
 });

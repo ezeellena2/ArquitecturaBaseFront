@@ -77,6 +77,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // On the phone the option editor gives each typed field its type and range.
     if (width < 640) await expect(payment).toHaveAccessibleDescription(es ? "Entero, de 0 a 180." : "Whole number, from 0 to 180.");
     await payment.fill(es ? "treinta" : "thirty"); await expect(payment).toHaveAttribute("aria-invalid", "true");
+    // Beside the title goes only the catalog's state, never «Cambios sin guardar»: an enabled Save says there are changes.
+    const header = page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) });
+    await expect(header).toContainText(es ? "Activo" : "Active");
+    await expect(header).not.toContainText(es ? "Cambios sin guardar" : "Unsaved changes");
     // The value and its reason; in the table, on a line under the row that names the row and the field. On the phone the
     // read-only table above also marks its cell, so the editor's control is what says it.
     const problem = es ? "«treinta» no es un número entero." : "“thirty” is not a whole number.";
