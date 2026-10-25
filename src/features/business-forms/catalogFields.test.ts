@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n";
-import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, catalogFieldRuleSummary, catalogFieldInputHint, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
+import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, catalogStoredValueText, catalogFieldRuleSummary, catalogFieldInputHint, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
 import type { CatalogFieldUsage } from "./api/catalogResponse";
 
 const field: CatalogFieldDraft = { localId: "field", id: "01990000-0000-7000-8000-000000000001", key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "decimal", sourceCatalogId: null, required: false, unique: false, min: "0", max: "180", maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
@@ -97,10 +97,34 @@ describe("catalog extra field values", () => {
     const es = i18n.getFixedT("es", "forms"), en = i18n.getFixedT("en", "forms");
     const due = { ...field, type: "date" as const, min: null, max: "2026-12-31" };
     expect(catalogFieldInputHint(due, "es", es)).toBe("Fecha, hasta 31/12/2026.");
-    expect(catalogFieldProblemText(es, due, "1/1/2027", "range", "es")).toBe("«1/1/2027» está fuera del rango: hasta 31/12/2026.");
+    expect(catalogFieldProblemText(es, due, "1/1/2027", "range", "es")).toBe("«01/01/2027» está fuera del rango: hasta 31/12/2026.");
+    // The table's date picker gives an ISO date: it is quoted with the same format as the range.
+    expect(catalogFieldProblemText(es, due, "2027-03-15", "range", "es")).toBe("«15/03/2027» está fuera del rango: hasta 31/12/2026.");
     expect(catalogFieldProblemText(es, { ...field, min: "1500,5", max: null }, "2", "range", "es")).toBe("«2» está fuera del rango: desde 1.500,5.");
-    expect(catalogFieldProblemText(en, { ...due, min: "2026-01-02", max: null }, "2025-12-31", "range", "en")).toBe("“2025-12-31” is out of range: from 01/02/2026.");
-    expect(catalogFieldProblemText(en, { ...field, min: "1,500.5", max: "2500" }, "3000", "range", "en")).toBe("“3000” is out of range: from 1,500.5 to 2,500.");
+    expect(catalogFieldProblemText(en, { ...due, min: "2026-01-02", max: null }, "2025-12-31", "range", "en")).toBe("“12/31/2025” is out of range: from 01/02/2026.");
+    expect(catalogFieldProblemText(en, { ...field, min: "1,500.5", max: "2500" }, "3000", "range", "en")).toBe("“3,000” is out of range: from 1,500.5 to 2,500.");
+    // What is not a value of the type is quoted as written.
+    expect(catalogFieldProblemText(es, { ...field, type: "integer" }, "30 días", "invalid", "es")).toBe("«30 días» no es un número entero.");
+  });
+  it("quotes a stored value of a server row as its cell shows it, in the type it was stored in", async () => {
+    await i18n.loadLanguages("en");
+    const es = i18n.getFixedT("es", "forms"), en = i18n.getFixedT("en", "forms"), yesNo = { yes: "Sí", no: "No" };
+    expect(catalogStoredValueText("decimal", "1500.5", "es", yesNo)).toBe("1.500,5");
+    expect(catalogStoredValueText("decimal", "1.234", "es", yesNo)).toBe("1,234");
+    expect(catalogStoredValueText("decimal", "1500.5", "en", yesNo)).toBe("1,500.5");
+    expect(catalogStoredValueText("integer", "1500", "es", yesNo)).toBe("1.500");
+    expect(catalogStoredValueText("date", "2027-03-15", "es", yesNo)).toBe("15/03/2027");
+    expect(catalogStoredValueText("boolean", "true", "es", yesNo)).toBe("Sí");
+    expect(catalogStoredValueText("text", "30 días", "es", yesNo)).toBe("30 días");
+    expect(catalogStoredValueText("integer", "30 días", "es", yesNo)).toBe("30 días");
+    expect(catalogStoredValueText("decimal", null, "es", yesNo)).toBeNull();
+    // A lower maximum quotes the saved 1500 as its cell shows it, «1.500», next to the range «hasta 1.000».
+    expect(catalogFieldProblemText(es, { ...field, type: "integer", min: null, max: "1.000" }, catalogStoredValueText("integer", "1500", "es", yesNo), "range", "es")).toBe("«1.500» está fuera del rango: hasta 1.000.");
+    expect(catalogFieldProblemText(es, { ...field, min: null, max: "1.000" }, catalogStoredValueText("decimal", "1.234", "es", yesNo), "range", "es")).toBe("«1,234» está fuera del rango: hasta 1.000.");
+    expect(catalogFieldProblemText(en, { ...field, min: "2,000.5", max: null }, catalogStoredValueText("decimal", "1500.5", "en", yesNo), "range", "en")).toBe("“1,500.5” is out of range: from 2,000.5.");
+    expect(catalogFieldProblemText(es, { ...field, type: "boolean" }, catalogStoredValueText("boolean", "true", "es", yesNo), "repeated", "es")).toBe("«Sí» se repite en otra opción activa.");
+    // A type change quotes the value in its previous type: a decimal that is not a whole number.
+    expect(catalogFieldProblemText(es, { ...field, type: "integer" }, catalogStoredValueText("decimal", "1500.5", "es", yesNo), "invalid", "es")).toBe("«1.500,5» no es un número entero.");
   });
   it("says a value is repeated when «único» is switched on or a unique field is restored", async () => {
     await i18n.loadLanguages("en");

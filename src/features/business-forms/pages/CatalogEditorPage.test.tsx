@@ -296,10 +296,13 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   const sourceId = "01990000-0000-7000-8000-000000000040", southId = "01990000-0000-7000-8000-000000000041";
   // Pérez's loaded value of a field saved as an option of «Zonas» or as a yes/no, shown in «En WhatsApp» after its text.
   function savedTypeSetup(field: ReturnType<typeof savedField>, value: string, texts = {}) {
-    setup();
+    setup(); sourceSetup();
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [field], presentation: { title: ["text", fieldId], description: [] } })),
-      http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, fields: { [fieldId]: value }, fieldTexts: texts }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
-      http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: sourceId, name: "Zonas", description: null, origin: "Manual", optionsCount: 1, usageCount: null, state: "Active", stateReason: null, canEdit: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })),
+      http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, fields: { [fieldId]: value }, fieldTexts: texts }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
+  }
+  // The source catalog «Zonas», with its option «Sur».
+  function sourceSetup() {
+    server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: sourceId, name: "Zonas", description: null, origin: "Manual", optionsCount: 1, usageCount: null, state: "Active", stateReason: null, canEdit: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })),
       http.get("/api/forms/catalogs/" + sourceId, () => HttpResponse.json({ ...initial, id: sourceId, key: sourceId.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" } })),
       http.get("/api/forms/catalogs/" + sourceId + "/items", () => HttpResponse.json({ items: [{ ...option, id: southId, code: "S", text: { es: "Sur", en: "South" } }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
   }
@@ -483,8 +486,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.queryByRole("textbox", { name: "Texto" })).not.toBeInTheDocument();
   });
   // «Plazo» keeps its type and narrows a rule: the Save comes back with every saved value that breaks it, on that control.
-  function rulesSetup(control: "maxLength" | "unique", reason: "length" | "invalid", rows = termRows) {
-    const term = savedField({ key: "term", name: "Plazo", type: "text" });
+  function rulesSetup(control: "maxLength" | "unique" | "max", reason: "length" | "invalid" | "range", rows: readonly (typeof termRows)[number][] = termRows, term = savedField({ key: "term", name: "Plazo", type: "text" })) {
     const message = "Hay valores que no cumplen las reglas del campo.";
     const requests: URLSearchParams[] = [];
     setup();
@@ -533,6 +535,32 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
     for (const name of ["Fila 1 · Plazo", "Fila 2 · Plazo"]) expect(screen.getByRole("textbox", { name })).toHaveAccessibleDescription(name + ": «30 días» se repite en otra opción activa.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+  it("quotes the text of a repeated option, never its identity, when «único» is switched on a catalog field", async () => {
+    viewport(true); sourceSetup(); const user = userEvent.setup();
+    rulesSetup("unique", "invalid", termRows.map(row => ({ ...row, fields: { [fieldId]: southId }, fieldTexts: { [fieldId]: { es: "Sur", en: "South" } } })), savedField({ key: "zone", name: "Zona", type: "catalog", sourceCatalogId: sourceId }));
+    await mount("/catalogos/" + id);
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Zona" }));
+    await user.click(screen.getByRole("checkbox", { name: "Único" }));
+    await screen.findByRole("button", { name: "Editar Gómez" });
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
+    for (const name of ["Fila 1 · Zona", "Fila 2 · Zona"]) expect(screen.getByRole("combobox", { name })).toHaveAccessibleDescription(name + ": «Sur» se repite en otra opción activa.");
+    expect(screen.queryByText(new RegExp(southId))).not.toBeInTheDocument();
+  });
+  it("quotes a saved decimal that breaks a new maximum as its cell shows it, next to the range", async () => {
+    viewport(true); const user = userEvent.setup();
+    rulesSetup("max", "range", [{ ...option, fields: { [fieldId]: "1500.5" } }], savedField({ key: "amount", name: "Importe", type: "decimal" }));
+    await mount("/catalogos/" + id);
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Importe" }));
+    await pasteText(user, screen.getByRole("textbox", { name: "Máximo" }), "1.000");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("1 opción tiene un valor que no cumple las reglas del campo.")).toBeInTheDocument();
+    const cell = screen.getByRole("textbox", { name: "Fila 1 · Importe" });
+    expect(cell).toHaveValue("1.500,5");
+    expect(cell).toHaveAccessibleDescription("Fila 1 · Importe: «1.500,5» está fuera del rango: hasta 1.000.");
   });
   it("retains a conflicted draft through reread and requires an explicit adoption without a second write", async () => {
     setup(); let writes = 0;

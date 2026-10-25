@@ -3,6 +3,7 @@ import type { CatalogField, CatalogFieldUsage } from "./api/catalogResponse";
 import { catalogScalarText, formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
 import type { FormCulture } from "./model";
 import { ownTexts } from "./editorModel";
+import { formatYesNo, type YesNoLabels } from "@/shared/lib/typedValue";
 
 export type CatalogFieldType = CatalogField["type"];
 export interface CatalogFieldDraft extends Omit<CatalogField, "id"> { readonly id: string | null; readonly localId: string }
@@ -81,12 +82,27 @@ export function catalogFieldRowReason(control: string, field: Pick<CatalogFieldD
 }
 
 /**
- * What is wrong with a field value, quoting the value as entered (cut at 40 characters) and the reason for the field type.
- * A range is worded like the field's help, with the draft's bounds read and formatted in `culture`.
+ * A value stored in a field of `type` (a server row's: the field's, or the previous one in a type change) as its cell
+ * shows it: integer, decimal and date with the shared typed-value format, a yes/no as Sí or No. An option's text comes
+ * from its loaded option; a text, and what is not a stored value of the type, stay as they are.
+ */
+export function catalogStoredValueText(type: CatalogFieldType, value: string | null, culture: FormCulture, labels: YesNoLabels): string | null {
+  if (value === null) return null;
+  if (type === "boolean") return formatYesNo(value, labels) ?? value;
+  const typed = valueType(type);
+  return typed && isCanonicalCatalogValue(typed, value) ? formatCatalogValue(typed, value, culture) : value;
+}
+
+/**
+ * What is wrong with a field value, quoting the value (cut at 40 characters) and the reason for the field type. A range is
+ * worded like the field's help, with the draft's bounds read and formatted in `culture`; a value out of range or repeated
+ * read as the type, so it is quoted with that same format. What is not a value of the type is quoted as written.
  */
 export function catalogFieldProblemText(t: TFunction<"forms">, field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">, value: string | null, reason: CatalogFieldProblemReason | "repeated", culture: FormCulture): string {
   if (reason === "required") return t("catalogs.fields.problem.required");
-  const characters = [...(value?.trim() ?? "")];
+  const written = value?.trim() ?? "", type = field.type;
+  const read = written && (reason === "range" || reason === "repeated") && (type === "integer" || type === "decimal" || type === "date") ? catalogScalarText(type, written, culture, undefined, culture) : written;
+  const characters = [...read];
   const shown = characters.length > 40 ? characters.slice(0, 40).join("") + "…" : characters.join("");
   if (reason === "repeated") return t("catalogs.fields.problem.repeated", { value: shown });
   if (reason === "invalid") return t("catalogs.fields.problem.invalid." + field.type, { value: shown });

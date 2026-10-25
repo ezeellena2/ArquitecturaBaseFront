@@ -29,6 +29,15 @@ it("lists row, value and reason with the remaining count and offers to show thos
   expect(onClose).toHaveBeenCalled();
 });
 
+it("quotes each saved value as its cell showed it, in the previous type", async () => {
+  await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Importe" from="decimal" field={term} culture="es" convertedCount={0} invalidCount={1} rows={[{ ...rows[0]!, value: "1500.5" }]} onClose={() => {}} onShowRows={() => {}} />); });
+  expect(within(screen.getByRole("dialog")).getByRole("cell", { name: "«1.500,5» no es un número entero." })).toBeInTheDocument();
+});
+it("quotes a saved yes/no as Sí or No", async () => {
+  await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Con GPS" from="boolean" field={term} culture="es" convertedCount={0} invalidCount={1} rows={[{ ...rows[0]!, value: "true" }]} onClose={() => {}} onShowRows={() => {}} />); });
+  expect(within(screen.getByRole("dialog")).getByRole("cell", { name: "«Sí» no es un número entero." })).toBeInTheDocument();
+});
+
 it("shows at most five rows and leaves out the types when only the source changed", async () => {
   const many = Array.from({ length: 7 }, (_, index) => ({ itemId: `01990000-0000-7000-8000-00000000010${index}`, code: "Z" + index, row: index + 1, value: "Sur " + index, reason: "invalid" as const }));
   await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Zona" from="catalog" field={{ type: "catalog", min: null, max: null, maxLength: null }} culture="es" convertedCount={0} invalidCount={7} rows={many} onClose={() => {}} onShowRows={() => {}} />); });

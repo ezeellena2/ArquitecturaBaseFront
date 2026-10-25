@@ -33,7 +33,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import type { CatalogDetail } from "../api/catalogResponse";
 import { catalogItemFieldIssues, catalogItemValue, editedFieldIds, pendingFieldTexts } from "../catalogDraft";
-import { catalogFieldProblemText, catalogFieldRowReason, type CatalogFieldDraft, type CatalogFieldType } from "../catalogFields";
+import { catalogFieldProblemText, catalogFieldRowReason, catalogStoredValueText, type CatalogFieldDraft, type CatalogFieldType } from "../catalogFields";
 import { administrativeName } from "../editorModel";
 import { catalogItemChanges, currentCatalogItem } from "../catalogItemEdits";
 import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor";
@@ -134,6 +134,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
   const fieldFeedback = editor.error instanceof ApiError ? readCatalogFieldFeedback(editor.error.problem) : null;
   const changedItems = draft ? catalogItemChanges(draft.items) : [];
+  const yesNo = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   const itemErrors: Record<string, Record<string, readonly string[]>> = {};
   const itemErrorPaths: string[] = [];
   for (const issue of indexedValidationIssues(changedItems, fields, "items")) {
@@ -169,10 +170,15 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   if (errorRows && (!errorField || (errorRows.control === "type" ? conversionKeys : ruleKeys).some(key => errorField[key] !== errorRows.field[key]))) setErrorRows(null);
   if (draft && errorRows && errorField?.id) {
     const fieldId = errorField.id;
+    // A row comes with the stored value; its line quotes what the cell shows: the option's text, or the value with the shared
+    // format of the type it was stored in (the previous one in a type change).
+    const storedType = errorRows.control === "type" ? errorRows.from : errorField.type;
     for (const row of errorRows.rows) {
       const original = draft.items.originals["item:" + row.itemId];
       if (original && editedFieldIds(draft, currentCatalogItem(draft.items, original)).includes(fieldId)) continue;
-      (itemErrors[row.itemId] ??= {})["fields." + fieldId] ??= [catalogFieldProblemText(t, errorField, row.value, catalogFieldRowReason(errorRows.control, errorField, row.reason), draft.culture)];
+      const texts = (original ?? items.data?.items.find(item => item.id === row.itemId))?.fieldTexts?.[fieldId];
+      const value = storedType === "catalog" && texts ? administrativeName(texts, culture) : catalogStoredValueText(storedType, row.value, draft.culture, yesNo);
+      (itemErrors[row.itemId] ??= {})["fields." + fieldId] ??= [catalogFieldProblemText(t, errorField, value, catalogFieldRowReason(errorRows.control, errorField, row.reason), draft.culture)];
     }
   }
   const itemErrorPathsStamp = JSON.stringify([...itemErrorPaths, ...definitionErrorPaths]);
@@ -228,7 +234,6 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const generateCode = (localId: string) => generateMissingCatalogCodes(knownItems).filter(item => item.localId === localId).forEach(editor.changeItem);
   const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item, draft.valueType, draft.culture, draft.savedFields))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   // While a type change is pending, an unedited option or yes/no keeps what it showed: in the table, its editor and the preview.
-  const yesNo = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   const pendingTexts = draft ? Object.fromEntries([...rowItems, ...changedItems].map(item => [item.localId, pendingFieldTexts(draft, item, culture, yesNo)])) : {};
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
   // Runs after the option editor's own effect, which puts the cursor in Texto when it opens, so the marked control keeps the
