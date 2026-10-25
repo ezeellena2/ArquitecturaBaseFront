@@ -19,6 +19,7 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { AlertCircleIcon, CheckCheckIcon, CheckIcon, ClockIcon, SendIcon } from "@/shared/ui/icons";
 import { RadioGroupField, type RadioOption } from "@/shared/ui/RadioGroupField";
 
@@ -232,7 +233,6 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
   const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentUser();
   const titleId = useId();
-  const waitId = useId();
   const sectionRef = useRef<HTMLElement>(null);
   const resendRef = useRef<HTMLButtonElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -364,8 +364,8 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
       tabIndex={-1}
       aria-label={isOpen ? undefined : t("lastInvitation.title")}
       aria-labelledby={isOpen ? titleId : undefined}
-      // En un teléfono el botón no entra al lado del texto sin aplastarlo: por debajo de `sm` baja debajo, con la
-      // espera abajo de él. El tablero no dibuja el teléfono; desde `sm` es el tablero.
+      // En un teléfono el botón no entra al lado del texto sin aplastarlo: por debajo de `sm` baja debajo. El tablero no
+      // dibuja el teléfono; desde `sm` es el tablero.
       className={cn(
         "grid grid-cols-[32px_minmax(0,1fr)] gap-x-3 gap-y-px rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] py-2.5 pr-3 pl-3.5 outline-none",
         isOpen ? "items-start pb-3" : "items-center sm:grid-cols-[32px_minmax(0,1fr)_auto]",
@@ -403,20 +403,10 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
         />
       ) : (
         <>
-          <p
-            className={cn(
-              "col-start-2 row-start-1 text-sm leading-[18px] font-medium text-[var(--color-content)]",
-              waiting ? "sm:self-end" : "",
-            )}
-          >
+          <p className="col-start-2 row-start-1 text-sm leading-[18px] font-medium text-[var(--color-content)]">
             {invitation.channel === "WhatsApp" ? t("lastInvitation.byWhatsApp") : t("lastInvitation.byEmail")}
           </p>
-          <p
-            className={cn(
-              "col-start-2 row-start-2 flex flex-wrap items-center gap-1.5 text-xs leading-[18px] text-[var(--color-content-muted)]",
-              waiting ? "sm:self-start" : "",
-            )}
-          >
+          <p className="col-start-2 row-start-2 flex flex-wrap items-center gap-1.5 text-xs leading-[18px] text-[var(--color-content-muted)]">
             <span className="tabular-nums">
               {formatDateTimeInZone(invitation.sentAtUtc, i18n.language, currentUser?.timeZoneId)}
             </span>
@@ -436,30 +426,23 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
               </span>
             ) : null}
           </p>
-          <Button
-            ref={resendRef}
-            type="button"
-            size="sm"
-            // Discreto mientras todo anda; con contorno cuando pide atención (no llegó) o está esperando.
-            variant={failed || waiting ? "outline" : "ghost"}
-            disabled={waiting}
-            aria-describedby={waiting ? waitId : undefined}
-            className={cn(
-              "col-start-2 row-start-4 mt-2 justify-self-start sm:col-start-3 sm:row-start-1 sm:mt-0 sm:justify-self-end",
-              waiting ? "" : "sm:row-span-2",
-            )}
-            onClick={open}
-          >
-            {t("lastInvitation.resend")}
-          </Button>
-          {waiting ? (
-            <p
-              id={waitId}
-              className="col-start-2 row-start-5 justify-self-start text-xs leading-[18px] text-[var(--color-content-muted)] tabular-nums sm:col-start-3 sm:row-start-2 sm:self-start sm:justify-self-end"
-            >
-              {t("lastInvitation.resendIn", { seconds })}
-            </p>
-          ) : null}
+          {/* El botón queda siempre en el mismo lugar y con la misma forma: la espera es su motivo (`DisabledReason`), no
+              un texto debajo. El contorno lo pide sólo una invitación que no llegó. */}
+          <div className="col-start-2 row-start-4 mt-2 flex justify-self-start sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
+            <DisabledReason reason={waiting ? t("lastInvitation.resendIn", { seconds }) : null}>
+              <Button
+                ref={resendRef}
+                type="button"
+                size="sm"
+                // Discreto mientras todo anda; con contorno cuando pide atención (no llegó).
+                variant={failed ? "outline" : "ghost"}
+                disabled={waiting}
+                onClick={open}
+              >
+                {t("lastInvitation.resend")}
+              </Button>
+            </DisabledReason>
+          </div>
           {failure ? (
             <p className="col-start-2 row-start-3 mt-1.5 text-xs leading-[1.45] text-[var(--color-content-muted)] sm:col-span-2">
               {failure.hint}

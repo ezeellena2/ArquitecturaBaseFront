@@ -755,6 +755,30 @@ describe("UserEditDialog", () => {
       expect(resend).toHaveAccessibleDescription("Podés reenviar en 45 s");
     });
 
+    it("gives the wait as the reason of Reenviar invitación, with no text below it and the same shape", async () => {
+      withUser(
+        invitedLaura,
+        detailOf(invitedLaura, {
+          lastInvitation: invitation({ sentAtUtc: "2026-09-24T14:05:00Z", deliveryStatus: "Pending" }),
+        }),
+      );
+
+      const strip = stripOf(await openEdit("laura.rios@gmail.com"));
+      const resend = strip.getByRole("button", { name: "Reenviar invitación" });
+      const shape = resend.className;
+
+      // La espera es el motivo del botón (tooltip y descripción), no un texto escrito debajo.
+      for (const text of strip.queryAllByText("Podés reenviar en 45 s")) expect(text).not.toBeVisible();
+      await userEvent.hover(resend);
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Podés reenviar en 45 s");
+
+      // Al terminar la espera, el botón sigue en el mismo lugar y con la misma forma.
+      vi.setSystemTime(new Date(now.getTime() + 45_000));
+      // Sin motivo, `DisabledReason` devuelve el botón solo: se lo vuelve a buscar.
+      await waitFor(() => expect(strip.getByRole("button", { name: "Reenviar invitación" })).toBeEnabled(), { timeout: 2_500 });
+      expect(strip.getByRole("button", { name: "Reenviar invitación" }).className).toBe(shape);
+    });
+
     it("counts down by itself and turns Reenviar invitación back on when the minute is over", async () => {
       withUser(
         invitedLaura,
@@ -772,7 +796,7 @@ describe("UserEditDialog", () => {
       await waitFor(() => expect(resend).toHaveAccessibleDescription("Podés reenviar en 42 s"), { timeout: 2_500 });
 
       vi.setSystemTime(new Date(now.getTime() + 45_000));
-      await waitFor(() => expect(resend).toBeEnabled(), { timeout: 2_500 });
+      await waitFor(() => expect(strip.getByRole("button", { name: "Reenviar invitación" })).toBeEnabled(), { timeout: 2_500 });
       expect(strip.queryByText(/Podés reenviar/)).not.toBeInTheDocument();
     });
 
@@ -794,7 +818,7 @@ describe("UserEditDialog", () => {
       await waitFor(() => expect(resend).toHaveAccessibleDescription("Podés reenviar en 57 s"), { timeout: 2_500 });
 
       vi.setSystemTime(new Date(now.getTime() + 60_000));
-      await waitFor(() => expect(resend).toBeEnabled(), { timeout: 2_500 });
+      await waitFor(() => expect(strip.getByRole("button", { name: "Reenviar invitación" })).toBeEnabled(), { timeout: 2_500 });
     });
 
     it("keeps counting after a turn that finds the clock where it was", async () => {
@@ -1044,7 +1068,9 @@ describe("UserEditDialog", () => {
         release();
 
         // El 202 lo apaga por un minuto: el foco no puede quedarse en un botón apagado, y lo toma la franja.
-        await waitFor(() => expect(resend).toBeDisabled());
+        await waitFor(() =>
+          expect(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" })).toBeDisabled(),
+        );
         expect(dialog.getByRole("region", { name: "Última invitación" })).toHaveFocus();
       });
 
