@@ -92,6 +92,21 @@ it("explains the wait of a form preparation as help of its retry",async()=>{
  expect(retry).toBeDisabled();
  for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
 });
+// With the dialog closed, the check next to «Enviar formulario» tells the same wait as its reason.
+it("explains the wait of a frozen form send as help of the check beside the composer",async()=>{
+ server.use(http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{posts.push(await request.json() as FormMessageRequest);return HttpResponse.error();}),http.get("/api/whatsapp/chats/:id/outgoing/:requestId",()=>HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}})));
+ const dialog=await openForm();
+ await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));
+ await userEvent.click(await within(dialog).findByRole("button",{name:"Consultar envío"}));
+ await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Consultar envío"})).toBeDisabled());
+ await userEvent.click(within(dialog).getByRole("button",{name:"Cancelar"}));
+ await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
+ const check=screen.getByRole("button",{name:"Consultar envío"});
+ expect(check).toBeDisabled();
+ expect(check).toHaveAccessibleDescription(wait);
+ for(const text of screen.getAllByText(wait))expect(text).not.toBeVisible();
+});
 
 it("keeps a request-conflict attempt frozen until its owned operation is checked", async () => {
   let reads = 0;

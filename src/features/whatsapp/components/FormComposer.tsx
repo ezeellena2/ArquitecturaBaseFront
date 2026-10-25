@@ -55,7 +55,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   return <>
     {canSend ? <div className="min-w-0">
       <div className="flex flex-wrap gap-2"><DisabledReason reason={accountReason}><Button variant="outline" size="sm" disabled={Boolean(state.disabledReason)||state.denied||frozen||state.sending||Boolean(assistant?.attempt)||assistantOpen} onClick={state.show}><FormIcon />{t("forms.action")}</Button></DisabledReason>
-      {frozen&&!state.open ? <Button variant="outline" size="sm" disabled={state.checking||state.sending||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button> : null}</div>
+      {frozen&&!state.open ? <DisabledReason reason={waitReason(state.checking||state.sending, state.waiting, state.waitSeconds)}><Button variant="outline" size="sm" disabled={state.checking||state.sending||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button></DisabledReason> : null}</div>
     </div> : null}
     <Dialog open={state.open || assistantOpen} onOpenChange={open=>{if(!busy){if(assistantOpen)assistant?.setOpen(open);else state.setOpen(open);}}}>
       <DialogContent onCloseAutoFocus={restoreFocus} className="sm:max-w-[600px]" showCloseButton={!busy} onEscapeKeyDown={event=>{if(busy)event.preventDefault();}} onPointerDownOutside={event=>{if(busy)event.preventDefault();}}>
