@@ -574,4 +574,4 @@ idioma (nombre y pie del PDF, nombre de un campo del catálogo y de un dato de l
 La [regla funcional](../../../ArquitecturaBase/docs/features/formularios.md#idioma-original-y-traducción-opcional--2026-10-19)
 fija el contrato. Las escenas visuales recorren editor, publicación, vista oficial, PDF, catálogos, campos y datos de las
 personas sin selector, y `catalogManual` suma el editor de catálogo en inglés sobre un original español, con la
-referencia; su corrida y la revisión de capturas quedan para el cierre conjunto del review.
+referencia.
