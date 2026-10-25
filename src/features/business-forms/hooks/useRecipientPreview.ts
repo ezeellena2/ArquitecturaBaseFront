@@ -23,7 +23,10 @@ export function useRecipientSamples(scope: FormReadScope, query: RecipientSample
     if (error instanceof ApiError && error.status === 429) restart(error.retryAfterSeconds ?? 60);
     throw error;
   }), enabled: enabled && canPreview(scope), staleTime: 0, gcTime: 0, refetchOnWindowFocus: false, refetchOnReconnect: false, meta: { errorOwner: "local" } });
-  return { ...samples, waitSeconds: samples.isError && cooldown.isRunning ? cooldown.seconds : 0 };
+  // Like the preview, only network, 5xx and 429 failures can be retried; a lost permission (401, 403) is a denial.
+  const retryable = samples.isError && isRetryable(samples.error);
+  const denied = samples.error instanceof ApiError && (samples.error.status === 401 || samples.error.status === 403);
+  return { ...samples, retryable, denied, waitSeconds: retryable && cooldown.isRunning ? cooldown.seconds : 0 };
 }
 export function useRecipientPreview(scope: FormReadScope, definitionId: string | null, questionId: string, type: "choice" | "multiChoice", source: DraftQuestionSource) {
   const owner = JSON.stringify([...formScopeKey(scope), definitionId, questionId]);

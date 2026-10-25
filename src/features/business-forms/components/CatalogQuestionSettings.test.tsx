@@ -207,6 +207,21 @@ it("keeps Retry disabled during the wait of a 429 on the recipient samples", asy
   } finally { focusManager.setFocused(undefined); onlineManager.setOnline(true); }
 });
 
+// Only network, 5xx and 429 can be retried (point 28): a rejected search (400) or a lost permission (403) offers no Retry
+// that would fail again, and a 403 says the permission is gone, like the preview.
+it.each([
+  [400, { code: "Validation.Failed", errors: { search: ["Usá hasta 100 caracteres."] } }, "No se pudo preparar la vista previa."],
+  [403, { code: "Auth.Forbidden" }, "Ya no tenés permiso para probar con personas."],
+] as const)("offers no Retry when the recipient samples fail with %i", async (status, body, text) => {
+  const requests = serveRecipientPreview();
+  server.use(http.get("/api/forms/recipient-samples", () => { requests.samples++; return HttpResponse.json(body, { status }); }));
+  renderWithProviders(settings(manualId));
+  const failed = await screen.findByRole("alert");
+  expect(failed).toHaveTextContent(text);
+  expect(within(failed).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+  expect(requests.samples).toBe(1);
+});
+
 const maximumCatalog = "01990000-0000-7000-8000-0000000000a1", zones = "01990000-0000-7000-8000-0000000000a2", zone = "01990000-0000-7000-8000-0000000000a3", category = "01990000-0000-7000-8000-0000000000a4", attribute = "01990000-0000-7000-8000-0000000000a5";
 const filterField = (id: string, key: string, es: string, type: "catalog" | "text", position: number) => ({ id, key, name: { es, en: es }, type, sourceCatalogId: type === "catalog" ? zones : null, required: false, unique: false, min: null, max: null, maxLength: type === "text" ? 80 : null, role: "filter", position, isActive: true, valuesCount: 3, usedBy: [] });
 type MaximumBody = { source: { match: { personAttributeId?: string }[] } };
