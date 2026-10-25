@@ -707,6 +707,7 @@
     "preview": {
       "asRecipient": "As if received by",
       "saveFirst": "Save the form to try it with a person.",
+      "completeFilters": "Complete the filters to try it with a person.",
       "loading": "Preparing this person’s options…",
       "denied": "You no longer have permission to try people.",
       "failed": "Could not prepare the preview.",

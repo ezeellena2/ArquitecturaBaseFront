@@ -707,6 +707,7 @@
     "preview": {
       "asRecipient": "Como si lo recibiera",
       "saveFirst": "Guardá el formulario para probar con una persona.",
+      "completeFilters": "Completá los filtros para probar con una persona.",
       "loading": "Preparando las opciones de esta persona…",
       "denied": "Ya no tenés permiso para probar con personas.",
       "failed": "No se pudo preparar la vista previa.",

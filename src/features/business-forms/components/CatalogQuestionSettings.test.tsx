@@ -258,6 +258,20 @@ it("explains why each filter addition is disabled", async () => {
   }
 });
 
+// An incomplete filter (no value, no person data) disables the test with a person: the reason says so, like an unsaved form.
+it("explains that the filters must be complete to try with a person", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  server.use(http.get("/api/forms/recipient-samples", () => HttpResponse.json(page([{ id: juan, name: "Juan" }]))));
+  const question = (match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} questionId="q" definitionId={formId} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
+  const view = renderWithProviders(question([{ fieldId: category, value: null }]));
+  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  expect(input).toBeDisabled();
+  expect(input).toHaveAccessibleDescription("Completá los filtros para probar con una persona.");
+  view.rerender(question([{ fieldId: category, value: "Frío" }]));
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toBeEnabled());
+  expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).not.toHaveAccessibleDescription();
+});
+
 it("tells the maximum per person and that everyone sees the same options with only fixed filters", async () => {
   const bodies = serveMaximum(body => HttpResponse.json(body.source.match.some(match => match.personAttributeId) ? { maximum: 18, maximumLabel: "Zona Sur" } : { maximum: 180, maximumLabel: null }));
   const view = renderWithProviders(maximumQuestion("multiChoice", [{ fieldId: zone, personAttributeId: attribute }]));
