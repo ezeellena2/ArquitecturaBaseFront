@@ -12,9 +12,25 @@ describe("Autocomplete", () => {
       <Autocomplete aria-label="Zone" value="" onValueChange={() => {}}
         options={[{ id: "north", label: "North" }, { id: "south", label: "South" }]} onSelect={() => {}} />
     </TableCell></TableRow></TableBody></Table>);
-    act(() => screen.getByRole("combobox", { name: "Zone" }).focus());
+    await userEvent.click(screen.getByRole("combobox", { name: "Zone" }));
     expect(await screen.findByRole("listbox")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Options" })).not.toContainElement(screen.getByRole("listbox"));
+  });
+  it("opens the list on a click, typing or the arrows, not when the code focuses the field", async () => {
+    render(<Autocomplete aria-label="Zone" value="" onValueChange={() => {}}
+      options={[{ id: "north", label: "North" }, { id: "south", label: "South" }]} onSelect={() => {}} />);
+    const input = screen.getByRole("combobox", { name: "Zone" });
+    // Focusing the field from code (the first error when saving) leaves the list closed, so it does not cover the error.
+    act(() => input.focus());
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(await screen.findByRole("listbox")).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    await userEvent.click(input);
+    expect(await screen.findByRole("listbox")).toBeInTheDocument();
   });
   it("keeps the list open when the field is tapped again", async () => {
     render(<Autocomplete aria-label="Zone" value="" onValueChange={() => {}}

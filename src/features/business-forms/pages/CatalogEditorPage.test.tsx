@@ -683,9 +683,12 @@ describe("Filters editor connected to current DTOs", () => {
     await waitFor(() => expect(sample).toHaveFocus());
     expect(sample).toHaveAttribute("aria-invalid", "true");
     expect(sample).toHaveAccessibleDescription("Elegí una persona de ejemplo para guardar.");
+    // The focus does not open the list of people, which would cover the error under the field.
+    expect(sample).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(previews).toEqual([]); expect(writes).toEqual([]);
     // From then on it validates live: choosing the person clears the mark, and Save tests and saves.
-    await user.click(await screen.findByRole("option", { name: "Ana" }));
+    await selectSample();
     expect(sample).not.toHaveAttribute("aria-invalid");
     expect(sample).toHaveAccessibleDescription("Elegí una persona de ejemplo. Esta prueba no cambia su identidad ni sus permisos.");
     await user.click(save); await waitFor(() => expect(writes).toHaveLength(1));

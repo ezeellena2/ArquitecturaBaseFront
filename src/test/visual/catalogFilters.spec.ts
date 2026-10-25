@@ -95,7 +95,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
     const person = page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
     await expect(person).toBeFocused(); await expect(person).toHaveAttribute("aria-invalid", "true");
-    await expect(page.getByText(label("Elegí una persona de ejemplo para guardar.", "Choose a sample person to save."), { exact: true })).toBeVisible();
+    // The focus does not open the list of people: the error under the field stays in view, not covered.
+    const required = page.getByText(label("Elegí una persona de ejemplo para guardar.", "Choose a sample person to save."), { exact: true });
+    await expect(required).toBeVisible(); await expect(page.getByRole("listbox")).toHaveCount(0);
+    await required.scrollIntoViewIfNeeded();
+    expect(await required.evaluate(node => { const box = node.getBoundingClientRect(); return node.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)); })).toBe(true);
+    await page.screenshot({ path: info.outputPath("filters-sample-required.png"), fullPage: true });
     expect(await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { previews: unknown[] } }).catalogsFixture.previews)).toHaveLength(0);
     await sample(); await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
     await expect(page.getByText(label("Hay más de 200 opciones. Ajustá los filtros antes de guardar.", "There are more than 200 options. Adjust the filters before saving."), { exact: true })).toBeVisible();

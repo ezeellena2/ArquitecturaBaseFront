@@ -8,7 +8,9 @@ interface Props extends Omit<ComponentProps<"input">, "onChange" | "value" | "on
   onSelect: (id: string) => void;
   footer?: ReactNode;
 }
-/** The list lives in a non-modal popover anchored to the field, so a scrolling table or dialog cannot clip it. */
+/** The list lives in a non-modal popover anchored to the field, so a scrolling table or dialog cannot clip it. It opens on a
+ * click, typing or the arrows, not on focus: a focus from code (the first error when saving) leaves it closed, so it does
+ * not cover the error under the field. */
 export function Autocomplete({ value, onValueChange, options, onSelect, footer, ...props }: Props) {
   const id = useId(), anchor = useRef<HTMLDivElement>(null), [open, setOpen] = useState(false), [active, setActive] = useState(-1);
   const expanded = open && !props.disabled && options.length > 0;
@@ -20,7 +22,7 @@ export function Autocomplete({ value, onValueChange, options, onSelect, footer, 
       <Input {...props} role="combobox" aria-autocomplete="list" aria-expanded={expanded} aria-controls={expanded ? `${id}-list` : undefined}
         aria-activedescendant={expanded && options[active] ? `${id}-${active}` : undefined} autoComplete="off" value={value}
         onChange={event => { setActive(-1); setOpen(true); onValueChange(event.target.value); }}
-        onFocus={event => { setOpen(true); props.onFocus?.(event); }} onBlur={event => { setOpen(false); setActive(-1); props.onBlur?.(event); }}
+        onClick={event => { setOpen(true); props.onClick?.(event); }} onBlur={event => { setOpen(false); setActive(-1); props.onBlur?.(event); }}
         onKeyDown={event => {
           if ((event.key === "ArrowDown" || event.key === "ArrowUp") && options.length) {
             event.preventDefault(); setOpen(true); setActive(index => event.key === "ArrowDown" ? (index + 1) % options.length : (index <= 0 ? options.length - 1 : index - 1));
