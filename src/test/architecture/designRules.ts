@@ -74,4 +74,11 @@ export function inspectDesign(source: string): DesignViolation[] {
   visit(file);
   return violations;
 }
+// «Cambios sin guardar» no es un estado que se ofrezca: Guardar habilitado ya dice que hay cambios. Devuelve la ruta de
+// cada texto de un locale que es sólo ese estado; un texto que lo nombra dentro de una frase o una marca de fila no cuenta.
+export function unsavedStatusTexts(locale: unknown, prefix = ""): string[] {
+  if (typeof locale === "string") return /^[\s·]*(cambios sin guardar|unsaved changes)[\s.]*$/i.test(locale) ? [prefix] : [];
+  if (!locale || typeof locale !== "object") return [];
+  return Object.entries(locale).flatMap(([key, value]) => unsavedStatusTexts(value, prefix ? prefix + "." + key : key));
+}
 import ts from "typescript";

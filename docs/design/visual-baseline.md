@@ -143,7 +143,7 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
 - Pantalla hija: `backTo`, caja de 24 px con flecha de 14 px, tooltip, sin borde permanente y nombre accesible que dice
   a dónde vuelve. `status` acompaña al título sin formar parte del nombre y muestra solo el estado del objeto, como
   «Activo» o «Dado de baja». No muestra «Cambios sin guardar» ni números de revisión: que Guardar esté habilitado ya
-  dice que hay cambios.
+  dice que hay cambios. Una prueba de arquitectura impide que un locale vuelva a ofrecer ese estado.
 - Migas en la barra superior, tres niveles (`Inicio / Gestión de usuarios / Usuarios`); una ruta hija suma la hoja
   (`… / Roles y permisos / Soporte`) con `useBreadcrumbLeaf`. Hasta que la pone, el padre queda último sin marcar como actual.
 

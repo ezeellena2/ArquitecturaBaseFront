@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { inspectDesign } from "./designRules";
+import { inspectDesign, unsavedStatusTexts } from "./designRules";
 
 const root = path.resolve(import.meta.dirname, "../..");
 function sourceFiles(directory: string): string[] {
@@ -39,5 +39,13 @@ describe("the application uses the shared design system", () => {
     const mounts = sourceFiles(root).filter(file => !file.includes(`${path.sep}test${path.sep}`))
       .filter(file => /<Toaster\b/.test(readFileSync(file, "utf8")));
     expect(mounts.map(file => path.relative(root, file).replaceAll("\\", "/"))).toEqual(["app/providers.tsx"]);
+  });
+  // Enabled Save already says there are changes: no locale offers «Cambios sin guardar» as a status (visual-baseline.md).
+  it("does not offer an unsaved-changes status in any locale", () => {
+    const locales = path.join(root, "locales");
+    const offered = readdirSync(locales, { withFileTypes: true }).filter(entry => entry.isDirectory()).flatMap(language =>
+      readdirSync(path.join(locales, language.name)).filter(name => name.endsWith(".json")).flatMap(name =>
+        unsavedStatusTexts(JSON.parse(readFileSync(path.join(locales, language.name, name), "utf8"))).map(key => `${language.name}/${name}: ${key}`)));
+    expect(offered).toEqual([]);
   });
 });

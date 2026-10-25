@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inspectDesign } from "./designRules";
+import { inspectDesign, unsavedStatusTexts } from "./designRules";
 
 describe("design boundaries", () => {
   it.each(["button", "input", "select", "textarea", "table", "thead", "tbody", "tr", "th", "td"])("requires shared UI instead of a native %s", (tag) => {
@@ -80,5 +80,9 @@ describe("design boundaries", () => {
     expect(inspectDesign('const Screen = () => <svg><path d="M0 0" /></svg>;')).toContainEqual({ line: 1, rule: "shared-icon" });
     expect(inspectDesign(`import { MailIcon } from '@/shared/ui/icons';
       const Screen = () => <MailIcon className="size-4" />;`)).toEqual([]);
+  });
+  it("finds a locale text that only offers an unsaved-changes status", () => {
+    expect(unsavedStatusTexts({ dirty: "Cambios sin guardar", page: { status: " · Unsaved changes" } })).toEqual(["dirty", "page.status"]);
+    expect(unsavedStatusTexts({ unsaved: "Nuevo, sin guardar", discardDescription: "Vas a perder lo que cambiaste sin guardar.", unsavedChanges: { title: "¿Descartar los cambios?" }, saving: "Guardando…" })).toEqual([]);
   });
 });
