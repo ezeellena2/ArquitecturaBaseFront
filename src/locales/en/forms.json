@@ -352,7 +352,7 @@
     "presentation": {
       "title": "In WhatsApp", "heading": "Title · up to 30 characters", "description": "Description · up to 300", "add": "Add field", "example": "For example",
       "hint": "Changes apply to new sends: existing sends and saved responses keep what was shown.",
-      "hidden": "Not shared outside the system: {{fields}}.", "tooLong_one": "1 option exceeds 30 characters. You can save; review the title before publishing.", "tooLong_other": "{{count}} options exceed 30 characters. You can save; review the title before publishing.",
+      "hidden": "Not shared outside the system: {{fields}}.",
       "titleTooLongIn_one": "In {{language}}: 1 option exceeds the 30-character title limit.", "titleTooLongIn_other": "In {{language}}: {{count}} options exceed the 30-character title limit.",
       "descriptionTooLongIn_one": "In {{language}}: 1 option exceeds the 300-character description limit.", "descriptionTooLongIn_other": "In {{language}}: {{count}} options exceed the 300-character description limit.",
       "more_one": "and {{count}} more", "more_other": "and {{count}} more",

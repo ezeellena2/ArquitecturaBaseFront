@@ -14,9 +14,9 @@ import { administrativeName } from "../editorModel";
 import type { FormCulture } from "../model";
 
 // `check` is the server's count over every active option, per catalog language. Without it (an editor with unsaved
-// changes) the loaded options are counted here in the shown language; null means the server count is not available,
-// so nothing is counted from a partial page.
-export function CatalogPresentationSection({ embedded = false, value, fields, items, valueType, culture, readOnly, check, inputCulture = culture, pendingTexts, errors = {}, onChange }: { embedded?: boolean; value: CatalogPresentation | null; fields: readonly CatalogFieldDraft[]; items: readonly CatalogManualItemValue[]; valueType: CatalogValueType; culture: FormCulture; readOnly: boolean; check?: CatalogPresentationCheck | null; inputCulture?: FormCulture; pendingTexts?: Readonly<Record<string, Readonly<Record<string, string>>>>; errors?: Readonly<Record<string, readonly string[]>>; onChange: (value: CatalogPresentation | null) => void }) {
+// changes) the loaded options are counted here in each language of the catalog (`cultures`), with the same limits and
+// words; null means the server count is not available, so nothing is counted from a partial page.
+export function CatalogPresentationSection({ embedded = false, value, fields, items, valueType, culture, cultures = [culture], readOnly, check, inputCulture = culture, pendingTexts, errors = {}, onChange }: { embedded?: boolean; value: CatalogPresentation | null; fields: readonly CatalogFieldDraft[]; items: readonly CatalogManualItemValue[]; valueType: CatalogValueType; culture: FormCulture; cultures?: readonly FormCulture[]; readOnly: boolean; check?: CatalogPresentationCheck | null; inputCulture?: FormCulture; pendingTexts?: Readonly<Record<string, Readonly<Record<string, string>>>>; errors?: Readonly<Record<string, readonly string[]>>; onChange: (value: CatalogPresentation | null) => void }) {
   const { t } = useTranslation("forms");
   const labelId = useId();
   const selected = value ?? { title: ["text"], description: ["detail"] };
@@ -27,8 +27,14 @@ export function CatalogPresentationSection({ embedded = false, value, fields, it
   const booleanLabels = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   const shown = example ? catalogOptionPresentation(example, value, fields, valueType, culture, booleanLabels, inputCulture, pendingTexts?.[example.localId]) : null;
   const hidden = fields.filter(field => field.isActive && ![...selected.title, ...selected.description].includes(field.id ?? field.localId)).map(field => administrativeName(field.name, culture));
-  const localTooLong = check === undefined ? items.filter(item => item.isActive && catalogOptionPresentation(item, value, fields, valueType, culture, booleanLabels, inputCulture, pendingTexts?.[item.localId]).title.length > 30).length : 0;
-  const problems = (check?.cultures ?? []).flatMap(entry => [
+  // The local count follows the server's: titles over 30 and descriptions over 300 among the active options, with three examples.
+  const local = check === undefined ? cultures.map(language => {
+    const shown = items.filter(item => item.isActive).map(item => ({ itemId: item.itemId ?? item.localId, ...catalogOptionPresentation(item, value, fields, valueType, language, booleanLabels, inputCulture, pendingTexts?.[item.localId]) }));
+    const titles = shown.filter(option => option.title.length > 30), descriptions = shown.filter(option => (option.description?.length ?? 0) > 300);
+    const examples = (options: typeof shown) => options.slice(0, 3).map(option => ({ itemId: option.itemId, title: option.title }));
+    return { culture: language, titleTooLongCount: titles.length, titleExamples: examples(titles), descriptionTooLongCount: descriptions.length, descriptionExamples: examples(descriptions) };
+  }) : [];
+  const problems = (check?.cultures ?? local).flatMap(entry => [
     { culture: entry.culture, part: "title", count: entry.titleTooLongCount, examples: entry.titleExamples },
     { culture: entry.culture, part: "description", count: entry.descriptionTooLongCount, examples: entry.descriptionExamples },
   ]).filter(problem => problem.count > 0);
@@ -38,7 +44,6 @@ export function CatalogPresentationSection({ embedded = false, value, fields, it
       return <div key={part} className="space-y-2"><Label htmlFor={id}>{t("catalogs.presentation." + (part === "title" ? "heading" : "description"))}</Label><div className="flex flex-wrap items-center gap-2">{selected[part].map((key, index) => <Badge key={key} variant="outline"><span>{names[part][index]}</span><Button type="button" size="inline" variant="ghost" disabled={readOnly || part === "title" && selected.title.length === 1} aria-label={t("catalogs.presentation.remove", { name: names[part][index], part: t("catalogs.presentation." + (part === "title" ? "heading" : "description")) })} onClick={() => update(part, selected[part].filter(value => value !== key))}>×</Button></Badge>)}<NativeSelect id={id} value="" disabled={readOnly} aria-invalid={!!error} aria-describedby={error ? id + "-error" : undefined} onChange={event => { if (event.target.value) update(part, [...selected[part], event.target.value]); }}><option value="" disabled>{t("catalogs.presentation.add")}</option>{choices.filter(choice => !selected[part].includes(choice.key)).map(choice => <option key={choice.key} value={choice.key} disabled={choice.disabled}>{choice.label}{choice.disabled ? " · " + t("catalogs.fields.savedFirst") : ""}</option>)}</NativeSelect></div>{error ? <p id={id + "-error"} role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}</div>;
     })}
     {shown ? <div className="space-y-1"><p className="text-xs font-semibold uppercase">{t("catalogs.presentation.example")}</p><div className="rounded-md border border-[var(--color-border)] p-3"><p className="break-words text-sm">{shown.title}</p>{shown.description ? <p className="break-words text-xs text-[var(--color-content-muted)]">{shown.description}</p> : null}</div></div> : null}
-    {localTooLong ? <p role="status" className="text-sm text-[var(--color-warning-700)]">{t("catalogs.presentation.tooLong", { count: localTooLong })}</p> : null}
     {problems.length ? <div role="status" className="space-y-3">{problems.map(problem => <div key={problem.culture + "-" + problem.part} className="space-y-1">
       <p className="text-sm text-[var(--color-warning-700)]">{t("catalogs.presentation." + problem.part + "TooLongIn", { count: problem.count, language: t("cultureNamesInText." + problem.culture) })}</p>
       {problem.examples.length ? <ul className="list-inside list-disc break-words text-sm">{problem.examples.map(example => <li key={example.itemId}>{example.title}</li>)}</ul> : null}

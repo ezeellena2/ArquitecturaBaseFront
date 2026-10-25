@@ -38,3 +38,21 @@ it("shows title and description checks for each catalog language from the server
   expect(screen.queryByText(/En inglés: .* del título/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Podés guardar/)).not.toBeInTheDocument();
 });
+
+// Point 23: with unsaved changes there is no server check, and the loaded options are counted here in each language of the
+// catalog with the same limits, titles over 30 and descriptions over 300, in the same words as the server check.
+it("counts long titles and descriptions of the loaded options in each catalog language without the server check", async () => {
+  const item = (localId: string, label: Record<string, string>, detail: Record<string, string>) => ({ localId, itemId: null, code: localId, label, detail, value: null, fields: {}, isActive: true, position: null });
+  const items = [
+    item("a", { es: "Norte", en: "North side of the city and its surroundings" }, { es: "x".repeat(301), en: "Short" }),
+    item("b", { es: "Sur", en: "South" }, { es: "Corto", en: "y".repeat(301) }),
+    { ...item("c", { es: "Una opción dada de baja con un texto largo", en: "Inactive" }, { es: "z".repeat(301) }), isActive: false },
+  ];
+  await act(async () => { renderWithProviders(<CatalogPresentationSection value={null} fields={[]} items={items} valueType="Text" culture="es" cultures={["es", "en"]} readOnly={false} onChange={() => undefined} />); });
+  expect(screen.getByText("En español: 1 opción supera los 300 caracteres de la descripción.")).toBeInTheDocument();
+  expect(screen.getByText("En inglés: 1 opción supera los 30 caracteres del título.")).toBeInTheDocument();
+  expect(screen.getByText("North side of the city and its surroundings")).toBeInTheDocument();
+  expect(screen.getByText("En inglés: 1 opción supera los 300 caracteres de la descripción.")).toBeInTheDocument();
+  expect(screen.queryByText(/En español: .* del título/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Podés guardar/)).not.toBeInTheDocument();
+});
