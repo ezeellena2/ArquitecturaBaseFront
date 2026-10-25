@@ -84,6 +84,26 @@ it("marks a new suggestion without destination only after trying to save", async
   expect(save).toBeEnabled();
   expect(writes).not.toHaveBeenCalled();
 });
+it("puts a conflict in its own titled surface with reread and the choices at the right of its header", async () => {
+  setup();
+  let revision = 0;
+  server.use(http.get("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({...current(),revision,id:revision?version:null})),
+    http.post("/api/forms/definitions/:id/suggestions",()=>{revision=2;return HttpResponse.json({code:"Forms.Suggestion.RevisionConflict"},{status:409});}));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  await add();
+  await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));
+  const review = await screen.findByRole("region",{name:"Revisión de las sugerencias"});
+  const band = within(review).getByRole("heading",{name:"Revisión de las sugerencias"}).parentElement!;
+  expect(within(band).getAllByRole("button").map(button=>button.textContent)).toEqual(["Releer sugerencias"]);
+  expect(within(review).getByRole("alert")).toHaveTextContent("Las sugerencias cambiaron. Releelas y elegí qué conservar.");
+  await userEvent.click(within(band).getByRole("button",{name:"Releer sugerencias"}));
+  await waitFor(()=>expect(within(band).getAllByRole("button").map(button=>button.textContent)).toEqual(["Releer sugerencias","Usar la revisión actual","Conservar mis cambios"]));
+  const header = screen.getByRole("heading",{name:"Qué sugerir después"}).parentElement!;
+  expect(within(header).getAllByRole("button").map(button=>button.textContent)).toEqual(["Agregar sugerencia","Guardar sugerencias"]);
+  await userEvent.click(within(band).getByRole("button",{name:"Conservar mis cambios"}));
+  expect(screen.queryByRole("region",{name:"Revisión de las sugerencias"})).not.toBeInTheDocument();
+  expect(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})).toHaveValue("Cuando pide factura");
+});
 it.each(["Deactivated", "Deleted"] as const)("keeps a %s target named and removable only, blocking save until it is removed and restoring focus", async state => {
  setup();
  const otherId = "0199a0c0-0000-7000-8000-000000000021";

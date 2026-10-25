@@ -151,13 +151,16 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
   };
   const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, i18n.language, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, culture, options.originalCulture) : ""}</li>)}</ol></>;
   return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+    {/* A conflict is its own surface above the editor: rereading and choosing go in its header, so the rules header keeps its shape. */}
+    {conflict ? <div className="lg:col-span-2"><Surface title={t("rules.conflictTitle")} padded actions={<>
+      <Button variant="outline" disabled={blocked} onClick={() => void run("reread", async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t("rules.reread")}</Button>
+      {current ? <><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(false)}>{t("rules.useCurrent")}</Button><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(true)}>{t("keepMine")}</Button></> : null}
+    </>}><p role="alert" className="text-sm">{t("rules.conflict")}</p></Surface></div> : null}
     <Surface title={t("rules.title")} actions={<>
       <Button data-add-rule variant="outline" disabled={blocked || rules.length >= 20} onClick={() => { const rule = newRule(); change([...rules, rule]); setExpanded(rule.id); }}>{t("rules.addRule")}</Button>
       <DisabledReason reason={saveDisabledReason}><Button disabled={blocked || conflict || !dirty} onClick={save}>{t(busy ? "rules.saving" : "rules.save")}</Button></DisabledReason>
     </>}>
       <p className="border-b border-[var(--color-border)] p-4 text-sm">{t("rules.independent")}</p>
-      {conflict ? <div className="space-y-2 border-b border-[var(--color-border)] p-4"><p role="alert">{t("rules.conflict")}</p>{conflict ? <><Button variant="outline" disabled={blocked} onClick={() => void run("reread", async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t("rules.reread")}</Button>{current ? <><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(false)}>{t("rules.useCurrent")}</Button><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(true)}>{t("keepMine")}</Button></> : null}</> : null}</div> : null}
-
       {rules.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("rules.empty")}</p> : null}
       {rules.map((rule, index) => <section key={rule.id} data-rule-id={rule.id} aria-label={t("rules.rule", { number: index + 1 })} className="border-b border-[var(--color-border)] p-4">
         <div className="flex items-start justify-between gap-3"><span className="text-xs text-[var(--color-content-muted)]">{index + 1}</span><div className="min-w-0 flex-1">{expanded !== rule.id ? summary(rule) : null}</div><div className="flex shrink-0">

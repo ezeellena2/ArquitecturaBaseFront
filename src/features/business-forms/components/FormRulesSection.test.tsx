@@ -392,6 +392,26 @@ it("requires a new reread after a second conflict instead of reusing the previou
   await userEvent.click(screen.getByRole("button",{name:"Releer reglas"}));await screen.findByRole("button",{name:"Conservar mis cambios"});
   expect(writes).toEqual([{expectedRevision:1,rules:[{...mine,actions:[{...mine.actions[0],text:{es:"Mensaje guardado propio"}}]}]},{expectedRevision:2,rules:[{...mine,actions:[{...mine.actions[0],text:{es:"Mensaje guardado propio"}}]}]}]);
 });
+it("puts a conflict in its own titled surface with reread and the choices at the right of its header", async () => {
+  setup(); const mine = storedRule(); let revision = 1;
+  server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ ...initial(), id: actor, revision, rules: revision === 1 ? [mine] : [storedRule("Actual")], createdAtUtc: "2026-10-17T12:00:00Z" })),
+    http.post("/api/forms/definitions/:id/rules", () => { revision = 2; return HttpResponse.json({ code: "Forms.Rules.RevisionConflict" }, { status: 409 }); }));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  const review = await screen.findByRole("region", { name: "Revisión de las reglas" });
+  const band = within(review).getByRole("heading", { name: "Revisión de las reglas" }).parentElement!;
+  expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Releer reglas"]);
+  expect(within(review).getByRole("alert")).toHaveTextContent("Las reglas cambiaron. Releé la revisión actual para revisarla.");
+  await userEvent.click(within(band).getByRole("button", { name: "Releer reglas" }));
+  await waitFor(() => expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Releer reglas", "Usar la revisión actual", "Conservar mis cambios"]));
+  const rules = screen.getByRole("heading", { name: "Cuando llega una respuesta" }).parentElement!;
+  expect(within(rules).getAllByRole("button").map(button => button.textContent)).toEqual(["Agregar regla", "Guardar reglas"]);
+  await userEvent.click(within(band).getByRole("button", { name: "Conservar mis cambios" }));
+  expect(screen.queryByRole("region", { name: "Revisión de las reglas" })).not.toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: "Mensaje" })).toHaveValue("Mensaje guardado propio");
+});
 
 it("tells the server cooldown, not an in-flight save, as the disabled reason once without discarding the draft", async () => {
   setup();serveRules([storedRule()]);let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});
