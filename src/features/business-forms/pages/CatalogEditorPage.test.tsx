@@ -582,7 +582,12 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     const name = await screen.findByRole("textbox", { name: label("Nombre", "Name") });
+    await within(await screen.findByRole("table")).findByText("Pérez");
+    // Without changes Save is off; an edit turns it on, and that is what says there are changes.
+    const save = () => screen.getByRole("button", { name: label("Guardar", "Save") });
+    expect(save()).toBeDisabled();
     await user.clear(name); await pasteText(user, name, "Borrador");
+    expect(save()).toBeEnabled();
     // Beside the title goes only the catalog's state: an enabled Save already says there are changes.
     const status = () => screen.getByRole("heading", { level: 1 }).parentElement!;
     expect(status()).toHaveTextContent(label("Activo", "Active"));
@@ -594,6 +599,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const band = within(review).getByRole("heading", { name: label("Revisión del catálogo", "Catalog review") }).parentElement!;
     expect(within(band).getByRole("button", { name: label("Revisar", "Review") })).toBeInTheDocument();
     expect(status()).not.toHaveTextContent(label("Cambios sin guardar", "Unsaved changes"));
+    // With a review pending Save stays off, although the draft keeps its changes.
+    expect(save()).toBeDisabled();
   });
   it("lets Save mark an invalid typed value and open its option without a request", async () => {
     setup(); const bodies: unknown[] = [];
