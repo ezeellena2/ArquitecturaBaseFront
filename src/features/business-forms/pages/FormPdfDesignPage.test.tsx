@@ -74,6 +74,33 @@ it("keeps revision numbers and save status out of the PDF design",async()=>{
  expect(screen.getAllByText(/Esperá [0-9]+ segundos para volver a intentar\./)).toHaveLength(1);
  expect(name).toHaveValue("Comprobante de visita propio otra vez");
 });
+// The preview is not turned off by errors still hidden: trying it marks and focuses the first one, without asking for the preview.
+it("marks the invalid design when the preview is tried instead of disabling it",async()=>{
+ const writes=setup();let previews=0;
+ server.use(http.post("/api/forms/definitions/:id/pdf-design/preview",()=>{previews++;return new HttpResponse(new Uint8Array([37,80,68,70]),{headers:{"content-type":"application/pdf","content-language":"es"}});}));
+ renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");
+ const name=await screen.findByRole("textbox",{name:"Nombre del PDF"});
+ await userEvent.clear(name);
+ expect(name).not.toHaveAttribute("aria-invalid","true");
+ const preview=within(screen.getByRole("region",{name:"Vista previa"})).getByRole("button",{name:"Vista previa"});
+ expect(preview).toBeEnabled();
+ expect(preview).not.toHaveAccessibleDescription();
+ await userEvent.click(preview);
+ await waitFor(()=>expect(name).toHaveFocus());
+ expect(name).toHaveAttribute("aria-invalid","true");
+ expect(name).toHaveAccessibleDescription("Completá el idioma original.");
+ expect(screen.getByText("Con una respuesta de ejemplo. La vista previa no guarda ni emite un comprobante.")).toBeInTheDocument();
+ expect(previews).toBe(0);
+ // Save, tried the same way, also focuses the first error and sends nothing.
+ act(()=>preview.focus());
+ await userEvent.click(screen.getByRole("button",{name:"Guardar diseño"}));
+ await waitFor(()=>expect(name).toHaveFocus());
+ expect(writes).toEqual([]);
+ await userEvent.type(name,"Comprobante");
+ expect(name).not.toHaveAttribute("aria-invalid","true");
+ await userEvent.click(preview);
+ await waitFor(()=>expect(previews).toBe(1));
+});
 
 it("keeps a removed selected question available until its new design is saved",async()=>{setup();server.use(http.get("/api/forms/definitions/:id/rules/options",()=>HttpResponse.json({...pdfOptionsFixture(),questions:[]})));renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");const removed=await screen.findByRole("checkbox",{name:"Pregunta retirada"});expect(removed).toBeChecked();await userEvent.click(removed);expect(screen.getByRole("checkbox",{name:"Pregunta retirada"})).not.toBeChecked();});
 
