@@ -455,7 +455,9 @@ como tooltip al pasar el mouse o con el foco y como descripción accesible, nunc
 adentro; `Surface` lleva sus acciones al borde derecho de la banda, a la altura del título y también al bajar de renglón;
 `Page.status` muestra sólo el estado del objeto. Ninguna pantalla muestra «Cambios sin guardar» ni números de revisión
 fuera de los historiales, y una prueba de arquitectura impide que un locale vuelva a ofrecer ese estado; la guarda de
-salida sigue avisando. Se valida al intentar guardar y, después del primer error, en vivo.
+salida sigue avisando. En su lugar, Guardar se apaga sin cambios en todos los editores: roles, IA, apariencia,
+configuración, información del negocio, PDF, catálogos y el borrador del formulario. El alta de un formulario, que no
+existe hasta guardarla, lo tiene habilitado desde el principio. Se valida al intentar guardar y, después del primer error, en vivo.
 
 Se conservan, con su motivo: los motivos dentro de los menús «⋯», los estados del flujo con su acción (guardado sin
 confirmar, revisión pendiente), la espera del chat y de Inicio, los conteos de los encabezados, «Nuevo, sin guardar» de
@@ -471,6 +473,13 @@ referencias nuevas de CE1 en uso (`catalog-field-in-use-*`). `catalog-*`, `busin
 `roles-*` pasaron sin actualizarse. Dos escenas de publicación se ajustaron sin cambiar producto: «Ir a la pregunta» abre la pregunta
 en el idioma del menú, y la prueba del tooltip de la espera mueve el puntero en pasos para que Radix lo cierre.
 
+El review del cierre (2026-10-25) encontró que el editor de formularios no cumplía la regla. «Guardar borrador» seguía
+habilitado en un formulario guardado sin cambios, y también cuando sólo cambiaban Reglas o Sugerencias, que tienen su
+propio Guardar. Se veía en las capturas de 1440 de Reglas y Sugerencias. Ni la corrida de 741 ni el recorrido lo
+detectaron: ninguna referencia compara el editor de formularios y sus escenas guardan después de cambiar el borrador.
+Se corrigió con su prueba unitaria (`FormsPage.test.tsx`) y se volvieron a tomar esas seis capturas de 1440, donde ahora
+está apagado. Las de 390 y 320 no muestran el encabezado de la página y quedan igual.
+
 | Vista | es · 1440 | en · 1440 | es · 390 | en · 390 | es · 320 | en · 320 |
 | --- | --- | --- | --- | --- | --- | --- |
 | Reglas | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/reglas-nueva-en-320.jpg) |
@@ -480,7 +489,8 @@ en el idioma del menú, y la prueba del tooltip de la espera mueve el puntero en
 | IA | [Ver](evidence/botones-y-estados-2026-10-23/ia-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/ia-en-320.jpg) |
 | Catálogo nuevo | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-es-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-en-1440.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-es-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-en-390.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-es-320.jpg) | [Ver](evidence/botones-y-estados-2026-10-23/catalogo-opciones-en-320.jpg) |
 
-- **Reglas:** el encabezado tiene sólo «Agregar regla» y Guardar; agregar una regla y una acción no muestra errores.
+- **Reglas:** el encabezado tiene sólo «Agregar regla» y Guardar; agregar una regla y una acción no muestra errores. En
+  esta captura y en las dos siguientes, «Guardar borrador» está apagado porque el borrador no cambió.
 - **Reglas al guardar:** Guardar no envía, marca el mensaje vacío y le da el foco.
 - **Sugerencias:** Guardar apagado por un destino dado de baja (BA6), con el motivo como tooltip al enfocar su envoltorio.
 - **PDF:** con cambios, junto al título va sólo el formulario; Guardar en «El comprobante» y Vista previa en su superficie.
