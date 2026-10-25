@@ -66,6 +66,32 @@ it("explains the wait of a form send as help of the footer action",async()=>{
  expect(within(dialog).getAllByText(wait)).toHaveLength(1);
  expect(posts).toHaveLength(1);
 });
+// A 429 of the list or of the preparation also turns off their Retry: the wait is its reason, with no text in the dialog.
+it("explains the wait of a form list as help of its retry",async()=>{
+ server.use(http.get("/api/whatsapp/chats/:id/forms",()=>HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}})));
+ await openChat();
+ await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
+ await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
+ const dialog=await screen.findByRole("dialog");
+ const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
+ const retry=await within(dialog).findByRole("button",{name:"Reintentar"});
+ await waitFor(()=>expect(retry).toHaveAccessibleDescription(wait));
+ expect(retry).toBeDisabled();
+ for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
+});
+it("explains the wait of a form preparation as help of its retry",async()=>{
+ server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}})));
+ await openChat();
+ await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
+ await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
+ const dialog=await screen.findByRole("dialog");
+ await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+ const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
+ const retry=await within(dialog).findByRole("button",{name:"Reintentar"});
+ await waitFor(()=>expect(retry).toHaveAccessibleDescription(wait));
+ expect(retry).toBeDisabled();
+ for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
+});
 
 it("keeps a request-conflict attempt frozen until its owned operation is checked", async () => {
   let reads = 0;

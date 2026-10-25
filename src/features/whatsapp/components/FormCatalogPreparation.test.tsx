@@ -17,7 +17,7 @@ it.each([
   } };
   function PreparedForm() {
     const query = useQuery({ queryKey: ["catalog-limit"], queryFn: async () => preparation });
-    return <FormCatalogPreparation query={query} waiting={false} hasCatalogQuestions recipientName="Juan Gómez"/>;
+    return <FormCatalogPreparation query={query} waitReason={null} hasCatalogQuestions recipientName="Juan Gómez"/>;
   }
   await act(async () => { renderWithProviders(<PreparedForm/>); });
   expect(await screen.findByText(message)).toBeInTheDocument();
@@ -32,7 +32,7 @@ it.each([
   } };
   function PreparedForm() {
     const query = useQuery({ queryKey: ["recipient-data-missing", culture], queryFn: async () => preparation });
-    return <FormCatalogPreparation query={query} waiting={false} hasCatalogQuestions recipientName="Pablo Sosa"/>;
+    return <FormCatalogPreparation query={query} waitReason={null} hasCatalogQuestions recipientName="Pablo Sosa"/>;
   }
   await act(async () => { renderWithProviders(<PreparedForm/>); });
   expect(await screen.findByText(message)).toBeInTheDocument();
