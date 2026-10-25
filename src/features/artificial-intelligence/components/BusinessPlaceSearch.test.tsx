@@ -59,14 +59,28 @@ describe("BusinessPlaceSearch", () => {
         : HttpResponse.json({ places: [] });
     }));
     renderWithProviders(<MemoryRouter><BusinessPlaceSearch disabled={false} onSelect={() => {}} /></MemoryRouter>);
-    const input = screen.getByRole("combobox");
-    await userEvent.type(input, "Clinic");
-    await waitFor(() => expect(input).toBeDisabled());
-    await waitFor(() => expect(input).toBeEnabled(), { timeout: 2000 });
+    await userEvent.type(screen.getByRole("combobox"), "Clinic");
+    // The wait is the reason of the field (`DisabledReason`), which wraps it only while it lasts: query it again.
+    await waitFor(() => expect(screen.getByRole("combobox")).toBeDisabled());
+    await waitFor(() => expect(screen.getByRole("combobox")).toBeEnabled(), { timeout: 2000 });
     await new Promise(resolve => setTimeout(resolve, 450));
     expect(calls).toBe(1);
     await userEvent.click(screen.getByRole("button", { name: "Buscar otra vez" }));
     await waitFor(() => expect(calls).toBe(2));
     await screen.findByText("No encontramos lugares. Probá agregando la ciudad.");
+  });
+  it("gives the wait after 429 as the reason of the search, not as text below it", async () => {
+    server.use(http.post("/api/ai/business-information/places/search", () =>
+      HttpResponse.json({ status: 429, code: "Ai.Places.RateLimited", detail: "Esperá antes de buscar.", retryAfter: 30 }, { status: 429 })));
+    renderWithProviders(<MemoryRouter><BusinessPlaceSearch disabled={false} onSelect={() => {}} /></MemoryRouter>);
+    await userEvent.type(screen.getByRole("combobox", { name: "Buscar un lugar" }), "Clinic");
+    const wait = "Podés buscar de nuevo en 30 s.";
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "Buscar un lugar" })).toHaveAccessibleDescription(new RegExp(`${wait}$`)));
+    const input = screen.getByRole("combobox", { name: "Buscar un lugar" });
+    expect(input).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("");
+    for (const text of screen.queryAllByText(wait)) expect(text).not.toBeVisible();
+    await userEvent.hover(input);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(wait);
   });
 });

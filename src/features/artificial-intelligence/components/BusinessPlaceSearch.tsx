@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { Autocomplete } from "@/shared/ui/Autocomplete";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { Button } from "@/shared/ui/button";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
@@ -51,15 +52,15 @@ export function BusinessPlaceSearch({ disabled, placeId, onSelect }: Props) {
   const failed = failedFor === searchKey;
   const attribution = <span translate="no" className="whitespace-nowrap text-sm font-normal text-[var(--color-content)]">Google Maps</span>;
   return <div className="space-y-2">
-    <FormField label={t("searchPlace")} hint={t("searchPlaceHint")}><Autocomplete value={input} disabled={disabled || wait > 0} maxLength={200}
+    <FormField label={t("searchPlace")} hint={t("searchPlaceHint")}><DisabledReason reason={waiting && !disabled ? t("placeWait", { seconds: wait }) : null} className="grid w-full"><Autocomplete value={input} disabled={disabled || waiting} maxLength={200}
       placeholder={t("searchPlacePlaceholder")} aria-busy={loading} options={places.map(place => ({ id: place.placeId, label: place.label }))}
       footer={attribution}
       onValueChange={value => { setInput(value); setResult(undefined); }} onSelect={id => {
         const place = places.find(item => item.placeId === id);
         if (place) { setSelected(place); setInput(""); setResult(undefined); onSelect(id); }
-      }} /></FormField>
+      }} /></DisabledReason></FormField>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <p role="status" className="text-sm text-[var(--color-content-muted)]">{loading ? t("searchingPlace") : wait > 0 ? t("placeWait", { seconds: wait }) : result?.input === query && places.length === 0 ? t("noPlaces") : selected && selected.placeId === placeId ? selected.label : ""}</p>
+      <p role="status" className="text-sm text-[var(--color-content-muted)]">{loading ? t("searchingPlace") : result?.input === query && places.length === 0 ? t("noPlaces") : selected && selected.placeId === placeId ? selected.label : ""}</p>
       {attribution}
     </div>
     {failed && wait === 0 ? <Button variant="outline" disabled={disabled} onClick={() => setRetry(value => value + 1)}>{t("retryPlace")}</Button> : null}
