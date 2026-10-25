@@ -131,8 +131,8 @@ it("offers filter additions in the section header", async () => {
   const view = renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={onSourceChange}/></MemoryRouter>);
   const band = async () => within(await screen.findByRole("region", { name: "Qué opciones ve cada persona" })).getByRole("heading", { name: "Qué opciones ve cada persona" }).parentElement!;
   // Both additions act on the whole section, so they go in its band beside the title.
-  const person = within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" });
-  await waitFor(() => expect(person).toBeEnabled());
+  // Until the person data arrive no field matches one, so the addition is off with its reason: read it again once enabled.
+  await waitFor(async () => expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toBeEnabled());
   const fixed = within(await band()).getByRole("button", { name: "Agregar filtro fijo" });
   expect(fixed).toBeEnabled();
   await userEvent.click(fixed);
@@ -237,6 +237,26 @@ function serveMaximum(answer: (body: MaximumBody, call: number) => Response) {
 }
 // No person is chosen and the form is not saved: the maximum depends only on the filters.
 const maximumQuestion = (type: "choice" | "multiChoice", match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} type={type} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
+
+// Each addition gives its own reason (point 38): no person data matches the remaining fields, or every filter field is in use.
+it("explains why each filter addition is disabled", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  const question = (match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
+  const view = renderWithProviders(question([{ fieldId: zone, value: null }]));
+  const band = async () => within(await screen.findByRole("region", { name: "Qué opciones ve cada persona" })).getByRole("heading", { name: "Qué opciones ve cada persona" }).parentElement!;
+  const person = within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" });
+  await waitFor(() => expect(person).toHaveAccessibleDescription("Ningún dato de las personas usa el catálogo de estos campos."));
+  expect(person).toBeDisabled();
+  const fixed = within(await band()).getByRole("button", { name: "Agregar filtro fijo" });
+  expect(fixed).toBeEnabled();
+  expect(fixed).not.toHaveAccessibleDescription();
+  view.rerender(question([{ fieldId: zone, value: null }, { fieldId: category, value: "Frío" }]));
+  for (const name of ["Agregar filtro según quien lo recibe", "Agregar filtro fijo"]) {
+    const button = within(await band()).getByRole("button", { name });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleDescription("Ya se usan todos los campos de filtro.");
+  }
+});
 
 it("tells the maximum per person and that everyone sees the same options with only fixed filters", async () => {
   const bodies = serveMaximum(body => HttpResponse.json(body.source.match.some(match => match.personAttributeId) ? { maximum: 18, maximumLabel: "Zona Sur" } : { maximum: 180, maximumLabel: null }));

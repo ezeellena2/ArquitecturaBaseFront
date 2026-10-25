@@ -689,6 +689,8 @@
       "addPerson": "Agregar filtro según quien lo recibe",
       "addFixed": "Agregar filtro fijo",
       "noFields": "Este catálogo no tiene campos de filtro disponibles.",
+      "allUsed": "Ya se usan todos los campos de filtro.",
+      "noPersonData": "Ningún dato de las personas usa el catálogo de estos campos.",
       "unavailable": "Campo no disponible",
       "unavailableValue": "Valor no disponible",
       "invalidValue": "Revisá el valor y el tipo del campo.",

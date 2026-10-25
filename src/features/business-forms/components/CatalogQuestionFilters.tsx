@@ -40,13 +40,16 @@ function filterChoices(source: DraftQuestionSource, fields: readonly CatalogFiel
   const available = eligible.filter(field => !match.some(condition => condition.fieldId === field.id));
   return { match, eligible, compatible, available };
 }
-// Both additions act on the whole section, so they go in its header; without filter fields, the reason is their tooltip.
+// Both additions act on the whole section, so they go in its header. Each one gives the reason it is off as its tooltip: no
+// filter fields, every filter field already in use or, for a filter by who receives it, no person data on their catalogs.
 export function CatalogQuestionFilterActions({ source, fields, attributes, onChange }: { source: DraftQuestionSource; fields: readonly CatalogField[]; attributes: readonly PersonAttribute[]; onChange: (source: DraftQuestionSource) => void }) {
   const { t } = useTranslation("forms");
   const { match, eligible, compatible, available } = filterChoices(source, fields, attributes);
-  const reason = eligible.length ? null : t("catalogQuestion.filter.noFields");
+  const personAvailable = available.some(field => compatible(field).length > 0);
+  const fixedReason = !eligible.length ? t("catalogQuestion.filter.noFields") : !available.length ? t("catalogQuestion.filter.allUsed") : null;
+  const personReason = fixedReason ?? (personAvailable ? null : t("catalogQuestion.filter.noPersonData"));
   const add = (person: boolean) => { const field = available.find(field => !person || compatible(field).length > 0); if (field) onChange(normalizeCatalogQuestionSource({ ...source, match: [...match, person ? { fieldId: field.id, personAttributeId: null } : { fieldId: field.id, value: null }] })); };
-  return <><DisabledReason reason={reason}><Button type="button" variant="outline" size="sm-wrap" disabled={!available.some(field => compatible(field).length > 0)} onClick={() => add(true)}>{t("catalogQuestion.filter.addPerson")}</Button></DisabledReason><DisabledReason reason={reason}><Button type="button" variant="outline" size="sm-wrap" disabled={available.length === 0} onClick={() => add(false)}>{t("catalogQuestion.filter.addFixed")}</Button></DisabledReason></>;
+  return <><DisabledReason reason={personReason}><Button type="button" variant="outline" size="sm-wrap" disabled={!personAvailable} onClick={() => add(true)}>{t("catalogQuestion.filter.addPerson")}</Button></DisabledReason><DisabledReason reason={fixedReason}><Button type="button" variant="outline" size="sm-wrap" disabled={available.length === 0} onClick={() => add(false)}>{t("catalogQuestion.filter.addFixed")}</Button></DisabledReason></>;
 }
 export function CatalogQuestionFilters({ source, fields, attributes, scope, readOnly, errors = {}, onChange }: { source: DraftQuestionSource; fields: readonly CatalogField[]; attributes: readonly PersonAttribute[]; scope: CatalogReadScope; readOnly: boolean; errors?: Readonly<Record<string, readonly string[]>>; onChange: (source: DraftQuestionSource) => void }) {
   const { t } = useTranslation("forms");

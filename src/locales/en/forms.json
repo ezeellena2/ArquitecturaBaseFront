@@ -689,6 +689,8 @@
       "addPerson": "Add filter by who receives it",
       "addFixed": "Add fixed filter",
       "noFields": "This catalog has no available filter fields.",
+      "allUsed": "Every filter field is already in use.",
+      "noPersonData": "No person data uses the catalog of these fields.",
       "unavailable": "Field unavailable",
       "unavailableValue": "Unavailable value",
       "invalidValue": "Check the value and the field type.",
