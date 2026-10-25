@@ -5,6 +5,7 @@ Muestra medios de ingreso y datos del perfil. Comparte verificación de destinos
 ## Al modificar
 
 - `PUT /api/me` reemplaza nombre, idioma y zona: enviá los tres aunque cambie uno.
+- Guardar de «Datos del perfil» actúa sobre toda la superficie: va en las acciones de su `Surface`, al borde derecho de la banda y a la altura del título, y envía el formulario por su id (`form={formId}`), sin pie.
 - Correo y número usan verificación por destino con el diálogo común; la oferta de vincular depende del backend.
 - El único medio de ingreso no se desvincula. Ante el conflicto correspondiente, volvé a consultar el perfil.
 - Conservá formato de teléfono, estados de verificación y mensajes para destino ocupado; no inferir una cuenta solo desde correo.

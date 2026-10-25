@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/shared/ui/notifications";
 import { LoginMethodsCard } from "../components/LoginMethodsCard";
@@ -54,6 +54,7 @@ export function ProfilePage() {
   const { t, i18n } = useTranslation("profile");
   const { data: user, isPending } = useCurrentUser();
   const queryClient = useQueryClient();
+  const formId = useId();
 
   const [draft, setDraft] = useState<Draft | undefined>();
   const [loadedUserId, setLoadedUserId] = useState<string | undefined>();
@@ -134,8 +135,18 @@ export function ProfilePage() {
       <div className={surfacesClassName}>
         <LoginMethodsCard user={user} />
 
-        <Surface title={t("sections.details")}>
+        {/* Guardar actúa sobre toda la superficie: va en su banda, a la altura del título, y envía el formulario por
+            su id, como en el editor de roles. */}
+        <Surface
+          title={t("sections.details")}
+          actions={
+            <Button type="submit" form={formId} disabled={mutation.isPending}>
+              {t("form.submit")}
+            </Button>
+          }
+        >
           <form
+            id={formId}
             noValidate
             className="flex flex-col"
             onSubmit={(event) => {
@@ -204,13 +215,6 @@ export function ProfilePage() {
                 </NativeSelect>
               </FormField>
 
-            </div>
-
-            {/* El pie de la superficie, como el de un diálogo: el botón a la derecha, separado de los campos. */}
-            <div className="flex justify-end border-t border-[var(--color-border)] px-4 py-3">
-              <Button type="submit" disabled={mutation.isPending}>
-                {t("form.submit")}
-              </Button>
             </div>
           </form>
         </Surface>

@@ -69,6 +69,28 @@ describe("ProfilePage", () => {
     );
   });
 
+  // Guardar acts on the whole surface: it goes in the band of «Datos del perfil», level with the title, not in a footer.
+  it("saves the profile from the details header", async () => {
+    const saved: ProfileBody[] = [];
+    server.use(...profileHandlers(saved));
+
+    renderRouteWithProviders("/perfil");
+
+    const details = await screen.findByRole("region", { name: "Datos del perfil" });
+    const band = within(details).getByRole("heading", { name: "Datos del perfil" }).parentElement!;
+    const save = within(band).getByRole("button", { name: "Guardar" });
+    expect(within(details).getAllByRole("button", { name: "Guardar" })).toEqual([save]);
+
+    const name = within(details).getByRole("textbox", { name: "Nombre" });
+    await userEvent.clear(name);
+    await userEvent.type(name, "Ana María");
+    await userEvent.click(save);
+
+    await waitFor(() =>
+      expect(saved).toEqual([{ displayName: "Ana María", culture: "es", timeZoneId: currentUser.timeZoneId }]),
+    );
+  });
+
   it("does not let the name grow past what the backend accepts", async () => {
     server.use(...profileHandlers([]));
 
