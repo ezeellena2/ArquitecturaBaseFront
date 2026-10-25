@@ -5,16 +5,19 @@ import { fixtureFormId } from "./formFixtures";
 
 type Language = "es" | "en";
 const text = (language: Language, es: string, en: string) => language === "es" ? es : en;
-async function open(page: Page, language: Language, width: number, scenario = "forms-catalog-fields") {
+async function enter(page: Page, language: Language, width: number, screen: string, heading: string, scenario = "forms-catalog-fields") {
   await page.setViewportSize({ width, height: 900 });
-  await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/formularios/" + fixtureFormId, scenario, lang: language }));
-  await expect(page.getByRole("heading", { name: text(language, "Pedir repuesto", "Request a spare part"), exact: true })).toBeVisible();
+  await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen, scenario, lang: language }));
+  await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   if (width < 768) {
     const menu = page.getByRole("button", { name: text(language, "Menú de navegación", "Navigation menu"), exact: true });
     if (await menu.getAttribute("aria-expanded") === "true") await menu.click();
     await expect(menu).toHaveAttribute("aria-expanded", "false");
   }
+}
+async function open(page: Page, language: Language, width: number, scenario = "forms-catalog-fields") {
+  await enter(page, language, width, "/formularios/" + fixtureFormId, text(language, "Pedir repuesto", "Request a spare part"), scenario);
   await page.getByRole("button", { name: text(language, "Editar Proveedores a consultar", "Edit Suppliers to contact"), exact: true }).click();
   const editor = page.locator("[data-question-local-id]").last();
   await expect(editor.getByRole("combobox", { name: text(language, "Dato de la persona", "Person’s data"), exact: true })).toHaveValue(catalogQuestionFixtureIds.attribute);
@@ -43,6 +46,11 @@ async function contained(page: Page, editor: Locator, width: number) {
     return bounds.left >= container.left - 1 && bounds.right <= container.right + 1;
   }))).toBe(true);
 }
+// «Como si lo recibiera» fills its column, saved or not: the reason of an unsaved form must not narrow the field.
+async function fillsColumn(sample: Locator) {
+  const widths = await sample.evaluate(input => ({ control: input.getBoundingClientRect().width, field: document.querySelector(`label[for="${CSS.escape(input.id)}"]`)!.parentElement!.getBoundingClientRect().width }));
+  expect(Math.abs(widths.control - widths.field)).toBeLessThanOrEqual(1);
+}
 async function observed(page: Page) {
   return page.evaluate(() => {
     const fixture = (globalThis as typeof globalThis & { catalogQuestionFixture: ReturnType<typeof createCatalogQuestionVisualFixtures> }).catalogQuestionFixture;
@@ -64,6 +72,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(inherit).toHaveAccessibleDescription(label("Texto · CUIT · Zona. Cambia si cambia el catálogo.", "Text · CUIT · Zone. Changes when the catalog changes."));
     await expect(description).toBeDisabled();
     await recipient(page, editor, language, "Juan Gómez");
+    await fillsColumn(editor.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }));
     await expect(editor.getByText(label("14 opciones", "14 options"), { exact: true })).toBeVisible();
     await expect(editor.getByText(label("Como mucho 14 por persona (Centro, la más grande): entra en una pregunta de varias (20).", "At most 14 per person (Center, the largest): fits in a multiple-choice question (20)."), { exact: true })).toBeVisible();
     const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
@@ -100,6 +109,21 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const seen = await observed(page);
     expect(seen.writes).toHaveLength(0);
     expect(seen.previews.at(-1)?.source).toMatchObject({ catalog: catalogQuestionFixtureIds.suppliers, match: [{ fieldId: catalogQuestionFixtureIds.zone, personAttributeId: catalogQuestionFixtureIds.attribute }, { fieldId: catalogQuestionFixtureIds.category, value: "Frío" }], presentation: { title: ["text"], description: [catalogQuestionFixtureIds.category, catalogQuestionFixtureIds.paymentDays] } });
+  });
+
+  test("CE4 recipient field keeps its width before the form is saved " + language + " " + width, async ({ page }) => {
+    const label = (es: string, en: string) => text(language, es, en);
+    await enter(page, language, width, "/formularios/nuevo", label("Nuevo formulario", "New form"));
+    await page.getByRole("button", { name: label("Agregar pregunta", "Add question"), exact: true }).click();
+    const editor = page.locator("[data-question-local-id]").last();
+    await editor.getByRole("combobox", { name: label("Tipo de respuesta", "Answer type"), exact: true }).selectOption("catalogChoice");
+    await editor.getByRole("combobox", { name: label("Catálogo", "Catalog"), exact: true }).selectOption(catalogQuestionFixtureIds.suppliers);
+    // Unsaved, the field stays in its place, disabled with its reason as a tooltip, and as wide as when the form is saved.
+    const sample = editor.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
+    await expect(sample).toBeDisabled();
+    await expect(sample).toHaveAccessibleDescription(label("Guardá el formulario para probar con una persona.", "Save the form to try it with a person."));
+    await fillsColumn(sample);
+    await contained(page, editor, width);
   });
 
   test("CE4 recipient without data never sees the full catalog " + language + " " + width, async ({ page }, info) => {

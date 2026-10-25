@@ -16,8 +16,9 @@ interface FieldProps {
 /// `disabledLabel`. El consumidor pasa `reason` solo cuando el control está deshabilitado por ese motivo: no mientras
 /// trabaja ni en ítems de menú, que muestran su motivo adentro. Sin motivo, devuelve el control solo.
 ///
-/// El envoltorio toma el ancho de su control, como un botón. Un control que ocupa todo el ancho de su campo (un `Input`)
-/// pasa `className="flex w-full"`, así no se achica al ancho propio del control cuando está deshabilitado.
+/// El envoltorio toma el ancho de su control, como un botón. Un control que ocupa todo el ancho de su campo pasa
+/// `className="grid w-full"`, así no se achica al ancho propio del control cuando está deshabilitado: la grilla estira
+/// al control aunque tenga su propio contenedor (un `Autocomplete`), y `flex w-full` sólo alcanza con un `Input` directo.
 export function DisabledReason({ reason, className, children, ...field }: FieldProps & {
   reason?: string | null;
   className?: string;
