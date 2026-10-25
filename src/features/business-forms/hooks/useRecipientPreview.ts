@@ -16,12 +16,13 @@ export function useRecipientSamples(scope: FormReadScope, query: RecipientSample
   const root = [...formScopeKey(scope), "recipient-samples"] as const;
   useUnobservedQueryCleanup(root);
   // The samples share the forms read limit: a 429 starts its Retry-After (60 s without one) before the error shows, and Retry waits it.
+  // A failed read repeats only through Retry: coming back to the window or reconnecting never sends it on its own (RF13-1).
   const cooldown = useCountdown(0);
   const { restart } = cooldown;
   const samples = useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchRecipientSamples(query, signal).catch((error: unknown) => {
     if (error instanceof ApiError && error.status === 429) restart(error.retryAfterSeconds ?? 60);
     throw error;
-  }), enabled: enabled && canPreview(scope), staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
+  }), enabled: enabled && canPreview(scope), staleTime: 0, gcTime: 0, refetchOnWindowFocus: false, refetchOnReconnect: false, meta: { errorOwner: "local" } });
   return { ...samples, waitSeconds: samples.isError && cooldown.isRunning ? cooldown.seconds : 0 };
 }
 export function useRecipientPreview(scope: FormReadScope, definitionId: string | null, questionId: string, type: "choice" | "multiChoice", source: DraftQuestionSource) {

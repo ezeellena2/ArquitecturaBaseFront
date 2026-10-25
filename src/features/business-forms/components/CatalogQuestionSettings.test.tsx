@@ -1,6 +1,7 @@
 import { MemoryRouter } from "react-router";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { focusManager, onlineManager } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { expect, it, vi } from "vitest";
 import { server } from "@/test/mocks/server";
@@ -197,6 +198,13 @@ it("keeps Retry disabled during the wait of a 429 on the recipient samples", asy
   expect(retry).toBeDisabled();
   expect(retry).toHaveAccessibleDescription("Esperá 5 segundos para volver a intentar.");
   expect(requests.samples).toBe(1);
+  // Coming back to the window or reconnecting inside the wait does not repeat the read on its own (RF13-1).
+  try {
+    await act(async () => { focusManager.setFocused(false); focusManager.setFocused(true); onlineManager.setOnline(false); onlineManager.setOnline(true); });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    expect(requests.samples).toBe(1);
+    expect(within(screen.getByRole("alert")).getByRole("button", { name: "Reintentar" })).toBeDisabled();
+  } finally { focusManager.setFocused(undefined); onlineManager.setOnline(true); }
 });
 
 const maximumCatalog = "01990000-0000-7000-8000-0000000000a1", zones = "01990000-0000-7000-8000-0000000000a2", zone = "01990000-0000-7000-8000-0000000000a3", category = "01990000-0000-7000-8000-0000000000a4", attribute = "01990000-0000-7000-8000-0000000000a5";
