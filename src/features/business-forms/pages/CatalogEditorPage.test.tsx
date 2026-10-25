@@ -536,6 +536,41 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     for (const name of ["Fila 1 · Plazo", "Fila 2 · Plazo"]) expect(screen.getByRole("textbox", { name })).toHaveAccessibleDescription(name + ": «30 días» se repite en otra opción activa.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+  async function removePlazo(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("button", { name: "Quitar Plazo" }));
+    const dialog = await screen.findByRole("dialog", { name: "Quitar «Plazo»" });
+    await user.click(within(dialog).getByRole("checkbox", { name: "Sí, quitar el campo y su valor" }));
+    await user.click(within(dialog).getByRole("button", { name: "Quitar el campo" }));
+  }
+  it("does not offer to show in the table the rows of a rule change on a field removed in the same save", async () => {
+    viewport(true); rulesSetup("maxLength", "length"); const user = userEvent.setup();
+    await mount("/catalogos/" + id);
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
+    await pasteText(user, screen.getByRole("spinbutton", { name: "Máximo de caracteres" }), "5");
+    await removePlazo(user);
+    await screen.findByRole("button", { name: "Editar Gómez" });
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
+    // The table leaves the removed field's column out: its message goes in the field's row, with the way to restore it.
+    expect(screen.getByText("Hay valores que no cumplen las reglas del campo.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Restaurar el campo" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ver los 2 en la tabla" })).not.toBeInTheDocument();
+  });
+  it("does not offer to show in the table the rows of a type change on a field removed in the same save", async () => {
+    viewport(true); conversionSetup(); const user = userEvent.setup();
+    await mount("/catalogos/" + id);
+    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
+    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
+    await removePlazo(user);
+    await screen.findByRole("button", { name: "Editar Gómez" });
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Cambiar el tipo de «Plazo»" });
+    expect(within(dialog).getByRole("cell", { name: "«30 días» no es un número entero." })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Ver la fila en la tabla" })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
+  });
   it("quotes the text of a repeated option, never its identity, when «único» is switched on a catalog field", async () => {
     viewport(true); sourceSetup(); const user = userEvent.setup();
     rulesSetup("unique", "invalid", termRows.map(row => ({ ...row, fields: { [fieldId]: southId }, fieldTexts: { [fieldId]: { es: "Sur", en: "South" } } })), savedField({ key: "zone", name: "Zona", type: "catalog", sourceCatalogId: sourceId }));

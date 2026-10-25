@@ -10,13 +10,13 @@ import type { FormCulture } from "../model";
 
 const shownRows = 5;
 
-/** CE1 «Cambiar el tipo»: the server's rows that do not convert, with the way to show them in the table. */
+/** CE1 «Cambiar el tipo»: the server's rows that do not convert, with the way to show them in the table (`onShowRows`, not for a removed field, which has no column there). */
 export function CatalogFieldConversionDialog({ name, from, field, culture, convertedCount, invalidCount, rows, onClose, onShowRows }: {
   name: string; from: CatalogFieldType; field: Pick<CatalogFieldDraft, "type" | "min" | "max" | "maxLength">;
   /** The draft's culture, in which its bounds are written. */
   culture: FormCulture;
   convertedCount: number; invalidCount: number; rows: readonly CatalogInvalidFieldRow[];
-  onClose: () => void; onShowRows: () => void;
+  onClose: () => void; onShowRows?: () => void;
 }) {
   const { t, i18n } = useTranslation("forms");
   const restoreFocus = useRestoreFocusOnClose();
@@ -34,6 +34,6 @@ export function CatalogFieldConversionDialog({ name, from, field, culture, conve
       <TableBody>{shown.map(row => <TableRow key={row.itemId}><TableCell>{row.row}</TableCell><TableCell className="whitespace-normal">{catalogFieldProblemText(t, field, catalogStoredValueText(from, row.value, culture, yesNo), row.reason, culture)}</TableCell></TableRow>)}</TableBody></Table>
     {more > 0 ? <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.fields.conversion.more", { count: more })}</p> : null}
     <Banner>{t("catalogs.fields.conversion.hint")}</Banner>
-    <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" onClick={onShowRows}>{t("catalogs.fields.conversion.show", { count: rows.length })}</Button></DialogFooter>
+    <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t("common:actions.cancel")}</Button>{onShowRows ? <Button type="button" onClick={onShowRows}>{t("catalogs.fields.conversion.show", { count: rows.length })}</Button> : null}</DialogFooter>
   </DialogContent></Dialog>;
 }
