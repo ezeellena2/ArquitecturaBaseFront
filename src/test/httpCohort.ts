@@ -27,6 +27,7 @@ const cohorts = {
   whatsappActions: ["whatsapp-form-actions-http", "WHATSAPP_FORM_ACTIONS_HTTP_CONTRACT_INPUT", "whatsapp-actions"],
   whatsappAudio: ["whatsapp-audio-http", "WHATSAPP_AUDIO_HTTP_CONTRACT_INPUT", "whatsapp-audio"],
   whatsappForms: ["whatsapp-forms-http", "WHATSAPP_FORMS_HTTP_CONTRACT_INPUT", "whatsapp-forms"],
+  aiAssistant: ["ai-assistant-http", "AI_ASSISTANT_HTTP_CONTRACT_INPUT", "ai-assistant"],
 } as const;
 export type HttpCohort = keyof typeof cohorts;
 const sha256 = z.string().regex(/^[0-9a-f]{64}$/);

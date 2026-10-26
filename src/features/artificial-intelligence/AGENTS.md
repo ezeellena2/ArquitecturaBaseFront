@@ -29,6 +29,8 @@ api/assistant valida cada respuesta con zod estricto y deriva sus tipos con z.in
 lanza «Invalid assistant contract.». state (pending, running, completed, failed, uncertain, canceled, expired) y
 stage viajan en minúsculas como el DTO, y las comparaciones usan la unión AssistantState. usage, stage (nunca null),
 cancelRequestedAtUtc y configurationDestination son requeridos. El contrato son el DTO y los ejemplos exportados
-en test/fixtures/ai-assistant-http; los dobles de comportamiento no lo acreditan.
+en test/fixtures/ai-assistant-http; los dobles de comportamiento no lo acreditan. assistantHttpContract lee esos
+cuerpos intactos con httpCohort("aiAssistant") por el cliente, MSW y los adaptadores del modelo: pending activo,
+completed con respuesta y canceled con un intento nuevo, y el texto es/en de cada estado.
 
 El panel interno usa useAssistantConversationList con usePagination/QueryCache privado (cuenta, idioma y revisión de permisos), 20 filas por defecto y GET acotados. conversationGroups recibe ahora UTC y zona del perfil; se recalcula al abrir/reanudar, sin timer paralelo. RuntimeProvider aísla la API experimental de threadList fijada en 0.15.23; callbacks sólo piden la navegación autorizada de AiAssistantPage. Nueva conversación no escribe hasta la aceptación; list/detail son autoridad de títulos. El borrado confirmado retira título y turnos del caché y luego invalida la página.

@@ -53,6 +53,7 @@ it.each([
   ["whatsappAudio", "WHATSAPP_AUDIO_HTTP_CONTRACT_INPUT", "whatsapp-audio", false],
   ["suggestionDetails", "FORMS_SUGGESTION_DETAILS_HTTP_CONTRACT_INPUT", "suggestion-details", false],
   ["catalogProposals", "FORMS_CATALOG_PROPOSALS_HTTP_CONTRACT_INPUT", "catalog-proposals", false],
+  ["aiAssistant", "AI_ASSISTANT_HTTP_CONTRACT_INPUT", "ai-assistant", false],
 ] as const)("qualifies synthetic %s files with exact bytes (nested=%s)", async (name, environment, artifactSet, nested) => {
   const directory = syntheticCohort(artifactSet, environment, nested);
   const cohort = httpCohort(name);
