@@ -472,7 +472,7 @@ control que apagan, sin texto al lado ni debajo, y el control no cambia de lugar
 Se conservan, con su motivo: los motivos dentro de los menús «⋯» y de «Descargar ▾»; los estados del flujo con su acción
 (guardado sin confirmar, revisión pendiente); el estado de la conversación sobre el compositor del chat y la espera de
 Inicio para enviar otra consulta; la cuenta regresiva del ingreso público para pedir otro código o enlace; la espera de
-Formularios que faltan, escrita sobre sus filtros y su tabla apagados; los conteos de los encabezados y la versión
+Formularios que faltan, escrita entre sus filtros y su tabla apagados; los conteos de los encabezados y la versión
 publicada junto al título de la planilla; «Nuevo, sin guardar» de CE1; los pies de diálogo y la etiqueta «Guardando…»
 mientras trabaja ([premisas](../guides/premisas-de-desarrollo.md)).
 
