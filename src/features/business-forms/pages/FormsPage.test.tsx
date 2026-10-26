@@ -292,6 +292,23 @@ describe("Forms routes", () => {
     await waitFor(() => expect(store.definitions.get(fixtureFormId)?.revision).toBe(3));
     expect(store.definitions.get(fixtureFormId)?.name.es).toBe("Mis cambios");
   });
+  // «Usar borrador actual» leaves nothing to save, so «Guardar borrador» is off: the focus goes to a usable control, not to body.
+  it("returns the focus to a usable control after using the current draft from the review", async () => {
+    setup("forms-conflict");
+    renderRouteWithProviders("/formularios/" + fixtureFormId);
+    await userEvent.clear(await screen.findByLabelText("Nombre"));
+    await pasteText(screen.getByLabelText("Nombre"), "Mis cambios");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+    const pending = await screen.findByRole("region", { name: "Revisión del borrador" });
+    await userEvent.click(within(within(pending).getByRole("heading", { name: "Revisión del borrador" }).parentElement!).getByRole("button", { name: "Revisar" }));
+    const review = await screen.findByRole("dialog", { name: "Revisión del borrador" });
+    await userEvent.click(within(review).getByRole("button", { name: "Usar borrador actual" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeDisabled();
+    await waitFor(() => expect(document.activeElement).not.toBe(document.body));
+    expect(document.activeElement).not.toBeNull();
+    expect((document.activeElement as HTMLElement).matches(":disabled")).toBe(false);
+  });
   it("keeps a confirmed locked prefix selectable and readonly even with no active publication", async () => {
     setup("forms-prefix");
     renderRouteWithProviders("/formularios/" + fixtureFormId);
