@@ -120,6 +120,9 @@ const page = <T extends z.ZodType>(item: T) =>
 const conversationPage = page(conversationSummary);
 const turnPage = page(turn);
 export type AssistantState = z.infer<typeof assistantStateSchema>;
+/** Every state and stage the backend publishes, in the order of the contract: each one has its text. */
+export const assistantStates = assistantStateSchema.options;
+export const assistantStages = stage.options;
 export type ContentAccess = z.infer<typeof contentAccess>;
 export type AssistantEvidence = z.infer<typeof evidence>;
 export type AssistantAccepted = z.infer<typeof accepted>;

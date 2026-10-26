@@ -1,7 +1,9 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
-import type { AssistantTurn } from "../../api/assistant";
+import { assistantStages, assistantStates, type AssistantTurn } from "../../api/assistant";
+import en from "@/locales/en/assistant.json";
+import es from "@/locales/es/assistant.json";
 import { AssistantOperationState } from "./AssistantOperationState";
 const turn: AssistantTurn = {
   turnId: "0199a0c0-0000-7000-8000-000000000222",
@@ -58,5 +60,11 @@ describe("AssistantOperationState", () => {
       screen.getByRole("button", { name: "Consultar estado" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/^states\./)).not.toBeInTheDocument();
+  });
+  // Each state of the contract, and each stage of an active turn, has its text in both languages: a state added to the union
+  // or a key removed from both files would show the raw «states.xxx» again, and the parity test does not see it.
+  it.each([["es", es], ["en", en]] as const)("has the text of every state and every active stage in %s", (_, texts) => {
+    for (const state of assistantStates) expect(texts.states).toHaveProperty(state);
+    for (const stage of assistantStages.filter(stage => stage !== "finished")) expect(texts.stages).toHaveProperty(stage);
   });
 });
