@@ -1,7 +1,7 @@
 import { httpCohort } from "@/test/httpCohort";
 import { expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
-import { readCatalog, readCatalogItems, readCatalogSave } from "./catalogResponse";
+import { catalogFieldUsageSchema, readCatalog, readCatalogItems, readCatalogSave } from "./catalogResponse";
 import { readCatalogFieldFeedback } from "./catalogFieldFeedback";
 import { server } from "@/test/mocks/server";
 import { createManualCatalog, fetchCatalogPage, fetchCatalog, updateManualCatalog, type ManualCatalogBody, type UpdateManualCatalogBody } from "./catalogs";
@@ -9,11 +9,50 @@ import { createManualCatalog, fetchCatalogPage, fetchCatalog, updateManualCatalo
 // Current producer cohort, separate from the immutable pre-K4 fixtures.
 const cohort=httpCohort("manualCatalogs");
 const raw=(name:string)=>cohort.bytes(name).toString("utf8");
-const fieldCaptures = ["fields-create.request.json", "fields-update.request.json", "fields-created.json", "fields-required-error.json", "fields-values-saved.json", "fields-conversion-error.json", "fields-unique-error.json", "fields-detail.json", "fields-items.json", "fields-removal-confirmation.json", "fields-removed.json", "fields-presentation.json", "fields-source-items.json", "fields-source-in-use.json", "fields-rules-error-es.json", "fields-rules-error-en.json"];
-it("verifies the exact current Manual and field captures from the common run", () => {
+const fieldCaptures = ["fields-create.request.json", "fields-update.request.json", "fields-created.json", "fields-required-error.json", "fields-values-saved.json", "fields-conversion-error.json", "fields-unique-error.json", "fields-detail.json", "fields-items.json", "fields-removal-confirmation.json", "fields-removed.json", "fields-presentation.json", "fields-source-items.json", "fields-source-in-use.json", "fields-rules-error-es.json", "fields-rules-error-en.json", "fields-in-use.json", "fields-usage-detail.json"];
+const languageCaptures = ["description-optional-created.json", "english-original-created.json", "english-original-detail-es.json", "original-missing-error.json"];
+it("verifies the 49 exact current Manual and field captures from the common run", () => {
  const provenance=cohort.verify();
  expect(provenance.sources.some(source=>source.path.endsWith("FormCatalogEndpointsTests.cs"))).toBe(true);
- expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["created.json","updated.json","detail.json","items.json","list-es.json","list-en.json","conflict-es.json","conflict-en.json","create-request.request.json","create-duplicate-positions-request.request.json","missing-revision-request.request.json","inactive-request.request.json","conflict-request.request.json","queued-moves-request.request.json","update-request.request.json", ...["text","integer","decimal","date"].flatMap(type=>["typed-"+type+"-created.json","typed-"+type+"-items.json"]), "typed-invalid-value-es.json","typed-invalid-value-en.json","typed-required-value.json","typed-type-change-rejected.json", ...fieldCaptures].sort());
+ expect(provenance.sources.some(source=>source.path.endsWith("/FormCatalogFieldInUseIntegrationTests.cs"))).toBe(true);
+ expect(provenance.captures).toHaveLength(49);
+ expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["created.json","updated.json","detail.json","items.json","list-es.json","list-en.json","conflict-es.json","conflict-en.json","create-request.request.json","create-duplicate-positions-request.request.json","missing-revision-request.request.json","inactive-request.request.json","conflict-request.request.json","queued-moves-request.request.json","update-request.request.json", ...["text","integer","decimal","date"].flatMap(type=>["typed-"+type+"-created.json","typed-"+type+"-items.json"]), "typed-invalid-value-es.json","typed-invalid-value-en.json","typed-required-value.json","typed-type-change-rejected.json", ...fieldCaptures, ...languageCaptures].sort());
+});
+it("reads a catalog without description, one created only in its English original, and the error of a missing original", async () => {
+  const optional = readCatalogSave(cohort.json("description-optional-created.json"), []);
+  expect(optional.catalog).toMatchObject({ originalCulture: "es", description: {}, revision: 1 });
+  const english = readCatalogSave(cohort.json("english-original-created.json"), ["north"], undefined, undefined, ["region"]);
+  expect(english.catalog).toMatchObject({ originalCulture: "en", name: { en: expect.any(String) }, description: { en: "Branch list" } });
+  expect(Object.keys(english.catalog.name)).toEqual(["en"]);
+  expect(english.catalog.fields?.[0]).toMatchObject({ id: english.fieldIdentityMap!.region, name: { en: "Region" } });
+  expect(english.catalog.presentationCheck?.cultures.map(entry => entry.culture)).toEqual(["en"]);
+  // With the menu in Spanish the detail keeps the English original as it is: one language, nothing copied.
+  const detail = readCatalog(cohort.json("english-original-detail-es.json"), english.catalog.id);
+  expect(detail).toEqual(english.catalog);
+  server.use(http.put("/api/forms/catalogs/" + english.catalog.id, () => cohort.response("original-missing-error.json", 400, { "content-type": "application/problem+json" })));
+  const rejected = updateManualCatalog(english.catalog.id, cohort.json("update-request.request.json") as UpdateManualCatalogBody);
+  await expect(rejected).rejects.toMatchObject({ status: 400, code: "Forms.Catalog.ContentInvalid", problem: cohort.json("original-missing-error.json") });
+  await expect(rejected).rejects.toMatchObject({ errors: { "items[1].text.en": [expect.any(String)] } });
+});
+it("reads the real FieldInUse rejection and each use of the detail with its question and stage", async () => {
+  const detail = readCatalog(cohort.json("fields-usage-detail.json"));
+  const uses = detail.fields!.map(field => [field.key, field.usedBy.map(use => catalogFieldUsageSchema.parse(use))]);
+  const [zone] = detail.fields!;
+  const question = { definitionId: zone!.usedBy[0]!.definitionId, formName: "Pedir repuesto", question: "Proveedor", questionId: zone!.usedBy[0]!.questionId };
+  expect(question.definitionId).not.toBeNull(); expect(question.questionId).not.toBeNull();
+  // The same question in the active version and the draft, another filter only in the active one, and the catalog's own «En WhatsApp».
+  expect(uses).toEqual([
+    ["zone", [{ ...question, stage: "Active" }, { ...question, stage: "Draft" }]],
+    ["kind", [{ ...question, stage: "Active" }]],
+    ["tax_id", [{ definitionId: null, formName: detail.name.es, question: null, questionId: null, stage: "Catalog" }]],
+  ]);
+  server.use(http.put("/api/forms/catalogs/" + detail.id, () => cohort.response("fields-in-use.json", 409, { "content-type": "application/problem+json" })));
+  const problem = cohort.json("fields-in-use.json") as { errors: Record<string, string[]> };
+  await expect(updateManualCatalog(detail.id, cohort.json("fields-update.request.json") as UpdateManualCatalogBody)).rejects.toMatchObject({ status: 409, code: "Forms.Catalog.FieldInUse", problem });
+  expect(Object.keys(problem.errors)).toEqual(["fields[0].isActive"]);
+  const feedback = readCatalogFieldFeedback(problem);
+  expect(feedback).toEqual({ uses: [{ ...question, stage: "Active" }, { ...question, stage: "Draft" }] });
+  expect(feedback!.uses).toEqual(zone!.usedBy);
 });
 it("consumes current Manual receipts and detail with filters:null", async () => {
   const createdBody = raw("created.json"), updatedBody = raw("updated.json"), detailBody = raw("detail.json");
