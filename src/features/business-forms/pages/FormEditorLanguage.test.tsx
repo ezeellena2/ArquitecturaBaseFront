@@ -8,7 +8,7 @@ import { notify } from "@/shared/ui/notifications";
 import { hasUnsavedChanges } from "@/shared/hooks/useUnsavedChangesGuard";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
-import { createFormFixtureStore, fixtureFormId } from "@/test/visual/formFixtures";
+import { createFormFixtureStore, fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
 import type { FormPublicationCheck } from "../api/response";
 import type { FormCulture } from "../model";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
@@ -75,6 +75,21 @@ it("titles the form in the menu language and falls back to the original when it 
   await userEvent.clear(name);
   expect(screen.getByRole("heading", { level: 1, name: "Registrar visita" })).toBeVisible();
   expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getAllByRole("listitem").at(-1)).toHaveTextContent(/^Registrar visita$/);
+});
+
+// Like the title, the save notice and the lifecycle dialogs name the form in the menu language, with the original as fallback.
+it("names the form in the menu language in the save notice and the deletion dialog", async () => {
+  const store = await setup("en");
+  store.lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: 0, canDelete: true }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await userEvent.click(await screen.findByRole("textbox", { name: "Name" }));
+  await userEvent.paste(" edited");
+  await userEvent.click(screen.getByRole("button", { name: "Save draft" }));
+  await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Saved the draft of Register visit edited." })));
+  const menu = screen.getByRole("button", { name: "Form actions" });
+  act(() => menu.focus()); await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitem", { name: /Delete/ }));
+  expect(await screen.findByRole("dialog", { name: "Delete “Register visit edited”" })).toBeVisible();
 });
 
 it("shows a save error of the other language under the visible field", async () => {
