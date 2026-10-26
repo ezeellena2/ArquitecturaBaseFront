@@ -32,6 +32,8 @@
   "required": "Obligatoria",
   "maxLength": "Máximo de caracteres",
   "addOption": "Agregar opción",
+  "optionsLimit_one": "Podés agregar hasta {{count}} opción.",
+  "optionsLimit_other": "Podés agregar hasta {{count}} opciones.",
   "option": "Opción {{number}}",
   "done": "Listo",
   "up": "Subir {{name}}",

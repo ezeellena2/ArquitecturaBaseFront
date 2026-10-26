@@ -6,6 +6,7 @@ import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import { FormField } from "@/shared/ui/FormField";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { IconButton } from "@/shared/ui/IconButton";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -79,6 +80,9 @@ export function QuestionEditor({ question, position, total, culture, original, e
     else onChange(replaceQuestionType(question, type, crypto.randomUUID(), original));
   }
   const selectionError = question.type === "multiChoice" ? fieldError("selection(?:\\.(?:minSelected|maxSelected))?") ?? (!validSelectionCounts(question.selection) ? t("multiple.invalidRange") : !question.source && question.selection.minSelected > question.options.length ? t("multiple.impossibleMinimum") : undefined) : undefined;
+  // «Agregar opción» se apaga en el tope (20 en una de varias, 50 en una de elección) con el tope como motivo.
+  const optionLimit = question.type === "multiChoice" ? 20 : 50;
+  const optionsFull = (question.type === "choice" || question.type === "multiChoice") && (question.options?.length ?? 0) >= optionLimit;
   const optionError = fieldError("options") ?? (question.type === "multiChoice" && !question.source && question.options.length > 20 ? t("multiple.optionLimit") : undefined);
   const selectionControls = <>{question.type === "choice" || question.type === "multiChoice" ? <CheckboxField label={t("multiple.allow")} checked={question.type === "multiChoice"} disabled={readOnly} onCheckedChange={multiple => {
         if (question.fieldId) setConfirmation({ multiple });
@@ -125,7 +129,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
             <IconButton size="icon-sm" label={t("remove", { name: t("option", { number: index + 1 }) })} onClick={() => { if (option.choiceId || Object.values(option.label).some(Boolean)) setConfirmation({ option: option.localId }); else removeOption(option.localId); }}><TrashIcon className="size-4" /></IconButton>
           </div> : null}
         </div>)}
-        {!readOnly ? <Button ref={addOptionButton} type="button" variant="outline" disabled={question.options.length >= (question.type === "multiChoice" ? 20 : 50)} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button> : null}
+        {!readOnly ? <DisabledReason reason={optionsFull ? question.type === "multiChoice" ? t("multiple.optionLimit") : t("optionsLimit", { count: optionLimit }) : null}><Button ref={addOptionButton} type="button" variant="outline" disabled={optionsFull} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button></DisabledReason> : null}
       </div> : null}
       <div className="flex justify-end"><Button type="button" variant="outline" onClick={() => { onExpand(false); editButton.current?.focus(); }}>{t("done")}</Button></div>
     </div> : null}

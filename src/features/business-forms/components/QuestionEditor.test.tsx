@@ -229,3 +229,20 @@ it("preserves twenty-one authored options while refusing to add another, rather 
   expect(screen.getByRole("button", { name: "Agregar opción" })).toBeDisabled();
   expect(screen.getByRole("alert")).toHaveTextContent("20 opciones");
 });
+it.each([
+  ["multiChoice", 20, "Esta pregunta admite hasta 20 opciones propias."],
+  ["choice", 50, "Podés agregar hasta 50 opciones."],
+] as const)("gives the limit as the reason of «Agregar opción» with %s options at the limit", async (type, count, reason) => {
+  const options = Array.from({ length: count }, (_, index) => ({ localId: "own-" + index, choiceId: null, label: { es: "Opción " + (index + 1) } }));
+  const question: DraftQuestion = type === "multiChoice" ? { ...first, type, selection: { minSelected: 1, maxSelected: 20 }, options } : { ...first, type, options };
+  await act(async () => { renderWithProviders(<QuestionEditor question={question} position={1} total={1}
+    culture="es" original="es" expanded readOnly={false} issues={[]} onChange={vi.fn()}
+    onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
+  const add = screen.getByRole("button", { name: "Agregar opción" });
+  expect(add).toBeDisabled();
+  expect(add).toHaveAccessibleDescription(reason);
+  // At the limit there is no error: the limit is only the reason of the button, not a text below it.
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  await userEvent.hover(add);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+});
