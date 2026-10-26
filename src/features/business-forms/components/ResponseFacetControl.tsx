@@ -9,6 +9,7 @@ import { Pagination } from "@/shared/ui/Pagination";
 import { Spinner } from "@/shared/ui/Spinner";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
 export function ResponseFacetControl({
@@ -47,6 +48,8 @@ export function ResponseFacetControl({
   useEffect(() => { onReadError?.(`${dimension}:${fieldId ?? ""}`, query.error); }, [onReadError, dimension, fieldId, query.error]);
   if (query.error instanceof ApiError && query.error.status === 403)
     return <ForbiddenPage />;
+  // The wait of a 429 is the reason of the controls it turns off (`DisabledReason`), never a text in the region.
+  const wait = query.cooldown.isRunning ? t("wait", { count: query.cooldown.seconds }) : null;
   return (
     <div ref={visibilityRef} className="flex flex-col gap-3">
       {searchable ? (
@@ -60,20 +63,21 @@ export function ResponseFacetControl({
           }}
         />
       ) : null}
-      {query.cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: query.cooldown.seconds })}</p> : null}
       {query.isPending && filter ? (
         <Spinner />
       ) : query.isError && !query.data && (query.error instanceof ApiError && (query.error.isNetworkError || query.error.status === 429)) ? (
-        <Button
-          type="button"
-          variant="outline"
-          disabled={query.cooldown.isRunning}
-          onClick={() => {
-            query.retry();
-          }}
-        >
-          {t("common:actions.retry")}
-        </Button>
+        <DisabledReason reason={wait}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={query.cooldown.isRunning}
+            onClick={() => {
+              query.retry();
+            }}
+          >
+            {t("common:actions.retry")}
+          </Button>
+        </DisabledReason>
       ) : (
         <div className="flex flex-col gap-2">
           {query.data?.items.map((option) => (
@@ -135,10 +139,10 @@ export function ResponsePresenceControl({
   const { ref: visibilityRef, visible } = useElementVisibility<HTMLDivElement>();
   const query = useResponseFacet(formId, filter, "presence", fieldId, 1, "", visible, !onReadError);
   useEffect(() => { onReadError?.(`presence:${fieldId}`, query.error); }, [onReadError, fieldId, query.error]);
+  const wait = query.cooldown.isRunning ? t("wait", { count: query.cooldown.seconds }) : null;
   return <div ref={visibilityRef} className="flex flex-col gap-2">
-    {query.cooldown.isRunning ? <p role="status" className="text-sm">{t("wait", { count: query.cooldown.seconds })}</p> : null}
-    {query.isError && query.error instanceof ApiError && (query.error.isNetworkError || query.error.status === 429) ? <Button type="button" variant="outline" disabled={query.cooldown.isRunning} onClick={() => query.retry()}>{t("common:actions.retry")}</Button> : null}
-    {(
+    {query.isError && query.error instanceof ApiError && (query.error.isNetworkError || query.error.status === 429) ? <DisabledReason reason={wait}><Button type="button" variant="outline" disabled={query.cooldown.isRunning} onClick={() => query.retry()}>{t("common:actions.retry")}</Button></DisabledReason> : null}
+    <DisabledReason reason={wait} className="grid w-full">
     <NativeSelect
       aria-label={t("responses.answerState")}
       value={value}
@@ -155,6 +159,6 @@ export function ResponsePresenceControl({
         );
       })}
     </NativeSelect>
-    )}
+    </DisabledReason>
   </div>;
 }

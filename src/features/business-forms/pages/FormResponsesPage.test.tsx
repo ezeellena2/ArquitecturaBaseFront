@@ -1045,9 +1045,16 @@ describe("response sheet", () => {
     await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
     expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
     if (status === 429) {
+      // The wait of the facet is the reason of its disabled Reintentar (and of the answer state), not a text in its region.
       const actor = within(dialog).getByRole("region", { name: "Cargó" });
+      const wait = /^Esperá [0-9]+ segundos para volver a intentar\.$/;
       expect(within(actor).getByRole("button", { name: "Reintentar" })).toBeDisabled();
-      expect(within(actor).getByRole("status")).toHaveTextContent("60");
+      expect(within(actor).getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(wait);
+      expect(within(actor).queryByRole("status")).not.toBeInTheDocument();
+      const state = within(dialog).getAllByRole("combobox", { name: "Respuesta" })[0];
+      expect(state).toBeDisabled();
+      expect(state).toHaveAccessibleDescription(wait);
+      for (const text of within(dialog).getAllByText(wait)) expect(text).not.toBeVisible();
     } else expect(within(dialog).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     expect(requested).toHaveBeenCalled();
   });
