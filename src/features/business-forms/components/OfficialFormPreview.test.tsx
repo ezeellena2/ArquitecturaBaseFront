@@ -66,3 +66,14 @@ it.each(["v", "new-version"])("retires a withdrawn menu language and renews only
  await waitFor(()=>expect(fetchFormPreview).toHaveBeenCalledTimes(2));
  expect(vi.mocked(fetchFormPreview).mock.calls.every(call=>call[2]==="es")).toBe(true);
 });
+
+// The wait of a 429 is the reason of the disabled load button, like the other dialog footers: never a text in the dialog.
+it("gives the wait of a 429 as the reason of the disabled load button",async()=>{
+ vi.mocked(fetchFormPreview).mockRejectedValue(new ApiError(429,{code:"RateLimit.Exceeded",detail:"Demasiados pedidos.",retryAfter:30}));
+ renderPreview();
+ const wait=/^Esperá [0-9]+ segundos para volver a intentar\.$/;
+ await waitFor(()=>expect(screen.getByRole("button",{name:"Cargar vista"})).toHaveAccessibleDescription(wait));
+ expect(screen.getByRole("button",{name:"Cargar vista"})).toBeDisabled();
+ for(const text of screen.getAllByText(wait))expect(text).not.toBeVisible();
+ expect(fetchFormPreview).toHaveBeenCalledTimes(1);
+});

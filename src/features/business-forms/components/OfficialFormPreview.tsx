@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { EmbeddedPreview } from "@/shared/ui/EmbeddedPreview";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -59,7 +60,7 @@ export function OfficialFormPreview({ definitionId, versionId, versionNumber, cu
       {live ? <p className="text-xs text-[var(--color-content-muted)]">{t("publication.previewFallback")}</p> : null}
       <DialogFooter><Button variant="outline" onClick={onClose}>{t("common:actions.close")}</Button>
         {live ? <Button asChild variant="outline"><a href={live.url} target="_blank" rel="noopener noreferrer">{t("publication.previewOpen")}</a></Button> : null}
-        {!denied ? <Button disabled={busy||now<waitUntil} onClick={()=>void load(culture)}>{t(expired||live?"publication.previewRenew":"publication.previewLoad")}</Button> : null}
+        {!denied ? <DisabledReason reason={!busy&&now<waitUntil?t("wait",{count:Math.ceil((waitUntil-now)/1000)}):null} className="max-sm:*:flex-1"><Button disabled={busy||now<waitUntil} onClick={()=>void load(culture)}>{t(expired||live?"publication.previewRenew":"publication.previewLoad")}</Button></DisabledReason> : null}
       </DialogFooter>
     </DialogContent>
   </Dialog>;
