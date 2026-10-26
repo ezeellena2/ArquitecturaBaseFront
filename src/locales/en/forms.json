@@ -103,7 +103,6 @@
   "noSave": "You no longer have permission to save. You can check your pending attempt.",
   "optionRemovedTitle": "Remove option?",
   "optionRemovedDescription": "It will no longer be offered in the draft; previous responses are preserved.",
-  "translations": "Text is edited per language and is not translated automatically.",
   "types": {
     "shortText": "Short text",
     "longText": "Long text",

@@ -36,6 +36,8 @@ it("edits the form in the menu language without a content language selector", as
   expect(name).toHaveValue("");
   expect(name).toHaveAttribute("placeholder", "Untranslated");
   expect(name).toHaveAccessibleDescription("Original (Spanish): Registrar visita");
+  // Without a selector, the old note about editing per language has nothing to point at: it is gone.
+  expect(screen.queryByText("Text is edited per language and is not translated automatically.")).not.toBeInTheDocument();
 });
 
 // Translating is changing the menu language and editing the same draft: nothing unsaved is lost, so the menu does not ask.

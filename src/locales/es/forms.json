@@ -103,7 +103,6 @@
   "noSave": "Ya no tenés permiso para guardar. Podés consultar tu intento pendiente.",
   "optionRemovedTitle": "¿Quitar la opción?",
   "optionRemovedDescription": "Dejará de ofrecerse en el borrador; las respuestas anteriores se conservan.",
-  "translations": "Los textos se editan por idioma y no se traducen automáticamente.",
   "types": {
     "shortText": "Texto corto",
     "longText": "Texto largo",
