@@ -48,20 +48,22 @@ it("preserves edits on conflict until the current revision is explicitly adopted
  await userEvent.click(within(band).getByRole("button",{name:"Usar la revisión actual"}));expect(name).toHaveValue("Diseño de otra persona");});
 it("removes editor texts and cached snapshots after PDF manage permission is denied",async()=>{setup();server.use(http.post("/api/forms/definitions/:id/pdf-design/preview",()=>new HttpResponse(new Uint8Array([37,80,68,70]),{headers:{"content-type":"application/pdf","content-language":"es"}})),http.post("/api/forms/definitions/:id/pdf-design",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");const name=await screen.findByRole("textbox",{name:"Nombre del PDF"});await userEvent.type(name," privado");await userEvent.click(screen.getByRole("button",{name:"Vista previa"}));await screen.findByTitle("Vista previa del PDF");await userEvent.click(screen.getByRole("button",{name:"Guardar diseño"}));await screen.findByRole("heading",{name:/permiso/});expect(screen.queryByRole("textbox")).not.toBeInTheDocument();expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();expect(screen.queryByRole("link",{name:"Descargar"})).not.toBeInTheDocument();expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:pdf-test");await waitFor(()=>expect(queryClient.getQueryCache().getAll().some(query=>JSON.stringify(query.state.data)?.includes("Comprobante de visita"))).toBe(false));});
 
-// Next to the title only what is designed; no «Cambios sin guardar» nor revision numbers: an enabled Save already says there are changes.
+// Next to the title nothing: the form goes in the breadcrumb, and Page.status only shows a state. No «Cambios sin guardar» nor
+// revision numbers: an enabled Save already says there are changes.
 // A wait is the reason of the disabled Save, without a text beside it, and the preview is asked from its surface header.
 it("keeps revision numbers and save status out of the PDF design",async()=>{
  const writes=setup();
  server.use(http.post("/api/forms/definitions/:id/pdf-design",async({request})=>{const body=await request.json() as {design:unknown};writes.push(body);if(writes.length>1)return HttpResponse.json({code:"RateLimit.Exceeded",detail:"Esperá antes de volver a guardar.",retryAfter:60},{status:429});return HttpResponse.json({...pdfDesignFixture(),id:crypto.randomUUID(),revision:1,design:body.design,createdAtUtc:"2026-10-16T12:00:00Z",author:{userId:responseFormId,displayName:"Ana"}});}));
  renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");
  const name=await screen.findByRole("textbox",{name:"Nombre del PDF"});
- expect(screen.getByText("Visita · diseño del PDF")).toBeVisible();
+ expect(screen.queryByText(/diseño del PDF$/)).not.toBeInTheDocument();
+ expect(within(screen.getByRole("navigation",{name:"Migas de pan"})).getByText("Visita")).toBeVisible();
  expect(screen.queryByText(/Revisión|Todavía no se guardó/)).not.toBeInTheDocument();
  const preview=screen.getByRole("heading",{name:"Vista previa"}).parentElement!;
  expect(within(preview).getAllByRole("button").map(button=>button.textContent)).toEqual(["Vista previa"]);
  await userEvent.type(name," propio");
  expect(screen.queryByText(/Cambios sin guardar/)).not.toBeInTheDocument();
- expect(screen.getByText("Visita · diseño del PDF")).toBeVisible();
+ expect(screen.queryByText(/diseño del PDF$/)).not.toBeInTheDocument();
  await userEvent.click(screen.getByRole("button",{name:"Guardar diseño"}));
  await waitFor(()=>expect(screen.getByRole("button",{name:"Guardar diseño"})).toBeDisabled());
  expect(writes).toHaveLength(1);

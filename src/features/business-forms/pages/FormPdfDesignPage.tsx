@@ -150,7 +150,7 @@ function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
     // Without changes or while saving, a disabled Save is obvious; a wait or a conflict is told as its reason, with no text beside it.
     const saveDisabledReason = busy ? null : cooldown.isRunning ? t("wait", { count: cooldown.seconds }) : review ? t("pdf.saveConflict") : null;
     // Next to the title only what is designed: an enabled Save already says there are changes, and revisions are not shown here.
-    return <Page title={localizedValue(draft.name, culture, original) || t("pdf.title")} status={t("pdf.status", { name: localizedValue(options.name, scope.culture, original) })} backTo={{ to: back, label: t("pdf.back") }} actions={<Button variant="outline" disabled={busy} onClick={() => { if (dirty)
+    return <Page title={localizedValue(draft.name, culture, original) || t("pdf.title")} backTo={{ to: back, label: t("pdf.back") }} actions={<Button variant="outline" disabled={busy} onClick={() => { if (dirty)
         setDiscard(true);
     else
         void navigate(back); }}>{t("discard")}</Button>}>

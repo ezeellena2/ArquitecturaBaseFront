@@ -1023,7 +1023,6 @@
   },
   "pdf": {
     "title": "Diseño del PDF",
-    "status": "{{name}} · diseño del PDF",
     "receipt": "El comprobante",
     "name": "Nombre del PDF",
     "questions": "Qué preguntas incluye",

@@ -1023,7 +1023,6 @@
   },
   "pdf": {
     "title": "PDF design",
-    "status": "{{name}} · PDF design",
     "receipt": "The receipt",
     "name": "PDF name",
     "questions": "Included questions",

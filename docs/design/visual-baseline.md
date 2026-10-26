@@ -493,7 +493,7 @@ está apagado. Las de 390 y 320 no muestran el encabezado de la página y quedan
   esta captura y en las dos siguientes, «Guardar borrador» está apagado porque el borrador no cambió.
 - **Reglas al guardar:** Guardar no envía, marca el mensaje vacío y le da el foco.
 - **Sugerencias:** Guardar apagado por un destino dado de baja (BA6), con el motivo como tooltip al enfocar su envoltorio.
-- **PDF:** con cambios, junto al título va sólo el formulario; Guardar en «El comprobante» y Vista previa en su superficie.
+- **PDF:** con cambios, junto al título va sólo el formulario; Guardar en «El comprobante» y Vista previa en su superficie. Desde el 2026-10-25 tampoco va el formulario, que queda en la miga: `Page.status` del PDF no se usa.
 - **IA:** con cambios, sin «Cambios sin guardar»; las acciones de la clave en el encabezado de su superficie.
 - **Catálogo nuevo:** las acciones de «Opciones» al borde derecho; en escritorio el motivo de Importar como tooltip y en
   el celular dentro de los ítems de «⋯».
