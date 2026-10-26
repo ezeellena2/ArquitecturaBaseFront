@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Otra persona cambió el dato. Volvé a cargarlo.","traceId":"00-c864f511934cf9aa7aeca73d38378203-ba843c86c0ddd7bd-01","code":"Forms.PersonAttribute.RevisionConflict"}

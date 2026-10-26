@@ -1,63 +1,50 @@
 {
+  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
       "length": 276,
-      "sha256": "9d6b52b13122a6c08295b51c9d41483520193b5331dc256d6fc7061819175781",
-      "name": "conflict-es.json"
+      "name": "conflict-es.json",
+      "sha256": "bbd11b0a633009aa8c523a4394cd00fba32e7786ee0f2348129ea8e549c0f129"
     },
     {
       "length": 152,
-      "sha256": "5f8abd5b3e41327cb630e67a2569841faf3998717dcbd407e2285df7a6e85e5c",
-      "name": "empty-es.json"
+      "name": "empty-es.json",
+      "sha256": "b2a3e9afb88bddf091dc7043c2776539c6eb288ed8f0f644e3d4561fbe704f8a"
     },
     {
       "length": 373,
-      "sha256": "fdf2f3b6952837f969faed5bfe6f42d7b805b035895b051d3bbca10b0630dc83",
-      "name": "history-es.json"
+      "name": "history-es.json",
+      "sha256": "748e5447f690f1a9ceec2fd19ae0b4e4726c8b5ef74ae04fbc9e3e67eaf62d12"
     },
     {
-      "length": 15859,
-      "sha256": "6685604302c9561cbec7aaaf61b42d0820a6d891e03aa40180b3a7395c237b59",
-      "name": "options-en.json"
+      "length": 16320,
+      "name": "options-en.json",
+      "sha256": "5e6d5c0e7fb8b300a3908ca9413969cba882559b7f3fe7121afda5603e2c97b5"
     },
     {
-      "length": 15859,
-      "sha256": "6685604302c9561cbec7aaaf61b42d0820a6d891e03aa40180b3a7395c237b59",
-      "name": "options-es.json"
-    },
-    {
-      "length": 680,
-      "sha256": "1da44ff563861dfe123f2149851dbd5646357080e6a4dd11ae28927bc91c819f",
-      "name": "revision-es.json"
+      "length": 16320,
+      "name": "options-es.json",
+      "sha256": "5e6d5c0e7fb8b300a3908ca9413969cba882559b7f3fe7121afda5603e2c97b5"
     },
     {
       "length": 680,
-      "sha256": "1da44ff563861dfe123f2149851dbd5646357080e6a4dd11ae28927bc91c819f",
-      "name": "saved-es.json"
+      "name": "revision-es.json",
+      "sha256": "7ce0df6f1bf0d9ecd39cfd3e81afee43e90f46163a4907d7d8486fed811d6ee0"
+    },
+    {
+      "length": 680,
+      "name": "saved-es.json",
+      "sha256": "7ce0df6f1bf0d9ecd39cfd3e81afee43e90f46163a4907d7d8486fed811d6ee0"
     },
     {
       "length": 285,
-      "sha256": "7c228ba0e25bab598bf543a9fbda666edd4eea257e54a993451c923d6326b6e3",
-      "name": "source-unpublished-es.json"
+      "name": "source-unpublished-es.json",
+      "sha256": "f9f32a4772ca0566e753d19e7db11693533aba89bda564095f7fa83d73f9f3e1"
     }
   ],
-  "sourceState": [
-    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
-    "?? docs/features/formularios-e2.md.pending",
-    "?? docs/features/formularios.md.pending",
-    "?? docs/history/README.md.pending",
-    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
-    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
-    "?? docs/plans/README.md.pending",
-    "?? docs/plans/formularios/README.md.pending",
-    "?? docs/plans/verificacion-y-produccion.md.pending",
-    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
-  ],
-  "schemaVersion": 1,
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
-  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "artifactSet": "suggestions",
   "sources": [
     {
       "sha256": "5b194a0b704e9512f0f310b3a7f3a799ae624486cb54e2e7eaf537be6cfb8847",
@@ -68,7 +55,9 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs"
     }
   ],
-  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
-  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
+  "artifactSet": "suggestions",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
 }

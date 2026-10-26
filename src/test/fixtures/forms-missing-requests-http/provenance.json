@@ -1,53 +1,40 @@
 {
+  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
       "length": 275,
-      "sha256": "44f48ee2b5e8668a43b910673aa5589b363f5a3b88292a91a40554a2711e9ca0",
-      "name": "conflict.json"
+      "name": "conflict.json",
+      "sha256": "1c179cd4a38430aded3728655fc56aa4683560199e8a154396084b30473f7537"
     },
     {
-      "length": 570,
-      "sha256": "18542bc177d952d1d4a368b81bdb0d72d83567be9b40488056e46e525b49fbab",
-      "name": "discarded-en.json"
+      "length": 571,
+      "name": "discarded-en.json",
+      "sha256": "0b12926b715a924bcbc375421d47655487346954011eb6df5952af8e25b12dcf"
     },
     {
-      "length": 576,
-      "sha256": "8230343409e9137f0dacac0b7c5691b7f771e2f6d4528e7d6269429da15f454e",
-      "name": "discarded-es.json"
+      "length": 577,
+      "name": "discarded-es.json",
+      "sha256": "b47efec7873c8970880713e8c042183c02ec44e931dda7dc20e3da1827e63b17"
     },
     {
       "length": 249,
-      "sha256": "a7ad4b286ac432285eb3c1b7c5ea06329b13d137022a20cc4a8df475a8be3c38",
-      "name": "forbidden.json"
+      "name": "forbidden.json",
+      "sha256": "cf13229c5bdcca3c76debcd227cbfd683fcda392c49eab50a564ef71335d9788"
     },
     {
       "length": 461,
-      "sha256": "d74f549f662b12c24ff7a8ec2f295d1d31eed1666b7bfb1de6561ec16bed5c12",
-      "name": "pending-en.json"
+      "name": "pending-en.json",
+      "sha256": "71bb61721bc6e5004e63ead88778192c7d0720cfa23522315e4141f976459169"
     },
     {
       "length": 467,
-      "sha256": "6c2cb6c2310e7966e12ba173f2a8c68fc2fc66b3da047cc6fb01a5db7e9c6591",
-      "name": "pending-es.json"
+      "name": "pending-es.json",
+      "sha256": "9b690b686dd36dcd27ac25d2e7fa640aab33dc6c0cd898c92fdbc6fe5fb07e02"
     }
   ],
-  "sourceState": [
-    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
-    "?? docs/features/formularios-e2.md.pending",
-    "?? docs/features/formularios.md.pending",
-    "?? docs/history/README.md.pending",
-    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
-    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
-    "?? docs/plans/README.md.pending",
-    "?? docs/plans/formularios/README.md.pending",
-    "?? docs/plans/verificacion-y-produccion.md.pending",
-    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
-  ],
-  "schemaVersion": 1,
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
-  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "artifactSet": "missing-requests",
   "sources": [
     {
       "sha256": "082b1f22a87aad7e17e8982d1ab5cbbbcb7b9a3518bacd6e46ee0e78d53eaed1",
@@ -62,7 +49,9 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestContractCapture.cs"
     }
   ],
-  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
-  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
+  "artifactSet": "missing-requests",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
 }

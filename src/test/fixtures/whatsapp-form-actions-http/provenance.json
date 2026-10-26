@@ -1,38 +1,25 @@
 {
+  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
       "length": 492,
-      "sha256": "bfd14101fdfe510c4839bf95888a324f85d0036c1667a58612399e56b73fd37c",
-      "name": "chats-form-actions.json"
+      "name": "chats-form-actions.json",
+      "sha256": "36265b336df9806785c58c29189301042a6ccff6950c38aa853db6d3ebe2dd0f"
     },
     {
-      "length": 1601,
-      "sha256": "69691cbf96b99a91b4724aca6360f5ad2f37de588ee9e06bac132d9270eb92f1",
-      "name": "thread-form-actions-restricted.json"
+      "length": 1602,
+      "name": "thread-form-actions-restricted.json",
+      "sha256": "02f6580f4da1f6779dc3aa25a8d46725f8fcc8fffaa05ebed061431bb966ae7e"
     },
     {
-      "length": 1759,
-      "sha256": "20efdf4f5b6826a3dcadfa8ba8771441f92ad3614f14023db0c4957ec242d63c",
-      "name": "thread-form-actions.json"
+      "length": 1760,
+      "name": "thread-form-actions.json",
+      "sha256": "47f1cd8170270e1552d17ec8b7009c9206ed53952b42864cbe1cbdd17d3ebe2a"
     }
   ],
-  "sourceState": [
-    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
-    "?? docs/features/formularios-e2.md.pending",
-    "?? docs/features/formularios.md.pending",
-    "?? docs/history/README.md.pending",
-    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
-    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
-    "?? docs/plans/README.md.pending",
-    "?? docs/plans/formularios/README.md.pending",
-    "?? docs/plans/verificacion-y-produccion.md.pending",
-    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
-  ],
-  "schemaVersion": 1,
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario",
-  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "artifactSet": "whatsapp-actions",
   "sources": [
     {
       "sha256": "769692bd79bcdcefd4a0612b1cc0892a6eb505f993c02ff32a1a74539beacf9c",
@@ -47,7 +34,9 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppFormActionScenario.cs"
     }
   ],
-  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
-  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
+  "artifactSet": "whatsapp-actions",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
 }

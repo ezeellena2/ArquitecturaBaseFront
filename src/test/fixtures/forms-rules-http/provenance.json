@@ -1,63 +1,50 @@
 {
+  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
       "length": 281,
-      "sha256": "0d76054d6a6a963b818a8e2c233aede709198e3db98f85cace1f9bce6ff923cb",
-      "name": "conflict-es.json"
+      "name": "conflict-es.json",
+      "sha256": "67075f530e1eaf8e2b4c09b2168c166e67768754d2ce41a30765ba64aec23dd3"
     },
     {
       "length": 146,
-      "sha256": "d3dafd4ca7be5f2a174c5eff1477c081688abf247e71814812a3cbbb657a87bb",
-      "name": "empty-es.json"
+      "name": "empty-es.json",
+      "sha256": "baa3ded0ba3c8f5c63b9ab84823c91dd7c5853f2aa4fd0323ac18d4fa46f72ce"
     },
     {
       "length": 375,
-      "sha256": "435741b257a00ccd69dd8905567e6130791d20ab068969aa78f5cfb723863d56",
-      "name": "history-es.json"
+      "name": "history-es.json",
+      "sha256": "bbf2506858b04af6e895d2b39ba7480abec3cbbd621aec346279e3c49c2126d1"
     },
     {
-      "length": 19133,
-      "sha256": "40bf96b81c12f831c6370bda0bcc8b9d3d19f612235c3f1f670f8eaa78cb981b",
-      "name": "options-en.json"
+      "length": 19227,
+      "name": "options-en.json",
+      "sha256": "8b713cc7e64c9022c127077f0f753f7afdd794d151ec1d7e7ba4c304157c3afa"
     },
     {
-      "length": 19133,
-      "sha256": "40bf96b81c12f831c6370bda0bcc8b9d3d19f612235c3f1f670f8eaa78cb981b",
-      "name": "options-es.json"
+      "length": 19227,
+      "name": "options-es.json",
+      "sha256": "8b713cc7e64c9022c127077f0f753f7afdd794d151ec1d7e7ba4c304157c3afa"
     },
     {
       "length": 505,
-      "sha256": "542e0750c9f1e36d6839f20a9741e50bbbd303984fd7628ce1b08731d2568dcc",
-      "name": "revision-es.json"
+      "name": "revision-es.json",
+      "sha256": "3aaf9f5976539a59a37ea8e543ea71ca42039fe5b0d29c78870cea0ab5111d5a"
     },
     {
       "length": 338,
-      "sha256": "55f6d164791e9933439c242821fc39cee24842b186748a895ec1ab8d44e91517",
-      "name": "role-unavailable-es.json"
+      "name": "role-unavailable-es.json",
+      "sha256": "6debf77b33640e0dffb67b352ede557b359a8e2cdb0d6305e10cd6147be63402"
     },
     {
       "length": 501,
-      "sha256": "450b40107df6d73b37d009ef06c55dababf31b2ee0ca4e0263cc5bc92b3d1a69",
-      "name": "saved-es.json"
+      "name": "saved-es.json",
+      "sha256": "39ca0bdcadb6a1cd5491d6c16dea7f07b72e46315ba5d308cdd74026d0673926"
     }
   ],
-  "sourceState": [
-    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
-    "?? docs/features/formularios-e2.md.pending",
-    "?? docs/features/formularios.md.pending",
-    "?? docs/history/README.md.pending",
-    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
-    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
-    "?? docs/plans/README.md.pending",
-    "?? docs/plans/formularios/README.md.pending",
-    "?? docs/plans/verificacion-y-produccion.md.pending",
-    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
-  ],
-  "schemaVersion": 1,
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "FormRuleHttpTests and FormRuleContractCapture",
-  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "artifactSet": "rules",
   "sources": [
     {
       "sha256": "a52e967dc1a915849b66bbc5a416bcca663a67344c3c246f1c45b0d72e845919",
@@ -68,7 +55,9 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs"
     }
   ],
-  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
-  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
+  "artifactSet": "rules",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
 }

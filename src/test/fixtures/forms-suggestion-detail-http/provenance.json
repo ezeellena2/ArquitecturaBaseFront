@@ -1,33 +1,20 @@
 {
+  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
       "length": 2059,
-      "sha256": "edb2c6a0ba8b0aa23008af4f92838f008a2d3ae374c1a099b4ccf970cc0e1fd0",
-      "name": "detail-en.json"
+      "name": "detail-en.json",
+      "sha256": "2f5477449109714379ab1edfca6fe17e0adcdf697e2746050d79e96fc0ea2bc9"
     },
     {
       "length": 2063,
-      "sha256": "595f3bea30a4340728f65c3dfc4820c585dc071eaa3e017b02e50b92ca1dba79",
-      "name": "detail-es.json"
+      "name": "detail-es.json",
+      "sha256": "62cd5708320405a6b18f38a83a223f7669c60918bcaa1cf92e7ec90946093f28"
     }
   ],
-  "sourceState": [
-    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
-    "?? docs/features/formularios-e2.md.pending",
-    "?? docs/features/formularios.md.pending",
-    "?? docs/history/README.md.pending",
-    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
-    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
-    "?? docs/plans/README.md.pending",
-    "?? docs/plans/formularios/README.md.pending",
-    "?? docs/plans/verificacion-y-produccion.md.pending",
-    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
-  ],
-  "schemaVersion": 1,
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
-  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "artifactSet": "suggestion-details",
   "sources": [
     {
       "sha256": "d964bf44402720bfe5a00fec51466678dec36ba42b2f6bee1fb5226524a752d9",
@@ -38,7 +25,9 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs"
     }
   ],
-  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
-  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
+  "artifactSet": "suggestion-details",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
 }

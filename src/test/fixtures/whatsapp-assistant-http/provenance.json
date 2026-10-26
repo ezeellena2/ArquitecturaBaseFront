@@ -1,83 +1,70 @@
 {
+  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
-      "length": 764,
-      "sha256": "d658c8970f6d1e3c35881c46bce9f204fab6dbdcca6cab234a9e67a07f023b1e",
-      "name": "always-send-receipt.json"
+      "length": 765,
+      "name": "always-send-receipt.json",
+      "sha256": "1b21dcff7a0816688510a2deea39275facdfe96d8ff52765a949aa8a0f604e92"
     },
     {
-      "length": 763,
-      "sha256": "9450dc54444bf6055a5b470bde93ccbe4c7d06b5176f3c21334f548178013d05",
-      "name": "send-receipt.json"
+      "length": 764,
+      "name": "send-receipt.json",
+      "sha256": "719f7215a19dffebf19c293f66345aa24e8123db4c67c2f79cb45f055571f61d"
     },
     {
       "length": 507,
-      "sha256": "8d9f2a9693ce1d22702cdb1d952a4dafc4d1899270b6334531cc4f534099618e",
-      "name": "suggestion-always-ready.json"
+      "name": "suggestion-always-ready.json",
+      "sha256": "9cfd73edf21c8737dc9ca8bef21015fcde68c5e9414fbc2ebe11de9e44ac44bd"
     },
     {
       "length": 159,
-      "sha256": "d710450ef25b0b4a7815dd758e36fce55db78f30369679d954c993306959fe78",
-      "name": "suggestion-blocked.json"
+      "name": "suggestion-blocked.json",
+      "sha256": "0be22e75644ceb26c716cabb39e2017820c513321da62da9c0c5cc42959c1e87"
     },
     {
       "length": 161,
-      "sha256": "cfe0ef4849011f7addabc30d37191e65fb8f00d9a8087d5ecae4ff6e76e8fca6",
-      "name": "suggestion-discarded.json"
+      "name": "suggestion-discarded.json",
+      "sha256": "0724e5236eb3e2907127e2c8c124b28561c940e9792196e051b2f334905d3f58"
     },
     {
       "length": 159,
-      "sha256": "0ce2cb73e4ec103a13a43683f59f044f5f97fa0deddb6af8195be60f60d77f38",
-      "name": "suggestion-no-reply.json"
+      "name": "suggestion-no-reply.json",
+      "sha256": "8d26c8b6724e48bb0bf6a582e6296bfad118358de9bfe3aa590f5ebd5ec947d6"
     },
     {
       "length": 159,
-      "sha256": "78a91c2f300c48f058b1e4aed2d5b7d81f6a061b1e6a90f525f01dd407654c9d",
-      "name": "suggestion-pending.json"
+      "name": "suggestion-pending.json",
+      "sha256": "fb4eaf46531e67098e5363d94661b8eec8d350ca8f5a3fee69faba5fa5df40a4"
     },
     {
       "length": 550,
-      "sha256": "8f358e553feadc82b8635af00a5b3238b51bc0b87b7548eaaeefd7347e188994",
-      "name": "suggestion-ready.json"
+      "name": "suggestion-ready.json",
+      "sha256": "6ff17fdabd488ad741063802ce62bf42f56aed56ebf5b7bdcef22192c55144da"
     },
     {
-      "length": 927,
-      "sha256": "de72fadc1aa18c089701f0df5d31a957227734773d112f8506a48d1ee3a972d3",
-      "name": "suggestion-sent.json"
+      "length": 928,
+      "name": "suggestion-sent.json",
+      "sha256": "6cf8026826629442c1437187a7a8e092732708fce3907bfdfaedd694223d4179"
     },
     {
-      "length": 2669,
-      "sha256": "eaf92fd2e6f163a7d95126f99d68bbeb09511e55fbccb4f8ef2d1a4cb8fcce17",
-      "name": "thread-always-ready.json"
+      "length": 2672,
+      "name": "thread-always-ready.json",
+      "sha256": "ebac7a08e366a77dce6acfc8b708fcaad6bbb8edac837acc02bca01efc120fdb"
     },
     {
-      "length": 1955,
-      "sha256": "8e9fab9b649c9023d4a33bfe7b1bb0b470a3baf5b0967819c48945f97cebd50b",
-      "name": "thread-restricted.json"
+      "length": 1958,
+      "name": "thread-restricted.json",
+      "sha256": "5fdd612383ee0386029ccace9bca2ecc41f477aca5586cdb5d41955d0845a969"
     },
     {
-      "length": 2139,
-      "sha256": "09bc2f3617bd151ca62fc01fe8fedafe56f1758cbe0e31382f87866bd2cd1212",
-      "name": "thread.json"
+      "length": 2142,
+      "name": "thread.json",
+      "sha256": "9c05ba719fdc427fa203f9d735be042219787cdbfe8e504fd2932089cad83e46"
     }
   ],
-  "sourceState": [
-    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
-    "?? docs/features/formularios-e2.md.pending",
-    "?? docs/features/formularios.md.pending",
-    "?? docs/history/README.md.pending",
-    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
-    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
-    "?? docs/plans/README.md.pending",
-    "?? docs/plans/formularios/README.md.pending",
-    "?? docs/plans/verificacion-y-produccion.md.pending",
-    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
-  ],
-  "schemaVersion": 1,
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "WhatsAppAssistantHttpTests and WhatsAppAssistantHttpTests.Suggestions and WhatsAppAssistantScenario and WhatsAppAssistantContractCapture and WhatsAppAssistantOperationsDouble and WhatsAppAssistantCaptureFixture and CapturingStructuredRecordPort",
-  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "artifactSet": "whatsapp-assistant",
   "sources": [
     {
       "sha256": "316f64b2ece8c40f97a01b1adcc597e6e1ca92df9d4f66caae96bc7cb6541947",
@@ -108,7 +95,9 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredRecordPort.cs"
     }
   ],
-  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
-  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
+  "artifactSet": "whatsapp-assistant",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
 }

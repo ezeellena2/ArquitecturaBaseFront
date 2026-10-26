@@ -1,0 +1,65 @@
+{
+  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
+  "captures": [
+    {
+      "length": 551,
+      "name": "bootstrap.json",
+      "sha256": "2cff42a248ecd8380deb5a2ca6949a3212ba74d44f3b6ed425f9595493643d15"
+    },
+    {
+      "length": 737,
+      "name": "canceled.json",
+      "sha256": "8fea6eeb5c4df54d49ae0f1216ba99e85d6289dd9b44ec1ebd0f7ea072a64891"
+    },
+    {
+      "length": 294,
+      "name": "submitted.json",
+      "sha256": "ee1c48e1e592a5b5377fa0658e6a1dc554b0bb2f7c041fd17005cfe6e078fc62"
+    },
+    {
+      "length": 1006,
+      "name": "turn-completed.json",
+      "sha256": "17c9b65606740cb21ef708c8150aea314f9477303a6f0db166760f24c0fc3590"
+    },
+    {
+      "length": 530,
+      "name": "turn-pending.json",
+      "sha256": "908d1231891b369bcfbc02f050047404cdf15108730625a40ab95f17bd9493e8"
+    },
+    {
+      "length": 1107,
+      "name": "turns.json",
+      "sha256": "833732bf20d556f39bf4da486640ba26336685471489718bb08e8e96947c1874"
+    }
+  ],
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and AiAssistantResponses",
+  "sources": [
+    {
+      "sha256": "aef03aa65bbf9f7db1ef9244160e7ede5e991cb371e8c477f7a2be045c7fbf34",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs"
+    },
+    {
+      "sha256": "5be90aee52b0b18f3351014a4bc87065dc35ddd58697b186f22bf6b7560a73a9",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs"
+    },
+    {
+      "sha256": "bbf447e8fe2fe0dee6db8a734a161b1930d605f5d33a0cd6cf497a8923228e5d",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs"
+    },
+    {
+      "sha256": "a9835c1bb6a97f6a2ac891df6918a9284c8f96e0d60bb08796aaadada90b9b13",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs"
+    },
+    {
+      "sha256": "c2b0d1c6571ccaff6226584e89095e235c033403e17904a2a94943c6e6f0e911",
+      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs"
+    }
+  ],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
+  "artifactSet": "ai-assistant",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
+}

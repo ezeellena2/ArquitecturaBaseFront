@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Revisá los datos del catálogo.","traceId":"00-e72e80881238e08c7152a7d92f827b7b-ddf3dcb940cf2aa9-01","code":"Forms.Catalog.ContentInvalid","errors":{"items[1].text.en":["Revisá los datos del catálogo."]}}

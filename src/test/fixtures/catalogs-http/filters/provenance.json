@@ -1,70 +1,59 @@
 {
+  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
       "length": 273,
-      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
-      "name": "create-request.json"
+      "name": "create-request.json",
+      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82"
     },
     {
-      "length": 613,
-      "sha256": "3370b7a27d1b2252078714e43f715461656d4e4dc9f28185077f0056e79ed15b",
-      "name": "created.json"
+      "length": 636,
+      "name": "created.json",
+      "sha256": "26b79609c4d1d83709511e4b233893199de9803c1c2ccfc81566515431a14b14"
     },
     {
-      "length": 591,
-      "sha256": "96ae22e95f448a4268108f38a7fc80602f53849200fb8bab84621f77a51a2185",
-      "name": "detail.json"
+      "length": 813,
+      "name": "detail.json",
+      "sha256": "be4e28a51ed5c83bd69bd92ea31670dffa4b17f87d6448ca8cb90ff6e99f53ee"
     },
     {
-      "length": 55920,
-      "sha256": "841d4beb3ff6f33a5c8392f6139d114371c29b5a056b1e145dfed2ef997bbc13",
-      "name": "options.json"
+      "length": 56034,
+      "name": "options.json",
+      "sha256": "ceff558fbaf067f5cb0f9b7d33ba09bb64a257d0b01abb8ded85a59aa91856a6"
     },
     {
       "length": 328,
-      "sha256": "cee5c2e877fd1d1d6f4e2c72024c43a5a7a8490d7a7b46cc996f98371713ba11",
-      "name": "preview-request.json"
+      "name": "preview-request.json",
+      "sha256": "c5afed587a93a682e7cbfd3428a9243ff9882aac51c0671cc48569ff4db39295"
     },
     {
       "length": 201,
-      "sha256": "82df95517d34aed9b227a2a4746ed0fd386997cb326c41bf903ade203effeef8",
-      "name": "preview.json"
+      "name": "preview.json",
+      "sha256": "7b2006715cd9185f8644a9fc5ec28bc16e8520fda865124f9582daedc29f5fde"
     },
     {
       "length": 289,
-      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
-      "name": "update-request.json"
+      "name": "update-request.json",
+      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c"
     },
     {
-      "length": 612,
-      "sha256": "3ff78bba953cc0a8ce4707c0511d65bd49229ee24b544b4b1fce1a78f40c566a",
-      "name": "updated.json"
+      "length": 635,
+      "name": "updated.json",
+      "sha256": "a6815629a2e322c110cc5cd49379ab8d4b7bb178db97afabf1b315454c206b12"
     }
   ],
-  "sourceState": [
-    "?? docs/architecture/premisas-de-la-plantilla.md.pending",
-    "?? docs/features/formularios-e2.md.pending",
-    "?? docs/features/formularios.md.pending",
-    "?? docs/history/README.md.pending",
-    "?? docs/plans/2026-10-21-catalogos-con-origenes-externos.md.pending",
-    "?? docs/plans/2026-10-22-documentos-por-whatsapp.md.pending",
-    "?? docs/plans/README.md.pending",
-    "?? docs/plans/formularios/README.md.pending",
-    "?? docs/plans/verificacion-y-produccion.md.pending",
-    "?? docs/reviews/2026-10-22-code-review-catalogos-e1.md.pending"
-  ],
-  "schemaVersion": 1,
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "FormCatalogFiltersEndpointsTests",
-  "generatedAtUtc": "2026-10-23T07:21:40.9176307Z",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "artifactSet": "catalog-filters",
   "sources": [
     {
-      "sha256": "77f028bcb4dc764cf8187e6bb39f1d5cde4c235488b0891e673a9de5cb377fcb",
+      "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71",
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs"
     }
   ],
-  "repositoryHead": "7e5b7a9499b39357db12e107f98a842a36bdd7cd",
-  "runId": "20261023-064235-5542f7f13d844d5985f55c4142c9385f",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
+  "artifactSet": "catalog-filters",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
 }
