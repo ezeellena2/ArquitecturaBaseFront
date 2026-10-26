@@ -261,8 +261,9 @@ crecen todos a 44 px en móvil.
   `Page` con Guardar/Descartar, sin estado del borrador. Las cuatro URLs anteriores redirigen.
 - Selectores nativos para idioma, zona y tamaño; `RadioGroupField` para el registro, con confirmación de su efecto.
 - Un conflicto muestra una tabla de los cuatro ajustes (actual y borrador), con scroll contenido en móvil. Conservar
-  cambios incorpora valores ajenos de campos no tocados. Un resultado incierto se consulta antes de otro envío o descarte.
-  «Revisar valores actuales» va en la banda de `Page`, antes de Descartar; Usar valores actuales y Conservar mis
+  cambios incorpora valores ajenos de campos no tocados. Un resultado incierto se consulta antes de otro envío o descarte:
+  hasta elegir, Descartar y Guardar se apagan con «Primero revisá los valores actuales y elegí qué conservar.» como motivo
+  (`DisabledReason`). «Revisar valores actuales» va en la banda de `Page`, antes de Descartar; Usar valores actuales y Conservar mis
   cambios, en el encabezado de la comparación. La comparación aparece al final del contenido: cada lectura lleva el
   foco a su título, que la deja a la vista y pone las elecciones en el siguiente Tab.
 - Evidencia: [guardado incierto](evidence/2026-09-30-configuracion-error.jpg) y [320 px](evidence/2026-09-30-configuracion-movil.jpg).
@@ -275,7 +276,8 @@ local, Guardar/Descartar y Restaurar colores iniciales (Campo) como borrador. Gu
 para conservar contraste; success, warning y danger no cambian. Restaurar va en el encabezado de «Colores del sistema»;
 `Page` no muestra estado del borrador y, tras un conflicto, «Revisar valores actuales» va en su banda, antes de
 Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de la comparación; como en
-`/configuracion`, cada lectura lleva el foco al título de la comparación. Recorridos:
+`/configuracion`, cada lectura lleva el foco al título de la comparación y, hasta elegir, Descartar y Guardar dan la
+revisión pendiente como motivo. Recorridos:
 `src/test/visual/appearance.spec.ts`.
 
 ### Inteligencia artificial
@@ -300,8 +302,11 @@ Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de
   en el encabezado de la superficie de recuperación. Horarios y demás datos se marcan al intentar guardar y después en
   vivo; Confirmar de una fecha especial queda habilitado y valida al tocarlo solo lo que trae esa fecha: el horario
   semanal se marca al guardar, en su campo.
+- «Agregar franja» va siempre debajo de las franjas del día (y de la fecha especial), como botón de texto; con cuatro se
+  apaga con «Podés agregar hasta 4 franjas.» como motivo. La papelera aparece en cada franja sólo con más de una.
 - Ubicación: `Autocomplete` sobre `Input` (nombre/ciudad → sugerencia → enlace a la ficha), sin modal pequeño de
-  coordenadas. Dirección manual antes de buscar; elegir prepara el borrador y Guardar confirma el PlaceId. Atribución de
+  coordenadas. Dirección manual antes de buscar; elegir prepara el borrador y Guardar confirma el PlaceId. La espera de un
+  429 es el motivo del buscador apagado; su línea de estado dice sólo el resultado. Atribución de
   Google Maps junto al contenido. Pendientes por instalación: [operación](../../../ArquitecturaBase/docs/guides/configurar-google-places.md).
 - Leaflet/OSM: navegar, marcar o ingresar coordenadas genera el enlace, sin búsquedas simuladas.
 - Horarios, fechas especiales y FAQ con validación real; los textos anteriores quedan para revisión manual.
@@ -313,7 +318,9 @@ Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de
   En móvil alterna bandeja y conversación, con «Chats» para volver. Tomar Atención manual requiere Send; activar
   Asistente exige ConfigureAssistant y disponibilidad confirmada. Un envío iniciado puede terminar al tomar Manual.
   Los envíos inciertos se consultan antes de resolverlos. Sin leyendas de atajo ni de intervalo (Ctrl+Enter envía,
-  Enter agrega línea, polling de 5 s).
+  Enter agrega línea, polling de 5 s). `Page` no lleva estado: un refresco fallido de la bandeja conserva lo visible y lo
+  avisa la notificación común. La espera de un 429 es el motivo de «Escuchar audio» y de «No, gracias» y «Revisar y
+  enviar» de la sugerencia, sin texto debajo.
 - La línea que separa WhatsApp de Inicio aparece solo si hay un ítem de WhatsApp visible.
 - `src/test/visual/whatsapp.spec.ts`; no se actualizan capturas para ocultar diferencias. Reglas:
   [WhatsApp](../../../ArquitecturaBase/docs/features/whatsapp.md#chat-de-atención--2026-10-02).
@@ -455,13 +462,19 @@ como tooltip al pasar el mouse o con el foco y como descripción accesible, nunc
 adentro; `Surface` lleva sus acciones al borde derecho de la banda, a la altura del título y también al bajar de renglón;
 `Page.status` muestra sólo el estado del objeto. Ninguna pantalla muestra «Cambios sin guardar» ni números de revisión
 fuera de los historiales, y una prueba de arquitectura impide que un locale vuelva a ofrecer ese estado; la guarda de
-salida sigue avisando. En su lugar, Guardar se apaga sin cambios en todos los editores: roles, IA, apariencia,
-configuración, información del negocio, PDF, catálogos y el borrador del formulario. El alta de un formulario, que no
-existe hasta guardarla, lo tiene habilitado desde el principio. Se valida al intentar guardar y, después del primer error, en vivo.
+salida sigue avisando. En su lugar, Guardar se apaga sin cambios en roles, IA, apariencia, configuración, información
+del negocio, PDF, catálogos (Manual y Filtros), el borrador del formulario y sus Reglas y Sugerencias. Lo tienen
+habilitado desde el principio lo que no existe hasta guardarlo (el alta de un formulario y un diseño de PDF todavía sin
+guardar, con revisión 0) y «Aprobar y activar» una propuesta de catálogo. Se valida al intentar guardar y, después del
+primer error, en vivo. La espera de un 429, un conflicto sin resolver y un tope son el motivo (`DisabledReason`) del
+control que apagan, sin texto al lado ni debajo, y el control no cambia de lugar ni de forma.
 
-Se conservan, con su motivo: los motivos dentro de los menús «⋯», los estados del flujo con su acción (guardado sin
-confirmar, revisión pendiente), la espera del chat y de Inicio, los conteos de los encabezados, «Nuevo, sin guardar» de
-CE1, los pies de diálogo y la etiqueta «Guardando…» mientras trabaja ([premisas](../guides/premisas-de-desarrollo.md)).
+Se conservan, con su motivo: los motivos dentro de los menús «⋯» y de «Descargar ▾»; los estados del flujo con su acción
+(guardado sin confirmar, revisión pendiente); el estado de la conversación sobre el compositor del chat y la espera de
+Inicio para enviar otra consulta; la cuenta regresiva del ingreso público para pedir otro código o enlace; la espera de
+Formularios que faltan, escrita sobre sus filtros y su tabla apagados; los conteos de los encabezados y la versión
+publicada junto al título de la planilla; «Nuevo, sin guardar» de CE1; los pies de diálogo y la etiqueta «Guardando…»
+mientras trabaja ([premisas](../guides/premisas-de-desarrollo.md)).
 
 La corrida visual del cierre aprobó 741/741 pruebas. Se revisaron las 29 diferencias de la primera corrida y se actualizaron sólo
 esas referencias, todas por esta decisión: `ai-*` (Probar conexión, Reemplazar y Quitar clave en el encabezado de su
@@ -506,3 +519,20 @@ al cerrarse; en Reglas, en inglés, Enter en «Add rule» no muestra errores y E
 this field.» y enfoca «Add action»; en Sugerencias a 390, Tab desde «Agregar sugerencia» llega a Guardar con el tooltip de
 BA6 y su descripción accesible; en IA a 320, en inglés, las tres acciones de la clave quedan al borde derecho sin
 desplazamiento horizontal. La biblioteca del Artifact sigue sin sincronizar (`DisabledReason` está en la deuda).
+
+La verificación final del 2026-10-25 (lotes FX01 a FX06 de la
+[verificación](../../../ArquitecturaBase/docs/reviews/2026-10-25-verificacion-final-e2/README.md)) terminó de aplicar
+la regla donde todavía había textos o cambios de forma, cada uno con su prueba unitaria. La espera de un 429 pasó a ser
+el motivo de «Reenviar invitación» (que además dejó de cambiar de contorno y de lugar), «Escuchar audio», el buscador de
+lugares, «No, gracias» y «Revisar y enviar» de la sugerencia, la búsqueda, las tarjetas y la paginación de «Enviar
+formulario», «Cargar vista» de la vista oficial, Ver y Descargar de los PDF armados (en «Descargar ▾», adentro de cada
+ítem) y los controles de las facetas de la planilla. La revisión pendiente es el motivo de Descartar y Guardar en
+Configuración y Apariencia, y el tope, el de «Agregar opción» (20 o 50) y «Agregar franja» (4), que queda siempre debajo
+de las franjas. En la pregunta de catálogo, cada «Agregar filtro» da su propio motivo, «Como si lo recibiera» dice por
+qué está apagado con un filtro incompleto y las personas de prueba no se vuelven a pedir solas durante una espera. Las
+acciones de la vista rápida D2 van al borde derecho de su encabezado, en el renglón del título. Junto al título ya no
+van el aviso de refresco del chat ni el formulario del diseño del PDF, que está en la miga. De las referencias (golden),
+sólo `settings-review-320` muestra uno de esos estados, y Descartar y Guardar suman el envoltorio de `DisabledReason`
+sin cambiar su dibujo. Cambian evidencias sin golden: D2 (`responses-d2-*` y la vista rápida de `formResponseFull`), el
+diseño del PDF (`pdf-design-*`), el editor de formularios, sin la nota «Los textos se editan por idioma…», y la
+información del negocio guiada (`business-guided-*`).

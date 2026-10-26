@@ -89,7 +89,10 @@ resultado es incierto, primero se consulta el estado actual; no enviar de nuevo 
 afirmar que no se guardó. La regla vale también para operaciones que pueden consumir códigos,
 enlaces o invitaciones. Los 429 respetan el plazo del servidor: el control queda deshabilitado y,
 después de cerrar la notificación, la espera sigue como su motivo con `DisabledReason`, sin un texto
-al lado del botón; no se habilita un reintento prematuro.
+al lado ni debajo del botón (en un ítem de menú, adentro del ítem); no se habilita un reintento prematuro.
+Conservan la espera escrita sólo la cuenta regresiva del ingreso público, la espera de Inicio para enviar
+otra consulta y la de Formularios que faltan sobre su región apagada, como fija el
+[cierre de botones y estados](../design/visual-baseline.md#botones-y-estados--2026-10-23).
 
 Con un Dialog abierto, el aviso debe anunciarse y su recuperación debe poder completarse
 con teclado. Se prueba la interacción del Toaster con el foco y los portales del diálogo en
