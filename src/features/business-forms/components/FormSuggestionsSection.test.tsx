@@ -66,7 +66,12 @@ it("marks a new suggestion without destination only after trying to save", async
   // Only the hidden reason of the disabled «Agregar dato» says it: no error is shown before trying.
   expect(region.queryByText("Elegí un formulario publicado disponible.",{ignore:"script, style, [hidden]"})).not.toBeInTheDocument();
   expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
+  // Without a destination yet, its title is neutral, open and summed up: it is not an unavailable form.
+  expect(region.queryByText(/Formulario publicado no disponible/)).not.toBeInTheDocument();
+  expect(region.getByText("Sugerencia 1")).toBeVisible();
   await userEvent.click(region.getByRole("button",{name:"Listo"}));
+  expect(region.queryByText(/Formulario publicado no disponible/)).not.toBeInTheDocument();
+  expect(region.getByText(/^Sugerencia 1/)).toBeVisible();
   const save = screen.getByRole("button",{name:"Guardar sugerencias"});
   expect(save).toBeEnabled();
   await userEvent.click(save);
