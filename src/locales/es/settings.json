@@ -60,6 +60,7 @@
   "review": {
     "action": "Revisar valores actuales",
     "reading": "Consultando…",
+    "pending": "Primero revisá los valores actuales y elegí qué conservar.",
     "title": "Revisar cambios",
     "setting": "Ajuste",
     "source": "Origen",

@@ -10,6 +10,7 @@ import { initialAppearance, type SystemAppearance } from "@/shared/lib/appearanc
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { AppearancePreview } from "@/shared/ui/AppearancePreview";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable } from "@/shared/ui/DataTable";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -99,10 +100,12 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
   }
   // La banda lleva solo el título y las acciones: Guardar habilitado ya dice que hay cambios. Revisar actúa sobre
   // toda la pantalla y aparece en la banda mientras un conflicto o un guardado incierto lo piden.
+  // Mientras tanto, Descartar y Guardar se apagan con la revisión pendiente como motivo, aunque se cierre el aviso.
+  const reviewReason = needsReview && !disabled ? t("review.pending") : null;
   return <Page title={t("appearance.title")}
     actions={<>{needsReview ? <Button variant="outline" disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
-      <Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={() => { setDraft(baseline.appearance); setErrors({}); dismissNotification(noticeId); }}>{t("discard")}</Button>
-      <Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); mutation.mutate({ appearance: draft, revision: baseline.revision }); }}>{t(mutation.isPending ? "saving" : "save")}</Button></>}>
+      <DisabledReason reason={reviewReason}><Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={() => { setDraft(baseline.appearance); setErrors({}); dismissNotification(noticeId); }}>{t("discard")}</Button></DisabledReason>
+      <DisabledReason reason={reviewReason}><Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); mutation.mutate({ appearance: draft, revision: baseline.revision }); }}>{t(mutation.isPending ? "saving" : "save")}</Button></DisabledReason></>}>
     <div className="flex flex-col gap-5">
       <Surface title={t("appearance.colors")} padded actions={<Button variant="outline" disabled={disabled} onClick={() => { setDraft(initialAppearance); setErrors({}); }}>{t("appearance.reset")}</Button>}>
         <p className="text-sm text-[var(--color-content-muted)]">{t("appearance.hint")}</p>

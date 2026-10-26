@@ -52,6 +52,18 @@ describe("AppearancePage", () => {
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
     expect(writes).toHaveLength(1);
   });
+  it("gives the pending review as the reason of the disabled Guardar and Descartar", async () => {
+    server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 })));
+    renderRouteWithProviders("/configuracion/apariencia"); await edit();
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    const reason = "Primero revisá los valores actuales y elegí qué conservar.";
+    await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAccessibleDescription(reason));
+    for (const name of ["Guardar cambios", "Descartar"]) {
+      expect(screen.getByRole("button", { name })).toBeDisabled();
+      expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(reason);
+    }
+    for (const text of screen.getAllByText(reason)) expect(text).not.toBeVisible();
+  });
 
   it("recovers an initial read failure with one notification and a fresh revision", async () => {
     const error = vi.spyOn(toast, "error");

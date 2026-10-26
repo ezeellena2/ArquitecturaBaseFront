@@ -60,6 +60,7 @@
   "review": {
     "action": "Review current values",
     "reading": "Checking…",
+    "pending": "First review the current values and choose what to keep.",
     "title": "Review changes",
     "setting": "Setting",
     "source": "Source",

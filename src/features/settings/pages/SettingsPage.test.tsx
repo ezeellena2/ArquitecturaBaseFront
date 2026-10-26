@@ -140,6 +140,21 @@ describe("SettingsPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(writes).toHaveLength(1);
   });
+  it("gives the pending review as the reason of the disabled Guardar and Descartar", async () => {
+    server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 })));
+    renderRouteWithProviders("/configuracion/listados");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    const reason = "Primero revisá los valores actuales y elegí qué conservar.";
+    await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAccessibleDescription(reason));
+    for (const name of ["Guardar cambios", "Descartar"]) {
+      expect(screen.getByRole("button", { name })).toBeDisabled();
+      expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(reason);
+    }
+    for (const text of screen.getAllByText(reason)) expect(text).not.toBeVisible();
+    await userEvent.hover(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+  });
   it("keeps validation by the field without an error notification", async () => {
     const error = vi.spyOn(toast, "error");
     server.use(http.patch("/api/settings", () => HttpResponse.json({ errors: { defaultCulture: ["Elegí un idioma admitido."] } }, { status: 400 })));

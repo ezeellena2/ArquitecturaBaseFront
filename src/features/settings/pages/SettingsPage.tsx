@@ -11,6 +11,7 @@ import { errorFeedback } from "@/shared/api/errorFeedback";
 import { presentationQueryKey } from "@/shared/api/presentation";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Page } from "@/shared/ui/Page";
@@ -117,10 +118,12 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
   const save = () => mutation.mutate({ changes, baseline });
   // La banda lleva solo el título y las acciones: Guardar habilitado ya dice que hay cambios. Revisar actúa sobre
   // toda la pantalla y aparece en la banda mientras un conflicto o un guardado incierto lo piden.
+  // Mientras tanto, Descartar y Guardar se apagan con la revisión pendiente como motivo, aunque se cierre el aviso.
+  const reviewReason = needsReview && !disabled ? t("review.pending") : null;
   return <Page title={t("title")}
     actions={<>{needsReview ? <Button variant="outline" disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
-      <Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={discard}>{t("discard")}</Button>
-      <Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); if (changes.registrationMode) setConfirm(true); else save(); }}>{t(mutation.isPending ? "saving" : "save")}</Button></>}>
+      <DisabledReason reason={reviewReason}><Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={discard}>{t("discard")}</Button></DisabledReason>
+      <DisabledReason reason={reviewReason}><Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); if (changes.registrationMode) setConfirm(true); else save(); }}>{t(mutation.isPending ? "saving" : "save")}</Button></DisabledReason></>}>
     <div className="flex flex-col gap-4">
       <SettingsForm draft={draft} errors={errors} disabled={disabled} onChange={changeDraft} />
       {review ? <SettingsReview current={review} draft={draft} disabled={disabled} titleRef={reviewTitle} onAccept={acceptReview} /> : null}
