@@ -22,12 +22,35 @@ function preview(culture: typeof cultures[number], name: string, revision: numbe
   return result;
 }
 
-it("qualifies the intact import captures and their actual producers", () => {
+// With the menu in Spanish, the preview and the export of a catalog whose original is English.
+const englishOriginal = ["es/en-original-preview.json", "es/en-original-export.xlsx", "es/en-original-export.http.json"];
+
+it("qualifies the 33 intact import captures and their actual producers", () => {
   const provenance = cohort.verify();
-  expect(provenance.captures.map(item => item.name).sort()).toEqual(cultures.flatMap(culture => names.map(name => capture(culture, name))).sort());
+  expect(provenance.captures).toHaveLength(33);
+  expect(provenance.captures.map(item => item.name).sort()).toEqual([...cultures.flatMap(culture => names.map(name => capture(culture, name))), ...englishOriginal].sort());
   for (const source of ["FormCatalogImportHttpTests.cs", "FormCatalogImportFieldsHttpTests.cs", "FormCatalogEndpointsTests.cs", "FormCatalogImportContractCapture.cs", "FormCatalogImportModels.cs", "FormCatalogImportTemplate.cs", "Catalogs.resx", "Catalogs.en.resx"]) {
     expect(provenance.sources.some(item => item.path.endsWith("/" + source))).toBe(true);
   }
+});
+
+it("reads the Spanish translation column of an English original catalog and downloads its export", async () => {
+  // The producer created the catalog in English and previewed «Código,Texto,Texto en español» with the menu in Spanish.
+  const plan = preview("es", "en-original-preview.json", 1, "Append");
+  expect(plan).toMatchObject({ rowsRead: 3, issues: [], counts: { added: 1, changed: 2, deactivated: 0, errorRows: 0 } });
+  expect(plan.added).toEqual([{ row: 4, code: "W", text: "Oeste", value: null }]);
+  expect(plan.changed.map(item => [item.code, item.changes])).toEqual([
+    ["N", [{ column: "textEs", before: "Norte", after: "Norte cambiado" }]],
+    ["E", [{ column: "textEs", before: null, after: "Este" }]],
+  ]);
+  server.use(http.get("/api/forms/catalogs/" + plan.catalogId + "/export", () =>
+    cohort.capturedResponse("es/en-original-export.xlsx", "es/en-original-export.http.json")));
+  const file = await exportCatalog(plan.catalogId, false);
+  const raw = cohort.bytes("es/en-original-export.xlsx");
+  expect(file.contentLanguage).toBe("es");
+  expect(file.fileName).toMatch(/\.xlsx$/);
+  expect(file.blob.size).toBe(raw.length);
+  expect(sha256(new Uint8Array(await file.blob.arrayBuffer()))).toBe(sha256(raw));
 });
 
 for (const culture of cultures) {
