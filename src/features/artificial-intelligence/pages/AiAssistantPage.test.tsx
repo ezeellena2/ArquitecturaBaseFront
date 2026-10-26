@@ -77,7 +77,7 @@ beforeEach(() => {
     conversationRevision: 2,
     turnRevision: 2,
     state: "completed",
-    stage: "verifying",
+    stage: "finished",
     contentAccess: "allowed",
     question: "Consulta anterior",
     answer: {
@@ -162,7 +162,8 @@ beforeEach(() => {
       return HttpResponse.json(acceptedOf(turn), { status: 202 });
     }),
     http.post("/api/ai/assistant/turns/:id/cancel", () => {
-      turn = { ...turn, state: "canceled", turnRevision: 3 };
+      turn = { ...turn, state: "canceled", stage: "finished", turnRevision: 3, cancelRequestedAtUtc: turn.cancelRequestedAtUtc ?? "2026-10-04T12:00:02Z",
+        failure: { code: "Ai.Assistant.Canceled", detail: "Cancelación confirmada.", recovery: "newAttempt" } };
       return HttpResponse.json(turn);
     }),
     http.delete(
@@ -224,7 +225,7 @@ describe("authenticated assistant", () => {
   });
   it("announces a terminal transition once in StrictMode across repeated GETs", async () => {
     const error = vi.spyOn(toast, "error");
-    turn = { ...turn, state: "running", answer: null, evidences: [] };
+    turn = { ...turn, state: "running", stage: "consulting", answer: null, evidences: [] };
     const router = createMemoryRouter(routes, {
       initialEntries: [`/?conversacion=${conversationId}`],
     });
@@ -241,6 +242,7 @@ describe("authenticated assistant", () => {
     turn = {
       ...turn,
       state: "failed",
+      stage: "finished",
       failure: {
         code: "Ai.Assistant.ProviderRejected",
         detail: "El proveedor rechazó la consulta.",
@@ -263,12 +265,14 @@ describe("authenticated assistant", () => {
   });
   it("does not notify expected durable cancellation as an operational error", async () => {
     const error = vi.spyOn(toast, "error");
-    turn = { ...turn, state: "running", answer: null, evidences: [] };
+    turn = { ...turn, state: "running", stage: "consulting", answer: null, evidences: [] };
     server.use(
       http.post("/api/ai/assistant/turns/:id/cancel", () => {
         turn = {
           ...turn,
           state: "canceled",
+          stage: "finished",
+          cancelRequestedAtUtc: turn.cancelRequestedAtUtc ?? "2026-10-04T12:00:02Z",
           failure: {
             code: "Ai.Assistant.Canceled",
             detail: "Cancelación confirmada.",
@@ -521,7 +525,7 @@ describe("authenticated assistant", () => {
     expect(writes).toHaveLength(0);
   });
   it("shows the durable cancellation request while the running operation remains active", async () => {
-    turn = { ...turn, state: "running", answer: null, evidences: [] };
+    turn = { ...turn, state: "running", stage: "consulting", answer: null, evidences: [] };
     server.use(
       http.post("/api/ai/assistant/turns/:id/cancel", () => {
         turn = { ...turn, cancelRequestedAtUtc: "2026-10-04T12:00:02Z" };
@@ -554,10 +558,10 @@ describe("authenticated assistant", () => {
   });
   it("publishes the confirmed completion when cancellation loses its race", async () => {
     const answer = turn.answer;
-    turn = { ...turn, state: "running", answer: null };
+    turn = { ...turn, state: "running", stage: "consulting", answer: null };
     server.use(
       http.post("/api/ai/assistant/turns/:id/cancel", () => {
-        turn = { ...turn, state: "completed", answer };
+        turn = { ...turn, state: "completed", stage: "finished", answer };
         return HttpResponse.json(turn);
       }),
     );

@@ -164,11 +164,12 @@ describe("durable assistant acceptance", () => {
         question: "private",
         answer: null,
         evidences: [],
-        failure: null,
+        // Like the backend: a confirmed cancellation keeps its request time and the Canceled failure.
+        failure: { code: "Ai.Assistant.Canceled", detail: "Cancelación confirmada.", recovery: "newAttempt" },
         usage: null,
         culture: "es",
         timeZoneId: "UTC",
-        cancelRequestedAtUtc: null,
+        cancelRequestedAtUtc: "2026-10-04T12:00:02Z",
       });
       expect(await cancel).toBe(false);
     });

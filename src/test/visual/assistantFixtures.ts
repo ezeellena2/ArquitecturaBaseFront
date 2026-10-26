@@ -76,6 +76,10 @@ export function createAssistantVisualFixtures(
       },
     ],
   };
+  const running =
+    scenario === "assistant-running" ||
+    scenario === "assistant-cancel-requested" ||
+    scenario === "assistant-scroll";
   let turn: AssistantTurn = {
     turnId: "0199a0c0-0000-7000-8000-000000000222",
     requestId: "0199a0c0-0000-7000-8000-000000000333",
@@ -83,17 +87,15 @@ export function createAssistantVisualFixtures(
     ordinal: 1,
     conversationRevision: 2,
     turnRevision: 2,
-    state:
-      scenario === "assistant-running" ||
-      scenario === "assistant-cancel-requested" ||
-      scenario === "assistant-scroll"
-        ? "running"
-        : scenario === "assistant-uncertain"
-          ? "uncertain"
-          : scenario === "assistant-failed"
-            ? "failed"
-            : "completed",
-    stage: "consulting",
+    state: running
+      ? "running"
+      : scenario === "assistant-uncertain"
+        ? "uncertain"
+        : scenario === "assistant-failed"
+          ? "failed"
+          : "completed",
+    // Like the backend: an active turn has its stage and a terminal one is always finished.
+    stage: running ? "consulting" : "finished",
     cancelRequestedAtUtc:
       scenario === "assistant-cancel-requested" ? date : null,
     contentAccess: scenario === "assistant-blocked" ? "blocked" : "allowed",
@@ -191,6 +193,7 @@ export function createAssistantVisualFixtures(
           requestId: fixtureId(2, index),
           ordinal: index + 1,
           state: "completed",
+          stage: "finished",
           question: `Earlier question ${index + 1}`,
           answer: {
             kind: "answer",
@@ -256,8 +259,15 @@ export function createAssistantVisualFixtures(
       turn = {
         ...turn,
         state: "canceled",
+        stage: "finished",
+        cancelRequestedAtUtc: turn.cancelRequestedAtUtc ?? date,
         answer: null,
         evidences: [],
+        failure: {
+          code: "Ai.Assistant.Canceled",
+          detail: en ? "Cancellation confirmed." : "Cancelación confirmada.",
+          recovery: "newAttempt",
+        },
         turnRevision: turn.turnRevision + 1,
       };
       return json(turn);
@@ -279,6 +289,7 @@ export function createAssistantVisualFixtures(
         turn = {
           ...turn,
           state: "completed",
+          stage: "finished",
           answer: {
             kind: "answer",
             text: "New confirmed result. ".repeat(80),
