@@ -30,15 +30,35 @@ it("notifies a PDF preview read failure once while keeping recovery in the view"
   view.unmount();
   expect(dismissNotification).toHaveBeenCalledWith(notice.id);
 });
-it("notifies one document download wait and preserves its visible cooldown", async () => {
+// The wait is the reason of Ver PDF and Descargar (`DisabledReason`), not a text at the foot of the surface.
+it("notifies one document download wait and gives it as the reason of each disabled action", async () => {
   server.use(http.get("/api/forms/records/:recordId/documents/:documentId/content", () => HttpResponse.json({ code: "RateLimit.Exceeded", detail: "Esperá para descargar esta copia.", retryAfter: 60 }, { status: 429 })));
   renderWithProviders(<DocumentsHarness owner="document-test-owner" recordId={responseRecordId} documents={[document]} onForbidden={vi.fn()}/>);
   await userEvent.click(screen.getByRole("button", { name: "Descargar" }));
   await waitFor(() => expect(notify).toHaveBeenCalledOnce());
   expect(screen.queryByText("Esperá para descargar esta copia.")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Descargar" })).toBeDisabled();
-  expect(screen.getByRole("status")).toHaveTextContent(/^Esperá \d+ segundos para volver a intentar\.$/);
+  const wait = /^Esperá \d+ segundos para volver a intentar\.$/;
+  for (const name of ["Ver PDF", "Descargar"]) {
+    await waitFor(() => expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(wait));
+    expect(screen.getByRole("button", { name })).toBeDisabled();
+  }
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
   expect(savePrivateBlob).not.toHaveBeenCalled();
+});
+// In the «Descargar ▾» menu the items keep their reason inside, as every menu does.
+it("tells the download wait inside the disabled items of the download menu", async () => {
+  server.use(http.get("/api/forms/records/:recordId/documents/:documentId/content", () => HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 60 }, { status: 429 })));
+  renderWithProviders(<DocumentsHarness menu owner="document-test-owner" recordId={responseRecordId} documents={[document]} onForbidden={vi.fn()}/>);
+  await act(async () => screen.getByRole("button", { name: "Descargar" }).focus());
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(await screen.findByRole("menuitem", { name: document.name }));
+  await waitFor(() => expect(notify).toHaveBeenCalledOnce());
+  await act(async () => screen.getByRole("button", { name: "Descargar" }).focus());
+  await userEvent.keyboard("{Enter}");
+  const item = await screen.findByRole("menuitem", { name: /^Visita aprobada\.pdf/ });
+  expect(item).toHaveAttribute("data-disabled");
+  expect(item).toHaveTextContent(/Esperá \d+ segundos para volver a intentar\.$/);
 });
 
 it("keeps a requested download alive after the menu closes without loading bytes on open", async () => {
