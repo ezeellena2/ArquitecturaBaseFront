@@ -6,7 +6,7 @@ import { Fragment, useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { AlertTriangleIcon, ChevronDownIcon, PencilIcon } from "@/shared/ui/icons";
+import { AlertTriangleIcon, ChevronDownIcon, PencilIcon, TrashIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { WideTable, WideTableCell, WideTableHead } from "@/shared/ui/WideTable";
@@ -19,7 +19,7 @@ import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onExpand, onChange, onFieldBlur, onMove, onActionRef }: {
+export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onExpand, onChange, onFieldBlur, onMove, onRemove, onActionRef }: {
   items: readonly CatalogManualItemValue[];
   inline: boolean; selected: readonly string[]; onSelect: (id: string, selected: boolean) => void; onSelectAll: (selected: boolean) => void;
   errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; warnings?: Readonly<Record<string, string>>; sortPending?: boolean;
@@ -39,6 +39,8 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   /** Leaving a control of an option, by its error path: the page then marks it if it is empty. */
   onFieldBlur?: (localId: string, path: string) => void;
   onMove?: (item: CatalogManualItemValue, delta: -1 | 1) => void;
+  /** A new option, never saved, leaves the draft. */
+  onRemove?: (item: CatalogManualItemValue) => void;
   onActionRef: (key: string, button: HTMLButtonElement | null) => void;
   fields?: readonly CatalogFieldDraft[]; scope?: CatalogReadScope; visibleFieldIds?: readonly string[];
 }) {
@@ -100,6 +102,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
             <IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("down", { name }) }) : t("down", { name })} disabled={readOnly || sortPending || item.itemId === null || !hasPendingMoves && item.position === totalCount} onClick={() => onMove(item, 1)}><ChevronDownIcon className="size-4" /></IconButton></> : null}
             {item.isActive || expanded ? <IconButton ref={rememberAction} size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} aria-expanded={expanded} onClick={() => onExpand(expanded ? null : item.localId)}><PencilIcon className="size-4" /></IconButton>
               : <Button ref={rememberAction} type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
+            {onRemove && item.itemId === null ? <IconButton size="icon-sm" label={t("catalogs.items.removeNamed", { name })} disabled={busy} onClick={() => onRemove(item)}><TrashIcon className="size-4" /></IconButton> : null}
           </div> : null}</WideTableCell>
         </TableRow>{problems.length ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{problems.map(problem => <p key={problem.id} id={problem.id} role="status" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</TableCell></TableRow> : null}{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
       })}

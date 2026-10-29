@@ -46,6 +46,14 @@ export function stageCatalogItem(state: CatalogItemEdits, item: CatalogManualIte
   return { originals: state.originals, changes };
 }
 
+// A new option leaves the draft without a trace, also once deactivated; a saved one is never discarded here.
+export function discardNewCatalogItem(state: CatalogItemEdits, localId: string): CatalogItemEdits {
+  const key = "new:" + localId;
+  if (!Object.hasOwn(state.changes, key)) return state;
+  const { [key]: _discarded, ...changes } = state.changes;
+  return { originals: state.originals, changes };
+}
+
 // A value keeps only the option texts that arrive with it (a chosen option); clearing it or writing it without texts
 // (as a pending type change does) drops the previous ones, so a cell never shows an option it no longer holds.
 export function withCatalogFieldValue(item: CatalogManualItemValue, key: string, value: string | null, texts?: Readonly<Record<string, string>>): CatalogManualItemValue {

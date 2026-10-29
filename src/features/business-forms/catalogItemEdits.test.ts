@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogItemChanges, mergeCatalogItemPage, newCatalogItemEdits, stageCatalogItem, withCatalogFieldValue, type CatalogManualItemValue } from "./catalogItemEdits";
+import { catalogItemChanges, discardNewCatalogItem, mergeCatalogItemPage, newCatalogItemEdits, stageCatalogItem, withCatalogFieldValue, type CatalogManualItemValue } from "./catalogItemEdits";
 
 const first: CatalogManualItemValue = { value: null, localId: "first", itemId: "saved-first", label: { es: "Pérez Hnos.", en: "" }, detail: { es: "Av. Colón 1234", en: null }, code: "C-001", isActive: true, position: 1 };
 const second: CatalogManualItemValue = { ...first, localId: "second", itemId: "saved-second", label: { es: "Ferretería Sur", en: "South hardware" }, code: "C-002", position: 2 };
@@ -20,6 +20,14 @@ describe("Manual catalog edits across partial pages", () => {
     state = stageCatalogItem(stageCatalogItem(state, edited), added);
     expect(catalogItemChanges(state)).toEqual([edited, { ...added, position: null }]);
     expect(catalogItemChanges(state).some(item => item.itemId === first.itemId)).toBe(false);
+  });
+  it("discards a new option, also after deactivating it, and never a saved one", () => {
+    let state = mergeCatalogItemPage(newCatalogItemEdits(), [first]);
+    const added = { ...first, localId: "new-item", itemId: null, code: "", label: { es: null, en: null }, position: null };
+    state = stageCatalogItem(stageCatalogItem(state, added), { ...added, isActive: false });
+    state = stageCatalogItem(state, { ...first, code: "C-099" });
+    state = discardNewCatalogItem(discardNewCatalogItem(state, added.localId), first.localId);
+    expect(catalogItemChanges(state)).toEqual([{ ...first, code: "C-099" }]);
   });
   it("removes a restored value from the pending set without deactivating other items", () => {
     let state = mergeCatalogItemPage(newCatalogItemEdits(), [first, second]);

@@ -2,7 +2,7 @@ import { formatCatalogValue, parseCatalogValue, relocalizeCatalogValue, type Cat
 import type { FormCulture } from "./model";
 import type { CatalogItemMove, CreateManualCatalogBody, UpdateManualCatalogBody } from "./api/catalogs";
 import type { CatalogDetail, CatalogItem } from "./api/catalogResponse";
-import { catalogItemChanges, mergeCatalogItemPage, newCatalogItemEdits, stageCatalogItem, type CatalogItemEdits, type CatalogManualItemValue } from "./catalogItemEdits";
+import { catalogItemChanges, discardNewCatalogItem, mergeCatalogItemPage, newCatalogItemEdits, stageCatalogItem, type CatalogItemEdits, type CatalogManualItemValue } from "./catalogItemEdits";
 
 import { openCatalogFilters } from "./catalogFilterDraft";
 import type { CatalogFiltersEditorValue } from "./components/CatalogFiltersEditor";
@@ -62,6 +62,7 @@ export function catalogDraftInCulture(draft: CatalogDraft, culture: FormCulture)
   return { ...draft, culture, items: { originals, changes }, fields: draft.fields.map(field => relocalizeCatalogField(field, from, culture)), savedFields: draft.savedFields.map(field => relocalizeCatalogField(field, from, culture)) };
 }
 export const stageCatalogDraftItem = (draft: CatalogDraft, item: CatalogManualItemValue): CatalogDraft => ({ ...draft, items: stageCatalogItem(draft.items, item) });
+export const discardCatalogDraftItem = (draft: CatalogDraft, localId: string): CatalogDraft => ({ ...draft, items: discardNewCatalogItem(draft.items, localId) });
 function canonicalItemValue(draft: CatalogDraft, item: CatalogManualItemValue): string | null {
   const parsed = parseCatalogValue(draft.valueType, item.value, draft.culture);
   if (!parsed.valid) throw new Error("Invalid catalog item value.");

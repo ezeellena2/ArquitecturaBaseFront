@@ -217,6 +217,23 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(text).toHaveFocus();
     expect(bodies).toEqual([]);
   });
+  it("removes a new option that was never saved, also once deactivated, and leaves nothing to save", async () => {
+    setup();
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
+    await user.click(screen.getByRole("button", { name: "Quitar Nueva opción" }));
+    expect(screen.queryByRole("button", { name: /Nueva opción/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Agregar opción" }));
+    await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Prueba");
+    await user.click(screen.getByRole("checkbox", { name: /^Activa/ }));
+    await user.click(screen.getByRole("button", { name: "Listo" }));
+    expect(screen.getByRole("button", { name: "Reactivar Prueba" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Quitar Prueba" }));
+    expect(screen.queryByRole("button", { name: "Reactivar Prueba" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Editar Pérez" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+  });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
     setup(); const bodies: unknown[] = []; let savedOption = option;
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));

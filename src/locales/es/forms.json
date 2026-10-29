@@ -419,6 +419,7 @@
       "activeHint": "Una opción dada de baja deja de ofrecerse en los envíos nuevos. Las respuestas que ya la eligieron siguen mostrándola.",
       "reactivate": "Reactivar",
       "reactivateNamed": "Reactivar {{name}}",
+      "removeNamed": "Quitar {{name}}",
       "empty": "Todavía no hay opciones.",
       "editing": "Editando {{name}}",
       "loadFailed": "No pudimos cargar las opciones.",
