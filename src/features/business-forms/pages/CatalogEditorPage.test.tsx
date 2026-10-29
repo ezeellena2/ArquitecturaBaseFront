@@ -234,6 +234,40 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.getByRole("button", { name: "Editar Pérez" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
   });
+  it("keeps the options of the current page in place while the next page loads", async () => {
+    setup(); const pages: number[] = []; const waiting: (() => void)[] = [];
+    const second = { ...option, id: "01990000-0000-7000-8000-000000000022", code: "C2", text: { es: "López", en: null }, position: 2 };
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, itemsCount: 2 })), http.get("/api/forms/catalogs/" + id + "/items", async ({ request }) => {
+      const page = Number(new URL(request.url).searchParams.get("page") ?? 1); pages.push(page);
+      if (page === 2) await new Promise<void>(resolve => waiting.push(resolve));
+      return HttpResponse.json({ items: [page === 1 ? option : second], page, pageSize: 1, totalCount: 2, totalPages: 2, hasPrevious: page > 1, hasNext: page === 1 });
+    }));
+    await mount("/catalogos/" + id + "?pageSize=1"); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Página siguiente" }));
+    await waitFor(() => expect(pages).toContain(2));
+    // A spinner in place of the whole block shortened the screen, and the scroll ended at its top.
+    expect(screen.getByRole("button", { name: "Editar Pérez" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Página siguiente" })).toBeInTheDocument();
+    waiting.forEach(resolve => resolve());
+    expect(await screen.findByRole("button", { name: "Editar López" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Editar Pérez" })).not.toBeInTheDocument();
+  });
+  it("does not show the options of the previous revision while the saved one loads", async () => {
+    setup(); let saved = false; const waiting: (() => void)[] = [];
+    server.use(http.get("/api/forms/catalogs/" + id + "/items", async () => {
+      if (saved) await new Promise<void>(resolve => waiting.push(resolve));
+      return HttpResponse.json({ items: [saved ? { ...option, code: "C2" } : option], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false });
+    }), http.put("/api/forms/catalogs/" + id, () => { saved = true; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
+    const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await pasteText(user, code, "C2");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    // The saved revision starts a new baseline: the page read before saving is not shown as if it were part of it.
+    await waitFor(() => expect(waiting.length).toBeGreaterThan(0));
+    expect(screen.queryByRole("button", { name: "Editar Pérez" })).not.toBeInTheDocument();
+    waiting.forEach(resolve => resolve());
+    expect(await screen.findByText("C2")).toBeInTheDocument();
+  });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
     setup(); const bodies: unknown[] = []; let savedOption = option;
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));

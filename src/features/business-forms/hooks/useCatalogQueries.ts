@@ -16,7 +16,12 @@ export function useCatalogDetail(scope: CatalogReadScope, id: string, errorOwner
 export function useCatalogItems(scope: CatalogReadScope, id: string, revision: number | null, query: CatalogItemsQuery, errorOwner: "local" | "global" = "local") {
   const root = [...catalogScopeKey(scope), "items", id, revision] as const;
   useUnobservedQueryCleanup(root);
-  return useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogItems(id, query, signal), enabled: canRead(scope) && id !== "" && revision !== null, staleTime: 0, gcTime: 0, meta: { errorOwner } });
+  const owner = JSON.stringify(root);
+  // Another page, size or search of the same revision keeps the rows on screen until the next ones arrive. Another revision
+  // does not: the editor takes each page it reads as the baseline of that revision.
+  return useQuery({ queryKey: [...root, query], queryFn: ({ signal }) => fetchCatalogItems(id, query, signal), enabled: canRead(scope) && id !== "" && revision !== null,
+    placeholderData: (previous, previousQuery) => JSON.stringify(previousQuery?.queryKey.slice(0, root.length)) === owner ? keepPreviousData(previous) : undefined,
+    staleTime: 0, gcTime: 0, meta: { errorOwner } });
 }
 export function useCatalogItemsById(scope: CatalogReadScope, id: string, itemIds: readonly string[], errorOwner: "local" | "global" = "global") {
   const root = [...catalogScopeKey(scope), "items-by-id", id, itemIds] as const;
