@@ -30,6 +30,11 @@ it("lists an option written only in the other language with that text", async ()
   expect(screen.getByRole("radio", { name: "North" })).toBeInTheDocument();
   expect(screen.getByText("North side")).toBeInTheDocument();
 });
+it.each(["es", "en"] as const)("shows the text a new form's final button starts with in %s, not the name of that setting", async language => {
+  await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture={language}/>); });
+  expect(screen.getByRole("button", { name: language === "en" ? "Submit" : "Enviar" })).toBeDisabled();
+  expect(screen.queryByText(language === "en" ? "Final button text" : "Texto del botón final")).not.toBeInTheDocument();
+});
 it("switches only the illustrative preview to checkboxes while leaving catalog data untouched", async () => {
   await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture="es"/>); });
   await userEvent.click(screen.getByRole("button", { name: "Varias" }));

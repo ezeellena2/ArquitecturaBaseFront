@@ -14,8 +14,10 @@ export const contentRequired = (_text: ContentTexts, culture: FormCulture, origi
 export const ownTexts = (text: ContentTexts): Partial<Record<FormCulture, string>> =>
   Object.fromEntries((["es", "en"] as const).flatMap(culture => text?.[culture]?.trim() ? [[culture, text[culture]!.trim()]] : []));
 export const suggestedPrefix = (name: string) => (name.trim().split(/\s+/).at(-1) ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
+/** The final button's text a new form starts with; the catalog preview shows it on its example button. */
+export const defaultSubmitLabel = (culture: FormCulture) => culture === "es" ? "Enviar" : "Submit";
 export function emptyForm(culture: FormCulture): DraftEditorValue {
-  return { name: { [culture]: "" }, prefix: "", offerWhen: null, draft: { format: 1, culture, submitLabel: { [culture]: culture === "es" ? "Enviar" : "Submit" }, fields: [] } };
+  return { name: { [culture]: "" }, prefix: "", offerWhen: null, draft: { format: 1, culture, submitLabel: { [culture]: defaultSubmitLabel(culture) }, fields: [] } };
 }
 export type QuestionEditorType = Exclude<DraftQuestion["type"], "multiChoice"> | "catalogChoice";
 export const questionEditorType = (question: DraftQuestion): QuestionEditorType => question.type === "choice" || question.type === "multiChoice" ? question.source ? "catalogChoice" : "choice" : question.type;

@@ -5,7 +5,7 @@ import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { PhonePreview } from "@/shared/ui/PhonePreview";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
-import { administrativeName } from "../editorModel";
+import { administrativeName, defaultSubmitLabel } from "../editorModel";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 import type { CatalogFieldDraft } from "../catalogFields";
@@ -28,7 +28,8 @@ export function CatalogPreview({ items, name, culture, fields = [], presentation
     <PhonePreview title={name} screenClassName="xl:min-h-0">{mode === "many" ? <><p className="text-sm">{content("catalogs.preview.upTo", { count: 3 })}</p>{options.map(item => <CheckboxField key={item.localId} label={label(item)} description={shown(item).description || undefined} checked={many.includes(item.localId)} disabled={!many.includes(item.localId) && many.filter(id => options.some(option => option.localId === id)).length >= 3} onCheckedChange={checked => setMany(values => checked ? [...values, item.localId] : values.filter(id => id !== item.localId))}/>)}</>
       : open ? <><RadioGroupField label={name} value={chosen?.localId} onValueChange={value => { setSelected(value); setOpen(false); }} options={options.map(item => ({ value: item.localId, label: label(item), description: shown(item).description || undefined }))}/><Button type="button" variant="outline" onClick={() => setOpen(false)}>{content("catalogs.preview.back")}</Button></>
       : <Button type="button" variant="outline" onClick={() => setOpen(true)} aria-expanded={open}>{chosen ? label(chosen) : content("catalogs.preview.choose")}</Button>}
-      <div className="mt-auto"><Button className="w-full" disabled>{content("submitLabel")}</Button><p className="mt-2 text-center text-xs text-[var(--color-content-muted)]">{content("previewOnly")}</p></div>
+      {/* The final button belongs to each form: the example shows the text a new form starts with. */}
+      <div className="mt-auto"><Button className="w-full" disabled>{defaultSubmitLabel(culture)}</Button><p className="mt-2 text-center text-xs text-[var(--color-content-muted)]">{content("previewOnly")}</p></div>
     </PhonePreview>
   </section>;
 }
