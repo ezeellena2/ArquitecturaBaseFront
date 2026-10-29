@@ -54,7 +54,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
     <Page title={t("title")}
       actions={<Button variant="outline" size="sm" onClick={() => void list.refetch()}>{t("refreshAction")}</Button>}>
       <Surface>
-        <div className="grid h-[calc(100svh-10rem)] min-h-[30rem] grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="grid h-[calc(100svh-10rem)] min-h-[30rem] grid-cols-1 xl:grid-cols-[17.5rem_minmax(0,1fr)]">
           <div className={cn("flex min-h-0 flex-col border-r border-[var(--color-border)]", selected ? "max-xl:hidden" : "")}>
             <div className="flex flex-col gap-3 border-b border-[var(--color-border)] p-3">
               <label htmlFor="chat-search" className="sr-only">{t("search")}</label>

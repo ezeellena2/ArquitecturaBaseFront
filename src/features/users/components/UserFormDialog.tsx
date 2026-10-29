@@ -259,7 +259,7 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
             />
 
             {draft.invite ? (
-              <div className="flex flex-col gap-2 pl-[25px]">
+              <div className="flex flex-col gap-2 pl-6.25">
                 <RadioGroupField
                   label={t("invitation.channel")}
                   options={channelOptions}

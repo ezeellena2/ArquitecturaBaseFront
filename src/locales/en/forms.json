@@ -307,9 +307,9 @@
   },
   "catalogs": {
     "fields": {
-      "title": "Fields", "field": "Field", "key": "Key", "type": "Type", "rules": "Rules", "role": "Role",
-      "add": "Add field", "edit": "Edit fields", "view": "View fields", "new": "New field", "unsaved": "New, unsaved",
-      "empty": "There are no extra fields yet.", "fixed": "Fixed: code, text and details. Extra:",
+      "title": "Fields", "key": "Key", "type": "Type", "rules": "Rules", "role": "Role",
+      "add": "Add field", "new": "New field",
+      "empty": "There are no extra fields yet.",
       "keyHint": "Used by the template, imports and stored data. It does not change after saving.",
       "optionalFirst": "A new field starts optional: every active option needs a value before it can be required.",
       "typeReview": "Saving checks every value. If any cannot convert, the change is not saved.",
@@ -323,7 +323,7 @@
         "goTo": "Go to the question", "goToNamed": "Go to the question “{{question}}” in {{form}}",
         "presentation": "It's also removed from this catalog's “In WhatsApp”."
       },
-      "columns": "Fields", "valueLabel": "Row {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Clear", "viewNamed": "View {{name}}", "clearValue": "Clear {{name}}",
+      "columns": "Columns", "valueLabel": "Row {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Clear", "viewNamed": "View {{name}}", "clearValue": "Clear {{name}}",
       "rowProblem": "Row {{row}} · {{field}}: {{message}}", "optionValueLabel": "{{option}} · {{field}}", "optionProblem": "{{option}} · {{field}}: {{message}}",
       "inputHint": { "integer": "Whole number", "decimal": "Decimal number", "date": "Date", "plain": "{{type}}.", "range": "{{type}}, {{rule}}." },
       "missingValues_one": "Values are missing from 1 active option.", "missingValues_other": "Values are missing from {{count, number(useGrouping: always)}} active options.",
@@ -332,6 +332,12 @@
       "convertedValues_one": "1 value can convert.", "convertedValues_other": "{{count, number(useGrouping: always)}} values can convert.",
       "roles": { "filter": "Filter", "data": "Data" },
       "roleHint": { "filter": "Show each person their own options, or use a fixed question filter.", "data": "Captured with the selected option and included in the response." },
+      "keyHelp": "What the key is", "roleHelp": "What the role is",
+      "roleHelpText": "Filter: show each person their own options, or use a fixed question filter. Data: captured with the selected option and included in the response.",
+      "inline": { "upTo": "Up to", "characters": "characters", "from": "From", "to": "to" },
+      "countLabel": "Fields · {{count}}", "addFields": "Add fields", "addCountLabel": "Add fields · {{count}}", "dialogTitle": "Fields of “{{name}}”",
+      "detailLabel": { "text": "Length", "range": "Range", "catalog": "Catalog" }, "position": "Field {{number}} of {{count}}", "count": "{{count}} of {{max}}", "newBadge": "New", "removeField": "Remove this field",
+      "backToList": "Back to the list", "removedState": "Removed when saving", "controlProblem": "“{{name}}” · {{field}}: {{message}}", "fieldProblem": "“{{name}}”: {{message}}",
       "types": { "text": "Text", "integer": "Whole number", "decimal": "Decimal", "date": "Date", "boolean": "Yes or no", "catalog": "Pick from a catalog" },
       "problem": {
         "required": "Missing: it is required.",
@@ -640,12 +646,9 @@
       "mode": "Choice preview",
       "one": "One option",
       "many": "Multiple",
-      "questionDecides": "Each form question decides this. This switch changes only the preview.",
       "choose": "Choose an option",
       "back": "Back",
-      "upTo": "Choose up to {{count}}",
-      "limit": "Illustrative preview of this page. WhatsApp allows up to 200 active options when sending.",
-      "limitMany": "Illustrative preview of this page. WhatsApp allows up to 20 active options in a multiple-choice question."
+      "upTo": "Choose up to {{count}}"
     },
     "actions": {
       "paste": "Paste from Excel",

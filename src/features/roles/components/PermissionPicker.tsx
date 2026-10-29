@@ -220,7 +220,7 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
 
         {/* Sin debounce: filtra en memoria, sobre un catálogo que ya llegó entero. */}
         <div className="relative w-80 max-w-full">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-[11px] size-[15px] -translate-y-1/2 text-[var(--color-content-muted)]" />
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.75 size-3.75 -translate-y-1/2 text-[var(--color-content-muted)]" />
           <Input
             ref={searchRef}
             type="search"
@@ -275,7 +275,7 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
       </FilterBar>
 
       <Surface>
-        <Table id={`${titleId}-table`} aria-labelledby={titleId} className="min-w-[520px] table-fixed">
+        <Table id={`${titleId}-table`} aria-labelledby={titleId} className="min-w-130 table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead scope="col" className="w-[34%]">{t("picker.columns.name")}</TableHead>
@@ -309,7 +309,7 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
                     }
                     embedded
                     // Como en el tablero: el motivo repite la búsqueda, y con una larga se parte en renglones.
-                    descriptionClassName="max-w-[360px]"
+                    descriptionClassName="max-w-90"
                   />
                 </TableCell>
               </TableRow>

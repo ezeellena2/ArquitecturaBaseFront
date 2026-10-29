@@ -8,6 +8,9 @@ import { formatYesNo, type YesNoLabels } from "@/shared/lib/typedValue";
 export type CatalogFieldType = CatalogField["type"];
 export interface CatalogFieldDraft extends Omit<CatalogField, "id"> { readonly id: string | null; readonly localId: string }
 export type CatalogFieldBody = Omit<CatalogFieldDraft, "valuesCount" | "usedBy">;
+/** What the server said about each field when saving, by `localId` and control path. */
+export type CatalogFieldErrors = Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
+export const catalogFieldHasErrors = (errors: CatalogFieldErrors, field: Pick<CatalogFieldDraft, "localId">) => Object.values(errors[field.localId] ?? {}).some(messages => messages.length > 0);
 export type CatalogFieldValueResult = { readonly valid: true; readonly value: string | null } | { readonly valid: false; readonly reason: "required" | "invalid" | "range" | "length" };
 export type CatalogFieldProblemReason = Extract<CatalogFieldValueResult, { valid: false }>["reason"];
 const textMaxLength = 300;

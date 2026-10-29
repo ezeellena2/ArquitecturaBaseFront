@@ -29,7 +29,8 @@ for (const lang of ["es", "en"] as const) {
     const box = (await composer.boundingBox())!;
     const prompts = (await suggestions.boundingBox())!;
     const panel = (await page.getByRole("complementary", { name: lang === "es" ? "Conversaciones" : "Conversations", exact: true }).boundingBox())!;
-    expect(panel.width).toBe(256);
+    // Escritorio a escala 75 %: el panel de 16rem mide 192 y la esquina del compositor, 12.
+    expect(panel.width).toBe(192);
     expect(frame.width).toBeGreaterThan(880);
     expect(frame.height).toBeGreaterThan(740);
     expect(box.width).toBeLessThanOrEqual(704);
@@ -37,7 +38,7 @@ for (const lang of ["es", "en"] as const) {
     expect(box.y).toBeGreaterThan(frame.y + frame.height * 0.25);
     expect(box.y + box.height).toBeLessThan(frame.y + frame.height * 0.7);
     expect(prompts.y).toBeGreaterThan(box.y + box.height);
-    expect(await composer.evaluate(node => parseFloat(getComputedStyle(node).borderRadius))).toBeGreaterThanOrEqual(16);
+    expect(await composer.evaluate(node => parseFloat(getComputedStyle(node).borderRadius))).toBeGreaterThanOrEqual(12);
     await expect(page.getByRole("button", { name: lang === "es" ? "Enviar" : "Send", exact: true })).toHaveText("");
     const hint = page.getByText(lang === "es" ? "Enter agrega una línea. Ctrl+Enter o ⌘+Enter envían." : "Enter adds a line. Ctrl+Enter or ⌘+Enter send.", { exact: true });
     expect((await hint.boundingBox())!.width).toBeLessThanOrEqual(1);

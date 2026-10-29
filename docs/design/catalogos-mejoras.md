@@ -47,7 +47,9 @@ el tablero CA1-A (versión 110 del lienzo) y el navegable ya lo muestran, y la c
 - por defecto se ve el campo cerrado, como en el formulario: la etiqueta, «Elegí una opción» y la flecha del desplegable;
 - al tocarlo, la lista con los círculos de una sola opción; «Volver» o elegir una la cierran, y el campo muestra lo elegido;
 - arriba, «Una opción / Varias»: «Una opción» es el desplegable; «Varias», las casillas cuadradas con «Elegí hasta N», como
-  en CA4. Debajo dice «Lo decide cada pregunta del formulario»: el selector cambia solo la vista previa, no el catálogo.
+  en CA4. El selector cambia solo la vista previa, no el catálogo. Desde el 2026-10-27 (decisión del usuario) va centrado
+  sobre el celular, sin texto debajo ni la nota del límite de WhatsApp, y en escritorio el celular termina donde termina
+  «En WhatsApp».
 
 En el navegable, la vista previa se toca: el campo abre la lista, una opción la cierra elegida y el selector cambia de una a
 varias.

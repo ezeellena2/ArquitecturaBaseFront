@@ -47,7 +47,7 @@ export function Page({
             <Link
               to={backTo.to}
               aria-label={backTo.label}
-              className="inline-flex size-6 shrink-0 translate-y-[3px] items-center justify-center rounded-[var(--radius-control)] text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]"
+              className="inline-flex size-6 shrink-0 translate-y-0.75 items-center justify-center rounded-[var(--radius-control)] text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]"
             >
               <ChevronLeftIcon className="size-3.5" />
             </Link>

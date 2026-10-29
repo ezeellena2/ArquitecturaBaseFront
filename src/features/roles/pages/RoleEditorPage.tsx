@@ -68,10 +68,10 @@ function EditorSkeleton(): ReactNode {
       </div></Surface>
       <div className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-4">
         <Skeleton className="h-9" />
-        <Skeleton className="h-[30px]" />
-        <Skeleton className="h-[30px]" />
-        <Skeleton className="h-[30px]" />
-        <Skeleton className="h-[30px]" />
+        <Skeleton className="h-7.5" />
+        <Skeleton className="h-7.5" />
+        <Skeleton className="h-7.5" />
+        <Skeleton className="h-7.5" />
       </div>
     </div>
   );

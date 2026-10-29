@@ -99,25 +99,27 @@ test("surface actions stay on the right edge of their header when they wrap", as
   expect(whole.firstTop).toBeGreaterThanOrEqual(whole.titleBottom);
   expect(whole.actionTop).toBe(whole.firstTop);
   expect(Math.abs(whole.right - 16)).toBeLessThanOrEqual(1);
-  // A 1440 entran en el renglón del título, al borde derecho y a su altura.
+  // A 1440 entran en el renglón del título, al borde derecho y a su altura. En escritorio la escala es 75 %:
+  // el margen de 1rem mide 12.
   await page.setViewportSize({ width: 1440, height: 900 });
   await last.scrollIntoViewIfNeeded();
   const wide = await measure();
-  expect(Math.abs(wide.right - 16)).toBeLessThanOrEqual(1);
+  expect(Math.abs(wide.right - 12)).toBeLessThanOrEqual(1);
   expect(Math.abs(wide.actionCenter - wide.titleCenter)).toBeLessThanOrEqual(1);
 });
 
 test("listing and editor share actual header typography and row sizes", async ({ page }) => {
+  // Escritorio a escala 75 %: cabecera de 11 px y 32 de alto, fila de 36, medidas sobre la raíz de 12.
   await page.setViewportSize({ width: 1440, height: 900 });
   for (const screen of ["/usuarios", "/roles", "/roles/support"]) {
     await openScreen(page, screen);
     const heading = page.getByRole("columnheader").first();
     await expect(heading).toBeVisible();
-    expect(await heading.evaluate(element => getComputedStyle(element).fontSize)).toBe("11px");
-    expect((await heading.boundingBox())?.height).toBe(32);
+    expect(await heading.evaluate(element => getComputedStyle(element).fontSize)).toBe("8.25px");
+    expect((await heading.boundingBox())?.height).toBe(24);
     if (screen !== "/roles/support") {
       const row = page.getByRole("row").nth(1);
-      expect((await row.boundingBox())?.height).toBe(36);
+      expect((await row.boundingBox())?.height).toBe(27);
     }
   }
 });

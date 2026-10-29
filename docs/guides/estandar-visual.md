@@ -70,7 +70,7 @@ Las cabeceras de `DataTable`, del editor y de comparaciones comparten `TableHead
 Las filas pueden crecer cuando el contenido ocupa varias líneas. Los controles de selección de permisos
 conservan sus blancos táctiles de 44 px en móvil. Un mínimo no recorta contenido para forzar una altura exacta.
 
-`Button` ofrece variantes principal, secundaria, terciaria, destructiva y enlace; `size="inline"`
+`Button` ofrece variantes principal, secundaria, terciaria, destructiva, destructiva con borde (`destructive-outline`, para quitar algo antes de confirmarlo) y enlace; `size="inline"`
 es la acción de texto de filtros y `size="touch"` permite el tamaño táctil aprobado.
 `SegmentedControl appearance="public"` conserva la selección subrayada del acceso;
 el resto usa su variante compacta. `Input` y `Textarea` definen el aspecto de solo lectura.

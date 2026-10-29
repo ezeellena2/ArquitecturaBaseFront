@@ -11,6 +11,9 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-[var(--color-primary-hover)]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+        // Opens a confirmation before taking something away: red, without the weight of the final action.
+        "destructive-outline":
+          "border border-destructive/40 bg-background text-destructive hover:bg-destructive/10 focus-visible:ring-destructive/20",
         outline:
           "border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
@@ -22,15 +25,15 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-[var(--height-control)] px-3 has-[>svg]:px-2.5",
-        xs: "h-[22px] gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
+        xs: "h-5.5 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-[var(--height-control-small)] gap-1.5 rounded-md px-2.5 has-[>svg]:px-2",
         "sm-wrap": "h-auto min-h-[var(--height-control-small)] max-w-full gap-1.5 whitespace-normal rounded-md px-2.5 py-1 has-[>svg]:px-2",
         inline: "h-auto gap-1.5 p-0 text-xs",
         touch: "min-h-11 h-auto px-4 py-2 whitespace-normal",
         lg: "h-9 rounded-md px-5 has-[>svg]:px-4",
-        icon: "size-[30px]",
+        icon: "size-7.5",
         "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-[26px]",
+        "icon-sm": "size-6.5",
         "icon-lg": "size-9",
       },
     },

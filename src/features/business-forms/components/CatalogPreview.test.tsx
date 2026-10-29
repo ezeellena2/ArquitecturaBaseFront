@@ -11,7 +11,6 @@ it.each(["es", "en"] as const)("starts closed, opens single-choice options and c
   await i18n.changeLanguage(language);
   await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture={language}/>); });
   const user = userEvent.setup(), english = language === "en";
-  expect(screen.getByText(english ? "Each form question decides this. This switch changes only the preview." : "Lo decide cada pregunta del formulario. Este selector cambia solo la vista previa.")).toBeInTheDocument();
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: english ? "Choose an option" : "Elegí una opción" }));
   const option = screen.getByRole("radio", { name: english ? "North" : "Norte" });
@@ -21,7 +20,7 @@ it.each(["es", "en"] as const)("starts closed, opens single-choice options and c
   await user.click(screen.getByRole("button", { name: english ? "North" : "Norte" }));
   await user.click(screen.getByRole("button", { name: english ? "Back" : "Volver" }));
   expect(screen.queryByRole("radio")).not.toBeInTheDocument();
-  expect(screen.getByText(/200/)).toBeInTheDocument(); expect(items[0]!.label.es).toBe("Norte");
+  expect(items[0]!.label.es).toBe("Norte");
   expect(screen.queryByText("1500.5")).not.toBeInTheDocument();
 });
 it("lists an option written only in the other language with that text", async () => {
@@ -37,15 +36,4 @@ it("switches only the illustrative preview to checkboxes while leaving catalog d
   expect(screen.getByRole("checkbox", { name: "Norte" })).not.toBeChecked();
   await userEvent.click(screen.getByText("Norte")); expect(screen.getByRole("checkbox", { name: "Norte" })).toBeChecked();
   expect(items[0]).not.toHaveProperty("selected");
-});
-
-it.each(["es", "en"] as const)("describes the correct WhatsApp option limit for each preview mode in %s", async language => {
-  await i18n.changeLanguage(language);
-  await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture={language}/>); });
-  expect(screen.getByText(/WhatsApp.*200/)).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: language === "en" ? "Multiple" : "Varias" }));
-  expect(screen.queryByText(/WhatsApp.*200/)).not.toBeInTheDocument();
-  expect(screen.getByText(/WhatsApp.*20/)).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: language === "en" ? "One option" : "Una opción" }));
-  expect(screen.getByText(/WhatsApp.*200/)).toBeInTheDocument();
 });

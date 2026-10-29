@@ -119,6 +119,11 @@ portales usan el tema global. Los campos comparten fondo y borde; foco, validaci
 
 Escala compacta para administración; el acceso público usa controles de 44/46 px.
 
+- **Escala de escritorio al 75 %** (elegida el 2026-10-28). Las medidas de este documento son nominales, sobre una
+  raíz de 16 px. En escritorio (≥ 1024 px y puntero fino) `src/index.css` pone la raíz en 75 % y la app entera se ve
+  como con el zoom del navegador en 75 %: 14 px se leen 10,5 y un control de 30 mide 22,5. Celular y tablet quedan en
+  16 px. Por eso toda medida va en `rem` o en la escala de Tailwind (`w-55`, no `w-[220px]`); en px quedan solo los
+  bordes y contornos de 1 y 2 px, los anillos de foco y los breakpoints.
 - **Clara y verde.** Canvas y superficies blancos; `surface-muted` y líneas delimitan. `<html>` sin `class="dark"`; `color-scheme: light`.
 - **Acción verde:** `-50`/`-100` fondos suaves, `-700` texto encima, `-600` relleno con `--color-brand-ink` blanco.
 - **Texto una talla abajo** (`--text-*` en `@theme`): la interfaz se lee en 14 px (`text-sm`), también en el ingreso.

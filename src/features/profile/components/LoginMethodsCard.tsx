@@ -52,7 +52,7 @@ function MethodRow({
         aria-hidden="true"
         className="inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-surface-muted)] text-[var(--color-content-muted)]"
       >
-        <Icon className="size-[17px]" />
+        <Icon className="size-4.25" />
       </span>
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm font-medium text-[var(--color-content)]">{label}</p>

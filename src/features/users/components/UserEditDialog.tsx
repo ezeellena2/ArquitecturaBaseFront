@@ -60,7 +60,7 @@ function MethodIcon({ icon: Icon, className }: { icon: IconComponent; className?
         className,
       )}
     >
-      <Icon className="size-[17px]" />
+      <Icon className="size-4.25" />
     </span>
   );
 }
@@ -94,12 +94,12 @@ function MethodRow({
     <li
       className={cn(
         rowClass,
-        "grid-cols-[32px_minmax(0,1fr)_auto] items-center py-2.5 sm:grid-cols-[32px_minmax(0,1fr)_92px_104px]",
+        "grid-cols-[2rem_minmax(0,1fr)_auto] items-center py-2.5 sm:grid-cols-[2rem_minmax(0,1fr)_5.75rem_6.5rem]",
       )}
     >
       <MethodIcon icon={icon} className="row-span-2 sm:row-span-1" />
       <span className="col-start-2 row-start-1 flex min-w-0 flex-col gap-px">
-        <span className="text-sm leading-[18px] font-medium text-[var(--color-content)]">{label}</span>
+        <span className="text-sm leading-4.5 font-medium text-[var(--color-content)]">{label}</span>
         {value === null ? (
           <span className="text-sm leading-5 text-[var(--color-content-muted)]">{empty}</span>
         ) : (
@@ -135,9 +135,9 @@ function MethodRow({
 /// la altura del campo, y el campo ocupa el resto.
 function FieldRow({ icon, children }: { icon: IconComponent; children: ReactNode }) {
   return (
-    <li className={cn(rowClass, "grid-cols-[32px_minmax(0,1fr)] items-start pt-2.5 pb-3")}>
+    <li className={cn(rowClass, "grid-cols-[2rem_minmax(0,1fr)] items-start pt-2.5 pb-3")}>
       {/* La etiqueta del campo y su separación: el ícono se centra con la caja de texto, no con el rótulo. */}
-      <MethodIcon icon={icon} className="mt-[22px]" />
+      <MethodIcon icon={icon} className="mt-5.5" />
       <div className="min-w-0">{children}</div>
     </li>
   );
@@ -342,9 +342,9 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
       {/* Con el pie en su banda: el cuerpo scrollea adentro y Guardar queda siempre a la vista. */}
       <DialogContent
         onCloseAutoFocus={restoreFocus}
-        className="flex max-h-[min(720px,90svh)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+        className="flex max-h-[min(45rem,90svh)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
       >
-        <DialogHeader className="px-[18px] pt-[18px] pr-12">
+        <DialogHeader className="px-4.5 pt-4.5 pr-12">
           <DialogTitle>{t("edit.title")}</DialogTitle>
           <DialogDescription>{userName(detail ?? user)}</DialogDescription>
         </DialogHeader>
@@ -353,7 +353,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
           // Sin esta rama, un detalle que falla dejaba dos bloques grises para siempre. Pasa de verdad con dos
           // administradores a la vez: uno elimina la cuenta y el otro abre el diálogo desde un listado viejo.
           detailQuery.isError ? (
-            <div className="flex flex-col items-start gap-3 p-[18px]">
+            <div className="flex flex-col items-start gap-3 p-4.5">
               <p role="alert" className="text-sm text-[var(--color-danger)]">
                 {t("common:states.loadFailed")}
               </p>
@@ -362,7 +362,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
               </Button>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 p-[18px]">
+            <div className="flex flex-col gap-3 p-4.5">
               <Skeleton aria-hidden="true" className="h-9" />
               <Skeleton aria-hidden="true" className="h-24" />
             </div>
@@ -376,7 +376,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
               submit(draft);
             }}
           >
-            <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-[18px] py-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4.5 py-4">
               <FormField label={t("form.displayName")} error={errors.fields.displayName}>
                 <Input
                   type="text"
@@ -495,7 +495,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                 {showsUnverifiedNote ? (
                   <p
                     id={unverifiedNoteId}
-                    className="mx-3.5 border-t border-[var(--color-border)]/60 pt-[9px] pb-[11px] text-xs leading-[1.45] text-[var(--color-content-muted)]"
+                    className="mx-3.5 border-t border-[var(--color-border)]/60 pt-2.25 pb-2.75 text-xs leading-[1.45] text-[var(--color-content-muted)]"
                   >
                     {t("methods.unverifiedHint")}
                   </p>
@@ -516,7 +516,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                 administrador, la red) va ahí, arriba de los botones: al final del cuerpo, cuando el cuerpo no entraba,
                 quedaba debajo del borde y en pantalla no cambiaba nada. En -700 porque el rojo de siempre no llega a
                 4.5:1 sobre este fondo. */}
-            <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] px-[18px] py-3">
+            <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4.5 py-3">
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={onClose}>
                   {t("common:actions.cancel")}

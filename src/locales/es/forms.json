@@ -307,9 +307,9 @@
   },
   "catalogs": {
     "fields": {
-      "title": "Campos", "field": "Campo", "key": "Clave", "type": "Tipo", "rules": "Reglas", "role": "Papel",
-      "add": "Agregar campo", "edit": "Editar campos", "view": "Ver campos", "new": "Nuevo campo", "unsaved": "Nuevo, sin guardar",
-      "empty": "Todavía no hay campos extra.", "fixed": "Fijos: código, texto y detalle. Extra:",
+      "title": "Campos", "key": "Clave", "type": "Tipo", "rules": "Reglas", "role": "Papel",
+      "add": "Agregar campo", "new": "Nuevo campo",
+      "empty": "Todavía no hay campos extra.",
       "keyHint": "La usan la plantilla, la importación y lo guardado. No cambia después de guardar.",
       "optionalFirst": "Un campo nuevo nace opcional: para hacerlo obligatorio, todas las opciones activas necesitan un valor.",
       "typeReview": "Al guardar se revisan todos los valores. Si alguno no convierte, el cambio no se guarda.",
@@ -323,7 +323,7 @@
         "goTo": "Ir a la pregunta", "goToNamed": "Ir a la pregunta «{{question}}» de {{form}}",
         "presentation": "También se saca de «En WhatsApp» de este catálogo."
       },
-      "columns": "Campos", "valueLabel": "Fila {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Limpiar", "viewNamed": "Ver {{name}}", "clearValue": "Limpiar {{name}}",
+      "columns": "Columnas", "valueLabel": "Fila {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Limpiar", "viewNamed": "Ver {{name}}", "clearValue": "Limpiar {{name}}",
       "rowProblem": "Fila {{row}} · {{field}}: {{message}}", "optionValueLabel": "{{option}} · {{field}}", "optionProblem": "{{option}} · {{field}}: {{message}}",
       "inputHint": { "integer": "Entero", "decimal": "Número decimal", "date": "Fecha", "plain": "{{type}}.", "range": "{{type}}, {{rule}}." },
       "missingValues_one": "Faltan valores en 1 opción activa.", "missingValues_other": "Faltan valores en {{count, number(useGrouping: always)}} opciones activas.",
@@ -332,6 +332,12 @@
       "convertedValues_one": "1 valor puede convertirse.", "convertedValues_other": "{{count, number(useGrouping: always)}} valores pueden convertirse.",
       "roles": { "filter": "Filtro", "data": "Dato" },
       "roleHint": { "filter": "Para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta.", "data": "Se guarda con la opción y viaja con la respuesta." },
+      "keyHelp": "Qué es la clave", "roleHelp": "Qué es el papel",
+      "roleHelpText": "Filtro: para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta. Dato: se guarda con la opción y viaja con la respuesta.",
+      "inline": { "upTo": "Hasta", "characters": "caracteres", "from": "De", "to": "a" },
+      "countLabel": "Campos · {{count}}", "addFields": "Agregar campos", "addCountLabel": "Agregar campos · {{count}}", "dialogTitle": "Campos de «{{name}}»",
+      "detailLabel": { "text": "Largo", "range": "Rango", "catalog": "Catálogo" }, "position": "Campo {{number}} de {{count}}", "count": "{{count}} de {{max}}", "newBadge": "Nuevo", "removeField": "Quitar campo",
+      "backToList": "Volver a la lista", "removedState": "Se quita al guardar", "controlProblem": "«{{name}}» · {{field}}: {{message}}", "fieldProblem": "«{{name}}»: {{message}}",
       "types": { "text": "Texto", "integer": "Entero", "decimal": "Decimal", "date": "Fecha", "boolean": "Sí o no", "catalog": "Elegir de un catálogo" },
       "problem": {
         "required": "Falta: es obligatorio.",
@@ -640,12 +646,9 @@
       "mode": "Vista previa de la elección",
       "one": "Una opción",
       "many": "Varias",
-      "questionDecides": "Lo decide cada pregunta del formulario. Este selector cambia solo la vista previa.",
       "choose": "Elegí una opción",
       "back": "Volver",
-      "upTo": "Elegí hasta {{count}}",
-      "limit": "Vista orientativa de esta página. WhatsApp admite hasta 200 opciones activas al enviar.",
-      "limitMany": "Vista orientativa de esta página. WhatsApp admite hasta 20 opciones activas en una pregunta de varias."
+      "upTo": "Elegí hasta {{count}}"
     },
     "actions": {
       "paste": "Pegar desde Excel",

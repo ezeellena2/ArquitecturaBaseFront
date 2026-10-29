@@ -54,7 +54,7 @@ export function OfficialFormPreview({ definitionId, versionId, versionNumber, cu
   if (preview && Date.parse(preview.expiresAtUtc)<=now) {setPreview(null);setExpired(true);}
   const live = preview && Date.parse(preview.expiresAtUtc)>now ? preview : null;
   return <Dialog open onOpenChange={open=>{if(!open)onClose();}}>
-    <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={restoreFocus}>
+    <DialogContent className="sm:max-w-150" onCloseAutoFocus={restoreFocus}>
       <DialogHeader><DialogTitle>{t("publication.previewTitle",{version:versionNumber})}</DialogTitle><DialogDescription>{t("publication.previewDescription")}</DialogDescription></DialogHeader>
       {busy ? <div role="status" className="flex min-h-60 items-center justify-center gap-2"><Spinner /><p>{t("publication.previewLoading")}</p></div> : live ? <EmbeddedPreview url={live.url} title={t("publication.previewFrame")} /> : <p className="min-h-32 text-sm text-[var(--color-content-muted)]">{t(denied?"publication.previewNoPermission":expired?"publication.previewExpired":failed?"publication.previewUnavailable":"publication.previewChoose")}</p>}
       {live ? <p className="text-xs text-[var(--color-content-muted)]">{t("publication.previewFallback")}</p> : null}

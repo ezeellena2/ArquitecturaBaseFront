@@ -27,7 +27,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 
 const sidebarEdgeToggleClassName =
-  "absolute top-[62px] -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-control-border)] bg-[var(--color-canvas)] text-[var(--color-nav-surface)] hover:bg-[var(--color-subnav-surface)] hover:text-[var(--color-nav-surface)]";
+  "absolute top-15.5 -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-control-border)] bg-[var(--color-canvas)] text-[var(--color-nav-surface)] hover:bg-[var(--color-subnav-surface)] hover:text-[var(--color-nav-surface)]";
 
 /// Qué grupos están desplegados y cómo se alterna uno. Va por props porque el estado vive en la barra: un
 /// grupo adentro de otro (Administración en el teléfono) lo necesita para plegarse sin conocer al de arriba.
@@ -65,11 +65,11 @@ function NavItem({
       aria-current={isCurrent ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-          "relative flex min-h-[30px] items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm transition-colors",
+          "relative flex min-h-7.5 items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm transition-colors",
           isCurrent
             ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
             : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
-          collapsed ? "size-[30px] justify-center px-0" : "",
+          collapsed ? "size-7.5 justify-center px-0" : "",
         )}
     >
       {showIcon ? <Icon className="size-4 shrink-0" /> : null}
@@ -118,7 +118,7 @@ function NavBranch({
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         onClick={() => controls.toggle(labelKey)}
-        className="flex min-h-[30px] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
+        className="flex min-h-7.5 w-full items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
       >
         {showIcon ? <Icon className="size-4 shrink-0" /> : null}
         <span className="min-w-0 flex-1 break-words text-left leading-4">{translate(labelKey)}</span>
@@ -134,7 +134,7 @@ function NavBranch({
           id={listId}
           className={cn(
             "mt-1 flex flex-col gap-1 border-l border-[var(--color-border)] pl-3",
-            showIcon ? "ml-[22px]" : "ml-3",
+            showIcon ? "ml-5.5" : "ml-3",
           )}
         >
           <NavItems items={items} controls={controls} translate={translate} onNavigate={onNavigate} showIcons={showIcon} />
@@ -216,11 +216,11 @@ function PanelTrigger({
       aria-controls={open ? panelId : undefined}
       onClick={onToggle}
       className={cn(
-        "relative flex h-[30px] w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm transition-colors",
+        "relative flex h-7.5 w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm transition-colors",
         open
           ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
           : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
-        collapsed ? "size-[30px] justify-center px-0" : "",
+        collapsed ? "size-7.5 justify-center px-0" : "",
       )}
     >
       <Icon className="size-4 shrink-0" />
@@ -400,12 +400,12 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           "navigation-surface relative flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]",
           isMobile
             ? cn(
-                "fixed top-12 bottom-0 left-0 z-50 w-[220px] transition-transform duration-200",
+                "fixed top-12 bottom-0 left-0 z-50 w-55 transition-transform duration-200",
                 mobileOpen ? "translate-x-0" : "-translate-x-full",
               )
             // z-30: la flecha de colapsar sale por fuera del borde derecho, y sin esto queda tapada por la
             // banda del encabezado de la pantalla, que es `sticky z-20` y se pinta después.
-            : cn("h-svh shrink-0 transition-[width] duration-200 z-30", iconsOnly ? "w-[56px]" : "w-[220px]"),
+            : cn("h-svh shrink-0 transition-[width] duration-200 z-30", iconsOnly ? "w-14" : "w-55"),
         )}
       >
         {/* `h-16`, el mismo alto exacto que el Topbar. Con el alto automático medía 65 (16 + 32 + 16 + 1 de
@@ -645,7 +645,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
         <nav
           id={panelId}
           aria-label={t(selectedPanel.labelKey)}
-          className="subnavigation-surface relative z-30 flex h-svh w-[224px] shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]"
+          className="subnavigation-surface relative z-30 flex h-svh w-56 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]"
         >
           {/* El mismo alto que la marca del menú y que el Topbar: los tres bordes de arriba forman una sola
               línea que cruza la pantalla. */}

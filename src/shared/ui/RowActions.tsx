@@ -55,7 +55,7 @@ function Grupo({ acciones }: { acciones: RowAction[] }) {
             {/* El envoltorio garantiza que el ícono quede oculto para el lector aunque venga de fuera del
                 set propio: el nombre accesible lo pone el botón, no el dibujo. */}
             <span aria-hidden="true" className="inline-flex">
-              <Icono className="size-[18px]" />
+              <Icono className="size-4.5" />
             </span>
           </button>
           </ActionTooltip>

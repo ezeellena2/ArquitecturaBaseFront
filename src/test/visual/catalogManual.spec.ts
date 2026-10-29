@@ -20,21 +20,40 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // No language selector: the catalog is written in the menu language, which is its original.
     await expect(page.getByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveCount(0);
     await page.getByRole("textbox", { name: english ? "Description" : "Descripción", exact: true }).fill(english ? "Where to store" : "Dónde guardar");
+    // El celular termina donde termina «En WhatsApp»: no empuja «Opciones», que queda al espacio común de 16 px.
+    // El selector de la vista previa mide lo que sus textos, sin estirarse, y va centrado en la columna, sin texto
+    // debajo ni nota del límite de WhatsApp.
+    const expectPreviewBesideSections = async () => {
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const surface = (name: string) => page.getByRole("region", { name, exact: true }).and(page.locator("section"));
+      const preview = page.getByRole("region", { name: english ? "How the employee sees it" : "Así lo ve el empleado", exact: true });
+      const [whatsapp, options, shown, mode] = await Promise.all([surface(english ? "In WhatsApp" : "En WhatsApp").boundingBox(), surface(english ? "Options" : "Opciones").boundingBox(),
+        preview.boundingBox(), preview.getByRole("group", { name: english ? "Choice preview" : "Vista previa de la elección", exact: true }).boundingBox()]);
+      expect(Math.abs(shown!.y + shown!.height - (whatsapp!.y + whatsapp!.height))).toBeLessThanOrEqual(1);
+      // Sólo corre en escritorio, a escala 75 %: el espacio de 1rem mide 12.
+      expect(Math.abs(options!.y - (whatsapp!.y + whatsapp!.height) - 12)).toBeLessThanOrEqual(1);
+      expect(mode!.width).toBeLessThan(shown!.width / 2);
+      expect(Math.abs(mode!.x + mode!.width / 2 - (shown!.x + shown!.width / 2))).toBeLessThanOrEqual(1);
+      await expect(preview.getByText(/WhatsApp|Lo decide cada pregunta|Each form question decides/)).toHaveCount(0);
+    };
+    if (width >= 1280) await expectPreviewBesideSections();
     await page.getByRole("button", { name: english ? "Add option" : "Agregar opción", exact: true }).click();
     await page.getByRole("textbox", { name: english ? "Text" : "Texto", exact: true }).fill("Central");
     await page.getByRole("textbox", { name: english ? "Code" : "Código", exact: true }).fill("D1");
     await expect(page.getByRole("button", { name: /Central.*(Guardá|Save)/ }).first()).toBeDisabled();
     // Las acciones de «Opciones» van al borde derecho de la sección (1 px de borde y 16 de margen, como el título a la
     // izquierda) y, en escritorio, a la altura del título. El motivo de las apagadas no va escrito debajo.
+    // En escritorio la escala es 75 %: el margen de 1rem mide 12.
     // La sección, no la región de la tabla que lleva el mismo nombre.
     const options = page.getByRole("region", { name: english ? "Options" : "Opciones", exact: true }).and(page.locator("section"));
     const optionsTitle = options.getByRole("heading", { name: english ? "Options" : "Opciones", exact: true });
     const moreActions = options.getByRole("button", { name: english ? "More option actions" : "Más acciones de opciones", exact: true });
     const [region, heading, menu] = await Promise.all([options.boundingBox(), optionsTitle.boundingBox(), moreActions.boundingBox()]);
-    expect(Math.abs(region!.x + region!.width - (menu!.x + menu!.width) - 17)).toBeLessThanOrEqual(1);
+    expect(Math.abs(region!.x + region!.width - (menu!.x + menu!.width) - (width >= 1024 ? 13 : 17))).toBeLessThanOrEqual(1);
     const reason = english ? "Save the catalog first." : "Guardá el catálogo antes.";
     await expect(options.getByText(reason).filter({ visible: true })).toHaveCount(0);
     await page.screenshot({ path: info.outputPath("manual-new.png"), fullPage: true });
+    if (width >= 1280) await expectPreviewBesideSections();
     if (width >= 640) {
       const named = (english ? ["Add option", "Paste from Excel", "Import", "Export"] : ["Agregar opción", "Pegar desde Excel", "Importar", "Exportar"])
         .map(name => options.getByRole("button", { name, exact: true }));

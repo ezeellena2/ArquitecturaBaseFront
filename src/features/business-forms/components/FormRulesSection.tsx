@@ -151,7 +151,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
     pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save");
   };
   const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, i18n.language, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{action.text ? ": " + localizedValue(action.text, culture, options.originalCulture) : ""}</li>)}</ol></>;
-  return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+  return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
     {/* A conflict is its own surface above the editor: rereading and choosing go in its header, so the rules header keeps its shape. */}
     {conflict ? <div className="lg:col-span-2"><Surface title={t("rules.conflictTitle")} padded actions={<>
       <Button variant="outline" disabled={blocked} onClick={() => void run("reread", async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t("rules.reread")}</Button>

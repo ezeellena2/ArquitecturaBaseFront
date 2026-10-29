@@ -27,7 +27,7 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
     <p className="text-sm text-[var(--color-content-muted)]">{t("hoursHint")}</p>
     <div className="divide-y divide-[var(--color-border)]">{value.days.map(day => {
       const label = t(`days.${weekdays[day.weekday]}`);
-      return <div key={day.weekday} className="grid grid-cols-[minmax(0,1fr)_112px] items-start gap-2 py-3 @min-[424px]:grid-cols-[80px_112px_minmax(0,1fr)]">
+      return <div key={day.weekday} className="grid grid-cols-[minmax(0,1fr)_7rem] items-start gap-2 py-3 @min-[424px]:grid-cols-[5rem_7rem_minmax(0,1fr)]">
         <p className="pt-1.5 text-sm font-medium">{label}</p>
         <OpeningStatusSelect status={day.status} label={label} disabled={disabled} onChange={status => changeDay({ ...day, status, periods: status === "open" ? day.periods.length ? day.periods : [emptyPeriod()] : [] })} />
         {day.status === "open" ? <div className="col-span-2 space-y-3 @min-[424px]:col-span-1"><OpeningPeriods periods={day.periods} label={label} editable={editable} disabled={disabled} onChange={periods => changeDay({ ...day, periods })} /></div> : null}

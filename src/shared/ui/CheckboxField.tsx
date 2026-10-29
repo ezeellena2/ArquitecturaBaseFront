@@ -39,7 +39,7 @@ export function CheckboxField({
   return (
     <div
       className={cn(
-        "relative flex items-start gap-2.5 rounded-[var(--radius-control)] px-2.5 py-[9px]",
+        "relative flex items-start gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2.25",
         disabled ? "" : "hover:bg-[var(--color-surface-muted)]",
       )}
     >
@@ -59,14 +59,14 @@ export function CheckboxField({
         <Label
           htmlFor={id}
           className={cn(
-            "text-[13.5px] leading-[1.2]",
+            "text-[0.84375rem] leading-[1.2]",
             disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer after:absolute after:inset-0",
           )}
         >
           {label}
         </Label>
         {description ? (
-          <p id={descriptionId} className="text-[12.5px] leading-[1.4] text-[var(--color-content-muted)]">
+          <p id={descriptionId} className="text-[0.78125rem] leading-[1.4] text-[var(--color-content-muted)]">
             {description}
           </p>
         ) : null}

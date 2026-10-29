@@ -319,7 +319,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     </>}><p className="text-sm">{t(editor.issue?.kind === "forbidden" ? "noSave" : editor.issue?.code === "Forms.Draft.RequestConflict" ? "requestConflict" : editor.issue?.kind === "expired" ? "expired" : "uncertainHint")}</p></Surface> : null}
     {reviewRequired ? <Surface title={t("reviewTitle")} padded actions={<DisabledReason reason={editor.busy ? null : waitReason}><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning} onClick={showReview}>{t("review")}</Button></DisabledReason>}><p className="text-sm">{t("reviewPending")}</p></Surface> : null}
     {retainedReview ? <Surface title={t("reviewChangesToInspect")} padded><p className="mb-3 text-sm">{t("reviewNoSave")}</p><DraftReviewChanges catalogScope={scope} value={retainedReview.value} definition={retainedReview.definition} culture={scope.culture} /></Surface> : null}
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex min-w-0 flex-col gap-4">
 
         <Surface title={t("form")} padded><div className="grid gap-4 sm:grid-cols-2">

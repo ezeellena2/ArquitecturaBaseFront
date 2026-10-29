@@ -24,6 +24,20 @@ async function pasteText(user: ReturnType<typeof userEvent.setup>, control: HTML
   await user.click(control);
   await user.paste(text);
 }
+// The fields live in a modal opened from «Agregar campos» in the options header: choose one, change it and leave it with «Listo».
+async function editField(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(await screen.findByRole("button", { name: /^Agregar campos/ }));
+  const dialog = screen.getByRole("dialog", { name: /^Campos de/ });
+  await user.click(within(dialog).getByRole("button", { name: "Editar " + name }));
+  return dialog;
+}
+// On the phone the chosen field has «Volver a la lista», and «Listo» is in the list.
+async function applyFields(user: ReturnType<typeof userEvent.setup>) {
+  const dialog = screen.getByRole("dialog", { name: /^Campos de/ });
+  const back = within(dialog).queryByRole("button", { name: "Volver a la lista" });
+  if (back) await user.click(back);
+  await user.click(within(dialog).getByRole("button", { name: "Listo" }));
+}
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
 const initial = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, originalCulture: "es" as const, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
@@ -248,8 +262,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const term = savedField({ key: "term", name: "Plazo", type: "text" });
     const bodies = fieldSetup(term, { [fieldId]: "30 días" }, () => HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ ...term, type: "integer" }] }, itemIdentityMap: {}, fieldIdentityMap: {} }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar Plazo" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
+    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "integer");
+    await applyFields(user);
     await renameOption(user);
     expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Guardar" }));
@@ -261,8 +275,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const message = "Completá el CUIT en las opciones activas.";
     const bodies = fieldSetup(savedField({ key: "tax_id", name: "CUIT", type: "text" }), {}, () => HttpResponse.json({ code: "Forms.Catalog.FieldValuesMissing", detail: message, errors: { "fields[0].required": [message] }, missingCount: 12 }, { status: 400 }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar CUIT" }));
-    await user.click(screen.getByRole("checkbox", { name: "Obligatorio" }));
+    await user.click(within(await editField(user, "CUIT")).getByRole("checkbox", { name: "Obligatorio" }));
+    await applyFields(user);
     await renameOption(user);
     expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Guardar" }));
@@ -276,8 +290,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const amount = savedField({ key: "amount", name: "Cantidad", type: "integer" });
     const bodies = fieldSetup(amount, { [fieldId]: "1500" }, () => HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ ...amount, type: "text" }] }, itemIdentityMap: {}, fieldIdentityMap: {} }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar Cantidad" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
+    await user.selectOptions(within(await editField(user, "Cantidad")).getByRole("combobox", { name: "Tipo" }), "text");
+    await applyFields(user);
     await renameOption(user);
     expect(screen.getByRole("textbox", { name: "Cantidad" })).toHaveValue("1.500");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
@@ -288,8 +302,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("shows a saved value that is not an option yet while a change to a catalog field is pending", async () => {
     fieldSetup(savedField({ key: "zone", name: "Zona", type: "text" }), { [fieldId]: "Sur" }, () => HttpResponse.json({}, { status: 500 }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar Zona" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "catalog");
+    await user.selectOptions(within(await editField(user, "Zona")).getByRole("combobox", { name: "Tipo" }), "catalog");
+    await applyFields(user);
     expect(within(await screen.findByRole("table")).getByText("Sur", { exact: true })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     expect(screen.getByRole("combobox", { name: "Zona" })).toHaveValue("Sur");
@@ -310,9 +324,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("shows the text of a saved option while a change to another type is pending, read-only with Clear", async () => {
     viewport(true); savedTypeSetup(savedField({ key: "zone", name: "Zona", type: "catalog", sourceCatalogId: sourceId }), southId, { [fieldId]: { es: "Sur", en: "South" } });
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Zona" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
+    await user.selectOptions(within(await editField(user, "Zona")).getByRole("combobox", { name: "Tipo" }), "text");
+    await applyFields(user);
     const cell = screen.getByRole("textbox", { name: "Fila 1 · Zona" });
     expect(cell).toHaveValue("Sur");
     expect(cell).toHaveAttribute("readonly");
@@ -328,8 +341,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("shows Sí or No for a saved yes/no while a change to another type is pending, in the row and in the option editor", async () => {
     viewport(false); savedTypeSetup(savedField({ key: "gps", name: "Con GPS", type: "boolean" }), "true");
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Editar Con GPS" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
+    await user.selectOptions(within(await editField(user, "Con GPS")).getByRole("combobox", { name: "Tipo" }), "text");
+    await applyFields(user);
     expect(within(screen.getByRole("row", { name: /Pérez/ })).getByText("Sí", { exact: true })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     const input = screen.getByRole("textbox", { name: "Con GPS" });
@@ -374,10 +387,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   }
   async function saveTypeChange(user: ReturnType<typeof userEvent.setup>) {
     await mount("/catalogos/" + id);
-    // The phone always lists the fields; on desktop «Editar campos» opens their table.
-    if (matchMedia("(min-width: 640px)").matches) await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(await screen.findByRole("button", { name: "Editar Plazo" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
+    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "integer");
+    await applyFields(user);
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     return screen.findByRole("dialog", { name: "Cambiar el tipo de «Plazo»" });
@@ -441,7 +452,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("drops the marks and the filter when the field goes back to its saved type", async () => {
     viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
     await showErrorRows(user);
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "text");
+    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "text");
+    await applyFields(user);
     expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
     expect(screen.queryByText("Con error · 1 fila")).not.toBeInTheDocument();
     expect(requests.at(-1)?.getAll("ids")).toEqual([]);
@@ -472,9 +484,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("keeps the focus where the person types after a type change marks an option already changed in the draft", async () => {
     viewport(true); conversionSetup(); const user = userEvent.setup();
     await mount("/catalogos/" + id);
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(await screen.findByRole("button", { name: "Editar Plazo" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
+    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "integer");
+    await applyFields(user);
     const text = await screen.findByRole("textbox", { name: "Texto de la opción 1" });
     await user.clear(text); await pasteText(user, text, "Pérez Norte");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
@@ -503,13 +514,12 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("marks every saved value that breaks a narrowed rule and filters the table to them without the type change dialog", async () => {
     viewport(true); const requests = rulesSetup("maxLength", "length"); const user = userEvent.setup();
     await mount("/catalogos/" + id);
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
-    await pasteText(user, screen.getByRole("spinbutton", { name: "Máximo de caracteres" }), "5");
+    await pasteText(user, within(await editField(user, "Plazo")).getByRole("spinbutton", { name: "Máximo de caracteres" }), "5");
+    await applyFields(user);
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
-    expect(screen.getByRole("spinbutton", { name: "Máximo de caracteres" })).toHaveAccessibleDescription("Hay valores que no cumplen las reglas del campo.");
+    expect(screen.getByText("«Plazo» · Máximo de caracteres: Hay valores que no cumplen las reglas del campo.")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeInvalid();
     expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toHaveAccessibleDescription("Fila 1 · Plazo: «30 días» supera los 5 caracteres.");
     expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo" })).toBeInvalid();
@@ -521,16 +531,16 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(await screen.findByText("Con error · 2 filas")).toBeInTheDocument();
     await waitFor(() => expect(requests.at(-1)?.getAll("ids")).toEqual([itemId, secondItemId]));
     expect(screen.queryByRole("button", { name: "Ver los 2 en la tabla" })).not.toBeInTheDocument();
-    await user.clear(screen.getByRole("spinbutton", { name: "Máximo de caracteres" }));
+    await user.clear(within(await editField(user, "Plazo")).getByRole("spinbutton", { name: "Máximo de caracteres" }));
+    await applyFields(user);
     await waitFor(() => expect(screen.queryByText("Con error · 2 filas")).not.toBeInTheDocument());
     expect(screen.getByRole("textbox", { name: "Fila 1 · Plazo" })).toBeValid();
   });
   it("says that a value is repeated when switching on «único» finds it in several options", async () => {
     viewport(true); rulesSetup("unique", "invalid", termRows.map(row => ({ ...row, fields: { [fieldId]: "30 días" } }))); const user = userEvent.setup();
     await mount("/catalogos/" + id);
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
-    await user.click(screen.getByRole("checkbox", { name: "Único" }));
+    await user.click(within(await editField(user, "Plazo")).getByRole("checkbox", { name: "Único" }));
+    await applyFields(user);
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
@@ -538,7 +548,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
   async function removePlazo(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(screen.getByRole("button", { name: "Quitar Plazo" }));
+    await user.click(within(screen.getByRole("dialog", { name: /^Campos de/ })).getByRole("button", { name: "Quitar campo" }));
     const dialog = await screen.findByRole("dialog", { name: "Quitar «Plazo»" });
     await user.click(within(dialog).getByRole("checkbox", { name: "Sí, quitar el campo y su valor" }));
     await user.click(within(dialog).getByRole("button", { name: "Quitar el campo" }));
@@ -546,25 +556,24 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("does not offer to show in the table the rows of a rule change on a field removed in the same save", async () => {
     viewport(true); rulesSetup("maxLength", "length"); const user = userEvent.setup();
     await mount("/catalogos/" + id);
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
-    await pasteText(user, screen.getByRole("spinbutton", { name: "Máximo de caracteres" }), "5");
+    await pasteText(user, within(await editField(user, "Plazo")).getByRole("spinbutton", { name: "Máximo de caracteres" }), "5");
     await removePlazo(user);
+    await applyFields(user);
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
-    // The table leaves the removed field's column out: its message goes in the field's row, with the way to restore it.
-    expect(screen.getByText("Hay valores que no cumplen las reglas del campo.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Restaurar el campo" })).toBeInTheDocument();
+    // The table leaves the removed field's column out: the notice names the field, and «Revisar» opens it with the way to restore it.
+    expect(screen.getByText("«Plazo»: Hay valores que no cumplen las reglas del campo.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Ver los 2 en la tabla" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Revisar" }));
+    expect(within(screen.getByRole("dialog", { name: /^Campos de/ })).getByRole("button", { name: "Restaurar el campo" })).toBeInTheDocument();
   });
   it("does not offer to show in the table the rows of a type change on a field removed in the same save", async () => {
     viewport(true); conversionSetup(); const user = userEvent.setup();
     await mount("/catalogos/" + id);
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Plazo" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo" }), "integer");
+    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "integer");
     await removePlazo(user);
+    await applyFields(user);
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     const dialog = await screen.findByRole("dialog", { name: "Cambiar el tipo de «Plazo»" });
@@ -576,9 +585,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     viewport(true); sourceSetup(); const user = userEvent.setup();
     rulesSetup("unique", "invalid", termRows.map(row => ({ ...row, fields: { [fieldId]: southId }, fieldTexts: { [fieldId]: { es: "Sur", en: "South" } } })), savedField({ key: "zone", name: "Zona", type: "catalog", sourceCatalogId: sourceId }));
     await mount("/catalogos/" + id);
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Zona" }));
-    await user.click(screen.getByRole("checkbox", { name: "Único" }));
+    await user.click(within(await editField(user, "Zona")).getByRole("checkbox", { name: "Único" }));
+    await applyFields(user);
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
@@ -589,9 +597,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     viewport(true); const user = userEvent.setup();
     rulesSetup("max", "range", [{ ...option, fields: { [fieldId]: "1500.5" } }], savedField({ key: "amount", name: "Importe", type: "decimal" }));
     await mount("/catalogos/" + id);
-    await user.click(await screen.findByRole("button", { name: "Editar campos" }));
-    await user.click(screen.getByRole("button", { name: "Editar Importe" }));
-    await pasteText(user, screen.getByRole("textbox", { name: "Máximo" }), "1.000");
+    await pasteText(user, within(await editField(user, "Importe")).getByRole("textbox", { name: "Máximo" }), "1.000");
+    await applyFields(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("1 opción tiene un valor que no cumple las reglas del campo.")).toBeInTheDocument();
     const cell = screen.getByRole("textbox", { name: "Fila 1 · Importe" });
@@ -641,15 +648,20 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     const name = await screen.findByRole("textbox", { name: "Nombre" }); await user.clear(name); await pasteText(user, name, "Mi catálogo");
-    await user.click(screen.getByRole("button", { name: "Quitar CUIT" }));
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Quitar el campo" }));
+    await user.click(within(await editField(user, "CUIT")).getByRole("button", { name: "Quitar campo" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Quitar «CUIT»" })).getByRole("button", { name: "Quitar el campo" }));
+    await applyFields(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
-    expect(await screen.findByText("«Proveedor» en Pedir repuesto, en la versión activa")).toBeInTheDocument();
-    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(await screen.findByText("«CUIT»: " + message)).toBeInTheDocument();
     expect(screen.queryByText("Revisión del catálogo")).not.toBeInTheDocument();
     expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
-    await user.click(screen.getByRole("button", { name: "Restaurar el campo" }));
-    expect(screen.queryByText("«Proveedor» en Pedir repuesto, en la versión activa")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Revisar" }));
+    const fields = screen.getByRole("dialog", { name: /^Campos de/ });
+    expect(within(fields).getByText("«Proveedor» en Pedir repuesto, en la versión activa")).toBeInTheDocument();
+    expect(within(fields).getByText(message)).toBeInTheDocument();
+    await user.click(within(fields).getByRole("button", { name: "Restaurar el campo" }));
+    expect(within(fields).queryByText("«Proveedor» en Pedir repuesto, en la versión activa")).not.toBeInTheDocument();
+    await applyFields(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(bodies).toHaveLength(2));
     expect(bodies[0]).toMatchObject({ name: { es: "Mi catálogo" }, fields: [{ id: fieldId, isActive: false }] });
@@ -1176,8 +1188,10 @@ it("imports with the fields saved in this session instead of the ones loaded on 
     added: [{ row: 2, code: "N", text: "Norte", value: null, fields: { [fieldId]: "20-1" } }], changed: [{ row: 3, itemId, code: "C1", changes: [{ column: fieldId, before: null, after: "20-2" }] }] });
   await mount("/catalogos/" + id); const user = userEvent.setup();
   await screen.findByRole("textbox", { name: "Nombre" });
-  await user.click(screen.getByRole("button", { name: "Agregar campo" }));
+  // Without fields, «Agregar campos» opens on a new one with the cursor in its name.
+  await user.click(await screen.findByRole("button", { name: "Agregar campos" }));
   await user.paste("CUIT");
+  await applyFields(user);
   await user.click(screen.getByRole("button", { name: "Guardar" }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Pegar desde Excel" })).toBeEnabled());
   await user.click(screen.getByRole("button", { name: "Pegar desde Excel" }));

@@ -22,7 +22,7 @@ export function Pagination({ page, pageSize, totalCount, totalPages, hasPrevious
 
   return (
     <nav
-      className="flex min-h-12 flex-wrap items-center justify-between gap-3 px-4 py-2 text-[13px] text-[var(--color-content-muted)]"
+      className="flex min-h-12 flex-wrap items-center justify-between gap-3 px-4 py-2 text-[0.8125rem] text-[var(--color-content-muted)]"
       aria-label={t("pagination.label")}
     >
       <div className="flex flex-wrap items-center gap-3"><p>{t("pagination.range", { from, to, total: totalCount })}</p>

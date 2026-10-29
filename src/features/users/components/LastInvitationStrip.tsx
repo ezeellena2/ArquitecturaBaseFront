@@ -172,7 +172,7 @@ function ResendInvitationForm({
         </div>
 
         {channel === "WhatsApp" ? (
-          <div className="my-0.5 ml-[26px] rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <div className="my-0.5 ml-6.5 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">
             <CheckboxField
               label={consentLabel}
               description={t("invitation.consentHint")}
@@ -367,8 +367,8 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
       // En un teléfono el botón no entra al lado del texto sin aplastarlo: por debajo de `sm` baja debajo. El tablero no
       // dibuja el teléfono; desde `sm` es el tablero.
       className={cn(
-        "grid grid-cols-[32px_minmax(0,1fr)] gap-x-3 gap-y-px rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] py-2.5 pr-3 pl-3.5 outline-none",
-        isOpen ? "items-start pb-3" : "items-center sm:grid-cols-[32px_minmax(0,1fr)_auto]",
+        "grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 gap-y-px rounded-[var(--radius-card)] bg-[var(--color-surface-muted)] py-2.5 pr-3 pl-3.5 outline-none",
+        isOpen ? "items-start pb-3" : "items-center sm:grid-cols-[2rem_minmax(0,1fr)_auto]",
       )}
     >
       <span
@@ -403,10 +403,10 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
         />
       ) : (
         <>
-          <p className="col-start-2 row-start-1 text-sm leading-[18px] font-medium text-[var(--color-content)]">
+          <p className="col-start-2 row-start-1 text-sm leading-4.5 font-medium text-[var(--color-content)]">
             {invitation.channel === "WhatsApp" ? t("lastInvitation.byWhatsApp") : t("lastInvitation.byEmail")}
           </p>
-          <p className="col-start-2 row-start-2 flex flex-wrap items-center gap-1.5 text-xs leading-[18px] text-[var(--color-content-muted)]">
+          <p className="col-start-2 row-start-2 flex flex-wrap items-center gap-1.5 text-xs leading-4.5 text-[var(--color-content-muted)]">
             <span className="tabular-nums">
               {formatDateTimeInZone(invitation.sentAtUtc, i18n.language, currentUser?.timeZoneId)}
             </span>

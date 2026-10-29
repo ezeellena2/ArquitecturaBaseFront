@@ -121,7 +121,7 @@ function SuggestionsEditor({definitionId,definitionRevision,publishedVersionId,s
     requestAnimationFrame(()=>{if(active.current)host.current?.querySelector<HTMLElement>('[data-suggestion-id="'+rowId+'"] [aria-invalid="true"]')?.focus();});
   };
   const resolve=(keep:boolean)=>{if(!current||blocked)return;setBaseline(current);if(!keep){setSuggestions(current.suggestions);setExpanded(null);}setCurrent(null);setConflict(false);setApiErrors({});};
-  return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+  return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
     {/* As in rules, a conflict is its own surface above the editor, with rereading and choosing in its header. */}
     {conflict?<div className="lg:col-span-2"><Surface title={t("suggestions.conflictTitle")} padded actions={<>
       <Button variant="outline" disabled={blocked} onClick={()=>void run("reread",async signal=>{const fresh=await fetchFormSuggestions(definitionId,signal);if(active.current)setCurrent(fresh);})}>{t("suggestions.reread")}</Button>

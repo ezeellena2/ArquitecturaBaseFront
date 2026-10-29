@@ -51,7 +51,7 @@ export function Banner({ tone = "info", action, children }: BannerProps) {
       {/* El ícono va con el primer renglón del texto, no con el centro del bloque: un texto de dos renglones no lo
           deja flotando entre los dos. */}
       <div className="flex min-w-0 basis-56 grow items-start gap-2.5">
-        <Icon className={cn("mt-0.5 size-[18px] shrink-0", iconClass)} />
+        <Icon className={cn("mt-0.5 size-4.5 shrink-0", iconClass)} />
         <p className="min-w-0 text-sm leading-normal text-[var(--color-content)]">{children}</p>
       </div>
       {action ? <div className="ml-auto shrink-0">{action}</div> : null}

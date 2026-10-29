@@ -60,7 +60,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
       {frozen&&!state.open ? <DisabledReason reason={waitReason(state.checking||state.sending, state.waiting, state.waitSeconds)}><Button variant="outline" size="sm" disabled={state.checking||state.sending||state.denied||state.waiting} onClick={()=>void state.checkOutcome()}>{t("send.check")}</Button></DisabledReason> : null}</div>
     </div> : null}
     <Dialog open={state.open || assistantOpen} onOpenChange={open=>{if(!busy){if(assistantOpen)assistant?.setOpen(open);else state.setOpen(open);}}}>
-      <DialogContent onCloseAutoFocus={restoreFocus} className="sm:max-w-[600px]" showCloseButton={!busy} onEscapeKeyDown={event=>{if(busy)event.preventDefault();}} onPointerDownOutside={event=>{if(busy)event.preventDefault();}}>
+      <DialogContent onCloseAutoFocus={restoreFocus} className="sm:max-w-150" showCloseButton={!busy} onEscapeKeyDown={event=>{if(busy)event.preventDefault();}} onPointerDownOutside={event=>{if(busy)event.preventDefault();}}>
         <DialogHeader><DialogTitle>{t("forms.title",{name})}</DialogTitle><DialogDescription>{t(assistantOpen ? "assistant.dialogDescription" : "forms.description")}</DialogDescription></DialogHeader>
         {assistantOpen && assistant?.proposal ? <>
           <p className="break-words text-sm font-medium">{t("assistant.version", { name: assistant.proposal.name, version: assistant.proposal.versionNumber })}</p>

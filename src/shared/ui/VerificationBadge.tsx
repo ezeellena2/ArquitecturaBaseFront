@@ -20,7 +20,7 @@ export function VerificationBadge({ verified, children, className, ...props }: V
     <Badge
       {...props}
       className={cn(
-        "text-[11.5px]",
+        "text-[0.71875rem]",
         verified
           ? "gap-1 bg-[var(--color-success-50)] text-[var(--color-success-700)]"
           : "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]",

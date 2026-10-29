@@ -67,14 +67,14 @@ export function RadioGroupField({ label, options, value, onValueChange, error, v
                 <Label
                   htmlFor={optionId}
                   className={cn(
-                    "text-[13.5px] leading-[1.2]",
+                    "text-[0.84375rem] leading-[1.2]",
                     option.disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer",
                   )}
                 >
                   {option.label}
                 </Label>
                 {option.description ? (
-                  <p id={descriptionId} className="text-[12.5px] leading-[1.4] text-[var(--color-content-muted)]">
+                  <p id={descriptionId} className="text-[0.78125rem] leading-[1.4] text-[var(--color-content-muted)]">
                     {option.description}
                   </p>
                 ) : null}
