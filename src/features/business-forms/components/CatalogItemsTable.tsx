@@ -19,7 +19,7 @@ import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onExpand, onChange, onFieldBlur, onMove, onRemove, onActionRef }: {
+export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onExpand, onChange, onFieldBlur, onMove, onRemove, deletedItemIds = [], deleteErrors, deleteDisabledReason, onDelete, onRestore, onActionRef }: {
   items: readonly CatalogManualItemValue[];
   inline: boolean; selected: readonly string[]; onSelect: (id: string, selected: boolean) => void; onSelectAll: (selected: boolean) => void;
   errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; warnings?: Readonly<Record<string, string>>; sortPending?: boolean;
@@ -41,6 +41,11 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   onMove?: (item: CatalogManualItemValue, delta: -1 | 1) => void;
   /** A new option, never saved, leaves the draft. */
   onRemove?: (item: CatalogManualItemValue) => void;
+  /** Saved options marked to delete on Save, and the server's reason by option when it refused. */
+  deletedItemIds?: readonly string[]; deleteErrors?: Readonly<Record<string, string>>;
+  /** Why «Eliminar» is off while moves or A–Z are pending, or null. */
+  deleteDisabledReason?: string | null;
+  onDelete?: (item: CatalogManualItemValue) => void; onRestore?: (item: CatalogManualItemValue) => void;
   onActionRef: (key: string, button: HTMLButtonElement | null) => void;
   fields?: readonly CatalogFieldDraft[]; scope?: CatalogReadScope; visibleFieldIds?: readonly string[];
 }) {
@@ -66,6 +71,10 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
         const messages = errors?.[item.localId];
         const expanded = expandedKey === item.localId;
         const rememberAction = (button: HTMLButtonElement | null) => onActionRef(item.localId, button);
+        // A saved option marked to delete stays in its place, read-only, until Save; its error is the server's reason.
+        const deleted = item.itemId !== null && deletedItemIds.includes(item.itemId);
+        const rowReadOnly = readOnly || deleted, deleteError = deleted ? deleteErrors?.[item.localId] : undefined;
+        const moveDisabled = readOnly || sortPending || item.itemId === null || deletedItemIds.length > 0;
         // While editing, a field value's error goes on its own line under the row, «Fila N · Campo: motivo», which the cell
         // refers to; a hidden column still says it there. It quotes the value and changes with each keystroke, so it is a
         // polite status, not an alert that interrupts the typing.
@@ -82,29 +91,31 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
             if (column.field) {
               const field = catalogItemFieldRule(column.field, item), key = field.id ?? field.localId, value = item.fields?.[key], texts = item.fieldTexts?.[key], pendingText = pendingTexts?.[item.localId]?.[key];
               const problem = problems.find(problem => problem.columnId === column.id);
-              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={valueLabel(administrativeName(field.name, culture))} value={value} texts={texts} pendingText={pendingText} culture={culture} readOnly={readOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />;
+              if (editing) content = <CatalogExtraFieldInput field={field} scope={scope} label={valueLabel(administrativeName(field.name, culture))} value={value} texts={texts} pendingText={pendingText} culture={culture} readOnly={rowReadOnly} aria-invalid={problem ? true : undefined} aria-describedby={problem?.id} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />;
               else {
                 const shown = value === null || value === undefined ? "—" : pendingText ?? (field.type === "catalog" && texts ? administrativeName(texts, culture) : unconvertedFieldValue(field.type, value) ?? (field.type === "catalog" ? "—" : field.type === "text" ? value : catalogScalarText(field.type, value, valueCulture, yesNo, valueCulture)));
                 // The text cell (below 640 px or without Manage) keeps its mark, such as a value the new type does not take.
                 content = error ? <><p>{shown}</p><p className="whitespace-normal text-xs text-[var(--color-danger)]">{error}</p></> : shown;
               }
             } else switch (column.id) {
-              case "text": content = editing ? <CatalogInlineInput label={t("catalogs.items.inlineText", { number })} value={item.label[culture] ?? ""} placeholder={contentReference(item.label, culture, original)} readOnly={readOnly} count error={error} warning={warnings?.[item.localId]} onChange={value => onChange({ ...item, label: { ...item.label, [culture]: value } })} onBlur={blur}/> : <><p>{name}</p><p className="text-xs text-[var(--color-content-muted)]">{item.code}</p></>; break;
-              case "code": content = <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineCode", { number })} value={item.code} readOnly={readOnly} error={error} onChange={code => onChange({ ...item, code })} onBlur={blur}/>; break;
-              case "value": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineValue", { number })} value={item.value ?? ""} readOnly={readOnly} type={column.inputType} inputMode={column.inputMode} error={error} onChange={value => onChange({ ...item, value: value || null })} onBlur={blur}/> : valueType === "Text" || !item.value ? item.value || "—" : catalogScalarText(catalogTypedValueTypes[valueType], item.value, valueCulture, yesNo, valueCulture); break;
-              case "detail": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineDetail", { number })} value={item.detail[culture] ?? ""} placeholder={contentReference(item.detail, culture, original)} readOnly={readOnly} error={error} onChange={value => onChange({ ...item, detail: { ...item.detail, [culture]: value || null } })}/> : administrativeName(item.detail, culture) || "—"; break;
-              case "isActive": content = editing ? <Checkbox aria-label={t("catalogs.items.activeNamed", { name })} checked={item.isActive} disabled={readOnly} onCheckedChange={value => onChange({ ...item, isActive: value === true })}/> : <Badge variant="outline">{t(item.isActive ? "catalogs.items.active" : "catalogs.state.Inactive")}</Badge>; break;
+              case "text": content = editing ? <CatalogInlineInput label={t("catalogs.items.inlineText", { number })} value={item.label[culture] ?? ""} placeholder={contentReference(item.label, culture, original)} readOnly={rowReadOnly} count error={error} warning={warnings?.[item.localId]} onChange={value => onChange({ ...item, label: { ...item.label, [culture]: value } })} onBlur={blur}/> : <><p>{name}</p><p className="text-xs text-[var(--color-content-muted)]">{item.code}</p></>; break;
+              case "code": content = <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineCode", { number })} value={item.code} readOnly={rowReadOnly} error={error} onChange={code => onChange({ ...item, code })} onBlur={blur}/>; break;
+              case "value": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineValue", { number })} value={item.value ?? ""} readOnly={rowReadOnly} type={column.inputType} inputMode={column.inputMode} error={error} onChange={value => onChange({ ...item, value: value || null })} onBlur={blur}/> : valueType === "Text" || !item.value ? item.value || "—" : catalogScalarText(catalogTypedValueTypes[valueType], item.value, valueCulture, yesNo, valueCulture); break;
+              case "detail": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineDetail", { number })} value={item.detail[culture] ?? ""} placeholder={contentReference(item.detail, culture, original)} readOnly={rowReadOnly} error={error} onChange={value => onChange({ ...item, detail: { ...item.detail, [culture]: value || null } })}/> : administrativeName(item.detail, culture) || "—"; break;
+              case "isActive": content = editing ? <Checkbox aria-label={t("catalogs.items.activeNamed", { name })} checked={item.isActive} disabled={rowReadOnly} onCheckedChange={value => onChange({ ...item, isActive: value === true })}/> : <Badge variant="outline">{t(item.isActive ? "catalogs.items.active" : "catalogs.state.Inactive")}</Badge>; break;
             }
             return <WideTableCell key={column.id} pinned={column.id === "text" ? "start" : undefined}>{content}</WideTableCell>;
           })}
           <WideTableCell pinned="end" className="text-right">{canManage ? <div className="flex justify-end gap-1">
-            {onMove ? <><IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("up", { name }) }) : t("up", { name })} disabled={readOnly || sortPending || item.itemId === null || !hasPendingMoves && item.position === 1} onClick={() => onMove(item, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
-            <IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("down", { name }) }) : t("down", { name })} disabled={readOnly || sortPending || item.itemId === null || !hasPendingMoves && item.position === totalCount} onClick={() => onMove(item, 1)}><ChevronDownIcon className="size-4" /></IconButton></> : null}
-            {item.isActive || expanded ? <IconButton ref={rememberAction} size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} aria-expanded={expanded} onClick={() => onExpand(expanded ? null : item.localId)}><PencilIcon className="size-4" /></IconButton>
+            {onMove ? <><IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("up", { name }) }) : t("up", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === 1} onClick={() => onMove(item, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
+            <IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("down", { name }) }) : t("down", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === totalCount} onClick={() => onMove(item, 1)}><ChevronDownIcon className="size-4" /></IconButton></> : null}
+            {deleted ? <><span className="self-center text-xs text-[var(--color-danger)]">{t("catalogs.items.deletedState")}</span><Button ref={rememberAction} type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.restoreNamed", { name })} onClick={() => onRestore?.(item)}>{t("catalogs.items.restore")}</Button></>
+              : item.isActive || expanded ? <IconButton ref={rememberAction} size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} aria-expanded={expanded} onClick={() => onExpand(expanded ? null : item.localId)}><PencilIcon className="size-4" /></IconButton>
               : <Button ref={rememberAction} type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
             {onRemove && item.itemId === null ? <IconButton size="icon-sm" label={t("catalogs.items.removeNamed", { name })} disabled={busy} onClick={() => onRemove(item)}><TrashIcon className="size-4" /></IconButton> : null}
+            {onDelete && item.itemId !== null && !deleted ? <IconButton size="icon-sm" label={t("catalogs.items.deleteNamed", { name })} disabledLabel={deleteDisabledReason ?? undefined} disabled={busy || !!deleteDisabledReason} onClick={() => onDelete(item)}><TrashIcon className="size-4" /></IconButton> : null}
           </div> : null}</WideTableCell>
-        </TableRow>{problems.length ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{problems.map(problem => <p key={problem.id} id={problem.id} role="status" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</TableCell></TableRow> : null}{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
+        </TableRow>{deleteError ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal"><p role="alert" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{deleteError}</p></TableCell></TableRow> : null}{problems.length ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{problems.map(problem => <p key={problem.id} id={problem.id} role="status" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</TableCell></TableRow> : null}{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
       })}
     </TableBody></WideTable>
   );

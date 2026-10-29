@@ -26,7 +26,7 @@ export interface ManualCatalogBody {
 }
 export interface CreateManualCatalogBody extends ManualCatalogBody { readonly valueType?: CatalogValueType }
 export interface CatalogItemMove { readonly itemId: string; readonly direction: "up" | "down" }
-export interface UpdateManualCatalogBody extends ManualCatalogBody { readonly expectedRevision: number; readonly isActive?: boolean; readonly moves?: readonly CatalogItemMove[]; readonly sortAlphabetically?: boolean; readonly confirmFieldRemovals?: readonly string[] }
+export interface UpdateManualCatalogBody extends ManualCatalogBody { readonly expectedRevision: number; readonly isActive?: boolean; readonly moves?: readonly CatalogItemMove[]; readonly sortAlphabetically?: boolean; readonly confirmFieldRemovals?: readonly string[]; readonly deleteItemIds?: readonly string[] }
 export interface CatalogItemsQuery {
   readonly page: number;
   readonly pageSize: number;

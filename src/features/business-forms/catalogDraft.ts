@@ -30,11 +30,14 @@ export interface CatalogDraft {
   readonly savedFields: readonly CatalogFieldDraft[];
   readonly presentation: CatalogPresentation | null;
   readonly confirmFieldRemovals: readonly string[];
+  // Saved options to delete on Save, in the order the server reports them (`deleteItemIds[i]`). A marked option has no
+  // edits, and marking waits for pending moves, as moving waits for pending deletions.
+  readonly deleteItems: readonly string[];
 }
 export function openCatalogDraft(catalog?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text", culture: FormCulture = "es"): CatalogDraft {
   const origin = catalog?.kind ?? kind;
   const fields = catalog?.fields?.map(field => openCatalogField(field, culture)) ?? [];
-  return { valueType: catalog?.valueType ?? (origin === "Filters" ? "Text" : valueType), culture, proposal: catalog?.proposal ?? null, isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: { es: catalog?.name.es ?? "", en: catalog?.name.en ?? "" }, description: { es: catalog?.description.es ?? "", en: catalog?.description.en ?? "" }, items: newCatalogItemEdits(), moves: [], sortAlphabetically: false, fields, savedFields: fields, presentation: catalog?.presentation ? { title: [...catalog.presentation.title], description: [...catalog.presentation.description] } : null, confirmFieldRemovals: [] };
+  return { valueType: catalog?.valueType ?? (origin === "Filters" ? "Text" : valueType), culture, proposal: catalog?.proposal ?? null, isActive: catalog?.isActive ?? true, kind: origin, filters: origin === "Filters" ? openCatalogFilters(catalog?.filters ?? { textColumn: "name", detailColumn: null, conditions: [], excludeRecipient: false, sortColumn: "name", sortDescending: false }) : null, id: catalog?.id ?? null, revision: catalog?.revision ?? null, name: { es: catalog?.name.es ?? "", en: catalog?.name.en ?? "" }, description: { es: catalog?.description.es ?? "", en: catalog?.description.en ?? "" }, items: newCatalogItemEdits(), moves: [], sortAlphabetically: false, fields, savedFields: fields, presentation: catalog?.presentation ? { title: [...catalog.presentation.title], description: [...catalog.presentation.description] } : null, confirmFieldRemovals: [], deleteItems: [] };
 }
 export function catalogItemValue(item: CatalogItem, valueType: CatalogValueType, culture: FormCulture, fields: readonly CatalogFieldDraft[] = []): CatalogManualItemValue {
   // A persisted UUID is also a valid local correlation key. UI identity prefixes never enter a body.
@@ -61,8 +64,16 @@ export function catalogDraftInCulture(draft: CatalogDraft, culture: FormCulture)
   }));
   return { ...draft, culture, items: { originals, changes }, fields: draft.fields.map(field => relocalizeCatalogField(field, from, culture)), savedFields: draft.savedFields.map(field => relocalizeCatalogField(field, from, culture)) };
 }
-export const stageCatalogDraftItem = (draft: CatalogDraft, item: CatalogManualItemValue): CatalogDraft => ({ ...draft, items: stageCatalogItem(draft.items, item) });
+export const stageCatalogDraftItem = (draft: CatalogDraft, item: CatalogManualItemValue): CatalogDraft =>
+  item.itemId !== null && draft.deleteItems.includes(item.itemId) ? draft : { ...draft, items: stageCatalogItem(draft.items, item) };
 export const discardCatalogDraftItem = (draft: CatalogDraft, localId: string): CatalogDraft => ({ ...draft, items: discardNewCatalogItem(draft.items, localId) });
+/** Marks a loaded saved option to delete on Save, dropping its edits, or restores it unedited. */
+export function markCatalogDraftItemDeleted(draft: CatalogDraft, itemId: string, deleted: boolean): CatalogDraft {
+  const original = draft.items.originals["item:" + itemId];
+  if (!deleted) return draft.deleteItems.includes(itemId) ? { ...draft, deleteItems: draft.deleteItems.filter(value => value !== itemId) } : draft;
+  if (!draft.id || !original || draft.deleteItems.includes(itemId) || draft.moves.length || draft.sortAlphabetically) return draft;
+  return { ...draft, items: stageCatalogItem(draft.items, original), deleteItems: [...draft.deleteItems, itemId] };
+}
 function canonicalItemValue(draft: CatalogDraft, item: CatalogManualItemValue): string | null {
   const parsed = parseCatalogValue(draft.valueType, item.value, draft.culture);
   if (!parsed.valid) throw new Error("Invalid catalog item value.");
@@ -122,11 +133,11 @@ export function catalogDraftBody(draft: CatalogDraft): CreateManualCatalogBody {
 }
 
 export function stageCatalogDraftMove(draft: CatalogDraft, itemId: string, direction: CatalogItemMove["direction"]): CatalogDraft {
-  if (!draft.id || draft.sortAlphabetically || !draft.items.originals["item:" + itemId]) return draft;
+  if (!draft.id || draft.sortAlphabetically || draft.deleteItems.length || !draft.items.originals["item:" + itemId]) return draft;
   return { ...draft, moves: [...draft.moves, { itemId, direction }] };
 }
 export function catalogDraftUpdateBody(draft: CatalogDraft): UpdateManualCatalogBody {
   if (!draft.id || draft.revision === null) throw new Error("An unsaved catalog cannot be updated.");
   const body = catalogDraftBody(draft);
-  return { name: body.name, description: body.description, fields: body.fields, presentation: body.presentation, confirmFieldRemovals: [...draft.confirmFieldRemovals], items: body.items, expectedRevision: draft.revision, isActive: draft.isActive, ...(draft.sortAlphabetically ? { sortAlphabetically: true } : {}), ...(!draft.sortAlphabetically && draft.moves.length ? { moves: draft.moves.map(move => ({ ...move })) } : {}) };
+  return { name: body.name, description: body.description, fields: body.fields, presentation: body.presentation, confirmFieldRemovals: [...draft.confirmFieldRemovals], items: body.items, expectedRevision: draft.revision, isActive: draft.isActive, ...(draft.sortAlphabetically ? { sortAlphabetically: true } : {}), ...(!draft.sortAlphabetically && draft.moves.length ? { moves: draft.moves.map(move => ({ ...move })) } : {}), ...(draft.deleteItems.length ? { deleteItemIds: [...draft.deleteItems] } : {}) };
 }

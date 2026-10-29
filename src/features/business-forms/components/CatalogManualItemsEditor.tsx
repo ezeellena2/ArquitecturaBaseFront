@@ -16,8 +16,9 @@ import type { CatalogFieldDraft } from "../catalogFields";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/shared/ui/dropdown-menu";
 import { FilterMenuTrigger } from "@/shared/ui/FilterMenuTrigger";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 
-export function CatalogManualItemsEditor({ items, culture, original, valueType, fields = [], scope, canManage, busy = false, hasPendingMoves = false, errors, editingItems = [], expandedKey, onExpand, onChange, onFieldBlur, onAdd, onMove, onRemove, filters, pagination, totalCount = pagination?.totalCount, onPageChange, onPageSizeChange, actions, notice, warnings, pendingTexts, sortPending, onGenerateCode }: {
+export function CatalogManualItemsEditor({ items, culture, original, valueType, fields = [], scope, canManage, busy = false, hasPendingMoves = false, errors, editingItems = [], expandedKey, onExpand, onChange, onFieldBlur, onAdd, onMove, onRemove, deletedItemIds, deleteErrors, onDelete, onRestore, filters, pagination, totalCount = pagination?.totalCount, onPageChange, onPageSizeChange, actions, notice, warnings, pendingTexts, sortPending, onGenerateCode }: {
   actions?: ReactNode;
   /** Above the table: what the server said about the fields when saving. */
   notice?: ReactNode; warnings?: Readonly<Record<string, string>>; sortPending?: boolean; onGenerateCode?: (item: CatalogManualItemValue) => void;
@@ -41,6 +42,9 @@ export function CatalogManualItemsEditor({ items, culture, original, valueType, 
   onMove?: (item: CatalogManualItemValue, delta: -1 | 1) => void;
   /** A new option, never saved, leaves the draft; the focus goes to «Agregar opción». */
   onRemove?: (item: CatalogManualItemValue) => void;
+  /** A saved option is marked to delete on Save after confirming, and can be restored until then. */
+  deletedItemIds?: readonly string[]; deleteErrors?: Readonly<Record<string, string>>;
+  onDelete?: (item: CatalogManualItemValue) => void; onRestore?: (item: CatalogManualItemValue) => void;
   filters?: ReactNode;
   pagination?: Omit<PagedResult<unknown>, "items">;
   /** Where the last option stops moving down: the pagination's total, or the unfiltered list's while only the rows with errors show. */
@@ -58,6 +62,7 @@ export function CatalogManualItemsEditor({ items, culture, original, valueType, 
   const previousExpanded = useRef<string | null>(null);
   const actionRefs = useRef(new Map<string, HTMLButtonElement>());
   const addRef = useRef<HTMLButtonElement>(null);
+  const [deleting, setDeleting] = useState<CatalogManualItemValue | null>(null);
   useLayoutEffect(() => {
     if (previousExpanded.current !== null && expandedKey === null) (actionRefs.current.get(previousExpanded.current) ?? addRef.current)?.focus();
     previousExpanded.current = expandedKey;
@@ -73,9 +78,13 @@ export function CatalogManualItemsEditor({ items, culture, original, valueType, 
     {fields.some(field => field.isActive) ? <div className="flex flex-wrap items-center gap-3 p-4">{filters}<DropdownMenu><FilterMenuTrigger>{t("catalogs.fields.columns")}</FilterMenuTrigger><DropdownMenuContent align="start">{fields.filter(field => field.isActive).map(field => <DropdownMenuCheckboxItem key={field.localId} checked={!hiddenFields.includes(field.localId)} onSelect={event => event.preventDefault()} onCheckedChange={visible => setHiddenFields(current => visible ? current.filter(id => id !== field.localId) : [...current, field.localId])}>{administrativeName(field.name, culture) || t("catalogs.fields.new")}</DropdownMenuCheckboxItem>)}</DropdownMenuContent></DropdownMenu></div> : filters}
     <CatalogItemsTable fields={fields} scope={scope} visibleFieldIds={fields.filter(field => !hiddenFields.includes(field.localId)).map(field => field.localId)} inline={fieldsInsideTable} selected={selected} onSelect={(id, checked) => setSelection({ pageKey, ids: checked ? [...selected, id] : selected.filter(value => value !== id) })} onSelectAll={checked => setSelection({ pageKey, ids: checked ? items.map(item => item.localId) : [] })} errors={errors} warnings={warnings} pendingTexts={pendingTexts} sortPending={sortPending} items={items} culture={culture} original={original} valueType={valueType} canManage={canManage} busy={busy} hasPendingMoves={hasPendingMoves} totalCount={totalCount} expandedKey={expandedKey}
       expandedContent={fieldsInsideTable && expandedItem ? <CatalogItemFields fields={fields} scope={scope} warning={warnings?.[expandedItem.localId]} pendingTexts={pendingTexts?.[expandedItem.localId]} onGenerateCode={generateCode ? () => generateCode(expandedItem) : undefined} item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} original={original} valueType={valueType} readOnly={readOnly} onChange={onChange} onFieldBlur={path => onFieldBlur?.(expandedItem.localId, path)} onDone={() => onExpand(null)}/> : undefined}
-      onExpand={onExpand} onChange={onChange} onFieldBlur={onFieldBlur} onMove={onMove} onRemove={onRemove ? item => { addRef.current?.focus(); onRemove(item); } : undefined} onActionRef={(key, button) => { if (button) actionRefs.current.set(key, button); else actionRefs.current.delete(key); }}/>
+      onExpand={onExpand} onChange={onChange} onFieldBlur={onFieldBlur} onMove={onMove} onRemove={onRemove ? item => { addRef.current?.focus(); onRemove(item); } : undefined}
+      deletedItemIds={deletedItemIds} deleteErrors={deleteErrors} onDelete={onDelete ? setDeleting : undefined} onRestore={onRestore}
+      deleteDisabledReason={hasPendingMoves || sortPending ? t("catalogs.items.deleteAfterOrder") : null} onActionRef={(key, button) => { if (button) actionRefs.current.set(key, button); else actionRefs.current.delete(key); }}/>
     {expandedItem && (!fieldsInsideTable || !items.some(item => item.localId === expandedItem.localId)) ? <div className="flex flex-col gap-3 p-4"><p className="text-sm font-medium">{t("catalogs.items.editing", { name: administrativeName(expandedItem.label, culture) || t("option", { number: expandedItem.position }) })}</p><CatalogItemFields fields={fields} scope={scope} warning={warnings?.[expandedItem.localId]} pendingTexts={pendingTexts?.[expandedItem.localId]} onGenerateCode={generateCode ? () => generateCode(expandedItem) : undefined} item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} original={original} valueType={valueType} readOnly={readOnly} onChange={onChange} onFieldBlur={path => onFieldBlur?.(expandedItem.localId, path)} onDone={() => onExpand(null)} /></div> : null}
     {items.length === 0 ? <div className="p-4"><p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.items.empty")}</p></div> : null}
     {pagination && onPageChange ? <Pagination {...pagination} onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} /> : null}
+    <ConfirmDialog open={deleting !== null} onOpenChange={open => { if (!open) setDeleting(null); }} title={t("catalogs.items.deleteTitle", { name: deleting ? administrativeName(deleting.label, culture) || t("option", { number: deleting.position }) : "" })}
+      description={t("catalogs.items.deleteDescription")} confirmLabel={t("catalogs.items.deleteConfirm")} destructive focusFallback={addRef} onConfirm={() => { if (deleting) onDelete?.(deleting); setDeleting(null); }} />
   </Surface>;
 }

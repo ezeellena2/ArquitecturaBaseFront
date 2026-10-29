@@ -23,3 +23,12 @@ export function readCatalogFieldFeedback(value: unknown): CatalogFieldFeedback |
   const result = feedbackSchema.safeParse(Object.fromEntries(entries));
   return result.success ? result.data : null;
 }
+
+const itemUsesSchema = z.array(z.enum(["records", "options", "people", "forms"])).min(1).max(4);
+export type CatalogItemUse = z.infer<typeof itemUsesSchema>[number];
+/** What keeps an option from being deleted (`Forms.Catalog.ItemInUse`), in the server's order; null if the error does not say. */
+export function readCatalogItemUses(value: unknown): readonly CatalogItemUse[] | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const result = itemUsesSchema.safeParse((value as Record<string, unknown>).uses);
+  return result.success ? result.data : null;
+}
