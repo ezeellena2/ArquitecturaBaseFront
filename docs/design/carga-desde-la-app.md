@@ -87,4 +87,14 @@ Etapa 5.
 
 ## Cierre local de la Etapa 1 — 2026-10-30
 
-Se completa con la verificación final del cierre.
+CW1-B, CW2-A, CW2-B, CW3, CW4, CW5 y CW6-A están implementadas con las reglas de armado de CW12, CW13-A y CW16. La
+verificación final aprobó 3.559/3.559 tests del front en 327 archivos, el lint con 51/51 reglas de diseño, el build sin
+advertencias y 775/775 pruebas visuales; las 30 escenas `formEntries` se compararon con sus tableros en es/en a 1440, 390 y
+320. Los contratos se calificaron con los 17 cuerpos de `forms-entries-http`, de la corrida conjunta del backend que aprobó
+6.548/6.548 tests y exportó las 24 cohortes.
+
+El recorrido en el navegador integrado se hizo sobre el catálogo visual y, con un arnés local que no quedó en el repositorio,
+con la API real y PostgreSQL y Azurite de prueba: la búsqueda en un catálogo de 58 lotes, una foto que viajó con el envío,
+«Enviada», la planilla con «Canal: App» y el origen en D2, el panel con «Mantener las respuestas para la siguiente» y quien
+sólo completa, en el celular y en inglés. Quedan la cámara de un celular real y pasar los tableros al lienzo del sistema
+visual.
