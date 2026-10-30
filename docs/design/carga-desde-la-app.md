@@ -52,7 +52,8 @@ dibujadas las preguntas en CW2-A y CW2-B.
    «N de M respondidas». Al enviar con errores, una zona plegada que los tiene se abre sola y el foco va a la primera pregunta
    con error.
 2. **Grilla de hasta tres por renglón.** Tres columnas en escritorio, dos en tableta y una en el celular y en el panel de CW2-B.
-   Las preguntas no se reordenan: una que no entra baja de renglón, y hay una línea entre renglones.
+   Las preguntas no se reordenan: una que no entra baja de renglón, y hay una línea entre cada renglón visible. Los renglones se
+   arman con las columnas en uso y el ancho de cada pregunta se recorta a ellas, así en el celular cada pregunta es un renglón.
 3. **El ancho sale del tipo; el autor no lo elige.**
 
    | Ocupa | Tipos de pregunta |
@@ -73,7 +74,10 @@ dibujadas las preguntas en CW2-A y CW2-B.
 ## Decisiones de diseño
 
 - **Una sola forma de armar las preguntas.** `entryZones` arma las zonas, `entryQuestionSpan` da el ancho por tipo y
-  `entryRows`, los renglones de tres sin reordenar. El panel usa los mismos controles en una columna. «Opción corta» es de hasta
+  `entryRows`, los renglones con las columnas en uso, sin reordenar. Las columnas salen del ancho de la zona y no del de la
+  pantalla (`entryColumns`: tres desde 46 rem, dos desde 30 rem y una debajo), porque en una tableta los paneles del menú
+  ocupan parte del ancho: con el panel de Formularios abierto, una tableta tiene lugar para una columna. En una columna, número
+  y fecha también van a lo ancho. El panel usa los mismos controles en una columna. «Opción corta» es de hasta
   20 caracteres, el «angosto» de CW12; el texto largo suma un renglón cada 100 caracteres de largo máximo, entre 2 y 6.
 - **Lo cargado vive en su dueño.** El borrador es de la página o del panel: nunca va a la URL, el storage ni la caché de
   consultas. «Pantalla completa» lo pasa en memoria. Repetir un envío con las mismas respuestas conserva su identificador, así

@@ -1,5 +1,6 @@
-import { useState, type ReactElement, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
 import { FormField } from "@/shared/ui/FormField";
@@ -10,7 +11,7 @@ import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
 import type { FormEntry, FormEntryQuestion } from "../api/entries";
-import { entryAnswered, entryChoiceInRow, entryQuestionId, entryQuestionSpan, entryRows, entryTextRows, entryZones, type EntryDraft, type EntryZone } from "../entryForm";
+import { entryAnswered, entryChoiceInRow, entryColumns, entryQuestionId, entryQuestionWidth, entryRows, entryTextRows, entryZones, type EntryDraft, type EntryZone } from "../entryForm";
 import { EntryCatalogField } from "./EntryCatalogField";
 import { EntryFilesField } from "./EntryFilesField";
 
@@ -28,8 +29,8 @@ interface Props {
 }
 
 const isFile = (question: FormEntryQuestion) => question.type === "photo" || question.type === "document";
-// The phone has one column and the tablet two; the computer, the three of the rule.
-const spanClass = { 1: "", 2: "sm:col-span-2", 3: "sm:col-span-2 lg:col-span-3" } as const;
+const gridClass = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3" } as const;
+const widthClass = { 1: "", 2: "col-span-2", 3: "col-span-3" } as const;
 
 /**
  * The questions of the active version in the editor's order, each with the control and width of its type (CW12, CW16).
@@ -39,13 +40,28 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   const { t } = useTranslation("formEntries");
   const [folded, setFolded] = useState<Readonly<Record<string, boolean>>>({});
   const [revealed, setRevealed] = useState(reveal);
+  // The rows are built with the columns that fit in the zones; until they are measured, the screen's.
+  const phone = useMediaQuery("(width < 640px)");
+  const tablet = useMediaQuery("(width < 1024px)");
+  const [widthRem, setWidthRem] = useState(0);
+  const observer = useRef<ResizeObserver | null>(null);
+  const measured = useCallback((node: HTMLDivElement | null) => {
+    observer.current?.disconnect();
+    if (!node) return;
+    const measure = () => setWidthRem(node.clientWidth / (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16));
+    measure();
+    observer.current = new ResizeObserver(measure);
+    observer.current.observe(node);
+  }, []);
+  const columns = widthRem > 0 ? entryColumns(widthRem) : phone ? 1 : tablet ? 2 : 3;
   const zones = entryZones(entry);
   // Opened while rendering, so the focus that follows the send finds the question with the error.
   if (reveal !== revealed) {
     setRevealed(reveal);
     setFolded(current => Object.fromEntries(zones.map(zone => [zone.key, !!current[zone.key] && !zone.questions.some(item => errors[item.fieldId])])));
   }
-  const question = (item: FormEntryQuestion) => <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}/>;
+  const question = (item: FormEntryQuestion) => <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}
+    wide={layout === "panel" || columns === 1}/>;
   if (layout === "panel") return <div className="flex flex-col gap-4">{entry.questions.map(question)}</div>;
 
   const answered = (items: FormEntryQuestion[]) => t("zone.answered", { count: items.filter(item => entryAnswered(item, draft)).length, total: items.length });
@@ -57,17 +73,19 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
     return parts.length ? parts.join(" · ") : answered(items);
   };
   const title = (zone: EntryZone) => zone.key === "files" ? t("page.files") : t("page.data");
-  return <div className="flex flex-col gap-4">{zones.map(zone => <CollapsibleSection key={zone.key} title={title(zone)} open={!folded[zone.key]}
+  return <div ref={measured} className="flex flex-col gap-4">{zones.map(zone => <CollapsibleSection key={zone.key} title={title(zone)} open={!folded[zone.key]}
     onOpenChange={open => setFolded(current => ({ ...current, [zone.key]: !open }))} expandLabel={t("zone.expand", { name: title(zone) })}
     collapseLabel={t("zone.collapse", { name: title(zone) })} summary={summary(zone.questions)}>
-    <div className="divide-y divide-[var(--color-border)]">{entryRows(zone.questions).map(row => <div key={row[0].fieldId} className="grid grid-cols-1 gap-x-5 gap-y-3 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
-      {row.map(item => <div key={item.fieldId} className={"min-w-0 " + spanClass[entryQuestionSpan(item)]}>{question(item)}</div>)}
+    <div className="divide-y divide-[var(--color-border)]">{entryRows(zone.questions, columns).map(row => <div key={row[0].fieldId} data-entry-row className={"grid gap-x-5 gap-y-3 px-4 py-3 " + gridClass[columns]}>
+      {row.map(item => <div key={item.fieldId} className={"min-w-0 " + widthClass[entryQuestionWidth(item, columns)]}>{question(item)}</div>)}
     </div>)}</div>
   </CollapsibleSection>)}</div>;
 }
 
-function EntryQuestion({ entry, question, draft, onChange, error, disabled }: {
+function EntryQuestion({ entry, question, draft, onChange, error, disabled, wide }: {
   entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; error?: string; disabled?: boolean;
+  /** One column: every control goes across, like on the phone (CW12). */
+  wide: boolean;
 }) {
   const { t } = useTranslation("formEntries");
   const id = entryQuestionId(question.fieldId);
@@ -126,9 +144,9 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled }: {
     ]}/>
   </div>, false);
   if (question.type === "longText") return field(<Textarea value={value} maxLength={question.maxLength ?? undefined} rows={entryTextRows(question)} disabled={disabled} onChange={event => setValue(event.target.value)}/>);
-  // Number and date stay narrow (CW12); on the phone everything goes across.
-  const narrow = question.type === "decimal" || question.type === "date";
-  return field(<Input value={value} disabled={disabled} className={narrow ? "w-full sm:w-37.5" : undefined}
+  // Number and date stay narrow within their cell (CW12); in one column everything goes across.
+  const narrow = !wide && (question.type === "decimal" || question.type === "date");
+  return field(<Input value={value} disabled={disabled} className={narrow ? "w-full max-w-37.5" : undefined}
     type={question.type === "date" ? "date" : "text"} inputMode={question.type === "decimal" ? "decimal" : undefined}
     maxLength={question.type === "shortText" ? question.maxLength ?? undefined : undefined} onChange={event => setValue(event.target.value)}/>);
 }

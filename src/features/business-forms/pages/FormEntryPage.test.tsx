@@ -217,6 +217,16 @@ describe("loading a response from the app", () => {
     expect(crop).toHaveValue(id(342));
   });
 
+  it.each([["phone", [1, 1, 1, 1, 1]], ["tablet", [1, 2, 1, 1]], ["computer", [2, 1, 1, 1]]] as const)(
+    "builds the rows with the columns of the %s, so every visible row has its line", async (screenSize, questionsPerRow) => {
+      const narrow = { phone: ["(width < 640px)", "(width < 1024px)"], tablet: ["(width < 1024px)"], computer: [] as string[] }[screenSize];
+      vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: narrow.includes(query), media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
+      setup();
+      const { container } = renderRouteWithProviders("/formularios/" + formId + "/cargar");
+      await screen.findByText("Lo que marca el pluviómetro.");
+      expect([...container.querySelectorAll("[data-entry-row]")].map(row => row.children.length)).toEqual(questionsPerRow);
+    });
+
   it("chooses the only option the filters leave", async () => {
     const form = entry();
     form.questions[0] = { ...form.questions[0], catalog: { onlyOption: lots[1], issue: null, missingData: null } };

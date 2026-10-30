@@ -37,6 +37,17 @@ async function answerSend(page: Page, number: string) {
   return sends;
 }
 
+const questionsPerRow = (page: Page) => page.locator("[data-entry-row]").evaluateAll(rows => rows.map(row => row.children.length));
+
+async function assertControlsInsideRows(page: Page) {
+  const outside = await page.locator("[data-entry-row]").evaluateAll(rows => rows.flatMap(row => {
+    const bounds = row.getBoundingClientRect();
+    return [...row.querySelectorAll("input:not([type=file]), textarea, select, button")].filter(control => control.getBoundingClientRect().right > bounds.right + 1)
+      .map(control => control.getAttribute("aria-label") ?? control.id);
+  }));
+  expect(outside).toEqual([]);
+}
+
 async function choose(page: Page, label: string, option: string, phone: boolean) {
   if (phone) {
     await page.getByRole("button", { name: label, exact: true }).click();
@@ -58,6 +69,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByText(es ? "Solo los lotes de tu campo en la campaña 2026/27." : "Only the lots of your field in the 2026/27 season.")).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await assertNoPageScroll(page, width);
+    // CW16: the rows are built with the columns in use, so every visible row has its line.
+    expect(await questionsPerRow(page)).toEqual(phone ? [1, 1, 1, 1, 1, 1, 1, 1] : [1, 1, 2, 2, 1, 1]);
+    await assertControlsInsideRows(page);
     await page.screenshot({ path: "test-results/form-entry-page-" + language + "-" + width + ".png", fullPage: true });
 
     const send = page.getByRole("button", { name: es ? "Enviar" : "Send", exact: true });
@@ -108,6 +122,27 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(sends).toHaveLength(1);
     await assertNoPageScroll(page, width);
     await page.screenshot({ path: "test-results/form-entry-sent-" + language + "-" + width + ".png", fullPage: true });
+  });
+}
+
+for (const language of ["es", "en"] as const) {
+  test("CW16 rows of two columns on a tablet " + language, async ({ page }) => {
+    const es = language === "es";
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await open(page, "/formularios/" + formEntryFixtureIds.sowing + "/cargar", "entries", language);
+    await expect(page.getByRole("heading", { name: es ? "Nueva respuesta" : "New response", level: 1 })).toBeVisible();
+    await expect(page.getByText(es ? "Solo los lotes de tu campo en la campaña 2026/27." : "Only the lots of your field in the 2026/27 season.")).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    await assertNoPageScroll(page, 768);
+    // With the forms panel open the zone is as narrow as a phone: one question per row and nothing out of its row.
+    expect(await questionsPerRow(page)).toEqual([1, 1, 1, 1, 1, 1, 1, 1]);
+    await assertControlsInsideRows(page);
+    await page.screenshot({ path: "test-results/form-entry-page-" + language + "-768.png", fullPage: true });
+    // Closing the panel leaves room for two: Lote, Cultivo and Semilla take both, Densidad and Hectáreas share a row.
+    await page.getByRole("button", { name: es ? "Cerrar el panel Formularios" : "Close the Forms panel", exact: true }).click();
+    await expect.poll(() => questionsPerRow(page)).toEqual([1, 1, 1, 2, 1, 1, 1]);
+    await assertControlsInsideRows(page);
+    await page.screenshot({ path: "test-results/form-entry-page-" + language + "-768-two-columns.png", fullPage: true });
   });
 }
 

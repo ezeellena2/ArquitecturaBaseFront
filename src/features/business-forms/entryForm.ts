@@ -49,15 +49,31 @@ export function entryQuestionSpan(question: FormEntryQuestion): 1 | 2 | 3 {
   return 3;
 }
 
-/** The questions in rows of three columns, in the editor's order: one that does not fit starts the next row. */
-export function entryRows(questions: readonly FormEntryQuestion[]): FormEntryQuestion[][] {
+/**
+ * How many columns fit in a zone of this width, in rem (CW16): three on the computer, two on a tablet and one on the phone.
+ * The width is the zone's and not the screen's, because the menu panels take part of a tablet.
+ */
+export function entryColumns(widthRem: number): 1 | 2 | 3 {
+  return widthRem < 30 ? 1 : widthRem < 46 ? 2 : 3;
+}
+
+/** The columns a question takes among those in use: its width by type, cut to the columns of the zone. */
+export function entryQuestionWidth(question: FormEntryQuestion, columns: 1 | 2 | 3): 1 | 2 | 3 {
+  return Math.min(entryQuestionSpan(question), columns) as 1 | 2 | 3;
+}
+
+/**
+ * The questions in rows of the columns in use (three on the computer, two on a tablet, one on the phone), in the editor's
+ * order: one that does not fit starts the next row, so every visible row has its line (CW16).
+ */
+export function entryRows(questions: readonly FormEntryQuestion[], columns: 1 | 2 | 3 = 3): FormEntryQuestion[][] {
   const rows: FormEntryQuestion[][] = [];
-  let used = 3;
+  let used: number = columns;
   for (const question of questions) {
-    const span = entryQuestionSpan(question);
-    if (used + span > 3) { rows.push([]); used = 0; }
+    const width = entryQuestionWidth(question, columns);
+    if (used + width > columns) { rows.push([]); used = 0; }
     rows[rows.length - 1].push(question);
-    used += span;
+    used += width;
   }
   return rows;
 }

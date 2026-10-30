@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FormEntry, FormEntryQuestion } from "./api/entries";
-import { carryEntryDraft, entryAnswered, entryChoiceInRow, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
+import { carryEntryDraft, entryAnswered, entryChoiceInRow, entryColumns, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
 
 const ids = { lot: "00000000-0000-4000-8000-000000000001", crop: "00000000-0000-4000-8000-000000000002", density: "00000000-0000-4000-8000-000000000003",
   date: "00000000-0000-4000-8000-000000000004", notes: "00000000-0000-4000-8000-000000000005", photos: "00000000-0000-4000-8000-000000000006",
@@ -122,5 +122,18 @@ describe("entry form", () => {
       ["data", [ids.lot, ids.crop, ids.density, ids.date, ids.notes]], ["files", [ids.photos]]]);
     expect(entryZones({ ...entry, questions: [photos] }).map(zone => zone.key)).toEqual(["files"]);
     expect(entryZones({ ...entry, questions: [] })).toEqual([]);
+  });
+
+  it("builds the rows with the columns in use, so every visible row has its line (CW16)", () => {
+    const [lot, crop, density, date, notes] = entry.questions;
+    const order = [lot, density, date, crop, notes];
+    const rows = (columns: 1 | 2 | 3) => entryRows(order, columns).map(row => row.map(item => item.fieldId));
+    expect(rows(3)).toEqual([[ids.lot, ids.density], [ids.date, ids.crop], [ids.notes]]);
+    expect(rows(2)).toEqual([[ids.lot], [ids.density, ids.date], [ids.crop], [ids.notes]]);
+    expect(rows(1)).toEqual([[ids.lot], [ids.density], [ids.date], [ids.crop], [ids.notes]]);
+  });
+
+  it("fits three columns on the computer, two on a tablet and one on the phone by the zone's width in rem", () => {
+    expect([19, 29.9, 30, 45.9, 46, 90].map(entryColumns)).toEqual([1, 1, 2, 2, 3, 3]);
   });
 });
