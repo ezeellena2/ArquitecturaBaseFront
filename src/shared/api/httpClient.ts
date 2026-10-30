@@ -67,12 +67,38 @@ async function send(path: string, init: RequestInit, token: string | undefined):
   return fetch(path, { ...init, headers });
 }
 
-async function request<T>(path: string, init: RequestInit = {}, binary: boolean | "download" | "file" = false): Promise<T> {
+/// Un multipart con el avance de la subida: XHR informa el progreso que `fetch` no da. Los mismos encabezados que `send`.
+function sendWithProgress(path: string, init: RequestInit, token: string | undefined, onProgress: (fraction: number) => void): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(init.method ?? "POST", path);
+    xhr.setRequestHeader("accept", "application/json");
+    if (token) xhr.setRequestHeader("authorization", `Bearer ${token}`);
+    const language = options.getLanguage?.();
+    if (language) xhr.setRequestHeader("accept-language", language);
+    xhr.upload.onprogress = event => { if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total); };
+    xhr.onload = () => {
+      const headers = new Headers();
+      for (const line of xhr.getAllResponseHeaders().trim().split(/[\r\n]+/)) {
+        const separator = line.indexOf(":");
+        if (separator > 0) headers.append(line.slice(0, separator).trim(), line.slice(separator + 1).trim());
+      }
+      resolve(new Response(xhr.status === 204 ? null : xhr.responseText, { status: xhr.status, headers }));
+    };
+    xhr.onerror = () => reject(new TypeError("The upload could not reach the server."));
+    xhr.onabort = () => reject(new DOMException("The upload was aborted.", "AbortError"));
+    init.signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+    xhr.send(init.body as XMLHttpRequestBodyInit);
+  });
+}
+
+async function request<T>(path: string, init: RequestInit = {}, binary: boolean | "download" | "file" = false,
+  transport: (path: string, init: RequestInit, token: string | undefined) => Promise<Response> = send): Promise<T> {
   let token = options.getAccessToken?.();
   let response: Response;
 
   try {
-    response = await send(path, init, token);
+    response = await transport(path, init, token);
   } catch (error) {
     if (init.signal?.aborted) throw error;
     throw ApiError.network();
@@ -84,7 +110,7 @@ async function request<T>(path: string, init: RequestInit = {}, binary: boolean 
 
     if (token) {
       try {
-        response = await send(path, init, token);
+        response = await transport(path, init, token);
       } catch (error) {
         if (init.signal?.aborted) throw error;
         throw ApiError.network();
@@ -148,4 +174,7 @@ export const api = {
   patch: <T>(path: string, body?: unknown, init?: RequestInit) =>
     request<T>(path, { ...init, method: "PATCH", body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body) }),
   delete: <T>(path: string, init?: RequestInit) => request<T>(path, { ...init, method: "DELETE" }),
+  /// POST multipart que informa el avance de la subida (de 0 a 1). Mismos errores, sesión y cancelación que `post`.
+  upload: <T>(path: string, body: FormData, onProgress: (fraction: number) => void, init?: RequestInit) =>
+    request<T>(path, { ...init, method: "POST", body }, false, (target, current, token) => sendWithProgress(target, current, token, onProgress)),
 };

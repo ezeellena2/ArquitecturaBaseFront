@@ -99,3 +99,28 @@ describe("Autocomplete", () => {
     expect(input).toHaveFocus();
   });
 });
+
+describe("Autocomplete with descriptions, states and multiple choice", () => {
+  it("shows each option's description and keeps the list open with a state when nothing matches", async () => {
+    const { rerender } = render(<Autocomplete aria-label="Lote" value="" onValueChange={() => {}} header="3 opciones"
+      options={[{ id: "7", label: "Lote 7 · 48 ha", description: "Soja 1ª · La Esperanza" }]} onSelect={() => {}} />);
+    await userEvent.click(screen.getByRole("combobox", { name: "Lote" }));
+    expect(screen.getByRole("option", { name: /Lote 7 · 48 ha/ })).toHaveTextContent("Soja 1ª · La Esperanza");
+    expect(screen.getByRole("listbox")).toHaveTextContent("3 opciones");
+    rerender(<Autocomplete aria-label="Lote" value="89" onValueChange={() => {}} options={[]} status="Ninguna opción coincide con «89»." onSelect={() => {}} />);
+    expect(screen.getByRole("listbox")).toHaveTextContent("Ninguna opción coincide con «89».");
+  });
+  it("toggles options of a multiple choice without closing and ignores the disabled ones", async () => {
+    const select = vi.fn();
+    render(<Autocomplete aria-label="Coadyuvantes" value="" onValueChange={() => {}} multiple onSelect={select}
+      options={[{ id: "oil", label: "Aceite metilado", selected: true }, { id: "ph", label: "Corrector de pH", disabled: true }, { id: "drift", label: "Antideriva" }]} />);
+    await userEvent.click(screen.getByRole("combobox", { name: "Coadyuvantes" }));
+    expect(screen.getByRole("listbox")).toHaveAttribute("aria-multiselectable", "true");
+    expect(screen.getByRole("option", { name: "Aceite metilado" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(screen.getByRole("option", { name: "Antideriva" }));
+    await userEvent.click(screen.getByRole("option", { name: "Corrector de pH" }));
+    expect(select).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith("drift");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+  });
+});

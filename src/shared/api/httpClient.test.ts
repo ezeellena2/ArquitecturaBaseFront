@@ -296,3 +296,36 @@ it("leaves the FormData boundary to the browser and preserves the file through t
     }
   } finally { fetch.mockRestore(); resetHttpClient(); }
 });
+
+it("uploads a multipart with progress through the same session, language, renewal and problem details", async () => {
+  const sent: { headers: Record<string, string>; body: unknown }[] = [];
+  class FakeUpload { onprogress: ((event: ProgressEvent) => void) | null = null; }
+  class FakeXhr {
+    static responses: { status: number; body: string }[] = [];
+    upload = new FakeUpload(); status = 0; responseText = ""; headers: Record<string, string> = {};
+    onload: (() => void) | null = null; onerror: (() => void) | null = null; onabort: (() => void) | null = null;
+    open() {}
+    setRequestHeader(name: string, value: string) { this.headers[name] = value; }
+    getAllResponseHeaders() { return "content-type: application/json\r\n"; }
+    abort() { this.onabort?.(); }
+    send(body: unknown) {
+      sent.push({ headers: this.headers, body });
+      this.upload.onprogress?.({ lengthComputable: true, loaded: 64, total: 100 } as ProgressEvent);
+      const response = FakeXhr.responses.shift()!;
+      this.status = response.status; this.responseText = response.body; this.onload?.();
+    }
+  }
+  vi.stubGlobal("XMLHttpRequest", FakeXhr);
+  configureHttpClient({ getAccessToken: () => sent.length === 0 ? "old" : "fresh", getLanguage: () => "en", renewSession: async () => "fresh" });
+  try {
+    FakeXhr.responses = [{ status: 401, body: "" }, { status: 200, body: JSON.stringify({ number: "LLU-000322" }) }];
+    const body = new FormData(); body.append("requestId", "r");
+    const progress: number[] = [];
+    await expect(api.upload("/api/forms/entries/f", body, fraction => progress.push(fraction))).resolves.toEqual({ number: "LLU-000322" });
+    expect(sent.map(request => request.headers.authorization)).toEqual(["Bearer old", "Bearer fresh"]);
+    expect(sent.every(request => request.headers["accept-language"] === "en" && request.body === body && !("content-type" in request.headers))).toBe(true);
+    expect(progress).toEqual([0.64, 0.64]);
+    FakeXhr.responses = [{ status: 409, body: JSON.stringify({ title: "Conflicto", status: 409, code: "Forms.Entry.VersionChanged" }) }];
+    await expect(api.upload("/api/forms/entries/f", body, () => {})).rejects.toMatchObject({ status: 409, code: "Forms.Entry.VersionChanged" });
+  } finally { vi.unstubAllGlobals(); resetHttpClient(); }
+});
