@@ -71,7 +71,7 @@ Tableros con shared/ui; su dueño posee datos y avisos.
 
 ### Carga desde la app
 
-- `FormEntryForm` arma las preguntas con las reglas fijas de CW12 y CW16: el control y el ancho salen del tipo (`entryQuestionSpan`, `entryRows`), hasta tres por renglón en escritorio, dos en tableta y una en el celular y en el panel, con una línea entre renglones. «Datos» y «Fotos y documentos» son `CollapsibleSection`, abiertas de entrada y, plegadas, con lo respondido en la banda. La unidad es parte de la etiqueta que escribió el autor.
+- `FormEntryForm` arma las preguntas con las reglas fijas de CW12 y CW16: las zonas salen de `entryZones` y el control y el ancho, del tipo (`entryQuestionSpan`, `entryRows`), hasta tres por renglón en escritorio, dos en tableta y una en el celular y en el panel, con una línea entre renglones. «Datos» y «Fotos y documentos» son `CollapsibleSection`, abiertas de entrada y, plegadas, con lo respondido en la banda. La unidad es parte de la etiqueta que escribió el autor.
 - `EntryCatalogField` (CW3) busca en el servidor: en escritorio, `Autocomplete` con el total, la descripción y «Mostrar 50 más», cuyos botones no le sacan el foco al campo; en el celular, la lista a pantalla completa, con «Listo» al elegir varias. `EntryFilesField` (CW4) revisa tipo, tamaño y cantidad antes de enviar y en el celular ofrece la cámara primero.
 - `FormEntryPanel` (CW2-B) carga junto a la planilla sólo en escritorio y se cierra con Escape o Cerrar, confirmando si hay algo cargado. `FormEntrySent` (CW5) muestra lo que la persona cargó con el número, estado y hora del envío, sin leer la respuesta guardada.
 

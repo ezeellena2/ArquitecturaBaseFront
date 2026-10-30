@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FormEntry, FormEntryQuestion } from "./api/entries";
-import { carryEntryDraft, entryAnswered, entryChoiceInRow, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
+import { carryEntryDraft, entryAnswered, entryChoiceInRow, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
 
 const ids = { lot: "00000000-0000-4000-8000-000000000001", crop: "00000000-0000-4000-8000-000000000002", density: "00000000-0000-4000-8000-000000000003",
   date: "00000000-0000-4000-8000-000000000004", notes: "00000000-0000-4000-8000-000000000005", photos: "00000000-0000-4000-8000-000000000006",
@@ -113,5 +113,14 @@ describe("entry form", () => {
     const draft = { ...initialEntryDraft(entry), values: { [ids.density]: "72,5", [ids.date]: "" }, files: { [ids.photos]: [photo()] } };
     expect(entry.questions.map(item => entryAnswered(item, draft))).toEqual([true, false, true, false, false, true]);
     expect([null, 100, 250, 500, 5000].map(maxLength => entryTextRows(question(ids.notes, "longText", { maxLength })))).toEqual([6, 2, 3, 5, 6]);
+  });
+
+  it("groups the questions in zones: the data in the editor's order and the files at the end", () => {
+    const [lot, crop, density, date, notes, photos] = entry.questions;
+    const mixed = { ...entry, questions: [lot, photos, crop, density, date, notes] };
+    expect(entryZones(mixed).map(zone => [zone.key, zone.questions.map(item => item.fieldId)])).toEqual([
+      ["data", [ids.lot, ids.crop, ids.density, ids.date, ids.notes]], ["files", [ids.photos]]]);
+    expect(entryZones({ ...entry, questions: [photos] }).map(zone => zone.key)).toEqual(["files"]);
+    expect(entryZones({ ...entry, questions: [] })).toEqual([]);
   });
 });

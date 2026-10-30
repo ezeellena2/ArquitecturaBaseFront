@@ -22,6 +22,19 @@ const isList = (question: FormEntryQuestion) => question.type === "choice" || qu
 /** The id of a question's control, so a problem can take the focus to it. */
 export const entryQuestionId = (fieldId: string) => "entry-" + fieldId;
 
+/** A folding zone of the loading page and the questions it holds. */
+export interface EntryZone { key: string; questions: FormEntryQuestion[] }
+
+/**
+ * The zones of the loading page (CW16): the data in the editor's order and the photos and documents at the end. Section
+ * titles, a later stage, add one zone per title to this list; the page draws whatever zones it receives.
+ */
+export function entryZones(entry: FormEntry): EntryZone[] {
+  const data = entry.questions.filter(question => !isFile(question));
+  const files = entry.questions.filter(isFile);
+  return [...data.length ? [{ key: "data", questions: data }] : [], ...files.length ? [{ key: "files", questions: files }] : []];
+}
+
 /** Up to five short own options go in a row; more, or longer ones, in a dropdown list (CW12). */
 export function entryChoiceInRow(question: FormEntryQuestion): boolean {
   return !!question.options && question.options.length <= 5 && question.options.every(option => option.label.length <= 20);

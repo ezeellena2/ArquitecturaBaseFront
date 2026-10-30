@@ -42,11 +42,39 @@ Quedan para etapas siguientes, con su tablero en el mismo lienzo: la vista propi
 (CW10-A) y anular (CW11-A) en la Etapa 3, las listas dependientes (CW7) en la Etapa 4 y los títulos de sección (CW15-B) en la
 Etapa 5.
 
+## Cómo se arma cada pregunta
+
+Reglas elegidas por el usuario el 2026-10-30, con CW16 como referencia y las reglas fijas de CW12. CW16 manda sobre cómo están
+dibujadas las preguntas en CW2-A y CW2-B.
+
+1. **Zonas plegables.** Las preguntas van en «Datos», en el orden del editor, y las fotos y los documentos al final, en «Fotos y
+   documentos». Cada zona es un `CollapsibleSection`, con la flecha en la banda; todas arrancan abiertas y, plegadas, dicen
+   «N de M respondidas». Al enviar con errores, una zona plegada que los tiene se abre sola y el foco va a la primera pregunta
+   con error.
+2. **Grilla de hasta tres por renglón.** Tres columnas en escritorio, dos en tableta y una en el celular y en el panel de CW2-B.
+   Las preguntas no se reordenan: una que no entra baja de renglón, y hay una línea entre renglones.
+3. **El ancho sale del tipo; el autor no lo elige.**
+
+   | Ocupa | Tipos de pregunta |
+   | --- | --- |
+   | Una columna | Número, fecha, sí o no, texto corto con largo máximo de hasta 30 y elegir una con lista desplegable |
+   | Dos columnas | Elegir de un catálogo (una o varias), elegir una con opciones en fila y texto corto de hasta 80 |
+   | El renglón entero | Texto largo, texto corto de más de 80 o sin largo máximo, elegir varias con opciones propias, foto y documento |
+
+4. **Controles por tipo (CW12).** Número y fecha, angostos dentro de su celda (en el celular, a lo ancho); sí o no, un
+   `SegmentedControl` sin valor inicial; elegir una, hasta cinco opciones cortas en fila, apiladas en el celular, y si no una
+   lista desplegable; elegir varias, casillas con «Elegí hasta N»; catálogo, la lista con búsqueda de CW3; fotos y documentos,
+   como en CW4. El texto largo crece de 2 a 6 renglones con su largo máximo.
+5. **Unidades en la etiqueta (CW13-A).** «Densidad (kg/ha)»: sin sufijo dentro del campo ni dato «Unidad» nuevo.
+6. **Títulos de sección, en una etapa posterior (CW15-B).** Serán un elemento nuevo del editor: en la app, una zona por título;
+   en WhatsApp, un subtítulo. En la Etapa 1 sólo existen «Datos» y «Fotos y documentos», y la página dibuja la lista de zonas
+   que recibe (`entryZones`), así los títulos suman zonas sin rehacerla.
+
 ## Decisiones de diseño
 
-- **Una sola forma de armar las preguntas.** `entryQuestionSpan` da el ancho por tipo y `entryRows` arma los renglones de tres
-  sin reordenar. El panel usa los mismos controles en una columna. «Opción corta» es de hasta 20 caracteres, el «angosto» de
-  CW12; el texto largo suma un renglón cada 100 caracteres de largo máximo, entre 2 y 6.
+- **Una sola forma de armar las preguntas.** `entryZones` arma las zonas, `entryQuestionSpan` da el ancho por tipo y
+  `entryRows`, los renglones de tres sin reordenar. El panel usa los mismos controles en una columna. «Opción corta» es de hasta
+  20 caracteres, el «angosto» de CW12; el texto largo suma un renglón cada 100 caracteres de largo máximo, entre 2 y 6.
 - **Lo cargado vive en su dueño.** El borrador es de la página o del panel: nunca va a la URL, el storage ni la caché de
   consultas. «Pantalla completa» lo pasa en memoria. Repetir un envío con las mismas respuestas conserva su identificador, así
   que un reintento tras un corte devuelve el primer número; cualquier cambio arma otro envío.
@@ -62,7 +90,8 @@ Etapa 5.
   tablero («58 lotes»): el catálogo no guarda cómo se llaman sus opciones.
 - Los mensajes de validación son los del tipo de pregunta («Completá esta respuesta.», «Elegí una opción.») y no los propios
   del dibujo («Elegí un lote.», «Escribí los milímetros.»), que el formulario no tiene.
-- Plegada, la banda de «Fotos y documentos» dice las fotos y archivos agregados («1 foto»); sin archivos, «0 de 1 respondidas».
+- Plegada, la banda de «Fotos y documentos» dice las fotos y archivos agregados («1 foto»), como la dibuja CW16; sin archivos,
+  «0 de 1 respondidas», como las demás zonas.
 - El aviso «Se guardó» del panel sale en la posición común de los avisos y puede tapar un momento el pie del panel.
 
 ## Correspondencia con `shared/ui`

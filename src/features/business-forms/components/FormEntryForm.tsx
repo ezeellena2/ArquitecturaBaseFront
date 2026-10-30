@@ -10,7 +10,7 @@ import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
 import type { FormEntry, FormEntryQuestion } from "../api/entries";
-import { entryAnswered, entryChoiceInRow, entryQuestionId, entryQuestionSpan, entryRows, entryTextRows, type EntryDraft } from "../entryForm";
+import { entryAnswered, entryChoiceInRow, entryQuestionId, entryQuestionSpan, entryRows, entryTextRows, entryZones, type EntryDraft, type EntryZone } from "../entryForm";
 import { EntryCatalogField } from "./EntryCatalogField";
 import { EntryFilesField } from "./EntryFilesField";
 
@@ -27,7 +27,6 @@ interface Props {
   reveal?: number;
 }
 
-type Zone = "data" | "files";
 const isFile = (question: FormEntryQuestion) => question.type === "photo" || question.type === "document";
 // The phone has one column and the tablet two; the computer, the three of the rule.
 const spanClass = { 1: "", 2: "sm:col-span-2", 3: "sm:col-span-2 lg:col-span-3" } as const;
@@ -38,34 +37,33 @@ const spanClass = { 1: "", 2: "sm:col-span-2", 3: "sm:col-span-2 lg:col-span-3" 
  */
 export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled, reveal = 0 }: Props) {
   const { t } = useTranslation("formEntries");
-  const [folded, setFolded] = useState<Partial<Record<Zone, boolean>>>({});
+  const [folded, setFolded] = useState<Readonly<Record<string, boolean>>>({});
   const [revealed, setRevealed] = useState(reveal);
-  const data = entry.questions.filter(item => !isFile(item));
-  const files = entry.questions.filter(isFile);
+  const zones = entryZones(entry);
   // Opened while rendering, so the focus that follows the send finds the question with the error.
   if (reveal !== revealed) {
     setRevealed(reveal);
-    setFolded(current => ({ data: current.data && !data.some(item => errors[item.fieldId]), files: current.files && !files.some(item => errors[item.fieldId]) }));
+    setFolded(current => Object.fromEntries(zones.map(zone => [zone.key, !!current[zone.key] && !zone.questions.some(item => errors[item.fieldId])])));
   }
   const question = (item: FormEntryQuestion) => <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}/>;
   if (layout === "panel") return <div className="flex flex-col gap-4">{entry.questions.map(question)}</div>;
 
   const answered = (items: FormEntryQuestion[]) => t("zone.answered", { count: items.filter(item => entryAnswered(item, draft)).length, total: items.length });
-  const attached = () => {
-    const count = (type: FormEntryQuestion["type"]) => files.filter(item => item.type === type).reduce((sum, item) => sum + (draft.files[item.fieldId]?.length ?? 0), 0);
+  // Folded, a zone says how many questions were answered; the files zone says what was attached, as CW16 draws it.
+  const summary = (items: FormEntryQuestion[]) => {
+    if (!items.every(isFile)) return answered(items);
+    const count = (type: FormEntryQuestion["type"]) => items.filter(item => item.type === type).reduce((sum, item) => sum + (draft.files[item.fieldId]?.length ?? 0), 0);
     const parts = [count("photo") ? t("sent.photos", { count: count("photo") }) : null, count("document") ? t("sent.files", { count: count("document") }) : null].filter(Boolean);
-    return parts.length ? parts.join(" · ") : answered(files);
+    return parts.length ? parts.join(" · ") : answered(items);
   };
-  const zone = (key: Zone, title: string, items: FormEntryQuestion[], summary: string) => <CollapsibleSection title={title} open={!folded[key]}
-    onOpenChange={open => setFolded(current => ({ ...current, [key]: !open }))} expandLabel={t("zone.expand", { name: title })} collapseLabel={t("zone.collapse", { name: title })} summary={summary}>
-    <div className="divide-y divide-[var(--color-border)]">{entryRows(items).map(row => <div key={row[0].fieldId} className="grid grid-cols-1 gap-x-5 gap-y-3 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
+  const title = (zone: EntryZone) => zone.key === "files" ? t("page.files") : t("page.data");
+  return <div className="flex flex-col gap-4">{zones.map(zone => <CollapsibleSection key={zone.key} title={title(zone)} open={!folded[zone.key]}
+    onOpenChange={open => setFolded(current => ({ ...current, [zone.key]: !open }))} expandLabel={t("zone.expand", { name: title(zone) })}
+    collapseLabel={t("zone.collapse", { name: title(zone) })} summary={summary(zone.questions)}>
+    <div className="divide-y divide-[var(--color-border)]">{entryRows(zone.questions).map(row => <div key={row[0].fieldId} className="grid grid-cols-1 gap-x-5 gap-y-3 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
       {row.map(item => <div key={item.fieldId} className={"min-w-0 " + spanClass[entryQuestionSpan(item)]}>{question(item)}</div>)}
     </div>)}</div>
-  </CollapsibleSection>;
-  return <div className="flex flex-col gap-4">
-    {data.length ? zone("data", t("page.data"), data, answered(data)) : null}
-    {files.length ? zone("files", t("page.files"), files, attached()) : null}
-  </div>;
+  </CollapsibleSection>)}</div>;
 }
 
 function EntryQuestion({ entry, question, draft, onChange, error, disabled }: {
