@@ -18,6 +18,8 @@ export function createResponseVisualFixtures(
   const en = language === "en";
   const sheet = responseSheetFixture();
   if (scenario === "responses-pdf") sheet.records.items[0].hasPdf = true;
+  // CW6-A: the newest response was loaded in the app.
+  if (scenario === "responses-app") sheet.records.items[0].channel = "app";
   if(scenario === "responses-approval"){sheet.hasApproval=true;for(const row of sheet.records.items)row.state="PendingApproval";}
   sheet.name = scenario === "responses-assisted" ? en ? "Invoice" : "Factura" : en ? "Delivery report" : "Informe de entregas";
   const labels = en
@@ -154,6 +156,7 @@ export function createResponseVisualFixtures(
         (ignoreDimension === "actor" ||
           !filter.actorIds?.length ||
           filter.actorIds.includes(row.actor.userId)) &&
+        (filter.enteredInApp == null || (row.channel === "app") === filter.enteredInApp) &&
         (!filter.receivedFromUtc ||
           row.submittedAtUtc >= filter.receivedFromUtc) &&
         (!filter.receivedToUtc || row.submittedAtUtc < filter.receivedToUtc) &&
@@ -347,6 +350,7 @@ export function createResponseVisualFixtures(
         const row = sheet.records.items.find((row) => row.id === recordId)!;
         const detail: ResponseDetail = {
           ...base,
+          ...(row.channel === "app" ? { channel: "app", origin: { ...base.origin!, channelId: "app", conversationId: null, maskedAddress: null } } : {}),
           name: sheet.name,
           values: row.cells
             .filter((cell) => cell.state !== "NotAsked")
