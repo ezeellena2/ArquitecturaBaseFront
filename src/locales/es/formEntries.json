@@ -1,0 +1,132 @@
+{
+  "load": "Cargar",
+  "loadForm": "Cargar {{name}}",
+  "addResponse": "Agregar respuesta",
+  "sheet": {
+    "channel": "Canal",
+    "allChannels": "Todos los canales",
+    "channels": {
+      "app": "App"
+    }
+  },
+  "origin": {
+    "app": "{{date}} · en la app, la cargó {{name}}",
+    "appBy": "En la app, la cargó {{name}}"
+  },
+  "page": {
+    "title": "Nueva respuesta",
+    "data": "Datos",
+    "files": "Fotos y documentos",
+    "opening": "Abriendo el formulario",
+    "loadFailed": "No se pudo abrir el formulario",
+    "loadFailedHint": "Revisá la conexión y volvé a intentar.",
+    "required": "Obligatoria",
+    "choose": "Elegí una opción"
+  },
+  "zone": {
+    "expand": "Expandir {{name}}",
+    "collapse": "Plegar {{name}}",
+    "answered": "{{count}} de {{total}} respondidas"
+  },
+  "leave": {
+    "title": "¿Salir sin enviar?",
+    "description": "Lo que cargaste en {{name}} se pierde.",
+    "stay": "Seguir cargando",
+    "confirm": "Salir sin enviar"
+  },
+  "panel": {
+    "label": "Nueva respuesta de {{name}}",
+    "keep": "Mantener las respuestas para la siguiente",
+    "fullScreen": "Pantalla completa",
+    "closeTitle": "¿Cerrar sin enviar?",
+    "closeDescription": "Lo que cargaste en esta respuesta se pierde.",
+    "closeConfirm": "Cerrar sin enviar"
+  },
+  "problems": {
+    "required": "Completá esta respuesta.",
+    "choose": "Elegí una opción.",
+    "chooseAtLeast_one": "Elegí al menos {{count}}.",
+    "chooseAtLeast_other": "Elegí al menos {{count}}.",
+    "chooseAtMost_one": "Elegí hasta {{count}}.",
+    "chooseAtMost_other": "Elegí hasta {{count}}.",
+    "number": "Escribí un número, como 72,5.",
+    "date": "Elegí una fecha.",
+    "maxLength_one": "Hasta {{count}} carácter.",
+    "maxLength_other": "Hasta {{count}} caracteres.",
+    "filesAtLeast_one": "Agregá al menos un archivo.",
+    "filesAtLeast_other": "Agregá al menos {{count}} archivos.",
+    "filesAtMost_one": "Hasta {{count}} archivo.",
+    "filesAtMost_other": "Hasta {{count}} archivos."
+  },
+  "catalog": {
+    "search": "Buscar en {{label}}",
+    "count_one": "{{count}} opción",
+    "count_other": "{{count}} opciones",
+    "more": "Mostrar 50 más",
+    "loading": "Cargando las opciones",
+    "noMatches": "Ninguna opción coincide con «{{search}}».",
+    "empty": "No hay opciones para vos.",
+    "failed": "No se pudieron traer las opciones.",
+    "clear": "Quitar {{label}}",
+    "unavailable": "«{{title}}» ya no está disponible. Elegí otro.",
+    "missingData": "No podés enviar {{form}}: te falta el dato «{{datum}}». Pedíselo a quien administra los datos de las personas.",
+    "missingDataReason": "Te falta el dato «{{datum}}».",
+    "blocked": "Esta lista no está disponible ahora.",
+    "chooseUpTo": "Elegí hasta {{count}}.",
+    "chosenOf": "Elegiste {{count}} de {{max}}.",
+    "done": "Listo · {{count}} elegidos",
+    "close": "Cerrar la lista"
+  },
+  "files": {
+    "upTo": "hasta {{count}}",
+    "dropPhotos": "Arrastrá las fotos acá o",
+    "dropFiles": "Arrastrá los archivos acá o",
+    "choosePhotos": "Elegir fotos",
+    "choosePhoto": "Elegir foto",
+    "chooseFiles": "Elegir archivos",
+    "photoHint": "JPG o PNG, hasta {{size}} MB cada una.",
+    "documentHint": "PDF, Word, Excel o imagen, hasta {{size}} MB.",
+    "add": "Agregar",
+    "counter": "{{count}} de {{max}}",
+    "remove": "Quitar {{name}}",
+    "takePhoto": "Tomar foto",
+    "gallery": "Elegir de la galería",
+    "otherFile": "Elegir otro archivo",
+    "photoType": "{{name}} no es una foto JPG o PNG.",
+    "documentType": "{{name}} no es un PDF, Word, Excel ni una imagen.",
+    "size": "{{name}} pesa {{size}} MB; el máximo es {{max}} MB.",
+    "count": "{{name}} no entra: el máximo es {{max}}.",
+    "maxReached": "Llegaste al máximo de {{max}}.",
+    "size_kb": "{{size}} KB",
+    "size_mb": "{{size}} MB",
+    "removeShort": "Quitar"
+  },
+  "send": {
+    "sending": "Enviando… {{percent}} %",
+    "notSaved": "No se guardó",
+    "review": "Revisá «{{label}}».",
+    "failed": "No se pudo enviar",
+    "failedHint": "Revisá la conexión y volvé a tocar {{submit}}.",
+    "newVersion": "{{name}} tiene una versión nueva. Pasá a ella para enviar: lo que cargaste se conserva.",
+    "useNewVersion": "Pasar a la versión nueva",
+    "deactivated": "{{name}} se dio de baja y ya no se puede cargar.",
+    "deactivatedUnknown": "Este formulario se dio de baja y ya no se puede cargar.",
+    "backToForms": "Volver a Formularios",
+    "saved": "Se guardó {{number}}",
+    "savedDetail": "{{name}} · {{state}}"
+  },
+  "sent": {
+    "title": "Enviada",
+    "loadAnother": "Cargar otra",
+    "viewInSheet": "Ver en la planilla",
+    "savedAt": "Se guardó {{date}}",
+    "version": "{{name}}, versión {{version}}",
+    "files_one": "{{count}} archivo",
+    "files_other": "{{count}} archivos",
+    "photos_one": "{{count}} foto",
+    "photos_other": "{{count}} fotos",
+    "yes": "Sí",
+    "no": "No",
+    "none": "—"
+  }
+}

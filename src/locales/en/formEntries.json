@@ -1,0 +1,132 @@
+{
+  "load": "Load",
+  "loadForm": "Load {{name}}",
+  "addResponse": "Add response",
+  "sheet": {
+    "channel": "Channel",
+    "allChannels": "All channels",
+    "channels": {
+      "app": "App"
+    }
+  },
+  "origin": {
+    "app": "{{date}} · in the app, loaded by {{name}}",
+    "appBy": "In the app, loaded by {{name}}"
+  },
+  "page": {
+    "title": "New response",
+    "data": "Data",
+    "files": "Photos and documents",
+    "opening": "Opening the form",
+    "loadFailed": "The form could not be opened",
+    "loadFailedHint": "Check the connection and try again.",
+    "required": "Required",
+    "choose": "Choose an option"
+  },
+  "zone": {
+    "expand": "Expand {{name}}",
+    "collapse": "Collapse {{name}}",
+    "answered": "{{count}} of {{total}} answered"
+  },
+  "leave": {
+    "title": "Leave without sending?",
+    "description": "What you loaded in {{name}} will be lost.",
+    "stay": "Keep loading",
+    "confirm": "Leave without sending"
+  },
+  "panel": {
+    "label": "New response to {{name}}",
+    "keep": "Keep the answers for the next one",
+    "fullScreen": "Full screen",
+    "closeTitle": "Close without sending?",
+    "closeDescription": "What you loaded in this response will be lost.",
+    "closeConfirm": "Close without sending"
+  },
+  "problems": {
+    "required": "Fill in this answer.",
+    "choose": "Choose an option.",
+    "chooseAtLeast_one": "Choose at least {{count}}.",
+    "chooseAtLeast_other": "Choose at least {{count}}.",
+    "chooseAtMost_one": "Choose up to {{count}}.",
+    "chooseAtMost_other": "Choose up to {{count}}.",
+    "number": "Write a number, like 72.5.",
+    "date": "Choose a date.",
+    "maxLength_one": "Up to {{count}} character.",
+    "maxLength_other": "Up to {{count}} characters.",
+    "filesAtLeast_one": "Add at least one file.",
+    "filesAtLeast_other": "Add at least {{count}} files.",
+    "filesAtMost_one": "Up to {{count}} file.",
+    "filesAtMost_other": "Up to {{count}} files."
+  },
+  "catalog": {
+    "search": "Search in {{label}}",
+    "count_one": "{{count}} option",
+    "count_other": "{{count}} options",
+    "more": "Show 50 more",
+    "loading": "Loading the options",
+    "noMatches": "No option matches «{{search}}».",
+    "empty": "There are no options for you.",
+    "failed": "The options could not be loaded.",
+    "clear": "Remove {{label}}",
+    "unavailable": "«{{title}}» is no longer available. Choose another one.",
+    "missingData": "You cannot send {{form}}: your «{{datum}}» is missing. Ask whoever manages people's data for it.",
+    "missingDataReason": "Your «{{datum}}» is missing.",
+    "blocked": "This list is not available right now.",
+    "chooseUpTo": "Choose up to {{count}}.",
+    "chosenOf": "You chose {{count}} of {{max}}.",
+    "done": "Done · {{count}} chosen",
+    "close": "Close the list"
+  },
+  "files": {
+    "upTo": "up to {{count}}",
+    "dropPhotos": "Drag the photos here or",
+    "dropFiles": "Drag the files here or",
+    "choosePhotos": "Choose photos",
+    "choosePhoto": "Choose a photo",
+    "chooseFiles": "Choose files",
+    "photoHint": "JPG or PNG, up to {{size}} MB each.",
+    "documentHint": "PDF, Word, Excel or image, up to {{size}} MB.",
+    "add": "Add",
+    "counter": "{{count}} of {{max}}",
+    "remove": "Remove {{name}}",
+    "takePhoto": "Take a photo",
+    "gallery": "Choose from the gallery",
+    "otherFile": "Choose another file",
+    "photoType": "{{name}} is not a JPG or PNG photo.",
+    "documentType": "{{name}} is not a PDF, Word, Excel or image.",
+    "size": "{{name}} weighs {{size}} MB; the maximum is {{max}} MB.",
+    "count": "{{name}} does not fit: the maximum is {{max}}.",
+    "maxReached": "You reached the maximum of {{max}}.",
+    "size_kb": "{{size}} KB",
+    "size_mb": "{{size}} MB",
+    "removeShort": "Remove"
+  },
+  "send": {
+    "sending": "Sending… {{percent}}%",
+    "notSaved": "It was not saved",
+    "review": "Check «{{label}}».",
+    "failed": "It could not be sent",
+    "failedHint": "Check the connection and press {{submit}} again.",
+    "newVersion": "{{name}} has a new version. Switch to it to send: what you loaded is kept.",
+    "useNewVersion": "Switch to the new version",
+    "deactivated": "{{name}} was deactivated and can no longer be loaded.",
+    "deactivatedUnknown": "This form was deactivated and can no longer be loaded.",
+    "backToForms": "Back to Forms",
+    "saved": "{{number}} was saved",
+    "savedDetail": "{{name}} · {{state}}"
+  },
+  "sent": {
+    "title": "Sent",
+    "loadAnother": "Load another",
+    "viewInSheet": "View in the sheet",
+    "savedAt": "Saved {{date}}",
+    "version": "{{name}}, version {{version}}",
+    "files_one": "{{count}} file",
+    "files_other": "{{count}} files",
+    "photos_one": "{{count}} photo",
+    "photos_other": "{{count}} photos",
+    "yes": "Yes",
+    "no": "No",
+    "none": "—"
+  }
+}
