@@ -58,6 +58,11 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 - `useResponsePanelNavigation` aplica una página tardía sólo al mismo contexto. `useResponseDocumentDownloads` posee una descarga por respuesta, compartida por el menú y la pestaña PDF, incluidos los documentos cargados en full: cerrar el menú no la aborta; cambiar de dueño, perder lectura o desmontar sí. Respeta la espera de un 429. El callback de denegación del detalle depende del callback estable del workspace: actualizar sólo navegación no reinicia lectores de PDF del mismo documento.
 - `useApprovalQueries` exige `formapprovals.decide` y conserva datos previos sólo del mismo dueño. `useFormPendingApprovals` lee sólo las tareas decidibles del formulario, sin opciones globales. Negar la lista, tarea, decisión o navegación retira su metadata y contexto sin negar la planilla autorizada.
 
+### Carga desde la app
+
+- `useFormEntry` relee la versión activa en cada apertura, con claves por dueño, `gcTime` 0 y sin reintentos: una versión nueva o una baja se ve enseguida. `useEntryOptions` pide 50 opciones por vez y sólo con la lista abierta. `useFormEntrySubmit` conserva el `requestId` mientras se reenvían las mismas respuestas (`entrySignature`), así un reintento tras un corte devuelve el primer número; cualquier cambio arma otro envío. Nada pasa por MutationCache.
+- `useEntryEditor` es el dueño de una respuesta en carga, en la página o el panel: el borrador en memoria (`entryForm`), los problemas después del primer intento y en vivo, los errores por pregunta del servidor, los conflictos que frenan el envío (versión, baja, permiso, formulario ausente) y `reveal`, que abre las zonas plegadas con algo para corregir antes de llevar el foco. `carryEntryDraft` conserva lo que sigue valiendo en una versión nueva y `keepForNextEntry`, todo menos los archivos. «Pantalla completa» pasa el borrador del panel a la página con `entryHandoff`, en memoria y por dueño, nunca por URL, historia ni storage.
+
 ## Referencias
 
 - Tests: `useFormDraftEditor.test.tsx`, `useFormPublication.test.ts`, `useFormPublicationCheck.test.ts`, `useCatalogDraftEditor.test.tsx`, `useCatalogQueries.test.tsx`, `useUnobservedQueryCleanup.test.tsx` y, en la raíz, `draftSession.test.ts`, `editorModel.test.ts`, `catalogDraft.test.ts`, `workflow.test.ts`.

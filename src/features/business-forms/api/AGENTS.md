@@ -64,6 +64,10 @@ Familias:
 - Los bytes de PDF exigen `application/pdf` y `Content-Language` es o en, que indica el idioma real de la copia.
 - Reglas y sugerencias comparten la gramática de condiciones de la planilla y validan las preguntas con `canonicalFormFieldSchema`. Cada condición guardada de una regla trae `values`, null o una lista. `rules/options` trae preguntas, roles y opciones de condición bajo `formrules.manage`, sin exigir leer roles, catálogos ni respuestas. Las opciones de sugerencias son versiones publicadas: `destinations` son los destinos elegibles y `unavailableDestinations` conserva nombre y estado de los dados de baja o eliminados.
 
+### Carga desde la app
+
+- `entries.ts` lee la versión activa para cargar, una página de 50 opciones de una pregunta de catálogo (con búsqueda) y envía la respuesta en multipart con `api.upload`, que informa el avance de la subida: `requestId`, `versionId`, `answers` en JSON y cada archivo con su `fileFieldIds`. Los guards son `strictObject` y un cuerpo fuera del contrato falla sin conservar lo que traía. `Forms.Entry.VersionChanged` y `Forms.Entry.Unavailable` llegan como `ApiError` 409. La cohorte es `entries` (`forms-entries-http`), del productor `FormEntryHttpTests`.
+
 ### Tests de contrato
 
 - Cada familia tiene su `*HttpContract.test.ts` (y `catalogFilters.test.ts`, `formFileDraftHttpContract.test.ts`) que lee cuerpos sin modificar mediante `httpCohort("<familia>")` de `src/test/httpCohort.ts`. El helper verifica tamaño y SHA256 contra el `provenance.json` del exportador; la variable de entrada que declara para cada familia (por ejemplo `FORMS_HTTP_CONTRACT_INPUT`) apunta a una salida nueva del productor sin copiarla.
