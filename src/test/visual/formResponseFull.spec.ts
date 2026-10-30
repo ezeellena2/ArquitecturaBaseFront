@@ -18,6 +18,18 @@ async function assertReadOnly(page: Page) {
 async function assertContained(page: Page, width: number) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
 }
+/** What the breadcrumbs show: the displayed items, none squeezed to nothing, and the leaf whole inside the bar. */
+async function shownCrumbs(page: Page, language: string) {
+  return page.getByRole("navigation", { name: language === "en" ? "Breadcrumb" : "Migas de pan", exact: true }).locator("ol").evaluate(list => {
+    const shown = [...list.children].filter(item => item.checkVisibility());
+    const leaf = list.querySelector('[aria-current="page"]')!;
+    return {
+      items: shown.map(item => item.textContent!.trim()),
+      squeezed: shown.filter(item => item.getBoundingClientRect().width < 1).length,
+      leafCut: leaf.getBoundingClientRect().right > list.getBoundingClientRect().right + 1 || leaf.scrollWidth > leaf.clientWidth + 1,
+    };
+  });
+}
 async function assertSheetScroll(page: Page, width: number) {
   const box = page.locator('[data-slot="table-container"]');
   const bounds = (await box.boundingBox())!;
@@ -60,6 +72,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     }
     await expect(page.getByRole("heading", { name: "TEST-000002", level: 1, exact: true })).toBeVisible();
     expect(await routerLocation(page)).toEqual({ pathname: firstPath, search: "" });
+    // The whole trail on the computer; with a header as narrow as a phone's, only the form and the number.
+    await expect.poll(() => shownCrumbs(page, language)).toEqual({ items: mobile ? [formName, "/", "TEST-000002"]
+      : [en ? "Home" : "Inicio", "/", en ? "Form management" : "Gestión de formularios", "/", en ? "Forms" : "Formularios", "/", formName, "/", "TEST-000002"], squeezed: 0, leafCut: false });
     if (mobile) {
       const breadcrumbs = page.getByRole("navigation", { name: en ? "Breadcrumb" : "Migas de pan", exact: true });
       const parent = breadcrumbs.getByRole("link", { name: formName, exact: true }).locator("..");
@@ -211,6 +226,26 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.keyboard.press("Escape");
     await expect(page.getByRole("link", { name: (en ? "Review" : "Revisar") + " TEST-000002", exact: true })).toBeFocused();
     expect((await fixtureCalls(page)).filter(call => /^\/api\/forms\/(?:records\/|definitions\/[^/]+\/records)/.test(call.path))).toEqual([]);
+    await assertReadOnly(page);
+  });
+}
+
+for (const language of ["es", "en"] as const) {
+  test("DC1 breadcrumbs on a tablet with the forms panel " + language, async ({ page }) => {
+    const en = language === "en";
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto("/src/test/visual/index.html?screen=" + encodeURIComponent(firstPath) + "&scenario=responses-full&lang=" + language);
+    await expect(page.getByRole("heading", { name: "TEST-000002", level: 1, exact: true })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    // With the forms panel open the header is as narrow as a phone's: only the form and the number, nothing empty or cut.
+    const short = { items: [en ? "Delivery report" : "Informe de entregas", "/", "TEST-000002"], squeezed: 0, leafCut: false };
+    await expect.poll(() => shownCrumbs(page, language)).toEqual(short);
+    await assertContained(page, 768);
+    await page.screenshot({ path: "test-results/response-full-tablet-" + language + "-768.png" });
+    // Closed, the header is still under the phone's 40 rem.
+    await page.getByRole("button", { name: en ? "Close the Forms panel" : "Cerrar el panel Formularios", exact: true }).click();
+    expect(await shownCrumbs(page, language)).toEqual(short);
+    await page.screenshot({ path: "test-results/response-full-tablet-closed-" + language + "-768.png" });
     await assertReadOnly(page);
   });
 }

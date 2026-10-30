@@ -48,6 +48,19 @@ async function assertControlsInsideRows(page: Page) {
   expect(outside).toEqual([]);
 }
 
+/** What the breadcrumbs show: the displayed items, none squeezed to nothing, and the leaf whole inside the bar. */
+async function shownCrumbs(page: Page, language: string) {
+  return page.getByRole("navigation", { name: language === "en" ? "Breadcrumb" : "Migas de pan", exact: true }).locator("ol").evaluate(list => {
+    const shown = [...list.children].filter(item => item.checkVisibility());
+    const leaf = list.querySelector('[aria-current="page"]')!;
+    return {
+      items: shown.map(item => item.textContent!.trim()),
+      squeezed: shown.filter(item => item.getBoundingClientRect().width < 1).length,
+      leafCut: leaf.getBoundingClientRect().right > list.getBoundingClientRect().right + 1 || leaf.scrollWidth > leaf.clientWidth + 1,
+    };
+  });
+}
+
 async function choose(page: Page, label: string, option: string, phone: boolean) {
   if (phone) {
     await page.getByRole("button", { name: label, exact: true }).click();
@@ -72,6 +85,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // CW16: the rows are built with the columns in use, so every visible row has its line.
     expect(await questionsPerRow(page)).toEqual(phone ? [1, 1, 1, 1, 1, 1, 1, 1] : [1, 1, 2, 2, 1, 1]);
     await assertControlsInsideRows(page);
+    // The response hangs from its form; with a header as narrow as a phone's, the breadcrumbs keep only the form and the leaf.
+    const sowing = es ? "Siembra" : "Sowing";
+    const leaf = es ? "Nueva respuesta" : "New response";
+    await expect.poll(() => shownCrumbs(page, language)).toEqual({ items: phone ? [sowing, "/", leaf]
+      : [es ? "Inicio" : "Home", "/", es ? "Gestión de formularios" : "Form management", "/", es ? "Formularios" : "Forms", "/", sowing, "/", leaf], squeezed: 0, leafCut: false });
     await page.screenshot({ path: "test-results/form-entry-page-" + language + "-" + width + ".png", fullPage: true });
 
     const send = page.getByRole("button", { name: es ? "Enviar" : "Send", exact: true });
@@ -137,11 +155,16 @@ for (const language of ["es", "en"] as const) {
     // With the forms panel open the zone is as narrow as a phone: one question per row and nothing out of its row.
     expect(await questionsPerRow(page)).toEqual([1, 1, 1, 1, 1, 1, 1, 1]);
     await assertControlsInsideRows(page);
+    // The header is too: the breadcrumbs keep only the form and the leaf, with nothing empty or cut.
+    const short = { items: [es ? "Siembra" : "Sowing", "/", es ? "Nueva respuesta" : "New response"], squeezed: 0, leafCut: false };
+    await expect.poll(() => shownCrumbs(page, language)).toEqual(short);
     await page.screenshot({ path: "test-results/form-entry-page-" + language + "-768.png", fullPage: true });
     // Closing the panel leaves room for two: Lote, Cultivo and Semilla take both, Densidad and Hectáreas share a row.
     await page.getByRole("button", { name: es ? "Cerrar el panel Formularios" : "Close the Forms panel", exact: true }).click();
     await expect.poll(() => questionsPerRow(page)).toEqual([1, 1, 1, 2, 1, 1, 1]);
     await assertControlsInsideRows(page);
+    // The header is still under the phone's 40 rem, where the whole trail cuts the form's name.
+    expect(await shownCrumbs(page, language)).toEqual(short);
     await page.screenshot({ path: "test-results/form-entry-page-" + language + "-768-two-columns.png", fullPage: true });
   });
 }
@@ -200,6 +223,9 @@ for (const language of ["es", "en"] as const) {
     await page.getByRole("button", { name: es ? "Agregar respuesta" : "Add response", exact: true }).click();
     const panel = page.getByRole("region", { name: es ? "Nueva respuesta de Informe de entregas" : "New response to Delivery report" });
     await expect(panel.getByLabel(amount)).toBeVisible();
+    // Number and date stay narrow in the panel, as on the board (CW12): only the page's single column puts them across.
+    const rem = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+    expect((await panel.getByLabel(amount).boundingBox())!.width).toBeLessThanOrEqual(37.5 / 4 * rem + 1);
     await expect(page.getByRole("link", { name: "TEST-000002", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: "test-results/form-entry-panel-" + language + "-1440.png" });

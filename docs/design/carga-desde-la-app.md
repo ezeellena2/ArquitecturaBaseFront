@@ -62,10 +62,11 @@ dibujadas las preguntas en CW2-A y CW2-B.
    | Dos columnas | Elegir de un catálogo (una o varias), elegir una con opciones en fila y texto corto de hasta 80 |
    | El renglón entero | Texto largo, texto corto de más de 80 o sin largo máximo, elegir varias con opciones propias, foto y documento |
 
-4. **Controles por tipo (CW12).** Número y fecha, angostos dentro de su celda (en el celular, a lo ancho); sí o no, un
-   `SegmentedControl` sin valor inicial; elegir una, hasta cinco opciones cortas en fila, apiladas en el celular, y si no una
-   lista desplegable; elegir varias, casillas con «Elegí hasta N»; catálogo, la lista con búsqueda de CW3; fotos y documentos,
-   como en CW4. El texto largo crece de 2 a 6 renglones con su largo máximo.
+4. **Controles por tipo (CW12).** Número y fecha, angostos: en la página, dentro de su celda y a lo ancho en una columna; en
+   el panel, como en CW2-B, salvo en el celular. Sí o no, un `SegmentedControl` sin valor inicial; elegir una, hasta cinco
+   opciones cortas en fila, apiladas en el celular, y si no una lista desplegable; elegir varias, casillas con «Elegí hasta N»;
+   catálogo, la lista con búsqueda de CW3; fotos y documentos, como en CW4. El texto largo crece de 2 a 6 renglones con su
+   largo máximo.
 5. **Unidades en la etiqueta (CW13-A).** «Densidad (kg/ha)»: sin sufijo dentro del campo ni dato «Unidad» nuevo.
 6. **Títulos de sección, en una etapa posterior (CW15-B).** Serán un elemento nuevo del editor: en la app, una zona por título;
    en WhatsApp, un subtítulo. En la Etapa 1 sólo existen «Datos» y «Fotos y documentos», y la página dibuja la lista de zonas
@@ -76,9 +77,10 @@ dibujadas las preguntas en CW2-A y CW2-B.
 - **Una sola forma de armar las preguntas.** `entryZones` arma las zonas, `entryQuestionSpan` da el ancho por tipo y
   `entryRows`, los renglones con las columnas en uso, sin reordenar. Las columnas salen del ancho de la zona y no del de la
   pantalla (`entryColumns`: tres desde 46 rem, dos desde 30 rem y una debajo), porque en una tableta los paneles del menú
-  ocupan parte del ancho: con el panel de Formularios abierto, una tableta tiene lugar para una columna. En una columna, número
-  y fecha también van a lo ancho. El panel usa los mismos controles en una columna. «Opción corta» es de hasta
-  20 caracteres, el «angosto» de CW12; el texto largo suma un renglón cada 100 caracteres de largo máximo, entre 2 y 6.
+  ocupan parte del ancho: con el panel de Formularios abierto, una tableta tiene lugar para una columna. En una columna de la
+  página, número y fecha también van a lo ancho. El panel usa los mismos controles en una columna, con número y fecha
+  angostos salvo en el celular, como en CW2-B. «Opción corta» es de hasta 20 caracteres, el «angosto» de CW12; el texto largo
+  suma un renglón cada 100 caracteres de largo máximo, entre 2 y 6.
 - **Lo cargado vive en su dueño.** El borrador es de la página o del panel: nunca va a la URL, el storage ni la caché de
   consultas. «Pantalla completa» lo pasa en memoria. Repetir un envío con las mismas respuestas conserva su identificador, así
   que un reintento tras un corte devuelve el primer número; cualquier cambio arma otro envío.
@@ -87,6 +89,10 @@ dibujadas las preguntas en CW2-A y CW2-B.
   La versión nueva y la baja llegan como aviso arriba, sin perder lo cargado.
 - **Quien sólo completa no lee respuestas.** «Enviada» se arma con lo que la persona cargó y el número, estado y hora del envío;
   no pide la respuesta guardada. Las migas muestran el formulario como texto, sin enlace a una planilla que no puede abrir.
+- **Las migas miden la barra.** En «Nueva respuesta» y en el detalle de una respuesta, con la barra superior de menos de
+  40 rem (el celular, o una tableta con un panel del menú abierto) quedan sólo el formulario y la hoja: «Siembra / Nueva
+  respuesta». Decide el ancho de la barra (`@container` en `Topbar`) y no el de la pantalla, así no quedan segmentos vacíos
+  ni la hoja cortada.
 
 ## Diferencias con el dibujo
 

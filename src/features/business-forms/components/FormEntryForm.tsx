@@ -60,8 +60,10 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
     setRevealed(reveal);
     setFolded(current => Object.fromEntries(zones.map(zone => [zone.key, !!current[zone.key] && !zone.questions.some(item => errors[item.fieldId])])));
   }
+  // Number and date stay narrow (CW12): in the panel, except on the phone; on the page, within their cell, and across in one column.
+  const narrowClass = layout === "panel" ? "w-full sm:w-37.5" : columns === 1 ? undefined : "w-full max-w-37.5";
   const question = (item: FormEntryQuestion) => <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}
-    wide={layout === "panel" || columns === 1}/>;
+    narrowClass={narrowClass}/>;
   if (layout === "panel") return <div className="flex flex-col gap-4">{entry.questions.map(question)}</div>;
 
   const answered = (items: FormEntryQuestion[]) => t("zone.answered", { count: items.filter(item => entryAnswered(item, draft)).length, total: items.length });
@@ -82,10 +84,10 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   </CollapsibleSection>)}</div>;
 }
 
-function EntryQuestion({ entry, question, draft, onChange, error, disabled, wide }: {
+function EntryQuestion({ entry, question, draft, onChange, error, disabled, narrowClass }: {
   entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; error?: string; disabled?: boolean;
-  /** One column: every control goes across, like on the phone (CW12). */
-  wide: boolean;
+  /** The width of number and date; without it they go across. */
+  narrowClass?: string;
 }) {
   const { t } = useTranslation("formEntries");
   const id = entryQuestionId(question.fieldId);
@@ -144,9 +146,8 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled, wide
     ]}/>
   </div>, false);
   if (question.type === "longText") return field(<Textarea value={value} maxLength={question.maxLength ?? undefined} rows={entryTextRows(question)} disabled={disabled} onChange={event => setValue(event.target.value)}/>);
-  // Number and date stay narrow within their cell (CW12); in one column everything goes across.
-  const narrow = !wide && (question.type === "decimal" || question.type === "date");
-  return field(<Input value={value} disabled={disabled} className={narrow ? "w-full max-w-37.5" : undefined}
+  const narrow = question.type === "decimal" || question.type === "date";
+  return field(<Input value={value} disabled={disabled} className={narrow ? narrowClass : undefined}
     type={question.type === "date" ? "date" : "text"} inputMode={question.type === "decimal" ? "decimal" : undefined}
     maxLength={question.type === "shortText" ? question.maxLength ?? undefined : undefined} onChange={event => setValue(event.target.value)}/>);
 }

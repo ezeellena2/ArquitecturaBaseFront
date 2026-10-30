@@ -107,7 +107,8 @@ function EntryBreadcrumbs({ formId, leaf, parent }: { formId: string; leaf?: str
 
 function ResponseBreadcrumbs({ formId, detail, sheet = true, leaf, parent }: { formId?: string; detail: boolean; sheet?: boolean; leaf?: string; parent?: string }) {
   const { t } = useTranslation();
-  const ancestorClassName = detail && formId ? "hidden sm:block" : "";
+  // Under 40 rem of bar (the phone, or a tablet with a menu panel open) only the form and the leaf; the bar decides, not the screen.
+  const ancestorClassName = detail && formId ? "hidden @min-[40rem]:block" : "";
   return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm">
     <li className={ancestorClassName}><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator className={ancestorClassName}/>
     <li className={"truncate text-[var(--color-content-muted)] " + ancestorClassName}>{t("navigation.forms")}</li><Separator className={ancestorClassName}/>
