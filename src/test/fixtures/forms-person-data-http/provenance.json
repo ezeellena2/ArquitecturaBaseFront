@@ -1,168 +1,173 @@
 {
-  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
+      "sha256": "585023bbae323b40398257572fc4127170f4b5cd8d1ac1815c29e301c6b04852",
       "length": 264,
-      "name": "attribute-conflict-en.json",
-      "sha256": "4b46e39f2a525364381b09f99d445bebd0053bd5f23680af5e02509657dabc97"
+      "name": "attribute-conflict-en.json"
     },
     {
+      "sha256": "57c65011854ed19f37632f712f4fd41174b096a1ed2540590d5f4d7c924d2a62",
       "length": 271,
-      "name": "attribute-conflict-es.json",
-      "sha256": "490f1d5cca49d0a40e2075969d6565d31704999b5d1151dd810428368c44525e"
+      "name": "attribute-conflict-es.json"
     },
     {
+      "sha256": "ce749b54efd197786390a90261d6dbbe44f8099701e019b7592716f6b1d13fb3",
       "length": 288,
-      "name": "attribute-created-en.json",
-      "sha256": "7bd30df1ed800a9cb53d20eefbf977c18f223f799ea12ac55272b6731643f7b2"
+      "name": "attribute-created-en.json"
     },
     {
+      "sha256": "44d7558925011ac27ab9cfdfdf24dba80fe44cbe469da1864fa5219eafa49c28",
       "length": 231,
-      "name": "attribute-created-english-original-en.json",
-      "sha256": "a75c874a8dd26e453bd93db941c5112c673ef14f90a75957939559d96e25c97d"
+      "name": "attribute-created-english-original-en.json"
     },
     {
+      "sha256": "8793fe78a22c37041aff5afd921d3ab3a4ef1d4b0058bfe4e60c5e781a4a3491",
       "length": 288,
-      "name": "attribute-created-es.json",
-      "sha256": "ffcd8a17ea1c40fe652a29aa9d91ac7bd574bd8ae8937adf25387302cee1791d"
+      "name": "attribute-created-es.json"
     },
     {
+      "sha256": "4b8314b1df8095f01a0833ad344d178229aa3e35301fcb1c70de7e98630ba5a3",
       "length": 313,
-      "name": "attribute-updated-en.json",
-      "sha256": "59b9a41475273c81c8471b1a50e8ade0114a4be0e605390ec225b5d27cf8b02c"
+      "name": "attribute-updated-en.json"
     },
     {
+      "sha256": "4d01f8aa6be06dc6c81395cd64b90e7d6affa7581feecf05314f29c3098ea277",
       "length": 313,
-      "name": "attribute-updated-es.json",
-      "sha256": "423d9f344344d8f347a95adba1190c63e55048030a106b9ba5f43952bf473b63"
+      "name": "attribute-updated-es.json"
     },
     {
+      "sha256": "6f42e6e8399522c543441604fc4e632392e5d2793375b2736c5ce68035546ace",
       "length": 430,
-      "name": "attribute-value-removal-confirmation-en.json",
-      "sha256": "473dd1dc3328b8940906e1381aa880b58a386468ff3271ec9b8a3aa387acc704"
+      "name": "attribute-value-removal-confirmation-en.json"
     },
     {
+      "sha256": "9cdeaa99d80ef5ab62fba9064850de4342c3e9a08faa07fd1e926c01795b0898",
       "length": 454,
-      "name": "attribute-value-removal-confirmation-es.json",
-      "sha256": "a14c23cdef36da66f508e97304b9e7016d1fd79e031c49c67fe06eee7b30e756"
+      "name": "attribute-value-removal-confirmation-es.json"
     },
     {
+      "sha256": "2e211cc50d211e67b6b65b95ae5e3ae3fe7560917913abc14153bfecd9e95c15",
       "length": 2168,
-      "name": "attributes-en.json",
-      "sha256": "4a4c2481ad181516bf1d32ecc358e07ec1313b05e8f3d180af85075c9940b1d8"
+      "name": "attributes-en.json"
     },
     {
+      "sha256": "69239f6bd426dc078dd863a22faa01ec6aead7b266f023690d5137d57ff21e14",
       "length": 1903,
-      "name": "attributes-es.json",
-      "sha256": "d045326783575675321db8c3b1713485824686640f3b20e49c7ea73670bb6458"
+      "name": "attributes-es.json"
     },
     {
+      "sha256": "e55eec51ffe2c9b78de786689039f2755b6e30d5679453c807b8e92c2e2d4622",
       "length": 259,
-      "name": "conflict-en.json",
-      "sha256": "375e88383aade1c067f82f6576b58cb3cdfa0f8bc0d8411930975984d4e721c1"
+      "name": "conflict-en.json"
     },
     {
+      "sha256": "07385f7d8ca1f8f73858570cb581efa5c2e74d66ae83da310f7d145af81909d2",
       "length": 271,
-      "name": "conflict-es.json",
-      "sha256": "9326b7273450f4111a1b7eafe12557746f4ff14d53f4b062b564e035390e0167"
+      "name": "conflict-es.json"
     },
     {
+      "sha256": "b4e60212f97fb36f68b5afe3ceabe41bcaf0899b0890411d2f10e2b8e9414e87",
       "length": 247,
-      "name": "forbidden-en.json",
-      "sha256": "47af9aabed7e3399d0f9e289fc0243f5e2e9c5faf5acb24561aeb6bdb56af6aa"
+      "name": "forbidden-en.json"
     },
     {
+      "sha256": "c45c72055026dbdc667307fb4106d1ba23c1757e4797b381e3e6b1c218db2bea",
       "length": 249,
-      "name": "forbidden-es.json",
-      "sha256": "b2b6d3c289c2d3041b1a9ce78325f1ca4f01d425956e6d2f8d4474e384837af6"
+      "name": "forbidden-es.json"
     },
     {
+      "sha256": "0f77e054d4c27e4f6ab124bebf1eeab6120eefc89e019a1df43f8f8da78e7f09",
       "length": 356,
-      "name": "invalid-value-en.json",
-      "sha256": "cc78a347e935f309f55d5b7662bde1df2f6d7b7f4272080262a639a29b2e4a81"
+      "name": "invalid-value-en.json"
     },
     {
+      "sha256": "f6d4017ca3a668b24def913eb35f65e57f3fb060b7d1beade68c815b6b1606fa",
       "length": 346,
-      "name": "invalid-value-es.json",
-      "sha256": "01e9681b9518633f64c00a95fde908b8db1abf61430ce39a41030edd5f7060e7"
+      "name": "invalid-value-es.json"
     },
     {
+      "sha256": "ed7e62f6fe077213d687bdc945df67db0fd4cec3261271c6e170b66be895f671",
       "length": 769,
-      "name": "people-en.json",
-      "sha256": "29cec876d159ad04109372600f08db0757ce427d1a8766a35354805c9f9fd744"
+      "name": "people-en.json"
     },
     {
+      "sha256": "ea65c1c6379869bbb4fbf8037e56c986d7e94aecf36bb6ed02c7b151f6ff6a18",
       "length": 703,
-      "name": "people-es.json",
-      "sha256": "1b577a9c227ea5d65568633c67bd60d0b2c8b764348842f07a2f3f77cabcd0ba"
+      "name": "people-es.json"
     },
     {
+      "sha256": "451cacf21fbf6f70339ac77e973121dcc1ce3c8c28111827bb986677ff08d734",
       "length": 77,
-      "name": "person-data-empty-en.json",
-      "sha256": "4b22e80033e70391e72657dc5adc4a117aaad3d89b0f4edb939a9f5e4b23ff50"
+      "name": "person-data-empty-en.json"
     },
     {
+      "sha256": "adf524e99a5c6c81ac423996290f5bba113fd8d84db4f4f4c701a9e691a74714",
       "length": 77,
-      "name": "person-data-empty-es.json",
-      "sha256": "a56e3a5b169d757e3ae13abc9e014d18b541e7b8359827ccb9f0c4b6d5260c82"
+      "name": "person-data-empty-es.json"
     },
     {
+      "sha256": "b3d5271b9305ecf90452fe81b29b495855f4cca4c822ebbfbc5651bc497a2e66",
       "length": 178,
-      "name": "person-data-en.json",
-      "sha256": "75ba45cbc11d3d75ec03e8fc865c7b3b16b66c4f82163caa18420f91c96b3887"
+      "name": "person-data-en.json"
     },
     {
+      "sha256": "a1ac97080cde2725e245e4e2bb80d29488ff9a55fa209f02d78f859392a3158e",
       "length": 177,
-      "name": "person-data-es.json",
-      "sha256": "a49d4e5ec2f35f0df05c01f3a30b97a0af3a4a626623897faba4c8292e43b328"
+      "name": "person-data-es.json"
     },
     {
+      "sha256": "b3d5271b9305ecf90452fe81b29b495855f4cca4c822ebbfbc5651bc497a2e66",
       "length": 178,
-      "name": "person-data-saved-en.json",
-      "sha256": "75ba45cbc11d3d75ec03e8fc865c7b3b16b66c4f82163caa18420f91c96b3887"
+      "name": "person-data-saved-en.json"
     },
     {
+      "sha256": "a1ac97080cde2725e245e4e2bb80d29488ff9a55fa209f02d78f859392a3158e",
       "length": 177,
-      "name": "person-data-saved-es.json",
-      "sha256": "a49d4e5ec2f35f0df05c01f3a30b97a0af3a4a626623897faba4c8292e43b328"
+      "name": "person-data-saved-es.json"
     },
     {
+      "sha256": "870bbc1b944c6544375fa15b3328697e1a13b90f7152d565381bd79adc9d3aa8",
       "length": 224,
-      "name": "person-options-en.json",
-      "sha256": "db8eb3fae36043c41a34e67fb63cf4eec10bcdc36b99403435d68479ed69f593"
+      "name": "person-options-en.json"
     },
     {
+      "sha256": "49de8c8f7fdd9ea51383c82557909856addfdeac3fb6e478d4546b7dc590bb4e",
       "length": 221,
-      "name": "person-options-es.json",
-      "sha256": "80ac4456b97bfa4dd63c3bc231deb90dc593eb6d1e0c636b554266b299e8e5e6"
+      "name": "person-options-es.json"
     },
     {
+      "sha256": "40998fffce72b3e62f74ec561df39ff4aa42586884f51ea79cfa52a560b69c8d",
       "length": 292,
-      "name": "source-in-use-en.json",
-      "sha256": "ff72255e9d4796005d4a9d61afcb4936fd5d4f268e99454271328db008a94892"
+      "name": "source-in-use-en.json"
     },
     {
+      "sha256": "1c63b3588c015bd29f6c02943cab3172a70de6eb09a6ddbdfa74d02c088d5f62",
       "length": 305,
-      "name": "source-in-use-es.json",
-      "sha256": "e7853cdf4f15fbf3a6504f05430d660ab91c33a29cf0e11865deb07587534184"
+      "name": "source-in-use-es.json"
     }
   ],
-  "sourceState": [],
+  "sourceState": [
+    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? .claude/"
+  ],
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
   "sources": [
     {
-      "sha256": "9fabf1d66b62304f05c43c676be1617979629ea952ff11cd8e0d75b07a4f0e28",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPersonDataHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPersonDataHttpTests.cs",
+      "sha256": "6516f867693b62dc5d81b9f448d607fbc94b05fe7626bec4d2df5f5661ff856a"
     },
     {
-      "sha256": "7f271b548b7ddd97177428782d6b6e2fd58294e7b282007a5655f9fdbb293c9b",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPersonDataContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPersonDataContractCapture.cs",
+      "sha256": "0626cd8063a110035567f06eacb567b5a2b8c5191e2a8ee90b4b2dca6d557664"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
-  "artifactSet": "person-data",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
+  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
+  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
+  "artifactSet": "person-data"
 }

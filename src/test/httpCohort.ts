@@ -15,6 +15,7 @@ const cohorts = {
   formFiles: ["form-files-http","FORM_FILES_HTTP_INPUT","form-files"],
   whatsappCatalogs: ["whatsapp-catalogs-http","WHATSAPP_CATALOG_HTTP_CONTRACT_INPUT","whatsapp-catalogs"],
   responses: ["forms-responses-http", "FORMS_RESPONSES_HTTP_CONTRACT_INPUT", "responses"],
+  entries: ["forms-entries-http", "FORMS_ENTRIES_HTTP_CONTRACT_INPUT", "entries"],
   rules: ["forms-rules-http", "FORMS_RULES_HTTP_CONTRACT_INPUT", "rules"],
   missingRequests: ["forms-missing-requests-http", "FORMS_MISSING_REQUEST_HTTP_CONTRACT_INPUT", "missing-requests"],
   suggestions: ["forms-suggestions-http", "FORMS_SUGGESTIONS_HTTP_CONTRACT_INPUT", "suggestions"],

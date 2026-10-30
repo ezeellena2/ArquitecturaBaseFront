@@ -1,57 +1,62 @@
 {
-  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
-      "length": 1694,
-      "name": "approved-en.json",
-      "sha256": "9d6d3b02ba049c0e1a7b34b420a19b2e60d87c231bd821331cb5544c38b1c4cd"
+      "sha256": "ce9112bb95776a49203d92a91a6ac02ec148e47351fb0538c84d6fc96dc47d73",
+      "length": 1685,
+      "name": "approved-en.json"
     },
     {
+      "sha256": "91b882b1a2283766fc6feb205438addaa4a19dcab8a9da3d1e44442ba14f2555",
       "length": 267,
-      "name": "conflict.json",
-      "sha256": "dd4ac5ffa3648d323e7163e487d4158febd5331762f2b5b20152fc6ac071e00b"
+      "name": "conflict.json"
     },
     {
+      "sha256": "cdb2e46d91e26fe3976969f7b465c94210f3201e6be63237501ed1a5e4741262",
+      "length": 1648,
+      "name": "detail-pending-en.json"
+    },
+    {
+      "sha256": "296fa073af9ae3e6d0b149c66b5c05156ca448e6562bc5de12c020583a73450c",
       "length": 1654,
-      "name": "detail-pending-en.json",
-      "sha256": "d3e83b9b091df9ca32f21b57923068b8af626efa38760342f672dea682e5f7fb"
+      "name": "detail-pending-es.json"
     },
     {
-      "length": 1660,
-      "name": "detail-pending-es.json",
-      "sha256": "77c0d59fbb298a9f1144f963016a32dea0eef698fc1c4383310e1c7a1e5a16fc"
+      "sha256": "0ca01c0e1be05ea514f76b2bb7dd9303a657b484e3a56310d4774adddb3486d5",
+      "length": 1634,
+      "name": "discarded-es.json"
     },
     {
-      "length": 1643,
-      "name": "discarded-es.json",
-      "sha256": "b9abc7a1098e6765744c867df422669036203ab69006dc6fa8ff6b1bac4a61f0"
-    },
-    {
+      "sha256": "bb556121145726e33d34aba7541213cf974351d5fd3328f0d799c97a9a7fb5b9",
       "length": 402,
-      "name": "list-original-en-in-es.json",
-      "sha256": "dce5c1e75d2a4f5308c17e4735f9116ac3cce37c16bddf2b0304e89273cbb59c"
+      "name": "list-original-en-in-es.json"
     }
   ],
-  "sourceState": [],
+  "sourceState": [
+    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? .claude/"
+  ],
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
   "sources": [
     {
-      "sha256": "d8deef17d23992e471a8480b6b5e323c49a58ef1e0cc74fd9b94369b4843a5c4",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogProposalHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogProposalHttpTests.cs",
+      "sha256": "17bb661be182b52f01ed3c2e177840927991efa38178db15afdbada37e8a9679"
     },
     {
-      "sha256": "578e893c12dba892f89d18259d0cd12d14f6f9e2228ebd1dc2e272e174e02430",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalScenario.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalScenario.cs",
+      "sha256": "578e893c12dba892f89d18259d0cd12d14f6f9e2228ebd1dc2e272e174e02430"
     },
     {
-      "sha256": "393918492feca3da79522683ca9da35984458d3d65cd164ce2635730906942ff",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs",
+      "sha256": "672eab0c9908e6fd935aae5511a9049457171ad8526d20b1069282afa58a1fa7"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
-  "artifactSet": "catalog-proposals",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
+  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
+  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
+  "artifactSet": "catalog-proposals"
 }

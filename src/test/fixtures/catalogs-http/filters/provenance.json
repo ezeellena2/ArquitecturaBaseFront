@@ -1,59 +1,64 @@
 {
-  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
+      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
       "length": 273,
-      "name": "create-request.json",
-      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82"
+      "name": "create-request.json"
     },
     {
+      "sha256": "e6aac68664169cc7e4ecbd4805594c8b2954ae16c69f90d315a39449b335ada2",
       "length": 636,
-      "name": "created.json",
-      "sha256": "26b79609c4d1d83709511e4b233893199de9803c1c2ccfc81566515431a14b14"
+      "name": "created.json"
     },
     {
+      "sha256": "182f91d2e91ff770c314f9fabd787ddd24d00b77589563ab3ad69b2f2cccad53",
       "length": 813,
-      "name": "detail.json",
-      "sha256": "be4e28a51ed5c83bd69bd92ea31670dffa4b17f87d6448ca8cb90ff6e99f53ee"
+      "name": "detail.json"
     },
     {
+      "sha256": "d972cabac0e424e5acde38b78af972194f49cbd75de0585c70071d052cb16e4c",
       "length": 56034,
-      "name": "options.json",
-      "sha256": "ceff558fbaf067f5cb0f9b7d33ba09bb64a257d0b01abb8ded85a59aa91856a6"
+      "name": "options.json"
     },
     {
+      "sha256": "de0c5e2fad3f691d76c06c9826880bf86538a647f91be85ab4a6a2395f027efc",
       "length": 328,
-      "name": "preview-request.json",
-      "sha256": "c5afed587a93a682e7cbfd3428a9243ff9882aac51c0671cc48569ff4db39295"
+      "name": "preview-request.json"
     },
     {
+      "sha256": "cfcbd51b59ce54ab9a6d3554ed78e9d8f75f7a1ba5a2fb1ca9bf2679431ba733",
       "length": 201,
-      "name": "preview.json",
-      "sha256": "7b2006715cd9185f8644a9fc5ec28bc16e8520fda865124f9582daedc29f5fde"
+      "name": "preview.json"
     },
     {
+      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
       "length": 289,
-      "name": "update-request.json",
-      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c"
+      "name": "update-request.json"
     },
     {
+      "sha256": "a90e7270af16ef39a28c129da471bdfcd7a698bea3e18282d83c3ba140baba44",
       "length": 635,
-      "name": "updated.json",
-      "sha256": "a6815629a2e322c110cc5cd49379ab8d4b7bb178db97afabf1b315454c206b12"
+      "name": "updated.json"
     }
   ],
-  "sourceState": [],
+  "sourceState": [
+    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? .claude/"
+  ],
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "FormCatalogFiltersEndpointsTests",
   "sources": [
     {
-      "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
+      "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
-  "artifactSet": "catalog-filters",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
+  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
+  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
+  "artifactSet": "catalog-filters"
 }

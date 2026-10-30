@@ -1,63 +1,68 @@
 {
-  "repositoryHead": "34e48beeb87ce2959265f3ea5c9e3003f107a674",
   "captures": [
     {
+      "sha256": "d570c50fb3030ebd6e0cef95bb61d44ef4d702cccd067bc48e15703d5f1319f5",
       "length": 276,
-      "name": "conflict-es.json",
-      "sha256": "bbd11b0a633009aa8c523a4394cd00fba32e7786ee0f2348129ea8e549c0f129"
+      "name": "conflict-es.json"
     },
     {
+      "sha256": "d66fc36fb45a133b17ec88c70b046511c05bc6672121947e3534b977e96cf427",
       "length": 152,
-      "name": "empty-es.json",
-      "sha256": "b2a3e9afb88bddf091dc7043c2776539c6eb288ed8f0f644e3d4561fbe704f8a"
+      "name": "empty-es.json"
     },
     {
+      "sha256": "1c4c9eb7df3dbd17915c69308573be45bff26c9db3dafe245aa17d76a6534a02",
       "length": 373,
-      "name": "history-es.json",
-      "sha256": "748e5447f690f1a9ceec2fd19ae0b4e4726c8b5ef74ae04fbc9e3e67eaf62d12"
+      "name": "history-es.json"
     },
     {
+      "sha256": "fdd7f0846270486993861965c76359c8e098cff6c3ac133be7068d464e9f6f73",
       "length": 16320,
-      "name": "options-en.json",
-      "sha256": "5e6d5c0e7fb8b300a3908ca9413969cba882559b7f3fe7121afda5603e2c97b5"
+      "name": "options-en.json"
     },
     {
+      "sha256": "fdd7f0846270486993861965c76359c8e098cff6c3ac133be7068d464e9f6f73",
       "length": 16320,
-      "name": "options-es.json",
-      "sha256": "5e6d5c0e7fb8b300a3908ca9413969cba882559b7f3fe7121afda5603e2c97b5"
+      "name": "options-es.json"
     },
     {
+      "sha256": "576068eacc8c999aa61396ca7ed942367ac08347971ab154c75d248e4328100e",
       "length": 680,
-      "name": "revision-es.json",
-      "sha256": "7ce0df6f1bf0d9ecd39cfd3e81afee43e90f46163a4907d7d8486fed811d6ee0"
+      "name": "revision-es.json"
     },
     {
+      "sha256": "576068eacc8c999aa61396ca7ed942367ac08347971ab154c75d248e4328100e",
       "length": 680,
-      "name": "saved-es.json",
-      "sha256": "7ce0df6f1bf0d9ecd39cfd3e81afee43e90f46163a4907d7d8486fed811d6ee0"
+      "name": "saved-es.json"
     },
     {
+      "sha256": "94cf6a013705d2d4a2e0f79dfe0d2e147c969010706b5c38680eda551b87cc8c",
       "length": 285,
-      "name": "source-unpublished-es.json",
-      "sha256": "f9f32a4772ca0566e753d19e7db11693533aba89bda564095f7fa83d73f9f3e1"
+      "name": "source-unpublished-es.json"
     }
   ],
-  "sourceState": [],
+  "sourceState": [
+    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
+    " M docs/plans/README.md",
+    " M docs/plans/formularios/README.md",
+    "?? .claude/"
+  ],
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
   "sources": [
     {
-      "sha256": "5b194a0b704e9512f0f310b3a7f3a799ae624486cb54e2e7eaf537be6cfb8847",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs",
+      "sha256": "b007eb804d9742074b96411b362d63222ff3c8dff67cdbb7304f9d53133d8e71"
     },
     {
-      "sha256": "f625255f15dd0bd5bb149c6b60e6f2a5a4ee72672b75b53dfd81ece1961dae03",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs",
+      "sha256": "282934f48206ca0fbfbf7e82b08277b941f67c490eeb82bb8b45ee555b37fdec"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261025-233355-14e4887e74f04628a4ea0748e3e0c988",
-  "artifactSet": "suggestions",
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-10-26T00:02:45.3454392Z"
+  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
+  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
+  "artifactSet": "suggestions"
 }
