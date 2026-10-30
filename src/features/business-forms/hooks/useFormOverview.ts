@@ -12,13 +12,14 @@ export function useFormOverviewScope() {
   const owner = [user?.id ?? "", i18n.language, [...(user?.permissions ?? [])].sort().join(",")].join(":");
   const canRead = !!user?.permissions.includes("formrecords.read");
   const canDecide = !!user?.permissions.includes("formapprovals.decide");
-  return { user, owner, canRead, canDecide };
+  const canCreate = !!user?.permissions.includes("formrecords.create");
+  return { user, owner, canRead, canDecide, canCreate };
 }
 export function useFormOverview(filter: FormOverviewQuery, enabled: boolean) {
-  const { user, owner, canRead, canDecide } = useFormOverviewScope();
+  const { user, owner, canRead, canDecide, canCreate } = useFormOverviewScope();
   const [deniedOwner, setDeniedOwner] = useState<string | null>(null);
   const client = useQueryClient();
-  const allowed = (canRead || canDecide) && deniedOwner !== owner;
+  const allowed = (canRead || canDecide || canCreate) && deniedOwner !== owner;
   useUnobservedQueryCleanup(["form-overview", owner]);
   const query = useQuery({
     queryKey: ["form-overview", owner, filter],
@@ -29,5 +30,5 @@ export function useFormOverview(filter: FormOverviewQuery, enabled: boolean) {
   const forbidden = deniedOwner === owner || query.error instanceof ApiError && query.error.status === 403;
   if (forbidden && deniedOwner !== owner) setDeniedOwner(owner);
   useEffect(() => { if (deniedOwner === owner) client.removeQueries({ queryKey: ["form-overview", owner] }); }, [client, deniedOwner, owner]);
-  return { scope: { user, owner, allowed, canRead, canDecide }, query: { ...query, data: allowed && !forbidden ? query.data : undefined }, forbidden };
+  return { scope: { user, owner, allowed, canRead, canDecide, canCreate }, query: { ...query, data: allowed && !forbidden ? query.data : undefined }, forbidden };
 }

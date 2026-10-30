@@ -165,3 +165,16 @@ it("keeps the full response under MF1 without linking a reader to template desig
   expect(items[4]).toHaveAttribute("aria-current", "page");
   expect(screen.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
 });
+
+it.each([[["formrecords.read", "formrecords.create"], true], [["formrecords.create"], false]] as const)("hangs «Nueva respuesta» from its form, linked only with a sheet %j", async (permissions, linked) => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })));
+  renderWithProviders(<MemoryRouter initialEntries={["/formularios/form-id/cargar"]}>
+    <Breadcrumbs/><ChildScreen leaf="Nueva respuesta" parent="Registrar visita"/>
+  </MemoryRouter>);
+  const items = await breadcrumbs();
+  expect(items.map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Formularios", "Registrar visita", "Nueva respuesta"]);
+  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios/respuestas");
+  if (linked) expect(await within(items[3]).findByRole("link")).toHaveAttribute("href", "/formularios/form-id/respuestas");
+  else { await new Promise(resolve => setTimeout(resolve, 50)); expect(within(items[3]).queryByRole("link")).not.toBeInTheDocument(); }
+  expect(items[4]).toHaveAttribute("aria-current", "page");
+});

@@ -174,3 +174,21 @@ it.each([
     expect(screen.getByText(hint, { exact: true })).toBeVisible();
   } finally { unmount(); await i18n.changeLanguage("es"); }
 });
+
+it("lets whoever only completes forms load one from its row without opening the sheet", async () => {
+  const payload = overview();
+  payload.forms.items[0] = { ...payload.forms.items[0], pendingApprovalCount: null, responseCount: null, lastResponse: null };
+  payload.forms.items.push({ id: "0199a0c0-0000-7000-8000-000000000226", name: "Control anterior", prefix: "ANT", deactivatedAtUtc: "2026-10-20T15:00:00Z",
+    pendingApprovalCount: null, responseCount: null, lastResponse: null });
+  payload.filterCounts.deactivatedPending = null;
+  setup(["formrecords.create"], payload);
+  const { router } = renderRouteWithProviders("/formularios/respuestas");
+  const table = await screen.findByRole("table");
+  expect(await within(table).findByText("Registrar visita")).toBeVisible();
+  expect(within(table).queryByRole("link", { name: "Registrar visita" })).not.toBeInTheDocument();
+  expect(within(table).queryByRole("columnheader", { name: "Respuestas" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("group", { name: "Estado de los formularios" })).not.toBeInTheDocument();
+  expect(within(table).queryByRole("button", { name: "Cargar Control anterior" })).not.toBeInTheDocument();
+  await userEvent.click(within(table).getByRole("button", { name: "Cargar Registrar visita" }));
+  await waitFor(() => expect(router.state.location.pathname).toBe("/formularios/" + responseFormId + "/cargar"));
+});

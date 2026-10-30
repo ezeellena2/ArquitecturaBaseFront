@@ -382,3 +382,15 @@ describe("Sidebar", () => {
     });
   });
 });
+
+it("shows «Formularios» to whoever only completes forms, without the design or catalogs links", async () => {
+  queryClient.clear();
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.create"] })),
+    http.get("/api/forms/overview", () => HttpResponse.json({ forms: { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false },
+      filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } })));
+  renderRouteWithProviders("/");
+  await userEvent.click(await screen.findByRole("button", { name: /^gestión de formularios$/i }));
+  expect(await screen.findByRole("link", { name: "Formularios" })).toHaveAttribute("href", "/formularios/respuestas");
+  expect(screen.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Catálogos" })).not.toBeInTheDocument();
+});

@@ -41,6 +41,8 @@ export function Breadcrumbs() {
   if (pdfPath) return <PdfBreadcrumbs formId={pdfPath[1]} leaf={leaf} parent={parent} />;
   const responsePath = /^\/formularios\/(?:respuestas$|([^/]+)\/respuestas(?:\/([^/]+)(\/completa)?)?$)/.exec(pathname);
   if (responsePath) return <ResponseBreadcrumbs formId={responsePath[1]} detail={!!responsePath[3]} leaf={leaf} parent={parent} />;
+  const entryPath = /^\/formularios\/([^/]+)\/cargar$/.exec(pathname);
+  if (entryPath) return <EntryBreadcrumbs formId={entryPath[1]} leaf={leaf} parent={parent} />;
   const activeLabelKey = pathname === "/" ? undefined : findActiveLabelKey(pathname);
   const parentLink = activeLabelKey ? undefined : parentLinkOf(pathname);
   const branchLabelKey = activeLabelKey || parentLink ? (isFormsPath(pathname) ? "navigation.forms" : branchOf(pathname)?.labelKey) : undefined;
@@ -96,14 +98,21 @@ export function Breadcrumbs() {
   );
 }
 
-function ResponseBreadcrumbs({ formId, detail, leaf, parent }: { formId?: string; detail: boolean; leaf?: string; parent?: string }) {
+/** «Nueva respuesta» hangs from its form; whoever only completes forms has no sheet, so the form's name stays as text. */
+function EntryBreadcrumbs({ formId, leaf, parent }: { formId: string; leaf?: string; parent?: string }) {
+  const { data: user } = useCurrentUser();
+  const sheet = !!user?.permissions.some(permission => permission === "formrecords.read" || permission === "formapprovals.decide");
+  return <ResponseBreadcrumbs formId={formId} detail sheet={sheet} leaf={leaf} parent={parent} />;
+}
+
+function ResponseBreadcrumbs({ formId, detail, sheet = true, leaf, parent }: { formId?: string; detail: boolean; sheet?: boolean; leaf?: string; parent?: string }) {
   const { t } = useTranslation();
   const ancestorClassName = detail && formId ? "hidden sm:block" : "";
   return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm">
     <li className={ancestorClassName}><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator className={ancestorClassName}/>
     <li className={"truncate text-[var(--color-content-muted)] " + ancestorClassName}>{t("navigation.forms")}</li><Separator className={ancestorClassName}/>
     {formId ? <><li className={ancestorClassName}><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.formOverview")}</Link></li><Separator className={ancestorClassName}/></> : null}
-    {detail && formId ? <><li className="min-w-0 truncate"><Link to={"/formularios/" + formId + "/respuestas"} className={linkClassName}>{parent ?? t("navigation.responses")}</Link></li><Separator/></> : null}
+    {detail && formId ? <><li className="min-w-0 truncate">{sheet ? <Link to={"/formularios/" + formId + "/respuestas"} className={linkClassName}>{parent ?? t("navigation.responses")}</Link> : parent ?? t("navigation.responses")}</li><Separator/></> : null}
     <li aria-current="page" className={"truncate font-medium" + (detail ? " shrink-0" : "")}>{leaf ?? t(formId ? "navigation.responses" : "navigation.formOverview")}</li>
   </ol></nav>;
 }

@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/auth/usePermissions";
 import { useSystemPresentation } from "@/shared/api/presentation";
@@ -23,8 +23,9 @@ import { useFormOverview } from "../hooks/useFormOverview";
 import { useResponseFeedback } from "../hooks/useResponseQueries";
 
 export function FormOverviewPage() {
-  const { t, i18n } = useTranslation("forms");
+  const { t, i18n } = useTranslation(["forms", "formEntries"]);
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const update = useQueryUpdate();
   const presentation = useSystemPresentation();
   const pagination = usePagination(presentation.data?.defaultPageSize, true);
@@ -39,24 +40,29 @@ export function FormOverviewPage() {
   if (!scope.allowed || forbidden) return <ForbiddenPage/>;
   const data = query.data;
   const empty = pagination.search ? { title: "noMatches", description: "noMatchesDescription" }
-    : !scope.canRead || pendingOnly ? { title: "overview.noPending", description: "overview.noPendingHint" }
+    : !scope.canRead && !scope.canCreate || pendingOnly ? { title: "overview.noPending", description: "overview.noPendingHint" }
     : state === "Deactivated" ? { title: "overview.noDeactivated", description: "overview.noDeactivatedHint" }
     : { title: "responses.noForms", description: "responses.noFormsHint" };
+  // Whoever only completes forms has no sheet to open (CW1-B): the name is text and «Cargar» is the way in.
+  const canOpen = scope.canRead || scope.canDecide;
   const formPath = (id: string) => "/formularios/" + id + "/respuestas";
   const columns: Column<FormOverviewRow>[] = [
-    { id: "name", header: t("formColumn"), cell: row => <div className="inline-flex items-center gap-2 whitespace-nowrap"><Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link>{row.deactivatedAtUtc ? <Badge variant="outline">{t("lifecycle.stateWithoutVersion")}</Badge> : null}</div> },
+    { id: "name", header: t("formColumn"), cell: row => <div className="inline-flex items-center gap-2 whitespace-nowrap">{canOpen ? <Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link> : <span className="font-medium">{row.name}</span>}{row.deactivatedAtUtc ? <Badge variant="outline">{t("lifecycle.stateWithoutVersion")}</Badge> : null}</div> },
     ...(scope.canDecide ? [{ id: "pending", header: t("overview.pendingColumn"), cell: (row: FormOverviewRow) => row.pendingApprovalCount ? <Link to={formPath(row.id)} aria-label={t("overview.pendingFor", { name: row.name, count: row.pendingApprovalCount })}><Badge variant="warning">{row.pendingApprovalCount}</Badge></Link> : "—" }] : []),
     ...(scope.canRead ? [
       { id: "responses", header: t("overview.responses"), cell: (row: FormOverviewRow) => row.responseCount ?? "—" },
       { id: "lastResponse", header: t("overview.lastResponse"), cell: (row: FormOverviewRow) => row.lastResponse ? <div className="inline-flex items-center gap-2 whitespace-nowrap"><Link to={formPath(row.id) + "/" + row.lastResponse.id} className="font-medium text-[var(--color-brand-700)] underline">{row.lastResponse.number}</Link><time className="text-xs text-[var(--color-content-muted)]" dateTime={row.lastResponse.submittedAtUtc}>{formatDateTimeInZone(row.lastResponse.submittedAtUtc, i18n.language, scope.user?.timeZoneId)}</time><Badge variant={approvalStateVariant(row.lastResponse.state)}>{t("approvals.states." + row.lastResponse.state)}</Badge></div> : <span className="text-sm text-[var(--color-content-muted)]">{t("overview.noResponses")}</span> },
     ] : []),
+    ...(scope.canCreate ? [{ id: "load", header: "", align: "right" as const, cell: (row: FormOverviewRow) => row.deactivatedAtUtc ? null
+      : <Button type="button" variant="outline" size="sm" aria-label={t("formEntries:loadForm", { name: row.name })}
+        onClick={() => navigate("/formularios/" + row.id + "/cargar", { state: { from: "overview" } })}>{t("formEntries:load")}</Button> }] : []),
   ];
   return <Page title={t("overview.title")}>
-    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput maxLength={100} label={t("overview.search")} value={pagination.search ?? ""} onChange={pagination.setSearch}/></div><div className="max-w-full overflow-x-auto">
+    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput maxLength={100} label={t("overview.search")} value={pagination.search ?? ""} onChange={pagination.setSearch}/></div>{canOpen ? <div className="max-w-full overflow-x-auto">
       <SegmentedControl aria-label={t("overview.state")} options={[
         { key: "Active", label: t("active") + " (" + (data?.filterCounts.active ?? "—") + ")", pressed: !pendingOnly && state === "Active", onSelect: () => update({ state: undefined, page: undefined }) },
         { key: "Deactivated", label: t("deactivated") + " (" + (data?.filterCounts.deactivated ?? "—") + ")", pressed: !pendingOnly && state === "Deactivated", onSelect: () => update({ state: "Deactivated", page: undefined }) },
-      ]}/></div>
+      ]}/></div> : null}
       {both ? <CheckboxField label={t("overview.pendingOnly")} checked={pendingOnly} onCheckedChange={checked => update({ pendingOnly: checked ? "true" : undefined, page: undefined })}/> : null}
     </div></FilterBar>
     <div className="flex flex-col gap-4">

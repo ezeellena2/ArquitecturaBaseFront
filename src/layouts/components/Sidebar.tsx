@@ -380,7 +380,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : administration;
   const selectedItems = openPanel === "forms" ? formsItems : openPanel === "whatsapp" ? whatsappItems : adminItems;
   const PanelIcon = selectedPanel.icon;
-  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && has(["formrecords.read", "formapprovals.decide"])) && openPanel !== undefined && !isMobile;
+  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && has(["formrecords.read", "formapprovals.decide", "formrecords.create"])) && openPanel !== undefined && !isMobile;
 
   return (
     <>
@@ -527,7 +527,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             );
           })}
 
-          {formsItems.length > 0 || has(["formrecords.read", "formapprovals.decide"]) ? (
+          {formsItems.length > 0 || has(["formrecords.read", "formapprovals.decide", "formrecords.create"]) ? (
             <div className="mt-2 border-t border-[var(--color-border)] pt-2">
               {isPending ? <Skeleton aria-hidden="true" className="h-9" /> : isMobile ? (
                 <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<FormsOverviewLink onNavigate={onNavigate}/>} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
@@ -677,7 +677,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 function FormsOverviewLink({onNavigate}:{onNavigate?:()=>void}) {
  const overview=useContext(FormsOverviewNavigationContext);const {t}=useTranslation();const {has,isPending}=usePermissions();
  if(isPending)return <Skeleton className="h-9"/>;
- if(!has(["formrecords.read","formapprovals.decide"]))return null;
+ if(!has(["formrecords.read","formapprovals.decide","formrecords.create"]))return null;
  const count=has("formapprovals.decide")?overview?.count:undefined;
- return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide"]}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} collapsed={false} onNavigate={onNavigate}/>{overview?.pending?<Skeleton className="h-4"/>:overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
+ return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide","formrecords.create"]}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} collapsed={false} onNavigate={onNavigate}/>{overview?.pending?<Skeleton className="h-4"/>:overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
 }
