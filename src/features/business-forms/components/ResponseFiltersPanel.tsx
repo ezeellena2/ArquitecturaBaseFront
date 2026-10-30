@@ -114,8 +114,8 @@ export function ResponseFiltersPanel({
   useResponseFeedback(count.isPending ? null : count.error ?? Object.values(facetErrors).find(Boolean), `responses:filters:${scope.owner}:${formId}`, countFeedback.network ? count.retry : undefined);
   const apply = () => {
     if (!normalized) return;
-    const { state, search, actorIds, receivedFromUtc, receivedToUtc, conditions } = normalized;
-    const filter: ResponseFilter = { state, search, actorIds, receivedFromUtc, receivedToUtc, conditions };
+    const { state, enteredInApp, search, actorIds, receivedFromUtc, receivedToUtc, conditions } = normalized;
+    const filter: ResponseFilter = { state, enteredInApp, search, actorIds, receivedFromUtc, receivedToUtc, conditions };
     onApply(filter, draft.versionIds ?? []);
     onClose();
   };

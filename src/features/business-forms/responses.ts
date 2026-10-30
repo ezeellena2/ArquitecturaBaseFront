@@ -52,6 +52,8 @@ export interface ResponseCondition {
 export type ResponseState = "Received" | "PendingApproval" | "Approved" | "Rejected";
 export interface ResponseFilter {
   state?: ResponseState | null;
+  /** Only what was loaded in the app (true) or only what arrived through a channel (false). */
+  enteredInApp?: boolean | null;
   search?: string;
   actorIds?: readonly string[];
   receivedFromUtc?: string;
@@ -199,6 +201,7 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
     labels.push({ key: fieldId, label: [column?.label, parts?.join(" · ")].filter(Boolean).join(": ") });
   }
   if (query.state) labels.push({ key: "state", label: t("approvals.state") + ": " + t("approvals.states." + query.state) });
+  if (query.enteredInApp != null) labels.push({ key: "channel", label: t("formEntries:sheet.channel") + ": " + t(query.enteredInApp ? "formEntries:sheet.channels.app" : "responses.whatsapp") });
   if (query.actorIds?.length) labels.push({ key: "actor", label: t("responses.people") + " · " + query.actorIds.length });
   if (query.versionIds?.length) labels.push({ key: "version", label: t("responses.version") + " · " + query.versionIds.map(id => versions.find(item => item.id === id)?.number ?? "—").join(", ") });
   if (query.receivedFromUtc || query.receivedToUtc) labels.push({ key: "received", label: t("responses.received") + " · " + [query.receivedFromUtc ? day(query.receivedFromUtc) : "…", query.receivedToUtc ? day(new Date(Date.parse(query.receivedToUtc) - 1).toISOString()) : "…"].join(" – ") });

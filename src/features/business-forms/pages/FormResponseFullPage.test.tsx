@@ -438,3 +438,14 @@ it("supplies the confirmed form parent and response number to full-page breadcru
   expect(trail.getByRole("link", { name: "Formulario publicado" })).toHaveAttribute("href", path);
   expect(trail.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
 });
+
+it("says a response loaded in the app was loaded there and by whom, without a conversation", async () => {
+  setup();
+  server.use(http.get("/api/forms/records/:id", ({ params }) => {
+    const detail = responseDetailFixture(String(params.id));
+    return HttpResponse.json({ ...detail, channel: "app", origin: { ...detail.origin!, channelId: "app", conversationId: null, maskedAddress: null } });
+  }));
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  expect((await screen.findAllByText(/en la app, la cargó Ana$/i)).length).toBeGreaterThan(0);
+  expect(screen.queryByText("Se lo mandó Ana")).not.toBeInTheDocument();
+});

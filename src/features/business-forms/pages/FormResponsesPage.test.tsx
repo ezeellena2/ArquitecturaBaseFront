@@ -1504,3 +1504,29 @@ it("shows sealed data subcolumns without enabling sorting or requiring catalog p
   expect(within(header).queryByRole("button")).not.toBeInTheDocument(); expect(screen.getByText("30-71234567-8")).toBeInTheDocument();
   const before = requested.mock.calls.length; await userEvent.click(header); expect(requested).toHaveBeenCalledTimes(before);
 });
+
+it("shows who loaded and the channel, and filters by the app channel without putting it in the URL", async () => {
+  setup();
+  const bodies: { enteredInApp?: boolean | null }[] = [];
+  server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+    const body = (await request.json()) as { enteredInApp?: boolean | null };
+    bodies.push(body);
+    const sheet = responseSheetFixture();
+    sheet.records.items = sheet.records.items.map((row, index) => ({ ...row, channel: index === 0 ? "app" : "phone" }));
+    if (body.enteredInApp) sheet.records.items = sheet.records.items.filter(row => row.channel === "app");
+    return HttpResponse.json(sheet);
+  }));
+  const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+  const table = await screen.findByRole("table");
+  await within(table).findByRole("link", { name: "TEST-000002" });
+  expect(within(table).getByRole("columnheader", { name: "Cargó" })).toBeVisible();
+  expect(within(table).getByRole("columnheader", { name: "Canal" })).toBeVisible();
+  expect(within(within(table).getByRole("link", { name: "TEST-000002" }).closest("tr")!).getByText("App")).toBeVisible();
+  expect(within(within(table).getByRole("link", { name: "TEST-000001" }).closest("tr")!).getByText("WhatsApp")).toBeVisible();
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Canal" }), "App");
+  await waitFor(() => expect(bodies.at(-1)?.enteredInApp).toBe(true));
+  await waitFor(() => expect(within(table).queryByRole("link", { name: "TEST-000001" })).not.toBeInTheDocument());
+  expect(router.state.location.search).not.toContain("App");
+  await userEvent.click(screen.getByRole("button", { name: "Quitar filtro: Canal: App" }));
+  await waitFor(() => expect(bodies.at(-1)?.enteredInApp).toBeUndefined());
+});

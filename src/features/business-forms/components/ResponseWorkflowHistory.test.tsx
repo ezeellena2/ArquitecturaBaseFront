@@ -115,3 +115,17 @@ it("keeps the wait as the reason of Retry while a running action refetches the h
   expect(retry).toBeDisabled();
   expect(retry).toHaveAccessibleDescription(wait);
 });
+
+it("names the app and whoever loaded the response in the receiving moment", async () => {
+  const record = responseDetailFixture();
+  const loaded = { ...record, channel: "app" as const, origin: { ...record.origin!, channelId: "app", conversationId: null, maskedAddress: null } };
+  function AppHarness() {
+    const workflow = useResponseWorkflow(responseFormId, responseRecordId);
+    return <ResponseWorkflowHistory record={loaded} workflow={workflow} timeZoneId="UTC" />;
+  }
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
+    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(responseWorkflowFixture())));
+  renderWithProviders(<AppHarness />);
+  const received = await screen.findByRole("listitem", { name: "Recibida" });
+  expect(within(received).getByText("En la app, la cargó " + record.origin!.senderName)).toBeInTheDocument();
+});

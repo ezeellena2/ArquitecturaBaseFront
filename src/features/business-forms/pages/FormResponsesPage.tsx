@@ -1,5 +1,5 @@
 import { useCallback, useContext, useLayoutEffect, useRef, useState } from "react";
-import { Link, useMatch, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useMatch, useNavigate, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
@@ -40,14 +40,19 @@ import { ResponseValue } from "../components/ResponseValue";
 import { ResponseColumnsMenu } from "../components/ResponseColumnsMenu";
 import { ResponseFiltersPanel } from "../components/ResponseFiltersPanel";
 import { ResponseExportDialog } from "../components/ResponseExportDialog";
+import { FormEntryPanel } from "../components/FormEntryPanel";
 export function FormResponsesPage() {
   const { formId = "" } = useParams();
-  const { t, i18n } = useTranslation("forms");
+  const { t, i18n } = useTranslation(["forms", "formEntries"]);
   const route = useResponseRouteQuery(formId);
   const { query, scope } = useResponseSheet(formId, route.query, route.ready);
   const mobile = useMediaQuery("(width < 640px)");
   const baseMatch = useMatch("/formularios/:formId/respuestas");
-  const recordId = useMatch("/formularios/:formId/respuestas/:recordId")?.params.recordId;
+  // «nueva» is the loading panel (CW2-B), not a response.
+  const adding = !!useMatch("/formularios/:formId/respuestas/nueva");
+  const matchedRecord = useMatch("/formularios/:formId/respuestas/:recordId")?.params.recordId;
+  const recordId = adding ? undefined : matchedRecord;
+  const [savedRecord, setSavedRecord] = useState<string | undefined>();
   const navigate = useNavigate();
   const update = useQueryUpdate();
   const client = useQueryClient();
@@ -88,6 +93,7 @@ export function FormResponsesPage() {
   const visibleCatalogFields = displayColumns.flatMap(column => column.catalogField ? [{ questionId: column.question.fieldId, fieldId: column.catalogField.fieldId }] : []);
   const hasFilters =
     !!route.query.state ||
+    route.query.enteredInApp != null ||
     !!route.query.search ||
     !!route.query.conditions?.length ||
     !!route.query.actorIds?.length ||
@@ -146,19 +152,13 @@ export function FormResponsesPage() {
       id: "actor",
       header: t("responses.actor"),
       sortable: true,
-      cell: (row) => (
-        <span className="flex items-center gap-2">
-          {row.channel === "phone" ? (
-            <PublicWhatsAppIcon className="size-4 shrink-0" />
-          ) : null}
-          <span className="sr-only">
-            {row.channel === "phone"
-              ? t("responses.whatsapp")
-              : t("responses.unknownChannel")}
-          </span>
-          {row.actor.displayName ?? t("responses.unknownPerson")}
-        </span>
-      ),
+      cell: (row) => row.actor.displayName ?? t("responses.unknownPerson"),
+    },
+    {
+      id: "channel",
+      header: t("formEntries:sheet.channel"),
+      cell: (row) => <span className="inline-flex items-center gap-1.5">{row.channel === "phone" ? <PublicWhatsAppIcon aria-hidden="true" className="size-4 shrink-0" /> : null}
+        {row.channel === "app" ? t("formEntries:sheet.channels.app") : row.channel === "phone" ? t("responses.whatsapp") : "—"}</span>,
     },
     ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
     ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
@@ -192,7 +192,8 @@ export function FormResponsesPage() {
           : undefined
       }
       actions={
-        scope.user?.permissions.includes("formrecords.export") ? (
+        scope.user?.permissions.includes("formrecords.export") || scope.user?.permissions.includes("formrecords.create") ? <>
+          {scope.user?.permissions.includes("formrecords.export") ? (
           <Button
             type="button"
             variant="outline"
@@ -201,7 +202,11 @@ export function FormResponsesPage() {
           >
             {t("responses.export")}
           </Button>
-        ) : undefined
+          ) : null}
+          {scope.user?.permissions.includes("formrecords.create") ? <Button type="button" onClick={() => mobile
+            ? navigate("/formularios/" + formId + "/cargar", { state: { from: "sheet" } })
+            : navigate({ pathname: "/formularios/" + formId + "/respuestas/nueva", search: route.params.toString() })}>{t("formEntries:addResponse")}</Button> : null}
+        </> : undefined
       }
     >
       {scope.user?.permissions.includes("formapprovals.decide") ? <FormPendingApprovals formId={formId} onDecided={() => { void query.refetch(); }}/> : null}
@@ -223,6 +228,13 @@ export function FormResponsesPage() {
               />
             </div>
           ) : null}
+          {/* «Canal» is one more quick filter (CW6-A): App or WhatsApp. */}
+          <div className="w-full sm:w-44"><NativeSelect aria-label={t("formEntries:sheet.channel")} value={route.query.enteredInApp == null ? "" : String(route.query.enteredInApp)}
+            onChange={event => route.setFilter({ ...route.query, enteredInApp: event.target.value === "" ? undefined : event.target.value === "true" })}>
+            <option value="">{t("formEntries:sheet.allChannels")}</option>
+            <option value="true">{t("formEntries:sheet.channels.app")}</option>
+            <option value="false">{t("responses.whatsapp")}</option>
+          </NativeSelect></div>
           {data?.hasApproval ? <NativeSelect aria-label={t("approvals.state")} value={route.query.state ?? ""} onChange={event => route.setFilter({ ...route.query, state: (event.target.value || undefined) as typeof route.query.state })}><option value="">{t("approvals.allStates")}</option>{(["Received", "PendingApproval", "Approved", "Rejected"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}</NativeSelect> : null}
           {firstChoice ? (
             <ResponseChoiceMenu
@@ -294,6 +306,7 @@ export function FormResponsesPage() {
             {appliedFilters.map(filter => <FilterChip key={filter.key} removeLabel={t("responses.remove", { name: filter.label })} onRemove={() => {
               if (filter.key === "version") route.setFilter(route.query, []);
               else if (filter.key === "state") route.setFilter({ ...route.query, state: undefined });
+              else if (filter.key === "channel") route.setFilter({ ...route.query, enteredInApp: undefined });
               else if (filter.key === "actor") route.setFilter({ ...route.query, actorIds: [] });
               else if (filter.key === "received") route.setFilter({ ...route.query, receivedFromUtc: undefined, receivedToUtc: undefined });
               else if (filter.key === "search") route.setFilter({ ...route.query, search: undefined });
@@ -308,7 +321,7 @@ export function FormResponsesPage() {
           columns={columns}
           rows={data?.records.items ?? []}
           rowKey={(row) => row.id}
-          selectedRowKey={recordId ?? (workspace?.navigation?.origin === "sheet" ? workspace.navigation.selection.recordId : undefined)}
+          selectedRowKey={recordId ?? (adding ? savedRecord : undefined) ?? (workspace?.navigation?.origin === "sheet" ? workspace.navigation.selection.recordId : undefined)}
           onRowClick={row => { rememberSheet(row.id); if (row.id === recordId) setFocusRequest(value => value + 1); navigate(recordPath(row.id)); }}
           isLoading={query.isPending}
           hasData={!!data}
@@ -373,6 +386,10 @@ export function FormResponsesPage() {
         />
       ) : null}
     </Page></div>
+    {adding && !mobile ? <FormEntryPanel key={scope.owner + ":" + formId} formId={formId} formName={data?.name}
+      onClose={() => navigate({ pathname: "/formularios/" + formId + "/respuestas", search: route.params.toString() })}
+      onSaved={id => { setSavedRecord(id); void query.refetch(); }}/> : null}
+    {adding && mobile ? <Navigate to={"/formularios/" + formId + "/cargar"} state={{ from: "sheet" }} replace/> : null}
     {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
     </div>
   );

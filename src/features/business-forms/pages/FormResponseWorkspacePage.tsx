@@ -14,8 +14,10 @@ export function FormResponseWorkspacePage() {
   const readScope = useResponseScope();
   const mobile = useMediaQuery("(width < 640px)");
   const direct = useMatch("/formularios/:formId/respuestas/:recordId");
+  // «nueva» is the loading panel, not a response: on the phone the sheet sends it to the loading page.
+  const adding = useMatch("/formularios/:formId/respuestas/nueva");
   const location = useLocation();
-  if (readScope.allowed && mobile && direct?.params.recordId) return <MobileResponseRedirect formId={formId} recordId={direct.params.recordId} search={location.search}/>;
+  if (readScope.allowed && mobile && direct?.params.recordId && !adding) return <MobileResponseRedirect formId={formId} recordId={direct.params.recordId} search={location.search}/>;
   if (readScope.allowed) return <FormResponsesPage/>;
   if (!has("formapprovals.decide")) return <ForbiddenPage/>;
   return <FormPendingApprovals formId={formId} standalone/>;

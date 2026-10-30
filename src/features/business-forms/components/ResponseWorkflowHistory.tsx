@@ -15,7 +15,7 @@ import type { WorkflowHistoryEntry } from "../workflowHistory";
 import { composeWorkflowMoments } from "../workflowMoments";
 import { sameWorkflowReviewTarget, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDocuments }: { workflow: ReturnType<typeof useResponseWorkflow>; record: ResponseDetail; timeZoneId?: string; renderDocuments?: (runId: string) => ReactNode }) {
-  const { t, i18n } = useTranslation("forms");
+  const { t, i18n } = useTranslation(["forms", "formEntries"]);
   const data = workflow.query.data?.recordId === record.id ? workflow.query.data : undefined;
   const date = (utc: string) => formatDateTimeInZone(utc, i18n.language, timeZoneId);
   const canManage = workflow.canManage;
@@ -70,7 +70,9 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
           : moment.task.state !== "Open" && moment.task.decidedAtUtc ? [{ type: "decision", key: "decision:" + moment.task.id, atUtc: moment.task.decidedAtUtc, task: moment.task }] : [];
         return <li key={moment.key} aria-label={title} className="space-y-3">
           <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] pb-2 text-sm"><span className="font-semibold">{title}</span>{moment.kind === "effects" ? <span className="text-xs text-[var(--color-content-muted)]">{t("detail.actionsCompleted", { completed: moment.completedCount, count: moment.totalCount })}</span> : null}</div>
-          {moment.kind === "received" && moment.origin ? <p className="text-sm text-[var(--color-content-muted)]">{t(moment.origin.senderKind === "Assistant" ? "detail.originAssistant" : "detail.originManual", { name: moment.origin.senderName ?? t("responses.unknownPerson") })}</p> : null}
+          {moment.kind === "received" && moment.origin ? <p className="text-sm text-[var(--color-content-muted)]">{moment.origin.channelId === "app"
+            ? t("formEntries:origin.appBy", { name: moment.origin.senderName ?? t("responses.unknownPerson") })
+            : t(moment.origin.senderKind === "Assistant" ? "detail.originAssistant" : "detail.originManual", { name: moment.origin.senderName ?? t("responses.unknownPerson") })}</p> : null}
           <ol className="space-y-3">
             {moment.kind === "approval" ? <li className="flex flex-wrap gap-2 text-sm"><time dateTime={moment.task.requestedAtUtc}>{date(moment.task.requestedAtUtc)}</time><span>{t("detail.approvalRequested", { role: moment.task.roleName ?? t("rules.unavailableRole") })}</span></li> : null}
             {entries.map(renderEntry)}
