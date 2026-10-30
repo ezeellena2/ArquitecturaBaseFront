@@ -117,7 +117,7 @@ dibujadas las preguntas en CW2-A y CW2-B.
 ## Cierre local de la Etapa 1 — 2026-10-30
 
 CW1-B, CW2-A, CW2-B, CW3, CW4, CW5 y CW6-A están implementadas con las reglas de armado de CW12, CW13-A y CW16. La
-verificación final aprobó 3.559/3.559 tests del front en 327 archivos, el lint con 51/51 reglas de diseño, el build sin
+verificación final aprobó 3.560/3.560 tests del front en 327 archivos, el lint con 51/51 reglas de diseño, el build sin
 advertencias y 775/775 pruebas visuales; las 30 escenas `formEntries` se compararon con sus tableros en es/en a 1440, 390 y
 320. Los contratos se calificaron con los 17 cuerpos de `forms-entries-http`, de la corrida conjunta del backend que aprobó
 6.548/6.548 tests y exportó las 24 cohortes.
