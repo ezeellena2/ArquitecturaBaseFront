@@ -41,10 +41,7 @@ export function CatalogListTable({ page, canManage, loading, error, onRetry, onP
 }) {
   const { t } = useTranslation("forms");
   const columns: Column<CatalogListRow>[] = [
-    { id: "name", header: t("catalogs.columns.name"), sortable: true, cell: row => <div>
-      <Link to={"/catalogos/" + row.id} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{row.name}</Link>
-      {row.description ? <p className="text-xs text-[var(--color-content-muted)]">{row.description}</p> : null}
-    </div> },
+    { id: "name", header: t("catalogs.columns.name"), sortable: true, cell: row => <Link to={"/catalogos/" + row.id} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{row.name}</Link> },
     { id: "origin", header: t("catalogs.columns.origin"), cell: row => <div><p>{t("catalogs.source." + (row.origin === "Manual" ? "manual" : "database"))}</p>
       {row.origin !== "Manual" ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.source.filters")}</p> : null}
     </div> },
