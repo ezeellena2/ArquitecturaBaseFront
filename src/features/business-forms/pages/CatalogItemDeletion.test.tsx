@@ -45,6 +45,9 @@ describe("Deleting a saved option of a Manual catalog", () => {
     await mount(); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Editar López" }));
     const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await user.type(code, "C9");
+    // The option is edited in the options modal; on the phone «Listo» is in its list.
+    await user.click(screen.getByRole("button", { name: "Volver a la lista" }));
+    await user.click(screen.getByRole("button", { name: "Listo" }));
     await markForDeletion(user, "López");
     expect(screen.getByText("Se elimina al guardar")).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "Código" })).not.toBeInTheDocument();

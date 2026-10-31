@@ -38,6 +38,14 @@ async function applyFields(user: ReturnType<typeof userEvent.setup>) {
   if (back) await user.click(back);
   await user.click(within(dialog).getByRole("button", { name: "Listo" }));
 }
+// An option is edited in the options modal: «Agregar opción» opens it on a new one, the pencil and a failed Save on the page's.
+// On the phone the chosen option has «Volver a la lista», and «Listo» is in the list; Save is behind the modal until it closes.
+async function doneOptions(user: ReturnType<typeof userEvent.setup>) {
+  const dialog = screen.getByRole("dialog", { name: /^(Opciones (nuevas )?de|New options for|Options of)/ });
+  const back = within(dialog).queryByRole("button", { name: /^(Volver a la lista|Back to the list)$/ });
+  if (back) await user.click(back);
+  await user.click(within(dialog).getByRole("button", { name: /^(Listo|Done)$/ }));
+}
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
 const initial = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, originalCulture: "es" as const, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
@@ -64,10 +72,15 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(text).toHaveValue("123456789012345678901234567890X");
     expect(screen.getByText("31/30")).toBeInTheDocument();
     expect(text).toHaveAttribute("aria-invalid", "true");
+    await doneOptions(user);
     await user.click(screen.getByRole("button",{name:"Guardar"}));
-    expect(bodies).toEqual([]); expect(text).toHaveValue("123456789012345678901234567890X");
+    // Saving opens the option again, with the focus on its marked text, and sends nothing.
+    const reopened = await screen.findByRole("textbox", {name:"Texto"});
+    await waitFor(() => expect(reopened).toHaveFocus());
+    expect(bodies).toEqual([]); expect(reopened).toHaveValue("123456789012345678901234567890X");
     expect(screen.getByRole("textbox", {name:"Detalle"})).toHaveAttribute("maxlength", "300");
-    await user.clear(text); await pasteText(user, text, "Texto corregido");
+    await user.clear(reopened); await pasteText(user, reopened, "Texto corregido");
+    await doneOptions(user);
     await user.click(screen.getByRole("button",{name:"Guardar"}));
     await waitFor(() => expect(bodies).toHaveLength(1));
   });
@@ -81,6 +94,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(screen.getByRole("button", { name: "Agregar opción" }));
     await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Pérez");
     await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "C1");
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/" + id));
     await screen.findByRole("button", { name: "Editar Pérez" });
@@ -125,14 +139,18 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.queryByText("Completá este campo.")).not.toBeInTheDocument();
     expect(screen.queryByText("Revisá las opciones marcadas antes de guardar.")).not.toBeInTheDocument();
     expect(text).not.toHaveAttribute("aria-invalid", "true"); expect(code).not.toHaveAttribute("aria-invalid", "true");
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
-    expect(text).toHaveAttribute("aria-invalid", "true"); expect(text).toHaveAccessibleDescription("Completá este campo.");
-    expect(code).toHaveAttribute("aria-invalid", "true"); expect(code).toHaveAccessibleDescription("Completá este campo.");
-    expect(bodies).toEqual([]);
     await pasteText(user, text, "Norte");
-    expect(text).not.toHaveAttribute("aria-invalid", "true");
-    expect(code).toHaveAccessibleDescription("Completá este campo.");
+    await doneOptions(user);
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    // Trying to save marks what is empty and opens the option again.
+    const empty = await screen.findByRole("textbox", { name: "Código" });
+    expect(empty).toHaveAttribute("aria-invalid", "true"); expect(empty).toHaveAccessibleDescription("Completá este campo.");
+    expect(screen.getByRole("textbox", { name: "Texto" })).not.toHaveAttribute("aria-invalid", "true");
+    expect(bodies).toEqual([]);
+    await pasteText(user, empty, "N");
+    expect(empty).not.toHaveAttribute("aria-invalid", "true");
     // Another option added after the attempt starts unmarked too.
+    await user.click(screen.getByRole("button", { name: "Volver a la lista" }));
     await user.click(screen.getByRole("button", { name: "Agregar opción" }));
     expect(screen.getByRole("textbox", { name: "Texto" })).not.toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("textbox", { name: "Código" })).not.toHaveAttribute("aria-invalid", "true");
@@ -150,23 +168,38 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.getByRole("textbox", { name: "Texto" })).not.toHaveAttribute("aria-invalid", "true");
     expect(screen.queryAllByText("Completá este campo.")).toHaveLength(1);
   });
-  it("takes the focus to the first marked control of an option that was already open when saving fails", async () => {
+  it("opens the option with the focus on its first marked control when saving fails", async () => {
     setup(); const bodies: unknown[] = [];
     server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
     await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Norte");
-    // Save is in the header, away from the open option: the attempt does not reopen it, but it takes the focus to what it marks.
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(screen.getByRole("dialog", { name: "Opciones de «Clientes»" })).toBeInTheDocument();
     const code = screen.getByRole("textbox", { name: "Código" });
     expect(code).toHaveAccessibleDescription("Completá este campo.");
-    expect(code).toHaveFocus();
+    await waitFor(() => expect(code).toHaveFocus());
     expect(bodies).toEqual([]);
   });
-  it("keeps Generate code in place while a code is typed and while the catalog saves", async () => {
+  it("puts back with Cancel what was written in the options modal", async () => {
     setup(); await mount("/catalogos/" + id); const user = userEvent.setup();
-    let saves = 0;
-    server.use(http.put("/api/forms/catalogs/" + id, () => { saves++; return new Promise<never>(() => undefined); }));
+    await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
+    const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await pasteText(user, code, "C2");
+    // On the phone «Cancelar» is in the list, as «Listo».
+    await user.click(screen.getByRole("button", { name: "Volver a la lista" }));
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Agregar opción" }));
+    await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Norte");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByText("Norte")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
+    expect(screen.getByRole("textbox", { name: "Código" })).toHaveValue("C1");
+  });
+  it("keeps Generate code in place while a code is typed", async () => {
+    setup(); await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
     await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Norte");
     const generate = screen.getByRole("button", { name: "Generar desde el texto" });
@@ -179,13 +212,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.clear(code);
     expect(generate).toBeEnabled();
     await user.click(generate);
-    expect(code).not.toHaveValue("");
-    expect(generate).toBeDisabled();
-    // Saving does not take it away either: it follows the permission and is only disabled while the request is pending.
-    await user.click(screen.getByRole("button", { name: "Guardar" }));
-    await waitFor(() => expect(saves).toBe(1));
-    await waitFor(() => expect(code).toHaveAttribute("readonly"));
-    expect(screen.getByRole("button", { name: "Generar desde el texto" })).toBe(generate);
+    expect(code).toHaveValue("NORTE");
     expect(generate).toBeDisabled();
   });
   it("creates an option written only in the menu language", async () => {
@@ -196,6 +223,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(screen.getByRole("button", { name: "Add option" }));
     await pasteText(user, screen.getByRole("textbox", { name: "Text" }), "Central");
     await pasteText(user, screen.getByRole("textbox", { name: "Code" }), "D1");
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(bodies).toHaveLength(1));
     expect(bodies[0]!.items).toEqual([expect.objectContaining({ itemId: null, code: "D1", text: { es: null, en: "Central" } })]);
@@ -212,25 +240,26 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "N");
     // Leaving the only text control touches the option's text in either language.
     expect(text).toHaveAccessibleDescription("En inglés: Completá este campo.");
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
-    expect(text).toHaveAccessibleDescription("En inglés: Completá este campo.");
-    expect(text).toHaveFocus();
+    const reopened = await screen.findByRole("textbox", { name: "Texto" });
+    expect(reopened).toHaveAccessibleDescription("En inglés: Completá este campo.");
+    await waitFor(() => expect(reopened).toHaveFocus());
     expect(bodies).toEqual([]);
   });
-  it("removes a new option that was never saved, also once deactivated, and leaves nothing to save", async () => {
+  it("removes a new option that was never saved, also one left empty, and leaves nothing to save", async () => {
     setup();
     await mount("/catalogos/" + id); const user = userEvent.setup();
+    // Left empty, «Listo» does not keep it.
     await user.click(await screen.findByRole("button", { name: "Agregar opción" }));
-    await user.click(screen.getByRole("button", { name: "Quitar Nueva opción" }));
+    await doneOptions(user);
     expect(screen.queryByRole("button", { name: /Nueva opción/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Agregar opción" }));
     await pasteText(user, screen.getByRole("textbox", { name: "Texto" }), "Prueba");
-    await user.click(screen.getByRole("checkbox", { name: /^Activa/ }));
-    await user.click(screen.getByRole("button", { name: "Listo" }));
-    expect(screen.getByRole("button", { name: "Reactivar Prueba" })).toBeInTheDocument();
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Quitar Prueba" }));
-    expect(screen.queryByRole("button", { name: "Reactivar Prueba" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Editar Prueba" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Editar Pérez" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
   });
@@ -261,6 +290,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
     const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await pasteText(user, code, "C2");
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     // The saved revision starts a new baseline: the page read before saving is not shown as if it were part of it.
     await waitFor(() => expect(waiting.length).toBeGreaterThan(0));
@@ -274,6 +304,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
     const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await pasteText(user, code, "C2");
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(bodies).toHaveLength(1));
     expect(bodies[0]).toMatchObject({ expectedRevision: 1, items: [{ itemId, code: "C2", text: { es: "Pérez", en: null } }] });
@@ -292,7 +323,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(await screen.findByRole("button", { name: "Reactivar Pérez" }));
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     const text = screen.getByRole("textbox", { name: "Texto" }); await user.clear(text); await pasteText(user, text, "Pérez Norte");
-    await user.click(screen.getByRole("checkbox", { name: "Activa" }));
+    await user.click(within(screen.getByRole("group", { name: "Estado" })).getByRole("button", { name: "De baja" }));
+    await doneOptions(user);
     expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(bodies).toHaveLength(1));
@@ -305,9 +337,10 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...initial, fields: [field] })), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [{ ...option, fields: values }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { bodies.push(await request.json() as typeof bodies[number]); return answer(); }));
     return bodies;
   }
-  async function renameOption(user: ReturnType<typeof userEvent.setup>) {
+  async function renameOption(user: ReturnType<typeof userEvent.setup>, done = true) {
     await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
     const text = screen.getByRole("textbox", { name: "Texto" }); await user.clear(text); await pasteText(user, text, "Pérez Norte");
+    if (done) await doneOptions(user);
   }
   it("lets the server review a type change instead of blocking Save", async () => {
     const term = savedField({ key: "term", name: "Plazo", type: "text" });
@@ -343,8 +376,9 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await user.selectOptions(within(await editField(user, "Cantidad")).getByRole("combobox", { name: "Tipo" }), "text");
     await applyFields(user);
-    await renameOption(user);
+    await renameOption(user, false);
     expect(screen.getByRole("textbox", { name: "Cantidad" })).toHaveValue("1.500");
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(bodies).toHaveLength(1));
     expect(bodies[0]).toMatchObject({ fields: [{ id: fieldId, type: "text" }], items: [{ itemId, text: { es: "Pérez Norte" } }] });
@@ -793,7 +827,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
     await user.clear(screen.getByRole("textbox", { name: "Código" }));
     await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "C99");
-    await user.click(screen.getByRole("button", { name: "Listo" }));
+    await doneOptions(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     const code = await screen.findByRole("textbox", { name: "Código" });
     expect(code).toHaveAttribute("aria-invalid", "true");
@@ -839,7 +873,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const value = screen.getByRole("textbox", { name: "Valor · Decimal" });
     await user.clear(value); await pasteText(user, value, "mil");
     expect(value).toHaveAttribute("aria-invalid", "true");
-    await user.click(screen.getByRole("button", { name: "Listo" }));
+    await doneOptions(user);
     expect(screen.queryByRole("textbox", { name: "Valor · Decimal" })).not.toBeInTheDocument();
     // Save stays enabled while the value is wrong: trying it opens the option and focuses the marked value, sending nothing.
     const save = screen.getByRole("button", { name: "Guardar" });
@@ -1102,11 +1136,15 @@ it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invali
   expect(value).toHaveValue(language === "es" ? "9.007.199.254.740.993,0123" : "9,007,199,254,740,993.0123");
   await user.clear(value); await pasteText(user, value, "mil");
   expect(value).toHaveValue("mil"); expect(value).toHaveAttribute("aria-invalid", "true");
-  const save = screen.getByRole("button", { name: language === "es" ? "Guardar" : "Save" });
-  await user.click(save);
-  expect(value).toHaveValue("mil"); expect(value).not.toHaveAttribute("readonly"); expect(bodies).toEqual([]);
-  await user.clear(value); await pasteText(user, value, language === "es" ? "1.500,50" : "1,500.50");
-  await user.click(save);
+  const save = () => screen.getByRole("button", { name: language === "es" ? "Guardar" : "Save" });
+  await doneOptions(user);
+  await user.click(save());
+  // Saving opens the option again with what was written, sending nothing.
+  const reopened = await screen.findByRole("textbox", { name: language === "es" ? "Valor · Decimal" : "Value · Decimal" });
+  expect(reopened).toHaveValue("mil"); expect(reopened).not.toHaveAttribute("readonly"); expect(bodies).toEqual([]);
+  await user.clear(reopened); await pasteText(user, reopened, language === "es" ? "1.500,50" : "1,500.50");
+  await doneOptions(user);
+  await user.click(save());
   await waitFor(() => expect(bodies).toHaveLength(1));
   expect(bodies[0]).not.toHaveProperty("valueType");
   expect(bodies[0]).toMatchObject({ expectedRevision: 1, items: [{ itemId, value: "1500.5", code: "C1" }] });
@@ -1127,12 +1165,15 @@ it("keeps the unsaved catalog when the menu language changes and shows the other
   await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
   const value = screen.getByRole("textbox", { name: "Valor · Decimal" });
   await user.clear(value); await pasteText(user, value, "2.500,75");
+  await doneOptions(user);
   expect(hasUnsavedChanges()).toBe(false);
   await act(() => i18n.changeLanguage("en"));
   const english = await screen.findByRole("textbox", { name: "Name" });
   expect(english).toHaveValue("Customers");
   expect(english).toHaveAccessibleDescription("Original (Spanish): Clientes editado");
+  await user.click(screen.getByRole("button", { name: "Edit Pérez" }));
   expect(await screen.findByRole("textbox", { name: "Value · Decimal" })).toHaveValue("2,500.75");
+  await doneOptions(user);
   await user.click(screen.getByRole("button", { name: "Save" }));
   await waitFor(() => expect(bodies).toHaveLength(1));
   expect(bodies[0]).toMatchObject({ name: { es: "Clientes editado", en: "Customers" }, items: [{ itemId, value: "2500.75" }] });
@@ -1162,8 +1203,9 @@ it("sends the chosen type only on creation and binds a value error to its unchan
   const text = screen.getByRole("textbox", { name: "Texto" }); await pasteText(user, text, "GBA");
   await pasteText(user, screen.getByRole("textbox", { name: "Código" }), "Z-GBA");
   await pasteText(user, screen.getByRole("textbox", { name: "Valor · Decimal" }), "1.500,50");
+  await doneOptions(user);
   await user.click(screen.getByRole("button", { name: "Guardar" }));
-  const value = screen.getByRole("textbox", { name: "Valor · Decimal" });
+  const value = await screen.findByRole("textbox", { name: "Valor · Decimal" });
   await waitFor(() => expect(value).toHaveAccessibleDescription(expect.stringContaining("Revisá el valor decimal.")));
   expect(value).toHaveValue("1.500,50");
   expect(bodies).toHaveLength(1);
@@ -1180,12 +1222,15 @@ it("blocks a duplicate code on either row but keeps duplicate labels as a warnin
   const code=screen.getByRole("textbox",{name:"Código"}); await user.clear(code); await pasteText(user,code,"c1");
   expect(code).toHaveAttribute("aria-invalid","true");
   expect(code).toHaveAccessibleDescription(expect.stringContaining("fila 1"));
+  await doneOptions(user);
   await user.click(screen.getByRole("button",{name:"Guardar"}));
   expect(bodies).toEqual([]);
-  await user.clear(code);await pasteText(user,code,"C2");
+  // Saving opens the option with the repeated code again.
+  const reopened=await screen.findByRole("textbox",{name:"Código"}); await user.clear(reopened);await pasteText(user,reopened,"C2");
   const text=screen.getByRole("textbox",{name:"Texto"});await user.clear(text);await pasteText(user,text,"Pérez");
   expect(text).toHaveAccessibleDescription(expect.stringContaining("fila 1"));
   expect(text).not.toHaveAttribute("aria-invalid","true");
+  await doneOptions(user);
   await user.click(screen.getByRole("button",{name:"Guardar"}));
   await waitFor(() => expect(bodies).toHaveLength(1));
 });

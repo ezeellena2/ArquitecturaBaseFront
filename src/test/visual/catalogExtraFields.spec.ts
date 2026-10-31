@@ -18,6 +18,12 @@ async function openFields(page: Page, es: boolean) {
   await expect(fields).toBeVisible();
   return fields;
 }
+// «Listo» of the options modal (B, 2026-10-31); on the phone it is in the list.
+async function doneOptions(page: Page, es: boolean, width: number) {
+  const options = page.getByRole("dialog", { name: es ? /^Opciones (nuevas )?de/ : /^(New options for|Options of)/ });
+  if (width < 640) await options.getByRole("button", { name: es ? "Volver a la lista" : "Back to the list", exact: true }).click();
+  await options.getByRole("button", { name: es ? "Listo" : "Done", exact: true }).click();
+}
 async function noWrites(page: Page) {
   expect(await page.evaluate(() => (globalThis as unknown as { catalogExtraFieldsFixture: { writes: unknown[] } }).catalogExtraFieldsFixture.writes)).toEqual([]);
 }
@@ -106,10 +112,6 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // On the phone the option editor gives each typed field its type and range.
     if (width < 640) await expect(payment).toHaveAccessibleDescription(es ? "Entero, de 0 a 180." : "Whole number, from 0 to 180.");
     await payment.fill(es ? "treinta" : "thirty"); await expect(payment).toHaveAttribute("aria-invalid", "true");
-    // Beside the title goes only the catalog's state, never «Cambios sin guardar»: an enabled Save says there are changes.
-    const header = page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) });
-    await expect(header).toContainText(es ? "Activo" : "Active");
-    await expect(header).not.toContainText(es ? "Cambios sin guardar" : "Unsaved changes");
     // The value and its reason; in the table, on a line under the row that names the row and the field. On the phone the
     // read-only table above also marks its cell, so the editor's control is what says it.
     const problem = es ? "«treinta» no es un número entero." : "“thirty” is not a whole number.";
@@ -117,11 +119,19 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     else await expect(page.getByText((es ? "Fila 1 · " : "Row 1 · ") + term + ": " + problem, { exact: true })).toBeVisible();
     await payment.scrollIntoViewIfNeeded(); await contained(page, payment, width);
     await page.screenshot({ path: info.outputPath("ce2-invalid-typed-value.png"), fullPage: true });
-    // Save stays enabled: trying it writes nothing, keeps the mark and opens the option (on 640 and wider, under its row).
-    await page.getByRole("button", { name: es ? "Guardar" : "Save", exact: true }).click();
-    await noWrites(page); await expect(payment).toHaveAttribute("aria-invalid", "true");
-    await payment.fill("45"); await expect(payment).not.toHaveAttribute("aria-invalid", "true");
-    await page.getByRole("button", { name: es ? "Listo" : "Done", exact: true }).click(); await expect(edit).toBeFocused();
+    // Save stays enabled: trying it writes nothing and opens the option in the options modal, with the cursor in the mark.
+    if (width < 640) await doneOptions(page, es, width);
+    // Beside the title goes only the catalog's state, never «Cambios sin guardar»: an enabled Save says there are changes.
+    const header = page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) });
+    await expect(header).toContainText(es ? "Activo" : "Active");
+    await expect(header).not.toContainText(es ? "Cambios sin guardar" : "Unsaved changes");
+    const save = page.getByRole("button", { name: es ? "Guardar" : "Save", exact: true });
+    await save.click();
+    await noWrites(page);
+    const marked = page.getByRole("dialog").getByRole("textbox", { name: term, exact: true });
+    await expect(marked).toHaveAttribute("aria-invalid", "true"); await expect(marked).toBeFocused();
+    await marked.fill("45"); await expect(marked).not.toHaveAttribute("aria-invalid", "true");
+    await doneOptions(page, es, width); await expect(save).toBeFocused();
     await page.screenshot({ path: info.outputPath("ce2-table-contained.png"), fullPage: true });
     await noWrites(page);
   });

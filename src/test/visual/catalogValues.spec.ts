@@ -19,23 +19,29 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const value = page.getByRole("textbox", { name: label("Valor · Decimal", "Value · Decimal"), exact: true });
     await value.fill("mil");
     await expect(value).toHaveAttribute("aria-invalid", "true");
-    // Beside the title goes only the catalog's state, never «Cambios sin guardar»: an enabled Save says there are changes.
-    const header = page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) });
-    await expect(header).toContainText(label("Activo", "Active"));
-    await expect(header).not.toContainText(label("Cambios sin guardar", "Unsaved changes"));
-    await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeEnabled();
     await value.scrollIntoViewIfNeeded();
     const bounds = await value.boundingBox(); expect(bounds).not.toBeNull();
     expect(bounds!.x).toBeGreaterThanOrEqual(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: info.outputPath("catalog-typed-invalid.png"), fullPage: true });
-    // Save stays enabled: trying it with the invalid value keeps the input marked and writes nothing (checked at the end).
-    // The option was already open, so the attempt takes the focus back to the marked value and brings it into view.
-    await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
-    await expect(value).toHaveValue("mil"); await expect(value).toHaveAttribute("aria-invalid", "true");
-    await expect(value).toBeFocused(); await expect(value).toBeInViewport();
-    await value.fill(english ? "3,200.00" : "3.200,00");
-    await expect(value).not.toHaveAttribute("aria-invalid", "true");
+    // «Listo» of the options modal keeps the invalid value in the draft; on the phone it is in the list.
+    const options = page.getByRole("dialog", { name: english ? /^Options of/ : /^Opciones de/ });
+    if (width < 640) await options.getByRole("button", { name: label("Volver a la lista", "Back to the list"), exact: true }).click();
+    await options.getByRole("button", { name: label("Listo", "Done"), exact: true }).click();
+    // Beside the title goes only the catalog's state, never «Cambios sin guardar»: an enabled Save says there are changes.
+    const header = page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) });
+    await expect(header).toContainText(label("Activo", "Active"));
+    await expect(header).not.toContainText(label("Cambios sin guardar", "Unsaved changes"));
+    const save = page.getByRole("button", { name: label("Guardar", "Save"), exact: true });
+    await expect(save).toBeEnabled();
+    // Save stays enabled: trying it with the invalid value writes nothing (checked at the end) and opens the option again,
+    // with the focus on the marked value, brought into view.
+    await save.click();
+    const reopened = page.getByRole("dialog").getByRole("textbox", { name: label("Valor · Decimal", "Value · Decimal"), exact: true });
+    await expect(reopened).toHaveValue("mil"); await expect(reopened).toHaveAttribute("aria-invalid", "true");
+    await expect(reopened).toBeFocused(); await expect(reopened).toBeInViewport();
+    await reopened.fill(english ? "3,200.00" : "3.200,00");
+    await expect(reopened).not.toHaveAttribute("aria-invalid", "true");
     await page.screenshot({ path: info.outputPath("catalog-typed-valid.png"), fullPage: true });
     expect(await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: unknown[] } }).catalogsFixture.writes)).toEqual([]);
   });

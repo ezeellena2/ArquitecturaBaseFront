@@ -41,6 +41,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(width);
     await page.screenshot({ path: "test-results/catalog-manual-" + language + "-" + width + ".png" });
+    // The option is in the options modal; on the phone «Listo» is in its list.
+    if (width < 640) await page.getByRole("button", { name: es ? "Volver a la lista" : "Back to the list", exact: true }).click();
     await page.getByRole("button", { name: es ? "Listo" : "Done", exact: true }).click();
     await expect(page.getByRole("button", { name: es ? "Editar Pérez Hnos." : "Edit Pérez Hnos.", exact: true })).toBeFocused();
     await page.getByRole("button", { name: es ? "Usuarios, con filtros" : "Users with filters", exact: true }).click();

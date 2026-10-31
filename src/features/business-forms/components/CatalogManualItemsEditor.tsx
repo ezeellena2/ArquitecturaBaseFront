@@ -1,5 +1,5 @@
 import type { CatalogValueType } from "../catalogValues";
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { PagedResult } from "@/shared/api/pagedResult";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
@@ -10,7 +10,6 @@ import { Surface } from "@/shared/ui/Surface";
 import { administrativeName } from "../editorModel";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
-import { CatalogItemFields } from "./CatalogItemFields";
 import { CatalogItemsTable } from "./CatalogItemsTable";
 import type { CatalogFieldDraft } from "../catalogFields";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
@@ -18,10 +17,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/s
 import { FilterMenuTrigger } from "@/shared/ui/FilterMenuTrigger";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 
-export function CatalogManualItemsEditor({ items, culture, original, valueType, fields = [], scope, canManage, busy = false, hasPendingMoves = false, errors, editingItems = [], expandedKey, onExpand, onChange, onFieldBlur, onAdd, onMove, onRemove, deletedItemIds, deleteErrors, onDelete, onRestore, filters, pagination, totalCount = pagination?.totalCount, onPageChange, onPageSizeChange, actions, notice, warnings, pendingTexts, sortPending, onGenerateCode }: {
+export function CatalogManualItemsEditor({ items, culture, original, valueType, fields = [], scope, canManage, busy = false, hasPendingMoves = false, errors, onEdit, onChange, onFieldBlur, onAdd, onMove, onRemove, deletedItemIds, deleteErrors, onDelete, onRestore, filters, pagination, totalCount = pagination?.totalCount, onPageChange, onPageSizeChange, actions, notice, warnings, pendingTexts, sortPending }: {
   actions?: ReactNode;
   /** Above the table: what the server said about the fields when saving. */
-  notice?: ReactNode; warnings?: Readonly<Record<string, string>>; sortPending?: boolean; onGenerateCode?: (item: CatalogManualItemValue) => void;
+  notice?: ReactNode; warnings?: Readonly<Record<string, string>>; sortPending?: boolean;
   /** By option and field, what an unedited option or yes/no showed while a type change is pending (`pendingFieldTexts`). */
   pendingTexts?: Readonly<Record<string, Readonly<Record<string, string>>>>;
   items: readonly CatalogManualItemValue[];
@@ -32,12 +31,12 @@ export function CatalogManualItemsEditor({ items, culture, original, valueType, 
   busy?: boolean;
   hasPendingMoves?: boolean;
   errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
-  editingItems?: readonly CatalogManualItemValue[];
-  expandedKey: string | null;
-  onExpand: (key: string | null) => void;
+  /** The pencil: the page opens the option in the options modal. */
+  onEdit: (item: CatalogManualItemValue) => void;
   onChange: (item: CatalogManualItemValue) => void;
-  /** Leaving a control of an option, in the table or in its editor, by the control's error path. */
+  /** Leaving a control of an option in the table, by the control's error path. */
   onFieldBlur?: (localId: string, path: string) => void;
+  /** «Agregar opción»: the page opens the options modal on a new option. */
   onAdd: () => void;
   onMove?: (item: CatalogManualItemValue, delta: -1 | 1) => void;
   /** A new option, never saved, leaves the draft; the focus goes to «Agregar opción». */
@@ -59,29 +58,17 @@ export function CatalogManualItemsEditor({ items, culture, original, valueType, 
   const [selection, setSelection] = useState({ pageKey, ids: [] as string[] });
   if (selection.pageKey !== pageKey) setSelection({ pageKey, ids: [] });
   const selected = selection.pageKey === pageKey ? selection.ids : [];
-  const previousExpanded = useRef<string | null>(null);
-  const actionRefs = useRef(new Map<string, HTMLButtonElement>());
   const addRef = useRef<HTMLButtonElement>(null);
   const [deleting, setDeleting] = useState<CatalogManualItemValue | null>(null);
-  useLayoutEffect(() => {
-    if (previousExpanded.current !== null && expandedKey === null) (actionRefs.current.get(previousExpanded.current) ?? addRef.current)?.focus();
-    previousExpanded.current = expandedKey;
-  }, [expandedKey]);
-  const readOnly = !canManage || busy;
-  // Generating a code follows the permission, not the moment: while saving or reviewing it stays, disabled.
-  const generateCode = canManage ? onGenerateCode : undefined;
   const fieldsInsideTable = useMediaQuery("(min-width: 640px)");
-  const expandedItem = items.find(item => item.localId === expandedKey) ?? editingItems.find(item => item.localId === expandedKey);
   return <Surface title={t("catalogs.items.title")} actions={<>{canManage ? <Button ref={addRef} type="button" variant="outline" disabled={busy} onClick={onAdd}><PlusIcon className="size-4" />{t("addOption")}</Button> : null}{actions}</>}>
     {notice}
     {selected.length && canManage ? <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] px-4 py-2"><p className="mr-auto text-sm">{t("catalogs.items.selectedPage", { count: selected.length })}</p><Button variant="outline" size="sm" disabled={busy} onClick={() => items.filter(item => selected.includes(item.localId)).forEach(item => onChange({ ...item, isActive: false }))}>{t("catalogs.lifecycle.deactivate")}</Button><Button variant="outline" size="sm" disabled={busy} onClick={() => items.filter(item => selected.includes(item.localId)).forEach(item => onChange({ ...item, isActive: true }))}>{t("catalogs.items.reactivate")}</Button><Button variant="ghost" size="sm" onClick={() => setSelection({ pageKey, ids: [] })}>{t("catalogs.items.clearSelection")}</Button></div> : null}
     {fields.some(field => field.isActive) ? <div className="flex flex-wrap items-center gap-3 p-4">{filters}<DropdownMenu><FilterMenuTrigger>{t("catalogs.fields.columns")}</FilterMenuTrigger><DropdownMenuContent align="start">{fields.filter(field => field.isActive).map(field => <DropdownMenuCheckboxItem key={field.localId} checked={!hiddenFields.includes(field.localId)} onSelect={event => event.preventDefault()} onCheckedChange={visible => setHiddenFields(current => visible ? current.filter(id => id !== field.localId) : [...current, field.localId])}>{administrativeName(field.name, culture) || t("catalogs.fields.new")}</DropdownMenuCheckboxItem>)}</DropdownMenuContent></DropdownMenu></div> : filters}
-    <CatalogItemsTable fields={fields} scope={scope} visibleFieldIds={fields.filter(field => !hiddenFields.includes(field.localId)).map(field => field.localId)} inline={fieldsInsideTable} selected={selected} onSelect={(id, checked) => setSelection({ pageKey, ids: checked ? [...selected, id] : selected.filter(value => value !== id) })} onSelectAll={checked => setSelection({ pageKey, ids: checked ? items.map(item => item.localId) : [] })} errors={errors} warnings={warnings} pendingTexts={pendingTexts} sortPending={sortPending} items={items} culture={culture} original={original} valueType={valueType} canManage={canManage} busy={busy} hasPendingMoves={hasPendingMoves} totalCount={totalCount} expandedKey={expandedKey}
-      expandedContent={fieldsInsideTable && expandedItem ? <CatalogItemFields fields={fields} scope={scope} warning={warnings?.[expandedItem.localId]} pendingTexts={pendingTexts?.[expandedItem.localId]} onGenerateCode={generateCode ? () => generateCode(expandedItem) : undefined} item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} original={original} valueType={valueType} readOnly={readOnly} onChange={onChange} onFieldBlur={path => onFieldBlur?.(expandedItem.localId, path)} onDone={() => onExpand(null)}/> : undefined}
-      onExpand={onExpand} onChange={onChange} onFieldBlur={onFieldBlur} onMove={onMove} onRemove={onRemove ? item => { addRef.current?.focus(); onRemove(item); } : undefined}
+    <CatalogItemsTable fields={fields} scope={scope} visibleFieldIds={fields.filter(field => !hiddenFields.includes(field.localId)).map(field => field.localId)} inline={fieldsInsideTable} selected={selected} onSelect={(id, checked) => setSelection({ pageKey, ids: checked ? [...selected, id] : selected.filter(value => value !== id) })} onSelectAll={checked => setSelection({ pageKey, ids: checked ? items.map(item => item.localId) : [] })} errors={errors} warnings={warnings} pendingTexts={pendingTexts} sortPending={sortPending} items={items} culture={culture} original={original} valueType={valueType} canManage={canManage} busy={busy} hasPendingMoves={hasPendingMoves} totalCount={totalCount}
+      onEdit={onEdit} onChange={onChange} onFieldBlur={onFieldBlur} onMove={onMove} onRemove={onRemove ? item => { addRef.current?.focus(); onRemove(item); } : undefined}
       deletedItemIds={deletedItemIds} deleteErrors={deleteErrors} onDelete={onDelete ? setDeleting : undefined} onRestore={onRestore}
-      deleteDisabledReason={hasPendingMoves || sortPending ? t("catalogs.items.deleteAfterOrder") : null} onActionRef={(key, button) => { if (button) actionRefs.current.set(key, button); else actionRefs.current.delete(key); }}/>
-    {expandedItem && (!fieldsInsideTable || !items.some(item => item.localId === expandedItem.localId)) ? <div className="flex flex-col gap-3 p-4"><p className="text-sm font-medium">{t("catalogs.items.editing", { name: administrativeName(expandedItem.label, culture) || t("option", { number: expandedItem.position }) })}</p><CatalogItemFields fields={fields} scope={scope} warning={warnings?.[expandedItem.localId]} pendingTexts={pendingTexts?.[expandedItem.localId]} onGenerateCode={generateCode ? () => generateCode(expandedItem) : undefined} item={expandedItem} errors={errors?.[expandedItem.localId]} culture={culture} original={original} valueType={valueType} readOnly={readOnly} onChange={onChange} onFieldBlur={path => onFieldBlur?.(expandedItem.localId, path)} onDone={() => onExpand(null)} /></div> : null}
+      deleteDisabledReason={hasPendingMoves || sortPending ? t("catalogs.items.deleteAfterOrder") : null} />
     {items.length === 0 ? <div className="p-4"><p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.items.empty")}</p></div> : null}
     {pagination && onPageChange ? <Pagination {...pagination} onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} /> : null}
     <ConfirmDialog open={deleting !== null} onOpenChange={open => { if (!open) setDeleting(null); }} title={t("catalogs.items.deleteTitle", { name: deleting ? administrativeName(deleting.label, culture) || t("option", { number: deleting.position }) : "" })}

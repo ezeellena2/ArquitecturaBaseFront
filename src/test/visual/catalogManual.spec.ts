@@ -37,9 +37,17 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await expect(preview.getByText(/WhatsApp|Lo decide cada pregunta|Each form question decides/)).toHaveCount(0);
     };
     if (width >= 1280) await expectPreviewBesideSections();
+    // An option is written in the options modal (B, 2026-10-31); on the phone «Listo» is in its list.
+    const doneOptions = async () => {
+      const options = page.getByRole("dialog", { name: english ? /^(New options for|Options of)/ : /^Opciones (nuevas )?de/ });
+      if (width < 640) await options.getByRole("button", { name: english ? "Back to the list" : "Volver a la lista", exact: true }).click();
+      await options.getByRole("button", { name: english ? "Done" : "Listo", exact: true }).click();
+    };
     await page.getByRole("button", { name: english ? "Add option" : "Agregar opción", exact: true }).click();
     await page.getByRole("textbox", { name: english ? "Text" : "Texto", exact: true }).fill("Central");
     await page.getByRole("textbox", { name: english ? "Code" : "Código", exact: true }).fill("D1");
+    await page.screenshot({ path: info.outputPath("manual-option-dialog.png") });
+    await doneOptions();
     await expect(page.getByRole("button", { name: /Central.*(Guardá|Save)/ }).first()).toBeDisabled();
     // Las acciones de «Opciones» van al borde derecho de la sección (1 px de borde y 16 de margen, como el título a la
     // izquierda) y, en escritorio, a la altura del título. El motivo de las apagadas no va escrito debajo.
@@ -70,6 +78,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("button", { name: english ? "Edit Central" : "Editar Central", exact: true })).toBeVisible();
     await page.getByRole("button", { name: english ? "Edit Central" : "Editar Central", exact: true }).click();
     await page.getByRole("textbox", { name: english ? "Code" : "Código", exact: true }).fill("D2");
+    await doneOptions();
     await page.getByRole("button", { name: english ? "Save" : "Guardar", exact: true }).click();
     if (width >= 640) await expect(page.getByRole("textbox", { name: english ? "Option 1 code" : "Código de la opción 1", exact: true })).toHaveValue("D2");
     else await expect(page.getByText("D2", { exact: true })).toBeVisible();
@@ -185,6 +194,11 @@ for (const width of [1440, 390, 320]) {
     await text.scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath("manual-english-option-reference.png"), fullPage: true });
     await text.fill("Pérez Bros.");
+    // On the phone the option is in the options modal, over the page: «Done» is in its list.
+    if (width < 640) {
+      await page.getByRole("button", { name: "Back to the list", exact: true }).click();
+      await page.getByRole("button", { name: "Done", exact: true }).click();
+    }
     await name.fill("Clients");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Clients", level: 1, exact: true })).toBeVisible();

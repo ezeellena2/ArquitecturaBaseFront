@@ -19,7 +19,7 @@ import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, expandedKey, expandedContent, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onExpand, onChange, onFieldBlur, onMove, onRemove, deletedItemIds = [], deleteErrors, deleteDisabledReason, onDelete, onRestore, onActionRef }: {
+export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onEdit, onChange, onFieldBlur, onMove, onRemove, deletedItemIds = [], deleteErrors, deleteDisabledReason, onDelete, onRestore }: {
   items: readonly CatalogManualItemValue[];
   inline: boolean; selected: readonly string[]; onSelect: (id: string, selected: boolean) => void; onSelectAll: (selected: boolean) => void;
   errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; warnings?: Readonly<Record<string, string>>; sortPending?: boolean;
@@ -32,9 +32,8 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   busy: boolean;
   hasPendingMoves: boolean;
   totalCount?: number;
-  expandedKey: string | null;
-  expandedContent?: ReactNode;
-  onExpand: (key: string | null) => void;
+  /** The pencil opens the option in the options modal. */
+  onEdit: (item: CatalogManualItemValue) => void;
   onChange: (item: CatalogManualItemValue) => void;
   /** Leaving a control of an option, by its error path: the page then marks it if it is empty. */
   onFieldBlur?: (localId: string, path: string) => void;
@@ -46,7 +45,6 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   /** Why «Eliminar» is off while moves or A–Z are pending, or null. */
   deleteDisabledReason?: string | null;
   onDelete?: (item: CatalogManualItemValue) => void; onRestore?: (item: CatalogManualItemValue) => void;
-  onActionRef: (key: string, button: HTMLButtonElement | null) => void;
   fields?: readonly CatalogFieldDraft[]; scope?: CatalogReadScope; visibleFieldIds?: readonly string[];
 }) {
   const { t } = useTranslation("forms");
@@ -69,8 +67,6 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
         // can be another row's.
         const valueLabel = (field: string) => t(item.itemId === null ? "catalogs.fields.optionValueLabel" : "catalogs.fields.valueLabel", { option: name, row: number, field });
         const messages = errors?.[item.localId];
-        const expanded = expandedKey === item.localId;
-        const rememberAction = (button: HTMLButtonElement | null) => onActionRef(item.localId, button);
         // A saved option marked to delete stays in its place, read-only, until Save; its error is the server's reason.
         const deleted = item.itemId !== null && deletedItemIds.includes(item.itemId);
         const rowReadOnly = readOnly || deleted, deleteError = deleted ? deleteErrors?.[item.localId] : undefined;
@@ -109,13 +105,13 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
           <WideTableCell pinned="end" className="text-right">{canManage ? <div className="flex justify-end gap-1">
             {onMove ? <><IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("up", { name }) }) : t("up", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === 1} onClick={() => onMove(item, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
             <IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("down", { name }) }) : t("down", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === totalCount} onClick={() => onMove(item, 1)}><ChevronDownIcon className="size-4" /></IconButton></> : null}
-            {deleted ? <><span className="self-center text-xs text-[var(--color-danger)]">{t("catalogs.items.deletedState")}</span><Button ref={rememberAction} type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.restoreNamed", { name })} onClick={() => onRestore?.(item)}>{t("catalogs.items.restore")}</Button></>
-              : item.isActive || expanded ? <IconButton ref={rememberAction} size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} aria-expanded={expanded} onClick={() => onExpand(expanded ? null : item.localId)}><PencilIcon className="size-4" /></IconButton>
-              : <Button ref={rememberAction} type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
+            {deleted ? <><span className="self-center text-xs text-[var(--color-danger)]">{t("catalogs.items.deletedState")}</span><Button type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.restoreNamed", { name })} onClick={() => onRestore?.(item)}>{t("catalogs.items.restore")}</Button></>
+              : item.isActive ? <IconButton size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} onClick={() => onEdit(item)}><PencilIcon className="size-4" /></IconButton>
+              : <Button type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
             {onRemove && item.itemId === null ? <IconButton size="icon-sm" label={t("catalogs.items.removeNamed", { name })} disabled={busy} onClick={() => onRemove(item)}><TrashIcon className="size-4" /></IconButton> : null}
             {onDelete && item.itemId !== null && !deleted ? <IconButton size="icon-sm" label={t("catalogs.items.deleteNamed", { name })} disabledLabel={deleteDisabledReason ?? undefined} disabled={busy || !!deleteDisabledReason} onClick={() => onDelete(item)}><TrashIcon className="size-4" /></IconButton> : null}
           </div> : null}</WideTableCell>
-        </TableRow>{deleteError ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal"><p role="alert" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{deleteError}</p></TableCell></TableRow> : null}{problems.length ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{problems.map(problem => <p key={problem.id} id={problem.id} role="status" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</TableCell></TableRow> : null}{expanded && expandedContent ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{expandedContent}</TableCell></TableRow> : null}</Fragment>;
+        </TableRow>{deleteError ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal"><p role="alert" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{deleteError}</p></TableCell></TableRow> : null}{problems.length ? <TableRow><TableCell colSpan={columns.length + 2 + (canManage ? 1 : 0)} className="whitespace-normal">{problems.map(problem => <p key={problem.id} id={problem.id} role="status" className="sticky left-4 flex w-fit items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</TableCell></TableRow> : null}</Fragment>;
       })}
     </TableBody></WideTable>
   );

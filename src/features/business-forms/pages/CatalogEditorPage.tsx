@@ -36,7 +36,8 @@ import type { CatalogDetail } from "../api/catalogResponse";
 import { catalogItemFieldIssues, catalogItemValue, editedFieldIds, pendingFieldTexts } from "../catalogDraft";
 import { catalogFieldProblemText, catalogFieldRowReason, catalogStoredValueText, type CatalogFieldDraft, type CatalogFieldType } from "../catalogFields";
 import { administrativeName } from "../editorModel";
-import { catalogItemChanges, currentCatalogItem } from "../catalogItemEdits";
+import { catalogItemChanges, currentCatalogItem, isBlankCatalogItem, sameCatalogItemValue, type CatalogManualItemValue } from "../catalogItemEdits";
+import { CatalogItemsDialog } from "../components/CatalogItemsDialog";
 import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor";
 import { CatalogStateAction } from "../components/CatalogStateAction";
 import { CatalogMetadataFields } from "../components/CatalogMetadataFields";
@@ -55,6 +56,13 @@ interface FieldErrorRows {
   readonly control: string; readonly field: CatalogFieldDraft; readonly from: CatalogFieldType;
   readonly convertedCount: number; readonly invalidCount: number; readonly rows: readonly CatalogInvalidFieldRow[];
   readonly open: boolean; readonly showRows: boolean; readonly totalCount?: number;
+}
+// The options modal (B, 2026-10-31): «Agregar opción» opens it on the options added in it, and the pencil or a failed Save on
+// the page's options. It edits the draft as it is typed: `added` and the options and deletions as they were when it opened
+// (`before`, `deleted`) let «Cancelar» put everything back, and «Listo» drop a new option left empty.
+interface ItemsDialogState {
+  readonly mode: "new" | "edit"; readonly selectedId: string | null; readonly added: readonly string[];
+  readonly before: ReadonlyMap<string, CatalogManualItemValue>; readonly deleted: readonly string[];
 }
 const conversionKeys = ["isActive", "type", "sourceCatalogId"] as const;
 const ruleKeys = [...conversionKeys, "maxLength", "min", "max", "unique"] as const;
@@ -105,7 +113,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   // menu language keeps the draft and shows its other translation.
   const culture = scope.culture;
   const original = initial?.originalCulture ?? scope.culture;
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [itemsDialog, setItemsDialog] = useState<ItemsDialogState | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [importSource, setImportSource] = useState<"file" | "paste" | null>(null);
@@ -117,8 +125,6 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   // The options that were in the draft when Save was tried, and the controls left (`touchedKey`): where an empty value shows.
   const [attempted, setAttempted] = useState<ReadonlySet<string>>(() => new Set());
   const [touched, setTouched] = useState<ReadonlySet<string>>(() => new Set());
-  // The option a failed Save opened: its first marked control takes the focus, even when it was already open.
-  const [focusOption, setFocusOption] = useState<{ localId: string } | null>(null);
   // A new error of the server marks fields: the first one takes the focus, which also scrolls it into view under the sticky header.
   const [focusMarked, setFocusMarked] = useState<object | null>(null);
   const host = useRef<HTMLDivElement>(null);
@@ -164,6 +170,9 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     definitionErrorPaths.push(issue.path);
   }
   const knownItems = draft ? [...Object.values(draft.items.originals).map(item => currentCatalogItem(draft.items, item)), ...changedItems.filter(item => item.itemId === null)] : [];
+  // Opening the options modal keeps the options as they are, for «Cancelar». A failed Save opens it while rendering.
+  const openItems = (mode: ItemsDialogState["mode"], selectedId: string | null, added: readonly string[] = []) =>
+    setItemsDialog({ mode, selectedId, added, before: new Map(knownItems.map(item => [item.localId, item])), deleted: draft?.deleteItems ?? [] });
   const itemWarnings: Record<string, string> = {};
   // What the editor finds wrong in the options before saving. An empty control (`required`) is marked only after Save was
   // tried with that option in the draft or after leaving that control; the rest show while typing.
@@ -218,48 +227,78 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     // Only a new error opens its option. Any edit clears the error, and by then the server rows already mark options:
     // opening one of them would take the focus from where the person types.
     const invalidItem = editor.error ? changedItems.find(item => itemErrors[item.localId]) : undefined;
-    if (invalidItem) setExpanded(invalidItem.localId);
+    // The option opens in the options modal, which puts the cursor in its first marked control.
+    if (invalidItem) openItems("edit", invalidItem.localId);
     // «Cambiar el tipo» opens over the page and takes the focus itself.
     const opensDialog = !!fieldFeedback?.invalidRows?.length && !!failed && !!savedType && failed.control === "type";
-    if (editor.error instanceof ApiError && Object.keys(editor.error.errors ?? {}).length && !opensDialog) setFocusMarked({});
+    if (editor.error instanceof ApiError && Object.keys(editor.error.errors ?? {}).length && !opensDialog && !invalidItem) setFocusMarked({});
   }
   const save = async () => {
     if (!editor.canSave) return;
     if (itemProblems.length) {
       // Trying to save marks what is empty in every option of the draft, which then validates as it is corrected, and opens
-      // the first option with a problem, with the focus on the first control it marks. Nothing is sent.
+      // the first option with a problem in the options modal, which puts the cursor in the first control it marks. Nothing is sent.
       setAttempted(new Set(knownItems.map(item => item.localId)));
       const failing = new Set(itemProblems.map(problem => problem.localId));
-      const first = [...changedItems, ...knownItems].find(item => failing.has(item.localId))!.localId;
-      setExpanded(first);
-      setFocusOption({ localId: first });
+      openItems("edit", [...changedItems, ...knownItems].find(item => failing.has(item.localId))!.localId);
       return;
     }
     setErrorRows(null);
     const saved = await editor.save();
     if (!saved || !active.current) return;
     setAttempted(new Set()); setTouched(new Set());
-    setExpanded(null);
+    setItemsDialog(null);
     notify({ id: feedbackId, kind: "success", message: t("catalogs.saved") });
     if (!initial) { guard.allowNextNavigation(); void navigate("/catalogos/" + saved.catalog.id, { replace: true }); }
   };
-  const addItem = () => {
-    if (!editor.canSave || !draft) return;
+  const newItem = () => {
     const localId = crypto.randomUUID();
     editor.changeItem({ localId, itemId: null, label: { es: null, en: null }, detail: { es: null, en: null }, code: "", value: null, isActive: true, position: null });
-    setExpanded(localId);
+    return localId;
   };
+  const addItem = () => {
+    if (!editor.canSave || !draft) return;
+    const localId = newItem();
+    openItems("new", localId, [localId]);
+  };
+  const addDialogItem = () => {
+    if (!editor.canSave || !itemsDialog) return;
+    const localId = newItem();
+    setItemsDialog({ ...itemsDialog, selectedId: localId, added: [...itemsDialog.added, localId] });
+  };
+  // «Cancelar» puts back what changed while the modal was open: what was added leaves, and what was edited or removed returns.
+  const cancelItems = () => {
+    if (!itemsDialog) return;
+    const current = new Map(knownItems.map(item => [item.localId, item]));
+    for (const localId of itemsDialog.added) editor.discardItem(localId);
+    for (const [localId, before] of itemsDialog.before) {
+      const now = current.get(localId);
+      if (now ? !sameCatalogItemValue(before, now) : before.itemId === null) editor.changeItem(before);
+    }
+    for (const itemId of draft?.deleteItems ?? []) if (!itemsDialog.deleted.includes(itemId)) editor.changeItemDeletion(itemId, false);
+    for (const itemId of itemsDialog.deleted) if (!draft?.deleteItems.includes(itemId)) editor.changeItemDeletion(itemId, true);
+    setItemsDialog(null);
+  };
+  // «Listo» keeps everything except a new option nobody wrote in, as «Campos» does with an untouched field.
+  const finishItems = () => {
+    if (!itemsDialog) return;
+    for (const item of changedItems) if (itemsDialog.added.includes(item.localId) && isBlankCatalogItem(item)) editor.discardItem(item.localId);
+    setItemsDialog(null);
+  };
+  const touch = (localId: string, path: string) => setTouched(current => current.has(touchedKey(localId, path)) ? current : new Set(current).add(touchedKey(localId, path)));
   const generateCodes = () => generateMissingCatalogCodes(knownItems, culture).forEach((item, index) => { if (knownItems[index]!.code !== item.code) editor.changeItem(item); });
   const generateCode = (localId: string) => generateMissingCatalogCodes(knownItems, culture).filter(item => item.localId === localId).forEach(editor.changeItem);
   const rowItems = draft ? [...(items.data?.items ?? []).map(item => currentCatalogItem(draft.items, catalogItemValue(item, draft.valueType, draft.culture, draft.savedFields))), ...catalogItemChanges(draft.items).filter(item => item.itemId === null)] : [];
   // While a type change is pending, an unedited option or yes/no keeps what it showed: in the table, its editor and the preview.
   const pendingTexts = draft ? Object.fromEntries([...rowItems, ...changedItems].map(item => [item.localId, pendingFieldTexts(draft, item, culture, yesNo)])) : {};
+  // The options modal lists what was added in it or, for the pencil and a failed Save, the page's options, plus the option a
+  // failed Save opened when it is on another page.
+  const dialogItems = !itemsDialog ? [] : itemsDialog.mode === "new" ? itemsDialog.added.flatMap(localId => changedItems.filter(item => item.localId === localId))
+    : [...rowItems, ...knownItems.filter(item => item.localId === itemsDialog.selectedId && !rowItems.some(row => row.localId === item.localId))];
+  const pageRange = items.data?.totalCount ? t("common:pagination.range", { from: (items.data.page - 1) * items.data.pageSize + 1, to: Math.min(items.data.page * items.data.pageSize, items.data.totalCount), total: items.data.totalCount }) : undefined;
   const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
   // The catalog's languages, as the server counts them: the original and the other one once the name has it.
   const catalogCultures = (["es", "en"] as const).filter(language => language === original || !!draft?.name[language]?.trim());
-  // Runs after the option editor's own effect, which puts the cursor in Texto when it opens, so the marked control keeps the
-  // focus; focusing it also scrolls it into view.
-  useEffect(() => { if (focusOption) host.current?.querySelector<HTMLElement>('[data-catalog-option="' + focusOption.localId + '"] [aria-invalid="true"]')?.focus(); }, [focusOption]);
   // After the option or the field with the error opens (and the option editor puts the cursor in Texto), as in the form editor.
   useEffect(() => {
     if (!focusMarked) return;
@@ -269,7 +308,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   // The saved type of each field: the fields modal says that saving checks the values when it changes.
   const savedFieldTypes = Object.fromEntries(((editor.confirmed ?? initial)?.fields ?? []).map(field => [field.id, field.type]));
   const hideErrorRows = () => setErrorRows(current => current && { ...current, showRows: false });
-  const showErrorRows = () => { setExpanded(null); setErrorRows(current => current && { ...current, open: false, showRows: true, totalCount: items.data?.totalCount }); };
+  const showErrorRows = () => { setErrorRows(current => current && { ...current, open: false, showRows: true, totalCount: items.data?.totalCount }); };
   // Removing the chip goes back to the list, also when reading only the rows with errors failed.
   const errorRowsChip = rowFilter ? <FilterChip removeLabel={t("catalogs.items.clearErrorRows")} onRemove={hideErrorRows}>{t("catalogs.items.errorRows", { count: rowFilter.length })}</FilterChip> : null;
   if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
@@ -280,19 +319,24 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} original={original} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onChange={editor.changeMetadata} /><CatalogPresentationSection value={draft.presentation} fields={draft.fields} items={rowItems} valueType={draft.valueType} culture={culture} cultures={catalogCultures} readOnly={readOnly} errors={fields} inputCulture={draft.culture} pendingTexts={pendingTexts} check={!editor.dirty ? (editor.confirmed ?? initial)?.presentationCheck : undefined} onChange={editor.changePresentation} /></div><div className="xl:self-stretch xl:contain-size"><CatalogPreview items={rowItems} fields={draft.fields} presentation={draft.presentation} valueType={draft.valueType} inputCulture={draft.culture} pendingTexts={pendingTexts} name={currentName} culture={culture} /></div></div>
       {draft.sortAlphabetically ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.actions.sortPending")}</p><Button variant="outline" disabled={readOnly} onClick={() => editor.changeSort(false)}>{t("catalogs.actions.clearSort")}</Button></div></Surface> : null}
       {draft.moves.length ? <Surface padded><div className="flex flex-wrap items-center justify-between gap-3"><p role="status" className="text-sm">{t("catalogs.items.movesPending", { count: draft.moves.length })}</p><Button variant="outline" disabled={readOnly} onClick={editor.clearMoves}>{t("catalogs.items.clearMoves")}</Button></div></Surface> : null}
-      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <>{errorRowsChip ? <div>{errorRowsChip}</div> : null}<EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /></> : <CatalogManualItemsEditor fields={draft.fields} scope={scope} sortPending={draft.sortAlphabetically} warnings={itemWarnings} pendingTexts={pendingTexts} onGenerateCode={item => generateCode(item.localId)} notice={<CatalogFieldsNotice fields={draft.fields} errors={definitionErrors} feedback={fieldFeedback} rootErrors={fields.fields} culture={culture} errorRows={errorRows && errorRows.control !== "type" && !errorRows.showRows && errorField?.isActive ? { count: errorRows.rows.length, onShow: showErrorRows } : undefined} onReview={fieldId => setFieldsDialog({ fieldId })} />}
-        actions={<><CatalogFieldsButton fields={draft.fields} errors={definitionErrors} canManage={canManage} onOpen={() => setFieldsDialog({ fieldId: null })} /><CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} /></>} valueType={draft.valueType} items={rowItems} editingItems={changedItems} errors={itemErrors} culture={culture} original={original} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} expandedKey={expanded} onExpand={setExpanded} onChange={editor.changeItem} onFieldBlur={(localId, path) => setTouched(current => current.has(touchedKey(localId, path)) ? current : new Set(current).add(touchedKey(localId, path)))} onAdd={addItem} onRemove={item => { if (expanded === item.localId) setExpanded(null); editor.discardItem(item.localId); }}
-        deletedItemIds={draft.deleteItems} deleteErrors={deleteErrors} onDelete={item => { if (!item.itemId) return; if (expanded === item.localId) setExpanded(null); editor.changeItemDeletion(item.itemId, true); }} onRestore={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, false); }} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
+      {draft.id && items.isPending ? <Surface padded><Spinner /></Surface> : items.error && !items.data ? <>{errorRowsChip ? <div>{errorRowsChip}</div> : null}<EmptyState title={t("catalogs.items.loadFailed")} action={<Button variant="outline" onClick={() => void items.refetch()}>{t("common:actions.retry")}</Button>} /></> : <CatalogManualItemsEditor fields={draft.fields} scope={scope} sortPending={draft.sortAlphabetically} warnings={itemWarnings} pendingTexts={pendingTexts} notice={<CatalogFieldsNotice fields={draft.fields} errors={definitionErrors} feedback={fieldFeedback} rootErrors={fields.fields} culture={culture} errorRows={errorRows && errorRows.control !== "type" && !errorRows.showRows && errorField?.isActive ? { count: errorRows.rows.length, onShow: showErrorRows } : undefined} onReview={fieldId => setFieldsDialog({ fieldId })} />}
+        actions={<><CatalogFieldsButton fields={draft.fields} errors={definitionErrors} canManage={canManage} onOpen={() => setFieldsDialog({ fieldId: null })} /><CatalogOptionsActions canManage={canManage} busy={readOnly && canManage} saved={!!draft.id} importDisabledReason={!draft.id ? t("catalogs.actions.saveFirst") : editor.dirty ? t("catalogs.actions.saveChangesFirst") : null} hasPendingMoves={draft.moves.length > 0} sortPending={draft.sortAlphabetically} dialogOpen={importSource !== null} focusRef={importFocus} onImport={setImportSource} onExport={template => void exported.download(template)} onSort={() => editor.changeSort(true)} onGenerateCodes={generateCodes} /></>} valueType={draft.valueType} items={rowItems} errors={itemErrors} culture={culture} original={original} canManage={canManage} busy={readOnly} hasPendingMoves={draft.moves.length > 0} onEdit={item => openItems("edit", item.localId)} onChange={editor.changeItem} onFieldBlur={touch} onAdd={addItem} onRemove={item => editor.discardItem(item.localId)}
+        deletedItemIds={draft.deleteItems} deleteErrors={deleteErrors} onDelete={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, true); }} onRestore={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, false); }} onMove={(item, direction) => { if (item.itemId) editor.changeMove(item.itemId, direction === -1 ? "up" : "down"); }}
         filters={draft.id ? <><div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={search => { hideErrorRows(); pagination.setSearch(search); }} /></div>{errorRowsChip}</> : undefined}
-        pagination={rowFilter ? undefined : items.data} totalCount={rowFilter ? errorRows?.totalCount : undefined} onPageChange={next => { setExpanded(null); pagination.setPage(next); }} onPageSizeChange={next => { setExpanded(null); pagination.setPageSize(next); }} />}
+        pagination={rowFilter ? undefined : items.data} totalCount={rowFilter ? errorRows?.totalCount : undefined} onPageChange={next => pagination.setPage(next)} onPageSizeChange={next => pagination.setPageSize(next)} />}
     </div>
     {fieldsDialog ? <CatalogFieldsDialog catalogName={currentName} fields={draft.fields} presentation={draft.presentation} culture={culture} original={original} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} savedTypes={savedFieldTypes} initialFieldId={fieldsDialog.fieldId} onApply={editor.changeFields} onClose={() => setFieldsDialog(null)} /> : null}
-    {importSource && draft.id && canManage ? <CatalogImportDialog scope={scope} catalog={editor.confirmed ?? initial!} initialSource={importSource} timeZoneId={timeZoneId} focusFallback={importFocus} onClose={() => setImportSource(null)} onObserved={editor.observeCatalog} onApplied={catalog => { editor.observeCatalog(catalog); setExpanded(null); }} onTemplate={() => void exported.download(true)} /> : null}
+    {itemsDialog ? <CatalogItemsDialog catalogName={currentName} mode={itemsDialog.mode} items={dialogItems} selectedId={itemsDialog.selectedId} totalCount={(editor.confirmed ?? initial)?.itemsCount ?? items.data?.totalCount ?? 0} range={pageRange}
+      culture={culture} original={original} valueType={draft.valueType} fields={draft.fields} scope={scope} readOnly={readOnly} errors={itemErrors} warnings={itemWarnings} pendingTexts={pendingTexts} deletedItemIds={draft.deleteItems} deleteErrors={deleteErrors}
+      onSelect={selectedId => setItemsDialog({ ...itemsDialog, selectedId })} onChange={editor.changeItem} onFieldBlur={touch} onGenerateCode={canManage ? item => generateCode(item.localId) : undefined}
+      onAdd={addDialogItem} onRemove={item => editor.discardItem(item.localId)} onDelete={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, true); }} onRestore={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, false); }}
+      onDone={finishItems} onCancel={cancelItems} /> : null}
+    {importSource && draft.id && canManage ? <CatalogImportDialog scope={scope} catalog={editor.confirmed ?? initial!} initialSource={importSource} timeZoneId={timeZoneId} focusFallback={importFocus} onClose={() => setImportSource(null)} onObserved={editor.observeCatalog} onApplied={catalog => { editor.observeCatalog(catalog); setItemsDialog(null); }} onTemplate={() => void exported.download(true)} /> : null}
     {errorRows?.open && errorField ? <CatalogFieldConversionDialog name={administrativeName(errorField.name, culture) || t("catalogs.fields.new")} from={errorRows.from} field={errorField} culture={draft.culture} convertedCount={errorRows.convertedCount} invalidCount={errorRows.invalidCount} rows={errorRows.rows} onClose={() => setErrorRows(current => current && { ...current, open: false })} onShowRows={errorField.isActive ? showErrorRows : undefined} /> : null}
     <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("stay")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
     <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent onCloseAutoFocus={restoreReviewFocus} className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.value ? <><p className="text-sm">{administrativeName(entry.value.name, culture)}</p><p className="text-xs text-[var(--color-content-muted)]">{administrativeName(entry.value.description, culture)}</p></> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</Surface>)}</div>
-      <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setErrorRows(null); setAttempted(new Set()); setTouched(new Set()); setExpanded(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
+      <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setErrorRows(null); setAttempted(new Set()); setTouched(new Set()); setItemsDialog(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
     </DialogContent></Dialog>
   </Page>;
 }
