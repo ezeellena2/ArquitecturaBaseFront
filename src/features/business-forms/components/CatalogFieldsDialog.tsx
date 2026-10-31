@@ -17,7 +17,7 @@ import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import type { CatalogFieldFeedback } from "../api/catalogFieldFeedback";
 import { catalogFieldTypes, type CatalogPresentation } from "../api/catalogResponse";
-import { catalogFieldHasErrors, catalogFieldRuleSummary, newCatalogField, type CatalogFieldDraft, type CatalogFieldErrors, type CatalogFieldType } from "../catalogFields";
+import { catalogFieldHasErrors, catalogFieldKeyFromName, catalogFieldRuleSummary, newCatalogField, type CatalogFieldDraft, type CatalogFieldErrors, type CatalogFieldType } from "../catalogFields";
 import { administrativeName, contentReference, contentRequired, moveItem } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import type { FormCulture } from "../model";
@@ -138,7 +138,7 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
     actions={!readOnly && selected.isActive ? <>{!desktop ? arrows(selected) : null}<Button type="button" variant="destructive-outline" onClick={() => { setRemoving(selected.localId); setConfirmValues(false); }}><TrashIcon className="size-4" />{t("catalogs.fields.removeField")}</Button></> : null}>
     {!selected.isActive ? <RemovedField title={title(selected)} messages={shown[selected.localId] ?? {}} uses={uses(selected)} readOnly={readOnly} onRestore={() => restore(selected)} />
       : readOnly ? <FieldText field={selected} title={title(selected)} scope={scope} />
-      : <FieldForm key={selected.localId} field={selected} culture={culture} original={original} scope={scope} errors={shown[selected.localId] ?? {}} uses={uses(selected)} focusOnOpen={focusField}
+      : <FieldForm key={selected.localId} field={selected} takenKeys={draft.fields.filter(field => field.localId !== selected.localId).map(field => field.key)} culture={culture} original={original} scope={scope} errors={shown[selected.localId] ?? {}} uses={uses(selected)} focusOnOpen={focusField}
         typeChanged={!!selected.id && selected.valuesCount > 0 && !!savedTypes?.[selected.id] && savedTypes[selected.id] !== selected.type}
         onChange={next => update(draft.fields.map(value => value.localId === next.localId ? next : value))} />}
   </Surface> : null;
@@ -179,7 +179,7 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
   </Dialog>;
 }
 
-function FieldForm({ field, culture, original, scope, errors, uses, typeChanged, focusOnOpen, onChange }: { field: CatalogFieldDraft; culture: FormCulture; original: FormCulture; scope: CatalogReadScope; errors: FieldMessages; uses: ReactNode; typeChanged: boolean; focusOnOpen: boolean; onChange: (field: CatalogFieldDraft) => void }) {
+function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, typeChanged, focusOnOpen, onChange }: { field: CatalogFieldDraft; takenKeys: readonly string[]; culture: FormCulture; original: FormCulture; scope: CatalogReadScope; errors: FieldMessages; uses: ReactNode; typeChanged: boolean; focusOnOpen: boolean; onChange: (field: CatalogFieldDraft) => void }) {
   const { t } = useTranslation("forms");
   const id = useId();
   const root = useRef<HTMLDivElement>(null), nameRef = useRef<HTMLInputElement>(null);
@@ -187,6 +187,8 @@ function FieldForm({ field, culture, original, scope, errors, uses, typeChanged,
   const [focusOnMount] = useState(focusOnOpen);
   useEffect(() => { if (focusOnMount) (root.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ?? nameRef.current)?.focus(); }, [focusOnMount]);
   const set = (next: Partial<CatalogFieldDraft>) => onChange({ ...field, ...next });
+  // A new field's key follows its name, in snake_case and without repeating another field's, until it is written by hand.
+  const setName = (text: string) => { const name = { ...field.name, [culture]: text }; set(field.id === null && !field.keyEdited ? { name, key: catalogFieldKeyFromName(text, takenKeys) } : { name }); };
   const changeType = (type: CatalogFieldType) => set({ type, sourceCatalogId: type === "catalog" ? field.sourceCatalogId : null, min: rangeTypes.includes(type) ? field.min : null, max: rangeTypes.includes(type) ? field.max : null, maxLength: type === "text" ? field.maxLength : null });
   const error = (path: string) => errors[path]?.length ? errors[path]!.join(" ") : undefined;
   const marked = (path: string) => error(path) ? { "aria-invalid": true, "aria-describedby": id + path + "-message" } : {};
@@ -213,11 +215,11 @@ function FieldForm({ field, culture, original, scope, errors, uses, typeChanged,
   return <div ref={root} className="flex flex-col divide-y divide-[var(--color-border)] [&>*]:px-4 [&>*]:py-3">
     {uses ? <div>{uses}</div> : null}
     <Row label={<Label htmlFor={id + "name"}>{t("name")}{contentRequired(field.name, culture, original) ? <span aria-hidden="true"> *</span> : null}</Label>}>
-      <Input ref={nameRef} id={id + "name"} maxLength={120} placeholder={culture !== original ? t("missingText") : undefined} value={field.name[culture] ?? ""} aria-invalid={nameError ? true : undefined} aria-describedby={nameError || nameHint ? id + "name-message" : undefined} onChange={event => set({ name: { ...field.name, [culture]: event.target.value } })} />
+      <Input ref={nameRef} id={id + "name"} maxLength={120} placeholder={culture !== original ? t("missingText") : undefined} value={field.name[culture] ?? ""} aria-invalid={nameError ? true : undefined} aria-describedby={nameError || nameHint ? id + "name-message" : undefined} onChange={event => setName(event.target.value)} />
       {nameError || nameHint ? <Message id={id + "name-message"} error={!!nameError}>{nameError ?? nameHint}</Message> : null}
     </Row>
     <Row label={<><Label htmlFor={id + "key"}>{t("catalogs.fields.key")}<span aria-hidden="true"> *</span></Label><Help label={t("catalogs.fields.keyHelp")} text={t("catalogs.fields.keyHint")} /></>}>
-      <div className="relative">{field.id ? <LockIcon aria-hidden="true" className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[var(--color-content-muted)]" /> : null}<Input id={id + "key"} aria-required maxLength={40} readOnly={field.id !== null} className={field.id ? "pl-7" : undefined} value={field.key} onChange={event => set({ key: event.target.value })} {...marked("key")} /></div>
+      <div className="relative">{field.id ? <LockIcon aria-hidden="true" className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[var(--color-content-muted)]" /> : null}<Input id={id + "key"} aria-required maxLength={40} readOnly={field.id !== null} className={field.id ? "pl-7" : undefined} value={field.key} onChange={event => set({ key: event.target.value, keyEdited: true })} {...marked("key")} /></div>
       {messageOf("key")}
     </Row>
     <div className="flex flex-col gap-3">

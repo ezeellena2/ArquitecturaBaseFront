@@ -118,6 +118,28 @@ it("adds an optional field at the end, with the cursor in its name, and says why
   expect(within(dialog).getByRole("checkbox", { name: "Obligatorio" })).toBeEnabled();
 });
 
+it("fills a new field's key from its name until the key is edited by hand", async () => {
+  await mount({ initial: [zone] });
+  const dialog = await openFields();
+  await userEvent.click(within(dialog).getByRole("button", { name: "Agregar campo" }));
+  const name = within(dialog).getByRole("textbox", { name: "Nombre" }), key = within(dialog).getByRole("textbox", { name: "Clave" });
+  await userEvent.type(name, "Proveedor desde");
+  expect(key).toHaveValue("proveedor_desde");
+  // It does not repeat the key of another field of the catalog.
+  await userEvent.clear(name);
+  await userEvent.type(name, "Zone");
+  expect(key).toHaveValue("zone_2");
+  // Edited by hand, it stays as written.
+  await userEvent.clear(key);
+  await userEvent.type(key, "zona_norte");
+  await userEvent.type(name, " norte");
+  expect(key).toHaveValue("zona_norte");
+  // A saved field keeps its key.
+  await userEvent.click(within(dialog).getByRole("button", { name: "Editar Zona" }));
+  await userEvent.type(within(dialog).getByRole("textbox", { name: "Nombre" }), " sur");
+  expect(within(dialog).getByRole("textbox", { name: "Clave" })).toHaveValue("zone");
+});
+
 it("edits the field name in the menu language with a single name field", async () => {
   await i18n.changeLanguage("en");
   try {

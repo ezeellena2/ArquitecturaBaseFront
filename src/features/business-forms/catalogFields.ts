@@ -6,8 +6,12 @@ import { ownTexts } from "./editorModel";
 import { formatYesNo, type YesNoLabels } from "@/shared/lib/typedValue";
 
 export type CatalogFieldType = CatalogField["type"];
-export interface CatalogFieldDraft extends Omit<CatalogField, "id"> { readonly id: string | null; readonly localId: string }
-export type CatalogFieldBody = Omit<CatalogFieldDraft, "valuesCount" | "usedBy">;
+export interface CatalogFieldDraft extends Omit<CatalogField, "id"> {
+  readonly id: string | null; readonly localId: string;
+  /** A new field's key written by hand: it no longer follows the name. Only the editor keeps it. */
+  readonly keyEdited?: boolean;
+}
+export type CatalogFieldBody = Omit<CatalogFieldDraft, "valuesCount" | "usedBy" | "keyEdited">;
 /** What the server said about each field when saving, by `localId` and control path. */
 export type CatalogFieldErrors = Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
 export const catalogFieldHasErrors = (errors: CatalogFieldErrors, field: Pick<CatalogFieldDraft, "localId">) => Object.values(errors[field.localId] ?? {}).some(messages => messages.length > 0);
@@ -24,6 +28,15 @@ export function unconvertedFieldValue(type: CatalogFieldType, value: string | nu
 }
 
 export const newCatalogField = (localId: string, position: number): CatalogFieldDraft => ({ localId, id: null, key: "", name: {}, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position, isActive: true, valuesCount: 0, usedBy: [] });
+const keyMaxLength = 40;
+/** A new field's key from its name, as the server takes it (`^[a-z][a-z0-9_]{0,39}$`): lowercase without accents, anything else
+ *  as one `_` and never at the ends, starting with a letter and without repeating another field's key (`_2`, `_3`…). */
+export function catalogFieldKeyFromName(name: string, taken: readonly string[]): string {
+  const base = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^[^a-z]+/, "").slice(0, keyMaxLength).replace(/_$/, "");
+  let key = base, suffix = 1;
+  while (key && taken.includes(key)) { const tail = "_" + ++suffix; key = base.slice(0, keyMaxLength - tail.length).replace(/_$/, "") + tail; }
+  return key;
+}
 export const openCatalogField = (field: CatalogField, culture: FormCulture = "es"): CatalogFieldDraft => ({ ...field, localId: field.id, name: { ...field.name }, min: field.min === null ? null : formatCatalogFieldValue(field, field.min, culture), max: field.max === null ? null : formatCatalogFieldValue(field, field.max, culture), usedBy: field.usedBy.map(use => ({ ...use })) });
 /** A field value written in `from`, written in `to` with the same value: only integers and decimals change. */
 export function relocalizeCatalogFieldValue(type: CatalogFieldType, input: string | null, from: FormCulture, to: FormCulture): string | null {
@@ -154,7 +167,7 @@ export function formatCatalogFieldValue(field: Pick<CatalogFieldDraft, "type">, 
 }
 
 export function catalogFieldsBody(fields: readonly CatalogFieldDraft[], culture: FormCulture = "es"): readonly CatalogFieldBody[] {
-  return fields.map(({ valuesCount: _valuesCount, usedBy: _usedBy, ...field }, index) => {
+  return fields.map(({ valuesCount: _valuesCount, usedBy: _usedBy, keyEdited: _keyEdited, ...field }, index) => {
     const type = valueType(field.type);
     const bound = (input: string | null) => {
       if (!input?.trim()) return null;

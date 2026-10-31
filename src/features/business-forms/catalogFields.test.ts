@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n";
-import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, catalogStoredValueText, catalogFieldRuleSummary, catalogFieldInputHint, groupCatalogFieldUses, type CatalogFieldDraft } from "./catalogFields";
+import { newCatalogField, parseCatalogFieldValue, formatCatalogFieldValue, catalogFieldsBody, catalogFieldProblemText, catalogFieldRowReason, catalogStoredValueText, catalogFieldRuleSummary, catalogFieldInputHint, groupCatalogFieldUses, catalogFieldKeyFromName, type CatalogFieldDraft } from "./catalogFields";
 import type { CatalogFieldUsage } from "./api/catalogResponse";
 
 const field: CatalogFieldDraft = { localId: "field", id: "01990000-0000-7000-8000-000000000001", key: "payment_days", name: { es: "Plazo", en: "Term" }, type: "decimal", sourceCatalogId: null, required: false, unique: false, min: "0", max: "180", maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
@@ -160,5 +160,39 @@ describe("catalog extra field values", () => {
       catalog: true,
     });
     expect(groupCatalogFieldUses(uses.filter(use => use.stage !== "Catalog")).catalog).toBe(false);
+  });
+});
+
+// A new field's key follows its name as the server takes it: ^[a-z][a-z0-9_]{0,39}$ (BusinessFormCatalog.Fields.cs).
+describe("catalog field key from its name", () => {
+  const serverKey = /^[a-z][a-z0-9_]{0,39}$/;
+  it("writes the name in lowercase snake_case, without accents", () => {
+    expect(catalogFieldKeyFromName("Proveedor desde", [])).toBe("proveedor_desde");
+    expect(catalogFieldKeyFromName("Límite de Crédito", [])).toBe("limite_de_credito");
+    expect(catalogFieldKeyFromName("Año / Ñandú", [])).toBe("ano_nandu");
+  });
+  it("turns anything else into one underscore, never at the ends", () => {
+    expect(catalogFieldKeyFromName("  Plazo de pago (días) ", [])).toBe("plazo_de_pago_dias");
+    expect(catalogFieldKeyFromName("¿CUIT -- N.º?", [])).toBe("cuit_n");
+  });
+  it("starts with a letter, or gives no key", () => {
+    expect(catalogFieldKeyFromName("2024 Ventas", [])).toBe("ventas");
+    expect(catalogFieldKeyFromName("123", [])).toBe("");
+    expect(catalogFieldKeyFromName("", [])).toBe("");
+  });
+  it("keeps up to 40 characters, without an underscore at the end", () => {
+    const key = catalogFieldKeyFromName("Comentario largo sobre el estado actual del pedido", []);
+    expect(key).toBe("comentario_largo_sobre_el_estado_actual");
+    expect(key).toMatch(serverKey);
+  });
+  it("does not repeat another field's key, with the suffix inside the 40 characters", () => {
+    expect(catalogFieldKeyFromName("Zona", ["zona"])).toBe("zona_2");
+    expect(catalogFieldKeyFromName("Zona", ["zona", "zona_2"])).toBe("zona_3");
+    const key = catalogFieldKeyFromName("Comentario largo sobre el estado actual del pedido", ["comentario_largo_sobre_el_estado_actual"]);
+    expect(key).toBe("comentario_largo_sobre_el_estado_actua_2");
+    expect(key).toMatch(serverKey);
+  });
+  it("keeps the mark of a key edited by hand in the editor, out of what is saved", () => {
+    expect(catalogFieldsBody([{ ...field, keyEdited: true }])[0]).not.toHaveProperty("keyEdited");
   });
 });
