@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi, type MockInstance } from "vitest";
 import { http, HttpResponse } from "msw";
 import i18n from "@/shared/i18n";
+import * as notifications from "@/shared/ui/notifications";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { catalogFieldsBody, newCatalogField, type CatalogFieldDraft, type CatalogFieldType } from "../catalogFields";
@@ -29,7 +30,7 @@ function Harness({ initial = [] as readonly CatalogFieldDraft[], readOnly = fals
   return <>
     <CatalogFieldsButton fields={fields} errors={errors} canManage={permissions.includes("formcatalogs.manage")} onOpen={() => setOpen({ fieldId: null })} />
     <CatalogFieldsNotice fields={fields} errors={errors} feedback={feedback} culture={culture} onReview={fieldId => setOpen({ fieldId })} />
-    {open ? <CatalogFieldsDialog catalogName="Proveedores" fields={fields} presentation={presentation} culture={culture} original={original} scope={scope} readOnly={readOnly} confirmedRemovals={confirmedRemovals} errors={errors} feedback={feedback} savedTypes={savedTypes} initialFieldId={open.fieldId}
+    {open ? <CatalogFieldsDialog catalogName="Proveedores" fields={fields} presentation={presentation} culture={culture} original={original} scope={scope} readOnly={readOnly} confirmedRemovals={confirmedRemovals} errors={errors} feedback={feedback} savedTypes={savedTypes} initialFieldId={open.fieldId} noticeId="catalogs:fields:test"
       onApply={(next, confirmed) => { setFields(next); setConfirmedRemovals(confirmed); onChange(next, confirmed); }} onClose={() => setOpen(null)} /> : null}
   </>;
 }
@@ -116,6 +117,37 @@ it("adds an optional field at the end, with the cursor in its name, and says why
   // A saved field can be made required.
   await userEvent.click(within(dialog).getByRole("button", { name: "Editar CUIT" }));
   expect(within(dialog).getByRole("checkbox", { name: "Obligatorio" })).toBeEnabled();
+});
+
+it("warns with «Listo» that the catalog has to be saved to enter the values of its new fields", async () => {
+  const notify = vi.spyOn(notifications, "notify");
+  const warning = "Guardá el catálogo para cargar los valores de los campos nuevos.";
+  try {
+    await mount({ initial: [field] });
+    // Only saved fields: «Listo» says nothing.
+    let dialog = await openFields();
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Nombre" }), " del proveedor");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Listo" }));
+    // «Cancelar» takes the new field away and says nothing.
+    dialog = await openFields();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Agregar campo" }));
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Nombre" }), "Rubro");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    expect(notify).not.toHaveBeenCalled();
+    dialog = await openFields();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Agregar campo" }));
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Nombre" }), "Rubro");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Listo" }));
+    expect(notify).toHaveBeenCalledExactlyOnceWith({ id: "catalogs:fields:test", kind: "warning", message: warning });
+    await waitFor(() => expect(document.querySelector('[data-sonner-toast][data-type="warning"]')).toHaveTextContent(warning));
+    // While the new field is not saved, each «Listo» says it again, in the same notice.
+    await openFields();
+    await userEvent.click(screen.getByRole("button", { name: "Listo" }));
+    expect(notify).toHaveBeenCalledTimes(2);
+    expect(notify).toHaveBeenLastCalledWith({ id: "catalogs:fields:test", kind: "warning", message: warning });
+  } finally {
+    notify.mockRestore();
+  }
 });
 
 it("fills a new field's key from its name until the key is edited by hand", async () => {

@@ -130,6 +130,8 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const host = useRef<HTMLDivElement>(null);
   const active = useRef(true);
   const feedbackId = "catalogs:editor:" + useId();
+  // «Listo» of the fields warns that new fields take values once saved; saving or leaving the page takes it away.
+  const fieldsNoticeId = "catalogs:fields:" + useId();
   const presentation = useSystemPresentation();
   const pagination = usePagination(presentation.data?.defaultPageSize, true);
   const draft = editor.draft;
@@ -140,7 +142,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const items = useCatalogItems(scope, draft?.id ?? "", draft?.revision ?? null, rowFilter ? { page: 1, pageSize: 50, sort: "position", ids: rowFilter } : { page, pageSize, sort: "position", search: pagination.search });
   const loadItems = editor.loadItems;
   useEffect(() => { if (items.data) loadItems(items.data.items, draft?.revision ?? null); }, [items.data, loadItems, draft?.revision]);
-  useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
+  useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); dismissNotification(fieldsNoticeId); }; }, [feedbackId, fieldsNoticeId]);
   const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind", "valueType"] });
   const canManage = scope.permissions.includes("formcatalogs.manage") && (initial?.kind ?? "Manual") === "Manual";
   const readOnly = !editor.canSave;
@@ -248,6 +250,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     if (!saved || !active.current) return;
     setAttempted(new Set()); setTouched(new Set());
     setItemsDialog(null);
+    dismissNotification(fieldsNoticeId);
     notify({ id: feedbackId, kind: "success", message: t("catalogs.saved") });
     if (!initial) { guard.allowNextNavigation(); void navigate("/catalogos/" + saved.catalog.id, { replace: true }); }
   };
@@ -325,7 +328,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
         filters={draft.id ? <><div className="p-4"><SearchInput label={t("catalogs.items.search")} value={pagination.search ?? ""} onChange={search => { hideErrorRows(); pagination.setSearch(search); }} /></div>{errorRowsChip}</> : undefined}
         pagination={rowFilter ? undefined : items.data} totalCount={rowFilter ? errorRows?.totalCount : undefined} onPageChange={next => pagination.setPage(next)} onPageSizeChange={next => pagination.setPageSize(next)} />}
     </div>
-    {fieldsDialog ? <CatalogFieldsDialog catalogName={currentName} fields={draft.fields} presentation={draft.presentation} culture={culture} original={original} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} savedTypes={savedFieldTypes} initialFieldId={fieldsDialog.fieldId} onApply={editor.changeFields} onClose={() => setFieldsDialog(null)} /> : null}
+    {fieldsDialog ? <CatalogFieldsDialog catalogName={currentName} fields={draft.fields} presentation={draft.presentation} culture={culture} original={original} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} savedTypes={savedFieldTypes} initialFieldId={fieldsDialog.fieldId} noticeId={fieldsNoticeId} onApply={editor.changeFields} onClose={() => setFieldsDialog(null)} /> : null}
     {itemsDialog ? <CatalogItemsDialog catalogName={currentName} mode={itemsDialog.mode} items={dialogItems} selectedId={itemsDialog.selectedId} totalCount={(editor.confirmed ?? initial)?.itemsCount ?? items.data?.totalCount ?? 0} range={pageRange}
       culture={culture} original={original} valueType={draft.valueType} fields={draft.fields} scope={scope} readOnly={readOnly} errors={itemErrors} warnings={itemWarnings} pendingTexts={pendingTexts} deletedItemIds={draft.deleteItems} deleteErrors={deleteErrors}
       onSelect={selectedId => setItemsDialog({ ...itemsDialog, selectedId })} onChange={editor.changeItem} onFieldBlur={touch} onGenerateCode={canManage ? item => generateCode(item.localId) : undefined}

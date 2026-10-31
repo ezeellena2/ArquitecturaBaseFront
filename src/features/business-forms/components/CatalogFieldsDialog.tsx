@@ -14,6 +14,7 @@ import { AlertTriangleIcon, ChevronDownIcon, LockIcon, PlusIcon, TrashIcon } fro
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { notify } from "@/shared/ui/notifications";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import type { CatalogFieldFeedback } from "../api/catalogFieldFeedback";
 import { catalogFieldTypes, type CatalogPresentation } from "../api/catalogResponse";
@@ -50,6 +51,8 @@ export interface CatalogFieldsDialogProps {
   savedTypes?: Readonly<Record<string, CatalogFieldType>>;
   /** The field «Revisar» opens, with the focus on its first marked control. */
   initialFieldId?: string | null;
+  /** The page's id for the warning «Listo» gives while there are new fields: saving the catalog takes it away. */
+  noticeId: string;
   onApply: (fields: readonly CatalogFieldDraft[], confirmed: readonly string[]) => void;
   onClose: () => void;
 }
@@ -57,7 +60,7 @@ export interface CatalogFieldsDialogProps {
 // Every field of a catalog in one modal (C, 2026-10-27): the list on the left and the chosen field on the right, each in its
 // box; on the phone, first the list and then the field. It edits a copy: «Listo» leaves it in the catalog, which «Guardar»
 // saves, and «Cancelar» or Esc discard it. It is mounted only while open.
-export function CatalogFieldsDialog({ catalogName, fields, presentation, culture, original, scope, readOnly, confirmedRemovals, errors = {}, feedback, savedTypes, initialFieldId = null, onApply, onClose }: CatalogFieldsDialogProps) {
+export function CatalogFieldsDialog({ catalogName, fields, presentation, culture, original, scope, readOnly, confirmedRemovals, errors = {}, feedback, savedTypes, initialFieldId = null, noticeId, onApply, onClose }: CatalogFieldsDialogProps) {
   const { t } = useTranslation("forms");
   const desktop = useMediaQuery("(min-width: 640px)");
   const restoreFocus = useRestoreFocusOnClose();
@@ -99,7 +102,12 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
     update(moveItem(draft.fields, from, draft.fields.indexOf(neighbor) - from));
   };
   const restore = (field: CatalogFieldDraft) => { update(draft.fields.map(value => value.localId === field.localId ? { ...value, isActive: true } : value), draft.confirmed.filter(id => id !== field.id)); setFocusField(true); };
-  const apply = () => { if (draft.changed) onApply(draft.fields, draft.confirmed); onClose(); };
+  // A new field takes values once the catalog is saved: «Listo» warns while the catalog it leaves has one (2026-10-31).
+  const apply = () => {
+    if (draft.changed) onApply(draft.fields, draft.confirmed);
+    if ((draft.changed ? draft.fields : fields).some(field => field.id === null)) notify({ id: noticeId, kind: "warning", message: t("catalogs.fields.saveToEnterValues") });
+    onClose();
+  };
   const backToList = () => { setReturnTo(selected?.localId ?? null); setSelectedId(null); };
   const uses = (field: CatalogFieldDraft) => feedback?.uses?.length && inUsePaths.some(path => shown[field.localId]?.[path]?.length) ? <CatalogFieldUses uses={feedback.uses} canOpenForms={canOpenForms} /> : null;
 

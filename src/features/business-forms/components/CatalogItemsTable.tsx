@@ -58,7 +58,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   return (
     <WideTable label={t("catalogs.items.title")} overflowHint={t("catalogs.items.moreColumns")}><TableHeader><TableRow>
       {canManage ? <TableHead scope="col"><Checkbox aria-label={t("catalogs.items.selectPage")} disabled={busy || !items.length} checked={selected.length === items.length && items.length > 0 ? true : selected.length ? "indeterminate" : false} onCheckedChange={value => onSelectAll(value === true)}/></TableHead> : null}
-      <TableHead scope="col">#</TableHead>{columns.map(column => <WideTableHead key={column.id} pinned={column.id === "text" ? "start" : undefined} scope="col">{column.field ? administrativeName(column.field.name, culture) : t(column.tableLabelKey)}{column.field && !column.field.id ? <p className="text-xs font-normal normal-case">{t("catalogs.fields.savedFirst")}</p> : null}</WideTableHead>)}<WideTableHead pinned="end" scope="col" className="text-right">{t("actionsColumn")}</WideTableHead>
+      <TableHead scope="col">#</TableHead>{columns.map(column => <WideTableHead key={column.id} pinned={column.id === "text" ? "start" : undefined} scope="col">{column.field ? administrativeName(column.field.name, culture) : t(column.tableLabelKey)}</WideTableHead>)}<WideTableHead pinned="end" scope="col" className="text-right">{t("actionsColumn")}</WideTableHead>
     </TableRow></TableHeader><TableBody>
       {items.map((item, index) => {
         const name = administrativeName(item.label, culture) || (item.itemId === null ? t("catalogs.items.new") : t("option", { number: item.position }));

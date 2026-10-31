@@ -9,6 +9,7 @@ import { AppProviders } from "@/app/providers";
 import { queryClient } from "@/shared/api/queryClient";
 import i18n from "@/shared/i18n";
 import { server } from "@/test/mocks/server";
+import * as notifications from "@/shared/ui/notifications";
 import { notify } from "@/shared/ui/notifications";
 import { hasUnsavedChanges } from "@/shared/hooks/useUnsavedChangesGuard";
 import capturedOptionsRaw from "@/test/fixtures/catalogs-http/filters/options.json?raw";
@@ -103,6 +104,24 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(bodies[0]!.name).not.toHaveProperty("en");
     expect(bodies[0]).not.toHaveProperty("requestId");
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "success")).toHaveLength(1);
+  });
+  it("warns after «Listo» that a new field takes values once the catalog is saved, and saving takes the warning away", async () => {
+    setup(); const fieldId = "01990000-0000-7000-8000-000000000030";
+    server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => {
+      const sent = (await request.json() as { fields: { localId: string; key: string; name: Record<string, string> }[] }).fields[0]!;
+      return HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ id: fieldId, key: sent.key, name: sent.name, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] }] }, itemIdentityMap: {}, fieldIdentityMap: { [sent.localId]: fieldId } });
+    }));
+    const dismiss = vi.spyOn(notifications, "dismissNotification");
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: /^Agregar campos/ }));
+    await pasteText(user, within(screen.getByRole("dialog", { name: /^Campos de/ })).getByRole("textbox", { name: "Nombre" }), "Rubro");
+    await applyFields(user);
+    const warning = vi.mocked(notify).mock.calls.map(([notice]) => notice).find(notice => notice.kind === "warning");
+    expect(warning?.message).toBe("Guardá el catálogo para cargar los valores de los campos nuevos.");
+    expect(dismiss).not.toHaveBeenCalledWith(warning!.id);
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "success")).toHaveLength(1));
+    expect(dismiss).toHaveBeenCalledWith(warning!.id);
   });
   it("creates a catalog in the menu language without a language selector", async () => {
     setup(undefined, "en"); await i18n.changeLanguage("en"); const bodies: Record<string, unknown>[] = [];

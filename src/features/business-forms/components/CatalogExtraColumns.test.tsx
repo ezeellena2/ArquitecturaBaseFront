@@ -18,6 +18,14 @@ it("shows extra columns by identity and lets the reader hide one without changin
   expect(change).not.toHaveBeenCalled();
 });
 
+it("names the column of an unsaved field only by the field", async () => {
+  const field = { ...newCatalogField("new", 1), name: { es: "Teléfono" } };
+  await act(async () => { renderWithProviders(<CatalogManualItemsEditor items={[{ localId: "row", itemId: "saved-row", code: "N", label: { es: "Norte" }, detail: {}, value: null, isActive: true, position: 1 }]} fields={[field]} culture="es" original="es" valueType="Text" canManage onEdit={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />); });
+  // Why its cells take no values yet is the help of each cell; «Listo» of the fields says to save.
+  expect(screen.getByRole("columnheader", { name: "Teléfono" })).toBeInTheDocument();
+  expect(screen.queryByText("Guardá para cargar valores", { selector: "th *" })).not.toBeInTheDocument();
+});
+
 it("shows a saved value that is not yet a yes or no as it is while a change to boolean is pending", async () => {
   const field = { ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", name: { es: "Usa GPS" }, type: "boolean" as const };
   await act(async () => { renderWithProviders(<CatalogManualItemsEditor items={[{ localId: "row", itemId: "saved-row", code: "N", label: { es: "Norte" }, detail: {}, value: null, fields: { [field.id]: "Con GPS" }, isActive: true, position: 1 }]} fields={[field]} culture="es" original="es" valueType="Text" canManage={false} onEdit={vi.fn()} onChange={vi.fn()} onAdd={vi.fn()} />); });
