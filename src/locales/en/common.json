@@ -160,5 +160,12 @@
     "morePhotos_other": "View {{count}} more photos",
     "photoCount_one": "{{count}} photo",
     "photoCount_other": "{{count}} photos"
+  },
+  "pasteGrid": {
+    "row": "Row",
+    "target": "Paste rows",
+    "placeholder": "Paste with Ctrl+V",
+    "moreRows_one": "And 1 more row",
+    "moreRows_other": "And {{count}} more rows"
   }
 }
