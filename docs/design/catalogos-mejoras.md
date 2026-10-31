@@ -104,3 +104,28 @@ El transporte y los datos son sintéticos; CA6 encadena escenas independientes y
 ## Convivencia con E2 — 2026-10-23
 
 E2 conserva CA1-A y CA2–CA6 y suma los [campos extra, la presentación y el filtro por persona](catalogos-campos-extra.md#cierre-local-de-e2--2026-10-23). La última VRT conjunta aprobó 719/719 pruebas, incluidos los recorridos de E1, sin reescribir sus referencias elegidas. La evidencia física pendiente de ambos se reúne en el [único piloto posterior al review de E2](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-único-con-meta-después-de-e2).
+
+## Las opciones en un modal, 2026-10-31
+
+Probando la app, el usuario pidió que «Agregar opción» abra un modal como el de [«Campos de…»](catalogos-campos-extra.md#los-campos-en-un-modal-desde-opciones-2026-10-27),
+en lugar de la fila vacía al pie de la tabla con el panel debajo. Se dibujaron tres formas en el lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila «Catálogos · agregar una opción en un
+modal», porque el lienzo del sistema visual no se abre desde esta cuenta: CO1-A, una opción por vez (la recomendada);
+CO1-B, igual al de campos; y CO1-C, por zonas, con la lista de WhatsApp al costado. **Se eligió B**; A y C quedan como las
+alternativas que no se eligieron. La tabla sigue editable en el lugar en escritorio.
+
+- **El modal.** «Agregar opción» lo abre con las opciones agregadas en él («Opciones nuevas de «Tipos de producto»»), y el
+  lápiz con las de la página («Opciones de «…»»). Lista a la izquierda (número o «—», texto, «Nueva», código o «Sin
+  código») y la opción elegida a la derecha, con su posición («Opción 2 de 5» o «Nueva opción») y «Quitar opción» en rojo
+  en la banda. Las filas, con las etiquetas a la izquierda y una línea entre ellas: Texto con su contador, Código con
+  «Generar desde el texto», los campos del catálogo, Valor, Detalle y, sólo en una guardada, Estado «Activa | De baja».
+  La ayuda de texto, código, detalle y estado va en la (i), sin textos debajo. «Agregar opción» al pie de la lista suma
+  otra.
+- **Listo y Cancelar.** El modal escribe en el borrador mientras se tipea y se guarda con «Guardar» de la página, como
+  hasta ahora. «Cancelar» o Esc devuelven todo como estaba al abrirlo; «Listo» deja todo menos una opción nueva sin nada
+  escrito, como un campo nuevo sin tocar.
+- **Lo que se completó al elegir** (errores, quitar y celular, en el mismo tablero). Si «Guardar» encuentra algo mal, se
+  abre el modal en la primera opción con problemas, con el cursor en su primer campo marcado, y la lista marca con un
+  triángulo las que tienen errores. Quitar una nueva no pregunta; una guardada pide confirmación, como el tacho de la
+  tabla, y queda en la lista con «Se elimina al guardar» y «Restaurar». En el celular ocupa la pantalla: primero la lista
+  y, al tocar una opción, la opción con «Volver a la lista»; «Cancelar» y «Listo» están en la lista.
