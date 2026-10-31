@@ -45,6 +45,8 @@ atribución (footer no seleccionable y visible en el desplegable), carga/vacío,
 La lista vive en un portal (Radix Popover anclado al campo), así no la recorta una tabla ni un diálogo con scroll;
 el foco sigue en el campo y Escape cierra solo la lista. La lista se abre al tocar el campo, al escribir o con las flechas,
 no al recibir el foco: un foco del código (el primer error al guardar) la deja cerrada y no tapa el error del campo.
+Con `dropdown` es un combo desplegable: al final del campo va la flecha de un desplegable, decorativa (el clic pasa al campo,
+que abre la lista), para una lista que se ve antes de escribir, como el catálogo de un campo del catálogo.
 
 - [Biblioteca y decisiones visuales](../../../docs/design/visual-baseline.md).
 - [Reglas de componentes y accesibilidad](../../../docs/architecture.md).
@@ -71,4 +73,4 @@ PrivateAudio recibe sólo Blob, etiqueta y una intención explícita de reproduc
 
 `CollapsibleSection` compone Surface y el botón de flecha común: open/onOpenChange pertenecen al consumidor, que aporta título, rótulos traducidos, metadata abierta y resumen plegado. Vincula aria-expanded/aria-controls con una identidad estable; conserva el cuerpo montado y oculto al plegar, sin mover el foco ni enviar el formulario. No conoce respuestas, actividad, permisos ni lecturas. El dueño de la pantalla retira su contenido privado al perder el alcance.
 
-`WideTable` reutiliza Table con una región de desplazamiento nombrada y alcanzable por teclado. `WideTableHead` y `WideTableCell` fijan opcionalmente la celda exterior de cada lado, heredando el fondo de su fila para conservar alternado, hover y selección; no conocen columnas de una feature. El consumidor mantiene el encabezado y las celdas de la misma columna fijos juntos. Con `overflowHint`, mientras queden columnas sin ver a la derecha (lo mide con `ResizeObserver` y el desplazamiento), ese texto va arriba a la derecha de la tabla y describe la región; al llegar al final queda invisible en su lugar, sin mover la tabla, y una tabla que entra no lo muestra. La geometría se verifica en navegador, no con clases en jsdom.
+`WideTable` reutiliza Table con una región de desplazamiento nombrada y alcanzable por teclado. `WideTableHead` y `WideTableCell` fijan opcionalmente la celda exterior de cada lado, heredando el fondo de su fila para conservar alternado, hover y selección; no conocen columnas de una feature. El consumidor mantiene el encabezado y las celdas de la misma columna fijos juntos. Que quedan columnas a la derecha lo dice la barra de desplazamiento, sin un texto que lo explique: `overflowHint` se retiró el 2026-10-31. La geometría se verifica en navegador, no con clases en jsdom.

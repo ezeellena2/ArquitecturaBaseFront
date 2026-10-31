@@ -54,7 +54,9 @@ y el navegable ya lo muestran, y las capturas de arriba son las ajustadas:
   si falla, el diálogo queda abierto con el error en esa sección.
 - **Comprobación de publicar (CE4).** Lo que no puede funcionar frena: un campo inactivo, el papel o el tipo equivocado, un
   título de más de 30. El máximo por persona y quién queda sin el dato son avisos que no frenan, en una lista aparte.
-- **Campo nuevo (CE1 y CE2).** Nace opcional, y su columna aparece apagada con «Guardá para cargar valores» hasta guardarlo.
+- **Campo nuevo (CE1 y CE2).** Nace opcional, y su columna aparece apagada con «Guardá para cargar valores» hasta guardarlo
+  (desde el 2026-10-31, ese motivo va sólo en el tooltip de cada celda y «Listo» de «Campos de…» avisa que hay que guardar:
+  [ajustes](catalogos-mejoras.md#ajustes-de-campos-de-y-de-la-tabla-2026-10-31)).
   Pasarlo a obligatorio exige que todas las opciones activas tengan valor; si no, dice cuántas faltan. Un menú «Campos» muestra
   u oculta columnas en la tabla.
 - **Respuestas (CE5).** Las subcolumnas de la planilla solo se muestran: no se ordenan, ni filtran, ni cuentan en las facetas.
@@ -110,9 +112,9 @@ ve también la lista, como al tocarlo.
   su celda, con el formato común del tipo que también usa el rango (el texto de la opción, Sí o No, «1.500,5»), nunca un
   GUID ni el valor canónico; uno que no es del tipo, como se escribió. La línea, y el error del campo en el editor de la
   opción, cambian con cada tecla: se anuncian como estado, no como alerta.
-- **Más columnas a la derecha (CE2).** Mientras la tabla de opciones tiene columnas sin ver a la derecha, arriba a la
-  derecha dice «La tabla se desplaza de costado: hay más columnas a la derecha.»; al llegar al final el texto se oculta sin
-  mover la tabla, y una tabla que entra entera no lo muestra.
+- **Más columnas a la derecha (CE2).** Mientras la tabla de opciones tenía columnas sin ver a la derecha, arriba a la
+  derecha decía «La tabla se desplaza de costado: hay más columnas a la derecha.». Se retiró el 2026-10-31: la barra de
+  desplazamiento alcanza ([ajustes](catalogos-mejoras.md#ajustes-de-campos-de-y-de-la-tabla-2026-10-31)).
 - **Ayudas de tipo y rango en el celular (CE2).** En el editor de la opción, cada campo entero, decimal o fecha dice su
   tipo y su rango debajo, con el formato común: «Entero, de 0 a 180.», «Fecha, hasta 31/12/2026.» o «Número decimal.» si
   no tiene rango. Un error del valor ocupa ese renglón.
@@ -155,7 +157,9 @@ alternativas que no se eligieron. Las reglas de CE1 no cambian.
   guardar; las flechas, en el elegido y sólo si hay más de uno) y el campo elegido a la derecha, con las etiquetas a la
   izquierda: nombre, clave (con candado una vez guardada), tipo y, en la fila de abajo, su detalle («Largo: Hasta N
   caracteres», «Rango: De … a …» o «Catálogo», con un buscador), «Obligatorio» y «Único», y el papel en un segmentado
-  «Filtro | Dato» con su ayuda debajo. Las ayudas de la clave y del papel son tooltips. Se pasa de un campo a otro sin
+  «Filtro | Dato» con su ayuda debajo. Las ayudas de la clave y del papel son tooltips. Desde el 2026-10-31 «Catálogo» es
+  un combo desplegable, la clave de un campo nuevo sigue al nombre y el papel va sin la ayuda debajo
+  ([ajustes](catalogos-mejoras.md#ajustes-de-campos-de-y-de-la-tabla-2026-10-31)). Se pasa de un campo a otro sin
   cerrar.
 - **Recuadros y separaciones** (pedido del 2026-10-27, sobre la captura real). La lista y el campo van cada uno en su
   `Surface`: la lista con «N de 20» en la banda, una línea entre campos, el elegido teñido con una barra a la izquierda y

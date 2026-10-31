@@ -129,3 +129,25 @@ alternativas que no se eligieron. La tabla sigue editable en el lugar en escrito
   triángulo las que tienen errores. Quitar una nueva no pregunta; una guardada pide confirmación, como el tacho de la
   tabla, y queda en la lista con «Se elimina al guardar» y «Restaurar». En el celular ocupa la pantalla: primero la lista
   y, al tocar una opción, la opción con «Volver a la lista»; «Cancelar» y «Listo» están en la lista.
+
+## Ajustes de «Campos de…» y de la tabla, 2026-10-31
+
+Probando el catálogo «Proveedores», el usuario pidió cinco ajustes con un mismo criterio: nada de leyendas que expliquen
+cosas por todos lados, porque para eso están la (i) y su tooltip. Son ajustes sobre piezas ya elegidas de la biblioteca;
+no se dibujaron.
+
+- **El catálogo de un campo es un combo desplegable.** «Catálogo», en un campo «Elegir de un catálogo», lleva la flecha
+  de un desplegable: al tocarlo muestra los primeros catálogos escritos a mano y activos («Proveedores · 6 opciones») y
+  al escribir los filtra, como antes. Es el `Autocomplete` común con su flecha (`dropdown`).
+- **La clave se completa sola.** Mientras se escribe el nombre de un campo nuevo, la clave lo sigue en snake_case
+  minúscula y sin tildes («Proveedor desde» → `proveedor_desde`): lo que no es una letra o un número pasa a `_`, sin
+  repetirse ni quedar en las puntas; empieza con letra, tiene hasta 40 caracteres y no repite la de otro campo del
+  catálogo (`_2`, `_3`…), como pide el servidor. Deja de seguir el nombre en cuanto se edita a mano, y una clave guardada
+  no cambia. Hasta ahora la clave viajaba tal como se escribía y el servidor rechazaba lo que no cumplía su patrón.
+- **«Papel» sin leyenda.** «Filtro | Dato» ya no repite debajo lo que explica la (i).
+- **Guardar para cargar los campos nuevos.** Los encabezados de las columnas nuevas ya no dicen «Guardá para cargar
+  valores»: siguen apagadas hasta guardar, con ese motivo en el tooltip de cada celda. En su lugar, mientras el catálogo
+  tenga campos nuevos, «Listo» avisa con un warning del Toaster «Guardá el catálogo para cargar los valores de los campos
+  nuevos.»; guardar o salir del catálogo lo retiran. La regla de no dejar notas de guardado cede acá por pedido del
+  usuario.
+- **La tabla sin «hay más columnas a la derecha».** La barra de desplazamiento alcanza; `WideTable` ya no tiene ese texto.
