@@ -1,6 +1,5 @@
 import type { CatalogValueType } from "./catalogValues";
 
-export type CatalogPaste = { valid: true; csv: string; rowCount: number; columnCount: number } | { valid: false; reason: "format" | "limit" };
 type PastedRows = { valid: true; rows: string[][] } | { valid: false; reason: "format" | "limit" };
 
 // Excel quotes cells containing tabs, line breaks or quotes. Keep their contents; the server owns header/row validation.
@@ -30,12 +29,6 @@ function pastedRows(text: string): PastedRows {
 }
 
 const csvRows = (rows: readonly (readonly string[])[]) => rows.map(cells => cells.map(value => '"' + value.replaceAll('"', '""') + '"').join(",")).join("\r\n");
-
-export function parseCatalogPaste(text: string): CatalogPaste {
-  const parsed = pastedRows(text);
-  if (!parsed.valid) return parsed;
-  return { valid: true, csv: csvRows(parsed.rows), rowCount: Math.max(0, parsed.rows.length - 1), columnCount: parsed.rows[0]?.length ?? 0 };
-}
 
 /** A column the paste grid offers: its label, the header the server reads when the paste brings none, and the headers that
  *  name it (normalized). */

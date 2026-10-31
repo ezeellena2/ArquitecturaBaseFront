@@ -47,12 +47,12 @@ async function doneOptions(user: ReturnType<typeof userEvent.setup>) {
   if (back) await user.click(back);
   await user.click(within(dialog).getByRole("button", { name: /^(Listo|Done)$/ }));
 }
-// «Importar» opens the import dialog on «Subir un archivo»; its «Pegar desde Excel» tab takes the rows (2026-10-31: the
-// options bar has no paste button).
+// «Importar» opens the import dialog on «Subir un archivo»; «Pegar desde Excel» in «Desde» shows the grid, whose first cell
+// takes the rows (2026-10-31: the options bar has no paste button).
 async function pasteRows(user: ReturnType<typeof userEvent.setup>, rows: string) {
   await user.click(await screen.findByRole("button", { name: "Importar" }));
-  act(() => screen.getByRole("tab", { name: "Pegar desde Excel" }).focus()); await user.keyboard("{Enter}");
-  await pasteText(user, screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), rows);
+  await user.click(screen.getByRole("button", { name: "Pegar desde Excel" }));
+  await pasteText(user, screen.getByRole("textbox", { name: "Pegar filas" }), rows);
 }
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
@@ -1318,9 +1318,10 @@ it("imports with the fields saved in this session instead of the ones loaded on 
   await pasteRows(user, "Code\tText\ttax_id\nN\tNorte\t20-1");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   const dialog = await screen.findByRole("dialog");
-  expect(await within(dialog).findByRole("columnheader", { name: "CUIT" })).toBeInTheDocument();
+  // The grid also has a «CUIT» column: the review is the tab panel.
+  expect(within(await within(dialog).findByRole("tabpanel")).getByRole("columnheader", { name: "CUIT" })).toBeInTheDocument();
   expect(within(dialog).queryByText(fieldId, { exact: false })).not.toBeInTheDocument();
-  act(() => within(dialog).getByRole("tab", { name: "Cambios" }).focus()); await user.keyboard("{Enter}");
+  act(() => within(dialog).getByRole("tab", { name: /^Cambios/ }).focus()); await user.keyboard("{Enter}");
   expect(await within(dialog).findByText("CUIT: — → 20-2")).toBeInTheDocument();
 });
 it("warns about long titles with the check of the applied import instead of the one loaded on entry", async () => {

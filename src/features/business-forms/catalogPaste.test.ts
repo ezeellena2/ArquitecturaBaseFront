@@ -1,24 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogPasteColumns, catalogPasteCsv, catalogPasteExtraColumns, parseCatalogPaste, readCatalogPaste, type CatalogPastedSheet } from "./catalogPaste";
-it("preserves quoted tabs, line breaks, escaped quotes and empty cells while producing one CSV for server preview", () => {
-  expect(parseCatalogPaste('Código\tTexto\tDetalle\r\nA\t"Norte\tSur"\t"Una ""cita""\ny otra"\r\nB\tSur\t')).toEqual({ valid: true, csv: '"Código","Texto","Detalle"\r\n"A","Norte\tSur","Una ""cita""\ny otra"\r\n"B","Sur",""', rowCount: 2, columnCount: 3 });
-});
-it("keeps headers for the server, accepts an empty sheet and does not interpret formulas or localized values", () => {
-  expect(parseCatalogPaste('Code\tText\tValue (decimal)\n')).toMatchObject({ valid: true, rowCount: 0, columnCount: 3 });
-  expect(parseCatalogPaste('Code\tText\tValue\nA\t=SUM(A1:A2)\t1.500,50')).toMatchObject({ valid: true, csv: '"Code","Text","Value"\r\n"A","=SUM(A1:A2)","1.500,50"' });
-});
-it("rejects broken quoting and excessive columns without inventing rows", () => {
-  expect(parseCatalogPaste('Code\tText\nA\t"open')).toEqual({ valid: false, reason: "format" });
-  expect(parseCatalogPaste(Array.from({ length: 65 }, () => "Header").join("\t"))).toEqual({ valid: false, reason: "limit" });
-});
-
-it.each([
-  ['Caño 1/2"', '"Code","Text"\r\n"A","Caño 1/2"""'],
-  ['Codo "T"', '"Code","Text"\r\n"A","Codo ""T"""'],
-])("preserves literal quotes inside the unquoted pasted cell %s", (text, csv) => {
-  expect(parseCatalogPaste("Code\tText\nA\t" + text)).toEqual({ valid: true, csv, rowCount: 1, columnCount: 2 });
-});
-
+import { catalogPasteColumns, catalogPasteCsv, catalogPasteExtraColumns, readCatalogPaste, type CatalogPastedSheet } from "./catalogPaste";
 // The paste grid (IM3-A, 2026-10-31): its header is the catalog's columns in the template's order; rows go in that order and
 // a header row, when it comes, places each column.
 describe("rows pasted into the catalog's columns", () => {
@@ -65,6 +46,20 @@ describe("rows pasted into the catalog's columns", () => {
   });
   it("keeps quoted tabs, line breaks and quotes in a cell and drops empty rows", () => {
     expect(sheet(readCatalogPaste('A\t"Norte\tSur"\t"Una ""cita""\ny otra"\n\t\t\nB\tSur', columns)).rows).toEqual([["A", "Norte\tSur", 'Una "cita"\ny otra'], ["B", "Sur"]]);
+  });
+  it("quotes tabs, line breaks, quotes and empty cells for the server's CSV", () => {
+    expect(catalogPasteCsv(sheet(readCatalogPaste('Código\tTexto\tDetalle\r\nA\t"Norte\tSur"\t"Una ""cita""\ny otra"\r\nB\tSur\t', columns))))
+      .toBe('"Código","Texto","Detalle"\r\n"A","Norte\tSur","Una ""cita""\ny otra"\r\n"B","Sur",""');
+  });
+  it.each([
+    ['Caño 1/2"', '"Code","Text"\r\n"A","Caño 1/2"""'],
+    ['Codo "T"', '"Code","Text"\r\n"A","Codo ""T"""'],
+  ])("keeps the literal quotes of the unquoted cell %s", (text, csv) => {
+    expect(catalogPasteCsv(sheet(readCatalogPaste("Code\tText\nA\t" + text, columns)))).toBe(csv);
+  });
+  it("does not interpret formulas or localized values: the server reads them", () => {
+    expect(catalogPasteCsv(sheet(readCatalogPaste("Code\tText\tValue\nA\t=SUM(A1:A2)\t1.500,50", catalogPasteColumns("Decimal", [], labels)))))
+      .toBe('"Code","Text","Value"\r\n"A","=SUM(A1:A2)","1.500,50"');
   });
   it("rejects broken quoting, too many columns and an empty paste", () => {
     expect(readCatalogPaste('A\t"open', columns)).toEqual({ valid: false, reason: "format" });

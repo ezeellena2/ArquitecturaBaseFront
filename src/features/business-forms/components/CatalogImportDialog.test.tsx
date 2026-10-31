@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -13,20 +13,50 @@ import type { CatalogDetail, CatalogField } from "../api/catalogResponse";
 import { CatalogImportDialog } from "./CatalogImportDialog";
 const catalog: CatalogDetail = { valueType: "Text", proposal: null, id: catalogImportPreviewFixture().catalogId, key: catalogImportPreviewFixture().catalogId.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 2, usageCount: null, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
 const scope = { actorId: "actor", culture: "es" as const, permissions: ["formcatalogs.read", "formcatalogs.manage"] };
+const quiet = { deactivations: 0, emptySheet: false, manyErrors: false };
 afterEach(async () => { cleanup(); vi.restoreAllMocks(); queryClient.clear(); await i18n.changeLanguage("es"); });
-async function mount(initialSource: "file" | "paste" = "paste") {
+// It opens on the file; «Pegar desde Excel» in «Desde» turns it to the grid.
+async function mount(source: "file" | "paste" = "paste", props: Partial<Parameters<typeof CatalogImportDialog>[0]> = {}) {
   const onApplied = vi.fn(), onObserved = vi.fn(), onClose = vi.fn();
-  const props = { scope, catalog, initialSource, onApplied, onObserved, onClose, onTemplate: vi.fn() };
+  const all = { scope, catalog, onApplied, onObserved, onClose, onTemplate: vi.fn(), ...props };
   let view!: ReturnType<typeof renderWithProviders>;
-  await act(async () => { view = renderWithProviders(<CatalogImportDialog {...props}/>); });
-  return { ...view, props, user: userEvent.setup(), onApplied, onObserved, onClose };
+  await act(async () => { view = renderWithProviders(<CatalogImportDialog {...all}/>); });
+  const user = userEvent.setup();
+  if (source === "paste") await user.click(screen.getByRole("button", { name: /^(Pegar desde Excel|Paste from Excel)$/ }));
+  return { ...view, props: all, user, onApplied, onObserved, onClose };
 }
+// The empty grid's first cell takes the paste, as Ctrl+V or the phone's «Pegar» would.
+async function paste(user: ReturnType<typeof userEvent.setup>, text: string, english = false) {
+  await user.click(screen.getByRole("textbox", { name: english ? "Paste rows" : "Pegar filas" }));
+  await user.paste(text);
+}
+const grid = (english = false) => screen.getByRole("region", { name: english ? "Pasted rows" : "Filas pegadas" });
+const sentText = (check: { mock: { calls: unknown[][] } }, call = 0) => (check.mock.calls[call]![1] as { file: File }).file.text();
+
+it("opens on the file with its origin in rows, the template in the band and the help in the (i), without notes or steps", async () => {
+  const { user, props } = await mount("file");
+  const dialog = screen.getByRole("dialog", { name: "Importar opciones a «Lista»" });
+  for (const note of ["Archivo o filas pegadas, revisar y aplicar. No se guarda nada hasta aplicar.", "XLSX o CSV, hasta 10 MB y 10.000 filas. No se ejecutan fórmulas ni macros.", "Lo que no viene en la planilla se da de baja, no se borra. Vuelve a ofrecerse si aparece en otra importación."])
+    expect(within(dialog).queryByText(note)).not.toBeInTheDocument();
+  expect(within(dialog).queryByRole("list")).not.toBeInTheDocument();
+  expect(within(dialog).getByRole("heading", { name: "Origen" })).toBeInTheDocument();
+  expect(within(dialog).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(dialog).getByText("Ningún archivo elegido")).toBeInTheDocument();
+  await user.hover(within(dialog).getByRole("button", { name: "Qué archivo sirve" }));
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("XLSX o CSV, hasta 10 MB y 10.000 filas. No se ejecutan fórmulas ni macros.");
+  await user.click(within(dialog).getByRole("button", { name: "Descargar la plantilla" }));
+  expect(props.onTemplate).toHaveBeenCalledOnce();
+  // Without a file, «Revisar» marks the field, as before.
+  await user.click(within(dialog).getByRole("button", { name: "Revisar" }));
+  expect(screen.getByLabelText("Archivo", { exact: true })).toHaveAccessibleDescription("Elegí un archivo XLSX o CSV de hasta 10 MB.");
+});
+
 it("reviews pasted rows through Append preview without saving, then requires the server confirmations before one explicit apply", async () => {
   const preview = { ...catalogImportPreviewFixture(), mode: "Append" as const, counts: { ...catalogImportPreviewFixture().counts, deactivated: 0 }, deactivated: [], confirmations: { deactivations: 0, emptySheet: false, manyErrors: true } };
   const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue(preview);
   const apply = vi.spyOn(imports, "applyCatalogImport").mockResolvedValue({ catalog: { ...catalog, revision: 8 }, itemIdentityMap: {}, fieldIdentityMap: {} });
   const { user, onApplied } = await mount();
-  await user.type(screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\nN\tNorte");
+  await paste(user, "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await screen.findByText("Repetido: también está en otra fila.");
   expect(check).toHaveBeenCalledExactlyOnceWith(catalog.id, expect.objectContaining({ file: expect.any(File), mode: "Append", expectedRevision: 7 }), expect.any(AbortSignal));
@@ -39,12 +69,99 @@ it("reviews pasted rows through Append preview without saving, then requires the
   expect(apply).toHaveBeenCalledExactlyOnceWith(catalog.id, expect.objectContaining({ sheetSha256: preview.sheetSha256, confirmDeactivations: 0, confirmErrors: true, confirmEmpty: false, mode: "Append" }), expect.any(AbortSignal));
   expect(queryClient.getMutationCache().getAll()).toEqual([]);
 });
+
+// IM3-A: a grid with the catalog's columns; what is pasted shows as a table before reviewing.
+it("pastes rows without headers into the catalog's columns and reviews only the pasted ones", async () => {
+  const field: CatalogField = { id: "01990000-0000-7000-8000-000000000131", key: "zona", name: { es: "Zona" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: null, role: "data", position: 1, isActive: true, valuesCount: 0, usedBy: [] };
+  const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...catalogImportPreviewFixture(), mode: "Append" });
+  const { user } = await mount("paste", { catalog: { ...catalog, fields: [field] } });
+  expect(within(grid()).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Fila", "Código", "Texto", "Detalle", "Activa", "Zona"]);
+  await paste(user, "N\tNorte\nS\tSur\n");
+  expect(screen.queryByRole("textbox", { name: "Pegar filas" })).not.toBeInTheDocument();
+  expect(within(grid()).getAllByRole("row").slice(1).map(row => within(row).getAllByRole("cell").slice(0, 3).map(cell => cell.textContent))).toEqual([["1", "N", "Norte"], ["2", "S", "Sur"]]);
+  expect(screen.getByText("2 filas")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await waitFor(() => expect(check).toHaveBeenCalledOnce());
+  // Only the pasted columns travel, so an absent one keeps its values.
+  expect(await sentText(check)).toBe('"Code","Text"\r\n"N","Norte"\r\n"S","Sur"');
+});
+
+// The first cell leaves with the paste; the focus is not lost: it goes to the filled grid, where another paste replaces the rows.
+it("moves the focus to the filled grid, where another paste replaces the rows", async () => {
+  const { user } = await mount();
+  await paste(user, "N\tNorte\nS\tSur");
+  expect(within(grid()).getByRole("region", { name: "Grilla para pegar" })).toHaveFocus();
+  await user.paste("C\tCentro");
+  expect(within(grid()).getAllByRole("row").slice(1).map(row => within(row).getAllByRole("cell").slice(0, 3).map(cell => cell.textContent))).toEqual([["1", "C", "Centro"]]);
+  expect(screen.getByText("1 fila")).toBeInTheDocument();
+});
+
+it("places the pasted columns by their headers and says that a column outside the catalog is not imported", async () => {
+  const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...catalogImportPreviewFixture(), mode: "Append" });
+  const { user } = await mount();
+  await paste(user, "Texto\tCódigo\tTeléfono\nNorte\tN\t0342\n");
+  expect(within(grid()).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Fila", "Código", "Texto", "Detalle", "Activa", "Teléfono"]);
+  expect(screen.getByText("La columna «Teléfono» no es del catálogo: no se importa.")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await waitFor(() => expect(check).toHaveBeenCalledOnce());
+  expect(await sentText(check)).toBe('"Texto","Código"\r\n"Norte","N"');
+});
+
+it("empties the grid with «Limpiar» and asks to paste before reviewing", async () => {
+  const check = vi.spyOn(imports, "previewCatalogImport");
+  const { user } = await mount();
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  expect(await screen.findByText("Pegá las filas en la grilla antes de revisar.")).toBeInTheDocument();
+  await paste(user, "N\tNorte");
+  await user.click(screen.getByRole("button", { name: "Limpiar" }));
+  expect(screen.getByRole("textbox", { name: "Pegar filas" })).toBeInTheDocument();
+  expect(screen.queryByText("1 fila")).not.toBeInTheDocument();
+  expect(check).not.toHaveBeenCalled();
+});
+
+// IM2-A: while reading, the button says so and the review zone shows its skeleton; Cancel keeps working.
+it("shows that it is reviewing with the button and a skeleton, and Cancel stops the reading", async () => {
+  let resolve!: (value: imports.CatalogImportPreview) => void;
+  const check = vi.spyOn(imports, "previewCatalogImport").mockImplementation(() => new Promise(done => { resolve = done; }));
+  const { user, onClose } = await mount();
+  await paste(user, "N\tNorte");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  expect(screen.getByRole("button", { name: "Revisando…" })).toBeDisabled();
+  expect(screen.getByRole("heading", { name: "Revisión" })).toBeInTheDocument();
+  expect(screen.getByRole("status", { name: "Revisando…" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Pegar desde Excel" })).toBeDisabled();
+  const cancel = screen.getByRole("button", { name: "Cancelar" });
+  expect(cancel).toBeEnabled();
+  await user.click(cancel);
+  expect((check.mock.calls[0]![2] as AbortSignal).aborted).toBe(true);
+  expect(onClose).toHaveBeenCalledOnce();
+  await act(async () => resolve(catalogImportPreviewFixture()));
+});
+
+it("keeps Cancel and the close button in sight but off, with their reason, while applying", async () => {
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...catalogImportPreviewFixture(), mode: "Append", issues: [], deactivated: [], counts: { ...catalogImportPreviewFixture().counts, errorRows: 0, deactivated: 0 }, confirmations: quiet });
+  let resolve!: (value: Awaited<ReturnType<typeof imports.applyCatalogImport>>) => void;
+  vi.spyOn(imports, "applyCatalogImport").mockImplementation(() => new Promise(done => { resolve = done; }));
+  const { user, onApplied } = await mount();
+  await paste(user, "N\tNorte");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await user.click(await screen.findByRole("button", { name: "Aplicar" }));
+  expect(screen.getByRole("button", { name: "Aplicando…" })).toBeDisabled();
+  for (const name of ["Cancelar", "Cerrar"]) {
+    const control = screen.getByRole("button", { name });
+    expect(control).toBeDisabled();
+    expect(control).toHaveAccessibleDescription("Esperá a que termine de aplicar.");
+  }
+  await act(async () => resolve({ catalog: { ...catalog, revision: 8 }, itemIdentityMap: {}, fieldIdentityMap: {} }));
+  await waitFor(() => expect(onApplied).toHaveBeenCalledOnce());
+});
+
 it("rereads after a revision conflict without another automatic apply and preserves the same file", async () => {
-  const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...catalogImportPreviewFixture(), mode: "Append", confirmations: { deactivations: 0, manyErrors: false, emptySheet: false } });
+  const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...catalogImportPreviewFixture(), mode: "Append", confirmations: quiet });
   const apply = vi.spyOn(imports, "applyCatalogImport").mockRejectedValue(new ApiError(409, { code: "Forms.Catalog.RevisionConflict" }));
   const read = vi.spyOn(catalogs, "fetchCatalog").mockResolvedValue({ ...catalog, revision: 8 });
   const { user, onObserved } = await mount();
-  await user.type(screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\nN\tNorte");
+  await paste(user, "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await user.click(await screen.findByRole("button", { name: "Aplicar sin la fila con errores" }));
   check.mockResolvedValue({ ...catalogImportPreviewFixture(), revision: 8, mode: "Append" });
@@ -55,11 +172,12 @@ it("rereads after a revision conflict without another automatic apply and preser
   expect(onObserved).toHaveBeenCalledWith(expect.objectContaining({ revision: 8 }));
   expect(apply).toHaveBeenCalledTimes(1);
 });
+
 it("aborts a private preview on close and refuses a late result after permission is revoked", async () => {
   let resolve!: (value: imports.CatalogImportPreview) => void;
   const check = vi.spyOn(imports, "previewCatalogImport").mockImplementation(() => new Promise(done => { resolve = done; }));
   const { user, props, rerender, unmount, onApplied } = await mount();
-  fireEvent.change(screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), { target: { value: "Code\tText\nN\tNorte" } });
+  await paste(user, "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   const signal = check.mock.calls[0]![2]!;
   rerender(<CatalogImportDialog {...props} scope={{ ...scope, permissions: [] }}/>);
@@ -70,35 +188,56 @@ it("aborts a private preview on close and refuses a late result after permission
 });
 
 it("keeps an already applied file as information and allows restoring it at the current revision", async () => {
-  const base=catalogImportPreviewFixture();
-  vi.spyOn(imports,"previewCatalogImport").mockResolvedValue({...base,mode:"Append",alreadyAppliedAtUtc:"2026-10-22T08:00:00Z",counts:{...base.counts,errorRows:0,deactivated:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});
-  const apply=vi.spyOn(imports,"applyCatalogImport").mockResolvedValue({catalog:{...catalog,revision:8},itemIdentityMap:{}, fieldIdentityMap: {}});
-  const {user}=await mount();
-  await user.type(screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
-  await user.click(screen.getByRole("button",{name:"Revisar"}));
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", alreadyAppliedAtUtc: "2026-10-22T08:00:00Z", counts: { ...base.counts, errorRows: 0, deactivated: 0 }, issues: [], deactivated: [], confirmations: quiet });
+  const apply = vi.spyOn(imports, "applyCatalogImport").mockResolvedValue({ catalog: { ...catalog, revision: 8 }, itemIdentityMap: {}, fieldIdentityMap: {} });
+  const { user } = await mount();
+  await paste(user, "Code\tText\nN\tNorte");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
   expect(await screen.findByText(/Esta planilla ya se aplicó/)).toBeInTheDocument();
-  const button=screen.getByRole("button",{name:"Aplicar"}); expect(button).toBeEnabled();
-  await user.click(button);await waitFor(()=>expect(apply).toHaveBeenCalledOnce());
-  expect(apply.mock.calls[0]![1]).toMatchObject({expectedRevision:7,sheetSha256:base.sheetSha256});
+  const button = screen.getByRole("button", { name: "Aplicar" }); expect(button).toBeEnabled();
+  await user.click(button); await waitFor(() => expect(apply).toHaveBeenCalledOnce());
+  expect(apply.mock.calls[0]![1]).toMatchObject({ expectedRevision: 7, sheetSha256: base.sheetSha256 });
 });
 
-it("reviews a file in Replace mode and requires both empty-sheet and exact deactivation confirmations",async()=>{
- const base=catalogImportPreviewFixture();vi.spyOn(imports,"previewCatalogImport").mockResolvedValue({...base,rowsRead:0,counts:{...base.counts,added:0,errorRows:0},added:[],issues:[],confirmations:{deactivations:1,emptySheet:true,manyErrors:false}});
- const apply=vi.spyOn(imports,"applyCatalogImport").mockResolvedValue({catalog:{...catalog,revision:8},itemIdentityMap:{}, fieldIdentityMap: {}});
- const {user}=await mount("file");const file=new File(["Code,Text"],"Vacia.csv",{type:"text/csv"});
- await user.upload(screen.getByLabelText("Archivo",{exact:true}),file);await user.click(screen.getByRole("button",{name:"Revisar"}));
- const button=await screen.findByRole("button",{name:"Aplicar"});expect(button).toBeDisabled();
- await user.click(screen.getByText("Sí, dar de baja 1 opción"));expect(button).toBeDisabled();
- await user.click(screen.getByText("Sí, aplicar esta planilla sin filas válidas"));expect(button).toBeEnabled();
- expect(apply).not.toHaveBeenCalled();await user.click(button);await waitFor(()=>expect(apply).toHaveBeenCalledOnce());
- expect(apply.mock.calls[0]![1]).toMatchObject({mode:"Replace",file,confirmDeactivations:1,confirmEmpty:true,confirmErrors:false});
+it("reviews a file in Replace mode and requires both empty-sheet and exact deactivation confirmations", async () => {
+  const base = catalogImportPreviewFixture(); vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, rowsRead: 0, counts: { ...base.counts, added: 0, errorRows: 0 }, added: [], issues: [], confirmations: { deactivations: 1, emptySheet: true, manyErrors: false } });
+  const apply = vi.spyOn(imports, "applyCatalogImport").mockResolvedValue({ catalog: { ...catalog, revision: 8 }, itemIdentityMap: {}, fieldIdentityMap: {} });
+  const { user } = await mount("file"); const file = new File(["Code,Text"], "Vacia.csv", { type: "text/csv" });
+  await user.upload(screen.getByLabelText("Archivo", { exact: true }), file);
+  expect(screen.getByText("Vacia.csv")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  const button = await screen.findByRole("button", { name: "Aplicar" }); expect(button).toBeDisabled();
+  // Confirming is in its zone; what deactivating means is the help of its (i).
+  expect(screen.getByRole("heading", { name: "Antes de aplicar" })).toBeInTheDocument();
+  await user.hover(screen.getByRole("button", { name: "Qué es dar de baja" }));
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Lo que no viene en la planilla se da de baja, no se borra.");
+  await user.click(screen.getByText("Sí, dar de baja 1 opción")); expect(button).toBeDisabled();
+  await user.click(screen.getByText("Sí, aplicar esta planilla sin filas válidas")); expect(button).toBeEnabled();
+  expect(apply).not.toHaveBeenCalled(); await user.click(button); await waitFor(() => expect(apply).toHaveBeenCalledOnce());
+  expect(apply.mock.calls[0]![1]).toMatchObject({ mode: "Replace", file, confirmDeactivations: 1, confirmEmpty: true, confirmErrors: false });
 });
-it("removes the pasted text and review on a forbidden write without retrying",async()=>{
- const base=catalogImportPreviewFixture();vi.spyOn(imports,"previewCatalogImport").mockResolvedValue({...base,mode:"Append",counts:{...base.counts,deactivated:0,errorRows:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});
- const apply=vi.spyOn(imports,"applyCatalogImport").mockRejectedValue(new ApiError(403,{}));const {user}=await mount();
- await user.type(screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");await user.click(screen.getByRole("button",{name:"Revisar"}));
- await user.click(await screen.findByRole("button",{name:"Aplicar"}));
- expect(await screen.findByText("Ya no tenés permiso para importar opciones.")).toBeInTheDocument();expect(screen.queryByRole("textbox")).not.toBeInTheDocument();expect(screen.queryByRole("button",{name:"Aplicar"})).not.toBeInTheDocument();expect(apply).toHaveBeenCalledOnce();
+
+it("removes the pasted rows and review on a forbidden write without retrying", async () => {
+  const base = catalogImportPreviewFixture(); vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", counts: { ...base.counts, deactivated: 0, errorRows: 0 }, issues: [], deactivated: [], confirmations: quiet });
+  const apply = vi.spyOn(imports, "applyCatalogImport").mockRejectedValue(new ApiError(403, {})); const { user } = await mount();
+  await paste(user, "Code\tText\nN\tNorte"); await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await user.click(await screen.findByRole("button", { name: "Aplicar" }));
+  expect(await screen.findByText("Ya no tenés permiso para importar opciones.")).toBeInTheDocument(); expect(screen.queryByRole("region", { name: "Filas pegadas" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Aplicar" })).not.toBeInTheDocument(); expect(apply).toHaveBeenCalledOnce();
+});
+
+// The counts go in the tabs and the band, not as loose chips.
+it("names the file, its sheet and the rows read in the band and puts each count in its tab", async () => {
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append" });
+  const { user } = await mount();
+  await paste(user, "Code\tText\nN\tNorte");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  const review = (await screen.findByRole("heading", { name: "Revisión" })).closest("section")!;
+  expect(within(review).getByText(new RegExp("^Pegado\\.csv · " + base.sheetName + " · "))).toBeInTheDocument();
+  expect(within(review).getByRole("tab", { name: "Errores y avisos " + base.issues.length })).toBeInTheDocument();
+  expect(within(review).getByRole("tab", { name: "Altas " + base.counts.added })).toBeInTheDocument();
+  expect(screen.queryByText(/^\d+ altas?$/)).not.toBeInTheDocument();
 });
 
 it.each([
@@ -108,20 +247,19 @@ it.each([
   ["Date", "en", "2026-04-03", "04/03/2026", "2026-05-04", "05/04/2026"],
 ] as const)("shows normalized %s values for added and changed rows in %s before applying", async (valueType, culture, before, shownBefore, after, shownAfter) => {
   await i18n.changeLanguage(culture);
-  const base = catalogImportPreviewFixture();
+  const base = catalogImportPreviewFixture(), english = culture === "en";
   vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", issues: [], deactivated: [],
     added: [{ ...base.added[0]!, value: after }],
     changed: [{ row: 3, itemId: catalog.id, code: "C", changes: [{ column: "value", before, after }] }],
-    counts: { ...base.counts, changed: 1, deactivated: 0, errorRows: 0 }, confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
+    counts: { ...base.counts, changed: 1, deactivated: 0, errorRows: 0 }, confirmations: quiet });
   const apply = vi.spyOn(imports, "applyCatalogImport");
-  const user = userEvent.setup();
-  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, valueType }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tValue\nN\tNorte\t" + after } });
-  await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
-  await user.click(await screen.findByRole("tab", { name: culture === "en" ? "New" : "Altas" }));
+  const { user } = await mount("paste", { scope: { ...scope, culture }, catalog: { ...catalog, valueType } });
+  await paste(user, "Code\tText\tValue\nN\tNorte\t" + after, english);
+  await user.click(screen.getByRole("button", { name: english ? "Review" : "Revisar" }));
+  await user.click(await screen.findByRole("tab", { name: english ? /^New/ : /^Altas/ }));
   expect(within(screen.getByRole("tabpanel")).getByRole("cell", { name: shownAfter })).toBeInTheDocument();
-  await user.click(screen.getByRole("tab", { name: culture === "en" ? "Changes" : "Cambios" }));
-  expect(within(screen.getByRole("tabpanel")).getByText(`${culture === "en" ? "Value" : "Valor"}: ${shownBefore} → ${shownAfter}`)).toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: english ? /^Changes/ : /^Cambios/ }));
+  expect(within(screen.getByRole("tabpanel")).getByText(`${english ? "Value" : "Valor"}: ${shownBefore} → ${shownAfter}`)).toBeInTheDocument();
   expect(apply).not.toHaveBeenCalled();
 });
 
@@ -135,16 +273,17 @@ it.each([["es", "Supervisor"], ["en", "Supervisor"], ["es", "textEn"], ["en", "t
     issues: [
       { row: 1, column: header, severity: "Warning", code: "Forms.CatalogImport.UnknownColumn", message: warningMessage, relatedRow: null, length: null },
       { ...base.issues[0]!, message: errorMessage },
-    ], confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
+    ], confirmations: quiet });
   const apply = vi.spyOn(imports, "applyCatalogImport");
-  const { user } = await mount();
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\t" + header + "\nN\tNorte\tAna" } });
+  const { user } = await mount("paste", { scope: { ...scope, culture } });
+  await paste(user, "Code\tText\t" + header + "\nN\tNorte\tAna", english);
   await user.click(screen.getByRole("button", { name: english ? "Review" : "Revisar" }));
-  expect(await screen.findByRole("columnheader", { name: english ? "Type" : "Tipo" })).toBeInTheDocument();
-  const warningRow = screen.getByText(header).closest("tr")!;
+  const panel = within(await screen.findByRole("tabpanel"));
+  expect(panel.getByRole("columnheader", { name: english ? "Type" : "Tipo" })).toBeInTheDocument();
+  const warningRow = panel.getByText(header).closest("tr")!;
   expect(within(warningRow).getByText(english ? "Warning" : "Aviso")).toBeInTheDocument();
   expect(within(warningRow).getByText(warningMessage)).toBeInTheDocument();
-  const errorRow = screen.getByText(errorMessage).closest("tr")!;
+  const errorRow = panel.getByText(errorMessage).closest("tr")!;
   expect(within(errorRow).getByText("Error")).toBeInTheDocument();
   expect(within(errorRow).getByText(english ? "Row 2" : "Fila 2")).toBeInTheDocument();
   expect(apply).not.toHaveBeenCalled();
@@ -157,31 +296,32 @@ it.each(["es", "en"] as const)("labels the Spanish translation columns of an Eng
   vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", deactivated: [],
     issues: [{ row: 3, column: "textEs", severity: "Error", code: "Forms.CatalogImport.TextTooLong", message: "Too long", relatedRow: null, length: 31 }],
     changed: [{ row: 2, itemId: base.deactivated[0]!.itemId, code: "N", changes: [{ column: "textEs", before: "Norte", after: "Norte cambiado" }, { column: "detailEs", before: null, after: "Zona norte" }] }],
-    counts: { ...base.counts, changed: 1, deactivated: 0 }, confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
-  const user = userEvent.setup();
-  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, originalCulture: "en", name: { en: "List" } }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\t" + text + "\nN\tNorth\tNorte cambiado" } });
+    counts: { ...base.counts, changed: 1, deactivated: 0 }, confirmations: quiet });
+  const { user } = await mount("paste", { scope: { ...scope, culture }, catalog: { ...catalog, originalCulture: "en", name: { en: "List" } } });
+  await paste(user, "Code\tText\t" + text + "\nN\tNorth\tNorte cambiado", english);
+  // The translation column that came with its header has its place in the grid.
+  expect(within(grid(english)).getByRole("columnheader", { name: text })).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: english ? "Review" : "Revisar" }));
-  const errorRow = (await screen.findByText("Too long")).closest("tr")!;
+  const errorRow = within(await screen.findByRole("tabpanel")).getByText("Too long").closest("tr")!;
   expect(within(errorRow).getByRole("cell", { name: text })).toBeInTheDocument();
-  await user.click(screen.getByRole("tab", { name: english ? "Changes" : "Cambios" }));
+  await user.click(screen.getByRole("tab", { name: english ? /^Changes/ : /^Cambios/ }));
   const panel = within(screen.getByRole("tabpanel"));
   expect(panel.getByText(`${text}: Norte → Norte cambiado`)).toBeInTheDocument();
   expect(panel.getByText(`${detail}: — → Zona norte`)).toBeInTheDocument();
   expect(screen.queryByText(/textEs|detailEs/)).not.toBeInTheDocument();
 });
 
-it("preserves the file after a preview conflict and rereads only on explicit review", async () => {
+it("preserves the pasted rows after a preview conflict and rereads only on explicit review", async () => {
   const check = vi.spyOn(imports, "previewCatalogImport")
     .mockRejectedValueOnce(new ApiError(409, { code: "Forms.Catalog.RevisionConflict" }))
     .mockResolvedValue({ ...catalogImportPreviewFixture(), revision: 8, mode: "Append" });
   const read = vi.spyOn(catalogs, "fetchCatalog").mockResolvedValue({ ...catalog, revision: 8 });
   const apply = vi.spyOn(imports, "applyCatalogImport");
   const { user, onObserved } = await mount();
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\nN\tNorte" } });
+  await paste(user, "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   const retry = await screen.findByRole("button", { name: "Revisar de nuevo" });
-  expect(screen.getByRole("textbox")).toHaveValue("Code\tText\nN\tNorte");
+  expect(within(grid()).getByRole("cell", { name: "Norte" })).toBeInTheDocument();
   expect(check).toHaveBeenCalledOnce();
   expect(read).not.toHaveBeenCalled();
   await user.click(retry);
@@ -203,13 +343,13 @@ it.each([
   await i18n.changeLanguage(culture);
   const notice = vi.spyOn(notifications, "notify");
   const check = vi.spyOn(imports, "previewCatalogImport").mockRejectedValue(new ApiError(400, { code: "Forms.CatalogImport." + reason, detail, sheet: "Detalle 2026" }));
-  const { user } = await mount();
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\nN\tNorte" } });
+  const { user } = await mount("paste", { scope: { ...scope, culture } });
+  await paste(user, "Code\tText\nN\tNorte", culture === "en");
   await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
   await waitFor(() => expect(notice).toHaveBeenCalledOnce());
   expect(notice).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: "error", message }));
   expect(check).toHaveBeenCalledOnce();
-  expect(screen.getByRole("textbox")).toHaveValue("Code\tText\nN\tNorte");
+  expect(within(grid(culture === "en")).getByRole("cell", { name: "Norte" })).toBeInTheDocument();
 });
 
 it.each([
@@ -219,23 +359,19 @@ it.each([
   const notice = vi.spyOn(notifications, "notify");
   vi.spyOn(imports, "previewCatalogImport").mockRejectedValue(new ApiError(400, { code, detail: "Revisá la planilla.", sheet }));
   const { user } = await mount();
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\nN\tNorte" } });
+  await paste(user, "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await waitFor(() => expect(notice).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ kind: "error", message: "Revisá la planilla." })));
 });
 
-it.each(["es", "en"] as const)("uses localized pasted-row steps and filenames in %s", async culture => {
+it.each(["es", "en"] as const)("sends the pasted rows as a localized file name in %s", async culture => {
   await i18n.changeLanguage(culture);
-  const base = catalogImportPreviewFixture();
-  const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append" });
-  const { user } = await mount();
-  expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(culture === "en" ? "Rows" : "Filas");
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\nN\tNorte" } });
+  const check = vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...catalogImportPreviewFixture(), mode: "Append" });
+  const { user } = await mount("paste", { scope: { ...scope, culture } });
+  await paste(user, "Code\tText\nN\tNorte", culture === "en");
   await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
-  await screen.findByRole("tab", { name: culture === "en" ? "New" : "Altas" });
-  const filename = culture === "en" ? "Pasted.csv" : "Pegado.csv";
-  expect(check.mock.calls[0]![1].file.name).toBe(filename);
-  expect(screen.getByText(new RegExp(filename.replace(".", "\\.")))).toBeInTheDocument();
+  await screen.findByRole("tab", { name: culture === "en" ? /^New/ : /^Altas/ });
+  expect(check.mock.calls[0]![1].file.name).toBe(culture === "en" ? "Pasted.csv" : "Pegado.csv");
 });
 
 it.each([
@@ -243,10 +379,10 @@ it.each([
 ] as const)("describes the pasted text limit without a file instruction in %s for %s", async (culture, limit) => {
   await i18n.changeLanguage(culture);
   const check = vi.spyOn(imports, "previewCatalogImport");
+  const { user } = await mount("paste", { scope: { ...scope, culture } });
   if (limit === "bytes") vi.spyOn(Blob.prototype, "size", "get").mockReturnValue(10 * 1024 * 1024 + 1);
-  const { user } = await mount();
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: limit === "columns" ? Array.from({ length: 65 }, () => "Header").join("\t") : "Code\tText\nN\tNorte" } });
-  await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
+  await paste(user, limit === "columns" ? Array.from({ length: 65 }, () => "x").join("\t") : "Code\tText\nN\tNorte", culture === "en");
+  if (limit === "bytes") await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
   expect(screen.getByText(culture === "en" ? "Paste up to 10,000 rows and 64 columns, without exceeding 10 MB of text." : "Pegá hasta 10.000 filas y 64 columnas, sin superar 10 MB de texto.")).toBeInTheDocument();
   expect(check).not.toHaveBeenCalled();
 });
@@ -261,16 +397,15 @@ it.each([
     changed: [{ row: 3, itemId: base.deactivated[0]!.itemId, code: "S", changes: [{ column: "active", before: "true", after: "false" }] }],
     counts: { ...base.counts, changed: 1, errorRows: 0 }, confirmations: { ...base.confirmations, manyErrors: false },
   });
-  const user = userEvent.setup();
-  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, valueType }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tActive\nN\tNorte\tYes\nS\tSur\tNo" } });
+  const { user } = await mount("paste", { scope: { ...scope, culture }, catalog: { ...catalog, valueType } });
+  await paste(user, "Code\tText\tActive\nN\tNorte\tYes\nS\tSur\tNo", english);
   await user.click(screen.getByRole("button", { name: english ? "Review" : "Revisar" }));
-  await user.click(await screen.findByRole("tab", { name: english ? "New" : "Altas" }));
+  await user.click(await screen.findByRole("tab", { name: english ? /^New/ : /^Altas/ }));
   const headers = () => within(screen.getByRole("tabpanel")).getAllByRole("columnheader").map(node => node.textContent);
   expect(headers()).toEqual([english ? "Row" : "Fila", english ? "Code" : "Código", english ? "Text" : "Texto", ...(valueType === "Text" ? [] : [english ? "Value" : "Valor"])]);
-  await user.click(screen.getByRole("tab", { name: english ? "Changes" : "Cambios" }));
+  await user.click(screen.getByRole("tab", { name: english ? /^Changes/ : /^Cambios/ }));
   expect(headers()).toEqual([english ? "Row" : "Fila", english ? "Code" : "Código", english ? "Changes" : "Cambios"]);
-  await user.click(screen.getByRole("tab", { name: english ? "Deactivated" : "Bajas" }));
+  await user.click(screen.getByRole("tab", { name: english ? /^Deactivated/ : /^Bajas/ }));
   expect(headers()).toEqual([english ? "Code" : "Código", english ? "Text" : "Texto"]);
 });
 
@@ -285,15 +420,12 @@ it.each([
   await i18n.changeLanguage(culture);
   const notice = vi.spyOn(notifications, "notify");
   const check = vi.spyOn(imports, "previewCatalogImport").mockRejectedValue(new ApiError(400, { code: "Forms.CatalogImport." + code, detail: "Generic server detail", column }));
-  const user = userEvent.setup();
-  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, fields: [extraField] }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
-  const input = screen.getByRole("textbox");
-  fireEvent.change(input, { target: { value: "Code\tText\nN\tNorte" } });
+  const { user } = await mount("paste", { scope: { ...scope, culture }, catalog: { ...catalog, fields: [extraField] } });
+  await paste(user, "Code\tText\nN\tNorte", culture === "en");
   await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
   expect(await screen.findByRole("alert")).toHaveTextContent(message);
-  expect(input).toHaveAttribute("aria-invalid", "true");
-  expect(input).toHaveAccessibleDescription(message);
-  expect(input).toHaveValue("Code\tText\nN\tNorte");
+  expect(within(grid(culture === "en")).getByRole("table")).toHaveAccessibleDescription(message);
+  expect(within(grid(culture === "en")).getByRole("cell", { name: "Norte" })).toBeInTheDocument();
   expect(notice).not.toHaveBeenCalled();
   expect(check).toHaveBeenCalledOnce();
 });
@@ -309,7 +441,7 @@ it("keeps a missing header next to the selected file and can review it again", a
   expect(input).toHaveAccessibleDescription("Falta la columna «Texto». Agregala y revisá de nuevo.");
   expect(notice).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: "Revisar" }));
-  await screen.findByRole("tab", { name: "Altas" });
+  await screen.findByRole("tab", { name: /^Altas/ });
   expect(check.mock.calls[1]![1].file).toBe(file);
 });
 it.each(["es", "en"] as const)("shows extra columns and their typed canonical values and names in every %s preview list", async culture => {
@@ -323,21 +455,20 @@ it.each(["es", "en"] as const)("shows extra columns and their typed canonical va
     issues: [{ row: 3, column: extraId, severity: "Error", code: "Forms.CatalogField.ValueInvalid", message: "Invalid value", relatedRow: null, length: null }],
     added: [{ ...base.added[0]!, fields: { [extraId]: "900719925474099301", [fields[1]!.id]: "0.001", [fields[2]!.id]: "false" } }],
     changed: [{ row: 4, itemId: base.deactivated[0]!.itemId, code: "S", changes: [{ column: extraId, before: "1", after: "900719925474099301" }] }],
-    counts: { ...base.counts, changed: 1, deactivated: 0 }, confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
-  const user = userEvent.setup();
-  await act(async () => { renderWithProviders(<CatalogImportDialog scope={{ ...scope, culture }} catalog={{ ...catalog, fields }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tpayment_days\nN\tNorte\t1" } });
+    counts: { ...base.counts, changed: 1, deactivated: 0 }, confirmations: quiet });
+  const { user } = await mount("paste", { scope: { ...scope, culture }, catalog: { ...catalog, fields } });
+  await paste(user, "Code\tText\tpayment_days\nN\tNorte\t1", culture === "en");
   await user.click(screen.getByRole("button", { name: culture === "en" ? "Review" : "Revisar" }));
   const name = culture === "en" ? "Term" : "Plazo", integer = culture === "en" ? "900,719,925,474,099,301" : "900.719.925.474.099.301";
-  expect(await screen.findByRole("cell", { name })).toBeInTheDocument();
-  await user.click(screen.getByRole("tab", { name: culture === "en" ? "New" : "Altas" }));
+  expect(within(await screen.findByRole("tabpanel")).getByRole("cell", { name })).toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: culture === "en" ? /^New/ : /^Altas/ }));
   const panel = within(screen.getByRole("tabpanel"));
   expect(panel.getAllByRole("columnheader").map(node => node.textContent)).toEqual([culture === "en" ? "Row" : "Fila", culture === "en" ? "Code" : "Código", name, "Importe", culture === "en" ? "Confirmed" : "Confirmado", culture === "en" ? "Text" : "Texto"]);
   expect(panel.getByRole("cell", { name: integer })).toBeInTheDocument();
   expect(panel.getByRole("cell", { name: culture === "en" ? "0.001" : "0,001" })).toBeInTheDocument();
   expect(panel.getByRole("cell", { name: "No" })).toBeInTheDocument();
   expect(screen.queryByRole("columnheader", { name: "Retirado" })).not.toBeInTheDocument();
-  await user.click(screen.getByRole("tab", { name: culture === "en" ? "Changes" : "Cambios" }));
+  await user.click(screen.getByRole("tab", { name: culture === "en" ? /^Changes/ : /^Cambios/ }));
   expect(within(screen.getByRole("tabpanel")).getByText(`${name}: 1 → ${integer}`)).toBeInTheDocument();
 });
 
@@ -348,14 +479,13 @@ it("shows the source option labels rather than their identities for added and ch
   vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", issues: [], deactivated: [],
     added: [{ ...base.added[0]!, fields: { [extraId]: optionId }, fieldTexts: { [extraId]: "Centro" } }],
     changed: [{ row: 4, itemId: base.deactivated[0]!.itemId, code: "S", changes: [{ column: extraId, before: sourceId, beforeText: "Norte", after: optionId, afterText: "Centro" }] }],
-    counts: { ...base.counts, changed: 1, deactivated: 0, errorRows: 0 }, confirmations: { deactivations: 0, emptySheet: false, manyErrors: false } });
-  const user = userEvent.setup();
-  await act(async () => { renderWithProviders(<CatalogImportDialog scope={scope} catalog={{ ...catalog, fields: [field] }} initialSource="paste" onApplied={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} onTemplate={vi.fn()}/>); });
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Code\tText\tzone\nN\tNorte\tCentro" } });
+    counts: { ...base.counts, changed: 1, deactivated: 0, errorRows: 0 }, confirmations: quiet });
+  const { user } = await mount("paste", { catalog: { ...catalog, fields: [field] } });
+  await paste(user, "Code\tText\tZona\nN\tNorte\tCentro");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
-  expect(await screen.findByRole("cell", { name: "Centro" })).toBeInTheDocument();
+  expect(within(await screen.findByRole("tabpanel")).getByRole("cell", { name: "Centro" })).toBeInTheDocument();
   expect(screen.queryByText(optionId)).not.toBeInTheDocument();
-  await user.click(screen.getByRole("tab", { name: "Cambios" }));
+  await user.click(screen.getByRole("tab", { name: /^Cambios/ }));
   expect(screen.getByText("Zona: Norte → Centro")).toBeInTheDocument();
   expect(screen.queryByText(new RegExp(sourceId))).not.toBeInTheDocument();
 });
