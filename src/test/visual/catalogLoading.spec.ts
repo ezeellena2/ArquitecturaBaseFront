@@ -44,6 +44,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await expect(text).toHaveValue(en ? "" : "Pérez"); await text.scrollIntoViewIfNeeded();
       if (en) await expect(text).toHaveAccessibleDescription("Original (Spanish): Pérez");
       const box = (await text.boundingBox())!; expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width);
+      // The option is in the options modal; on the phone «Listo» is in its list.
+      await page.getByRole("button", { name: label("Volver a la lista", "Back to the list"), exact: true }).click();
       await page.getByRole("button", { name: label("Listo", "Done"), exact: true }).click();
       await expect(page.getByRole("button", { name: label("Editar Pérez", "Edit Pérez"), exact: true })).toBeFocused();
     }
