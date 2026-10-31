@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MemoryRouter, RouterProvider, createMemoryRouter } from "react-router";
-import { act, cleanup, screen, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi, type MockInstance } from "vitest";
 import { http, HttpResponse } from "msw";
@@ -463,15 +463,26 @@ it("warns that saving checks the values only when the type of a field with value
   expect(within(dialog).queryByText(warning)).not.toBeInTheDocument();
 });
 
-it("chooses the source catalog of a field by searching it", async () => {
-  const zones = "01990000-0000-7000-8000-000000000009";
-  server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: zones, name: "Zonas", description: null, origin: "Manual", optionsCount: 6, usageCount: null, state: "Active", stateReason: null, canEdit: true }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })));
+it("chooses the source catalog in a dropdown that opens on the first catalogs and filters them while typing", async () => {
+  const row = (id: string, name: string, optionsCount: number) => ({ valueType: "Text", id, name, description: null, origin: "Manual", optionsCount, usageCount: null, state: "Active", stateReason: null, canEdit: true });
+  const catalogs = [row("01990000-0000-7000-8000-000000000010", "Tipos de producto", 5), row("01990000-0000-7000-8000-000000000009", "Zonas", 6)];
+  server.use(http.get("/api/forms/catalogs", ({ request }) => {
+    const search = new URL(request.url).searchParams.get("search") ?? "";
+    const items = catalogs.filter(catalog => catalog.name.toLowerCase().includes(search.toLowerCase()));
+    return HttpResponse.json({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: items.length, manual: items.length, filters: 0 } } });
+  }));
   await mount({ initial: [field] });
   const dialog = await openFields();
   await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "catalog");
-  await userEvent.type(within(dialog).getByRole("combobox", { name: "Catálogo" }), "Zon");
-  await userEvent.click(await screen.findByRole("option", { name: "Zonas · 6 opciones" }));
-  expect(within(dialog).getByRole("combobox", { name: "Catálogo" })).toHaveValue("Zonas");
+  const source = within(dialog).getByRole("combobox", { name: "Catálogo" });
+  // Opening it shows the first catalogs, before typing anything.
+  await userEvent.click(source);
+  expect(await screen.findByRole("option", { name: "Tipos de producto · 5 opciones" })).toBeInTheDocument();
+  expect(screen.getByRole("option", { name: "Zonas · 6 opciones" })).toBeInTheDocument();
+  await userEvent.type(source, "Zon");
+  await waitFor(() => expect(screen.queryByRole("option", { name: "Tipos de producto · 5 opciones" })).not.toBeInTheDocument());
+  await userEvent.click(screen.getByRole("option", { name: "Zonas · 6 opciones" }));
+  expect(source).toHaveValue("Zonas");
 });
 
 it("shows the restore error of an active field next to its name", async () => {

@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { cn } from "@/shared/lib/utils";
+import { ChevronDownIcon } from "./icons";
 import { Input } from "./input";
 export interface AutocompleteOption {
   id: string;
@@ -24,11 +25,13 @@ interface Props extends Omit<ComponentProps<"input">, "onChange" | "value" | "on
   status?: ReactNode;
   /** Choosing toggles an option and keeps the list open; each option shows its box. */
   multiple?: boolean;
+  /** A dropdown: the arrow at the end of the field says that a click shows the options before typing. */
+  dropdown?: boolean;
 }
 /** The list lives in a non-modal popover anchored to the field, so a scrolling table or dialog cannot clip it. It opens on a
  * click, typing or the arrows, not on focus: a focus from code (the first error when saving) leaves it closed, so it does
  * not cover the error under the field. */
-export function Autocomplete({ value, onValueChange, options, onSelect, footer, header, status, multiple = false, ...props }: Props) {
+export function Autocomplete({ value, onValueChange, options, onSelect, footer, header, status, multiple = false, dropdown = false, ...props }: Props) {
   const id = useId(), anchor = useRef<HTMLDivElement>(null), [open, setOpen] = useState(false), [active, setActive] = useState(-1);
   const expanded = open && !props.disabled && (options.length > 0 || status != null);
   function select(index: number) {
@@ -39,7 +42,7 @@ export function Autocomplete({ value, onValueChange, options, onSelect, footer, 
   }
   return <PopoverPrimitive.Root open={expanded} onOpenChange={next => { if (!next) { setOpen(false); setActive(-1); } }}>
     <PopoverPrimitive.Anchor asChild><div ref={anchor} className="relative min-w-0">
-      <Input {...props} role="combobox" aria-autocomplete="list" aria-expanded={expanded} aria-controls={expanded ? `${id}-list` : undefined}
+      <Input {...props} className={cn(dropdown && "peer pr-8", props.className)} role="combobox" aria-autocomplete="list" aria-expanded={expanded} aria-controls={expanded ? `${id}-list` : undefined}
         aria-activedescendant={expanded && options[active] ? `${id}-${active}` : undefined} autoComplete="off" value={value}
         onChange={event => { setActive(-1); setOpen(true); onValueChange(event.target.value); }}
         onClick={event => { setOpen(true); props.onClick?.(event); }} onBlur={event => { setOpen(false); setActive(-1); props.onBlur?.(event); }}
@@ -51,6 +54,8 @@ export function Autocomplete({ value, onValueChange, options, onSelect, footer, 
           else if (event.key === "Escape") { setOpen(false); setActive(-1); }
           props.onKeyDown?.(event);
         }} />
+      {/* The click goes through the arrow to the field, which opens the list. */}
+      {dropdown ? <span aria-hidden="true" data-slot="autocomplete-arrow" className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-[var(--color-content-muted)] peer-disabled:opacity-50"><ChevronDownIcon className="size-3.5" /></span> : null}
     </div></PopoverPrimitive.Anchor>
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content asChild align="start" sideOffset={4} collisionPadding={8} hideWhenDetached
