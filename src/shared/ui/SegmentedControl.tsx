@@ -18,15 +18,19 @@ export interface SegmentedOption {
 ///
 /// `fullWidth` lo estira al ancho de su contenedor, en partes iguales: es la forma que tiene en una tarjeta
 /// angosta, como la del ingreso, donde el segmentado encabeza el formulario. Sin eso, mide lo que sus textos.
+///
+/// `disabled` apaga todas las opciones mientras su dueño trabaja, como el origen de una importación que revisa.
 export function SegmentedControl({
   options,
   fullWidth = false,
   appearance = "compact",
+  disabled = false,
   "aria-label": label,
 }: {
   options: readonly SegmentedOption[];
   fullWidth?: boolean;
   appearance?: "compact" | "public";
+  disabled?: boolean;
   "aria-label": string;
 }): ReactNode {
   return (
@@ -44,10 +48,11 @@ export function SegmentedControl({
           // Sin `type`, adentro de un formulario (el editor de un rol) el botón lo enviaría.
           type="button"
           aria-pressed={option.pressed}
+          disabled={disabled}
           onClick={option.onSelect}
           className={cn(
             // El contorno de foco va hacia adentro: el grupo recorta lo que sale de su borde.
-            appearance === "public" ? undefined : cn("px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)] whitespace-nowrap"),
+            appearance === "public" ? undefined : cn("px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)] whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"),
             fullWidth ? "flex-1" : "",
             appearance === "public" ? undefined : option.pressed
               ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"

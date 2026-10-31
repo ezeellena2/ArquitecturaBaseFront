@@ -59,4 +59,23 @@ describe("SegmentedControl", () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it("turns every option off while its owner works", async () => {
+    const onFile = vi.fn();
+    render(
+      <SegmentedControl
+        aria-label="Desde"
+        disabled
+        options={[
+          { key: "file", label: "Subir un archivo", pressed: true, onSelect: vi.fn() },
+          { key: "paste", label: "Pegar desde Excel", pressed: false, onSelect: onFile },
+        ]}
+      />,
+    );
+
+    // La importación, mientras revisa o aplica: no se cambia de origen a mitad de camino.
+    for (const name of ["Subir un archivo", "Pegar desde Excel"]) expect(screen.getByRole("button", { name })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Pegar desde Excel" }));
+    expect(onFile).not.toHaveBeenCalled();
+  });
 });
