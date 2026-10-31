@@ -158,7 +158,30 @@ datos que tiene cada persona…» y la de la clave, que pasa a su (i)). La clave
 nombre, con el mismo generador y el mismo patrón que la de un campo, sin repetir la de otro dato.
 
 El mismo día sumó la barra de Opciones: **sólo «Importar»**. «Pegar desde Excel» deja la barra y el «⋯» del celular, e
-«Importar» abre el diálogo con sus dos pestañas, «Subir un archivo» y «Pegar desde Excel», como antes. El rediseño de
-ese diálogo (sin leyendas ni pasos numerados, con carga visible al revisar y lo pegado en una grilla) se dibujó para
-elegir antes de programarlo: IM1, IM2 e IM3 del lienzo provisorio
-[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), en la fila «Catálogos · importar opciones».
+«Importar» abre el diálogo de importación, que se rediseñó a continuación.
+
+## El diálogo de importación, 2026-10-31
+
+Con el mismo criterio, el usuario pidió rediseñar «Importar opciones a «…»»: sin la descripción, sin los pasos numerados
+ni los siete chips de cantidades, con carga visible y lo pegado en una grilla. Se dibujó antes de programarlo, en IM1, IM2
+e IM3 del lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila «Catálogos
+· importar opciones»), y eligió las tres opciones A:
+
+- **IM1-A · Las dos zonas a la vista.** Un solo diálogo, de arriba abajo, como «Campos de…». «Origen» tiene «Desde»
+  («Subir un archivo | Pegar desde Excel») y, para un archivo, «Archivo» con su nombre y «Elegir archivo» o «Cambiar»; la
+  plantilla va en la banda. Qué acepta el archivo, qué hace cada origen y qué es dar de baja van en sus (i). Después de
+  «Revisar», «Revisión» queda debajo: la banda dice el archivo, la hoja, las filas leídas y las que no cambian, y cada
+  pestaña lleva su cantidad. «Antes de aplicar» aparece sólo con algo para confirmar, una casilla por confirmación.
+- **IM2-A · El botón y un esqueleto.** «Revisar» pasa a «Revisando…» con su ruedita, el origen se apaga y la revisión
+  aparece enseguida como un esqueleto; Cancelar sigue andando. Al aplicar, «Aplicando…», la revisión atenuada y Cancelar y
+  la × a la vista pero apagados, con «Esperá a que termine de aplicar.» en su tooltip.
+- **IM3-A · Una grilla con las columnas del catálogo.** Pegar desde Excel muestra una grilla con los encabezados del
+  catálogo en el orden de la plantilla, con el cursor en la primera celda («Pegá con Ctrl+V»). Sin encabezados, las filas
+  van en ese orden; si lo copiado los trae (nombre o clave), ubican cada columna y esa fila no se importa. Una columna que
+  no es del catálogo queda al final, en rojo, con el motivo debajo. La banda dice cuántas filas hay y tiene «Limpiar»;
+  pegar sobre la grilla llena la reemplaza. Se revisa como un archivo, pero sólo con las columnas pegadas: una que no vino
+  conserva sus valores.
+
+Es `CatalogImportDialog` con la grilla común `PasteGrid` (biblioteca compartida); la lectura de lo pegado es
+`readCatalogPaste` y el CSV que se revisa, `catalogPasteCsv`. La evidencia está en las escenas CA2 de `catalogLoading` (grilla vacía, columna ajena, revisando y
+aplicando).
