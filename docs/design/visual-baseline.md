@@ -204,8 +204,8 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
 - Se valida al enviar; después del primer error, en vivo mientras se corrige.
 - Cancelar junto a la primaria, que va última; una destructiva, separada a la izquierda.
 - **Toda acción que tarda muestra que está cargando** (decisión del usuario, 2026-10-31): no alcanza con apagar el
-  botón. El botón muestra su ruedita y dice qué hace («Guardando…», «Revisando…», «Aplicando…»), y la zona que espera
-  el resultado muestra su esqueleto. No tapa la pantalla ni pierde lo escrito.
+  botón, y no tapa la pantalla ni pierde lo escrito. Cómo se ve la señal, en el botón y en la zona que espera el
+  resultado, se elige en un tablero antes de sumarla a `shared/ui`.
 - **Un botón está habilitado o deshabilitado, sin explicaciones al lado** (decisión del usuario, 2026-10-23):
   - no se agregan textos debajo ni al costado, como «No hay cambios para guardar», «Revisá los datos marcados antes de
     guardar» o «Guardá … antes»;
