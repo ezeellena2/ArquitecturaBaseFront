@@ -2,7 +2,6 @@ import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "re
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -11,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Surface } from "@/shared/ui/Surface";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { IconButton } from "@/shared/ui/IconButton";
-import { AlertTriangleIcon, ChevronDownIcon, InfoIcon, LockIcon, PlusIcon, TrashIcon } from "@/shared/ui/icons";
+import { AlertTriangleIcon, ChevronDownIcon, LockIcon, PlusIcon, TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
@@ -26,6 +25,7 @@ import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 import { CatalogFieldSourceInput } from "./CatalogFieldSourceInput";
 import { CatalogFieldSourceSummary } from "./CatalogFieldSourceSummary";
 import { CatalogFieldUses } from "./CatalogFieldUses";
+import { CatalogRow as Row, CatalogRowHelp as Help, CatalogRowMessage as Message } from "./CatalogRow";
 
 const maxFields = 20;
 const rangeTypes: readonly CatalogFieldType[] = ["integer", "decimal", "date"];
@@ -177,20 +177,6 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
       </DialogContent></Dialog>
     </DialogContent>
   </Dialog>;
-}
-
-// A row of the field: the label on the left from 640 px, on top below.
-function Row({ label, children }: { label: ReactNode; children: ReactNode }) {
-  return <div className="grid gap-1.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-x-4">
-    <div className="flex items-center gap-1 sm:min-h-[var(--height-control)] sm:self-start">{label}</div>
-    <div className="flex min-w-0 flex-col gap-1.5">{children}</div>
-  </div>;
-}
-function Message({ id, error, children }: { id?: string; error?: boolean; children: ReactNode }) {
-  return <p id={id} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{children}</p>;
-}
-function Help({ label, text }: { label: string; text: string }) {
-  return <ActionTooltip label={text}><Button type="button" variant="ghost" size="icon-xs" aria-label={label}><InfoIcon className="size-3.5" /></Button></ActionTooltip>;
 }
 
 function FieldForm({ field, culture, original, scope, errors, uses, typeChanged, focusOnOpen, onChange }: { field: CatalogFieldDraft; culture: FormCulture; original: FormCulture; scope: CatalogReadScope; errors: FieldMessages; uses: ReactNode; typeChanged: boolean; focusOnOpen: boolean; onChange: (field: CatalogFieldDraft) => void }) {
