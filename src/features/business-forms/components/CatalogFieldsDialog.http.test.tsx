@@ -27,7 +27,7 @@ function Harness({ initial = detail.fields!.map(field => openCatalogField(field,
   return <>
     <CatalogFieldsButton fields={fields} errors={errors} canManage onOpen={() => setOpen({ fieldId: null })} />
     <CatalogFieldsNotice fields={fields} errors={errors} feedback={feedback} culture="es" onReview={fieldId => setOpen({ fieldId })} />
-    {open ? <CatalogFieldsDialog catalogName="Proveedores" fields={fields} presentation={detail.presentation} culture="es" original={detail.originalCulture} scope={{ actorId: "editor", culture: "es", permissions }} readOnly={false} confirmedRemovals={confirmedRemovals} errors={errors} feedback={feedback} initialFieldId={open.fieldId} onApply={next => setFields(next)} onClose={() => setOpen(null)} /> : null}
+    {open ? <CatalogFieldsDialog catalogName="Proveedores" fields={fields} presentation={detail.presentation} culture="es" original={detail.originalCulture} scope={{ actorId: "editor", culture: "es", permissions }} readOnly={false} confirmedRemovals={confirmedRemovals} errors={errors} feedback={feedback} initialFieldId={open.fieldId} noticeId="catalogs:fields:http" onApply={next => setFields(next)} onClose={() => setOpen(null)} /> : null}
   </>;
 }
 // Opens the fields from «Agregar campos», chooses one and asks to remove it.
