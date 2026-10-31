@@ -44,7 +44,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await contained(page, fields, width);
     await page.screenshot({ path: info.outputPath("ce1-fields-modal.png"), fullPage: true });
     await back(); await choose(es ? "Zona" : "Zone");
-    await expect(fields.getByRole("combobox", { name: es ? "Catálogo" : "Catalog", exact: true })).toHaveValue(es ? "Zonas" : "Zones");
+    const source = fields.getByRole("combobox", { name: es ? "Catálogo" : "Catalog", exact: true });
+    await expect(source).toHaveValue(es ? "Zonas" : "Zones");
+    // A dropdown: the arrow at its end, and a click shows the first catalogs before typing anything.
+    await expect(source.locator("xpath=..").locator('[data-slot="autocomplete-arrow"]')).toBeVisible();
+    await source.click();
+    await expect(page.getByRole("option", { name: es ? /^Proveedores · \d+ opciones$/ : /^Suppliers · \d+ options$/ })).toBeVisible();
+    await expect(page.getByRole("option", { name: es ? /^Zonas · \d+ opciones$/ : /^Zones · \d+ options$/ })).toBeVisible();
+    await page.screenshot({ path: info.outputPath("ce1-source-dropdown.png"), fullPage: true });
+    await page.keyboard.press("Escape");
     await back(); await choose(es ? "Plazo de pago (días)" : "Payment term (days)");
     await expect(fields.getByRole("textbox", { name: es ? "Mínimo" : "Minimum", exact: true })).toHaveValue("0");
     await expect(fields.getByRole("textbox", { name: es ? "Máximo" : "Maximum", exact: true })).toHaveValue("180");
@@ -55,14 +63,23 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(fields.getByRole("textbox", { name: es ? "Nombre en inglés" : "Name in English", exact: true })).toHaveCount(0);
     if (!es) await expect(name).toHaveAttribute("placeholder", "Untranslated");
     await name.fill("Teléfono");
-    await fields.getByRole("textbox", { name: es ? "Clave" : "Key", exact: true }).fill("phone");
+    // The key follows the name, in lowercase snake_case without accents.
+    await expect(fields.getByRole("textbox", { name: es ? "Clave" : "Key", exact: true })).toHaveValue("telefono");
     await expect(fields.getByRole("checkbox", { name: es ? "Obligatorio" : "Required", exact: true })).toBeDisabled();
     await contained(page, name, width);
     await page.screenshot({ path: info.outputPath("ce1-new-optional-field.png"), fullPage: true });
-    // «Listo» leaves it in the catalog, without saving.
+    // «Listo» leaves it in the catalog, without saving, and warns that the catalog has to be saved to enter its values.
     await back();
     await fields.getByRole("button", { name: es ? "Listo" : "Done", exact: true }).click();
     await expect(fields).toHaveCount(0);
+    const warning = page.locator('[data-sonner-toast][data-type="warning"]');
+    await expect(warning).toContainText(es ? "Guardá el catálogo para cargar los valores de los campos nuevos." : "Save the catalog to enter values for the new fields.");
+    await contained(page, warning, width);
+    await page.screenshot({ path: info.outputPath("ce1-done-warning.png"), fullPage: true });
+    await warning.getByRole("button", { name: es ? "Cerrar aviso" : "Close notification", exact: true }).click();
+    await expect(warning).toHaveCount(0);
+    // The new column is named only by its field: why its cells are off is their help.
+    await expect(page.getByRole("columnheader", { name: "Teléfono", exact: true })).toHaveCount(1);
     const edit = page.getByRole("button", { name: es ? "Editar Frío Sur S.A." : "Edit Frío Sur S.A.", exact: true });
     if (width < 640) await edit.click();
     const value = page.getByRole("textbox", { name: width < 640 ? "Teléfono" : (es ? "Fila 1 · Teléfono" : "Row 1 · Teléfono"), exact: true });
@@ -83,22 +100,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.setViewportSize({ width, height: 900 }); await open(page, language);
     const region = page.locator(`[data-slot="table-container"][role="region"][aria-label="${es ? "Opciones" : "Options"}"]`);
     await contained(page, region, width);
-    const more = page.getByText(es ? "La tabla se desplaza de costado: hay más columnas a la derecha." : "The table scrolls sideways: there are more columns to the right.", { exact: true });
-    if (width >= 1024) {
-      // At the 75 % desktop scale every column fits at 1440: a table that fits has no hint.
-      expect(await region.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(false);
-      await expect(more).toHaveCount(0);
-    } else {
-      expect(await region.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
-      // Columns left to see on the right are announced above the table; at its end the text hides without moving the table.
-      await expect(more).toBeVisible(); await contained(page, more, width);
-      const top = (await region.boundingBox())!.y;
+    // At the 75 % desktop scale every column fits at 1440; narrower, the table scrolls sideways inside its region, and its
+    // scroll bar is enough: no text says there are more columns to the right.
+    expect(await region.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(width < 1024);
+    await expect(page.getByText(es ? "La tabla se desplaza de costado: hay más columnas a la derecha." : "The table scrolls sideways: there are more columns to the right.", { exact: true })).toHaveCount(0);
+    if (width < 1024) {
       await region.evaluate(node => { node.scrollLeft = node.scrollWidth; });
       expect(await region.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
-      await expect(more).toBeHidden();
-      expect((await region.boundingBox())!.y).toBe(top);
       await region.evaluate(node => { node.scrollLeft = 0; });
-      await expect(more).toBeVisible();
     }
     const menu = page.getByRole("button", { name: es ? "Columnas" : "Columns", exact: true });
     await menu.click(); await page.getByRole("menuitemcheckbox", { name: "CUIT", exact: true }).click();
