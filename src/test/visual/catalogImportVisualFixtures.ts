@@ -4,14 +4,15 @@ import { catalogImportPreviewFixture } from "../catalogImportFixtures";
 
 interface BaseStore { writes: unknown[]; reads: string[]; handle(request: Request): Promise<Response> }
 interface ImportSubmission { mode: CatalogImportMode; expectedRevision: number; fileName: string; bytes: number }
-export interface CatalogImportVisualStore extends BaseStore { previews: ImportSubmission[]; applies: ImportSubmission[] }
+type ImportStep = "preview" | "apply";
+export interface CatalogImportVisualStore extends BaseStore { previews: ImportSubmission[]; applies: ImportSubmission[]; hold(step: ImportStep): void; release(): void }
 
 // Explicit simulated transport. No parser, database or actual producer evidence is claimed here.
 export function createCatalogImportVisualStore(culture: "es" | "en", catalog: Pick<CatalogDetail, "id" | "valueType" | "name">,
   createBase: () => BaseStore): CatalogImportVisualStore {
   const base = createBase(), catalogId = catalog.id, typed = catalog.valueType === "Decimal";
   const previews: ImportSubmission[] = [], applies: ImportSubmission[] = [];
-  let applied = false;
+  let applied = false, held: ImportStep | null = null, release = () => {};
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
     status, headers: { "content-type": "application/json", "cache-control": "no-store" },
   });
@@ -31,13 +32,15 @@ export function createCatalogImportVisualStore(culture: "es" | "en", catalog: Pi
       deactivated: mode === "Replace" ? [{ itemId: "01990000-0000-7000-8000-000000000083", code: "C3", text: "Ríos" }] : [],
       confirmations: { deactivations: mode === "Replace" ? 1 : 0, emptySheet: false, manyErrors: true } };
   };
-  return { writes: base.writes, reads: base.reads, previews, applies, async handle(request) {
+  // A scene holds the next preview or apply to show the dialog while it works (IM2-A), then releases it.
+  return { writes: base.writes, reads: base.reads, previews, applies, hold(step) { held = step; }, release() { held = null; release(); }, async handle(request) {
     const url = new URL(request.url);
     if (url.pathname.endsWith("/import-previews") || url.pathname.endsWith("/imports")) {
       if (request.method !== "POST") return json({ code: "MethodNotAllowed" }, 405);
       const form = await request.formData(); const file = form.get("file"), mode = form.get("mode");
       if (!(file instanceof File) || (mode !== "Replace" && mode !== "Append")) return json({ code: "General.Validation" }, 400);
       const submission: ImportSubmission = { mode, expectedRevision: Number(form.get("expectedRevision")), fileName: file.name, bytes: file.size };
+      if (held === (url.pathname.endsWith("/import-previews") ? "preview" : "apply")) await new Promise<void>(resolve => { release = resolve; });
       if (url.pathname.endsWith("/import-previews")) { previews.push(submission); return json(preview(mode)); }
       applies.push(submission); applied = true;
       const current = await base.handle(new Request(url.origin + "/api/forms/catalogs/" + catalogId));
