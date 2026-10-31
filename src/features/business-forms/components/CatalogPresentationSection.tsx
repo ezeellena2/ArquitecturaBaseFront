@@ -26,7 +26,6 @@ export function CatalogPresentationSection({ embedded = false, value, fields, it
   const example = items.find(item => item.isActive);
   const booleanLabels = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   const shown = example ? catalogOptionPresentation(example, value, fields, valueType, culture, booleanLabels, inputCulture, pendingTexts?.[example.localId]) : null;
-  const hidden = fields.filter(field => field.isActive && ![...selected.title, ...selected.description].includes(field.id ?? field.localId)).map(field => administrativeName(field.name, culture));
   // The local count follows the server's: titles over 30 and descriptions over 300 among the active options, with three examples.
   const local = check === undefined ? cultures.map(language => {
     const shown = items.filter(item => item.isActive).map(item => ({ itemId: item.itemId ?? item.localId, ...catalogOptionPresentation(item, value, fields, valueType, language, booleanLabels, inputCulture, pendingTexts?.[item.localId]) }));
@@ -49,8 +48,6 @@ export function CatalogPresentationSection({ embedded = false, value, fields, it
       {problem.examples.length ? <ul className="list-inside list-disc break-words text-sm">{problem.examples.map(example => <li key={example.itemId}>{example.title}</li>)}</ul> : null}
       {problem.count > problem.examples.length ? <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.presentation.more", { count: problem.count - problem.examples.length })}</p> : null}
     </div>)}</div> : null}
-    {hidden.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.presentation.hidden", { fields: hidden.join(", ") })}</p> : null}
-    <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.presentation.hint")}</p>
   </div>;
   return embedded ? content : <Surface title={t("catalogs.presentation.title")} padded>{content}</Surface>;
 }
