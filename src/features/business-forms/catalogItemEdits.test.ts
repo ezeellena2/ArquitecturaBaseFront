@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogItemChanges, discardNewCatalogItem, mergeCatalogItemPage, newCatalogItemEdits, stageCatalogItem, withCatalogFieldValue, type CatalogManualItemValue } from "./catalogItemEdits";
+import { catalogItemChanges, discardNewCatalogItem, isBlankCatalogItem, mergeCatalogItemPage, newCatalogItemEdits, sameCatalogItemValue, stageCatalogItem, withCatalogFieldValue, type CatalogManualItemValue } from "./catalogItemEdits";
 
 const first: CatalogManualItemValue = { value: null, localId: "first", itemId: "saved-first", label: { es: "Pérez Hnos.", en: "" }, detail: { es: "Av. Colón 1234", en: null }, code: "C-001", isActive: true, position: 1 };
 const second: CatalogManualItemValue = { ...first, localId: "second", itemId: "saved-second", label: { es: "Ferretería Sur", en: "South hardware" }, code: "C-002", position: 2 };
@@ -72,5 +72,22 @@ describe("Manual catalog edits across partial pages", () => {
     const state = mergeCatalogItemPage(newCatalogItemEdits(), [first]);
     const reordered = { ...first, label: { en: "", es: "Pérez Hnos." }, detail: { en: null, es: "Av. Colón 1234" } };
     expect(catalogItemChanges(stageCatalogItem(state, reordered))).toEqual([]);
+  });
+});
+
+describe("Options modal", () => {
+  const blank: CatalogManualItemValue = { localId: "new", itemId: null, label: { es: null, en: "" }, detail: { es: null, en: " " }, code: " ", value: null, isActive: true, position: null, fields: { zone: null, tax: "" } };
+  it("tells a new option left untouched from one with something written", () => {
+    expect(isBlankCatalogItem(blank)).toBe(true);
+    expect(isBlankCatalogItem({ ...blank, label: { es: "Norte", en: null } })).toBe(false);
+    expect(isBlankCatalogItem({ ...blank, code: "N" })).toBe(false);
+    expect(isBlankCatalogItem({ ...blank, detail: { es: "Zona norte", en: null } })).toBe(false);
+    expect(isBlankCatalogItem({ ...blank, value: "3" })).toBe(false);
+    expect(isBlankCatalogItem({ ...blank, fields: { zone: "zone-norte" } })).toBe(false);
+  });
+  it("compares two values of an option by what it saves, whatever the order of its texts", () => {
+    expect(sameCatalogItemValue(first, { ...first, label: { en: "", es: "Pérez Hnos." } })).toBe(true);
+    expect(sameCatalogItemValue(first, { ...first, isActive: false })).toBe(false);
+    expect(sameCatalogItemValue(first, { ...first, fields: { zone: "zone-norte" } })).toBe(false);
   });
 });

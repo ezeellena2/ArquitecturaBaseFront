@@ -23,6 +23,11 @@ const sameTexts = (first: Readonly<Record<string, string | null>>, second: Reado
 };
 const sameValue = (first: CatalogManualItemValue, second: CatalogManualItemValue) => first.itemId === second.itemId && first.code === second.code && first.value === second.value
   && first.isActive === second.isActive && first.position === second.position && sameTexts(first.label, second.label) && sameTexts(first.detail, second.detail) && sameTexts(first.fields ?? {}, second.fields ?? {});
+// The options modal puts back what changed while it was open when it is cancelled.
+export const sameCatalogItemValue = sameValue;
+// A new option nobody wrote in: «Listo» in the options modal does not leave it in the draft.
+export const isBlankCatalogItem = (item: CatalogManualItemValue) => !item.code.trim() && !item.value
+  && ![...Object.values(item.label), ...Object.values(item.detail)].some(text => text?.trim()) && !Object.values(item.fields ?? {}).some(value => value);
 
 export const newCatalogItemEdits = (): CatalogItemEdits => ({ originals: {}, changes: {} });
 
