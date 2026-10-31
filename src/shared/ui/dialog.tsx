@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next"
 
 import { Button } from "@/shared/ui/button"
 import { ActionTooltip } from "./ActionTooltip"
+import { DisabledReason } from "./DisabledReason"
 
 function Dialog({
   ...props
@@ -53,11 +54,14 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  closeDisabledReason,
   placement = "center",
   mobileFullscreen = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  /** While the dialog cannot close (an import applying): the × stays in sight, off, with this reason as its help. */
+  closeDisabledReason?: string
   placement?: "center" | "right"
   mobileFullscreen?: boolean
 }) {
@@ -87,7 +91,15 @@ function DialogContent({
       >
         {children}
         <div ref={registerHost} popover="manual" className="m-0 h-0 w-0 overflow-visible border-0 bg-transparent p-0 text-inherit" data-slot="notification-host" />
-        {showCloseButton && (
+        {showCloseButton && closeDisabledReason ? (
+          // The reason's wrapper takes the corner, so hovering or focusing it shows the help.
+          <DisabledReason reason={closeDisabledReason} className="absolute top-4 right-4 rounded-xs">
+            <button type="button" disabled data-slot="dialog-close" className="rounded-xs opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+              <XIcon />
+              <span className="sr-only">{t("actions.close")}</span>
+            </button>
+          </DisabledReason>
+        ) : showCloseButton && (
           <ActionTooltip label={t("actions.close")}>
           <DialogPrimitive.Close
             data-slot="dialog-close"
