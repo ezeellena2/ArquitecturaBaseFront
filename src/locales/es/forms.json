@@ -331,7 +331,6 @@
       "incompatibleValues_one": "1 opción tiene un valor que no cumple las reglas del campo.", "incompatibleValues_other": "{{count, number(useGrouping: always)}} opciones tienen valores que no cumplen las reglas del campo.",
       "convertedValues_one": "1 valor puede convertirse.", "convertedValues_other": "{{count, number(useGrouping: always)}} valores pueden convertirse.",
       "roles": { "filter": "Filtro", "data": "Dato" },
-      "roleHint": { "filter": "Para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta.", "data": "Se guarda con la opción y viaja con la respuesta." },
       "keyHelp": "Qué es la clave", "roleHelp": "Qué es el papel",
       "roleHelpText": "Filtro: para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta. Dato: se guarda con la opción y viaja con la respuesta.",
       "inline": { "upTo": "Hasta", "characters": "caracteres", "from": "De", "to": "a" },

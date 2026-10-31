@@ -238,7 +238,6 @@ function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, t
     <Row label={<><Label>{t("catalogs.fields.role")}</Label><Help label={t("catalogs.fields.roleHelp")} text={t("catalogs.fields.roleHelpText")} /></>}>
       {/* Halves of the width on the phone; from 640 px, as wide as its texts. */}
       <div className="sm:self-start"><SegmentedControl fullWidth aria-label={t("catalogs.fields.role")} options={(["filter", "data"] as const).map(role => ({ key: role, label: t("catalogs.fields.roles." + role), pressed: field.role === role, onSelect: () => set({ role }) }))} /></div>
-      <Message>{t("catalogs.fields.roleHint." + field.role)}</Message>
       {messageOf("role")}
     </Row>
   </div>;

@@ -331,7 +331,6 @@
       "incompatibleValues_one": "1 option has a value that doesn't meet the field rules.", "incompatibleValues_other": "{{count, number(useGrouping: always)}} options have values that don't meet the field rules.",
       "convertedValues_one": "1 value can convert.", "convertedValues_other": "{{count, number(useGrouping: always)}} values can convert.",
       "roles": { "filter": "Filter", "data": "Data" },
-      "roleHint": { "filter": "Show each person their own options, or use a fixed question filter.", "data": "Captured with the selected option and included in the response." },
       "keyHelp": "What the key is", "roleHelp": "What the role is",
       "roleHelpText": "Filter: show each person their own options, or use a fixed question filter. Data: captured with the selected option and included in the response.",
       "inline": { "upTo": "Up to", "characters": "characters", "from": "From", "to": "to" },

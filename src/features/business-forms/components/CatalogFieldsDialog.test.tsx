@@ -244,7 +244,8 @@ it("puts the type's detail beside the type and changes it with the type", async 
   expect(within(dialog).getByRole("checkbox", { name: "Obligatorio" })).toBeChecked();
   await userEvent.click(within(dialog).getByRole("button", { name: "Filtro" }));
   expect(within(dialog).getByRole("button", { name: "Filtro" })).toHaveAttribute("aria-pressed", "true");
-  expect(within(dialog).getByText("Para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta.")).toBeInTheDocument();
+  // The role is explained only by its tooltip, without a text under it.
+  expect(within(dialog).queryByText("Para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta.")).not.toBeInTheDocument();
   await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "boolean");
   expect(within(dialog).queryByRole("textbox", { name: "Mínimo" })).not.toBeInTheDocument();
 });
