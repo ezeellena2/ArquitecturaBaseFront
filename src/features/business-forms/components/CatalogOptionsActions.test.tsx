@@ -25,12 +25,12 @@ async function more(user: ReturnType<typeof userEvent.setup>) {
   return { trigger, menu: await screen.findByRole("menu") };
 }
 
-it("keeps desktop import and export visible and dispatches the explicit file or paste source", async () => {
+// «Importar» opens the dialog with its two tabs, «Subir un archivo» and «Pegar desde Excel»: no paste button (2026-10-31).
+it("keeps desktop import and export visible, without a paste button beside them", async () => {
   const value = props(); await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup();
-  const paste = await screen.findByRole("button", { name: "Pegar desde Excel" });
-  await user.click(paste); expect(value.onImport).toHaveBeenLastCalledWith("paste"); expect(value.focusRef.current).toBe(paste);
-  const file = screen.getByRole("button", { name: "Importar" });
-  await user.click(file); expect(value.onImport).toHaveBeenLastCalledWith("file"); expect(value.focusRef.current).toBe(file);
+  const file = await screen.findByRole("button", { name: "Importar" });
+  expect(screen.queryByRole("button", { name: "Pegar desde Excel" })).not.toBeInTheDocument();
+  await user.click(file); expect(value.onImport).toHaveBeenCalledExactlyOnceWith(); expect(value.focusRef.current).toBe(file);
   await user.click(screen.getByRole("button", { name: "Exportar" })); expect(value.onExport).toHaveBeenLastCalledWith(false);
   await more(user); await user.click(screen.getByRole("menuitem", { name: "Descargar la plantilla" })); expect(value.onExport).toHaveBeenLastCalledWith(true);
   await more(user); await user.click(screen.getByRole("menuitem", { name: "Ordenar A–Z" })); expect(value.onSort).toHaveBeenCalledOnce();
@@ -42,9 +42,10 @@ it("moves the mobile actions into the same menu and remembers its actual trigger
   expect(screen.queryByRole("button", { name: "Importar" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Exportar" })).not.toBeInTheDocument();
   const { trigger, menu } = await more(user);
-  expect(within(menu).getAllByRole("menuitem")).toHaveLength(6);
-  await user.click(within(menu).getByRole("menuitem", { name: "Pegar desde Excel" }));
-  expect(value.onImport).toHaveBeenCalledWith("paste"); expect(value.focusRef.current).toBe(trigger);
+  expect(within(menu).getAllByRole("menuitem")).toHaveLength(5);
+  expect(within(menu).queryByRole("menuitem", { name: "Pegar desde Excel" })).not.toBeInTheDocument();
+  await user.click(within(menu).getByRole("menuitem", { name: "Importar" }));
+  expect(value.onImport).toHaveBeenCalledExactlyOnceWith(); expect(value.focusRef.current).toBe(trigger);
 });
 
 it.each([false, true])("offers only export and template to a read-only user on mobile=%s", async mobile => {
@@ -60,9 +61,8 @@ it.each([false, true])("offers only export and template to a read-only user on m
 it("shows a new catalog's reason only on hover or keyboard focus and to screen readers", async () => {
   const value = props({ saved: false }); await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup();
   const reason = "Guardá el catálogo antes.";
-  const paste = await screen.findByRole("button", { name: "Pegar desde Excel" });
-  const file = screen.getByRole("button", { name: "Importar" });
-  for (const button of [paste, file, screen.getByRole("button", { name: "Exportar" })]) {
+  const file = await screen.findByRole("button", { name: "Importar" });
+  for (const button of [file, screen.getByRole("button", { name: "Exportar" })]) {
     expect(button).toBeDisabled(); expect(button).toHaveAccessibleDescription(reason);
   }
   // Nada debajo de los botones, que los desalinearía: el motivo no se ve hasta pasar el mouse o llegar con el teclado.
@@ -70,7 +70,7 @@ it("shows a new catalog's reason only on hover or keyboard focus and to screen r
   await user.hover(file); expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
   await user.keyboard("{Escape}"); await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
   // Un botón deshabilitado no recibe foco: lo recibe su envoltorio, que abre el mismo motivo.
-  await user.tab(); expect(paste.parentElement).toHaveFocus();
+  await user.tab(); expect(file.parentElement).toHaveFocus();
   expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
 });
 
@@ -88,14 +88,13 @@ it("blocks dirty import without disabling the saved catalog's export", async () 
   const reason = "Guardá o descartá los cambios antes de importar.";
   const value = props({ importDisabledReason: reason });
   await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup();
-  const paste = await screen.findByRole("button", { name: "Pegar desde Excel" });
-  const file = screen.getByRole("button", { name: "Importar" });
-  for (const button of [paste, file]) { expect(button).toBeDisabled(); expect(button).toHaveAccessibleDescription(reason); }
+  const file = await screen.findByRole("button", { name: "Importar" });
+  expect(file).toBeDisabled(); expect(file).toHaveAccessibleDescription(reason);
   // El mismo motivo que en un catálogo nuevo: como ayuda, nunca escrito debajo de los botones.
   for (const text of screen.queryAllByText(reason)) expect(text).not.toBeVisible();
   await user.hover(file); expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
   await user.keyboard("{Escape}"); await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
-  await user.tab(); await user.tab(); expect(file.parentElement).toHaveFocus();
+  await user.tab(); expect(file.parentElement).toHaveFocus();
   expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
   await user.click(file); expect(value.onImport).not.toHaveBeenCalled();
   const exportButton = screen.getByRole("button", { name: "Exportar" });
@@ -114,14 +113,14 @@ it.each(["moves", "sortPending"])("explains and prevents unavailable sorting for
 
 it("prevents duplicate operations while its owner is busy", async () => {
   const value = props({ busy: true }); await mount(<CatalogOptionsActions {...value} />);
-  const buttons = await screen.findAllByRole("button"); expect(buttons).toHaveLength(4);
+  const buttons = await screen.findAllByRole("button"); expect(buttons).toHaveLength(3);
   for (const button of buttons) expect(button).toBeDisabled();
   expect(value.onImport).not.toHaveBeenCalled(); expect(value.onExport).not.toHaveBeenCalled();
 });
 
 it("does not explain the disabled actions while its owner is busy", async () => {
   await mount(<CatalogOptionsActions {...props({ busy: true, saved: false })} />);
-  for (const name of ["Pegar desde Excel", "Importar", "Exportar"]) {
+  for (const name of ["Importar", "Exportar"]) {
     const button = await screen.findByRole("button", { name });
     expect(button).toBeDisabled(); expect(button).toHaveAccessibleDescription("");
   }
@@ -143,8 +142,8 @@ it("hands menu focus to the dialog without restoring it to More", async () => {
 
 it("uses the existing English action labels", async () => {
   await act(async () => { await i18n.changeLanguage("en"); }); await mount(<CatalogOptionsActions {...props()} />);
-  expect(await screen.findByRole("button", { name: "Paste from Excel" })).toBeEnabled();
-  expect(screen.getByRole("button", { name: "Import" })).toBeEnabled(); expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
+  expect(await screen.findByRole("button", { name: "Import" })).toBeEnabled();
+  expect(screen.queryByRole("button", { name: "Paste from Excel" })).not.toBeInTheDocument(); expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
   const user = userEvent.setup(), trigger = screen.getByRole("button", { name: "More option actions" });
   act(() => trigger.focus()); await user.keyboard("{Enter}");
   expect(await screen.findByRole("menuitem", { name: "Download the template" })).toBeEnabled();

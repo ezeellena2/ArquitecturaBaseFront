@@ -47,6 +47,13 @@ async function doneOptions(user: ReturnType<typeof userEvent.setup>) {
   if (back) await user.click(back);
   await user.click(within(dialog).getByRole("button", { name: /^(Listo|Done)$/ }));
 }
+// «Importar» opens the import dialog on «Subir un archivo»; its «Pegar desde Excel» tab takes the rows (2026-10-31: the
+// options bar has no paste button).
+async function pasteRows(user: ReturnType<typeof userEvent.setup>, rows: string) {
+  await user.click(await screen.findByRole("button", { name: "Importar" }));
+  act(() => screen.getByRole("tab", { name: "Pegar desde Excel" }).focus()); await user.keyboard("{Enter}");
+  await pasteText(user, screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), rows);
+}
 const id = "01990000-0000-7000-8000-000000000020";
 const itemId = "01990000-0000-7000-8000-000000000021";
 const initial = { valueType: "Text" as const, proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, description: { es: "Visitas", en: "Visits" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 1, usageCount: null, originalCulture: "es" as const, unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en" as const, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
@@ -1281,14 +1288,13 @@ it("applies an explicitly reviewed paste and adopts the returned clean baseline 
  setup();const base=catalogImportPreviewFixture();const check=vi.spyOn(catalogImports,"previewCatalogImport").mockResolvedValue({...base,revision:1,mode:"Append",counts:{...base.counts,errorRows:0,deactivated:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});
  const apply=vi.spyOn(catalogImports,"applyCatalogImport").mockResolvedValue({catalog:{...initial,kind:"Manual",revision:2},itemIdentityMap:{}, fieldIdentityMap: {}});
  await mount("/catalogos/"+id);const user=userEvent.setup();
- await user.click(await screen.findByRole("button",{name:"Pegar desde Excel"}));
- await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
+ await pasteRows(user,"Code\tText\nN\tNorte");
  await user.click(screen.getByRole("button",{name:"Revisar"}));
  expect(await screen.findByRole("button",{name:"Aplicar"})).toBeEnabled();expect(apply).not.toHaveBeenCalled();
  await user.click(screen.getByRole("button",{name:"Aplicar"}));
  await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(apply).toHaveBeenCalledOnce();expect(check).toHaveBeenCalledOnce();
  expect(screen.queryByText("Cambios sin guardar",{exact:true})).not.toBeInTheDocument();expect(queryClient.getMutationCache().getAll()).toEqual([]);
- await user.click(screen.getByRole("button",{name:"Pegar desde Excel"}));await pasteText(user,screen.getByRole("textbox",{name:"Pegá las filas con encabezados"}),"Code\tText\nN\tNorte");
+ await pasteRows(user,"Code\tText\nN\tNorte");
  await user.click(screen.getByRole("button",{name:"Revisar"}));await waitFor(()=>expect(check).toHaveBeenCalledTimes(2));expect(check.mock.calls[1]![1].expectedRevision).toBe(2);
 });
 it("imports with the fields saved in this session instead of the ones loaded on entry", async () => {
@@ -1308,9 +1314,8 @@ it("imports with the fields saved in this session instead of the ones loaded on 
   await user.paste("CUIT");
   await applyFields(user);
   await user.click(screen.getByRole("button", { name: "Guardar" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "Pegar desde Excel" })).toBeEnabled());
-  await user.click(screen.getByRole("button", { name: "Pegar desde Excel" }));
-  await pasteText(user, screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\ttax_id\nN\tNorte\t20-1");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Importar" })).toBeEnabled());
+  await pasteRows(user, "Code\tText\ttax_id\nN\tNorte\t20-1");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   const dialog = await screen.findByRole("dialog");
   expect(await within(dialog).findByRole("columnheader", { name: "CUIT" })).toBeInTheDocument();
@@ -1329,8 +1334,7 @@ it("warns about long titles with the check of the applied import instead of the 
   await mount("/catalogos/" + id); const user = userEvent.setup();
   expect(await screen.findByText("En español: 1 opción supera los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.getByText(entryTitle)).toBeInTheDocument();
-  await user.click(await screen.findByRole("button", { name: "Pegar desde Excel" }));
-  await pasteText(user, screen.getByRole("textbox", { name: "Pegá las filas con encabezados" }), "Code\tText\nN\tNorte");
+  await pasteRows(user, "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await user.click(await screen.findByRole("button", { name: "Aplicar" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

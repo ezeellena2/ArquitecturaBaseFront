@@ -17,7 +17,8 @@ export interface CatalogOptionsActionsProps {
   sortPending: boolean;
   dialogOpen: boolean;
   focusRef: RefObject<HTMLButtonElement | null>;
-  onImport: (source: "file" | "paste") => void;
+  /** «Importar» opens the import dialog, with its two tabs: «Subir un archivo» and «Pegar desde Excel». */
+  onImport: () => void;
   onExport: (template: boolean) => void;
   onSort: () => void;
   onGenerateCodes: () => void;
@@ -36,13 +37,13 @@ export function CatalogOptionsActions({ canManage, busy, saved, importDisabledRe
     : sortPending ? t("catalogs.actions.sortPending") : null);
   // El motivo de un botón apagado va como ayuda (DisabledReason), no escrito debajo; mientras el dueño trabaja no se
   // explica, porque el motivo no es ése.
-  const pasteImportReason = busy ? null : importReason;
+  const shownImportReason = busy ? null : importReason;
   const exportReason = busy ? null : saveReason;
 
-  function beginImport(source: "file" | "paste", button: HTMLButtonElement | null) {
+  function beginImport(button: HTMLButtonElement | null) {
     focusRef.current = button;
     openingDialog.current = true;
-    onImport(source);
+    onImport();
   }
 
   function item(label: string, reason: string | null, action: () => void) {
@@ -55,12 +56,8 @@ export function CatalogOptionsActions({ canManage, busy, saved, importDisabledRe
   // Sin contenedor propio: las acciones de la Surface «Opciones» las alinea ella, al borde derecho y a la altura del título.
   return <>
     {!mobile ? <>
-      {canManage ? <>
-        <DisabledReason reason={pasteImportReason}><Button type="button" variant="outline" disabled={busy || importReason !== null}
-          onClick={event => beginImport("paste", event.currentTarget)}>{t("catalogs.actions.paste")}</Button></DisabledReason>
-        <DisabledReason reason={pasteImportReason}><Button type="button" variant="outline" disabled={busy || importReason !== null}
-          onClick={event => beginImport("file", event.currentTarget)}>{t("catalogs.actions.import")}</Button></DisabledReason>
-      </> : null}
+      {canManage ? <DisabledReason reason={shownImportReason}><Button type="button" variant="outline" disabled={busy || importReason !== null}
+        onClick={event => beginImport(event.currentTarget)}>{t("catalogs.actions.import")}</Button></DisabledReason> : null}
       <DisabledReason reason={exportReason}><Button type="button" variant="outline" disabled={busy || !saved}
         onClick={() => onExport(false)}>{t("catalogs.actions.export")}</Button></DisabledReason>
     </> : null}
@@ -74,14 +71,9 @@ export function CatalogOptionsActions({ canManage, busy, saved, importDisabledRe
         if (openingDialog.current || dialogOpen) event.preventDefault();
       }}>
         {mobile ? <>
-          {canManage ? <>
-            <DropdownMenuItem aria-disabled={busy || importReason !== null || undefined} onSelect={event => {
-              if (busy || importReason !== null) event.preventDefault(); else beginImport("paste", trigger.current);
-            }}><span>{t("catalogs.actions.paste")}{importReason ? <span className="block text-xs">{importReason}</span> : null}</span></DropdownMenuItem>
-            <DropdownMenuItem aria-disabled={busy || importReason !== null || undefined} onSelect={event => {
-              if (busy || importReason !== null) event.preventDefault(); else beginImport("file", trigger.current);
-            }}><span>{t("catalogs.actions.import")}{importReason ? <span className="block text-xs">{importReason}</span> : null}</span></DropdownMenuItem>
-          </> : null}
+          {canManage ? <DropdownMenuItem aria-disabled={busy || importReason !== null || undefined} onSelect={event => {
+            if (busy || importReason !== null) event.preventDefault(); else beginImport(trigger.current);
+          }}><span>{t("catalogs.actions.import")}{importReason ? <span className="block text-xs">{importReason}</span> : null}</span></DropdownMenuItem> : null}
           {item(t("catalogs.actions.export"), saveReason, () => onExport(false))}
           <DropdownMenuSeparator />
         </> : null}

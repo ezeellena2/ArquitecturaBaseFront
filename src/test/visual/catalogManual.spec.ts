@@ -63,14 +63,16 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: info.outputPath("manual-new.png"), fullPage: true });
     if (width >= 1280) await expectPreviewBesideSections();
     if (width >= 640) {
-      const named = (english ? ["Add option", "Paste from Excel", "Import", "Export"] : ["Agregar opción", "Pegar desde Excel", "Importar", "Exportar"])
+      // «Importar» alone: pasting is a tab of its dialog (2026-10-31).
+      await expect(options.getByRole("button", { name: english ? "Paste from Excel" : "Pegar desde Excel", exact: true })).toHaveCount(0);
+      const named = (english ? ["Add option", "Import", "Export"] : ["Agregar opción", "Importar", "Exportar"])
         .map(name => options.getByRole("button", { name, exact: true }));
       for (const action of [...named, moreActions]) {
         const box = (await action.boundingBox())!;
         expect(Math.abs(box.y + box.height / 2 - (heading!.y + heading!.height / 2))).toBeLessThanOrEqual(1);
       }
       // El botón apagado no recibe el puntero: lo recibe su envoltorio, que muestra el motivo como ayuda.
-      await named[2]!.locator("..").hover();
+      await named[1]!.locator("..").hover();
       await expect(page.getByRole("tooltip")).toHaveText(reason);
       await page.screenshot({ path: info.outputPath("manual-new-reason.png"), fullPage: true });
     }

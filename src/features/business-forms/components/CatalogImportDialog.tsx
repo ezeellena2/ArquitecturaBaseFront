@@ -23,11 +23,11 @@ import { catalogScalarText, catalogTypedValueTypes } from "../catalogValues";
 import { administrativeName } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 
-export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; initialSource: "file" | "paste"; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void }
+export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; /** The tab it opens on: «Importar» opens on the file. */ initialSource?: "file" | "paste"; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void }
 function fresh(owner: string, revision: number, source: "file" | "paste") {
   return { owner, revision, source, paste: "", file: null as File | null, preview: null as CatalogImportPreview | null, busy: null as "preview" | "apply" | null, conflict: false, forbidden: false, fileError: null as string | null, confirmDeactivations: false, confirmEmpty: false, confirmErrors: false };
 }
-export function CatalogImportDialog({ scope, catalog, initialSource, timeZoneId, focusFallback, onClose, onApplied, onObserved, onTemplate }: CatalogImportDialogProps) {
+export function CatalogImportDialog({ scope, catalog, initialSource = "file", timeZoneId, focusFallback, onClose, onApplied, onObserved, onTemplate }: CatalogImportDialogProps) {
   const { t, i18n } = useTranslation("forms");
   const owner = JSON.stringify([scope.actorId, scope.culture, [...scope.permissions].sort(), catalog.id]);
   const fields = (catalog.fields ?? []).filter(field => field.isActive).sort((a, b) => a.position - b.position);

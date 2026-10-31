@@ -13,12 +13,14 @@ async function enter(page: Page, language: "es" | "en", scenario: string, query 
 async function contained(page: Page, width: number) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
 }
+// «Importar» opens the dialog on the file; pasting is its «Pegar desde Excel» tab (2026-10-31: no paste button in the bar).
 async function importAction(page: Page, en: boolean, width: number, source: "file" | "paste") {
-  const name = source === "file" ? en ? "Import" : "Importar" : en ? "Paste from Excel" : "Pegar desde Excel";
+  const name = en ? "Import" : "Importar";
   if (width < 640) {
     await page.getByRole("button", { name: en ? "More option actions" : "Más acciones de opciones", exact: true }).click();
     await page.getByRole("menuitem", { name, exact: true }).click();
   } else await page.getByRole("button", { name, exact: true }).click();
+  if (source === "paste") await page.getByRole("dialog").getByRole("tab", { name: en ? "Paste from Excel" : "Pegar desde Excel", exact: true }).click();
 }
 
 // Evidence scenes only: real routes/components with an explicit simulated HTTP transport, no goldens.

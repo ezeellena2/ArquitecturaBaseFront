@@ -668,7 +668,6 @@
       "upTo": "Elegí hasta {{count}}"
     },
     "actions": {
-      "paste": "Pegar desde Excel",
       "import": "Importar",
       "export": "Exportar",
       "more": "Más acciones de opciones",

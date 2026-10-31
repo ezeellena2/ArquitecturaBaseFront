@@ -668,7 +668,6 @@
       "upTo": "Choose up to {{count}}"
     },
     "actions": {
-      "paste": "Paste from Excel",
       "import": "Import",
       "export": "Export",
       "more": "More option actions",

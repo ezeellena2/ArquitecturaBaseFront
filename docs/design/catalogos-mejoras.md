@@ -151,3 +151,9 @@ no se dibujaron.
   nuevos.»; guardar o salir del catálogo lo retiran. La regla de no dejar notas de guardado cede acá por pedido del
   usuario.
 - **La tabla sin «hay más columnas a la derecha».** La barra de desplazamiento alcanza; `WideTable` ya no tiene ese texto.
+
+El mismo día sumó la barra de Opciones: **sólo «Importar»**. «Pegar desde Excel» deja la barra y el «⋯» del celular, e
+«Importar» abre el diálogo con sus dos pestañas, «Subir un archivo» y «Pegar desde Excel», como antes. El rediseño de
+ese diálogo (sin leyendas ni pasos numerados, con carga visible al revisar y lo pegado en una grilla) se dibujó para
+elegir antes de programarlo: IM1, IM2 e IM3 del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), en la fila «Catálogos · importar opciones».
