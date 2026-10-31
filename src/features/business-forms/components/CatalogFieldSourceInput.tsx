@@ -5,9 +5,10 @@ import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogPage } from "../hooks/useCatalogQueries";
 import { administrativeName } from "../editorModel";
 
-// The source of a field that picks from a catalog: a dropdown of the active catalogs written by hand, which opens on the first
-// ones and filters them while typing, like an option's value (2026-10-31). A question's full selector has no room in its row.
-export function CatalogFieldSourceInput({ scope, value, label, readOnly, onChange, ...aria }: { scope: CatalogReadScope; value: string | null; label: string; readOnly: boolean; onChange: (id: string | null) => void; "aria-invalid"?: boolean; "aria-describedby"?: string }) {
+// The source of a field or a person attribute that picks from a catalog: a dropdown of the active catalogs written by hand,
+// which opens on the first ones and filters them while typing, like an option's value (2026-10-31). Inside a FormField it
+// takes the field's id and messages.
+export function CatalogFieldSourceInput({ scope, value, label, readOnly, onChange, ...aria }: { scope: CatalogReadScope; value: string | null; label: string; readOnly: boolean; onChange: (id: string | null) => void; id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }) {
   const { t } = useTranslation("forms");
   const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState("");
   useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);

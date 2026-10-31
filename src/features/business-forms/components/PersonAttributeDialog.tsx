@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
@@ -6,24 +6,32 @@ import { operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFee
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { createPersonAttribute, updatePersonAttribute, type PersonAttribute } from "../api/personData";
+import { catalogFieldKeyFromName } from "../catalogFields";
 import { contentReference, contentRequired, ownTexts } from "../editorModel";
 import { personDataScopeKey, type PersonDataScope } from "../hooks/usePersonData";
 import type { FormCulture } from "../model";
 import { localizedIssue, localizedIssueMessage } from "../validationPaths";
-import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
+import { CatalogFieldSourceInput } from "./CatalogFieldSourceInput";
+import { CatalogRowHelp } from "./CatalogRow";
 
 type Names = Readonly<Partial<Record<FormCulture, string>>>;
 // The name is one field in the menu language: a new attribute is born in it, and outside the attribute's original it is the
 // optional translation, with the original as a reference that is never copied. The draft keeps both languages.
-export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: { scope: PersonDataScope; attribute: PersonAttribute | null; onClose: () => void; onReload: () => Promise<unknown> }) {
- const { t } = useTranslation("forms"), client = useQueryClient();
+export function PersonAttributeDialog({ scope, attribute, takenKeys, onClose, onReload }: { scope: PersonDataScope; attribute: PersonAttribute | null;
+ /** The keys of the other attributes, which a new one's key does not repeat. */ takenKeys: readonly string[]; onClose: () => void; onReload: () => Promise<unknown> }) {
+ const { t } = useTranslation("forms"), client = useQueryClient(), keyId = useId();
  const culture = scope.culture, original = attribute?.originalCulture ?? scope.culture;
  const [key, setKey] = useState(attribute?.key ?? ""), [name, setName] = useState<Names>({ ...attribute?.name });
+ // A new attribute's key follows its name, as a catalog field's does, until it is written by hand; a saved one keeps its key.
+ const [keyEdited, setKeyEdited] = useState(false);
+ const changeName = (text: string) => { setName({ ...name, [culture]: text }); if (!attribute && !keyEdited) setKey(catalogFieldKeyFromName(text, takenKeys)); };
  const [type, setType] = useState<PersonAttribute["type"]>(attribute?.type ?? "Catalog"), [sourceCatalogId, setSource] = useState(attribute?.sourceCatalogId ?? null), [isActive, setActive] = useState(attribute?.isActive ?? true);
  const [busy, setBusy] = useState(false), [error, setError] = useState<unknown>(null), [confirmValues, setConfirmValues] = useState(false);
  // Rereading after a conflict: the button waits for it and a failed read is said under the conflict, which stays.
@@ -56,7 +64,7 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
   });
  };
  const changeType = (next: PersonAttribute["type"]) => { setType(next); setConfirmValues(false); };
- const changeSource = (next: string) => { setSource(next); setConfirmValues(false); };
+ const changeSource = (next: string | null) => { setSource(next); setConfirmValues(false); };
  const canReadCatalogs = scope.permissions.includes("formcatalogs.read");
  // Only the languages with text travel: an existing translation is kept, a blank one is not sent.
  const names = ownTexts(name), reference = contentReference(name, culture, original);
@@ -84,11 +92,22 @@ export function PersonAttributeDialog({ scope, attribute, onClose, onReload }: {
   }
   finally { if (operation.current === controller) operation.current = null; if (mounted.current) setBusy(false); }
  }
- return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent onCloseAutoFocus={restoreFocus}><DialogHeader><DialogTitle>{t(attribute ? "personData.editAttribute" : "personData.addAttribute")}</DialogTitle><DialogDescription>{t("personData.attributeHint")}</DialogDescription></DialogHeader><div ref={fieldsRef} className="space-y-4">
-  <FormField label={t("name")} required={contentRequired(name, culture, original)} hint={reference ? t("originalText", { language: t("cultures." + original), text: reference }) : undefined} error={localizedIssueMessage(localizedIssue(errors, "name", culture), culture, t) ?? required("name")}><Input ref={nameRef} value={name[culture] ?? ""} disabled={busy} maxLength={120} placeholder={culture !== original ? t("missingText") : undefined} onChange={event => setName({ ...name, [culture]: event.target.value })} /></FormField>
-  <FormField label={t("catalogs.fields.key")} required error={message("key") ?? required("key")} hint={t("catalogs.fields.keyHint")}><Input value={key} readOnly={!!attribute} disabled={busy} maxLength={40} onChange={event => setKey(event.target.value)} /></FormField>
+ const keyError = message("key") ?? required("key");
+ // No notes in the dialog: the key's help is the tooltip of its (i), and the catalog is the same dropdown as a catalog field's,
+ // without its description (2026-10-31).
+ return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent aria-describedby={undefined} onCloseAutoFocus={restoreFocus}><DialogHeader><DialogTitle>{t(attribute ? "personData.editAttribute" : "personData.addAttribute")}</DialogTitle></DialogHeader><div ref={fieldsRef} className="space-y-4">
+  <FormField label={t("name")} required={contentRequired(name, culture, original)} hint={reference ? t("originalText", { language: t("cultures." + original), text: reference }) : undefined} error={localizedIssueMessage(localizedIssue(errors, "name", culture), culture, t) ?? required("name")}><Input ref={nameRef} value={name[culture] ?? ""} disabled={busy} maxLength={120} placeholder={culture !== original ? t("missingText") : undefined} onChange={event => changeName(event.target.value)} /></FormField>
+  {/* FormField puts its label inside a <label>, where a button does not belong: the (i) goes beside the Label, as in «Campos de…». */}
+  <div className="flex flex-col gap-1.5">
+   <div className="flex items-center gap-1"><Label htmlFor={keyId}>{t("catalogs.fields.key")}<span aria-hidden="true"> *</span></Label><CatalogRowHelp label={t("catalogs.fields.keyHelp")} text={t("catalogs.fields.keyHint")} /></div>
+   <Input id={keyId} value={key} readOnly={!!attribute} disabled={busy} maxLength={40} aria-invalid={keyError ? true : undefined} aria-describedby={keyError ? keyId + "-message" : undefined} onChange={event => { setKey(event.target.value); setKeyEdited(true); }} />
+   {keyError ? <p id={keyId + "-message"} role="alert" className="text-sm text-[var(--color-danger)]">{keyError}</p> : null}
+  </div>
   <FormField label={t("personData.type")} required error={message("type")}><NativeSelect value={type} disabled={busy || inUse} onChange={event => changeType(event.target.value as PersonAttribute["type"])}><option value="Catalog">{t("catalogs.fields.types.catalog")}</option><option value="Text">{t("catalogs.fields.types.text")}</option></NativeSelect></FormField>
-  {type === "Catalog" ? canReadCatalogs ? <CatalogQuestionSelector scope={scope} manualOnly value={sourceCatalogId ?? ""} readOnly={busy || inUse} error={message("sourceCatalogId") ?? required("sourceCatalogId")} onChange={changeSource} /> : <FormField label={t("catalogQuestion.catalog")} required hint={t("catalogQuestion.requiresRead")} error={message("sourceCatalogId") ?? required("sourceCatalogId")}><Input readOnly value={attribute?.sourceCatalogName ?? ""} /></FormField> : null}
+  {type === "Catalog" ? <FormField label={t("catalogQuestion.catalog")} required error={message("sourceCatalogId") ?? required("sourceCatalogId")}>
+   {canReadCatalogs ? <CatalogFieldSourceInput scope={scope} value={sourceCatalogId} label={t("catalogQuestion.catalog")} readOnly={busy || inUse} onChange={changeSource} />
+    : <DisabledReason reason={t("catalogQuestion.requiresRead")} className="grid w-full"><Input disabled value={attribute?.sourceCatalogName ?? ""} /></DisabledReason>}
+  </FormField> : null}
   {removalCount !== null && removalPending ? <CheckboxField label={t("personData.confirmValueRemoval", { count: removalCount })} checked={confirmValues} disabled={busy} onCheckedChange={setConfirmValues} /> : null}
   {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} error={message("isActive")} onCheckedChange={setActive} /> : null}
   {inUse ? <div className="text-sm">{namedUses ? <><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></> : <p>{t("personData.inUseCount", { count: usedBy.length })}</p>}</div> : null}

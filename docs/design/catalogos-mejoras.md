@@ -152,6 +152,11 @@ no se dibujaron.
   usuario.
 - **La tabla sin «hay más columnas a la derecha».** La barra de desplazamiento alcanza; `WideTable` ya no tiene ese texto.
 
+Con el mismo criterio, **«Agregar dato» y «Editar dato»** de Datos de las personas usan el combo del catálogo de un campo:
+sin el buscador ni la lista paginada de abajo, sin la descripción del catálogo elegido y sin las leyendas del diálogo («Los
+datos que tiene cada persona…» y la de la clave, que pasa a su (i)). La clave de un dato nuevo se completa sola desde el
+nombre, con el mismo generador y el mismo patrón que la de un campo, sin repetir la de otro dato.
+
 El mismo día sumó la barra de Opciones: **sólo «Importar»**. «Pegar desde Excel» deja la barra y el «⋯» del celular, e
 «Importar» abre el diálogo con sus dos pestañas, «Subir un archivo» y «Pegar desde Excel», como antes. El rediseño de
 ese diálogo (sin leyendas ni pasos numerados, con carga visible al revisar y lo pegado en una grilla) se dibujó para

@@ -40,6 +40,17 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // One name in the menu language, where a new attribute is born: no separate English name.
     await expect(dialog.getByRole("textbox", { name: es ? "Nombre en inglés" : "Name in English", exact: true })).toHaveCount(0);
     await name.fill(es ? "Región" : "Region");
+    // The key follows the name, as a catalog field's; its help is the tooltip of its (i), and the dialog has no notes (2026-10-31).
+    await expect(dialog.getByRole("textbox", { name: es ? "Clave" : "Key", exact: true })).toHaveValue("region");
+    await expect(dialog.getByRole("button", { name: es ? "Qué es la clave" : "What the key is", exact: true })).toBeVisible();
+    for (const note of es ? ["Los datos que tiene cada persona eligen de un catálogo o son un texto. Los valores se cargan en Editar usuario.", "La usan la plantilla, la importación y lo guardado. No cambia después de guardar."]
+      : ["Each person’s data can pick from a catalog or contain text. Set values in Edit user.", "Used by the template, imports and stored data. It does not change after saving."])
+      await expect(dialog.getByText(note, { exact: true })).toHaveCount(0);
+    // Without permission to read catalogs, the catalog is off with the reason as its help, not a text under it.
+    const noRead = es ? "Necesitás permiso para leer catálogos y elegir uno." : "You need permission to read catalogs and choose one.";
+    const catalog = dialog.getByRole("textbox", { name: es ? "Catálogo" : "Catalog", exact: true });
+    await expect(catalog).toBeDisabled(); await expect(catalog).toHaveAccessibleDescription(noRead);
+    await expect(dialog.getByText(noRead, { exact: true }).filter({ visible: true })).toHaveCount(0);
     // Save is not turned off by the empty key or catalog: trying it marks them (decision V28).
     await expect(dialog.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeEnabled();
     await page.screenshot({ path: "test-results/person-data-attribute-" + language + "-" + width + ".png", fullPage: true });

@@ -130,7 +130,9 @@ it("creates a text attribute with an immutable key and without reading catalogs"
  await userEvent.click(screen.getByRole("button", { name: "Agregar dato" }));
  const dialog = within(screen.getByRole("dialog", { name: "Agregar dato" }));
  await userEvent.type(dialog.getByRole("textbox", { name: "Nombre" }), "Sede");
- await userEvent.type(dialog.getByRole("textbox", { name: "Clave" }), "site");
+ // Edited by hand, the key no longer follows the name.
+ const key = dialog.getByRole("textbox", { name: "Clave" });
+ await userEvent.clear(key); await userEvent.type(key, "site");
  await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  await waitFor(() => expect(bodies).toEqual([{ key: "site", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
@@ -147,6 +149,10 @@ it("marks the empty fields of a new attribute when saving and clears each one as
  expect(save).toBeEnabled();
  const name = dialog.getByRole("textbox", { name: "Nombre" }), key = dialog.getByRole("textbox", { name: "Clave" });
  expect(name).not.toHaveAttribute("aria-invalid", "true");
+ // Without permission to read catalogs, why the catalog cannot be chosen is its help, not a text under it.
+ const noRead = "Necesitás permiso para leer catálogos y elegir uno.";
+ expect(dialog.getByRole("textbox", { name: "Catálogo" })).toHaveAccessibleDescription(noRead);
+ expect(dialog.queryByText(noRead, { selector: "p" })).not.toBeInTheDocument();
  await userEvent.click(save);
  expect(bodies).toEqual([]);
  for (const control of [name, key, dialog.getByRole("textbox", { name: "Catálogo" })]) {
@@ -156,11 +162,12 @@ it("marks the empty fields of a new attribute when saving and clears each one as
  expect(name).toHaveFocus();
  await userEvent.type(name, "Sede");
  expect(name).not.toHaveAttribute("aria-invalid", "true");
- expect(key).toHaveAttribute("aria-invalid", "true");
- await userEvent.type(key, "site");
+ // The key follows the name, so it is filled too.
+ expect(key).toHaveValue("sede");
+ expect(key).not.toHaveAttribute("aria-invalid", "true");
  await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
  await userEvent.click(save);
- await waitFor(() => expect(bodies).toEqual([{ key: "site", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
+ await waitFor(() => expect(bodies).toEqual([{ key: "sede", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
 });
 it("creates a person attribute named only in the menu language", async () => {
  const zones = "01990000-0000-7000-8000-000000000004";
@@ -178,15 +185,71 @@ it("creates a person attribute named only in the menu language", async () => {
   const dialog = within(screen.getByRole("dialog", { name: "Add attribute" }));
   expect(dialog.queryByRole("textbox", { name: "Name in English" })).not.toBeInTheDocument();
   await userEvent.type(dialog.getByRole("textbox", { name: "Name" }), "Zone");
-  await userEvent.type(dialog.getByRole("textbox", { name: "Key" }), "zone");
-  const catalog = dialog.getByRole("combobox", { name: "Catalog" });
-  await waitFor(() => expect(catalog).toBeEnabled());
-  await userEvent.selectOptions(catalog, zones);
+  expect(dialog.getByRole("textbox", { name: "Key" })).toHaveValue("zone");
+  await userEvent.click(dialog.getByRole("combobox", { name: "Catalog" }));
+  await userEvent.click(await screen.findByRole("option", { name: "Zones · 2 options" }));
   await userEvent.click(dialog.getByRole("button", { name: "Save" }));
   await waitFor(() => expect(bodies).toEqual([{ key: "zone", name: { en: "Zone" }, type: "Catalog", sourceCatalogId: zones }]));
  } finally {
   await i18n.changeLanguage("es");
  }
+});
+it("fills a new attribute's key from its name, without repeating another attribute's, until it is edited by hand", async () => {
+ const bodies: unknown[] = [];
+ await mount(["formpersondata.manage"]);
+ server.use(http.post("/api/forms/person-attributes", async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ ...attribute, id: "01990000-0000-7000-8000-000000000003", key: "sede", name: { es: "Branch norte" }, revision: 1 }); }));
+ await screen.findByText("Sucursal");
+ await userEvent.click(screen.getByRole("button", { name: "Agregar dato" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Agregar dato" }));
+ const name = dialog.getByRole("textbox", { name: "Nombre" }), key = dialog.getByRole("textbox", { name: "Clave" });
+ await userEvent.type(name, "Sede central");
+ expect(key).toHaveValue("sede_central");
+ // «branch» is the key of «Sucursal».
+ await userEvent.clear(name); await userEvent.type(name, "Branch");
+ expect(key).toHaveValue("branch_2");
+ // Edited by hand, it stays as written.
+ await userEvent.clear(key); await userEvent.type(key, "sede");
+ await userEvent.type(name, " norte");
+ expect(key).toHaveValue("sede");
+ await userEvent.selectOptions(dialog.getByRole("combobox", { name: "Tipo" }), "Text");
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ await waitFor(() => expect(bodies).toEqual([{ key: "sede", name: { es: "Branch norte" }, type: "Text", sourceCatalogId: null }]));
+ // A saved attribute keeps its key.
+ await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ await userEvent.click(screen.getByRole("button", { name: "Editar Sucursal" }));
+ const saved = within(screen.getByRole("dialog", { name: "Editar dato" }));
+ await userEvent.type(saved.getByRole("textbox", { name: "Nombre" }), " sur");
+ expect(saved.getByRole("textbox", { name: "Clave" })).toHaveValue("branch");
+});
+it("chooses the catalog in a dropdown, without its description, a separate search or the dialog's notes", async () => {
+ const zones = "01990000-0000-7000-8000-000000000004";
+ const row = (catalogId: string, name: string, description: string | null) => ({ valueType: "Text", id: catalogId, name, description, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: true });
+ const bodies: unknown[] = [];
+ await mount(["formpersondata.manage", "formcatalogs.read"]);
+ server.use(
+  http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [row(zones, "Zonas", "Zonas de reparto"), row("01990000-0000-7000-8000-000000000005", "Regiones", null)], page: 1, pageSize: 20, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 2, manual: 2, filters: 0 } } })),
+  http.post("/api/forms/person-attributes", async ({ request }) => { bodies.push(await request.json()); return HttpResponse.json({ ...attribute, id: "01990000-0000-7000-8000-000000000003", key: "zona", name: { es: "Zona" }, type: "Catalog", sourceCatalogId: zones, sourceCatalogName: "Zonas", revision: 1 }); }));
+ await screen.findByText("Sucursal");
+ await userEvent.click(screen.getByRole("button", { name: "Agregar dato" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Agregar dato" }));
+ // No notes in the dialog: the key's help is the tooltip of its (i).
+ const keyHelp = "La usan la plantilla, la importación y lo guardado. No cambia después de guardar.";
+ expect(dialog.queryByText("Los datos que tiene cada persona eligen de un catálogo o son un texto. Los valores se cargan en Editar usuario.")).not.toBeInTheDocument();
+ expect(dialog.queryByText(keyHelp)).not.toBeInTheDocument();
+ await userEvent.hover(dialog.getByRole("button", { name: "Qué es la clave" }));
+ expect(await screen.findByRole("tooltip")).toHaveTextContent(keyHelp);
+ await userEvent.type(dialog.getByRole("textbox", { name: "Nombre" }), "Zona");
+ // The same dropdown as a catalog field: the first catalogs when it opens, without a search or a list of its own.
+ expect(dialog.queryByRole("searchbox", { name: "Buscar catálogo" })).not.toBeInTheDocument();
+ expect(dialog.queryByRole("link", { name: "Ver el catálogo" })).not.toBeInTheDocument();
+ const catalog = dialog.getByRole("combobox", { name: "Catálogo" });
+ await userEvent.click(catalog);
+ expect(await screen.findByRole("option", { name: "Regiones · 2 opciones" })).toBeInTheDocument();
+ await userEvent.click(screen.getByRole("option", { name: "Zonas · 2 opciones" }));
+ expect(catalog).toHaveValue("Zonas");
+ expect(dialog.queryByText("Zonas de reparto")).not.toBeInTheDocument();
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ await waitFor(() => expect(bodies).toEqual([{ key: "zona", name: { es: "Zona" }, type: "Catalog", sourceCatalogId: zones }]));
 });
 it("translates a person attribute name with its original as reference and keeps the original", async () => {
  const spanish = { ...attribute, name: { es: "Sucursal" } };
@@ -282,14 +345,15 @@ it("asks to confirm clearing stored values under the catalog when only the sourc
  await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
  const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
  const catalog = dialog.getByRole("combobox", { name: "Catálogo" });
- await waitFor(() => expect(catalog).toBeEnabled());
- await userEvent.selectOptions(catalog, regions);
+ const choose = async (option: string) => { await userEvent.click(catalog); await userEvent.click(await screen.findByRole("option", { name: option })); };
+ await waitFor(() => expect(catalog).toHaveValue("Zonas"));
+ await choose("Regiones · 2 opciones");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  const confirm = await dialog.findByRole("checkbox", { name: "Sí, cambiar el dato y borrar el valor que tiene cargado una persona" });
  expect(catalog).toHaveAccessibleDescription(notConfirmed);
  await userEvent.click(confirm);
  expect(confirm).toBeChecked();
- await userEvent.selectOptions(catalog, branches);
+ await choose("Sucursales · 2 opciones");
  expect(confirm).not.toBeChecked();
  await userEvent.click(confirm);
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
