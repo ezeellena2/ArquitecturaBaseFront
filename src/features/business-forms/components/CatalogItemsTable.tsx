@@ -56,7 +56,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   // Typed values are read and shown in the draft's culture, the one its editable text was written in.
   const valueCulture = scope?.culture ?? culture, yesNo = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   return (
-    <WideTable label={t("catalogs.items.title")} overflowHint={t("catalogs.items.moreColumns")}><TableHeader><TableRow>
+    <WideTable label={t("catalogs.items.title")}><TableHeader><TableRow>
       {canManage ? <TableHead scope="col"><Checkbox aria-label={t("catalogs.items.selectPage")} disabled={busy || !items.length} checked={selected.length === items.length && items.length > 0 ? true : selected.length ? "indeterminate" : false} onCheckedChange={value => onSelectAll(value === true)}/></TableHead> : null}
       <TableHead scope="col">#</TableHead>{columns.map(column => <WideTableHead key={column.id} pinned={column.id === "text" ? "start" : undefined} scope="col">{column.field ? administrativeName(column.field.name, culture) : t(column.tableLabelKey)}</WideTableHead>)}<WideTableHead pinned="end" scope="col" className="text-right">{t("actionsColumn")}</WideTableHead>
     </TableRow></TableHeader><TableBody>
