@@ -45,7 +45,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(dialog.getByRole("button", { name: es ? "Qué es la clave" : "What the key is", exact: true })).toBeVisible();
     for (const note of es ? ["Los datos que tiene cada persona eligen de un catálogo o son un texto. Los valores se cargan en Editar usuario.", "La usan la plantilla, la importación y lo guardado. No cambia después de guardar."]
       : ["Each person’s data can pick from a catalog or contain text. Set values in Edit user.", "Used by the template, imports and stored data. It does not change after saving."])
-      await expect(dialog.getByText(note, { exact: true })).toHaveCount(0);
+      // A help is the hidden description of its (i) (`InfoTip`), never a visible note.
+      await expect(dialog.getByText(note, { exact: true }).filter({ visible: true })).toHaveCount(0);
     // Without permission to read catalogs, the catalog is off with the reason as its help, not a text under it.
     const noRead = es ? "Necesitás permiso para leer catálogos y elegir uno." : "You need permission to read catalogs and choose one.";
     const catalog = dialog.getByRole("textbox", { name: es ? "Catálogo" : "Catalog", exact: true });

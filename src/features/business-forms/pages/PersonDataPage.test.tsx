@@ -115,12 +115,53 @@ it("shows the wait and the failure of reloading an attribute after a revision co
  const reload = dialog.getByRole("button", { name: "Volver a cargar el dato" });
  await userEvent.click(reload);
  await waitFor(() => expect(reload).toBeDisabled());
+ // While it rereads, the button says so with its ring (LC1-A).
+ expect(dialog.getByRole("button", { name: "Volviendo a cargar…" })).toHaveAttribute("aria-busy", "true");
  await act(async () => { release(); });
  await waitFor(() => expect(dialog.getByRole("alert")).toHaveTextContent("Ocurrió un error inesperado. Si el problema continúa, informá el código trace-reload."));
  expect(dialog.getByRole("button", { name: "Volver a cargar el dato" })).toBeEnabled();
  expect(dialog.getByRole("button", { name: "Guardar" })).toBeDisabled();
  expect(dialog.getByRole("textbox", { name: "Nombre" })).toHaveValue("Sucursal central");
  expect(dialog.getByRole("textbox", { name: "Nombre" })).not.toHaveFocus();
+});
+// While it saves, «Guardar» says so with its ring (LC1-A, inventory of legends, 2026-11-01).
+it("says «Guardando…» with its ring while it saves an attribute", async () => {
+ let release!: () => void;
+ await mount(["formpersondata.manage"]);
+ server.use(http.put(`/api/forms/person-attributes/${id}`, async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ ...attribute, name: { es: "Sucursal central", en: "Branch" }, revision: 2 }); }));
+ await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
+ await userEvent.type(dialog.getByRole("textbox", { name: "Nombre" }), " central");
+ await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
+ const saving = await dialog.findByRole("button", { name: "Guardando…" });
+ expect(saving).toBeDisabled();
+ expect(saving).toHaveAttribute("aria-busy", "true");
+ await act(async () => { release(); });
+ await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar dato" })).not.toBeInTheDocument());
+});
+// While a typed search is on its way, the catalog dropdown says «Buscando…» instead of the previous catalogs.
+it("says «Buscando…» in the catalog dropdown while a search is on its way", async () => {
+ const catalogs = (name: string) => ({ items: [{ valueType: "Text", id: "01990000-0000-7000-8000-000000000031", name, description: null, origin: "Manual", optionsCount: 3, usageCount: null, state: "Active", stateReason: null, canEdit: true }],
+  page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } });
+ let release: (() => void) | undefined;
+ await mount(["formpersondata.manage", "formcatalogs.read"]);
+ server.use(http.get("/api/forms/catalogs", async ({ request }) => {
+  const search = new URL(request.url).searchParams.get("search") ?? "";
+  if (search) await new Promise<void>(resolve => { release = resolve; });
+  return HttpResponse.json(catalogs(search ? "Zonas norte" : "Zonas"));
+ }));
+ await userEvent.click(await screen.findByRole("button", { name: "Agregar dato" }));
+ const dialog = within(screen.getByRole("dialog", { name: "Agregar dato" }));
+ const catalog = dialog.getByRole("combobox", { name: "Catálogo" });
+ await userEvent.click(catalog);
+ expect(await screen.findByRole("option", { name: "Zonas · 3 opciones" })).toBeInTheDocument();
+ await userEvent.type(catalog, "nor");
+ const list = screen.getByRole("listbox", { name: "Catálogo" });
+ await waitFor(() => expect(list).toHaveTextContent("Buscando…"));
+ expect(within(list).queryByRole("option")).not.toBeInTheDocument();
+ await waitFor(() => expect(release).toBeTypeOf("function"));
+ await act(async () => { release!(); });
+ expect(await screen.findByRole("option", { name: "Zonas norte · 3 opciones" })).toBeInTheDocument();
 });
 it("creates a text attribute with an immutable key and without reading catalogs", async () => {
  const bodies: unknown[] = [];
@@ -235,7 +276,8 @@ it("chooses the catalog in a dropdown, without its description, a separate searc
  // No notes in the dialog: the key's help is the tooltip of its (i).
  const keyHelp = "La usan la plantilla, la importación y lo guardado. No cambia después de guardar.";
  expect(dialog.queryByText("Los datos que tiene cada persona eligen de un catálogo o son un texto. Los valores se cargan en Editar usuario.")).not.toBeInTheDocument();
- expect(dialog.queryByText(keyHelp)).not.toBeInTheDocument();
+ // The help is the hidden description of the (i) (`InfoTip`), never a visible note.
+ for (const text of dialog.queryAllByText(keyHelp)) expect(text).not.toBeVisible();
  await userEvent.hover(dialog.getByRole("button", { name: "Qué es la clave" }));
  expect(await screen.findByRole("tooltip")).toHaveTextContent(keyHelp);
  await userEvent.type(dialog.getByRole("textbox", { name: "Nombre" }), "Zona");
