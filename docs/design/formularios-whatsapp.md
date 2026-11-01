@@ -593,11 +593,17 @@ pasar» y queda sólo el prefijo que se fija.
   preguntas, agregadas, cambiadas y quitadas respecto de la versión publicada, idiomas y, mientras está libre, el prefijo.
 - Un texto que pasa su límite lo dice en concreto: «Hasta 20 caracteres; tiene 26.» (y «La ayuda: …» o «La opción «…»: …»
   cuando no es el título). El límite viene del compilador del canal y el largo sale del borrador guardado.
-- La ayuda va en las (i): qué pasa al publicar (la de «Qué se publica»), qué son los problemas y los avisos, qué falta en
-  un idioma, cuándo queda fijo el prefijo y, con cambios sin guardar, por qué hay que guardar primero.
+- La ayuda va en las (i): qué son los problemas y los avisos, qué falta en un idioma (hasta tres por nombre y el resto
+  contado), cómo se elige el idioma con dos y cuándo queda fijo el prefijo. Lo que el usuario aprobó sacar en el inventario
+  de leyendas no va ni en una (i): la descripción, «Qué queda fijo», «Qué va a pasar», «Podés publicar igual…», los textos
+  de reactivar (queda «Próxima respuesta» como fila) y el porqué de guardar primero, que dice el título «Primero guardá los
+  cambios».
 - Publicar apagado dice su motivo en el tooltip: el problema, la comprobación vencida (con «Volver a comprobar»), una
   publicación en curso o la publicación no disponible. Se va la nota del pie.
 - Mientras comprueba, el botón dice «Comprobando…» con su aro (LC1-A) y «Qué se publica» se arma con un esqueleto.
+- Después de aceptar, la superficie de la publicación dice el estado con su título y sus pasos, sin el párrafo que lo
+  repetía (aceptando, publicando, publicado, fallido); «Consultar publicación» dice «Consultando…» con su aro, también en
+  la confirmación de salida con una publicación sin confirmar, que espera la respuesta abierta.
 
 Las escenas `forms.spec` («publication check with a problem and a warning», es/en a 1440, 390 y 320 px) y
 `formLanguages.spec` muestran el diálogo con un problema, un aviso y los idiomas.
