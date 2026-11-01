@@ -133,7 +133,8 @@ it("explains the filters in the (i) of their section instead of a note", async (
   for (const readOnly of [false, true]) {
     const view = renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: manualId }} questionId="q" readOnly={readOnly} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
     const section = await screen.findByRole("region", { name: "Qué opciones ve cada persona" });
-    expect(within(section).queryByText(hint)).not.toBeInTheDocument();
+    // The (i) keeps the text hidden as its accessible description: it is not in sight.
+    expect(within(section).getByText(hint)).not.toBeVisible();
     await userEvent.hover(within(section).getByRole("button", { name: "Cómo funcionan los filtros" }));
     expect(await screen.findByRole("tooltip")).toHaveTextContent(hint);
     view.unmount();
