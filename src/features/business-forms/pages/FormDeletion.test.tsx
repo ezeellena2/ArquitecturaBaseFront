@@ -63,7 +63,8 @@ it("deletes with the confirmed revision and returns to the list without a dirty-
  await waitFor(()=>expect(router.state.location.pathname).toBe("/formularios"));
  expect(received).toEqual({expectedRevision:1});expect(store.definitions.has(fixtureFormId)).toBe(false);
  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
- expect(queryClient.getQueryCache().getAll().some(query=>query.queryKey.includes("detail")&&query.queryKey.includes(fixtureFormId))).toBe(false);
+ // The route changes before the editor unmounts (a transition): its private detail is gone once the list takes its place.
+ await waitFor(()=>expect(queryClient.getQueryCache().getAll().some(query=>query.queryKey.includes("detail")&&query.queryKey.includes(fixtureFormId))).toBe(false));
 });
 it("removes a deleted row and restores focus to the list search",async()=>{
  const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:true,deletionUnavailableReason:null}));

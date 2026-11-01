@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -19,11 +19,14 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { FormField } from "@/shared/ui/FormField";
+import { IconButton } from "@/shared/ui/IconButton";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { Page } from "@/shared/ui/Page";
 import { LockIcon } from "@/shared/ui/icons";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
@@ -133,15 +136,18 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const [expanded, setExpanded] = useState<string | null>(() => openQuestionFieldId ? editor.session?.value.draft.fields.find(q => q.fieldId === openQuestionFieldId)?.localId ?? null : null);
   const [prefixTouched, setPrefixTouched] = useState("definition" in initial);
   const [removeId, setRemoveId] = useState<string | null>(null);
+  // Repeating the same attempt keeps the unconfirmed surface in sight, with its own sign, until the answer arrives.
+  const [replaying, setReplaying] = useState(false);
+  const prefixId = useId();
   const [discardOpen, setDiscardOpen] = useState(false);
+  // Leaving with an unconfirmed publication offers to consult it: the confirmation waits for the answer, with its ring.
+  const [leaveConsulting, setLeaveConsulting] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [retainedReview, setRetainedReview] = useState<{ value: DraftEditorValue; definition: FormDefinitionSnapshot } | null>(null);
   const lifecycleAction = useRef<HTMLButtonElement>(null);
   const deletionFallback = useRef<HTMLElement | null>(null);
   const publicationAction = useRef<HTMLButtonElement>(null);
   const publicationReturnFocus = useRef<HTMLElement | null>(null);
-  // Leaving with an unconfirmed publication offers to consult it: the confirmation waits for the answer, with its ring.
-  const [leaveConsulting, setLeaveConsulting] = useState(false);
   const publicationLeadsToRange = useRef(false);
   const [publicationOpen, setPublicationOpen] = useState(() => reactivateOnOpen && !!lifecycle?.deactivatedAtUtc && lifecycle.canReactivate && canPublish);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -258,6 +264,13 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const formTextIssues = Object.fromEntries(visibleIssues.filter(issue => !issue.fieldLocalId).reverse().map(issue => [issue.path, issue.messages]));
   const textError = (path: "name" | "draft.submitLabel") => localizedIssueMessage(localizedIssue(formTextIssues, path, contentCulture), contentCulture, t);
   const prefixLocked = (session.confirmed?.prefixLocked ?? false) || ["Accepting", "Unconfirmed"].includes(publication.phase);
+  // Why the prefix cannot change goes in the lock's tooltip; while it can change, how the numbering works goes in its (i).
+  const prefixNote = publicationPending ? t("publication.prefixPending") : prefixLocked ? t("prefixLocked") : contentCulture !== value.draft.culture ? t("prefixOriginal") : null;
+  const prefixError = errorFor("prefix") ?? (editor.issue?.code === "Forms.Definition.PrefixTaken" ? t("prefixTaken") : undefined);
+  // Each action shows its own sign while it works: saving, checking the save, repeating the attempt or reading the current draft.
+  const saving = editor.busy && session.phase === "Saving" && !replaying;
+  const recovering = editor.busy && session.phase === "Unconfirmed";
+  const reviewing = editor.busy && reviewRequired;
   const publicationState = publication.status?.state ?? publication.receipt?.state ?? publication.aggregate?.state ?? projection?.currentOperation?.state ?? (projection?.activeVersion ? "Published" : undefined);
   const publicationVersion = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
   const publicationLabel = publication.phase === "Accepting" ? "publication.accepting" : publication.phase === "Unconfirmed" || publicationState === "Uncertain" ? "publication.unconfirmed" : publicationState ? publicationLabelKey(publicationState) : null;
@@ -306,7 +319,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   }
   return <div ref={host}><Page title={displayName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t("draft")}</Badge>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
-    {scope.permissions.includes("formtemplates.manage") ? <DisabledReason reason={saveEnabled ? waitReason : null}><Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!saveEnabled || cooldown.isRunning} onClick={() => void operate(editor.save)}>{t(editor.busy && session.phase === "Saving" ? "saving" : "save")}</Button></DisabledReason> : null}
+    {scope.permissions.includes("formtemplates.manage") ? <DisabledReason reason={saveEnabled ? waitReason : null}><Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!saveEnabled || cooldown.isRunning} pending={saving} onClick={() => void operate(editor.save)}>{t(saving ? "saving" : "save")}</Button></DisabledReason> : null}
     {canPublish && session.confirmed ? <Button ref={publicationAction} type="button" disabled={knownDeleted || deactivated && !lifecycle?.canReactivate || frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => openPublication(publicationAction.current)}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button> : null}
     {lifecycle && (scope.permissions.includes("formtemplates.publish") || scope.permissions.includes("formtemplates.manage")) ? <FormLifecycleMenu canManage={scope.permissions.includes("formtemplates.manage")} canPublish={canPublish} onDelete={() => { deletionFallback.current = lifecycleAction.current; setDeletionOpen(true); }} triggerRef={lifecycleAction} lifecycle={lifecycle} blocked={knownDeleted || frozen || editor.busy || publicationPending} onDeactivate={() => setDeactivationOpen(true)} onReactivate={() => openPublication(lifecycleAction.current)} /> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
@@ -315,20 +328,31 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     {lifecycle ? <FormLifecycleNotice lifecycle={lifecycle} timeZoneId={timeZoneId} /> : null}
     {!deactivated || publication.phase === "Accepting" || publication.phase === "Unconfirmed" || (publicationVersion ?? 0) > (projection?.activeVersion?.versionNumber ?? 0) ? <PublicationProgress publication={publication} projection={projection} feedbackId={`forms:publication:${session.scope.editorId}`} onReplay={() => void publication.replay()} onGoToIssue={goToPublicationIssue} canLocateIssue={issue => publicationFieldIssues(value, [issue]).length > 0} /> : null}
     {/* An unconfirmed save and a pending review are states of the flow: their own surface, titled, with the actions in its band. */}
-    {session.phase === "Unconfirmed" ? <Surface title={t("uncertain")} padded actions={<>
-      <DisabledReason reason={editor.busy || editor.issue?.kind === "expired" ? null : waitReason}><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning || editor.issue?.kind === "expired"} onClick={() => void operate(editor.recover)}>{t(editor.busy ? "recovering" : "recover")}</Button></DisabledReason>
-      {editor.issue?.kind === "missing" && scope.permissions.includes("formtemplates.manage") ? <Button type="button" variant="outline" disabled={editor.busy} onClick={() => void operate(editor.retry)}>{t("retrySame")}</Button> : null}
+    {session.phase === "Unconfirmed" || replaying ? <Surface title={t("uncertain")} padded actions={<>
+      <DisabledReason reason={editor.busy || editor.issue?.kind === "expired" ? null : waitReason}><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning || editor.issue?.kind === "expired"} pending={recovering} onClick={() => void operate(editor.recover)}>{t(recovering ? "recovering" : "recover")}</Button></DisabledReason>
+      {(editor.issue?.kind === "missing" || replaying) && scope.permissions.includes("formtemplates.manage") ? <Button type="button" variant="outline" disabled={editor.busy} pending={replaying} onClick={() => { setReplaying(true); void operate(editor.retry).finally(() => setReplaying(false)); }}>{t(replaying ? "retryingSame" : "retrySame")}</Button> : null}
     </>}><p className="text-sm">{t(editor.issue?.kind === "forbidden" ? "noSave" : editor.issue?.code === "Forms.Draft.RequestConflict" ? "requestConflict" : editor.issue?.kind === "expired" ? "expired" : "uncertainHint")}</p></Surface> : null}
-    {reviewRequired ? <Surface title={t("reviewTitle")} padded actions={<DisabledReason reason={editor.busy ? null : waitReason}><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning} onClick={showReview}>{t("review")}</Button></DisabledReason>}><p className="text-sm">{t("reviewPending")}</p></Surface> : null}
-    {retainedReview ? <Surface title={t("reviewChangesToInspect")} padded><p className="mb-3 text-sm">{t("reviewNoSave")}</p><DraftReviewChanges catalogScope={scope} value={retainedReview.value} definition={retainedReview.definition} culture={scope.culture} /></Surface> : null}
+    {reviewRequired ? <Surface title={t("reviewTitle")} padded actions={<DisabledReason reason={editor.busy ? null : waitReason}><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning} pending={reviewing} onClick={showReview}>{t(reviewing ? "reviewing" : "review")}</Button></DisabledReason>}><p className="text-sm">{t("reviewPending")}</p></Surface> : null}
+    {retainedReview ? <Surface title={t("reviewChangesToInspect")} padded><DraftReviewChanges catalogScope={scope} value={retainedReview.value} definition={retainedReview.definition} culture={scope.culture} /></Surface> : null}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex min-w-0 flex-col gap-4">
 
         <Surface title={t("form")} padded><div className="grid gap-4 sm:grid-cols-2">
           <FormField label={t("name")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: originalName }) : undefined} error={textError("name")}><Input readOnly={readOnly} maxLength={120} placeholder={contentCulture !== value.draft.culture ? t("missingText") : undefined} data-form-text="name" value={value.name[contentCulture] ?? ""} onChange={e => change({ ...value, name: { ...value.name, [contentCulture]: e.target.value }, prefix: prefixTouched || contentCulture !== value.draft.culture ? value.prefix : suggestedPrefix(e.target.value) })} /></FormField>
-          <FormField label={t("submitLabel")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: value.draft.submitLabel[value.draft.culture] }) : t("submitHint")} error={textError("draft.submitLabel")}><Input readOnly={readOnly} placeholder={contentCulture !== value.draft.culture ? t("missingText") : undefined} data-form-text="submitLabel" value={value.draft.submitLabel[contentCulture] ?? ""} onChange={e => change({ ...value, draft: { ...value.draft, submitLabel: { ...value.draft.submitLabel, [contentCulture]: e.target.value } } })} /></FormField>
-          <FormField label={<span className="inline-flex items-center gap-1">{t("prefix")}{prefixLocked || contentCulture !== value.draft.culture ? <LockIcon className="size-3.5" /> : null}</span>} error={errorFor("prefix") ?? (editor.issue?.code === "Forms.Definition.PrefixTaken" ? t("prefixTaken") : undefined)} hint={publicationPending ? t("publication.prefixPending") : prefixLocked ? t("prefixLocked") : contentCulture !== value.draft.culture ? t("prefixOriginal") : t("prefixHint", { prefix: value.prefix || "…" })}><Input readOnly={readOnly || prefixLocked || contentCulture !== value.draft.culture} value={value.prefix} onChange={e => { setPrefixTouched(true); change({ ...value, prefix: e.target.value }); }} /></FormField>
-          <div className="sm:col-span-2"><FormField label={t("offerWhen")} hint={t("offerWhenHint")} error={errorFor("offerWhen")}><Textarea readOnly={readOnly} maxLength={1000} value={value.offerWhen ?? ""} onChange={event => change({ ...value, offerWhen: event.target.value || null })} /></FormField></div>
+          <FormField label={t("submitLabel")} help={t("submitHint")} hint={contentCulture !== value.draft.culture ? t("originalText", { language: t("cultures." + value.draft.culture), text: value.draft.submitLabel[value.draft.culture] }) : undefined} error={textError("draft.submitLabel")}><Input readOnly={readOnly} placeholder={contentCulture !== value.draft.culture ? t("missingText") : undefined} data-form-text="submitLabel" value={value.draft.submitLabel[contentCulture] ?? ""} onChange={e => change({ ...value, draft: { ...value.draft, submitLabel: { ...value.draft.submitLabel, [contentCulture]: e.target.value } } })} /></FormField>
+          {/* Not a FormField: its label carries the lock, a focusable element whose tooltip says why the prefix cannot change, and
+              FormField does not admit a control in its label. The same shape: label, control and error, tied by their ids. */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1">
+              <Label htmlFor={prefixId}>{t("prefix")}</Label>
+              <span className="-my-1 inline-flex">{prefixNote
+                ? <><IconButton size="icon-xs" label={prefixNote}><LockIcon className="size-3.5 text-[var(--color-content-muted)]" /></IconButton><span id={prefixId + "-note"} hidden>{prefixNote}</span></>
+                : <InfoTip id={prefixId + "-note"} text={t("prefixHint", { prefix: value.prefix || "…" })} label={t("common:actions.moreInfo", { label: t("prefix") })} />}</span>
+            </div>
+            <Input id={prefixId} aria-invalid={prefixError ? true : undefined} aria-describedby={prefixId + "-note" + (prefixError ? " " + prefixId + "-message" : "")} readOnly={readOnly || prefixLocked || contentCulture !== value.draft.culture} value={value.prefix} onChange={e => { setPrefixTouched(true); change({ ...value, prefix: e.target.value }); }} />
+            {prefixError ? <p id={prefixId + "-message"} role="alert" className="text-sm text-[var(--color-danger)]">{prefixError}</p> : null}
+          </div>
+          <div className="sm:col-span-2"><FormField label={t("offerWhen")} help={t("offerWhenHint")} error={errorFor("offerWhen")}><Textarea readOnly={readOnly} maxLength={1000} value={value.offerWhen ?? ""} onChange={event => change({ ...value, offerWhen: event.target.value || null })} /></FormField></div>
         </div></Surface>
         <Surface title={t("questions")} actions={<>{maximumFiles(value.draft.fields) > 0 ? <span className="text-xs text-[var(--color-content-muted)]">{t("files.budget", { total: maximumFiles(value.draft.fields) })}</span> : null}<span className="text-xs text-[var(--color-content-muted)]">{t("publication.questions", { count: value.draft.fields.length })}</span>{!readOnly ? <DisabledReason reason={value.draft.fields.length >= 40 ? t("questionLimit", { count: 40 }) : null}><Button ref={addQuestionButton} type="button" variant="outline" disabled={value.draft.fields.length >= 40} onClick={() => { const q = newQuestion("shortText", value.draft.culture, crypto.randomUUID()); change({ ...value, draft: { ...value.draft, fields: [...value.draft.fields, q] } }); setExpanded(q.localId); }}>{t("addQuestion")}</Button></DisabledReason> : null}</>}>
           {value.draft.fields.length === 0 ? <EmptyState embedded title={t("emptyQuestions")} /> : null}
@@ -359,7 +383,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   }} onConflict={error => { setPublicationOpen(false); editor.requireReview(error); }} onGoToIssue={goToPublicationIssue} onCompleteTranslation={locatePublicationIssue} /> : null}
   <ConfirmDialog open={(discardOpen || guard.isBlocked) && !frozen && !publicationPending} onOpenChange={open => { setDiscardOpen(open); if (!open) guard.stay(); }} title={t("discardTitle")} description={t("discardDescription")} cancelLabel={t("stay")} confirmLabel={t("discard")} destructive onConfirm={leave} />
   {(guard.isBlocked && publicationPending) || leaveConsulting ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("publication.unconfirmed")} description={t("publication.unconfirmedHint")} cancelLabel={t("stay")} confirmLabel={t("publication.consult")} pending={leaveConsulting} pendingLabel={t("publication.consulting")} onConfirm={() => { guard.stay(); setLeaveConsulting(true); void publication.consult().finally(() => { if (active.current) setLeaveConsulting(false); }); }} /> : null}
-  {guard.isBlocked && session.phase === "Saving" && !publicationPending ? <Dialog open onOpenChange={() => guard.stay()}><DialogContent><DialogHeader><DialogTitle>{t("saving")}</DialogTitle><DialogDescription>{t("savingLeave")}</DialogDescription></DialogHeader><DialogFooter><Button type="button" variant="outline" onClick={() => guard.stay()}>{t("stay")}</Button></DialogFooter></DialogContent></Dialog> : null}
+  {/* Leaving while it saves: the dialog waits with the save, its state in a region with the spinner, not as a description. */}
+  {guard.isBlocked && session.phase === "Saving" && !publicationPending ? <Dialog open onOpenChange={() => guard.stay()}><DialogContent aria-describedby={undefined}><DialogHeader><DialogTitle>{t("saving")}</DialogTitle></DialogHeader><div role="status" className="flex items-center gap-2 text-sm"><Spinner decorative /><p>{t("savingLeave")}</p></div><DialogFooter><Button type="button" variant="outline" onClick={() => guard.stay()}>{t("stay")}</Button></DialogFooter></DialogContent></Dialog> : null}
   {guard.isBlocked && frozen && session.phase !== "Saving" && !publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t(reviewRequired ? "reviewTitle" : "uncertain")} description={t(reviewRequired ? "reviewPending" : "busyLeave")} cancelLabel={t("stay")} confirmLabel={t(session.phase === "Unconfirmed" ? "recover" : "review")} onConfirm={() => { guard.stay(); if (session.phase === "Unconfirmed") void operate(editor.recover); else if (reviewRequired) showReview(); }} /> : null}
   <ConfirmDialog focusFallback={removalFocus} open={removeId !== null} onOpenChange={open => { if (!open) setRemoveId(null); }} title={t("removeTitle")} description={t("removeDescription")} confirmLabel={t("removeQuestionAction")} destructive onConfirm={() => { if (removeId) removeQuestion(removeId); }} />
   {editor.review ? <DraftReview catalogScope={scope} key={editor.review.definition.revision} value={value} definition={editor.review.definition} culture={scope.culture} auditSummary={t("reviewAudit", { date: formatDateTimeInZone(editor.review.audit.lastChangedAtUtc, scope.culture, timeZoneId), author: editor.review.audit.lastChangedBy?.displayName ?? "—" })} open={reviewOpen} onCloseAutoFocus={event => { event.preventDefault(); [reviewReturnFocus.current, saveButton.current, host.current?.querySelector<HTMLElement>('[data-form-text="name"]')].find(node => node?.isConnected && !node.matches(":disabled"))?.focus(); }} onOpenChange={setReviewOpen} onUseCurrent={editor.useCurrent} onResolve={choices => { setRetainedReview({ value, definition: editor.review!.definition }); editor.resolveReview(choices); }} /> : null}

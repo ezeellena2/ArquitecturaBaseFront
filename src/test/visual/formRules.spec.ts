@@ -11,10 +11,13 @@ for (const language of ["es", "en"] as const)
       await page.getByRole("button", { name: en ? "Add action" : "Agregar acción", exact: true }).click();
       const message = en ? "We received {número}." : "Recibimos {número}.";
       await page.getByRole("textbox", { name: en ? "Message" : "Mensaje", exact: true }).fill(message);
-      // The header keeps Add rule and Save at its right edge, without draft state or revision.
-      const band = page.getByRole("heading", { name: en ? "When a response arrives" : "Cuando llega una respuesta", exact: true }).locator("..");
+      // The header keeps Add rule and Save at its right edge, without draft state or revision; that the rules are saved apart is
+      // the (i) next to the title (2026-10-31), whose hidden help is not one of the actions.
+      const band = page.getByRole("heading", { name: en ? "When a response arrives" : "Cuando llega una respuesta", exact: true }).locator("xpath=ancestor::section[1]/*[1]");
       const headerButtons = [en ? "Add rule" : "Agregar regla", en ? "Save rules" : "Guardar reglas"];
-      await expect(band.getByRole("button")).toHaveText(headerButtons);
+      const actions = band.getByRole("button").filter({ hasNotText: en ? "Rules are saved separately" : "Se guardan aparte" });
+      await expect(band.getByRole("button", { name: en ? "More about When a response arrives" : "Más información sobre Cuando llega una respuesta", exact: true })).toBeVisible();
+      await expect(actions).toHaveText(headerButtons);
       await expect(band).not.toContainText(en ? "Unsaved changes" : "Cambios sin guardar");
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
@@ -22,7 +25,7 @@ for (const language of ["es", "en"] as const)
       await page.getByRole("button", { name: en ? "Save rules" : "Guardar reglas", exact: true }).click();
       const revision = page.getByRole("button", { name: en ? "Revision 1" : "Revisión 1", exact: true });
       await expect(revision).toBeVisible();
-      await expect(band.getByRole("button")).toHaveText(headerButtons);
+      await expect(actions).toHaveText(headerButtons);
       await expect(band).not.toContainText(en ? "Revision" : "Revisión");
       const saved = await page.evaluate(language => {
         const store = (window as unknown as { formsFixture: { writes: unknown[]; ruleWrites: { expectedRevision: number; rules: { actions: { text: Record<string, string> }[] }[] }[] } }).formsFixture;

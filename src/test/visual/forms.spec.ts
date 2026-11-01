@@ -129,7 +129,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: "Edit Customer", exact: true }).click();
     await page.getByRole("textbox", { name: "Option 1", exact: true }).fill("Perez brothers");
     await page.getByRole("button", { name: "Edit Notes", exact: true }).click();
-    await page.getByRole("textbox", { name: "Help for the employee", exact: true }).fill("Tell us what happened.");
+    await page.getByRole("textbox", { name: "Help for the employee (optional)", exact: true }).fill("Tell us what happened.");
     await expect(page.getByText(/\d+ untranslated/)).toHaveCount(0);
     await expect(preview.getByRole("radio", { name: "Yes", exact: true })).toHaveCount(1);
     await expect(preview.getByRole("radio", { name: "Sí", exact: true })).toHaveCount(0);

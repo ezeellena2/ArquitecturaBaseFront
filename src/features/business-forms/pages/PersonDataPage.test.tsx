@@ -437,3 +437,12 @@ it("counts a single redacted use in the singular in English", async () => {
   expect(await screen.findByText("In use in 1 form. While in use, its type and source cannot change and it cannot be deactivated.")).toBeInTheDocument();
  } finally { await act(() => i18n.changeLanguage("es")); }
 });
+
+// What the data are goes in the (i) of the «Datos» title, not in a line above its table (2026-10-31).
+it("explains the data in the (i) of their title", async () => {
+ await mount(["formpersondata.manage"]);
+ const hint = "Los datos que tiene cada persona eligen de un catálogo o son un texto. Los valores se cargan en Editar usuario.";
+ const definitions = (await screen.findByRole("heading", { name: "Datos" })).closest("section")!;
+ expect(within(definitions).queryByText(hint, { ignore: "script, style, [hidden]" })).not.toBeInTheDocument();
+ expect(within(definitions).getByRole("button", { name: "Más información sobre Datos" })).toHaveAccessibleDescription(hint);
+});

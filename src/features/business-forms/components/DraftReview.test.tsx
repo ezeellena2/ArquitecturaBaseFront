@@ -25,6 +25,9 @@ describe("Draft review presentation", () => {
     const onResolve = vi.fn();
     await act(async () => { renderWithProviders(<DraftReview value={value} definition={definition} culture="es" open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={onResolve} />); });
     const dialog = screen.getByRole("dialog", { name: "Revisión del borrador" });
+    // The comparison speaks for itself: no description under the title and no note before the choices (2026-10-31).
+    expect(dialog).not.toHaveAccessibleDescription();
+    expect(within(dialog).queryByText(/Ninguna opción guarda|Compará lo guardado/)).not.toBeInTheDocument();
     expect(within(dialog).getByRole("cell", { name: "Cliente · Opción: Norte actualizado · Español" })).toBeInTheDocument();
     expect(within(dialog).getByRole("cell", { name: "Orden de opciones de Cliente" })).toBeInTheDocument();
     expect(within(dialog).getByRole("cell", { name: "Norte → Sur" })).toBeInTheDocument();

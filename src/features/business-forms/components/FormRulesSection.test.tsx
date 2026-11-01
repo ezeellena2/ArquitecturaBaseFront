@@ -205,6 +205,9 @@ it("binds the unchanged exported role validation to its rule and focuses the mar
   expect(notify).not.toHaveBeenCalled();
 });
 
+// The band of a surface: its title, the (i) of its help and its actions.
+const bandOf = (title: string) => screen.getByRole("heading", { name: title }).closest("section")!.firstElementChild as HTMLElement;
+const rulesHelp = "Se guardan aparte: cambiarlas no crea otra versión ni toca WhatsApp. Lo que ya pasó con cada respuesta no cambia.";
 function storedRule(message = "Mensaje guardado"): FormRule {
   return { id: crypto.randomUUID(), event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: message } }] };
 }
@@ -215,14 +218,15 @@ it("keeps the rules header to Add and Save without draft state, revision or expl
   setup(); serveRules([storedRule()], 3);
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const save = await screen.findByRole("button", { name: "Guardar reglas" });
-  const band = screen.getByRole("heading", { name: "Cuando llega una respuesta" }).parentElement!;
-  expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Agregar regla", "Guardar reglas"]);
-  expect(band).toHaveTextContent(/^Cuando llega una respuestaAgregar reglaGuardar reglas$/);
+  // Besides the title, the band has only its (i), whose help is hidden until it is asked for, and the two actions.
+  const band = bandOf("Cuando llega una respuesta");
+  expect(within(band).getAllByRole("button").map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Más información sobre Cuando llega una respuesta", "Agregar regla", "Guardar reglas"]);
+  expect(band.textContent!.replace(rulesHelp, "")).toBe("Cuando llega una respuestaAgregar reglaGuardar reglas");
   expect(save).toBeDisabled();
   expect(save).not.toHaveAccessibleDescription();
   await userEvent.click(screen.getByRole("button", { name: "Editar regla 1" }));
   await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
-  expect(band).toHaveTextContent(/^Cuando llega una respuestaAgregar reglaGuardar reglas$/);
+  expect(band.textContent!.replace(rulesHelp, "")).toBe("Cuando llega una respuestaAgregar reglaGuardar reglas");
   expect(save).toBeEnabled();
   expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
   expect(screen.queryByText(/revisión 3/i)).not.toBeInTheDocument();
@@ -248,7 +252,7 @@ it("marks an incomplete new rule only after trying to save and then corrects it 
   await userEvent.click(addAction);
   const message = region.getByRole("textbox", { name: "Mensaje" });
   expect(message).toHaveAttribute("aria-invalid", "true");
-  expect(message).toHaveAccessibleDescription("Completá este dato.");
+  expect(message).toHaveAccessibleDescription("Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta. Completá este dato.");
   await userEvent.type(message, "Recibimos tu respuesta.");
   expect(message).not.toHaveAttribute("aria-invalid");
   expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
@@ -268,7 +272,7 @@ it("does not mark the empty message of a new action before trying to save and th
   expect(region.queryByText("Completá este dato.")).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
   expect(message).toHaveAttribute("aria-invalid", "true");
-  expect(message).toHaveAccessibleDescription("Completá este dato.");
+  expect(message).toHaveAccessibleDescription("Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta. Completá este dato.");
   await waitFor(() => expect(message).toHaveFocus());
   expect(writes).not.toHaveBeenCalled();
 });
@@ -423,8 +427,8 @@ it("puts a conflict in its own titled surface with reread and the choices at the
   expect(within(review).getByRole("alert")).toHaveTextContent("Las reglas cambiaron. Releé la revisión actual para revisarla.");
   await userEvent.click(within(band).getByRole("button", { name: "Releer reglas" }));
   await waitFor(() => expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Releer reglas", "Usar la revisión actual", "Conservar mis cambios"]));
-  const rules = screen.getByRole("heading", { name: "Cuando llega una respuesta" }).parentElement!;
-  expect(within(rules).getAllByRole("button").map(button => button.textContent)).toEqual(["Agregar regla", "Guardar reglas"]);
+  const rules = bandOf("Cuando llega una respuesta");
+  expect(within(rules).getAllByRole("button").map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Más información sobre Cuando llega una respuesta", "Agregar regla", "Guardar reglas"]);
   await userEvent.click(within(band).getByRole("button", { name: "Conservar mis cambios" }));
   expect(screen.queryByRole("region", { name: "Revisión de las reglas" })).not.toBeInTheDocument();
   expect(screen.getByRole("textbox", { name: "Mensaje" })).toHaveValue("Mensaje guardado propio");
@@ -436,7 +440,7 @@ it("tells the server cooldown, not an in-flight save, as the disabled reason onc
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));await userEvent.type(screen.getByRole("textbox",{name:"Mensaje"})," propio");
   await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));
-  const saving=screen.getByRole("button",{name:"Guardando reglas…"});expect(saving).toBeDisabled();expect(saving).not.toHaveAccessibleDescription();
+  const saving=screen.getByRole("button",{name:"Guardando reglas…"});expect(saving).toBeDisabled();expect(saving).toHaveAttribute("aria-busy","true");expect(saving).not.toHaveAccessibleDescription();
   await act(async()=>{release();});const save=await screen.findByRole("button",{name:"Guardar reglas"});
   expect(save).toBeDisabled();expect(save).toHaveAccessibleDescription(/Esperá [0-9]+ segundos para volver a intentar./);
   expect(screen.getAllByText(/Esperá [0-9]+ segundos para volver a intentar./)).toHaveLength(1);
@@ -475,7 +479,7 @@ it("edits a rule message in the menu language with the original as reference", a
     await userEvent.click(await screen.findByRole("button", { name: "Edit rule 1" }));
     const message = screen.getByRole("textbox", { name: "Message" });
     expect(message).toHaveValue("");
-    expect(message).toHaveAccessibleDescription("Original (Spanish): Hola");
+    expect(message).toHaveAccessibleDescription("Use {número} and a question name in braces to fill in response values. Original (Spanish): Hola");
     expect(message).toHaveAttribute("placeholder", "Untranslated");
     await userEvent.type(message, "Hello");
     await userEvent.click(screen.getByRole("button", { name: "Save rules" }));
@@ -493,7 +497,7 @@ it("shows a save error of the translation under the original message, with its l
   await userEvent.type(message, ", ¿cómo estás?");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
   await waitFor(() => expect(message).toHaveAttribute("aria-invalid", "true"));
-  expect(message).toHaveAccessibleDescription("En inglés: El texto es demasiado largo.");
+  expect(message).toHaveAccessibleDescription("Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta. En inglés: El texto es demasiado largo.");
   await waitFor(() => expect(message).toHaveFocus());
   expect(notify).not.toHaveBeenCalled();
 });
@@ -546,4 +550,61 @@ it("explains the limit of conditions in a rule", async () => {
   expect(addCondition).toHaveAccessibleDescription("Se alcanzó el límite.");
   await userEvent.hover(addCondition);
   expect(await screen.findByRole("tooltip")).toHaveTextContent("Se alcanzó el límite.");
+});
+
+// Each control has its own sign (2026-10-31): rereading and opening a revision say so on themselves, and Save says it saves
+// only while it saves.
+it("rereads with its own sign without making Save say it saves", async () => {
+  setup(); serveRules([storedRule()]);
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Forms.Rules.RevisionConflict" }, { status: 409 })));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  const reread = await screen.findByRole("button", { name: "Releer reglas" });
+  server.use(http.get("/api/forms/definitions/:id/rules", async () => { await gate; return HttpResponse.json({ ...initial(), id: actor, revision: 2, rules: [storedRule("Actual")], createdAtUtc: "2026-10-17T12:00:00Z" }); }));
+  await userEvent.click(reread);
+  const rereading = await screen.findByRole("button", { name: "Releyendo…" });
+  expect(rereading).toHaveAttribute("aria-busy", "true");
+  expect(screen.getByRole("button", { name: "Guardar reglas" })).not.toHaveAttribute("aria-busy");
+  expect(screen.queryByRole("button", { name: "Guardando reglas…" })).not.toBeInTheDocument();
+  await act(async () => release());
+  expect(await screen.findByRole("button", { name: "Usar la revisión actual" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Releer reglas" })).not.toHaveAttribute("aria-busy");
+});
+
+it("opens a revision with its own sign without making Save say it saves", async () => {
+  setup();
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: actor, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", author: null, hasApproval: false, changes: { addedRules: 1, updatedRules: 0, removedRules: 0, orderChanged: false } }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+    http.get("/api/forms/definitions/:id/rules/revisions/:revision", async () => { await gate; return HttpResponse.json({ ...initial(), id: actor, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", rules: [] }); }));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  const trigger = await screen.findByRole("button", { name: "Revisión 1" });
+  await userEvent.click(trigger);
+  await waitFor(() => expect(trigger).toHaveAttribute("aria-busy", "true"));
+  expect(screen.getByRole("button", { name: "Guardar reglas" })).not.toHaveAttribute("aria-busy");
+  expect(screen.queryByRole("button", { name: "Guardando reglas…" })).not.toBeInTheDocument();
+  await act(async () => release());
+  expect(await screen.findByRole("dialog", { name: "Revisión 1" })).toBeInTheDocument();
+});
+
+// No notes in the rules (2026-10-31): that they are saved apart is the (i) of the title, the conditions and the message have
+// their (i), the PDF action keeps only «Ver el diseño» and the history has no note under it.
+it("explains the rules in their (i) instead of notes", async () => {
+  setup(); serveRules([{ id: crypto.randomUUID(), event: "Approved", conditions: [], actions: [newRuleAction("GeneratePdf"), { ...newRuleAction("NotifyAuthor"), text: { es: "Hola" } }] }]);
+  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
+  await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
+  const hidden = { ignore: "script, style, [hidden]" };
+  expect(screen.queryByText(rulesHelp, hidden)).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Más información sobre Cuando llega una respuesta" })).toHaveAccessibleDescription(rulesHelp);
+  const always = "Sin condición, la regla corre siempre. Las condiciones usan las preguntas del formulario.";
+  expect(screen.queryByText(always, hidden)).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Más información sobre Si (opcional)" })).toHaveAccessibleDescription(always);
+  expect(screen.queryByText("Armar el PDF con el diseño vigente.")).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Ver el diseño" })).toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: "Mensaje" })).toHaveAccessibleDescription("Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta.");
+  expect(screen.queryByText("Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta.", hidden)).not.toBeInTheDocument();
+  expect(screen.queryByText("Cada respuesta recuerda con qué revisión se procesó. Los cambios se aplican a las respuestas nuevas.")).not.toBeInTheDocument();
+  expect(await screen.findByText("Todavía no hay revisiones.")).toBeInTheDocument();
 });

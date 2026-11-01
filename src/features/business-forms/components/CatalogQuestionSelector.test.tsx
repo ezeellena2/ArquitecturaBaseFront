@@ -27,13 +27,12 @@ it("is the catalog dropdown, with every kind of catalog and the unusable ones of
   }));
   const onChange = vi.fn(), user = userEvent.setup();
   renderWithProviders(<MemoryRouter><CatalogQuestionSelector scope={scope} value="" readOnly={false} onChange={onChange} /></MemoryRouter>);
+  // No note and no (i): when the options are prepared is not explained beside the catalog (2026-10-31).
   expect(screen.queryByText("Las opciones se preparan al mandar el formulario.")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Cuándo se arman las opciones" })).not.toBeInTheDocument();
   expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
   expect(screen.queryByRole("link", { name: "Ver el catálogo" })).not.toBeInTheDocument();
   expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
-  // When the options are prepared is the help of its (i).
-  await user.hover(screen.getByRole("button", { name: "Cuándo se arman las opciones" }));
-  expect(await screen.findByRole("tooltip")).toHaveTextContent("Las opciones se preparan al mandar el formulario.");
   await user.click(catalog());
   expect(await screen.findByRole("option", { name: "Clientes privados · 2 opciones" })).not.toHaveAttribute("aria-disabled");
   expect(screen.getByRole("option", { name: "Técnicos" })).not.toHaveAttribute("aria-disabled");

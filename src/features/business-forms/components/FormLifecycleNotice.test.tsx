@@ -28,3 +28,11 @@ for(const language of ["es","en"] as const)it("keeps NeedsAttention visible as a
  await i18n.changeLanguage(language);renderWithProviders(<FormLifecycleNotice lifecycle={fixtureLifecycle(2,{deactivatedAtUtc:"2026-10-21T12:00:00Z",deprecationState:"NeedsAttention",deprecatedAtUtc:null})}/>);
  const message=await screen.findByText(language==="es"?"No se pudo deprecar en WhatsApp. Requiere atención.":"Could not deprecate on WhatsApp. Needs attention.");expect(message).toBeVisible();expect(message.closest('[role="status"]')?.textContent).toBe(message.textContent);expect(screen.queryByRole("button")).not.toBeInTheDocument();
 });
+
+// The notice says who deactivated it and when; that it is not offered and what is kept are not notes (2026-10-31).
+it("says only who deactivated the form and when",()=>{
+ renderWithProviders(<FormLifecycleNotice lifecycle={fixtureLifecycle(1,{deactivatedAtUtc:"2026-10-20T12:00:00Z",deprecationState:null,deprecatedAtUtc:null})} timeZoneId="America/Argentina/Buenos_Aires"/>);
+ expect(screen.getByText(/^Dado de baja por/)).toBeInTheDocument();
+ expect(screen.queryByText("No se manda desde el chat y el asistente no lo ofrece.")).not.toBeInTheDocument();
+ expect(screen.queryByText("Los PDF, las aprobaciones pendientes y las acciones de reglas se conservan.")).not.toBeInTheDocument();
+});

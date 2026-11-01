@@ -32,7 +32,7 @@ it("clears original help explicitly while preserving the other language and fiel
   await act(async () => { renderWithProviders(<QuestionEditor question={question} position={1} total={1}
     culture="es" original="es" expanded readOnly={false} issues={[]} onChange={onChange}
     onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
-  await userEvent.clear(screen.getByLabelText("Ayuda para el empleado"));
+  await userEvent.clear(screen.getByLabelText("Ayuda para el empleado (opcional)"));
   expect(onChange).toHaveBeenLastCalledWith({ ...question, help: { es: null, en: "Details" } });
 });
 
@@ -137,7 +137,7 @@ it("marks untranslated secondary text neutrally and preserves the original refer
   const onChange = vi.fn();
   await act(async () => { renderWithProviders(<QuestionEditor question={question} position={1} total={1} culture="en" original="es" expanded readOnly={false} issues={[]} onChange={onChange} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
   expect(screen.getByLabelText("Pregunta")).toHaveAttribute("placeholder", "Sin traducir");
-  expect(screen.getByLabelText("Ayuda para el empleado")).toHaveAttribute("placeholder", "Sin traducir");
+  expect(screen.getByLabelText("Ayuda para el empleado (opcional)")).toHaveAttribute("placeholder", "Sin traducir");
   expect(screen.getByLabelText("Opción 1")).toHaveAttribute("placeholder", "Sin traducir");
   expect(screen.getByText("Sin traducir")).toBeInTheDocument();
   expect(screen.getByText(/3 sin traducir/)).toBeInTheDocument();
@@ -157,7 +157,7 @@ it("shows a label error of the other language with its language name", async () 
   await act(async () => { renderWithProviders(<QuestionEditor question={question} position={1} total={1} culture="es" original="es" expanded readOnly={false} issues={issues} onChange={vi.fn()} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
   expect(screen.getByLabelText("Pregunta")).toHaveAccessibleDescription("En inglés: Usá hasta 200 caracteres.");
   expect(screen.getByLabelText("Pregunta")).toHaveAttribute("aria-invalid", "true");
-  expect(screen.getByLabelText("Ayuda para el empleado")).toHaveAccessibleDescription("En inglés: Usá hasta 500 caracteres.");
+  expect(screen.getByLabelText("Ayuda para el empleado (opcional)")).toHaveAccessibleDescription("En inglés: Usá hasta 500 caracteres.");
   expect(screen.getByLabelText("Opción 2")).toHaveAccessibleDescription("En inglés: Usá hasta 30 caracteres.");
   expect(screen.getByLabelText("Opción 1")).not.toHaveAttribute("aria-invalid");
 });
@@ -248,4 +248,27 @@ it.each([
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   await userEvent.hover(add);
   expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
+});
+// No notes under the controls (2026-10-31): a date says nothing under its type, the help says it is optional in its label, and
+// what the minimum of a multiple choice means is the (i) next to «Mínimo».
+it("keeps the question controls without notes: optional in the label and the minimum in its (i)", async () => {
+  const date: DraftQuestion = { ...second, help: null };
+  const view = renderWithProviders(<QuestionEditor question={date} position={1} total={1}
+    culture="es" original="es" expanded readOnly={false} issues={[]} onChange={vi.fn()}
+    onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />);
+  expect(screen.queryByText("Fecha sin hora.")).not.toBeInTheDocument();
+  expect(screen.getByRole("combobox", { name: "Tipo de respuesta" })).not.toHaveAccessibleDescription();
+  const help = screen.getByRole("textbox", { name: "Ayuda para el empleado (opcional)" });
+  expect(help).not.toHaveAccessibleDescription();
+  expect(screen.queryByText("Opcional", { exact: true })).not.toBeInTheDocument();
+  view.unmount();
+  const multiple: DraftQuestion = { ...first, type: "multiChoice", selection: { minSelected: 1, maxSelected: 2 } };
+  renderWithProviders(<QuestionEditor question={multiple} position={1} total={1}
+    culture="es" original="es" expanded readOnly={false} issues={[]} onChange={vi.fn()}
+    onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />);
+  const hint = "Con mínimo 1, la pregunta es obligatoria. WhatsApp muestra hasta 20 opciones en una pregunta de varias.";
+  expect(screen.getByRole("spinbutton", { name: "Mínimo" })).toHaveAccessibleDescription(hint);
+  expect(screen.getAllByText(hint).every(node => node.closest("[hidden]"))).toBe(true);
+  await userEvent.hover(screen.getByRole("button", { name: "Más información sobre Mínimo" }));
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(hint);
 });

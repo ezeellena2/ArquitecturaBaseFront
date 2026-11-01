@@ -153,9 +153,9 @@ describe("Forms routes", () => {
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(await within(dialog).findByRole("button", { name: "Complete English" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    await waitFor(() => expect(screen.getByLabelText("Help for the employee")).toHaveFocus());
-    expect(screen.getByLabelText("Help for the employee")).toHaveValue("");
-    expect(screen.getByLabelText("Help for the employee")).toHaveAccessibleDescription("Original (Spanish): Contá lo que pasó.");
+    await waitFor(() => expect(screen.getByLabelText("Help for the employee (optional)")).toHaveFocus());
+    expect(screen.getByLabelText("Help for the employee (optional)")).toHaveValue("");
+    expect(screen.getByLabelText("Help for the employee (optional)")).toHaveAccessibleDescription("Original (Spanish): Contá lo que pasó.");
     expect(store.writes).toHaveLength(0);
     expect(store.definitions.get(current.id)?.revision).toBe(current.revision);
   });
@@ -184,6 +184,7 @@ describe("Forms routes", () => {
     expect(name).toHaveValue("");
     expect(name).toHaveAttribute("placeholder", "Untranslated");
     expect(screen.getByLabelText("Numbering prefix")).toHaveAttribute("readonly");
+    expect(screen.getByLabelText("Numbering prefix")).toHaveAccessibleDescription("The prefix is shared. Edit it in the original language.");
     expect(screen.getByText(/Number with decimals · Required · 1 untranslated/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Edit Importe cobrado" }));
     expect(screen.getByLabelText("Question")).toHaveValue("");
@@ -286,6 +287,8 @@ describe("Forms routes", () => {
     await userEvent.click(within(review).getByRole("button", { name: "Conservar mis cambios" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByText("Cambios de la otra revisión para revisar")).toBeInTheDocument();
+    // The changes speak for themselves: no note on what the choices did not save (2026-10-31).
+    expect(screen.queryByText(/Ninguna opción guarda/)).not.toBeInTheDocument();
     expect(screen.getByLabelText("Nombre")).toHaveValue("Mis cambios");
     expect(store.calls.filter(call => call.method === "PUT")).toHaveLength(1);
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
@@ -314,7 +317,13 @@ describe("Forms routes", () => {
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     const prefix = await screen.findByLabelText("Prefijo de numeración");
     expect(prefix).toHaveAttribute("readonly"); expect(prefix).not.toBeDisabled();
-    expect(screen.getByText("El prefijo quedó fijo cuando se aceptó la primera publicación, aunque después no se haya completado.")).toBeInTheDocument();
+    // Why it cannot change is the tooltip of the lock next to its label and the description of the field, not a text under it.
+    const reason = "El prefijo quedó fijo cuando se aceptó la primera publicación, aunque después no se haya completado.";
+    expect(prefix).toHaveAccessibleDescription(reason);
+    expect(screen.getAllByText(reason).every(node => node.closest("[hidden]"))).toBe(true);
+    expect(screen.queryByRole("button", { name: "Más información sobre Prefijo de numeración" })).not.toBeInTheDocument();
+    await userEvent.hover(screen.getByRole("button", { name: reason }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
     // The locked prefix does not lock the draft: the rest is still edited and saved.
     await pasteText(screen.getByLabelText("Nombre"), " editado");
     expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeEnabled();
@@ -630,6 +639,9 @@ it("offers only Stay when navigation is attempted during an unresolved save", as
   await act(() => router.navigate("/formularios"));
   try {
     const dialog = await screen.findByRole("dialog", { name: "Guardando…" });
+    // It waits with the save: its state is a region with the spinner, not a description under the title.
+    expect(within(dialog).getByRole("status")).toHaveTextContent("Estamos guardando el borrador. Esperá el resultado antes de salir.");
+    expect(dialog).not.toHaveAccessibleDescription();
     expect(within(dialog).getByRole("button", { name: "Seguir editando" })).toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: "Revisar" })).not.toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: "Descartar" })).not.toBeInTheDocument();
@@ -759,3 +771,108 @@ it("edits a form whose original is English in Spanish as its optional translatio
   expect(screen.getByRole("button", { name: "Activos (1)" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("button", { name: /^Dados de baja/ })).toBeInTheDocument();
  });
+
+// The list keeps its rows while it reads again for a filter, a search, a sort or a page (2026-10-31): the table runs its line
+// and dims its rows until the answer arrives, instead of showing the old rows as if they were the new ones.
+it("shows that the list reads again while the filter changes", async () => {
+  const store = setup();
+  let reads = 0, release = () => {};
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/definitions", async ({ request }) => { reads++; if (reads > 1) await pending; return store.handle(request); }));
+  renderRouteWithProviders("/formularios");
+  const container = () => screen.getByRole("table").closest('[data-slot="table-container"]');
+  await screen.findByRole("table");
+  expect(container()).not.toHaveAttribute("aria-busy");
+  await userEvent.click(screen.getByRole("button", { name: /^Publicados/ }));
+  await waitFor(() => expect(reads).toBe(2));
+  expect(container()).toHaveAttribute("aria-busy", "true");
+  expect(within(screen.getByRole("table")).getAllByRole("rowgroup")[1]).toHaveAttribute("inert");
+  await act(async () => release());
+  await waitFor(() => expect(screen.queryByRole("table") === null || !container()?.hasAttribute("aria-busy")).toBe(true));
+});
+
+// An empty list says only that there are no forms: «Nuevo formulario» is already the way to start (2026-10-31).
+it("says only that there are no forms yet, without an instruction", async () => {
+  setup("forms-empty");
+  renderRouteWithProviders("/formularios");
+  expect(await screen.findByText("Todavía no hay formularios")).toBeInTheDocument();
+  expect(screen.queryByText("Creá el primero para empezar.")).not.toBeInTheDocument();
+});
+
+// No notes in «El formulario» (2026-10-31): the final button, the numbering and the offer explain themselves in their (i).
+it("explains the form fields in their (i) instead of notes", async () => {
+  setup();
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  const submit = await screen.findByRole("textbox", { name: "Texto del botón final" });
+  expect(submit).toHaveAccessibleDescription("Es lo que toca el empleado al terminar.");
+  const prefix = screen.getByRole("textbox", { name: "Prefijo de numeración" });
+  expect(prefix).toHaveAccessibleDescription("Las respuestas se numeran VIS-000001. Podés cambiar el prefijo hasta iniciar la primera publicación. El ejemplo no reserva nada.");
+  expect(screen.getByRole("button", { name: "Más información sobre Prefijo de numeración" })).toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: "Cuándo lo ofrece el asistente" })).toHaveAccessibleDescription(/^El asistente lee el mensaje/);
+  for (const note of ["Es lo que toca el empleado al terminar.", "El asistente lee el mensaje y, si coincide con esto, ofrece el formulario. Sin este texto no lo ofrece. No guarda nada sin que la persona confirme."])
+    expect(screen.queryByText(note, { ignore: "script, style, [hidden]" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/^Las respuestas se numeran/, { ignore: "script, style, [hidden]" })).not.toBeInTheDocument();
+});
+
+// Every action that takes time shows it on its own control (2026-10-31).
+it("shows on Save draft that it saves", async () => {
+  const store = setup();
+  let release = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => { await gate; return store.handle(request); }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await pasteText(await screen.findByLabelText("Nombre"), " editado");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  const saving = await screen.findByRole("button", { name: "Guardando…" });
+  expect(saving).toHaveAttribute("aria-busy", "true");
+  await act(async () => release());
+  await waitFor(() => expect(screen.getByRole("button", { name: "Guardar borrador" })).not.toHaveAttribute("aria-busy"));
+});
+
+it("shows on Review that it reads the current draft", async () => {
+  const store = setup("forms-conflict");
+  let release = () => {}, hold = false;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/definitions/:id", async ({ request }) => { if (hold) await gate; return store.handle(request); }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await userEvent.clear(await screen.findByLabelText("Nombre"));
+  await pasteText(screen.getByLabelText("Nombre"), "Mis cambios");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  const pending = await screen.findByRole("region", { name: "Revisión del borrador" });
+  hold = true;
+  await userEvent.click(within(pending).getByRole("button", { name: "Revisar" }));
+  const reviewing = await within(pending).findByRole("button", { name: "Revisando…" });
+  expect(reviewing).toHaveAttribute("aria-busy", "true");
+  await act(async () => release());
+  expect(await screen.findByRole("dialog", { name: "Revisión del borrador" })).toBeInTheDocument();
+});
+
+it("keeps the unconfirmed save in sight with its own sign while it checks the save and repeats the attempt", async () => {
+  const store = setup("forms-uncertain");
+  let releaseCheck = () => {};
+  const check = new Promise<void>(resolve => { releaseCheck = resolve; });
+  server.use(http.get("/api/forms/draft-changes/:id", async ({ request }) => { await check; return store.handle(request); }));
+  renderRouteWithProviders("/formularios/nuevo");
+  await pasteText(await screen.findByLabelText("Nombre"), "Registrar entrega");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  const surface = await screen.findByRole("region", { name: "Guardado sin confirmar" });
+  await userEvent.click(within(surface).getByRole("button", { name: "Consultar guardado" }));
+  const checking = await within(surface).findByRole("button", { name: "Consultando guardado…" });
+  expect(checking).toHaveAttribute("aria-busy", "true");
+  await act(async () => releaseCheck());
+  const replay = await within(surface).findByRole("button", { name: "Repetir el mismo intento" });
+  let releaseReplay = () => {};
+  const repeat = new Promise<void>(resolve => { releaseReplay = resolve; });
+  server.use(http.post("/api/forms/definitions", async ({ request }) => { await repeat; return store.handle(request); }));
+  await userEvent.click(replay);
+  const current = screen.getByRole("region", { name: "Guardado sin confirmar" });
+  const repeating = await within(current).findByRole("button", { name: "Repitiendo el intento…" });
+  expect(repeating).toHaveAttribute("aria-busy", "true");
+  expect(within(current).getByRole("button", { name: "Consultar guardado" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Guardar borrador" })).not.toHaveAttribute("aria-busy");
+  await act(async () => releaseReplay());
+  // The same attempt was kept by the server: the save is confirmed and the surface leaves with its sign.
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Guardado sin confirmar" })).not.toBeInTheDocument());
+  expect(screen.queryByRole("button", { name: "Repitiendo el intento…" })).not.toBeInTheDocument();
+  await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.kind === "success")).toBe(true));
+});

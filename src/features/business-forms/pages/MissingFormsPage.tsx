@@ -13,6 +13,7 @@ import {formatDateTimeInZone} from "@/shared/lib/dateTime";
 import {Button} from "@/shared/ui/button";
 import {ConfirmDialog} from "@/shared/ui/ConfirmDialog";
 import {DataTable,type Column} from "@/shared/ui/DataTable";
+import {DisabledReason} from "@/shared/ui/DisabledReason";
 import {FilterBar} from "@/shared/ui/FilterBar";
 import {ForbiddenPage} from "@/shared/ui/ForbiddenPage";
 import {Page} from "@/shared/ui/Page";
@@ -43,6 +44,8 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  if(list.data&&!list.isPlaceholderData&&!denied&&!list.error&&lastLoaded!==list.data)setLastLoaded(list.data);
  const data=list.data??lastLoaded;
  const [selected,setSelected]=useState<MissingTopic|null>(null);const [busy,setBusy]=useState(false);const [needsRefresh,setNeedsRefresh]=useState(false);
+ // An explicit read again (Reintentar, or after a conflict) keeps the rows in sight: the table says it reads until they arrive.
+ const [rereading,setRereading]=useState(false);
  const cooldown=useCountdown(0);const {setSearch:updateSearch}=pagination;
  const setSearch=useCallback((value:string)=>{if(!cooldown.isRunning)updateSearch(value);},[cooldown.isRunning,updateSearch]);
  const active=useRef(false);const controller=useRef<AbortController|null>(null);const search=useRef<HTMLInputElement>(null);
@@ -58,9 +61,10 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
   if(failure.kind==="wait")restart(failure.retryAfterSeconds??30);
   notify({id:feedbackId,kind:"error",message:readErrorMessage(listError,t)});
  },[listError,feedbackId,t,restart]);
- async function refresh(){if(cooldown.isRunning)return;const result=await list.refetch();if(active.current&&result.isSuccess)setNeedsRefresh(false);}
+ async function refresh(){if(cooldown.isRunning)return;setRereading(true);try{const result=await list.refetch();if(active.current&&result.isSuccess)setNeedsRefresh(false);}finally{if(active.current)setRereading(false);}}
+ // The confirmation waits for the answer and for the list read again, with «Descartando…», and closes then, also on a failure.
  async function discard(row:MissingTopic){
-  if(busy||cooldown.isRunning||needsRefresh||forbidden)return;
+  if(busy||cooldown.isRunning||needsRefresh||forbidden){setSelected(null);return;}
   const pending=new AbortController();controller.current=pending;setBusy(true);dismissNotification(writeId);
   try{await discardMissingTopic(row.id,row.revision,pending.signal);if(!active.current||pending.signal.aborted)return;
    notify({id:writeId+":success",kind:"success",message:t("missing.discardedNotice")});await client.invalidateQueries({queryKey:root});
@@ -70,7 +74,7 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
    if(failure.kind==="cancelled")return;
    if(error instanceof ApiError&&error.status===409){setNeedsRefresh(true);notify({id:writeId,kind:"warning",message:t("missing.conflict"),action:{label:t("common:actions.retry"),onClick:()=>{if(active.current)void refresh();}}});await refresh();}
    else{if(failure.kind==="wait")cooldown.restart(failure.retryAfterSeconds??30);notify({id:writeId,kind:"error",message:readErrorMessage(error,t)});}
-  }finally{if(active.current&&!pending.signal.aborted)setBusy(false);}
+  }finally{if(active.current&&!pending.signal.aborted){setBusy(false);setSelected(null);}}
  }
  if(forbidden)return <ForbiddenPage/>;
  const date=(value:string)=>formatDateTimeInZone(value,i18n.language,timeZoneId);
@@ -82,12 +86,13 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
   {id:"actions",header:t("actionsColumn"),align:"right",cell:row=><div className="flex justify-end gap-2">{canCreate?<Button asChild size="sm" variant="outline"><Link to="/formularios/nuevo" state={{formSeed:{ownerActorId:actorId,name:row.name}}} aria-label={t("missing.createFor",{name:row.name})}><PlusIcon className="size-4"/>{t("missing.create")}</Link></Button>:null}{row.state==="Pending"?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.discardFor",{name:row.name})} onClick={()=>setSelected(row)}>{t("missing.discard")}</Button>:null}</div>},
  ];
  const filtered=!!query.search;const globallyEmpty=data?.stateCounts.pending===0&&data.stateCounts.discarded===0;
- return <Page title={t("missing.title")}><div className="flex flex-col gap-4">
-  <p className="text-sm text-[var(--color-content-muted)]">{t("missing.description")}</p>
-  <fieldset disabled={cooldown.isRunning} className="min-w-0"><FilterBar><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap items-center gap-3"><div className="w-full sm:w-72" ref={node=>{search.current=node?.querySelector<HTMLInputElement>("input")??null;}}><SearchInput value={query.search??""} onChange={setSearch} label={t("missing.search")}/></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("missing.filter")} options={(["Pending","Discarded"] as const).map(key=>({key,pressed:key===state,label:t(key==="Pending"?"missing.pending":"missing.discarded")+" ("+(data?.stateCounts[key==="Pending"?"pending":"discarded"]??"…")+")",onSelect:()=>{setSelected(null);update({state:key==="Pending"?undefined:key,page:undefined});}}))}/></div></div>{data?<p className="text-xs text-[var(--color-content-muted)]">{t("missing.totals",{topics:t("missing.topicCount",{count:data.totalCount}),requests:t("missing.requestCount",{count:data.totalRequests})})}</p>:null}</div></FilterBar></fieldset>
-  {cooldown.isRunning?<p role="status" className="text-sm text-[var(--color-content-muted)]">{t("wait",{count:cooldown.seconds})}</p>:null}
-  {list.error&&data?<div><Button type="button" variant="outline" disabled={cooldown.isRunning} onClick={()=>void refresh()}>{t("common:actions.retry")}</Button></div>:null}
-  <fieldset disabled={cooldown.isRunning} className="min-w-0"><Surface><DataTable columns={columns} rows={data?.items??[]} rowKey={row=>row.id} hasData={data!==undefined} isLoading={list.isPending} error={list.error?t("missing.loadFailed"):undefined} onRetry={cooldown.isRunning?undefined:()=>void refresh()} sort={query.sort} onSortChange={pagination.toggleSort} emptyTitle={t(filtered?"missing.noMatches":globallyEmpty?"missing.empty":state==="Pending"?"missing.noPending":"missing.noDiscarded")} emptyAction={filtered?<Button type="button" variant="outline" onClick={()=>update({search:undefined,page:undefined})}>{t("clearFilters")}</Button>:undefined}/>{data?<Pagination {...data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/>:null}</Surface></fieldset>
-  <ConfirmDialog open={selected!==null} onOpenChange={open=>{if(!open)setSelected(null);}} focusFallback={search} title={t("missing.discardTitle")} description={t("missing.discardDescription",{name:selected?.name})} confirmLabel={t("missing.discard")} destructive onConfirm={()=>{if(selected)void discard(selected);}}/>
+ // The wait of a 429 is the reason of every control it turns off: the filters and the table give it as their tooltip and
+ // description, with no text between them.
+ const waitReason=cooldown.isRunning?t("wait",{count:cooldown.seconds}):null;
+ return <Page title={t("missing.title")} help={t("missing.description")}><div className="flex flex-col gap-4">
+  <DisabledReason reason={waitReason} className="grid w-full"><fieldset disabled={cooldown.isRunning} className="min-w-0"><FilterBar><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap items-center gap-3"><div className="w-full sm:w-72" ref={node=>{search.current=node?.querySelector<HTMLInputElement>("input")??null;}}><SearchInput value={query.search??""} onChange={setSearch} label={t("missing.search")}/></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("missing.filter")} options={(["Pending","Discarded"] as const).map(key=>({key,pressed:key===state,label:t(key==="Pending"?"missing.pending":"missing.discarded")+" ("+(data?.stateCounts[key==="Pending"?"pending":"discarded"]??"…")+")",onSelect:()=>{setSelected(null);update({state:key==="Pending"?undefined:key,page:undefined});}}))}/></div></div>{data?<p className="text-xs text-[var(--color-content-muted)]">{t("missing.totals",{topics:t("missing.topicCount",{count:data.totalCount}),requests:t("missing.requestCount",{count:data.totalRequests})})}</p>:null}</div></FilterBar></fieldset></DisabledReason>
+  {list.error&&data?<div><DisabledReason reason={rereading?null:waitReason}><Button type="button" variant="outline" disabled={cooldown.isRunning} pending={rereading} onClick={()=>void refresh()}>{t(rereading?"retrying":"common:actions.retry")}</Button></DisabledReason></div>:null}
+  <DisabledReason reason={waitReason} className="grid w-full"><fieldset disabled={cooldown.isRunning} className="min-w-0"><Surface><DataTable columns={columns} rows={data?.items??[]} rowKey={row=>row.id} hasData={data!==undefined} isLoading={list.isPending} refreshing={list.isPlaceholderData||rereading} error={list.error?t("missing.loadFailed"):undefined} onRetry={cooldown.isRunning?undefined:()=>void refresh()} sort={query.sort} onSortChange={pagination.toggleSort} emptyTitle={t(filtered?"missing.noMatches":globallyEmpty?"missing.empty":state==="Pending"?"missing.noPending":"missing.noDiscarded")} emptyAction={filtered?<Button type="button" variant="outline" onClick={()=>update({search:undefined,page:undefined})}>{t("clearFilters")}</Button>:undefined}/>{data?<Pagination {...data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/>:null}</Surface></fieldset></DisabledReason>
+  <ConfirmDialog open={selected!==null} onOpenChange={open=>{if(!open)setSelected(null);}} focusFallback={search} title={t("missing.discardTitle")} description={t("missing.discardDescription",{name:selected?.name})} confirmLabel={t("missing.discard")} destructive pending={busy} pendingLabel={t("missing.discarding")} onConfirm={()=>{if(selected)void discard(selected);}}/>
  </div></Page>;
 }

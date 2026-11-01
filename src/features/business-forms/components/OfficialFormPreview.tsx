@@ -1,17 +1,35 @@
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { EmbeddedPreview } from "@/shared/ui/EmbeddedPreview";
 import { Spinner } from "@/shared/ui/Spinner";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormPreview } from "../api/forms";
 import { ExpiredFormPreview, type readFormPreview } from "../api/response";
 import type { FormCulture } from "../model";
+
+// Meta's page takes a moment to draw after its URL arrives: until the frame loads, the region says it is loading. The listener
+// is attached before the browser paints, so a load cannot be missed.
+function OfficialFrame({ url, title, loading }: { url: string; title: string; loading: string }) {
+  const host = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const frame = host.current?.querySelector("iframe");
+    if (!frame) return;
+    const done = () => setLoaded(url);
+    frame.addEventListener("load", done);
+    return () => frame.removeEventListener("load", done);
+  }, [url]);
+  return <div ref={host} className="relative">
+    {loaded === url ? null : <div role="status" className="absolute inset-0 flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-surface)]"><Spinner decorative /><p>{loading}</p></div>}
+    <EmbeddedPreview url={url} title={title} />
+  </div>;
+}
 
 // The expiring official URL stays in this dialog. It never enters QueryCache or storage.
 // It shows the menu language when that version published it and, otherwise, the original.
@@ -54,10 +72,9 @@ export function OfficialFormPreview({ definitionId, versionId, versionNumber, cu
   if (preview && Date.parse(preview.expiresAtUtc)<=now) {setPreview(null);setExpired(true);}
   const live = preview && Date.parse(preview.expiresAtUtc)>now ? preview : null;
   return <Dialog open onOpenChange={open=>{if(!open)onClose();}}>
-    <DialogContent className="sm:max-w-150" onCloseAutoFocus={restoreFocus}>
-      <DialogHeader><DialogTitle>{t("publication.previewTitle",{version:versionNumber})}</DialogTitle><DialogDescription>{t("publication.previewDescription")}</DialogDescription></DialogHeader>
-      {busy ? <div role="status" className="flex min-h-60 items-center justify-center gap-2"><Spinner /><p>{t("publication.previewLoading")}</p></div> : live ? <EmbeddedPreview url={live.url} title={t("publication.previewFrame")} /> : <p className="min-h-32 text-sm text-[var(--color-content-muted)]">{t(denied?"publication.previewNoPermission":expired?"publication.previewExpired":failed?"publication.previewUnavailable":"publication.previewChoose")}</p>}
-      {live ? <p className="text-xs text-[var(--color-content-muted)]">{t("publication.previewFallback")}</p> : null}
+    <DialogContent className="sm:max-w-150" aria-describedby={undefined} onCloseAutoFocus={restoreFocus}>
+      <DialogHeader><DialogTitle>{t("publication.previewTitle",{version:versionNumber})}</DialogTitle></DialogHeader>
+      {busy ? <div role="status" className="flex min-h-60 items-center justify-center gap-2"><Spinner /><p>{t("publication.previewLoading")}</p></div> : live ? <OfficialFrame url={live.url} title={t("publication.previewFrame")} loading={t("publication.previewLoading")} /> : <p className="min-h-32 text-sm text-[var(--color-content-muted)]">{t(denied?"publication.previewNoPermission":expired?"publication.previewExpired":failed?"publication.previewUnavailable":"publication.previewChoose")}</p>}
       <DialogFooter><Button variant="outline" onClick={onClose}>{t("common:actions.close")}</Button>
         {live ? <Button asChild variant="outline"><a href={live.url} target="_blank" rel="noopener noreferrer">{t("publication.previewOpen")}</a></Button> : null}
         {!denied ? <DisabledReason reason={!busy&&now<waitUntil?t("wait",{count:Math.ceil((waitUntil-now)/1000)}):null} className="max-sm:*:flex-1"><Button disabled={busy||now<waitUntil} onClick={()=>void load(culture)}>{t(expired||live?"publication.previewRenew":"publication.previewLoad")}</Button></DisabledReason> : null}

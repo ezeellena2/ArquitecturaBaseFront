@@ -13,7 +13,22 @@ it("shows a catalog question without resolving or offering options", async () =>
   await act(async () => { renderWithProviders(<FormPreview value={value} culture="es" />); });
   const question = screen.getByRole("combobox", { name: "Cliente" });
   expect(question).toBeDisabled(); expect(within(question).getAllByRole("option")).toHaveLength(1);
-  expect(screen.getByText("Las opciones se preparan según quien lo recibe, al mandar el formulario.")).toBeInTheDocument();
+  // The disabled dropdown is enough: no note about when the options are prepared (2026-10-31).
+  expect(screen.queryByText("Las opciones se preparan según quien lo recibe, al mandar el formulario.")).not.toBeInTheDocument();
+});
+
+// No notes under or inside the phone (2026-10-31): what the preview is goes in the (i) of its heading, and an empty form
+// shows the empty phone without asking for questions.
+it("explains the preview in the (i) of its heading instead of notes", async () => {
+  const value: DraftEditorValue = { offerWhen: null, name: { es: "Visita" }, prefix: "VIS", draft: { format: 1, culture: "es", submitLabel: { es: "Enviar" }, fields: [] } };
+  await act(async () => { renderWithProviders(<FormPreview value={value} culture="es" />); });
+  const preview = screen.getByRole("region", { name: "Vista previa" });
+  for (const note of ["Vista previa orientativa. La vista oficial de WhatsApp estará disponible al publicar.", "La vista previa usa un solo idioma.", "Esta vista no envía ni guarda respuestas.", "Agregá preguntas para ver cómo queda.", "Vista previa en español."])
+    expect(within(preview).queryByText(note)).not.toBeInTheDocument();
+  const help = within(preview).getByRole("button", { name: "Más información sobre Vista previa para una cuenta en español" });
+  expect(help).toHaveAccessibleDescription("Vista previa orientativa. La vista oficial de WhatsApp estará disponible al publicar. La vista previa usa un solo idioma. Esta vista no envía ni guarda respuestas.");
+  await userEvent.hover(help);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Esta vista no envía ni guarda respuestas.");
 });
 
 beforeAll(async () => { await i18n.loadLanguages(["es", "en"]); });
@@ -67,8 +82,12 @@ for (const original of ["es", "en"] as const) it("uses one " + original + " cult
   await act(async () => { view = renderWithProviders(<FormPreview value={partial} culture={secondary} />); });
   const preview = screen.getByRole("region", { name: "Vista previa" });
   expect(preview.querySelector("[lang]")).toHaveAttribute("lang", original);
-  expect(within(preview).getByText(original === "es" ? "Fecha sin hora." : "Date without a time.")).toBeInTheDocument();
+  expect(within(preview).getByText(original === "es" ? "Fecha de visita" : "Visit date")).toBeInTheDocument();
+  expect(within(preview).queryByText(original === "es" ? "Fecha sin hora." : "Date without a time.")).not.toBeInTheDocument();
   expect(within(preview).getByText(original === "es" ? "Vista previa · pantalla 1 de 3" : "Preview · screen 1 of 3")).toBeInTheDocument();
+  // How photos and documents split the screens is the (i) next to the position, in the language of the interface.
+  expect(within(preview).getByRole("button", { name: "Más información sobre Vista previa · pantalla 1 de 3" })).toHaveAccessibleDescription("Cada pregunta de foto o documento abre su propia pantalla. Las preguntas siguientes pueden compartirla.");
+  expect(screen.queryByText("Cada pregunta de foto o documento abre su propia pantalla. Las preguntas siguientes pueden compartirla.", { ignore: "[hidden], [hidden] *" })).not.toBeInTheDocument();
   await userEvent.click(within(preview).getByRole("button", { name: original === "es" ? "Continuar" : "Continue" }));
   expect(within(preview).getByRole("button", { name: original === "es" ? "Sacar foto" : "Take photo" })).toBeInTheDocument();
   expect(within(preview).getByRole("button", { name: original === "es" ? "Pantalla anterior" : "Previous screen" })).toBeEnabled();
@@ -111,10 +130,12 @@ for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as c
     const preview = screen.getByRole("region", { name: ui === "es" ? "Vista previa" : "Preview" });
     expect(within(preview).getByRole("heading", { name: ui === "es" ? "Vista previa para una cuenta en " + languages[secondary] : "Preview for an account using " + languages[secondary] })).toBeInTheDocument();
     expect(within(preview).getByText(ui === "es" ? "Se muestra en " + languages[original] + ": falta 1 texto en " + languages[secondary] + "." : "Shown in " + languages[original] + ": 1 text is untranslated in " + languages[secondary] + ".")).toBeInTheDocument();
-    expect(within(preview).getByText(ui === "es" ? "La vista previa usa un solo idioma." : "This preview uses one language.")).toBeInTheDocument();
+    // That the preview uses one language is part of the (i) of the heading, not a note under the phone.
+    expect(within(preview).getByRole("button", { name: ui === "es" ? "Más información sobre Vista previa para una cuenta en " + languages[secondary] : "More about Preview for an account using " + languages[secondary] })).toHaveAccessibleDescription(new RegExp(ui === "es" ? "La vista previa usa un solo idioma\\." : "This preview uses one language\\."));
     expect(within(preview).queryByText(/le llega|It arrives|What an account.*receives/i)).not.toBeInTheDocument();
     await act(async () => { view.rerender(<FormPreview value={complete} culture={secondary} />); });
-    expect(within(preview).getByText(ui === "es" ? "Vista previa en " + languages[secondary] + "." : "Preview in " + languages[secondary] + ".")).toBeInTheDocument();
+    // The heading already names the language: no «Vista previa en …» repeats it.
+    expect(within(preview).queryByText(ui === "es" ? "Vista previa en " + languages[secondary] + "." : "Preview in " + languages[secondary] + ".")).not.toBeInTheDocument();
   });
 }
 
@@ -156,7 +177,8 @@ it("does not resolve catalog options for the illustrative multi preview", async 
     type: "multiChoice", source: { catalog: "01990000-0000-7000-8000-000000000091" }, label: { es: "Fallas", en: "Faults" }, help: null,
     required: true, selection: { minSelected: 1, maxSelected: 3 } }] } };
   await act(async () => { renderWithProviders(<FormPreview value={value} culture="es"/>); });
-  expect(screen.getByText("Las opciones se preparan según quien lo recibe, al mandar el formulario.")).toBeVisible();
+  expect(screen.getByRole("group", { name: "Fallas" })).toBeInTheDocument();
+  expect(screen.queryByText("Las opciones se preparan según quien lo recibe, al mandar el formulario.")).not.toBeInTheDocument();
   expect(screen.queryByRole("checkbox", { name: "Frío" })).not.toBeInTheDocument();
   expect(reads).toBe(0);
 });

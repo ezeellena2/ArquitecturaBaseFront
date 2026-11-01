@@ -22,7 +22,7 @@ it("edits the PDF texts in the menu language and previews that language without 
  renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");
  const name=await screen.findByRole("textbox",{name:"PDF name"});
  expect(name).toHaveValue("");expect(name).toHaveAttribute("placeholder","Untranslated");expect(name).toHaveAccessibleDescription("Original (Spanish): Comprobante de visita");expect((name as HTMLInputElement).labels?.[0]).toHaveTextContent(/^PDF name$/);
- const footer=screen.getByRole("textbox",{name:"Footer text"});
+ const footer=screen.getByRole("textbox",{name:"Footer text (optional)"});
  expect(footer).toHaveValue("");expect(footer).toHaveAccessibleDescription("Original (Spanish): Gracias por tu visita.");
  expect(screen.getAllByRole("textbox")).toHaveLength(2);
  expect(screen.queryByRole("group",{name:"Preview language"})).not.toBeInTheDocument();
@@ -91,7 +91,9 @@ it("marks the invalid design when the preview is tried instead of disabling it",
  await waitFor(()=>expect(name).toHaveFocus());
  expect(name).toHaveAttribute("aria-invalid","true");
  expect(name).toHaveAccessibleDescription("Completá el idioma original.");
- expect(screen.getByText("Con una respuesta de ejemplo. La vista previa no guarda ni emite un comprobante.")).toBeInTheDocument();
+ // Before asking for it, the preview region says only that there is none yet: no note on what it does (2026-10-31).
+ expect(screen.getByText("Todavía no hay vista previa.")).toBeInTheDocument();
+ expect(screen.queryByText("Con una respuesta de ejemplo. La vista previa no guarda ni emite un comprobante.")).not.toBeInTheDocument();
  expect(previews).toBe(0);
  // Save, tried the same way, also focuses the first error and sends nothing.
  act(()=>preview.focus());
@@ -138,7 +140,7 @@ it("shows an error of the original under the translated field with its language"
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions: ["formrules.manage"] })), http.post("/api/forms/definitions/:id/pdf-design", () => { saves++; return HttpResponse.json({ code: "Validation.Failed", errors: { "design.name.es": ["Check the PDF name."] } }, { status: 400 }); }));
   await act(async () => { await i18n.changeLanguage("en"); });
   renderRouteWithProviders("/formularios/" + responseFormId + "/pdf");
-  const footer = await screen.findByRole("textbox", { name: "Footer text" });
+  const footer = await screen.findByRole("textbox", { name: "Footer text (optional)" });
   await userEvent.type(footer, "Thanks for your visit.");
   await userEvent.click(screen.getByRole("button", { name: "Save design" }));
   expect(footer).toHaveAccessibleDescription("In Spanish: Complete the original language.");
@@ -173,4 +175,42 @@ it("names the confirmed form in PDF breadcrumbs without linking a forbidden temp
   expect(within(crumbs).getAllByRole("listitem").map(item => item.textContent)).toEqual(["Inicio", "Visita", "Diseño del PDF"]);
   expect(within(crumbs).queryByRole("link", { name: "Visita" })).not.toBeInTheDocument();
   expect(within(crumbs).getAllByRole("link").map(link => link.getAttribute("href"))).toEqual(["/"]);
+});
+
+// Every action that takes time shows it on its own control (2026-10-31): saving the design and rereading after a conflict.
+it("shows on Save design that it saves, and on Reread that it reads again",async()=>{
+ setup();let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});let conflict=false;let rereads=0;
+ server.use(http.post("/api/forms/definitions/:id/pdf-design",async()=>{await gate;return HttpResponse.json({code:"Forms.Pdf.RevisionConflict"},{status:409});}));
+ renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");
+ const name=await screen.findByRole("textbox",{name:"Nombre del PDF"});
+ await userEvent.type(name," propio");
+ await userEvent.click(screen.getByRole("button",{name:"Guardar diseño"}));
+ const saving=await screen.findByRole("button",{name:"Guardando diseño…"});
+ expect(saving).toHaveAttribute("aria-busy","true");expect(saving).toBeDisabled();
+ let releaseRead!:()=>void;const read=new Promise<void>(resolve=>{releaseRead=resolve;});
+ server.use(http.get("/api/forms/definitions/:id/pdf-design",async()=>{rereads++;if(conflict)await read;return HttpResponse.json({...pdfDesignFixture(),revision:2});}));
+ conflict=true;
+ await act(async()=>release());
+ const band=(await screen.findByRole("heading",{name:"El diseño cambió"})).parentElement!;
+ await userEvent.click(within(band).getByRole("button",{name:"Releer"}));
+ const rereading=await within(band).findByRole("button",{name:"Releyendo…"});
+ expect(rereading).toHaveAttribute("aria-busy","true");
+ // Save keeps its own text: rereading is not saving.
+ expect(screen.getByRole("button",{name:"Guardar diseño"})).not.toHaveAttribute("aria-busy");
+ await act(async()=>releaseRead());
+ await waitFor(()=>expect(within(band).getByRole("button",{name:"Usar la revisión actual"})).toBeInTheDocument());
+ expect(rereads).toBe(1);
+});
+
+// No notes in the receipt (2026-10-31): the photos explain themselves in their (i), the approval and the fixed copies say
+// nothing more, and the footer says it is optional in its label.
+it("explains the receipt in its (i) instead of notes",async()=>{
+ setup();
+ renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");
+ const photos=await screen.findByRole("checkbox",{name:"Incluir las fotos"});
+ expect(photos).toHaveAccessibleDescription("Las de las preguntas elegidas, chicas y debajo de su pregunta. Sin marcar, solo dice cuántas hay. Los documentos se nombran, no se adjuntan.");
+ expect(screen.getByRole("checkbox",{name:"Quién la aprobó y cuándo"})).not.toHaveAccessibleDescription();
+ expect(screen.getByRole("textbox",{name:"Texto al pie (opcional)"})).not.toHaveAccessibleDescription();
+ for(const note of ["Se completa al aprobarla.","Opcional. Si lo agregás, completá el idioma original.","Los PDF ya armados no cambian: son una copia fija del momento.","El PDF real se arma con los datos y el idioma de cada respuesta."])expect(screen.queryByText(note)).not.toBeInTheDocument();
+ expect(screen.queryByText("Las de las preguntas elegidas, chicas y debajo de su pregunta. Sin marcar, solo dice cuántas hay. Los documentos se nombran, no se adjuntan.",{ignore:"script, style, [hidden]"})).not.toBeInTheDocument();
 });

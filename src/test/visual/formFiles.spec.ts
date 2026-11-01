@@ -28,7 +28,8 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
   await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-files&lang=${lang}`);
   await expect(page.getByRole("heading",{name:en?"Register visit":"Registrar visita"}).first()).toBeVisible();await page.evaluate(()=>document.fonts.ready);
   await expect(page.getByText(en?"Files: up to 7 of 10":"Archivos: hasta 7 de 10")).toBeVisible();
-  await expect(page.getByText(en?"Each photo or document question starts its own screen. Following questions can share it.":"Cada pregunta de foto o documento abre su propia pantalla. Las preguntas siguientes pueden compartirla.")).toBeVisible();
+  // How photos and documents split the screens is the (i) next to the position, not a note under the phone (2026-10-31).
+  await expect(page.getByRole("button",{name:en?/^More about Preview · screen 1 of \d+$/:/^Más información sobre Vista previa · pantalla 1 de \d+$/})).toHaveAccessibleDescription(en?"Each photo or document question starts its own screen. Following questions can share it.":"Cada pregunta de foto o documento abre su propia pantalla. Las preguntas siguientes pueden compartirla.");
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   await page.screenshot({path:`test-results/form-files-editor-${lang}-${width}.png`,fullPage:true});
   await page.getByRole("button",{name:en?"Edit Site photos":"Editar Fotos de la obra",exact:true}).click();

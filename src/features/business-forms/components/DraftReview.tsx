@@ -4,7 +4,7 @@ import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/shared/ui/dialog";
 import { DataTable } from "@/shared/ui/DataTable";
 import { Surface } from "@/shared/ui/Surface";
 import { createDraftReview, localizedValue, questionEditorType, type DraftReviewRow } from "../editorModel";
@@ -16,10 +16,10 @@ export function DraftReview({ value, definition, culture, catalogScope, auditSum
 }) {
   const { t } = useTranslation("forms");
   const restoreFocus = useRestoreFocusOnClose(open);
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-3xl" onCloseAutoFocus={onCloseAutoFocus ?? restoreFocus}><DialogHeader><DialogTitle>{t("reviewTitle")}</DialogTitle><DialogDescription>{t("reviewDescription")}</DialogDescription></DialogHeader>
+  // The comparison and the two choices, without explanations of what they do or do not save (2026-10-31).
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-3xl" aria-describedby={undefined} onCloseAutoFocus={onCloseAutoFocus ?? restoreFocus}><DialogHeader><DialogTitle>{t("reviewTitle")}</DialogTitle></DialogHeader>
     {auditSummary ? <p className="text-sm text-[var(--color-content-muted)]">{auditSummary}</p> : null}
     <DraftReviewChanges value={value} definition={definition} culture={culture} catalogScope={catalogScope} />
-    <p className="text-sm text-[var(--color-content-muted)]">{t("reviewNoSave")}</p>
     <DialogFooter><Button type="button" variant="outline" onClick={() => { onUseCurrent(); onOpenChange(false); }}>{t("useCurrent")}</Button><Button type="button" onClick={() => {
       const review = createDraftReview(value, definition);
       onResolve(Object.fromEntries(review.rows.map(row => [row.id, row.canKeep ? "mine" : "current"])));

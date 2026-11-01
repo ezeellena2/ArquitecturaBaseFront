@@ -57,7 +57,9 @@ function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
     const [baseline, setBaseline] = useState<FormPdfDesign | null>(null);
     const [draft, setDraft] = useState<PdfDesign | null>(null);
     const [error, setError] = useState<unknown>(null);
-    const [busy, setBusy] = useState(false);
+    // What is running, so Save and Reread each show their own sign.
+    const [running, setRunning] = useState<"save" | "reread" | null>(null);
+    const busy = running !== null;
     const [validation, setValidation] = useState(false);
     const [review, setReview] = useState(false);
     const [current, setCurrent] = useState<FormPdfDesign | null>(null);
@@ -88,7 +90,7 @@ function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
         return; const prepared = preparePdfDesign(draft, baseline.originalCulture); if (!prepared.design) {
         markInvalid();
         return;
-    } setValidation(true); const controller = new AbortController(); request.current = controller; setBusy(true); setError(null); dismissNotification(notificationRoot + ":save"); pendingNotices.current.delete("save"); try {
+    } setValidation(true); const controller = new AbortController(); request.current = controller; setRunning("save"); setError(null); dismissNotification(notificationRoot + ":save"); pendingNotices.current.delete("save"); try {
         const result = await savePdfDesign(definitionId, baseline.revision, prepared.design, controller.signal);
         if (!active.current || controller.signal.aborted)
             return;
@@ -114,10 +116,10 @@ function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
     }
     finally {
         if (active.current)
-            setBusy(false);
+            setRunning(null);
     } };
     const reread = async () => { if (busy)
-        return; const controller = new AbortController(); request.current = controller; setBusy(true); dismissNotification(notificationRoot + ":reread"); pendingNotices.current.delete("reread"); try {
+        return; const controller = new AbortController(); request.current = controller; setRunning("reread"); dismissNotification(notificationRoot + ":reread"); pendingNotices.current.delete("reread"); try {
         const value = await fetchPdfDesign(definitionId, controller.signal);
         if (active.current && !controller.signal.aborted)
             setCurrent(value);
@@ -134,7 +136,7 @@ function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
     }
     finally {
         if (active.current)
-            setBusy(false);
+            setRunning(null);
     } };
     if (query.isPending || !baseline || !draft)
         return <Page title={t("pdf.title")}>{query.error ? <EmptyState title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>}/> : <Spinner />}</Page>;
@@ -154,20 +156,19 @@ function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
         setDiscard(true);
     else
         void navigate(back); }}>{t("discard")}</Button>}>
-  {review ? <Surface title={t("pdf.conflict")} padded actions={<><Button variant="outline" disabled={busy} onClick={() => void reread()}>{t("pdf.reread")}</Button>{current ? <Button disabled={busy} onClick={() => { setBaseline(current); setDraft(current.design); setReview(false); setCurrent(null); setError(null); setValidation(false); setPreview(null); pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save"); }}>{t("pdf.useCurrent")}</Button> : null}</>}><p>{t("pdf.conflictHint")}</p></Surface> : null}
+  {review ? <Surface title={t("pdf.conflict")} padded actions={<><Button variant="outline" disabled={busy} pending={running === "reread"} onClick={() => void reread()}>{t(running === "reread" ? "rereading" : "pdf.reread")}</Button>{current ? <Button disabled={busy} onClick={() => { setBaseline(current); setDraft(current.design); setReview(false); setCurrent(null); setError(null); setValidation(false); setPreview(null); pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save"); }}>{t("pdf.useCurrent")}</Button> : null}</>}><p>{t("pdf.conflictHint")}</p></Surface> : null}
   <div ref={host} className="grid items-start gap-4 xl:grid-cols-[3fr_2fr]">
-   <Surface title={t("pdf.receipt")} padded actions={<DisabledReason reason={saveDisabledReason}><Button disabled={blocked || cooldown.isRunning || !dirty && baseline.revision > 0} onClick={() => void save()}>{t("pdf.save")}</Button></DisabledReason>}>
+   <Surface title={t("pdf.receipt")} padded actions={<DisabledReason reason={saveDisabledReason}><Button disabled={blocked || cooldown.isRunning || !dirty && baseline.revision > 0} pending={running === "save"} onClick={() => void save()}>{t(running === "save" ? "pdf.saving" : "pdf.save")}</Button></DisabledReason>}>
     <div className="space-y-5"><FormField label={t("pdf.name")} required={contentRequired(draft.name, culture, original)} hint={reference(draft.name)} error={textError("name")}><Input maxLength={160} placeholder={culture !== original ? t("missingText") : undefined} value={draft.name[culture] ?? ""} disabled={blocked} onChange={event => change({ ...draft, name: { ...draft.name, [culture]: event.target.value } })}/></FormField>
     <fieldset className="space-y-2"><legend className="mb-2 text-sm font-medium">{t("pdf.questions")}</legend>{[...options.questions.map(question => ({ id: question.fieldId, label: localizedValue(question.label, scope.culture, original) })), ...selectedUnknown.map(id => ({ id, label: t("pdf.retiredQuestion") }))].map(question => <CheckboxField key={question.id} label={question.label} checked={draft.questionIds.includes(question.id)} disabled={blocked} onCheckedChange={checked => change({ ...draft, questionIds: checked ? [...draft.questionIds, question.id] : draft.questionIds.filter(id => id !== question.id) })}/>)}</fieldset>
-    <CheckboxField label={t("pdf.includePhotos")} description={t("pdf.photosHint")} checked={draft.includePhotos} disabled={blocked} onCheckedChange={checked => change({ ...draft, includePhotos: checked })}/>
-    <CheckboxField label={t("pdf.includeApproval")} description={t("pdf.approvalHint")} checked={draft.includeApproval} disabled={blocked} onCheckedChange={checked => change({ ...draft, includeApproval: checked })}/>
-    <FormField label={t("pdf.footer")} hint={reference(draft.footer) ?? t("pdf.footerHint")} error={textError("footer")}><Textarea maxLength={1000} rows={3} disabled={blocked} placeholder={culture !== original && draft.footer?.[original]?.trim() ? t("missingText") : undefined} value={draft.footer?.[culture] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [culture]: event.target.value } })}/></FormField>
-    <p className="text-xs text-[var(--color-content-muted)]">{t("pdf.fixedHint")}</p>
+    <CheckboxField label={t("pdf.includePhotos")} help={t("pdf.photosHint")} checked={draft.includePhotos} disabled={blocked} onCheckedChange={checked => change({ ...draft, includePhotos: checked })}/>
+    <CheckboxField label={t("pdf.includeApproval")} checked={draft.includeApproval} disabled={blocked} onCheckedChange={checked => change({ ...draft, includeApproval: checked })}/>
+    <FormField label={t("pdf.footer")} hint={reference(draft.footer)} error={textError("footer")}><Textarea maxLength={1000} rows={3} disabled={blocked} placeholder={culture !== original && draft.footer?.[original]?.trim() ? t("missingText") : undefined} value={draft.footer?.[culture] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [culture]: event.target.value } })}/></FormField>
    </div></Surface>
    <Surface title={t("pdf.preview")} padded actions={<Button variant="outline" disabled={blocked} onClick={() => { if (prepared.design)
         setPreview(prepared.design);
     else
-        markInvalid(); }}>{t("pdf.preview")}</Button>}>{preview ? <FormPdfPreview operationId={notificationRoot + ":preview"} load={loadPreview} onForbidden={onDenied} requestedCulture={culture} example/> : <p className="text-sm text-[var(--color-content-muted)]">{t("pdf.previewHint")}</p>}</Surface>
+        markInvalid(); }}>{t("pdf.preview")}</Button>}>{preview ? <FormPdfPreview operationId={notificationRoot + ":preview"} load={loadPreview} onForbidden={onDenied} requestedCulture={culture}/> : <p className="text-sm text-[var(--color-content-muted)]">{t("pdf.previewEmpty")}</p>}</Surface>
   </div>
   <ConfirmDialog open={discard || guard.isBlocked} onOpenChange={open => { if (!open) {
         setDiscard(false);

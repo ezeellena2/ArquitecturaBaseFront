@@ -25,10 +25,12 @@ it("names a filter field and the person data written only in the other language"
   expect(within(row).getByRole("combobox", { name: "Dato de la persona" })).toHaveDisplayValue("Customer branch");
 });
 it("keeps inherited presentation absent until the author explicitly chooses their own", async () => { const changed = vi.fn(); renderWithProviders(<Harness changed={changed}/>); expect(screen.getByRole("radio", { name: /Como en el catálogo/ })).toBeChecked(); expect(changed).not.toHaveBeenCalled(); await userEvent.click(screen.getByRole("radio", { name: /Propio de esta pregunta/ })); expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog, presentation: { title: ["text"], description: ["detail"] } }); await userEvent.click(screen.getByRole("radio", { name: /Como en el catálogo/ })); expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog }); });
+// The parts are data; that they follow the catalog, and what «Propio de esta pregunta» means, are not notes (2026-10-31).
 it("names the catalog fields used by «Como en el catálogo»", () => {
   options.presentation = { title: ["text"], description: [ids.field, "data-field"] };
   renderWithProviders(<Harness changed={vi.fn()}/>);
-  expect(screen.getByRole("radio", { name: /Como en el catálogo/ })).toHaveAccessibleDescription("Texto · Sucursal · Precio. Cambia si cambia el catálogo.");
+  expect(screen.getByRole("radio", { name: /Como en el catálogo/ })).toHaveAccessibleDescription("Texto · Sucursal · Precio");
+  expect(screen.getByRole("radio", { name: /Propio de esta pregunta/ })).not.toHaveAccessibleDescription();
 });
 it("shows a fixed catalog value outside the first twenty options, also read-only", () => {
   options.page = Array.from({ length: 20 }, (_, index) => option("01990000-0000-7000-8000-0000000001" + String(index).padStart(2, "0"), "Zona " + (index + 1), index + 1));

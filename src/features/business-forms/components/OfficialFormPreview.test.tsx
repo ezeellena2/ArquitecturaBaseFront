@@ -77,3 +77,18 @@ it("gives the wait of a 429 as the reason of the disabled load button",async()=>
  for(const text of screen.getAllByText(wait))expect(text).not.toBeVisible();
  expect(fetchFormPreview).toHaveBeenCalledTimes(1);
 });
+
+// The title says what it is and «Abrir en otra pestaña» is in the footer: no description and no note (2026-10-31). Meta's
+// page takes a moment to draw: the region says it is loading until its frame loads.
+it("says the official view is loading until its frame loads, without notes",async()=>{
+ vi.mocked(fetchFormPreview).mockResolvedValue({url,expiresAtUtc:"2099-10-10T12:00:00Z"});
+ renderPreview();
+ const frame=await screen.findByTitle("Vista oficial del formulario en WhatsApp");
+ expect(screen.getByRole("dialog")).not.toHaveAccessibleDescription();
+ expect(screen.queryByText("La vista de WhatsApp corresponde a la versión publicada.")).not.toBeInTheDocument();
+ expect(screen.queryByText("Si no ves la vista, abrila en otra pestaña.")).not.toBeInTheDocument();
+ expect(screen.getByText("Cargando la vista de WhatsApp…").closest("[role=status]")).not.toBeNull();
+ fireEvent.load(frame);
+ await waitFor(()=>expect(screen.queryByText("Cargando la vista de WhatsApp…")).not.toBeInTheDocument());
+ expect(frame).toBeInTheDocument();
+});

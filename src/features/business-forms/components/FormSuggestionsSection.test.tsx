@@ -18,6 +18,9 @@ function setup(){server.use(http.get("/api/forms/definitions/:id/suggestions",()
 const props=()=>({definitionId:id,definitionRevision:1,scope,onDirtyChange:vi.fn()});
 async function add(){await userEvent.click(await screen.findByRole("button",{name:"Agregar sugerencia"}));await userEvent.selectOptions(screen.getByRole("combobox",{name:"Formulario a sugerir"}),destinationId);await userEvent.type(screen.getByRole("textbox",{name:"Cuándo sugerirlo"}),"Cuando pide factura");}
 beforeEach(()=>vi.clearAllMocks());
+// The band of a surface: its title, the (i) of its help and its actions.
+const bandOf=(title:string)=>screen.getByRole("heading",{name:title}).closest("section")!.firstElementChild as HTMLElement;
+const suggestionsHelp="Después de esta respuesta, el asistente puede ofrecer estos formularios a quien respondió. Se aplica al guardar: no hace falta volver a publicar en WhatsApp.";
 it("saves a monolingual suggestion independently with a record number mapping and stable identities",async()=>{setup();const writes=vi.fn();server.use(http.post("/api/forms/definitions/:id/suggestions",async({request})=>{const body=await request.json() as {suggestions:unknown[]};writes(body);return HttpResponse.json({...current(),id:version,sourceVersionId:version,revision:1,suggestions:body.suggestions.map(row=>({...row as object,destinationVersionId:version})),createdAtUtc:"2026-10-17T12:00:00Z"},{status:201});}));const p=props();renderWithProviders(<FormSuggestionsSection {...p}/>);await add();await userEvent.click(screen.getByRole("button",{name:"Agregar dato"}));await userEvent.selectOptions(screen.getByRole("combobox",{name:"Dato de origen 1"}),"RecordNumber");await userEvent.selectOptions(screen.getByRole("combobox",{name:"Pregunta de destino 1"}),targetId);await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));await waitFor(()=>expect(writes).toHaveBeenCalledOnce());expect(writes).toHaveBeenCalledWith({expectedRevision:0,suggestions:[{id:expect.any(String),destinationDefinitionId:destinationId,mode:"Assistant",when:"Cuando pide factura",isActive:true,conditions:[],mappings:[{source:{kind:"RecordNumber",fieldId:null},destinationFieldId:targetId}]}]});await waitFor(()=>expect(p.onDirtyChange).toHaveBeenLastCalledWith(false));expect(vi.mocked(notify).mock.calls.at(-1)?.[0]).toMatchObject({kind:"success"});});
 it("retains its own whole draft through a conflict and uses the reread revision only after an explicit choice",async()=>{setup();let revision=0;const writes:unknown[]=[];server.use(http.get("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({...current(),revision,id:revision?version:null})),http.post("/api/forms/definitions/:id/suggestions",async({request})=>{const body=await request.json() as {suggestions:unknown[]};writes.push(body);if(writes.length===1){revision=2;return HttpResponse.json({code:"Forms.Suggestion.RevisionConflict"},{status:409});}return HttpResponse.json({...current(),id:version,sourceVersionId:version,revision:3,suggestions:body.suggestions.map(row=>({...row as object,destinationVersionId:version})),createdAtUtc:"2026-10-17T12:00:00Z"},{status:201});}));renderWithProviders(<FormSuggestionsSection {...props()}/>);await add();await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));await userEvent.click(await screen.findByRole("button",{name:"Releer sugerencias"}));expect(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})).toHaveValue("Cuando pide factura");await userEvent.click(await screen.findByRole("button",{name:"Conservar mis cambios"}));expect(writes).toHaveLength(1);await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));await waitFor(()=>expect(writes).toHaveLength(2));expect(writes[1]).toEqual({...writes[0] as object,expectedRevision:2});});
 it("notifies one recoverable save failure without duplicating the cause or losing the draft",async()=>{setup();server.use(http.post("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({code:"Test.Save",detail:"Falló este guardado."},{status:500})));const view=renderWithProviders(<FormSuggestionsSection {...props()}/>);await add();await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));await waitFor(()=>expect(notify).toHaveBeenCalledOnce());const notice=vi.mocked(notify).mock.calls[0][0];expect(notice.kind).toBe("error");expect(screen.queryByText(notice.message)).not.toBeInTheDocument();expect(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})).toHaveValue("Cuando pide factura");expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toBeEnabled();view.unmount();expect(dismissNotification).toHaveBeenCalledWith(notice.id);});
@@ -40,20 +43,23 @@ it("keeps the suggestions header to Add and Save without draft state or revision
   server.use(http.get("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({...current(),id:version,sourceVersionId:version,revision:3,suggestions:[row],createdAtUtc:"2026-10-17T12:00:00Z"})));
   renderWithProviders(<FormSuggestionsSection {...props()}/>);
   const save = await screen.findByRole("button",{name:"Guardar sugerencias"});
-  const band = screen.getByRole("heading",{name:"Qué sugerir después"}).parentElement!;
-  expect(within(band).getAllByRole("button").map(button=>button.textContent)).toEqual(["Agregar sugerencia","Guardar sugerencias"]);
-  expect(band).toHaveTextContent(/^Qué sugerir despuésAgregar sugerenciaGuardar sugerencias$/);
+  // Besides the title, the band has only its (i), whose help is hidden until it is asked for, and the two actions.
+  const band = bandOf("Qué sugerir después");
+  expect(within(band).getAllByRole("button").map(button=>button.getAttribute("aria-label")??button.textContent)).toEqual(["Más información sobre Qué sugerir después","Agregar sugerencia","Guardar sugerencias"]);
+  expect(band.textContent!.replace(suggestionsHelp,"")).toBe("Qué sugerir despuésAgregar sugerenciaGuardar sugerencias");
   expect(save).toBeDisabled();
   expect(save).not.toHaveAccessibleDescription();
   await userEvent.click(screen.getByRole("button",{name:"Editar sugerencia 1"}));
   await userEvent.type(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})," propio");
-  expect(band).toHaveTextContent(/^Qué sugerir despuésAgregar sugerenciaGuardar sugerencias$/);
+  expect(band.textContent!.replace(suggestionsHelp,"")).toBe("Qué sugerir despuésAgregar sugerenciaGuardar sugerencias");
   expect(save).toBeEnabled();
   expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
   expect(screen.queryByText(/revisión 3/i)).not.toBeInTheDocument();
-  const group = screen.getByRole("heading",{name:"Datos que pasan"});
-  expect(group.nextElementSibling).toHaveTextContent("Solo se unen preguntas del mismo tipo. El resto lo completa la persona; siempre revisa los datos antes de confirmar.");
-  expect(group.parentElement!.lastElementChild).toBe(screen.getByRole("button",{name:"Agregar dato"}));
+  // How the data are joined is the (i) next to «Datos que pasan», not a note under the title (2026-10-31).
+  const mappingHelp = "Solo se unen preguntas del mismo tipo. El resto lo completa la persona; siempre revisa los datos antes de confirmar.";
+  expect(screen.queryByText(mappingHelp,{ignore:"script, style, [hidden]"})).not.toBeInTheDocument();
+  expect(screen.getByRole("button",{name:"Más información sobre Datos que pasan"})).toHaveAccessibleDescription(mappingHelp);
+  expect(screen.getByRole("button",{name:"Agregar dato"})).toBeInTheDocument();
 });
 it("marks a new suggestion without destination only after trying to save", async () => {
   setup();
@@ -81,7 +87,8 @@ it("marks a new suggestion without destination only after trying to save", async
   expect(target).toHaveAccessibleDescription("Elegí un formulario publicado disponible.");
   await waitFor(()=>expect(target).toHaveFocus());
   const when = region.getByRole("textbox",{name:"Cuándo sugerirlo"});
-  expect(when).toHaveAccessibleDescription("Completá este dato.");
+  // Its help is the (i) next to the label, read before the error.
+  expect(when).toHaveAccessibleDescription("Es lo que lee el asistente para decidirlo. Escribilo como se lo explicarías a un compañero. Completá este dato.");
   await userEvent.selectOptions(target,destinationId);
   expect(target).not.toHaveAttribute("aria-invalid");
   await userEvent.type(when,"Cuando pide factura");
@@ -122,8 +129,8 @@ it("puts a conflict in its own titled surface with reread and the choices at the
   expect(within(review).getByRole("alert")).toHaveTextContent("Las sugerencias cambiaron. Releelas y elegí qué conservar.");
   await userEvent.click(within(band).getByRole("button",{name:"Releer sugerencias"}));
   await waitFor(()=>expect(within(band).getAllByRole("button").map(button=>button.textContent)).toEqual(["Releer sugerencias","Usar la revisión actual","Conservar mis cambios"]));
-  const header = screen.getByRole("heading",{name:"Qué sugerir después"}).parentElement!;
-  expect(within(header).getAllByRole("button").map(button=>button.textContent)).toEqual(["Agregar sugerencia","Guardar sugerencias"]);
+  const header = bandOf("Qué sugerir después");
+  expect(within(header).getAllByRole("button").map(button=>button.getAttribute("aria-label")??button.textContent)).toEqual(["Más información sobre Qué sugerir después","Agregar sugerencia","Guardar sugerencias"]);
   await userEvent.click(within(band).getByRole("button",{name:"Conservar mis cambios"}));
   expect(screen.queryByRole("region",{name:"Revisión de las sugerencias"})).not.toBeInTheDocument();
   expect(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})).toHaveValue("Cuando pide factura");
@@ -222,4 +229,56 @@ it("explains the limits of suggestions and of data in a suggestion", async () =>
   const addMapping = screen.getByRole("button",{name:"Agregar dato"});
   expect(addMapping).toBeDisabled();
   expect(addMapping).toHaveAccessibleDescription("Se alcanzó el límite.");
+});
+
+// Each control has its own sign (2026-10-31): rereading and opening a revision say so on themselves, and Save says it saves
+// only while it saves.
+it("rereads with its own sign without making Save say it saves",async()=>{
+  setup();let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});let reads=0;
+  server.use(http.get("/api/forms/definitions/:id/suggestions",async()=>{reads++;if(reads>1)await gate;return HttpResponse.json({...current(),revision:reads>1?2:0,id:reads>1?version:null});}),
+    http.post("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({code:"Forms.Suggestion.RevisionConflict"},{status:409})));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  await add();
+  await userEvent.click(screen.getByRole("button",{name:"Guardar sugerencias"}));
+  await userEvent.click(await screen.findByRole("button",{name:"Releer sugerencias"}));
+  const rereading=await screen.findByRole("button",{name:"Releyendo…"});
+  expect(rereading).toHaveAttribute("aria-busy","true");
+  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).not.toHaveAttribute("aria-busy");
+  expect(screen.queryByRole("button",{name:"Guardando sugerencias…"})).not.toBeInTheDocument();
+  await act(async()=>release());
+  expect(await screen.findByRole("button",{name:"Usar la revisión actual"})).toBeInTheDocument();
+});
+
+it("opens a revision with its own sign and without a description",async()=>{
+  setup();let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+  server.use(http.get("/api/forms/definitions/:id/suggestions/revisions",()=>HttpResponse.json({items:[{id:version,revision:1,createdAtUtc:"2026-10-17T12:00:00Z",author:null,changes:{addedSuggestions:1,updatedSuggestions:0,removedSuggestions:0,orderChanged:false}}],page:1,pageSize:10,totalCount:1,totalPages:1,hasPrevious:false,hasNext:false})),
+    http.get("/api/forms/definitions/:id/suggestions/revisions/:revision",async()=>{await gate;return HttpResponse.json({...current(),id:version,sourceVersionId:version,revision:1,createdAtUtc:"2026-10-17T12:00:00Z"});}));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  const trigger=await screen.findByRole("button",{name:"Revisión 1"});
+  expect(screen.queryByText("Cada guardado conserva una copia. Ver una revisión no cambia el borrador.")).not.toBeInTheDocument();
+  await userEvent.click(trigger);
+  await waitFor(()=>expect(trigger).toHaveAttribute("aria-busy","true"));
+  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).not.toHaveAttribute("aria-busy");
+  await act(async()=>release());
+  const dialog=await screen.findByRole("dialog",{name:"Revisión 1"});
+  expect(dialog).not.toHaveAccessibleDescription();
+});
+
+// No notes in a suggestion (2026-10-31): what it does is the (i) of the title, how it is offered and when to suggest it are
+// (i)s, the conditions say «la sugerencia», and an empty history says only that.
+it("explains a suggestion in its (i) instead of notes",async()=>{
+  setup();
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  await userEvent.click(await screen.findByRole("button",{name:"Agregar sugerencia"}));
+  const hidden={ignore:"script, style, [hidden]"};
+  expect(screen.queryByText(suggestionsHelp,hidden)).not.toBeInTheDocument();
+  expect(screen.getByRole("button",{name:"Más información sobre Qué sugerir después"})).toHaveAccessibleDescription(suggestionsHelp);
+  expect(screen.queryByText("Solo aparecen formularios publicados.")).not.toBeInTheDocument();
+  expect(screen.getByRole("combobox",{name:"Formulario a sugerir"})).not.toHaveAccessibleDescription();
+  expect(screen.getByRole("button",{name:"Más información sobre Cómo se ofrece"})).toHaveAccessibleDescription("La IA decide: lo ofrece si encaja con el cuándo o si la persona lo pide. Preguntar siempre: lo ofrece después de cada respuesta, sin IA. Se puede limitar con «Si (opcional)».");
+  for(const name of [/La IA decide/,/Preguntar siempre/])expect(screen.getByRole("radio",{name})).not.toHaveAccessibleDescription();
+  expect(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})).toHaveAccessibleDescription("Es lo que lee el asistente para decidirlo. Escribilo como se lo explicarías a un compañero.");
+  expect(screen.getByRole("button",{name:"Más información sobre Si (opcional)"})).toHaveAccessibleDescription("Sin condición, la sugerencia corre siempre. Las condiciones usan las preguntas del formulario.");
+  expect(screen.queryByText(/la regla corre siempre/)).not.toBeInTheDocument();
+  expect(await screen.findByText("Todavía no hay revisiones.")).toBeInTheDocument();
 });

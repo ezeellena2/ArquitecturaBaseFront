@@ -44,3 +44,19 @@ it.each(["photo", "document"] as const)("keeps the %s settings and derives requi
   fireEvent.change(screen.getByRole("spinbutton", { name: "Mínimo" }), { target: { value: "0" } });
   expect(change).toHaveBeenLastCalledWith({ ...updated, required: false, files: { ...updated.files, minFiles: 0 } });
 });
+
+// The source cards say only where the photo comes from, and the meaning of the minimum (with the document types) is the (i)
+// next to «Cuántas fotos» or «Cuántos documentos», not a note under the controls (2026-10-31).
+it.each([
+  ["photo", "Cuántas fotos", "Con mínimo 1, la pregunta es obligatoria. Con 0, es opcional."],
+  ["document", "Cuántos documentos", "PDF, Excel, Word o imágenes JPEG y PNG. Sin CSV. Con mínimo 1, la pregunta es obligatoria. Con 0, es opcional."],
+] as const)("explains the %s counts in the (i) of their heading", async (type, heading, help) => {
+  const question = newQuestion(type, "es", "test");
+  if (question.type !== "photo" && question.type !== "document") throw new Error("Expected a file question");
+  renderWithProviders(<FileQuestionSettings question={question} readOnly={false} onChange={vi.fn()}/>);
+  expect(screen.getByText(heading)).toBeInTheDocument();
+  for (const note of ["Con mínimo 1, la pregunta es obligatoria. Con 0, es opcional.", "PDF, Excel, Word o imágenes JPEG y PNG. Sin CSV.", "Puede sacarla en el momento o elegir una que ya tiene.", "La saca en el momento: sirve como evidencia de la visita."])
+    expect(screen.queryByText(note, { ignore: "script, style, [hidden]" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Más información sobre " + heading })).toHaveAccessibleDescription(help);
+  if (type === "photo") for (const name of [/Cámara o galería/, /Solo cámara/]) expect(screen.getByRole("radio", { name })).not.toHaveAccessibleDescription();
+});

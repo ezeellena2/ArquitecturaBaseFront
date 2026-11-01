@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, expect, it, vi } from "vitest";
@@ -28,4 +28,17 @@ it("explains the server wait as help of Delete",async()=>{
  await userEvent.hover(remove);
  expect(await screen.findByRole("tooltip")).toHaveTextContent(wait);
  expect(deletes).toBe(1);
+});
+
+// Deleting shows on its button that it works, without dimming, until the answer arrives (2026-10-31).
+it("shows on Delete that it deletes while the request works",async()=>{
+ let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});const onDeleted=vi.fn();
+ server.use(http.delete("/api/forms/definitions/:id",async()=>{await gate;return new HttpResponse(null,{status:204});}));
+ renderWithProviders(<FormDeletionDialog id={fixtureFormId} name="Registrar visita" prefix="VIS" hasPublishedVersion={false} revision={1} scope={{actorId:"actor",culture:"es",permissions:["formtemplates.read","formtemplates.manage"]}} onDeleted={onDeleted} onClose={vi.fn()}/>);
+ const dialog=await screen.findByRole("dialog");
+ await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+ const working=await within(dialog).findByRole("button",{name:"Eliminando…"});
+ expect(working).toHaveAttribute("aria-busy","true");expect(working).toBeDisabled();
+ await act(async()=>release());
+ await waitFor(()=>expect(onDeleted).toHaveBeenCalledOnce());
 });

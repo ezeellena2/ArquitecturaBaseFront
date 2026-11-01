@@ -99,5 +99,6 @@ export function useRecipientMaximum(scope: FormReadScope, source: DraftQuestionS
   // Rejected filters (400) or a lost permission are not a failure to retry: the filters and the permissions say what happens.
   const failed = isRetryable(current?.error);
   const canRetry = failed && !cooldown.isRunning;
-  return { result: current?.result ?? null, failed, canRetry, waitSeconds: failed && cooldown.isRunning ? cooldown.seconds : 0, retry: () => { if (canRetry) setAttempt(value => value + 1); } };
+  // `busy` covers the 300 ms wait and the read of these filters: the line says it is calculating instead of going blank.
+  return { result: current?.result ?? null, busy: stamp !== null && !current, failed, canRetry, waitSeconds: failed && cooldown.isRunning ? cooldown.seconds : 0, retry: () => { if (canRetry) setAttempt(value => value + 1); } };
 }

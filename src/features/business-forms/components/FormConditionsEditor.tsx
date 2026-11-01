@@ -4,19 +4,23 @@ import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { MultiSelect } from "@/shared/ui/MultiSelect";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import type { ResponseColumn, ResponseCondition } from "../responses";
 
-export function FormConditionsEditor({ conditions, columns, blocked, error, onChange, heading, fieldPath, missingQuestionLabel }: {
+// `help` says what the conditions do for their owner (a rule or a suggestion): in the (i) next to the heading, never as a
+// note above «Agregar condición».
+export function FormConditionsEditor({ conditions, columns, blocked, error, onChange, heading, help, fieldPath, missingQuestionLabel }: {
   conditions: readonly ResponseCondition[];
   columns: readonly ResponseColumn[];
   blocked: boolean;
   error?: string;
   onChange: (conditions: readonly ResponseCondition[]) => void;
   heading?: string;
+  help?: string;
   fieldPath?: string;
   missingQuestionLabel?: string;
 }) {
@@ -30,7 +34,7 @@ export function FormConditionsEditor({ conditions, columns, blocked, error, onCh
     pendingFocus.current = null;
   }, [conditions]);
   return <div ref={host} className="space-y-3">
-    {heading ? <h3 className="text-sm font-medium">{heading}</h3> : null}
+    {heading ? <div className="flex items-center gap-1"><h3 className="text-sm font-medium">{heading}</h3>{help ? <span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: heading })} text={help} /></span> : null}</div> : null}
     {conditions.map((condition, index) => {
       const field = columns.find(column => column.fieldId === condition.fieldId);
       const presence = ["answered", "unanswered", "notAsked"].includes(condition.operator);
@@ -57,7 +61,6 @@ export function FormConditionsEditor({ conditions, columns, blocked, error, onCh
       </div>;
     })}
     {error && (!fieldPath || !conditions.length) ? <p id={errorId} role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}
-    <p className="text-xs text-[var(--color-content-muted)]">{t("rules.always")}</p>
     <DisabledReason reason={blocked ? null : !columns.length ? t("rules.noQuestions") : conditions.length >= 10 ? t("rules.errors.tooMany") : null}><Button data-suggestion-field={!conditions.length ? fieldPath : undefined} aria-invalid={!!fieldPath && !!error && !conditions.length} aria-describedby={fieldPath && error && !conditions.length ? errorId : undefined} data-add-condition variant="outline" disabled={blocked || !columns.length || conditions.length >= 10} onClick={() => onChange([...conditions, { fieldId: columns[0].fieldId, operator: "answered", values: [] }])}>{t("rules.addCondition")}</Button></DisabledReason>
   </div>;
 }

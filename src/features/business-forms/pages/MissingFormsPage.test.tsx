@@ -100,14 +100,15 @@ it("recovers a throttled refresh explicitly while retaining the previously loade
  renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
  await userEvent.type(screen.getByRole("searchbox",{name:"Buscar por tema"}),"materiales");
  await act(async()=>{await queryClient.invalidateQueries({queryKey:["form-missing-requests"]});});
- const retry=await screen.findByRole("button",{name:"Reintentar"});expect(retry).toBeDisabled();expect(screen.getByText(topic.name)).toBeInTheDocument();
+ // The wait is the tooltip of Retry once it is off, so the button is read again each time.
+ const retry=()=>screen.getByRole("button",{name:"Reintentar"});await waitFor(()=>expect(retry()).toBeDisabled());expect(screen.getByText(topic.name)).toBeInTheDocument();
  expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Descartados (0)"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Último pedido"})).toBeDisabled();
  expect(screen.getByRole("combobox",{name:"Filas por página"})).toBeDisabled();
  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,350));});expect(calls).toBe(2);
- await act(async()=>{now+=3000;document.dispatchEvent(new Event("visibilitychange"));});await waitFor(()=>expect(retry).toBeEnabled());expect(calls).toBe(2);clock.mockRestore();
- await userEvent.click(retry);await waitFor(()=>expect(calls).toBe(3));
+ await act(async()=>{now+=3000;document.dispatchEvent(new Event("visibilitychange"));});await waitFor(()=>expect(retry()).toBeEnabled());expect(calls).toBe(2);clock.mockRestore();
+ await userEvent.click(retry());await waitFor(()=>expect(calls).toBe(3));
 });
 
 it.each([
@@ -125,4 +126,57 @@ it.each([
  server.use(http.get("/api/forms/missing-requests",()=>HttpResponse.json(page(items,{totalCount:topics,totalRequests:requests,stateCounts:{pending:topics,discarded:0}}))));
  renderRouteWithProviders("/formularios/faltantes");
  expect(await screen.findByText(expected)).toBeInTheDocument();
+});
+
+// What the page is goes in the (i) of its title, not in a paragraph under it (2026-10-31).
+it("explains the page in the (i) of its title",async()=>{
+ setup();renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
+ const description="Lo que alguien quiso registrar por WhatsApp y no tenía un formulario que pudiera completar. El asistente los agrupa por tema; no se guardan nombres ni mensajes.";
+ expect(screen.queryByText(description,{ignore:"script, style, [hidden]"})).not.toBeInTheDocument();
+ expect(screen.getByRole("button",{name:"Más información sobre Formularios que faltan"})).toHaveAccessibleDescription(description);
+});
+
+// The list keeps its rows while it reads again (2026-10-31): the table runs its line and dims its rows until they arrive.
+it("shows that the list reads again while the state changes",async()=>{
+ setup();let reads=0;let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+ server.use(http.get("/api/forms/missing-requests",async()=>{reads++;if(reads>1)await gate;return HttpResponse.json(page());}));
+ renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
+ const container=()=>screen.getByRole("table").closest('[data-slot="table-container"]');
+ expect(container()).not.toHaveAttribute("aria-busy");
+ await userEvent.click(screen.getByRole("button",{name:/^Descartados/}));
+ await waitFor(()=>expect(reads).toBe(2));
+ expect(container()).toHaveAttribute("aria-busy","true");
+ await act(async()=>release());
+ await waitFor(()=>expect(container()).not.toHaveAttribute("aria-busy"));
+});
+
+// Discarding waits in its confirmation, with «Descartando…», until the topic left the list: the row never stays behind it.
+it("keeps the discard confirmation open with «Descartando…» until the list is read again",async()=>{
+ setup();let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});let discarded=false;
+ server.use(http.get("/api/forms/missing-requests",()=>HttpResponse.json(discarded?page([],{stateCounts:{pending:0,discarded:1}}):page())),
+  http.post("/api/forms/missing-requests/:id/discard",async()=>{await gate;discarded=true;return HttpResponse.json({...topic,revision:3,state:"Discarded",discardedBy:{userId:id,displayName:"Ana"},discardedAtUtc:"2026-10-17T13:00:00Z"});}));
+ renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
+ await userEvent.click(screen.getByRole("button",{name:"Descartar Reclamos de clientes"}));
+ const dialog=await screen.findByRole("dialog",{name:"Descartar pedido"});
+ await userEvent.click(within(dialog).getByRole("button",{name:"Descartar"}));
+ const working=await within(dialog).findByRole("button",{name:"Descartando…"});
+ expect(working).toHaveAttribute("aria-busy","true");
+ expect(within(dialog).getByRole("button",{name:"Cancelar"})).toBeDisabled();
+ await act(async()=>release());
+ await waitFor(()=>expect(screen.queryByRole("dialog",{name:"Descartar pedido"})).not.toBeInTheDocument());
+ expect(screen.queryByText(topic.name)).not.toBeInTheDocument();
+});
+
+// The wait of a 429 is the reason of the controls it turns off, not a text above the table (2026-10-31).
+it("gives the wait of a 429 as the reason of the disabled controls",async()=>{
+ setup();let calls=0;
+ server.use(http.get("/api/forms/missing-requests",()=>{calls++;return calls===2?HttpResponse.json({detail:"Esperá para consultar.",retryAfter:30},{status:429}):HttpResponse.json(page());}));
+ renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
+ await act(async()=>{await queryClient.invalidateQueries({queryKey:["form-missing-requests"]});});
+ const retry=await screen.findByRole("button",{name:"Reintentar"});
+ await waitFor(()=>expect(retry).toHaveAccessibleDescription(/^Esperá \d+ segundos para volver a intentar\.$/));
+ expect(screen.getAllByText(/^Esperá \d+ segundos para volver a intentar\.$/).every(node=>node.closest("[hidden]"))).toBe(true);
+ expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
+ await userEvent.hover(screen.getByRole("table"));
+ expect(await screen.findByRole("tooltip")).toHaveTextContent(/^Esperá \d+ segundos para volver a intentar\.$/);
 });

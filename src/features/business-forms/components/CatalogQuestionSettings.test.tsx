@@ -38,7 +38,7 @@ const ownCatalogId = "01990000-0000-7000-8000-000000000098";
 const ownOption = (index: number) => ({ id: "01990000-0000-7000-8000-0000000009" + String(index).padStart(2, "0"), code: "C" + index, text: { es: "Opción " + index, en: null }, detail: {}, value: null, position: index, isActive: true, fields: {}, fieldTexts: {} });
 const ownExamples = ["C1 · Distribuidora del Litoral Norte", "C2 · Ferretería Industrial del Centro", "C3 · Repuestos y Servicios del Oeste"].map((title, index) => ({ itemId: ownOption(index + 1).id, title }));
 const ownPresentation = { title: ["code", "text"], description: [] };
-function renderOwnPresentation(answer: (call: number) => Response) {
+function renderOwnPresentation(answer: (call: number) => Response | Promise<Response>) {
   const bodies: unknown[] = [];
   server.use(
     http.get("/api/forms/catalogs", () => HttpResponse.json({ filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } }, ...page([{ id: ownCatalogId, name: "Proveedores", description: null, origin: "Manual", valueType: "Text", optionsCount: 60, usageCount: 0, state: "Active", stateReason: null, canEdit: true }]) })),
@@ -240,7 +240,7 @@ it.each([
 const maximumCatalog = "01990000-0000-7000-8000-0000000000a1", zones = "01990000-0000-7000-8000-0000000000a2", zone = "01990000-0000-7000-8000-0000000000a3", category = "01990000-0000-7000-8000-0000000000a4", attribute = "01990000-0000-7000-8000-0000000000a5";
 const filterField = (id: string, key: string, es: string, type: "catalog" | "text", position: number) => ({ id, key, name: { es, en: es }, type, sourceCatalogId: type === "catalog" ? zones : null, required: false, unique: false, min: null, max: null, maxLength: type === "text" ? 80 : null, role: "filter", position, isActive: true, valuesCount: 3, usedBy: [] });
 type MaximumBody = { source: { match: { personAttributeId?: string }[] } };
-function serveMaximum(answer: (body: MaximumBody, call: number) => Response) {
+function serveMaximum(answer: (body: MaximumBody, call: number) => Response | Promise<Response>) {
   const bodies: MaximumBody[] = [];
   server.use(
     http.get("/api/forms/catalogs", () => HttpResponse.json({ filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } }, ...page([{ id: maximumCatalog, name: "Proveedores", description: null, origin: "Manual", valueType: "Text", optionsCount: 200, usageCount: 0, state: "Active", stateReason: null, canEdit: true }]) })),
@@ -259,9 +259,9 @@ it("explains why each filter addition is disabled", async () => {
   const question = (match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
   const view = renderWithProviders(question([{ fieldId: zone, value: null }]));
   const band = async () => within(await screen.findByRole("region", { name: "Qué opciones ve cada persona" })).getByRole("heading", { name: "Qué opciones ve cada persona" }).parentElement!;
-  const person = within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" });
-  await waitFor(() => expect(person).toHaveAccessibleDescription("Ningún dato de las personas usa el catálogo de estos campos."));
-  expect(person).toBeDisabled();
+  // The reason is known once the person data arrive: the button gets its tooltip then, so it is read again.
+  await waitFor(async () => expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toHaveAccessibleDescription("Ningún dato de las personas usa el catálogo de estos campos."));
+  expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toBeDisabled();
   const fixed = within(await band()).getByRole("button", { name: "Agregar filtro fijo" });
   expect(fixed).toBeEnabled();
   expect(fixed).not.toHaveAccessibleDescription();
@@ -310,6 +310,83 @@ it("warns instead of confirming the limit when the filters leave no option for a
   view.rerender(maximumQuestion("multiChoice", [{ fieldId: zone, personAttributeId: attribute }]));
   await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Con estos filtros nadie ve ninguna opción."));
   expect(screen.queryByText(/Como mucho/)).not.toBeInTheDocument();
+});
+
+// Every read that takes time says so in its place (decision of 2026-10-31): the maximum, the people to try with, a retry and
+// the length check of an own presentation no longer leave their line empty while they wait.
+it("says the maximum per person is being calculated while it is read", async () => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  serveMaximum(async () => { await gate; return HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }); });
+  renderWithProviders(maximumQuestion("multiChoice", [{ fieldId: zone, personAttributeId: attribute }]));
+  const calculating = await screen.findByText("Calculando cuántas opciones ve cada persona…");
+  expect(calculating.closest("[role=status]")).not.toBeNull();
+  await act(async () => { release(); });
+  expect(await screen.findByText("Como mucho 18 por persona (Zona Sur, la más grande): entra en una pregunta de varias (20).")).toBeInTheDocument();
+  expect(screen.queryByText("Calculando cuántas opciones ve cada persona…")).not.toBeInTheDocument();
+});
+
+it("says it is searching while the people to try with load again after Retry", async () => {
+  const requests = serveRecipientPreview();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/recipient-samples", async () => { requests.samples++; if (requests.samples === 1) return HttpResponse.json({ title: "Error", status: 500 }, { status: 500 }); await gate; return HttpResponse.json(page([{ id: juan, name: "Juan" }])); }));
+  renderWithProviders(settings(manualId));
+  const failed = await screen.findByRole("alert");
+  await userEvent.click(within(failed).getByRole("button", { name: "Reintentar" }));
+  expect(await screen.findByText("Buscando…")).toBeInTheDocument();
+  expect(screen.getByText("Buscando…").closest("[role=status]")).not.toBeNull();
+  await act(async () => { release(); });
+  await waitFor(() => expect(screen.queryByText("Buscando…")).not.toBeInTheDocument());
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+it("says it is searching in the open list while people load, and that there are none", async () => {
+  const requests = serveRecipientPreview();
+  const gates: (() => void)[] = [];
+  server.use(http.get("/api/forms/recipient-samples", async ({ request }) => {
+    requests.samples++;
+    const search = new URL(request.url).searchParams.get("search") ?? "";
+    if (search) await new Promise<void>(resolve => gates.push(resolve));
+    return HttpResponse.json(page(search === "zzz" ? [] : [{ id: juan, name: "Juan" }]));
+  }));
+  renderWithProviders(settings(manualId));
+  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  await waitFor(() => expect(input).toBeEnabled());
+  await userEvent.type(input, "zzz");
+  const list = await screen.findByRole("listbox", { name: "Como si lo recibiera" });
+  await waitFor(() => expect(list).toHaveTextContent("Buscando…"));
+  await waitFor(() => expect(gates).toHaveLength(1));
+  await act(async () => { gates[0]!(); });
+  await waitFor(() => expect(screen.getByRole("listbox", { name: "Como si lo recibiera" })).toHaveTextContent("No hay personas para mostrar."));
+});
+
+it("says the option lengths of an own presentation are being checked", async () => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  renderOwnPresentation(async () => { await gate; return longTitles(); });
+  const checking = await screen.findByText("Revisando el largo de las opciones…");
+  expect(checking.closest("[role=status]")).not.toBeNull();
+  await act(async () => { release(); });
+  expect(await screen.findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
+  expect(screen.queryByText("Revisando el largo de las opciones…")).not.toBeInTheDocument();
+});
+
+it("gives no reason that is not true yet while the person data load", async () => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  server.use(http.get("/api/forms/person-attributes", async () => { await gate; return HttpResponse.json({ items: [] }); }));
+  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }] }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
+  const section = await screen.findByRole("region", { name: "Qué opciones ve cada persona" });
+  const person = within(section).getByRole("button", { name: "Agregar filtro según quien lo recibe" });
+  expect(person).toBeDisabled();
+  expect(person).not.toHaveAccessibleDescription();
+  // The saved person filter does not say its data is unavailable before the data arrive.
+  expect(within(section).getByRole("combobox", { name: "Dato de la persona" })).toHaveDisplayValue("…");
+  await act(async () => { release(); });
+  await waitFor(() => expect(within(section).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toHaveAccessibleDescription("Ningún dato de las personas usa el catálogo de estos campos."));
+  expect(within(section).getByRole("combobox", { name: "Dato de la persona" })).toHaveDisplayValue("Campo no disponible");
 });
 
 it("offers Retry when the maximum per person cannot be read", async () => {

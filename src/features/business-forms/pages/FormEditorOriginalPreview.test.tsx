@@ -24,7 +24,7 @@ it("keeps editing a translation while emptying a text turns the preview to the E
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const name = await screen.findByRole("textbox", { name: "Nombre" });
   const preview = screen.getByRole("region", { name: "Vista previa" });
-  expect(within(preview).getByText("Vista previa en español.")).toBeInTheDocument();
+  expect(within(preview).getByText("Registrar visita")).toBeInTheDocument();
   await userEvent.clear(name);
   expect(name).toBeVisible();
   expect(name).toHaveFocus();
