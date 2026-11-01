@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
-import { ActionTooltip } from "@/shared/ui/ActionTooltip";
-import { Button } from "@/shared/ui/button";
-import { InfoIcon } from "@/shared/ui/icons";
+import { InfoTip } from "@/shared/ui/InfoTip";
 
 // A row of the catalog modals («Campos de…» and the options): the label on the left from 640 px, on top below.
 export function CatalogRow({ label, children }: { label: ReactNode; children: ReactNode }) {
@@ -17,7 +15,7 @@ export function CatalogRowMessage({ id, error, polite, children }: { id?: string
   return <p id={id} role={error ? polite ? "status" : "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{children}</p>;
 }
 
-// The (i) next to a label: the explanation goes in its tooltip, not as a text under the control.
+// The (i) next to a label: the common one, with the explanation in its tooltip, not as a text under the control.
 export function CatalogRowHelp({ label, text }: { label: string; text: string }) {
-  return <ActionTooltip label={text}><Button type="button" variant="ghost" size="icon-xs" aria-label={label}><InfoIcon className="size-3.5" /></Button></ActionTooltip>;
+  return <InfoTip label={label} text={text} />;
 }
