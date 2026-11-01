@@ -12,6 +12,7 @@ regeneración o controles sin capacidad productiva para imitar una demo.
 No conoce sesión, contratos HTTP, proveedor ni features. La feature aporta textos, estado confirmado,
 fuentes, acciones y borrador. No incorporar HTML, Markdown arbitrario, imágenes ni tools ejecutables.
 Enter agrega línea; Ctrl/Meta+Enter envían y respetan IME. Scroll no roba la posición de lectura.
+Mientras la pregunta viaja (`sending`), el aro de `IconButton pending` reemplaza la flecha; «Enviando…» lo aporta la feature en `sendLabel`.
 No habilitar edición, branching, regeneración ni cola por añadir controles genéricos.
 
 Fuentes: [arquitectura](../../../../docs/architecture.md), [diseño](../../../../docs/design/inicio-asistente-propuesta.md).

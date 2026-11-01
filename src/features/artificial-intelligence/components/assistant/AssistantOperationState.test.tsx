@@ -61,6 +61,19 @@ describe("AssistantOperationState", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/^states\./)).not.toBeInTheDocument();
   });
+  // A request on its way shows it on the button that sent it: the spinner and the gerund, without a second click.
+  it("shows «Cancelando…» with the spinner while the cancellation of the turn is on its way", () => {
+    renderWithProviders(<AssistantOperationState turn={{ ...turn, state: "running", stage: "consulting" }} busy cancelling onCancel={vi.fn()} onRefresh={vi.fn()} onRepeat={vi.fn()} />);
+    const cancelling = screen.getByRole("button", { name: "Cancelando…" });
+    expect(cancelling).toHaveAttribute("aria-busy", "true");
+    expect(cancelling).toBeDisabled();
+  });
+  it("shows «Consultando…» with the spinner while an uncertain turn is read again", () => {
+    renderWithProviders(<AssistantOperationState turn={{ ...turn, state: "uncertain", stage: "finished" }} busy={false} refreshing onCancel={vi.fn()} onRefresh={vi.fn()} onRepeat={vi.fn()} />);
+    const checking = screen.getByRole("button", { name: "Consultando…" });
+    expect(checking).toHaveAttribute("aria-busy", "true");
+    expect(checking).toBeDisabled();
+  });
   // Each state of the contract, and each stage of an active turn, has its text in both languages: a state added to the union
   // or a key removed from both files would show the raw «states.xxx» again, and the parity test does not see it.
   it.each([["es", es], ["en", en]] as const)("has the text of every state and every active stage in %s", (_, texts) => {

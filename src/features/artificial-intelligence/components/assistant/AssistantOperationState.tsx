@@ -12,12 +12,18 @@ const repeatable: readonly AssistantState[] = [
 export function AssistantOperationState({
   turn,
   busy,
+  cancelling = false,
+  refreshing = false,
   onCancel,
   onRefresh,
   onRepeat,
 }: {
   turn: AssistantTurn;
   busy: boolean;
+  /// The request to cancel this turn is on its way: «Cancelar consulta» shows the spinner and «Cancelando…».
+  cancelling?: boolean;
+  /// The status of this turn is being read again: «Consultar estado» shows the spinner and «Consultando…».
+  refreshing?: boolean;
   onCancel: () => void;
   onRefresh: () => void;
   onRepeat: () => void;
@@ -43,9 +49,10 @@ export function AssistantOperationState({
           variant="outline"
           type="button"
           disabled={busy || !!turn.cancelRequestedAtUtc}
+          pending={cancelling}
           onClick={onCancel}
         >
-          {t(turn.cancelRequestedAtUtc ? "cancelRequested" : "cancel")}
+          {t(cancelling ? "canceling" : turn.cancelRequestedAtUtc ? "cancelRequested" : "cancel")}
         </Button>
       ) : turn.state === "uncertain" ? (
         <Button
@@ -53,9 +60,10 @@ export function AssistantOperationState({
           variant="outline"
           type="button"
           disabled={busy}
+          pending={refreshing}
           onClick={onRefresh}
         >
-          {t("checkStatus")}
+          {t(refreshing ? "checking" : "checkStatus")}
         </Button>
       ) : null}
       {repeatable.includes(turn.state) && turn.question ? (

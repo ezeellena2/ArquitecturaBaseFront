@@ -67,7 +67,8 @@ describe("BusinessPlaceSearch", () => {
     expect(calls).toBe(1);
     await userEvent.click(screen.getByRole("button", { name: "Buscar otra vez" }));
     await waitFor(() => expect(calls).toBe(2));
-    await screen.findByText("No encontramos lugares. Probá agregando la ciudad.");
+    // La línea dice sólo el resultado, sin una instrucción después.
+    expect(await screen.findByRole("status")).toHaveTextContent(/^No encontramos lugares\.$/);
   });
   it("gives the wait after 429 as the reason of the search, not as text below it", async () => {
     server.use(http.post("/api/ai/business-information/places/search", () =>
@@ -75,7 +76,8 @@ describe("BusinessPlaceSearch", () => {
     renderWithProviders(<MemoryRouter><BusinessPlaceSearch disabled={false} onSelect={() => {}} /></MemoryRouter>);
     await userEvent.type(screen.getByRole("combobox", { name: "Buscar un lugar" }), "Clinic");
     const wait = "Podés buscar de nuevo en 30 s.";
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Buscar un lugar" })).toHaveAccessibleDescription(new RegExp(`${wait}$`)));
+    // El buscador no lleva leyenda: su descripción es sólo la espera.
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "Buscar un lugar" })).toHaveAccessibleDescription(wait));
     const input = screen.getByRole("combobox", { name: "Buscar un lugar" });
     expect(input).toBeDisabled();
     expect(screen.getByRole("status")).toHaveTextContent("");

@@ -10,6 +10,8 @@ import { businessInformationQueryKey, fetchBusinessChange, fetchBusinessInformat
 import { businessDraftFrom, businessFields, businessDetailFields, businessLimits, businessValidation, mergeBusinessReview, normalizeBusinessDraft } from "../businessInformationModel";
 import { detailsEqual } from "../businessDetailsModel";
 type Recovery = "none" | "uncertain" | "missing" | "conflict";
+// Qué está esperando la red: cada uno muestra la espera en su botón, y revisar no es guardar.
+type Work = "save" | "retry" | "recover";
 const noticeId = "ai:business-save";
 
 export function useBusinessInformationEditor(initial: BusinessInformation) {
@@ -21,7 +23,8 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   // Se valida al intentar guardar; después del primer intento fallido, en vivo mientras se corrige.
   const [attempted, setAttempted] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [working, setWorking] = useState<Work>();
+  const busy = working !== undefined;
   const [recovery, setRecovery] = useState<Recovery>("none");
   const [review, setReview] = useState<BusinessInformation>();
   const active = useRef(true);
@@ -51,13 +54,13 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
     if (feedback.kind === "forbidden") { pending.current = null; guard.allowNextNavigation(); void navigate("/sin-permiso"); return true; }
     return feedback.kind === "session";
   }
-  function begin() {
+  function begin(work: Work) {
     if (inFlight.current) return null;
-    const controller = new AbortController(); inFlight.current = controller; setBusy(true); return controller;
+    const controller = new AbortController(); inFlight.current = controller; setWorking(work); return controller;
   }
   function finish(controller: AbortController) {
     if (inFlight.current === controller) inFlight.current = null;
-    if (active.current) setBusy(false);
+    if (active.current) setWorking(undefined);
   }
   async function confirmed(request: BusinessSaveRequest, revision: number, signal: AbortSignal) {
     // The receipt proves this request committed, even if the following read fails.
@@ -81,7 +84,7 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
       const invalid = Object.keys(businessValidation(draft))[0];
       if (invalid) { setAttempted(true); document.getElementById(`business-${invalid}`)?.focus(); return; }
     } else if (recovery !== "missing" || !pending.current) return;
-    const controller = begin(); if (!controller) return;
+    const controller = begin(retry ? "retry" : "save"); if (!controller) return;
     if (!retry) pending.current = { ...normalizeBusinessDraft(draft), expectedRevision: baseline.revision, requestId: crypto.randomUUID() };
     const request = pending.current;
     if (!request) { finish(controller); return; }
@@ -105,7 +108,7 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
     } finally { finish(controller); }
   }
   async function recover() {
-    const controller = begin(); if (!controller) return;
+    const controller = begin("recover"); if (!controller) return;
     try {
       const request = pending.current;
       if (request) {
@@ -131,5 +134,5 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
     reset(review); setDraft(next);
     notify({ id: noticeId, kind: "info", message: t(keep ? "merged" : "adopted") });
   }
-  return { baseline, draft, errors, changed, busy, recovery, review, guard, change, discard: () => reset(baseline), save, recover, acceptReview };
+  return { baseline, draft, errors, changed, busy, working, recovery, review, guard, change, discard: () => reset(baseline), save, recover, acceptReview };
 }

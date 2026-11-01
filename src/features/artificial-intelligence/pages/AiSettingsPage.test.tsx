@@ -268,6 +268,122 @@ describe("AI settings", () => {
     expect(await screen.findByRole("textbox", { name: "Modelo" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Probar conexión" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Guardar cambios" })).not.toBeInTheDocument();
+    // Junto al título va el estado «Sólo lectura», como en Información del negocio, sin un párrafo que lo explique.
+    const header = screen.getByRole("heading", { level: 1, name: "Inteligencia artificial" }).closest("header") as HTMLElement;
+    expect(header.textContent).toBe("Inteligencia artificialSólo lectura");
+    expect(screen.queryByText(/Podés consultar esta conexión/)).not.toBeInTheDocument();
+    // Sin el botón de prueba tampoco va su aviso de costo.
+    expect(screen.queryByRole("button", { name: "Más información sobre Clave y prueba de conexión" })).not.toBeInTheDocument();
+  });
+  it("leaves no legend under the controls and puts what is not obvious in the information icons", async () => {
+    renderRouteWithProviders("/configuracion/ia");
+    const model = await screen.findByRole("textbox", { name: "Modelo" });
+    // Que el proveedor no devolvió modelos es el resultado de la consulta: queda, sin la instrucción que lo seguía.
+    expect(await screen.findByText("El proveedor no devolvió modelos.")).toHaveAttribute("role", "status");
+    expect(screen.queryByText(/Podés actualizar la lista/)).not.toBeInTheDocument();
+    expect(model).not.toHaveAccessibleDescription();
+    for (const legend of [/Una conexión compartida/, /Ingresá la clave de API/, /Modelos disponibles para esta clave/, /No guarda cambios/, /Deja la conexión preparada/, /Conserva proveedor, modelo y clave/])
+      expect(screen.queryByText(legend)).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Disponible" })).not.toHaveAccessibleDescription();
+    expect(screen.getByRole("radio", { name: "Pausada" })).not.toHaveAccessibleDescription();
+    // Por qué no se ve la clave guardada y que la prueba puede tener costo van en la (i), con su tooltip.
+    expect(screen.queryByText("La clave guardada nunca se muestra ni se devuelve al navegador.", { selector: "p" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Más información sobre Clave configurada" })).toHaveAccessibleDescription("La clave guardada nunca se muestra ni se devuelve al navegador.");
+    expect(screen.getByRole("button", { name: "Más información sobre Clave y prueba de conexión" })).toHaveAccessibleDescription("La prueba envía un pedido breve al proveedor y puede tener costo.");
+    await userEvent.click(screen.getByRole("button", { name: "Reemplazar clave" }));
+    expect(keyField()).not.toHaveAccessibleDescription();
+    expect(screen.queryByText(/Usá una clave de API del proveedor/)).not.toBeInTheDocument();
+  });
+  it("shows the spinner and the gerund on loading models, testing and saving while each one works", async () => {
+    const gates: Partial<Record<"models" | "test" | "save", () => void>> = {};
+    const hold = (name: "models" | "test" | "save") => new Promise<void>(resolve => { gates[name] = resolve; });
+    server.use(
+      http.post("/api/ai/connection/models", async () => { await hold("models"); return HttpResponse.json({ provider: "OpenAI", revision: current.revision, models: [] }); }),
+      http.post("/api/ai/connection/test", async ({ request }) => { tests.push(await request.json()); await hold("test"); return HttpResponse.json({ revision: current.revision, inputTokens: 4, outputTokens: 1 }); }),
+      http.put("/api/ai/connection", async ({ request }) => { const body = await request.json() as AiSaveRequest; writes.push(body); await hold("save"); current = { ...current, model: body.model, revision: current.revision + 1 }; return HttpResponse.json({ requestId: body.requestId, connection: current }); }));
+    renderRouteWithProviders("/configuracion/ia");
+    // Los modelos de la clave guardada se piden solos al entrar.
+    const loading = await screen.findByRole("button", { name: "Cargando modelos…" });
+    expect(loading).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(gates.models).toBeDefined());
+    gates.models!();
+    await screen.findByRole("button", { name: "Actualizar modelos" });
+    await userEvent.click(screen.getByRole("button", { name: "Probar conexión" }));
+    expect(screen.getByRole("button", { name: "Probando…" })).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(gates.test).toBeDefined());
+    gates.test!();
+    await screen.findByRole("button", { name: "Probar conexión" });
+    await userEvent.type(screen.getByRole("textbox", { name: "Modelo" }), "-next");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(screen.getByRole("button", { name: "Guardando…" })).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(gates.save).toBeDefined());
+    gates.save!();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled());
+    expect(writes).toHaveLength(1);
+  });
+  it("shows the check of an uncertain save on its own button while Save keeps its name", async () => {
+    let receipt: { requestId: string; connection: AiConnection } | undefined;
+    let release: (() => void) | undefined;
+    server.use(http.put("/api/ai/connection", async ({ request }) => { const body = await request.json() as AiSaveRequest; writes.push(body); current = { ...current, model: body.model, revision: 2 }; receipt = { requestId: body.requestId, connection: current }; return HttpResponse.error(); }),
+      http.get("/api/ai/connection/changes/:id", async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json(receipt); }));
+    renderRouteWithProviders("/configuracion/ia");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Modelo" }), "-changed");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    const review = await screen.findByRole("region", { name: "Revisión del guardado" });
+    await userEvent.click(within(review).getByRole("button", { name: "Consultar guardado" }));
+    expect(within(review).getByRole("button", { name: "Consultando…" })).toHaveAttribute("aria-busy", "true");
+    // Consultar no guarda: el Guardar de la cabecera no dice «Guardando…» ni muestra el aro.
+    expect(screen.getByRole("button", { name: "Guardar cambios" })).not.toHaveAttribute("aria-busy");
+    expect(screen.queryByRole("button", { name: "Guardando…" })).not.toBeInTheDocument();
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Revisión del guardado" })).not.toBeInTheDocument());
+    expect(writes).toHaveLength(1);
+  });
+  it("shows the read of the current configuration after a conflict on its own button", async () => {
+    let hold: Promise<void> | undefined;
+    server.use(http.get("/api/ai/connection", async () => { if (hold) await hold; return HttpResponse.json(current); }),
+      http.put("/api/ai/connection", async ({ request }) => {
+        writes.push(await request.json() as AiSaveRequest);
+        current = { ...current, provider: "Anthropic", model: "remote-model", revision: 2 };
+        return HttpResponse.json({ code: "Ai.Connection.RevisionConflict" }, { status: 409 });
+      }));
+    renderRouteWithProviders("/configuracion/ia");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Modelo" }), "-next");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    const review = await screen.findByRole("region", { name: "Revisión del guardado" });
+    let release!: () => void;
+    hold = new Promise<void>(resolve => { release = resolve; });
+    await userEvent.click(within(review).getByRole("button", { name: "Leer configuración actual" }));
+    expect(within(review).getByRole("button", { name: "Consultando…" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByRole("button", { name: "Guardando…" })).not.toBeInTheDocument();
+    release();
+    expect(await within(review).findByRole("button", { name: "Usar configuración actual" })).toBeEnabled();
+  });
+  it("shows the retry of the same save on its own button, not on Save", async () => {
+    let puts = 0;
+    let release: (() => void) | undefined;
+    server.use(http.put("/api/ai/connection", async ({ request }) => {
+      const body = await request.json() as AiSaveRequest; writes.push(body); puts++;
+      if (puts === 1) return HttpResponse.error();
+      await new Promise<void>(resolve => { release = resolve; });
+      current = { ...current, model: body.model, revision: 2 };
+      return HttpResponse.json({ requestId: body.requestId, connection: current });
+    }), http.get("/api/ai/connection/changes/:id", () => HttpResponse.json({ code: "Ai.Connection.ChangeNotFound" }, { status: 404 })));
+    renderRouteWithProviders("/configuracion/ia");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Modelo" }), "-changed");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Consultar guardado" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Reintentar el mismo guardado" }));
+    // Una sola señal, en el botón que se tocó: el Guardar de la cabecera conserva su nombre.
+    const review = screen.getByRole("region", { name: "Revisión del guardado" });
+    expect(within(review).getByRole("button", { name: "Guardando…" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getAllByRole("button", { name: "Guardando…" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Guardar cambios" })).not.toHaveAttribute("aria-busy");
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Revisión del guardado" })).not.toBeInTheDocument());
+    expect(writes[1]).toEqual(writes[0]);
   });
   it("reports a connection test through the notification without a status beside the button", async () => {
     const success = vi.spyOn(toast, "success");
@@ -279,10 +395,12 @@ describe("AI settings", () => {
     expect(screen.queryByText("Probada para este borrador")).not.toBeInTheDocument();
     expect(screen.queryByText("Sin prueba vigente")).not.toBeInTheDocument();
     expect(within(credential).queryByRole("status")).not.toBeInTheDocument();
-    // Probar, Reemplazar y Quitar actúan sobre toda la superficie: van al borde derecho de su banda, no en el cuerpo.
-    const band = within(credential).getByRole("heading", { level: 2, name: "Clave y prueba de conexión" }).parentElement as HTMLElement;
-    expect(within(credential).getAllByRole("button")).toEqual(within(band).getAllByRole("button"));
-    expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Probar conexión", "Reemplazar clave", "Quitar clave"]);
+    // Probar, Reemplazar y Quitar actúan sobre toda la superficie: van al borde derecho de su banda, no en el cuerpo. Las
+    // (i) no son acciones: la del título y la de «Clave configurada» quedan fuera de la cuenta.
+    const band = within(credential).getByRole("heading", { level: 2, name: "Clave y prueba de conexión" }).closest("div") as HTMLElement;
+    const actions = (scope: HTMLElement) => within(scope).getAllByRole("button").filter(button => !button.getAttribute("aria-label")?.startsWith("Más información"));
+    expect(actions(credential)).toEqual(actions(band));
+    expect(actions(band).map(button => button.textContent)).toEqual(["Probar conexión", "Reemplazar clave", "Quitar clave"]);
   });
   it("keeps the AI header without an unsaved status", async () => {
     renderRouteWithProviders("/configuracion/ia");

@@ -309,6 +309,124 @@ describe("business information editor", () => {
     renderRouteWithProviders("/configuracion/negocio");
     expect(await screen.findByRole("textbox", { name: "Nombre del negocio" })).toHaveAttribute("readonly");
     expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
+    // «Sólo lectura» junto al título ya lo dice: sin un párrafo que lo repita.
+    const header = screen.getByRole("heading", { level: 1, name: "Información del negocio" }).closest("header") as HTMLElement;
+    expect(header.textContent).toBe("Información del negocioSólo lectura");
+    expect(screen.queryByText(/Podés consultar esta información/)).not.toBeInTheDocument();
+  });
+  it("leaves no legend under the fields and puts the four explanations in information icons", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    current.details.location = { mode: "local", address: "Address", reference: "", area: "", latitude: null, longitude: null };
+    current.details.faq = [{ id: crypto.randomUUID(), question: "¿Hace falta reservar?", answer: "" }, { id: crypto.randomUUID(), question: "¿Qué medios de pago aceptan?", answer: "Efectivo" }];
+    renderRouteWithProviders("/configuracion/negocio");
+    const name = await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    for (const control of [name, screen.getByRole("textbox", { name: "Qué hace el negocio" }), screen.getByRole("textbox", { name: "Productos y servicios" }),
+      screen.getByRole("textbox", { name: "Políticas y condiciones" }), screen.getByRole("textbox", { name: "Dirección del local" }),
+      screen.getByRole("combobox", { name: "Buscar un lugar" }), screen.getByRole("textbox", { name: "Enlace de la ubicación" })])
+      expect(control).not.toHaveAccessibleDescription();
+    for (const legend of [/Guardá los datos confirmados/, /Elegí cómo atendés cada día/, /Elegí preguntas habituales/, /Todavía no elegiste un lugar/, /Los feriados se consultan/])
+      expect(screen.queryByText(legend)).not.toBeInTheDocument();
+    // Sin fechas especiales queda el vacío corto.
+    expect(screen.getByText("Sin excepciones cargadas.")).toBeInTheDocument();
+    // Lo que no es obvio va en la (i): los datos que no se cargan, la zona del horario, los textos anteriores y las preguntas sin respuesta.
+    expect(screen.queryByText(/No cargues claves/, { selector: "p" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Más información sobre Datos del negocio" })).toHaveAccessibleDescription("Incluí sólo información confirmada. No cargues claves, códigos de acceso ni datos personales de clientes.");
+    expect(screen.getByRole("combobox", { name: "Zona horaria del horario" })).toHaveAccessibleDescription("Los horarios y fechas especiales corresponden a esta zona; no cambia la configuración general.");
+    const legacy = "Texto guardado anteriormente. Conservá lo que siga vigente y revisalo al completar las opciones nuevas; no se convierte automáticamente.";
+    expect(screen.queryByText(legacy, { selector: "p" })).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Horario de atención" })).toHaveAccessibleDescription(legacy);
+    expect(screen.getByRole("textbox", { name: "Ubicación o zona de atención" })).toHaveAccessibleDescription(legacy);
+    expect(screen.queryByText(/sugerir mensajes/, { selector: "p" })).toBeNull();
+    // Sólo la pregunta sin respuesta lleva la (i) que explica qué pasa con ella.
+    expect(screen.getAllByRole("button", { name: "Más información sobre Sin respuesta" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Más información sobre Sin respuesta" })).toHaveAccessibleDescription("Las preguntas sin respuesta no se usarán para sugerir mensajes.");
+    // El diálogo de una fecha especial no explica debajo de su título.
+    await userEvent.click(screen.getByRole("button", { name: "Agregar fecha especial" }));
+    const dialog = await screen.findByRole("dialog", { name: "Horario de una fecha especial" });
+    expect(dialog).not.toHaveAccessibleDescription();
+    expect(within(dialog).queryByText(/Esta fecha reemplaza el horario semanal/)).not.toBeInTheDocument();
+  });
+  it("shows Save working with the spinner and «Guardando…»", async () => {
+    let release: (() => void) | undefined;
+    server.use(http.put("/api/ai/business-information", async ({ request }) => {
+      const body = await request.json() as BusinessSaveRequest; writes.push(body);
+      await new Promise<void>(resolve => { release = resolve; });
+      current = { ...current, ...body, revision: current.revision + 1 };
+      return HttpResponse.json({ requestId: body.requestId, revision: current.revision });
+    }));
+    renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");
+    await userEvent.click(save());
+    expect(screen.getByRole("button", { name: "Guardando…" })).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await waitFor(() => expect(save()).toBeDisabled());
+    expect(save()).not.toHaveAttribute("aria-busy");
+  });
+  it("shows the review of an uncertain save on its own button while Save keeps its name", async () => {
+    let id = "";
+    let release: (() => void) | undefined;
+    server.use(http.put("/api/ai/business-information", async ({ request }) => {
+      const body = await request.json() as BusinessSaveRequest; writes.push(body); id = body.requestId;
+      current = { ...current, ...body, revision: 2 }; return HttpResponse.error();
+    }), http.get("/api/ai/business-information/changes/:id", async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ requestId: id, revision: 2 }); }));
+    renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");
+    await userEvent.click(save());
+    await userEvent.click(await screen.findByRole("button", { name: "Revisar guardado" }));
+    expect(screen.getByRole("button", { name: "Revisando…" })).toHaveAttribute("aria-busy", "true");
+    // Revisar no guarda: el Guardar de la cabecera conserva su nombre y no muestra el aro.
+    expect(save()).not.toHaveAttribute("aria-busy");
+    expect(screen.queryByRole("button", { name: "Guardando…" })).not.toBeInTheDocument();
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await waitFor(() => expect(save()).toBeDisabled());
+    expect(writes).toHaveLength(1);
+  });
+  it("shows the review of another administrator's changes on its own button", async () => {
+    let hold: Promise<void> | undefined;
+    server.use(http.get("/api/ai/business-information", async () => { if (hold) await hold; return HttpResponse.json(current); }),
+      http.put("/api/ai/business-information", async ({ request }) => {
+        writes.push(await request.json() as BusinessSaveRequest); current = { ...current, hours: "10–17", revision: 2 };
+        return HttpResponse.json({ code: "Ai.BusinessInformation.RevisionConflict" }, { status: 409 });
+      }));
+    renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");
+    await userEvent.click(save());
+    const review = await screen.findByRole("region", { name: "Revisar cambios de otro administrador" });
+    let release!: () => void;
+    hold = new Promise<void>(resolve => { release = resolve; });
+    await userEvent.click(within(review).getByRole("button", { name: "Revisar cambios" }));
+    expect(within(review).getByRole("button", { name: "Revisando…" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByRole("button", { name: "Guardando…" })).not.toBeInTheDocument();
+    release();
+    expect(await within(review).findByRole("button", { name: "Conservar mis cambios" })).toBeEnabled();
+    // La tabla y el Toaster de la elección ya dicen qué pasa: sin una explicación encima de la tabla.
+    expect(screen.queryByText(/Compará los datos/)).not.toBeInTheDocument();
+  });
+  it("shows the retry of the same save on its own button, not on Save", async () => {
+    let puts = 0;
+    let release: (() => void) | undefined;
+    server.use(http.put("/api/ai/business-information", async ({ request }) => {
+      const body = await request.json() as BusinessSaveRequest; writes.push(body); puts++;
+      if (puts === 1) return HttpResponse.error();
+      await new Promise<void>(resolve => { release = resolve; });
+      current = { ...current, ...body, revision: 2 };
+      return HttpResponse.json({ requestId: body.requestId, revision: 2 });
+    }), http.get("/api/ai/business-information/changes/:id", () => HttpResponse.json({ code: "Ai.BusinessInformation.ChangeNotFound" }, { status: 404 })));
+    renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");
+    await userEvent.click(save());
+    await userEvent.click(await screen.findByRole("button", { name: "Revisar guardado" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Reintentar el mismo guardado" }));
+    // Una sola señal, en el botón que se tocó: el Guardar de la cabecera conserva su nombre.
+    expect(screen.getAllByRole("button", { name: "Guardando…" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Guardando…" })).toHaveAttribute("aria-busy", "true");
+    expect(save()).not.toHaveAttribute("aria-busy");
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await waitFor(() => expect(save()).toBeDisabled());
+    expect(writes[1]).toEqual(writes[0]);
   });
   it("a denied route exposes no business content", async () => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.read", "ai.manage"] })));

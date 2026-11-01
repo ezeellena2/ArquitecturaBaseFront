@@ -4,7 +4,7 @@ import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
 import { TrashIcon } from "@/shared/ui/icons";
@@ -24,7 +24,6 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
   function changeDay(next: OpeningDay) { onChange({ ...value, days: value.days.map(day => day.weekday === next.weekday ? next : day) }); }
   // El error llega del editor: aparece al intentar guardar y después sigue en vivo, no al abrir un día.
   return <Surface title={t("hoursSection")} padded><div className="@container space-y-4" id="business-details.openingHours" tabIndex={-1} role="group" aria-label={t("hoursSection")} aria-invalid={!!error} aria-describedby={error ? "business-hours-error" : undefined}>
-    <p className="text-sm text-[var(--color-content-muted)]">{t("hoursHint")}</p>
     <div className="divide-y divide-[var(--color-border)]">{value.days.map(day => {
       const label = t(`days.${weekdays[day.weekday]}`);
       return <div key={day.weekday} className="grid grid-cols-[minmax(0,1fr)_7rem] items-start gap-2 py-3 @min-[424px]:grid-cols-[5rem_7rem_minmax(0,1fr)]">
@@ -35,7 +34,8 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
     })}</div>
     {error ? <p id="business-hours-error" role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}
     {editable ? <Button variant="outline" disabled={locked} onClick={() => onChange({ ...value, days: value.days.map(day => day.weekday < 5 ? { ...structuredClone(value.days[0]), weekday: day.weekday } : day) })}>{t("copyWeek")}</Button> : null}
-    <FormField label={t("timeZoneLabel")} hint={t("timeZoneHint")}><NativeSelect value={value.timeZoneId} disabled={disabled} onChange={event => onChange({ ...value, timeZoneId: event.target.value })}>{zones.map(zone => <option key={zone}>{zone}</option>)}</NativeSelect></FormField>
+    {/* Que la zona sea sólo la del horario, y no la general, no es obvio: va en la (i) de su etiqueta. */}
+    <FormField label={t("timeZoneLabel")} help={t("timeZoneHint")}><NativeSelect value={value.timeZoneId} disabled={disabled} onChange={event => onChange({ ...value, timeZoneId: event.target.value })}>{zones.map(zone => <option key={zone}>{zone}</option>)}</NativeSelect></FormField>
     <div className="space-y-3 border-t border-[var(--color-border)] pt-3"><p className="text-sm font-medium">{t("exceptions")}</p>
       {!value.exceptions.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("noExceptions")}</p> : value.exceptions.map(item => <div key={item.date} className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm">{item.date} · {t(item.status)}{item.status === "open" ? ` · ${item.periods.map(period => `${period.start}–${period.end}${period.nextDay ? " (+1)" : ""}`).join(", ")}` : ""}</p>
@@ -91,8 +91,9 @@ function SpecialDateDialog({ initial, hours, onCancel, onConfirm }: { initial: S
     setAttempted(true);
     if (found.date) document.getElementById(dateId)?.focus();
   }
-  return <Dialog open onOpenChange={open => { if (!open) onCancel(); }}><DialogContent onCloseAutoFocus={restore}>
-    <DialogHeader><DialogTitle>{t("specialTitle")}</DialogTitle><DialogDescription>{t("specialHint")}</DialogDescription></DialogHeader>
+  // Sin leyenda debajo del título: el diálogo se explica con sus campos.
+  return <Dialog open onOpenChange={open => { if (!open) onCancel(); }}><DialogContent aria-describedby={undefined} onCloseAutoFocus={restore}>
+    <DialogHeader><DialogTitle>{t("specialTitle")}</DialogTitle></DialogHeader>
     <FormField label={t("specialDate")} error={shown.date ? t(shown.date) : undefined}><Input id={dateId} type="date" min="1900-01-01" max="9998-12-31" value={value.date} onChange={event => setValue({ ...value,date:event.target.value })} /></FormField>
     <OpeningStatusSelect label={t("specialDate")} status={value.status} disabled={false} onChange={status => setValue({ ...value,status,periods:status === "open" ? [emptyPeriod()] : [] })} />
     {value.status === "open" ? <OpeningPeriods periods={value.periods} label={t("specialDate")} editable disabled={false} onChange={periods => setValue({ ...value,periods })} /> : null}

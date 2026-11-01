@@ -10,6 +10,8 @@ import { aiConnectionQueryKey, fetchAiChange, fetchAiConnection, saveAiConnectio
 import { dirty, draftFrom, mergeReview, saveRequest, type AiDraft } from "../model";
 
 type Recovery = "none" | "uncertain" | "missing" | "conflict";
+// Qué está esperando la red: cada uno muestra la espera en su botón, y consultar no es guardar.
+type Work = "save" | "retry" | "recover";
 const noticeId = "ai:save";
 const fields = ["provider", "model", "apiKey", "enabled"] as const;
 
@@ -23,7 +25,8 @@ export function useAiConnectionEditor(initial: AiConnection) {
   const [draft, setDraft] = useState(() => draftFrom(initial));
   const [draftVersion, setDraftVersion] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
+  const [working, setWorking] = useState<Work>();
+  const busy = working !== undefined;
   const [recovery, setRecovery] = useState<Recovery>("none");
   const [review, setReview] = useState<AiConnection>();
   const active = useRef(true);
@@ -54,14 +57,14 @@ export function useAiConnectionEditor(initial: AiConnection) {
     if (feedback.kind === "forbidden") { pending.current = null; guard.allowNextNavigation(); void navigate("/sin-permiso"); return true; }
     return feedback.kind === "session";
   }
-  function begin() {
+  function begin(work: Work) {
     if (inFlight.current) return null;
-    const controller = new AbortController(); inFlight.current = controller; setBusy(true);
+    const controller = new AbortController(); inFlight.current = controller; setWorking(work);
     return controller;
   }
   function finish(controller: AbortController) {
     if (inFlight.current === controller) inFlight.current = null;
-    if (active.current) setBusy(false);
+    if (active.current) setWorking(undefined);
   }
   async function confirmSaved(connection: AiConnection, signal: AbortSignal) {
     // El comprobante prueba nuestra escritura. Una lectura posterior puede
@@ -80,7 +83,7 @@ export function useAiConnectionEditor(initial: AiConnection) {
     if (active.current) notify({ id: noticeId, kind: "success", message: t(newer ? "savedThenChanged" : "saved") });
   }
   async function save(retry = false) {
-    const controller = begin(); if (!controller) return;
+    const controller = begin(retry ? "retry" : "save"); if (!controller) return;
     setErrors({});
     if (!retry) pending.current = saveRequest(draft, baseline.revision, crypto.randomUUID());
     const request = pending.current;
@@ -107,7 +110,7 @@ export function useAiConnectionEditor(initial: AiConnection) {
     } finally { finish(controller); }
   }
   async function recover() {
-    const controller = begin(); if (!controller) return;
+    const controller = begin("recover"); if (!controller) return;
     try {
       if (pending.current) {
         const receipt = await fetchAiChange(pending.current.requestId, controller.signal);
@@ -132,5 +135,5 @@ export function useAiConnectionEditor(initial: AiConnection) {
     reset(review); setDraft(next);
   }
   function requireReview() { setRecovery("conflict"); }
-  return { baseline, draft, draftVersion, errors, changed, busy, recovery, review, guard, change, discard, save, recover, acceptReview, requireReview };
+  return { baseline, draft, draftVersion, errors, changed, busy, working, recovery, review, guard, change, discard, save, recover, acceptReview, requireReview };
 }

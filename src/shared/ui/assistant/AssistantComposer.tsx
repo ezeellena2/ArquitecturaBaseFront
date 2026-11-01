@@ -3,11 +3,14 @@ import { useEffect, useId } from "react";
 import { IconButton } from "../IconButton";
 import { ArrowUpIcon } from "../icons";
 
-export function AssistantComposer({ label, hint, placeholder, sendLabel, value, onValueChange, disabled, error }: {
+export function AssistantComposer({ label, hint, placeholder, sendLabel, sending = false, value, onValueChange, disabled, error }: {
   label: string;
   hint: string;
   placeholder: string;
+  /// While the question is on its way it says so («Enviando…»).
   sendLabel: string;
+  /// The question is on its way: the spinner takes the place of the arrow.
+  sending?: boolean;
   value: string;
   onValueChange: (value: string) => void;
   disabled: boolean;
@@ -26,7 +29,7 @@ export function AssistantComposer({ label, hint, placeholder, sendLabel, value, 
           disabled={disabled} onChange={event => onValueChange(event.target.value)} />
         <div className="assistant-composer-actions">
           <ComposerPrimitive.Send asChild>
-            <IconButton label={sendLabel} className="assistant-send" type="submit" disabled={disabled || !value.trim()}>
+            <IconButton label={sendLabel} className="assistant-send" type="submit" pending={sending} disabled={disabled || !value.trim()}>
               <ArrowUpIcon />
             </IconButton>
           </ComposerPrimitive.Send>

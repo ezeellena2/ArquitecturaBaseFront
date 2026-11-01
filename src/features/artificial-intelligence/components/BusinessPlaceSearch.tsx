@@ -52,7 +52,7 @@ export function BusinessPlaceSearch({ disabled, placeId, onSelect }: Props) {
   const failed = failedFor === searchKey;
   const attribution = <span translate="no" className="whitespace-nowrap text-sm font-normal text-[var(--color-content)]">Google Maps</span>;
   return <div className="space-y-2">
-    <FormField label={t("searchPlace")} hint={t("searchPlaceHint")}><DisabledReason reason={waiting && !disabled ? t("placeWait", { seconds: wait }) : null} className="grid w-full"><Autocomplete value={input} disabled={disabled || waiting} maxLength={200}
+    <FormField label={t("searchPlace")}><DisabledReason reason={waiting && !disabled ? t("placeWait", { seconds: wait }) : null} className="grid w-full"><Autocomplete value={input} disabled={disabled || waiting} maxLength={200}
       placeholder={t("searchPlacePlaceholder")} aria-busy={loading} options={places.map(place => ({ id: place.placeId, label: place.label }))}
       footer={attribution}
       onValueChange={value => { setInput(value); setResult(undefined); }} onSelect={id => {

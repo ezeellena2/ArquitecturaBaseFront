@@ -17,6 +17,9 @@ import {
 } from "../api/assistant";
 import type { PagedResult } from "@/shared/api/pagedResult";
 import { assistantKey, createSubmission } from "../assistant/model";
+/// The request on its way and what it acts on (the turn it cancels, the conversation it deletes): only the control that
+/// sent it shows the spinner and its gerund.
+export type AssistantAction = "submit" | "retry" | "recover" | "cancel" | "remove";
 export function useAssistantTurnActions({
   userId,
   onAccepted,
@@ -28,11 +31,11 @@ export function useAssistantTurnActions({
 }) {
   const { t } = useTranslation(["assistant", "common"]);
   const client = useQueryClient();
-  const [busy, setBusy] = useState(false);
+  const [working, setWorking] = useState<{ action: AssistantAction; target?: string }>();
   const [uncertain, setUncertain] = useState(false);
   const [fieldError, setFieldError] = useState<string>();
   const frozen = useRef<AssistantSubmit | null>(null);
-  const working = useRef(false);
+  const inFlight = useRef(false);
   const mounted = useRef(true);
   const generation = useRef(0);
   const cooldown = useCountdown(0);
@@ -42,7 +45,7 @@ export function useAssistantTurnActions({
       mounted.current = false;
       generation.current += 1;
       frozen.current = null;
-      working.current = false;
+      inFlight.current = false;
       dismissNotification(`assistant:${userId}:acceptance`);
       dismissNotification(`assistant:${userId}:action`);
     };
@@ -124,10 +127,10 @@ export function useAssistantTurnActions({
       message: operationalErrorMessage(error, t),
     });
   }
-  async function send(body: AssistantSubmit) {
-    if (working.current) return false;
-    working.current = true;
-    setBusy(true);
+  async function send(body: AssistantSubmit, action: "submit" | "retry") {
+    if (inFlight.current) return false;
+    inFlight.current = true;
+    setWorking({ action });
     setFieldError(undefined);
     const version = generation.current;
     try {
@@ -140,8 +143,8 @@ export function useAssistantTurnActions({
       return false;
     } finally {
       if (isCurrent(version)) {
-        working.current = false;
-        setBusy(false);
+        inFlight.current = false;
+        setWorking(undefined);
       }
     }
   }
@@ -153,19 +156,19 @@ export function useAssistantTurnActions({
       revision: number;
     },
   ) {
-    if (working.current || frozen.current || cooldown.isRunning) return false;
+    if (inFlight.current || frozen.current || cooldown.isRunning) return false;
     frozen.current = createSubmission(
       crypto.randomUUID(),
       question,
       connectionRevision,
       conversation,
     );
-    return send(frozen.current);
+    return send(frozen.current, "submit");
   }
   async function recover() {
-    if (!frozen.current || working.current) return;
-    working.current = true;
-    setBusy(true);
+    if (!frozen.current || inFlight.current) return;
+    inFlight.current = true;
+    setWorking({ action: "recover" });
     const version = generation.current;
     try {
       accept(await assistantApi.turn(frozen.current.requestId), version);
@@ -180,20 +183,20 @@ export function useAssistantTurnActions({
       } else handle(error, version);
     } finally {
       if (isCurrent(version)) {
-        working.current = false;
-        setBusy(false);
+        inFlight.current = false;
+        setWorking(undefined);
       }
     }
   }
   async function retryIdentical() {
-    if (frozen.current && !working.current && !cooldown.isRunning)
-      return send(frozen.current);
+    if (frozen.current && !inFlight.current && !cooldown.isRunning)
+      return send(frozen.current, "retry");
     return false;
   }
   async function cancel(requestId: string) {
-    if (working.current) return false;
-    working.current = true;
-    setBusy(true);
+    if (inFlight.current) return false;
+    inFlight.current = true;
+    setWorking({ action: "cancel", target: requestId });
     const version = generation.current;
     try {
       const turn = await assistantApi.cancel(requestId);
@@ -209,15 +212,15 @@ export function useAssistantTurnActions({
       return false;
     } finally {
       if (isCurrent(version)) {
-        working.current = false;
-        setBusy(false);
+        inFlight.current = false;
+        setWorking(undefined);
       }
     }
   }
   async function remove(conversationId: string) {
-    if (working.current) return false;
-    working.current = true;
-    setBusy(true);
+    if (inFlight.current) return false;
+    inFlight.current = true;
+    setWorking({ action: "remove", target: conversationId });
     const version = generation.current;
     try {
       await assistantApi.remove(conversationId);
@@ -245,13 +248,14 @@ export function useAssistantTurnActions({
       return false;
     } finally {
       if (isCurrent(version)) {
-        working.current = false;
-        setBusy(false);
+        inFlight.current = false;
+        setWorking(undefined);
       }
     }
   }
   return {
-    busy,
+    busy: working !== undefined,
+    working,
     uncertain,
     fieldError,
     cooldownSeconds: cooldown.seconds,

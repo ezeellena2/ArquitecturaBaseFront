@@ -621,4 +621,194 @@ describe("authenticated assistant", () => {
     expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
   });
 });
+// Every action that waits for the server shows it on the control that was touched: the spinner and what it is doing.
+describe("assistant waits", () => {
+  const running = () => ({ ...turn, state: "running" as const, stage: "consulting" as const, answer: null, evidences: [] });
+  it("shows the spinner in place of the arrow while the question is being sent", async () => {
+    let release: (() => void) | undefined;
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      const body = (await request.json()) as AssistantSubmit;
+      writes.push(body);
+      await new Promise<void>((resolve) => { release = resolve; });
+      turn = { ...turn, requestId: body.requestId, question: body.question };
+      return HttpResponse.json(acceptedOf(turn), { status: 202 });
+    }));
+    renderRouteWithProviders("/");
+    await pasteText(await screen.findByRole("textbox", { name: "Tu pregunta" }), "¿Cuántos usuarios activos hay?");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    const sending = await screen.findByRole("button", { name: "Enviando…" });
+    expect(sending).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await screen.findByText("Hay tres usuarios activos.");
+    expect(screen.queryByRole("button", { name: "Enviando…" })).not.toBeInTheDocument();
+  });
+  it("shows «Cancelando…» on «Cancelar consulta» until the cancellation is requested", async () => {
+    turn = running();
+    let release: (() => void) | undefined;
+    server.use(http.post("/api/ai/assistant/turns/:id/cancel", async () => {
+      await new Promise<void>((resolve) => { release = resolve; });
+      turn = { ...turn, cancelRequestedAtUtc: "2026-10-04T12:00:02Z" };
+      return HttpResponse.json(turn);
+    }));
+    renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    await userEvent.click(await screen.findByRole("button", { name: "Cancelar consulta" }));
+    expect(screen.getByRole("button", { name: "Cancelando…" })).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    expect(await screen.findByRole("button", { name: "Cancelación solicitada" })).toBeDisabled();
+  });
+  it("keeps the decision open with «Cancelando…» and the other choices off while it cancels", async () => {
+    turn = running();
+    let release: (() => void) | undefined;
+    server.use(http.post("/api/ai/assistant/turns/:id/cancel", async () => {
+      await new Promise<void>((resolve) => { release = resolve; });
+      turn = { ...turn, state: "canceled", stage: "finished", cancelRequestedAtUtc: "2026-10-04T12:00:02Z",
+        failure: { code: "Ai.Assistant.Canceled", detail: "Cancelación confirmada.", recovery: "newAttempt" } };
+      return HttpResponse.json(turn);
+    }));
+    const { router } = renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    await screen.findByRole("button", { name: "Cancelar consulta" });
+    await userEvent.click(screen.getByRole("button", { name: "Nueva conversación" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Empezar otra conversación?" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar y continuar" }));
+    expect(within(dialog).getByRole("button", { name: "Cancelando…" })).toHaveAttribute("aria-busy", "true");
+    expect(within(dialog).getByRole("button", { name: "Seguir editando" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Continuar en segundo plano" })).toBeDisabled();
+    // Escape does not leave it halfway: the decision waits for the answer.
+    await userEvent.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "¿Empezar otra conversación?" })).toBe(dialog);
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(router.state.location.search).not.toContain("conversacion="));
+  });
+  it("shows on its own button when the acceptance is being checked and when the same request is being repeated", async () => {
+    let turnReads = 0;
+    let releaseCheck: (() => void) | undefined;
+    let releaseRepeat: (() => void) | undefined;
+    server.use(
+      http.post("/api/ai/assistant/turns", async ({ request }) => {
+        const body = (await request.json()) as AssistantSubmit;
+        writes.push(body);
+        if (writes.length === 1) return HttpResponse.error();
+        await new Promise<void>((resolve) => { releaseRepeat = resolve; });
+        turn = { ...turn, requestId: body.requestId, question: body.question };
+        return HttpResponse.json(acceptedOf(turn), { status: 202 });
+      }),
+      http.get("/api/ai/assistant/turns/:id", async () => {
+        turnReads++;
+        if (turnReads > 1) return HttpResponse.json(turn);
+        await new Promise<void>((resolve) => { releaseCheck = resolve; });
+        return HttpResponse.json({ code: "Ai.Assistant.NotFound" }, { status: 404 });
+      }),
+    );
+    renderRouteWithProviders("/");
+    await pasteText(await screen.findByRole("textbox", { name: "Tu pregunta" }), "Pregunta privada");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    const acceptance = (await screen.findByText("Aceptación por confirmar")).closest("[role=status]") as HTMLElement;
+    await userEvent.click(within(acceptance).getByRole("button", { name: "Consultar estado" }));
+    expect(within(acceptance).getByRole("button", { name: "Consultando…" })).toHaveAttribute("aria-busy", "true");
+    expect(within(acceptance).getByRole("button", { name: "Repetir el mismo pedido" })).toBeDisabled();
+    await waitFor(() => expect(releaseCheck).toBeDefined());
+    releaseCheck!();
+    await userEvent.click(await within(acceptance).findByRole("button", { name: "Repetir el mismo pedido" }));
+    expect(within(acceptance).getByRole("button", { name: "Enviando…" })).toHaveAttribute("aria-busy", "true");
+    // The arrow does not say it: the repetition shows it on its own button.
+    expect(screen.getByRole("button", { name: "Enviar" })).not.toHaveAttribute("aria-busy");
+    await waitFor(() => expect(releaseRepeat).toBeDefined());
+    releaseRepeat!();
+    await waitFor(() => expect(screen.queryByText("Aceptación por confirmar")).not.toBeInTheDocument());
+    expect(writes[1]).toEqual(writes[0]);
+  });
+  it("shows «Consultando…» on an uncertain turn while its status is read again", async () => {
+    turn = { ...turn, state: "uncertain", stage: "finished", answer: null, evidences: [],
+      failure: { code: "Ai.Assistant.Uncertain", detail: "No sabemos si terminó.", recovery: "reviewUncertainty" } };
+    let hold: Promise<void> | undefined;
+    server.use(http.get("/api/ai/assistant/conversations/:id/turns", async () => {
+      if (hold) await hold;
+      return HttpResponse.json(pageOf([turn]));
+    }));
+    renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    const check = await screen.findByRole("button", { name: "Consultar estado" });
+    let release!: () => void;
+    hold = new Promise<void>((resolve) => { release = resolve; });
+    await userEvent.click(check);
+    expect(screen.getByRole("button", { name: "Consultando…" })).toHaveAttribute("aria-busy", "true");
+    release();
+    expect(await screen.findByRole("button", { name: "Consultar estado" })).toBeEnabled();
+  });
+  it("shows «Reintentando…» on Retry while the failed history is read again", async () => {
+    let fail = true;
+    let hold: Promise<void> | undefined;
+    server.use(http.get("/api/ai/assistant/conversations/:id/turns", async () => {
+      if (hold) await hold;
+      return fail ? HttpResponse.json({ code: "Unexpected" }, { status: 500 }) : HttpResponse.json(pageOf([turn]));
+    }));
+    renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    const retry = await screen.findByRole("button", { name: "Reintentar" });
+    fail = false;
+    let release!: () => void;
+    hold = new Promise<void>((resolve) => { release = resolve; });
+    await userEvent.click(retry);
+    expect(screen.getByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+    release();
+    await screen.findByText("Hay tres usuarios activos.");
+    expect(screen.queryByRole("button", { name: "Reintentando…" })).not.toBeInTheDocument();
+  });
+  it("shows «Cargando…» on «Cargar anteriores» while the earlier turns arrive", async () => {
+    const older = { ...turn, turnId: "0199a0c0-0000-7000-8000-000000000555", requestId: "0199a0c0-0000-7000-8000-000000000666", ordinal: 1, question: "Consulta más vieja" };
+    turn = { ...turn, ordinal: 2 };
+    let release: (() => void) | undefined;
+    server.use(http.get("/api/ai/assistant/conversations/:id/turns", async ({ request }) => {
+      if (new URL(request.url).searchParams.get("page") === "2") {
+        await new Promise<void>((resolve) => { release = resolve; });
+        return HttpResponse.json({ ...pageOf([older]), page: 2, totalCount: 2, totalPages: 2, hasPrevious: true });
+      }
+      return HttpResponse.json({ ...pageOf([turn]), totalCount: 2, totalPages: 2, hasNext: true });
+    }));
+    renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    await userEvent.click(await screen.findByRole("button", { name: "Cargar anteriores" }));
+    expect(screen.getByRole("button", { name: "Cargando…" })).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await screen.findByText("Consulta más vieja");
+    expect(screen.queryByRole("button", { name: "Cargando…" })).not.toBeInTheDocument();
+  });
+  it("keeps the delete confirmation open with «Eliminando…» until the server answers", async () => {
+    let release: (() => void) | undefined;
+    server.use(http.delete("/api/ai/assistant/conversations/:id", async () => {
+      await new Promise<void>((resolve) => { release = resolve; });
+      return new HttpResponse(null, { status: 204 });
+    }));
+    renderRouteWithProviders("/");
+    const panel = await screen.findByRole("complementary", { name: "Conversaciones" });
+    // The row menu opens from the keyboard, as in the browser scene.
+    (await within(panel).findByRole("button", { name: "Acciones de Conversación" })).focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Eliminar conversación" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Eliminar esta conversación?" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Eliminar conversación" }));
+    expect(within(dialog).getByRole("button", { name: "Eliminando…" })).toHaveAttribute("aria-busy", "true");
+    expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    await waitFor(() => expect(release).toBeDefined());
+    release!();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+  it("shows «Reintentando…» on the availability Retry while it reads again", async () => {
+    let hold: Promise<void> | undefined;
+    server.use(http.get("/api/ai/assistant/bootstrap", async () => {
+      if (hold) await hold;
+      return HttpResponse.json({ availability: "capacityLimited", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null });
+    }));
+    renderRouteWithProviders("/");
+    const availability = (await screen.findByText("La capacidad del asistente está ocupada")).closest("[role=status]") as HTMLElement;
+    let release!: () => void;
+    hold = new Promise<void>((resolve) => { release = resolve; });
+    await userEvent.click(within(availability).getByRole("button", { name: "Reintentar" }));
+    expect(within(availability).getByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+    release();
+    expect(await within(availability).findByRole("button", { name: "Reintentar" })).toBeEnabled();
+  });
+});
 

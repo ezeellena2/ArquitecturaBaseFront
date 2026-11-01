@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -113,6 +114,20 @@ export function AiAssistantPage() {
   const [deleteId, setDeleteId] = useState<string>();
   const [repeat, setRepeat] = useState<AssistantTurn>();
   const [forbidden, setForbidden] = useState(false);
+  // A read the person asked for (the status of an uncertain turn, the retry of a failed history or of the availability)
+  // shows its spinner on the button that asked, also when the confirmed data stays on screen meanwhile.
+  const [rereading, setRereading] = useState<"status" | "retry" | "availability">();
+  const reread = useCallback(
+    async (kind: "status" | "retry" | "availability", read: () => Promise<unknown>) => {
+      setRereading(kind);
+      try {
+        await read();
+      } finally {
+        setRereading((current) => (current === kind ? undefined : current));
+      }
+    },
+    [],
+  );
   const restoreDecision = useRestoreFocusOnClose(
     nextConversation !== undefined,
   );
@@ -225,13 +240,13 @@ export function AiAssistantPage() {
             ? {
                 label: t("checkStatus"),
                 onClick: () => {
-                  void data.refetch();
+                  void reread("status", data.refetch);
                 },
               }
             : undefined,
       });
     }
-  }, [data, userId, t, accepted]);
+  }, [data, userId, t, accepted, reread]);
   function go(id: string | null) {
     navigation.allowNextNavigation();
     setAccepted(undefined);
@@ -271,6 +286,9 @@ export function AiAssistantPage() {
     data.conversation.isFetching ||
     bootstrap.data?.availability !== "available" ||
     (!!conversationId && !data.conversation.data);
+  // Each request on its way shows it on the control that sent it; the cancellation, on the turn it cancels.
+  const working = actions.working?.action;
+  const cancelling = working === "cancel" ? actions.working?.target : undefined;
   async function submit(question: string) {
     const max = bootstrap.data?.limits.questionMaxLength ?? 4000;
     if (!question.trim()) {
@@ -403,7 +421,8 @@ export function AiAssistantPage() {
                         <span>{t(`availability.${bootstrap.data.availability}`)}</span>
                         {bootstrap.data.configurationDestination === "aiConfiguration" && user?.permissions.includes("ai.read") ? (
                           <Button variant="link" size="inline" asChild><Link to="/configuracion/ia">{t("configuration")}</Link></Button>
-                        ) : <Button variant="link" size="inline" onClick={() => { void bootstrap.refetch(); }}>{t("common:actions.retry")}</Button>}
+                        ) : <Button variant="link" size="inline" pending={rereading === "availability"} onClick={() => { void reread("availability", () => bootstrap.refetch()); }}>
+                          {t(rereading === "availability" ? "retrying" : "common:actions.retry")}</Button>}
                       </div>
                     ) : null}
                     operation={
@@ -421,12 +440,12 @@ export function AiAssistantPage() {
                           <Button
                             size="touch"
                             variant="outline"
-                            disabled={data.history.isFetchingNextPage}
+                            pending={data.history.isFetchingNextPage}
                             onClick={() => {
                               void data.history.fetchNextPage();
                             }}
                           >
-                            {t("loadMore")}
+                            {t(data.history.isFetchingNextPage ? "loadingMore" : "loadMore")}
                           </Button>
                         ) : null}
                         {data.turns
@@ -436,24 +455,28 @@ export function AiAssistantPage() {
                               key={turn.requestId}
                               turn={turn}
                               busy={actions.busy}
+                              cancelling={cancelling === turn.requestId}
+                              refreshing={rereading === "status"}
                               onCancel={() => {
                                 void actions.cancel(turn.requestId);
                               }}
                               onRefresh={() => {
-                                void data.refetch();
+                                void reread("status", data.refetch);
                               }}
                               onRepeat={() => setRepeat(turn)}
                             />
                           ))}
-                        {data.turn.isError || data.history.isError ? (
+                        {/* While it reads again the error may clear before the answer arrives: the button stays with its spinner. */}
+                        {data.turn.isError || data.history.isError || rereading === "retry" ? (
                           <Button
                             size="touch"
                             variant="outline"
+                            pending={rereading === "retry"}
                             onClick={() => {
-                              void data.refetch();
+                              void reread("retry", data.refetch);
                             }}
                           >
-                            {t("common:actions.retry")}
+                            {t(rereading === "retry" ? "retrying" : "common:actions.retry")}
                           </Button>
                         ) : null}
                         {actions.uncertain ? (
@@ -466,21 +489,23 @@ export function AiAssistantPage() {
                               size="touch"
                               variant="outline"
                               disabled={actions.busy}
+                              pending={working === "recover"}
                               onClick={() => {
                                 void actions.recover();
                               }}
                             >
-                              {t("checkStatus")}
+                              {t(working === "recover" ? "checking" : "checkStatus")}
                             </Button>
                             <Button
                               size="touch"
                               variant="outline"
                               disabled={actions.busy}
+                              pending={working === "retry"}
                               onClick={() => {
                                 void actions.retryIdentical();
                               }}
                             >
-                              {t("repeatIdentical")}
+                              {t(working === "retry" ? "sending" : "repeatIdentical")}
                             </Button>
                           </div>
                         ) : null}
@@ -496,7 +521,8 @@ export function AiAssistantPage() {
                         label={t("question")}
                         hint={t("keyboardHelp")}
                         placeholder={t("placeholder")}
-                        sendLabel={t("send")}
+                        sendLabel={t(working === "submit" ? "sending" : "send")}
+                        sending={working === "submit"}
                         value={draft}
                         onValueChange={(value) => {
                           setDraft(value);
@@ -511,13 +537,15 @@ export function AiAssistantPage() {
               )}
             </AssistantWorkspace>
           </div>
+          {/* While «Cancelar y continuar» waits, the decision stays open with its spinner and the other choices are off;
+              the button stays even if the canceled turn stops being active before the answer is confirmed. */}
           <Dialog
             open={nextConversation !== undefined}
             onOpenChange={(open) => {
-              if (!open) setNextConversation(undefined);
+              if (!open && !cancelling) setNextConversation(undefined);
             }}
           >
-            <DialogContent onCloseAutoFocus={restoreDecision}>
+            <DialogContent onCloseAutoFocus={restoreDecision} closeDisabledReason={cancelling ? t("canceling") : undefined}>
               <DialogHeader>
                 <DialogTitle>{t("newTitle")}</DialogTitle>
                 <DialogDescription>{t("newHelp")}</DialogDescription>
@@ -526,15 +554,17 @@ export function AiAssistantPage() {
                 <Button
                   size="touch"
                   variant="outline"
+                  disabled={!!cancelling}
                   onClick={() => setNextConversation(undefined)}
                 >
                   {t("keepEditing")}
                 </Button>
-                {data.active && data.requestId ? (
+                {(data.active && data.requestId) || cancelling ? (
                   <Button
                     size="touch"
                     variant="outline"
                     disabled={actions.busy}
+                    pending={!!cancelling}
                     onClick={async () => {
                       if (await actions.cancel(data.requestId!)) {
                         go(nextConversation ?? null);
@@ -542,17 +572,18 @@ export function AiAssistantPage() {
                       }
                     }}
                   >
-                    {t("cancelAndContinue")}
+                    {t(cancelling ? "canceling" : "cancelAndContinue")}
                   </Button>
                 ) : null}
                 <Button
                   size="touch"
+                  disabled={!!cancelling}
                   onClick={() => {
                     go(nextConversation ?? null);
                     setNextConversation(undefined);
                   }}
                 >
-                  {t(data.active ? "continueBackground" : "newConversation")}
+                  {t(data.active || cancelling ? "continueBackground" : "newConversation")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -567,9 +598,13 @@ export function AiAssistantPage() {
             description={t("deleteHelp")}
             destructive
             confirmLabel={t("delete")}
+            // The confirmation waits open with «Eliminando…» and closes with the answer, also when it fails.
+            pending={working === "remove"}
+            pendingLabel={t("deleting")}
             onConfirm={() => {
               const id = deleteId!;
               void actions.remove(id).then((removed) => {
+                setDeleteId(undefined);
                 if (removed && id === conversationId) go(null);
               });
             }}

@@ -12,7 +12,6 @@ import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableRowHeader } from "@/shared/ui/table";
 import { Textarea } from "@/shared/ui/textarea";
@@ -51,32 +50,32 @@ function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; 
     if (name === "details.faq") return value.details?.faq.map(entry => `${entry.question}\n${entry.answer || t("unanswered")}`).join("\n\n") ?? "";
     return value[name];
   }
+  // El texto anterior se conserva para revisarlo; qué es y qué hacer con él va en la (i) de su etiqueta.
   function legacy(name: "hours" | "location" | "faq") {
-    return editor.draft[name] || editor.baseline[name] ? <div className="space-y-2 border-t border-[var(--color-border)] pt-3"><p className="text-xs text-[var(--color-content-muted)]">{t("legacyHint")}</p>{field(name, true)}</div> : null;
+    return editor.draft[name] || editor.baseline[name] ? <div className="border-t border-[var(--color-border)] pt-3">{field(name, true, t("legacyHint"))}</div> : null;
   }
-  function field(name: BusinessField, multiline = false) {
+  function field(name: BusinessField, multiline = false, help?: string) {
     const props = { id: `business-${name}`, value: editor.draft[name], maxLength: businessLimits[name], readOnly: !canManage,
       disabled: locked, placeholder: t(`${name}Placeholder`), onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => editor.change({ [name]: event.target.value }) };
-    return <FormField label={t(name)} hint={t(`${name}Hint`)} error={editor.errors[name]} required={name === "name"}>
+    return <FormField label={t(name)} help={help} error={editor.errors[name]} required={name === "name"}>
       {multiline ? <Textarea {...props} rows={name === "faq" ? 4 : 2} /> : <Input {...props} />}
     </FormField>;
   }
-  // El estado es el del objeto (sólo lectura o un guardado por revisar): Guardar habilitado ya dice que hay cambios.
+  // El estado es el del objeto (sólo lectura o un guardado por revisar): Guardar habilitado ya dice que hay cambios. Cada
+  // espera se ve en el botón que se tocó: revisar o reintentar no ponen «Guardando…» en Guardar.
   return <Page title={t("title")} status={!canManage || uncertain ? <span className="text-xs text-[var(--color-content-muted)]">{t(!canManage ? "readonly" : "pending")}</span> : undefined}
     actions={canManage ? <><Button variant="outline" disabled={!editor.changed || locked} onClick={() => setDiscarding(true)}>{t("discard")}</Button>
-      <Button disabled={!editor.changed || locked} onClick={() => void editor.save()}>{editor.busy ? <Spinner decorative /> : null}{t(editor.busy ? "saving" : "save")}</Button></> : undefined}>
+      <Button disabled={!editor.changed || locked} pending={editor.working === "save"} onClick={() => void editor.save()}>{t(editor.working === "save" ? "saving" : "save")}</Button></> : undefined}>
     <div className="flex flex-col gap-5">
-      <p className="max-w-3xl text-sm text-[var(--color-content-muted)]">{t(!canManage ? "readonlyHint" : "intro")}</p>
-      {/* El cuerpo explica el estado del guardado; revisar, reintentar y elegir van en la banda. */}
+      {/* El cuerpo explica el estado del guardado; revisar, reintentar y elegir van en la banda, cada uno con su espera. */}
       {editor.recovery !== "none" ? <Surface title={t(editor.recovery === "conflict" ? "reviewTitle" : "pending")} padded actions={<>
-        <Button variant="outline" disabled={editor.busy} onClick={() => void editor.recover()}>{t(editor.recovery === "conflict" ? "review" : "verify")}</Button>
-        {editor.recovery === "missing" ? <Button disabled={editor.busy} onClick={() => void editor.save(true)}>{t("retrySame")}</Button> : null}
+        <Button variant="outline" disabled={editor.busy} pending={editor.working === "recover"} onClick={() => void editor.recover()}>{t(editor.working === "recover" ? "verifying" : editor.recovery === "conflict" ? "review" : "verify")}</Button>
+        {editor.recovery === "missing" ? <Button disabled={editor.busy} pending={editor.working === "retry"} onClick={() => void editor.save(true)}>{t(editor.working === "retry" ? "saving" : "retrySame")}</Button> : null}
         {editor.review ? <><Button variant="outline" disabled={editor.busy} onClick={() => editor.acceptReview(false)}>{t("useCurrent")}</Button>
           <Button disabled={editor.busy} onClick={() => editor.acceptReview(true)}>{t("keepMine")}</Button></> : null}
       </>}>
         <p className="max-w-3xl text-sm">{t(editor.recovery === "conflict" ? "conflictMessage" : editor.recovery === "missing" ? "missingReceipt" : "uncertainHint")}</p>
         {editor.review ? <>
-          <p className="text-sm text-[var(--color-content-muted)]">{t("reviewHint")}</p>
           <Table><TableHeader><TableRow><TableHead scope="col">{t("field")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("current")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("mine")}</TableHead></TableRow></TableHeader>
             <TableBody>{reviewFields.filter(name => editor.review && reviewText(name, editor.review) !== reviewText(name, { ...editor.draft, revision: editor.baseline.revision })).map(name => <TableRow key={name}>
               <TableRowHeader className="whitespace-normal">{t(name === "details.location" ? "locationSection" : name === "details.openingHours" ? "hoursSection" : name === "details.faq" ? "answers" : name)}</TableRowHeader><TableCell className="min-w-48 max-w-sm whitespace-pre-wrap break-words">{editor.review && reviewText(name, editor.review) || t("noValue")}</TableCell><TableCell className="min-w-48 max-w-sm whitespace-pre-wrap break-words">{reviewText(name, { ...editor.draft, revision: editor.baseline.revision }) || t("noValue")}</TableCell>
@@ -84,14 +83,14 @@ function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; 
           </Table>
         </> : null}
       </Surface> : null}
-      <Surface title={t("basics")} padded><div className="grid gap-4 sm:grid-cols-2">{field("name")}{field("description", true)}</div></Surface>
+      {/* El único aviso sobre datos sensibles va en la (i) del título de los datos del negocio. */}
+      <Surface title={t("basics")} help={t("limitsHint")} padded><div className="grid gap-4 sm:grid-cols-2">{field("name")}{field("description", true)}</div></Surface>
       <div className="grid items-start gap-5 xl:grid-cols-2">
         <BusinessLocationEditor value={details.location} onChange={location => editor.change({ details: { ...details, location } })} editable={canManage} locked={locked} error={editor.errors["details.location"]} legacy={legacy("location")} />
         <BusinessHoursEditor value={details.openingHours} onChange={openingHours => editor.change({ details: { ...details, openingHours } })} editable={canManage} locked={locked} error={editor.errors["details.openingHours"]} legacy={legacy("hours")} />
       </div>
       <Surface title={t("offering")} padded><div className="grid gap-4 sm:grid-cols-2">{field("services", true)}{field("policies", true)}</div></Surface>
       <BusinessFaqEditor value={details.faq} onChange={faq => editor.change({ details: { ...details, faq } })} editable={canManage} locked={locked} error={editor.errors["details.faq"]} legacy={legacy("faq")} />
-      <p className="max-w-3xl text-xs text-[var(--color-content-muted)]">{t("limitsHint")}</p>
     </div>
     <ConfirmDialog open={discarding} onOpenChange={setDiscarding} title={t("discardTitle")} description={t("discardHint")} confirmLabel={t("discard")} cancelLabel={t("stay")} onConfirm={editor.discard} />
     <ConfirmDialog open={editor.guard.isBlocked} onOpenChange={open => { if (!open) editor.guard.stay(); }} title={t(uncertain ? "uncertainLeaveTitle" : "discardTitle")} description={t(uncertain ? "uncertainLeaveHint" : "discardHint")} confirmLabel={t(uncertain ? "leave" : "discard")} cancelLabel={t("stay")} onConfirm={editor.guard.leave} />
