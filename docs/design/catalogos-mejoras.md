@@ -157,6 +157,12 @@ sin el buscador ni la lista paginada de abajo, sin la descripción del catálogo
 datos que tiene cada persona…» y la de la clave, que pasa a su (i)). La clave de un dato nuevo se completa sola desde el
 nombre, con el mismo generador y el mismo patrón que la de un campo, sin repetir la de otro dato.
 
+También **«Catálogo» de una pregunta «Elegir de un catálogo»** en el editor de formularios es ese combo: sin el desplegable
+con «Lotes · Texto · Escritas a mano · 193 opciones.», sin el buscador con su paginado y sin «Ver el catálogo». Ofrece los
+catálogos de los dos tipos y muestra apagados, con su motivo, los dados de baja y los que no se pueden usar. «Las opciones se
+preparan al mandar el formulario.» pasa a la (i) de «Catálogo», y la leyenda de «Qué opciones ve cada persona» («Los filtros se
+suman…»), a la (i) de su banda, como la de «Papel».
+
 El mismo día sumó la barra de Opciones: **sólo «Importar»**. «Pegar desde Excel» deja la barra y el «⋯» del celular, e
 «Importar» abre el diálogo de importación, que se rediseñó a continuación.
 
