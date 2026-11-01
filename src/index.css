@@ -338,7 +338,6 @@ table {
 .access-form-main { padding: 2.375rem 1.5rem 3rem; }
 .access-form { width: 100%; max-width: 25rem; margin: 0 auto; }
 .access-form h1 { font-size: 1.875rem; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
-.access-intro { color: var(--color-content-muted); margin-top: 0.625rem; }
 .access-back { display: inline-flex; align-items: center; gap: 0.4375rem; color: var(--color-content-muted); font-size: 0.8125rem; min-height: 2rem; align-self: flex-start; }
 .access-back:hover { color: var(--color-brand-600); }
 .access-shell [data-slot="button"] { min-height: 2.75rem; height: auto; padding: 0.625rem 1.125rem; white-space: normal; text-align: center; border-radius: var(--radius-control); }
