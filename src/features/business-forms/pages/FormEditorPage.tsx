@@ -180,7 +180,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     let catalogWait: MutationObserver | undefined;
     const frame = focusQuestion(localId, container => {
       const label = container?.querySelector<HTMLElement>('[data-question-control="label"]');
-      const catalog = container?.querySelector<HTMLSelectElement>('[data-question-control="catalog"]');
+      const catalog = container?.querySelector<HTMLInputElement>('[data-question-control="catalog"]');
       if (!catalog?.disabled) return catalog ?? label;
       catalogWait = new MutationObserver(() => {
         if (catalog.disabled) return;

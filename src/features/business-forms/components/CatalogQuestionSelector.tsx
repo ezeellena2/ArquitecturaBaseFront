@@ -1,52 +1,23 @@
-import type { CatalogDetail } from "../api/catalogResponse";
-import { administrativeName } from "../editorModel";
-import { useState } from "react";
-import { Link } from "react-router";
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { ApiError } from "@/shared/api/ApiError";
-import { Button } from "@/shared/ui/button";
-import { EmptyState } from "@/shared/ui/EmptyState";
-import { FormField } from "@/shared/ui/FormField";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
-import { Pagination } from "@/shared/ui/Pagination";
-import { SearchInput } from "@/shared/ui/SearchInput";
-import { Spinner } from "@/shared/ui/Spinner";
-import { useCatalogDetail, useCatalogPage } from "../hooks/useCatalogQueries";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
+import { Label } from "@/shared/ui/label";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
+import { CatalogFieldSourceInput } from "./CatalogFieldSourceInput";
+import { CatalogRowHelp, CatalogRowMessage } from "./CatalogRow";
 
-export function CatalogQuestionSelector({ scope, value, readOnly, error, onChange, manualOnly = false, selectedCatalog }: { scope: CatalogReadScope; value: string; readOnly: boolean; error?: string; onChange: (id: string) => void; manualOnly?: boolean; selectedCatalog?: CatalogDetail | null }) {
-  const { t } = useTranslation("forms");
-  const [search, setSearch] = useState(""); const [page, setPage] = useState(1);
-  const query = { page, pageSize: 20, sort: "name" as const, search, ...(manualOnly ? { kind: "Manual" as const } : {}) };
-  const list = useCatalogPage(scope, query, "global");
-  const rows = list.data?.items ?? [];
-  const currentRow = rows.find(row => row.id === value);
-  const detailId = selectedCatalog === undefined && value && list.data && !currentRow ? value : "";
-  const detail = useCatalogDetail(scope, detailId, "global");
-  const resolvedDetail = selectedCatalog === undefined ? detail.data : selectedCatalog;
-  const failure = list.error ?? detail.error;
-  const canRead = !!scope.actorId && scope.permissions.includes("formcatalogs.read") && !(failure instanceof ApiError && failure.status === 403);
-  const reason = (state: string, code: string | null) => state === "Unavailable" && code ? t("catalogs.unavailableReason") : t("catalogs.state." + state);
-  const label = (name: string, valueType: string, origin: string, count: number | null, state: string, code: string | null) => [name, t("catalogs.valueTypes." + valueType), t("catalogs.source." + (origin === "Manual" ? "manual" : "database")), count === null ? null : t("catalogs.filters.result", { count }), state === "Active" ? null : reason(state, code)].filter(Boolean).join(" · ");
-  const selected = currentRow ?? resolvedDetail;
-  const selectedName = currentRow?.name ?? (resolvedDetail ? administrativeName(resolvedDetail.name, scope.culture) : t("catalogQuestion.selected"));
-  const selectedDescription = currentRow?.description ?? (resolvedDetail ? administrativeName(resolvedDetail.description, scope.culture) : undefined);
-  const detailState = resolvedDetail?.unavailableReasonCode ? "Unavailable" : resolvedDetail?.isActive ? "Active" : "Inactive";
-  return <div className="flex flex-col gap-3">
-    <FormField label={t("catalogQuestion.catalog")} required error={error} hint={!canRead ? t("catalogQuestion.requiresRead") : selectedDescription ?? t("catalogQuestion.hint")}>
-      <NativeSelect data-question-control="catalog" value={canRead ? value : ""} disabled={readOnly || !canRead || list.isPending} onChange={event => {
-        if (readOnly || !canRead) return;
-        if (rows.some(row => row.id === event.target.value && row.state === "Active" && (!manualOnly || row.origin === "Manual"))) onChange(event.target.value);
-      }}><option value="" disabled>{t("select")}</option>
-        {canRead && value && !currentRow ? <option value={value} disabled={!resolvedDetail || detailState !== "Active"}>{resolvedDetail ? label(selectedName, resolvedDetail.valueType, resolvedDetail.kind, null, detailState, resolvedDetail.unavailableReasonCode) : selectedName}</option> : null}
-        {canRead ? rows.map(row => <option key={row.id} value={row.id} disabled={row.state !== "Active" || manualOnly && row.origin !== "Manual"}>{label(row.name, row.valueType, row.origin, row.optionsCount, row.state, row.stateReason)}</option>) : null}
-      </NativeSelect>
-    </FormField>
-    {canRead && !readOnly ? <SearchInput value={search} label={t("catalogQuestion.search")} onChange={next => { setSearch(next); setPage(1); }} /> : null}
-    {canRead && list.isPending ? <Spinner /> : null}
-    {canRead && failure ? <div><Button type="button" variant="outline" onClick={() => { void list.refetch(); if (detailId) void detail.refetch(); }}>{t("common:actions.retry")}</Button></div> : null}
-    {canRead && list.data && !readOnly ? <Pagination {...list.data} onPageChange={setPage} /> : null}
-    {canRead && list.data && !rows.length && !failure ? <EmptyState embedded title={t(search.trim()?"catalogQuestion.noResults":"catalogQuestion.empty")} /> : null}
-    {canRead && selected ? <div><Button type="button" variant="link" asChild><Link to={"/catalogos/" + value}>{t("catalogQuestion.view")}</Link></Button></div> : null}
+// The catalog of a question: the dropdown of a catalog field (2026-10-31), with every kind of catalog and the unusable ones
+// off. When the options are prepared is the help of its (i); without permission to read catalogs it stays off, with that
+// reason, and the question keeps its catalog. Emptying the text does not leave the question without a catalog.
+export function CatalogQuestionSelector({ scope, value, readOnly, error, selectedName, onChange }: { scope: CatalogReadScope; value: string; readOnly: boolean; error?: string; selectedName?: string | null; onChange: (id: string) => void }) {
+  const { t } = useTranslation("forms"), id = useId();
+  const canRead = !!scope.actorId && scope.permissions.includes("formcatalogs.read");
+  return <div className="flex flex-col gap-1.5">
+    <div className="flex items-center gap-1"><Label htmlFor={id}>{t("catalogQuestion.catalog")}<span aria-hidden="true"> *</span></Label><CatalogRowHelp label={t("catalogQuestion.hintLabel")} text={t("catalogQuestion.hint")} /></div>
+    <DisabledReason reason={canRead ? null : t("catalogQuestion.requiresRead")} className="grid w-full">
+      <CatalogFieldSourceInput anyKind scope={scope} value={canRead && value ? value : null} label={t("catalogQuestion.catalog")} readOnly={readOnly || !canRead} selectedName={selectedName} onChange={next => { if (next) onChange(next); }}
+        id={id} aria-invalid={error ? true : undefined} aria-describedby={error ? id + "error" : undefined} data-question-control="catalog" />
+    </DisabledReason>
+    {error ? <CatalogRowMessage id={id + "error"} error>{error}</CatalogRowMessage> : null}
   </div>;
 }

@@ -25,22 +25,20 @@ beforeEach(() => {
 });
 const expandedQuestions = () => screen.getAllByRole("button", { name: /^Editar / }).filter(button => button.getAttribute("aria-expanded") === "true");
 
-it("opens the question named by the catalog usage link and focuses its catalog once it can be chosen", async () => {
+it("opens the question named by the catalog usage link and focuses its catalog", async () => {
   const customer = fixtureDefinition().draft.fields[0]!;
   renderRouteWithProviders("/formularios/" + fixtureFormId, { state: { questionFieldId: customer.fieldId } });
   const label = await screen.findByRole("textbox", { name: "Pregunta" });
   expect(label).toHaveValue("Cliente");
   expect(expandedQuestions().map(button => button.getAttribute("aria-label"))).toEqual(["Editar Cliente"]);
-  // While the catalog list loads the catalog cannot be chosen, so the question's label holds the focus.
+  // The catalog is a dropdown that can be chosen while its list loads (2026-10-31): it takes the focus on arrival.
   const catalog = screen.getByRole("combobox", { name: "Catálogo" });
-  await act(async () => { await new Promise(resolve => requestAnimationFrame(resolve)); });
-  expect(catalog).toBeDisabled();
-  expect(label).toHaveFocus();
+  await waitFor(() => expect(catalog).toHaveFocus());
+  expect(catalog).toBeEnabled();
 
   act(() => releaseCatalogs());
-  await waitFor(() => expect(catalog).toBeEnabled());
-  expect(catalog).toHaveValue(catalogId);
-  await waitFor(() => expect(catalog).toHaveFocus());
+  await waitFor(() => expect(catalog).toHaveValue("Clientes"));
+  expect(catalog).toHaveFocus();
   cleanup();
 
   queryClient.clear();

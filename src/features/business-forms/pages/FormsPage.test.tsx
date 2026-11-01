@@ -636,8 +636,9 @@ it("creates a catalog question, reports its missing selection, then saves the se
   expect(await screen.findByText("Elegí un catálogo.")).toBeInTheDocument();
   const catalog = screen.getByRole("combobox",{name:"Catálogo"});
   expect(catalog).toHaveAttribute("aria-invalid","true");
-  await screen.findByRole("option",{name:/Clientes ·/});
-  await userEvent.selectOptions(catalog,catalogId);
+  // The catalog is a dropdown (2026-10-31): it shows the first catalogs when touched.
+  await userEvent.click(catalog);
+  await userEvent.click(await screen.findByRole("option",{name:/^Clientes ·/}));
   await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));
   await waitFor(()=>expect(router.state.location.pathname).toMatch(/^\/formularios\/0199/));
   expect(sent).toHaveLength(2);

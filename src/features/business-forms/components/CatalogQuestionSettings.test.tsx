@@ -125,6 +125,21 @@ it("explains why a person cannot be tried before saving only on hover or focus",
   expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
 });
 
+// No note under «Qué opciones ve cada persona»: how the filters work is the help of the (i) in its band, as in «Papel»,
+// also in a form that is only read.
+it("explains the filters in the (i) of their section instead of a note", async () => {
+  serveRecipientPreview();
+  const hint = "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona debe elegir del mismo catálogo.";
+  for (const readOnly of [false, true]) {
+    const view = renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: manualId }} questionId="q" readOnly={readOnly} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
+    const section = await screen.findByRole("region", { name: "Qué opciones ve cada persona" });
+    expect(within(section).queryByText(hint)).not.toBeInTheDocument();
+    await userEvent.hover(within(section).getByRole("button", { name: "Cómo funcionan los filtros" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(hint);
+    view.unmount();
+  }
+});
+
 it("offers filter additions in the section header", async () => {
   serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
   const onSourceChange = vi.fn();

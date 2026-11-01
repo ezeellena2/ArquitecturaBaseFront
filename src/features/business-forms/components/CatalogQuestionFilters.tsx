@@ -56,7 +56,7 @@ export function CatalogQuestionFilters({ source, fields, attributes, scope, read
   const { match, eligible, compatible, available } = filterChoices(source, fields, attributes);
   const update = (conditions: readonly FormCatalogMatch<string | null>[]) => onChange(normalizeCatalogQuestionSource({ ...source, match: conditions }));
   const change = (index: number, condition: FormCatalogMatch<string | null>) => update(match.map((item, position) => position === index ? condition : item));
-  return <div className="space-y-3"><p className="text-xs text-[var(--color-content-muted)]">{t("catalogQuestion.filter.hint")}</p>
+  return <div className="space-y-3">
     {match.map((condition, index) => {
       const field = fields.find(field => field.id === condition.fieldId);
       const person = "personAttributeId" in condition;
