@@ -499,6 +499,28 @@ it("disables Discard while acceptance is pending and while its result is unconfi
   await screen.findByRole("heading", { name: "Publicación sin confirmar" });
   expect(screen.getByRole("button", { name: "Descartar" })).toBeDisabled();
 });
+// Leaving with an unconfirmed publication offers to consult it: the confirmation stays open with «Consultando…» and its
+// ring until the answer arrives, and the person stays in the editor (inventory of waits, 2026-11-01).
+it("keeps the leave confirmation open with «Consultando…» while it consults the unconfirmed publication", async () => {
+  const store = setup("forms-publication-uncertain", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+  const { router } = renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await screen.findByLabelText("Nombre");
+  await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
+  const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
+  await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar versión 1" }));
+  await screen.findByRole("heading", { name: "Publicación sin confirmar" });
+  let release = () => {};
+  const held = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/definitions/:id/publications/:requestId", async ({ request }) => { await held; return store.handle(request); }));
+  act(() => { void router.navigate("/formularios"); });
+  const leave = await screen.findByRole("dialog", { name: "Publicación sin confirmar" });
+  await userEvent.click(within(leave).getByRole("button", { name: "Consultar publicación" }));
+  try {
+    expect(within(leave).getByRole("button", { name: "Consultando…" })).toHaveAttribute("aria-busy", "true");
+  } finally { release(); }
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Publicación sin confirmar" })).not.toBeInTheDocument());
+  expect(router.state.location.pathname).toBe("/formularios/" + fixtureFormId);
+});
 
 it("reports the common server cause and trace for a failed initial list", async () => {
   setup();

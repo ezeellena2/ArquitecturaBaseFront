@@ -60,10 +60,11 @@ describe("Chosen publication board PU1-A", () => {
     await mount();
     expect(screen.getByRole("dialog").querySelector("[data-slot='dialog-footer']")).not.toHaveTextContent("2026-10-10 15:20");
   });
-  it("leaves the explanations to the (i), without a description, «Qué queda fijo» or «Qué va a pasar»", async () => {
+  // Approved in the inventory of legends (P1, P7, P11, P13 and P14): they go away entirely, not to an (i).
+  it("has no description, «Qué queda fijo» or «Qué va a pasar», not even in an (i)", async () => {
     await mount();
-    for (const text of [/Revisamos el borrador/, /Qué queda fijo/, /Qué va a pasar/, /Aceptar el pedido/, /Le llega en español/]) expect(screen.queryByText(text)).not.toBeInTheDocument();
-    expect(within(zone("Qué se publica")).getByRole("button", { name: "Más información sobre Qué se publica" })).toHaveAccessibleDescription(/^Se guarda la versión 3 con estas preguntas y se manda a WhatsApp\./);
+    for (const text of [/Revisamos el borrador/, /Qué queda fijo/, /Qué va a pasar/, /Aceptar el pedido/, /Le llega en español/, /conservan lo publicado/, /Se guarda la versión/]) expect(screen.queryByText(text)).not.toBeInTheDocument();
+    expect(within(zone("Qué se publica")).queryByRole("button", { name: "Más información sobre Qué se publica" })).not.toBeInTheDocument();
   });
   it("says the prefix becomes fixed only while it is free", async () => {
     await mount(undefined, value, { prefixLocked: false });
@@ -128,20 +129,27 @@ describe("Chosen publication board PU1-A", () => {
     await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
     for (const text of screen.queryAllByText(reason)) expect(text).not.toBeVisible();
   });
-  it("with unsaved changes asks to save first, and why is the (i) of the title", async () => {
+  // P2 and P3: the title says it all.
+  it("with unsaved changes asks to save first with its title alone", async () => {
     await mount(undefined, value, { dirty: true });
     expect(screen.getByRole("dialog", { name: "Primero guardá los cambios" })).not.toHaveAttribute("aria-describedby");
-    expect(screen.getByRole("button", { name: "Por qué hay que guardar" })).toHaveAccessibleDescription("Se publica sólo lo guardado.");
+    expect(screen.queryByText(/Se publica sólo lo guardado/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Por qué/ })).not.toBeInTheDocument();
     expect(screen.queryByText("Tus cambios siguen en el editor.")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeEnabled();
   });
-  it("reactivating says where the numbering continues, and what comes back is the (i)", async () => {
+  // P4 to P6: reactivating shows the next response as a datum, and nothing explains the numbering or what comes back.
+  it("reactivating shows the next response as a row, without explanations", async () => {
     await mount(undefined, value, { reactivation: { name: "Registrar visita", nextRecordNumber: "VIS-0042" } });
-    expect(screen.getByRole("dialog", { name: "Reactivar «Registrar visita»" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Reactivar «Registrar visita»" })).not.toHaveAttribute("aria-describedby");
     const published = zone("Qué se publica");
-    expect(row(published, "Numeración")).toHaveTextContent("Sigue en VIS-0042");
-    expect(within(published).getByRole("button", { name: "Más información sobre Qué se publica" })).toHaveAccessibleDescription(/Vuelve a mandarse desde el chat/);
+    expect(row(published, "Próxima respuesta")).toHaveTextContent(/^VIS-0042$/);
+    for (const text of [/Flows nuevos/, /La numeración sigue/, /Vuelve a mandarse/]) expect(screen.queryByText(text)).not.toBeInTheDocument();
+    expect(within(published).queryByRole("button", { name: "Más información sobre Qué se publica" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reactivar con la versión 3" })).toBeEnabled();
+    cleanup();
+    await mount(undefined, value, { reactivation: { name: "Registrar visita", nextRecordNumber: null } });
+    expect(within(zone("Qué se publica")).queryByText("Próxima respuesta", { selector: "dt" })).not.toBeInTheDocument();
   });
 });
 
@@ -222,7 +230,8 @@ it.each([1, 3, 4, 8])("names at most three optional omissions in the (i) and cou
   const languages = row(zone("Qué se publica"), "Idiomas");
   const names = ["Nombre", "Texto del botón final", "Cliente · la pregunta"].slice(0, Math.min(count, 3));
   const list = new Intl.ListFormat("es", { type: "conjunction" }).format(count > 3 ? [...names, count - 3 + " más"] : names);
-  expect(within(languages).getByRole("button", { name: "Qué falta en el español" })).toHaveAccessibleDescription((count === 1 ? "Falta " : "Faltan ") + list + ". Podés publicar igual y sumarlo en otra versión.");
+  // P10: the count stays, without «Podés publicar igual y sumarlo en otra versión.».
+  expect(within(languages).getByRole("button", { name: "Qué falta en el español" })).toHaveAccessibleDescription((count === 1 ? "Falta " : "Faltan ") + list + ".");
   expect(within(languages).getByRole("button", { name: "Completar el español" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
 });

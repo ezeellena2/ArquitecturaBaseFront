@@ -140,6 +140,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const deletionFallback = useRef<HTMLElement | null>(null);
   const publicationAction = useRef<HTMLButtonElement>(null);
   const publicationReturnFocus = useRef<HTMLElement | null>(null);
+  // Leaving with an unconfirmed publication offers to consult it: the confirmation waits for the answer, with its ring.
+  const [leaveConsulting, setLeaveConsulting] = useState(false);
   const publicationLeadsToRange = useRef(false);
   const [publicationOpen, setPublicationOpen] = useState(() => reactivateOnOpen && !!lifecycle?.deactivatedAtUtc && lifecycle.canReactivate && canPublish);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -356,7 +358,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     void operate(editor.save).then(saved => { if (saved && active.current) setPublicationOpen(true); });
   }} onConflict={error => { setPublicationOpen(false); editor.requireReview(error); }} onGoToIssue={goToPublicationIssue} onCompleteTranslation={locatePublicationIssue} /> : null}
   <ConfirmDialog open={(discardOpen || guard.isBlocked) && !frozen && !publicationPending} onOpenChange={open => { setDiscardOpen(open); if (!open) guard.stay(); }} title={t("discardTitle")} description={t("discardDescription")} cancelLabel={t("stay")} confirmLabel={t("discard")} destructive onConfirm={leave} />
-  {guard.isBlocked && publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("publication.unconfirmed")} description={t("publication.unconfirmedHint")} cancelLabel={t("stay")} confirmLabel={t("publication.consult")} onConfirm={() => { guard.stay(); void publication.consult(); }} /> : null}
+  {(guard.isBlocked && publicationPending) || leaveConsulting ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t("publication.unconfirmed")} description={t("publication.unconfirmedHint")} cancelLabel={t("stay")} confirmLabel={t("publication.consult")} pending={leaveConsulting} pendingLabel={t("publication.consulting")} onConfirm={() => { guard.stay(); setLeaveConsulting(true); void publication.consult().finally(() => { if (active.current) setLeaveConsulting(false); }); }} /> : null}
   {guard.isBlocked && session.phase === "Saving" && !publicationPending ? <Dialog open onOpenChange={() => guard.stay()}><DialogContent><DialogHeader><DialogTitle>{t("saving")}</DialogTitle><DialogDescription>{t("savingLeave")}</DialogDescription></DialogHeader><DialogFooter><Button type="button" variant="outline" onClick={() => guard.stay()}>{t("stay")}</Button></DialogFooter></DialogContent></Dialog> : null}
   {guard.isBlocked && frozen && session.phase !== "Saving" && !publicationPending ? <ConfirmDialog open onOpenChange={() => guard.stay()} title={t(reviewRequired ? "reviewTitle" : "uncertain")} description={t(reviewRequired ? "reviewPending" : "busyLeave")} cancelLabel={t("stay")} confirmLabel={t(session.phase === "Unconfirmed" ? "recover" : "review")} onConfirm={() => { guard.stay(); if (session.phase === "Unconfirmed") void operate(editor.recover); else if (reviewRequired) showReview(); }} /> : null}
   <ConfirmDialog focusFallback={removalFocus} open={removeId !== null} onOpenChange={open => { if (!open) setRemoveId(null); }} title={t("removeTitle")} description={t("removeDescription")} confirmLabel={t("removeQuestionAction")} destructive onConfirm={() => { if (removeId) removeQuestion(removeId); }} />

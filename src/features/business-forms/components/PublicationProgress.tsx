@@ -50,25 +50,29 @@ export function PublicationProgress({ publication, feedbackId, onReplay, project
     : publication.phase === "Unconfirmed" ? "publication.unconfirmed" : publication.phase === "Rejected" ? "publication.rejected"
     : state === "Published" ? "publication.published" : state === "Failed" ? "publication.failed"
     : state === "Uncertain" ? "publication.unconfirmed" : "publication.publishing";
-  const hint = publication.phase === "Accepting" ? "publication.acceptingHint"
-    : publication.phase === "Unconfirmed" ? "publication.unconfirmedHint" : publication.phase === "Rejected" ? "publication.rejectedHint"
-    : state === "Published" ? "publication.publishedHint" : state === "Failed" ? "publication.failedHint"
-    : state === "Uncertain" ? "publication.reviewHint" : "publication.progressHint";
+  // The title and the steps say the state (inventory of legends, 2026-11-01): a paragraph stays only where the state asks
+  // to do something (unconfirmed, rejected or in review), or as a datum, the published languages.
+  const message = publication.phase === "Accepting" ? null : publication.phase === "Unconfirmed" ? "publication.unconfirmedHint"
+    : publication.phase === "Rejected" ? "publication.rejectedHint" : state === "Uncertain" ? "publication.reviewHint" : null;
   const requiresReview = publication.status?.requiresReview ?? publication.aggregate?.requiresReview ?? projection?.currentOperation?.requiresReview;
   // Consulting and replaying act on the whole publication: they go in the header, with the wait of a 429 as their reason.
+  // While it consults, also the periodic consultation, the button says so with its ring.
   const waitReason = publication.busy || !cooldown.isRunning ? null : t("wait", { count: cooldown.seconds });
   const actions = !forbidden && ["Accepted", "Unconfirmed"].includes(publication.phase) ? <>
-    <DisabledReason reason={waitReason}><Button type="button" variant="outline" disabled={publication.busy || cooldown.isRunning} onClick={() => void publication.consult()}>{t("publication.consult")}</Button></DisabledReason>
+    <DisabledReason reason={waitReason}><Button type="button" variant="outline" pending={publication.busy} disabled={cooldown.isRunning} onClick={() => void publication.consult()}>{t(publication.busy ? "publication.consulting" : "publication.consult")}</Button></DisabledReason>
     {publication.canReplay ? <DisabledReason reason={waitReason}><Button type="button" variant="outline" disabled={publication.busy || cooldown.isRunning} onClick={onReplay}>{t("publication.replay")}</Button></DisabledReason> : null}
   </> : null;
+  const steps = publication.confirmed && state !== "Failed" ? <ol className="flex flex-col gap-1 text-sm">
+    <li>{t("publication.stepAccepted")}</li>
+    <li className="text-[var(--color-content-muted)]">{t(state === "Preparing" ? "publication.stepPreparing" : state === "Publishing" ? "publication.stepSent" : state === "ActivationPending" ? "publication.stepActivating" : state === "Published" ? "publication.stepReady" : "publication.stepPending")}</li>
+  </ol> : null;
   return <Surface title={t(title, { version })} padded actions={actions}>
     <div className="flex flex-col gap-3">
-      <p role={state === "Published" ? undefined : "status"} className="text-sm">{t(state === "Published" && publishedCultures.length ? "publication.languages" : hint, { version, languages })}</p>
-      {publication.confirmed && state !== "Failed" ? <ol className="flex flex-col gap-1 text-sm">
-        <li>{t("publication.stepAccepted")}</li>
-        <li className="text-[var(--color-content-muted)]">{t(state === "Preparing" ? "publication.stepPreparing" : state === "Publishing" ? "publication.stepSent" : state === "ActivationPending" ? "publication.stepActivating" : state === "Published" ? "publication.stepReady" : "publication.stepPending")}</li>
-      </ol> : null}
-      {requiresReview && hint !== "publication.reviewHint" ? <p className="text-sm">{t("publication.reviewHint")}</p> : null}
+      {publication.phase === "Accepting" ? <p role="status" className="sr-only">{t(title, { version })}</p> : null}
+      {message ? <p role="status" className="text-sm">{t(message)}</p> : state === "Published" && publishedCultures.length ? <p className="text-sm">{t("publication.languages", { languages })}</p> : null}
+      {/* While it goes on, the current step is what changes: it is announced. */}
+      {steps && !message && state !== "Published" ? <div role="status">{steps}</div> : steps}
+      {requiresReview && message !== "publication.reviewHint" ? <p className="text-sm">{t("publication.reviewHint")}</p> : null}
       {issues.length ? <ul className="flex flex-col gap-2 text-sm">{issues.map((issue,index) => <li key={index}><p>{issue.message}</p>{issue.culture ? <p className="text-xs text-[var(--color-content-muted)]">{t("common:language." + issue.culture)}</p> : null}{onGoToIssue && canLocateIssue?.(issue) ? <Button type="button" size="sm" variant="outline" onClick={() => onGoToIssue(issue)}>{t(issue.fieldId ? "publication.goToQuestion" : "publication.goToText")}</Button> : null}</li>)}</ul> : null}
       {projection?.activeVersion && state !== "Published" ? <p className="text-sm text-[var(--color-content-muted)]">{t("publication.previousActive", { version: projection.activeVersion.versionNumber })}</p> : null}
       {publication.error && publication.confirmed ? <p className="text-sm">{t("publication.statusFailed")}</p> : null}

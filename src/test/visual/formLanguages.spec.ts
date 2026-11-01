@@ -37,7 +37,7 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     const missing = es ? "Faltan Cliente · la opción «Pérez Hnos.», Importe cobrado · la pregunta y Observaciones · la ayuda." : "Missing: Customer · option “Pérez Hnos.”, Importe cobrado · question, and Notes · help.";
     if (state === "original") {
       await expect(without).toBeVisible();
-      await expect(languages.getByRole("button", { name: es ? "Qué falta en el inglés" : "What is missing in English", exact: true })).toHaveAccessibleDescription(missing + (es ? " Podés publicar igual y sumarlo en otra versión." : " You can publish anyway and add it in another version."));
+      await expect(languages.getByRole("button", { name: es ? "Qué falta en el inglés" : "What is missing in English", exact: true })).toHaveAccessibleDescription(missing);
     } else await expect(without).toHaveCount(0);
     if (state === "remove") {
       await expect(warnings.getByText(es ? "Deja de publicarse." : "It will no longer be published.", { exact: true })).toBeVisible();

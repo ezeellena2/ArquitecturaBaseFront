@@ -140,7 +140,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   };
   const currentNames = (ids: readonly string[]) => value.draft.fields.filter(q => q.fieldId && ids.includes(q.fieldId)).map(q => localizedValue(q.label, scope.culture, value.draft.culture)).join(", ");
   const summaryRows = (diff: FormPublicationCheck["diff"] | null) => <>
-    {reactivation ? <SummaryRow label={t("publication.numberingRow")}>{t(reactivation.nextRecordNumber ? "publication.numberingNext" : "publication.numberingSame", { number: reactivation.nextRecordNumber })}</SummaryRow> : null}
+    {reactivation?.nextRecordNumber ? <SummaryRow label={t("publication.nextRecordRow")}>{reactivation.nextRecordNumber}</SummaryRow> : null}
     {savedAt ? <SummaryRow label={t("publication.draftRow")}>{t("publication.savedAtValue", { date: savedAt })}</SummaryRow> : null}
     <SummaryRow label={t("publication.questionsRow")}>{value.draft.fields.length}</SummaryRow>
     {/* The changes are against the published version, without naming it: a newer one is never labeled with a stale number. */}
@@ -181,8 +181,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
           </Finding>)}
         </ul>
       </Surface> : null}
-      <Surface title={t("publication.summary")} headingLevel={3}
-        help={reactivation ? t("lifecycle.reactivateDescription") + " " + t("lifecycle.reactivateEffect") : t("publication.summaryHelp", { version: result.nextVersionNumber })}>
+      <Surface title={t("publication.summary")} headingLevel={3}>
         <dl className={rows}>
           {summaryRows(result.diff)}
           {publishedCultures.length ? <SummaryRow label={t("publication.languagesRow")}>
@@ -193,7 +192,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
               const language = t("cultureNamesInText." + culture);
               return <span key={culture} className="flex flex-wrap items-center gap-x-1">
                 <span className={muted}>{t("publication.withoutCulture", { language, count: missing.length })}</span>
-                <InfoTip label={t("publication.missingHelpLabel", { language })} text={missingList(missing) + " " + t("publication.publishAnyway")} />
+                <InfoTip label={t("publication.missingHelpLabel", { language })} text={missingList(missing)} />
                 {complete(culture)}
               </span>;
             })}
@@ -208,10 +207,9 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   // Why Publish is off is its reason: a problem, the expired check, a publication in progress or a channel not available.
   const publishReason = !result || accepting ? null : expired ? t("publication.expired") : result.issues.length ? t("publication.fixFirst", { count: result.issues.length })
     : result.acceptanceAvailability === "InProgress" ? t("publication.inProgress") : !result.canAccept ? t("publication.unavailable") : null;
-  // Why to save first is the (i) of the title: the dialog has no description.
+  // No description: with unsaved changes the title says it all.
   return <Dialog open onOpenChange={onOpenChange}><DialogContent mobileFullscreen={!!reactivation} className={reactivation ? "flex flex-col sm:max-w-2xl" : "sm:max-w-2xl"} onCloseAutoFocus={onCloseAutoFocus} aria-describedby={undefined}>
-    <DialogHeader><div className="flex items-center gap-1 pr-6"><DialogTitle>{reactivation && !dirty ? t("lifecycle.reactivateTitle", { name: reactivation.name }) : t(dirty ? "publication.saveFirst" : check.result ? "publication.versionTitle" : "publication.title", { version: check.result?.nextVersionNumber })}</DialogTitle>
-      {dirty ? <InfoTip label={t("publication.unsavedHelpLabel")} text={t("publication.unsaved")} /> : null}</div></DialogHeader>
+    <DialogHeader><DialogTitle className="pr-6">{reactivation && !dirty ? t("lifecycle.reactivateTitle", { name: reactivation.name }) : t(dirty ? "publication.saveFirst" : check.result ? "publication.versionTitle" : "publication.title", { version: check.result?.nextVersionNumber })}</DialogTitle></DialogHeader>
     {reactivation ? <div className="min-h-0 flex-1 overflow-y-auto">{content}</div> : content}
     <DialogFooter className={reactivation ? "shrink-0" : undefined}>
       <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common:actions.cancel")}</Button>

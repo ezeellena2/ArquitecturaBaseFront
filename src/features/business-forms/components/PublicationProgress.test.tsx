@@ -59,6 +59,38 @@ it("keeps the published English UI state static and announces the result only on
   expect(notify).toHaveBeenCalledOnce();
 });
 
+// The inventory of legends (P16 to P19, 2026-11-01): the title and the steps say the state; no paragraph repeats it.
+it("announces «Aceptando publicación…» as the status, without a paragraph under it", async () => {
+  await act(async () => { renderWithProviders(<PublicationProgress publication={{ ...session("Publishing"), phase: "Accepting", status: null, confirmed: false, busy: true }} feedbackId="accepting" onReplay={vi.fn()} />); });
+  expect(screen.getByRole("heading", { name: "Aceptando publicación…" })).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(/^Aceptando publicación…$/);
+  expect(screen.queryByText(/Estamos confirmando la versión/)).not.toBeInTheDocument();
+});
+it("announces the steps of a publication in progress, without a paragraph that repeats them", async () => {
+  const original = session("Publishing");
+  await act(async () => { renderWithProviders(<PublicationProgress publication={{ ...original, status: { ...original.status!, requiresReview: false } }} feedbackId="publishing" onReplay={vi.fn()} />); });
+  expect(screen.getByRole("status")).toHaveTextContent(/Aceptada.*Enviada a WhatsApp; esperando confirmación/);
+  expect(screen.queryByText(/Podés seguir editando el borrador/)).not.toBeInTheDocument();
+});
+it("says nothing more than the title for a version published without languages or one that failed", async () => {
+  const original = session("Publishing");
+  const view = renderWithProviders(<PublicationProgress publication={{ ...original, status: { ...original.status!, state: "Published", requiresReview: false, cultures: [] } }} feedbackId="published-plain" onReplay={vi.fn()} />);
+  await act(async () => {});
+  expect(screen.getByRole("heading", { name: "Publicado · versión 2" })).toBeInTheDocument();
+  expect(screen.queryByText(/está publicada y lista para mandar/)).not.toBeInTheDocument();
+  view.rerender(<PublicationProgress publication={{ ...original, status: { ...original.status!, state: "Failed", requiresReview: false } }} feedbackId="published-plain" onReplay={vi.fn()} />);
+  expect(screen.getByRole("heading", { name: "No se pudo publicar · versión 2" })).toBeInTheDocument();
+  expect(screen.queryByText(/no se activó/)).not.toBeInTheDocument();
+});
+// While it consults, the button says so with its ring (LC1-A), also during the periodic consultation.
+it("says «Consultando…» with its ring while it consults, and replaying waits", async () => {
+  await act(async () => { renderWithProviders(<PublicationProgress publication={{ ...session("Publishing"), phase: "Unconfirmed", canReplay: true, busy: true }} feedbackId="consulting" onReplay={vi.fn()} />); });
+  const consulting = screen.getByRole("button", { name: "Consultando…" });
+  expect(consulting).toBeDisabled();
+  expect(consulting).toHaveAttribute("aria-busy", "true");
+  expect(screen.getByRole("button", { name: "Repetir el mismo intento" })).toBeDisabled();
+});
+
 // Consulting and replaying act on the whole publication: they go in the header of its surface, and the wait of a 429 is their reason.
 it("puts consult and replay in the header of the publication and explains the wait as their reason", async () => {
   const wait = "Esperá 30 segundos para volver a intentar.";
