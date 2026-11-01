@@ -66,6 +66,18 @@ function DialogContent({
   mobileFullscreen?: boolean
 }) {
   const { t } = useTranslation()
+  const { onOpenAutoFocus, ...contentProps } = props
+  // Radix focuses the first tabbable element on open; if that is an (i), its tooltip would cover the content. The
+  // focus goes to the next element instead, and the (i) stays one Tab back.
+  const skipInfoTip = React.useCallback((event: Event) => {
+    onOpenAutoFocus?.(event)
+    if (event.defaultPrevented || !(event.currentTarget instanceof HTMLElement)) return
+    const tabbable = [...event.currentTarget.querySelectorAll<HTMLElement>("button, [href], input:not([type=hidden]), select, textarea, [tabindex]")]
+      .filter(element => element.tabIndex >= 0 && !element.matches(":disabled") && !element.closest("[hidden], [inert]"))
+    if (!tabbable[0]?.hasAttribute("data-info-tip")) return
+    event.preventDefault()
+    tabbable.find(element => !element.hasAttribute("data-info-tip"))?.focus()
+  }, [onOpenAutoFocus])
   const registerHost = React.useCallback((host: HTMLDivElement | null) => {
     if (!host) return
     // A manual top-layer host escapes the panel's transform/scroll while remaining in its focus scope.
@@ -87,7 +99,8 @@ function DialogContent({
             : "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100svh-2rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 rounded-[var(--radius-card)] border bg-background p-4 duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 motion-reduce:animate-none sm:max-w-lg",
           className
         )}
-        {...props}
+        {...contentProps}
+        onOpenAutoFocus={skipInfoTip}
       >
         {children}
         <div ref={registerHost} popover="manual" className="m-0 h-0 w-0 overflow-visible border-0 bg-transparent p-0 text-inherit" data-slot="notification-host" />

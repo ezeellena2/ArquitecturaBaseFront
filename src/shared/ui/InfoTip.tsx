@@ -12,7 +12,7 @@ export function InfoTip({ label, text, id }: { label: string; text: string; id?:
   const textId = id ?? generatedId;
   return (
     <ActionTooltip label={text}>
-      <Button type="button" variant="ghost" size="icon-xs" aria-label={label} aria-describedby={textId} className="relative z-10 text-[var(--color-content-muted)]">
+      <Button type="button" variant="ghost" size="icon-xs" aria-label={label} aria-describedby={textId} data-info-tip="" className="relative z-10 text-[var(--color-content-muted)]">
         <InfoIcon className="size-3.5" />
         <span id={textId} hidden>{text}</span>
       </Button>

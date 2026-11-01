@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { CheckboxField } from "./CheckboxField";
+import { Dialog, DialogContent, DialogTitle } from "./dialog";
 import { FormField } from "./FormField";
 import { InfoTip } from "./InfoTip";
 import { Input } from "./input";
@@ -19,6 +20,23 @@ describe("InfoTip", () => {
     await userEvent.tab();
     expect(info).toHaveFocus();
     expect(await screen.findByRole("tooltip")).toHaveTextContent("La clave guardada nunca se muestra.");
+  });
+});
+
+describe("an information icon first in a dialog", () => {
+  it("does not take the focus when the dialog opens, so its tooltip does not cover the content", async () => {
+    renderWithProviders(
+      <Dialog open>
+        <DialogContent aria-describedby={undefined}>
+          <DialogTitle>Exportar a Excel</DialogTitle>
+          <FormField label="Archivo" help="Número, recibida y canal siempre se incluyen."><Input /></FormField>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(await screen.findByLabelText("Archivo")).toHaveFocus();
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    await userEvent.tab({ shift: true });
+    expect(screen.getByRole("button", { name: "Más información sobre Archivo" })).toHaveFocus();
   });
 });
 
