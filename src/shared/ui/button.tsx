@@ -44,15 +44,21 @@ const buttonVariants = cva(
   }
 )
 
+// While its action works (board LC1-A, 2026-11-01): the spinner in the text color before the gerund the owner passes
+// («Guardando…»), off for a second click but not dimmed, in the same place.
 function Button({
   className,
   variant = "default",
   size = "default",
   asChild = false,
+  pending = false,
+  disabled,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    pending?: boolean
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
@@ -61,9 +67,14 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      aria-busy={pending || undefined}
+      disabled={disabled || pending}
+      className={cn(buttonVariants({ variant, size, className }), pending && "disabled:opacity-100")}
       {...props}
-    />
+    >
+      {pending && !asChild ? <span data-slot="button-spinner" aria-hidden="true" className="inline-block size-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" /> : null}
+      {children}
+    </Comp>
   )
 }
 

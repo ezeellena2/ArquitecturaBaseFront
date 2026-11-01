@@ -137,4 +137,20 @@ describe("ConfirmDialog", () => {
 
     expect(screen.getByRole("button", { name: "Guardar" })).toHaveAttribute("data-variant", "default");
   });
+
+  it("stays open while its action works and closes when its owner ends it", async () => {
+    function Owner() {
+      const [open, setOpen] = useState(true), [pending, setPending] = useState(false);
+      return <ConfirmDialog open={open} onOpenChange={setOpen} title="¿Desactivar a juan@example.com?" confirmLabel="Desactivar" pendingLabel="Desactivando…"
+        pending={pending} onConfirm={() => setPending(true)} />;
+    }
+    renderWithProviders(<Owner />);
+    await userEvent.click(screen.getByRole("button", { name: "Desactivar" }));
+    const working = screen.getByRole("button", { name: "Desactivando…" });
+    expect(working).toHaveAttribute("aria-busy", "true");
+    expect(working).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "¿Desactivar a juan@example.com?" })).toBeInTheDocument();
+  });
 });
