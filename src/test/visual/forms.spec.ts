@@ -191,6 +191,37 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   });
 }
 
+// PU1-A (2026-11-01): what stops publishing and what is worth reviewing in their zones, what is published in rows, and why
+// Publish is off as its reason; the explanations are the (i).
+for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
+  test(`publication check with a problem and a warning ${language} at ${width}px`, async ({ page }) => {
+    const es = language === "es";
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-blocked&lang=${language}`);
+    await page.getByRole("button", { name: es ? "Publicar en WhatsApp" : "Publish on WhatsApp", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: es ? "Publicar la versión 1 en WhatsApp" : "Publish version 1 on WhatsApp", exact: true });
+    const problems = dialog.getByRole("region", { name: es ? "Problemas" : "Problems", exact: true });
+    await expect(problems.getByText(es ? "Importe cobrado al cliente · Español" : "Amount collected from the customer · English", { exact: true })).toBeVisible();
+    await expect(problems.getByText(es ? "Hasta 20 caracteres; tiene 26." : "Up to 20 characters; it has 34.", { exact: true })).toBeVisible();
+    const warnings = dialog.getByRole("region", { name: es ? "Avisos" : "Warnings", exact: true });
+    await expect(warnings.getByText(es ? "Como mucho 125 opciones por persona, de un límite de 200." : "At most 125 options per person, against a limit of 200.", { exact: true })).toBeVisible();
+    const published = dialog.getByRole("region", { name: es ? "Qué se publica" : "What is published", exact: true });
+    await expect(published.locator("dt", { hasText: es ? "Prefijo" : "Prefix" })).toBeVisible();
+    for (const text of es ? ["Qué queda fijo", "Qué va a pasar", "Revisamos el borrador"] : ["What becomes fixed", "What happens next", "We check the saved draft"]) await expect(dialog.getByText(text)).toHaveCount(0);
+    const publish = dialog.getByRole("button", { name: es ? "Publicar versión 1" : "Publish version 1", exact: true });
+    await expect(publish).toBeDisabled();
+    await expect(publish).toHaveAccessibleDescription(es ? "Corregí el problema para publicar." : "Fix the problem to publish.");
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    const bounds = (await dialog.boundingBox())!; expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+    for (const zone of [problems, warnings, published]) expect(await zone.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+    await page.screenshot({ path: `test-results/forms-publication-blocked-${language}-${width}.png`, fullPage: true });
+    // «Ir a la pregunta» closes the dialog to fix the title in the editor.
+    await problems.getByRole("button", { name: es ? "Ir a la pregunta" : "Go to the question", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+  });
+}
+
 test("uncertain publication keeps one UUID and replays only the same body after a 404 and wait", async ({ page }) => {
   const attempts = () => page.evaluate(() => (window as typeof window & { fixturePublicationAttempts: string[] }).fixturePublicationAttempts);
   await page.setViewportSize({ width: 320, height: 900 });

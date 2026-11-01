@@ -25,33 +25,39 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: es ? "Publicar la versión " + version + " en WhatsApp" : "Publish version " + version + " on WhatsApp", exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: es ? "Publicar versión " + version : "Publish version " + version, exact: true })).toBeEnabled();
+    // PU1-A (2026-11-01): the languages are a row of «Qué se publica»; what is missing is the (i) of that row, and a language
+    // that stops being published is a warning with its own (i).
     const incomplete = state === "original" || state === "remove";
-    await expect(dialog.getByText(incomplete ? es ? "En WhatsApp, en español" : "On WhatsApp, in Spanish" : es ? "En WhatsApp, en español y en inglés" : "On WhatsApp, in Spanish and English", { exact: true })).toBeVisible();
+    const published = dialog.getByRole("region", { name: es ? "Qué se publica" : "What is published", exact: true });
+    const languages = published.locator("dt", { hasText: es ? "Idiomas" : "Languages" }).locator("xpath=following-sibling::dd[1]");
+    await expect(languages).toContainText(incomplete ? es ? "Español" : "Spanish" : es ? "Español e inglés" : "Spanish and English");
+    const without = languages.getByText(es ? "Sin el inglés: faltan 3 textos" : "Without English: 3 texts missing", { exact: true });
+    const warnings = dialog.getByRole("region", { name: es ? "Avisos" : "Warnings", exact: true });
+    // A text missing in English is named in English when the question has it, and in Spanish when it does not.
+    const missing = es ? "Faltan Cliente · la opción «Pérez Hnos.», Importe cobrado · la pregunta y Observaciones · la ayuda." : "Missing: Customer · option “Pérez Hnos.”, Importe cobrado · question, and Notes · help.";
+    if (state === "original") {
+      await expect(without).toBeVisible();
+      await expect(languages.getByRole("button", { name: es ? "Qué falta en el inglés" : "What is missing in English", exact: true })).toHaveAccessibleDescription(missing + (es ? " Podés publicar igual y sumarlo en otra versión." : " You can publish anyway and add it in another version."));
+    } else await expect(without).toHaveCount(0);
+    if (state === "remove") {
+      await expect(warnings.getByText(es ? "Deja de publicarse." : "It will no longer be published.", { exact: true })).toBeVisible();
+      await expect(warnings.getByRole("button", { name: es ? "Qué cambia para el inglés" : "What changes for English", exact: true }))
+        .toHaveAccessibleDescription((es ? "Desde la versión 3, las cuentas en inglés lo reciben en español. " : "From version 3, accounts in English receive it in Spanish. ") + missing);
+    } else await expect(warnings).toHaveCount(0);
+    // Completing English is offered only with the menu in English, the language it is edited in.
     if (incomplete) {
-      if (state === "original") await expect(dialog.getByText(es ? "El inglés no se publica." : "English is not published.", { exact: true })).toBeVisible();
-      else await expect(dialog.getByText(es ? "El inglés no se publica." : "English is not published.", { exact: true })).toHaveCount(0);
-      await expect(dialog.getByRole("status")).toHaveCount(1);
-      await expect(dialog.getByRole("status").getByRole("listitem")).toHaveCount(3);
-      // Completing English is offered only with the menu in English, the language it is edited in.
       if (es) await expect(dialog.getByRole("button", { name: "Completar el inglés", exact: true })).toHaveCount(0);
       else await expect(dialog.getByRole("button", { name: "Complete English", exact: true })).toBeEnabled();
     }
-    if (state === "add") await expect(dialog.getByText(es ? "Se suma el inglés." : "English is added.", { exact: true })).toBeVisible();
-    if (state === "remove") await expect(dialog.getByText(es ? "El inglés deja de publicarse." : "English will no longer be published.", { exact: true })).toBeVisible();
+    if (state === "add") await expect(languages.getByText(es ? "Se suma el inglés." : "English is added.", { exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    if (incomplete) {
-      const notice = dialog.getByRole("status");
-      const copy = notice.locator("p");
-      const noticeBounds = (await notice.boundingBox())!;
-      const copyBounds = (await copy.boundingBox())!;
-      expect(copyBounds.width).toBeGreaterThanOrEqual(noticeBounds.width * 0.6);
-      if (!es) {
-        const actionBounds = (await notice.getByRole("button", { name: "Complete English", exact: true }).boundingBox())!;
-        expect(actionBounds.y).toBeGreaterThanOrEqual(copyBounds.y + copyBounds.height);
-        expect(actionBounds.x).toBeGreaterThanOrEqual(noticeBounds.x);
-        expect(actionBounds.x + actionBounds.width).toBeLessThanOrEqual(noticeBounds.x + noticeBounds.width);
-      }
-      expect(await copy.evaluate(node => node.scrollWidth)).toBeLessThanOrEqual(await copy.evaluate(node => node.clientWidth));
+    // The row wraps inside its zone, the completion included: nothing runs off to the side.
+    expect(await languages.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+    if (incomplete && !es) {
+      const zone = (await (state === "remove" ? warnings : published).boundingBox())!;
+      const action = (await dialog.getByRole("button", { name: "Complete English", exact: true }).boundingBox())!;
+      expect(action.x).toBeGreaterThanOrEqual(zone.x);
+      expect(action.x + action.width).toBeLessThanOrEqual(zone.x + zone.width);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     const bounds = await dialog.boundingBox(); expect(bounds!.x).toBeGreaterThanOrEqual(0); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);

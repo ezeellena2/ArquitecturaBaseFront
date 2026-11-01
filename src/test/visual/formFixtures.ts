@@ -109,6 +109,8 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       : !complete && q.type === "decimal" ? { ...q, label: { ...q.label, en: "" } } : !complete && q.type === "choice" && !q.source ? { ...q, options: q.options.map((o, index) => index === 0 ? { ...o, label: { ...o.label, en: "" } } : o) } : q) } });
   }
   if (scenario.startsWith("forms-publication")) { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "longText" ? { ...q, help: { es: "Contá lo que pasó.", en: "Describe what happened." } } : q) } }); }
+  // PU1-A: a number question whose original title is longer than the 20 characters WhatsApp shows.
+  if (scenario === "forms-publication-blocked") { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, [d.draft.culture]: d.draft.culture === "es" ? "Importe cobrado al cliente" : "Amount collected from the customer" } } : q) } }); }
   if(scenario === "forms-publication-budget-http"){ const budget=responseBudgetDefinition(culture);definitions.clear();definitions.set(budget.id,budget); }
   const ruleFixture = createRuleVisualFixtures(culture, () => definitions.get(fixtureFormId));
   const publications = new Map<string, { definitionId: string; requestId: string; operationId: string; versionId: string; versionNumber: number; draftRevision: number; state: string; acceptedAtUtc: string; recoveryPath: string }>();
@@ -214,13 +216,20 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
       const input = await request.json() as DraftWriteBody;
       if (input.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
-      const available = scenario.startsWith("forms-publication") || scenario.startsWith("forms-languages-") || scenario.startsWith("forms-lifecycle");
+      // A blocked check brings the compiler's limit in the issue, and a warning that does not stop publishing.
+      const blocked = scenario === "forms-publication-blocked";
+      const amount = definition.draft.fields.findIndex(q => q.type === "decimal");
+      const issues = blocked ? [{ channelId: "phone", fieldId: definition.draft.fields[amount]!.fieldId, choiceId: null, path: "draft.fields[" + amount + "].label." + definition.draft.culture, code: "WhatsApp.Flow.TextTooLong",
+        message: culture === "es" ? "El texto supera el límite del componente. Revisá el texto indicado." : "The text exceeds the component limit. Review the indicated text.", limit: 20, culture: definition.draft.culture }] : [];
+      const warnings = blocked ? [{ fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh",
+        message: culture === "es" ? "Revisá el máximo de opciones por persona frente al límite de WhatsApp." : "Review the maximum options per person against the WhatsApp limit.", limit: 200, maximum: 125 }] : [];
+      const available = !blocked && (scenario.startsWith("forms-publication") || scenario.startsWith("forms-languages-") || scenario.startsWith("forms-lifecycle"));
       const cultures = fixturePublicationCultures(definition);
       const complete = cultures.filter(item => item.isComplete).map(item => item.culture);
       const activeVersion = overview(definition.id).activeVersion;
       const previousCultures = activeVersion?.cultures ?? [];
-      return json({ definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: nextVersionNumber(definition.id), compatibility: "LocallyValidated",
-        canAccept: available, acceptanceAvailability: available ? "Available" : "Unavailable", cultures, channels: [{ channelId: "phone", profileRevision: "fixture-v1", compatibility: "LocallyValidated", externalEvidence: "Pending", cultures: complete }], issues: [], warnings: [],
+      return json({ definitionId: definition.id, draftRevision: definition.revision, nextVersionNumber: nextVersionNumber(definition.id), compatibility: blocked ? "Blocked" : "LocallyValidated",
+        canAccept: available, acceptanceAvailability: available || blocked ? "Available" : "Unavailable", cultures, channels: [{ channelId: "phone", profileRevision: "fixture-v1", compatibility: blocked ? "Blocked" : "LocallyValidated", externalEvidence: "Pending", cultures: complete }], issues, warnings,
         checkToken: available ? "fixture-publication-ticket" : null, checkExpiresAtUtc: available ? "2099-10-10T16:00:00Z" : null,
         diff: { baseVersionId: activeVersion?.versionId ?? null, added: activeVersion ? [] : definition.draft.fields.map(q => q.fieldId), changed: [], removed: [], addedCultures: complete.filter(value => !previousCultures.includes(value)), removedCultures: previousCultures.filter(value => !complete.includes(value)) } });
     }
