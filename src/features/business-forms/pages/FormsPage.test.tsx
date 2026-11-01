@@ -135,8 +135,8 @@ describe("Forms routes", () => {
     await screen.findByLabelText("Name");
     await userEvent.click(screen.getByRole("button", { name: "Publish on WhatsApp" }));
     const dialog = await screen.findByRole("dialog", { name: "Publish version 1 on WhatsApp" });
-    expect(await within(dialog).findByText("English is not published.")).toBeInTheDocument();
-    expect(within(dialog).getByText("Notes · help")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Without English: 1 text missing")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "What is missing in English" })).toHaveAccessibleDescription(/Notes · help/);
     expect(within(dialog).getByRole("button", { name: "Publish version 1" })).toBeEnabled();
     expect(within(dialog).queryByRole("button", { name: "Complete English" })).not.toBeInTheDocument();
     expect(store.calls.filter(call => call.path.endsWith("/publication-checks"))).toHaveLength(1);
