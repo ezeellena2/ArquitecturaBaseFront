@@ -89,7 +89,7 @@ inglés, con las traducciones cargadas en el editor (D5, variante E). Desde el 2
 
 | Captura | Qué define |
 | --- | --- |
-| [P1 · Publicar la versión 1](evidence/formularios-whatsapp/e2-p1-publicar.png) | Confirmación de la primera publicación: «Qué incluye», «Qué queda fijo» (las preguntas de la versión y el prefijo) y «Qué va a pasar». Aceptar no es publicar. |
+| [P1 · Publicar la versión 1](evidence/formularios-whatsapp/e2-p1-publicar.png) | Confirmación de la primera publicación: «Qué incluye», «Qué queda fijo» (las preguntas de la versión y el prefijo) y «Qué va a pasar». Aceptar no es publicar. Desde el 2026-11-01 la reemplaza [PU1-A](#publicar-en-whatsapp-pu1-a--2026-11-01). |
 | [P1 · Antes de publicar](evidence/formularios-whatsapp/e2-p1-antes.png) | Variantes del diálogo: comprobando, cambios sin guardar, pregunta que WhatsApp no podría mostrar, versión siguiente con sus diferencias, comprobación vencida, cambios de otra persona, publicación en curso y cuenta de WhatsApp no lista. |
 | [P2 · Publicando](evidence/formularios-whatsapp/e2-p2-publicando.png) | El avance en palabras (Aceptada, Enviada a WhatsApp, WhatsApp la revisa, Lista para mandar), la versión anterior en uso y el borrador editable mientras tanto. |
 | [P2 · Cómo termina](evidence/formularios-whatsapp/e2-p2-resultado.png) | Publicada, rechazada por una pregunta, falla general con «Reintentar», sin confirmar, necesita revisión y cómo se ve en el listado. «Consultar publicación» y «Repetir el mismo intento» van en el encabezado de su superficie, con la espera como su ayuda y sin texto debajo (decisión del 2026-10-23). |
@@ -272,9 +272,10 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
 5. **Guardar no es publicar.** «Guardar borrador» conserva el trabajo. «Publicar en WhatsApp» abre la confirmación
    y, al aceptar, crea la versión, la manda a WhatsApp y la activa. Internamente son los pasos del recorrido A del
    plan, con estado durable; la persona ve una sola acción y su estado.
-6. **La confirmación de publicar** muestra «Qué cambia respecto de la versión anterior» (diferencias calculadas) y
-   «Qué va a pasar» en tres pasos. El motivo de un rechazo se muestra junto a la pregunta marcada; la versión
-   publicada anterior sigue funcionando.
+6. **La confirmación de publicar** sigue [PU1-A](#publicar-en-whatsapp-pu1-a--2026-11-01) desde el 2026-11-01: lo que
+   frena y lo que conviene revisar en sus zonas, sólo si hay, y «Qué se publica» en filas, con las diferencias respecto
+   de la versión publicada. El motivo de un rechazo se muestra junto a la pregunta marcada; la versión publicada anterior
+   sigue funcionando.
 7. **Respuestas.** Planilla por formulario. Las columnas son las preguntas; los filtros salen de sus tipos; la
    búsqueda mira los textos largos; «—» indica que la pregunta no existía en la versión de esa respuesta. «Cargó»
    muestra la persona y el canal con ícono y texto accesible. «Estado» aparece solo si el formulario pide aprobación.
@@ -576,3 +577,27 @@ La [regla funcional](../../../ArquitecturaBase/docs/features/formularios.md#idio
 fija el contrato. Las escenas visuales recorren editor, publicación, vista oficial, PDF, catálogos, campos y datos de las
 personas sin selector, y `catalogManual` suma el editor de catálogo en inglés sobre un original español, con la
 referencia.
+
+## Publicar en WhatsApp: PU1-A — 2026-11-01
+
+Publicando su formulario de prueba, el usuario dijo que el diálogo «Publicar la versión N en WhatsApp» tenía demasiada
+explicación y texto suelto. De tres tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila «Formularios · publicar en
+WhatsApp»: A por zonas, B una sola lista con íconos, C pestañas con su cantidad) eligió **A**. Cumple también lo que había
+aprobado ese mismo día en el inventario de [leyendas y carga](visual-baseline.md): se van «Qué queda fijo» y «Qué va a
+pasar» y queda sólo el prefijo que se fija.
+
+- Sin descripción ni párrafos: el diálogo son zonas con líneas entre filas. «Problemas» (lo que frena) y «Avisos» (lo que
+  conviene revisar, incluido un idioma que deja de publicarse) aparecen sólo si hay alguno, cada fila con su ícono, qué
+  es, el detalle y, si corresponde, «Ir a la pregunta». «Qué se publica» va siempre, en filas: borrador guardado,
+  preguntas, agregadas, cambiadas y quitadas respecto de la versión publicada, idiomas y, mientras está libre, el prefijo.
+- Un texto que pasa su límite lo dice en concreto: «Hasta 20 caracteres; tiene 26.» (y «La ayuda: …» o «La opción «…»: …»
+  cuando no es el título). El límite viene del compilador del canal y el largo sale del borrador guardado.
+- La ayuda va en las (i): qué pasa al publicar (la de «Qué se publica»), qué son los problemas y los avisos, qué falta en
+  un idioma, cuándo queda fijo el prefijo y, con cambios sin guardar, por qué hay que guardar primero.
+- Publicar apagado dice su motivo en el tooltip: el problema, la comprobación vencida (con «Volver a comprobar»), una
+  publicación en curso o la publicación no disponible. Se va la nota del pie.
+- Mientras comprueba, el botón dice «Comprobando…» con su aro (LC1-A) y «Qué se publica» se arma con un esqueleto.
+
+Las escenas `forms.spec` («publication check with a problem and a warning», es/en a 1440, 390 y 320 px) y
+`formLanguages.spec` muestran el diálogo con un problema, un aviso y los idiomas.
