@@ -1,20 +1,33 @@
 import * as React from "react"
 import { cn } from "cn"
 
-function Table({ className, scrollLabel, ...props }: React.ComponentProps<"table"> & { scrollLabel?: string }) {
+const TableRefreshing = React.createContext(false)
+
+// `refreshing` (board LC2-A, 2026-11-01): while the list reads again with its previous rows in sight, a line runs under
+// the header and the body dims, out of reach, so nobody opens a row that no longer matches. The first load keeps its
+// spinner in the owner's place.
+function Table({ className, scrollLabel, refreshing = false, ...props }: React.ComponentProps<"table"> & { scrollLabel?: string; refreshing?: boolean }) {
   return (
     <div
       data-slot="table-container"
+      aria-busy={refreshing || undefined}
       className={cn("relative w-full overflow-x-auto", scrollLabel && "min-w-0 max-w-full")}
       role={scrollLabel ? "region" : undefined}
       aria-label={scrollLabel}
       tabIndex={scrollLabel ? 0 : undefined}
     >
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
+      {refreshing ? (
+        <div data-slot="table-refreshing" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[var(--height-table-header)] z-10 h-0.5 overflow-hidden bg-[var(--color-brand-100)]">
+          <div className="h-full w-1/3 animate-[table-refresh_1.2s_ease-in-out_infinite] bg-[var(--color-brand-500)] motion-reduce:animate-none" />
+        </div>
+      ) : null}
+      <TableRefreshing.Provider value={refreshing}>
+        <table
+          data-slot="table"
+          className={cn("w-full caption-bottom text-sm", className)}
+          {...props}
+        />
+      </TableRefreshing.Provider>
     </div>
   )
 }
@@ -30,11 +43,13 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
 }
 
 function TableBody({ className, striped = true, ...props }: React.ComponentProps<"tbody"> & { striped?: boolean }) {
+  const refreshing = React.useContext(TableRefreshing)
   return (
     <tbody
       data-slot="table-body"
       data-striped={striped}
-      className={cn("[&_tr:last-child]:border-0", className)}
+      inert={refreshing || undefined}
+      className={cn("[&_tr:last-child]:border-0", refreshing && "opacity-45", className)}
       {...props}
     />
   )

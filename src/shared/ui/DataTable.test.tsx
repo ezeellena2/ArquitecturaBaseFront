@@ -172,4 +172,19 @@ describe("DataTable", () => {
     await userEvent.click(screen.getByRole("button", { name: /reintentar/i }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps the previous rows dimmed and out of reach while it reads again", () => {
+    renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} refreshing />);
+    const table = screen.getByRole("table");
+    expect(table.closest('[data-slot="table-container"]')).toHaveAttribute("aria-busy", "true");
+    expect(within(table).getAllByRole("rowgroup")[1]).toHaveAttribute("inert");
+    expect(document.querySelector('[data-slot="table-refreshing"]')).not.toBeNull();
+  });
+
+  it("shows nothing extra once the rows arrived", () => {
+    renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} />);
+    const table = screen.getByRole("table");
+    expect(table.closest('[data-slot="table-container"]')).not.toHaveAttribute("aria-busy");
+    expect(within(table).getAllByRole("rowgroup")[1]).not.toHaveAttribute("inert");
+  });
 });

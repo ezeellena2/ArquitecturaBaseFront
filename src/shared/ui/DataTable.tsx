@@ -23,6 +23,9 @@ interface DataTableProps<TRow> {
   /// Clic en una celda sin controles; los enlaces conservan la navegación por teclado.
   onRowClick?: (row: TRow) => void;
   isLoading?: boolean;
+  /// Vuelve a leer con las filas anteriores a la vista (buscar, filtrar, ordenar, paginar): la tabla las atenúa y
+  /// corre una línea bajo el encabezado (tablero LC2-A). El dueño pasa, por ejemplo, `isPlaceholderData`.
+  refreshing?: boolean;
   /// Includes a successfully loaded empty list; refresh failures preserve its state.
   hasData?: boolean;
   error?: string;
@@ -60,6 +63,7 @@ export function DataTable<TRow>({
   selectedRowKey,
   onRowClick,
   isLoading,
+  refreshing = false,
   hasData = rows.length > 0,
   error,
   errorDescription,
@@ -102,7 +106,7 @@ export function DataTable<TRow>({
   }
 
   return (
-    <Table>
+    <Table refreshing={refreshing}>
       <TableHeader>
         {/* TableHeader aporta el tono y neutraliza el hover de la banda para todos los listados. */}
         <TableRow>

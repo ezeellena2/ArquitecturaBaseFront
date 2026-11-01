@@ -200,6 +200,12 @@
   }
 }
 
+/* La línea que corre bajo el encabezado de una tabla que vuelve a leer (tablero LC2-A). */
+@keyframes table-refresh {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
 @layer components {
   /* Solo el cuerpo alterna filas; bandas, hover y selección mantienen prioridad. */
   [data-slot="table-body"] > :where([data-slot="table-row"]) {
