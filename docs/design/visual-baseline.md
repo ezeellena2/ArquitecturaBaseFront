@@ -591,3 +591,17 @@ campos del catálogo.
 La regla conserva, con su motivo, dos textos aprobados que no explican cómo funciona algo: el cuerpo de «¿Empezar otra
 conversación?» en Inicio, que dice qué se pierde, y el error de un rol que ya no existe, que dice por qué
 (`keptLegends`, por archivo y clave).
+
+La corrida visual del cierre aprobó 785/785 pruebas. Cambiaron 25 referencias, revisadas una por una y todas por esta
+decisión: `appearance-*` (la explicación de «Colores del sistema» en la (i) del título, sin la nota de contraste del pie),
+`ai-*` (sin la introducción, la ayuda de Modelo ni las descripciones de Disponible y Pausada; la (i) en «Clave
+configurada» y en el título «Clave y prueba de conexión»), `business-information-*` (sin la introducción ni las ayudas
+de los campos; la (i) en «Datos del negocio», en el texto anterior y en la zona horaria del horario), `settings-1440`,
+`settings-320` y `settings-review-320` (la (i) en «Preferencias regionales» y en «Filas por página», sin las
+descripciones de las opciones del registro), `profile-1440` y `profile-320` (sin las tres ayudas), `user-dialog-320`
+(sin la descripción del diálogo ni la ayuda de Nombre) y `login-390` (sin el subtítulo). Las demás pasaron sin
+actualizarse. Una escena se ajustó sin cambiar producto: la de la pregunta de catálogo pide que la ayuda de los filtros
+no se vea, porque la (i) común la conserva oculta como descripción accesible.
+
+Queda un defecto anterior, que estas capturas ahora muestran también en inglés a 390 y 320: en Información del negocio,
+los selects de los días cortan «Sin definir» y «Not defined».
