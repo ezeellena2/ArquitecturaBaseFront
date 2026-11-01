@@ -20,6 +20,7 @@ import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { OtpInput } from "@/shared/ui/OtpInput";
 import { PhoneField } from "@/shared/ui/PhoneField";
@@ -91,8 +92,8 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
 
   const copy =
     channel === "whatsapp"
-      ? { title: t("linkWhatsApp.title"), description: t("linkWhatsApp.description"), taken: t("linkWhatsApp.taken") }
-      : { title: t("addEmail.title"), description: t("addEmail.description"), taken: t("addEmail.taken") };
+      ? { title: t("linkWhatsApp.title"), taken: t("linkWhatsApp.taken") }
+      : { title: t("addEmail.title"), taken: t("addEmail.taken") };
 
   function startCodeStep(destination: SentTo, resendAfterSeconds: number) {
     setSentTo(destination);
@@ -253,14 +254,14 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
       }}
     >
       <DialogContent onCloseAutoFocus={restoreFocus}>
+        {/* Para pedir el destino no hay descripción: «Enviar código» ya dice lo que va a pasar. En el paso del código,
+            la descripción es a dónde llegó, que es un dato. */}
         <DialogHeader>
           <DialogTitle>{copy.title}</DialogTitle>
-          <DialogDescription>
-            {sentTo === undefined ? (
-              copy.description
-            ) : (
-              // Con su propio id, para que el código lo nombre como su descripción (ver `OtpInput`, más abajo). El id
-              // no va en `DialogDescription`: Radix nombra al diálogo con el suyo.
+          {sentTo === undefined ? null : (
+            <DialogDescription>
+              {/* Con su propio id, para que el código lo nombre como su descripción (ver `OtpInput`, más abajo). El id
+                  no va en `DialogDescription`: Radix nombra al diálogo con el suyo. */}
               <span id={sentToId}>
                 {sentTo.channel === "whatsapp" ? (
                   // El número va resaltado y entero, como en el ingreso: partido al final de un renglón, "•••• 6789"
@@ -277,8 +278,8 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
                   t("common:code.sentToEmail", { email: sentTo.email })
                 )}
               </span>
-            )}
-          </DialogDescription>
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         {sentTo === undefined ? (
@@ -323,8 +324,10 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
               <Button type="button" variant="outline" onClick={onClose}>
                 {t("common:actions.cancel")}
               </Button>
-              <Button type="submit" disabled={send.isPending || isRetryLimited}>
-                {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
+              <Button type="submit" pending={send.isPending} disabled={isRetryLimited}>
+                {send.isPending
+                  ? t("common:code.sending")
+                  : isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
               </Button>
             </DialogFooter>
           </form>
@@ -351,23 +354,40 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
               {sentTo.channel === "whatsapp" ? t("common:code.otherPhone") : t("common:code.otherEmail")}
             </Button>
 
-            <OtpInput
-              length={CODE_LENGTH}
-              value={code}
-              onChange={(next) => {
-                setCode(next);
-                // Lo escrito ya es otro código: las casillas dejan de estar en error.
-                setFailure((previous) => (previous ? { ...previous, wrong: false } : previous));
-              }}
-              label={t("common:code.label")}
-              disabled={confirm.isPending}
-              invalid={failure?.wrong}
-              autoFocus
-              // La descripción del diálogo se lee al entrar en él, no cuando cambia: el foco salta a la primera
-              // casilla y, sin esto, el lector de pantalla diría "Código, Código 1" y no a dónde llegó, que vence ni
-              // que en WhatsApp Web no se ve.
-              aria-describedby={sentTo.channel === "whatsapp" ? `${sentToId} ${noticeId}` : sentToId}
-            />
+            <div className="flex flex-col gap-1.5">
+              {/* El mensaje de WhatsApp lo escribe Meta y no dice para qué es el código: que llega al WhatsApp del
+                  celular, y no a WhatsApp Web, va en la (i) junto a «Código». La palabra ya es el nombre del grupo de
+                  casillas: a la vista, sólo para llevar la (i). */}
+              {sentTo.channel === "whatsapp" ? (
+                <span className="flex items-center justify-center gap-1 text-sm font-medium text-[var(--color-content)]">
+                  <span aria-hidden="true">{t("common:code.label")}</span>
+                  <span className="-my-1 inline-flex">
+                    <InfoTip
+                      id={noticeId}
+                      label={t("common:actions.moreInfo", { label: t("common:code.label") })}
+                      text={t("common:code.whatsappNotice")}
+                    />
+                  </span>
+                </span>
+              ) : null}
+              <OtpInput
+                length={CODE_LENGTH}
+                value={code}
+                onChange={(next) => {
+                  setCode(next);
+                  // Lo escrito ya es otro código: las casillas dejan de estar en error.
+                  setFailure((previous) => (previous ? { ...previous, wrong: false } : previous));
+                }}
+                label={t("common:code.label")}
+                disabled={confirm.isPending}
+                invalid={failure?.wrong}
+                autoFocus
+                // La descripción del diálogo se lee al entrar en él, no cuando cambia: el foco salta a la primera
+                // casilla y, sin esto, el lector de pantalla diría "Código, Código 1" y no a dónde llegó, que vence ni
+                // que en WhatsApp Web no se ve (el texto de la (i)).
+                aria-describedby={sentTo.channel === "whatsapp" ? `${sentToId} ${noticeId}` : sentToId}
+              />
+            </div>
 
             {failure === undefined ? null : failure.taken ? (
               <Banner tone="danger">{failure.message}</Banner>
@@ -384,18 +404,14 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
               type="button"
               variant="outline"
               className="w-full"
-              disabled={isResendWaiting || resend.isPending || failure?.taken === true}
+              pending={resend.isPending}
+              disabled={isResendWaiting || failure?.taken === true}
               onClick={() => resend.mutate(sentTo)}
             >
-              {isResendWaiting ? t("common:code.resendIn", { seconds: resendSeconds }) : t("common:code.resend")}
+              {resend.isPending
+                ? t("common:code.resending")
+                : isResendWaiting ? t("common:code.resendIn", { seconds: resendSeconds }) : t("common:code.resend")}
             </Button>
-
-            {/* El mensaje de WhatsApp lo escribe Meta y no dice para qué es el código: lo dice el diálogo. */}
-            {sentTo.channel === "whatsapp" ? (
-              <p id={noticeId} className="text-center text-sm text-[var(--color-content-muted)]">
-                {t("common:code.whatsappNotice")}
-              </p>
-            ) : null}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
@@ -403,11 +419,10 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
               </Button>
               <Button
                 type="submit"
-                disabled={
-                  code.length !== CODE_LENGTH || confirm.isPending || failure?.spent === true || failure?.taken === true
-                }
+                pending={confirm.isPending}
+                disabled={code.length !== CODE_LENGTH || failure?.spent === true || failure?.taken === true}
               >
-                {t("common:code.verify")}
+                {confirm.isPending ? t("common:code.verifying") : t("common:code.verify")}
               </Button>
             </DialogFooter>
           </form>

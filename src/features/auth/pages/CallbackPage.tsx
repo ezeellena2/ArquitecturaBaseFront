@@ -89,11 +89,11 @@ export function CallbackPage() {
     );
   }
 
+  // El aro y «Iniciando sesión…» ya dicen que espera: sin un renglón que diga que puede tardar.
   return (
     <div className="flex flex-col items-center gap-3 py-4 text-center">
       <Spinner />
       <p className="text-sm font-medium text-[var(--color-content)]">{t("callback.title")}</p>
-      <p className="text-xs text-[var(--color-content-muted)]">{t("callback.hint")}</p>
     </div>
   );
 }

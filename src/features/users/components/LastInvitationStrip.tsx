@@ -21,6 +21,7 @@ import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { AlertCircleIcon, CheckCheckIcon, CheckIcon, ClockIcon, SendIcon } from "@/shared/ui/icons";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { RadioGroupField, type RadioOption } from "@/shared/ui/RadioGroupField";
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -111,7 +112,6 @@ function channelOf(value: string): InvitationChannel {
 
 interface ResendInvitationFormProps {
   titleId: string;
-  description: string | undefined;
   options: readonly RadioOption[];
   initialChannel: InvitationChannel | undefined;
   consentLabel: string;
@@ -128,9 +128,10 @@ interface ResendInvitationFormProps {
 ///
 /// Vive adentro del formulario de la edición, así que no es un `<form>` (no se anidan): sus botones son `type="button"`
 /// y no tiene campos de texto con los que un Enter mande nada.
+///
+/// Por qué no llegó la anterior ya lo dijo la franja, y las opciones ofrecen el otro canal: el panel no lo repite.
 function ResendInvitationForm({
   titleId,
-  description,
   options,
   initialChannel,
   consentLabel,
@@ -149,11 +150,6 @@ function ResendInvitationForm({
       <h3 id={titleId} className="col-start-2 text-sm leading-5 font-semibold text-[var(--color-content)]">
         {t("resend.title")}
       </h3>
-      {description ? (
-        <p className="col-start-2 mt-0.5 text-xs leading-[1.45] text-[var(--color-content-muted)]">
-          {description}
-        </p>
-      ) : null}
 
       {/* Las opciones traen su propio margen interno: se lo compensa para que el botón de opción quede alineado con el
           título, como en el tablero. */}
@@ -175,7 +171,7 @@ function ResendInvitationForm({
           <div className="my-0.5 ml-6.5 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">
             <CheckboxField
               label={consentLabel}
-              description={t("invitation.consentHint")}
+              help={t("invitation.consentHint")}
               error={errors.consent}
               checked={consent}
               onCheckedChange={(next) => {
@@ -191,12 +187,14 @@ function ResendInvitationForm({
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
           {t("common:actions.cancel")}
         </Button>
+        {/* Mientras trabaja se nombra por lo que dice, «Reenviando…», y no por la etiqueta de cuando espera el clic. */}
         <Button
           type="button"
           variant="outline"
           size="sm"
-          aria-label={t("resend.submitLabel")}
-          disabled={channel === undefined || isPending}
+          aria-label={isPending ? undefined : t("resend.submitLabel")}
+          pending={isPending}
+          disabled={channel === undefined}
           onClick={() => {
             if (channel !== undefined) {
               // Por correo no se pide consentimiento: va en false aunque la casilla haya quedado marcada de antes.
@@ -204,7 +202,7 @@ function ResendInvitationForm({
             }
           }}
         >
-          {t("resend.submit")}
+          {isPending ? t("resend.resending") : t("resend.submit")}
         </Button>
       </div>
     </>
@@ -306,24 +304,15 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
     },
   });
 
+  // Debajo de cada canal, su correo o su número; sin él, la opción queda apagada y sin un texto que lo explique.
   const phone = user.formattedPhoneNumber;
   const options: RadioOption[] = [
-    {
-      value: "Email",
-      label: t("invitation.email"),
-      description: user.email ?? t("invitation.emailNeeded"),
-      disabled: user.email === null,
-    },
+    { value: "Email", label: t("invitation.email"), description: user.email ?? undefined, disabled: user.email === null },
   ];
 
   // Con WhatsApp apagado no se ofrece, como en el alta: el backend respondería que no está disponible.
   if (whatsappEnabled) {
-    options.push({
-      value: "WhatsApp",
-      label: t("invitation.whatsApp"),
-      description: phone ?? t("invitation.phoneNeeded"),
-      disabled: phone === null,
-    });
+    options.push({ value: "WhatsApp", label: t("invitation.whatsApp"), description: phone ?? undefined, disabled: phone === null });
   }
 
   // Arranca en el canal de la última, si todavía se puede; si no, en el que se pueda.
@@ -338,21 +327,13 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
     : t("invitation.consentWithoutName", { app });
 
   const failed = invitation.deliveryStatus === "Failed";
-  // "No llegó" se ve igual por los dos canales; lo que cambia es el porqué y a qué otro canal se puede pasar. Por
-  // WhatsApp avisó Meta (su límite o un rechazo); por correo, la cola no lo tomó. Se ofrece el otro canal solo si se
-  // puede usar, como las opciones del reenvío.
-  const failure = !failed
+  // "No llegó" se ve igual por los dos canales; lo que cambia es el porqué, que va en la (i) junto al estado. Por
+  // WhatsApp avisó Meta (su límite o un rechazo); por correo, la cola no lo tomó.
+  const failureHint = !failed
     ? undefined
     : invitation.channel === "Email"
-      ? {
-          hint: t("lastInvitation.failedHintByEmail"),
-          resend:
-            whatsappEnabled && phone !== null ? t("resend.failedByEmail") : t("resend.failedByEmailWithoutWhatsApp"),
-        }
-      : {
-          hint: t("lastInvitation.failedHint"),
-          resend: user.email === null ? t("resend.failedWithoutEmail") : t("resend.failed"),
-        };
+      ? t("lastInvitation.failedHintByEmail")
+      : t("lastInvitation.failedHint");
   const waiting = seconds > 0;
   const status = invitation.deliveryStatus === null ? undefined : statuses[invitation.deliveryStatus];
   const StatusIcon = status?.icon;
@@ -384,7 +365,6 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
       {isOpen ? (
         <ResendInvitationForm
           titleId={titleId}
-          description={failure?.resend}
           options={options}
           initialChannel={initialChannel}
           consentLabel={consentLabel}
@@ -423,12 +403,21 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
                   <StatusIcon className="size-3.5" />
                   {t(`lastInvitation.status.${status.key}`)}
                 </span>
+                {failureHint ? (
+                  // La (i) no agranda el renglón del estado.
+                  <span className="-my-1 inline-flex">
+                    <InfoTip
+                      label={t("common:actions.moreInfo", { label: t(`lastInvitation.status.${status.key}`) })}
+                      text={failureHint}
+                    />
+                  </span>
+                ) : null}
               </span>
             ) : null}
           </p>
           {/* El botón queda siempre en el mismo lugar y con la misma forma: la espera es su motivo (`DisabledReason`), no
               un texto debajo. El contorno lo pide sólo una invitación que no llegó. */}
-          <div className="col-start-2 row-start-4 mt-2 flex justify-self-start sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
+          <div className="col-start-2 row-start-3 mt-2 flex justify-self-start sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
             <DisabledReason reason={waiting ? t("lastInvitation.resendIn", { seconds }) : null}>
               <Button
                 ref={resendRef}
@@ -443,11 +432,6 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
               </Button>
             </DisabledReason>
           </div>
-          {failure ? (
-            <p className="col-start-2 row-start-3 mt-1.5 text-xs leading-[1.45] text-[var(--color-content-muted)] sm:col-span-2">
-              {failure.hint}
-            </p>
-          ) : null}
         </>
       )}
     </section>

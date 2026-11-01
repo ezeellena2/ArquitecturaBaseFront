@@ -15,9 +15,8 @@
   "empty": {
     "title": "No encontramos usuarios",
     "description": "Todavía no hay usuarios cargados.",
-    "searchDescription": "Probá con otro correo o nombre.",
     "filteredTitle": "Ningún usuario coincide",
-    "filteredDescription": "Hay {{filters}}. Probá quitando alguno.",
+    "filteredDescription": "Hay {{filters}}.",
     "clear": "Limpiar filtros"
   },
   "actions": {
@@ -37,10 +36,9 @@
   },
   "create": {
     "title": "Nuevo usuario",
-    "description": "Cargá un correo, un número de WhatsApp o los dos: con uno alcanza.",
-    "descriptionEmailOnly": "Dale de alta el correo. Después entra con su código, como todos.",
     "submit": "Crear",
     "submitAndInvite": "Crear e invitar",
+    "creating": "Creando…",
     "success": "Listo: ya puede ingresar."
   },
   "invitation": {
@@ -48,8 +46,6 @@
     "channel": "Por dónde",
     "email": "Por correo",
     "whatsApp": "Por WhatsApp",
-    "emailNeeded": "Cargá un correo para usar esta opción.",
-    "phoneNeeded": "Cargá un número para usar esta opción.",
     "consent": "{{name}} aceptó recibir mensajes por WhatsApp.",
     "consentWithoutName": "La persona aceptó recibir mensajes por WhatsApp.",
     "consentHint": "Sin esto, WhatsApp no permite escribirle primero."
@@ -72,7 +68,6 @@
     "unlinkFor": "Desvincular el WhatsApp de {{user}}",
     "verified": "Verificado",
     "unverified": "Sin verificar",
-    "onlyMethod": "Es su único medio de ingreso. Si lo desvinculás, no va a poder entrar hasta que le cargues otro.",
     "unverifiedHint": "Lo que carga un admin queda «Sin verificar» hasta que la persona entra con eso."
   },
   "lastInvitation": {
@@ -94,18 +89,16 @@
   },
   "resend": {
     "title": "Reenviar la invitación",
-    "failed": "Por WhatsApp no llegó: puede ser el límite de Meta o un rechazo. Podés probar de nuevo o mandarla por correo.",
-    "failedWithoutEmail": "Por WhatsApp no llegó: puede ser el límite de Meta o un rechazo. Podés probar de nuevo.",
-    "failedByEmail": "Por correo no salió. Podés probar de nuevo o mandarla por WhatsApp.",
-    "failedByEmailWithoutWhatsApp": "Por correo no salió. Podés probar de nuevo.",
     "submit": "Reenviar",
-    "submitLabel": "Reenviar la invitación"
+    "submitLabel": "Reenviar la invitación",
+    "resending": "Reenviando…"
   },
   "unlink": {
     "title": "¿Desvincular el WhatsApp de {{user}}?",
     "descriptionWithEmail": "Se cierran sus sesiones abiertas y ya no va a poder entrar con {{phone}}. Va a poder seguir entrando con su correo.",
     "descriptionWithoutEmail": "Se cierran sus sesiones abiertas y ya no va a poder entrar con {{phone}}. Como no tiene correo, se queda sin forma de entrar hasta que le cargues un número o un correo.",
     "confirm": "Desvincular",
+    "unlinking": "Desvinculando…",
     "success": "Desvinculamos su WhatsApp.",
     "ownDescription": "Vas a dejar de entrar con {{phone}} y desde su chat. Tu sesión va a seguir abierta."
   },
@@ -114,7 +107,6 @@
     "emailPlaceholder": "correo@ejemplo.com",
     "emailInvalid": "Ingresá un correo electrónico válido.",
     "displayName": "Nombre",
-    "displayNameHint": "Opcional. Es el nombre que se muestra en el sistema.",
     "roles": "Roles",
     "rolesPlaceholder": "Sin roles",
     "rolesEmpty": "Todavía no hay roles para asignar.",
@@ -123,17 +115,20 @@
   "activate": {
     "title": "Activar a {{user}}",
     "description": "Va a poder volver a ingresar con sus medios de acceso y los permisos que ya tiene asignados.",
-    "confirm": "Activar"
+    "confirm": "Activar",
+    "activating": "Activando…"
   },
   "deactivate": {
     "title": "Desactivar a {{user}}",
     "description": "Le cortamos el acceso ahora mismo: la sesión que tenga abierta deja de servir y no va a poder volver a entrar hasta que la actives de nuevo. Sus datos quedan como están.",
-    "confirm": "Desactivar"
+    "confirm": "Desactivar",
+    "deactivating": "Desactivando…"
   },
   "delete": {
     "title": "Eliminar a {{user}}",
     "description": "La cuenta desaparece de los listados y no va a poder ingresar. Su historial de ingresos se conserva, y si más adelante la das de alta con el mismo correo, se restaura.",
-    "confirm": "Eliminar"
+    "confirm": "Eliminar",
+    "deleting": "Eliminando…"
   },
   "feedback": {
     "activated": "Ya puede volver a ingresar.",

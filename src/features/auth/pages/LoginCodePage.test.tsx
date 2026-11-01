@@ -69,6 +69,66 @@ describe("LoginCodePage", () => {
     await waitFor(() => expect(assign).toHaveBeenCalledWith(returnUrl));
   });
 
+  it("says it is verifying, and takes no second click, until the page changes", async () => {
+    let release = () => {};
+    const answered = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let verifications = 0;
+    server.use(
+      http.post("/account/login-code/verify", async () => {
+        verifications += 1;
+        await answered;
+
+        return HttpResponse.json({ returnUrl });
+      }),
+    );
+    renderRouteWithProviders(codeUrl, { state: { email: "ana@example.com" } });
+
+    await userEvent.type(screen.getAllByRole("textbox")[0], "482913");
+    await userEvent.click(screen.getByRole("button", { name: "Verificar" }));
+
+    const verifying = await screen.findByRole("button", { name: "Verificando…" });
+    expect(verifying).toHaveAttribute("aria-busy", "true");
+    expect(verifying).toBeDisabled();
+    await userEvent.click(verifying);
+    expect(verifications).toBe(1);
+
+    release();
+
+    // Con la respuesta, el navegador se va: hasta que cambia la página, sigue diciendo que trabaja.
+    await waitFor(() => expect(assign).toHaveBeenCalledWith(returnUrl));
+    expect(screen.getByRole("button", { name: "Verificando…" })).toHaveAttribute("aria-busy", "true");
+  });
+
+  it("says it is resending the code, and takes no second click, while it is on its way", async () => {
+    let release = () => {};
+    const answered = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requests = 0;
+    server.use(
+      http.post("/account/login-code", async () => {
+        requests += 1;
+        await answered;
+
+        return HttpResponse.json({ resendAfterSeconds: 60 }, { status: 202 });
+      }),
+    );
+    renderRouteWithProviders(codeUrl, { state: { email: "ana@example.com", resendAfterSeconds: 0 } });
+
+    await userEvent.click(await screen.findByRole("button", { name: "Reenviar código" }));
+
+    const resending = await screen.findByRole("button", { name: "Reenviando…" });
+    expect(resending).toHaveAttribute("aria-busy", "true");
+    expect(resending).toBeDisabled();
+    await userEvent.click(resending);
+    expect(requests).toBe(1);
+
+    release();
+    expect(await screen.findByRole("button", { name: "Reenviar en 60 s" })).toBeDisabled();
+  });
+
   it("shows the message and the attempts left when the code is wrong", async () => {
     server.use(
       http.post("/account/login-code/verify", () =>
@@ -144,10 +204,15 @@ describe("LoginCodePage", () => {
         "Te mandamos un código al +54 9 11 •••• 6789. Vence en 10 minutos.",
       );
 
-      expect(screen.getByRole("group", { name: "Código" })).toBeInTheDocument();
+      // Dónde se ve el código va en la (i) junto a «Código», y es la descripción del grupo de casillas.
+      const code = screen.getByRole("group", { name: "Código" });
+      expect(code).toHaveAccessibleDescription("Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra.");
+      expect(screen.getByRole("button", { name: "Más información sobre Código" })).toHaveAccessibleDescription(
+        "Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra.",
+      );
+      expect(screen.queryByText("Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra.", { selector: "p" })).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Verificar" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Reenviar en 45 s" })).toBeDisabled();
-      expect(screen.getByText("Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra.")).toBeInTheDocument();
       expect(screen.queryByText(/revisá tu correo/i)).not.toBeInTheDocument();
     });
 

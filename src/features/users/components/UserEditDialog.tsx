@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/shared/ui/notifications";
@@ -26,7 +26,6 @@ import { rolesQueryKey } from "@/shared/api/roles";
 import { UserDataSectionContext, type UserDataSaveState } from "@/shared/hooks/userDataSectionContext";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { cn } from "@/shared/lib/utils";
-import { Banner } from "@/shared/ui/Banner";
 import { Surface } from "@/shared/ui/Surface";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import { Button } from "@/shared/ui/button";
@@ -160,7 +159,6 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   const restoreFocus = useRestoreFocusOnClose();
   const isMounted = useRef(true);
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
-  const unverifiedNoteId = useId();
   const extension = useContext(UserDataSectionContext);
   const extraOwner = useMemo(() => ({ userId: user.id, extension }), [user.id, extension]);
   const currentExtraOwner = useRef(extraOwner), submittedExtraOwner = useRef<object | null>(null);
@@ -264,7 +262,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
     },
   });
 
-  // Desvincular es una acción aparte, que no espera a "Guardar": la confirmación se cierra al confirmar, así que el
+  // Desvincular es una acción aparte, que no espera a "Guardar": la confirmación espera abierta la respuesta y el
   // resultado va a un aviso. El diálogo de edición queda abierto, con el detalle nuevo.
   const unlink = useMutation({
     mutationFn: () => unlinkUserPhone(user.id),
@@ -309,24 +307,24 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
     });
   }
 
-  // Sin correo, el número es lo único con lo que entra. Una cuenta con Google siempre tiene el correo de Google, así
-  // que alcanza con mirar el correo: el detalle no dice si hay Google.
-  const isOnlyMethod = phone !== null && detail?.email === null;
-
-  // "Sin verificar" se explica al pie de la caja, y la insignia lo lleva como descripción. Con un campo abierto, la
-  // explicación es la ayuda del campo (punto 3): lo que se está cargando va a quedar así, y no se repite abajo.
-  const emailUnverified = detail?.email != null && !detail.emailConfirmed;
-  const phoneUnverified = phone !== null && detail?.phoneNumberConfirmed === false;
-  const showsUnverifiedNote = (emailUnverified || phoneUnverified) && !isAddingEmail && !isAddingPhone;
-
+  // "Sin verificar" lleva su explicación como la insignia del listado (`columns.tsx`): en el tooltip, al pasar el mouse
+  // o al llegar con el teclado, y como texto del disparador para el lector de pantalla, que en modo exploración no lee
+  // la descripción de algo que no recibe foco. Sin una nota al pie de la caja.
   function badgeFor(verified: boolean) {
+    if (verified) {
+      return <VerificationBadge verified>{t("methods.verified")}</VerificationBadge>;
+    }
+
     return (
-      <VerificationBadge
-        verified={verified}
-        aria-describedby={!verified && showsUnverifiedNote ? unverifiedNoteId : undefined}
-      >
-        {verified ? t("methods.verified") : t("methods.unverified")}
-      </VerificationBadge>
+      <ActionTooltip label={t("methods.unverifiedHint")}>
+        <span
+          tabIndex={0}
+          className="inline-flex shrink-0 rounded-[var(--radius-control)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]"
+        >
+          <VerificationBadge verified={false}>{t("methods.unverified")}</VerificationBadge>
+          <span className="sr-only">{t("methods.unverifiedHint")}</span>
+        </span>
+      </ActionTooltip>
     );
   }
 
@@ -400,7 +398,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                 <ul className="flex flex-col">
                   {isAddingEmail ? (
                     <FieldRow icon={MailIcon}>
-                      <FormField label={t("form.email")} hint={t("methods.unverifiedHint")} error={errors.fields.email}>
+                      <FormField label={t("form.email")} error={errors.fields.email}>
                         <Input
                           ref={emailRef}
                           type="email"
@@ -436,7 +434,6 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                       <PhoneField
                         ref={numberRef}
                         label={t("common:phone.label")}
-                        hint={t("methods.unverifiedHint")}
                         error={errors.fields.phone}
                         countries={countries}
                         country={effectiveCountry}
@@ -484,22 +481,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                     />
                   ) : null}
                 </ul>
-
-                {/* Justo debajo de la fila de la que habla, y sigue hasta guardar aunque se esté agregando un correo. */}
-                {isOnlyMethod ? (
-                  <div className="mx-3.5 mb-3.5">
-                    <Banner tone="warning">{t("methods.onlyMethod")}</Banner>
-                  </div>
-                ) : null}
-
-                {showsUnverifiedNote ? (
-                  <p
-                    id={unverifiedNoteId}
-                    className="mx-3.5 border-t border-[var(--color-border)]/60 pt-2.25 pb-2.75 text-xs leading-[1.45] text-[var(--color-content-muted)]"
-                  >
-                    {t("methods.unverifiedHint")}
-                  </p>
-                ) : null}
+                {/* Que el número es su único medio de ingreso lo dice la confirmación de «Desvincular». */}
               </Surface>
 
               {detail.lastInvitation === null ? null : (
@@ -521,7 +503,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                 <Button type="button" variant="outline" onClick={onClose}>
                   {t("common:actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={mutation.isPending || !!extension && (!extraFlags.ready || extraFlags.busy)}>
+                <Button type="submit" pending={mutation.isPending} disabled={!!extension && (!extraFlags.ready || extraFlags.busy)}>
                   {mutation.isPending ? t("edit.saving") : t("edit.submit")}
                 </Button>
               </DialogFooter>
@@ -535,11 +517,9 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
             phone={phone}
             hasEmail={detail.email !== null}
             isOwnAccount={isOwnAccount}
-            onConfirm={() => {
-              if (!unlink.isPending) {
-                unlink.mutate();
-              }
-            }}
+            pending={unlink.isPending}
+            // La confirmación espera abierta y se cierra con la respuesta, también si falla (el porqué va a un aviso).
+            onConfirm={() => unlink.mutate(undefined, { onSettled: () => setIsConfirmingUnlink(false) })}
             onClose={() => setIsConfirmingUnlink(false)}
           />
         ) : null}

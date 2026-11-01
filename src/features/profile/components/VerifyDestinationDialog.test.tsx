@@ -135,7 +135,9 @@ describe("linking WhatsApp", () => {
 
     const dialog = await openDialog("Vincular", "Vincular WhatsApp");
 
-    expect(dialog).toHaveAccessibleDescription("Te mandamos un código a ese número para comprobar que es tuyo.");
+    // Sin descripción debajo del título: «Enviar código» ya dice lo que va a pasar.
+    expect(dialog).not.toHaveAccessibleDescription();
+    expect(within(dialog).queryByText(/para comprobar que es tuyo/)).not.toBeInTheDocument();
     expect(within(dialog).getByRole("combobox", { name: "País: Argentina, +54" })).toHaveTextContent("AR +54");
     expect(within(dialog).getByRole("textbox", { name: "Número de WhatsApp" })).toHaveAttribute("type", "tel");
     expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
@@ -163,7 +165,11 @@ describe("linking WhatsApp", () => {
     expect(calls.codeRequests).toEqual([{ country: "AR", number: "11 2345-6789" }]);
     expect(screen.getByRole("dialog", { name: "Vincular WhatsApp" })).toBe(dialog);
     expect(dialog).toHaveTextContent("Te mandamos un código al +54 9 11 •••• 6789. Vence en 10 minutos.");
-    expect(dialog).toHaveTextContent("Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra.");
+    // Que en WhatsApp Web no se ve va en la (i) junto a «Código», no en un renglón debajo de los botones.
+    expect(within(dialog).getByRole("button", { name: "Más información sobre Código" })).toHaveAccessibleDescription(
+      "Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra.",
+    );
+    expect(within(dialog).queryByText("Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra.", { selector: "p" })).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Verificar" })).toBeDisabled();
     expect(within(dialog).getByRole("button", { name: "Reenviar en 45 s" })).toBeDisabled();
     expect(within(dialog).getByRole("button", { name: "Usar otro número" })).toBeInTheDocument();
@@ -182,6 +188,70 @@ describe("linking WhatsApp", () => {
         "Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra.",
     );
     expect(within(code).getByRole("textbox", { name: "Código 1" })).toHaveFocus();
+  });
+
+  it("says it is sending the code, and takes no second click, while it is on its way", async () => {
+    const calls = linkWhatsAppServer();
+    const answer = heldResponse();
+    server.use(
+      http.post("/api/me/whatsapp/code", async ({ request }) => {
+        calls.codeRequests.push(await request.json());
+        await answer.released;
+
+        return HttpResponse.json({ resendAfterSeconds: 45, phone, maskedPhone }, { status: 202 });
+      }),
+    );
+
+    const dialog = await openAndSendNumber();
+
+    const sending = await within(dialog).findByRole("button", { name: "Enviando…" });
+    expect(sending).toHaveAttribute("aria-busy", "true");
+    expect(sending).toBeDisabled();
+    await userEvent.click(sending);
+    expect(calls.codeRequests).toHaveLength(1);
+
+    answer.release();
+    expect(await within(dialog).findByRole("group", { name: "Código" })).toBeInTheDocument();
+  });
+
+  it("says it is resending and verifying while each answer is on its way", async () => {
+    const calls = linkWhatsAppServer({ resendAfterSeconds: [0, 45] });
+    const resent = heldResponse();
+    const verified = heldResponse();
+    server.use(
+      http.post("/api/me/whatsapp/code", async ({ request }) => {
+        calls.codeRequests.push(await request.json());
+        if (calls.codeRequests.length > 1) await resent.released;
+
+        return HttpResponse.json(
+          { resendAfterSeconds: calls.codeRequests.length > 1 ? 45 : 0, phone, maskedPhone },
+          { status: 202 },
+        );
+      }),
+      http.put("/api/me/whatsapp", async () => {
+        await verified.released;
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const dialog = await openAndSendNumber();
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Reenviar código" }));
+
+    const resending = await within(dialog).findByRole("button", { name: "Reenviando…" });
+    expect(resending).toHaveAttribute("aria-busy", "true");
+    expect(resending).toBeDisabled();
+    resent.release();
+    expect(await within(dialog).findByRole("button", { name: "Reenviar en 45 s" })).toBeDisabled();
+
+    await typeCode(dialog, "482913");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Verificar" }));
+
+    const verifying = await within(dialog).findByRole("button", { name: "Verificando…" });
+    expect(verifying).toHaveAttribute("aria-busy", "true");
+    expect(verifying).toBeDisabled();
+    verified.release();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
   it("links the number, closes and refreshes the profile", async () => {
@@ -501,7 +571,7 @@ describe("adding an email", () => {
 
     const dialog = await openDialog("Agregar correo", "Agregar correo");
 
-    expect(dialog).toHaveAccessibleDescription("Te mandamos un código a ese correo para comprobar que es tuyo.");
+    expect(dialog).not.toHaveAccessibleDescription();
     expect(within(dialog).getByRole("textbox", { name: "Correo electrónico" })).toHaveAttribute("type", "email");
     expect(within(dialog).getByRole("button", { name: "Enviar código" })).toBeInTheDocument();
   });

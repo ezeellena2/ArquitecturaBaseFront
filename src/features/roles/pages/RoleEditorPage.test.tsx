@@ -626,7 +626,10 @@ describe("RoleEditorPage", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
-    expect(await screen.findByRole("button", { name: "Guardando…" })).toBeDisabled();
+    // Con el aro antes del gerundio: no alcanza con apagar el botón.
+    const saving = await screen.findByRole("button", { name: "Guardando…" });
+    expect(saving).toBeDisabled();
+    expect(saving).toHaveAttribute("aria-busy", "true");
     // La pantalla no se tapa: lo escrito sigue a la vista.
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Soporte");
 

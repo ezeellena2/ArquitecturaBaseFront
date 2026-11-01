@@ -44,6 +44,22 @@ export function LoginPage() {
   // El error de un ingreso con Google que cruzó el redirect de OIDC (ver `loginRedirectError`). Se lee una vez.
   const [carriedErrorCode] = useState(carriedLoginRedirectError);
   const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
+  // Se tocó «Ingresar con Google» y el navegador se está yendo: el botón lo dice hasta que cambia la página.
+  const [isGoingToGoogle, setIsGoingToGoogle] = useState(false);
+
+  // Atrás desde Google puede traer esta página de la caché del navegador tal como quedó (`pageshow` con `persisted`):
+  // el botón volvería en «Ingresando con Google…» para siempre. Vuelve el enlace.
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        setIsGoingToGoogle(false);
+      }
+    }
+
+    globalThis.addEventListener("pageshow", handlePageShow);
+
+    return () => globalThis.removeEventListener("pageshow", handlePageShow);
+  }, []);
 
   const { data: methods, isPending, isError, refetch } = useQuery({
     queryKey: loginMethodsQueryKey,
@@ -118,20 +134,41 @@ export function LoginPage() {
     }
   }
 
+  const googleUrl = externalLoginUrl(returnUrl, registration);
+
   return (
     <div className="flex flex-col gap-6">
       <Link to="/" className="access-back"><ArrowLeft size={16} aria-hidden="true" />{t("access.back")}</Link>
-      <div><h1>{t(registration ? "registration.title" : "login.title")}</h1>
-        <p className="access-intro">{t(registration ? "registration.intro" : "login.intro")}</p></div>
+      {/* El título y el formulario alcanzan: sin un subtítulo que explique para qué es la pantalla. */}
+      <h1>{t(registration ? "registration.title" : "login.title")}</h1>
 
       {showGoogle ? (
         <>
-          <Button asChild variant="outline" className="w-full">
-            <a href={externalLoginUrl(returnUrl, registration)}>
-              <GoogleIcon className="size-4" />
-              {t(registration ? "registration.google" : "login.google")}
-            </a>
-          </Button>
+          {/* Es una navegación completa al servidor: mientras el navegador se va, en lugar del enlace queda el botón
+              con el aro y el gerundio, que no acepta otro clic. Abrirlo en otra pestaña no cambia esta página. */}
+          {isGoingToGoogle ? (
+            <Button variant="outline" className="w-full" pending>
+              {t(registration ? "registration.googlePending" : "login.googlePending")}
+            </Button>
+          ) : (
+            <Button asChild variant="outline" className="w-full">
+              <a
+                href={googleUrl}
+                onClick={(event) => {
+                  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  setIsGoingToGoogle(true);
+                  globalThis.location.assign(googleUrl);
+                }}
+              >
+                <GoogleIcon className="size-4" />
+                {t(registration ? "registration.google" : "login.google")}
+              </a>
+            </Button>
+          )}
 
           <div className="flex items-center gap-3 text-xs text-[var(--color-content-muted)]">
             <span aria-hidden="true" className="h-px flex-1 bg-[var(--color-border)]" />

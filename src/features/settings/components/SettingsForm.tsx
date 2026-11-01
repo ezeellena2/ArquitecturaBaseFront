@@ -18,9 +18,10 @@ interface Props {
 export function SettingsForm({ draft, errors, disabled, onChange }: Props) {
   const { t } = useTranslation("settings");
   const zones = [...new Set([draft.defaultTimeZoneId, "America/Argentina/Buenos_Aires", "UTC", ...Intl.supportedValuesOf("timeZone")])].sort();
+  // Sin leyendas: lo que hace falta aclarar va en la (i) del título o de la etiqueta. El efecto de cada registro lo
+  // explica la confirmación al guardar.
   return <>
-    <Surface title={t("sections.regional")} padded>
-      <p className="max-w-2xl text-sm text-[var(--color-content-muted)]">{t("hints.regional")}</p>
+    <Surface title={t("sections.regional")} help={t("hints.regional")} padded>
       <div className="flex flex-wrap gap-4">
         <div className="w-72 max-w-full"><FormField label={t("fields.defaultCulture")} error={errors.defaultCulture}>
           <NativeSelect value={draft.defaultCulture} disabled={disabled} onChange={event => onChange({ defaultCulture: event.target.value as SettingsDraft["defaultCulture"] })}>
@@ -39,19 +40,18 @@ export function SettingsForm({ draft, errors, disabled, onChange }: Props) {
       </div>
     </Surface>
     <Surface title={t("sections.lists")} padded>
-      <div className="w-72 max-w-full"><FormField label={t("fields.defaultPageSize")} error={errors.defaultPageSize}>
+      <div className="w-72 max-w-full"><FormField label={t("fields.defaultPageSize")} help={t("hints.listados")} error={errors.defaultPageSize}>
         <NativeSelect value={draft.defaultPageSize} disabled={disabled} onChange={event => onChange({ defaultPageSize: Number(event.target.value) })}>
           {[10, 20, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
         </NativeSelect>
       </FormField></div>
-      <p className="max-w-2xl text-sm text-[var(--color-content-muted)]">{t("hints.listados")}</p>
     </Surface>
     <Surface title={t("sections.registration")} padded>
       <div className="max-w-2xl"><RadioGroupField label={t("registration.title")} value={draft.registrationMode}
         onValueChange={value => onChange({ registrationMode: value as RegistrationMode })} error={errors.registrationMode}
         options={[
-          { value: "InviteOnly", label: t("registration.InviteOnlyLabel"), description: t("registration.inviteOnly"), disabled },
-          { value: "Open", label: t("registration.OpenLabel"), description: t("registration.open"), disabled },
+          { value: "InviteOnly", label: t("registration.InviteOnlyLabel"), disabled },
+          { value: "Open", label: t("registration.OpenLabel"), disabled },
         ]} />
       </div>
     </Surface>

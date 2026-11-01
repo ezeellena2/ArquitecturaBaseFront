@@ -115,6 +115,53 @@ describe("RolesPage", () => {
     expect(within(table).getByText("4")).toBeInTheDocument();
   });
 
+  it("says there are no roles yet without explaining what they are for, with Nuevo rol in the band", async () => {
+    server.use(...managerHandlers());
+    // Aparte y después: dentro de un mismo `server.use`, gana el primero que coincide.
+    server.use(http.get("/api/roles/paged", () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })));
+
+    renderRouteWithProviders("/roles");
+
+    expect(await screen.findByRole("heading", { name: "Todavía no hay roles" })).toBeInTheDocument();
+    expect(screen.queryByText(/para agrupar permisos/)).not.toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Nuevo rol" })).toBeInTheDocument();
+  });
+
+  it("keeps the deletion open, saying it is deleting, until the answer arrives", async () => {
+    let release = () => {};
+    const answered = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let deletes = 0;
+    server.use(
+      ...managerHandlers(),
+      http.delete("/api/roles/r2", async () => {
+        deletes += 1;
+        await answered;
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderRouteWithProviders("/roles");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Eliminar el rol Soporte" }));
+    const dialog = await screen.findByRole("dialog", { name: "Eliminar el rol Soporte" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Eliminar" }));
+
+    // Espera abierta la respuesta, con el aro y el gerundio, y no deja pedirlo otra vez ni cancelarlo.
+    const deleting = within(dialog).getByRole("button", { name: "Eliminando…" });
+    expect(deleting).toHaveAttribute("aria-busy", "true");
+    expect(deleting).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    await userEvent.click(deleting);
+    expect(deletes).toBe(1);
+
+    release();
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
   it("says the number of permissions in singular when there is only one", async () => {
     server.use(...managerHandlers());
 

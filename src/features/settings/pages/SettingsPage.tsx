@@ -121,9 +121,9 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
   // Mientras tanto, Descartar y Guardar se apagan con la revisión pendiente como motivo, aunque se cierre el aviso.
   const reviewReason = needsReview && !disabled ? t("review.pending") : null;
   return <Page title={t("title")}
-    actions={<>{needsReview ? <Button variant="outline" disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
+    actions={<>{needsReview ? <Button variant="outline" pending={reading} disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
       <DisabledReason reason={reviewReason}><Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={discard}>{t("discard")}</Button></DisabledReason>
-      <DisabledReason reason={reviewReason}><Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); if (changes.registrationMode) setConfirm(true); else save(); }}>{t(mutation.isPending ? "saving" : "save")}</Button></DisabledReason></>}>
+      <DisabledReason reason={reviewReason}><Button pending={mutation.isPending} disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); if (changes.registrationMode) setConfirm(true); else save(); }}>{t(mutation.isPending ? "saving" : "save")}</Button></DisabledReason></>}>
     <div className="flex flex-col gap-4">
       <SettingsForm draft={draft} errors={errors} disabled={disabled} onChange={changeDraft} />
       {review ? <SettingsReview current={review} draft={draft} disabled={disabled} titleRef={reviewTitle} onAccept={acceptReview} /> : null}

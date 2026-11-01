@@ -103,9 +103,9 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart, 
       {registration ? <FormField label={t("registration.name")} error={errors.displayName ? t("registration.nameInvalid") : undefined}>
         <Input autoComplete="name" maxLength={100} {...register("displayName", { onChange: (event) => onDisplayNameChange?.(event.target.value) })} />
       </FormField> : null}
+      {/* La pestaña y «Enviar código» ya dicen que el código va por WhatsApp: el renglón de abajo queda para el error. */}
       <PhoneField
         label={t("common:phone.label")}
-        hint={t("login.phoneHint")}
         error={numberError}
         countries={countries}
         country={country}
@@ -119,8 +119,10 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart, 
         </p>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting || isRetryLimited}>
-        {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
+      <Button type="submit" className="w-full" pending={isSubmitting} disabled={isRetryLimited}>
+        {isSubmitting
+          ? t("common:code.sending")
+          : isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
       </Button>
     </form>
   );

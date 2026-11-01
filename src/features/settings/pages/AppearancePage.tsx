@@ -103,16 +103,15 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
   // Mientras tanto, Descartar y Guardar se apagan con la revisión pendiente como motivo, aunque se cierre el aviso.
   const reviewReason = needsReview && !disabled ? t("review.pending") : null;
   return <Page title={t("appearance.title")}
-    actions={<>{needsReview ? <Button variant="outline" disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
+    actions={<>{needsReview ? <Button variant="outline" pending={reading} disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
       <DisabledReason reason={reviewReason}><Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={() => { setDraft(baseline.appearance); setErrors({}); dismissNotification(noticeId); }}>{t("discard")}</Button></DisabledReason>
-      <DisabledReason reason={reviewReason}><Button disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); mutation.mutate({ appearance: draft, revision: baseline.revision }); }}>{t(mutation.isPending ? "saving" : "save")}</Button></DisabledReason></>}>
+      <DisabledReason reason={reviewReason}><Button pending={mutation.isPending} disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); mutation.mutate({ appearance: draft, revision: baseline.revision }); }}>{t(mutation.isPending ? "saving" : "save")}</Button></DisabledReason></>}>
     <div className="flex flex-col gap-5">
-      <Surface title={t("appearance.colors")} padded actions={<Button variant="outline" disabled={disabled} onClick={() => { setDraft(initialAppearance); setErrors({}); }}>{t("appearance.reset")}</Button>}>
-        <p className="text-sm text-[var(--color-content-muted)]">{t("appearance.hint")}</p>
+      {/* A quiénes se aplican, en la (i) del título; que la vista previa es el borrador se ve, y el contraste no se explica. */}
+      <Surface title={t("appearance.colors")} help={t("appearance.hint")} padded actions={<Button variant="outline" disabled={disabled} onClick={() => { setDraft(initialAppearance); setErrors({}); }}>{t("appearance.reset")}</Button>}>
         <div className="grid max-w-3xl gap-5 sm:grid-cols-2">{fields.map(field => <FormField key={field} label={t(`appearance.fields.${field}`)} hint={draft[field].toUpperCase()} error={errors[`appearance.${field}`]}>
           <Input type="color" value={draft[field]} disabled={disabled} onChange={event => { setDraft(previous => ({ ...previous, [field]: event.target.value })); setErrors(previous => ({ ...previous, [`appearance.${field}`]: "" })); }} />
         </FormField>)}</div>
-        <p className="max-w-3xl text-sm text-[var(--color-content-muted)]">{t("appearance.contrast")}</p>
       </Surface>
       <AppearancePreview appearance={draft} labels={{ title: t("appearance.preview"), home: t("common:navigation.dashboard"), administration: t("common:navigation.administration"), name: t("appearance.name"), role: t("appearance.role"), search: t("appearance.search"), newUser: t("appearance.newUser") }} />
       {review ? <Surface title={t("review.title")} titleRef={reviewTitle} padded actions={<><Button variant="outline" disabled={disabled} onClick={() => acceptReview(false)}>{t("review.useCurrent")}</Button><Button disabled={disabled} onClick={() => acceptReview(true)}>{t("review.keepMine")}</Button></>}>

@@ -15,9 +15,8 @@
   "empty": {
     "title": "We couldn't find any users",
     "description": "There are no users yet.",
-    "searchDescription": "Try another email or name.",
     "filteredTitle": "No user matches",
-    "filteredDescription": "There are {{filters}}. Try removing one.",
+    "filteredDescription": "{{filters}}.",
     "clear": "Clear filters"
   },
   "actions": {
@@ -37,10 +36,9 @@
   },
   "create": {
     "title": "New user",
-    "description": "Add an email address, a WhatsApp number or both: one is enough.",
-    "descriptionEmailOnly": "Add the email address. They sign in with their code, like everyone else.",
     "submit": "Create",
     "submitAndInvite": "Create and invite",
+    "creating": "Creating…",
     "success": "Done: they can sign in now."
   },
   "invitation": {
@@ -48,8 +46,6 @@
     "channel": "How",
     "email": "By email",
     "whatsApp": "By WhatsApp",
-    "emailNeeded": "Add an email address to use this option.",
-    "phoneNeeded": "Add a number to use this option.",
     "consent": "{{name}} agreed to receive WhatsApp messages.",
     "consentWithoutName": "The person agreed to receive WhatsApp messages.",
     "consentHint": "Without this, WhatsApp does not let us message them first."
@@ -72,7 +68,6 @@
     "unlinkFor": "Unlink the WhatsApp of {{user}}",
     "verified": "Verified",
     "unverified": "Not verified",
-    "onlyMethod": "It is their only way to sign in. If you unlink it, they cannot sign in until you add another one.",
     "unverifiedHint": "What an admin adds stays “Not verified” until the person signs in with it."
   },
   "lastInvitation": {
@@ -94,18 +89,16 @@
   },
   "resend": {
     "title": "Resend the invitation",
-    "failed": "It did not arrive by WhatsApp: it may be Meta's limit or a rejection. You can try again or send it by email.",
-    "failedWithoutEmail": "It did not arrive by WhatsApp: it may be Meta's limit or a rejection. You can try again.",
-    "failedByEmail": "It did not go out by email. You can try again or send it by WhatsApp.",
-    "failedByEmailWithoutWhatsApp": "It did not go out by email. You can try again.",
     "submit": "Resend",
-    "submitLabel": "Resend the invitation"
+    "submitLabel": "Resend the invitation",
+    "resending": "Resending…"
   },
   "unlink": {
     "title": "Unlink the WhatsApp of {{user}}?",
     "descriptionWithEmail": "Their open sessions are closed and they can no longer sign in with {{phone}}. They can keep signing in with their email.",
     "descriptionWithoutEmail": "Their open sessions are closed and they can no longer sign in with {{phone}}. Since they have no email, they are left without a way to sign in until you add a number or an email.",
     "confirm": "Unlink",
+    "unlinking": "Unlinking…",
     "success": "Their WhatsApp was unlinked.",
     "ownDescription": "You will no longer be able to sign in with {{phone}} or its chat. Your session will stay open."
   },
@@ -114,7 +107,6 @@
     "emailPlaceholder": "email@example.com",
     "emailInvalid": "Enter a valid email address.",
     "displayName": "Name",
-    "displayNameHint": "Optional. The name shown across the system.",
     "roles": "Roles",
     "rolesPlaceholder": "No roles",
     "rolesEmpty": "There are no roles to assign yet.",
@@ -123,17 +115,20 @@
   "activate": {
     "title": "Activate {{user}}",
     "description": "They will be able to sign in again using their sign-in methods and their existing permissions.",
-    "confirm": "Activate"
+    "confirm": "Activate",
+    "activating": "Activating…"
   },
   "deactivate": {
     "title": "Deactivate {{user}}",
     "description": "Their access is cut right away: any open session stops working and they can't sign in again until you activate them. Their data stays as it is.",
-    "confirm": "Deactivate"
+    "confirm": "Deactivate",
+    "deactivating": "Deactivating…"
   },
   "delete": {
     "title": "Delete {{user}}",
     "description": "The account disappears from the listings and can't sign in. Their sign-in history is kept, and if you add the same email again later, the account is restored.",
-    "confirm": "Delete"
+    "confirm": "Delete",
+    "deleting": "Deleting…"
   },
   "feedback": {
     "activated": "They can sign in again.",

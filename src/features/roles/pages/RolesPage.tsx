@@ -46,7 +46,7 @@ export function RolesPage() {
       notify({ id: `roles:delete:${role.id}`, kind: "success", message: t("feedback.deleted") });
       await queryClient.invalidateQueries({ queryKey: rolesQueryKey });
     },
-    // `ConfirmDialog` se cierra al confirmar, así que el error llega cuando el diálogo ya no está: va a un aviso.
+    // La confirmación espera abierta la respuesta y se cierra con ella, también si falla: el porqué va a un aviso.
     onError: (mutationError, role) => notify({ id: `roles:delete:${role.id}`, kind: "error", message: roleActionErrorMessage(mutationError, t) }),
   });
 
@@ -132,8 +132,8 @@ export function RolesPage() {
           isLoading={isLoading}
           error={error ? t("common:states.loadFailed") : undefined}
           onRetry={() => void refetch()}
+          // Sin una frase que explique para qué sirve un rol: «Nuevo rol» está en la banda.
           emptyTitle={t("empty.title")}
-          emptyDescription={t("empty.description")}
         />
         {data ? <Pagination {...data} onPageChange={setPage} onPageSizeChange={setPageSize} /> : null}
       </Surface>
@@ -150,7 +150,9 @@ export function RolesPage() {
           description={t("delete.description")}
           confirmLabel={t("delete.confirm")}
           destructive
-          onConfirm={() => removal.mutate(deletingRole)}
+          pending={removal.isPending}
+          pendingLabel={t("delete.deleting")}
+          onConfirm={() => removal.mutate(deletingRole, { onSettled: () => setDeletingRole(undefined) })}
         />
       ) : null}
     </Page>

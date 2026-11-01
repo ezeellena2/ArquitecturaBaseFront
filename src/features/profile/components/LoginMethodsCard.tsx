@@ -10,8 +10,8 @@ import { VerifyDestinationDialog } from "./VerifyDestinationDialog";
 import { currentUserQueryKey, type CurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
-import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { MailIcon, SmartphoneIcon } from "@/shared/ui/icons";
 import { VerificationBadge } from "@/shared/ui/VerificationBadge";
 
@@ -23,31 +23,22 @@ function hasLoginMethodBesidesPhone(user: CurrentUser): boolean {
   return (user.email !== null && user.emailConfirmed) || user.hasGoogleLogin;
 }
 
-/// Una fila: el ícono, qué medio es, su valor (o que falta) y, a la derecha, lo que se puede hacer. La ayuda va debajo
-/// del valor.
+/// Una fila: el ícono, qué medio es, su valor (o que falta) y, a la derecha, lo que se puede hacer.
 function MethodRow({
   icon: Icon,
   label,
-  hint,
   action,
   children,
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
-  hint?: string;
   action?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    // Con ayuda, la fila tiene tres renglones y el botón se queda arriba, a la altura del nombre; sin ayuda, al medio.
     // En un ancho de celular el botón no entra al lado del texto sin partirlo en renglones de dos palabras: baja debajo
     // del valor, alineado con él.
-    <li
-      className={cn(
-        "mx-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2.5 py-3.5 sm:grid-cols-[auto_minmax(0,1fr)_auto]",
-        hint ? "items-start" : "items-start sm:items-center",
-      )}
-    >
+    <li className="mx-4 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2.5 py-3.5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
       <span
         aria-hidden="true"
         className="inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-surface-muted)] text-[var(--color-content-muted)]"
@@ -57,7 +48,6 @@ function MethodRow({
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm font-medium text-[var(--color-content)]">{label}</p>
         {children}
-        {hint ? <p className="text-xs leading-snug text-[var(--color-content-muted)]">{hint}</p> : null}
       </div>
       {action ? <div className="col-start-2 sm:col-start-3 sm:row-start-1">{action}</div> : null}
     </li>
@@ -66,7 +56,7 @@ function MethodRow({
 
 /// La superficie "Medios de ingreso" de `/perfil` (tablero "WhatsApp · Perfil: correo y WhatsApp", puntos 1, 3 y 4):
 /// con qué entra la cuenta, y lo que se puede agregar o sacar. La regla que no se rompe es que nadie se queda sin forma
-/// de entrar por su propia mano: si el número es lo único, en lugar de "Desvincular" va por qué no se puede.
+/// de entrar por su propia mano: si el número es lo único, "Desvincular" queda apagado con ese motivo (`DisabledReason`).
 ///
 /// - El correo se agrega una vez; no hay "cambiar correo".
 /// - WhatsApp se ofrece para vincular solo si está prendido (`login-methods`). Un número que ya está se muestra
@@ -74,7 +64,7 @@ function MethodRow({
 /// - El número se muestra formateado (`formattedPhoneNumber`), nunca en E.164, y enmascarado al confirmar.
 /// - Lo que se hace acá puede llevarse el botón con el que se hizo. Entonces el foco va al título de la superficie, no
 ///   a `<body>`: agregar el correo se lleva "Agregar correo"; desvincular con WhatsApp apagado, la fila entera; y si
-///   el servidor dice que el número es lo único, "Desvincular" deja lugar a la ayuda.
+///   el servidor dice que el número es lo único, "Desvincular" vuelve apagado (es otro elemento, envuelto en su motivo).
 export function LoginMethodsCard({ user }: { user: CurrentUser }) {
   const { t } = useTranslation("profile");
   const queryClient = useQueryClient();
@@ -117,7 +107,7 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
       notify({ id: "features/profile/components/LoginMethodsCard:2", kind: "error", message: profileActionErrorMessage(error, t) });
 
       // El servidor dice que el número es lo único: el perfil que se ve está viejo (se sacó el correo o Google desde
-      // otro lado). Con el perfil nuevo, la fila explica por qué no se puede.
+      // otro lado). Con el perfil nuevo, «Desvincular» queda apagado con el porqué como motivo.
       if (error instanceof ApiError && error.code === "Users.User.LastLoginMethod") {
         await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       }
@@ -132,7 +122,6 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
         <MethodRow
           icon={MailIcon}
           label={t("methods.email.label")}
-          hint={user.email ? undefined : t("methods.email.recoveryHint")}
           action={
             user.email ? null : (
               <Button
@@ -160,20 +149,20 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
           <MethodRow
             icon={SmartphoneIcon}
             label={t("methods.whatsapp.label")}
-            hint={canUnlinkWhatsApp ? undefined : t("methods.whatsapp.onlyMethod")}
             action={
-              // No se apaga mientras se desvincula: la confirmación ya se cerró y le devuelve el foco a este botón, y
-              // uno apagado no lo toma. El pedido doble lo frena `onConfirm`.
-              canUnlinkWhatsApp ? (
+              // Si el número es lo único, queda apagado con el porqué como motivo. No se apaga mientras se desvincula: la
+              // confirmación espera abierta y, al cerrarse, le devuelve el foco a este botón, que apagado no lo tomaría.
+              <DisabledReason reason={canUnlinkWhatsApp ? null : t("methods.whatsapp.onlyMethod")}>
                 <Button
                   ref={handOffFocusWhenRemoved}
                   type="button"
                   variant="outline"
+                  disabled={!canUnlinkWhatsApp}
                   onClick={() => setOpenDialog("unlinkWhatsApp")}
                 >
                   {t("methods.whatsapp.unlink")}
                 </Button>
-              ) : null
+              </DisabledReason>
             }
           >
             <span className="flex flex-wrap items-center gap-2">
@@ -186,14 +175,17 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
             icon={SmartphoneIcon}
             label={t("methods.whatsapp.label")}
             action={
-              <Button
-                ref={handOffFocusWhenRemoved}
-                type="button"
-                variant="outline"
-                onClick={() => setOpenDialog("linkWhatsApp")}
-              >
-                {t("methods.whatsapp.link")}
-              </Button>
+              // Envuelto como «Desvincular», sin motivo: es el mismo botón, que al desvincular se queda con el foco.
+              <DisabledReason>
+                <Button
+                  ref={handOffFocusWhenRemoved}
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpenDialog("linkWhatsApp")}
+                >
+                  {t("methods.whatsapp.link")}
+                </Button>
+              </DisabledReason>
             }
           >
             <p className="text-sm text-[var(--color-content-muted)]">{t("methods.whatsapp.notLinked")}</p>
@@ -217,11 +209,11 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
       {openDialog === "unlinkWhatsApp" ? (
         <UnlinkWhatsAppDialog
           maskedPhone={user.maskedPhoneNumber ?? ""}
-          onConfirm={() => {
-            if (!unlink.isPending) {
-              unlink.mutate();
-            }
-          }}
+          pending={unlink.isPending}
+          // Si con la respuesta la fila ya no tiene ese botón (se fue la fila, o volvió apagado), el foco va al título.
+          focusFallback={titleRef}
+          // Espera abierta y se cierra con la respuesta, también si falla (el porqué va a un aviso).
+          onConfirm={() => unlink.mutate(undefined, { onSettled: closeDialog })}
           onClose={closeDialog}
         />
       ) : null}

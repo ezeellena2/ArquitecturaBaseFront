@@ -74,6 +74,39 @@ describe("LoginPage", () => {
     expect(screen.queryByRole("heading", { name: "Revisá tu correo" })).not.toBeInTheDocument();
   });
 
+  it.each(["email", "whatsapp"] as const)("says it is sending the %s code, and takes no second click, while it is on its way", async (channel) => {
+    withLoginMethods(whatsappOn);
+    let release = () => {};
+    const answered = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requests = 0;
+    server.use(http.post(channel === "email" ? "/account/login-code" : "/account/login-code/whatsapp", async () => {
+      requests += 1;
+      await answered;
+
+      return HttpResponse.json(channel === "email" ? { resendAfterSeconds: 60 } : whatsAppCodeResponse, { status: 202 });
+    }));
+    renderRouteWithProviders(loginUrl);
+    await loginMethodsSettled();
+    if (channel === "whatsapp") {
+      await chooseWhatsApp();
+      await userEvent.type(screen.getByRole("textbox", { name: "Número de WhatsApp" }), "11 2345-6789");
+    } else {
+      await userEvent.type(screen.getByRole("textbox", { name: "Correo electrónico" }), "ana@example.com");
+    }
+    await userEvent.click(screen.getByRole("button", { name: "Enviar código" }));
+
+    const sending = await screen.findByRole("button", { name: "Enviando…" });
+    expect(sending).toHaveAttribute("aria-busy", "true");
+    expect(sending).toBeDisabled();
+    await userEvent.click(sending);
+    expect(requests).toBe(1);
+
+    release();
+    expect(await screen.findByRole("heading", { name: channel === "email" ? "Revisá tu correo" : "Revisá tu WhatsApp" })).toBeInTheDocument();
+  });
+
   // AppProviders usa el queryClient de la app (un singleton): sin esto, los medios de ingreso de un test
   // quedarían cacheados para el siguiente.
   beforeEach(() => {
@@ -91,6 +124,36 @@ describe("LoginPage", () => {
       expect(screen.queryByRole("group", { name: "Ingresar con" })).not.toBeInTheDocument();
       expect(screen.getByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Ingresar con Google" })).toBeInTheDocument();
+      // El título y el formulario alcanzan: sin un subtítulo que explique para qué es la pantalla.
+      expect(screen.getByRole("heading", { level: 1, name: "Iniciar sesión" })).toBeInTheDocument();
+      expect(screen.queryByText("Ingresá a tu cuenta para continuar.")).not.toBeInTheDocument();
+    });
+
+    it("says it is going to Google, and takes no second click, until the page changes", async () => {
+      // La navegación la hace el navegador: acá se mira a dónde va, no se va.
+      const assign = vi.fn();
+      vi.stubGlobal("location", { ...globalThis.location, assign });
+      try {
+        renderRouteWithProviders(loginUrl);
+        await loginMethodsSettled();
+
+        await userEvent.click(screen.getByRole("link", { name: "Ingresar con Google" }));
+
+        expect(assign).toHaveBeenCalledWith(`/account/external/google?returnUrl=${encodeURIComponent(authorizeUrl)}&register=false`);
+        const going = screen.getByRole("button", { name: "Ingresando con Google…" });
+        expect(going).toHaveAttribute("aria-busy", "true");
+        expect(going).toBeDisabled();
+        await userEvent.click(going);
+        expect(assign).toHaveBeenCalledTimes(1);
+
+        // Atrás desde Google puede traer la página de la caché del navegador tal como quedó: vuelve el enlace.
+        act(() => {
+          globalThis.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+        });
+        expect(screen.getByRole("link", { name: "Ingresar con Google" })).toBeInTheDocument();
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
 
     it("keeps the email sign-in working as always when the methods can not be loaded", async () => {
@@ -133,7 +196,9 @@ describe("LoginPage", () => {
       const number = screen.getByRole("textbox", { name: "Número de WhatsApp" });
       expect(number).toHaveAttribute("type", "tel");
       expect(number).toHaveAttribute("autocomplete", "tel-national");
-      expect(number).toHaveAccessibleDescription("Te mandamos un código por WhatsApp.");
+      // La pestaña y «Enviar código» ya dicen que el código va por WhatsApp: el renglón de abajo queda para el error.
+      expect(number).not.toHaveAccessibleDescription();
+      expect(screen.queryByText("Te mandamos un código por WhatsApp.")).not.toBeInTheDocument();
       expect(screen.getByRole("combobox", { name: "País: Argentina, +54" })).toHaveTextContent("AR +54");
       expect(screen.getByRole("button", { name: "Enviar código" })).toBeEnabled();
     });
@@ -187,7 +252,7 @@ describe("LoginPage", () => {
       });
     });
 
-    it("says the number is not valid when it is sent empty, in place of the hint", async () => {
+    it("says the number is not valid when it is sent empty", async () => {
       const bodies: unknown[] = [];
       withLoginMethods(whatsappOn);
       server.use(
@@ -202,7 +267,7 @@ describe("LoginPage", () => {
       await chooseWhatsApp();
       const number = screen.getByRole("textbox", { name: "Número de WhatsApp" });
 
-      // Se valida al enviar, no al tipear: antes de enviar, la ayuda sigue ahí.
+      // Se valida al enviar, no al tipear: antes de enviar, no está marcado.
       expect(number).not.toHaveAttribute("aria-invalid");
 
       await userEvent.click(screen.getByRole("button", { name: "Enviar código" }));

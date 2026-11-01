@@ -48,6 +48,13 @@ describe("CallbackPage", () => {
     globalThis.sessionStorage.removeItem(retryStorageKey);
   });
 
+  it("says it is signing in while the exchange runs, without a line saying it can take a while", async () => {
+    renderAt("/auth/callback?code=abc&state=def&iss=https://localhost");
+
+    expect(await screen.findByText("Iniciando sesión…")).toBeInTheDocument();
+    expect(screen.queryByText("Esto puede tardar unos segundos.")).not.toBeInTheDocument();
+  });
+
   it("restarts the flow without a query the first time the exchange fails", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     authState.error = new Error("No matching state found in storage");

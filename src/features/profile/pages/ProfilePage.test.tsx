@@ -91,6 +91,37 @@ describe("ProfilePage", () => {
     );
   });
 
+  it("says it is saving, and takes no second click, while the profile is on its way", async () => {
+    let release = () => {};
+    const answered = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let puts = 0;
+    server.use(
+      http.get("/api/me", () => HttpResponse.json(currentUser)),
+      http.put("/api/me", async () => {
+        puts += 1;
+        await answered;
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderRouteWithProviders("/perfil");
+
+    await screen.findByRole("textbox", { name: "Nombre" });
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    const saving = await screen.findByRole("button", { name: "Guardando…" });
+    expect(saving).toHaveAttribute("aria-busy", "true");
+    expect(saving).toBeDisabled();
+    await userEvent.click(saving);
+    expect(puts).toBe(1);
+
+    release();
+    expect(await screen.findByRole("button", { name: "Guardar" })).toBeEnabled();
+  });
+
   it("does not let the name grow past what the backend accepts", async () => {
     server.use(...profileHandlers([]));
 
@@ -216,14 +247,12 @@ describe("ProfilePage", () => {
     expect(methods.getByText("ana@example.com")).toBeInTheDocument();
     expect(details.queryByText("ana@example.com")).not.toBeInTheDocument();
 
-    // El formulario queda igual: último ingreso, nombre con su ayuda, idioma, zona horaria y Guardar.
+    // El formulario queda igual: último ingreso, nombre, idioma, zona horaria y Guardar, sin leyendas debajo de los campos.
     expect(details.getByText("Último ingreso")).toBeInTheDocument();
     expect(details.getByText("18 sept 2026, 9:00")).toBeInTheDocument();
-    expect(details.getByRole("textbox", { name: "Nombre" })).toHaveAccessibleDescription(
-      "Es el nombre que se muestra en el sistema.",
-    );
-    expect(details.getByRole("combobox", { name: "Idioma" })).toBeInTheDocument();
-    expect(details.getByRole("combobox", { name: "Zona horaria" })).toBeInTheDocument();
+    expect(details.getByRole("textbox", { name: "Nombre" })).not.toHaveAccessibleDescription();
+    expect(details.getByRole("combobox", { name: "Idioma" })).not.toHaveAccessibleDescription();
+    expect(details.getByRole("combobox", { name: "Zona horaria" })).not.toHaveAccessibleDescription();
     expect(details.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
   });
 

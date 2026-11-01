@@ -91,6 +91,68 @@ describe("SettingsPage", () => {
     for (const topic of ["idioma", "zona-horaria", "listados", "registro"]) expect(screen.getAllByRole("link").some(link => link.getAttribute("href") === `/configuracion/${topic}`)).toBe(false);
   });
 
+  it("puts the explanations in the information icons, with no lines under the titles, fields or options", async () => {
+    renderRouteWithProviders("/configuracion");
+    const regional = await screen.findByRole("region", { name: "Preferencias regionales" });
+    // Que son valores iniciales, y no el idioma de todos, va en la (i) del título de la superficie.
+    expect(within(regional).getByRole("button", { name: "Más información sobre Preferencias regionales" })).toHaveAccessibleDescription(
+      "Valores iniciales para cuentas nuevas y pantallas públicas. Cada persona conserva sus preferencias.",
+    );
+    expect(screen.queryByText(/Valores iniciales para cuentas nuevas/, { selector: "p" })).not.toBeInTheDocument();
+    // La de «Filas por página», junto a su etiqueta, y es la descripción del desplegable.
+    expect(screen.getByRole("combobox", { name: "Filas por página" })).toHaveAccessibleDescription(
+      "Cantidad inicial de filas. En cada listado se puede elegir otro tamaño.",
+    );
+    expect(screen.getByRole("button", { name: "Más información sobre Filas por página" })).toBeInTheDocument();
+    expect(screen.queryByText(/Cantidad inicial de filas/, { selector: "p" })).not.toBeInTheDocument();
+    // El efecto de cada registro lo explica la confirmación al guardar: las opciones no llevan texto debajo.
+    expect(screen.getByRole("radio", { name: "Solo por invitación" })).not.toHaveAccessibleDescription();
+    expect(screen.getByRole("radio", { name: "Registro abierto" })).not.toHaveAccessibleDescription();
+  });
+
+  it("says it is saving, and takes no second click, while the changes are on their way", async () => {
+    let release = () => {};
+    const answered = new Promise<void>(resolve => { release = resolve; });
+    server.use(http.patch("/api/settings", async ({ request }) => {
+      writes.push(await request.json());
+      await answered;
+      return new HttpResponse(null, { status: 204 });
+    }));
+    renderRouteWithProviders("/configuracion");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    const saving = await screen.findByRole("button", { name: "Guardando…" });
+    expect(saving).toHaveAttribute("aria-busy", "true");
+    expect(saving).toBeDisabled();
+    await userEvent.click(saving);
+    expect(writes).toHaveLength(1);
+
+    release();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled());
+  });
+
+  it("says it is reading the current values while they arrive", async () => {
+    server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 })));
+    renderRouteWithProviders("/configuracion");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
+    const review = await within(header).findByRole("button", { name: "Revisar valores actuales" });
+    let release = () => {};
+    const answered = new Promise<void>(resolve => { release = resolve; });
+    server.use(http.get("/api/settings", async () => { await answered; return HttpResponse.json(settings); }));
+
+    await userEvent.click(review);
+
+    const reading = await within(header).findByRole("button", { name: "Consultando…" });
+    expect(reading).toHaveAttribute("aria-busy", "true");
+    expect(reading).toBeDisabled();
+
+    release();
+    expect(await screen.findByRole("region", { name: "Revisar cambios" })).toBeInTheDocument();
+  });
+
   it.each(["idioma", "zona-horaria", "listados", "registro"])("redirects the former %s URL to the unified screen", async topic => {
     const { router } = renderRouteWithProviders(`/configuracion/${topic}`);
     await screen.findByRole("combobox", { name: "Idioma predeterminado" });

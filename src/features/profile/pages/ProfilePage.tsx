@@ -140,8 +140,8 @@ export function ProfilePage() {
         <Surface
           title={t("sections.details")}
           actions={
-            <Button type="submit" form={formId} disabled={mutation.isPending}>
-              {t("form.submit")}
+            <Button type="submit" form={formId} pending={mutation.isPending}>
+              {mutation.isPending ? t("form.saving") : t("form.submit")}
             </Button>
           }
         >
@@ -167,11 +167,7 @@ export function ProfilePage() {
                 </p>
               </div>
 
-              <FormField
-                label={t("form.displayName")}
-                hint={t("form.displayNameHint")}
-                error={fieldErrors?.displayName?.[0]}
-              >
+              <FormField label={t("form.displayName")} error={fieldErrors?.displayName?.[0]}>
                 <Input
                   type="text"
                   autoComplete="name"
@@ -181,7 +177,7 @@ export function ProfilePage() {
                 />
               </FormField>
 
-              <FormField label={t("form.language")} hint={t("form.languageHint")} error={fieldErrors?.culture?.[0]}>
+              <FormField label={t("form.language")} error={fieldErrors?.culture?.[0]}>
                 <NativeSelect
                   value={draft.culture}
                   onChange={(event) => {
@@ -202,7 +198,7 @@ export function ProfilePage() {
 
               {/* Los nombres de las zonas no se traducen: son identificadores de IANA, los mismos que guarda el
                   backend, y son la forma en que la gente las busca ("Montevideo", "Madrid"). */}
-              <FormField label={t("form.timeZone")} hint={t("form.timeZoneHint")} error={fieldErrors?.timeZoneId?.[0]}>
+              <FormField label={t("form.timeZone")} error={fieldErrors?.timeZoneId?.[0]}>
                 <NativeSelect
                   value={draft.timeZoneId}
                   onChange={(event) => setDraft({ ...draft, timeZoneId: event.target.value })}

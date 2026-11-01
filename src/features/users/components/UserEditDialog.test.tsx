@@ -1,9 +1,9 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { act, isInaccessible, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { adminHandlers, ana, carla, detailOf, juan, laura, pageOf } from "../testData";
+import { admin, adminHandlers, ana, carla, detailOf, juan, laura, pageOf } from "../testData";
 import { userQueryKey, type LastInvitation, type UserDetail, type UserListItem } from "../api/users";
 import { loginMethodsQueryKey, type LoginMethods } from "@/shared/api/loginMethods";
 import { queryClient } from "@/shared/api/queryClient";
@@ -17,9 +17,22 @@ vi.mock("react-oidc-context", async () => {
   return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) };
 });
 
+/// Ya no se escribe bajo «Medios de ingreso»: lo dice la confirmación de «Desvincular».
 const onlyMethodWarning =
   "Es su único medio de ingreso. Si lo desvinculás, no va a poder entrar hasta que le cargues otro.";
 const unverifiedHint = "Lo que carga un admin queda «Sin verificar» hasta que la persona entra con eso.";
+
+/// «Sin verificar» lleva su explicación como la insignia del listado: en el tooltip, al pasar el mouse o al llegar con el
+/// teclado, y como texto del propio disparador para el lector de pantalla (no un `aria-describedby`, que en modo
+/// exploración no se lee). Ya no hay una nota al pie de la caja.
+async function expectUnverifiedExplained(row: ReturnType<typeof within>, dialog: ReturnType<typeof within>) {
+  const trigger = row.getByText("Sin verificar").parentElement as HTMLElement;
+  expect(trigger).toHaveAttribute("tabindex", "0");
+  expect(isInaccessible(within(trigger).getByText(unverifiedHint))).toBe(false);
+  await act(async () => trigger.focus());
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(unverifiedHint);
+  expect(dialog.queryByText(unverifiedHint, { selector: "p" })).not.toBeInTheDocument();
+}
 
 /// Laura, como la dibuja el tablero "Editar usuario · B": entró con WhatsApp, y el correo se lo cargó un admin y
 /// todavía no lo usó.
@@ -188,6 +201,18 @@ describe("UserEditDialog", () => {
     expect(dialog.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("maxlength", "100");
   });
 
+  it("turns Roles off without permission to read them, keeping the roles the account has", async () => {
+    withUser(juan);
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...admin, permissions: ["users.read", "users.manage"] })));
+
+    const dialog = await openEdit("+54 9 11 2345-6789");
+
+    const roles = dialog.getByRole("button", { name: "Roles" });
+    expect(roles).toBeDisabled();
+    expect(roles).toHaveTextContent("User");
+    expect(roles).toHaveAccessibleDescription("Para asignar roles necesitás permiso de lectura sobre ellos.");
+  });
+
   describe("the login methods", () => {
     it("shows each method as a row with its value, its badge and its action", async () => {
       withUser(invitedLaura, detailOf(invitedLaura, { emailConfirmed: false }));
@@ -200,8 +225,7 @@ describe("UserEditDialog", () => {
       const email = rowOf(dialog, 0);
       expect(email.getByText("Correo electrónico")).toBeInTheDocument();
       expect(email.getByText("laura.rios@gmail.com")).toBeInTheDocument();
-      // La explicación de "Sin verificar" está a la vista, al pie de la caja, y la insignia la lleva como descripción.
-      expect(email.getByText("Sin verificar")).toHaveAccessibleDescription(unverifiedHint);
+      await expectUnverifiedExplained(email, dialog);
       expect(email.queryByRole("button")).not.toBeInTheDocument();
 
       const whatsApp = rowOf(dialog, 1);
@@ -216,7 +240,7 @@ describe("UserEditDialog", () => {
       expect(methodsOf(dialog).queryByRole("status")).not.toBeInTheDocument();
     });
 
-    it("shows an account without email, with its number verified and the warning that it is the only way in", async () => {
+    it("shows an account without email, with its number verified and no warning under it", async () => {
       withUser(juan);
 
       const dialog = await openEdit("+54 9 11 2345-6789");
@@ -231,21 +255,23 @@ describe("UserEditDialog", () => {
       expect(whatsApp.getByText("Verificado")).toBeInTheDocument();
       expect(whatsApp.getByRole("button", { name: "Desvincular el WhatsApp de Juan Gómez" })).toBeInTheDocument();
 
-      expect(methods.getByRole("status")).toHaveTextContent(onlyMethodWarning);
+      // Que es su único medio lo dice la confirmación de «Desvincular», no un aviso fijo debajo de la fila.
+      expect(methods.queryByRole("status")).not.toBeInTheDocument();
+      expect(methods.queryByText(onlyMethodWarning)).not.toBeInTheDocument();
       // Nada está sin verificar: no hay nada que explicar (tablero B, punto 2).
       expect(methods.queryByText(unverifiedHint)).not.toBeInTheDocument();
     });
 
-    it("says that a number the admin loaded is not verified, and explains it", async () => {
+    it("says that a number the admin loaded is not verified, and explains it in its tooltip", async () => {
       withUser(laura);
 
       const dialog = await openEdit("+54 9 351 555-1234");
       const whatsApp = rowOf(dialog, 1);
 
       expect(whatsApp.getByText("+54 9 351 555-1234")).toBeInTheDocument();
-      expect(whatsApp.getByText("Sin verificar")).toHaveAccessibleDescription(unverifiedHint);
+      await expectUnverifiedExplained(whatsApp, dialog);
       expect(whatsApp.queryByText("Verificado")).not.toBeInTheDocument();
-      expect(methodsOf(dialog).getByRole("status")).toHaveTextContent(onlyMethodWarning);
+      expect(methodsOf(dialog).queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("shows the email with whether it is verified, and does not warn when there is one", async () => {
@@ -289,17 +315,18 @@ describe("UserEditDialog", () => {
       expect(methods.getByRole("button", { name: "Desvincular el WhatsApp de Juan Gómez" })).toBeInTheDocument();
     });
 
-    it("opens the email in its own row, focused and explained, and keeps the warning until saving", async () => {
+    it("opens the email in its own row, focused and with no line under it", async () => {
       withUser(juan);
 
       const dialog = await openEdit("+54 9 11 2345-6789");
       await userEvent.click(dialog.getByRole("button", { name: "Agregar correo" }));
 
-      // Tablero B, punto 3: la fila se abre en su campo, con el foco puesto; la ayuda de "Sin verificar" va con él.
+      // Tablero B, punto 3: la fila se abre en su campo, con el foco puesto. Que queda «Sin verificar» lo dice la
+      // insignia al guardar: el renglón de abajo queda para el error.
       const email = rowOf(dialog, 0).getByRole("textbox", { name: "Correo electrónico" });
       expect(email).toHaveFocus();
-      expect(email).toHaveAccessibleDescription(unverifiedHint);
-      expect(methodsOf(dialog).getByRole("status")).toHaveTextContent(onlyMethodWarning);
+      expect(email).not.toHaveAccessibleDescription();
+      expect(methodsOf(dialog).queryByRole("status")).not.toBeInTheDocument();
     });
   });
 
@@ -316,7 +343,7 @@ describe("UserEditDialog", () => {
       await waitFor(() => expect(updates).toEqual([{ displayName: "Ana", roles: ["User", "Admin"] }]));
     });
 
-    it("says it is saving and turns the button off meanwhile", async () => {
+    it("says it is saving, with the spinner, and turns the button off meanwhile", async () => {
       let release: () => void = () => {};
       const answered = new Promise<void>((resolve) => {
         release = resolve;
@@ -330,7 +357,9 @@ describe("UserEditDialog", () => {
       const dialog = await openEdit("ana@example.com");
       await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
 
-      expect(await dialog.findByRole("button", { name: "Guardando…" })).toBeDisabled();
+      const saving = await dialog.findByRole("button", { name: "Guardando…" });
+      expect(saving).toBeDisabled();
+      expect(saving).toHaveAttribute("aria-busy", "true");
 
       release();
       await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar usuario" })).not.toBeInTheDocument());
@@ -362,7 +391,7 @@ describe("UserEditDialog", () => {
 
       const number = rowOf(dialog, 1).getByRole("textbox", { name: "Número de WhatsApp" });
       expect(number).toHaveFocus();
-      expect(number).toHaveAccessibleDescription(unverifiedHint);
+      expect(number).not.toHaveAccessibleDescription();
       expect(dialog.getByRole("combobox", { name: "País: Argentina, +54" })).toBeInTheDocument();
 
       await userEvent.type(number, "11 2345-6789");
@@ -679,9 +708,11 @@ describe("UserEditDialog", () => {
       const strip = stripOf(await openEdit("laura.rios@gmail.com"));
 
       expect(strip.getByText("No llegó")).toBeInTheDocument();
-      expect(
-        strip.getByText("WhatsApp no la entregó: puede ser el límite de mensajes de Meta o un rechazo."),
-      ).toBeInTheDocument();
+      // El porqué va en la (i) junto a «No llegó», no en un renglón debajo.
+      expect(strip.getByRole("button", { name: "Más información sobre No llegó" })).toHaveAccessibleDescription(
+        "WhatsApp no la entregó: puede ser el límite de mensajes de Meta o un rechazo.",
+      );
+      expect(strip.queryByText(/WhatsApp no la entregó/, { selector: "p" })).not.toBeInTheDocument();
       const resend = strip.getByRole("button", { name: "Reenviar invitación" });
       expect(resend).toBeDisabled();
       expect(resend).toHaveAccessibleDescription("Podés reenviar en 45 s");
@@ -713,19 +744,17 @@ describe("UserEditDialog", () => {
 
       expect(strip.getByText("Invitación por correo")).toBeInTheDocument();
       expect(strip.getByText("No llegó")).toBeInTheDocument();
-      expect(strip.getByText("El correo no salió: no pudimos mandarlo en ese momento.")).toBeInTheDocument();
+      expect(strip.getByRole("button", { name: "Más información sobre No llegó" })).toHaveAccessibleDescription(
+        "El correo no salió: no pudimos mandarlo en ese momento.",
+      );
       // La explicación de WhatsApp no corresponde: no fue Meta.
       expect(strip.queryByText(/WhatsApp no la entregó/)).not.toBeInTheDocument();
     });
 
     it.each([
-      [
-        "offers WhatsApp when it is on and there is a number",
-        whatsappLoginMethods,
-        "Por correo no salió. Podés probar de nuevo o mandarla por WhatsApp.",
-      ],
-      ["does not offer WhatsApp when it is off", loginMethods, "Por correo no salió. Podés probar de nuevo."],
-    ] as const)("says why it is resending one by email that did not go out: %s", async (_, methods, text) => {
+      ["with WhatsApp on and a number", whatsappLoginMethods],
+      ["with WhatsApp off", loginMethods],
+    ] as const)("opens the resend of one that did not go out without repeating why, %s", async (_, methods) => {
       withUser(
         invitedLaura,
         detailOf(invitedLaura, { lastInvitation: invitation({ channel: "Email", deliveryStatus: "Failed" }) }),
@@ -735,9 +764,10 @@ describe("UserEditDialog", () => {
       const dialog = await openEdit("laura.rios@gmail.com");
       await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
 
+      // Lo dijo la franja, y las opciones de canal ya ofrecen el otro: el panel no lo vuelve a explicar.
       const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
-      expect(panel.getByText(text)).toBeInTheDocument();
-      expect(panel.queryByText(/Por WhatsApp no llegó/)).not.toBeInTheDocument();
+      expect(panel.queryByText(/no salió|no llegó/i)).not.toBeInTheDocument();
+      expect(panel.getByRole("radio", { name: "Por correo" })).toBeChecked();
     });
 
     it("waits a minute from the time of the last invitation before offering to resend it", async () => {
@@ -854,14 +884,10 @@ describe("UserEditDialog", () => {
         const dialog = await openEdit("laura.rios@gmail.com");
         await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
 
-        // Sin otro diálogo: la franja se abre en el lugar (tablero B, punto 4).
+        // Sin otro diálogo: la franja se abre en el lugar (tablero B, punto 4). Por qué no llegó ya lo dijo la franja.
         expect(screen.getAllByRole("dialog")).toHaveLength(1);
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
-        expect(
-          panel.getByText(
-            "Por WhatsApp no llegó: puede ser el límite de Meta o un rechazo. Podés probar de nuevo o mandarla por correo.",
-          ),
-        ).toBeInTheDocument();
+        expect(panel.queryByText(/no llegó/i)).not.toBeInTheDocument();
 
         const channels = panel.getByRole("radiogroup", { name: "Por dónde" });
         const byEmail = within(channels).getByRole("radio", { name: "Por correo" });
@@ -872,11 +898,16 @@ describe("UserEditDialog", () => {
         expect(byWhatsApp).toBeChecked();
         expect(byWhatsApp).toHaveFocus();
 
+        // Por qué se pide el consentimiento va en la (i) al final de la casilla, y sigue siendo su descripción.
         const consent = panel.getByRole("checkbox", {
           name: "Laura aceptó recibir mensajes por WhatsApp.",
         });
         expect(consent).not.toBeChecked();
         expect(consent).toHaveAccessibleDescription("Sin esto, WhatsApp no permite escribirle primero.");
+        expect(
+          panel.getByRole("button", { name: "Más información sobre Laura aceptó recibir mensajes por WhatsApp." }),
+        ).toBeInTheDocument();
+        expect(panel.queryByText("Sin esto, WhatsApp no permite escribirle primero.", { selector: "p" })).not.toBeInTheDocument();
 
         await userEvent.click(consent);
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
@@ -910,7 +941,7 @@ describe("UserEditDialog", () => {
         await waitFor(() => expect(sent).toEqual([{ channel: "Email", consent: false }]));
       });
 
-      it("turns off the channel the account cannot use, and says why", async () => {
+      it("turns off the channel the account cannot use, with no line under it", async () => {
         withUser(laura, detailOf(laura, { lastInvitation: invitation() }));
 
         const dialog = await openEdit("+54 9 351 555-1234");
@@ -919,8 +950,39 @@ describe("UserEditDialog", () => {
 
         const byEmail = panel.getByRole("radio", { name: "Por correo" });
         expect(byEmail).toBeDisabled();
-        expect(byEmail).toHaveAccessibleDescription("Cargá un correo para usar esta opción.");
+        expect(byEmail).not.toHaveAccessibleDescription();
+        expect(panel.queryByText(/para usar esta opción/)).not.toBeInTheDocument();
         expect(panel.getByRole("radio", { name: "Por WhatsApp" })).toBeChecked();
+      });
+
+      it("says it is resending, and takes no second click, while the invitation is on its way", async () => {
+        let release: () => void = () => {};
+        const answered = new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        const sent = withResend(invitedLaura, detailOf(invitedLaura, { lastInvitation: invitation() }), async () => {
+          await answered;
+
+          return new HttpResponse(null, { status: 202 });
+        });
+
+        const dialog = await openEdit("laura.rios@gmail.com");
+        await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
+        const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
+        await userEvent.click(panel.getByRole("radio", { name: "Por correo" }));
+        await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
+
+        const resending = await panel.findByRole("button", { name: "Reenviando…" });
+        expect(resending).toHaveAttribute("aria-busy", "true");
+        expect(resending).toBeDisabled();
+        await userEvent.click(resending);
+        expect(sent).toEqual([{ channel: "Email", consent: false }]);
+
+        release();
+
+        // Con la respuesta, el panel se cierra y vuelve la franja con la invitación nueva.
+        const strip = within(await dialog.findByRole("region", { name: "Última invitación" }));
+        expect(await strip.findByText("Pendiente")).toBeInTheDocument();
       });
 
       it("puts the missing consent under the checkbox and stays open", async () => {
@@ -1174,6 +1236,44 @@ describe("UserEditDialog", () => {
       );
       expect(within(confirmation).getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
       expect(within(confirmation).getByRole("button", { name: "Desvincular" })).toBeInTheDocument();
+    });
+
+    it("keeps the confirmation open, saying it is unlinking, until the answer arrives", async () => {
+      let release: () => void = () => {};
+      const answered = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let unlinks = 0;
+      withUser(juan);
+      server.use(
+        http.delete(`/api/users/${juan.id}/whatsapp`, async () => {
+          unlinks += 1;
+          await answered;
+
+          return new HttpResponse(null, { status: 204 });
+        }),
+      );
+
+      const dialog = await openEdit("+54 9 11 2345-6789");
+      await userEvent.click(dialog.getByRole("button", { name: "Desvincular el WhatsApp de Juan Gómez" }));
+      const confirmation = await screen.findByRole("dialog", { name: "¿Desvincular el WhatsApp de Juan Gómez?" });
+      await userEvent.click(within(confirmation).getByRole("button", { name: "Desvincular" }));
+
+      const unlinking = within(confirmation).getByRole("button", { name: "Desvinculando…" });
+      expect(unlinking).toHaveAttribute("aria-busy", "true");
+      expect(unlinking).toBeDisabled();
+      expect(within(confirmation).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+      await userEvent.keyboard("{Escape}");
+      expect(screen.getByRole("dialog", { name: "¿Desvincular el WhatsApp de Juan Gómez?" })).toBeInTheDocument();
+      expect(unlinks).toBe(1);
+
+      release();
+
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog", { name: "¿Desvincular el WhatsApp de Juan Gómez?" })).not.toBeInTheDocument(),
+      );
+      // El diálogo de edición sigue abierto: el Escape de antes era de la confirmación, que esperaba.
+      expect(screen.getByRole("dialog", { name: "Editar usuario" })).toBeInTheDocument();
     });
 
     it("says that an account with email keeps entering with it, and names it by the email without a name", async () => {

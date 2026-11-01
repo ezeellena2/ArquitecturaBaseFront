@@ -110,8 +110,10 @@ export function EmailCodeForm({ returnUrl, notice, onSubmitStart, registration =
         </p>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting || isRetryLimited}>
-        {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
+      <Button type="submit" className="w-full" pending={isSubmitting} disabled={isRetryLimited}>
+        {isSubmitting
+          ? t("common:code.sending")
+          : isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
       </Button>
     </form>
   );

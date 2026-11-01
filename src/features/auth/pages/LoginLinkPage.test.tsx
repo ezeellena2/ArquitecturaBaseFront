@@ -146,11 +146,8 @@ function storedValues(storage: Storage): string {
 
 async function expectLinkNoLongerValid() {
   expect(await screen.findByRole("heading", { name: "Este enlace ya no sirve" })).toBeInTheDocument();
-  expect(
-    screen.getByText(
-      "Los enlaces sirven una sola vez y vencen a los 10 minutos. Pedí otro desde el chat o entrá con tu número.",
-    ),
-  ).toBeInTheDocument();
+  // El título y los botones alcanzan: sin una descripción que explique cómo funcionan los enlaces.
+  expect(screen.queryByText(/Los enlaces sirven una sola vez/)).not.toBeInTheDocument();
   // Los botones aparecen cuando se sabe si hay chat al que volver (`login-methods`), así que se esperan.
   expect(await screen.findByRole("link", { name: "Ir al ingreso" })).toHaveAttribute("href", "/login");
   expect(screen.queryByRole("button", { name: "Continuar" })).not.toBeInTheDocument();
@@ -321,9 +318,8 @@ describe("LoginLinkPage", () => {
       expect(within(account).getByText("Ana Pérez")).toBeInTheDocument();
       expect(within(account).getByText("+54 9 11 •••• 6789")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Continuar" })).toBeEnabled();
-      expect(
-        screen.getByText("¿No pediste entrar? Cerrá esta página: si no tocás Continuar, no pasa nada."),
-      ).toBeInTheDocument();
+      // Sin un texto al pie que explique qué pasa si no se toca Continuar.
+      expect(screen.queryByText(/No pediste entrar/)).not.toBeInTheDocument();
       // Abrir el enlace no abre la sesión: eso lo hace Continuar.
       expect(redeem.bodies).toEqual([]);
       expect(signinRedirect).not.toHaveBeenCalled();
@@ -367,7 +363,8 @@ describe("LoginLinkPage", () => {
 
       const status = await screen.findByRole("status");
       expect(within(status).getByRole("heading", { name: "Iniciando sesión…" })).toBeInTheDocument();
-      expect(status).toHaveTextContent("Esto puede tardar unos segundos.");
+      // El aro y «Iniciando sesión…» ya dicen que espera: sin «Esto puede tardar unos segundos».
+      expect(status).not.toHaveTextContent("Esto puede tardar unos segundos.");
 
       await waitFor(() => expect(signinRedirect).toHaveBeenCalledTimes(1));
       expect(signinRedirect).toHaveBeenCalledWith({ state: { returnTo: "/" } });
@@ -390,7 +387,7 @@ describe("LoginLinkPage", () => {
       // Todavía sin respuesta del canje: el pantallazo 2 es lo que se ve mientras corre, no lo que viene después.
       const status = await screen.findByRole("status");
       const title = within(status).getByRole("heading", { name: "Iniciando sesión…" });
-      expect(status).toHaveTextContent("Esto puede tardar unos segundos.");
+      expect(status).not.toHaveTextContent("Esto puede tardar unos segundos.");
       expect(screen.queryByRole("button", { name: "Continuar" })).not.toBeInTheDocument();
       // El botón tocado se fue con la pantalla: el foco no cae en `<body>`, pasa al título del estado nuevo.
       expect(title).toHaveFocus();
@@ -708,6 +705,36 @@ describe("LoginLinkPage", () => {
 
       await waitFor(() => expect(signinRedirect).toHaveBeenCalledTimes(1));
       expect(redeems).toBe(2);
+    });
+
+    it("says it is reviewing while the fresh preview is on its way", async () => {
+      const error = vi.spyOn(toast, "error");
+      let previews = 0;
+      const secondPreview = heldResponse();
+      previewResponds(async () => {
+        previews += 1;
+        if (previews > 1) await secondPreview.released;
+
+        return HttpResponse.json(ana);
+      });
+      redeemResponds(() => HttpResponse.error());
+      openLink();
+
+      await userEvent.click(await screen.findByRole("button", { name: "Continuar" }));
+      await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
+      error.mockRestore();
+
+      await userEvent.click(within(screen.getByRole("main")).getByRole("button", { name: "Revisar" }));
+
+      // La cuenta queda a la vista mientras se vuelve a leer, y el botón dice que revisa, con el aro.
+      const reviewing = await within(screen.getByRole("main")).findByRole("button", { name: "Revisando…" });
+      expect(reviewing).toHaveAttribute("aria-busy", "true");
+      expect(reviewing).toBeDisabled();
+      expect(screen.getByRole("group", { name: "Vas a entrar como" })).toBeInTheDocument();
+
+      secondPreview.release();
+      expect(await screen.findByRole("button", { name: "Continuar" })).toBeEnabled();
+      expect(previews).toBe(2);
     });
   });
 });

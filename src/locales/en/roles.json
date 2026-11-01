@@ -7,12 +7,10 @@
     "permissions": "Permissions",
     "actions": "Actions"
   },
-  "systemBadge": "System role",
   "permissionsCount_one": "{{count}} permission",
   "permissionsCount_other": "{{count}} permissions",
   "empty": {
-    "title": "There are no roles yet",
-    "description": "Create the first one to group permissions."
+    "title": "There are no roles yet"
   },
   "actions": {
     "new": "New role",
@@ -41,7 +39,6 @@
     "allPermissions": "All permissions",
     "saving": "Saving…",
     "details": "Role details",
-    "systemNameHint": "System roles can't be renamed.",
     "loadError": "We couldn't load the role",
     "gone": {
       "title": "This role no longer exists",
@@ -53,15 +50,6 @@
       "confirm": "Discard",
       "stay": "Keep editing"
     }
-  },
-  "summary": {
-    "title": "What it will allow",
-    "none": "None",
-    "empty": "You haven't picked any permission yet. A role without permissions can be saved, but it doesn't allow anything.",
-    "areas_one": "{{count}} area",
-    "areas_other": "{{count}} areas",
-    "count": "{{permissions}} in {{areas}}",
-    "remove": "Remove {{name}}"
   },
   "picker": {
     "columns": {
@@ -93,7 +81,8 @@
   "delete": {
     "title": "Delete the {{name}} role",
     "description": "Whoever has it loses the permissions it granted. This can't be undone.",
-    "confirm": "Delete"
+    "confirm": "Delete",
+    "deleting": "Deleting…"
   },
   "feedback": {
     "created": "The role was created.",

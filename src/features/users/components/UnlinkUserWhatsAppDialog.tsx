@@ -9,6 +9,8 @@ interface UnlinkUserWhatsAppDialogProps {
   /// Sin correo, la persona se queda sin forma de entrar; con correo, sigue entrando con él.
   hasEmail: boolean;
   isOwnAccount?: boolean;
+  /// El pedido está en camino: la confirmación muestra «Desvinculando…» y espera abierta (`ConfirmDialog.pending`).
+  pending: boolean;
   onConfirm: () => void;
   onClose: () => void;
 }
@@ -17,9 +19,9 @@ interface UnlinkUserWhatsAppDialogProps {
 /// perdido o robado. Dice qué se pierde: las sesiones abiertas, entrar con ese número y, sin correo, toda forma de
 /// entrar.
 ///
-/// El pedido lo hace quien lo abre, no el diálogo: `ConfirmDialog` se cierra al confirmar, así que cuando llega la
-/// respuesta ya no está, y su resultado va a un aviso.
-export function UnlinkUserWhatsAppDialog({ name, phone, hasEmail, isOwnAccount, onConfirm, onClose }: UnlinkUserWhatsAppDialogProps) {
+/// El pedido lo hace quien lo abre, no el diálogo: la confirmación espera abierta hasta que llega la respuesta y quien
+/// la abrió la cierra; el resultado va a un aviso.
+export function UnlinkUserWhatsAppDialog({ name, phone, hasEmail, isOwnAccount, pending, onConfirm, onClose }: UnlinkUserWhatsAppDialogProps) {
   const { t } = useTranslation("users");
 
   return (
@@ -36,6 +38,8 @@ export function UnlinkUserWhatsAppDialog({ name, phone, hasEmail, isOwnAccount, 
       }
       confirmLabel={t("unlink.confirm")}
       destructive
+      pending={pending}
+      pendingLabel={t("unlink.unlinking")}
       onConfirm={onConfirm}
     />
   );

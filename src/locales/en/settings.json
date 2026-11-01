@@ -7,9 +7,6 @@
   },
   "registration": {
     "title": "Who can sign in",
-    "switchLabel": "Open registration",
-    "open": "Open: anyone signing in with a new email gets an account of their own, with the User role.",
-    "inviteOnly": "Invite only: only people an administrator added can sign in. Nobody else gets a code.",
     "OpenLabel": "Open registration",
     "InviteOnlyLabel": "Invitation only"
   },
@@ -26,23 +23,13 @@
     "conflict": "Another administrator changed the settings. Check the current values.",
     "failed": "We could not save the settings changes.",
     "reviewFailed": "We could not check the current settings.",
-    "savedTopic": "Saved the {{topic}} setting.",
     "lateUncertain": "We could not confirm the settings save. Check the current values.",
     "lateFailed": "We could not save the settings changes."
   },
   "errorTraceId": "Code to report: {{traceId}}",
-  "topics": {
-    "idioma": "Language",
-    "zona-horaria": "Time zone",
-    "listados": "Lists",
-    "registro": "Registration"
-  },
   "hints": {
     "regional": "Initial values for new accounts and public pages. Each person keeps their preferences.",
-    "idioma": "Initial language for new accounts and public screens. Each person keeps their preference.",
-    "zona-horaria": "Initial time zone for new accounts. Each person keeps their profile preference; dates are stored in UTC.",
-    "listados": "Initial number of rows. Each list can use a different size.",
-    "registro": "Choose who can create an account in the system."
+    "listados": "Initial number of rows. Each list can use a different size."
   },
   "fields": {
     "defaultCulture": "Default language",
@@ -73,8 +60,7 @@
   "appearance": {
     "title": "Appearance",
     "colors": "System colors",
-    "hint": "These colors apply to everyone and to sign-in screens. The preview shows your draft; the system changes when you save.",
-    "contrast": "Text and focus adjust to remain readable. Error, warning and success colors retain their meaning.",
+    "hint": "These colors apply to everyone and to sign-in screens.",
     "reset": "Restore initial colors",
     "preview": "Preview",
     "name": "Name",

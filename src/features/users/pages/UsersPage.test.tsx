@@ -85,6 +85,71 @@ describe("UsersPage", () => {
     await waitFor(() => expect(activated).toBe(1));
   });
 
+  it.each([
+    ["Activar a beto@example.com", "Activar", "Activando…", "post", "/api/users/2/activate"],
+    ["Desactivar a ana@example.com", "Desactivar", "Desactivando…", "post", "/api/users/1/deactivate"],
+    ["Eliminar a ana@example.com", "Eliminar", "Eliminando…", "delete", "/api/users/1"],
+  ] as const)("keeps «%s» open, saying what it is doing, until the answer arrives", async (action, confirm, working, method, path) => {
+    let release = () => {};
+    const answered = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requests = 0;
+    server.use(
+      ...adminHandlers([ana, beto]),
+      http[method](path, async () => {
+        requests += 1;
+        await answered;
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderRouteWithProviders("/usuarios");
+    await userEvent.click(await screen.findByRole("button", { name: action }));
+    const dialog = await screen.findByRole("dialog", { name: action });
+    await userEvent.click(within(dialog).getByRole("button", { name: confirm }));
+
+    // La confirmación espera la respuesta abierta, con el aro y el gerundio, y no deja pedirlo otra vez ni cancelarlo.
+    const busy = within(dialog).getByRole("button", { name: working });
+    expect(busy).toHaveAttribute("aria-busy", "true");
+    expect(busy).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    await userEvent.click(busy);
+    expect(requests).toBe(1);
+
+    release();
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("dims the rows it shows while a new search reads, and lets them go when the answer arrives", async () => {
+    const releases: (() => void)[] = [];
+    server.use(
+      http.get("/api/users", async ({ request }) => {
+        if (new URL(request.url).searchParams.has("search")) {
+          await new Promise<void>((resolve) => releases.push(resolve));
+        }
+
+        return HttpResponse.json(page);
+      }),
+      http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
+    );
+    renderRouteWithProviders("/usuarios");
+    const containerOf = () => screen.getByRole("table").closest('[data-slot="table-container"]');
+    await screen.findByRole("table");
+    expect(containerOf()).not.toHaveAttribute("aria-busy");
+
+    await userEvent.type(screen.getByRole("searchbox"), "ana");
+
+    // Las filas de antes quedan a la vista, atenuadas e inertes, con la línea que corre bajo el encabezado.
+    await waitFor(() => expect(containerOf()).toHaveAttribute("aria-busy", "true"));
+    expect(within(screen.getByRole("table")).getAllByRole("rowgroup")[1]).toHaveAttribute("inert");
+
+    releases.forEach((release) => release());
+
+    await waitFor(() => expect(containerOf()).not.toHaveAttribute("aria-busy"));
+  });
+
   it("keeps the inactive status accessible and the activation action compact without visible labels", async () => {
     server.use(...adminHandlers([ana, beto]));
     renderRouteWithProviders("/usuarios");
@@ -395,7 +460,9 @@ describe("UsersPage", () => {
 
     // Son dos vacíos distintos: "todavía no hay usuarios" no se arregla igual que "ninguno coincide".
     expect(await screen.findByRole("heading", { name: /ningún usuario coincide/i })).toBeInTheDocument();
-    expect(screen.getByText(/2 filtros aplicados/i)).toBeInTheDocument();
+    expect(screen.getByText("Hay 2 filtros aplicados.")).toBeInTheDocument();
+    // Cómo salir lo dice el botón: el vacío no lo explica con otra frase.
+    expect(screen.queryByText(/probá quitando/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /limpiar filtros/i })).toBeInTheDocument();
   });
 

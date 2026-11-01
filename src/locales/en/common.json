@@ -32,7 +32,6 @@
   "errors": {
     "pageLoad": {
       "title": "We could not open this page",
-      "description": "Check that the application is available and reload the page to try again.",
       "reload": "Reload page"
     },
     "network": "We couldn't connect. Check your connection.",
@@ -45,7 +44,7 @@
     },
     "notFound": {
       "title": "We couldn't find this page",
-      "description": "Check the address or go back to the dashboard."
+      "home": "Back to home"
     },
     "writeUncertain": "We could not confirm the outcome. Check the current state before repeating the operation. Reference: {{traceId}}",
     "saveRetry": "We could not confirm the save. Save again. Reference: {{traceId}}"
@@ -71,11 +70,14 @@
   "code": {
     "label": "Code",
     "send": "Send code",
+    "sending": "Sending…",
     "retryIn": "Retry in {{seconds}} s",
     "verify": "Verify",
+    "verifying": "Verifying…",
     "attemptsLeft_one": "{{count}} attempt left",
     "attemptsLeft_other": "{{count}} attempts left",
     "resend": "Resend code",
+    "resending": "Resending…",
     "resendIn": "Resend in {{seconds}} s",
     "otherEmail": "Use a different email",
     "otherPhone": "Use a different number",

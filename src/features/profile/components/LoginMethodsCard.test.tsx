@@ -17,6 +17,15 @@ vi.mock("react-oidc-context", async () => {
 
 const onlyMethodHint = "Es tu único medio de ingreso: para desvincularlo, primero agregá un correo.";
 
+/// Con el número como único medio, «Desvincular» está, apagado, y el porqué es su motivo (tooltip y descripción), sin
+/// un texto a la vista en su lugar.
+function expectUnlinkTurnedOff(methods: ReturnType<typeof within>) {
+  const unlink = methods.getByRole("button", { name: "Desvincular" });
+  expect(unlink).toBeDisabled();
+  expect(unlink).toHaveAccessibleDescription(onlyMethodHint);
+  for (const text of methods.queryAllByText(onlyMethodHint)) expect(text).not.toBeVisible();
+}
+
 function withProfile(user: CurrentUser, methods: LoginMethods = loginMethods) {
   server.use(
     http.get("/api/me", () => HttpResponse.json(user)),
@@ -62,13 +71,14 @@ describe("LoginMethodsCard", () => {
       expect(methods.queryByText("Verificado")).not.toBeInTheDocument();
     });
 
-    it("offers to add an email when the account has none, and says what it is for", async () => {
+    it("offers to add an email when the account has none, without a line explaining what for", async () => {
       withProfile(phoneOnlyUser);
 
       const methods = await openMethods();
 
       expect(methods.getByText("Todavía no agregaste uno.")).toBeInTheDocument();
-      expect(methods.getByText("Con un correo recuperás la cuenta si cambiás de número.")).toBeInTheDocument();
+      // Para qué sirve ya lo avisa el Inicio, con «Agregar correo».
+      expect(methods.queryByText(/recuperás la cuenta/)).not.toBeInTheDocument();
       expect(methods.getByRole("button", { name: "Agregar correo" })).toBeInTheDocument();
     });
   });
@@ -94,13 +104,14 @@ describe("LoginMethodsCard", () => {
       expect(methods.queryByText("Verificado")).not.toBeInTheDocument();
     });
 
-    it("explains instead of offering to unlink when the number is the only way in", async () => {
+    it("turns Desvincular off when the number is the only way in, and gives that as its reason", async () => {
       withProfile(phoneOnlyUser, whatsappLoginMethods);
 
       const methods = await openMethods();
 
-      expect(methods.getByText(onlyMethodHint)).toBeInTheDocument();
-      expect(methods.queryByRole("button", { name: "Desvincular" })).not.toBeInTheDocument();
+      expectUnlinkTurnedOff(methods);
+      await userEvent.hover(methods.getByRole("button", { name: "Desvincular" }).parentElement as HTMLElement);
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(onlyMethodHint);
     });
 
     it("counts an email that is not verified as no other way in", async () => {
@@ -110,8 +121,7 @@ describe("LoginMethodsCard", () => {
 
       const methods = await openMethods();
 
-      expect(methods.getByText(onlyMethodHint)).toBeInTheDocument();
-      expect(methods.queryByRole("button", { name: "Desvincular" })).not.toBeInTheDocument();
+      expectUnlinkTurnedOff(methods);
     });
 
     it.each([
@@ -122,7 +132,8 @@ describe("LoginMethodsCard", () => {
 
       const methods = await openMethods();
 
-      expect(methods.getByRole("button", { name: "Desvincular" })).toBeInTheDocument();
+      expect(methods.getByRole("button", { name: "Desvincular" })).toBeEnabled();
+      expect(methods.getByRole("button", { name: "Desvincular" })).not.toHaveAccessibleDescription();
       expect(methods.queryByText(onlyMethodHint)).not.toBeInTheDocument();
     });
 
@@ -169,9 +180,8 @@ describe("LoginMethodsCard", () => {
     /// Un `/api/me` que responde `withEmailAndPhone` hasta el DELETE y `after` desde ahí, como el servidor: es lo que
     /// prueba que la pantalla vuelve a pedir el perfil.
     ///
-    /// El DELETE tarda un poco, como en la red: la confirmación se cierra antes de que llegue la respuesta, y el foco
-    /// vuelve a la fila mientras el pedido sigue en curso. Una respuesta instantánea escondía que el botón de la fila se
-    /// apagaba justo en ese momento.
+    /// El DELETE tarda un poco, como en la red: la confirmación espera abierta la respuesta y, cuando se cierra, el foco
+    /// vuelve a la fila, que ya cambió. Una respuesta instantánea escondería lo que pasa en el medio.
     function unlinkServer({
       after,
       methods = whatsappLoginMethods,
@@ -229,6 +239,39 @@ describe("LoginMethodsCard", () => {
       expect(within(dialog).getByRole("button", { name: "Desvincular" })).toBeInTheDocument();
     });
 
+    it("keeps the confirmation open, saying it is unlinking, until the answer arrives", async () => {
+      let release = () => {};
+      const answered = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let deletes = 0;
+      withProfile(withEmailAndPhone, whatsappLoginMethods);
+      server.use(
+        http.delete("/api/me/whatsapp", async () => {
+          deletes += 1;
+          await answered;
+
+          return new HttpResponse(null, { status: 204 });
+        }),
+      );
+
+      const methods = await openMethods();
+      await userEvent.click(methods.getByRole("button", { name: "Desvincular" }));
+      const dialog = await screen.findByRole("dialog", { name: "¿Desvincular tu WhatsApp?" });
+      await userEvent.click(within(dialog).getByRole("button", { name: "Desvincular" }));
+
+      const unlinking = within(dialog).getByRole("button", { name: "Desvinculando…" });
+      expect(unlinking).toHaveAttribute("aria-busy", "true");
+      expect(unlinking).toBeDisabled();
+      expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+      await userEvent.click(unlinking);
+      expect(deletes).toBe(1);
+
+      release();
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
+
     it("unlinks the number and refreshes the profile", async () => {
       const calls = unlinkServer({ after: withoutPhone, respond: unlinked });
 
@@ -242,14 +285,13 @@ describe("LoginMethodsCard", () => {
 
     it("says why it could not unlink the number", async () => {
       // El perfil cargado decía que había un correo verificado, pero el servidor ya no lo tiene (se sacó desde otro
-      // lado): gana el servidor. Con el perfil nuevo, la fila explica por qué no se puede.
+      // lado): gana el servidor. Con el perfil nuevo, «Desvincular» queda apagado con el porqué como motivo.
       unlinkServer({ after: phoneOnlyUser, respond: lastLoginMethod });
 
       const methods = await confirmUnlink();
 
       expect(await screen.findByText("El detalle del servidor.")).toBeInTheDocument();
-      expect(await methods.findByText(onlyMethodHint)).toBeInTheDocument();
-      expect(methods.queryByRole("button", { name: "Desvincular" })).not.toBeInTheDocument();
+      await waitFor(() => expectUnlinkTurnedOff(methods));
       expect(methods.getByText("+54 9 11 2345-6789")).toBeInTheDocument();
     });
 
@@ -259,7 +301,8 @@ describe("LoginMethodsCard", () => {
       const title = () => screen.getByRole("heading", { name: "Medios de ingreso" });
 
       it("goes back to the row button, which now offers to link", async () => {
-        // El botón de la fila no se apaga mientras se desvincula: apagado, no toma el foco que le devuelve el diálogo.
+        // El botón de la fila no se apaga mientras se desvincula (la confirmación espera abierta): apagado, no tomaría el
+        // foco que le devuelve el diálogo.
         unlinkServer({ after: withoutPhone, respond: unlinked });
 
         const methods = await confirmUnlink();
@@ -277,12 +320,12 @@ describe("LoginMethodsCard", () => {
         await waitFor(() => expect(title()).toHaveFocus());
       });
 
-      it("goes to the title of the surface when the server refuses and the button goes away", async () => {
+      it("goes to the title of the surface when the server refuses and the button turns off", async () => {
         unlinkServer({ after: phoneOnlyUser, respond: lastLoginMethod });
 
         const methods = await confirmUnlink();
 
-        expect(await methods.findByText(onlyMethodHint)).toBeInTheDocument();
+        await waitFor(() => expectUnlinkTurnedOff(methods));
         await waitFor(() => expect(title()).toHaveFocus());
       });
     });

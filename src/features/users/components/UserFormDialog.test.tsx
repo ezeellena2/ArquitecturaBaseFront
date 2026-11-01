@@ -3,7 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { adminHandlers } from "../testData";
+import { admin, adminHandlers } from "../testData";
 import { loginMethodsQueryKey, type LoginMethods } from "@/shared/api/loginMethods";
 import { queryClient } from "@/shared/api/queryClient";
 import { loginMethods, whatsappLoginMethods } from "@/test/mocks/handlers";
@@ -76,17 +76,33 @@ describe("UserFormDialog", () => {
 
       const dialog = await openNewUser();
 
-      expect(dialog.getByText("Cargá un correo, un número de WhatsApp o los dos: con uno alcanza.")).toBeInTheDocument();
+      // Sin leyendas: los dos campos están a la vista y, si faltan los dos, lo dice el error del alta.
+      expect(screen.getByRole("dialog", { name: "Nuevo usuario" })).not.toHaveAccessibleDescription();
+      expect(dialog.queryByText(/con uno alcanza/)).not.toBeInTheDocument();
       expect(dialog.getByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
       expect(dialog.getByRole("textbox", { name: "Número de WhatsApp" })).toBeInTheDocument();
       // El país arranca en el primero de los habilitados.
       expect(dialog.getByRole("combobox", { name: "País: Argentina, +54" })).toBeInTheDocument();
-      expect(dialog.getByRole("textbox", { name: "Nombre" })).toHaveAccessibleDescription(
-        "Opcional. Es el nombre que se muestra en el sistema.",
-      );
+      expect(dialog.getByRole("textbox", { name: "Nombre" })).not.toHaveAccessibleDescription();
       expect(dialog.getByRole("button", { name: "Roles" })).toBeInTheDocument();
       expect(dialog.getByRole("checkbox", { name: "Mandarle una invitación" })).not.toBeChecked();
       expect(dialog.getByRole("button", { name: "Crear" })).toBeInTheDocument();
+    });
+
+    it("turns Roles off without permission to read them, and gives that as its reason", async () => {
+      withCreate(whatsappLoginMethods);
+      // Aparte y después: dentro de un mismo `server.use`, gana el primero que coincide.
+      server.use(http.get("/api/me", () => HttpResponse.json({ ...admin, permissions: ["users.read", "users.manage"] })));
+
+      const dialog = await openNewUser();
+
+      // El campo está, apagado y sin un texto en su lugar: el motivo es su tooltip y su descripción.
+      const roles = await dialog.findByRole("button", { name: "Roles" });
+      expect(roles).toBeDisabled();
+      expect(roles).toHaveAccessibleDescription("Para asignar roles necesitás permiso de lectura sobre ellos.");
+      for (const text of dialog.queryAllByText("Para asignar roles necesitás permiso de lectura sobre ellos.")) {
+        expect(text).not.toBeVisible();
+      }
     });
 
     it("does not let the name grow past what the backend accepts", async () => {
@@ -121,7 +137,7 @@ describe("UserFormDialog", () => {
 
       const dialog = await openNewUser();
 
-      expect(dialog.getByText("Dale de alta el correo. Después entra con su código, como todos.")).toBeInTheDocument();
+      expect(screen.getByRole("dialog", { name: "Nuevo usuario" })).not.toHaveAccessibleDescription();
       expect(dialog.queryByRole("textbox", { name: "Número de WhatsApp" })).not.toBeInTheDocument();
 
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
@@ -162,6 +178,35 @@ describe("UserFormDialog", () => {
   });
 
   describe("creating", () => {
+    it("says it is creating, and takes no second click, while the answer is on its way", async () => {
+      let release = () => {};
+      const answered = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const created = withCreate(whatsappLoginMethods, () => HttpResponse.json(newUserId));
+      server.use(
+        http.post("/api/users", async ({ request }) => {
+          created.push(await request.json());
+          await answered;
+
+          return HttpResponse.json(newUserId);
+        }),
+      );
+
+      const dialog = await openNewUser();
+      await userEvent.type(dialog.getByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
+      await userEvent.click(dialog.getByRole("button", { name: "Crear" }));
+
+      const creating = await dialog.findByRole("button", { name: "Creando…" });
+      expect(creating).toHaveAttribute("aria-busy", "true");
+      expect(creating).toBeDisabled();
+      await userEvent.click(creating);
+      expect(created).toHaveLength(1);
+
+      release();
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nuevo usuario" })).not.toBeInTheDocument());
+    });
+
     it("creates a user with only an email", async () => {
       const created = withCreate(whatsappLoginMethods);
 
@@ -258,10 +303,15 @@ describe("UserFormDialog", () => {
 
       expect(dialog.getByRole("radio", { name: "Por WhatsApp" })).toBeChecked();
 
+      // Por qué se pide va en la (i) al final de la casilla, y sigue siendo su descripción.
       const consent = dialog.getByRole("checkbox", {
         name: "Laura aceptó recibir mensajes por WhatsApp.",
       });
       expect(consent).toHaveAccessibleDescription("Sin esto, WhatsApp no permite escribirle primero.");
+      expect(
+        dialog.getByRole("button", { name: "Más información sobre Laura aceptó recibir mensajes por WhatsApp." }),
+      ).toHaveAccessibleDescription("Sin esto, WhatsApp no permite escribirle primero.");
+      expect(dialog.queryByText("Sin esto, WhatsApp no permite escribirle primero.", { selector: "p" })).not.toBeInTheDocument();
 
       await userEvent.click(consent);
       await userEvent.click(dialog.getByRole("button", { name: "Crear e invitar" }));
@@ -309,7 +359,8 @@ describe("UserFormDialog", () => {
   });
 
   describe("the channels", () => {
-    it("disables Por correo without an email, and says why", async () => {
+    // La opción se prende sola al cargar el correo o el número: no lleva un texto que lo explique debajo.
+    it("disables Por correo without an email, with no line under it", async () => {
       withCreate(whatsappLoginMethods);
 
       const dialog = await openNewUser();
@@ -318,11 +369,12 @@ describe("UserFormDialog", () => {
 
       const email = dialog.getByRole("radio", { name: "Por correo" });
       expect(email).toBeDisabled();
-      expect(email).toHaveAccessibleDescription("Cargá un correo para usar esta opción.");
+      expect(email).not.toHaveAccessibleDescription();
+      expect(dialog.queryByText(/para usar esta opción/)).not.toBeInTheDocument();
       expect(dialog.getByRole("radio", { name: "Por WhatsApp" })).toBeEnabled();
     });
 
-    it("disables Por WhatsApp without a number, and says why", async () => {
+    it("disables Por WhatsApp without a number, with no line under it", async () => {
       withCreate(whatsappLoginMethods);
 
       const dialog = await openNewUser();
@@ -331,7 +383,8 @@ describe("UserFormDialog", () => {
 
       const whatsapp = dialog.getByRole("radio", { name: "Por WhatsApp" });
       expect(whatsapp).toBeDisabled();
-      expect(whatsapp).toHaveAccessibleDescription("Cargá un número para usar esta opción.");
+      expect(whatsapp).not.toHaveAccessibleDescription();
+      expect(dialog.queryByText(/para usar esta opción/)).not.toBeInTheDocument();
       expect(dialog.getByRole("radio", { name: "Por correo" })).toBeEnabled();
     });
 

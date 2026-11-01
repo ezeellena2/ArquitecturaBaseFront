@@ -126,9 +126,10 @@ function AccountToEnter({ preview }: { preview: LoginLinkPreview }) {
   );
 }
 
-/// Pantallazo 2. Los mismos textos que `/auth/callback`, que es lo que viene después: el ingreso se ve como un solo
-/// paso. La región entera es el estado, así que el aro no se anuncia aparte. Solo se llega tocando Continuar, así que
-/// el título siempre recibe el foco: una región viva que entra al DOM ya llena no siempre se anuncia.
+/// Pantallazo 2. El mismo texto que `/auth/callback`, que es lo que viene después: el ingreso se ve como un solo paso.
+/// El aro y «Iniciando sesión…» ya dicen que espera. La región entera es el estado, así que el aro no se anuncia aparte.
+/// Solo se llega tocando Continuar, así que el título siempre recibe el foco: una región viva que entra al DOM ya llena
+/// no siempre se anuncia.
 function SigningIn() {
   const { t } = useTranslation("auth");
 
@@ -138,7 +139,6 @@ function SigningIn() {
       <StateTitle takesFocus className="text-lg font-semibold text-[var(--color-content)]">
         {t("callback.title")}
       </StateTitle>
-      <p className="text-xs text-[var(--color-content-muted)]">{t("callback.hint")}</p>
     </div>
   );
 }
@@ -146,7 +146,8 @@ function SigningIn() {
 /// El número del bot, según `GET /account/login-methods`: `pending` mientras no respondió.
 type ChatToGoBackTo = { status: "pending" } | { status: "settled"; whatsappNumber: string | null };
 
-/// Pantallazo 3. Vencido, usado, invalidado, inventado, sin token o con uno roto: todos dicen lo mismo.
+/// Pantallazo 3. Vencido, usado, invalidado, inventado, sin token o con uno roto: todos dicen lo mismo. El título y los
+/// botones alcanzan, sin explicar cómo funcionan los enlaces.
 function LinkNoLongerValid({ chat, takesFocus }: { chat: ChatToGoBackTo; takesFocus: boolean }) {
   const { t } = useTranslation("auth");
 
@@ -159,7 +160,6 @@ function LinkNoLongerValid({ chat, takesFocus }: { chat: ChatToGoBackTo; takesFo
         <StateTitle takesFocus={takesFocus} className="text-xl font-semibold text-[var(--color-content)]">
           {t("link.invalid.title")}
         </StateTitle>
-        <p className="text-sm text-[var(--color-content-muted)]">{t("link.invalid.description")}</p>
       </div>
       {/* Los botones esperan a saber si hay chat al que volver. "Volver a WhatsApp" va arriba: si apareciera después,
           correría "Ir al ingreso" justo cuando la persona lo está por tocar. Mientras tanto, el aro ocupa el lugar
@@ -470,7 +470,10 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
   }
 
   // Pantallazo 1. Un canje que falló por algo que pasa deja la cuenta a la vista y Continuar para reintentar; con el
-  // límite de pedidos, recién cuando termina la espera que dijo el servidor.
+  // límite de pedidos, recién cuando termina la espera que dijo el servidor. Tras un canje incierto, Revisar vuelve a
+  // leer la vista previa con la cuenta a la vista, y el botón dice que revisa.
+  const reviewing = requiresReview && preview.isFetching;
+
   return (
     <div key="account" className="flex flex-col gap-5">
       <StateTitle
@@ -488,12 +491,14 @@ function LoginLinkFlow({ token }: { token: string | undefined }) {
       <Button
         type="button"
         size="touch" className={touchButtonClassName}
+        pending={reviewing}
         disabled={isRetryLimited || preview.isFetching}
         onClick={() => requiresReview ? void reviewOutcome() : handleContinue(token)}
       >
-        {isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : requiresReview ? t("common:actions.review") : t("link.continue")}
+        {reviewing
+          ? t("link.reviewing")
+          : isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : requiresReview ? t("common:actions.review") : t("link.continue")}
       </Button>
-      <p className="text-center text-xs text-[var(--color-content-muted)]">{t("link.notYou")}</p>
     </div>
   );
 }

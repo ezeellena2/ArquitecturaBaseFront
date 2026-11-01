@@ -12,7 +12,7 @@ import { rolesQueryKey } from "@/shared/api/roles";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { PhoneField } from "@/shared/ui/PhoneField";
@@ -162,22 +162,11 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
     });
   }
 
-  const channelOptions: RadioOption[] = [
-    {
-      value: "Email",
-      label: t("invitation.email"),
-      disabled: !hasEmail,
-      description: hasEmail ? undefined : t("invitation.emailNeeded"),
-    },
-  ];
+  // Sin el correo o el número, su opción queda apagada y se prende sola al cargarlo: no hace falta explicarlo debajo.
+  const channelOptions: RadioOption[] = [{ value: "Email", label: t("invitation.email"), disabled: !hasEmail }];
 
   if (whatsappEnabled) {
-    channelOptions.push({
-      value: "WhatsApp",
-      label: t("invitation.whatsApp"),
-      disabled: !hasPhone,
-      description: hasPhone ? undefined : t("invitation.phoneNeeded"),
-    });
+    channelOptions.push({ value: "WhatsApp", label: t("invitation.whatsApp"), disabled: !hasPhone });
   }
 
   // "Laura aceptó…": con el nombre de pila, como la saluda la plantilla. Sin nombre, "La persona aceptó…".
@@ -198,11 +187,9 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
     >
       {/* Con la invitación abierta, el formulario no entra en una pantalla baja: el diálogo scrollea adentro. */}
       <DialogContent onCloseAutoFocus={restoreFocus} className="max-h-[calc(100svh-2rem)] overflow-y-auto">
+        {/* Sin descripción: los campos están a la vista y, si falta el correo o el número, lo dice el error del alta. */}
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
-          <DialogDescription>
-            {whatsappEnabled ? t("create.description") : t("create.descriptionEmailOnly")}
-          </DialogDescription>
         </DialogHeader>
 
         <form
@@ -235,7 +222,7 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
             />
           ) : null}
 
-          <FormField label={t("form.displayName")} hint={t("form.displayNameHint")} error={errors.fields.displayName}>
+          <FormField label={t("form.displayName")} error={errors.fields.displayName}>
             <Input
               type="text"
               autoComplete="off"
@@ -272,7 +259,7 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
                   <div className="ml-2.5 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
                     <CheckboxField
                       label={consentLabel}
-                      description={t("invitation.consentHint")}
+                      help={t("invitation.consentHint")}
                       error={errors.fields.consent}
                       checked={draft.consent}
                       onCheckedChange={(consent) => change({ consent }, "consent")}
@@ -287,8 +274,8 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
             <Button type="button" variant="outline" onClick={onClose}>
               {t("common:actions.cancel")}
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {draft.invite ? t("create.submitAndInvite") : t("create.submit")}
+            <Button type="submit" pending={mutation.isPending}>
+              {mutation.isPending ? t("create.creating") : draft.invite ? t("create.submitAndInvite") : t("create.submit")}
             </Button>
           </DialogFooter>
         </form>

@@ -9,7 +9,6 @@
     "email": {
       "label": "Email address",
       "empty": "You haven't added one yet.",
-      "recoveryHint": "With an email you can recover your account if you change your number.",
       "add": "Add email"
     },
     "whatsapp": {
@@ -24,22 +23,18 @@
     "lastLogin": "Last sign-in",
     "lastLoginNever": "There isn't one yet.",
     "displayName": "Name",
-    "displayNameHint": "The name shown across the system.",
     "language": "Language",
-    "languageHint": "It's saved in your account: wherever you sign in from, the system speaks to you in this language.",
     "timeZone": "Time zone",
-    "timeZoneHint": "We use it to show dates and times in your local time.",
-    "submit": "Save"
+    "submit": "Save",
+    "saving": "Saving…"
   },
   "linkWhatsApp": {
     "title": "Link WhatsApp",
-    "description": "We'll send a code to that number to check it's yours.",
     "taken": "This number is already linked to another account. If it's yours, ask an administrator to release it.",
     "success": "Your WhatsApp is linked."
   },
   "addEmail": {
     "title": "Add email",
-    "description": "We'll send a code to that email to check it's yours.",
     "emailLabel": "Email address",
     "emailInvalid": "Enter a valid email address.",
     "taken": "This email is already in another account. If it's yours, ask an administrator to release it.",
@@ -49,6 +44,7 @@
     "title": "Unlink your WhatsApp?",
     "description": "You won't be able to sign in with {{phone}} or from the chat anymore. You can link it again whenever you want.",
     "confirm": "Unlink",
+    "unlinking": "Unlinking…",
     "success": "Your WhatsApp was unlinked."
   },
   "feedback": {

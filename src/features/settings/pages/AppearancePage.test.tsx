@@ -111,12 +111,51 @@ describe("AppearancePage", () => {
     settings.appearance = { ...initialAppearance, primaryColor: "#335F85" };
     renderRouteWithProviders("/configuracion/apariencia");
     const colors = await screen.findByRole("region", { name: "Colores del sistema" });
-    // Restaurar actúa sobre los cuatro colores: va al borde derecho de su banda, no al pie de la superficie.
-    const band = within(colors).getByRole("heading", { level: 2, name: "Colores del sistema" }).parentElement as HTMLElement;
-    expect(within(colors).getAllByRole("button")).toEqual([within(band).getByRole("button", { name: "Restaurar colores iniciales" })]);
+    // Restaurar actúa sobre los cuatro colores: va al borde derecho de su banda, no al pie de la superficie. En la banda
+    // también está la (i) del título.
+    const band = within(colors).getByRole("heading", { level: 2, name: "Colores del sistema" }).closest("div") as HTMLElement;
+    expect(within(colors).getAllByRole("button", { name: "Restaurar colores iniciales" })).toEqual([within(band).getByRole("button", { name: "Restaurar colores iniciales" })]);
     await userEvent.click(within(band).getByRole("button", { name: "Restaurar colores iniciales" }));
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
     expect(writes).toEqual([]);
+  });
+
+  it("explains the colors in the information icon of their title, with no lines in the surface", async () => {
+    renderRouteWithProviders("/configuracion/apariencia");
+    const colors = await screen.findByRole("region", { name: "Colores del sistema" });
+    // Sólo la primera oración: que la vista previa muestra el borrador ya se ve, y el contraste no se explica.
+    expect(within(colors).getByRole("button", { name: "Más información sobre Colores del sistema" })).toHaveAccessibleDescription(
+      "Estos colores se aplican a todas las personas y a las pantallas de ingreso.",
+    );
+    expect(within(colors).queryByText(/La vista previa muestra tu borrador/)).not.toBeInTheDocument();
+    expect(within(colors).queryByText(/conservar la legibilidad/)).not.toBeInTheDocument();
+    expect(within(colors).queryByText(/Estos colores se aplican/, { selector: "p" })).not.toBeInTheDocument();
+  });
+
+  it("says it is saving, and then reading the current values, while each answer is on its way", async () => {
+    let releaseSave = () => {};
+    const saved = new Promise<void>(resolve => { releaseSave = resolve; });
+    server.use(http.patch("/api/settings", async () => { await saved; return HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 }); }));
+    renderRouteWithProviders("/configuracion/apariencia"); await edit();
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    const saving = await screen.findByRole("button", { name: "Guardando…" });
+    expect(saving).toHaveAttribute("aria-busy", "true");
+    expect(saving).toBeDisabled();
+
+    let releaseRead = () => {};
+    const read = new Promise<void>(resolve => { releaseRead = resolve; });
+    server.use(http.get("/api/settings", async () => { await read; return HttpResponse.json(settings); }));
+    releaseSave();
+    const header = screen.getByRole("heading", { level: 1, name: "Apariencia" }).closest("header") as HTMLElement;
+    await userEvent.click(await within(header).findByRole("button", { name: "Revisar valores actuales" }));
+
+    const reading = await within(header).findByRole("button", { name: "Consultando…" });
+    expect(reading).toHaveAttribute("aria-busy", "true");
+    expect(reading).toBeDisabled();
+
+    releaseRead();
+    expect(await screen.findByRole("region", { name: "Revisar cambios" })).toBeInTheDocument();
   });
 
   it("keeps the draft after a conflict and rereads the revision before retrying", async () => {

@@ -32,7 +32,6 @@
   "errors": {
     "pageLoad": {
       "title": "No pudimos abrir esta pantalla",
-      "description": "Revisá que la aplicación esté disponible y recargá la pantalla para volver a intentar.",
       "reload": "Recargar pantalla"
     },
     "network": "No pudimos conectarnos. Revisá tu conexión.",
@@ -45,7 +44,7 @@
     },
     "notFound": {
       "title": "No encontramos esta página",
-      "description": "Revisá la dirección o volvé al tablero."
+      "home": "Volver al inicio"
     },
     "writeUncertain": "No pudimos confirmar el resultado. Revisá el estado actual antes de repetir la operación. Referencia: {{traceId}}",
     "saveRetry": "No pudimos confirmar el guardado. Volvé a guardar. Referencia: {{traceId}}"
@@ -71,11 +70,14 @@
   "code": {
     "label": "Código",
     "send": "Enviar código",
+    "sending": "Enviando…",
     "retryIn": "Reintentá en {{seconds}} s",
     "verify": "Verificar",
+    "verifying": "Verificando…",
     "attemptsLeft_one": "Te queda {{count}} intento",
     "attemptsLeft_other": "Te quedan {{count}} intentos",
     "resend": "Reenviar código",
+    "resending": "Reenviando…",
     "resendIn": "Reenviar en {{seconds}} s",
     "otherEmail": "Usar otro correo",
     "otherPhone": "Usar otro número",

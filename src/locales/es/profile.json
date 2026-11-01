@@ -9,7 +9,6 @@
     "email": {
       "label": "Correo electrónico",
       "empty": "Todavía no agregaste uno.",
-      "recoveryHint": "Con un correo recuperás la cuenta si cambiás de número.",
       "add": "Agregar correo"
     },
     "whatsapp": {
@@ -24,22 +23,18 @@
     "lastLogin": "Último ingreso",
     "lastLoginNever": "Todavía no hay ninguno.",
     "displayName": "Nombre",
-    "displayNameHint": "Es el nombre que se muestra en el sistema.",
     "language": "Idioma",
-    "languageHint": "Queda guardado en tu cuenta: entres desde donde entres, el sistema te habla en este idioma.",
     "timeZone": "Zona horaria",
-    "timeZoneHint": "Con esto mostramos las fechas y las horas en tu hora local.",
-    "submit": "Guardar"
+    "submit": "Guardar",
+    "saving": "Guardando…"
   },
   "linkWhatsApp": {
     "title": "Vincular WhatsApp",
-    "description": "Te mandamos un código a ese número para comprobar que es tuyo.",
     "taken": "Este número ya está vinculado a otra cuenta. Si es tuyo, pedile a un administrador que lo libere.",
     "success": "Vinculamos tu WhatsApp."
   },
   "addEmail": {
     "title": "Agregar correo",
-    "description": "Te mandamos un código a ese correo para comprobar que es tuyo.",
     "emailLabel": "Correo electrónico",
     "emailInvalid": "Ingresá un correo electrónico válido.",
     "taken": "Este correo ya está en otra cuenta. Si es tuyo, pedile a un administrador que lo libere.",
@@ -49,6 +44,7 @@
     "title": "¿Desvincular tu WhatsApp?",
     "description": "Ya no vas a poder entrar con {{phone}} ni desde el chat. Podés volver a vincularlo cuando quieras.",
     "confirm": "Desvincular",
+    "unlinking": "Desvinculando…",
     "success": "Desvinculamos tu WhatsApp."
   },
   "feedback": {

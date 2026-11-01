@@ -337,7 +337,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
       </Button>
       {/* Está en la banda, afuera del formulario: `form` lo ata a él, y así Enter en el nombre también guarda.
           Sin cambios se deshabilita: habilitado ya dice que hay algo que guardar, sin un «Cambios sin guardar». */}
-      <Button type="submit" form={formId} disabled={mutation.isPending || !isDirty}>
+      <Button type="submit" form={formId} pending={mutation.isPending} disabled={!isDirty}>
         {mutation.isPending ? t("editor.saving") : t("form.submit")}
       </Button>
     </>

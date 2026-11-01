@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { requestLoginCode, requestWhatsAppLoginCode, verifyLoginCode } from "../api/loginCode";
@@ -15,6 +15,7 @@ import {
 } from "@/shared/api/codeErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { Button } from "@/shared/ui/button";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { OtpInput } from "@/shared/ui/OtpInput";
 
 const CODE_LENGTH = 6;
@@ -25,10 +26,11 @@ const whatsappLoginState: LoginState = { channel: "whatsapp" };
 /// `/login/codigo` (sección 5.2). Verifica el código de 6 dígitos y, si es válido, vuelve al `returnUrl`
 /// original con una navegación real: ahí el servidor ya encuentra la cookie y emite el code de OIDC.
 ///
-/// Es la misma pantalla para el correo y para WhatsApp: cambian el título, a dónde se mandó el código, el aviso de
-/// abajo y con qué se verifica y se reenvía. El destino llega en el estado de la ruta (`LoginCodeState`).
+/// Es la misma pantalla para el correo y para WhatsApp: cambian el título, a dónde se mandó el código, la (i) junto a
+/// «Código» y con qué se verifica y se reenvía. El destino llega en el estado de la ruta (`LoginCodeState`).
 export function LoginCodePage() {
   const { t } = useTranslation("auth");
+  const noticeId = useId();
   const location = useLocation();
   const registration = location.pathname.startsWith("/registro");
   const registrationState = location.state as LoginCodeState | null;
@@ -177,17 +179,35 @@ export function LoginCodePage() {
           void handleVerify();
         }}
       >
-        <OtpInput
-          length={CODE_LENGTH}
-          value={code}
-          onChange={(value) => {
-            setCode(value);
-            setIsCodeWrong(false);
-          }}
-          label={t("common:code.label")}
-          disabled={isVerifying}
-          invalid={isCodeWrong}
-        />
+        <div className="flex flex-col gap-1.5">
+          {/* El mensaje de WhatsApp lo escribe Meta y no dice para qué es el código: que llega al WhatsApp del celular,
+              y no a WhatsApp Web, va en la (i) junto a «Código», y es la descripción del grupo de casillas. La palabra
+              ya es el nombre del grupo: a la vista, sólo para llevar la (i). */}
+          {destination.channel === "whatsapp" ? (
+            <span className="flex items-center justify-center gap-1 text-sm font-medium text-[var(--color-content)]">
+              <span aria-hidden="true">{t("common:code.label")}</span>
+              <span className="-my-1 inline-flex">
+                <InfoTip
+                  id={noticeId}
+                  label={t("common:actions.moreInfo", { label: t("common:code.label") })}
+                  text={t("common:code.whatsappNotice")}
+                />
+              </span>
+            </span>
+          ) : null}
+          <OtpInput
+            length={CODE_LENGTH}
+            value={code}
+            onChange={(value) => {
+              setCode(value);
+              setIsCodeWrong(false);
+            }}
+            label={t("common:code.label")}
+            disabled={isVerifying}
+            invalid={isCodeWrong}
+            aria-describedby={destination.channel === "whatsapp" ? noticeId : undefined}
+          />
+        </div>
 
         {error ? (
           <div role="alert" className="flex flex-col gap-1 text-center text-sm text-[var(--color-danger)]">
@@ -216,12 +236,14 @@ export function LoginCodePage() {
           </Link>
         ) : null}
 
+        {/* Con la respuesta buena el navegador se va: sigue diciendo que trabaja hasta que cambia la página. */}
         <Button
           type="submit"
           className="w-full"
-          disabled={code.length !== CODE_LENGTH || isVerifying || isCodeSpent || isAccountClosed}
+          pending={isVerifying}
+          disabled={code.length !== CODE_LENGTH || isCodeSpent || isAccountClosed}
         >
-          {t(registration ? "registration.verify" : "common:code.verify")}
+          {isVerifying ? t("common:code.verifying") : t(registration ? "registration.verify" : "common:code.verify")}
         </Button>
       </form>
 
@@ -229,16 +251,14 @@ export function LoginCodePage() {
         type="button"
         variant="outline"
         className="w-full"
-        disabled={isResendRunning || isResending || isAccountClosed}
+        pending={isResending}
+        disabled={isResendRunning || isAccountClosed}
         onClick={() => void handleResend()}
       >
-        {isResendRunning ? t("common:code.resendIn", { seconds: resendSeconds }) : t("common:code.resend")}
+        {isResending
+          ? t("common:code.resending")
+          : isResendRunning ? t("common:code.resendIn", { seconds: resendSeconds }) : t("common:code.resend")}
       </Button>
-
-      {/* El mensaje de WhatsApp lo escribe Meta y no dice para qué es el código: lo dice esta pantalla. */}
-      {destination.channel === "whatsapp" ? (
-        <p className="text-center text-sm text-[var(--color-content-muted)]">{t("common:code.whatsappNotice")}</p>
-      ) : null}
     </div>
   );
 }

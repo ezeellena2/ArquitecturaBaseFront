@@ -61,15 +61,17 @@ export function UsersPage() {
   const hasFilters = appliedCount > 0;
   const query = { page, pageSize, sort, search, ...filters.values };
 
-  const { data, error, isLoading, refetch } = useQuery({
+  // `keepPreviousData`: al buscar, filtrar, ordenar o paginar, las filas anteriores quedan a la vista mientras llegan
+  // las nuevas, y la tabla las atenúa (`refreshing`).
+  const { data, error, isLoading, isPlaceholderData, refetch } = useQuery({
     queryKey: usersQueryKey(query),
     queryFn: () => fetchUsers(query),
     placeholderData: keepPreviousData,
     enabled: ready,
   });
 
-  // Las dos acciones de fila que no abren un formulario. El resultado va a un aviso y no a un cartel dentro
-  // del diálogo, porque `ConfirmDialog` se cierra al confirmar: cuando llega la respuesta ya no está.
+  // Las dos acciones de fila que no abren un formulario. La confirmación espera abierta la respuesta (`pending`) y el
+  // resultado va a un aviso.
   const activation = useMutation({
     mutationFn: ({ user, isActive }: { user: UserListItem; isActive: boolean }) => setUserActive(user.id, isActive),
     onSuccess: async (_result, variables) => {
@@ -143,6 +145,7 @@ export function UsersPage() {
           hasData={data !== undefined}
           rowKey={(row) => row.id}
           isLoading={isLoading}
+          refreshing={isPlaceholderData}
           error={error ? t("common:states.loadFailed") : undefined}
           onRetry={() => void refetch()}
           sort={sort}
@@ -192,14 +195,19 @@ export function UsersPage() {
           description={t(`${confirmation.kind}.description`)}
           confirmLabel={t(`${confirmation.kind}.confirm`)}
           destructive={confirmation.kind !== "activate"}
+          // Espera abierta la respuesta, también si falla: se cierra cuando llega, con el resultado en un aviso.
+          pending={activation.isPending || removal.isPending}
+          pendingLabel={{ activate: t("activate.activating"), deactivate: t("deactivate.deactivating"), delete: t("delete.deleting") }[confirmation.kind]}
           onConfirm={() => {
+            const close = { onSettled: () => setConfirmation(undefined) };
+
             if (isDeletion) {
-              removal.mutate(confirmation.user);
+              removal.mutate(confirmation.user, close);
 
               return;
             }
 
-            activation.mutate({ user: confirmation.user, isActive: confirmation.kind === "activate" });
+            activation.mutate({ user: confirmation.user, isActive: confirmation.kind === "activate" }, close);
           }}
         />
       ) : null}
