@@ -17,7 +17,6 @@ import { Label } from "@/shared/ui/label";
 import { PasteGrid } from "@/shared/ui/PasteGrid";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
@@ -31,7 +30,7 @@ import { administrativeName } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogRow as Row, CatalogRowHelp as Help, CatalogRowMessage as Message } from "./CatalogRow";
 
-export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void }
+export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void; downloadingTemplate?: boolean }
 type Source = "file" | "paste";
 function fresh(owner: string, revision: number, source: Source) {
   return { owner, revision, source, sheet: null as CatalogPastedSheet | null, file: null as File | null, preview: null as CatalogImportPreview | null, busy: null as "preview" | "apply" | null, conflict: false, forbidden: false, fileError: null as string | null, confirmDeactivations: false, confirmEmpty: false, confirmErrors: false };
@@ -43,8 +42,8 @@ const band = "text-xs text-[var(--color-surface-header-foreground)]";
 const rows = "flex flex-col divide-y divide-[var(--color-border)] [&>*]:px-4 [&>*]:py-3";
 
 // IM1-A, IM2-A and IM3-A (2026-10-31): the origin and the review at sight, the help in the (i), a skeleton while reading and,
-// while applying, Cancel and the × in sight but off.
-export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback, onClose, onApplied, onObserved, onTemplate }: CatalogImportDialogProps) {
+// while applying, Cancel and the × in sight but off. What waits says so with the common busy button (LC1-A), the template too.
+export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback, onClose, onApplied, onObserved, onTemplate, downloadingTemplate = false }: CatalogImportDialogProps) {
   const { t, i18n } = useTranslation("forms");
   const owner = JSON.stringify([scope.actorId, scope.culture, [...scope.permissions].sort(), catalog.id]);
   const fields = (catalog.fields ?? []).filter(field => field.isActive).sort((a, b) => a.position - b.position);
@@ -132,7 +131,7 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
     <Label htmlFor={id + key} className="font-normal">{label}</Label>{help}
   </div>;
 
-  const origin = <Surface title={t("catalogs.import.origin")} headingLevel={3} actions={state.source === "file" ? <Button type="button" variant="link" disabled={busy} onClick={onTemplate}>{t("catalogs.import.template")}</Button> : null}>
+  const origin = <Surface title={t("catalogs.import.origin")} headingLevel={3} actions={state.source === "file" ? <Button type="button" variant="link" pending={downloadingTemplate} disabled={busy} onClick={onTemplate}>{t(downloadingTemplate ? "catalogs.actions.downloadingTemplate" : "catalogs.import.template")}</Button> : null}>
     <div className={rows}>
       <Row label={<><Label>{t("catalogs.import.from")}</Label><Help label={t("catalogs.import.sourceHelpLabel")} text={t("catalogs.import.sourceHelp")} /></>}>
         <div className="sm:self-start"><SegmentedControl fullWidth aria-label={t("catalogs.import.from")} disabled={busy} options={(["file", "paste"] as const).map(source => ({ key: source, label: t(source === "file" ? "catalogs.import.upload" : "catalogs.import.paste"), pressed: state.source === source, onSelect: () => changeSource(source) }))} /></div>
@@ -208,7 +207,7 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
   </div> : null;
 
   const primary = !owned || state.forbidden ? null
-    : busy ? <Button type="button" disabled><Spinner decorative />{t(applying ? "catalogs.import.applying" : "catalogs.import.reviewing")}</Button>
+    : busy ? <Button type="button" pending>{t(applying ? "catalogs.import.applying" : "catalogs.import.reviewing")}</Button>
     : state.conflict ? <Button type="button" onClick={() => void review(true)}>{t("catalogs.import.reviewAgain")}</Button>
     : !preview ? <Button type="button" onClick={() => void review()}>{t("catalogs.import.review")}</Button>
     : <Button type="button" disabled={!confirmed} onClick={() => void apply()}>{t(preview.counts.errorRows ? "catalogs.import.applyWithoutErrors" : "catalogs.import.apply", { count: preview.counts.errorRows })}</Button>;

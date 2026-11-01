@@ -37,7 +37,8 @@ it("opens on the file with its origin in rows, the template in the band and the 
   const { user, props } = await mount("file");
   const dialog = screen.getByRole("dialog", { name: "Importar opciones a «Lista»" });
   for (const note of ["Archivo o filas pegadas, revisar y aplicar. No se guarda nada hasta aplicar.", "XLSX o CSV, hasta 10 MB y 10.000 filas. No se ejecutan fórmulas ni macros.", "Lo que no viene en la planilla se da de baja, no se borra. Vuelve a ofrecerse si aparece en otra importación."])
-    expect(within(dialog).queryByText(note)).not.toBeInTheDocument();
+    // A help is the hidden description of its (i) (`InfoTip`), never a visible note.
+    for (const text of within(dialog).queryAllByText(note)) expect(text).not.toBeVisible();
   expect(within(dialog).queryByRole("list")).not.toBeInTheDocument();
   expect(within(dialog).getByRole("heading", { name: "Origen" })).toBeInTheDocument();
   expect(within(dialog).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
@@ -119,6 +120,14 @@ it("empties the grid with «Limpiar» and asks to paste before reviewing", async
   expect(check).not.toHaveBeenCalled();
 });
 
+// While the template downloads, its link says so with its ring, like the menu of the options bar (LC1-A).
+it("says «Descargando la plantilla…» with its ring while the template downloads", async () => {
+  await mount("file", { downloadingTemplate: true });
+  const link = screen.getByRole("button", { name: "Descargando la plantilla…" });
+  expect(link).toBeDisabled();
+  expect(link).toHaveAttribute("aria-busy", "true");
+});
+
 // IM2-A: while reading, the button says so and the review zone shows its skeleton; Cancel keeps working.
 it("shows that it is reviewing with the button and a skeleton, and Cancel stops the reading", async () => {
   let resolve!: (value: imports.CatalogImportPreview) => void;
@@ -127,6 +136,8 @@ it("shows that it is reviewing with the button and a skeleton, and Cancel stops 
   await paste(user, "N\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   expect(screen.getByRole("button", { name: "Revisando…" })).toBeDisabled();
+  // The common busy button (LC1-A): its ring, without dimming.
+  expect(screen.getByRole("button", { name: "Revisando…" })).toHaveAttribute("aria-busy", "true");
   expect(screen.getByRole("heading", { name: "Revisión" })).toBeInTheDocument();
   expect(screen.getByRole("status", { name: "Revisando…" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Pegar desde Excel" })).toBeDisabled();
@@ -147,6 +158,7 @@ it("keeps Cancel and the close button in sight but off, with their reason, while
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await user.click(await screen.findByRole("button", { name: "Aplicar" }));
   expect(screen.getByRole("button", { name: "Aplicando…" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Aplicando…" })).toHaveAttribute("aria-busy", "true");
   for (const name of ["Cancelar", "Cerrar"]) {
     const control = screen.getByRole("button", { name });
     expect(control).toBeDisabled();
