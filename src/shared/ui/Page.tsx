@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { ChevronLeftIcon } from "./icons";
 import { ActionTooltip } from "./ActionTooltip";
+import { InfoTip } from "./InfoTip";
 
 /// El caparazón de una pantalla: el encabezado y el contenido, en ese orden.
 ///
@@ -28,6 +30,7 @@ export function Page({
   backTo,
   status,
   actions,
+  help,
   children,
   viewport = false,
 }: {
@@ -35,9 +38,12 @@ export function Page({
   backTo?: { to: string; label: string };
   status?: ReactNode;
   actions?: ReactNode;
+  /// Sólo cuando la pantalla entera necesita una aclaración que no es obvia: va en la (i) junto al título (tablero LC3).
+  help?: string;
   children: ReactNode;
   viewport?: boolean;
 }): ReactNode {
+  const { t } = useTranslation();
   const content = (
     <>
       <header className="sticky top-0 z-20 flex min-h-12 flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-page-header)] px-5 py-2 sm:py-1.5 max-sm:static">
@@ -54,7 +60,8 @@ export function Page({
             </ActionTooltip>
           ) : null}
           <h1 className="min-w-0 truncate text-2xl font-semibold tracking-normal text-[var(--color-content)] max-sm:whitespace-normal max-sm:break-words">{title}</h1>
-          {status ? <span className="flex shrink-0 items-center gap-2 max-sm:basis-full">{status}</span> : null}
+          {help ? <span className="inline-flex shrink-0 self-center"><InfoTip text={help} label={t("actions.moreInfo", { label: title })} /></span> : null}
+          {status ?<span className="flex shrink-0 items-center gap-2 max-sm:basis-full">{status}</span> : null}
         </span>
         {actions ? <span className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-2 max-sm:w-full">{actions}</span> : null}
       </header>

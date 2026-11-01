@@ -13,6 +13,8 @@
   },
   "actions": {
     "cancel": "Cancel",
+    "moreInfo": "More about {{label}}",
+    "moreInfoPlain": "More information",
     "confirm": "Confirm",
     "save": "Save",
     "search": "Search",

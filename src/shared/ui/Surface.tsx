@@ -1,4 +1,6 @@
 import { useId, type ReactNode, type Ref } from "react";
+import { useTranslation } from "react-i18next";
+import { InfoTip } from "./InfoTip";
 
 interface SurfaceProps {
   title?: string;
@@ -6,20 +8,24 @@ interface SurfaceProps {
   headingLevel?: 2 | 3;
   padded?: boolean;
   actions?: ReactNode;
+  /// La explicación de la sección entera: en la (i) junto al título, nunca como un párrafo arriba del contenido.
+  help?: string;
   children: ReactNode;
 }
 
 // La caja y su banda se definen acá: las features solo deciden el contenido.
 // Una banda crece con el texto; un título largo no queda recortado en móvil.
 // Las acciones van al borde derecho de la banda, a la altura del título; si no entran, bajan de renglón y siguen a la derecha.
-export function Surface({ title, titleRef, headingLevel = 2, padded = false, actions, children }: SurfaceProps) {
+export function Surface({ title, titleRef, headingLevel = 2, padded = false, actions, help, children }: SurfaceProps) {
+  const { t } = useTranslation();
   const id = useId();
   const Heading = headingLevel === 3 ? "h3" : "h2";
+  const heading = <Heading id={id} ref={titleRef} tabIndex={titleRef ? -1 : undefined} className="text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase text-[var(--color-surface-header-foreground)] outline-none">{title}</Heading>;
   return (
     <section aria-labelledby={title ? id : undefined} data-slot="surface" className="flex min-w-0 shrink-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
       {title ? (
         <div className="flex min-h-10 flex-wrap items-center justify-between gap-2 border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4 py-2">
-          <Heading id={id} ref={titleRef} tabIndex={titleRef ? -1 : undefined} className="text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase text-[var(--color-surface-header-foreground)] outline-none">{title}</Heading>
+          {help ? <span className="flex items-center gap-1">{heading}<span className="-my-1 inline-flex"><InfoTip text={help} label={t("actions.moreInfo", { label: title })} /></span></span> : heading}
           {actions ? <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{actions}</div> : null}
         </div>
       ) : null}

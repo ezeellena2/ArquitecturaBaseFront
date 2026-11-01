@@ -1,14 +1,18 @@
 import { useId, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Checkbox } from "./checkbox";
+import { InfoTip } from "./InfoTip";
 import { Label } from "./label";
 
 interface CheckboxFieldProps {
   label: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
-  /// Línea de ayuda debajo de la etiqueta.
+  /// Un dato debajo de la etiqueta (un conteo). Una explicación de la casilla no va acá sino en `help`.
   description?: string;
+  /// La explicación de la casilla: en la (i) al final de su texto, con su tooltip (tablero LC3). Tocarla no la marca.
+  help?: string;
   /// Va debajo de la ayuda, sin reemplazarla: el error dice qué falta y la ayuda, por qué hace falta ("Sin esto,
   /// WhatsApp no permite escribirle primero"). Es lo que distingue a una casilla de un `FormField`.
   error?: string;
@@ -28,13 +32,27 @@ export function CheckboxField({
   checked,
   onCheckedChange,
   description,
+  help,
   error,
   disabled,
 }: CheckboxFieldProps): ReactNode {
+  const { t } = useTranslation();
   const id = useId();
   const descriptionId = `${id}-description`;
+  const helpId = `${id}-help`;
   const errorId = `${id}-error`;
-  const describedBy = [description ? descriptionId : undefined, error ? errorId : undefined].filter(Boolean).join(" ");
+  const describedBy = [help ? helpId : undefined, description ? descriptionId : undefined, error ? errorId : undefined].filter(Boolean).join(" ");
+  const labelNode = (
+    <Label
+      htmlFor={id}
+      className={cn(
+        "text-[0.84375rem] leading-[1.2]",
+        disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer after:absolute after:inset-0",
+      )}
+    >
+      {label}
+    </Label>
+  );
 
   return (
     <div
@@ -56,15 +74,13 @@ export function CheckboxField({
         className="mt-px border-[var(--color-content-muted)]"
       />
       <div className="flex flex-col gap-0.5">
-        <Label
-          htmlFor={id}
-          className={cn(
-            "text-[0.84375rem] leading-[1.2]",
-            disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer after:absolute after:inset-0",
-          )}
-        >
-          {label}
-        </Label>
+        {help ? (
+          <span className="flex items-center gap-1">
+            {labelNode}
+            {/* Encima del área de la etiqueta que se estira sobre la fila: tocar la (i) abre su ayuda y no marca la casilla. */}
+            <span className="-my-1 inline-flex"><InfoTip id={helpId} text={help} label={t("actions.moreInfo", { label })} /></span>
+          </span>
+        ) : labelNode}
         {description ? (
           <p id={descriptionId} className="text-[0.78125rem] leading-[1.4] text-[var(--color-content-muted)]">
             {description}

@@ -1,14 +1,17 @@
 import { useId, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { RadioGroup } from "radix-ui";
 import { cn } from "@/shared/lib/utils";
+import { InfoTip } from "./InfoTip";
 import { Label } from "./label";
 
 export interface RadioOption {
   value: string;
   label: string;
-  /// Línea de ayuda debajo de la etiqueta. En una opción apagada, es el porqué ("Cargá un correo para usar esta
-  /// opción"): un botón de opción apagado no recibe foco, así que la razón tiene que estar a la vista.
+  /// Un dato debajo de la etiqueta (un conteo, un correo). Una explicación de la opción no va acá sino en `help`.
   description?: string;
+  /// La explicación de la opción: en la (i) al final de su texto, con su tooltip (tablero LC3). Tocarla no la elige.
+  help?: string;
   disabled?: boolean;
 }
 
@@ -31,6 +34,7 @@ interface RadioGroupFieldProps {
 /// Group de Radix, que da el rol `radiogroup`, las flechas para moverse y el foco en la elegida, con la misma fila que
 /// `CheckboxField`.
 export function RadioGroupField({ label, options, value, onValueChange, error, variant = "plain", layout = "column" }: RadioGroupFieldProps): ReactNode {
+  const { t } = useTranslation();
   const id = useId();
   const errorId = `${id}-error`;
 
@@ -47,6 +51,8 @@ export function RadioGroupField({ label, options, value, onValueChange, error, v
         {options.map((option) => {
           const optionId = `${id}-${option.value}`;
           const descriptionId = `${optionId}-description`;
+          const helpId = `${optionId}-help`;
+          const describedBy = [option.help ? helpId : undefined, option.description ? descriptionId : undefined].filter(Boolean).join(" ");
 
           return (
             // `relative`: dentro de un formulario, Radix pone al lado del botón un input escondido y posicionado, para
@@ -56,7 +62,7 @@ export function RadioGroupField({ label, options, value, onValueChange, error, v
                 id={optionId}
                 value={option.value}
                 disabled={option.disabled}
-                aria-describedby={option.description ? descriptionId : undefined}
+                aria-describedby={describedBy || undefined}
                 className={cn(
                   "mt-px inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-content-muted)] bg-[var(--color-surface)] outline-none",
                   "focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:border-primary",
@@ -66,15 +72,24 @@ export function RadioGroupField({ label, options, value, onValueChange, error, v
                 <RadioGroup.Indicator className="size-2 rounded-full bg-primary" />
               </RadioGroup.Item>
               <div className="flex flex-col gap-0.5">
-                <Label
-                  htmlFor={optionId}
-                  className={cn(
-                    "text-[0.84375rem] leading-[1.2]",
-                    option.disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer",
-                  )}
-                >
-                  {option.label}
-                </Label>
+                {option.help ? (
+                  <span className="flex items-center gap-1">
+                    <Label htmlFor={optionId} className={cn("text-[0.84375rem] leading-[1.2]", option.disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer")}>
+                      {option.label}
+                    </Label>
+                    <span className="-my-1 inline-flex"><InfoTip id={helpId} text={option.help} label={t("actions.moreInfo", { label: option.label })} /></span>
+                  </span>
+                ) : (
+                  <Label
+                    htmlFor={optionId}
+                    className={cn(
+                      "text-[0.84375rem] leading-[1.2]",
+                      option.disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer",
+                    )}
+                  >
+                    {option.label}
+                  </Label>
+                )}
                 {option.description ? (
                   <p id={descriptionId} className="text-[0.78125rem] leading-[1.4] text-[var(--color-content-muted)]">
                     {option.description}
