@@ -26,7 +26,9 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
   return <Surface title={t("hoursSection")} padded><div className="@container space-y-4" id="business-details.openingHours" tabIndex={-1} role="group" aria-label={t("hoursSection")} aria-invalid={!!error} aria-describedby={error ? "business-hours-error" : undefined}>
     <div className="divide-y divide-[var(--color-border)]">{value.days.map(day => {
       const label = t(`days.${weekdays[day.weekday]}`);
-      return <div key={day.weekday} className="grid grid-cols-[minmax(0,1fr)_7rem] items-start gap-2 py-3 @min-[424px]:grid-cols-[5rem_7rem_minmax(0,1fr)]">
+      // La columna del estado y los selects de hora miden lo que su opción más larga en cada idioma: un ancho fijo cortaba
+      // «Sin definir» y «Elegir».
+      return <div key={day.weekday} className="grid grid-cols-[minmax(0,1fr)_max-content] items-start gap-2 py-3 @min-[424px]:grid-cols-[5rem_max-content_minmax(0,1fr)]">
         <p className="pt-1.5 text-sm font-medium">{label}</p>
         <OpeningStatusSelect status={day.status} label={label} disabled={disabled} onChange={status => changeDay({ ...day, status, periods: status === "open" ? day.periods.length ? day.periods : [emptyPeriod()] : [] })} />
         {day.status === "open" ? <div className="col-span-2 space-y-3 @min-[424px]:col-span-1"><OpeningPeriods periods={day.periods} label={label} editable={editable} disabled={disabled} onChange={periods => changeDay({ ...day, periods })} /></div> : null}
@@ -60,9 +62,9 @@ function OpeningPeriods({ periods, label, editable, disabled, onChange }: { peri
   function update(index: number, next: OpeningPeriod) { onChange(periods.map((period,i) => i === index ? next : period)); }
   return <div className="space-y-3">{periods.map((period,index) => <div key={index} className="space-y-1.5">
     <div className="flex min-w-0 items-start gap-2">
-      <NativeSelect className="w-20 shrink-0" aria-label={`${label} ${index+1} · ${t("from")}`} disabled={disabled} value={period.start} onChange={event => update(index,{ ...period, start:event.target.value })}><option value="">{t("chooseTime")}</option>{timeOptions.map(time => <option key={time}>{time}</option>)}</NativeSelect>
+      <NativeSelect className="w-auto shrink-0" aria-label={`${label} ${index+1} · ${t("from")}`} disabled={disabled} value={period.start} onChange={event => update(index,{ ...period, start:event.target.value })}><option value="">{t("chooseTime")}</option>{timeOptions.map(time => <option key={time}>{time}</option>)}</NativeSelect>
       <span className="pt-1 text-xs text-[var(--color-content-muted)]">–</span>
-      <NativeSelect className="w-20 shrink-0" aria-label={`${label} ${index+1} · ${t("to")}`} disabled={disabled} value={period.end} onChange={event => update(index,{ ...period,end:event.target.value })}><option value="">{t("chooseTime")}</option>{timeOptions.map(time => <option key={time}>{time}</option>)}</NativeSelect>
+      <NativeSelect className="w-auto shrink-0" aria-label={`${label} ${index+1} · ${t("to")}`} disabled={disabled} value={period.end} onChange={event => update(index,{ ...period,end:event.target.value })}><option value="">{t("chooseTime")}</option>{timeOptions.map(time => <option key={time}>{time}</option>)}</NativeSelect>
       {editable && periods.length > 1 ? <IconButton label={`${t("removePeriod")} · ${label} ${index+1}`} size="icon-sm" disabled={disabled} onClick={() => onChange(periods.filter((_,i) => i !== index))}><TrashIcon className="size-4" /></IconButton> : null}
     </div>
     {period.nextDay || (period.start && period.end && period.end <= period.start) ? <label className="flex items-center gap-2 text-xs text-[var(--color-content-muted)]"><Checkbox disabled={disabled} checked={period.nextDay} onCheckedChange={checked => update(index,{ ...period,nextDay:checked === true })} />{t("nextDay")}</label> : null}

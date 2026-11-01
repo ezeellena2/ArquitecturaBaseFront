@@ -21,6 +21,25 @@ for (const language of ["es", "en"] as const) {
       await expect(name).toHaveValue(language === "es" ? "Negocio actualizado" : "Updated business");
       await expect(faq).toHaveValue("Confirmed answer");
     });
+    test(`business opening hours show the whole text of each select at ${width}px in ${language}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto(`/src/test/visual/index.html?screen=/configuracion/negocio&scenario=business-normal&lang=${language}`);
+      const hours = page.getByRole("group", { name: language === "es" ? "Horario de atención" : "Opening hours", exact: true });
+      await expect(hours).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      // An open day adds its times: neither they nor the status of each day are narrower than their widest option.
+      await hours.getByRole("combobox", { name: language === "es" ? "Lunes · Atención" : "Monday · Opening", exact: true }).selectOption("open");
+      const selects = hours.getByRole("combobox", { name: language === "es" ? / · (Atención|Desde|Hasta)$/ : / · (Opening|From|Until)$/ });
+      await expect(selects).toHaveCount(9);
+      expect(await selects.evaluateAll(found => found.filter(select => {
+        const probe = select.cloneNode(true) as HTMLSelectElement;
+        probe.style.cssText = "position: absolute; visibility: hidden; width: auto";
+        select.after(probe);
+        const needed = probe.getBoundingClientRect().width;
+        probe.remove();
+        return select.getBoundingClientRect().width + 0.5 < needed;
+      }).map(select => select.getAttribute("aria-label")))).toEqual([]);
+    });
   }
   test(`business permissions distinguish area headings from plain permission rows in ${language}`, async ({ page }) => {
     await page.goto(`/src/test/visual/index.html?screen=/roles/admin&scenario=business-roles&lang=${language}`);
