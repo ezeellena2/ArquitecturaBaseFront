@@ -24,6 +24,11 @@ describe("a button whose action is working", () => {
     expect(button.querySelector('[data-slot="button-spinner"]')).toBeNull();
   });
 
+  it("keeps lending its look to a single child, such as a link", () => {
+    render(<Button asChild><a href="/formularios/nuevo">Nuevo formulario</a></Button>);
+    expect(screen.getByRole("link", { name: "Nuevo formulario" })).toHaveAttribute("data-slot", "button");
+  });
+
   it("changes the drawing of an icon button for the spinner and keeps its name", () => {
     renderWithProviders(<IconButton label="Descargando el PDF" pending><span data-testid="drawing" aria-hidden="true">↓</span></IconButton>);
     const button = screen.getByRole("button", { name: "Descargando el PDF" });

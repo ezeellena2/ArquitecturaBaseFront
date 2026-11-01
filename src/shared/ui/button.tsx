@@ -72,8 +72,11 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }), pending && "disabled:opacity-100")}
       {...props}
     >
-      {pending && !asChild ? <span data-slot="button-spinner" aria-hidden="true" className="inline-block size-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" /> : null}
-      {children}
+      {/* With asChild the Slot takes a single element: the child stays alone, without the spinner. */}
+      {asChild ? children : <>
+        {pending ? <span data-slot="button-spinner" aria-hidden="true" className="inline-block size-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none" /> : null}
+        {children}
+      </>}
     </Comp>
   )
 }
