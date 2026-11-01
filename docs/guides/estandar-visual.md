@@ -39,6 +39,8 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Casillas y alternativas | `CheckboxField`, `RadioGroupField`, `Checkbox` para tablas | Opciones, estado y validación |
 | Íconos y acciones | `shared/ui/icons`, `IconButton`, `RowActions` | Nombre traducido, permiso y operación |
 | Ayuda contextual | `ActionTooltip` | Texto y control alcanzable con teclado; sin `title` nativo |
+| Explicación de un campo, una sección o una opción | `InfoTip`, `help` de `FormField`, `Surface`, `Page`, `CheckboxField` y `RadioGroupField` | La (i) con su tooltip; nunca un texto debajo o al costado (`hint` y `description`, sólo datos) |
+| Acción que tarda | `Button`/`IconButton` con `pending`, `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` | Aro y gerundio en el botón, confirmación abierta hasta la respuesta, filas atenuadas con la línea que corre; nunca sólo apagar el botón |
 | Motivo de un deshabilitado | `DisabledReason` | Motivo traducido, solo si no es obvio; sin textos al lado ni debajo del control |
 | Conversación | `MessageHistory`, `MessageBubble`, `MessageDateDivider` | Orden/origen de los mensajes, día del perfil, formato común, estado confirmado y acciones permitidas |
 

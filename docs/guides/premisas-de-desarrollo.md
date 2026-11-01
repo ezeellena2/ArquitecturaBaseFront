@@ -61,8 +61,10 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   reemplaza sus cuatro destinos anteriores y conserva la biblioteca común.
 - La cabecera de Page tiene el nombre del tema, el estado necesario y la acción principal.
   Las migas muestran el contexto. No repetir el título en una tarjeta ni llenar la cabecera de ayudas.
-- La información se ordena como etiqueta → valor/control → ayuda breve cuando hace falta.
-  No agregar datos técnicos, auditoría, instrucciones largas ni resúmenes que no ayudan a decidir.
+- La información se ordena como etiqueta → valor/control. Sin leyendas explicativas (decisión del
+  usuario, 2026-10-31): una explicación que sirve va en la (i) con su tooltip, junto a la etiqueta o el
+  título (`help`), y lo demás se saca. No agregar datos técnicos, auditoría, instrucciones largas ni
+  resúmenes que no ayudan a decidir.
 - Elegir el componente según el dato: una colección administrable usa tabla; un valor de un catálogo
   usa selector; pocas alternativas que requieren explicación usan radios; varias selecciones usan
   checks o MultiSelect; un dato libre usa un campo. No usar una tabla para presentar un único ajuste.
@@ -125,15 +127,18 @@ ComposerPrimitive.Input con etiqueta accesible, ayuda de teclado oculta y error 
 No es un editor administrativo con FormField visible. La excepción queda encapsulada en
 shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguientes.
 
-- Cada campo usa `FormField` con una etiqueta visible, su control y la ayuda o el error asociado.
-  El placeholder muestra un ejemplo; no reemplaza la etiqueta. Usar `Input`, `Textarea`, `Select`,
+- Cada campo usa `FormField` con una etiqueta visible, su control y su error asociado. El renglón de
+  abajo es para el error o para un dato (`hint`: el texto original en el otro idioma, un valor), nunca
+  para explicar; la explicación que sirve va en `help`, la (i) junto a la etiqueta, y es parte de la
+  descripción accesible del control. El placeholder muestra un ejemplo; no reemplaza la etiqueta. Usar `Input`, `Textarea`, `Select`,
   `MultiSelect` y `NativeSelect`; estos últimos sirven para listas extensas y selección nativa.
   Teléfonos y códigos usan `PhoneField` y `OtpInput` cuando corresponda.
 - Los campos heredan fondo, borde, foco y validación. Conservar `aria-invalid`, `aria-describedby`,
   límites del contrato y autocompletado pertinente. No cambiar los controles solo para esconder
   una validación o un estado deshabilitado.
 - Una casilla con texto usa `CheckboxField`; una celda de tabla usa `Checkbox` con nombre accesible.
-  La etiqueta permite marcar la casilla. La ayuda explica la consecuencia; el error explica qué corregir.
+  La etiqueta permite marcar la casilla. Si la consecuencia no es obvia, va en la (i) al final de su
+  texto (`help`); el error explica qué corregir. Lo mismo vale para una opción de `RadioGroupField`.
 - Un grupo de checks admite ninguno, algunos (`indeterminate`) y todos. El alcance de “todos” debe
   ser explícito: sección, resultados filtrados o página. No cambiar otras secciones ni seleccionar
   datos que la persona no puede administrar.
@@ -145,8 +150,11 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   lo muestra como tooltip al pasar el mouse o con el foco y como descripción accesible, sin textos
   al lado ni debajo del control.
   Los estados de validación no dependen solo del color.
-- Una mutación conserva el borrador ante un fallo. Mostrar que está guardando y evitar envíos
-  duplicados; anunciar éxito solo después de la respuesta. Invalidar las consultas afectadas,
+- Una mutación conserva el borrador ante un fallo. Toda acción que tarda muestra que trabaja (decisión
+  del usuario, 2026-10-31; tableros LC1-A y LC2-A): el botón con `pending` pone el aro y su gerundio
+  («Guardando…») sin atenuarse ni aceptar otro clic; una confirmación con `pending` queda abierta hasta
+  la respuesta; un listado que vuelve a leer pasa `refreshing` a su tabla. Anunciar éxito solo después
+  de la respuesta. Invalidar las consultas afectadas,
   incluidos los conteos, el detalle y los permisos del usuario actual cuando corresponda.
 
 ## Botones y acciones

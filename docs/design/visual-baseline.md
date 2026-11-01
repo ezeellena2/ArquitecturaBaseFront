@@ -70,7 +70,8 @@ de `features/users/columns.tsx`; avatar de cuenta en `Sidebar.tsx` y `UserMenu.t
 explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `Surface`, `FilterChip`, `FilterMenuTrigger`,
 `TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `SegmentedControl` (`fullWidth`,
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
-`error`, `Spinner decorative`, `DisabledReason`, `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+`error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
+`ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing`, `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
 `CheckCheck`, `Send`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
@@ -204,8 +205,10 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
 - Se valida al enviar; después del primer error, en vivo mientras se corrige.
 - Cancelar junto a la primaria, que va última; una destructiva, separada a la izquierda.
 - **Toda acción que tarda muestra que está cargando** (decisión del usuario, 2026-10-31): no alcanza con apagar el
-  botón, y no tapa la pantalla ni pierde lo escrito. Cómo se ve la señal, en el botón y en la zona que espera el
-  resultado, se elige en un tablero antes de sumarla a `shared/ui`.
+  botón, y no tapa la pantalla ni pierde lo escrito. La forma la eligió el usuario el 2026-11-01 (ver
+  [Leyendas y carga](#leyendas-y-carga--2026-11-01)): el botón con el aro y el gerundio, sin atenuarse (`Button pending`,
+  LC1-A); la confirmación abierta hasta la respuesta (`ConfirmDialog pending`); un listado que vuelve a leer, con una
+  línea que corre bajo el encabezado y las filas anteriores atenuadas y fuera de alcance (`refreshing`, LC2-A).
 - **Un botón está habilitado o deshabilitado, sin explicaciones al lado** (decisión del usuario, 2026-10-23):
   - no se agregan textos debajo ni al costado, como «No hay cambios para guardar», «Revisá los datos marcados antes de
     guardar» o «Guardá … antes»;
@@ -481,10 +484,11 @@ control que apagan, sin texto al lado ni debajo, y el control no cambia de lugar
 
 Se conservan, con su motivo: los motivos dentro de los menús «⋯» y de «Descargar ▾»; los estados del flujo con su acción
 (guardado sin confirmar, revisión pendiente); el estado de la conversación sobre el compositor del chat y la espera de
-Inicio para enviar otra consulta; la cuenta regresiva del ingreso público para pedir otro código o enlace; la espera de
-Formularios que faltan, escrita entre sus filtros y su tabla apagados; los conteos de los encabezados y la versión
-publicada junto al título de la planilla; «Nuevo, sin guardar» de CE1; los pies de diálogo y la etiqueta «Guardando…»
-mientras trabaja ([premisas](../guides/premisas-de-desarrollo.md)).
+Inicio para enviar otra consulta; la cuenta regresiva del ingreso público para pedir otro código o enlace; los conteos
+de los encabezados y la versión publicada junto al título de la planilla; «Nuevo, sin guardar» de CE1; los pies de
+diálogo y la etiqueta «Guardando…» mientras trabaja ([premisas](../guides/premisas-de-desarrollo.md)). Desde el
+2026-11-01 la espera de Formularios que faltan ya no se escribe entre sus filtros y su tabla: es el motivo de los dos
+controles apagados (`DisabledReason`).
 
 La corrida visual del cierre aprobó 741/741 pruebas. Se revisaron las 29 diferencias de la primera corrida y se actualizaron sólo
 esas referencias, todas por esta decisión: `ai-*` (Probar conexión, Reemplazar y Quitar clave en el encabezado de su
@@ -546,3 +550,44 @@ sólo `settings-review-320` muestra uno de esos estados, y Descartar y Guardar s
 sin cambiar su dibujo. Cambian evidencias sin golden: D2 (`responses-d2-*` y la vista rápida de `formResponseFull`), el
 diseño del PDF (`pdf-design-*`), el editor de formularios, sin la nota «Los textos se editan por idioma…», y la
 información del negocio guiada (`business-guided-*`).
+
+## Leyendas y carga — 2026-11-01
+
+El usuario fijó el 2026-10-31 las dos reglas de [Formularios y diálogos](#formularios-y-diálogos): sin leyendas
+explicativas y toda acción que tarda muestra que está cargando. Se revisaron todas las pantallas (unas 240 leyendas y
+otras tantas esperas sin señal, en unas 50 pantallas y diálogos) y el 2026-11-01 aprobó la propuesta de cada una, en 23
+preguntas por pantalla y una de los vacíos, viendo las capturas marcadas del inventario. Lo aprobado cambia decisiones
+anteriores, que quedan reemplazadas:
+
+- Publicar en WhatsApp (tablero P1): se van «Qué queda fijo» y «Qué va a pasar»; queda sólo la línea del prefijo que se
+  fija al aceptar la primera publicación.
+- Sugerencias: la ayuda de «Datos que pasan» pasa a la (i).
+- Chat de WhatsApp (2026-10-28): sale el aviso amarillo fijo de disponibilidad de la IA. En Manual, «Pasar a modo
+  Asistente» queda apagado con el motivo como tooltip; en Asistente, el motivo va en el aviso del compositor.
+- «Enviar un formulario» (C3 y C4): la ayuda del mensaje pasa a la (i) y el motivo de «Enviar formulario» apagado, a su
+  tooltip; «Cambió la cuenta vinculada…» va en un aviso rojo.
+- Vacíos: llevan su título y su botón, sin la descripción que explica; un listado filtrado sin coincidencias conserva
+  «Hay N filtros aplicados» como dato.
+
+La forma de las piezas comunes la eligió en tres tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila «Leyendas y carga», que falta pasar
+al lienzo del sistema visual:
+
+| Tablero | Elección | En el código |
+| --- | --- | --- |
+| LC1 · El botón mientras trabaja | **A**: el aro y el gerundio, sin atenuarse, en el mismo lugar y sin otro clic; la confirmación queda abierta hasta la respuesta; un ícono de fila o el «⋯» cambian su dibujo por el aro | `Button pending`, `IconButton pending`, `ConfirmDialog pending`/`pendingLabel` |
+| LC2 · Un listado que vuelve a leer | **A**: una línea corre bajo el encabezado y las filas anteriores quedan atenuadas y fuera de alcance; la primera carga conserva su aro | `Table refreshing`, `DataTable refreshing` |
+| LC3 · Dónde va la (i) | Aprobado: junto a la etiqueta de un campo, al título de una superficie o de una pantalla, al final de una opción o una casilla, o en el tooltip de un ícono que ya está, como el candado del prefijo | `InfoTip`; `help` en `FormField`, `Surface`, `Page`, `CheckboxField` y las opciones de `RadioGroupField` |
+
+`hint` y `description` quedan para datos (el texto original en el otro idioma, un valor, un conteo). Una prueba de
+arquitectura (`legend` en `src/test/architecture/designRules.ts`) impide un texto fijo de las traducciones en el `hint`
+de `FormField` o `PhoneField`, la `description` de `CheckboxField`, de una opción de `RadioGroupField` o de `EmptyState`,
+y en `DialogDescription`; un texto con valores es un dato y no cuenta. No ve un párrafo suelto: eso lo sigue cuidando la
+revisión de cada cambio.
+
+El diálogo de importación de catálogos (IM1–IM3) y «Agregar dato» los resolvió con las mismas reglas la sesión de los
+campos del catálogo.
+
+La regla conserva, con su motivo, dos textos aprobados que no explican cómo funciona algo: el cuerpo de «¿Empezar otra
+conversación?» en Inicio, que dice qué se pierde, y el error de un rol que ya no existe, que dice por qué
+(`keptLegends`, por archivo y clave).

@@ -81,6 +81,36 @@ describe("design boundaries", () => {
     expect(inspectDesign(`import { MailIcon } from '@/shared/ui/icons';
       const Screen = () => <MailIcon className="size-4" />;`)).toEqual([]);
   });
+  it("finds a fixed explanation under a field, a check box, an option, an empty state or a dialog title", () => {
+    const source = `import { FormField as Field } from '@/shared/ui/FormField';
+      import { CheckboxField } from '@/shared/ui/CheckboxField';
+      import { RadioGroupField } from '@/shared/ui/RadioGroupField';
+      import { EmptyState } from '@/shared/ui/EmptyState';
+      import { DialogDescription } from '@/shared/ui/dialog';
+      const help = t("form.timeZoneHint");
+      const Screen = () => <>
+        <Field label="Zona" hint={help}><Input /></Field>
+        <CheckboxField label="Acepto" checked={false} onCheckedChange={save} description={ok ? t("consentHint") : undefined} />
+        <RadioGroupField label="Registro" value={value} onValueChange={choose} options={[{ value: "open", label: "Abierto", description: t("openHint") }]} />
+        <EmptyState title="Sin catálogos" description={t("empty.description")} />
+        <DialogDescription>{t("import.description")}</DialogDescription>
+      </>;`;
+    expect(inspectDesign(source).filter(violation => violation.rule === "legend").map(violation => violation.line)).toEqual([8, 9, 10, 11, 12]);
+  });
+
+  it("allows data under a control and explanations in the information icon", () => {
+    const source = `import { FormField } from '@/shared/ui/FormField';
+      import { EmptyState } from '@/shared/ui/EmptyState';
+      import { DialogDescription } from '@/shared/ui/dialog';
+      const Screen = () => <>
+        <FormField label="Nombre" hint={t("originalText", { language, text })} help={t("form.nameHint")}><Input /></FormField>
+        <FormField label="Color" hint={value.toUpperCase()}><Input /></FormField>
+        <EmptyState title="Ningún usuario coincide" description={t("empty.filtered", { count })} />
+        <DialogDescription>{t("code.sentTo", { destination })}</DialogDescription>
+      </>;`;
+    expect(inspectDesign(source).filter(violation => violation.rule === "legend")).toEqual([]);
+  });
+
   it("finds a locale text that only offers an unsaved-changes status", () => {
     expect(unsavedStatusTexts({ dirty: "Cambios sin guardar", page: { status: " · Unsaved changes" } })).toEqual(["dirty", "page.status"]);
     expect(unsavedStatusTexts({ unsaved: "Nuevo, sin guardar", discardDescription: "Vas a perder lo que cambiaste sin guardar.", unsavedChanges: { title: "¿Descartar los cambios?" }, saving: "Guardando…" })).toEqual([]);

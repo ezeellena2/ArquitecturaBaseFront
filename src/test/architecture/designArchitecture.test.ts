@@ -20,10 +20,18 @@ describe("the application uses the shared design system", () => {
     }).map(file => path.relative(root, file).replaceAll("\\", "/")).sort();
     expect(consumers).toEqual(["shared/ui/notifications.ts", "shared/ui/sonner.tsx"]);
   });
+  // Textos fijos que el usuario aprobó conservar el 2026-11-01 porque no explican cómo funciona algo (archivo y clave).
+  const keptLegends = new Set([
+    "features/artificial-intelligence/pages/AiAssistantPage.tsx newHelp", // el cuerpo de una decisión dice qué se pierde
+    "features/roles/pages/RoleEditorPage.tsx editor.gone.description", // un error dice por qué no está el rol
+  ]);
   it("keeps feature controls, table density, typography and surfaces in shared UI", () => {
-    const violations = sourceFiles(path.join(root, "features")).flatMap(file =>
-      inspectDesign(readFileSync(file, "utf8")).map(violation => `${path.relative(root, file)}:${violation.line} ${violation.rule}`),
-    );
+    const violations = sourceFiles(path.join(root, "features")).flatMap(file => {
+      const name = path.relative(root, file).replaceAll("\\", "/");
+      return inspectDesign(readFileSync(file, "utf8"))
+        .filter(violation => violation.rule !== "legend" || !keptLegends.has(`${name} ${violation.key}`))
+        .map(violation => `${name}:${violation.line} ${violation.rule}`);
+    });
     expect(violations, violations.join("\n")).toEqual([]);
   });
 

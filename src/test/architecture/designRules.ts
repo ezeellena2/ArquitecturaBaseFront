@@ -1,6 +1,8 @@
 export interface DesignViolation {
   line: number;
   rule: string;
+  /// La clave de la traducción, en una leyenda: así se conserva una con su motivo sin apagar la regla para el archivo.
+  key?: string;
 }
 
 // Se inspecciona sintaxis, no texto crudo: ejemplos en comentarios no son código.
@@ -10,7 +12,7 @@ export function inspectDesign(source: string): DesignViolation[] {
   const controls = new Set(["button", "input", "select", "textarea", "dialog", "table", "thead", "tbody", "tfoot", "tr", "th", "td"]);
   const imports = new Map<string, string>();
   const constants = new Map<string, ts.Expression>();
-  const add = (node: ts.Node, rule: string) => violations.push({ line: file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1, rule });
+  const add = (node: ts.Node, rule: string, key?: string) => violations.push({ line: file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1, rule, ...(key ? { key } : {}) });
 
   for (const statement of file.statements) {
     if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier) && statement.moduleSpecifier.text === "lucide-react") add(statement, "shared-icon");
@@ -68,8 +70,44 @@ export function inspectDesign(source: string): DesignViolation[] {
         while (ancestor && !(ts.isJsxElement(ancestor) && imports.get(ancestor.openingElement.tagName.getText(file)) === "Surface")) ancestor = ancestor.parent;
         if (!ancestor) add(node, "table-surface");
       }
+      // Sin leyendas explicativas (decisión del usuario, 2026-10-31): un texto fijo de las traducciones bajo un campo, una
+      // casilla, una opción, un vacío o el título de un diálogo explica cómo funciona algo, y va en `help`, la (i).
+      const legendProps: Record<string, string> = { FormField: "hint", PhoneField: "hint", CheckboxField: "description", EmptyState: "description" };
+      for (const attribute of node.attributes.properties) {
+        if (!ts.isJsxAttribute(attribute) || !attribute.initializer) continue;
+        const attributeName = attribute.name.getText(file);
+        const key = legendProps[component ?? ""] === attributeName ? fixedTranslation(attribute.initializer) : null;
+        if (key) add(attribute, "legend", key);
+        if (component === "RadioGroupField" && attributeName === "options") optionDescriptions(attribute.initializer).forEach(([description, optionKey]) => add(description, "legend", optionKey));
+      }
+    }
+    if (ts.isJsxElement(node) && imports.get(node.openingElement.tagName.getText(file)) === "DialogDescription") {
+      const key = node.children.map(child => ts.isJsxExpression(child) && child.expression ? fixedTranslation(child.expression) : null).find(Boolean);
+      if (key) add(node, "legend", key);
     }
     ts.forEachChild(node, visit);
+  }
+  // `t("clave")` sin valores: un texto fijo, y devuelve su clave. Uno con valores (el texto original, una cantidad) es un
+  // dato y no cuenta.
+  function fixedTranslation(node: ts.Node): string | null {
+    if (ts.isJsxExpression(node) || ts.isParenthesizedExpression(node)) return node.expression ? fixedTranslation(node.expression) : null;
+    if (ts.isConditionalExpression(node)) return fixedTranslation(node.whenTrue) ?? fixedTranslation(node.whenFalse);
+    if (ts.isBinaryExpression(node)) return fixedTranslation(node.left) ?? fixedTranslation(node.right);
+    if (ts.isIdentifier(node) && constants.has(node.text)) return fixedTranslation(constants.get(node.text)!);
+    if (!ts.isCallExpression(node) || node.expression.getText(file) !== "t" || !node.arguments[0] || !ts.isStringLiteralLike(node.arguments[0])) return null;
+    const options = node.arguments[1];
+    const fixed = !options || (ts.isObjectLiteralExpression(options) && options.properties.every(property => ["defaultValue", "ns", "lng"].includes(property.name?.getText(file) ?? "")));
+    return fixed ? node.arguments[0].text : null;
+  }
+  function optionDescriptions(node: ts.Node): [ts.Node, string][] {
+    const found: [ts.Node, string][] = [];
+    const walk = (child: ts.Node) => {
+      const key = ts.isPropertyAssignment(child) && child.name.getText(file) === "description" ? fixedTranslation(child.initializer) : null;
+      if (key) found.push([child, key]);
+      ts.forEachChild(child, walk);
+    };
+    walk(node);
+    return found;
   }
   visit(file);
   return violations;
