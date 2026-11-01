@@ -1,5 +1,6 @@
-import { screen, within, waitFor } from "@testing-library/react";
+import { act, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useQueryClient } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { it, expect, vi } from "vitest";
 import { currentUser } from "@/test/mocks/handlers";
@@ -128,4 +129,117 @@ it("names the app and whoever loaded the response in the receiving moment", asyn
   renderWithProviders(<AppHarness />);
   const received = await screen.findByRole("listitem", { name: "Recibida" });
   expect(within(received).getByText("En la app, la cargó " + record.origin!.senderName)).toBeInTheDocument();
+});
+
+// Each recovery button says what it is doing while its POST works (board LC1-A); the others only turn off.
+it("says Consultando… only on the action being consulted", async () => {
+  const user = userEvent.setup();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true }),
+    action({ id: id(5), order: 1, state: "Failed", canRetry: true, completedAtUtc: null })] };
+  showActivity(workflow);
+  server.use(http.post("/api/forms/records/:id/actions/:runId/consult", async () => { await gate; return HttpResponse.json(workflow); }));
+  const effects = await screen.findByRole("listitem", { name: "Al recibirla" });
+  await user.click(within(effects).getByRole("button", { name: "Consultar" }));
+  expect(within(effects).getByRole("button", { name: "Consultando…" })).toHaveAttribute("aria-busy", "true");
+  expect(within(effects).getByRole("button", { name: "Reintentar" })).toBeDisabled();
+  expect(within(effects).getAllByRole("button", { name: "Consultando…" })).toHaveLength(1);
+  await act(async () => release());
+  await waitFor(() => expect(within(effects).getByRole("button", { name: "Consultar" })).toBeEnabled());
+});
+
+it("says Reintentando… on an action being retried, not Consultando…", async () => {
+  const user = userEvent.setup();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [action({ state: "Failed", canRetry: true, completedAtUtc: null })] };
+  showActivity(workflow);
+  server.use(http.post("/api/forms/records/:id/actions/:runId/retry", async () => { await gate; return HttpResponse.json({ ...workflow, actions: [action()] }); }));
+  const effects = await screen.findByRole("listitem", { name: "Al recibirla" });
+  await user.click(within(effects).getByRole("button", { name: "Reintentar" }));
+  expect(within(effects).getByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+  expect(within(effects).queryByText("Consultando…")).not.toBeInTheDocument();
+  await act(async () => release());
+  await waitFor(() => expect(within(effects).queryByRole("button", { name: "Reintentando…" })).not.toBeInTheDocument());
+});
+
+// Explanations are not written under the history (decision of 2026-10-31): what still helps goes in the (i).
+it("tells what Retry resumes in the (i) next to it, only where the button is", async () => {
+  showActivity({ ...responseWorkflowFixture(), actions: [action({ state: "Failed", canRetry: true, completedAtUtc: null }),
+    action({ id: id(5), kind: "NotifyRole", order: 1, state: "Uncertain", completedAtUtc: null, canConsult: true })] });
+  const effects = await screen.findByRole("listitem", { name: "Al recibirla" });
+  const help = "Reintentar retoma sólo lo que no salió: no repite lo confirmado ni arma otro PDF.";
+  expect(within(effects).getAllByRole("button", { name: "Más información sobre Reintentar" })).toHaveLength(1);
+  expect(within(effects).getByRole("button", { name: "Más información sobre Reintentar" })).toHaveAccessibleDescription(help);
+  for (const text of screen.getAllByText(help)) expect(text).not.toBeVisible();
+  expect(screen.queryByText(/No sabemos si salió/)).not.toBeInTheDocument();
+});
+
+it("has no Retry help without a Retry button", async () => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
+    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json({ ...responseWorkflowFixture(), actions: [action({ state: "Failed", canRetry: true, completedAtUtc: null })] })));
+  renderWithProviders(<ActivityHarness />);
+  const effects = await screen.findByRole("listitem", { name: "Al recibirla" });
+  expect(within(effects).getByText("No se pudo")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Más información sobre Reintentar" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Reintentar retoma/)).not.toBeInTheDocument();
+});
+
+it("tells that a human review does not confirm the delivery in the (i) next to it", async () => {
+  showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false,
+    deliveredAtUtc: null, readAtUtc: null, review: { wasSent: true, reviewedAtUtc: instant("04"), reviewedBy: { userId: id(9), displayName: "Luz" } } }] })] });
+  const effects = await screen.findByRole("listitem", { name: "Al recibirla" });
+  expect(within(effects).getByText("Luz indicó que salió.")).toBeVisible();
+  expect(within(effects).getByRole("button", { name: "Más información sobre Luz indicó que salió." })).toHaveAccessibleDescription("Revisión humana: no confirma la entrega de WhatsApp.");
+  for (const text of screen.getAllByText("Revisión humana: no confirma la entrega de WhatsApp.")) expect(text).not.toBeVisible();
+});
+
+it("resolves a send without a description, with each option's consequence in its (i), and waits with Confirmando…", async () => {
+  const user = userEvent.setup();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const recipient = { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain" as const, reasonCode: null, reason: null, canReview: true, deliveredAtUtc: null, readAtUtc: null, review: null };
+  const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true, recipients: [recipient] })] };
+  showActivity(workflow);
+  server.use(http.post("/api/forms/records/:id/actions/:runId/review", async () => { await gate;
+    return HttpResponse.json({ ...workflow, actions: [action({ kind: "NotifyRole", recipients: [{ ...recipient, state: "Accepted", canReview: false, review: { wasSent: true, reviewedAtUtc: instant("09"), reviewedBy: { userId: id(9), displayName: "Luz" } } }] })] }); }));
+  const effects = await screen.findByRole("listitem", { name: "Al recibirla" });
+  await user.click(within(effects).getByRole("button", { name: "Resolver envío" }));
+  const dialog = screen.getByRole("dialog", { name: "Resolver el envío" });
+  expect(dialog).not.toHaveAccessibleDescription();
+  expect(within(dialog).getByRole("radio", { name: "Salió" })).toHaveAccessibleDescription("La regla continúa sin volver a mandar este aviso.");
+  expect(within(dialog).getByRole("radio", { name: "No salió" })).toHaveAccessibleDescription("Se registra la falla de esta persona. No se reintenta el aviso al rol.");
+  await user.click(within(dialog).getByRole("radio", { name: "Salió" }));
+  await user.click(within(dialog).getByRole("button", { name: "Confirmar que salió" }));
+  expect(within(dialog).getByRole("button", { name: "Confirmando…" })).toHaveAttribute("aria-busy", "true");
+  expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+  expect(within(dialog).getByRole("button", { name: "Cerrar" })).toHaveAccessibleDescription("Confirmando…");
+  await act(async () => release());
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+
+it("says Reintentando… while it reads again a history that failed after being shown", async () => {
+  const user = userEvent.setup();
+  let reads = 0;
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrules.manage"] })),
+    http.get("/api/forms/records/:id/workflow", async () => {
+      if (++reads === 2) return HttpResponse.json({ code: "Test.Workflow", detail: "No se pudo leer." }, { status: 400 });
+      if (reads > 2) await gate;
+      return HttpResponse.json(responseWorkflowFixture());
+    }));
+  function Host() {
+    const client = useQueryClient();
+    return <><button type="button" onClick={() => { void client.invalidateQueries({ queryKey: ["form-responses"] }); }}>Leer de nuevo</button><ActivityHarness /></>;
+  }
+  renderWithProviders(<Host />);
+  await screen.findByRole("listitem", { name: "Recibida" });
+  await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+  await user.click(screen.getByRole("button", { name: "Leer de nuevo" }));
+  await user.click(await screen.findByRole("button", { name: "Reintentar" }));
+  expect(await screen.findByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+  await act(async () => release());
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Reintent/ })).not.toBeInTheDocument());
 });

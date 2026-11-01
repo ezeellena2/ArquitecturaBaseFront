@@ -72,3 +72,65 @@ it("keeps per-option server counts and applies anyOf from More filters", async (
   await userEvent.click(await screen.findByRole("button", { name: /Ver 2 respuestas/ }));
   expect(apply).toHaveBeenCalledWith(expect.objectContaining({ conditions: [{ fieldId: column.fieldId, operator: "anyOf", values: [column.options[0]!.id] }] }), []);
 });
+
+// The panel does not explain under its title how the options are counted (decision of 2026-10-31).
+it("has no description under its title", async () => {
+  setup();
+  renderWithProviders(<ResponseFiltersPanel formId={responseFormId} query={selected} columns={[]} zone="UTC" onApply={vi.fn()} onClose={vi.fn()}/>);
+  const dialog = await screen.findByRole("dialog", { name: "Más filtros" });
+  expect(dialog).not.toHaveAccessibleDescription();
+  expect(screen.queryByText(/Las opciones se cuentan/)).not.toBeInTheDocument();
+});
+
+// While it counts the draft, Apply says so with its spinner instead of going back to a label that looks ready.
+it("says Contando… on Apply while it counts the draft", async () => {
+  setup();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.post("/api/forms/definitions/:id/records/search", async () => { await gate; return HttpResponse.json(responseSheetFixture()); }));
+  renderWithProviders(<ResponseFiltersPanel formId={responseFormId} query={selected} columns={[]} zone="UTC" onApply={vi.fn()} onClose={vi.fn()}/>);
+  expect(await screen.findByRole("button", { name: "Contando…" })).toHaveAttribute("aria-busy", "true");
+  await act(async () => release());
+  expect(await screen.findByRole("button", { name: /Ver 2 respuestas/ })).toBeEnabled();
+});
+
+// A facet that reads again keeps its previous options dimmed and out of reach, with the spinner over them.
+it("dims a facet's options while they read again", async () => {
+  setup();
+  const column = { fieldId: "01990000-0000-7000-8000-000000000910", type: "multiChoice" as const, label: "Fallas",
+    introducedInVersion: 1, options: [{ id: "01990000-0000-7000-8000-000000000911", label: "Frío" }, { id: "01990000-0000-7000-8000-000000000912", label: "Ruido" }] };
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => {
+    const { fieldId, search } = await request.json() as { fieldId?: string; search?: string };
+    if (search) await gate;
+    const items = fieldId === column.fieldId ? column.options.map(option => ({ ...option, count: 2 })) : [];
+    return HttpResponse.json({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: items.length ? 1 : 0, hasPrevious: false, hasNext: false });
+  }));
+  renderWithProviders(<ResponseFiltersPanel formId={responseFormId} query={{ page: 1, pageSize: 20 }} columns={[column]} zone="UTC" onApply={vi.fn()} onClose={vi.fn()}/>);
+  expect((await screen.findByRole("checkbox", { name: "Frío" })).closest("[inert]")).toBeNull();
+  await userEvent.type(screen.getAllByRole("searchbox", { name: "Buscar opciones" })[0], "fr");
+  await waitFor(() => expect(screen.getByRole("checkbox", { name: "Frío" }).closest("[inert]")).not.toBeNull());
+  expect(screen.getAllByRole("status").some(status => status.textContent === "Cargando…")).toBe(true);
+  await act(async () => release());
+  await waitFor(() => expect(screen.getByRole("checkbox", { name: "Frío" }).closest("[inert]")).toBeNull());
+});
+
+// The export says once what always goes in the (i) next to «Columnas a exportar», and its button waits with «Exportando…».
+it("exports without a description, with the fixed columns in the (i) of Columnas a exportar, and says Exportando… while it works", async () => {
+  setup();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.post("/api/forms/definitions/:id/records/export", async () => { await gate; return new HttpResponse(new Uint8Array([80, 75]), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": "attachment; filename=visits.xlsx" } }); }));
+  function Export() { const cooldown = useCountdown(0); return <ResponseExportDialog formId={responseFormId} prefix="VIS" filter={selected} total={2} ready cooldown={cooldown} columns={[]} visible={[]} filterLabels={[]} onClose={vi.fn()} onForbidden={vi.fn()}/>; }
+  await act(async () => { renderWithProviders(<Export/>); });
+  const dialog = await screen.findByRole("dialog", { name: "Exportar respuestas a Excel" });
+  expect(dialog).not.toHaveAccessibleDescription();
+  const fixed = "Número, recibida, cargó y canal siempre se incluyen. De los archivos se exportan la cantidad y los nombres.";
+  expect(screen.getByRole("button", { name: "Más información sobre Columnas a exportar" })).toHaveAccessibleDescription(fixed);
+  for (const text of screen.getAllByText(fixed)) expect(text).not.toBeVisible();
+  await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
+  expect(await screen.findByRole("button", { name: "Exportando…" })).toHaveAttribute("aria-busy", "true");
+  await act(async () => release());
+  await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
+});

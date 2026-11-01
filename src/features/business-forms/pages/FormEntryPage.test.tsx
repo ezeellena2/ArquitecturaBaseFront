@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -184,10 +184,62 @@ describe("loading a response from the app", () => {
     form.questions[0] = { ...form.questions[0], catalog: { onlyOption: null, issue: "Forms.Record.RecipientDataMissing", missingData: "Zona" } };
     const { sends } = setup({ form });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    expect(await screen.findByText("No podés enviar Registro de lluvia: te falta el dato «Zona». Pedíselo a quien administra los datos de las personas.")).toBeVisible();
+    // Only the state that blocks the send: who to ask is not explained (decision of 2026-10-31).
+    expect(await screen.findByText("No podés enviar Registro de lluvia: te falta el dato «Zona».")).toBeVisible();
+    expect(screen.queryByText(/Pedíselo/)).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Lote" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
     expect(sends).toHaveLength(0);
+  });
+
+  it("says Actualizando… while it switches to the new version", async () => {
+    setup({ submit: [() => HttpResponse.json({ title: "Conflicto", status: 409, code: "Forms.Entry.VersionChanged" }, { status: 409 })] });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    await fill(user);
+    await user.click(screen.getByRole("button", { name: "Enviar" }));
+    await screen.findByText(/tiene una versión nueva/);
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    server.use(http.get("/api/forms/entries/:formId", async () => { await gate; return HttpResponse.json(entry(4)); }));
+    await user.click(screen.getByRole("button", { name: "Pasar a la versión nueva" }));
+    expect(screen.getByRole("button", { name: "Actualizando…" })).toHaveAttribute("aria-busy", "true");
+    await act(async () => release());
+    await waitFor(() => expect(screen.queryByText(/tiene una versión nueva/)).not.toBeInTheDocument());
+  });
+
+  // An empty state does not explain what to do (decision of 2026-10-31): its title and «Reintentar», which goes back to the wait.
+  it("names a form that could not be opened with its title and Reintentar", async () => {
+    let reads = 0;
+    setup({ form: () => ++reads === 1 ? HttpResponse.json({ code: "Test.Entry", detail: "No se pudo." }, { status: 500 }) : HttpResponse.json(entry()) });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    expect(await screen.findByRole("heading", { name: "No se pudo abrir el formulario" })).toBeVisible();
+    expect(screen.queryByText(/Revisá la conexión/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByLabelText(/^Milímetros/)).toBeVisible();
+  });
+
+  // The limit of a question with several answers is part of its label, as with the photos; no line under the options.
+  it("puts the limit of a question of several options in its label", async () => {
+    const form = entry();
+    form.questions.push({ fieldId: id(316), type: "multiChoice", label: "Plagas", help: null, required: false, maxLength: null,
+      options: [{ id: id(341), label: "Chinche" }, { id: id(342), label: "Oruga" }, { id: id(343), label: "Trips" }], selection: { minSelected: 0, maxSelected: 2 }, files: null, catalog: null });
+    setup({ form });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    expect(await screen.findByRole("group", { name: "Plagas hasta 2" })).toBeVisible();
+    expect(screen.queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
+  });
+
+  // Formats and size go in the (i) next to the label and describe the button that chooses the files.
+  it("tells the formats and size of the photos in the (i) next to their label", async () => {
+    setup();
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    const hint = "JPG o PNG, hasta 25 MB cada una.";
+    expect(await screen.findByRole("button", { name: "Más información sobre Fotos del pluviómetro" })).toHaveAccessibleDescription(hint);
+    expect(screen.getByRole("button", { name: "Elegir fotos" })).toHaveAccessibleDescription(hint);
+    for (const text of screen.getAllByText(hint)) expect(text).not.toBeVisible();
+    expect(screen.getByText("Arrastrá las fotos acá o")).toBeVisible();
   });
 
   it("folds a zone with what was answered and opens it again when a send finds something to correct", async () => {

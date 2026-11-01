@@ -1,4 +1,4 @@
-import { AlertTriangleIcon, ClockIcon } from "@/shared/ui/icons";
+import { AlertTriangleIcon } from "@/shared/ui/icons";
 import { PrivateImage } from "@/shared/ui/PrivateImage";
 import { PhotoThumbnail } from "@/shared/ui/PhotoThumbnail";
 import { useEffect, useRef, useState, type RefObject } from "react";
@@ -11,6 +11,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { useElementVisibility } from "@/shared/hooks/useElementVisibility";
 import { PhotoViewer } from "@/shared/ui/PhotoViewer";
+import { Spinner } from "@/shared/ui/Spinner";
 
 function fileSize(bytes: number, language: string) {
   return bytes < 1024 * 1024
@@ -67,14 +68,11 @@ function Thumbnail({
           alt=""
           className="h-full w-full object-cover"
         />
+      ) : query.isPending ? (
+        // While the photo loads its place turns, as every wait does; its name already says «Cargando…».
+        <span data-slot="thumbnail-spinner"><Spinner decorative /></span>
       ) : (
-        <span aria-hidden="true">
-          {query.isPending ? (
-            <ClockIcon className="size-5" />
-          ) : (
-            <AlertTriangleIcon className="size-5" />
-          )}
-        </span>
+        <span aria-hidden="true"><AlertTriangleIcon className="size-5" /></span>
       )}
     </PhotoThumbnail>
     </span>
@@ -172,14 +170,15 @@ function DocumentDownload({
           {fileSize(file.size, i18n.resolvedLanguage ?? "es")}
         </p>
       </div>
+      {/* While the document arrives its button shows that it works (board LC1-A). */}
       <Button
         type="button"
         variant="outline"
         size="sm"
-        disabled={requested}
+        pending={requested}
         onClick={() => setRequested(true)}
       >
-        {t("files.download")}
+        {t(requested ? "files.downloading" : "files.download")}
       </Button>
       {requested ? (
         <DownloadRequest

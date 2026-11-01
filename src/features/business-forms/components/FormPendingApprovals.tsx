@@ -18,6 +18,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { fetchApprovalTask, type ApprovalTask } from "../api/approvals";
 import { approvalForbidden } from "../hooks/useApprovalQueries";
 import { useFormPendingApprovals } from "../hooks/useFormPendingApprovals";
+import { useRereadSignal } from "../hooks/useRereadSignal";
 import { useResponseFeedback, useResponseScope } from "../hooks/useResponseQueries";
 import { usePendingApprovalNavigation } from "../hooks/usePendingApprovalNavigation";
 import { useResponseWorkspace } from "../hooks/useResponseWorkspace";
@@ -101,7 +102,9 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
     search: pendingSearch(task.id), pending: { tasks: query.data?.items.map(item => ({ id: item.id, recordId: item.recordId, requestedAtUtc: item.requestedAtUtc })) ?? [], page, pageSize, totalCount: query.data?.totalCount ?? 0 } });
   const full = mobile && readScope.allowed;
   const open = (task: ApprovalTask) => { remember(task); if (full) { workspace.prepareFull(task.recordId); navigate(responseFullPath(formId, task.recordId, params.toString())); return; } if (task.id === taskId) setFocusRequest(value => value + 1); update({ approval: task.id, tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }); };
-  const refresh = () => { onDecided?.(); };
+  // After a decision the queue reads again (the panel invalidates it): its rows stay dimmed until the new list arrives.
+  const reread = useRereadSignal(query);
+  const refresh = () => { reread.mark(); onDecided?.(); };
   useLayoutEffect(() => {
     if (location.pathname !== "/formularios/" + formId + "/respuestas" || taskId || workspace.fullEntry?.locationKey === null || !workspace.fullEntry || workspace.navigation?.origin !== "pending" || !query.data || query.isPlaceholderData) return;
     const target = workspace.navigation.selection.taskId;
@@ -131,8 +134,8 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
         { id: "review", header: t("actionsColumn"), cell: row => <Button variant="link" size="inline" asChild><Link data-pending-task={row.id} aria-label={t("overview.review") + " " + row.number} to={full ? responseFullPath(formId, row.recordId, params.toString()) : "/formularios/" + formId + "/respuestas?" + pendingSearch(row.id)}
           onClick={event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { remember(row); if (full) workspace.prepareFull(row.recordId); if (row.id === taskId) setFocusRequest(value => value + 1); } }}>{t("overview.review")}</Link></Button> },
       ]} rows={query.data?.items ?? []} rowKey={row => row.id} selectedRowKey={taskId ?? (workspace.navigation?.origin === "pending" ? workspace.navigation.selection.taskId : undefined)} onRowClick={open}
-        isLoading={query.isPending} hasData={!!query.data} error={query.error ? t("approvals.loadFailed") : undefined} onRetry={() => void query.refetch()}
-        emptyTitle={t("overview.noPending")} emptyDescription={t("approvals.emptyHint")}/>
+        isLoading={query.isPending} refreshing={query.isPlaceholderData || query.isError && query.isFetching || reread.rereading} hasData={!!query.data} error={query.error ? t("approvals.loadFailed") : undefined} onRetry={() => void query.refetch()}
+        emptyTitle={t("overview.noPending")}/>
       {query.data && query.data.totalPages > 1 ? <Pagination {...query.data} onPageChange={next => update({ approvalPage: next === 1 ? undefined : String(next), approval: undefined })} onPageSizeChange={size => update({ approvalPageSize: String(size), approvalPage: undefined, approval: undefined })}/> : null}
     </Surface>
   </div>

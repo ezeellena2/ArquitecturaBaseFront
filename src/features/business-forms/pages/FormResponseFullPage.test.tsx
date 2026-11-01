@@ -449,3 +449,38 @@ it("says a response loaded in the app was loaded there and by whom, without a co
   expect((await screen.findAllByText(/en la app, la cargó Ana$/i)).length).toBeGreaterThan(0);
   expect(screen.queryByText("Se lo mandó Ana")).not.toBeInTheDocument();
 });
+
+// While the next response loads, the spinner goes next to «1 de 2» and the previous sections stay dimmed and out of reach.
+it("says it reads the next response next to its position and dims the previous sections", async () => {
+  setup();
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/records/" + responseSecondId, async () => { await gate; return HttpResponse.json(responseDetailFixture(responseSecondId)); }));
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  await waitFor(() => expect(screen.getByRole("button", { name: "Siguiente" })).toBeEnabled());
+  expect(screen.getByRole("heading", { name: "Respuesta" }).closest("[inert]")).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+  try {
+    const header = screen.getByRole("heading", { name: "TEST-000002", level: 1 }).closest("header")!;
+    await waitFor(() => expect(within(header).getByRole("status")).toHaveTextContent("Cargando…"));
+    expect(screen.getByRole("heading", { name: "Respuesta" }).closest("[inert]")).not.toBeNull();
+  } finally { await act(async () => release?.()); }
+  await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
+  expect(screen.getByRole("heading", { name: "Respuesta" }).closest("[inert]")).toBeNull();
+});
+
+// The state badge and the decision arrive with the workflow: until then its place says it is loading.
+it("shows it reads the state of the response while its workflow arrives", async () => {
+  setup();
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/records/:id/workflow", async ({ params }) => { await gate; return HttpResponse.json(responseWorkflowFixture(String(params.id))); }));
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  const title = await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  try {
+    await waitFor(() => expect(within(title.parentElement!).getByRole("status")).toHaveTextContent("Cargando…"));
+  } finally { await act(async () => release?.()); }
+  await waitFor(() => expect(within(title.parentElement!).queryByRole("status")).not.toBeInTheDocument());
+  expect(title.parentElement).toHaveTextContent("Recibida");
+});

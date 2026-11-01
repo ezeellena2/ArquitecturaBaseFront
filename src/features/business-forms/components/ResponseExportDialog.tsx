@@ -11,12 +11,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/shared/ui/dialog";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { ResponseCatalogFieldSelection, ResponseColumn, ResponseQuery } from "../responses";
 export function ResponseExportDialog({
@@ -50,6 +50,7 @@ export function ResponseExportDialog({
   const [selection, setSelection] = useState("all");
   const [pending, setPending] = useState(false);
   const controller = useRef<AbortController | null>(null);
+  const columnsGroup = useRef<HTMLDivElement | null>(null);
   const feedbackId = `responses:export:${formId}`;
   const restore = useRestoreFocusOnClose();
   useEffect(
@@ -114,18 +115,22 @@ export function ResponseExportDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent onCloseAutoFocus={restore}>
+      {/* The dialog opens on the chosen option, as before the (i): focused first, its tooltip would cover the options. */}
+      <DialogContent aria-describedby={undefined} onCloseAutoFocus={restore} onOpenAutoFocus={event => {
+        const chosen = columnsGroup.current?.querySelector<HTMLElement>('[role="radio"][data-state="checked"]');
+        if (chosen) { event.preventDefault(); chosen.focus(); }
+      }}>
         <DialogHeader>
           <DialogTitle>{t("responses.exportTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("responses.exportDescription")}
-          </DialogDescription>
         </DialogHeader>
         <p>
           {t("responses.count", { count: total })}
         </p>
         <p>{t("responses.appliedFilters", { count: filterLabels.length })}</p>
         {filterLabels.length ? <ul className="list-disc pl-5 text-sm">{filterLabels.map(label => <li key={label}>{label}</li>)}</ul> : null}
+        {/* What always goes in the file is in the (i) next to the group's name, not in a line under the options. */}
+        <div ref={columnsGroup} className="flex flex-col gap-1.5">
+        <p className="flex items-center gap-1 text-sm font-medium">{t("responses.exportColumns")}<span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: t("responses.exportColumns") })} text={t("responses.exportHint")}/></span></p>
         <RadioGroupField
           label={t("responses.exportColumns")}
           value={selection}
@@ -141,9 +146,7 @@ export function ResponseExportDialog({
             },
           ]}
         />
-        <p className="text-sm text-[var(--color-content-muted)]">
-          {t("responses.exportHint")}
-        </p>
+        </div>
         <p className="break-words text-sm">
           {prefix}-{new Date().toISOString().slice(0, 10).replaceAll("-", "")}
           .xlsx
@@ -159,6 +162,7 @@ export function ResponseExportDialog({
           >
             <Button
               type="button"
+              pending={pending}
               disabled={!ready || pending || total > 10000 || cooldown.seconds > 0}
               onClick={() => {
                 void download();

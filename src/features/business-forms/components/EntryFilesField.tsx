@@ -114,7 +114,6 @@ export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id,
       {!full ? <div>{choose}</div> : null}
     </div>}
     {counter}
-    {files.length === 0 ? <p className="text-xs text-[var(--color-content-muted)]">{photo ? t("files.photoHint", { size: maxFileSizeMiB }) : t("files.documentHint", { size: maxFileSizeMiB })}</p> : null}
     {messages}
   </div>;
 }

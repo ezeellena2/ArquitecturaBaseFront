@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
@@ -8,6 +8,7 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { Spinner } from "@/shared/ui/Spinner";
 import type { ResponseDetail } from "../api/responses";
 import type { useResponseWorkflow } from "../hooks/useResponseWorkflow";
@@ -22,9 +23,9 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
   const [reviewTarget, setReviewTarget] = useState<WorkflowReviewTarget | null>(null);
   const [wasSent, setWasSent] = useState<boolean | undefined>();
   const reviewFocus = useRef<HTMLElement | null>(null);
-  const reviewing = data?.actions.find(action => action.id === reviewTarget?.runId);
-  const reviewingRecipient = reviewing?.recipients.find(recipient => recipient.user.userId === reviewTarget?.recipientUserId);
-  const reviewOpen = !!reviewing && reviewing.revision === reviewTarget?.expectedRevision && !!reviewingRecipient && canManage && workflowCanReview(reviewingRecipient);
+  const reviewingAction = data?.actions.find(action => action.id === reviewTarget?.runId);
+  const reviewingRecipient = reviewingAction?.recipients.find(recipient => recipient.user.userId === reviewTarget?.recipientUserId);
+  const reviewOpen = !!reviewingAction && reviewingAction.revision === reviewTarget?.expectedRevision && !!reviewingRecipient && canManage && workflowCanReview(reviewingRecipient);
   const needsConsult = !!reviewTarget && sameWorkflowReviewTarget(workflow.needsConsultReview, reviewTarget);
   const restoreFocus = useRestoreFocusOnClose(reviewOpen, reviewFocus);
   const disabled = workflow.busy || workflow.query.isFetching || workflow.cooldown.isRunning;
@@ -33,6 +34,10 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
   // are not remounted under the mouse or the keyboard focus.
   const waitReason = workflow.busy || !workflow.cooldown.isRunning ? null : t("wait", { count: workflow.cooldown.seconds });
   const closeReview = () => { setReviewTarget(null); setWasSent(undefined); };
+  // Only the touched button says what it is doing (board LC1-A): «Consultando…» or «Reintentando…» on its action, and
+  // «Consultando…» or «Confirmando…» in the dialog; the rest only turn off.
+  const acting = workflow.working?.kind === "act" ? workflow.working.runId : null;
+  const reviewing = workflow.working?.kind === "check" ? "workflow.working" : workflow.working?.kind === "review" ? "workflow.confirming" : null;
   const renderEntry = (entry: WorkflowHistoryEntry) => {
         if (entry.type === "record") {
           const event = entry.event;
@@ -46,17 +51,18 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
         const next = canManage ? workflowNextAction(action) : null;
         return <li key={entry.key} tabIndex={-1} className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-3 text-sm sm:flex-row sm:items-start">
           <time className="text-xs text-[var(--color-content-muted)]" dateTime={entry.atUtc}>{date(entry.atUtc)}</time>
-          <div className="min-w-0 flex-1 space-y-2"><p>{t("rules.actions." + action.kind)}</p>{action.reason ? <p>{action.reason}</p> : null}{action.state === "Uncertain" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.consultFirst")}</p> : action.state === "NotApplicable" ? <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.notApplicable")}</p> : null}
+          <div className="min-w-0 flex-1 space-y-2"><p>{t("rules.actions." + action.kind)}</p>{action.reason ? <p>{action.reason}</p> : null}
             {action.kind === "GeneratePdf" && action.event === "Approved" ? renderDocuments?.(action.id) : null}
             {action.recipients.length ? <ul className="space-y-3">{action.recipients.map(recipient => <li key={recipient.user.userId} tabIndex={-1} aria-label={t("workflow.recipient", { name: recipient.user.displayName ?? t("responses.unknownPerson") })} className="space-y-2 border-l border-[var(--color-border)] pl-3">
               <div className="flex flex-wrap items-center gap-2"><span>{recipient.user.displayName ?? t("responses.unknownPerson")}</span><Badge variant="outline">{t("workflow.recipientStates." + recipient.state)}</Badge></div>
               {recipient.reason ? <p>{recipient.reason}</p> : null}
               {recipient.deliveredAtUtc ? <p className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-content-muted)]"><Badge variant="outline">{t("workflow.delivered")}</Badge><time dateTime={recipient.deliveredAtUtc}>{date(recipient.deliveredAtUtc)}</time></p> : null}
               {recipient.readAtUtc ? <p className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-content-muted)]"><Badge variant="outline">{t("workflow.read")}</Badge><time dateTime={recipient.readAtUtc}>{date(recipient.readAtUtc)}</time></p> : null}
-              {recipient.review ? <div className="space-y-1 text-xs text-[var(--color-content-muted)]"><p>{t(recipient.review.wasSent ? "workflow.reviewSent" : "workflow.reviewNotSent", { name: recipient.review.reviewedBy.displayName ?? t("responses.unknownPerson") })}</p><time dateTime={recipient.review.reviewedAtUtc}>{date(recipient.review.reviewedAtUtc)}</time><p>{t("workflow.humanReviewHint")}</p></div> : null}
+              {recipient.review ? <div className="space-y-1 text-xs text-[var(--color-content-muted)]"><ReviewNote text={t(recipient.review.wasSent ? "workflow.reviewSent" : "workflow.reviewNotSent", { name: recipient.review.reviewedBy.displayName ?? t("responses.unknownPerson") })}/><time dateTime={recipient.review.reviewedAtUtc}>{date(recipient.review.reviewedAtUtc)}</time></div> : null}
               {canManage && workflowCanReview(recipient) ? <DisabledReason reason={waitReason}><Button variant="outline" size="sm" disabled={disabled} onClick={event => { reviewFocus.current = event.currentTarget.closest("li"); setWasSent(undefined); setReviewTarget({ runId: action.id, recipientUserId: recipient.user.userId, expectedRevision: action.revision }); }}>{t("workflow.review")}</Button></DisabledReason> : null}
             </li>)}</ul> : null}
-            {next ? <DisabledReason reason={waitReason}><Button variant="outline" size="sm" disabled={disabled} onClick={() => void workflow.act(action.id)}>{t(workflow.busy ? "workflow.working" : next === "consult" ? "workflow.consult" : "common:actions.retry")}</Button></DisabledReason> : null}
+            {next ? <div className="flex items-center gap-1"><DisabledReason reason={waitReason}><Button variant="outline" size="sm" pending={acting === action.id} disabled={disabled} onClick={() => void workflow.act(action.id)}>{t(acting === action.id ? next === "consult" ? "workflow.working" : "responses.retrying" : next === "consult" ? "workflow.consult" : "common:actions.retry")}</Button></DisabledReason>
+              {next === "retry" ? <InfoTip label={t("common:actions.moreInfo", { label: t("common:actions.retry") })} text={t("workflow.retryHint")}/> : null}</div> : null}
           </div><Badge variant="outline" className="self-start">{t("workflow.states." + action.state)}</Badge>
         </li>;
   };
@@ -81,20 +87,27 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, renderDo
       })}
     </ol>
     {workflow.query.isPending || !data && !workflow.query.isError ? <Spinner /> : null}
-    {workflow.query.error ? <div className="space-y-2 text-sm"><p role="status">{t("common:states.loadFailed")}</p>{!(workflow.query.error instanceof ApiError && workflow.query.error.status === 404) ? <Button variant="outline" disabled={workflow.query.isFetching} onClick={() => void workflow.query.refetch()}>{t("common:actions.retry")}</Button> : null}</div> : null}
+    {workflow.query.error ? <div className="space-y-2 text-sm"><p role="status">{t("common:states.loadFailed")}</p>{!(workflow.query.error instanceof ApiError && workflow.query.error.status === 404) ? <Button variant="outline" pending={workflow.query.isFetching} onClick={() => void workflow.query.refetch()}>{t(workflow.query.isFetching ? "responses.retrying" : "common:actions.retry")}</Button> : null}</div> : null}
     {workflow.controlsDenied ? <p role="status" className="text-sm">{t("workflow.noManagePermission")}</p> : null}
-    <p className="text-xs text-[var(--color-content-muted)]">{t("workflow.retryHint")}</p>
+    {/* While the review works the dialog waits open, with the × off and its gerund as the reason, as a confirmation that waits. */}
     <Dialog open={reviewOpen} onOpenChange={open => { if (!open && !workflow.busy) closeReview(); }}>
-      <DialogContent onCloseAutoFocus={restoreFocus} showCloseButton={!workflow.busy} onEscapeKeyDown={event => { if (workflow.busy) event.preventDefault(); }} onPointerDownOutside={event => { if (workflow.busy) event.preventDefault(); }}>
-        <DialogHeader><DialogTitle>{t("workflow.reviewTitle")}</DialogTitle><DialogDescription>{t("workflow.reviewDescription")}</DialogDescription></DialogHeader>
+      <DialogContent aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={workflow.busy ? t(reviewing ?? "workflow.confirming") : undefined} onEscapeKeyDown={event => { if (workflow.busy) event.preventDefault(); }} onPointerDownOutside={event => { if (workflow.busy) event.preventDefault(); }}>
+        <DialogHeader><DialogTitle>{t("workflow.reviewTitle")}</DialogTitle></DialogHeader>
         <p className="text-sm">{t("workflow.recipient", { name: reviewingRecipient?.user.displayName ?? t("responses.unknownPerson") })}</p>
         <RadioGroupField label={t("workflow.reviewTitle")} value={wasSent === undefined ? undefined : String(wasSent)} onValueChange={value => setWasSent(value === "true")} options={[
-          { value: "true", label: t("workflow.sent"), description: t("workflow.sentHint"), disabled: workflow.busy || needsConsult },
-          { value: "false", label: t("workflow.notSent"), description: t(reviewing?.kind === "NotifyRole" ? "workflow.notSentRoleHint" : "workflow.notSentHint"), disabled: workflow.busy || needsConsult },
+          { value: "true", label: t("workflow.sent"), help: t("workflow.sentHint"), disabled: workflow.busy || needsConsult },
+          { value: "false", label: t("workflow.notSent"), help: t(reviewingAction?.kind === "NotifyRole" ? "workflow.notSentRoleHint" : "workflow.notSentHint"), disabled: workflow.busy || needsConsult },
         ]} />
         {needsConsult ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("workflow.reviewCheckRequired")}</p> : null}
-        <DialogFooter><Button variant="outline" disabled={workflow.busy} onClick={closeReview}>{t("common:actions.cancel")}</Button><DisabledReason reason={waitReason} className="max-sm:*:flex-1"><Button disabled={disabled || !needsConsult && wasSent === undefined} onClick={async () => { if (!reviewTarget) return; const resolved = needsConsult ? await workflow.checkReview(reviewTarget) : wasSent !== undefined && await workflow.review(reviewTarget, wasSent); if (resolved) closeReview(); }}>{t(needsConsult ? "workflow.consult" : wasSent === undefined ? "workflow.confirmReview" : wasSent ? "workflow.confirmSent" : "workflow.confirmNotSent")}</Button></DisabledReason></DialogFooter>
+        <DialogFooter><Button variant="outline" disabled={workflow.busy} onClick={closeReview}>{t("common:actions.cancel")}</Button><DisabledReason reason={waitReason} className="max-sm:*:flex-1"><Button pending={!!reviewing} disabled={disabled || !needsConsult && wasSent === undefined} onClick={async () => { if (!reviewTarget) return; const resolved = needsConsult ? await workflow.checkReview(reviewTarget) : wasSent !== undefined && await workflow.review(reviewTarget, wasSent); if (resolved) closeReview(); }}>{t(reviewing ?? (needsConsult ? "workflow.consult" : wasSent === undefined ? "workflow.confirmReview" : wasSent ? "workflow.confirmSent" : "workflow.confirmNotSent"))}</Button></DisabledReason></DialogFooter>
       </DialogContent>
     </Dialog>
   </>;
+}
+
+/// Who said a send went out: that a human review does not confirm the WhatsApp delivery goes in the (i) next to it, not
+/// in a line under it (decision of 2026-10-31).
+function ReviewNote({ text }: { text: string }) {
+  const { t } = useTranslation("forms");
+  return <p className="flex flex-wrap items-center gap-x-1">{text}<InfoTip label={t("common:actions.moreInfo", { label: text })} text={t("workflow.humanReviewHint")}/></p>;
 }

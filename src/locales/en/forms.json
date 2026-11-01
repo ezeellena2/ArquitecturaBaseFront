@@ -763,10 +763,6 @@
       "cameraOrGallery": "Camera or gallery",
       "camera": "Camera only"
     },
-    "sourceHelp": {
-      "cameraOrGallery": "Take a photo now or choose an existing one.",
-      "camera": "Take it now as evidence of the visit."
-    },
     "howManyPhotos": "How many photos",
     "howManyDocuments": "How many documents",
     "minimum": "Minimum",
@@ -789,7 +785,6 @@
     "title": "Responses",
     "version": "Form version",
     "noForms": "No published forms yet",
-    "noFormsHint": "Published forms will appear here.",
     "number": "No.",
     "received": "Received",
     "actor": "Submitted by",
@@ -799,7 +794,6 @@
     "fixedColumns": "Always visible",
     "search": "Search long text answers",
     "filters": "More filters",
-    "filterHint": "Options are counted with the other filters applied.",
     "clear": "Clear all",
     "apply": "Apply filters",
     "receivedFrom": "Received from",
@@ -827,9 +821,7 @@
     "unknownChannel": "Channel unavailable",
     "unknownPerson": "Person unavailable",
     "noMatches": "No matching responses",
-    "noMatchesHint": "Change or clear the filters to see responses.",
     "empty": "No responses yet",
-    "emptyHint": "Send this form from the WhatsApp chat; confirmed responses will appear here.",
     "detail": "Response details",
     "unavailable": "The response could not be found or is unavailable",
     "back": "Back to the sheet",
@@ -846,7 +838,6 @@
     "historySaved": "Response saved",
     "export": "Export to Excel",
     "exportTitle": "Export responses to Excel",
-    "exportDescription": "Exports include responses matching the applied filters.",
     "exportColumns": "Columns to export",
     "allColumns_one": "All questions ({{count}} column)",
     "allColumns_other": "All questions ({{count}} columns)",
@@ -874,7 +865,9 @@
     "viewResponses_one": "View {{count}} response",
     "viewResponses_other": "View {{count}} responses",
     "anyOf": "any of",
-    "anyOfCount": "any of {{count}}"
+    "anyOfCount": "any of {{count}}",
+    "retrying": "Retrying…",
+    "counting": "Counting…"
   },
   "rules": {
     "title": "When a response arrives",
@@ -969,8 +962,6 @@
     "ruleRevision": "Rules from revision {{revision}}",
     "consult": "Check status",
     "working": "Checking…",
-    "consultFirst": "Delivery is unconfirmed. Check its status, then review the send if it is still unconfirmed.",
-    "notApplicable": "The rule condition did not match.",
     "retryHint": "Retry resumes only unfinished work: it never repeats confirmed actions or creates another PDF.",
     "states": {
       "Waiting": "Waiting",
@@ -983,7 +974,6 @@
     "noManagePermission": "You no longer have permission to recover actions.",
     "review": "Resolve send",
     "reviewTitle": "Resolve the send",
-    "reviewDescription": "Check its status and verify the send before choosing. Your review lets the rule continue; it does not confirm WhatsApp delivery.",
     "sent": "Sent",
     "notSent": "Not sent",
     "sentHint": "The rule continues without sending this notice again.",
@@ -991,6 +981,7 @@
     "confirmReview": "Confirm review",
     "confirmSent": "Confirm it was sent",
     "confirmNotSent": "Confirm it was not sent",
+    "confirming": "Confirming…",
     "reviewSent": "{{name}} marked it as sent.",
     "reviewNotSent": "{{name}} marked it as not sent.",
     "humanReviewHint": "Human review does not confirm WhatsApp delivery.",
@@ -1011,13 +1002,13 @@
   "approvals": {
     "loadFailed": "We couldn't load the approvals.",
     "role": "Role",
-    "emptyHint": "Responses waiting for approval appear here, oldest first.",
     "approve": "Approve",
     "reject": "Reject",
+    "approving": "Approving…",
+    "rejecting": "Rejecting…",
     "approved": "Response approved.",
     "rejected": "Response rejected.",
     "rejectTitle": "Reject {{number}}",
-    "rejectHint": "The reason is kept in the response history.",
     "reason": "Reason",
     "reasonCount": "{{count}} / 500 characters",
     "ownResponse": "You cannot approve or reject your own response.",
@@ -1097,7 +1088,9 @@
     "rowPdf": "View PDF for {{number}}",
     "originManual": "Sent by {{name}}",
     "originAssistant": "Sent by the assistant",
-    "keyboardHint": "↑ ↓ another response · Esc close",
+    "previousShortcut": "Previous (↑)",
+    "nextShortcut": "Next (↓)",
+    "closeShortcut": "Close (Esc)",
     "issues": "Some actions failed or messages remain unconfirmed.",
     "assistance": {
       "origin": "How it started",
@@ -1300,7 +1293,6 @@
     "lastResponse": "Last response",
     "noResponses": "No responses yet",
     "pendingOnly": "With something to approve",
-    "deactivatedHint": "Deactivated forms retain their responses and pending decisions.",
     "deactivatedPending_one": "There is {{count}} deactivated form with something to approve.",
     "deactivatedPending_other": "There are {{count}} deactivated forms with something to approve.",
     "viewDeactivated": "View deactivated forms",
@@ -1310,11 +1302,8 @@
     "pendingTitle_other": "To approve · {{count}}",
     "review": "Review",
     "noPending": "No responses to approve.",
-    "noPendingHint": "Forms with responses you can decide on will appear here.",
     "noDeactivated": "No deactivated forms",
-    "noDeactivatedHint": "Published forms that are deactivated will appear here.",
-    "pendingNavigation": "{{position}} of {{count}} to approve",
-    "pendingKeyboardHint": "↑ ↓ navigate pending responses · Escape closes"
+    "pendingNavigation": "{{position}} of {{count}} to approve"
   },
   "multiple": {
     "allow": "Allow choosing several",

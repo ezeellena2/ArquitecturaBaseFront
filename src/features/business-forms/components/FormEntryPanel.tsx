@@ -65,11 +65,11 @@ export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId:
       <div className="flex flex-col gap-4">
         {editor.conflict === "deactivated" || query.error && "code" in query.error && query.error.code === "Forms.Entry.Unavailable"
           ? <Banner tone="danger">{entry?.name ?? formName ? t("send.deactivated", { name: entry?.name ?? formName }) : t("send.deactivatedUnknown")}</Banner> : null}
-        {editor.conflict === "version" && entry ? <Banner tone="warning" action={<Button type="button" variant="outline" onClick={() => void query.refetch()}>{t("send.useNewVersion")}</Button>}>
+        {editor.conflict === "version" && entry ? <Banner tone="warning" action={<Button type="button" variant="outline" pending={query.isFetching} onClick={() => void query.refetch()}>{t(query.isFetching ? "send.updating" : "send.useNewVersion")}</Button>}>
           {t("send.newVersion", { name: entry.name })}</Banner> : null}
         {editor.missing && entry ? <Banner tone="warning">{t("catalog.missingData", { form: entry.name, datum: editor.missing.catalog?.missingData ?? "" })}</Banner> : null}
         {entry && editor.draft ? <FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="panel" disabled={editor.sending}/>
-          : query.isError ? <EmptyState title={t("page.loadFailed")} description={t("page.loadFailedHint")}
+          : query.isError ? <EmptyState title={t("page.loadFailed")}
             action={<Button type="button" variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>}/>
           : <div role="status" aria-label={t("page.opening")} className="flex flex-col gap-4">{[0, 1, 2].map(index => <div key={index} className="flex flex-col gap-2"><Skeleton className="h-4 w-32"/><Skeleton className="h-8 w-full"/></div>)}</div>}
       </div>
@@ -77,7 +77,7 @@ export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId:
     <footer className="flex shrink-0 flex-wrap items-center gap-3 border-t border-[var(--color-border)] px-4 py-3">
       <div className="min-w-0 flex-1"><CheckboxField label={t("panel.keep")} checked={keep} onCheckedChange={setKeep}/></div>
       <Button type="button" variant="outline" disabled={editor.sending} onClick={close}>{t("common:actions.cancel")}</Button>
-      <DisabledReason reason={submitReason}><Button type="button" disabled={!entry || editor.blocked || editor.sending} aria-busy={editor.sending || undefined} onClick={() => void submit()}>
+      <DisabledReason reason={submitReason}><Button type="button" disabled={!entry || editor.blocked} pending={editor.sending} onClick={() => void submit()}>
         {editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) }) : entry?.submitLabel ?? "…"}</Button></DisabledReason>
     </footer>
     <ConfirmDialog open={closing || guard.isBlocked} onOpenChange={open => { if (!open) { setClosing(false); guard.stay(); } }}

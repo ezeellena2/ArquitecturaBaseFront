@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
@@ -111,6 +110,9 @@ export function ResponseFiltersPanel({
   const count = useResponseCount(formId, facetFilter);
   const countFeedback = errorFeedback(count.error);
   const canRetryCount = count.isCountPaused || countFeedback.network || count.error instanceof ApiError && (count.error.status === 429 || count.error.status >= 500);
+  // While the draft settles and its total is read, Apply says «Contando…» with its spinner (board LC1-A) instead of going
+  // back to a label that looks ready; a failed or paused count (the wait of a 429) lets it apply without counting.
+  const counting = !invalidNumber && !invalidRange && !!normalized && !count.isError && !count.isCountPaused && (facetFilter === null || count.isFetching);
   useResponseFeedback(count.isPending ? null : count.error ?? Object.values(facetErrors).find(Boolean), `responses:filters:${scope.owner}:${formId}`, countFeedback.network ? count.retry : undefined);
   const apply = () => {
     if (!normalized) return;
@@ -126,10 +128,9 @@ export function ResponseFiltersPanel({
         if (!open) onClose();
       }}
     >
-      <DialogContent placement="right" className="overflow-hidden" onCloseAutoFocus={restore}>
+      <DialogContent placement="right" className="overflow-hidden" aria-describedby={undefined} onCloseAutoFocus={restore}>
         <DialogHeader>
           <DialogTitle>{t("responses.filters")}</DialogTitle>
-          <DialogDescription>{t("responses.filterHint")}</DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -332,10 +333,11 @@ export function ResponseFiltersPanel({
           </Button>
           <Button
             type="button"
+            pending={counting}
             disabled={invalidNumber || invalidRange || !facetFilter}
             onClick={apply}
           >
-            {count.data === undefined || count.isError || count.isFetching ? t("responses.apply") : t("responses.viewResponses", { count: count.data })}
+            {counting ? t("responses.counting") : count.data === undefined || count.isError ? t("responses.apply") : t("responses.viewResponses", { count: count.data })}
           </Button>
         </DialogFooter>
       </DialogContent>

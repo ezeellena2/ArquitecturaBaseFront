@@ -69,9 +69,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await assertStateControls(page, es, state, 6, 2, width);
     const first = table.getByRole("link", { name: state === "active" ? es ? "Registrar visita" : "Register visit" : es ? "Control de vehículo" : "Vehicle inspection", exact: true });
     await expect(first).toHaveAttribute("href", "/formularios/" + (state === "active" ? formOverviewFixtureIds.visit : formOverviewFixtureIds.deactivated) + "/respuestas");
+    // The segment and the columns already say what a deactivated form keeps: no banner explains it (2026-10-31).
     if (state === "deactivated") await expect(page.getByText(es
       ? "Los formularios dados de baja conservan sus respuestas y lo que espera una decisión."
-      : "Deactivated forms retain their responses and pending decisions.", { exact: true })).toBeVisible();
+      : "Deactivated forms retain their responses and pending decisions.", { exact: true })).toHaveCount(0);
     else await expect(page.getByRole("button", { name: es ? "Ver dados de baja" : "View deactivated forms", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await assertOverviewGeometry(page, width);

@@ -545,3 +545,18 @@ it.each(["link", "row"] as const)("returns to the visible pending row after brow
   expect(selected.closest("tr")).toHaveAttribute("aria-selected", "true");
   expect(screen.getByRole("link", { name: "Revisar TEST-000001" }).closest("tr")).not.toHaveAttribute("aria-selected", "true");
 });
+
+// The state badge and the decision arrive with the workflow: until then the header says it is loading next to the title.
+it("shows it reads the state of the response while its workflow arrives", async () => {
+  setup();
+  let release: (() => void) | undefined;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/records/:id/workflow", async ({ params }) => { await gate; return HttpResponse.json(responseWorkflowFixture(String(params.id))); }));
+  renderRouteWithProviders(path + "/" + responseRecordId);
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  await within(panel).findByRole("heading", { name: "TEST-000002" });
+  try {
+    expect(within(panel).getByRole("status")).toHaveTextContent("Cargando…");
+  } finally { await act(async () => release?.()); }
+  await waitFor(() => expect(within(panel).queryByRole("status")).not.toBeInTheDocument());
+});

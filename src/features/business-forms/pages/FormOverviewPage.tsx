@@ -39,10 +39,11 @@ export function FormOverviewPage() {
   useResponseFeedback(query.error, "forms:overview:" + scope.owner, query.refetch);
   if (!scope.allowed || forbidden) return <ForbiddenPage/>;
   const data = query.data;
-  const empty = pagination.search ? { title: "noMatches", description: "noMatchesDescription" }
-    : !scope.canRead && !scope.canCreate || pendingOnly ? { title: "overview.noPending", description: "overview.noPendingHint" }
-    : state === "Deactivated" ? { title: "overview.noDeactivated", description: "overview.noDeactivatedHint" }
-    : { title: "responses.noForms", description: "responses.noFormsHint" };
+  // An empty list says what is missing with its title only, without explaining how it works (decision of 2026-10-31).
+  const emptyTitle = pagination.search ? "noMatches"
+    : !scope.canRead && !scope.canCreate || pendingOnly ? "overview.noPending"
+    : state === "Deactivated" ? "overview.noDeactivated"
+    : "responses.noForms";
   // Whoever only completes forms has no sheet to open (CW1-B): the name is text and «Cargar» is the way in.
   const canOpen = scope.canRead || scope.canDecide;
   const formPath = (id: string) => "/formularios/" + id + "/respuestas";
@@ -66,11 +67,12 @@ export function FormOverviewPage() {
       {both ? <CheckboxField label={t("overview.pendingOnly")} checked={pendingOnly} onCheckedChange={checked => update({ pendingOnly: checked ? "true" : undefined, page: undefined })}/> : null}
     </div></FilterBar>
     <div className="flex flex-col gap-4">
-      {!pendingOnly && state === "Deactivated" ? <Banner>{t("overview.deactivatedHint")}</Banner> : null}
       {!pendingOnly && state === "Active" && !!data?.filterCounts.deactivatedPending ? <Banner action={<Button variant="outline" aria-label={t("overview.viewDeactivated")} onClick={() => update({ state: "Deactivated", pendingOnly: undefined, page: undefined })}>{t("common:actions.view")}</Button>}>{t("overview.deactivatedPending", { count: data.filterCounts.deactivatedPending })}</Banner> : null}
+      {/* Searching, filtering or paginating keeps the previous rows dimmed under a running line (board LC2-A), as does
+          Reintentar after a failed read with rows in sight; without rows it goes back to the first load's spinner. */}
       <Surface><DataTable columns={columns} rows={data?.forms.items ?? []} rowKey={row => row.id}
-        isLoading={query.isPending} hasData={!!data} error={query.error ? t("loadFailed") : undefined} onRetry={() => void query.refetch()}
-        emptyTitle={t(empty.title)} emptyDescription={t(empty.description)}/>
+        isLoading={query.isPending} refreshing={query.isPlaceholderData || query.isError && query.isFetching} hasData={!!data} error={query.error ? t("loadFailed") : undefined} onRetry={() => void query.refetch()}
+        emptyTitle={t(emptyTitle)}/>
         {data ? <Pagination {...data.forms} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/> : null}
       </Surface>
     </div>

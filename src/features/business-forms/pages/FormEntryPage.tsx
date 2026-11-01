@@ -71,8 +71,8 @@ export function FormEntryPage() {
     if (result && entry && draft) setSent({ result, entry, draft });
   };
   const sendButton = (touch = false) => <DisabledReason reason={submitReason}>
-    <Button type="button" size={touch ? "touch" : "default"} className={touch ? "w-full" : undefined} disabled={!entry || editor.blocked || unavailable || editor.sending}
-      aria-busy={editor.sending || undefined} onClick={() => void submit()}>{sendLabel}</Button>
+    <Button type="button" size={touch ? "touch" : "default"} className={touch ? "w-full" : undefined} disabled={!entry || editor.blocked || unavailable}
+      pending={editor.sending} onClick={() => void submit()}>{sendLabel}</Button>
   </DisabledReason>;
   const actions = mobile || !entry ? undefined : <>
     <Button type="button" variant="outline" disabled={editor.sending} onClick={() => navigate(back)}>{t("common:actions.cancel")}</Button>
@@ -82,12 +82,13 @@ export function FormEntryPage() {
     <div className="flex flex-col gap-4">
       {unavailable ? <Banner tone="danger" action={<Button type="button" variant="outline" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>}>
         {entry ? t("send.deactivated", { name: entry.name }) : t("send.deactivatedUnknown")}</Banner> : null}
-      {editor.conflict === "version" && entry ? <Banner tone="warning" action={<Button type="button" variant="outline" onClick={() => void query.refetch()}>{t("send.useNewVersion")}</Button>}>
+      {editor.conflict === "version" && entry ? <Banner tone="warning" action={<Button type="button" variant="outline" pending={query.isFetching} onClick={() => void query.refetch()}>{t(query.isFetching ? "send.updating" : "send.useNewVersion")}</Button>}>
         {t("send.newVersion", { name: entry.name })}</Banner> : null}
       {editor.missing && entry ? <Banner tone="warning">{t("catalog.missingData", { form: entry.name, datum: editor.missing.catalog?.missingData ?? "" })}</Banner> : null}
       {missingForm ? <EmptyState title={t("forms:responses.unavailableForm")} action={<Button type="button" variant="outline" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>}/>
         : entry && editor.draft ? <FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="page" disabled={editor.sending || unavailable} reveal={editor.reveal}/>
-        : query.isError && !unavailable ? <Surface padded><EmptyState title={t("page.loadFailed")} description={t("page.loadFailedHint")}
+        // Reintentar goes back to the skeleton below while it reads the form again.
+        : query.isError && !unavailable ? <Surface padded><EmptyState title={t("page.loadFailed")}
           action={<Button type="button" variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>}/></Surface>
         : !unavailable ? <Surface title={t("page.data")}><div role="status" aria-label={t("page.opening")} className="flex flex-col gap-4 p-4">
           {[0, 1, 2].map(index => <div key={index} className="flex flex-col gap-2"><Skeleton className="h-4 w-32"/><Skeleton className="h-8 w-full"/></div>)}

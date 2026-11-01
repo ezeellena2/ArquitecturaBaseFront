@@ -4,6 +4,7 @@ import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
 import { FormField } from "@/shared/ui/FormField";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
@@ -97,14 +98,23 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled, narr
   const choose = (option?: { id: string; label: string }) => onChange({ ...draft, choices: { ...draft.choices, [question.fieldId]: option ? [{ id: option.id, title: option.label, description: null }] : [] } });
   const blocked = disabled || question.catalog?.issue != null;
   const message = error ?? question.help ?? undefined;
+  // How many answers a question takes goes in its label, «Fotos del lote hasta 3», «Proveedores hasta 2», never in a line
+  // under its control; the formats and size of the files go in the (i) next to it and describe its button (2026-10-31).
+  const limit = isFile(question) ? question.files?.maxFiles : question.type === "multiChoice" ? question.selection?.maxSelected ?? (question.catalog ? 1 : 20) : undefined;
+  const help = isFile(question) ? t(question.type === "photo" ? "files.photoHint" : "files.documentHint", { size: entry.maxFileSizeMiB }) : undefined;
+  const helpId = id + "-help";
+  const describedBy = [help ? helpId : undefined, message ? messageId : undefined].filter(Boolean).join(" ") || undefined;
+  const labelText = <>{question.label}{question.required ? <span aria-hidden="true"> *</span> : null}
+    {limit !== undefined ? <>{" "}<span className="text-xs font-normal text-[var(--color-content-muted)]">{t("upTo", { count: limit })}</span></> : null}</>;
   // A list, a group or the files carry their own controls: the label names the group and the message goes below it.
-  const grouped = (control: ReactNode, labelled = true) => <div className="flex flex-col gap-1.5" data-entry-question={question.fieldId}>
-    {labelled ? <Label htmlFor={id}>{question.label}{question.required ? <span aria-hidden="true"> *</span> : null}</Label>
-      : <Label asChild><span id={id + "-label"}>{question.label}{question.required ? <span aria-hidden="true"> *</span> : null}
-        {isFile(question) && question.files ? <span className="text-xs font-normal text-[var(--color-content-muted)]">{t("files.upTo", { count: question.files.maxFiles })}</span> : null}</span></Label>}
-    {control}
-    {message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{message}</p> : null}
-  </div>;
+  const grouped = (control: ReactNode, labelled = true) => {
+    const label = labelled ? <Label htmlFor={id}>{labelText}</Label> : <Label asChild><span id={id + "-label"}>{labelText}</span></Label>;
+    return <div className="flex flex-col gap-1.5" data-entry-question={question.fieldId}>
+      {help ? <div className="flex items-center gap-1">{label}<span className="-my-1 inline-flex"><InfoTip id={helpId} label={t("common:actions.moreInfo", { label: question.label })} text={help}/></span></div> : label}
+      {control}
+      {message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{message}</p> : null}
+    </div>;
+  };
   const field = (control: ReactElement<{ id?: string }>) => <div data-entry-question={question.fieldId}>
     <FormField label={question.label} htmlFor={id} required={question.required} hint={question.help ?? undefined} error={error}>{control}</FormField>
   </div>;
@@ -113,7 +123,7 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled, narr
     invalid={!!error} describedBy={message ? messageId : undefined} disabled={blocked}
     onChange={chosen => onChange({ ...draft, choices: { ...draft.choices, [question.fieldId]: chosen } })}/>);
   if (isFile(question)) return grouped(<EntryFilesField question={question} files={draft.files[question.fieldId] ?? []} maxFileSizeMiB={entry.maxFileSizeMiB} id={id}
-    invalid={!!error} describedBy={message ? messageId : undefined} disabled={disabled}
+    invalid={!!error} describedBy={describedBy} disabled={disabled}
     onChange={files => onChange({ ...draft, files: { ...draft.files, [question.fieldId]: files } })}/>, false);
   // Up to five short options in a row; more, or longer ones, in a dropdown list (CW12).
   if (question.type === "choice" && !entryChoiceInRow(question)) return field(<NativeSelect value={draft.choices[question.fieldId]?.[0]?.id ?? ""} disabled={disabled}
@@ -136,7 +146,6 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled, narr
           onCheckedChange={next => onChange({ ...draft, choices: { ...draft.choices, [question.fieldId]: next
             ? [...chosen, { id: option.id, title: option.label, description: null }] : chosen.filter(item => item.id !== option.id) } })}/>;
       })}
-      <p className="text-xs text-[var(--color-content-muted)]">{t("catalog.chooseUpTo", { count: max })}</p>
     </div>, false);
   }
   if (question.type === "boolean") return grouped(<div id={id} tabIndex={-1} className="outline-none">

@@ -1530,3 +1530,95 @@ it("shows who loaded and the channel, and filters by the app channel without put
   await userEvent.click(screen.getByRole("button", { name: "Quitar filtro: Canal: App" }));
   await waitFor(() => expect(bodies.at(-1)?.enteredInApp).toBeUndefined());
 });
+
+describe("response sheet waits and empty states", () => {
+  // Searching keeps the previous rows dimmed and out of reach under a running line (board LC2-A).
+  it("dims the previous rows while a search reads", async () => {
+    setup();
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = (await request.json()) as { search?: string };
+      if (body.search) await gate;
+      return HttpResponse.json(responseSheetFixture());
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    expect((await screen.findByRole("link", { name: "TEST-000002" })).closest("[inert]")).toBeNull();
+    await userEvent.type(screen.getByRole("searchbox", { name: "Buscar en textos largos" }), "completo");
+    await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000002" }).closest("[inert]")).not.toBeNull());
+    await act(async () => release());
+    await waitFor(() => expect(screen.getByRole("link", { name: "TEST-000002" }).closest("[inert]")).toBeNull());
+  });
+
+  // An empty sheet does not explain how responses arrive (decision of 2026-10-31): its title and, to whoever loads, the way to add one.
+  it("names an empty sheet with its title and offers Agregar respuesta to whoever loads", async () => {
+    setup(["formrecords.read", "formrecords.create"]);
+    const empty = responseSheetFixture();
+    empty.records = { ...empty.records, items: [], totalCount: 0, totalPages: 0, hasNext: false, hasPrevious: false };
+    server.use(http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(empty)));
+    const { router } = renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    expect(await screen.findByRole("heading", { name: "Todavía no hay respuestas" })).toBeVisible();
+    expect(screen.queryByText(/Mandá este formulario/)).not.toBeInTheDocument();
+    const add = screen.getAllByRole("button", { name: "Agregar respuesta" });
+    expect(add).toHaveLength(2);
+    await userEvent.click(add[1]);
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/formularios/${responseFormId}/respuestas/nueva`));
+  });
+
+  it("names an empty sheet with its title only to whoever cannot load", async () => {
+    setup(["formrecords.read"]);
+    const empty = responseSheetFixture();
+    empty.records = { ...empty.records, items: [], totalCount: 0, totalPages: 0, hasNext: false, hasPrevious: false };
+    server.use(http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(empty)));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    expect(await screen.findByRole("heading", { name: "Todavía no hay respuestas" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Agregar respuesta" })).not.toBeInTheDocument();
+  });
+
+  it("names a filtered empty sheet with its title and Limpiar todo, without an instruction", async () => {
+    setup();
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
+      const body = (await request.json()) as { search?: string };
+      const sheet = responseSheetFixture();
+      return HttpResponse.json(body.search ? { ...sheet, records: { ...sheet.records, items: [], totalCount: 0, totalPages: 0, hasNext: false, hasPrevious: false } } : sheet);
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("link", { name: "TEST-000002" });
+    await userEvent.type(screen.getByRole("searchbox", { name: "Buscar en textos largos" }), "inexistente");
+    expect(await screen.findByRole("heading", { name: "Ninguna respuesta coincide" })).toBeVisible();
+    expect(screen.queryByText(/Cambiá o limpiá/)).not.toBeInTheDocument();
+    // «Limpiar todo» of the empty state clears the private filter, which would otherwise stay for this form.
+    const clear = screen.getAllByRole("button", { name: "Limpiar todo" });
+    expect(clear).toHaveLength(2);
+    await userEvent.click(clear[1]);
+    expect(await screen.findByRole("link", { name: "TEST-000002" })).toBeInTheDocument();
+  });
+});
+
+describe("quick choice filter", () => {
+  // Reintentar does not close the menu: its spinner shows the wait until the options arrive.
+  it("keeps the choice menu open while it reads its options again", async () => {
+    setup();
+    let reads = 0;
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const options = responseSheetFixture().columns.find(column => column.label === "Modalidad")!.options;
+    server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async () => {
+      if (++reads === 1) return HttpResponse.json({ code: "Test.Facet", detail: "No se pudieron contar." }, { status: 500 });
+      await gate;
+      const items = options.map(option => ({ ...option, count: 2 }));
+      return HttpResponse.json({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
+    }));
+    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
+    await screen.findByRole("link", { name: "TEST-000002" });
+    const trigger = screen.getAllByRole("button", { name: "Modalidad" }).find(button => button.getAttribute("aria-haspopup") === "menu")!;
+    await act(async () => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Reintentar" }));
+    const menu = screen.getByRole("menu");
+    expect(within(menu).getByRole("status")).toHaveTextContent("Cargando…");
+    await act(async () => release());
+    expect(await within(menu).findByRole("menuitemcheckbox", { name: /Opción histórica/ })).toBeInTheDocument();
+    expect(within(menu).queryByRole("menuitem", { name: "Reintentar" })).not.toBeInTheDocument();
+  }, 15000);
+});

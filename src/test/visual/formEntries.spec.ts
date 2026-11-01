@@ -174,8 +174,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     const es = language === "es";
     await page.setViewportSize({ width, height: 900 });
     await open(page, "/formularios/" + formEntryFixtureIds.sowing + "/cargar", "entries-missing-data", language);
-    await expect(page.getByText(es ? "No podés enviar Siembra: te falta el dato «Campo». Pedíselo a quien administra los datos de las personas."
-      : "You cannot send Sowing: your «Field» is missing. Ask whoever manages people's data for it.")).toBeVisible();
+    await expect(page.getByText(es ? "No podés enviar Siembra: te falta el dato «Campo»."
+      : "You cannot send Sowing: your «Field» is missing.", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: es ? "Enviar" : "Send", exact: true })).toBeDisabled();
     await page.evaluate(() => document.fonts.ready);
     await assertNoPageScroll(page, width);

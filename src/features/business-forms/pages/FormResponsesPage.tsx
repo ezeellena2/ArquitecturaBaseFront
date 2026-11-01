@@ -29,6 +29,7 @@ import { notify } from "@/shared/ui/notifications";
 import { useResponsePanelNavigation } from "../hooks/useResponsePanelNavigation";
 import { IconButton } from "@/shared/ui/IconButton";
 import { useResponseFeedback, useResponseSheet } from "../hooks/useResponseQueries";
+import { useRereadSignal } from "../hooks/useRereadSignal";
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { FilterChip } from "@/shared/ui/FilterChip";
@@ -67,6 +68,16 @@ export function FormResponsesPage() {
   useResponseFeedback(recordId && !(query.error instanceof ApiError && query.error.status === 403) ? null : query.error, `responses:sheet:${scope.owner}:${formId}`, query.refetch);
   const exportCooldown = useCountdown(0);
   const canExport = !!query.data && !query.isFetching && !query.isPending && !query.isPlaceholderData && !query.isError;
+  // The rows in sight dim under a running line while the sheet reads again (board LC2-A): another search, filter, order or
+  // page, Reintentar after a failure with rows in sight, and the read that follows a decision or a saved response. Without
+  // rows, Reintentar goes back to the first load's spinner.
+  const reread = useRereadSignal(query);
+  const refreshing = query.isPlaceholderData || query.isError && query.isFetching || reread.rereading;
+  const readAgain = () => { reread.mark(); void query.refetch(); };
+  const canCreate = !!scope.user?.permissions.includes("formrecords.create");
+  const addResponse = () => mobile
+    ? navigate("/formularios/" + formId + "/cargar", { state: { from: "sheet" } })
+    : navigate({ pathname: "/formularios/" + formId + "/respuestas/nueva", search: route.params.toString() });
   const [panel, setPanel] = useState<"filters" | "export" | null>(null);
   const [initialField, setInitialField] = useState<string | undefined>();
   const workspace = useContext(ResponseWorkspaceContext);
@@ -203,13 +214,11 @@ export function FormResponsesPage() {
             {t("responses.export")}
           </Button>
           ) : null}
-          {scope.user?.permissions.includes("formrecords.create") ? <Button type="button" onClick={() => mobile
-            ? navigate("/formularios/" + formId + "/cargar", { state: { from: "sheet" } })
-            : navigate({ pathname: "/formularios/" + formId + "/respuestas/nueva", search: route.params.toString() })}>{t("formEntries:addResponse")}</Button> : null}
+          {canCreate ? <Button type="button" onClick={addResponse}>{t("formEntries:addResponse")}</Button> : null}
         </> : undefined
       }
     >
-      {scope.user?.permissions.includes("formapprovals.decide") ? <FormPendingApprovals formId={formId} onDecided={() => { void query.refetch(); }}/> : null}
+      {scope.user?.permissions.includes("formapprovals.decide") ? <FormPendingApprovals formId={formId} onDecided={readAgain}/> : null}
       <FilterBar>
         <div className="flex flex-wrap items-center gap-3">
           {!data ||
@@ -324,6 +333,7 @@ export function FormResponsesPage() {
           selectedRowKey={recordId ?? (adding ? savedRecord : undefined) ?? (workspace?.navigation?.origin === "sheet" ? workspace.navigation.selection.recordId : undefined)}
           onRowClick={row => { rememberSheet(row.id); if (row.id === recordId) setFocusRequest(value => value + 1); navigate(recordPath(row.id)); }}
           isLoading={query.isPending}
+          refreshing={refreshing}
           hasData={!!data}
           error={query.error ? t(query.error instanceof ApiError && query.error.status === 404 ? "responses.unavailableForm" : "responses.loadFailed") : undefined}
           onRetry={query.error instanceof ApiError && query.error.status === 404 ? undefined : () => {
@@ -332,9 +342,7 @@ export function FormResponsesPage() {
           sort={sort}
           onSortChange={route.toggleSort}
           emptyTitle={t(hasFilters ? "responses.noMatches" : "responses.empty")}
-          emptyDescription={t(
-            hasFilters ? "responses.noMatchesHint" : "responses.emptyHint",
-          )}
+          // An empty sheet does not explain how responses arrive (decision of 2026-10-31): its title and the way out.
           emptyAction={
             hasFilters ? (
               <Button
@@ -344,7 +352,7 @@ export function FormResponsesPage() {
               >
                 {t("responses.clear")}
               </Button>
-            ) : undefined
+            ) : canCreate ? <Button type="button" variant="outline" onClick={addResponse}>{t("formEntries:addResponse")}</Button> : undefined
           }
         />
         {data ? (
@@ -388,9 +396,9 @@ export function FormResponsesPage() {
     </Page></div>
     {adding && !mobile ? <FormEntryPanel key={scope.owner + ":" + formId} formId={formId} formName={data?.name}
       onClose={() => navigate({ pathname: "/formularios/" + formId + "/respuestas", search: route.params.toString() })}
-      onSaved={id => { setSavedRecord(id); void query.refetch(); }}/> : null}
+      onSaved={id => { setSavedRecord(id); readAgain(); }}/> : null}
     {adding && mobile ? <Navigate to={"/formularios/" + formId + "/cargar"} state={{ from: "sheet" }} replace/> : null}
-    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch }} onDecided={() => { void query.refetch(); }}/> : null}
+    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch, retrying: query.isError && query.isFetching }} onDecided={readAgain}/> : null}
     </div>
   );
 }

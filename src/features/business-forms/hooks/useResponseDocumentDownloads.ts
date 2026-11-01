@@ -14,17 +14,18 @@ export function useResponseDocumentDownloads(owner: string, recordId: string, on
   const operationId = "forms:document:" + owner + ":" + recordId + ":download";
   const current = useRef(operationId);
   const request = useRef<AbortController | null>(null);
-  const [operation, setOperation] = useState<{ owner: string; busy: boolean } | null>(null);
+  // `target` is where the download started, the menu or a copy's card: only that button says «Descargando…».
+  const [operation, setOperation] = useState<{ owner: string; busy: boolean; target?: string } | null>(null);
   const [waitOwner, setWaitOwner] = useState<string | null>(null);
   const cooldown = useCountdown(0);
   useLayoutEffect(() => { current.current = operationId; }, [operationId]);
   useEffect(() => () => { request.current?.abort(); request.current = null; dismissNotification(operationId); }, [operationId]);
   const busy = operation?.owner === operationId && operation.busy;
   const waiting = waitOwner === operationId && cooldown.isRunning;
-  const perform = async (load: (signal: AbortSignal) => Promise<{ blob: Blob; fileName?: string | null }>, name: string) => {
+  const perform = async (load: (signal: AbortSignal) => Promise<{ blob: Blob; fileName?: string | null }>, name: string, target: string) => {
     if (disabled || busy || waiting || request.current) return;
     const controller = new AbortController(); request.current = controller;
-    setOperation({ owner: operationId, busy: true }); dismissNotification(operationId);
+    setOperation({ owner: operationId, busy: true, target }); dismissNotification(operationId);
     try {
       const file = await load(controller.signal);
       if (current.current === operationId && !controller.signal.aborted) savePrivateBlob(file.blob, file.fileName ?? name);
@@ -38,8 +39,8 @@ export function useResponseDocumentDownloads(owner: string, recordId: string, on
       if (current.current === operationId) setOperation({ owner: operationId, busy: false });
     }
   };
-  const download = (document: IssuedDocument) => perform(signal => fetchResponseDocument(recordId, document.id, true, signal), document.name);
-  const downloadFile = (file: PrivateFormFile) => perform(async signal => ({ blob: await readFormFile(recordId, file.fileId, false, signal) }), file.name);
-  return { download, downloadFile, disabled: disabled || busy || waiting, seconds: waiting ? cooldown.seconds : 0 };
+  const download = (document: IssuedDocument, from: "card" | "menu" = "card") => perform(signal => fetchResponseDocument(recordId, document.id, true, signal), document.name, from === "menu" ? "menu" : document.id);
+  const downloadFile = (file: PrivateFormFile) => perform(async signal => ({ blob: await readFormFile(recordId, file.fileId, false, signal) }), file.name, "menu");
+  return { download, downloadFile, disabled: disabled || busy || waiting, seconds: waiting ? cooldown.seconds : 0, working: busy ? operation?.target ?? null : null };
 }
 export type ResponseDocumentDownloadsState = ReturnType<typeof useResponseDocumentDownloads>;

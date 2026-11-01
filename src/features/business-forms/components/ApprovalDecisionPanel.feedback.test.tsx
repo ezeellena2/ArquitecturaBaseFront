@@ -117,3 +117,88 @@ it("keeps a live task query when one of two panels leaves and purges it after pe
   await waitFor(() => expect(taskQuery()).toBeUndefined());
   expect(client!.getQueryData(otherKey)).toEqual({ private: "Other actor metadata" });
 });
+
+// A decision that waits for the server says so on its own button (board LC1-A), not only by turning the buttons off.
+function decided(state: "Approved" | "Rejected", reason: string | null = null) {
+  const task = approvalTaskFixture();
+  return { taskId: task.id, recordId: task.recordId, revision: 2, state, decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" }, reason };
+}
+it("shows Aprobando… on Approve while the decision is on its way", async () => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
+    http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(approvalTaskFixture())),
+    http.post("/api/forms/approvals/:id/decisions", async () => { await gate; return HttpResponse.json(decided("Approved")); }));
+  renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
+  expect(await screen.findByRole("button", { name: "Aprobando…" })).toHaveAttribute("aria-busy", "true");
+  expect(screen.getByRole("button", { name: "Rechazar" })).toBeDisabled();
+  await act(async () => release());
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Aprobando…" })).not.toBeInTheDocument());
+});
+it("waits in the reject dialog with Rechazando… and its close turned off, and closes it with the answer", async () => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
+    http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(approvalTaskFixture())),
+    http.post("/api/forms/approvals/:id/decisions", async () => { await gate; return HttpResponse.json(decided("Rejected", "Falta la firma")); }));
+  renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Rechazar" }));
+  const dialog = await screen.findByRole("dialog", { name: "Rechazar VIS-00001" });
+  expect(screen.queryByText("El motivo queda en el historial de la respuesta.")).not.toBeInTheDocument();
+  expect(dialog).not.toHaveAccessibleDescription();
+  await userEvent.type(within(dialog).getByRole("textbox", { name: /Motivo/ }), "Falta la firma");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Rechazar" }));
+  expect(within(dialog).getByRole("button", { name: "Rechazando…" })).toHaveAttribute("aria-busy", "true");
+  expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+  const close = within(dialog).getByRole("button", { name: "Cerrar" });
+  expect(close).toBeDisabled();
+  expect(close).toHaveAccessibleDescription("Rechazando…");
+  await userEvent.keyboard("{Escape}");
+  expect(screen.getByRole("dialog", { name: "Rechazar VIS-00001" })).toBeInTheDocument();
+  await act(async () => release());
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+// Without a task read yet, Reintentar goes back to the first load's spinner; once one was shown, the button stays and says it.
+it("says Reintentando… while it reads again a task that failed after being shown", async () => {
+  let reads = 0;
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
+    http.get("/api/forms/approvals/" + approvalTaskId, async () => {
+      if (++reads === 2) return HttpResponse.json({ code: "Test.Approval", detail: "No se pudo leer." }, { status: 400 });
+      if (reads > 2) await gate;
+      return HttpResponse.json(approvalTaskFixture());
+    }));
+  function Host() {
+    const client = useQueryClient();
+    return <><button type="button" onClick={() => { void client.invalidateQueries({ queryKey: ["form-approvals"] }); }}>Leer de nuevo</button><ApprovalDecisionPanel taskId={approvalTaskId}/></>;
+  }
+  renderWithProviders(<Host/>);
+  await screen.findByRole("button", { name: "Aprobar" });
+  await userEvent.click(screen.getByRole("button", { name: "Leer de nuevo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Reintentar" }));
+  expect(await screen.findByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+  await act(async () => release());
+  expect(await screen.findByRole("button", { name: "Aprobar" })).toBeEnabled();
+});
+it("shows it reads the task again next to the decision buttons it turns off", async () => {
+  let reads = 0;
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
+    http.get("/api/forms/approvals/" + approvalTaskId, async () => { if (++reads > 1) await gate; return HttpResponse.json(approvalTaskFixture()); }));
+  function Host() {
+    const client = useQueryClient();
+    return <><button type="button" onClick={() => { void client.invalidateQueries({ queryKey: ["form-approvals"] }); }}>Leer de nuevo</button><ApprovalDecisionPanel taskId={approvalTaskId}/></>;
+  }
+  renderWithProviders(<Host/>);
+  const approve = await screen.findByRole("button", { name: "Aprobar" });
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Leer de nuevo" }));
+  await waitFor(() => expect(approve).toBeDisabled());
+  expect(screen.getByRole("status")).toHaveTextContent("Cargando…");
+  await act(async () => release());
+  await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+  expect(screen.getByRole("button", { name: "Aprobar" })).toBeEnabled();
+});

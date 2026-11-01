@@ -105,7 +105,11 @@ function Choices({
       ) : null}
       {query.isError ? (
         <DropdownMenuItem
-          onSelect={() => {
+          onSelect={(event) => {
+            // The menu stays open while it reads again, with its spinner in place of Reintentar; the menu itself keeps the
+            // focus, since an item that goes away would close it.
+            event.preventDefault();
+            (event.target as HTMLElement).closest<HTMLElement>('[role="menu"]')?.focus();
             void query.refetch();
           }}
         >

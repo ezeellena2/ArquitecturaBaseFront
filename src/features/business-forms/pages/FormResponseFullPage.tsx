@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
+import { cn } from "@/shared/lib/utils";
 import { Page } from "@/shared/ui/Page";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -70,15 +71,17 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
       event.target instanceof Element && event.target.closest('input,textarea,select,[contenteditable="true"],[role="dialog"],[role="combobox"],[role="menu"]')) return;
     if (event.key === "ArrowUp" && navigation.previous && !loadingTarget) { event.preventDefault(); navigation.onMove(-1); }
     if (event.key === "ArrowDown" && navigation.next && !loadingTarget) { event.preventDefault(); navigation.onMove(1); }
-  }}><Page title={data.number} backTo={backTo} status={current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : undefined} actions={<>
+  }}><Page title={data.number} backTo={backTo} status={current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : undefined} actions={<>
     {navigation.position !== undefined && navigation.count !== undefined ? <span className="text-xs text-[var(--color-content-muted)]">{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</span> : null}
+    {/* While another response loads, the spinner goes next to «1 de 2» and the previous sections stay dimmed and out of reach. */}
+    {loadingTarget ? <Spinner/> : null}
     <IconButton label={t("responses.previous")} disabled={!navigation.previous || loadingTarget} onClick={() => navigation.onMove(-1)}><ArrowUpIcon className="size-4"/></IconButton>
     <IconButton label={t("responses.next")} disabled={!navigation.next || loadingTarget} onClick={() => navigation.onMove(1)}><ArrowDownIcon className="size-4"/></IconButton>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="outline" size="sm" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
     {current?.documents.length || files.length ? <ResponseDocumentDownloads documents={current?.documents ?? []} files={files} downloads={downloads}/> : null}
     <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
   </>}>
-    <div className="space-y-4">
+    <div className={cn("space-y-4", loadingTarget && "opacity-45")} inert={loadingTarget || undefined}>
       <CollapsibleSection title={t("responses.answer")} open={answerOpen} onOpenChange={setAnswerOpen} expandLabel={t("detail.expandAnswer")} collapseLabel={t("detail.collapseAnswer")} meta={t("responses.versionLabel", { version: data.versionNumber })} summary={t("detail.answerSummary", { count: data.values.length })}>
         <div className="px-4"><ResponseAnswer record={data} actor={detail.scope.user!.id} busy={loadingTarget} photos={photos} onForbidden={deny} onError={onFileError}/></div>
       </CollapsibleSection>

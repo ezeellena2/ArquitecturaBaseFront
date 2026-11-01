@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -70,11 +70,13 @@ describe("a catalog question while loading", () => {
     expect(field).toHaveValue("");
   });
 
+  // The limit is in the label (decision of 2026-10-31); «Elegiste N de N.» stays as the count once it is reached.
   it("chooses up to the maximum of a multiple choice and shows each choice as a chip", async () => {
     setup(true);
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    expect(await screen.findByText("Elegí hasta 2.")).toBeVisible();
+    expect(await screen.findByText("hasta 2")).toBeVisible();
+    expect(screen.queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
     await user.click(screen.getByRole("combobox", { name: "Lotes" }));
     await user.click(await screen.findByRole("option", { name: /^Lote 1/ }));
     await user.click(screen.getByRole("option", { name: "Lote 2" }));
@@ -83,7 +85,8 @@ describe("a catalog question while loading", () => {
     await user.click(screen.getByRole("button", { name: "Mostrar 50 más" }));
     expect(await screen.findByRole("option", { name: "Lote 3" })).toHaveAttribute("aria-disabled", "true");
     await user.click(screen.getByRole("button", { name: "Quitar Lote 1" }));
-    expect(screen.getByText("Elegí hasta 2.")).toBeVisible();
+    expect(screen.queryByText("Elegiste 2 de 2.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
   });
 
   it("opens the list full screen on the phone and applies several choices with «Listo»", async () => {
@@ -91,14 +94,35 @@ describe("a catalog question while loading", () => {
     setup(true);
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    await user.click(await screen.findByRole("button", { name: "Lotes" }));
-    const dialog = await screen.findByRole("dialog", { name: "Lotes" });
+    await user.click(await screen.findByRole("button", { name: "Lotes hasta 2" }));
+    const dialog = await screen.findByRole("dialog", { name: "Lotes hasta 2" });
+    expect(within(dialog).queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
     expect(within(dialog).getByRole("textbox", { name: "Buscar en Lotes" })).toHaveFocus();
     await user.click(await within(dialog).findByRole("option", { name: /^Lote 1/ }));
     await user.click(within(dialog).getByRole("option", { name: "Lote 2" }));
     await user.click(within(dialog).getByRole("button", { name: "Listo · 2 elegidos" }));
-    expect(screen.queryByRole("dialog", { name: "Lotes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Lotes hasta 2" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Quitar Lote 1" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Quitar Lote 2" })).toBeVisible();
+  });
+
+  it("says Cargando… on «Mostrar 50 más» while the next options arrive", async () => {
+    setup();
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    server.use(http.get("/api/forms/entries/:formId/versions/:versionId/questions/:fieldId/options", async ({ request }) => {
+      const page = Number(new URL(request.url).searchParams.get("page"));
+      if (page > 1) await gate;
+      const items = lots.slice((page - 1) * 2, page * 2);
+      return HttpResponse.json({ items, page, pageSize: 50, totalCount: lots.length, totalPages: 2, hasPrevious: page > 1, hasNext: page < 2 });
+    }));
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    await user.click(await screen.findByRole("combobox", { name: "Lotes" }));
+    const list = await screen.findByRole("listbox", { name: "Lotes" });
+    await user.click(within(list).getByRole("button", { name: "Mostrar 50 más" }));
+    expect(within(list).getByRole("button", { name: "Cargando…" })).toHaveAttribute("aria-busy", "true");
+    await act(async () => release());
+    await waitFor(() => expect(within(list).getAllByRole("option")).toHaveLength(4));
   });
 });

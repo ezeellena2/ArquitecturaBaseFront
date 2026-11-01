@@ -17,7 +17,8 @@ export function useResponseWorkflow(formId: string, recordId: string, retainPrev
     refetchInterval: current => current.state.data?.actions.some(action => action.state === "Waiting" || action.state === "Running") ? 2000 : false,
     gcTime: 0, meta: { errorOwner: "local" } });
   const [deniedManageOwner, setDeniedManageOwner] = useState<string | null>(null);
-  const [operation, setOperation] = useState<{ owner: string; busy: boolean; error: unknown } | null>(null);
+  // `runId` and `kind` say which button works while `busy`: only that one shows its spinner and gerund.
+  const [operation, setOperation] = useState<{ owner: string; busy: boolean; error: unknown; runId?: string; kind?: "act" | "review" | "check" } | null>(null);
   const liveOwner = useRef<string | undefined>(owner);
   const controller = useRef<AbortController | null>(null);
   const [reviewCheck, setReviewCheck] = useState<{ owner: string; target: WorkflowReviewTarget } | null>(null);
@@ -69,7 +70,7 @@ export function useResponseWorkflow(formId: string, recordId: string, retainPrev
     controller.current = request;
     const check = reviewCheck;
     const mustCheck = review && check?.owner === owner && sameWorkflowReviewTarget(check.target, review.target);
-    setOperation({ owner, busy: true, error: null });
+    setOperation({ owner, busy: true, error: null, runId, kind: !review ? "act" : "checkOnly" in review || mustCheck ? "check" : "review" });
     try {
       if (review && ("checkOnly" in review || mustCheck)) return await reconcileReview(review.target, request, null);
       const result = method === "review" && review
@@ -96,5 +97,6 @@ export function useResponseWorkflow(formId: string, recordId: string, retainPrev
       if (controller.current === request) controller.current = null;
     }
   };
-  return { query, scope, busy, observeApproval, cooldown, act: (runId: string) => execute(runId), review: (target: WorkflowReviewTarget, wasSent: boolean) => execute(target.runId, { target, wasSent }), checkReview: (target: WorkflowReviewTarget) => execute(target.runId, { target, checkOnly: true }), needsConsultReview: reviewCheck?.owner === owner ? reviewCheck.target : null, canManage, controlsDenied, error: operation?.owner === owner ? operation.error ?? query.error : query.error };
+  const working = busy && operation?.runId && operation.kind ? { runId: operation.runId, kind: operation.kind } : null;
+  return { query, scope, busy, working, observeApproval, cooldown, act: (runId: string) => execute(runId), review: (target: WorkflowReviewTarget, wasSent: boolean) => execute(target.runId, { target, wasSent }), checkReview: (target: WorkflowReviewTarget) => execute(target.runId, { target, checkOnly: true }), needsConsultReview: reviewCheck?.owner === owner ? reviewCheck.target : null, canManage, controlsDenied, error: operation?.owner === owner ? operation.error ?? query.error : query.error };
 }

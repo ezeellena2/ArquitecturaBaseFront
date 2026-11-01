@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, expect, it, vi } from "vitest";
@@ -68,4 +68,29 @@ it("does not expose per-form approval data to a response-only reader",async()=>{
  await screen.findByRole("columnheader",{name:"Importe"});
  expect(screen.queryByRole("region",{name:/Por aprobar/})).not.toBeInTheDocument();
  expect(reads.lists).toHaveLength(0);
+});
+
+// An empty queue does not explain what it would hold (decision of 2026-10-31): its title is enough.
+it("names an empty queue with its title only", async () => {
+ setup(false);
+ server.use(http.get("/api/forms/approvals",()=>HttpResponse.json({items:[],page:1,pageSize:20,totalCount:0,totalPages:0,hasPrevious:false,hasNext:false})));
+ renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");
+ expect(await screen.findByRole("heading",{name:"No hay respuestas por aprobar."})).toBeVisible();
+ expect(screen.queryByText(/esperan aprobación aparecen acá/)).not.toBeInTheDocument();
+});
+
+// After a decision the queue reads again: its rows stay dimmed and out of reach until the new list arrives (board LC2-A).
+it("dims the queue while it reads again after a decision",async()=>{
+ const {tasks}=setup(false);
+ let lists=0;let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+ server.use(http.get("/api/forms/approvals",async()=>{if(++lists>1)await gate;return HttpResponse.json({items:tasks,page:1,pageSize:20,totalCount:2,totalPages:1,hasPrevious:false,hasNext:false});}),
+  http.post("/api/forms/approvals/:id/decisions",()=>HttpResponse.json({taskId:approvalTaskId,recordId:tasks[0].recordId,revision:2,state:"Approved",decidedAtUtc:"2026-10-17T13:00:00Z",decidedBy:{userId:currentUser.id,displayName:"Luz"},reason:null})));
+ renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");
+ const pending=await screen.findByRole("region",{name:"Por aprobar · 2"});
+ await userEvent.click(within(pending).getByRole("link",{name:"Revisar VIS-00001"}));
+ const panel=await screen.findByRole("region",{name:"Detalle de la respuesta"});
+ await userEvent.click(await within(panel).findByRole("button",{name:"Aprobar"}));
+ await waitFor(()=>expect(within(pending).getByRole("link",{name:"Revisar VIS-00002"}).closest("[inert]")).not.toBeNull());
+ await act(async()=>release());
+ await waitFor(()=>expect(within(pending).getByRole("link",{name:"Revisar VIS-00002"}).closest("[inert]")).toBeNull());
 });

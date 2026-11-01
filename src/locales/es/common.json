@@ -153,6 +153,7 @@
   },
   "files": {
     "download": "Descargar",
+    "downloading": "Descargando…",
     "openPhoto": "Ver {{name}}",
     "none": "Sin archivos",
     "loading": "Cargando…",

@@ -97,3 +97,50 @@ it("blocks viewing and downloading the previous fixed PDF until the navigation t
   await waitFor(() => expect(reads).toBe(1));
   expect(await screen.findByRole("dialog")).toBeInTheDocument();
 });
+
+// A download says it is working on the button that started it (board LC1-A): the card's «Descargar» or the menu trigger.
+it("says Descargando… on the copy it downloads while the others wait", async () => {
+  let release: (() => void) | undefined;
+  server.use(http.get("/api/forms/records/:recordId/documents/:documentId/content", async () => {
+    await new Promise<void>(resolve => { release = resolve; });
+    return new HttpResponse(new Uint8Array([37,80,68,70]), { headers: { "content-type": "application/pdf", "content-language": "es" } });
+  }));
+  renderWithProviders(<DocumentsHarness owner="document-test-owner" recordId={responseRecordId} documents={[document]} onForbidden={vi.fn()}/>);
+  await userEvent.click(screen.getByRole("button", { name: "Descargar" }));
+  expect(await screen.findByRole("button", { name: "Descargando…" })).toHaveAttribute("aria-busy", "true");
+  expect(screen.getByRole("button", { name: "Ver PDF" })).toBeDisabled();
+  await waitFor(() => expect(release).toBeDefined());
+  await act(async () => release?.());
+  await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
+  expect(screen.getByRole("button", { name: "Descargar" })).toBeEnabled();
+});
+
+it("says Descargando… on the menu trigger while one of its items downloads", async () => {
+  let release: (() => void) | undefined;
+  server.use(http.get("/api/forms/records/:recordId/documents/:documentId/content", async () => {
+    await new Promise<void>(resolve => { release = resolve; });
+    return new HttpResponse(new Uint8Array([37,80,68,70]), { headers: { "content-type": "application/pdf", "content-language": "es" } });
+  }));
+  renderWithProviders(<DocumentsHarness menu owner="document-test-owner" recordId={responseRecordId} documents={[document]} onForbidden={vi.fn()}/>);
+  await act(async () => screen.getByRole("button", { name: "Descargar" }).focus());
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(await screen.findByRole("menuitem", { name: document.name }));
+  expect(await screen.findByRole("button", { name: "Descargando…" })).toHaveAttribute("aria-busy", "true");
+  await waitFor(() => expect(release).toBeDefined());
+  await act(async () => release?.());
+  await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
+  expect(screen.getByRole("button", { name: "Descargar" })).toBeEnabled();
+});
+
+// That an issued PDF does not change is said once, in the (i) next to the title, not under each copy nor in «Copia fija».
+it("tells once, next to its title, that the issued PDFs are fixed copies", async () => {
+  const fixed = "Los PDF ya armados no cambian: son una copia fija del momento.";
+  server.use(http.get("/api/forms/records/:recordId/documents/:documentId/content", () => new HttpResponse(new Uint8Array([37,80,68,70]), { headers: { "content-type": "application/pdf", "content-language": "es" } })));
+  renderWithProviders(<DocumentsHarness owner="document-test-owner" recordId={responseRecordId} documents={[document, { ...document, id: "0199a0c0-0000-7000-8000-000000000081", name: "Copia en inglés.pdf", culture: "en" as const }]} onForbidden={vi.fn()}/>);
+  expect(screen.getByRole("button", { name: "Más información sobre PDF de la respuesta" })).toHaveAccessibleDescription(fixed);
+  for (const text of screen.getAllByText(fixed)) expect(text).not.toBeVisible();
+  await userEvent.click(screen.getAllByRole("button", { name: "Ver PDF" })[0]);
+  const dialog = await screen.findByRole("dialog");
+  await waitFor(() => expect(within(dialog).getByTitle("Vista previa del PDF")).toBeInTheDocument());
+  expect(within(dialog).queryByText(fixed)).not.toBeInTheDocument();
+});

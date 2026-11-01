@@ -12,6 +12,7 @@ import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
+import { cn } from "@/shared/lib/utils";
 export function ResponseFacetControl({
   formId,
   filter,
@@ -50,6 +51,9 @@ export function ResponseFacetControl({
     return <ForbiddenPage />;
   // The wait of a 429 is the reason of the controls it turns off (`DisabledReason`), never a text in the region.
   const wait = query.cooldown.isRunning ? t("wait", { count: query.cooldown.seconds }) : null;
+  // Another search, page or draft keeps the previous options in sight, dimmed and out of reach with the spinner over them,
+  // as a table that reads again (board LC2-A).
+  const refreshing = query.isPlaceholderData && query.isFetching;
   return (
     <div ref={visibilityRef} className="flex flex-col gap-3">
       {searchable ? (
@@ -79,7 +83,9 @@ export function ResponseFacetControl({
           </Button>
         </DisabledReason>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="relative">
+        {refreshing ? <Spinner className="absolute inset-0 z-10 flex items-center justify-center"/> : null}
+        <div className={cn("flex flex-col gap-2", refreshing && "opacity-45")} inert={refreshing || undefined}>
           {query.data?.items.map((option) => (
             <CheckboxField
               key={option.id}
@@ -108,6 +114,7 @@ export function ResponseFacetControl({
               }
             />
           ))}
+        </div>
         </div>
       )}
       {query.data?.items.length === 0 ? (
@@ -140,8 +147,11 @@ export function ResponsePresenceControl({
   const query = useResponseFacet(formId, filter, "presence", fieldId, 1, "", visible, !onReadError);
   useEffect(() => { onReadError?.(`presence:${fieldId}`, query.error); }, [onReadError, fieldId, query.error]);
   const wait = query.cooldown.isRunning ? t("wait", { count: query.cooldown.seconds }) : null;
+  // Its counts arrive with the facet: the spinner next to the select says they are being read, first or again.
+  const loading = query.isFetching && (query.isPending || query.isPlaceholderData);
   return <div ref={visibilityRef} className="flex flex-col gap-2">
     {query.isError && query.error instanceof ApiError && (query.error.isNetworkError || query.error.status === 429) ? <DisabledReason reason={wait}><Button type="button" variant="outline" disabled={query.cooldown.isRunning} onClick={() => query.retry()}>{t("common:actions.retry")}</Button></DisabledReason> : null}
+    <div className="flex items-center gap-2"><div className="min-w-0 flex-1">
     <DisabledReason reason={wait} className="grid w-full">
     <NativeSelect
       aria-label={t("responses.answerState")}
@@ -160,5 +170,6 @@ export function ResponsePresenceControl({
       })}
     </NativeSelect>
     </DisabledReason>
+    </div>{loading ? <Spinner/> : null}</div>
   </div>;
 }

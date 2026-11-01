@@ -73,7 +73,7 @@ function DesktopCatalogField({ entry, question, chosen, onChange, id, invalid, d
         onValueChange={value => { setOpened(true); setTyping(true); list.setSearch(value); }}
         header={list.total !== undefined && list.items.length > 0 ? t("catalog.count", { count: list.total }) : undefined}
         status={list.items.length === 0 && opened ? state ?? undefined : undefined}
-        footer={list.options.hasNextPage ? <Button type="button" variant="link" size="inline" disabled={list.options.isFetchingNextPage} {...keepFocus} onClick={() => void list.options.fetchNextPage()}>{t("catalog.more")}</Button> : undefined}
+        footer={list.options.hasNextPage ? <Button type="button" variant="link" size="inline" pending={list.options.isFetchingNextPage} {...keepFocus} onClick={() => void list.options.fetchNextPage()}>{t(list.options.isFetchingNextPage ? "catalog.loadingMore" : "catalog.more")}</Button> : undefined}
         options={list.items.map(option => ({ id: option.id, label: option.title, description: option.description,
           selected: multiple ? chosen.some(item => item.id === option.id) : undefined,
           disabled: full && !chosen.some(item => item.id === option.id) }))}
@@ -91,7 +91,8 @@ function DesktopCatalogField({ entry, question, chosen, onChange, id, invalid, d
     {chosen.length ? <div className="flex flex-wrap gap-2">{chosen.map(option => <FilterChip key={option.id} removeLabel={t("catalog.clear", { label: option.title })}
       onRemove={() => onChange(chosen.filter(item => item.id !== option.id))}>{option.title}</FilterChip>)}</div> : null}
     {field}
-    <p className="text-xs text-[var(--color-content-muted)]">{full ? t("catalog.chosenOf", { count: chosen.length, max }) : t("catalog.chooseUpTo", { count: max })}</p>
+    {/* The limit is in the label; reached, the count says so («Elegiste 2 de 2.»). */}
+    {full ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalog.chosenOf", { count: chosen.length, max })}</p> : null}
   </div>;
 }
 
@@ -118,19 +119,18 @@ function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, de
         </Button>
         {!multiple && chosen[0] && !disabled ? <Button type="button" variant="ghost" size="touch" aria-label={t("catalog.clear", { label: chosen[0].title })} onClick={() => onChange([])}><CloseIcon className="size-4"/></Button> : null}
       </div>
-      {multiple ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalog.chooseUpTo", { count: max })}</p> : null}
     </div>
     <Dialog open={open} onOpenChange={next => { if (!next) close(); }}>
       <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined} className="inset-0 flex h-svh w-screen max-w-none flex-col gap-0 overflow-hidden p-0">
         <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-2">
-          <DialogTitle className="min-w-0 flex-1 truncate">{question.label}</DialogTitle>
+          <DialogTitle className="min-w-0 flex-1 truncate">{question.label}{multiple ? <>{" "}<span className="text-xs font-normal text-[var(--color-content-muted)]">{t("upTo", { count: max })}</span></> : null}</DialogTitle>
           <IconButton variant="ghost" label={t("catalog.close")} onClick={close}><CloseIcon className="size-5"/></IconButton>
         </header>
         <div className="border-b border-[var(--color-border)] p-3">
           <Input autoFocus aria-label={t("catalog.search", { label: question.label })} placeholder={t("catalog.search", { label: question.label })}
             value={list.search} onChange={event => list.setSearch(event.target.value)}/>
           {list.total !== undefined && list.items.length > 0 ? <p className="mt-2 text-xs text-[var(--color-content-muted)]">{t("catalog.count", { count: list.total })}</p> : null}
-          {multiple ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{full ? t("catalog.chosenOf", { count: picked.length, max }) : t("catalog.chooseUpTo", { count: max })}</p> : null}
+          {full ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("catalog.chosenOf", { count: picked.length, max })}</p> : null}
         </div>
         <ul role="listbox" aria-label={question.label} aria-multiselectable={multiple || undefined} className="min-h-0 flex-1 overflow-y-auto">
           {list.items.map(option => {
@@ -150,7 +150,7 @@ function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, de
             </li>;
           })}
           {list.items.length === 0 ? <li role="presentation" className="p-4 text-sm text-[var(--color-content-muted)]">{state}</li> : null}
-          {list.options.hasNextPage ? <li role="presentation" className="p-3 text-center"><Button type="button" variant="outline" size="touch" disabled={list.options.isFetchingNextPage} onClick={() => void list.options.fetchNextPage()}>{t("catalog.more")}</Button></li> : null}
+          {list.options.hasNextPage ? <li role="presentation" className="p-3 text-center"><Button type="button" variant="outline" size="touch" pending={list.options.isFetchingNextPage} onClick={() => void list.options.fetchNextPage()}>{t(list.options.isFetchingNextPage ? "catalog.loadingMore" : "catalog.more")}</Button></li> : null}
         </ul>
         {multiple ? <footer className="border-t border-[var(--color-border)] p-3"><Button type="button" size="touch" className="w-full" onClick={() => { onChange(picked); close(); }}>{t("catalog.done", { count: picked.length })}</Button></footer> : null}
       </DialogContent>
