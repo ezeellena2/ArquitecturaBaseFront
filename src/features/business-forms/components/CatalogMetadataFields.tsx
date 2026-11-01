@@ -25,7 +25,7 @@ export function CatalogMetadataFields({ name, description, culture, original, ca
     <FormField label={t("name")} required={contentRequired(name, culture, original)} hint={reference(name)} error={textError("name")}>
       <Input readOnly={readOnly} maxLength={120} placeholder={culture !== original ? t("missingText") : undefined} value={name[culture]} onChange={event => onChange({ name: { ...name, [culture]: event.target.value } })} />
     </FormField>
-    <FormField label={t("catalogs.metadata.description")} hint={reference(description) ?? t("catalogs.metadata.descriptionHint")} error={textError("description")}>
+    <FormField label={t("catalogs.metadata.description")} hint={reference(description)} error={textError("description")}>
       <Textarea readOnly={readOnly} maxLength={1000} placeholder={culture !== original && description[original].trim() ? t("missingText") : undefined} value={description[culture]} onChange={event => onChange({ description: { ...description, [culture]: event.target.value } })} />
     </FormField>
   </div></Surface>;

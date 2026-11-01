@@ -34,6 +34,8 @@ it.each(["es", "en"] as const)("shows the text a new form's final button starts 
   await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture={language}/>); });
   expect(screen.getByRole("button", { name: language === "en" ? "Submit" : "Enviar" })).toBeDisabled();
   expect(screen.queryByText(language === "en" ? "Final button text" : "Texto del botón final")).not.toBeInTheDocument();
+  // The title and the disabled button already say it is a preview: no note under the phone (2026-10-31).
+  expect(screen.queryByText(language === "en" ? "This preview does not send or save responses." : "Esta vista no envía ni guarda respuestas.")).not.toBeInTheDocument();
 });
 it("switches only the illustrative preview to checkboxes while leaving catalog data untouched", async () => {
   await act(async () => { renderWithProviders(<CatalogPreview items={items} name="Zonas" culture="es"/>); });

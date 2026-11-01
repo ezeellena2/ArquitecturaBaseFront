@@ -108,7 +108,7 @@ export function CatalogItemsDialog({ catalogName, mode, items, selectedId, total
           : <><Button type="button" variant="outline" onClick={onCancel}>{t("common:actions.cancel")}</Button><Button type="button" onClick={onDone}>{t("done")}</Button></>}
       </DialogFooter>
       <ConfirmDialog open={deleting !== null} onOpenChange={open => { if (!open) setDeleting(null); }} title={t("catalogs.items.deleteTitle", { name: deleting ? name(deleting) : "" })}
-        description={t("catalogs.items.deleteDescription")} confirmLabel={t("catalogs.items.deleteConfirm")} destructive onConfirm={() => { if (deleting) onDelete(deleting); }} />
+        confirmLabel={t("catalogs.items.deleteConfirm")} destructive onConfirm={() => { if (deleting) onDelete(deleting); }} />
     </DialogContent>
   </Dialog>;
 }

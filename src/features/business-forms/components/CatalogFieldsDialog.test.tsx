@@ -8,7 +8,7 @@ import i18n from "@/shared/i18n";
 import * as notifications from "@/shared/ui/notifications";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
-import { catalogFieldsBody, newCatalogField, type CatalogFieldDraft, type CatalogFieldType } from "../catalogFields";
+import { catalogFieldsBody, newCatalogField, type CatalogFieldDraft } from "../catalogFields";
 import type { CatalogFieldFeedback } from "../api/catalogFieldFeedback";
 import type { CatalogPresentation } from "../api/catalogResponse";
 import type { FormCulture } from "../model";
@@ -22,7 +22,7 @@ const catalogPermissions = ["formcatalogs.read", "formcatalogs.manage"] as const
 const optionalFirst = "Un campo nuevo nace opcional: para hacerlo obligatorio, todas las opciones activas necesitan un valor.";
 
 // As in the catalog editor: «Agregar campos» in the options header, the notice above the table and the modal, mounted while open.
-function Harness({ initial = [] as readonly CatalogFieldDraft[], readOnly = false, errors = {} as Errors, feedback = null as CatalogFieldFeedback | null, permissions = catalogPermissions as readonly string[], presentation = null as CatalogPresentation | null, savedTypes = undefined as Readonly<Record<string, CatalogFieldType>> | undefined, culture = "es" as FormCulture, original = "es" as FormCulture, onChange = (() => undefined) as (fields: readonly CatalogFieldDraft[], confirmed: readonly string[]) => void }) {
+function Harness({ initial = [] as readonly CatalogFieldDraft[], readOnly = false, errors = {} as Errors, feedback = null as CatalogFieldFeedback | null, permissions = catalogPermissions as readonly string[], presentation = null as CatalogPresentation | null, culture = "es" as FormCulture, original = "es" as FormCulture, onChange = (() => undefined) as (fields: readonly CatalogFieldDraft[], confirmed: readonly string[]) => void }) {
   const [fields, setFields] = useState(initial);
   const [confirmedRemovals, setConfirmedRemovals] = useState<readonly string[]>([]);
   const [open, setOpen] = useState<{ fieldId: string | null } | null>(null);
@@ -30,7 +30,7 @@ function Harness({ initial = [] as readonly CatalogFieldDraft[], readOnly = fals
   return <>
     <CatalogFieldsButton fields={fields} errors={errors} canManage={permissions.includes("formcatalogs.manage")} onOpen={() => setOpen({ fieldId: null })} />
     <CatalogFieldsNotice fields={fields} errors={errors} feedback={feedback} culture={culture} onReview={fieldId => setOpen({ fieldId })} />
-    {open ? <CatalogFieldsDialog catalogName="Proveedores" fields={fields} presentation={presentation} culture={culture} original={original} scope={scope} readOnly={readOnly} confirmedRemovals={confirmedRemovals} errors={errors} feedback={feedback} savedTypes={savedTypes} initialFieldId={open.fieldId} noticeId="catalogs:fields:test"
+    {open ? <CatalogFieldsDialog catalogName="Proveedores" fields={fields} presentation={presentation} culture={culture} original={original} scope={scope} readOnly={readOnly} confirmedRemovals={confirmedRemovals} errors={errors} feedback={feedback} initialFieldId={open.fieldId} noticeId="catalogs:fields:test"
       onApply={(next, confirmed) => { setFields(next); setConfirmedRemovals(confirmed); onChange(next, confirmed); }} onClose={() => setOpen(null)} /> : null}
   </>;
 }
@@ -482,18 +482,13 @@ it("says a server error above the table, and «Revisar» opens the field with th
   expect(within(dialog).getByRole("textbox", { name: "Clave" })).toBeValid();
 });
 
-it("warns that saving checks the values only when the type of a field with values changes", async () => {
-  const warning = "Al guardar se revisan todos los valores. Si alguno no convierte, el cambio no se guarda.";
-  await mount({ initial: [field, { ...newCatalogField("new", 2), key: "zone" }], savedTypes: { [field.id!]: "text" } });
+// Without legends (2026-10-31): if a value does not convert, saving opens «Cambiar el tipo» with the counts and rows.
+it("says nothing under the type when the type of a field with values changes", async () => {
+  await mount({ initial: [field, { ...newCatalogField("new", 2), key: "zone" }] });
   const dialog = await openFields();
-  expect(within(dialog).queryByText(warning)).not.toBeInTheDocument();
   await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "integer");
-  expect(within(dialog).getByRole("combobox", { name: "Tipo" })).toHaveAccessibleDescription(warning);
-  await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "text");
-  expect(within(dialog).queryByText(warning)).not.toBeInTheDocument();
-  await userEvent.click(within(dialog).getByRole("button", { name: "Editar Nuevo campo" }));
-  await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "integer");
-  expect(within(dialog).queryByText(warning)).not.toBeInTheDocument();
+  expect(within(dialog).getByRole("combobox", { name: "Tipo" })).not.toHaveAccessibleDescription();
+  expect(within(dialog).queryByText(/Al guardar se revisan todos los valores/)).not.toBeInTheDocument();
 });
 
 it("chooses the source catalog in a dropdown that opens on the first catalogs and filters them while typing", async () => {
@@ -513,9 +508,35 @@ it("chooses the source catalog in a dropdown that opens on the first catalogs an
   expect(await screen.findByRole("option", { name: "Tipos de producto · 5 opciones" })).toBeInTheDocument();
   expect(screen.getByRole("option", { name: "Zonas · 6 opciones" })).toBeInTheDocument();
   await userEvent.type(source, "Zon");
-  await waitFor(() => expect(screen.queryByRole("option", { name: "Tipos de producto · 5 opciones" })).not.toBeInTheDocument());
-  await userEvent.click(screen.getByRole("option", { name: "Zonas · 6 opciones" }));
+  // While it searches, the open list says so instead of the previous catalogs (2026-10-31).
+  expect(screen.getByRole("listbox", { name: "Catálogo" })).toHaveTextContent("Buscando…");
+  expect(screen.queryByRole("option", { name: "Tipos de producto · 5 opciones" })).not.toBeInTheDocument();
+  await userEvent.click(await screen.findByRole("option", { name: "Zonas · 6 opciones" }));
+  expect(screen.queryByRole("option", { name: "Tipos de producto · 5 opciones" })).not.toBeInTheDocument();
   expect(source).toHaveValue("Zonas");
+});
+
+it("shows «…» for a chosen source catalog while its name is read, in the field and in its text", async () => {
+  const zones = "01990000-0000-7000-8000-000000000009"; let release: (() => void) | undefined;
+  const catalogField: CatalogFieldDraft = { ...field, type: "catalog", sourceCatalogId: zones, valuesCount: 0 };
+  server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } })),
+    http.get("/api/forms/catalogs/" + zones, async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ valueType: "Text", proposal: null, id: zones, key: zones.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" }, description: { es: "Zonas", en: "Zones" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 3, usageCount: null, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } }); }),
+    http.get("/api/forms/catalogs/" + zones + "/items", () => HttpResponse.json({ items: [], page: 1, pageSize: 1, totalCount: 3, totalPages: 3, hasPrevious: false, hasNext: true })));
+  await mount({ initial: [catalogField] });
+  const dialog = await openFields();
+  const source = within(dialog).getByRole("combobox", { name: "Catálogo" });
+  await waitFor(() => expect(release).toBeDefined());
+  expect(source).toHaveValue(""); expect(source).toHaveAttribute("placeholder", "…");
+  await act(async () => { release!(); });
+  await waitFor(() => expect(source).toHaveValue("Zonas"));
+  expect(source).not.toHaveAttribute("placeholder");
+  cleanup(); release = undefined;
+  await mount({ initial: [catalogField], readOnly: true });
+  const text = await openFields();
+  await waitFor(() => expect(release).toBeDefined());
+  expect(within(text).getByText("…")).toBeInTheDocument();
+  await act(async () => { release!(); });
+  expect(await within(text).findByText("Zonas · 3 opciones")).toBeInTheDocument();
 });
 
 it("shows the restore error of an active field next to its name", async () => {

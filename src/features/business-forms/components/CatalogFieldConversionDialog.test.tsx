@@ -22,7 +22,8 @@ it("lists row, value and reason with the remaining count and offers to show thos
   expect(first).toEqual(["37", "«30 días» no es un número entero."]);
   expect(second).toEqual(["52", "Falta: es obligatorio."]);
   expect(within(dialog).getByText("Y 10 más.")).toBeInTheDocument();
-  expect(within(dialog).getByText("Corregilos en la tabla, o exportá, corregí el Excel e importalo. El tipo cambia al guardar, cuando todos entran.")).toBeInTheDocument();
+  // «Ver los N en la tabla» is the way: no banner explains how to fix them (2026-10-31).
+  expect(within(dialog).queryByText(/Corregilos en la tabla/)).not.toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("button", { name: "Ver los 2 en la tabla" }));
   expect(onShowRows).toHaveBeenCalledTimes(1);
   await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));

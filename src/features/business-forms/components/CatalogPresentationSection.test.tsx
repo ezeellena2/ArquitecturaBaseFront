@@ -15,7 +15,8 @@ function Harness() {
 it("adds selected data to the description and keeps unsaved fields unavailable", async () => {
   await act(async () => { renderWithProviders(<Harness />); });
   const description = screen.getByRole("combobox", { name: "Descripción · hasta 300" });
-  expect(within(description).getByRole("option", { name: /Teléfono.*Guardá para cargar valores/ })).toBeDisabled();
+  // A native option has no tooltip: its reason goes after its name, and here no value is loaded (2026-10-31).
+  expect(within(description).getByRole("option", { name: "Teléfono · Guardá el campo primero" })).toBeDisabled();
   await userEvent.selectOptions(description, field.id);
   expect(screen.getByText("Disponible · 30-71234567-8")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Quitar Texto de Título · hasta 30 caracteres" })).toBeDisabled();

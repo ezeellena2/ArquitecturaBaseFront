@@ -122,6 +122,9 @@
   "reviewAudit": "Último cambio: {{date}} · {{author}}",
   "wait_one": "Esperá {{count}} segundo para volver a intentar.",
   "wait_other": "Esperá {{count}} segundos para volver a intentar.",
+  "searching": "Buscando…",
+  "retrying": "Reintentando…",
+  "rereading": "Releyendo…",
   "cultures": {
     "es": "Español",
     "en": "Inglés"
@@ -310,7 +313,6 @@
       "empty": "Todavía no hay campos extra.",
       "keyHint": "La usan la plantilla, la importación y lo guardado. No cambia después de guardar.",
       "optionalFirst": "Un campo nuevo nace opcional: para hacerlo obligatorio, todas las opciones activas necesitan un valor.",
-      "typeReview": "Al guardar se revisan todos los valores. Si alguno no convierte, el cambio no se guarda.",
       "unique": "Único", "requiredLabel": "Obligatorio", "min": "Mínimo", "max": "Máximo", "savedFirst": "Guardá para cargar valores", "saveToEnterValues": "Guardá el catálogo para cargar los valores de los campos nuevos.", "limit_one": "Un catálogo admite hasta {{count}} campo.", "limit_other": "Un catálogo admite hasta {{count}} campos.",
       "removeTitle": "Quitar «{{name}}»", "remove": "Quitar el campo", "removeHint": "Se quita de la tabla, de la plantilla y del Excel. Las respuestas que ya lo guardaron lo conservan.",
       "confirmRemoval_one": "Sí, quitar el campo y su valor", "confirmRemoval_other": "Sí, quitar el campo y sus {{count, number(useGrouping: always)}} valores", "detail": { "between": "De {{min}} a {{max}}", "from": "Desde {{min}}", "to": "Hasta {{max}}", "length_one": "{{count}} carácter", "length_other": "{{count}} caracteres", "source_one": "{{name}} · 1 opción", "source_other": "{{name}} · {{count, number(useGrouping: always)}} opciones" }, "inUse": "El campo está en uso. Sacá esos usos para poder quitarlo.",
@@ -350,7 +352,6 @@
         "reviewed_one": "Se revisa 1 valor cargado: {{converted}} y {{invalid}}.", "reviewed_other": "Se revisan los {{count, number(useGrouping: always)}} valores cargados: {{converted}} y {{invalid}}.",
         "converted_one": "{{count}} se convierte", "converted_other": "{{count, number(useGrouping: always)}} se convierten", "invalid_one": "{{count}} no", "invalid_other": "{{count, number(useGrouping: always)}} no",
         "row": "Fila", "what": "Qué pasa", "more_one": "Y {{count}} más.", "more_other": "Y {{count, number(useGrouping: always)}} más.",
-        "hint": "Corregilos en la tabla, o exportá, corregí el Excel e importalo. El tipo cambia al guardar, cuando todos entran.",
         "show_one": "Ver la fila en la tabla", "show_other": "Ver los {{count}} en la tabla"
       }
     },
@@ -359,7 +360,7 @@
       "titleTooLongIn_one": "En {{language}}: 1 opción supera los 30 caracteres del título.", "titleTooLongIn_other": "En {{language}}: {{count}} opciones superan los 30 caracteres del título.",
       "descriptionTooLongIn_one": "En {{language}}: 1 opción supera los 300 caracteres de la descripción.", "descriptionTooLongIn_other": "En {{language}}: {{count}} opciones superan los 300 caracteres de la descripción.",
       "more_one": "y {{count}} más", "more_other": "y {{count}} más",
-      "remove": "Quitar {{name}} de {{part}}", "yes": "Sí", "no": "No", "unavailable": "Campo no disponible"
+      "remove": "Quitar {{name}} de {{part}}", "yes": "Sí", "no": "No", "unavailable": "Campo no disponible", "saveFieldFirst": "Guardá el campo primero"
     },
     "lifecycle": {
       "deactivate": "Dar de baja",
@@ -369,14 +370,12 @@
     },
     "new": "Nuevo catálogo",
     "origin": {
-      "label": "De dónde salen las opciones",
-      "fixedHint": "¿De dónde salen las opciones? No se puede cambiar después: para otro origen, se arma otro catálogo.",
+      "label": "¿De dónde salen las opciones?",
+      "fixedHint": "No se puede cambiar después: para otro origen, se arma otro catálogo.",
       "manual": "Escribirlas a mano",
-      "manualHint": "Para listas que mantiene una persona: clientes, tipos de trabajo, depósitos. Se agregan, ordenan y dan de baja acá.",
       "filters": "Tomarlas de la base, con filtros",
       "filtersHint": "Elegís una vista de catálogo (por ahora, Usuarios) y qué filas entran. Se actualiza sola: un usuario nuevo aparece en el próximo envío.",
-      "continue": "Continuar",
-      "comingSoon": "Disponible próximamente."
+      "continue": "Continuar"
     },
     "columns": {
       "name": "Catálogo",
@@ -400,9 +399,7 @@
     "usage_other": "{{count}} formularios",
     "editNamed": "Editar {{name}}",
     "emptyTitle": "Todavía no hay catálogos.",
-    "emptyDescription": "Creá el primero para compartir sus opciones entre formularios.",
     "noMatches": "No encontramos catálogos con estos filtros.",
-    "noMatchesDescription": "Limpiá los filtros para ver los demás catálogos.",
     "items": {
       "title": "Opciones",
       "text": "Texto",
@@ -416,12 +413,12 @@
       "reactivateNamed": "Reactivar {{name}}",
       "removeNamed": "Quitar {{name}}",
       "deleteNamed": "Eliminar {{name}}", "deleteTitle": "¿Eliminar «{{name}}»?", "deleteConfirm": "Eliminar opción",
-      "deleteDescription": "Si una respuesta, otra opción, el dato de una persona o un formulario la usa, no se va a poder eliminar: en ese caso, dala de baja.",
       "deleteAfterOrder": "Guardá o descartá el orden pendiente para eliminar opciones.",
       "deletedState": "Se elimina al guardar", "restore": "Restaurar", "restoreNamed": "Restaurar {{name}}",
       "inUse": "No se puede eliminar: {{uses}}. Podés darla de baja.",
       "uses": { "records": "la eligió una respuesta", "options": "la usa otra opción", "people": "la tiene una persona en sus datos", "forms": "la usa un formulario" },
       "empty": "Todavía no hay opciones.",
+      "noMatches": "No hay opciones que coincidan.",
       "editing": "Editando {{name}}",
       "loadFailed": "No pudimos cargar las opciones.",
       "search": "Buscar opción",
@@ -481,7 +478,6 @@
       "remove": "Quitar condición {{number}}",
       "add": "Agregar condición",
       "excludeRecipient": "Sin incluir a quien lo recibe",
-      "excludeRecipientHint": "La persona que recibe el formulario no aparece entre estas opciones.",
       "direction": "Dirección",
       "ascending": "A → Z",
       "descending": "Z → A",
@@ -499,7 +495,6 @@
       },
       "previewTitle": "Vista previa",
       "sample": "Como si lo recibiera",
-      "sampleHint": "Elegí una persona de ejemplo. Esta prueba no cambia su identidad ni sus permisos.",
       "sampleRequired": "Elegí una persona de ejemplo para guardar.",
       "test": "Probar",
       "chooseSample": "Elegí una persona para probar antes de guardar.",
@@ -508,7 +503,6 @@
       "result_other": "{{count}} opciones.",
       "exceedsLimit": "Hay más de 200 opciones. Ajustá los filtros antes de guardar.",
       "optionsFailed": "No pudimos cargar las columnas y las personas de ejemplo.",
-      "readOnlyPreview": "Necesitás permiso para administrar catálogos para probar esta vista.",
       "unavailableColumn": "Columna no disponible",
       "unavailableOperator": "Comparación no disponible",
       "unavailableValue": "Valor no disponible",
@@ -516,8 +510,7 @@
     },
     "metadata": {
       "title": "El catálogo",
-      "description": "Descripción",
-      "descriptionHint": "La leen las personas para saber cuándo usarlo."
+      "description": "Descripción"
     },
     "title": "Catálogos",
     "saved": "Catálogo guardado.",
@@ -526,10 +519,10 @@
     "review": {
       "title": "Revisión del catálogo",
       "required": "El catálogo puede haber cambiado. Revisá la versión actual antes de guardar de nuevo.",
-      "description": "Tu borrador se conserva al releer. Usar la revisión actual descarta los cambios sin guardar, incluidas las opciones pendientes.",
+      "description": "«{{action}}» descarta los cambios sin guardar, incluidas las opciones pendientes.",
+      "filtersDescription": "«{{action}}» descarta los cambios sin guardar.",
       "mine": "Tu borrador",
       "current": "La revisión actual",
-      "readFirst": "Releé para comparar con la revisión actual.",
       "reread": "Releer",
       "adopt": "Usar la revisión actual"
     },
@@ -540,11 +533,12 @@
     "proposal": {
       "title": "Propuesta del asistente",
       "approve": "Aprobar y activar",
+      "approving": "Aprobando…",
       "discard": "Descartar propuesta",
+      "discarding": "Descartando…",
       "discardTitle": "¿Descartar esta propuesta?",
       "discardHint": "No se activará ni podrá usarse en formularios. Se conserva quién la pidió y la propuesta original.",
       "discarded": "Propuesta descartada.",
-      "pendingHint": "No se usa hasta que alguien la apruebe.",
       "requested": "La pidió {{name}} por WhatsApp el {{date}}.",
       "decided": "La resolvió {{name}} el {{date}}.",
       "unsupportedColumn": "No se pudo filtrar por «{{criterion}}»: ese dato no existe en la vista Usuarios.",
@@ -672,8 +666,10 @@
     "actions": {
       "import": "Importar",
       "export": "Exportar",
+      "exporting": "Exportando…",
       "more": "Más acciones de opciones",
       "template": "Descargar la plantilla",
+      "downloadingTemplate": "Descargando la plantilla…",
       "sort": "Ordenar A–Z",
       "generateCodes": "Generar los códigos que faltan",
       "saveFirst": "Guardá el catálogo antes.",

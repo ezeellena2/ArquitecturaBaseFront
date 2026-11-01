@@ -18,6 +18,18 @@ it("cancels and ignores bytes from the prior owner when Read is removed",async()
  let pending!:Promise<void>;act(()=>{pending=result.current.download(true);});const signal=fetch.mock.calls[0]![2]!;rerender({permissions:[]});expect(signal.aborted).toBe(true);
  await act(async()=>{done({blob:new Blob(["private"]),fileName:"Privado.xlsx",contentLanguage:"es"});await pending;});expect(savePrivateBlob).not.toHaveBeenCalled();
 });
+// The owner shows the wait on the control that started it: «Exportar», or the template wherever it was asked for.
+it("says which download is working until its file arrives",async()=>{
+ let done!:(value:Awaited<ReturnType<typeof imports.exportCatalog>>)=>void;vi.spyOn(imports,"exportCatalog").mockImplementation(()=>new Promise(resolve=>{done=resolve;}));
+ const {result}=renderHook(()=>useCatalogExport(scope,"id"));expect(result.current.working).toBeNull();
+ let pending!:Promise<void>;act(()=>{pending=result.current.download(true);});
+ expect(result.current.working).toBe("template");expect(result.current.busy).toBe(true);
+ await act(async()=>{done({blob:new Blob(["xlsx"]),fileName:"Plantilla.xlsx",contentLanguage:"es"});await pending;});
+ expect(result.current.working).toBeNull();
+ act(()=>{pending=result.current.download(false);});expect(result.current.working).toBe("export");
+ await act(async()=>{done({blob:new Blob(["xlsx"]),fileName:"Lista.xlsx",contentLanguage:"es"});await pending;});
+ expect(result.current.working).toBeNull();expect(result.current.busy).toBe(false);
+});
 it("exposes a denied Read so the owner can remove the private editor",async()=>{
  const denied=new ApiError(403,{});vi.spyOn(imports,"exportCatalog").mockRejectedValue(denied);
  const {result}=renderHook(()=>useCatalogExport(scope,"id"));await act(()=>result.current.download(false));expect(result.current).toHaveProperty("error",denied);

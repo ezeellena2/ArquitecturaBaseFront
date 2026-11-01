@@ -24,10 +24,12 @@ export interface CatalogListRow {
   canEdit: boolean;
 }
 
-export function CatalogListTable({ page, canManage, loading, error, onRetry, onPageChange, onPageSizeChange, onViewUsage, onEdit, hasFilters, emptyAction, sort, onSortChange }: {
+export function CatalogListTable({ page, canManage, loading, refreshing = false, error, onRetry, onPageChange, onPageSizeChange, onViewUsage, onEdit, hasFilters, emptyAction, sort, onSortChange }: {
   page?: PagedResult<CatalogListRow>;
   canManage: boolean;
   loading?: boolean;
+  /** Another search, filter, order or page is being read: the rows on sight dim until it arrives (LC2-A). */
+  refreshing?: boolean;
   error?: string;
   onRetry?: () => void;
   onPageChange: (page: number) => void;
@@ -58,9 +60,9 @@ export function CatalogListTable({ page, canManage, loading, error, onRetry, onP
     }]} /> },
   ];
   return <Surface>
-    <DataTable columns={columns} rows={page?.items ?? []} hasData={page !== undefined} rowKey={row => row.id} isLoading={loading && !page} error={error} onRetry={onRetry}
-      emptyTitle={t(hasFilters ? "catalogs.noMatches" : "catalogs.emptyTitle")} emptyDescription={t(hasFilters ? "catalogs.noMatchesDescription" : "catalogs.emptyDescription")}
-      emptyAction={emptyAction} sort={sort} onSortChange={onSortChange} />
+    {/* The empty states keep their title and their way out (a new catalog, or clearing the filters), without a description. */}
+    <DataTable columns={columns} rows={page?.items ?? []} hasData={page !== undefined} rowKey={row => row.id} isLoading={loading && !page} refreshing={refreshing} error={error} onRetry={onRetry}
+      emptyTitle={t(hasFilters ? "catalogs.noMatches" : "catalogs.emptyTitle")} emptyAction={emptyAction} sort={sort} onSortChange={onSortChange} />
     {page ? <Pagination {...page} onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} /> : null}
   </Surface>;
 }

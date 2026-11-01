@@ -19,8 +19,10 @@ import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
 
-export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, hasPendingMoves, totalCount, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onEdit, onChange, onFieldBlur, onMove, onRemove, deletedItemIds = [], deleteErrors, deleteDisabledReason, onDelete, onRestore }: {
+export function CatalogItemsTable({ items, culture, original, valueType, fields = [], scope, visibleFieldIds, canManage, busy, refreshing = false, hasPendingMoves, totalCount, inline, selected, onSelect, onSelectAll, errors, warnings, pendingTexts, sortPending, onEdit, onChange, onFieldBlur, onMove, onRemove, deletedItemIds = [], deleteErrors, deleteDisabledReason, onDelete, onRestore }: {
   items: readonly CatalogManualItemValue[];
+  /** The rows on sight are being replaced (another page, search or the rows with errors): dimmed and out of reach (LC2-A). */
+  refreshing?: boolean;
   inline: boolean; selected: readonly string[]; onSelect: (id: string, selected: boolean) => void; onSelectAll: (selected: boolean) => void;
   errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; warnings?: Readonly<Record<string, string>>; sortPending?: boolean;
   /** By option and field, what an unedited option or yes/no showed while a type change is pending (`pendingFieldTexts`). */
@@ -56,7 +58,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   // Typed values are read and shown in the draft's culture, the one its editable text was written in.
   const valueCulture = scope?.culture ?? culture, yesNo = { yes: t("catalogs.presentation.yes"), no: t("catalogs.presentation.no") };
   return (
-    <WideTable label={t("catalogs.items.title")}><TableHeader><TableRow>
+    <WideTable label={t("catalogs.items.title")} refreshing={refreshing}><TableHeader><TableRow>
       {canManage ? <TableHead scope="col"><Checkbox aria-label={t("catalogs.items.selectPage")} disabled={busy || !items.length} checked={selected.length === items.length && items.length > 0 ? true : selected.length ? "indeterminate" : false} onCheckedChange={value => onSelectAll(value === true)}/></TableHead> : null}
       <TableHead scope="col">#</TableHead>{columns.map(column => <WideTableHead key={column.id} pinned={column.id === "text" ? "start" : undefined} scope="col">{column.field ? administrativeName(column.field.name, culture) : t(column.tableLabelKey)}</WideTableHead>)}<WideTableHead pinned="end" scope="col" className="text-right">{t("actionsColumn")}</WideTableHead>
     </TableRow></TableHeader><TableBody>

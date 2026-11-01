@@ -19,12 +19,15 @@ import { withoutPresentationFields } from "../catalogPresentation";
 export interface CatalogReadScope { readonly actorId: string | null; readonly culture: FormCulture; readonly permissions: readonly string[] }
 // Only a stale revision requires rereading. Other 409s are business errors the author corrects in the editor.
 const isRevisionConflict = (error: unknown) => error instanceof ApiError && error.code === "Forms.Catalog.RevisionConflict";
+// What the editor waits for while it is busy: the page shows the wait on the control that started it.
+export type CatalogEditorWork = "save" | "preview" | "discardProposal" | "readCurrent";
 interface EditorState {
   readonly owner: string;
   readonly epoch: object;
   readonly draft: CatalogDraft;
   readonly baseline: Pick<CatalogDraft, "name" | "description" | "filters" | "isActive" | "fields" | "presentation">;
   readonly busy: boolean;
+  readonly working: CatalogEditorWork | null;
   readonly requiresReview: boolean;
   readonly current: CatalogDetail | null;
   // The confirmed detail the baseline came from (loaded, saved, imported or adopted): the definition for dialogs.
@@ -35,7 +38,7 @@ interface EditorState {
 }
 function fresh(owner: string, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text", culture: FormCulture = "es"): EditorState {
   const draft = openCatalogDraft(initial, kind, valueType, culture);
-  return { owner, epoch: {}, draft, baseline: { isActive: draft.isActive, name: draft.name, description: draft.description, filters: draft.filters, fields: draft.fields, presentation: draft.presentation }, busy: false, requiresReview: false, current: null, confirmed: initial ?? null, saved: null, previewResult: null, error: null };
+  return { owner, epoch: {}, draft, baseline: { isActive: draft.isActive, name: draft.name, description: draft.description, filters: draft.filters, fields: draft.fields, presentation: draft.presentation }, busy: false, working: null, requiresReview: false, current: null, confirmed: initial ?? null, saved: null, previewResult: null, error: null };
 }
 export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: CatalogDetail, kind: CatalogDraft["kind"] = "Manual", valueType: CatalogValueType = "Text") {
   const client = useQueryClient();
@@ -130,7 +133,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (captured.filters && (captured.isActive || pendingProposal) && !sampleUserId) return;
     let writing = false;
     const controller = new AbortController(); operation.current = controller;
-    setState(value => ({ ...value, busy: true, error: null, saved: null }));
+    setState(value => ({ ...value, busy: true, working: "save", error: null, saved: null }));
     try {
       if (captured.filters && captured.isActive && !pendingProposal) {
         const previewResult = await previewCatalogFilters({ sampleUserId: sampleUserId!, filters: catalogFiltersBody(captured.filters) }, controller.signal);
@@ -167,7 +170,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview
       || captured.proposal?.state !== "Pending" || !captured.id || captured.revision === null) return;
     const controller = new AbortController(); operation.current = controller;
-    setState(value => ({ ...value, busy: true, error: null, saved: null }));
+    setState(value => ({ ...value, busy: true, working: "discardProposal", error: null, saved: null }));
     try {
       const discarded = await discardCatalogProposal(captured.id, captured.revision, controller.signal);
       if (!accepts(owner, controller) || !permissionsRef.current.canManage) return;
@@ -187,7 +190,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     const filters = stateRef.current.draft.filters;
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || !filters || operation.current) return;
     const controller = new AbortController(); operation.current = controller;
-    setState(value => ({ ...value, busy: true, error: null, previewResult: null }));
+    setState(value => ({ ...value, busy: true, working: "preview", error: null, previewResult: null }));
     try {
       const previewResult = await previewCatalogFilters({ sampleUserId, filters: catalogFiltersBody(filters) }, controller.signal);
       if (accepts(owner, controller) && permissionsRef.current.canManage) setState(value => ({ ...value, previewResult }));
@@ -198,7 +201,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     const id = stateRef.current.draft.id;
     if (!owned || !isCurrentOwner() || !id || operation.current) return;
     const controller = new AbortController(); operation.current = controller;
-    setState(value => ({ ...value, busy: true, error: null }));
+    setState(value => ({ ...value, busy: true, working: "readCurrent", error: null }));
     try {
       const current = await fetchCatalog(id, controller.signal);
       if (accepts(owner, controller)) setState(value => ({ ...value, current, busy: false }));
@@ -224,7 +227,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description)
     || JSON.stringify(catalogFieldsBody(draft.fields, draft.culture)) !== JSON.stringify(catalogFieldsBody(state.baseline.fields, draft.culture)) || JSON.stringify(draft.presentation) !== JSON.stringify(state.baseline.presentation)
     || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0 || draft.deleteItems.length > 0 || draft.sortAlphabetically);
-  return { draft, dirty, busy: owned && state.busy, requiresReview: owned && state.requiresReview, current: owned ? state.current : null, confirmed: owned ? state.confirmed : null,
+  return { draft, dirty, busy: owned && state.busy, working: owned && state.busy ? state.working : null, requiresReview: owned && state.requiresReview, current: owned ? state.current : null, confirmed: owned ? state.confirmed : null,
     saved: owned ? state.saved : null, previewResult: owned && canManage ? state.previewResult : null, error: owned ? state.error : null, canSave: owned && canManage && !state.busy && !state.requiresReview,
     changeSort, observeCatalog, changeMetadata, changeFilters, changeFields, changePresentation, clearPreview, preview, changeItem, discardItem, changeItemDeletion, changeMove, clearMoves, loadItems, save, discardProposal, readCurrent, adoptCurrent };
 }

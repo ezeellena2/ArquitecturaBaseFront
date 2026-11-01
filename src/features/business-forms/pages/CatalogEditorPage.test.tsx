@@ -303,9 +303,13 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     // A spinner in place of the whole block shortened the screen, and the scroll ended at its top.
     expect(screen.getByRole("button", { name: "Editar Pérez" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Página siguiente" })).toBeInTheDocument();
+    // The rows that are being replaced stay dimmed and out of reach, with the line under the header (LC2-A).
+    const table = () => screen.getByRole("table").closest('[data-slot="table-container"]');
+    expect(table()).toHaveAttribute("aria-busy", "true");
     waiting.forEach(resolve => resolve());
     expect(await screen.findByRole("button", { name: "Editar López" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Editar Pérez" })).not.toBeInTheDocument();
+    expect(table()).not.toHaveAttribute("aria-busy");
   });
   it("does not show the options of the previous revision while the saved one loads", async () => {
     setup(); let saved = false; const waiting: (() => void)[] = [];
@@ -732,6 +736,53 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await waitFor(() => expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Catálogo actual"));
     expect(writes).toBe(1);
   });
+  // Every wait shows on the control that started it (2026-10-31, LC1-A): the gerund on the button, which takes no second click.
+  it("says Guardando… on Save while the catalog saves", async () => {
+    setup(); let writes = 0, release: (() => void) | undefined;
+    server.use(http.put("/api/forms/catalogs/" + id, async () => { writes++; await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), " editado");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    const saving = await screen.findByRole("button", { name: "Guardando…" });
+    expect(saving).toHaveAttribute("aria-busy", "true"); expect(saving).toBeDisabled();
+    await waitFor(() => expect(release).toBeDefined());
+    expect(writes).toBe(1);
+    await act(async () => { release!(); });
+    expect(await screen.findByRole("button", { name: "Guardar" })).not.toHaveAttribute("aria-busy");
+  });
+  it("says Exportando… on Export until the file arrives", async () => {
+    setup(); let done: ((file: Awaited<ReturnType<typeof catalogImports.exportCatalog>>) => void) | undefined;
+    vi.spyOn(catalogImports, "exportCatalog").mockImplementation(() => new Promise(resolve => { done = resolve; }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Exportar" }));
+    expect(await screen.findByRole("button", { name: "Exportando…" })).toHaveAttribute("aria-busy", "true");
+    // The template, in «⋯», waits for the same download: its trigger keeps its name and does not spin.
+    expect(screen.getByRole("button", { name: "Más acciones de opciones" })).not.toHaveAttribute("aria-busy");
+    await act(async () => { done!({ blob: new Blob(["xlsx"]), fileName: "Clientes.xlsx", contentLanguage: "es" }); });
+    expect(await screen.findByRole("button", { name: "Exportar" })).not.toHaveAttribute("aria-busy");
+  });
+  it("rereads with Releyendo… on its button and a spinner in the current revision, under only the warning of adopting it", async () => {
+    setup();
+    server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), " editado");
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    await user.click(await screen.findByRole("button", { name: "Revisar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Revisión del catálogo" });
+    expect(dialog).toHaveAccessibleDescription("«Usar la revisión actual» descarta los cambios sin guardar, incluidas las opciones pendientes.");
+    const current = within(dialog).getByRole("region", { name: "La revisión actual" });
+    expect(current).toHaveTextContent("—");
+    expect(within(dialog).queryByText(/Releé para comparar/)).not.toBeInTheDocument();
+    let release: (() => void) | undefined;
+    server.use(http.get("/api/forms/catalogs/" + id, async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ ...initial, revision: 2, name: { es: "Catálogo actual", en: "Current catalog" } }); }));
+    await user.click(within(dialog).getByRole("button", { name: "Releer" }));
+    expect(within(dialog).getByRole("button", { name: "Releyendo…" })).toHaveAttribute("aria-busy", "true");
+    expect(within(current).getByRole("status")).toBeInTheDocument();
+    await waitFor(() => expect(release).toBeDefined());
+    await act(async () => { release!(); });
+    expect(await within(current).findByText("Catálogo actual")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Releer" })).not.toHaveAttribute("aria-busy");
+  });
   it("reports a source in use without entering review", async () => {
     setup(); let writes = 0; const detail = "Un campo o un dato de las personas toma sus valores de este catálogo: no se puede dar de baja.";
     server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.SourceInUse", detail }, { status: 409 }); }));
@@ -977,6 +1028,9 @@ describe("Filters editor connected to current DTOs", () => {
     filterSetup(["formcatalogs.read"]); await mount("/catalogos/" + id);
     expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeDisabled(); expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
     expect(screen.queryByRole("combobox", { name: "Como si lo recibiera" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Probar" })).not.toBeInTheDocument();
+    // Without Manage there is nothing to test: no preview, and no text saying so (2026-10-31).
+    expect(screen.queryByRole("region", { name: "Vista previa" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/para probar esta vista/)).not.toBeInTheDocument();
   });
   it("binds filter errors to the field and retains the conditions without a duplicate toast", async () => {
     filterSetup(); server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ code: "Validation.Failed", errors: { "filters.conditions[0]": ["Revisá la condición."] } }, { status: 400 })));
@@ -1004,9 +1058,23 @@ describe("Filters editor connected to current DTOs", () => {
     // From then on it validates live: choosing the person clears the mark, and Save tests and saves.
     await selectSample();
     expect(sample).not.toHaveAttribute("aria-invalid");
-    expect(sample).toHaveAccessibleDescription("Elegí una persona de ejemplo. Esta prueba no cambia su identidad ni sus permisos.");
+    // Nothing under the person explains the test (2026-10-31): the line under it is only for its error.
+    expect(sample).not.toHaveAccessibleDescription();
     await user.click(save); await waitFor(() => expect(writes).toHaveLength(1));
     expect(previews).toHaveLength(1);
+  });
+  it("says Guardando… on Save while it tests and saves an active filters catalog", async () => {
+    filterSetup(); let release: (() => void) | undefined;
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })),
+      http.put("/api/forms/catalogs/" + id + "/filters", async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ catalog: { ...filtersDetail, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), " editado");
+    await selectSample(); await user.click(screen.getByRole("button", { name: "Guardar" }));
+    const saving = await screen.findByRole("button", { name: "Guardando…" });
+    expect(saving).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(release).toBeDefined());
+    await act(async () => { release!(); });
+    expect(await screen.findByRole("button", { name: "Guardar" })).not.toHaveAttribute("aria-busy");
   });
   it("keeps only the catalog state beside the title and Review and Test in the bands of their surfaces", async () => {
     filterSetup();
@@ -1015,7 +1083,11 @@ describe("Filters editor connected to current DTOs", () => {
     await mount("/catalogos/" + id); const user = userEvent.setup();
     const preview = await screen.findByRole("region", { name: "Vista previa" });
     const previewBand = within(preview).getByRole("heading", { name: "Vista previa" }).parentElement!;
+    // Why Test is off is its help, not a text in the preview (2026-10-31).
+    const choose = "Elegí una persona para probar antes de guardar.";
     expect(within(previewBand).getByRole("button", { name: "Probar" })).toBeDisabled();
+    expect(within(previewBand).getByRole("button", { name: "Probar" })).toHaveAccessibleDescription(choose);
+    expect(screen.getAllByText(choose).every(node => node.closest("[hidden]"))).toBe(true);
     // Without changes Save is off; an edit turns it on, and that is what says there are changes.
     const save = screen.getByRole("button", { name: "Guardar" });
     expect(save).toBeDisabled();
@@ -1058,9 +1130,34 @@ it("keeps sample search focused and enabled while its next page is loading", asy
   }));
   await mount("/catalogos/" + id); const user = userEvent.setup(); const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
   await waitFor(() => expect(input).toBeEnabled());
-  try { await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); expect(screen.getByRole("combobox", { name: "Texto de cada opción" })).toBeInTheDocument(); expect(searches).toBe(1); }
+  try {
+    await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); expect(screen.getByRole("combobox", { name: "Texto de cada opción" })).toBeInTheDocument(); expect(searches).toBe(1);
+    // While it searches, the open list says so instead of showing the previous people.
+    expect(screen.getByRole("listbox")).toHaveTextContent("Buscando…");
+    expect(within(screen.getByRole("listbox")).queryByRole("option")).not.toBeInTheDocument();
+  }
   finally { release(); }
   expect(await screen.findByRole("option", { name: "Persona buscada" })).toBeInTheDocument();
+  expect(screen.queryByText("Buscando…")).not.toBeInTheDocument();
+});
+
+it("keeps Retry of the sample people in place, working, while they are read again", async () => {
+  filterSetup(); const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)); let fail = false, release: (() => void) | undefined;
+  server.use(http.get("/api/forms/catalog-filter-options", async ({ request }) => {
+    if (!new URL(request.url).searchParams.get("search")) return HttpResponse.json(options);
+    if (fail) return HttpResponse.json({}, { status: 503 });
+    await new Promise<void>(resolve => { release = resolve; });
+    return HttpResponse.json(options);
+  }));
+  await mount("/catalogos/" + id); const user = userEvent.setup();
+  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  fail = true; await user.type(input, "Ana");
+  const retry = await screen.findByRole("button", { name: "Reintentar" });
+  fail = false; await user.click(retry);
+  expect(screen.getByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+  await waitFor(() => expect(release).toBeDefined());
+  await act(async () => { release!(); });
+  await waitFor(() => expect(screen.queryByRole("button", { name: /^Reintent/ })).not.toBeInTheDocument());
 });
 
  it("preserves the filters editor and its draft when sample search fails", async () => {
@@ -1147,6 +1244,25 @@ it("does not reset the sample page when its initial search is unchanged", async 
   expect(screen.getByRole("button", {name:"Página anterior"})).toBeEnabled();
 });
 
+it("shows a spinner beside the sample people's pages while another page is read", async () => {
+  filterSetup(); const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)); let release: (() => void) | undefined;
+  server.use(http.get("/api/forms/catalog-filter-options", async ({ request }) => {
+    const page = Number(new URL(request.url).searchParams.get("page") ?? 1);
+    if (page === 2) await new Promise<void>(resolve => { release = resolve; });
+    return HttpResponse.json({ ...options, sampleUsers: { items: [{ id: itemId, name: page === 1 ? "Primera persona" : "Segunda persona" }], page, pageSize: 20, totalCount: 21, totalPages: 2, hasPrevious: page > 1, hasNext: page === 1 } });
+  }));
+  await mount("/catalogos/" + id);
+  const preview = await screen.findByRole("region", { name: "Vista previa" });
+  await screen.findByText("Página 1 de 2", { exact: true });
+  expect(within(preview).queryByRole("status")).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Página siguiente" }));
+  await waitFor(() => expect(release).toBeDefined());
+  expect(within(preview).getByRole("status")).toBeInTheDocument();
+  await act(async () => { release!(); });
+  await screen.findByText("Página 2 de 2", { exact: true });
+  expect(within(preview).queryByRole("status")).not.toBeInTheDocument();
+});
+
 it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invalid input and never changes the persisted type", async language => {
   setup(undefined, language); await i18n.changeLanguage(language);
   const typed = { ...initial, valueType: "Decimal" };
@@ -1160,6 +1276,11 @@ it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invali
   await user.click(await screen.findByRole("button", { name: language === "es" ? "Editar Pérez" : "Edit Pérez" }));
   const value = screen.getByRole("textbox", { name: language === "es" ? "Valor · Decimal" : "Value · Decimal" });
   expect(value).toHaveValue(language === "es" ? "9.007.199.254.740.993,0123" : "9,007,199,254,740,993.0123");
+  // What the value takes is in the (i) next to its label, not a line under it, and it is the value's description (2026-10-31).
+  const takes = language === "es" ? "Número decimal, sin redondeos." : "Decimal number, without rounding.";
+  expect(value).toHaveAccessibleDescription(takes);
+  expect(screen.getByRole("button", { name: language === "es" ? "Más información sobre Valor · Decimal" : "More about Value · Decimal" })).toHaveAccessibleDescription(takes);
+  expect(screen.queryByText(takes, { selector: "p" })).not.toBeInTheDocument();
   await user.clear(value); await pasteText(user, value, "mil");
   expect(value).toHaveValue("mil"); expect(value).toHaveAttribute("aria-invalid", "true");
   const save = () => screen.getByRole("button", { name: language === "es" ? "Guardar" : "Save" });

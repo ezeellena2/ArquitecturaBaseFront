@@ -3,6 +3,7 @@ import { catalogItemColumns } from "../catalogColumns";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
@@ -87,11 +88,16 @@ export function CatalogItemFields({ item, culture, original, valueType, fields =
         </div>
         {message(column.id, error)}
       </CatalogRow>;
+      // What the value takes goes in the (i) next to its label, and is the control's description too (2026-10-31); the line
+      // under it is for its error.
       case "value": {
-        const hint = t("catalogs.valueType.inputHint." + valueType);
-        return <CatalogRow key={column.id} label={label(column.id, t(column.editorLabelKey, { type: t("catalogs.valueTypes." + valueType) }), column.required)}>
-          <Input {...described(column.id, error, hint)} type={column.inputType} inputMode={column.inputMode} maxLength={column.maxLength} readOnly={readOnly} value={item.value ?? ""} onChange={event => onChange({ ...item, value: event.target.value || null })} onBlur={blur} />
-          {message(column.id, error, hint)}
+        const valueLabel = t(column.editorLabelKey, { type: t("catalogs.valueTypes." + valueType) }), helpId = id + column.id + "-help", marked = described(column.id, error);
+        return <CatalogRow key={column.id} label={<>
+          <Label htmlFor={id + column.id}>{valueLabel}{column.required ? <span aria-hidden="true"> *</span> : null}</Label>
+          <InfoTip id={helpId} label={t("common:actions.moreInfo", { label: valueLabel })} text={t("catalogs.valueType.inputHint." + valueType)} />
+        </>}>
+          <Input {...marked} aria-describedby={[helpId, marked["aria-describedby"]].filter(Boolean).join(" ")} type={column.inputType} inputMode={column.inputMode} maxLength={column.maxLength} readOnly={readOnly} value={item.value ?? ""} onChange={event => onChange({ ...item, value: event.target.value || null })} onBlur={blur} />
+          {message(column.id, error)}
         </CatalogRow>;
       }
       case "detail": {

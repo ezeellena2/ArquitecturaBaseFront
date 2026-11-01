@@ -47,8 +47,6 @@ export interface CatalogFieldsDialogProps {
   confirmedRemovals: readonly string[];
   errors?: CatalogFieldErrors;
   feedback?: CatalogFieldFeedback | null;
-  /** The saved type of each saved field: changing it in a field with values says that saving checks them. */
-  savedTypes?: Readonly<Record<string, CatalogFieldType>>;
   /** The field «Revisar» opens, with the focus on its first marked control. */
   initialFieldId?: string | null;
   /** The page's id for the warning «Listo» gives while there are new fields: saving the catalog takes it away. */
@@ -60,7 +58,7 @@ export interface CatalogFieldsDialogProps {
 // Every field of a catalog in one modal (C, 2026-10-27): the list on the left and the chosen field on the right, each in its
 // box; on the phone, first the list and then the field. It edits a copy: «Listo» leaves it in the catalog, which «Guardar»
 // saves, and «Cancelar» or Esc discard it. It is mounted only while open.
-export function CatalogFieldsDialog({ catalogName, fields, presentation, culture, original, scope, readOnly, confirmedRemovals, errors = {}, feedback, savedTypes, initialFieldId = null, noticeId, onApply, onClose }: CatalogFieldsDialogProps) {
+export function CatalogFieldsDialog({ catalogName, fields, presentation, culture, original, scope, readOnly, confirmedRemovals, errors = {}, feedback, initialFieldId = null, noticeId, onApply, onClose }: CatalogFieldsDialogProps) {
   const { t } = useTranslation("forms");
   const desktop = useMediaQuery("(min-width: 640px)");
   const restoreFocus = useRestoreFocusOnClose();
@@ -147,7 +145,6 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
     {!selected.isActive ? <RemovedField title={title(selected)} messages={shown[selected.localId] ?? {}} uses={uses(selected)} readOnly={readOnly} onRestore={() => restore(selected)} />
       : readOnly ? <FieldText field={selected} title={title(selected)} scope={scope} />
       : <FieldForm key={selected.localId} field={selected} takenKeys={draft.fields.filter(field => field.localId !== selected.localId).map(field => field.key)} culture={culture} original={original} scope={scope} errors={shown[selected.localId] ?? {}} uses={uses(selected)} focusOnOpen={focusField}
-        typeChanged={!!selected.id && selected.valuesCount > 0 && !!savedTypes?.[selected.id] && savedTypes[selected.id] !== selected.type}
         onChange={next => update(draft.fields.map(value => value.localId === next.localId ? next : value))} />}
   </Surface> : null;
 
@@ -187,7 +184,7 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
   </Dialog>;
 }
 
-function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, typeChanged, focusOnOpen, onChange }: { field: CatalogFieldDraft; takenKeys: readonly string[]; culture: FormCulture; original: FormCulture; scope: CatalogReadScope; errors: FieldMessages; uses: ReactNode; typeChanged: boolean; focusOnOpen: boolean; onChange: (field: CatalogFieldDraft) => void }) {
+function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, focusOnOpen, onChange }: { field: CatalogFieldDraft; takenKeys: readonly string[]; culture: FormCulture; original: FormCulture; scope: CatalogReadScope; errors: FieldMessages; uses: ReactNode; focusOnOpen: boolean; onChange: (field: CatalogFieldDraft) => void }) {
   const { t } = useTranslation("forms");
   const id = useId();
   const root = useRef<HTMLDivElement>(null), nameRef = useRef<HTMLInputElement>(null);
@@ -205,7 +202,8 @@ function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, t
   const nameError = [localizedIssueMessage(localizedIssue(errors, "name", culture), culture, t), error("isActive")].filter(Boolean).join(" ") || undefined;
   const reference = contentReference(field.name, culture, original);
   const nameHint = reference ? t("originalText", { language: t("cultures." + original), text: reference }) : undefined;
-  const typeHint = error("type") ?? (typeChanged ? t("catalogs.fields.typeReview") : undefined);
+  // Nothing under Tipo explains what saving checks (2026-10-31): a value that does not convert opens «Cambiar el tipo».
+  const typeError = error("type");
   const bound = (key: "min" | "max") => <Input type={field.type === "date" ? "date" : "text"} inputMode={field.type === "integer" ? "numeric" : field.type === "decimal" ? "decimal" : undefined} className={field.type === "date" ? "w-40" : "w-24"} aria-label={t("catalogs.fields." + key)} value={field[key] ?? ""} onChange={event => set({ [key]: event.target.value || null })} {...marked(key)} />;
   // The type's detail goes on its own row under Tipo: a length, a range or the source catalog.
   const detailKind = field.type === "text" ? "text" : rangeTypes.includes(field.type) ? "range" : field.type === "catalog" ? "catalog" : null;
@@ -232,8 +230,8 @@ function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, t
     </Row>
     <div className="flex flex-col gap-3">
       <Row label={<Label htmlFor={id + "type"}>{t("catalogs.fields.type")}<span aria-hidden="true"> *</span></Label>}>
-        <NativeSelect id={id + "type"} aria-required value={field.type} aria-invalid={error("type") ? true : undefined} aria-describedby={typeHint ? id + "type-message" : undefined} onChange={event => changeType(event.target.value as CatalogFieldType)}>{catalogFieldTypes.map(type => <option key={type} value={type}>{t("catalogs.fields.types." + type)}</option>)}</NativeSelect>
-        {typeHint ? <Message id={id + "type-message"} error={!!error("type")}>{typeHint}</Message> : null}
+        <NativeSelect id={id + "type"} aria-required value={field.type} aria-invalid={typeError ? true : undefined} aria-describedby={typeError ? id + "type-message" : undefined} onChange={event => changeType(event.target.value as CatalogFieldType)}>{catalogFieldTypes.map(type => <option key={type} value={type}>{t("catalogs.fields.types." + type)}</option>)}</NativeSelect>
+        {typeError ? <Message id={id + "type-message"} error>{typeError}</Message> : null}
       </Row>
       {detailKind ? <Row label={<Label id={id + "detail"}>{t("catalogs.fields.detailLabel." + detailKind)}</Label>}>
         <div role="group" aria-labelledby={id + "detail"}>{detail}</div>

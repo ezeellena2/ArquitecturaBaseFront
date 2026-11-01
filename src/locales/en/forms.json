@@ -122,6 +122,9 @@
   "reviewAudit": "Last change: {{date}} · {{author}}",
   "wait_one": "Wait {{count}} second before trying again.",
   "wait_other": "Wait {{count}} seconds before trying again.",
+  "searching": "Searching…",
+  "retrying": "Retrying…",
+  "rereading": "Reading again…",
   "cultures": {
     "es": "Spanish",
     "en": "English"
@@ -310,7 +313,6 @@
       "empty": "There are no extra fields yet.",
       "keyHint": "Used by the template, imports and stored data. It does not change after saving.",
       "optionalFirst": "A new field starts optional: every active option needs a value before it can be required.",
-      "typeReview": "Saving checks every value. If any cannot convert, the change is not saved.",
       "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values", "saveToEnterValues": "Save the catalog to enter values for the new fields.", "limit_one": "A catalog can have up to {{count}} field.", "limit_other": "A catalog can have up to {{count}} fields.",
       "removeTitle": "Remove “{{name}}”", "remove": "Remove field", "removeHint": "Removed from the table, template and Excel. Responses that already captured it keep it.",
       "confirmRemoval_one": "Yes, remove the field and its value", "confirmRemoval_other": "Yes, remove the field and its {{count, number(useGrouping: always)}} values", "detail": { "between": "From {{min}} to {{max}}", "from": "From {{min}}", "to": "Up to {{max}}", "length_one": "{{count}} character", "length_other": "{{count}} characters", "source_one": "{{name}} · 1 option", "source_other": "{{name}} · {{count, number(useGrouping: always)}} options" }, "inUse": "This field is in use. Remove those uses before removing it.",
@@ -350,7 +352,6 @@
         "reviewed_one": "1 loaded value is checked: {{converted}} and {{invalid}}.", "reviewed_other": "All {{count, number(useGrouping: always)}} loaded values are checked: {{converted}} and {{invalid}}.",
         "converted_one": "{{count}} converts", "converted_other": "{{count, number(useGrouping: always)}} convert", "invalid_one": "{{count}} doesn't", "invalid_other": "{{count, number(useGrouping: always)}} don't",
         "row": "Row", "what": "What happens", "more_one": "And {{count}} more.", "more_other": "And {{count, number(useGrouping: always)}} more.",
-        "hint": "Fix them in the table, or export, fix the Excel file and import it. The type changes on save, once they all fit.",
         "show_one": "Show the row in the table", "show_other": "Show the {{count}} in the table"
       }
     },
@@ -359,7 +360,7 @@
       "titleTooLongIn_one": "In {{language}}: 1 option exceeds the 30-character title limit.", "titleTooLongIn_other": "In {{language}}: {{count}} options exceed the 30-character title limit.",
       "descriptionTooLongIn_one": "In {{language}}: 1 option exceeds the 300-character description limit.", "descriptionTooLongIn_other": "In {{language}}: {{count}} options exceed the 300-character description limit.",
       "more_one": "and {{count}} more", "more_other": "and {{count}} more",
-      "remove": "Remove {{name}} from {{part}}", "yes": "Yes", "no": "No", "unavailable": "Unavailable field"
+      "remove": "Remove {{name}} from {{part}}", "yes": "Yes", "no": "No", "unavailable": "Unavailable field", "saveFieldFirst": "Save the field first"
     },
     "lifecycle": {
       "deactivate": "Deactivate",
@@ -369,14 +370,12 @@
     },
     "new": "New catalog",
     "origin": {
-      "label": "Where the options come from",
-      "fixedHint": "Where do the options come from? This cannot change later: use a new catalog for another source.",
+      "label": "Where do the options come from?",
+      "fixedHint": "This cannot change later: use a new catalog for another source.",
       "manual": "Write them manually",
-      "manualHint": "For lists maintained by a person: customers, job types and warehouses. Add, order and deactivate options here.",
       "filters": "Use database options with filters",
       "filtersHint": "Choose a catalog view (currently Users) and which rows to include. It updates automatically: a new user appears in the next send.",
-      "continue": "Continue",
-      "comingSoon": "Coming soon."
+      "continue": "Continue"
     },
     "columns": {
       "name": "Catalog",
@@ -400,9 +399,7 @@
     "usage_other": "{{count}} forms",
     "editNamed": "Edit {{name}}",
     "emptyTitle": "No catalogs yet.",
-    "emptyDescription": "Create the first catalog to share its options across forms.",
     "noMatches": "No catalogs match these filters.",
-    "noMatchesDescription": "Clear the filters to see other catalogs.",
     "items": {
       "title": "Options",
       "text": "Text",
@@ -416,12 +413,12 @@
       "reactivateNamed": "Reactivate {{name}}",
       "removeNamed": "Remove {{name}}",
       "deleteNamed": "Delete {{name}}", "deleteTitle": "Delete “{{name}}”?", "deleteConfirm": "Delete option",
-      "deleteDescription": "If a response, another option, a person's data or a form uses it, it can't be deleted: deactivate it instead.",
       "deleteAfterOrder": "Save or discard the pending order to delete options.",
       "deletedState": "Deleted when saving", "restore": "Restore", "restoreNamed": "Restore {{name}}",
       "inUse": "It can't be deleted: {{uses}}. You can deactivate it.",
       "uses": { "records": "a response chose it", "options": "another option uses it", "people": "a person has it in their data", "forms": "a form uses it" },
       "empty": "No options yet.",
+      "noMatches": "No options match.",
       "editing": "Editing {{name}}",
       "loadFailed": "We could not load the options.",
       "search": "Search options",
@@ -481,7 +478,6 @@
       "remove": "Remove condition {{number}}",
       "add": "Add condition",
       "excludeRecipient": "Exclude the recipient",
-      "excludeRecipientHint": "The person receiving the form is not included in these options.",
       "direction": "Direction",
       "ascending": "A → Z",
       "descending": "Z → A",
@@ -499,7 +495,6 @@
       },
       "previewTitle": "Preview",
       "sample": "As if received by",
-      "sampleHint": "Choose a sample person. This test does not change their identity or permissions.",
       "sampleRequired": "Choose a sample person to save.",
       "test": "Test",
       "chooseSample": "Choose a person to test before saving.",
@@ -508,7 +503,6 @@
       "result_other": "{{count}} options.",
       "exceedsLimit": "There are more than 200 options. Adjust the filters before saving.",
       "optionsFailed": "We could not load the columns and sample people.",
-      "readOnlyPreview": "You need permission to manage catalogs to test this preview.",
       "unavailableColumn": "Unavailable column",
       "unavailableOperator": "Unavailable comparison",
       "unavailableValue": "Unavailable value",
@@ -516,8 +510,7 @@
     },
     "metadata": {
       "title": "The catalog",
-      "description": "Description",
-      "descriptionHint": "People read it to know when to use this catalog."
+      "description": "Description"
     },
     "title": "Catalogs",
     "saved": "Catalog saved.",
@@ -526,10 +519,10 @@
     "review": {
       "title": "Catalog review",
       "required": "The catalog may have changed. Review the current version before saving again.",
-      "description": "Rereading preserves your draft. Using the current revision discards unsaved changes, including pending options.",
+      "description": "“{{action}}” discards unsaved changes, including pending options.",
+      "filtersDescription": "“{{action}}” discards unsaved changes.",
       "mine": "Your draft",
       "current": "The current revision",
-      "readFirst": "Reread to compare with the current revision.",
       "reread": "Reread",
       "adopt": "Use the current revision"
     },
@@ -540,11 +533,12 @@
     "proposal": {
       "title": "Assistant proposal",
       "approve": "Approve and activate",
+      "approving": "Approving…",
       "discard": "Discard proposal",
+      "discarding": "Discarding…",
       "discardTitle": "Discard this proposal?",
       "discardHint": "It will stay inactive and cannot be used in forms. The requester and original proposal are retained.",
       "discarded": "Proposal discarded.",
-      "pendingHint": "It is not used until someone approves it.",
       "requested": "Requested by {{name}} via WhatsApp on {{date}}.",
       "decided": "Resolved by {{name}} on {{date}}.",
       "unsupportedColumn": "Could not filter by “{{criterion}}”: that field does not exist in the Users view.",
@@ -672,8 +666,10 @@
     "actions": {
       "import": "Import",
       "export": "Export",
+      "exporting": "Exporting…",
       "more": "More option actions",
       "template": "Download the template",
+      "downloadingTemplate": "Downloading the template…",
       "sort": "Sort A–Z",
       "generateCodes": "Generate missing codes",
       "saveFirst": "Save the catalog first.",

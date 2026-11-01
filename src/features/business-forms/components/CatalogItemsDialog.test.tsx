@@ -95,6 +95,8 @@ it("asks before removing a saved option, marks it to delete and offers to restor
   const { user, onDelete, onRestore } = await mount({ items: [first, second] });
   await user.click(screen.getByRole("button", { name: "Quitar opción" }));
   const confirm = screen.getByRole("dialog", { name: "¿Eliminar «Pérez Hnos.»?" });
+  // The rule of what cannot be deleted is not explained there: if something uses it, saving says so on its row.
+  expect(within(confirm).queryByText(/no se va a poder eliminar/)).not.toBeInTheDocument();
   await user.click(within(confirm).getByRole("button", { name: "Eliminar opción" }));
   expect(onDelete).toHaveBeenCalledWith(first);
   expect(screen.getByRole("button", { name: "Editar Pérez Hnos." })).toHaveTextContent("Se elimina al guardar");

@@ -61,3 +61,36 @@ it("requests the Unavailable state from the server and preserves origin/search/s
   expect(params.get("kind")).toBe("Filters"); expect(params.get("search")).toBe("supervisores"); expect(params.get("sort")).toBe("-name"); expect(params.get("page")).toBeNull();
   await waitFor(() => expect(requests.some(request => request.get("state") === "Unavailable")).toBe(true)); expect(requests.at(-1)!.has("isActive")).toBe(false);
 });
+
+// Searching, filtering, sorting or paging keeps the rows in sight, dimmed and out of reach, with the line under the header (LC2-A).
+it("dims the listed catalogs while the next ones are read", async () => {
+  const row = { valueType: "Text", id: "01990000-0000-7000-8000-000000000030", name: "Clientes", description: null, origin: "Manual", optionsCount: 3, usageCount: null, state: "Active", stateReason: null, canEdit: true };
+  setup(["formcatalogs.read"]); let release: (() => void) | undefined;
+  server.use(http.get("/api/forms/catalogs", async ({ request }) => {
+    if (new URL(request.url).searchParams.get("kind") === "Filters") await new Promise<void>(resolve => { release = resolve; });
+    return HttpResponse.json({ ...listRaw, items: [row], totalCount: 1, totalPages: 1, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } });
+  }));
+  await act(async () => { renderRouteWithProviders("/catalogos?pageSize=20"); });
+  const table = () => screen.getByRole("table").closest('[data-slot="table-container"]');
+  await screen.findByRole("link", { name: "Clientes" });
+  expect(table()).not.toHaveAttribute("aria-busy");
+  await userEvent.setup().click(screen.getByRole("button", { name: "De la base (0)" }));
+  await waitFor(() => expect(release).toBeDefined());
+  expect(table()).toHaveAttribute("aria-busy", "true");
+  await act(async () => { release!(); });
+  await waitFor(() => expect(table()).not.toHaveAttribute("aria-busy"));
+});
+
+// Without legends (2026-10-31): the empty list has its title and its way out, without a description.
+it("leaves the empty list with its title and «Nuevo catálogo», and no matches with its title and «Limpiar filtros»", async () => {
+  setup(["formcatalogs.read", "formcatalogs.manage"]);
+  let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+  await act(async () => { router = renderRouteWithProviders("/catalogos?pageSize=20").router; });
+  expect(await screen.findByText("Todavía no hay catálogos.")).toBeInTheDocument();
+  expect(screen.queryByText("Creá el primero para compartir sus opciones entre formularios.")).not.toBeInTheDocument();
+  expect(screen.getAllByRole("button", { name: "Nuevo catálogo" })).toHaveLength(2);
+  await act(async () => { await router.navigate("/catalogos?pageSize=20&search=zzz"); });
+  expect(await screen.findByText("No encontramos catálogos con estos filtros.")).toBeInTheDocument();
+  expect(screen.queryByText("Limpiá los filtros para ver los demás catálogos.")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Limpiar filtros" })).toBeInTheDocument();
+});

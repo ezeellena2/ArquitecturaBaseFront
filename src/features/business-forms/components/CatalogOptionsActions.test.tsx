@@ -118,6 +118,30 @@ it("prevents duplicate operations while its owner is busy", async () => {
   expect(value.onImport).not.toHaveBeenCalled(); expect(value.onExport).not.toHaveBeenCalled();
 });
 
+// A download shows on the control that asked for it (LC1-A): Exportar says «Exportando…»; one asked in «⋯» spins its trigger.
+it("shows the export that works on Export and leaves the menu alone", async () => {
+  await mount(<CatalogOptionsActions {...props({ downloading: "export" })} />);
+  const exporting = screen.getByRole("button", { name: "Exportando…" });
+  expect(exporting).toHaveAttribute("aria-busy", "true"); expect(exporting).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Más acciones de opciones" })).not.toHaveAttribute("aria-busy");
+  const user = userEvent.setup(); const { menu } = await more(user);
+  expect(within(menu).getByRole("menuitem", { name: "Descargar la plantilla" })).toHaveAttribute("aria-disabled", "true");
+});
+
+it("spins the menu trigger while the template it offered downloads", async () => {
+  await mount(<CatalogOptionsActions {...props({ downloading: "template" })} />);
+  const trigger = screen.getByRole("button", { name: "Descargando la plantilla…" });
+  expect(trigger).toHaveAttribute("aria-busy", "true"); expect(trigger).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Exportar" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Exportar" })).not.toHaveAttribute("aria-busy");
+});
+
+it("spins the menu trigger on the phone, where Export lives in the menu", async () => {
+  viewport.mobile = true;
+  await mount(<CatalogOptionsActions {...props({ downloading: "export" })} />);
+  expect(screen.getByRole("button", { name: "Exportando…" })).toHaveAttribute("aria-busy", "true");
+});
+
 it("does not explain the disabled actions while its owner is busy", async () => {
   await mount(<CatalogOptionsActions {...props({ busy: true, saved: false })} />);
   for (const name of ["Importar", "Exportar"]) {

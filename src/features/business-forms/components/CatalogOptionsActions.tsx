@@ -17,6 +17,8 @@ export interface CatalogOptionsActionsProps {
   sortPending: boolean;
   dialogOpen: boolean;
   focusRef: RefObject<HTMLButtonElement | null>;
+  /** The file on its way (`useCatalogExport.working`): its control shows the wait, and both downloads wait for it. */
+  downloading?: "export" | "template" | null;
   /** «Importar» opens the import dialog, with its two tabs: «Subir un archivo» and «Pegar desde Excel». */
   onImport: () => void;
   onExport: (template: boolean) => void;
@@ -25,7 +27,7 @@ export interface CatalogOptionsActionsProps {
 }
 
 export function CatalogOptionsActions({ canManage, busy, saved, importDisabledReason, hasPendingMoves,
-  sortPending, dialogOpen, focusRef, onImport, onExport, onSort, onGenerateCodes }: CatalogOptionsActionsProps) {
+  sortPending, dialogOpen, focusRef, downloading = null, onImport, onExport, onSort, onGenerateCodes }: CatalogOptionsActionsProps) {
   const { t } = useTranslation("forms");
   const mobile = useMediaQuery("(max-width: 639px)");
   const trigger = useRef<HTMLButtonElement>(null);
@@ -39,6 +41,8 @@ export function CatalogOptionsActions({ canManage, busy, saved, importDisabledRe
   // explica, porque el motivo no es ése.
   const shownImportReason = busy ? null : importReason;
   const exportReason = busy ? null : saveReason;
+  // A download asked in «⋯» (the template, and on the phone also the export) spins the trigger, which says what it does.
+  const exporting = downloading === "export", menuWorking = downloading === "template" || (mobile && exporting);
 
   function beginImport(button: HTMLButtonElement | null) {
     focusRef.current = button;
@@ -46,26 +50,28 @@ export function CatalogOptionsActions({ canManage, busy, saved, importDisabledRe
     onImport();
   }
 
-  function item(label: string, reason: string | null, action: () => void) {
-    const unavailable = busy || reason !== null;
+  function item(label: string, reason: string | null, action: () => void, unavailable = busy || reason !== null) {
     return <DropdownMenuItem aria-disabled={unavailable || undefined} onSelect={event => {
       if (unavailable) event.preventDefault(); else action();
     }}><span>{label}{reason ? <span className="block text-xs">{reason}</span> : null}</span></DropdownMenuItem>;
   }
+  // While a file is on its way, the other download waits for it too: the owner takes one at a time.
+  const download = (label: string, template: boolean) => item(label, saveReason, () => onExport(template), busy || saveReason !== null || downloading !== null);
 
   // Sin contenedor propio: las acciones de la Surface «Opciones» las alinea ella, al borde derecho y a la altura del título.
   return <>
     {!mobile ? <>
       {canManage ? <DisabledReason reason={shownImportReason}><Button type="button" variant="outline" disabled={busy || importReason !== null}
         onClick={event => beginImport(event.currentTarget)}>{t("catalogs.actions.import")}</Button></DisabledReason> : null}
-      <DisabledReason reason={exportReason}><Button type="button" variant="outline" disabled={busy || !saved}
-        onClick={() => onExport(false)}>{t("catalogs.actions.export")}</Button></DisabledReason>
+      <DisabledReason reason={exportReason}><Button type="button" variant="outline" pending={exporting} disabled={busy || !saved || downloading !== null}
+        onClick={() => onExport(false)}>{t(exporting ? "catalogs.actions.exporting" : "catalogs.actions.export")}</Button></DisabledReason>
     </> : null}
     <DropdownMenu open={open && !dialogOpen} onOpenChange={value => {
       if (value) openingDialog.current = false;
       setOpen(value);
     }}>
-      <DropdownMenuTrigger asChild><IconButton ref={trigger} label={t("catalogs.actions.more")}
+      <DropdownMenuTrigger asChild><IconButton ref={trigger} pending={menuWorking}
+        label={t(!menuWorking ? "catalogs.actions.more" : exporting ? "catalogs.actions.exporting" : "catalogs.actions.downloadingTemplate")}
         disabled={busy || dialogOpen}><MoreVerticalIcon className="size-4" aria-hidden="true" /></IconButton></DropdownMenuTrigger>
       <DropdownMenuContent align="end" onCloseAutoFocus={event => {
         if (openingDialog.current || dialogOpen) event.preventDefault();
@@ -74,10 +80,10 @@ export function CatalogOptionsActions({ canManage, busy, saved, importDisabledRe
           {canManage ? <DropdownMenuItem aria-disabled={busy || importReason !== null || undefined} onSelect={event => {
             if (busy || importReason !== null) event.preventDefault(); else beginImport(trigger.current);
           }}><span>{t("catalogs.actions.import")}{importReason ? <span className="block text-xs">{importReason}</span> : null}</span></DropdownMenuItem> : null}
-          {item(t("catalogs.actions.export"), saveReason, () => onExport(false))}
+          {download(t("catalogs.actions.export"), false)}
           <DropdownMenuSeparator />
         </> : null}
-        {item(t("catalogs.actions.template"), saveReason, () => onExport(true))}
+        {download(t("catalogs.actions.template"), true)}
         {canManage ? <>
           <DropdownMenuSeparator />
           {item(t("catalogs.actions.sort"), sortReason, onSort)}

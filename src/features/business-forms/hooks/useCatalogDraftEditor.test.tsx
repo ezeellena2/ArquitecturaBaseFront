@@ -50,6 +50,28 @@ describe("Manual catalog editor ownership", () => {
     expect(result.current.requiresReview).toBe(false);
     expect(writes).toBe(1);
   });
+  // The page shows the wait on the control that started it: «Guardando…» on Save, «Releyendo…» on Reread.
+  it("says which operation is working while it waits for the server", async () => {
+    let release!: () => void;
+    server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })),
+      http.get("/api/forms/catalogs/" + id, async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ ...initial, revision: 2 }); }));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope, initial), harness());
+    expect(result.current.working).toBeNull();
+    act(() => result.current.changeMetadata({ name: { es: "Mi nombre", en: "My name" } }));
+    let saving!: Promise<unknown>;
+    act(() => { saving = result.current.save(); });
+    expect(result.current.working).toBe("save");
+    await act(async () => { await saving; });
+    expect(result.current.working).toBeNull();
+    expect(result.current.requiresReview).toBe(true);
+    let reading!: Promise<unknown>;
+    act(() => { reading = result.current.readCurrent(); });
+    expect(result.current.working).toBe("readCurrent");
+    await waitFor(() => expect(release).toBeDefined());
+    await act(async () => { release(); await reading; });
+    expect(result.current.working).toBeNull();
+    expect(result.current.current!.revision).toBe(2);
+  });
   it("keeps the draft editable after a business conflict and requires review only for a revision conflict", async () => {
     let code = "Forms.Catalog.SourceInUse"; let writes = 0;
     server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code, detail: "En uso." }, { status: 409 }); }));

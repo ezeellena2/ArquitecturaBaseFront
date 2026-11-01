@@ -14,6 +14,7 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { administrativeName } from "../editorModel";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { FormField } from "@/shared/ui/FormField";
@@ -44,6 +45,7 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
   const [previousManage, setPreviousManage] = useState(scope.permissions.includes("formcatalogs.manage"));
   const [reviewOpen, setReviewOpen] = useState(false); const [discardOpen, setDiscardOpen] = useState(false);
   const [discardProposalOpen, setDiscardProposalOpen] = useState(false);
+  const [retryingSamples, setRetryingSamples] = useState(false);
   // Save does not wait for the sample person: trying it without one marks the person, and from then on it validates live.
   const [attempted, setAttempted] = useState(false);
   const proposalResult = useRef<HTMLDivElement>(null); const sampleInput = useRef<HTMLInputElement>(null);
@@ -98,43 +100,51 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
   };
   const discardProposal = async () => {
     const discarded = await editor.discardProposal();
-    if (discarded && active.current) notify({ id: feedbackId, kind: "success", message: t("catalogs.proposal.discarded") });
+    if (!active.current) return;
+    // The confirmation waits open while it works (LC1-A) and closes with the answer, also when it failed.
+    setDiscardProposalOpen(false);
+    if (discarded) notify({ id: feedbackId, kind: "success", message: t("catalogs.proposal.discarded") });
   };
+  // Retry stays in its place, working, until the people answer.
+  const retrySamples = async () => { setRetryingSamples(true); await options.refetch(); if (active.current) setRetryingSamples(false); };
   if (!draft?.filters || [editor.error, options.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   const samples = options.data?.sampleUsers;
+  // Each wait shows on the control that started it (LC1-A), and the preview spins only for what fills it.
+  const saving = editor.working === "save", rereading = editor.working === "readCurrent", previewing = saving || editor.working === "preview";
+  // While a search reads the people, the open list says so instead of the previous ones.
+  const searchingSamples = search !== settledSearch || options.isPlaceholderData;
   return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{pendingProposal ? <Badge variant="outline" className="border-[var(--color-warning)] text-[var(--color-warning-700)]">{t("catalogs.proposal.title")}</Badge> : t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}</span>}
-    actions={canManage ? <>{pendingProposal ? <Button variant="outline" disabled={!editor.canSave} onClick={() => setDiscardProposalOpen(true)}>{t("catalogs.proposal.discard")}</Button> : <>{draft.id && (!proposal || proposal.state === "Approved") ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button></>}<Button key="catalog-save" disabled={!editor.canSave || (!pendingProposal && !editor.dirty)} onClick={() => void save()}>{t(pendingProposal ? "catalogs.proposal.approve" : "common:actions.save")}</Button></> : undefined}>
+    actions={canManage ? <>{pendingProposal ? <Button variant="outline" disabled={!editor.canSave} onClick={() => setDiscardProposalOpen(true)}>{t("catalogs.proposal.discard")}</Button> : <>{draft.id && (!proposal || proposal.state === "Approved") ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button></>}<Button key="catalog-save" pending={saving} disabled={!editor.canSave || (!pendingProposal && !editor.dirty)} onClick={() => void save()}>{t(pendingProposal ? saving ? "catalogs.proposal.approving" : "catalogs.proposal.approve" : saving ? "saving" : "common:actions.save")}</Button></> : undefined}>
     {proposal ? <div ref={proposalResult} tabIndex={-1} className="mb-4 flex flex-col gap-2">
-      <Banner><strong>{t("catalogs.proposal.states." + proposal.state)}.</strong>{" "}{t("catalogs.proposal.requested", { name: proposal.requestedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.requestedAtUtc, scope.culture, timeZoneId) })}{" "}{pendingProposal ? t("catalogs.proposal.pendingHint") : proposal.decidedBy && proposal.decidedAtUtc ? t("catalogs.proposal.decided", { name: proposal.decidedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.decidedAtUtc, scope.culture, timeZoneId) }) : null}</Banner>
+      <Banner><strong>{t("catalogs.proposal.states." + proposal.state)}.</strong>{" "}{t("catalogs.proposal.requested", { name: proposal.requestedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.requestedAtUtc, scope.culture, timeZoneId) })}{" "}{!pendingProposal && proposal.decidedBy && proposal.decidedAtUtc ? t("catalogs.proposal.decided", { name: proposal.decidedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.decidedAtUtc, scope.culture, timeZoneId) }) : null}</Banner>
       {proposal.originalProposal.limitations.map((limitation, index) => <p key={index} className="break-words text-sm text-[var(--color-warning-700)]">{t("catalogs.proposal.unsupportedColumn", { criterion: limitation.criterion })}</p>)}
     </div> : null}
     {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded actions={<Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("review")}</Button>}><p className="text-sm">{t("catalogs.review.required")}</p></Surface> : null}
-    <div ref={host} className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+    {/* Without Manage there is nothing to test, so there is no preview beside the configuration. */}
+    <div ref={host} className={canManage ? "grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]" : "grid items-start gap-4"}>
       <div className="flex min-w-0 flex-col gap-4">
         <CatalogMetadataFields valueType="Text" name={draft.name} description={draft.description} culture={culture} original={original} canManage={canManage && !editor.requiresReview} busy={editor.busy} origin="Filters" errors={fields} onChange={editor.changeMetadata} />
         {!options.data && options.isPending ? <Spinner /> : options.data ? <CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={canManage && !editor.requiresReview} busy={editor.busy} errors={fields} onChange={editor.changeFilters} /> : <EmptyState title={t("catalogs.filters.optionsFailed")} action={<Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button>} />}
       </div>
-      <Surface title={t("catalogs.filters.previewTitle")} padded actions={canManage ? <Button variant="outline" disabled={!sample || editor.busy || editor.requiresReview} onClick={() => { if (sample) void editor.preview(sample.id); }}>{t("catalogs.filters.test")}</Button> : undefined}>
-        {canManage ? <>
-          <FormField label={t("catalogs.filters.sample")} hint={t("catalogs.filters.sampleHint")} error={fields["sampleUserId"]?.join(" ") ?? (attempted && needsSample && !sample ? t("catalogs.filters.sampleRequired") : undefined)}>
-            <Autocomplete ref={sampleInput} value={sampleName} aria-busy={options.isFetching} disabled={editor.busy || editor.requiresReview} options={samples?.items.map(person => ({ id: person.id, label: person.name })) ?? []}
-              onValueChange={value => { setSampleName(value); setSearch(value); setSample(null); editor.clearPreview(); }}
-              onSelect={id => { const person = samples?.items.find(person => person.id === id); if (person) { setSample(person); setSampleName(person.name); editor.clearPreview(); } }} />
-          </FormField>
-          {options.error && options.data ? <div><Button variant="outline" onClick={() => void options.refetch()}>{t("common:actions.retry")}</Button></div> : null}
-          {samples ? <Pagination {...samples} onPageChange={setSamplePage} /> : null}
-          {editor.busy ? <Spinner /> : editor.previewResult && !editor.previewResult.exceedsLimit ? <>
-            {editor.previewResult.items.length ? <ul className="divide-y divide-[var(--color-border)]">{editor.previewResult.items.map(item => <li key={item.id} className="flex flex-col gap-1 py-3"><span className="break-words text-sm">{item.text}</span>{item.detail ? <span className="break-words text-xs text-[var(--color-content-muted)]">{item.detail}</span> : null}{!item.canSend ? <span className="text-xs text-[var(--color-danger)]">{t("catalogs.filters.optionTooLong")}</span> : null}</li>)}</ul> : <p className="text-sm">{t("catalogs.filters.empty")}</p>}
-            <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.filters.result", { count: editor.previewResult.totalCount })}</p>
-          </> : !editor.previewResult ? <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.filters.chooseSample")}</p> : null}
-        </> : <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.filters.readOnlyPreview")}</p>}
-      </Surface>
+      {canManage ? <Surface title={t("catalogs.filters.previewTitle")} padded actions={<DisabledReason reason={!sample && !editor.busy && !editor.requiresReview ? t("catalogs.filters.chooseSample") : null}><Button variant="outline" disabled={!sample || editor.busy || editor.requiresReview} onClick={() => { if (sample) void editor.preview(sample.id); }}>{t("catalogs.filters.test")}</Button></DisabledReason>}>
+        <FormField label={t("catalogs.filters.sample")} error={fields["sampleUserId"]?.join(" ") ?? (attempted && needsSample && !sample ? t("catalogs.filters.sampleRequired") : undefined)}>
+          <Autocomplete ref={sampleInput} value={sampleName} aria-busy={options.isFetching} disabled={editor.busy || editor.requiresReview} options={searchingSamples ? [] : samples?.items.map(person => ({ id: person.id, label: person.name })) ?? []} status={searchingSamples ? t("searching") : undefined}
+            onValueChange={value => { setSampleName(value); setSearch(value); setSample(null); editor.clearPreview(); }}
+            onSelect={id => { const person = samples?.items.find(person => person.id === id); if (person) { setSample(person); setSampleName(person.name); editor.clearPreview(); } }} />
+        </FormField>
+        {(options.error && options.data) || retryingSamples ? <div><Button variant="outline" pending={retryingSamples} onClick={() => void retrySamples()}>{t(retryingSamples ? "retrying" : "common:actions.retry")}</Button></div> : null}
+        {samples ? <div className="flex items-center gap-2"><div className="min-w-0 flex-1"><Pagination {...samples} onPageChange={setSamplePage} /></div>{options.isPlaceholderData ? <Spinner /> : null}</div> : null}
+        {previewing ? <Spinner /> : editor.previewResult && !editor.previewResult.exceedsLimit ? <>
+          {editor.previewResult.items.length ? <ul className="divide-y divide-[var(--color-border)]">{editor.previewResult.items.map(item => <li key={item.id} className="flex flex-col gap-1 py-3"><span className="break-words text-sm">{item.text}</span>{item.detail ? <span className="break-words text-xs text-[var(--color-content-muted)]">{item.detail}</span> : null}{!item.canSend ? <span className="text-xs text-[var(--color-danger)]">{t("catalogs.filters.optionTooLong")}</span> : null}</li>)}</ul> : <p className="text-sm">{t("catalogs.filters.empty")}</p>}
+          <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.filters.result", { count: editor.previewResult.totalCount })}</p>
+        </> : null}
+      </Surface> : null}
     </div>
-    <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent className="sm:max-w-4xl" onCloseAutoFocus={restoreReviewFocus}><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description")}</DialogDescription></DialogHeader>
-      <div className="grid gap-4 sm:grid-cols-2"><div><p className="text-sm font-medium">{t("catalogs.review.mine")}</p><p className="text-sm">{administrativeName(draft.name, culture)}</p><p className="text-sm">{administrativeName(draft.description, culture)}</p><CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={false} onChange={() => {}} /></div><div><p className="text-sm font-medium">{t("catalogs.review.current")}</p><p className="text-sm">{administrativeName(editor.current?.name, culture)}</p><p className="text-sm">{administrativeName(editor.current?.description, culture)}</p>{editor.current?.filters ? <CatalogFiltersEditor view={view} columns={columns} value={openCatalogFilters(editor.current.filters)} canManage={false} onChange={() => {}} /> : <p className="text-sm">{t("catalogs.review.readFirst")}</p>}</div></div>
-      <DialogFooter><Button variant="outline" disabled={editor.busy} onClick={() => void editor.readCurrent()}>{t("catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
+    <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent className="sm:max-w-4xl" onCloseAutoFocus={restoreReviewFocus}><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.filtersDescription", { action: t("catalogs.review.adopt") })}</DialogDescription></DialogHeader>
+      <div className="grid gap-4 sm:grid-cols-2"><div><p className="text-sm font-medium">{t("catalogs.review.mine")}</p><p className="text-sm">{administrativeName(draft.name, culture)}</p><p className="text-sm">{administrativeName(draft.description, culture)}</p><CatalogFiltersEditor view={view} columns={columns} value={draft.filters} canManage={false} onChange={() => {}} /></div><div><p className="text-sm font-medium">{t("catalogs.review.current")}</p>{rereading ? <Spinner /> : <><p className="text-sm">{administrativeName(editor.current?.name, culture)}</p><p className="text-sm">{administrativeName(editor.current?.description, culture)}</p>{editor.current?.filters ? <CatalogFiltersEditor view={view} columns={columns} value={openCatalogFilters(editor.current.filters)} canManage={false} onChange={() => {}} /> : <p className="text-sm">—</p>}</>}</div></div>
+      <DialogFooter><Button variant="outline" pending={rereading} disabled={editor.busy} onClick={() => void editor.readCurrent()}>{t(rereading ? "rereading" : "catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
     </DialogContent></Dialog>
-    <ConfirmDialog open={discardProposalOpen} onOpenChange={setDiscardProposalOpen} focusFallback={proposalResult} title={t("catalogs.proposal.discardTitle")} description={t("catalogs.proposal.discardHint")} confirmLabel={t("catalogs.proposal.discard")} destructive onConfirm={() => void discardProposal()} />
+    <ConfirmDialog open={discardProposalOpen} onOpenChange={setDiscardProposalOpen} focusFallback={proposalResult} title={t("catalogs.proposal.discardTitle")} description={t("catalogs.proposal.discardHint")} confirmLabel={t("catalogs.proposal.discard")} pending={editor.working === "discardProposal"} pendingLabel={t("catalogs.proposal.discarding")} destructive onConfirm={() => void discardProposal()} />
     <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} onConfirm={guard.leave} />
     <ConfirmDialog open={discardOpen} onOpenChange={setDiscardOpen} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} onConfirm={() => { guard.allowNextNavigation(); void navigate("/catalogos"); }} />
   </Page>;

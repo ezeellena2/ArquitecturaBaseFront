@@ -70,7 +70,7 @@ export function CatalogFiltersEditor({ view, columns, value, canManage, busy = f
       }}><PlusIcon className="size-4" />{t("catalogs.filters.add")}</Button></div> : null}
     </div>
     <div className="grid gap-4 sm:grid-cols-2">
-      <CheckboxField label={t("catalogs.filters.excludeRecipient")} description={t("catalogs.filters.excludeRecipientHint")} disabled={disabled} checked={value.excludeRecipient} onCheckedChange={excludeRecipient => onChange({ ...value, excludeRecipient })} />
+      <CheckboxField label={t("catalogs.filters.excludeRecipient")} disabled={disabled} checked={value.excludeRecipient} onCheckedChange={excludeRecipient => onChange({ ...value, excludeRecipient })} />
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField label={t("catalogs.filters.order")} error={errors["filters.sortColumn"]?.join(" ")}><NativeSelect disabled={disabled} value={value.sortColumn} onChange={event => onChange({ ...value, sortColumn: event.target.value })}>{!sortColumns.some(column => column.key === value.sortColumn) ? <option value={value.sortColumn}>{t("catalogs.filters.unavailableColumn")}</option> : null}{sortColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</NativeSelect></FormField>
         <FormField label={t("catalogs.filters.direction")}><NativeSelect disabled={disabled} value={value.sortDescending ? "desc" : "asc"} onChange={event => onChange({ ...value, sortDescending: event.target.value === "desc" })}><option value="asc">{t("catalogs.filters.ascending")}</option><option value="desc">{t("catalogs.filters.descending")}</option></NativeSelect></FormField>

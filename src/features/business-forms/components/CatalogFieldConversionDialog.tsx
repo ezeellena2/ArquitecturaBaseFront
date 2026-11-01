@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
@@ -33,7 +32,7 @@ export function CatalogFieldConversionDialog({ name, from, field, culture, conve
     <Table><TableHeader><TableRow><TableHead scope="col">{t("catalogs.fields.conversion.row")}</TableHead><TableHead scope="col">{t("catalogs.fields.conversion.what")}</TableHead></TableRow></TableHeader>
       <TableBody>{shown.map(row => <TableRow key={row.itemId}><TableCell>{row.row}</TableCell><TableCell className="whitespace-normal">{catalogFieldProblemText(t, field, catalogStoredValueText(from, row.value, culture, yesNo), row.reason, culture)}</TableCell></TableRow>)}</TableBody></Table>
     {more > 0 ? <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.fields.conversion.more", { count: more })}</p> : null}
-    <Banner>{t("catalogs.fields.conversion.hint")}</Banner>
+    {/* «Ver los N en la tabla» is the way to fix them: no banner explains it (2026-10-31). */}
     <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t("common:actions.cancel")}</Button>{onShowRows ? <Button type="button" onClick={onShowRows}>{t("catalogs.fields.conversion.show", { count: rows.length })}</Button> : null}</DialogFooter>
   </DialogContent></Dialog>;
 }

@@ -29,7 +29,7 @@ export function CatalogPreview({ items, name, culture, fields = [], presentation
       : open ? <><RadioGroupField label={name} value={chosen?.localId} onValueChange={value => { setSelected(value); setOpen(false); }} options={options.map(item => ({ value: item.localId, label: label(item), description: shown(item).description || undefined }))}/><Button type="button" variant="outline" onClick={() => setOpen(false)}>{content("catalogs.preview.back")}</Button></>
       : <Button type="button" variant="outline" onClick={() => setOpen(true)} aria-expanded={open}>{chosen ? label(chosen) : content("catalogs.preview.choose")}</Button>}
       {/* The final button belongs to each form: the example shows the text a new form starts with. */}
-      <div className="mt-auto"><Button className="w-full" disabled>{defaultSubmitLabel(culture)}</Button><p className="mt-2 text-center text-xs text-[var(--color-content-muted)]">{content("previewOnly")}</p></div>
+      <div className="mt-auto"><Button className="w-full" disabled>{defaultSubmitLabel(culture)}</Button></div>
     </PhonePreview>
   </section>;
 }

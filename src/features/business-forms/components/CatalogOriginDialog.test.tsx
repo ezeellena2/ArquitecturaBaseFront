@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { act, cleanup, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
@@ -68,4 +68,25 @@ it.each(["es", "en"] as const)("chooses the immutable manual value type explicit
   expect(onSelect).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: language === "es" ? "Continuar" : "Continue" }));
   expect(onSelect).toHaveBeenCalledExactlyOnceWith("Manual", "Decimal");
+});
+
+// Without legends (2026-10-31): the question is the visible label of the cards, and what cannot change goes in the (i).
+it.each(["es", "en"] as const)("asks where the options come from as the label of the cards and explains in the information icons in %s", async language => {
+  await mount(language);
+  const es = language === "es", question = es ? "¿De dónde salen las opciones?" : "Where do the options come from?";
+  const dialog = screen.getByRole("dialog", { name: es ? "Nuevo catálogo" : "New catalog" });
+  expect(dialog).not.toHaveAccessibleDescription();
+  expect(within(dialog).getByText(question)).toBeVisible();
+  expect(within(dialog).getByRole("radiogroup", { name: question })).toBeInTheDocument();
+  expect(within(dialog).getByRole("button", { name: (es ? "Más información sobre " : "More about ") + question }))
+    .toHaveAccessibleDescription(es ? "No se puede cambiar después: para otro origen, se arma otro catálogo." : "This cannot change later: use a new catalog for another source.");
+  expect(within(dialog).getByRole("radio", { name: es ? "Escribirlas a mano" : "Write them manually" })).not.toHaveAccessibleDescription();
+  expect(within(dialog).queryByText(es ? /Para listas que mantiene una persona/ : /For lists maintained by a person/)).not.toBeInTheDocument();
+  const filters = es ? "Elegís una vista de catálogo (por ahora, Usuarios) y qué filas entran. Se actualiza sola: un usuario nuevo aparece en el próximo envío."
+    : "Choose a catalog view (currently Users) and which rows to include. It updates automatically: a new user appears in the next send.";
+  expect(within(dialog).getByRole("radio", { name: es ? "Tomarlas de la base, con filtros" : "Use database options with filters" })).toHaveAccessibleDescription(filters);
+  expect(within(dialog).queryByText(filters, { selector: "p" })).not.toBeInTheDocument();
+  const valueType = es ? "Se elige al crear el catálogo y después no se puede cambiar." : "Choose it when creating the catalog. It cannot be changed later.";
+  expect(within(dialog).getByRole("button", { name: (es ? "Más información sobre " : "More about ") + (es ? "Tipo de valor" : "Value type") })).toHaveAccessibleDescription(valueType);
+  expect(within(dialog).queryByText(valueType, { selector: "p" })).not.toBeInTheDocument();
 });

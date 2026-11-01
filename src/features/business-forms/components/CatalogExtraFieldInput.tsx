@@ -25,16 +25,22 @@ interface Props {
 
 function SourceOptionInput({ field, value, texts, culture, label, readOnly, error: _error, scope, onChange, onBlur, pendingText, ...aria }: Props) {
   const { t } = useTranslation("forms");
-  const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState("");
+  const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState(""), [retrying, setRetrying] = useState(false);
   useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
   const owner = scope ?? { actorId: null, culture, permissions: [] };
   const detail = useCatalogDetail(owner, readOnly ? "" : field.sourceCatalogId ?? "", "global");
   const items = useCatalogItems(owner, readOnly ? "" : field.sourceCatalogId ?? "", detail.data?.revision ?? null, { page: 1, pageSize: 20, search: settled, isActive: true, sort: "text" }, "global");
   const sourceActive = detail.data?.kind === "Manual" && detail.data.isActive && !detail.data.unavailableReasonCode;
+  // While the source and its first options load, or a search reads, the open list says so instead of the previous options.
+  const loading = detail.isLoading || (sourceActive && items.isLoading);
+  const searching = sourceActive && !loading && ((search ?? "") !== settled || items.isPlaceholderData);
   // A cleared value shows no option, even while the caller still holds the texts of the previous one.
   const currentText = !value ? "" : pendingText ?? (texts ? administrativeName(texts, culture) : administrativeName(items.data?.items.find(item => item.id === value)?.text, culture) || (unconvertedFieldValue("catalog", value) ?? ""));
-  const options = sourceActive ? (items.data?.items ?? []).filter(item => item.isActive).map(item => ({ id: item.id, label: administrativeName(item.text, culture) })) : [];
-  return <div className="min-w-32"><Autocomplete {...aria} aria-label={label} disabled={readOnly || !sourceActive} value={search ?? currentText} options={options} onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => { setSearch(null); onBlur?.(); }} onSelect={id => { const option = items.data?.items.find(item => item.id === id); if (option) { onChange(id, Object.fromEntries(Object.entries(option.text).filter((entry): entry is [string, string] => typeof entry[1] === "string"))); setSearch(null); } }} footer={items.data?.hasNext ? t("catalogQuestion.search") : undefined} />{detail.isError || items.isError ? <Button type="button" variant="link" onClick={() => { void detail.refetch(); void items.refetch(); }}>{t("common:actions.retry")}</Button> : null}</div>;
+  const options = sourceActive && !searching ? (items.data?.items ?? []).filter(item => item.isActive).map(item => ({ id: item.id, label: administrativeName(item.text, culture) })) : [];
+  const status = loading ? t("common:states.loading") : searching ? t("searching") : sourceActive && items.data && !options.length ? t(settled.trim() ? "catalogs.items.noMatches" : "catalogs.items.empty") : undefined;
+  // Retry stays in its place, working, until the source answers.
+  const retry = async () => { setRetrying(true); await Promise.all([detail.refetch(), items.refetch()]); setRetrying(false); };
+  return <div className="min-w-32"><Autocomplete {...aria} aria-label={label} disabled={readOnly || retrying || (!loading && !sourceActive)} value={search ?? currentText} options={options} status={status} onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => { setSearch(null); onBlur?.(); }} onSelect={id => { const option = items.data?.items.find(item => item.id === id); if (option) { onChange(id, Object.fromEntries(Object.entries(option.text).filter((entry): entry is [string, string] => typeof entry[1] === "string"))); setSearch(null); } }} />{detail.isError || items.isError || retrying ? <Button type="button" variant="link" pending={retrying} onClick={() => void retry()}>{t(retrying ? "retrying" : "common:actions.retry")}</Button> : null}</div>;
 }
 
 export function CatalogExtraFieldInput(props: Props) {

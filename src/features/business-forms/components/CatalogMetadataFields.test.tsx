@@ -19,7 +19,9 @@ describe("Catalog metadata in the menu language", () => {
     expect(screen.queryByRole("group")).not.toBeInTheDocument();
     expect(screen.getByText("Nombre", { selector: "label" })).toHaveTextContent(/^Nombre \*$/);
     expect(screen.getByRole("textbox", { name: "Nombre" })).not.toHaveAttribute("placeholder");
-    expect(screen.getByRole("textbox", { name: "Descripción" })).toHaveAccessibleDescription("La leen las personas para saber cuándo usarlo.");
+    // Without legends (2026-10-31): nothing under Descripción explains who reads it.
+    expect(screen.getByRole("textbox", { name: "Descripción" })).not.toHaveAccessibleDescription();
+    expect(screen.queryByText("La leen las personas para saber cuándo usarlo.")).not.toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: "Nombre" }), "Clientes");
     await user.type(screen.getByRole("textbox", { name: "Descripción" }), "Visitas");
     expect(changes).toHaveBeenCalledWith({ name: { es: "Clientes", en: "" } });
@@ -44,11 +46,11 @@ describe("Catalog metadata in the menu language", () => {
     expect(changes).toHaveBeenLastCalledWith({ name: { es: "Clientes", en: "Customers" } });
     expect(name).toHaveValue("Customers"); expect(name).toHaveAccessibleDescription("Original (Spanish): Clientes");
   });
-  it("keeps the description hint while the original has no description to translate", async () => {
+  it("leaves the description without a reference or a placeholder while the original has none to translate", async () => {
     await act(async () => { renderWithProviders(<CatalogMetadataFields valueType="Text" name={{ es: "Clientes", en: "" }} description={{ es: "", en: "" }} culture="en" original="es" canManage onChange={() => {}} />); });
     const description = screen.getByRole("textbox", { name: "Descripción" });
     expect(description).not.toHaveAttribute("placeholder");
-    expect(description).toHaveAccessibleDescription("La leen las personas para saber cuándo usarlo.");
+    expect(description).not.toHaveAccessibleDescription();
   });
   it("shows origin and value type as one read-only line above name and an optional description", async () => {
     const view = await act(async () => renderWithProviders(<CatalogMetadataFields valueType="Text" name={{ es: "Clientes", en: "" }} description={{ es: "", en: "" }} culture="es" original="es" canManage onChange={() => {}} />));

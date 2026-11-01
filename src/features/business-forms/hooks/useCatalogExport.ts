@@ -12,18 +12,20 @@ export function useCatalogExport(scope: CatalogReadScope, catalogId: string | nu
   const allowed = !!catalogId && scope.actorId !== null && scope.permissions.includes("formcatalogs.read");
   const current = useRef({ owner, allowed });
   const flight = useRef<AbortController | null>(null);
-  const [state, setState] = useState<{ owner: string; busy: boolean; error: unknown }>({ owner, busy: false, error: null });
-  if (state.owner !== owner) setState({ owner, busy: false, error: null });
+  // `template` says which file is on its way, so the owner shows the wait on the control that asked for it.
+  const [state, setState] = useState<{ owner: string; busy: boolean; template: boolean; error: unknown }>({ owner, busy: false, template: false, error: null });
+  if (state.owner !== owner) setState({ owner, busy: false, template: false, error: null });
   const feedbackId = "catalogs:export:" + useId();
   useLayoutEffect(() => { current.current = { owner, allowed }; }, [owner, allowed]);
   useEffect(() => () => { flight.current?.abort(); flight.current = null; dismissNotification(feedbackId); }, [owner, allowed, feedbackId]);
   const download = async (template: boolean) => {
     if (!allowed || !catalogId || flight.current) return;
-    const controller = new AbortController(); flight.current = controller; setState({ owner, busy: true, error: null });
+    const controller = new AbortController(); flight.current = controller; setState({ owner, busy: true, template, error: null });
     const owns = () => !controller.signal.aborted && current.current.owner === owner && current.current.allowed;
     try { const file = await exportCatalog(catalogId, template, controller.signal); if (owns()) savePrivateBlob(file.blob, file.fileName ?? "Catalog.xlsx"); }
-    catch (error) { if (owns()) { setState({ owner, busy: true, error }); if (!["cancelled", "session", "forbidden"].includes(errorFeedback(error).kind)) notify({ id: feedbackId, kind: "error", message: readErrorMessage(error, t) }); } }
+    catch (error) { if (owns()) { setState({ owner, busy: true, template, error }); if (!["cancelled", "session", "forbidden"].includes(errorFeedback(error).kind)) notify({ id: feedbackId, kind: "error", message: readErrorMessage(error, t) }); } }
     finally { if (flight.current === controller) { flight.current = null; if (owns()) setState(value => value.owner === owner ? { ...value, busy: false } : value); } }
   };
-  return { busy: state.owner === owner && state.busy, error: state.owner === owner ? state.error : null, download };
+  const busy = state.owner === owner && state.busy;
+  return { busy, working: busy ? state.template ? "template" as const : "export" as const : null, error: state.owner === owner ? state.error : null, download };
 }

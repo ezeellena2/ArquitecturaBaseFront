@@ -37,6 +37,9 @@ describe("Chosen Users filters editor K4", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: "Detalle" }), "active");
     expect(onChange.mock.lastCall?.[0]).toEqual({ ...initial, detailColumn: "active" });
     expect(screen.getByRole("checkbox", { name: "Sin incluir a quien lo recibe" })).toBeChecked();
+    // Its label says it all: no line under it repeats it (2026-10-31).
+    expect(screen.getByRole("checkbox", { name: "Sin incluir a quien lo recibe" })).not.toHaveAccessibleDescription();
+    expect(screen.queryByText("La persona que recibe el formulario no aparece entre estas opciones.")).not.toBeInTheDocument();
   });
   it("changes one condition's value without replacing other identities or configuration", async () => {
     const { user, onChange } = await mount();

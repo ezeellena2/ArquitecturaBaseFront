@@ -95,6 +95,46 @@ it("cancels discarding at the exact trigger and records an explicit discard with
  expect(screen.queryByRole("button", { name: "Reactivar" })).not.toBeInTheDocument();
  expect(writes).toEqual([]);
 });
+// The confirmation waits open with «Descartando…» until the server answers, and takes no second request (LC1-A).
+it("keeps the discard confirmation open, working, until the proposal is discarded", async () => {
+ let release: (() => void) | undefined;
+ await mount();
+ server.use(http.post("/api/forms/catalogs/" + id + "/proposal/discard", async ({ request }) => {
+  discarded.push(await request.json()); await new Promise<void>(resolve => { release = resolve; });
+  current = { ...current, revision: current.revision + 1, proposal: { ...current.proposal, state: "Discarded", decidedBy: { userId: operator, displayName: "Laura" }, decidedAtUtc: "2026-10-17T13:00:00Z" } };
+  return HttpResponse.json(current);
+ }));
+ await userEvent.click(await screen.findByRole("button", { name: "Descartar propuesta" }));
+ const dialog = await screen.findByRole("dialog");
+ await userEvent.click(within(dialog).getByRole("button", { name: "Descartar propuesta" }));
+ const discarding = within(dialog).getByRole("button", { name: "Descartando…" });
+ expect(discarding).toHaveAttribute("aria-busy", "true");
+ expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+ await userEvent.keyboard("{Escape}");
+ expect(screen.getByRole("dialog")).toBeInTheDocument();
+ await waitFor(() => expect(release).toBeDefined());
+ expect(discarded).toHaveLength(1);
+ await act(async () => { release!(); });
+ await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ await screen.findByText(/Propuesta descartada/);
+});
+it("says Aprobando… on its button while the proposal is approved", async () => {
+ let release: (() => void) | undefined;
+ await mount();
+ server.use(http.post("/api/forms/catalogs/" + id + "/proposal/approve", async ({ request }) => { writes.push(await request.json()); await new Promise<void>(resolve => { release = resolve; }); current = approved(); return HttpResponse.json({ catalog: current, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+ await chooseSample(); await userEvent.click(screen.getByRole("button", { name: "Aprobar y activar" }));
+ const approving = await screen.findByRole("button", { name: "Aprobando…" });
+ expect(approving).toHaveAttribute("aria-busy", "true");
+ await waitFor(() => expect(release).toBeDefined());
+ await act(async () => { release!(); });
+ await screen.findByRole("button", { name: "Guardar" });
+ expect(writes).toHaveLength(1);
+});
+it("says who asked for a pending proposal without explaining that it is not used yet", async () => {
+ await mount();
+ await screen.findByText(/La pidió Ana Pérez/);
+ expect(screen.queryByText(/No se usa hasta que alguien la apruebe/)).not.toBeInTheDocument();
+});
 it("preserves edits after a conflict and adopts the reread decision only explicitly without another approval", async () => {
  await mount(); server.use(http.post("/api/forms/catalogs/" + id + "/proposal/approve", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 }); }));
  await rename("Mi propuesta"); const draftName = screen.getByRole("textbox", { name: "Nombre" }); await chooseSample(); await userEvent.click(screen.getByRole("button", { name: "Aprobar y activar" }));
