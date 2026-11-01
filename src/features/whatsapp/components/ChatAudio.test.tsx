@@ -11,7 +11,7 @@ import { ChatTimeline } from "./ChatTimeline";
 const base = { audio: null, id: "audio-1", direction: "Inbound" as const, kind: "Audio", body: null as string | null, occurredAtUtc: "2026-10-17T12:00:00Z", inboundSequence: 1, operatorUserId: null, status: null, errorCode: null, origin: "Conversation" as const, assistant: null, quickReplies: null };
 function view(state: ChatAudio["state"] = "Pending", canPlay = true, body: string | null = null, owner = "actor-a", denied = vi.fn(), reasonCode?: "tooLarge" | null) {
  const message = { ...base, audio: { state, canPlay, ...(reasonCode === undefined ? {} : { reasonCode }) }, body };
- return <ChatTimeline items={buildTimeline([message], [])} contactId="chat-1" readOwner={owner} onAudioForbidden={denied} actor="actor-a" canSend={false} canReuse={false} reviewing={false} onReview={vi.fn()} onReuse={vi.fn()} atBottom onAtBottomChange={vi.fn()} hasOlder={false} loadingOlder={false} historyError={false} loadOlder={vi.fn()}/>;
+ return <ChatTimeline items={buildTimeline([message], [])} contactId="chat-1" readOwner={owner} onAudioForbidden={denied} actor="actor-a" canSend={false} canReuse={false} onReview={vi.fn()} onReuse={vi.fn()} atBottom onAtBottomChange={vi.fn()} hasOlder={false} loadingOlder={false} historyError={false} loadOlder={vi.fn()}/>;
 }
 afterEach(async () => { vi.unstubAllGlobals(); vi.restoreAllMocks(); await act(async () => { await i18n.changeLanguage("es"); }); });
 it("lets a read-only operator listen while transcription is pending without loading bytes on render", async () => {
@@ -79,10 +79,26 @@ it("gives the wait after a 429 as the reason of Escuchar audio, with no text bel
  expect(await screen.findByRole("tooltip")).toHaveTextContent(wait);
 });
 
-it("keeps a stored audio playable when transcription is unavailable", async () => {
+it("keeps a stored audio playable when transcription is unavailable, saying only that it could not be transcribed", async () => {
  await act(async () => { renderWithProviders(view("Unavailable", true)); });
  expect(screen.getByRole("button", { name: "Escuchar audio" })).toBeEnabled();
- expect(screen.getByText("No pudimos pasar este audio a texto. Escuchalo: el asistente no lo va a responder.")).toBeVisible();
+ expect(screen.getByText("No pudimos pasar este audio a texto.")).toBeVisible();
+ expect(screen.queryByText(/Escuchalo/)).not.toBeInTheDocument();
+});
+
+it("shows that the audio is loading in its button until the bytes arrive", async () => {
+ let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+ vi.stubGlobal("URL", class extends URL { static createObjectURL = vi.fn(() => "blob:private-audio"); static revokeObjectURL = vi.fn(); });
+ vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(); vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+ server.use(http.get("/api/whatsapp/chats/chat-1/messages/audio-1/audio", async () => { await gate; return new HttpResponse("OggS", { headers: { "content-type": "audio/ogg" } }); }));
+ renderWithProviders(view());
+ try {
+  await userEvent.click(screen.getByRole("button", { name: "Escuchar audio" }));
+  const loading = await screen.findByRole("button", { name: "Cargando audio…" });
+  expect(loading).toHaveAttribute("aria-busy", "true");
+  expect(loading).toBeDisabled();
+ } finally { await act(async () => release()); }
+ await waitFor(() => expect(screen.getByLabelText("Audio recibido")).toBeInTheDocument());
 });
 
 for (const language of ["es", "en"] as const) {

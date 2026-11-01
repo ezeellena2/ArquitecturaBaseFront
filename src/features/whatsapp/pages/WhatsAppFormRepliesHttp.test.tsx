@@ -80,7 +80,7 @@ for (const culture of ['es', 'en'] as const) describe('received forms in real pa
     expect(screen.queryByText('Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Cargar mensajes anteriores' }));
     expect(await screen.findByText('Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.')).toBeInTheDocument();
-    expect(screen.getByText('No pudimos guardar la respuesta del formulario. Podés escribirle o mandárselo de nuevo.')).toBeInTheDocument();
+    expect(screen.getByText('No pudimos guardar la respuesta del formulario.')).toBeInTheDocument();
     expect(screen.getByText('Llegó una respuesta de formulario. La estamos guardando…')).toBeInTheDocument();
     expect(screen.queryByText(/Guardada como/)).not.toBeInTheDocument();
   });
@@ -88,7 +88,7 @@ for (const culture of ['es', 'en'] as const) describe('received forms in real pa
     await open('reply-all-states');
     expect(await saved()).toBeInTheDocument();
     expect(screen.getByText('Llegó una respuesta de formulario. La estamos guardando…')).toBeInTheDocument();
-    expect(screen.getByText('No pudimos guardar la respuesta del formulario. Podés escribirle o mandárselo de nuevo.')).toBeInTheDocument();
+    expect(screen.getByText('No pudimos guardar la respuesta del formulario.')).toBeInTheDocument();
     expect(screen.getByText('Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.')).toBeInTheDocument();
     expect(screen.getAllByText('Guardada como VIS-000024')).toHaveLength(1);
   });

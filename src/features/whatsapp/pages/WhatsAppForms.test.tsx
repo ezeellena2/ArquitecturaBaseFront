@@ -14,11 +14,15 @@ vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof im
 const definitionId="019abcde-1000-7000-8000-000000000001",versionId="019abcde-1000-7000-8000-000000000002";
 let contact: Chat; let thread: Thread; let posts: FormMessageRequest[]; let options: ChatFormOption[];
 const receipt=(request:FormMessageRequest,culture=contact.formEligibility?.recipientCulture??"es")=>({ quickReplies: null, assistant: null,id:"019abcde-1000-7000-8000-000000000003",requestId:request.requestId,operatorUserId:currentUser.id,body:(request.message??(culture==="en"?"Complete this form.":"Completá este formulario.")).trim(),requestedAtUtc:"2026-10-10T12:00:00Z",state:"Pending",waMessageId:null,kind:"Flow",origin:"Conversation" as const,recoveryPath:"/api/whatsapp/chats/"+contact.id+"/outgoing/"+request.requestId,form:{definitionId,versionId,versionNumber:1,name:options[0].name,culture}});
+const formsPage=(items=options,page=1,totalPages=1,totalCount=options.length)=>({page:{items,page,pageSize:4,totalCount,totalPages,hasPrevious:page>1,hasNext:page<totalPages},recipientCulture:contact.formEligibility?.recipientCulture,recipientContextRevision:contact.formEligibility?.recipientContextRevision});
+// A response held until the test releases it, to see what the dialog shows while it waits.
+function held(){let release!:()=>void;const answer=new Promise<void>(resolve=>{release=resolve;});return {answer,release:()=>act(async()=>release())};}
+async function openDialog(){await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));return screen.findByRole("dialog");}
 beforeEach(()=>{
  queryClient.clear();posts=[];options=[{definitionId,versionId,versionNumber:1,prefix:"VIS",name:{es:"Registrar visita",en:"Register visit"},questionCount:4,submitLabel:{es:"Confirmar visita",en:"Confirm visit"}}];
  contact={id:"chat-forms",profileName:"Juan",phoneNumber:"+54 9 351 555-1234",mode:"Manual",modeRevision:7,lastInboundAtUtc:new Date().toISOString(),lastInboundSequence:1,unreadCount:0,preview:"Hola",linkedAccount:{userId:"employee",displayName:"Juan Gómez",email:"juan@example.com",isActive:true},formEligibility:{status:"Eligible",recipientCulture:"es",recipientContextRevision:"opaque-1"}};
  thread={ assistantSuggestion: null, assistantAvailability: { state: "notInstalled" },contact,messages:[],outgoing:[],beforeAtUtc:null,beforeId:null};
- server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["whatsapp.read","whatsapp.send","users.read"]})),http.get("/api/whatsapp/chats",()=>HttpResponse.json({page:{items:[contact],page:1,pageSize:20,totalPages:1,totalCount:1},allCount:1,unreadCount:0})),http.get("/api/whatsapp/chats/:id/messages",()=>HttpResponse.json(thread)),http.put("/api/whatsapp/chats/:id/read",()=>new HttpResponse(null,{status:204})),http.get("/api/whatsapp/chats/:id/forms",()=>HttpResponse.json({page:{items:options,page:1,pageSize:4,totalCount:options.length,totalPages:1,hasPrevious:false,hasNext:false},recipientCulture:contact.formEligibility?.recipientCulture,recipientContextRevision:contact.formEligibility?.recipientContextRevision})),http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>HttpResponse.json({culture:contact.formEligibility?.recipientCulture,recipientContextRevision:contact.formEligibility?.recipientContextRevision,preparation:{canSend:true,catalogs:[],issues:[]}})),http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{const body=await request.json() as FormMessageRequest;posts.push(body);const result=receipt(body);thread.outgoing=[result as Thread['outgoing'][number]];return HttpResponse.json(result,{status:202});}));
+ server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["whatsapp.read","whatsapp.send","users.read"]})),http.get("/api/whatsapp/chats",()=>HttpResponse.json({page:{items:[contact],page:1,pageSize:20,totalPages:1,totalCount:1},allCount:1,unreadCount:0})),http.get("/api/whatsapp/chats/:id/messages",()=>HttpResponse.json(thread)),http.put("/api/whatsapp/chats/:id/read",()=>new HttpResponse(null,{status:204})),http.get("/api/whatsapp/chats/:id/forms",()=>HttpResponse.json(formsPage())),http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>HttpResponse.json({culture:contact.formEligibility?.recipientCulture,recipientContextRevision:contact.formEligibility?.recipientContextRevision,preparation:{canSend:true,catalogs:[],issues:[]}})),http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{const body=await request.json() as FormMessageRequest;posts.push(body);const result=receipt(body);thread.outgoing=[result as Thread['outgoing'][number]];return HttpResponse.json(result,{status:202});}));
 });
 afterEach(()=>{queryClient.clear();vi.restoreAllMocks();});
 async function openChat(){renderRouteWithProviders("/whatsapp/chat");await userEvent.click(await screen.findByRole("button",{name:"Juan"}));return screen.findByLabelText("Respuesta al cliente");}
@@ -28,18 +32,19 @@ describe("WhatsApp form sending with simulated server",()=>{
  it("keeps ordinary text available when the recipient has no linked account",async()=>{contact.linkedAccount=null;contact.formEligibility={status:"NoLinkedAccount",recipientCulture:null,recipientContextRevision:null};const text=await openChat();expect(text).toBeEnabled();expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeDisabled();expect(screen.getByText("Número sin cuenta vinculada")).toBeInTheDocument();expect(posts).toEqual([]);});
  it("queues the exact selected version and message without losing the ordinary chat draft",async()=>{const dialog=await openForm();fireEvent.change(screen.getByLabelText("Respuesta al cliente"),{target:{value:"Borrador del chat"}});const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:" Cuando termines, completá la visita. "}});await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await waitFor(()=>expect(posts).toHaveLength(1));await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(posts[0]).toMatchObject({definitionId,versionId,expectedModeRevision:7,expectedRecipientContextRevision:"opaque-1",message:" Cuando termines, completá la visita. "});expect(posts[0]).not.toHaveProperty("userId");expect(posts[0]).not.toHaveProperty("culture");expect(screen.getByLabelText("Respuesta al cliente")).toHaveValue("Borrador del chat");expect(await screen.findByText("En cola")).toBeInTheDocument();expect(screen.getByText("Registrar visita")).toBeInTheDocument();expect(queryClient.getMutationCache().getAll().some(m=>JSON.stringify(m.state.variables).includes("Cuando termines"))).toBe(false);});
  it("looks up a lost response before repeating the same UUID and frozen body explicitly",async()=>{server.use(http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{const body=await request.json() as FormMessageRequest;posts.push(body);return posts.length===1?HttpResponse.error():HttpResponse.json(receipt(body),{status:202});}),http.get("/api/whatsapp/chats/:id/outgoing/:requestId",()=>new HttpResponse(null,{status:404})));const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Texto que se conserva"}});await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await userEvent.click((await screen.findAllByRole("button",{name:"Consultar envío"}))[0]);expect(message).toHaveValue("Texto que se conserva");expect(message).toBeDisabled();expect(posts).toHaveLength(1);await userEvent.click(await within(dialog).findByRole("button",{name:"Repetir el mismo pedido"}));await waitFor(()=>expect(posts).toHaveLength(2));expect(posts[1]).toEqual(posts[0]);});
- it("blocks a changed recipient context while preserving what the operator wrote",async()=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Mensaje privado intacto"}});contact.formEligibility={...contact.formEligibility!,recipientContextRevision:"opaque-2",recipientCulture:"en"};await queryClient.invalidateQueries({queryKey:chatKey});await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled());expect(message).toHaveValue("Mensaje privado intacto");expect(posts).toEqual([]);});
+ // A changed recipient asks to close and refresh: it goes in a red notice, like the 409 of the preparation (C4, 2026-11-01).
+ it("blocks a changed recipient context with a red notice while preserving what the operator wrote",async()=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Mensaje privado intacto"}});contact.formEligibility={...contact.formEligibility!,recipientContextRevision:"opaque-2",recipientCulture:"en"};await queryClient.invalidateQueries({queryKey:chatKey});await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled());const changed="Cambió la cuenta vinculada o su idioma. Cerrá el diálogo, actualizá el chat y revisá el destinatario antes de enviar.";expect(within(dialog).getByRole("alert")).toHaveTextContent(changed);expect(within(dialog).getAllByText(changed)).toHaveLength(1);expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).not.toHaveAccessibleDescription(changed);expect(message).toHaveValue("Mensaje privado intacto");expect(posts).toEqual([]);});
 });
 
 it.each(["InactiveAccount","NoEligibleForms"] as const)("keeps ordinary messages enabled for form-only restriction %s",async status=>{contact.formEligibility={...contact.formEligibility!,status};if(status==="InactiveAccount")contact.linkedAccount!.isActive=false;const text=await openChat();expect(text).toBeEnabled();expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeDisabled();expect(posts).toEqual([]);});
 it("supports an eligible account without email",async()=>{contact.linkedAccount!.email=null;await openChat();expect(screen.getByText(/sin correo/)).toBeInTheDocument();expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled();});
-it("uses the recipient language for the initial message and both buttons, independently of Spanish UI",async()=>{contact.formEligibility!.recipientCulture="en";options[0]={...options[0],name:{es:"Registrar visita",en:"Register visit"},submitLabel:{es:"Confirmar visita",en:"Confirm visit"}};await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete this form.");expect(within(dialog).getByText(/Open form/)).toHaveTextContent("Confirm visit");expect(posts).toEqual([]);});
+it("uses the recipient language for the initial message and both buttons, independently of Spanish UI",async()=>{contact.formEligibility!.recipientCulture="en";options[0]={...options[0],name:{es:"Registrar visita",en:"Register visit"},submitLabel:{es:"Confirmar visita",en:"Confirm visit"}};await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete this form.");expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/«Open form».*«Confirm visit»/);expect(posts).toEqual([]);});
 it.each(["", "x".repeat(1025)])("validates message without truncating or posting",async text=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:text}});await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await waitFor(()=>expect(message).toHaveFocus());expect(message).toHaveValue(text);expect(posts).toEqual([]);});
 it.each(["Assistant","Closed"])("invalidates send availability while preserving the message when %s",async reason=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Texto intacto"}});if(reason==="Assistant")contact.mode="Assistant";else contact.lastInboundAtUtc="2020-01-01T00:00:00Z";await queryClient.invalidateQueries({queryKey:chatKey});await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled());expect(message).toHaveValue("Texto intacto");expect(posts).toEqual([]);});
 it("hides form metadata after permission is revoked by the API while preserving written text",async()=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Mensaje privado"}});server.use(http.post("/api/whatsapp/chats/:id/form-messages",()=>HttpResponse.json({code:"General.Forbidden"},{status:403})));await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await waitFor(()=>expect(within(dialog).queryByRole("radio")).not.toBeInTheDocument());expect(message).toHaveValue("Mensaje privado");expect(within(dialog).queryByText("Registrar visita")).not.toBeInTheDocument();expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();});
 it("blocks a withdrawn selected version without converting it to a text send",async()=>{const dialog=await openForm();server.use(http.post("/api/whatsapp/chats/:id/form-messages",()=>HttpResponse.json({code:"WhatsApp.Flow.FormUnavailable"},{status:409})));const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Conservar texto"}});await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled());expect(message).toHaveValue("Conservar texto");expect(posts).toEqual([]);});
 it("recovers a persisted lost response by GET without reposting",async()=>{server.use(http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{posts.push(await request.json() as FormMessageRequest);return HttpResponse.error();}),http.get("/api/whatsapp/chats/:id/outgoing/:requestId",()=>HttpResponse.json(receipt(posts[0]))));const dialog=await openForm();await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await userEvent.click((await screen.findAllByRole("button",{name:"Consultar envío"}))[0]);await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(posts).toHaveLength(1);});
-it.each(["Failed","Uncertain","Reviewed"] as const)("keeps a %s form card in the existing timeline without text reuse or false delivery",async state=>{const request={requestId:"019abcde-1000-7000-8000-000000000004",definitionId,versionId,expectedModeRevision:7,expectedRecipientContextRevision:"opaque-1",message:"Pedido previo"};thread.outgoing=[{...receipt(request),state} as Thread['outgoing'][number]];await openChat();expect(screen.getByText("Registrar visita")).toBeInTheDocument();expect(screen.queryByRole("button",{name:"Usar este texto en el borrador"})).not.toBeInTheDocument();expect(screen.queryByText("Entregado",{exact:true})).not.toBeInTheDocument();if(state==="Uncertain")expect(screen.getByRole("button",{name:"Ya revisé el WhatsApp"})).toBeInTheDocument();});
+it.each(["Failed","Uncertain","Reviewed"] as const)("keeps a %s form card in the existing timeline without text reuse or false delivery",async state=>{const request={requestId:"019abcde-1000-7000-8000-000000000004",definitionId,versionId,expectedModeRevision:7,expectedRecipientContextRevision:"opaque-1",message:"Pedido previo"};thread.outgoing=[{...receipt(request),state} as Thread['outgoing'][number]];await openChat();expect(screen.getByText("Registrar visita")).toBeInTheDocument();expect(screen.queryByRole("button",{name:"Usar este texto en el borrador"})).not.toBeInTheDocument();expect(screen.queryByText("Entregado",{exact:true})).not.toBeInTheDocument();expect(screen.queryByText(/El formulario no le llegó/)).not.toBeInTheDocument();if(state==="Uncertain")expect(screen.getByRole("button",{name:"Ya revisé el WhatsApp"})).toBeInTheDocument();});
 
 it("respects Retry-After when checking a lost form send without repeating its POST",async()=>{let reads=0;server.use(http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{posts.push(await request.json() as FormMessageRequest);return HttpResponse.error();}),http.get("/api/whatsapp/chats/:id/outgoing/:requestId",()=>{reads++;return HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}});}));const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Pedido privado congelado"}});await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await userEvent.click(await within(dialog).findByRole("button",{name:"Consultar envío"}));await waitFor(()=>expect(reads).toBe(1));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Consultar envío"})).toBeDisabled());expect(message).toHaveValue("Pedido privado congelado");expect(message).toBeDisabled();for(const action of screen.getAllByRole("button",{name:"Consultar envío"}))fireEvent.click(action);expect(reads).toBe(1);expect(posts).toHaveLength(1);});
 
@@ -340,7 +345,7 @@ it("waits for complete presentation culture even without catalogs and sends the 
  await waitFor(()=>expect(preparations).toBe(1)); await act(async()=>release());
  await waitFor(()=>expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá este formulario."));
  expect(within(dialog).getByRole("radio",{name:"Registrar visita"})).toHaveAttribute("aria-checked","true");
- expect(within(dialog).getByText(/^Es lo que lee arriba del botón/)).toHaveTextContent("Confirmar visita");
+ expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/^Es lo que lee arriba del botón.*«Confirmar visita»/);
  expect(within(dialog).queryByText(/Cambió la cuenta/)).not.toBeInTheDocument();
  await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"})); await waitFor(()=>expect(posts).toHaveLength(1));
  expect(posts[0]).toMatchObject({expectedRecipientContextRevision:"opaque-1",message:null}); expect(posts[0]).not.toHaveProperty("culture");
@@ -380,7 +385,7 @@ for (const original of ["es", "en"] as const) for (const secondaryText of [undef
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(await within(dialog).findByRole("radio", { name }));
     await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeEnabled());
-    expect(within(dialog).getByText(/^Es lo que lee arriba del botón/)).toHaveTextContent(submitLabel);
+    expect(within(dialog).getByRole("textbox", { name: "Mensaje que lo acompaña" })).toHaveAccessibleDescription(new RegExp("^Es lo que lee arriba del botón.*«" + submitLabel + "»"));
     expect(within(dialog).getByRole("textbox", { name: "Mensaje que lo acompaña" })).toHaveValue(original === "es" ? "Completá este formulario." : "Complete this form.");
     await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -393,10 +398,163 @@ for (const original of ["es", "en"] as const) for (const secondaryText of [undef
   });
 }
 
-it("does not repeat the Manual attention explanation inside an ordinary form dialog", async () => {
- thread.assistantAvailability = { state: "available" };
+// No explanations under the title or the message (2026-11-01): the message is marked required and its help goes in the (i).
+it("opens the form dialog without explanations, with the message required and its help in the information icon", async () => {
+ const dialog = await openDialog();
+ expect(dialog).not.toHaveAttribute("aria-describedby");
+ expect(within(dialog).queryByText(/Le llega por WhatsApp/)).not.toBeInTheDocument();
+ const message = within(dialog).getByRole("textbox", { name: "Mensaje que lo acompaña" });
+ expect(within(dialog).getByText("Mensaje que lo acompaña", { selector: "label" })).toHaveTextContent(/^Mensaje que lo acompaña \*$/);
+ expect(message).toHaveAttribute("aria-required", "true");
+ expect(message).not.toHaveAccessibleDescription();
+ expect(within(dialog).queryByText(/El mensaje es obligatorio/)).not.toBeInTheDocument();
+ await userEvent.click(await within(dialog).findByRole("radio", { name: "Registrar visita" }));
+ await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeEnabled());
+ const help = "Es lo que lee arriba del botón «Abrir formulario». El botón final del formulario es otro: «Confirmar visita».";
+ expect(message).toHaveAccessibleDescription(help);
+ expect(within(dialog).getByRole("button", { name: "Más información sobre Mensaje que lo acompaña" })).toHaveAccessibleDescription(help);
+ for (const text of within(dialog).getAllByText(help)) expect(text).not.toBeVisible();
+ expect(within(dialog).getByText(/^Se puede mandar hasta .+\.$/)).toBeVisible();
+ expect(within(dialog).queryByText(/24 horas después/)).not.toBeInTheDocument();
+});
+
+// Why the form cannot be sent any more is the reason of its disabled send, not a paragraph above the footer (C4, 2026-11-01).
+it.each([
+ ["Assistant", "Tomá la atención manual para contestar."],
+ ["Closed", "Pasaron 24 horas desde el último mensaje del cliente."],
+] as const)("gives the reason of a send that closes while the dialog is open (%s) as help of the footer action", async (reason, text) => {
  const dialog = await openForm();
- expect(within(dialog).queryByText("La conversación sigue en atención manual.")).not.toBeInTheDocument();
- expect(screen.queryByText("La conversación sigue en atención manual.")).not.toBeInTheDocument();
- expect(posts).toEqual([]);
+ if (reason === "Assistant") contact.mode = "Assistant"; else contact.lastInboundAtUtc = "2020-01-01T00:00:00Z";
+ await queryClient.invalidateQueries({ queryKey: chatKey });
+ await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toHaveAccessibleDescription(text));
+ expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeDisabled();
+ for (const shown of within(dialog).getAllByText(text)) expect(shown).not.toBeVisible();
+ expect(within(dialog).queryByText(/El envío de plantillas/)).not.toBeInTheDocument();
+});
+
+it("shows the forms loading in a status region until the list answers", async () => {
+ const wait = held();
+ server.use(http.get("/api/whatsapp/chats/:id/forms", async () => { await wait.answer; return HttpResponse.json(formsPage()); }));
+ const dialog = await openDialog();
+ try {
+  const loading = await within(dialog).findByText("Cargando formularios…");
+  expect(loading.closest('[role="status"]')).not.toBeNull();
+ } finally { await wait.release(); }
+ expect(await within(dialog).findByRole("radio", { name: "Registrar visita" })).toBeInTheDocument();
+});
+
+it("keeps the forms and the pagination in sight with a loading status while another page loads", async () => {
+ const next = { ...options[0], definitionId: "019abcde-1000-7000-8000-000000000011", versionId: "019abcde-1000-7000-8000-000000000012", name: { es: "Otro formulario", en: "Another form" } };
+ const wait = held();
+ server.use(http.get("/api/whatsapp/chats/:id/forms", async ({ request }) => {
+  const page = Number(new URL(request.url).searchParams.get("page"));
+  if (page === 2) await wait.answer;
+  return HttpResponse.json(formsPage(page === 2 ? [next] : options, page, 2, 5));
+ }));
+ const dialog = await openDialog();
+ await within(dialog).findByRole("radio", { name: "Registrar visita" });
+ try {
+  await userEvent.click(within(dialog).getByRole("button", { name: "Página siguiente" }));
+  const loading = await within(dialog).findByText("Cargando formularios…");
+  expect(loading.closest('[role="status"]')).not.toBeNull();
+  expect(within(dialog).getByRole("radio", { name: "Registrar visita" })).toBeInTheDocument();
+  expect(within(dialog).getByRole("navigation", { name: "Paginado" })).toBeInTheDocument();
+ } finally { await wait.release(); }
+ expect(await within(dialog).findByRole("radio", { name: "Otro formulario" })).toBeInTheDocument();
+ expect(within(dialog).queryByText("Cargando formularios…")).not.toBeInTheDocument();
+});
+
+it("shows that it retries the forms list until it answers", async () => {
+ vi.spyOn(notifications, "notify").mockImplementation(() => 0);
+ let reads = 0;
+ const wait = held();
+ server.use(http.get("/api/whatsapp/chats/:id/forms", async () => {
+  if (++reads === 1) return HttpResponse.json({ code: "General.Unexpected" }, { status: 500 });
+  await wait.answer;
+  return HttpResponse.json(formsPage());
+ }));
+ const dialog = await openDialog();
+ const retry = await within(dialog).findByRole("button", { name: "Reintentar" });
+ try {
+  await userEvent.click(retry);
+  const working = await within(dialog).findByRole("button", { name: "Reintentando…" });
+  expect(working).toHaveAttribute("aria-busy", "true");
+  expect(working).toBeDisabled();
+ } finally { await wait.release(); }
+ expect(await within(dialog).findByRole("radio", { name: "Registrar visita" })).toBeInTheDocument();
+});
+
+it("shows that it retries the preparation of a form until it answers", async () => {
+ vi.spyOn(notifications, "notify").mockImplementation(() => 0);
+ let reads = 0;
+ const wait = held();
+ server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation", async () => {
+  if (++reads === 1) return HttpResponse.json({ detail: "Falla temporal" }, { status: 500 });
+  await wait.answer;
+  return HttpResponse.json({ culture: "es", recipientContextRevision: "opaque-1", preparation: { canSend: true, catalogs: [], issues: [] } });
+ }));
+ const dialog = await openDialog();
+ await userEvent.click(await within(dialog).findByRole("radio", { name: "Registrar visita" }));
+ const retry = await within(dialog).findByRole("button", { name: "Reintentar" });
+ try {
+  await userEvent.click(retry);
+  const working = await within(dialog).findByRole("button", { name: "Reintentando…" });
+  expect(working).toHaveAttribute("aria-busy", "true");
+  expect(working).toBeDisabled();
+ } finally { await wait.release(); }
+ await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeEnabled());
+});
+
+it("shows that it saves the form send until the request answers, without letting the dialog close", async () => {
+ const wait = held();
+ server.use(http.post("/api/whatsapp/chats/:id/form-messages", async ({ request }) => {
+  const body = await request.json() as FormMessageRequest; posts.push(body); await wait.answer;
+  const result = receipt(body); thread.outgoing = [result as Thread["outgoing"][number]];
+  return HttpResponse.json(result, { status: 202 });
+ }));
+ const dialog = await openForm();
+ try {
+  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+  const working = await within(dialog).findByRole("button", { name: "Guardando…" });
+  expect(working).toHaveAttribute("aria-busy", "true");
+  expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+ } finally { await wait.release(); }
+ await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ expect(posts).toHaveLength(1);
+});
+
+it("shows that it checks an uncertain form send from the footer until the lookup answers", async () => {
+ const wait = held();
+ server.use(http.post("/api/whatsapp/chats/:id/form-messages", async ({ request }) => { posts.push(await request.json() as FormMessageRequest); return HttpResponse.error(); }),
+  http.get("/api/whatsapp/chats/:id/outgoing/:requestId", async () => { await wait.answer; return HttpResponse.json(receipt(posts[0])); }));
+ const dialog = await openForm();
+ await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+ const check = await within(dialog).findByRole("button", { name: "Consultar envío" });
+ try {
+  await userEvent.click(check);
+  const working = await within(dialog).findByRole("button", { name: "Consultando…" });
+  expect(working).toHaveAttribute("aria-busy", "true");
+  expect(working).toBeDisabled();
+ } finally { await wait.release(); }
+ await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ expect(posts).toHaveLength(1);
+});
+
+it("shows that it checks a frozen form send from beside the composer until the lookup answers", async () => {
+ const wait = held();
+ server.use(http.post("/api/whatsapp/chats/:id/form-messages", async ({ request }) => { posts.push(await request.json() as FormMessageRequest); return HttpResponse.error(); }),
+  http.get("/api/whatsapp/chats/:id/outgoing/:requestId", async () => { await wait.answer; return HttpResponse.json(receipt(posts[0])); }));
+ const dialog = await openForm();
+ await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+ await within(dialog).findByRole("button", { name: "Consultar envío" });
+ await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+ await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ try {
+  await userEvent.click(screen.getAllByRole("button", { name: "Consultar envío" })[0]);
+  const working = await screen.findByRole("button", { name: "Consultando…" });
+  expect(working).toHaveAttribute("aria-busy", "true");
+  expect(working).toBeDisabled();
+ } finally { await wait.release(); }
+ await waitFor(() => expect(screen.queryByRole("button", { name: "Consultando…" })).not.toBeInTheDocument());
+ expect(posts).toHaveLength(1);
 });

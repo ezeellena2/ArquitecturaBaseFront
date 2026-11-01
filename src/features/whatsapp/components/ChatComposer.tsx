@@ -8,6 +8,7 @@ import { FormIcon } from "@/shared/ui/icons";
 import { useAssistantSuggestion, type AssistantComposerContext } from "../hooks/useAssistantSuggestion";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
+import { Spinner } from "@/shared/ui/Spinner";
 import { Textarea } from "@/shared/ui/textarea";
 import { chatKey, findOutgoing, sendText, type Chat, type Outgoing } from "../api/chat";
 import { replyDisabledReason } from "../lib/replyAvailability";
@@ -100,14 +101,16 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
   const disabledReason = replyDisabledReason(contact, canSend, outgoing, now) ?? (draft.form?.attempt || assistant.attempt ? "send.pending" : undefined);
   // La espera de un 429 es el motivo de «No, gracias» y «Revisar y enviar», como en el pie del diálogo.
   const suggestionWait = assistant.waiting && !assistant.busy ? t("forms.waitingHint", { count: assistant.waitSeconds }) : null;
+  const discarding = assistant.busyAction === "discard";
   return (
     <div className="border-t border-[var(--color-border)] p-3">
+      {assistant.searching ? <div role="status" className="mb-2 flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t(assistant.proposal ? "send.checking" : "assistant.searching")}</div> : null}
       {assistant.proposal ? <section aria-label={t(assistant.proposal.proposalId === null ? "assistant.configuredSuggestionLabel" : "assistant.suggestionLabel")} className="mb-2 flex flex-wrap items-start gap-2 rounded-[var(--radius-control)] border border-[var(--color-primary)] bg-[var(--color-surface-muted)] p-3">
         <FormIcon className="size-4 shrink-0" />
         <div className="min-w-0 flex-1"><p className="break-words text-sm font-medium">{t(assistant.proposal.proposalId === null ? "assistant.configuredSuggestion" : "assistant.suggestion", { name: assistant.proposal.name })}</p>
           {assistant.proposal.fields.length ? <p className="mt-1 break-words text-sm text-[var(--color-content-muted)]">{t("assistant.prefilledSummary", { fields: assistant.proposal.fields.map(field => field.label + ": " + field.displayValue).join(" · ") })}</p> : null}
         </div>
-        <div className="flex flex-wrap gap-2"><DisabledReason reason={suggestionWait}><Button variant="outline" size="sm" disabled={assistant.busy || !!assistant.attempt || assistant.waiting} onClick={() => void assistant.discard()}>{t("assistant.discard")}</Button></DisabledReason>
+        <div className="flex flex-wrap gap-2"><DisabledReason reason={suggestionWait}><Button variant="outline" size="sm" pending={discarding} disabled={assistant.busy || !!assistant.attempt || assistant.waiting} onClick={() => void assistant.discard()}>{t(discarding ? "assistant.discarding" : "assistant.discard")}</Button></DisabledReason>
           <DisabledReason reason={suggestionWait}><Button size="sm" disabled={assistant.busy || assistant.waiting || !!draft.attempt || !!draft.form?.attempt} onClick={() => assistant.setOpen(true)}>{t("assistant.review")}</Button></DisabledReason></div>
       </section> : null}
       {disabledReason ? <p className="mb-2 text-sm text-[var(--color-content-muted)]">{t(disabledReason)}</p> : null}
@@ -120,8 +123,8 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
       <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
         <FormComposer assistant={assistant} focusFallback={focusFallback} onAvailabilityChange={onFormAvailabilityChange} openRequest={formOpenRequest} contact={contact} actor={actor} canSend={canSend} outgoing={outgoing} draft={draft} updateDraft={updateDraft} timeZone={timeZone} />
         {canSend ? <div className="ml-auto flex flex-wrap justify-end gap-2">
-        {draft.attempt?.checking ? <Button variant="outline" size="sm" disabled={checking} onClick={() => void checkOutcome()}>{t("send.check")}</Button> :
-          <Button size="sm" disabled={Boolean(disabledReason) || sending || !draft.body.trim()} onClick={submit}>{t(sending ? "send.sending" : draft.attempt?.notStored ? "send.retry" : "send.action")}</Button>}
+        {draft.attempt?.checking ? <Button variant="outline" size="sm" pending={checking} onClick={() => void checkOutcome()}>{t(checking ? "send.checking" : "send.check")}</Button> :
+          <Button size="sm" pending={sending} disabled={Boolean(disabledReason) || !draft.body.trim()} onClick={submit}>{t(sending ? "send.sending" : draft.attempt?.notStored ? "send.retry" : "send.action")}</Button>}
         </div> : null}
       </div>
     </div>

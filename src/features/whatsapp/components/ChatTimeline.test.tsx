@@ -14,12 +14,12 @@ const message = (status: string | null): ChatMessage => ({ audio: null, quickRep
   id: "message", status, body: "Mensaje del historial", direction: "Outbound", kind: "Text",
   occurredAtUtc: "2026-10-02T02:00:00Z", inboundSequence: 0, operatorUserId: null, errorCode: null,
 });
-async function setup(messages: ChatMessage[], outgoing: Outgoing[], canSend = true, canReuse = true) {
+async function setup(messages: ChatMessage[], outgoing: Outgoing[], canSend = true, canReuse = true, { reviewing, hasOlder = false, loadingOlder = false }: { reviewing?: string; hasOlder?: boolean; loadingOlder?: boolean } = {}) {
   const onReview = vi.fn();
   const onReuse = vi.fn();
   await act(async () => { renderWithProviders(<ChatTimeline contactId="chat-1" readOwner="test" onAudioForbidden={vi.fn()} items={buildTimeline(messages, outgoing)} actor="me" timeZone="America/Argentina/Buenos_Aires"
-    canSend={canSend} canReuse={canReuse} reviewing={false} onReview={onReview} onReuse={onReuse}
-    atBottom onAtBottomChange={vi.fn()} hasOlder={false} loadingOlder={false} historyError={false} loadOlder={vi.fn()} />); });
+    canSend={canSend} canReuse={canReuse} reviewing={reviewing} onReview={onReview} onReuse={onReuse}
+    atBottom onAtBottomChange={vi.fn()} hasOlder={hasOlder} loadingOlder={loadingOlder} historyError={false} loadOlder={vi.fn()} />); });
   return { onReview, onReuse };
 }
 
@@ -81,6 +81,26 @@ describe("ChatTimeline", () => {
     expect(screen.getByText("Texto no disponible")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Usar este texto en el borrador" })).not.toBeInTheDocument();
   });
+  it("names an unsupported message by its type without a product note", async () => {
+    await setup([{ ...message(null), direction: "Inbound", kind: "Media", body: null }], []);
+    expect(screen.getByText("Mensaje archivo")).toBeInTheDocument();
+    expect(screen.queryByText(/vista de archivos pendiente/)).not.toBeInTheDocument();
+  });
+  it("shows that earlier messages are loading in their button", async () => {
+    await setup([message(null)], [], true, true, { hasOlder: true, loadingOlder: true });
+    const loading = screen.getByRole("button", { name: "Cargando mensajes…" });
+    expect(loading).toHaveAttribute("aria-busy", "true");
+    expect(loading).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Cargar mensajes anteriores" })).not.toBeInTheDocument();
+  });
+  it("shows the review in progress only on the bubble being reviewed", async () => {
+    await setup([], [{ ...operation("Uncertain"), id: "first", requestId: "request-a" }, { ...operation("Uncertain"), id: "second", requestId: "request-b", requestedAtUtc: "2026-10-02T12:01:00Z" }], true, true, { reviewing: "request-a" });
+    const working = screen.getByRole("button", { name: "Confirmando…" });
+    expect(working).toHaveAttribute("aria-busy", "true");
+    const other = screen.getByRole("button", { name: "Ya revisé el WhatsApp" });
+    expect(other).toBeDisabled();
+    expect(other).not.toHaveAttribute("aria-busy");
+  });
 });
 
 const receivedReply: NonNullable<ChatMessage['formReply']> = { state: 'Completed', definitionId: 'definition-old', versionId: 'version-old', versionNumber: 1,
@@ -111,7 +131,7 @@ it('uses a quiet metadata-free fallback for a received invalid projection withou
 });
 
 it("labels automatic form actions and never reuses or manually reviews them in chat",async ()=>{await setup([{...message("Failed"),origin:"FormAction",kind:"Document",body:"PDF sent after approval"}],[{...operation("Uncertain"),origin:"FormAction",operatorUserId:null}]);expect(screen.getAllByText("Acción del formulario")).toHaveLength(2);expect(screen.getAllByText("Automático ·")).toHaveLength(2);expect(screen.getByText("PDF sent after approval")).toBeInTheDocument();expect(screen.queryByRole("button",{name:"Usar este texto en el borrador"})).not.toBeInTheDocument();expect(screen.queryByRole("button",{name:"Ya revisé el WhatsApp"})).not.toBeInTheDocument();});
-it("withdraws automatic captions immediately when form values are revoked",async()=>{await act(async()=>{renderWithProviders(<ChatTimeline contactId="chat-1" readOwner="test" onAudioForbidden={vi.fn()} items={buildTimeline([{...message("Delivered"),origin:"FormAction",kind:"Document",body:"private receipt caption"}],[])} actor="me" canSend={false} canReuse={false} reviewing={false} onReview={vi.fn()} onReuse={vi.fn()} atBottom onAtBottomChange={vi.fn()} hasOlder={false} loadingOlder={false} historyError={false} loadOlder={vi.fn()} formValuesRevoked/>);});expect(screen.getByText("Acción del formulario")).toBeInTheDocument();expect(screen.queryByText("private receipt caption")).not.toBeInTheDocument();});
+it("withdraws automatic captions immediately when form values are revoked",async()=>{await act(async()=>{renderWithProviders(<ChatTimeline contactId="chat-1" readOwner="test" onAudioForbidden={vi.fn()} items={buildTimeline([{...message("Delivered"),origin:"FormAction",kind:"Document",body:"private receipt caption"}],[])} actor="me" canSend={false} canReuse={false} onReview={vi.fn()} onReuse={vi.fn()} atBottom onAtBottomChange={vi.fn()} hasOlder={false} loadingOlder={false} historyError={false} loadOlder={vi.fn()} formValuesRevoked/>);});expect(screen.getByText("Acción del formulario")).toBeInTheDocument();expect(screen.queryByText("private receipt caption")).not.toBeInTheDocument();});
 
 it("shows Assistant author and keeps its automatic uncertainty and failure out of manual controls", async () => {
   const failed = { ...message("Failed"), origin: "Assistant" as const, body: "Pregunta del asistente" };

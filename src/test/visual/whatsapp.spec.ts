@@ -161,7 +161,10 @@ test("incoming polling during a pending history page preserves the visible messa
     };
   });
   await page.getByRole("button", { name: "Cargar mensajes anteriores", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Cargar mensajes anteriores", exact: true })).toBeDisabled();
+  // While the page loads, its button says so (board LC1-A) and takes no other click.
+  const loadingOlder = page.getByRole("button", { name: "Cargando mensajes…", exact: true });
+  await expect(loadingOlder).toBeDisabled();
+  await expect(loadingOlder).toHaveAttribute("aria-busy", "true");
   // Keep reading while the previous page is loading, after clicking scrolled its button into view.
   await viewport.evaluate(node => { node.scrollTop = 100; });
   const before = (await anchor.boundingBox())!.y;

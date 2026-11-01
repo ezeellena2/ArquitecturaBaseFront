@@ -22,6 +22,8 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
   const [search, setSearch] = useState("");
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
+  // A retry of a list that never arrived turns the query back to pending: the failure stays with its working Retry meanwhile.
+  const [retryingForms, setRetryingForms] = useState(false);
   const [fieldError, setFieldError] = useState<string>();
   const [selectionError, setSelectionError] = useState<string>();
   const [forbidden, setForbidden] = useState(false);
@@ -41,8 +43,12 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
   const commonReason = replyDisabledReason(contact, canSend, outgoing, now);
   const recipientReason = !eligibility ? "forms.unavailable" : eligibility.status === "NoLinkedAccount" ? "forms.noLinkedAccount" : eligibility.status === "InactiveAccount" ? "forms.inactiveAccount" : eligibility.status === "NoEligibleForms" ? "forms.noEligibleForms" : undefined;
   const disabledReason = commonReason ?? (!(eligibility?.recipientCulture === "en" ? englishReady : spanishReady) ? "forms.loading" : undefined) ?? (draft.attempt ? "send.pending" : recipientReason);
-  const forms = useQuery({ queryKey: [...chatKey, actor, "forms", contact.id, eligibility?.recipientContextRevision, eligibility?.recipientCulture, page, search],
-    queryFn: async ({signal}) => { try { return await listChatForms(contact.id, page, search, signal); } catch(error) { const feedback = errorFeedback(error); if(feedback.kind === "wait") beginWait(feedback.retryAfterSeconds); throw error; } }, enabled: open && !denied && !changed && eligibility?.status === "Eligible", retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, meta: {errorOwner:"local"} });
+  const formsScope = [...chatKey, actor, "forms", contact.id, eligibility?.recipientContextRevision, eligibility?.recipientCulture];
+  const formsStamp = JSON.stringify(formsScope);
+  const forms = useQuery({ queryKey: [...formsScope, page, search],
+    queryFn: async ({signal}) => { try { return await listChatForms(contact.id, page, search, signal); } catch(error) { const feedback = errorFeedback(error); if(feedback.kind === "wait") beginWait(feedback.retryAfterSeconds); throw error; } }, enabled: open && !denied && !changed && eligibility?.status === "Eligible", retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, meta: {errorOwner:"local"},
+    // Another page or search keeps the previous forms in sight while it reads; another recipient context starts from zero.
+    placeholderData: (previous, previousQuery) => previousQuery && JSON.stringify(previousQuery.queryKey.slice(0, formsScope.length)) === formsStamp ? previous : undefined });
   const preparationKey = useMemo(()=>[...chatKey,actor,"forms",contact.id,"preparation",eligibility?.recipientContextRevision,
     eligibility?.recipientCulture,form?.selection?.definitionId,form?.selection?.versionId,i18n.resolvedLanguage],
     [actor,contact.id,eligibility?.recipientContextRevision,eligibility?.recipientCulture,form?.selection?.definitionId,form?.selection?.versionId,i18n.resolvedLanguage]);
@@ -159,5 +165,5 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
       else {const feedback=errorFeedback(error);if(active.current&&feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);if(active.current&&feedback.kind!=="session")notify({id:noticeId,kind:"error",message:feedback.kind==="forbidden"?t("send.forbidden"):t("send.checkFailed"),action:["forbidden","wait"].includes(feedback.kind)?undefined:{label:t("send.check"),onClick:()=>void checkOutcome()}});if(feedback.kind==="forbidden"){setForbidden(true);client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id});}}
     } finally {pending.current=false;if(active.current)setChecking(false);}
   }
-  return {presentationCulture,presentationReady,canOpen,open,setOpen,page,setPage,search,setSearch,forms,preparation,preparationBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied)void refetchForms();}, updateForm};
+  return {presentationCulture,presentationReady,canOpen,open,setOpen,page,setPage,search,setSearch,forms,preparation,preparationBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryingForms, retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied){setRetryingForms(true);void refetchForms().finally(()=>setRetryingForms(false));}}, updateForm};
 }

@@ -17,7 +17,8 @@ export function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, ac
   atBottom, onAtBottomChange, hasOlder, loadingOlder, historyError, loadOlder, formValuesRevoked = false, onResendForm }: {
   contactId: string; readOwner: string; onAudioForbidden: () => void;
   items: readonly TimelineItem[]; actor: string; timeZone?: string; canSend: boolean; canReuse: boolean;
-  reviewing: boolean; onReview: (operation: Outgoing) => void; onReuse: (body: string) => void;
+  /** The `requestId` whose review is being confirmed: that bubble shows the progress, and no other review starts meanwhile. */
+  reviewing?: string; onReview: (operation: Outgoing) => void; onReuse: (body: string) => void;
   atBottom: boolean; onAtBottomChange: (recent: boolean) => void;
   hasOlder: boolean; loadingOlder: boolean; historyError: boolean; loadOlder: () => Promise<unknown>; formValuesRevoked?: boolean; onResendForm?: () => void;
 }) {
@@ -28,7 +29,7 @@ export function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, ac
   const groups = useMemo(() => groupTimelineByDay(items, timeZone), [items, timeZone]);
   const { viewport: viewportRef, onScroll, loadOlder: prependHistory, preserveViewport } = useChatHistoryViewport(items, atBottom, onAtBottomChange);
   return <MessageHistory ref={viewportRef} label={t("history")} onScroll={onScroll}>
-    {hasOlder ? <div className="mb-4 text-center"><Button variant="outline" size="sm" disabled={loadingOlder} onClick={() => void prependHistory(loadOlder)}>{t("older")}</Button></div> : null}
+    {hasOlder ? <div className="mb-4 text-center"><Button variant="outline" size="sm" pending={loadingOlder} onClick={() => void prependHistory(loadOlder)}>{t(loadingOlder ? "loadingOlder" : "older")}</Button></div> : null}
     {historyError ? <p className="mb-3 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
     {groups.map(group => <div key={group.date}>
       <MessageDateDivider date={group.date} label={formatDateInZone(group.items[0].occurredAtUtc, language, timeZone)} />
@@ -46,11 +47,10 @@ export function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, ac
         </section> : null}
         {item.origin === "Conversation" && item.source === "outgoing" && item.operation.state === "Uncertain" ? <>
           <p>{t("review.description")}</p>
-          {canSend && item.operation.operatorUserId === actor ? <Button variant="outline" size="sm" disabled={reviewing} onClick={() => onReview(item.operation)}>{t("review.action")}</Button> : null}
+          {canSend && item.operation.operatorUserId === actor ? <Button variant="outline" size="sm" disabled={Boolean(reviewing)} pending={reviewing === item.operation.requestId} onClick={() => onReview(item.operation)}>{t(reviewing === item.operation.requestId ? "review.confirming" : "review.action")}</Button> : null}
         </> : null}
         {item.origin === "Conversation" && item.delivery?.code === "Failed" && item.kind !== "Flow" && item.body && canSend ?
           <Button variant="muted-link" size="inline" disabled={!canReuse} onClick={() => onReuse(item.body!)}>{t("reuse")}</Button> : null}
-        {item.delivery?.code === "Failed" && item.kind === "Flow" ? <p>{t("forms.failed")}</p> : null}
       </MessageBubble>)}
     </div>)}
   </MessageHistory>;

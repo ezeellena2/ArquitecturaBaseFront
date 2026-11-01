@@ -44,6 +44,86 @@ beforeEach(() => { recipientCulture = "es"; availability = "available"; currentP
 });
 afterEach(() => vi.restoreAllMocks());
 async function openSuggestion() { renderWithProviders(<Harness />); const action = await screen.findByRole("button", { name: "Revisar y enviar" }); await userEvent.click(action); return { dialog: await screen.findByRole("dialog"), action }; }
+// A response held until the test releases it, to see what the chat shows while it waits.
+function held() { let release!: () => void; const answer = new Promise<void>(resolve => { release = resolve; }); return { answer, release: () => act(async () => release()) }; }
+
+// No explanation under the title (2026-11-01): what happens with the prefilled data goes in the (i) of its group.
+it("reviews a suggestion without explanations under the title, with the prefilled help in the information icon", async () => {
+ const { dialog } = await openSuggestion();
+ expect(dialog).not.toHaveAttribute("aria-describedby");
+ expect(within(dialog).queryByText(/Revisá los datos propuestos/)).not.toBeInTheDocument();
+ const help = "Juan los ve cargados y los puede cambiar. Lo que destildes va vacío.";
+ expect(within(dialog).getByRole("button", { name: "Más información sobre Datos que van prellenados" })).toHaveAccessibleDescription(help);
+ expect(within(dialog).getByRole("group", { name: "Datos que van prellenados" })).toHaveAccessibleDescription(help);
+ for (const text of within(dialog).getAllByText(help)) expect(text).not.toBeVisible();
+});
+it("shows that it looks for a suggestion in the place of the card until the assistant answers", async () => {
+ const wait = held();
+ server.use(http.post("/api/whatsapp/chats/:id/assistant-suggestions", async ({ request }) => { requests.push(await request.json()); await wait.answer; return HttpResponse.json(body, { status: 202 }); }));
+ renderWithProviders(<Harness />);
+ try {
+  const searching = await screen.findByText("Buscando una sugerencia…");
+  expect(searching.closest('[role="status"]')).not.toBeNull();
+  expect(screen.queryByRole("button", { name: "Revisar y enviar" })).not.toBeInTheDocument();
+ } finally { await wait.release(); }
+ expect(await screen.findByRole("button", { name: "Revisar y enviar" })).toBeInTheDocument();
+ expect(screen.queryByText("Buscando una sugerencia…")).not.toBeInTheDocument();
+});
+it("keeps telling that it looks for a suggestion while the assistant has it pending", async () => {
+ body = { ...ready, state: "Pending", proposal: null as unknown as typeof proposal };
+ renderWithProviders(<Harness />);
+ const searching = await screen.findByText("Buscando una sugerencia…");
+ expect(searching.closest('[role="status"]')).not.toBeNull();
+ await waitFor(() => expect(requests).toHaveLength(1));
+ expect(screen.getByText("Buscando una sugerencia…")).toBeInTheDocument();
+ expect(screen.queryByRole("button", { name: "Revisar y enviar" })).not.toBeInTheDocument();
+});
+it("shows that it discards the suggestion until the discard answers", async () => {
+ const wait = held();
+ server.use(http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/discard", async () => { discarded++; await wait.answer; return HttpResponse.json({ ...ready, state: "Discarded", proposal: null }); }));
+ renderWithProviders(<Harness />);
+ try {
+  await userEvent.click(await screen.findByRole("button", { name: "No, gracias" }));
+  const working = await screen.findByRole("button", { name: "Descartando…" });
+  expect(working).toHaveAttribute("aria-busy", "true");
+  expect(working).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Revisar y enviar" })).toBeDisabled();
+ } finally { await wait.release(); }
+ await waitFor(() => expect(screen.queryByRole("button", { name: "Revisar y enviar" })).not.toBeInTheDocument());
+ expect(discarded).toBe(1);
+});
+it("shows that it saves the suggested send until it answers, without letting the dialog close", async () => {
+ const wait = held();
+ server.use(http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/send", async ({ request }) => { const send = await request.json() as typeof sends[number]; sends.push(send); await wait.answer; return HttpResponse.json(receipt(send.requestId), { status: 202 }); }));
+ const { dialog } = await openSuggestion();
+ try {
+  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+  const working = await within(dialog).findByRole("button", { name: "Guardando…" });
+  expect(working).toHaveAttribute("aria-busy", "true");
+  expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+ } finally { await wait.release(); }
+ await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ expect(sends).toHaveLength(1);
+});
+// Checking a lost send is a read: it shows that it works and the dialog can still be closed (not frozen without a signal).
+it("shows that it checks a lost suggested send while the dialog can still be closed", async () => {
+ const wait = held();
+ server.use(http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/send", async ({ request }) => { sends.push(await request.json() as typeof sends[number]); return HttpResponse.error(); }),
+  http.get("/api/whatsapp/chats/:id/assistant-suggestions/:requestId", async () => { await wait.answer; return HttpResponse.json({ ...ready, state: "Sent", proposal: null, outgoing: receipt("019abcde-1000-7000-8000-000000000011") }); }));
+ const { dialog } = await openSuggestion();
+ await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
+ const check = await within(dialog).findByRole("button", { name: "Consultar envío" });
+ try {
+  await userEvent.click(check);
+  const working = await within(dialog).findByRole("button", { name: "Consultando…" });
+  expect(working).toHaveAttribute("aria-busy", "true");
+  expect(working).toBeDisabled();
+  expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeEnabled();
+  expect(within(dialog).getByRole("button", { name: "Cerrar" })).toBeEnabled();
+ } finally { await wait.release(); }
+ await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ expect(sends).toHaveLength(1);
+});
 it("requests one shared suggestion and sends only explicitly included IDs through the existing form dialog", async () => {
  const { dialog } = await openSuggestion();
  expect(requests).toHaveLength(1); expect(requests[0]).toMatchObject({ sourceMessageId, expectedModeRevision: 7 });

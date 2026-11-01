@@ -53,7 +53,7 @@ it("does not make one thread GET per accepted audio and keeps attempts after a t
  expect(api.reads()).toBe(1);
  api.failNextRead();
  await act(async () => { await readClient.refetchQueries({ queryKey: chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });
- await screen.findByText("No se pudo actualizar. Se conserva el historial visible.");
+ await screen.findByText("No se pudo actualizar.");
  await waitFor(() => expect(api.reads()).toBe(2));
  await act(async () => { await readClient.refetchQueries({ queryKey: chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });
  await waitFor(() => expect(api.reads()).toBe(3));
@@ -73,7 +73,7 @@ it("keeps an in-flight transcription through a transient thread GET failure befo
   await waitFor(() => expect(posts).toBe(1));
   api.failNextRead();
   await act(async () => { await readClient.refetchQueries({ queryKey: chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });
-  await screen.findByText("No se pudo actualizar. Se conserva el historial visible.");
+  await screen.findByText("No se pudo actualizar.");
   expect(signal?.aborted).toBe(false);
   await act(async () => release());
   await act(async () => { await readClient.refetchQueries({ queryKey: chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });

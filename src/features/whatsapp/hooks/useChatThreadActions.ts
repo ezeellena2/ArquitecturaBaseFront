@@ -20,13 +20,15 @@ export function useChatThreadActions(id: string, refresh: () => Promise<unknown>
     if (active.current && !["session", "cancelled"].includes(result.kind)) notify({ id: feedbackId, kind: "error", message: result.kind === "uncertain" ? t(uncertain) : result.detail ?? t("actionFailed") });
     if (active.current) void refresh();
   }
+  // Each confirmation waits open with its progress until the answer (board LC1-A) and closes when it settles, also on a failure.
+  // A success stays pending until the conversation is read again, so the closed dialog never uncovers the previous state.
   const changing = useMutation({ retry: false,
     mutationFn: (next: { mode: ChatMode; revision: number }) => changeMode(id, next.mode, next.revision),
     onSuccess: result => {
-      void client.invalidateQueries({ queryKey: chatKey });
       if (active.current && result.mode === "Manual" && result.assistantSendInProgress) notify({ id: feedbackId, kind: "info", message: t("mode.manualSendInProgress") });
-    }, onError: error => feedback(error, "mode.uncertain") });
+      return client.invalidateQueries({ queryKey: chatKey });
+    }, onError: error => feedback(error, "mode.uncertain"), onSettled: () => setMode(undefined) });
   const reviewing = useMutation({ retry: false, mutationFn: (operation: Pick<Outgoing, "requestId">) => reviewOutgoing(id, operation.requestId),
-    onSuccess: () => { void client.invalidateQueries({ queryKey: chatKey }); }, onError: error => feedback(error, "review.uncertain") });
+    onSuccess: () => client.invalidateQueries({ queryKey: chatKey }), onError: error => feedback(error, "review.uncertain"), onSettled: () => setReviewReference(undefined) });
   return { mode, setMode, review, setReview, changing, reviewing };
 }

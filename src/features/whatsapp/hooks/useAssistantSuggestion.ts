@@ -34,7 +34,9 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
   const suggestionRef = useRef(suggestion);
   const [recovery, setRecovery] = useState<"none" | "consult" | "repeat">("none");
   const recoveryRef = useRef(recovery);
-  const [busy, setBusy] = useState(false);
+  // The operation in flight, so each control shows its own progress: one operation at a time.
+  const [busyAction, setBusyAction] = useState<"request" | "consult" | "discard" | "send">();
+  const busy = busyAction !== undefined;
   const [denied, setDenied] = useState(false);
   const deniedRef = useRef(false);
   const [waitUntil, setWaitUntil] = useState(0);
@@ -58,7 +60,7 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
     setOpen(false); setSelected([]);
     attemptRef.current = undefined; setAttempt(undefined);
     recoveryRef.current = "none"; setRecovery("none");
-    setBusy(false); deniedRef.current = false; setDenied(false);
+    setBusyAction(undefined); deniedRef.current = false; setDenied(false);
     deadline.current = 0; setWaitUntil(0); setNow(Date.now());
     currentRequest.current = { requestId: crypto.randomUUID(), sourceMessageId: context?.sourceMessageId ?? "", expectedModeRevision: modeRevision };
     pointer.current = context?.pointer;
@@ -113,10 +115,10 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
   async function run(action: "request" | "consult" | "discard" | "send", work: (signal: AbortSignal) => Promise<void>) {
     if (!enabledRef.current || !active.current || currentOwner.current !== owner || deniedRef.current || operation.current || Date.now() < deadline.current) return;
     const controller = new AbortController();
-    operation.current = controller; setBusy(true);
+    operation.current = controller; setBusyAction(action);
     try { await work(controller.signal); }
     catch (error) { if (owns(controller.signal)) fail(error, action); }
-    finally { if (operation.current === controller) operation.current = null; if (owns(controller.signal)) setBusy(false); }
+    finally { if (operation.current === controller) operation.current = null; if (owns(controller.signal)) setBusyAction(undefined); }
   }
   async function request() {
     if (!requestAllowed.current) return;
@@ -178,7 +180,11 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [waitUntil]);
-  return { proposal: stateOwner === owner && !denied && enabled ? suggestion?.proposal ?? null : null, open: stateOwner === owner && !denied && enabled && open, setOpen, selected, setSelected, attempt, recovery, busy, denied,
+  const shown = stateOwner === owner && !denied && enabled;
+  return { proposal: shown ? suggestion?.proposal ?? null : null, open: shown && open, setOpen, selected, setSelected, attempt, recovery, busy, busyAction: shown ? busyAction : undefined, denied,
+    // Asking for a suggestion, or reading it while the assistant has it pending or after a notice: the composer says it is
+    // working, in the place of the card. The dialog shows its own progress in its footer.
+    searching: shown && !open && (busyAction === "request" || busyAction === "consult" || suggestion?.state === "Pending"),
     waiting: now < waitUntil, waitSeconds: Math.max(0, Math.ceil((waitUntil - now) / 1000)), discard, send, consult };
 }
 export type AssistantComposerState = ReturnType<typeof useAssistantSuggestion>;

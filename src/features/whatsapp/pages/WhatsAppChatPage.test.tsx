@@ -16,12 +16,19 @@ let contact: Chat;
 let thread: Thread;
 let requests: { requestId: string; body: string }[];
 const pending = (requestId: string, body: string): Outgoing => ({ quickReplies: null, assistant: null, origin: "Conversation" as const, id: "pending-1", requestId, body, state: "Pending", operatorUserId: currentUser.id, requestedAtUtc: "2026-10-02T12:00:00Z", waMessageId: null });
+const inbox = (items = [contact, { ...contact, id: "chat-2", profileName: "Luis" }]) => ({ page: { items, totalCount: items.length, page: 1, pageSize: 20, totalPages: 1 }, allCount: 2, unreadCount: 1 });
+// A response held until the test releases it, to see what the screen shows while it waits.
+function held() {
+  let release!: () => void;
+  const answer = new Promise<void>(resolve => { release = resolve; });
+  return { answer, release: () => act(async () => release()) };
+}
 beforeEach(() => {
   queryClient.clear(); requests = [];
   contact = { id: "chat-1", profileName: "Ana", phoneNumber: "+54 9 351 555-1234", mode: "Manual", modeRevision: 2, lastInboundAtUtc: new Date().toISOString(), lastInboundSequence: 1, unreadCount: 1, preview: "Hola" };
   thread = { assistantSuggestion: null, assistantAvailability: { state: "notInstalled" }, contact, messages: [{ audio: null, quickReplies: null, assistant: null, origin: "Conversation" as const, id: "message-1", direction: "Inbound", body: "Hola", kind: "Text", occurredAtUtc: contact.lastInboundAtUtc, inboundSequence: 1, operatorUserId: null, status: null, errorCode: null }], outgoing: [], beforeAtUtc: null, beforeId: null };
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] })),
-    http.get("/api/whatsapp/chats", () => HttpResponse.json({ page: { items: [contact, { ...contact, id: "chat-2", profileName: "Luis" }], totalCount: 2, page: 1, pageSize: 20, totalPages: 1 }, allCount: 2, unreadCount: 1 })),
+    http.get("/api/whatsapp/chats", () => HttpResponse.json(inbox())),
     http.get("/api/whatsapp/chats/:id/messages", () => HttpResponse.json(thread)),
     http.put("/api/whatsapp/chats/:id/read", () => new HttpResponse(null, { status: 204 })),
     http.post("/api/whatsapp/chats/:id/messages", async ({ request }) => { const body = await request.json() as typeof requests[number]; requests.push(body); thread.outgoing = [pending(body.requestId, body.body)]; return HttpResponse.json(thread.outgoing[0], { status: 202 }); }));
@@ -50,6 +57,8 @@ it("keeps the frozen text and identity outside MutationCache while sending and g
     act(() => { fireEvent.click(send); fireEvent.click(send); fireEvent.keyDown(input, { key: "Enter", ctrlKey: true }); });
     await waitFor(() => expect(requests).toHaveLength(1));
     expect(input).toBeDisabled();
+    // While it saves, the button shows that it works (board LC1-A), and a second click does nothing.
+    expect(screen.getByRole("button", { name: "Guardando…" })).toHaveAttribute("aria-busy", "true");
     expectPrivateSendOutsideMutationCache(requests[0]);
   } finally { await act(async () => release()); }
   await waitFor(() => expect(input).toHaveValue(""));
@@ -89,27 +98,219 @@ it("replaces the visible composer with the primary manual attention control in A
   expect(within(screen.getByRole("heading", { name: "Ana" }).closest("header")!).getByText("Asistente", { selector: '[data-slot="badge"]' })).toBeInTheDocument();
 });
 
-it("keeps assistant unavailability inline across refresh and reopening without repeating notifications", async () => {
+// In Manual, why Assistant cannot be enabled is the reason of its disabled button, not a fixed notice (2026-11-01).
+it("gives assistant unavailability as the reason of the disabled Assistant switch across refresh and reopening without notifications", async () => {
   const warnings = vi.spyOn(toast, "warning");
   thread.assistantAvailability = { state: "paused" };
   await open();
-  const reason = await screen.findByText("El asistente está pausado.");
-  expect(reason.closest('[role="status"]')).not.toBeNull();
-  expect(screen.getByText("La conversación sigue en atención manual.")).toBeVisible();
+  const enable = screen.getByRole("button", { name: "Pasar a modo Asistente" });
+  expect(enable).toBeDisabled();
+  expect(enable).toHaveAccessibleDescription("El asistente está pausado.");
+  for (const text of screen.getAllByText("El asistente está pausado.")) expect(text).not.toBeVisible();
+  expect(screen.queryByText("La conversación sigue en atención manual.")).not.toBeInTheDocument();
   await act(async () => { await queryClient.invalidateQueries({ queryKey: chatApi.chatKey }); });
   await userEvent.click(screen.getByRole("button", { name: "Luis" }));
   await userEvent.click(screen.getByRole("button", { name: "Ana" }));
   await screen.findByRole("textbox", { name: "Respuesta al cliente" });
-  expect(screen.getAllByText("El asistente está pausado.")).toHaveLength(1);
+  expect(screen.getByRole("button", { name: "Pasar a modo Asistente" })).toHaveAccessibleDescription("El asistente está pausado.");
   expect(warnings).not.toHaveBeenCalled();
 });
 
-it("does not describe Manual continuity while an unavailable Assistant owns the conversation", async () => {
+// In Assistant nobody answers while it is unavailable: the reason goes in the notice of the composer, next to taking manual attention.
+it("tells an unavailable Assistant in the notice of the composer, next to taking manual attention", async () => {
   contact.mode = "Assistant";
   thread.assistantAvailability = { state: "paused" };
-  await open();
-  expect(screen.getByText("El asistente está pausado.")).toBeVisible();
+  const controls = await open();
+  expect(within(controls).getByText("El asistente está pausado.")).toBeVisible();
+  expect(within(controls).getByText("El asistente atiende esta conversación. Para escribirle vos, tomá la atención manual.")).toBeVisible();
+  expect(within(controls).getByRole("button", { name: "Tomar atención manual" })).toBeEnabled();
+  expect(screen.getAllByText("El asistente está pausado.")).toHaveLength(1);
   expect(screen.queryByText("La conversación sigue en atención manual.")).not.toBeInTheDocument();
+});
+
+it("tells only that the phone number is missing in the header and why it cannot reply above the composer", async () => {
+  contact.phoneNumber = null;
+  await open();
+  const header = screen.getByRole("heading", { name: "Ana" }).closest("header")!;
+  expect(within(header).getByText("Sin número")).toBeVisible();
+  expect(screen.getAllByText("WhatsApp no informó un número al que podamos responder.")).toHaveLength(1);
+  expect(within(header).queryByText("WhatsApp no informó un número al que podamos responder.")).not.toBeInTheDocument();
+});
+
+it("asks only to choose a conversation in the empty panel", async () => {
+  renderRouteWithProviders("/whatsapp/chat");
+  await screen.findByRole("button", { name: "Ana" });
+  expect(screen.getByText("Elegí una conversación.")).toBeInTheDocument();
+});
+
+it("shows that Actualizar reads the inbox again until it answers, keeping the conversations in sight", async () => {
+  renderRouteWithProviders("/whatsapp/chat");
+  await screen.findByRole("button", { name: "Ana" });
+  const wait = held();
+  server.use(http.get("/api/whatsapp/chats", async () => { await wait.answer; return HttpResponse.json(inbox()); }));
+  try {
+    await userEvent.click(screen.getByRole("button", { name: "Actualizar" }));
+    const working = await screen.findByRole("button", { name: "Actualizando…" });
+    expect(working).toHaveAttribute("aria-busy", "true");
+    expect(working).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Ana" })).toBeVisible();
+  } finally { await wait.release(); }
+  expect(await screen.findByRole("button", { name: "Actualizar" })).toBeEnabled();
+});
+
+it("keeps the conversations and their counts while a filter reads again, with a loading status", async () => {
+  renderRouteWithProviders("/whatsapp/chat");
+  await screen.findByRole("button", { name: "Luis" });
+  const wait = held();
+  server.use(http.get("/api/whatsapp/chats", async ({ request }) => {
+    if (new URL(request.url).searchParams.get("unreadOnly") !== "true") return HttpResponse.json(inbox());
+    await wait.answer;
+    return HttpResponse.json(inbox([contact]));
+  }));
+  try {
+    await userEvent.click(screen.getByRole("button", { name: "Sin leer (1)" }));
+    const loading = await screen.findByText("Cargando conversaciones…");
+    expect(loading.closest('[role="status"]')).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Luis" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Todos (2)" })).toBeInTheDocument();
+  } finally { await wait.release(); }
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Luis" })).not.toBeInTheDocument());
+  expect(screen.queryByText("Cargando conversaciones…")).not.toBeInTheDocument();
+});
+
+it("shows the conversation loading under a header with Chats until the thread answers", async () => {
+  const wait = held();
+  server.use(http.get("/api/whatsapp/chats/:id/messages", async () => { await wait.answer; return HttpResponse.json(thread); }));
+  renderRouteWithProviders("/whatsapp/chat");
+  try {
+    await userEvent.click(await screen.findByRole("button", { name: "Ana" }));
+    const loading = await screen.findByText("Cargando la conversación…");
+    expect(loading.closest('[role="status"]')).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Chats" })).toBeInTheDocument();
+    expect(screen.queryByText("Cargando conversaciones…")).not.toBeInTheDocument();
+  } finally { await wait.release(); }
+  expect(await screen.findByLabelText("Respuesta al cliente")).toBeInTheDocument();
+});
+
+it("shows that it retries a failed conversation load until the thread answers", async () => {
+  let reads = 0;
+  const wait = held();
+  server.use(http.get("/api/whatsapp/chats/:id/messages", async () => {
+    if (++reads === 1) return HttpResponse.json({ code: "General.Unexpected" }, { status: 500 });
+    await wait.answer;
+    return HttpResponse.json(thread);
+  }));
+  renderRouteWithProviders("/whatsapp/chat");
+  await userEvent.click(await screen.findByRole("button", { name: "Ana" }));
+  const retry = await screen.findByRole("button", { name: "Reintentar" });
+  expect(screen.getByText("No se pudo cargar el chat.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Chats" })).toBeInTheDocument();
+  try {
+    await userEvent.click(retry);
+    const working = await screen.findByRole("button", { name: "Reintentando…" });
+    expect(working).toHaveAttribute("aria-busy", "true");
+    expect(working).toBeDisabled();
+  } finally { await wait.release(); }
+  expect(await screen.findByLabelText("Respuesta al cliente")).toBeInTheDocument();
+});
+
+it("says only that a refresh failed and shows that it retries it, keeping the history in sight", async () => {
+  await open();
+  let failing = true;
+  const wait = held();
+  server.use(http.get("/api/whatsapp/chats/:id/messages", async () => {
+    if (failing) return HttpResponse.json({ code: "General.Unexpected" }, { status: 500 });
+    await wait.answer;
+    return HttpResponse.json(thread);
+  }));
+  await act(async () => { await queryClient.refetchQueries({ queryKey: chatApi.chatKey, predicate: query => query.queryKey.at(-1) === "thread" }); });
+  expect(await screen.findByText("No se pudo actualizar.")).toBeVisible();
+  expect(screen.queryByText(/Se conserva el historial visible/)).not.toBeInTheDocument();
+  failing = false;
+  try {
+    await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+    expect(within(screen.getByLabelText("Historial de mensajes")).getByText("Hola")).toBeInTheDocument();
+  } finally { await wait.release(); }
+  await waitFor(() => expect(screen.queryByText("No se pudo actualizar.")).not.toBeInTheDocument());
+});
+
+it("keeps the manual attention confirmation open with its progress until the change answers", async () => {
+  contact.mode = "Assistant";
+  const wait = held();
+  server.use(http.put("/api/whatsapp/chats/:id/mode", async () => {
+    await wait.answer; contact.mode = "Manual"; contact.modeRevision++;
+    return HttpResponse.json({ mode: contact.mode, modeRevision: contact.modeRevision, assistantSendInProgress: false });
+  }));
+  await open();
+  await userEvent.click(screen.getByRole("button", { name: "Tomar atención manual" }));
+  const dialog = screen.getByRole("dialog");
+  try {
+    await userEvent.click(within(dialog).getByRole("button", { name: "Tomar atención manual" }));
+    const working = await within(dialog).findByRole("button", { name: "Tomando la atención…" });
+    expect(working).toHaveAttribute("aria-busy", "true");
+    expect(working).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    expect(screen.getByRole("dialog")).toBe(dialog);
+  } finally { await wait.release(); }
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(screen.getByRole("textbox", { name: "Respuesta al cliente" })).toBeEnabled();
+});
+
+it("keeps the Assistant confirmation open with its progress until the change answers", async () => {
+  thread.assistantAvailability = { state: "available" };
+  const wait = held();
+  server.use(http.put("/api/whatsapp/chats/:id/mode", async () => {
+    await wait.answer; contact.mode = "Assistant"; contact.modeRevision++;
+    return HttpResponse.json({ mode: contact.mode, modeRevision: contact.modeRevision, assistantSendInProgress: false });
+  }));
+  await open();
+  await userEvent.click(screen.getByRole("button", { name: "Pasar a modo Asistente" }));
+  const dialog = screen.getByRole("dialog", { name: "Pasar a modo Asistente" });
+  try {
+    await userEvent.click(within(dialog).getByRole("button", { name: "Pasar a Asistente" }));
+    expect(await within(dialog).findByRole("button", { name: "Pasando a Asistente…" })).toHaveAttribute("aria-busy", "true");
+    expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+  } finally { await wait.release(); }
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(screen.getByRole("region", { name: "Asistente" })).toBeInTheDocument();
+});
+
+it("keeps the review confirmation open with its progress until the review answers", async () => {
+  thread.outgoing = [{ ...pending("request-review", "Resultado externo incierto"), state: "Uncertain" }];
+  const wait = held();
+  server.use(http.post("/api/whatsapp/chats/:id/outgoing/:requestId/review", async () => {
+    await wait.answer; thread.outgoing[0].state = "Reviewed";
+    return new HttpResponse(null, { status: 204 });
+  }));
+  await open();
+  await userEvent.click(screen.getByRole("button", { name: "Ya revisé el WhatsApp" }));
+  const dialog = screen.getByRole("dialog", { name: "Confirmar revisión del envío" });
+  try {
+    await userEvent.click(within(dialog).getByRole("button", { name: "Confirmar que revisé" }));
+    expect(await within(dialog).findByRole("button", { name: "Confirmando…" })).toHaveAttribute("aria-busy", "true");
+    expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+  } finally { await wait.release(); }
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(screen.getByText("Revisado por el operador")).toBeInTheDocument();
+});
+
+it("shows that it checks an uncertain send until the lookup answers, without posting again", async () => {
+  const wait = held();
+  server.use(http.post("/api/whatsapp/chats/:id/messages", async ({ request }) => {
+    const body = await request.json() as typeof requests[number]; requests.push(body); thread.outgoing = [pending(body.requestId, body.body)];
+    return HttpResponse.json({ code: "General.Unexpected", traceId: "chat-trace" }, { status: 500 });
+  }), http.get("/api/whatsapp/chats/:id/outgoing/:requestId", async () => { await wait.answer; return HttpResponse.json(thread.outgoing[0]); }));
+  const input = await open(); fireEvent.change(input, { target: { value: "Respuesta conservada" } });
+  await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+  try {
+    await userEvent.click((await screen.findAllByRole("button", { name: "Consultar envío" }))[0]);
+    const working = await screen.findByRole("button", { name: "Consultando…" });
+    expect(working).toHaveAttribute("aria-busy", "true");
+    expect(working).toBeDisabled();
+  } finally { await wait.release(); }
+  await waitFor(() => expect(input).toHaveValue(""));
+  expect(requests).toHaveLength(1);
 });
 
 describe("WhatsAppChatPage", () => {
@@ -208,7 +409,7 @@ describe("WhatsAppChatPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Actualizar" }));
     await waitFor(() => expect(errors).toHaveBeenCalledTimes(1));
     // Page.status shows only the state of the object; the conversations stay as they were.
-    expect(screen.queryByText("No se pudo actualizar. Se conserva el historial visible.")).not.toBeInTheDocument();
+    expect(screen.queryByText("No se pudo actualizar.")).not.toBeInTheDocument();
     expect(screen.queryByText("No se pudo cargar el chat.")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Ana" })).toBeVisible();
   });
@@ -353,10 +554,24 @@ it("enables Assistant with ConfigureAssistant alone after explicit confirmation 
   expect(screen.queryByRole("button", { name: "Tomar atención manual" })).not.toBeInTheDocument();
   expect(requests).toEqual([]);
 });
-it.each(["notInstalled", "notConfigured", "paused", "modelNotQualified"] as const)("does not offer Assistant when its real availability is %s", async state => {
-  thread.assistantAvailability = { state };
+it("does not offer Assistant when the assistant is not installed", async () => {
+  thread.assistantAvailability = { state: "notInstalled" };
   await open();
   expect(screen.queryByRole("button", { name: "Pasar a modo Asistente" })).not.toBeInTheDocument();
+  expect(requests).toEqual([]);
+});
+it.each([
+  ["notConfigured", "El asistente no está disponible: falta configurar la conexión de IA."],
+  ["paused", "El asistente está pausado."],
+  ["modelNotQualified", "El asistente no está disponible: falta verificar el modelo."],
+] as const)("keeps Assistant off with its reason as a tooltip when its real availability is %s", async (state, reason) => {
+  thread.assistantAvailability = { state };
+  await open();
+  const enable = screen.getByRole("button", { name: "Pasar a modo Asistente" });
+  expect(enable).toBeDisabled();
+  expect(enable).toHaveAccessibleDescription(reason);
+  await userEvent.hover(enable);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
   expect(requests).toEqual([]);
 });
 
