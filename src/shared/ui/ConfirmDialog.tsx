@@ -48,6 +48,8 @@ export function ConfirmDialog({
       <DialogContent
         onCloseAutoFocus={restoreFocus}
         closeDisabledReason={pending ? pendingLabel ?? confirmLabel : undefined}
+        // Sin descripción, Radix pide que se diga explícitamente que no la hay.
+        {...(description ? {} : { "aria-describedby": undefined })}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
