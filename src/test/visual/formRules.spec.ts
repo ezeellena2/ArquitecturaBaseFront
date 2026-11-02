@@ -39,4 +39,32 @@ for (const language of ["es", "en"] as const)
       await history.getByRole("button", { name: en ? "Close" : "Cerrar", exact: true }).click();
       await expect(revision).toBeFocused();
     });
+    // Board RP1-A: the attachment is never cleared; its reason is under the box right away, with the button that fixes the order.
+    test("attached PDF tells why and fixes the order " + language + " at " + width, async ({ page }) => {
+      const en = language === "en";
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "&scenario=forms-rules&lang=" + language);
+      await expect(page.getByRole("heading", { name: en ? "Register visit" : "Registrar visita", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: en ? "Add rule" : "Agregar regla", exact: true }).click();
+      await page.getByRole("combobox", { name: en ? "When" : "Cuándo", exact: true }).selectOption("Approved");
+      await page.getByRole("button", { name: en ? "Add action" : "Agregar acción", exact: true }).click();
+      await page.getByRole("textbox", { name: en ? "Message" : "Mensaje", exact: true }).fill(en ? "We approved {número}." : "Aprobamos {número}.");
+      const attach = page.getByRole("checkbox", { name: en ? "Attach PDF" : "Adjuntar el PDF", exact: true });
+      // The label covers the whole row of the common box, as clicking anywhere on it does.
+      await page.getByText(en ? "Attach PDF" : "Adjuntar el PDF", { exact: true }).click();
+      const reason = en ? "To attach it, “Generate PDF” must come before this message." : "Para adjuntarlo, «Armar el PDF» tiene que ir antes de este mensaje.";
+      await expect(page.getByRole("alert").filter({ hasText: reason })).toBeVisible();
+      const fix = page.getByRole("button", { name: en ? "Add “Generate PDF” before" : "Agregar «Armar el PDF» antes", exact: true });
+      await expect(fix).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await page.screenshot({ path: "test-results/rules-pdf-attachment-" + language + "-" + width + ".png", fullPage: true });
+      await fix.click();
+      await expect(page.getByRole("combobox", { name: en ? "Action 1" : "Acción 1", exact: true })).toHaveValue("GeneratePdf");
+      await expect(attach).toBeChecked();
+      await expect(attach).toBeFocused();
+      await expect(page.getByRole("alert").filter({ hasText: reason })).toHaveCount(0);
+      const writes = await page.evaluate(() => (window as unknown as { formsFixture: { ruleWrites: unknown[] } }).formsFixture.ruleWrites.length);
+      expect(writes).toBe(0);
+    });
   }

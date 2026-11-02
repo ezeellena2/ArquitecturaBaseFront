@@ -73,7 +73,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(panel.locator("header").getByText(en ? "To approve" : "Por aprobar", { exact: true })).toBeVisible();
     await page.screenshot({ path: "test-results/approvals-detail-pending-" + language + "-" + width + ".png", fullPage: true });
     await panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true }).click();
-    const approval = page.getByRole("dialog", { name: en ? "Approve TEST-000002?" : "¿Aprobar TEST-000002?", exact: true });
+    // The title carries the number of the task; this double's task has its own.
+    const approval = page.getByRole("dialog", { name: en ? /^Approve / : /^¿Aprobar / });
     await approval.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true }).click();
     await expect(approval).toHaveCount(0);
     await expect(panel.locator('div[tabindex="-1"]').filter({ has: page.getByText(en ? "Alex Smith" : "Alex Pérez", { exact: false }) }).last()).toBeVisible();
