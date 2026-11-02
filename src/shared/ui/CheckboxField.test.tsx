@@ -47,4 +47,23 @@ describe("CheckboxField", () => {
       "Sin esto, WhatsApp no permite escribirle primero. Confirmá que la persona aceptó recibir mensajes por WhatsApp.",
     );
   });
+
+  it("explains a disabled box with its reason in a tooltip, not with a text under it", async () => {
+    renderWithProviders(
+      <CheckboxField label="Adjuntar el PDF" checked={false} disabled disabledReason="Sólo al aprobar." onCheckedChange={vi.fn()} />,
+    );
+
+    const checkbox = screen.getByRole("checkbox", { name: "Adjuntar el PDF" });
+    expect(checkbox).toBeDisabled();
+    expect(checkbox).toHaveAccessibleDescription("Sólo al aprobar.");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await userEvent.hover(checkbox);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Sólo al aprobar.");
+  });
+
+  it("leaves out the reason while the box can be used", () => {
+    renderWithProviders(<CheckboxField label="Adjuntar el PDF" checked disabledReason="Sólo al aprobar." onCheckedChange={vi.fn()} />);
+
+    expect(screen.getByRole("checkbox", { name: "Adjuntar el PDF" })).toHaveAccessibleDescription("");
+  });
 });

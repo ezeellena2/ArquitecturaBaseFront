@@ -2,6 +2,7 @@ import { useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Checkbox } from "./checkbox";
+import { DisabledReason } from "./DisabledReason";
 import { InfoTip } from "./InfoTip";
 import { Label } from "./label";
 
@@ -17,6 +18,9 @@ interface CheckboxFieldProps {
   /// WhatsApp no permite escribirle primero"). Es lo que distingue a una casilla de un `FormField`.
   error?: string;
   disabled?: boolean;
+  /// Por qué está apagada, cuando no es obvio: tooltip y descripción accesible de la casilla (`DisabledReason`), sin
+  /// texto debajo. Sólo cuenta mientras está apagada.
+  disabledReason?: string | null;
 }
 
 /// Una casilla con su etiqueta al lado. `FormField` pone la etiqueta arriba del control, que para una casilla
@@ -35,6 +39,7 @@ export function CheckboxField({
   help,
   error,
   disabled,
+  disabledReason,
 }: CheckboxFieldProps): ReactNode {
   const { t } = useTranslation();
   const id = useId();
@@ -61,18 +66,20 @@ export function CheckboxField({
         disabled ? "" : "hover:bg-[var(--color-surface-muted)]",
       )}
     >
-      <Checkbox
-        id={id}
-        checked={checked}
-        disabled={disabled}
-        aria-describedby={describedBy || undefined}
-        aria-invalid={error ? true : undefined}
-        // Radix informa `boolean | "indeterminate"`; acá solo hay marcada o no.
-        onCheckedChange={(value) => onCheckedChange(value === true)}
-        // Sin marcar, el borde de `--color-border` casi no se ve sobre blanco: una casilla vacía tiene que
-        // leerse como algo que se puede marcar, como la del tablero.
-        className="mt-px border-[var(--color-content-muted)]"
-      />
+      <DisabledReason reason={disabled ? disabledReason : null}>
+        <Checkbox
+          id={id}
+          checked={checked}
+          disabled={disabled}
+          aria-describedby={describedBy || undefined}
+          aria-invalid={error ? true : undefined}
+          // Radix informa `boolean | "indeterminate"`; acá solo hay marcada o no.
+          onCheckedChange={(value) => onCheckedChange(value === true)}
+          // Sin marcar, el borde de `--color-border` casi no se ve sobre blanco: una casilla vacía tiene que
+          // leerse como algo que se puede marcar, como la del tablero.
+          className="mt-px border-[var(--color-content-muted)]"
+        />
+      </DisabledReason>
       <div className="flex flex-col gap-0.5">
         {help ? (
           <span className="flex items-center gap-1">
