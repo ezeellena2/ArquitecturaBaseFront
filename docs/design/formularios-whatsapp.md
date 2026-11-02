@@ -607,3 +607,38 @@ pasar» y queda sólo el prefijo que se fija.
 
 Las escenas `forms.spec` («publication check with a problem and a warning», es/en a 1440, 390 y 320 px) y
 `formLanguages.spec` muestran el diálogo con un problema, un aviso y los idiomas.
+
+## Reglas: adjuntar el PDF, RP1-A — 2026-11-01
+
+Armando «Se aprueba una respuesta» con un mensaje que adjuntaba el PDF y «Armar el PDF» al final, el usuario no entendió
+«Agregá Armar el PDF antes de adjuntarlo.», y la casilla se le desmarcó sola al agregar la acción. De tres tableros del
+lienzo provisorio (fila «Formularios · reglas · "Adjuntar el PDF"»: A avisa al lado, B marcar trae el PDF, C no deja
+romperlo) eligió **A**. En el mismo cambio eligió que cambiar el tipo de una acción no borre lo escrito.
+
+- «Adjuntar el PDF» nunca se desmarca solo: ni al mover, quitar o cambiar una acción, ni al cambiar el evento.
+- Si «Armar el PDF» falta o está después del mensaje, el motivo aparece debajo de la casilla en el momento, sin esperar a
+  guardar: «Para adjuntarlo, «Armar el PDF» tiene que ir antes de este mensaje.». Debajo, un botón lo arregla: «Subir
+  "Armar el PDF"» pone el primero que está después justo antes del mensaje, y si no hay ninguno, «Agregar "Armar el PDF"
+  antes» lo agrega ahí. El foco vuelve a la casilla.
+- Con otro evento, la casilla sin marcar se apaga y el motivo va en su tooltip («El PDF se adjunta sólo cuando se aprueba
+  una respuesta.», `CheckboxField disabledReason`). Si estaba marcada, sigue habilitada para desmarcarla, con ese motivo
+  debajo.
+- Cambiar el tipo de una acción conserva el mensaje, el rol y el adjunto aunque el tipo nuevo no los use: vuelven si se
+  elige otra vez el tipo anterior. Al guardar, cada dato va sólo con el tipo que lo usa.
+
+La escena `formRules.spec` («attached PDF tells why and fixes the order», es/en a 1440, 390 y 320 px) muestra el motivo y
+el botón.
+
+## Por aprobar: confirmar antes de aprobar, AP1-A — 2026-11-01
+
+El usuario aprobó una respuesta y, siete segundos después, sin querer, la siguiente: después de decidir, el foco queda en
+el panel y ↓ abre la siguiente (DC0 y MF1), con «Aprobar» en el mismo lugar. Nada pasaba solo a la siguiente. De tres
+tableros (fila «Formularios · Por aprobar»: A «Aprobar» pide confirmar, B vuelve a la lista, C unos segundos para deshacer)
+eligió **A**.
+
+- «Aprobar» abre un diálogo como el de Rechazar: «¿Aprobar VIS-000003?», con quién la cargó y cuándo. El foco empieza en
+  «Cancelar», así que Enter no aprueba, y el botón del diálogo queda lejos del del panel.
+- Mientras manda, el diálogo espera abierto con «Aprobando…» (LC1-A) y se cierra con la respuesta, sea cual sea.
+- Lo demás sigue igual: después de decidir, el panel se queda en la decidida y ↑ ↓ pasan de una por aprobar a otra.
+
+La escena `formApprovals.spec` guarda la captura del diálogo (`approvals-confirm`, es/en a 1440, 390 y 320 px).
