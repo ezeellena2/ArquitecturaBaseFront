@@ -107,6 +107,19 @@ it("keeps decision-only users in the metadata quick view and refuses the full ro
   expect(reads.details).toBe(0); expect(reads.workflow).toBe(0); expect(reads.anchors).toHaveLength(0);
 });
 
+it("leaves the decision out for a viewer who may approve but lacks the role of the pending task", async () => {
+  const { tasks } = setup(["formrecords.read", "formapprovals.decide"], true);
+  let taskReads = 0;
+  server.use(http.get("/api/forms/approvals/" + tasks[0].id, () => { taskReads++; return HttpResponse.json({ code: "Forms.Approval.NotFound", detail: "No encontramos la tarea de aprobación." }, { status: 404 }); }));
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  const page = (await screen.findByRole("heading", { name: "TEST-000002", level: 1 })).closest('[tabindex="-1"]')!;
+  await waitFor(() => expect(taskReads).toBe(1));
+  await waitFor(() => expect(page).not.toHaveClass("max-sm:pb-24"));
+  expect(screen.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+  expect(screen.queryByText("No pudimos cargar los datos")).not.toBeInTheDocument();
+  expect(screen.queryByText("No encontramos la tarea de aprobación.")).not.toBeInTheDocument();
+});
+
 it("continues to the pending successor after deciding on a compacted one-row page", async () => {
   const { reads } = setup(["formrecords.read", "formapprovals.decide"], true);
   const { router } = renderRouteWithProviders(path + "?approvalPageSize=1");

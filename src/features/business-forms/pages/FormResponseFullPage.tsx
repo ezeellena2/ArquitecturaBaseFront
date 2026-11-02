@@ -52,6 +52,7 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   const [answerOpen, setAnswerOpen] = useState(true);
   const [activityOpen, setActivityOpen] = useState(!mobile || openPdf);
   const [decisionTarget, setDecisionTarget] = useState<HTMLDivElement | null>(null);
+  const [unavailableTask, setUnavailableTask] = useState<string | null>(null);
   const container = useRef<HTMLDivElement | null>(null);
   useLayoutEffect(() => { container.current?.focus(); }, [data?.id]);
   useBreadcrumbLeaf(data?.number, data?.name);
@@ -59,7 +60,9 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     if (task && !await workflow.observeApproval(task)) return;
     void workflow.query.refetch(); navigation.refreshPending();
   };
-  const canDecide = detail.scope.user?.permissions.includes("formapprovals.decide") && !navigation.decisionDenied;
+  // Deciding also takes the task's role: outside it the panel hands the task back and the page keeps no decision bar.
+  const taskKey = current?.task ? detail.scope.owner + ":" + current.task.id : null;
+  const canDecide = detail.scope.user?.permissions.includes("formapprovals.decide") && !navigation.decisionDenied && !(taskKey && taskKey === unavailableTask);
   const pending = current?.task?.state === "Open" && canDecide;
   const backTo = { to: navigation.backTo, label: t("detail.backToResponses") };
   if (!allowed) return <Page title={t("responses.detail")} backTo={backTo}><ForbiddenPage/></Page>;
@@ -88,7 +91,7 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
       <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
         <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} renderDocuments={runId => current?.documents.filter(document => document.runId === runId).map(document => <ResponseDocumentPreview key={document.id} owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny} enabled={activityOpen && !loadingTarget}/>)}/></div>
       </CollapsibleSection>
-      {current?.task && canDecide ? <ApprovalDecisionPanel key={current.task.id} embedded taskId={current.task.id} disabled={loadingTarget} actionsTarget={decisionTarget} onForbidden={navigation.denyDecision} onDecided={refresh}/> : null}
+      {current?.task && canDecide ? <ApprovalDecisionPanel key={current.task.id} embedded taskId={current.task.id} disabled={loadingTarget} actionsTarget={decisionTarget} onForbidden={navigation.denyDecision} onUnavailable={() => setUnavailableTask(taskKey)} onDecided={refresh}/> : null}
     </div>
   </Page></div>;
 }

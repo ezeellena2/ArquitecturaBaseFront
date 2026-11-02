@@ -227,6 +227,21 @@ it.each(["sheet", "pending"])("shows unavailable for a confirmed response belong
   const panel = screen.getByRole("region", { name: "Detalle de la respuesta" });
   expect(within(panel).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
 });
+it.each(["Open", "Approved"] as const)("shows an %s approval without decision or load error to a viewer who may approve but lacks its role", async taskState => {
+  const { tasks } = setup(["formrecords.read", "formapprovals.decide"], true);
+  if (taskState === "Approved") Object.assign(tasks[0], { state: "Approved", canDecide: false, cannotDecideReason: "AlreadyDecided", revision: 2, decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" } });
+  let taskReads = 0;
+  server.use(http.get("/api/forms/approvals/" + tasks[0].id, () => { taskReads++; return HttpResponse.json({ code: "Forms.Approval.NotFound", detail: "No encontramos la tarea de aprobación." }, { status: 404 }); }));
+  renderRouteWithProviders(path + "/" + responseRecordId);
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  const moment = (await within(panel).findByRole("heading", { name: taskState === "Open" ? "Por aprobar" : "Aprobada", level: 3 })).closest("li")!;
+  await within(moment).findByText("Supervisión");
+  if (taskState === "Approved") expect(within(moment).getByText(/^Luz · /)).toBeInTheDocument();
+  expect(taskReads).toBe(1);
+  expect(within(panel).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
+  expect(within(panel).queryByText("No pudimos cargar los datos")).not.toBeInTheDocument();
+  expect(screen.queryByText("No encontramos la tarea de aprobación.")).not.toBeInTheDocument();
+});
 it.each(["sheet", "pending"])("pushes opening %s and replaces arrow navigation in browser history", async source => {
   setup(["formrecords.read", "formapprovals.decide"], true);
   const origin = path;

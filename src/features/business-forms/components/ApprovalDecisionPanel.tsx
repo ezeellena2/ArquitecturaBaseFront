@@ -21,12 +21,13 @@ import { decideApprovalTask, fetchApprovalTask, type ApprovalTask } from "../api
 import { approvalStateVariant, prepareApprovalDecision, type ApprovalDecision } from "../approvals";
 import { approvalForbidden, useApprovalScope } from "../hooks/useApprovalQueries";
 import { useUnobservedQueryCleanup } from "../hooks/useUnobservedQueryCleanup";
-export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget, disabled = false, onForbidden, embedded = false, statusId }: {
+export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget, disabled = false, onForbidden, onUnavailable, embedded = false, statusId }: {
     taskId: string;
     embedded?: boolean;
     statusId?: string;
     disabled?: boolean;
     onForbidden?: () => void;
+    onUnavailable?: () => void;
     onDecided?: (task?: ApprovalTask) => void;
     actionsTarget?: HTMLElement | null;
 }) {
@@ -38,9 +39,9 @@ export function ApprovalDecisionPanel({ taskId, onDecided, actionsTarget, disabl
         return null;
     if (denied === owner)
         return <p role="status">{t("approvals.noPermission")}</p>;
-    return <DecisionEditor key={owner} taskId={taskId} scope={scope} embedded={embedded} statusId={statusId} onDecided={onDecided} actionsTarget={actionsTarget} disabled={disabled} onForbidden={() => { setDenied(owner); onForbidden?.(); }}/>;
+    return <DecisionEditor key={owner} taskId={taskId} scope={scope} embedded={embedded} statusId={statusId} onDecided={onDecided} actionsTarget={actionsTarget} disabled={disabled} onForbidden={() => { setDenied(owner); onForbidden?.(); }} onUnavailable={onUnavailable}/>;
 }
-function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, disabled, embedded, statusId }: {
+function DecisionEditor({ taskId, scope, onDecided, onForbidden, onUnavailable, actionsTarget, disabled, embedded, statusId }: {
     taskId: string;
     scope: ReturnType<typeof useApprovalScope>;
     disabled: boolean;
@@ -48,6 +49,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     statusId?: string;
     onDecided?: (task?: ApprovalTask) => void;
     onForbidden: () => void;
+    onUnavailable?: () => void;
     actionsTarget?: HTMLElement | null;
 }) {
     const { t, i18n } = useTranslation("forms");
@@ -57,7 +59,13 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     useEffect(() => () => { if (pendingNotice.current) dismissNotification(operationId); }, [operationId]);
     const key = useMemo(() => ["form-approvals", scope.owner, "task", taskId], [scope.owner, taskId]);
     useUnobservedQueryCleanup(key);
-    const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchApprovalTask(taskId, signal), gcTime: 0 });
+    // Deciding takes the task's role, not only the permission: outside the role the task reads as NotFound. A detail that already
+    // shows the task (onUnavailable) gets it back as null and shows the decision read-only, without an error or a notice.
+    const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchApprovalTask(taskId, signal).catch((failure: unknown) => {
+        if (onUnavailable && failure instanceof ApiError && failure.code === "Forms.Approval.NotFound")
+            return null;
+        throw failure;
+    }), gcTime: 0 });
     // The decision on its way: its button shows the spinner and its gerund (board LC1-A); the other one turns off.
     const [deciding, setDeciding] = useState<ApprovalDecision | null>(null);
     const busy = deciding !== null;
@@ -74,6 +82,8 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     useLayoutEffect(() => { live.current = true; return () => { live.current = false; controller.current?.abort(); }; }, []);
     useEffect(() => { if (approvalForbidden(query.error))
         onForbidden(); }, [query.error, onForbidden]);
+    useEffect(() => { if (query.data === null)
+        onUnavailable?.(); }, [query.data, onUnavailable]);
     const refresh = (task?: ApprovalTask) => { void client.invalidateQueries({ queryKey: ["form-approvals", scope.owner], predicate: entry => entry.queryKey[2] !== "task" }); void client.invalidateQueries({ queryKey: ["form-overview", scope.owner] }); onDecided?.(task); };
     const decide = async (decision: ApprovalDecision) => {
         const task = query.data;
@@ -116,7 +126,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
                     return;
                 setReject(false);
                 setReason("");
-                refresh(reread.data);
+                refresh(reread.data ?? undefined);
                 setError(failure);
             }
             else {
@@ -140,6 +150,8 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     if (approvalForbidden(query.error)) return null;
     if (query.isPending)
         return <Spinner />;
+    if (task === null)
+        return null;
     const transientReadFailure = errorFeedback(query.error).network || query.error instanceof ApiError && (query.error.status >= 500 || query.error.status === 429);
     if (!task || query.error && !transientReadFailure)
         return <EmptyState embedded title={t("common:states.loadFailed")} action={!approvalForbidden(query.error) ? <Button variant="outline" pending={query.isFetching} onClick={() => void query.refetch()}>{t(query.isFetching ? "responses.retrying" : "common:actions.retry")}</Button> : undefined}/>;

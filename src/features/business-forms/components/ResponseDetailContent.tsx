@@ -25,6 +25,7 @@ export function ResponseDetailContent({ state, formId, recordId, onDecided, onDe
   const [params] = useSearchParams();
   const update = useQueryUpdate();
   const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
+  const [unavailable, setUnavailable] = useState<ReadonlySet<string>>(() => new Set());
   const invalidTab = data?.id === recordId && data.definitionId === formId && !detail.query.isPlaceholderData &&
     (params.get("tab") === "photos" && !hasPhotos || params.get("tab") === "pdf" && current?.recordId === recordId && !current.documents.length);
   useEffect(() => { if (invalidTab) update({ tab: undefined }); }, [invalidTab, update]);
@@ -32,9 +33,12 @@ export function ResponseDetailContent({ state, formId, recordId, onDecided, onDe
   const date = (utc: string) => formatDateTimeInZone(utc, i18n.language, detail.scope.user?.timeZoneId);
   const moments = composeWorkflowMoments(data, current);
   const canDecide = decisionAllowed && detail.scope.user?.permissions.includes("formapprovals.decide");
+  // Deciding also takes the task's role: outside it the panel hands the task back and its moment reads as for anyone else.
+  const decisionKey = (taskId: string) => detail.scope.owner + ":" + taskId;
+  const decidable = (taskId: string) => canDecide && !unavailable.has(decisionKey(taskId));
   const tab = ["answer", "activity", ...(hasPhotos ? ["photos"] : [])].includes(params.get("tab") ?? "") ? params.get("tab")! : params.get("tab") === "pdf" && current?.documents.length ? "pdf" : "answer";
   const refresh = async (task?: ApprovalTask) => { if (task && !await workflow.observeApproval(task)) return; void workflow.query.refetch(); onDecided?.(); };
-  return <div className={canDecide && current?.task?.state === "Open" ? "max-sm:pb-20" : undefined}>
+  return <div className={current?.task?.state === "Open" && decidable(current.task.id) ? "max-sm:pb-20" : undefined}>
     <ol className="mb-4 space-y-3 border-b border-[var(--color-border)] pb-4">
       {moments.map(moment => {
         const state = workflowMomentState(moment);
@@ -47,7 +51,7 @@ export function ResponseDetailContent({ state, formId, recordId, onDecided, onDe
           : <><p className="text-sm">{data.actor.displayName ?? t("responses.unknownPerson")} · {date(moment.atUtc)}</p>{moment.origin ? <p className="text-xs text-[var(--color-content-muted)]">{t(moment.origin.senderKind === "Assistant" ? "detail.originAssistant" : "detail.originManual", { name: moment.origin.senderName ?? t("responses.unknownPerson") })}</p> : null}</>}</> : moment.kind === "effects" ? <><h3 className="font-semibold">{t("detail.events." + moment.event)}</h3><Button variant="link" size="inline" onClick={() => update({ tab: "activity" })}>{t("detail.actionsCompleted", { completed: moment.completedCount, count: moment.totalCount })}</Button>{moment.actions.some(action => action.state === "Failed" || action.state === "Uncertain" || action.recipients.some(recipient => recipient.state === "Failed" || recipient.state === "Uncertain")) ? <p className="text-xs text-[var(--color-content-muted)]">{t("detail.issues")}</p> : null}</> : <>
           <h3 id={"approval-moment-" + moment.task.id} className="font-semibold">{t("approvals.taskStates." + moment.task.state)}</h3>
           {moment.task.state === "Open" ? <p className="text-xs text-[var(--color-content-muted)]"><ActionTooltip label={date(moment.task.requestedAtUtc)}><time dateTime={moment.task.requestedAtUtc} tabIndex={0}>{formatRelativeTime(moment.task.requestedAtUtc, i18n.language)}</time></ActionTooltip></p> : null}
-          {canDecide ? <><ApprovalDecisionPanel embedded statusId={"approval-moment-" + moment.task.id} taskId={moment.task.id} disabled={loadingTarget} onForbidden={onDecisionForbidden} actionsTarget={decisionActions} onDecided={refresh}/><div ref={setDecisionActions} className={moment.task.state === "Open" ? "mt-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/></> : <><p className="text-sm">{moment.task.roleName ?? t("responses.unknownPerson")}</p>{moment.task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: moment.task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(moment.task.decidedAtUtc) })}</p> : null}{moment.task.reason ? <p className="text-sm whitespace-pre-wrap">{moment.task.reason}</p> : null}</>}
+          {decidable(moment.task.id) ? <><ApprovalDecisionPanel embedded statusId={"approval-moment-" + moment.task.id} taskId={moment.task.id} disabled={loadingTarget} onForbidden={onDecisionForbidden} onUnavailable={() => { const key = decisionKey(moment.task.id); setUnavailable(previous => previous.has(key) ? previous : new Set(previous).add(key)); }} actionsTarget={decisionActions} onDecided={refresh}/><div ref={setDecisionActions} className={moment.task.state === "Open" ? "mt-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/></> : <><p className="text-sm">{moment.task.roleName ?? t("responses.unknownPerson")}</p>{moment.task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: moment.task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: date(moment.task.decidedAtUtc) })}</p> : null}{moment.task.reason ? <p className="text-sm whitespace-pre-wrap">{moment.task.reason}</p> : null}</>}
         </>}
       </li>; })}
     </ol>
