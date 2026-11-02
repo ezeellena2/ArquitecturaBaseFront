@@ -900,6 +900,8 @@
     "message": "Mensaje",
     "messageHint": "Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta.",
     "includePdf": "Adjuntar el PDF",
+    "movePdfBefore": "Subir «Armar el PDF»",
+    "addPdfBefore": "Agregar «Armar el PDF» antes",
     "upAction": "Subir acción {{number}}",
     "downAction": "Bajar acción {{number}}",
     "removeAction": "Quitar acción {{number}}",
@@ -933,7 +935,8 @@
       "approvalLast": "Pedir aprobación tiene que ser la última acción. Lo que sigue va en «Se aprueba» o «Se rechaza».",
       "approvalOnReceived": "La aprobación se pide cuando se recibe una respuesta.",
       "pdfAfterApproval": "El PDF se arma sólo cuando se aprueba una respuesta.",
-      "pdfBeforeAttachment": "Agregá Armar el PDF antes de adjuntarlo.",
+      "pdfBeforeAttachment": "Para adjuntarlo, «Armar el PDF» tiene que ir antes de este mensaje.",
+      "pdfOnApproval": "El PDF se adjunta sólo cuando se aprueba una respuesta.",
       "tooMany": "Se alcanzó el límite.",
       "tooLong": "El mensaje supera el límite permitido."
     },

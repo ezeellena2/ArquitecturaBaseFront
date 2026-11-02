@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newRule, newRuleAction, clearUnavailablePdfAttachments, prepareRules, ruleFieldErrors } from "./rules";
+import { newRule, newRuleAction, fixPdfAttachment, pdfAttachmentIssue, prepareRules, ruleFieldErrors, withRuleActionKind } from "./rules";
 import type { ResponseColumn } from "./responses";
 const original = "es";
 const column: ResponseColumn = { fieldId: "0199a0c0-0000-7000-8000-000000000030", type: "decimal", label: "Importe", introducedInVersion: 1, options: [] };
@@ -32,6 +32,7 @@ it("attaches only an approved PDF generated earlier in the same rule", () => {
   const notify = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aprobado." } };
   expect(prepareRules([{ ...newRule(), event: "Approved", actions: [notify] }], "es", []).issues).toContainEqual({ path: "rules.0.actions.0.includePdf", key: "pdfBeforeAttachment" });
   expect(prepareRules([{ ...newRule(), event: "Approved", actions: [newRuleAction("GeneratePdf"), notify] }], "es", []).issues).toEqual([]);
+  expect(prepareRules([{ ...newRule(), event: "Received", actions: [notify] }], "es", []).issues).toContainEqual({ path: "rules.0.actions.0.includePdf", key: "pdfOnApproval" });
 });
 it("rejects blank conditions and limits caption text without changing it", () => {
   const rule = { ...newRule(), conditions: [{ fieldId: column.fieldId, operator: "equals", values: [""] }], actions: [newRuleAction("GeneratePdf"), { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "a".repeat(1025) } }] };
@@ -71,14 +72,37 @@ it("binds a message error of either language to its rule", () => {
   expect(result.firstRuleId).toBe(rule.id);
 });
 
-it("preserves a selected PDF only while a prior generator still applies without mutating the source", () => {
-  const firstPdf = newRuleAction("GeneratePdf"); const secondPdf = newRuleAction("GeneratePdf"); const notice = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aviso" } };
-  const rule = { ...newRule(), event: "Approved" as const, actions: [firstPdf, secondPdf, notice] };
-  const withoutOne = { ...rule, actions: [secondPdf, notice] };
-  expect(clearUnavailablePdfAttachments(withoutOne)).toEqual(withoutOne);
-  expect(clearUnavailablePdfAttachments({ ...rule, actions: [notice, firstPdf] }).actions[0]).toEqual({ ...notice, includePdf: false });
-  expect(clearUnavailablePdfAttachments({ ...rule, event: "Rejected" }).actions[2].includePdf).toBe(false);
-  expect(rule.actions[2].includePdf).toBe(true);
+it("tells why an attached PDF cannot go and which fix applies, without clearing the choice", () => {
+  const pdf = newRuleAction("GeneratePdf"); const notice = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aviso" } };
+  const rule = { ...newRule(), event: "Approved" as const, actions: [notice, pdf] };
+  expect(pdfAttachmentIssue(rule, 0)).toEqual({ key: "pdfBeforeAttachment", fix: "move" });
+  expect(pdfAttachmentIssue({ ...rule, actions: [notice] }, 0)).toEqual({ key: "pdfBeforeAttachment", fix: "add" });
+  expect(pdfAttachmentIssue({ ...rule, actions: [pdf, notice] }, 1)).toBeNull();
+  expect(pdfAttachmentIssue({ ...rule, event: "Rejected", actions: [pdf, notice] }, 1)).toEqual({ key: "pdfOnApproval", fix: null });
+  expect(pdfAttachmentIssue({ ...rule, actions: [{ ...notice, includePdf: false }] }, 0)).toBeNull();
+  expect(rule.actions[0].includePdf).toBe(true);
+});
+it("moves the first later PDF just before the message, or adds one there", () => {
+  const pdf = newRuleAction("GeneratePdf"); const role = { ...newRuleAction("NotifyRole"), roleId: crypto.randomUUID() };
+  const notice = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aviso" } };
+  const rule = { ...newRule(), event: "Approved" as const, actions: [role, notice, pdf, newRuleAction("GeneratePdf")] };
+  expect(fixPdfAttachment(rule, 1).actions).toEqual([role, pdf, notice, rule.actions[3]]);
+  const added = fixPdfAttachment({ ...rule, actions: [role, notice] }, 1).actions;
+  expect(added.map(action => action.kind)).toEqual(["NotifyRole", "GeneratePdf", "NotifyAuthor"]);
+  expect(added[1].id).not.toBe(pdf.id);
+});
+it("keeps the message, the role and the attachment when the kind changes, and saves each only with its kind", () => {
+  const roleId = crypto.randomUUID();
+  const message = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aviso", en: "" } };
+  const toRole = { ...withRuleActionKind(message, "NotifyRole"), roleId };
+  expect(toRole).toEqual({ ...message, kind: "NotifyRole", roleId });
+  const toPdf = withRuleActionKind(toRole, "GeneratePdf");
+  expect(withRuleActionKind(toPdf, "NotifyAuthor")).toEqual({ ...message, roleId });
+  expect(withRuleActionKind(newRuleAction("GeneratePdf"), "NotifyAuthor").text).toEqual({ es: "", en: "" });
+  const prepared = prepareRules([{ ...newRule(), event: "Approved", actions: [newRuleAction("GeneratePdf"), toRole] }], "es", []);
+  expect(prepared.issues).toEqual([]);
+  expect(prepared.rules[0].actions[1]).toMatchObject({ kind: "NotifyRole", roleId, includePdf: false, text: { es: "Aviso", en: "" } });
+  expect(prepareRules([{ ...newRule(), event: "Approved", actions: [toPdf] }], "es", []).rules[0].actions[0]).toMatchObject({ kind: "GeneratePdf", roleId: null, text: null, includePdf: false });
 });
 
 

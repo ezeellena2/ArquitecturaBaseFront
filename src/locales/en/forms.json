@@ -900,6 +900,8 @@
     "message": "Message",
     "messageHint": "Use {número} and a question name in braces to fill in response values.",
     "includePdf": "Attach PDF",
+    "movePdfBefore": "Move “Generate PDF” up",
+    "addPdfBefore": "Add “Generate PDF” before",
     "upAction": "Move action {{number}} up",
     "downAction": "Move action {{number}} down",
     "removeAction": "Remove action {{number}}",
@@ -933,7 +935,8 @@
       "approvalLast": "Requesting approval must be the last action. Add later actions under approved or rejected.",
       "approvalOnReceived": "Approval is requested when a response is received.",
       "pdfAfterApproval": "A PDF is generated only when a response is approved.",
-      "pdfBeforeAttachment": "Add Generate PDF before attaching it.",
+      "pdfBeforeAttachment": "To attach it, “Generate PDF” must come before this message.",
+      "pdfOnApproval": "The PDF is attached only when a response is approved.",
       "tooMany": "The limit has been reached.",
       "tooLong": "The message exceeds the allowed length."
     },

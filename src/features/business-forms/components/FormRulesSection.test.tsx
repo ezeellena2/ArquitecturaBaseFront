@@ -357,15 +357,25 @@ it("shows rule history change counts and order without loading each revision", a
   expect(details).toBe(0);
 });
 
-it("clears an attached PDF when changing the event and saves the remaining notice without that attachment", async () => {
+const onlyApproved = "El PDF se adjunta sólo cuando se aprueba una respuesta.";
+const pdfFirst = "Para adjuntarlo, «Armar el PDF» tiene que ir antes de este mensaje.";
+it("keeps an attached PDF when the event changes, tells why under it and turns off only once unchecked", async () => {
   setup(); const notice = { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Aviso" } }; const rule: FormRule = { id: actor, event: "Approved", conditions: [], actions: [newRuleAction("GeneratePdf"), notice] }; serveRules([rule]);
   const writes = vi.fn(); server.use(http.post("/api/forms/definitions/:id/rules", async ({request}) => { const body = await request.json() as {rules:FormRule[]}; writes(body); return HttpResponse.json({...initial(),id:actor,revision:2,rules:body.rules,createdAtUtc:"2026-10-17T12:00:00Z"}); }));
   renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
-  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeChecked();
   await userEvent.selectOptions(screen.getByRole("combobox",{name:"Cuándo"}),"Rejected");
-  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).not.toBeChecked();
-  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeDisabled();
+  const attach = screen.getByRole("checkbox",{name:"Adjuntar el PDF"});
+  // The choice stays and the reason is next to it right away, without trying to save; no button can fix the event.
+  expect(attach).toBeChecked(); expect(attach).toBeEnabled();
+  expect(screen.getByRole("alert")).toHaveTextContent(onlyApproved);
+  expect(screen.queryByRole("button",{name:/«Armar el PDF»/})).not.toBeInTheDocument();
+  await userEvent.click(attach);
+  // Turned off, the box goes inside the wrapper of its reason: it is a new element.
+  const off = screen.getByRole("checkbox",{name:"Adjuntar el PDF"});
+  expect(off).not.toBeChecked(); expect(off).toBeDisabled();
+  expect(off).toHaveAccessibleDescription(onlyApproved);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole("button",{name:"Quitar acción 1"}));
   await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));
   await waitFor(()=>expect(writes).toHaveBeenCalledOnce());
@@ -393,13 +403,47 @@ it("focuses the next remaining condition and then Add condition after removing t
   await userEvent.click(screen.getByRole("button",{name:"Quitar condición 1"}));
   await waitFor(()=>expect(screen.getByRole("button",{name:"Agregar condición"})).toHaveFocus());
 });
-it.each(["remove","move"] as const)("clears orphaned PDF attachments when their generator changes: %s", async kind => {
+it.each([["remove","Quitar acción 1","Agregar «Armar el PDF» antes"],["move","Bajar acción 1","Subir «Armar el PDF»"]] as const)("keeps the attachment when its PDF stops coming first and puts the PDF back before it with one button: %s", async (_, change, fix) => {
   setup();const notice={...newRuleAction("NotifyAuthor"),includePdf:true,text:{es:"Aviso"}};const pdf=newRuleAction("GeneratePdf");const rule:FormRule={...storedRule(),event:"Approved",actions:[pdf,notice]};serveRules([rule]);
   renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
-  await userEvent.click(screen.getByRole("button",{name:kind==="remove"?"Quitar acción 1":"Bajar acción 1"}));
-  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).not.toBeChecked();
-  expect(screen.getByRole("button",{name:"Guardar reglas"})).toBeEnabled();
+  await userEvent.click(screen.getByRole("button",{name:change}));
+  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeChecked();
+  expect(screen.getByRole("alert")).toHaveTextContent(pdfFirst);
+  await userEvent.click(screen.getByRole("button",{name:fix}));
+  expect(screen.getByRole("combobox",{name:"Acción 1"})).toHaveValue("GeneratePdf");
+  expect(screen.getByRole("combobox",{name:"Acción 2"})).toHaveValue("NotifyAuthor");
+  const attach=screen.getByRole("checkbox",{name:"Adjuntar el PDF"});
+  expect(attach).toBeChecked(); expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  await waitFor(()=>expect(attach).toHaveFocus());
+});
+it("tells right away why a checked attachment needs a PDF before it, without trying to save", async () => {
+  setup();
+  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
+  await userEvent.click(await screen.findByRole("button",{name:"Agregar regla"}));
+  await userEvent.selectOptions(screen.getByRole("combobox",{name:"Cuándo"}),"Approved");
+  await userEvent.click(screen.getByRole("button",{name:"Agregar acción"}));
+  await userEvent.click(screen.getByRole("checkbox",{name:"Adjuntar el PDF"}));
+  expect(screen.getByRole("alert")).toHaveTextContent(pdfFirst);
+  await userEvent.click(screen.getByRole("button",{name:"Agregar «Armar el PDF» antes"}));
+  expect(screen.getByRole("combobox",{name:"Acción 1"})).toHaveValue("GeneratePdf");
+  expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeChecked();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+it("keeps the written message and the chosen role when an action changes kind", async () => {
+  setup();const rule:FormRule={...storedRule("Aviso escrito")};serveRules([rule]);
+  renderWithProviders(<MemoryRouter><FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
+  await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
+  const kind=screen.getByRole("combobox",{name:"Acción 1"});
+  await userEvent.selectOptions(kind,"NotifyRole");
+  expect(screen.getByRole("textbox",{name:"Mensaje"})).toHaveValue("Aviso escrito");
+  await userEvent.selectOptions(screen.getByRole("combobox",{name:"Rol"}),actor);
+  await userEvent.selectOptions(kind,"GeneratePdf");
+  expect(screen.queryByRole("textbox",{name:"Mensaje"})).not.toBeInTheDocument();
+  await userEvent.selectOptions(kind,"RequestApproval");
+  expect(screen.getByRole("combobox",{name:"Rol"})).toHaveValue(actor);
+  await userEvent.selectOptions(kind,"NotifyAuthor");
+  expect(screen.getByRole("textbox",{name:"Mensaje"})).toHaveValue("Aviso escrito");
 });
 it("requires a new reread after a second conflict instead of reusing the previous current revision", async () => {
   setup();const mine=storedRule();let revision=1;const writes:unknown[]=[];
