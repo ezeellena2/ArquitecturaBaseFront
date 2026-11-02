@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { beforeEach, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import { approvalTaskFixture } from "@/test/approvalFixtures";
+import { approvalTaskFixture, approveAndConfirm } from "@/test/approvalFixtures";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { responseDetailFixture, responseFormId, responseSecondId, responseSheetFixture, responseWorkflowFixture } from "@/test/responseFixtures";
@@ -164,7 +164,7 @@ it("observes a competing decision after 409 without submitting a second decision
   }));
   renderRouteWithProviders(path);
   const panel = await openFirst();
-  await userEvent.click(within(panel).getByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm(within(panel));
   expect(await within(panel).findByText(/Otra supervisora/)).toBeVisible();
   expect(writes).toBe(1);
   expect(within(panel).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
@@ -180,7 +180,7 @@ it.each(["post", "get"] as const)("withdraws approval metadata after %s 403 whil
   const { router } = renderRouteWithProviders(path);
   const panel = await openFirst();
   expect(await screen.findByRole("columnheader", { name: "Importe" })).toBeVisible();
-  if (source === "post") await userEvent.click(within(panel).getByRole("button", { name: "Aprobar" }));
+  if (source === "post") await approveAndConfirm(within(panel));
   else {
     fixture.access.denied = true;
     await act(async () => { await queryClient.invalidateQueries({ predicate: query => query.queryKey[0] === "form-approvals" }); });
@@ -211,7 +211,7 @@ it("retains the confirmed queue after a decision and visits the next pending ite
   const { router } = renderRouteWithProviders(path + "?approvalPageSize=1");
   const panel = await openFirst();
   expect(within(panel).getByText("1 de 2 por aprobar")).toBeVisible();
-  await userEvent.click(within(panel).getByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm(within(panel));
   await within(panel).findByText(/Supervisora/);
   await waitFor(() => expect(screen.queryByRole("link", { name: "Revisar VIS-00001" })).not.toBeInTheDocument());
   expect(within(panel).getByText("1 de 2 por aprobar")).toBeVisible();
@@ -294,7 +294,7 @@ it.each(["sheet", "values"])("keeps decision metadata available when %s reading 
   await waitFor(() => expect(screen.queryByRole("columnheader", { name: "Importe" })).not.toBeInTheDocument());
   expect(within(panel).queryByText("Importe")).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Revisar VIS-00001" })).toBeVisible();
-  await userEvent.click(within(panel).getByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm(within(panel));
   await waitFor(() => expect(fixture.decisions).toEqual([{ expectedRevision: 1, decision: "Approved" }]));
   expect(await within(screen.getByRole("region", { name: "Detalle de la respuesta" })).findByText(/Supervisora/)).toBeVisible();
   await waitFor(() => {
@@ -315,7 +315,7 @@ it("shares only captured and anchored pending references with full-detail naviga
   try {
     renderRouteWithProviders(path + "?approvalPageSize=1");
     const panel = await openFirst();
-    await userEvent.click(within(panel).getByRole("button", { name: "Aprobar" }));
+    await approveAndConfirm(within(panel));
     await within(panel).findByText(/Supervisora/);
     await waitFor(() => expect(screen.getByRole("link", { name: "Revisar VIS-00002" })).toBeVisible());
     expect(observed.snapshot?.pending?.tasks).toEqual([{ id: fixture.tasks[0].id, recordId: fixture.tasks[0].recordId, requestedAtUtc: fixture.tasks[0].requestedAtUtc }]);

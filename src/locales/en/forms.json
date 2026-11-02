@@ -1003,6 +1003,7 @@
     "approved": "Response approved.",
     "rejected": "Response rejected.",
     "rejectTitle": "Reject {{number}}",
+    "approveTitle": "Approve {{number}}?",
     "reason": "Reason",
     "reasonCount": "{{count}} / 500 characters",
     "ownResponse": "You cannot approve or reject your own response.",

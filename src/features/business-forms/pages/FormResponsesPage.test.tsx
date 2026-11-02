@@ -14,7 +14,7 @@ import {
   responseSheetFixture,
 } from "@/test/responseFixtures";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import { approvalTaskFixture, approvalTaskId } from "@/test/approvalFixtures";
+import { approvalTaskFixture, approvalTaskId, approveAndConfirm } from "@/test/approvalFixtures";
 import type { ApprovalPage, ApprovalTask } from "../api/approvals";
 import type { ResponseAction, ResponseRecipient, ResponseWorkflow } from "../api/workflow";
 vi.mock("react-oidc-context", async () => ({
@@ -175,7 +175,7 @@ describe("response sheet", () => {
     expect(badge).toHaveAttribute("data-variant", variant);
   });
   it("keeps response values readable when approval permission is revoked",async()=>{setup(["formrecords.read","formapprovals.decide"]);const taskId=crypto.randomUUID();server.use(http.get("/api/forms/approvals/count",()=>HttpResponse.json({count:1})),http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"PendingApproval",task:{id:taskId,roleId:taskId,roleName:"Supervisión", requestedAtUtc:"2026-10-16T12:00:00Z",revision:1,state:"Open",decidedAtUtc:null,decidedBy:null,reason:null}})),http.get("/api/forms/approvals/:id",()=>HttpResponse.json({id:taskId,definitionId:responseFormId,recordId:responseRecordId,number:"TEST-000002",formName:"Visita",author:{userId:taskId,displayName:"Ana"},role:{id:taskId,name:"Supervisión"},requestedAtUtc:"2026-10-16T12:00:00Z",revision:1,state:"Open",canDecide:true,cannotDecideReason:null,decidedAtUtc:null,decidedBy:null,reason:null})),http.post("/api/forms/approvals/:id/decisions",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);
-    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));await userEvent.click(await screen.findByRole("button",{name:"Aprobar"}));await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();});
+    const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));await approveAndConfirm();await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();});
   it("shows the historic decision to a reader without approval permission",async()=>{setup(["formrecords.read"]);const taskId=crypto.randomUUID();let metadataReads=0;server.use(http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"Rejected",task:{id:taskId,roleId:taskId,roleName:"Supervisión histórica", requestedAtUtc:"2026-10-16T12:00:00Z",revision:2,state:"Rejected",decidedAtUtc:"2026-10-16T13:00:00Z",decidedBy:{userId:taskId,displayName:"Luz"},reason:"Falta la firma"}})),http.get("/api/forms/approvals/:id",()=>{metadataReads++;return HttpResponse.json({});}));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);
     const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));await within((await responseView.findByRole("heading", { name: "Rechazada", level: 3 })).closest("li")!).findByText("Falta la firma");expect(within(responseView.getByRole("heading", { name: "Rechazada", level: 3 }).closest("li")!).getByText(/Luz/)).toBeInTheDocument();expect(metadataReads).toBe(0);expect(screen.queryByRole("button",{name:"Aprobar"})).not.toBeInTheDocument();});
 
@@ -1277,7 +1277,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
       const reject = within(await screen.findByRole("dialog", { name: "Rechazar TEST-000002" }));
       await userEvent.type(reject.getByRole("textbox", { name: /Motivo/ }), "Revisá la firma");
       await userEvent.click(reject.getByRole("button", { name: "Rechazar" }));
-    } else await userEvent.click(actions.getByRole("button", { name: "Aprobar" }));
+    } else await approveAndConfirm(actions);
     await waitFor(() => expect(fixture.workflowReads).toBe(2));
     expect(panel).toBeInTheDocument();
     expect(within(summaryElement.closest("li")!).getByRole("heading", { name: decision === "Approved" ? "Aprobada" : "Rechazada", level: 3 })).toBeInTheDocument();
@@ -1343,7 +1343,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
     expect(screen.getAllByRole("button", { name: "Rechazar" })).toHaveLength(1);
     const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
     expect(within(title.closest("header")!).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
-    await userEvent.click(header.getByRole("button", { name: "Aprobar" }));
+    await approveAndConfirm(header);
     await header.findByRole("heading", { name: "Aprobada", level: 3 });
     expect(header.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
     await waitFor(() => expect(within(panel).getByText("Supervisión").closest("[tabindex='-1']")).toHaveFocus());
@@ -1353,7 +1353,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
     setupDetailDecision();
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
     const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
-    const approve = await within(panel).findByRole("button", { name: "Aprobar" });
+    await within(panel).findByRole("button", { name: "Aprobar" });
     const moment = within(panel).getByText("Supervisión").closest("li")!;
     expect(moment).toHaveAttribute("data-moment-state", "pending");
     const previous = structuredClone(queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-responses" && query.queryKey[2] === "workflow" })[0].state.data) as ResponseWorkflow;
@@ -1367,7 +1367,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
     }));
     await act(async () => { void queryClient.invalidateQueries({ predicate: query => query.queryKey[0] === "form-responses" && query.queryKey[2] === "workflow" }); });
     await waitFor(() => expect(reads).toBe(1));
-    await userEvent.click(approve);
+    await approveAndConfirm(within(panel));
     await within(moment).findByRole("heading", { name: "Aprobada", level: 3 });
     await waitFor(() => expect(reads).toBe(2));
     await act(async () => release?.());
@@ -1381,7 +1381,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
   it("does not revive a private workflow or refresh after closing during decision observation", async () => {
     const { fixture } = setupDetailDecision();
     const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    const approve = await screen.findByRole("button", { name: "Aprobar" });
+    await screen.findByRole("button", { name: "Aprobar" });
     let release: (() => void) | undefined;
     const gate = new Promise<void>(resolve => { release = resolve; });
     let observing = false;
@@ -1391,7 +1391,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
       return original(filters, options);
     });
     try {
-      await userEvent.click(approve);
+      await approveAndConfirm();
       await waitFor(() => expect(observing).toBe(true));
       await userEvent.click(screen.getByRole("button", { name: "Cerrar" }));
       await waitFor(() => expect(router.state.location.pathname).toBe("/formularios/" + responseFormId + "/respuestas"));

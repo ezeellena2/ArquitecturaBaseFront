@@ -8,6 +8,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Badge } from "@/shared/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogTitle } from "@/shared/ui/dialog";
@@ -62,6 +63,8 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     const busy = deciding !== null;
     const [error, setError] = useState<unknown>(null);
     const [reject, setReject] = useState(false);
+    // Aprobar asks first (board AP1-A): its dialog names the response, so a habitual click does not decide the next one.
+    const [confirming, setConfirming] = useState(false);
     const [reason, setReason] = useState("");
     const summary = useRef<HTMLDivElement | null>(null);
     const focusDecision = useRef(false);
@@ -123,8 +126,10 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
             }
         }
         finally {
-            if (live.current)
+            if (live.current) {
                 setDeciding(null);
+                setConfirming(false);
+            }
         }
     };
     const task = query.data;
@@ -142,7 +147,7 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
     const waitReason = cooldown.isRunning && !busy ? t("wait", { count: cooldown.seconds }) : null;
     const decisionReason = busy ? null : task.cannotDecideReason === "OwnResponse" ? t("approvals.ownResponse") : waitReason;
     // Reading the task again turns the buttons off for a moment: the spinner next to them says why.
-    const controls = task.state === "Open" ? <div className="flex flex-wrap items-center gap-2"><DisabledReason reason={decisionReason}><Button variant="outline" disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button></DisabledReason><DisabledReason reason={decisionReason}><Button pending={deciding === "Approved"} disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => void decide("Approved")}>{t(deciding === "Approved" ? "approvals.approving" : "approvals.approve")}</Button></DisabledReason>{query.isFetching && !busy ? <Spinner/> : null}</div> : null;
+    const controls = task.state === "Open" ? <div className="flex flex-wrap items-center gap-2"><DisabledReason reason={decisionReason}><Button variant="outline" disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setReject(true)}>{t("approvals.reject")}</Button></DisabledReason><DisabledReason reason={decisionReason}><Button disabled={disabled || !task.canDecide || busy || query.isFetching || cooldown.isRunning} onClick={() => setConfirming(true)}>{t("approvals.approve")}</Button></DisabledReason>{query.isFetching && !busy ? <Spinner/> : null}</div> : null;
     return <div ref={summary} aria-labelledby={statusId} tabIndex={-1} className="space-y-3 outline-none">
   <div className="flex flex-wrap items-center gap-3">{embedded ? null : <Badge variant={approvalStateVariant(task.state)}>{t("approvals.taskStates." + task.state)}</Badge>}<span className="text-sm">{task.role.name}</span></div>
   {task.decidedAtUtc ? <p className="text-sm">{t("approvals.decisionBy", { name: task.decidedBy?.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(task.decidedAtUtc, i18n.language, scope.user?.timeZoneId) })}</p> : null}
@@ -153,6 +158,8 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, actionsTarget, 
         setReject(false);
         setReason("");
     } }} onSubmit={() => void decide("Rejected")} disabled={disabled || cooldown.isRunning} fallback={summary} waitReason={waitReason}/> : null}
+  {/* It waits open with Aprobando… (board LC1-A) and closes with the answer, whatever it is. */}
+  {confirming ? <ConfirmDialog open onOpenChange={open => { if (!open) setConfirming(false); }} title={t("approvals.approveTitle", { number: task.number })} description={t("approvals.decisionBy", { name: task.author.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(task.requestedAtUtc, i18n.language, scope.user?.timeZoneId) })} confirmLabel={t("approvals.approve")} pending={deciding === "Approved"} pendingLabel={t("approvals.approving")} focusFallback={summary} onConfirm={() => void decide("Approved")}/> : null}
  </div>;
 }
 function RejectDialog({ number, reason, setReason, busy, onClose, onSubmit, disabled, fallback, waitReason, fieldError }: {

@@ -7,7 +7,7 @@ import { server } from "@/test/mocks/server";
 import { queryClient } from "@/shared/api/queryClient";
 import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
-import { approvalTaskFixture } from "@/test/approvalFixtures";
+import { approvalTaskFixture, approveAndConfirm } from "@/test/approvalFixtures";
 import { responseFormId, responseRecordId, responseSecondId, responseSheetFixture, responseDetailFixture, responseWorkflowFixture } from "@/test/responseFixtures";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
@@ -114,7 +114,7 @@ it("continues to the pending successor after deciding on a compacted one-row pag
   const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await userEvent.click(await within(quick).findByRole("link", { name: "Abrir en pantalla completa" }));
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
-  await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm();
   await waitFor(() => expect(reads.decisions).toBe(1));
   const next = screen.getByRole("button", { name: "Siguiente" });
   await waitFor(() => expect(next).toBeEnabled());
@@ -169,7 +169,7 @@ it.each(["quick", "full"] as const)("continues after the resolved anchor without
     await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
   }
   Object.assign(tasks[0], { state: "Approved", revision: 2, canDecide: false, cannotDecideReason: "AlreadyDecided" });
-  await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm();
   await waitFor(() => expect(reads.decisions).toBe(1));
   await waitFor(() => expect(reads.pendingPages.at(-1)).toEqual([fourthTask.id]));
   await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));

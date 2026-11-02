@@ -11,7 +11,7 @@ import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
-import { approvalTaskFixture, approvalTaskId } from "@/test/approvalFixtures";
+import { approvalTaskFixture, approvalTaskId, approveAndConfirm } from "@/test/approvalFixtures";
 import { ApprovalDecisionPanel } from "./ApprovalDecisionPanel";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 beforeEach(() => { toast.dismiss(); });
@@ -25,7 +25,7 @@ it("keeps the confirmed decision in the real notification store after its panel 
     return open ? <ApprovalDecisionPanel taskId={approvalTaskId} onDecided={() => setOpen(false)}/> : <p>Panel cerrado</p>;
   }
   renderWithProviders(<Host/>);
-  await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm();
   await screen.findByText("Panel cerrado");
   await waitFor(() => expect(toast.getToasts().some(notice => "title" in notice && notice.title === "Respuesta aprobada.")).toBe(true));
 });
@@ -123,18 +123,39 @@ function decided(state: "Approved" | "Rejected", reason: string | null = null) {
   const task = approvalTaskFixture();
   return { taskId: task.id, recordId: task.recordId, revision: 2, state, decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" }, reason };
 }
-it("shows Aprobando… on Approve while the decision is on its way", async () => {
+// Aprobar asks first, with the number, who loaded it and when (board AP1-A): a habitual click on the same place does not
+// decide the next response. The dialog starts on Cancelar, so Enter does not approve either.
+it("asks to confirm an approval with its number, author and date, starting on Cancelar", async () => {
+  const decisions = vi.fn();
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
+    http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(approvalTaskFixture())),
+    http.post("/api/forms/approvals/:id/decisions", () => { decisions(); return HttpResponse.json(decided("Approved")); }));
+  renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
+  const dialog = await screen.findByRole("dialog", { name: "¿Aprobar VIS-00001?" });
+  expect(dialog).toHaveAccessibleDescription(/^Ana · 16 oct 2026/);
+  await waitFor(() => expect(within(dialog).getByRole("button", { name: "Cancelar" })).toHaveFocus());
+  await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(decisions).not.toHaveBeenCalled();
+  await approveAndConfirm();
+  await waitFor(() => expect(decisions).toHaveBeenCalledOnce());
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+it("waits in the approval dialog with Aprobando… and its close turned off, and closes it with the answer", async () => {
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
     http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(approvalTaskFixture())),
     http.post("/api/forms/approvals/:id/decisions", async () => { await gate; return HttpResponse.json(decided("Approved")); }));
   renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
-  await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
-  expect(await screen.findByRole("button", { name: "Aprobando…" })).toHaveAttribute("aria-busy", "true");
-  expect(screen.getByRole("button", { name: "Rechazar" })).toBeDisabled();
+  await approveAndConfirm();
+  const dialog = screen.getByRole("dialog", { name: "¿Aprobar VIS-00001?" });
+  expect(await within(dialog).findByRole("button", { name: "Aprobando…" })).toHaveAttribute("aria-busy", "true");
+  expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
   await act(async () => release());
-  await waitFor(() => expect(screen.queryByRole("button", { name: "Aprobando…" })).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(screen.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
 });
 it("waits in the reject dialog with Rechazando… and its close turned off, and closes it with the answer", async () => {
   let release!: () => void;

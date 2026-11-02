@@ -7,7 +7,7 @@ import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { responseDetailFixture, responseSheetFixture, responseWorkflowFixture, responseFormId, responseRecordId, responseSecondId } from "@/test/responseFixtures";
-import { approvalTaskFixture } from "@/test/approvalFixtures";
+import { approvalTaskFixture, approveAndConfirm } from "@/test/approvalFixtures";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 beforeEach(() => { queryClient.clear(); vi.clearAllMocks(); });
 afterEach(() => vi.restoreAllMocks());
@@ -86,7 +86,7 @@ it("keeps the per-form pending total confirmed with the navigation context after
   await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000002" }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   expect(within(panel).getByText("1 de 2 por aprobar")).toBeInTheDocument();
-  await userEvent.click(await within(panel).findByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm(within(panel));
   await within(panel).findByText(/Luz/);
   await waitFor(() => expect(screen.queryByRole("link", { name: "Revisar TEST-000002" })).not.toBeInTheDocument());
   expect(within(panel).getByText("1 de 2 por aprobar")).toBeInTheDocument();
@@ -322,7 +322,7 @@ it("keeps a metadata-only approval panel after deciding without reading values, 
   await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000002" }));
   await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("approval")).toBe(tasks[0].id));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
-  await userEvent.click(await within(panel).findByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm(within(panel));
   await within(panel).findByText(/Luz/);
   expect(reads).toMatchObject({ values: 0, workflow: 0, files: 0, decisions: 1 });
   expect(within(panel).queryByRole("tab", { name: "PDF" })).not.toBeInTheDocument();
@@ -510,7 +510,7 @@ it("withdraws denied task metadata in the per-form pending while preserving inde
   renderRouteWithProviders(path + "?approvalPageSize=20");
   await userEvent.click(await screen.findByRole("link", { name: "Revisar TEST-000002" }));
   let panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
-  await userEvent.click(await panel.findByRole("button", { name: "Aprobar" }));
+  await approveAndConfirm(panel);
   await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");
   panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
   expect(panel.getByText("Texto completo para revisar")).toBeVisible();

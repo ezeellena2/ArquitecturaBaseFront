@@ -6,7 +6,7 @@ import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { queryClient } from "@/shared/api/queryClient";
-import { approvalTaskFixture, approvalTaskId } from "@/test/approvalFixtures";
+import { approvalTaskFixture, approvalTaskId, approveAndConfirm } from "@/test/approvalFixtures";
 import { responseFormId, responseSecondId, responseSheetFixture, responseDetailFixture, responseWorkflowFixture } from "@/test/responseFixtures";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
@@ -89,7 +89,7 @@ it("dims the queue while it reads again after a decision",async()=>{
  const pending=await screen.findByRole("region",{name:"Por aprobar · 2"});
  await userEvent.click(within(pending).getByRole("link",{name:"Revisar VIS-00001"}));
  const panel=await screen.findByRole("region",{name:"Detalle de la respuesta"});
- await userEvent.click(await within(panel).findByRole("button",{name:"Aprobar"}));
+ await approveAndConfirm(within(panel));
  await waitFor(()=>expect(within(pending).getByRole("link",{name:"Revisar VIS-00002"}).closest("[inert]")).not.toBeNull());
  await act(async()=>release());
  await waitFor(()=>expect(within(pending).getByRole("link",{name:"Revisar VIS-00002"}).closest("[inert]")).toBeNull());

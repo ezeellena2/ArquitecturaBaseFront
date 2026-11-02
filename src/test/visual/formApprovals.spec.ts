@@ -32,6 +32,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await rejection.getByRole("button", { name: en ? "Cancel" : "Cancelar", exact: true }).click();
     await expect(reject).toBeFocused();
     await panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true }).click();
+    // Approve asks first, with the number (board AP1-A): the dialog starts on Cancel, so Enter does not approve.
+    const approval = page.getByRole("dialog", { name: en ? "Approve VIS-00001?" : "¿Aprobar VIS-00001?", exact: true });
+    await expect(approval.getByRole("button", { name: en ? "Cancel" : "Cancelar", exact: true })).toBeFocused();
+    await page.screenshot({ path: "test-results/approvals-confirm-" + language + "-" + width + ".png", fullPage: true });
+    await approval.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true }).click();
+    await expect(approval).toHaveCount(0);
     await expect(panel.getByText(en ? "Approved" : "Aprobada", { exact: true })).toBeVisible();
     await expect(panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true })).toHaveCount(0);
     await expect(panel.locator('[tabindex="-1"]').filter({ has: page.getByText(en ? "Supervision" : "Supervisión", { exact: true }) }).last()).toBeFocused();
@@ -67,6 +73,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(panel.locator("header").getByText(en ? "To approve" : "Por aprobar", { exact: true })).toBeVisible();
     await page.screenshot({ path: "test-results/approvals-detail-pending-" + language + "-" + width + ".png", fullPage: true });
     await panel.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true }).click();
+    const approval = page.getByRole("dialog", { name: en ? "Approve TEST-000002?" : "¿Aprobar TEST-000002?", exact: true });
+    await approval.getByRole("button", { name: en ? "Approve" : "Aprobar", exact: true }).click();
+    await expect(approval).toHaveCount(0);
     await expect(panel.locator('div[tabindex="-1"]').filter({ has: page.getByText(en ? "Alex Smith" : "Alex Pérez", { exact: false }) }).last()).toBeVisible();
     await expect(panel.locator("header").getByText(en ? "Approved" : "Aprobada", { exact: true })).toBeVisible();
     await expect(width < 640 ? panel.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true }) : panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true })).toBeVisible();
