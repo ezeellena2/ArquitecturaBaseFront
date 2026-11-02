@@ -158,7 +158,7 @@ sin aprobación, PDF ni asistente. Cargar desde la web queda para después (deci
 | Captura | Qué define |
 | --- | --- |
 | [T1 · La planilla](evidence/formularios-whatsapp/pla-t1-planilla.png) | «Respuestas» en el panel (MF1 la reemplaza por «Formularios», 2026-10-20), columnas fijas (número, recibida, cargó) y una por pregunta de todas las versiones; «—» si no existía y «Sin respuesta» si no se contestó. Fotos: primera miniatura y cantidad, abre el visor de F4; documentos: tipo y cantidad. Con muchas preguntas se desplaza a lo ancho y «Columnas» oculta las que sobran (elegido el 2026-10-16). |
-| [T2 · Más filtros](evidence/formularios-whatsapp/pla-t2-filtros.png) | Un filtro por pregunta según su tipo, con conteos del servidor; versión del formulario; búsqueda privada fuera de la dirección. Desde el 2026-10-25, la espera de un 429 de una faceta es el motivo de su Reintentar y su «Respuesta» apagados, sin texto en su región. |
+| [T2 · Más filtros](evidence/formularios-whatsapp/pla-t2-filtros.png) | Un filtro por pregunta según su tipo, con conteos del servidor; versión del formulario; búsqueda privada fuera de la dirección. Desde el 2026-10-25, la espera de un 429 de una faceta es el motivo de su Reintentar y su «Respuesta» apagados, sin texto en su región. Desde el 2026-11-02, [PL1-A](#respuestas-dos-solapas-y-un-solo-filtros-pl1-a--2026-11-02) lleva estos filtros a «Filtros», un desplegable como «Columnas», y se va el panel lateral. |
 | [T3 · Una respuesta](evidence/formularios-whatsapp/pla-t3-respuesta.png) | Lo que respondió con las preguntas de su versión, de dónde vino, historial y anterior/siguiente dentro de la planilla. A todo el ancho, con galería de fotos que abre el visor y documentos con descarga (elegido el 2026-10-16). |
 | [T4 · Estados y casos](evidence/formularios-whatsapp/pla-t4-estados.png) | Carga, sin respuestas, sin coincidencias, error, muchos formularios, sin permiso, respuesta que no está y pregunta que cambió de tipo. |
 
@@ -253,7 +253,7 @@ Se ajustó el mismo día con la guía (versión 96 del lienzo).
 
 | Captura | Qué define |
 | --- | --- |
-| [MF1 · Una tabla de formularios](evidence/formularios-whatsapp/menu-mf1-tabla.png) | **Elegido el 2026-10-20.** El grupo del menú pasa a llamarse «Gestión de formularios». Su panel tiene «Formularios», con lo que espera tu decisión, y Diseñar formularios, Catálogos y Formularios que faltan, como están. «Formularios» es una tabla: lo que cada uno tiene por aprobar, cuántas respuestas y la última con su estado; primero los que esperan aprobación y después por la última respuesta. «Con algo por aprobar» deja solo esos, incluidos los dados de baja que esperan una decisión. El segmentado dice «Activos (N) · Dados de baja (N)», con las mismas palabras que Diseñar formularios: los dados de baja van aparte, con un aviso, y una línea arriba de la tabla avisa si alguno espera una decisión. Al entrar en un formulario, «Por aprobar · N», de la más vieja a la más nueva, arriba de la planilla; «Revisar» abre D2, y ahí ↑ ↓ recorren lo que espera en ese orden; desde la planilla, recorren la planilla. No hay bandeja aparte. Quien solo ve respuestas, sin «Por aprobar» ni número; quien solo aprueba, sus formularios con algo para decidir y cuántas, sin «Respuestas», «Última respuesta» ni «Con algo por aprobar», porque no puede ver respuestas, y al entrar, la tarea sin las respuestas; sin permiso, no ve «Formularios». En el celular, la misma tabla, con su desplazamiento contenido. Lo de quien solo aprueba, las flechas, el segmentado y el celular son ajustes del 2026-10-20 (versión 96). |
+| [MF1 · Una tabla de formularios](evidence/formularios-whatsapp/menu-mf1-tabla.png) | **Elegido el 2026-10-20.** El grupo del menú pasa a llamarse «Gestión de formularios». Su panel tiene «Formularios», con lo que espera tu decisión, y Diseñar formularios, Catálogos y Formularios que faltan, como están. «Formularios» es una tabla: lo que cada uno tiene por aprobar, cuántas respuestas y la última con su estado; primero los que esperan aprobación y después por la última respuesta. «Con algo por aprobar» deja solo esos, incluidos los dados de baja que esperan una decisión. El segmentado dice «Activos (N) · Dados de baja (N)», con las mismas palabras que Diseñar formularios: los dados de baja van aparte, con un aviso, y una línea arriba de la tabla avisa si alguno espera una decisión. Al entrar en un formulario, «Por aprobar · N», de la más vieja a la más nueva, arriba de la planilla (desde el 2026-11-02, una solapa: [PL1-A](#respuestas-dos-solapas-y-un-solo-filtros-pl1-a--2026-11-02)); «Revisar» abre D2, y ahí ↑ ↓ recorren lo que espera en ese orden; desde la planilla, recorren la planilla. No hay bandeja aparte. Quien solo ve respuestas, sin «Por aprobar» ni número; quien solo aprueba, sus formularios con algo para decidir y cuántas, sin «Respuestas», «Última respuesta» ni «Con algo por aprobar», porque no puede ver respuestas, y al entrar, la tarea sin las respuestas; sin permiso, no ve «Formularios». En el celular, la misma tabla, con su desplazamiento contenido. Lo de quien solo aprueba, las flechas, el segmentado y el celular son ajustes del 2026-10-20 (versión 96). |
 
 ## Decisiones de diseño
 
@@ -642,3 +642,37 @@ eligió **A**.
 - Lo demás sigue igual: después de decidir, el panel se queda en la decidida y ↑ ↓ pasan de una por aprobar a otra.
 
 La escena `formApprovals.spec` guarda la captura del diálogo (`approvals-confirm`, es/en a 1440, 390 y 320 px).
+
+## Respuestas: dos solapas y un solo «Filtros», PL1-A — 2026-11-02
+
+Mirando «Registro de aplicación», el usuario preguntó por qué la planilla tenía tantos botones de filtro («Lote»,
+«Recibida», «Más filtros») y pidió algo simple: los filtros uno al lado del otro, un botón de filtros como el desplegable
+de «Columnas», sin «5 respuestas» y, en lugar de la banda de las por aprobar arriba, dos solapas. De dos tableros del
+lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila «Formularios ·
+respuestas · dos solapas y un solo «Filtros»»: A con lo aplicado en chips, B con lo aplicado adentro de «Filtros») eligió
+**A**, y confirmó los tres puntos que su pedido no decía (los marcados abajo). Está por programar.
+
+- **Dos solapas.** «Por aprobar (N)» tiene la tabla de hoy (N°, Cargó, Recibida, Rol y «Revisar»), de la más vieja a la
+  más nueva y sin filtros; «Todas» es la planilla con sus filtros. La planilla se abre en «Por aprobar» si la persona
+  tiene alguna para decidir y, si no, en «Todas» (confirmado). La solapa va en la dirección, así «Volver» y un enlace
+  vuelven a la misma. Con cero, «Por aprobar (0)» muestra su vacío. Las dos solapas son de quien ve respuestas y aprueba:
+  quien sólo ve respuestas tiene la planilla y quien sólo aprueba, lo que espera su decisión, sin solapas.
+- **Tres filtros a la vista**, uno al lado del otro y sin botón para aplicar: la búsqueda (si el formulario tiene textos
+  largos), el canal y el estado (si pide aprobación), con su ancho y no a todo el renglón. En el celular pasan de renglón.
+- **Un solo «Filtros»**, con su ícono y la cantidad aplicada, se despliega desde el botón como «Columnas». A la izquierda
+  están Recibida, cada pregunta en el orden del formulario, Cargó y Versión; a la derecha, lo que se elige en la marcada.
+  Siguen el filtro de cada pregunta según su tipo, con las cantidades del servidor (una opción con cero, apagada), y
+  «Respuesta» (respondida, sin respuesta, no se preguntó) (confirmado). Cada cambio se aplica enseguida, como en
+  «Columnas» y en «Más filtros» de Usuarios: se van «Ver N respuestas», Cancelar y «Contando…» (confirmado), y mientras
+  la planilla vuelve a leer se ven la línea y las filas atenuadas (LC2-A). En el celular ocupa la pantalla: primero la
+  lista y, al tocar una, sus opciones, con «‹» para volver y «Listo» al pie.
+- **Lo aplicado, en chips** debajo de la barra, cada uno con su ×, y «Limpiar todo», como en Usuarios. «Columnas» va al
+  final de la barra.
+- **Sin «N respuestas»:** la cantidad ya está al pie de la tabla.
+
+Reemplaza la banda «Por aprobar · N» de arriba de la planilla (MF1 y DC0 conservan el orden y las ↑ ↓ de lo que espera),
+el panel lateral «Más filtros» de T2 y el botón «Recibida», que abría el mismo panel. También el filtro de la primera
+pregunta de elegir arriba de la planilla: «Lote», el «alguna de» de [CA5](catalogos-mejoras.md), que queda adentro de
+«Filtros» con su chip. Y el contador de respuestas. La regla de «Listados y filtros» del
+[fundamento visual](visual-baseline.md#listados-y-filtros) todavía dice que el panel avanzado aplica el conjunto una vez:
+se ajusta al programar esta elección, que hace lo mismo que Usuarios.
