@@ -52,7 +52,7 @@ function TableBody({ className, striped = true, ...props }: React.ComponentProps
       data-slot="table-body"
       data-striped={striped}
       inert={refreshing || undefined}
-      className={cn("[[data-slot=surface]>[data-slot=table-container]:last-child_&>tr:last-child]:border-b-0", refreshing && "opacity-45", className)}
+      className={cn("[[data-slot=surface]>[data-slot=table-container]:last-child_&:last-child>tr:last-child]:border-b-0", refreshing && "opacity-45", className)}
       {...props}
     />
   )
