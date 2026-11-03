@@ -23,11 +23,11 @@ de Git, este documento congela lo elegido. Las pantallas, la navegación y los t
 | Tablero | Qué define |
 | --- | --- |
 | **CW1-B · Desde «Formularios»** (elegida) | «Cargar» al final de cada fila de MF1 para quien tiene «Completar formularios», salvo en los dados de baja. Quien sólo completa ve «Formularios» con los nombres sin enlace, sin «Por aprobar», «Respuestas», «Última respuesta» ni el segmento de estado. En el celular, «Cargar» queda al final de la tabla, con su desplazamiento contenido. La vista propia («Mis cargas») es de la Etapa 2. |
-| **CW2-A · En su propia página** (elegida) | «Nueva respuesta» en `/formularios/{id}/cargar`, con el formulario en las migas. «Volver» lleva a «Formularios» o a la planilla, según de dónde vino. Cancelar y Enviar en la banda; en el celular, Enviar fijo al pie. Se valida al enviar: cada error en su pregunta y el foco en la primera; después, en vivo. Salir con algo cargado pide confirmar. Mientras sube, el botón dice «Enviando… 64 %». |
+| **CW2-A · En su propia página** (elegida) | «Nueva respuesta» en `/formularios/{id}/cargar`, con el formulario en las migas. «Volver» lleva a «Formularios» o a la planilla, según de dónde vino. Cancelar y Enviar en la banda; en el celular, Enviar fijo al pie. Se valida al enviar: cada error en su pregunta y el foco en la primera; después, en vivo. Salir con algo cargado pide confirmar. Mientras sube, el botón dice «Enviando… 64 %». Desde el 2026-11-02 tiene también «Mantener las respuestas para la siguiente» ([AR2-A](#mantener-lo-cargado-en-la-página-ar2-a--2026-11-02)). |
 | **CW2-B · En un panel junto a la planilla** (elegida) | «Agregar respuesta» en el encabezado de la planilla abre el panel al costado, como D2, sólo en escritorio; en el celular abre la página. Una columna; al enviar, el aviso dice el número y la planilla se relee con la respuesta marcada. «Mantener las respuestas para la siguiente» conserva todo menos los archivos. «Pantalla completa» pasa lo cargado a la página. |
 | **CW3 · Las listas** | Una pregunta de catálogo es siempre una lista con búsqueda en el servidor, de 50 en 50, con los filtros fijos y por persona de quien carga. Muestra el total, la descripción de cada opción y «Mostrar 50 más». La única opción que dejan los filtros viene elegida. En el celular, la lista ocupa la pantalla, con la búsqueda arriba y «Listo» al pie al elegir varias. Sin el dato de la persona, la página lo dice y Enviar queda apagado con el motivo. |
 | **CW4 · Fotos y documentos** | Miniaturas o archivos con «Agregar» y el contador; viajan con el envío, así que quitar no pide confirmación. Tipo, tamaño y cantidad se revisan antes de enviar. En el celular, «Tomar foto» primero y «Quitar» en rojo. |
-| **CW5 · Después de enviar** | La página muestra «Enviada» con lo que se mandó, el número y el estado, con «Cargar otra», «Volver a Formularios» y, para quien ve respuestas, «Ver en la planilla». Una versión nueva se ofrece con «Pasar a la versión nueva», conservando lo cargado; un formulario dado de baja ya no se carga. |
+| **CW5 · Después de enviar** | La página muestra «Enviada» con lo que se mandó, el número y el estado, con «Cargar otra», «Volver a Formularios» y, para quien ve respuestas, «Ver en la planilla». Una versión nueva se ofrece con «Pasar a la versión nueva», conservando lo cargado; un formulario dado de baja ya no se carga. Con «Mantener las respuestas para la siguiente» marcada no se muestra: el formulario queda listo para la siguiente ([AR2-A](#mantener-lo-cargado-en-la-página-ar2-a--2026-11-02)). |
 | **CW6-A · La planilla de siempre** (elegida) | La respuesta cargada es una fila más: «Cargó» es quien la cargó y «Canal» dice App o WhatsApp, con su filtro rápido, el chip y «Limpiar todo». El detalle dice «Recibida · … · en la app, la cargó Ana Pérez» en el lugar del origen de WhatsApp. El Excel no cambia: el canal ya salía siempre. |
 
 Cómo se arma un formulario (2026-10-30):
@@ -175,3 +175,20 @@ programar.
 Con A, los tres formularios del tablero llenan sus renglones, salvo uno en el de fotos y documentos: la cuarta pregunta de un
 valor antes de un texto largo queda sola. Para ordenar un formulario largo están los títulos de sección (CW15-B), que siguen
 en la Etapa 5 del plan.
+
+## Mantener lo cargado en la página, AR2-A — 2026-11-02
+
+Cargando «Recepción de insumos» desde «Cargar», el usuario no encontró «Mantener las respuestas para la siguiente» en la
+página «Nueva respuesta»: sólo estaba en el panel junto a la planilla (CW2-B). Cargó un renglón del remito y no pudo seguir
+con los otros con lo mismo. De dos tableros del lienzo provisorio (fila «La carga en la página · mantener lo cargado para la
+siguiente»: A la misma casilla que el panel, B «Cargar otra con lo mismo» en «Enviada») eligió **A**. Se suma a AR1-A y está
+por programar.
+
+- **La misma casilla que el panel,** con el mismo texto, en la banda de «Nueva respuesta», antes de Cancelar y Enviar. En el
+  celular va en el pie fijo, arriba de Enviar.
+- **Marcada, el formulario sigue.** Al enviar, el aviso común dice el número («Se guardó REC-000123.») y el formulario queda
+  con las respuestas para la siguiente, sin pasar por «Enviada»; el foco vuelve a la primera pregunta. Sin marcar, se ve
+  «Enviada», como hoy (CW5).
+- **Los archivos no se mantienen,** como en el panel: las fotos y los documentos arrancan vacíos.
+- **No se recuerda:** vale mientras se carga. Al volver a entrar, la casilla arranca sin marcar y el formulario, vacío. Cada
+  envío arma un pedido nuevo, así que no repite el número del anterior, y salir con algo cargado sigue pidiendo confirmación.
