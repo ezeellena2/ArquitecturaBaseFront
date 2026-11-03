@@ -77,7 +77,8 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
             <div className="min-h-0 flex-1 overflow-y-auto" aria-label={t("conversations")}>
               {list.isPending ? <div role="status" className="flex items-center gap-2 p-4 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t("loading")}</div> : null}
               {list.isError && !list.data ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
-              {list.data?.page.items.map(chat => <div key={chat.id} className={cn("border-b border-[var(--color-border)] p-2", selected === chat.id ? "bg-[var(--color-surface-muted)]" : "")}>
+              {/* The open one, as in a list with a detail: the brand tint and a 3 px bar at its start (OE1-A, 2026-11-03). */}
+              {list.data?.page.items.map(chat => <div key={chat.id} className={cn("border-b border-[var(--color-border)] p-2", selected === chat.id ? "bg-[var(--color-brand-50)] shadow-[inset_3px_0_0_var(--color-brand-600)]" : "")}>
                 <Button variant="ghost" className="w-full justify-start text-left" aria-label={chat.profileName ?? chat.phoneNumber ?? t("unnamed")} aria-pressed={selected === chat.id} onClick={() => setSelected(chat.id)}>
                   <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="min-w-0 flex-1 truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.mode === "Assistant" ? <Badge variant="outline">{t("mode.Assistant")}</Badge> : null}{chat.unreadCount ? <span className="text-xs">{chat.unreadCount}</span> : null}</span>
                 </Button>

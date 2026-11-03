@@ -143,6 +143,15 @@ it("asks only to choose a conversation in the empty panel", async () => {
   expect(screen.getByText("Elegí una conversación.")).toBeInTheDocument();
 });
 
+it("marks the open conversation in the inbox with the brand tint and a bar at its start", async () => {
+  // OE1-A (2026-11-03): la abierta sólo tomaba un gris claro, el mismo del mouse encima. Ahora, como una lista con detalle.
+  await open();
+  const chosen = screen.getByRole("button", { name: "Ana" });
+  expect(chosen).toHaveAttribute("aria-pressed", "true");
+  expect(chosen.parentElement).toHaveClass("bg-[var(--color-brand-50)]", "shadow-[inset_3px_0_0_var(--color-brand-600)]");
+  expect(screen.getByRole("button", { name: "Luis" }).parentElement).not.toHaveClass("bg-[var(--color-brand-50)]");
+});
+
 it("shows that Actualizar reads the inbox again until it answers, keeping the conversations in sight", async () => {
   renderRouteWithProviders("/whatsapp/chat");
   await screen.findByRole("button", { name: "Ana" });
