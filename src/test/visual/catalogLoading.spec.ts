@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { visualCatalogId } from "./catalogFixtures";
+import { expectColumnLines, expectRightAligned } from "./tableColumns";
 
 type ImportFixture = { writes: unknown[]; previews: { mode: string; expectedRevision: number; bytes: number }[]; applies: unknown[]; hold(step: "preview" | "apply"): void; release(): void };
 const fixture = (page: Page) => page.evaluate(() => (window as typeof window & { catalogsFixture: ImportFixture }).catalogsFixture);
@@ -171,6 +172,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     });
     expect(overlappingTitleRects).toEqual([]);
     await dialog.getByRole("textbox", { name: label("Pegar filas", "Paste rows"), exact: true }).fill("Code\tText\tValue\nN\tNorte\t1500.5\nC1\tGBA\t1500.5\n");
+    // 2026-11-02: the grid and the new options draw a line between every two columns and put the value to the right.
+    const grid = dialog.getByRole("region", { name: label("Filas pegadas", "Pasted rows"), exact: true });
+    await expectColumnLines(grid.getByRole("table"));
+    await expectRightAligned(grid.getByRole("columnheader", { name: label("Valor", "Value"), exact: true }));
+    await expectRightAligned(grid.getByRole("cell", { name: "1500.5", exact: true }).first());
     await dialog.getByRole("button", { name: label("Revisar", "Review"), exact: true }).click();
     const apply = dialog.getByRole("button", { name: label("Aplicar sin las 24 filas con errores", "Apply without the 24 rows with errors"), exact: true });
     await expect(apply).toBeDisabled();
@@ -180,6 +186,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(review.getByRole("columnheader", { name: label("Valor", "Value"), exact: true })).toBeVisible();
     const addedValue = review.getByRole("cell", { name: label("1.500,5", "1,500.5"), exact: true });
     await addedValue.scrollIntoViewIfNeeded(); await expect(addedValue).toBeVisible();
+    await expectColumnLines(review.getByRole("table"));
+    for (const numeric of [review.getByRole("columnheader", { name: label("Valor", "Value"), exact: true }), addedValue]) await expectRightAligned(numeric);
     await page.screenshot({ path: info.outputPath("catalog-import-typed-added.png"), fullPage: true });
     await dialog.getByRole("tab", { name: en ? /^Changes/ : /^Cambios/ }).click();
     const changedValue = review.getByRole("cell", { name: label("Valor: 1.000 → 1.500,5", "Value: 1,000 → 1,500.5"), exact: true });
@@ -187,6 +195,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: info.outputPath("catalog-import-typed-changed.png"), fullPage: true });
     await dialog.getByRole("tab", { name: en ? /^Errors and warnings/ : /^Errores y avisos/ }).click();
     await expect(review.getByRole("columnheader", { name: label("Tipo", "Type"), exact: true })).toBeVisible();
+    // Every table draws the line, the list of errors and warnings too, and its row numbers go to the right.
+    await expectColumnLines(review.getByRole("table"));
+    await expectRightAligned(review.getByRole("columnheader", { name: label("Fila", "Row"), exact: true }));
     const related = review.getByText(label("Fila 2", "Row 2"), { exact: true });
     await expect(related).toHaveCount(24); await related.first().scrollIntoViewIfNeeded();
     await expect(related.first()).toBeVisible();

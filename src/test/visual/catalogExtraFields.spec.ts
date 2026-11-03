@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { catalogExtraFieldFixtureIds } from "./catalogExtraFieldsFixtures";
+import { expectColumnLines, expectPinnedLineWhileScrolled, expectRightAligned } from "./tableColumns";
 
 async function open(page: Page, language: "es" | "en", scenario = "catalogs-extra-fields") {
   await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + catalogExtraFieldFixtureIds.catalog, scenario, lang: language }));
@@ -104,11 +105,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // scroll bar is enough: no text says there are more columns to the right.
     expect(await region.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(width < 1024);
     await expect(page.getByText(es ? "La tabla se desplaza de costado: hay más columnas a la derecha." : "The table scrolls sideways: there are more columns to the right.", { exact: true })).toHaveCount(0);
-    if (width < 1024) {
-      await region.evaluate(node => { node.scrollLeft = node.scrollWidth; });
-      expect(await region.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
-      await region.evaluate(node => { node.scrollLeft = 0; });
-    }
+    // A, 2026-11-02: a line between every two columns and a typed number to the right; the pinned text keeps its line while
+    // the other columns scroll under it.
+    await expectColumnLines(region.getByRole("table"));
+    const days = region.getByRole("columnheader", { name: term, exact: true });
+    await expectRightAligned(days);
+    if (width < 640) await expectRightAligned(region.locator("tbody tr").first().locator("td").nth(await days.evaluate(node => (node as HTMLTableCellElement).cellIndex)));
+    if (width < 1024) await expectPinnedLineWhileScrolled(region, region.locator('thead [data-pinned="start"]'));
     const menu = page.getByRole("button", { name: es ? "Columnas" : "Columns", exact: true });
     await menu.click(); await page.getByRole("menuitemcheckbox", { name: "CUIT", exact: true }).click();
     await expect(page.getByRole("columnheader", { name: "CUIT", exact: true })).toHaveCount(0);

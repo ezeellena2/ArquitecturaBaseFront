@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { responseFormId } from "../responseFixtures";
 import type { createResponseVisualFixtures } from "./responseFixtures";
+import { expectColumnLines, expectRightAligned } from "./tableColumns";
 
 // Chosen CE5 through real routes; transport is synthetic and does not qualify Meta or persistence.
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
@@ -23,6 +24,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(table.getByText(label("30, Contado", "30, Cash"), { exact: true })).toBeVisible();
     const extraHeader = table.getByRole("columnheader", { name: question + " · CUIT", exact: true });
     await expect(extraHeader.getByRole("button")).toHaveCount(0);
+    // A, 2026-11-02: the sheet draws a line between every two columns and puts its numbers to the right, a catalog's too.
+    await expectColumnLines(table);
+    for (const numeric of [table.getByRole("columnheader", { name: label("Importe", "Amount"), exact: true }),
+      table.getByRole("columnheader", { name: question + " · " + label("Plazo de pago", "Payment terms"), exact: true }),
+      table.getByRole("cell", { name: label("30, Contado", "30, Cash"), exact: true })]) await expectRightAligned(numeric);
     const tableContainer = page.locator('[data-slot="table-container"]').first();
     const box = (await tableContainer.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width + 1);

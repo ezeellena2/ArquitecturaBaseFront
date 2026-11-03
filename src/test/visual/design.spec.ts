@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectColumnLines, expectRightAligned } from "./tableColumns";
 
 for (const width of [1440, 320]) {
   test(`an operational notice remains accessible above an open dialog at ${width}px`, async ({ page }) => {
@@ -150,6 +151,18 @@ test("table bodies alternate colors while headers and hover keep their hierarchy
     await rows.nth(1).hover();
     await expect.poll(() => background(1)).toBe("rgb(231, 237, 234)");
   }
+});
+
+test("every table draws a thin line between its columns and puts its numbers to the right", async ({ page }) => {
+  // Lists too, chosen on 2026-11-02 after the sheets: Usuarios has no numbers and Roles counts its users.
+  for (const screen of ["/usuarios", "/roles"]) {
+    await openScreen(page, screen);
+    await expect(page.locator('[data-slot="table-body"] > tr').first()).toBeVisible();
+    await expectColumnLines(page.getByRole("table"));
+  }
+  const users = page.getByRole("columnheader", { name: "Usuarios", exact: true });
+  await expectRightAligned(users);
+  await expectRightAligned(page.locator('[data-slot="table-body"] > tr').first().locator("td").nth(await users.evaluate(node => (node as HTMLTableCellElement).cellIndex)));
 });
 
 test("role fields, filters and permissions have separate shared containers", async ({ page }) => {

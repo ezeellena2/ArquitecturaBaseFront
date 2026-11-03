@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { personDataFixtureIds } from "./personDataFixtures";
+import { expectColumnLines } from "./tableColumns";
 
 // Evidence against the chosen CE4-A board; no golden is rewritten and no real API is contacted.
 async function open(page: Page, language: "es" | "en", scenario = "person-data") {
@@ -29,6 +30,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(regions).toHaveCount(2);
     for (const region of await regions.all()) await contained(region, page, width);
     if (width < 640) expect(await regions.first().evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
+    // 2026-11-02: every table draws a line between every two columns, the list of data and the people table.
+    for (const table of await page.getByRole("table").all()) await expectColumnLines(table);
     await expect(page.getByRole("table").last().getByRole("row")).toHaveCount(7);
     await expect(page.getByText(es ? "6 personas · 2 sin Zona" : "6 people · 2 without Zone", { exact: true })).toBeVisible();
     await page.screenshot({ path: "test-results/person-data-table-" + language + "-" + width + ".png", fullPage: true });
