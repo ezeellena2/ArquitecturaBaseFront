@@ -10,7 +10,14 @@ it("keeps each code with hyphens on one line and lets the text wrap at its space
   expect(whole(container)).toEqual(["30-71458236-9,", "30-65432109-7"]);
 });
 
-it("leaves the words without hyphens as they are", () => {
-  const { container } = render(<p><CellText text="Zona norte, depósito 2" /></p>);
-  expect(container.querySelector("p")?.innerHTML).toBe("Zona norte, depósito 2");
+it("breaks a path only after its slashes, each of its parts whole", () => {
+  const { container } = render(<p><CellText text="America/Argentina/Buenos Aires" /></p>);
+  expect(container).toHaveTextContent("America/Argentina/Buenos Aires");
+  expect(whole(container)).toEqual(["America/", "Argentina/", "Buenos"]);
+  expect(container.querySelectorAll("wbr")).toHaveLength(2);
+});
+
+it("leaves a date and the words without hyphens or slashes as they are", () => {
+  const { container } = render(<p><CellText text="Zona norte, depósito 2, 16/03/2027" /></p>);
+  expect(container.querySelector("p")?.innerHTML).toBe("Zona norte, depósito 2, 16/03/2027");
 });

@@ -2,6 +2,7 @@ import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { settingFields, type SettingField, type SettingsDraft, type SystemSettings } from "../api/settings";
 import { Button } from "@/shared/ui/button";
+import { CellText } from "@/shared/ui/CellText";
 import { Surface } from "@/shared/ui/Surface";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell, TableRowHeader } from "@/shared/ui/table";
 
@@ -20,8 +21,8 @@ export function SettingsReview({ current, draft, disabled, titleRef, onAccept }:
       <TableHeader><TableRow><TableHead scope="col" className="whitespace-normal">{t("review.setting")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("review.current")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("review.mine")}</TableHead></TableRow></TableHeader>
       <TableBody>{settingFields.map(field => <TableRow key={field}>
         <TableRowHeader className="max-w-40 break-words whitespace-normal">{t(`fields.${field}`)}</TableRowHeader>
-        <TableCell className="break-all whitespace-normal">{display(field, current[field])}</TableCell>
-        <TableCell className="break-all whitespace-normal">{display(field, draft[field])}</TableCell>
+        <TableCell className="whitespace-normal"><CellText text={display(field, current[field])} /></TableCell>
+        <TableCell className="whitespace-normal"><CellText text={display(field, draft[field])} /></TableCell>
       </TableRow>)}</TableBody>
     </Table>
   </Surface>;

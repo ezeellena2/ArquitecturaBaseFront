@@ -45,8 +45,13 @@ export function closingLine(table: Locator) {
 }
 
 /** Every code with hyphens in the cell («30-71458236-9») stays on one line. */
-export async function expectCodesWhole(cell: Locator) {
-  const lines = await cell.evaluate(node => Array.from(node.textContent!.matchAll(/\S*-\S*/g), match => {
+export const expectCodesWhole = (cell: Locator) => expectWhole(cell, "\\S*-\\S*");
+
+/** Every word of the cell stays on one line: it breaks only at its spaces and after a slash («America/|Argentina/|Buenos Aires»). */
+export const expectWordsWhole = (cell: Locator) => expectWhole(cell, "[^\\s/]+\\/?");
+
+async function expectWhole(cell: Locator, part: string) {
+  const lines = await cell.evaluate((node, pattern) => Array.from(node.textContent!.matchAll(new RegExp(pattern, "g")), match => {
     const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), range = document.createRange();
     const tops = new Set<number>();
     let offset = 0;
@@ -56,7 +61,7 @@ export async function expectCodesWhole(cell: Locator) {
       offset += text.length;
     }
     return tops.size;
-  }));
+  }), part);
   expect(lines.length).toBeGreaterThan(0);
   expect(lines.every(count => count === 1)).toBe(true);
 }

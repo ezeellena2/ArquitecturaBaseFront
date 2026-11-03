@@ -299,6 +299,26 @@ describe("SettingsPage", () => {
     expect(within(band).getByRole("button", { name: "Usar valores actuales" })).toHaveFocus();
   });
 
+  it("breaks the time zone in the comparison only after its slashes and at its spaces, with whole words", async () => {
+    server.use(http.patch("/api/settings", async ({ request }) => {
+      writes.push(await request.json());
+      settings = { ...settings, defaultPageSize: 100, revision: 2 };
+      return HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 });
+    }));
+    renderRouteWithProviders("/configuracion/listados");
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
+    await userEvent.click(await within(header).findByRole("button", { name: "Revisar valores actuales" }));
+    const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
+    // «America/Arg|entina/Bueno|s Aires» was cut at any letter (2026-11-02): now only after a slash or at a space.
+    for (const cell of within(comparison).getAllByRole("cell", { name: "America/Argentina/Buenos Aires" })) {
+      expect(cell).not.toHaveClass("break-all");
+      expect(Array.from(cell.querySelectorAll(".whitespace-nowrap"), part => part.textContent)).toEqual(["America/", "Argentina/", "Buenos"]);
+      expect(cell.querySelectorAll("wbr")).toHaveLength(2);
+    }
+  });
+
   it("does not repeat a write that was committed before a 500 response", async () => {
     server.use(http.patch("/api/settings", async ({ request }) => {
       writes.push(await request.json()); settings = { ...settings, defaultPageSize: 50, revision: 2 };

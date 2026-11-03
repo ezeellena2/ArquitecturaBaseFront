@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { closingLine, expectColumnLines, expectRightAligned } from "./tableColumns";
+import { closingLine, expectColumnLines, expectRightAligned, expectWordsWhole } from "./tableColumns";
 
 for (const width of [1440, 320]) {
   test(`an operational notice remains accessible above an open dialog at ${width}px`, async ({ page }) => {
@@ -291,6 +291,10 @@ test("a settings conflict uses the common comparison table", async ({ page }) =>
   const title = page.getByRole("heading", { level: 2, name: "Revisar cambios", exact: true });
   await expect(title).toBeFocused();
   await expect(title).toBeInViewport();
+  // The time zone breaks only after its slashes and at its spaces, with whole words: no «America/Arg|entina» (2026-11-02).
+  const zones = page.getByRole("cell", { name: "America/Argentina/Buenos Aires", exact: true });
+  await expect(zones).toHaveCount(2);
+  for (const zone of await zones.all()) await expectWordsWhole(zone);
   await page.getByRole("table").scrollIntoViewIfNeeded();
   await expect(page).toHaveScreenshot("settings-review-320.png", { fullPage: true });
 });
