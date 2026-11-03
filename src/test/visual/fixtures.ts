@@ -117,7 +117,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     hours: "9–18", location: english ? "In-store service" : "Atención en el local", services: english ? "Maintenance and accessories." : "Mantenimiento y accesorios.",
     policies: english ? "Quotes confirmed after inspection." : "Presupuestos después de revisar el producto.", faq: "", revision: 1 };
   if (scenario === "business-empty") business = { name: "", description: "", hours: "", location: "", services: "", policies: "", faq: "", revision: 0 };
-  if (scenario === "business-guided") {
+  if (scenario === "business-guided" || scenario === "business-conflict-hours") {
     const details = emptyBusinessDetails("America/Argentina/Buenos_Aires");
     details.location = { mode: "both", address: english ? "123 Example Avenue" : "Av. Ejemplo 123", reference: "", area: "", latitude: null, longitude: null };
     details.openingHours.days = details.openingHours.days.map(day => ({ ...day, status: day.weekday === 6 ? "closed" : "open", periods: day.weekday === 6 ? [] : [{ start: "09:00", end: day.weekday === 5 ? "13:00" : "18:00", nextDay: false }] }));
@@ -205,6 +205,13 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
       ] });
       if (request.method === "PUT") {
         const data = await request.json() as BusinessSaveRequest;
+        if (scenario === "business-conflict-hours" && !businessConflict && business.details) {
+          const hours = business.details.openingHours;
+          business = { ...business, services: english ? "Maintenance, accessories and spare parts." : "Mantenimiento, accesorios y repuestos.", revision: business.revision + 1,
+            details: { ...business.details, openingHours: { ...hours, days: hours.days.map(day => day.weekday === 0 ? { ...day, periods: [{ start: "08:00", end: "17:00", nextDay: false }] } : day.weekday === 5 ? { ...day, status: "closed" as const, periods: [] } : day) } } };
+          businessConflict = true;
+          return json({ code: "Ai.BusinessInformation.RevisionConflict" }, 409);
+        }
         if (scenario === "business-conflict" && !businessConflict) {
           business = { ...business, hours: "10–17", revision: business.revision + 1 }; businessConflict = true;
           return json({ code: "Ai.BusinessInformation.RevisionConflict" }, 409);
@@ -286,7 +293,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
       if (scenario === "dialog-error" && path === "/api/users" && request.method === "POST") return json({ status: 500, traceId: "dialog-test" }, 500);
       if (path === "/api/settings" && request.method === "PATCH") {
         if (scenario === "conflict") {
-          settings = { ...settings, defaultPageSize: 50, revision: 2 };
+          settings = { ...settings, defaultPageSize: 50, defaultTimeZoneId: "UTC", revision: 2 };
           return json({ status: 409, code: "Settings.System.RevisionConflict", detail: english ? "Another person changed this setting." : "Otra persona cambió este ajuste." }, 409);
         }
         settings = { ...settings, ...await request.json(), revision: settings.revision + 1 };

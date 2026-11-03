@@ -324,8 +324,11 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     const previous = request.method === "PUT" ? definitions.get(path.split("/").at(-2)!) : undefined;
     if (scenario === "forms-conflict" && previous && !conflict) {
       conflict = true;
+      // Another person changed the name, the data of two questions, an option and the order (LR2-A reads them side by side).
+      const changed = previous.draft.fields.map(q => q.type === "longText" ? { ...q, maxLength: 300 } : q.type === "decimal" ? { ...q, required: false }
+        : q.type === "choice" && !q.source ? { ...q, options: q.options.map((option, index) => index === 1 ? { ...option, label: { ...option.label, [culture]: culture === "es" ? "Distribuidora del Norte" : "Northern distributor" } } : option) } : q);
       definitions.set(previous.id, { ...previous, name: { ...previous.name, [culture]: culture === "es" ? "Visita guardada" : "Saved visit" }, revision: previous.revision + 1,
-        draft: { ...previous.draft, fields: previous.draft.fields.map(q => q.type === "longText" ? { ...q, maxLength: 300 } : q) } });
+        draft: { ...previous.draft, fields: [changed[0]!, changed[2]!, changed[1]!, ...changed.slice(3)] } });
       return json({ code: "Forms.Draft.RevisionConflict" }, 409);
     }
     if (previous && body.expectedRevision !== previous.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);

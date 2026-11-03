@@ -190,8 +190,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     for (const numeric of [review.getByRole("columnheader", { name: label("Valor", "Value"), exact: true }), addedValue]) await expectRightAligned(numeric);
     await page.screenshot({ path: info.outputPath("catalog-import-typed-added.png"), fullPage: true });
     await dialog.getByRole("tab", { name: en ? /^Changes/ : /^Cambios/ }).click();
-    const changedValue = review.getByRole("cell", { name: label("Valor: 1.000 → 1.500,5", "Value: 1,000 → 1,500.5"), exact: true });
-    await changedValue.scrollIntoViewIfNeeded(); await expect(changedValue).toBeVisible();
+    // The changed column once, before and after in their own columns (LR2-A); on a phone, under it, without scrolling sideways.
+    const changedColumn = review.getByRole("rowheader", { name: label("Valor", "Value"), exact: true });
+    await changedColumn.scrollIntoViewIfNeeded(); await expect(changedColumn).toBeVisible();
+    const changedValues = changedColumn.locator("xpath=..").getByRole("cell");
+    await expect(changedValues.last()).toHaveText(label("1.500,5", "1,500.5"));
+    await expect(changedValues.nth(-2)).toHaveText(label("1.000", "1,000"));
+    expect(await review.locator('[data-slot="table-container"]').evaluate(box => box.scrollWidth <= box.clientWidth + 1)).toBe(true);
     await page.screenshot({ path: info.outputPath("catalog-import-typed-changed.png"), fullPage: true });
     await dialog.getByRole("tab", { name: en ? /^Errors and warnings/ : /^Errores y avisos/ }).click();
     await expect(review.getByRole("columnheader", { name: label("Tipo", "Type"), exact: true })).toBeVisible();

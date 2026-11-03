@@ -291,14 +291,15 @@ test("a settings conflict uses the common comparison table", async ({ page }) =>
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await page.getByRole("button", { name: "Revisar valores actuales", exact: true }).first().click();
   await expect(page.getByRole("table")).toBeVisible();
-  await expect(page.getByRole("rowheader")).toHaveCount(4);
+  // Only what differs, side by side (LR2-A): the rows per page and the time zone that the other person changed.
+  await expect(page.getByRole("rowheader")).toHaveText(["Zona horaria predeterminada", "Filas por página"]);
   // Revisar está en la banda y la comparación, al final: la lectura lleva el foco a su título y la deja a la vista.
   const title = page.getByRole("heading", { level: 2, name: "Revisar cambios", exact: true });
   await expect(title).toBeFocused();
   await expect(title).toBeInViewport();
   // The time zone breaks only after its slashes and at its spaces, with whole words: no «America/Arg|entina» (2026-11-02).
   const zones = page.getByRole("cell", { name: "America/Argentina/Buenos Aires", exact: true });
-  await expect(zones).toHaveCount(2);
+  await expect(zones).toHaveCount(1);
   for (const zone of await zones.all()) await expectWordsWhole(zone);
   await page.getByRole("table").scrollIntoViewIfNeeded();
   await expect(page).toHaveScreenshot("settings-review-320.png", { fullPage: true });
