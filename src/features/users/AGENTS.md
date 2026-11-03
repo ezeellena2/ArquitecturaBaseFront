@@ -4,7 +4,7 @@ Muestra listado, filtros y conteos, alta, edición de roles, estado de medios de
 
 ## Al modificar
 
-- Filtros, búsqueda, orden y paginado viven en URL. El conteo ignora su propio filtro y las opciones con cero se deshabilitan.
+- Filtros, búsqueda, orden y paginado viven en URL. Rol y «Más filtros › Creado» son desplegables simples (FO1-A, 2026-11-03): una opción por renglón, sin la cantidad, con la elegida tildada y ninguna apagada; sus opciones salen de `filter-counts`, cuyas cantidades no se muestran.
 - Alta y edición usan diálogos distintos: editar no crea identidades. Invitaciones piden canal y consentimiento según su contrato.
 - La sección opcional de datos llega por `shared/hooks/userDataSectionContext`, sin importar otro módulo. Guardar confirma primero el usuario y luego sólo los datos cambiados; si éstos fallan, conserva el diálogo y la sección explica que el usuario ya se guardó. El controller de la sección vive en el diálogo, sin valores en la coordinación ni en MutationCache.
 - Editar reemplaza nombre y roles juntos en un solo PUT. Reenviar una invitación espera un minuto desde que llegó el detalle y vuelve a pedir el consentimiento cada vez (`components/LastInvitationStrip.tsx`, `components/UserEditDialog.tsx`). La espera es el motivo de «Reenviar invitación» (`DisabledReason`), sin texto debajo, y el botón no cambia de lugar ni de forma: el contorno lo pide sólo una invitación que no llegó.

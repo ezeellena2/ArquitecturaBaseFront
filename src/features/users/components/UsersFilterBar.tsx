@@ -17,28 +17,23 @@ import { FilterChip } from "@/shared/ui/FilterChip";
 import { FilterMenuTrigger } from "@/shared/ui/FilterMenuTrigger";
 import { FilterBar } from "@/shared/ui/FilterBar";
 
-/// Una opción de un desplegable, con su conteo a la derecha. La de cero va deshabilitada: elegirla daría una
-/// lista vacía, y el número ya dice por qué. Dejarla apretable es ofrecer un camino que no lleva a ningún lado.
+/// Una opción de un desplegable de filtro: un renglón con su nombre, sin la cantidad ni nada debajo, y ninguna se
+/// apaga por no traer nada (FO1-A, 2026-11-03): si no hay coincidencias, el vacío lo dice y ofrece limpiar.
 ///
 /// Es una opción de radio de su grupo, que dice cuál está elegida: la elegida lleva la tilde (OE1-A, 2026-11-03). La
 /// de "cualquiera" tiene el valor vacío.
 function OptionRow({
   value,
   label,
-  count,
   onSelect,
 }: {
   value: string;
   label: string;
-  count: number | undefined;
   onSelect: () => void;
 }) {
   return (
-    <DropdownMenuRadioItem value={value} disabled={count === 0} onSelect={onSelect} className="justify-between gap-6">
-      <span>{label}</span>
-      {count === undefined ? null : (
-        <span className="text-xs tabular-nums text-[var(--color-content-muted)]">{count}</span>
-      )}
+    <DropdownMenuRadioItem value={value} onSelect={onSelect}>
+      {label}
     </DropdownMenuRadioItem>
   );
 }
@@ -52,9 +47,8 @@ interface UsersFilterBarProps {
 /// La barra de filtros del listado (fundamento visual, "Listados y filtros"): buscador, estado, rol y el
 /// resto detrás de "Más filtros", con los chips de lo puesto debajo.
 ///
-/// Cada opción muestra **cuántos traería**, y ese número sale de `/api/users/filter-counts`, que lo calcula
-/// con los demás filtros puestos e ignorando el propio. Es lo que hace que elegir una opción no sea una
-/// apuesta: el número dice de antemano si hay algo del otro lado.
+/// Los roles y los plazos de "Creado" salen de `/api/users/filter-counts`, que trae también cuántos traería cada
+/// opción; esas cantidades no se muestran (FO1-A, 2026-11-03).
 export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterBarProps) {
   const { t } = useTranslation("users");
   const { values, active, setFilter, clear } = filters;
@@ -116,7 +110,6 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
               <OptionRow
                 value=""
                 label={t("filters.role.any")}
-                count={undefined}
                 onSelect={() => setFilter("role", undefined)}
               />
               {roleOptions.map((role) => (
@@ -124,7 +117,6 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
                   key={role.name}
                   value={role.name}
                   label={role.name}
-                  count={role.count}
                   onSelect={() => setFilter("role", role.name)}
                 />
               ))}
@@ -150,7 +142,6 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
               <OptionRow
                 value=""
                 label={t("filters.createdWithin.any")}
-                count={undefined}
                 onSelect={() => setFilter("createdWithinDays", undefined)}
               />
               {createdOptions.map((option) => (
@@ -158,7 +149,6 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
                   key={option.days}
                   value={String(option.days)}
                   label={t("filters.createdWithin.option", { count: option.days })}
-                  count={option.count}
                   onSelect={() => setFilter("createdWithinDays", String(option.days))}
                 />
               ))}

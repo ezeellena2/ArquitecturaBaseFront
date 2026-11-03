@@ -435,9 +435,9 @@ describe("UsersPage", () => {
     expect(screen.queryByRole("button", { name: /quitar el filtro estado/i })).not.toBeInTheDocument();
   });
 
-  it("disables the options that would bring nothing", async () => {
-    // El número no está para decorar: si una opción da cero, elegirla es un camino que no lleva a ningún
-    // lado, y el desplegable lo dice antes de que se apriete.
+  it("offers each role and each date without its count, none of them off", async () => {
+    // FO1-A (2026-11-03): un filtro de opciones es un desplegable simple, una opción por renglón, sin la cantidad ni
+    // nada debajo, y ninguna se apaga por no traer nada: si no hay coincidencias, el vacío lo dice y ofrece limpiar.
     server.use(...listHandlers());
 
     renderRouteWithProviders("/usuarios");
@@ -449,8 +449,16 @@ describe("UsersPage", () => {
     trigger.focus();
     await userEvent.keyboard("{Enter}");
 
-    expect(await screen.findByRole("menuitemradio", { name: /soporte/i })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("menuitemradio", { name: /admin/i })).not.toHaveAttribute("aria-disabled", "true");
+    expect(await screen.findByRole("menuitemradio", { name: "Soporte" })).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("menuitemradio", { name: "Admin" })).not.toHaveAttribute("aria-disabled", "true");
+    await userEvent.keyboard("{Escape}");
+
+    const more = screen.getByRole("button", { name: /más filtros/i });
+    more.focus();
+    await userEvent.keyboard("{Enter}");
+
+    expect(await screen.findByRole("menuitemradio", { name: "Últimos 7 días" })).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("menuitemradio", { name: "Últimos 30 días" })).toBeInTheDocument();
   });
 
   it("marks the chosen role in its menu", async () => {
