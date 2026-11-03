@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectColumnLines, expectRightAligned } from "./tableColumns";
+import { closingLine, expectColumnLines, expectRightAligned } from "./tableColumns";
 
 for (const width of [1440, 320]) {
   test(`an operational notice remains accessible above an open dialog at ${width}px`, async ({ page }) => {
@@ -163,6 +163,16 @@ test("every table draws a thin line between its columns and puts its numbers to 
   const users = page.getByRole("columnheader", { name: "Usuarios", exact: true });
   await expectRightAligned(users);
   await expectRightAligned(page.locator('[data-slot="table-body"] > tr').first().locator("td").nth(await users.evaluate(node => (node as HTMLTableCellElement).cellIndex)));
+});
+
+test("a table closes with a line under its last row unless it touches the edge of its surface", async ({ page }) => {
+  // 2026-11-02: over the pagination the last row draws its line; the permissions end at the surface's border, which closes them.
+  await openScreen(page, "/usuarios");
+  await expect(page.locator('[data-slot="table-body"] > tr').first()).toBeVisible();
+  expect(await closingLine(page.getByRole("table"))).toBe("1px");
+  await openScreen(page, "/roles/support");
+  await expect(page.locator('[data-slot="table-body"] > tr').first()).toBeVisible();
+  expect(await closingLine(page.getByRole("table"))).toBe("0px");
 });
 
 test("role fields, filters and permissions have separate shared containers", async ({ page }) => {

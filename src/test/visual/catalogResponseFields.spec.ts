@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { responseFormId } from "../responseFixtures";
 import type { createResponseVisualFixtures } from "./responseFixtures";
-import { expectColumnLines, expectRightAligned } from "./tableColumns";
+import { expectCodesWhole, expectColumnLines, expectRightAligned } from "./tableColumns";
 
 // Chosen CE5 through real routes; transport is synthetic and does not qualify Meta or persistence.
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
@@ -24,6 +24,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(table.getByText(label("30, Contado", "30, Cash"), { exact: true })).toBeVisible();
     const extraHeader = table.getByRole("columnheader", { name: question + " · CUIT", exact: true });
     await expect(extraHeader.getByRole("button")).toHaveCount(0);
+    // 2026-11-02: a code is not split at its hyphens. With a short header the column is as narrow as the code allows; here
+    // the cell is narrowed by hand to show that each CUIT stays on one line while the list still wraps at its spaces.
+    const cuit = table.getByRole("cell", { name: "30-71234567-8, 30-65432109-7", exact: true });
+    await cuit.evaluate(node => { (node.firstElementChild as HTMLElement).style.maxWidth = "4rem"; });
+    await expectCodesWhole(cuit);
+    await cuit.evaluate(node => { (node.firstElementChild as HTMLElement).style.maxWidth = ""; });
     // A, 2026-11-02: the sheet draws a line between every two columns and puts its numbers to the right, a catalog's too.
     await expectColumnLines(table);
     for (const numeric of [table.getByRole("columnheader", { name: label("Importe", "Amount"), exact: true }),
