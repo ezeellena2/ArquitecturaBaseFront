@@ -58,18 +58,18 @@ dibujadas las preguntas en CW2-A y CW2-B.
 
    | Ocupa | Tipos de pregunta |
    | --- | --- |
-   | Una columna | Número, fecha, sí o no, texto corto con largo máximo de hasta 30 y elegir una con lista desplegable |
-   | Dos columnas | Elegir de un catálogo (una o varias), elegir una con opciones en fila y texto corto de hasta 80 |
+   | Una columna | Número, fecha, sí o no, texto corto con largo máximo de hasta 80, elegir una y elegir de un catálogo (una o varias) |
    | El renglón entero | Texto largo, texto corto de más de 80 o sin largo máximo, elegir varias con opciones propias, foto y documento |
 
-   Desde el 2026-11-02 quedan dos anchos ([AR1-A](#dos-anchos-ar1-a--2026-11-02), por programar): lo de las dos columnas pasa a
-   una.
+   Son los dos anchos de [AR1-A](#dos-anchos-ar1-a--2026-11-02) (2026-11-02): las dos columnas que tenían el catálogo, las
+   opciones en fila y el texto corto de hasta 80 pasaron a una.
 
-4. **Controles por tipo (CW12).** Número y fecha, angostos: en la página, dentro de su celda y a lo ancho en una columna; en
-   el panel, como en CW2-B, salvo en el celular. Sí o no, un `SegmentedControl` sin valor inicial; elegir una, hasta cinco
-   opciones cortas en fila, apiladas en el celular, y si no una lista desplegable; elegir varias, casillas con «Elegí hasta N»;
-   catálogo, la lista con búsqueda de CW3; fotos y documentos, como en CW4. El texto largo crece de 2 a 6 renglones con su
-   largo máximo.
+4. **Controles por tipo (CW12 y AR1-A).** Número y fecha, angostos: en la página, dentro de su celda y a lo ancho en una
+   columna; en el panel, como en CW2-B, salvo en el celular. Sí o no, un `SegmentedControl` sin valor inicial; elegir una,
+   hasta cinco opciones en fila aunque sean largas (las que no entran bajan, y en el celular van apiladas) y si no una lista
+   desplegable; elegir varias, casillas en las columnas de la zona, de arriba abajo, con «hasta N» en la etiqueta; catálogo,
+   la lista con búsqueda de CW3; fotos y documentos, como en CW4. El texto largo crece de 2 a 6 renglones con su largo
+   máximo.
 5. **Unidades en la etiqueta (CW13-A).** «Densidad (kg/ha)»: sin sufijo dentro del campo ni dato «Unidad» nuevo.
 6. **Títulos de sección, en una etapa posterior (CW15-B).** Serán un elemento nuevo del editor: en la app, una zona por título;
    en WhatsApp, un subtítulo. En la Etapa 1 sólo existen «Datos» y «Fotos y documentos», y la página dibuja la lista de zonas
@@ -81,9 +81,9 @@ dibujadas las preguntas en CW2-A y CW2-B.
   `entryRows`, los renglones con las columnas en uso, sin reordenar. Las columnas salen del ancho de la zona y no del de la
   pantalla (`entryColumns`: tres desde 46 rem, dos desde 30 rem y una debajo), porque en una tableta los paneles del menú
   ocupan parte del ancho: con el panel de Formularios abierto, una tableta tiene lugar para una columna. En una columna de la
-  página, número y fecha también van a lo ancho. El panel usa los mismos controles en una columna, con número y fecha
-  angostos salvo en el celular, como en CW2-B. «Opción corta» es de hasta 20 caracteres, el «angosto» de CW12; el texto largo
-  suma un renglón cada 100 caracteres de largo máximo, entre 2 y 6.
+  página, número y fecha también van a lo ancho. El panel usa las mismas zonas y controles en una columna, con número y
+  fecha angostos salvo en el celular, como en CW2-B, y las casillas de elegir varias en dos columnas. El largo de las
+  opciones no cuenta desde AR1-A; el texto largo suma un renglón cada 100 caracteres de largo máximo, entre 2 y 6.
 - **Lo cargado vive en su dueño.** El borrador es de la página o del panel: nunca va a la URL, el storage ni la caché de
   consultas. «Pantalla completa» lo pasa en memoria. Repetir un envío con las mismas respuestas conserva su identificador, así
   que un reintento tras un corte devuelve el primer número; cualquier cambio arma otro envío.
@@ -156,8 +156,9 @@ dónde quedan mal:
 - una sola zona larga;
 - el panel sin zonas.
 
-De tres opciones eligió **A**: B dejaba los tres anchos de hoy con las piezas arregladas y C volvía a una columna. Está por
-programar.
+De tres opciones eligió **A**: B dejaba los tres anchos de hoy con las piezas arregladas y C volvía a una columna. Quedó
+programada el mismo día; la escena `formEntries` suma a «Siembra» una pregunta de elegir varias con siete opciones para
+mostrar las casillas en columnas.
 
 - **Dos anchos.** Lo que tiene un solo valor ocupa una columna: número, fecha, sí o no, texto corto de hasta 80, elegir una
   y elegir de un catálogo, de una o de varias. Lo que necesita espacio ocupa el renglón entero: texto largo, texto corto sin
@@ -181,8 +182,8 @@ en la Etapa 5 del plan.
 Cargando «Recepción de insumos» desde «Cargar», el usuario no encontró «Mantener las respuestas para la siguiente» en la
 página «Nueva respuesta»: sólo estaba en el panel junto a la planilla (CW2-B). Cargó un renglón del remito y no pudo seguir
 con los otros con lo mismo. De dos tableros del lienzo provisorio (fila «La carga en la página · mantener lo cargado para la
-siguiente»: A la misma casilla que el panel, B «Cargar otra con lo mismo» en «Enviada») eligió **A**. Se suma a AR1-A y está
-por programar.
+siguiente»: A la misma casilla que el panel, B «Cargar otra con lo mismo» en «Enviada») eligió **A**. Se suma a AR1-A y quedó
+programada el mismo día.
 
 - **La misma casilla que el panel,** con el mismo texto, en la banda de «Nueva respuesta», antes de Cancelar y Enviar. En el
   celular va en el pie fijo, arriba de Enviar.
@@ -192,3 +193,6 @@ por programar.
 - **Los archivos no se mantienen,** como en el panel: las fotos y los documentos arrancan vacíos.
 - **No se recuerda:** vale mientras se carga. Al volver a entrar, la casilla arranca sin marcar y el formulario, vacío. Cada
   envío arma un pedido nuevo, así que no repite el número del anterior, y salir con algo cargado sigue pidiendo confirmación.
+  Programándolo apareció que, con las mismas respuestas mantenidas y sin archivos, el envío siguiente repetía el pedido del
+  anterior y recibía su número; ahora un envío que llegó suelta su pedido, en la página y en el panel, y sólo un reintento
+  después de un corte lo repite.
