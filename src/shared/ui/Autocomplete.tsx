@@ -8,7 +8,8 @@ export interface AutocompleteOption {
   label: string;
   /** A second, muted line: what tells two similar options apart. */
   description?: string | null;
-  /** Already chosen: in a multiple choice its box is marked; in a single one, such as a filter's combo, it carries a check. */
+  /** Already chosen: in a multiple choice its box is marked; in a single one, such as a filter's combo, it carries the tick on
+   * the left, and the other options keep its place. */
   selected?: boolean;
   /** Cannot be chosen now, such as the rest of a multiple choice that reached its maximum. */
   disabled?: boolean;
@@ -71,9 +72,10 @@ export function Autocomplete({ value, onValueChange, options, onSelect, footer, 
             className="flex w-full items-start gap-2 break-words rounded-sm px-2.5 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground data-[active]:bg-accent data-[active]:text-accent-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
             onPointerDown={event => event.preventDefault()} onMouseDown={event => event.preventDefault()} onClick={() => select(index)}>
             {multiple ? <span aria-hidden="true" className={cn("mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border border-input text-[0.6875rem] leading-none",
-              option.selected && "border-[var(--color-brand-700)] bg-[var(--color-brand-700)] text-white")}>{option.selected ? "✓" : null}</span> : null}
-            <span className={cn("min-w-0 flex-1", !multiple && option.selected && "font-medium")}><span className="block">{option.label}</span>{option.description ? <span className="block text-xs text-[var(--color-content-muted)]">{option.description}</span> : null}</span>
-            {!multiple && option.selected ? <CheckIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--color-brand-700)]" /> : null}
+              option.selected && "border-[var(--color-brand-700)] bg-[var(--color-brand-700)] text-white")}>{option.selected ? "✓" : null}</span>
+              // The chosen one of a single choice carries the tick on the left, as in a filter's dropdown menu (OE1-A).
+              : option.selected === undefined ? null : <span aria-hidden="true" className="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center">{option.selected ? <CheckIcon className="size-4" /> : null}</span>}
+            <span className="min-w-0"><span className="block">{option.label}</span>{option.description ? <span className="block text-xs text-[var(--color-content-muted)]">{option.description}</span> : null}</span>
           </button></li>)}
           {status != null && options.length === 0 ? <li role="presentation" className="px-2.5 py-2 text-sm text-[var(--color-content-muted)]">{status}</li> : null}
           {footer ? <li role="presentation" className="sticky bottom-0 border-t border-input bg-popover px-2.5 py-2 text-right">{footer}</li> : null}
