@@ -21,7 +21,9 @@ export interface ResponseWorkspace {
   deny: () => void;
   formId: string;
   filter: ResponseFilter;
-  setFilter: (formId: string, filter: ResponseFilter) => void;
+  /** The names of what was chosen in «Filtros» (an option, a person), which a catalog question's column does not have (PL2-A). */
+  names: Readonly<Record<string, string>>;
+  setFilter: (formId: string, filter: ResponseFilter, names?: Readonly<Record<string, string>>) => void;
   navigation: (ResponseNavigationContext & { formId: string }) | null;
   setNavigation: (formId: string, navigation: ResponseNavigationContext | null) => void;
 }
@@ -38,7 +40,8 @@ export function useResponseWorkspace(formId: string) {
     enterFull: (recordId: string, key: string, search: string) => context.enterFull(formId, recordId, key, search),
     finishFull: context.finishFull,
     filter: context.formId === formId ? context.filter : {},
-    setFilter: (filter: ResponseFilter) => context.setFilter(formId, filter),
+    names: context.formId === formId ? context.names : {},
+    setFilter: (filter: ResponseFilter, names?: Readonly<Record<string, string>>) => context.setFilter(formId, filter, names),
     navigation: context.navigation?.formId === formId ? context.navigation : null,
     setNavigation: (navigation: ResponseNavigationContext | null) => context.setNavigation(formId, navigation),
   };

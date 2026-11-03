@@ -17,22 +17,23 @@ export function ResponseWorkspaceProvider({
     fullEntry: ResponseFullEntry | null;
     formId: string;
     filter: ResponseFilter;
+    names: Readonly<Record<string, string>>;
     denied: boolean;
     navigation: (ResponseNavigationContext & { formId: string }) | null;
-  }>({ owner, formId: "", filter: {}, denied: false, navigation: null, fullEntry: null });
+  }>({ owner, formId: "", filter: {}, names: {}, denied: false, navigation: null, fullEntry: null });
   const location = useLocation();
   const activeForm = formId ?? /^\/formularios\/([^/]+)\/respuestas(?:\/|$)/.exec(
     location.pathname,
   )?.[1];
   if (state.formId && state.formId !== activeForm || state.navigation && state.navigation.formId !== activeForm || state.fullEntry && state.fullEntry.formId !== activeForm)
-    setState({ ...state, formId: "", filter: {}, navigation: null, fullEntry: null });
+    setState({ ...state, formId: "", filter: {}, names: {}, navigation: null, fullEntry: null });
   if (state.owner !== owner)
-    setState({ owner, formId: "", filter: {}, denied: false, navigation: null, fullEntry: null });
+    setState({ owner, formId: "", filter: {}, names: {}, denied: false, navigation: null, fullEntry: null });
   const deny = useCallback(
     () =>
       setState((previous) =>
         previous.owner === owner && !previous.denied
-          ? { owner, formId: "", filter: {}, denied: true, navigation: null, fullEntry: null }
+          ? { owner, formId: "", filter: {}, names: {}, denied: true, navigation: null, fullEntry: null }
           : previous,
       ),
     [owner],
@@ -48,7 +49,7 @@ export function ResponseWorkspaceProvider({
           const entry = previous.fullEntry;
           const internal = entry?.formId === formId && entry.recordId === recordId && (entry.locationKey === null || entry.locationKey === locationKey);
           if (internal && entry.locationKey === locationKey) return previous;
-          return { ...previous, formId, filter: internal ? previous.filter : {},
+          return { ...previous, formId, filter: internal ? previous.filter : {}, names: internal ? previous.names : {},
             navigation: internal && previous.navigation ? previous.navigation : { formId, origin: "sheet", selection: { recordId }, search },
             fullEntry: { formId, recordId, locationKey, intent: internal ? entry.intent : undefined } };
         }),
@@ -57,12 +58,14 @@ export function ResponseWorkspaceProvider({
         deny,
         formId: state.owner === owner ? state.formId : "",
         filter: state.owner === owner ? state.filter : {},
+        names: state.owner === owner ? state.names : {},
         navigation: state.owner === owner ? state.navigation : null,
         setNavigation: (formId, navigation) => setState(previous => previous.owner === owner ? { ...previous, navigation: navigation ? { ...navigation, formId } : null } : previous),
-        setFilter: (formId, filter) =>
+        // The name of what was just chosen joins the ones already known for this form.
+        setFilter: (formId, filter, names) =>
           setState((previous) =>
             previous.owner === owner
-              ? { ...previous, formId, filter }
+              ? { ...previous, formId, filter, names: { ...previous.formId === formId ? previous.names : {}, ...names } }
               : previous,
           ),
       }}

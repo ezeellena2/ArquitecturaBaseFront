@@ -197,7 +197,7 @@ export function FormResponsesPage() {
         />,
     })),
   ];
-  const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, i18n.language, scope.user?.timeZoneId, data?.versions);
+  const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, i18n.language, scope.user?.timeZoneId, data?.versions, route.names);
   const sort = route.query.sort?.replace(
     "field",
     route.query.sortFieldId ?? "field",
@@ -221,7 +221,7 @@ export function FormResponsesPage() {
           <option value="false">{t("responses.whatsapp")}</option>
         </NativeSelect></div>
         {data?.hasApproval ? <div className="w-full sm:w-44"><NativeSelect aria-label={t("approvals.state")} value={route.query.state ?? ""} onChange={event => route.setFilter({ ...route.query, state: (event.target.value || undefined) as typeof route.query.state })}><option value="">{t("approvals.allStates")}</option>{(["Received", "PendingApproval", "Approved", "Rejected"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}</NativeSelect></div> : null}
-        <ResponseFiltersMenu formId={formId} query={route.query} columns={data?.columns ?? []} zone={scope.user?.timeZoneId ?? "UTC"} disabled={!data} onApply={route.setFilter}/>
+        <ResponseFiltersMenu formId={formId} query={route.query} columns={data?.columns ?? []} zone={scope.user?.timeZoneId ?? "UTC"} names={route.names} disabled={!data} onApply={route.setFilter}/>
         <div className="sm:ml-auto">
           <ResponseColumnsMenu columns={data?.columns ?? []} visible={visible} visibleCatalogFields={visibleCatalogFields}
             onChange={(ids) => route.setColumns(data?.columns ?? [], ids)}/>

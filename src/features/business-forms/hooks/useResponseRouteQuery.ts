@@ -54,8 +54,9 @@ export function useResponseRouteQuery(formId: string) {
   const setFilter = (
     filter: ResponseFilter,
     versionIds: readonly string[] = query.versionIds ?? [],
+    names?: Readonly<Record<string, string>>,
   ) => {
-    workspace.setFilter(filter);
+    workspace.setFilter(filter, names);
     update({
       versionIds: versionIds.length ? versionIds.join(",") : undefined,
       page: undefined,
@@ -91,6 +92,7 @@ export function useResponseRouteQuery(formId: string) {
     pagination,
     ready: pagination.ready,
     selection: params.get("columns"),
+    names: workspace.names,
     setFilter,
     setColumns,
     toggleSort,

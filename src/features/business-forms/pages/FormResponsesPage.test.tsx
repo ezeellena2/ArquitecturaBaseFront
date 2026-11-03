@@ -881,20 +881,17 @@ describe("response sheet", () => {
     const dialog = await openFilters("Cargó");
     await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
     expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
+    // The open list of the combo says it could not load (board PL2-A).
+    await userEvent.click(within(dialog).getByRole("combobox", { name: "Cargó" }));
+    const list = within(await screen.findByRole("listbox", { name: "Cargó" }));
+    expect(list.getByText("No pudimos cargar los datos")).toBeInTheDocument();
     if (status === 429) {
-      // The wait of the facet is the reason of its disabled Reintentar (and of the answer state), not a text in its region.
-      const actor = within(dialog).getByRole("region", { name: "Cargó" });
+      // The wait of the facet is the reason of its disabled Reintentar, not a text in the list.
       const wait = /^Esperá [0-9]+ segundos para volver a intentar\.$/;
-      expect(within(actor).getByRole("button", { name: "Reintentar" })).toBeDisabled();
-      expect(within(actor).getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(wait);
-      expect(within(actor).queryByRole("status")).not.toBeInTheDocument();
-      await userEvent.click(within(dialog).getByRole("button", { name: "Importe" }));
-      const state = await within(dialog).findByRole("combobox", { name: "Respuesta" });
-      await waitFor(() => expect(state).toBeDisabled());
-      expect(state).toBeDisabled();
-      expect(state).toHaveAccessibleDescription(wait);
-      for (const text of within(dialog).getAllByText(wait)) expect(text).not.toBeVisible();
-    } else expect(within(dialog).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+      expect(list.getByRole("button", { name: "Reintentar" })).toBeDisabled();
+      expect(list.getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(wait);
+      for (const text of list.getAllByText(wait)) expect(text).not.toBeVisible();
+    } else expect(list.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     expect(requested).toHaveBeenCalled();
   });
   it("names an account without a display name in the person filter", async () => {
@@ -918,23 +915,19 @@ describe("response sheet", () => {
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
     const dialog = await openFilters("Cargó");
-    expect(
-      await within(dialog).findByRole("checkbox", {
-        name: "Persona sin información",
-      }),
-    ).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("combobox", { name: "Cargó" }));
+    expect(await screen.findByRole("option", { name: "Persona sin información" })).toBeInTheDocument();
   });
-  it("offers yes and no directly without a text search for a boolean question", async () => {
+  it("offers yes and no directly without typing for a boolean question", async () => {
     setup();
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
     const dialog = await openFilters("Confirmado");
-    expect(
-      await within(dialog).findByRole("checkbox", { name: "No" }),
-    ).toBeEnabled();
-    expect(
-      within(within(dialog).getByRole("region", { name: "Confirmado" })).queryByRole("searchbox", { name: "Buscar opciones" }),
-    ).not.toBeInTheDocument();
+    const combo = within(dialog).getByRole("combobox", { name: "Confirmado" });
+    expect(combo).toHaveAttribute("readonly");
+    await userEvent.click(combo);
+    expect(await screen.findByRole("option", { name: "No" })).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByRole("option", { name: "Sí" })).toBeInTheDocument();
   });
   it("withdraws all values and counts after a denied filter count", async () => {
     setup();
@@ -1325,12 +1318,36 @@ it("filters multi choices through anyOf while keeping their column unsortable", 
   // The first question to choose from is not a filter of its own over the sheet anymore: it is in «Filtros» (board PL1-A).
   expect(screen.queryByRole("button", { name: "Fallas" })).not.toBeInTheDocument();
   const dialog = await openFilters("Fallas");
-  await userEvent.click(await within(dialog).findByRole("checkbox", { name: "Frío" }));
+  await userEvent.click(within(dialog).getByRole("combobox", { name: "Fallas" }));
+  await userEvent.click(await screen.findByRole("option", { name: "Frío" }));
   await waitFor(() => expect(requests).toContainEqual(expect.objectContaining({ conditions: [{ fieldId: single.fieldId, operator: "anyOf", values: [options[0]!.id] }] })));
   await userEvent.keyboard("{Escape}");
   expect(screen.getByRole("button", { name: "Filtros 1" })).toBeInTheDocument();
   expect(await screen.findByText("Fallas: alguna de Frío", { exact: true })).toBeInTheDocument();
   expect(requests.every(body => (body as { sortFieldId?: string }).sortFieldId !== single.fieldId)).toBe(true);
+});
+
+// A catalog question's column has no options (board PL2-A): the chip and the closed combo name the option with the name the
+// sheet remembers from when it was chosen, also after closing and opening «Filtros» again.
+it("names a catalog option in its chip and in its closed combo", async () => {
+  setup();
+  const sheet = responseSheetFixture();
+  const article = sheet.columns.find(column => column.type === "choice")!;
+  article.label = "Artículo"; article.options = [];
+  const glyphosate = "01990000-0000-7000-8000-000000000932";
+  server.use(http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(sheet)),
+    http.post("/api/forms/definitions/:id/records/filter-counts/search", () => HttpResponse.json({
+      items: [{ id: glyphosate, label: "Glifosato 48%", count: 3 }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false,
+    })));
+  renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+  await screen.findByRole("table");
+  const dialog = await openFilters("Artículo");
+  await userEvent.click(within(dialog).getByRole("combobox", { name: "Artículo" }));
+  await userEvent.click(await screen.findByRole("option", { name: "Glifosato 48%" }));
+  expect(await screen.findByText("Artículo: Glifosato 48%", { exact: true })).toBeInTheDocument();
+  await userEvent.keyboard("{Escape}");
+  const reopened = await openFilters("Artículo con filtro");
+  expect(within(reopened).getByRole("combobox", { name: "Artículo" })).toHaveValue("Glifosato 48%");
 });
 
 it("shows sealed data subcolumns without enabling sorting or requiring catalog permission", async () => {
