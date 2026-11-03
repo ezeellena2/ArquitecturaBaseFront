@@ -267,6 +267,21 @@ function serveMaximum(answer: (body: MaximumBody, call: number) => Response | Pr
 // No person is chosen and the form is not saved: the maximum depends only on the filters.
 const maximumQuestion = (type: "choice" | "multiChoice", match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} type={type} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
 
+// Board LR1: what the person tried has reads in two columns, the datum in grey and its value beside it, not «Zona: Norte».
+it("reads the data of the person tried in two columns", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  server.use(http.get("/api/forms/recipient-samples", () => HttpResponse.json(page([{ id: juan, name: "Juan" }]))),
+    http.post("/api/forms/definitions/:id/recipient-previews", () => HttpResponse.json({ recipient: { id: juan, name: "Juan", values: [{ attributeId: attribute, name: "Zona", text: "Norte" }] }, state: "Ready", optionCount: 1, limit: 200, exceedsLimit: false, options: [{ id: itemId, title: "Equipo A", description: null }] })));
+  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }] }} questionId="q" definitionId={formId} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()} onPreviewChange={vi.fn()}/></MemoryRouter>);
+  await expand(filtersTitle);
+  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  await waitFor(() => expect(input).toBeEnabled());
+  await userEvent.click(input); await userEvent.click(await screen.findByRole("option", { name: "Juan" }));
+  expect(await screen.findByText("1 opción")).toBeInTheDocument();
+  expect(screen.getByText("Norte").closest("dd")?.previousElementSibling).toHaveTextContent(/^Zona$/);
+  expect(screen.queryByText("Zona: Norte")).not.toBeInTheDocument();
+});
+
 // Each addition gives its own reason (point 38): no person data matches the remaining fields, or every filter field is in use.
 it("explains why each filter addition is disabled", async () => {
   serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
