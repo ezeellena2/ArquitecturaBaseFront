@@ -14,6 +14,8 @@ import { CatalogImportDialog } from "./CatalogImportDialog";
 const catalog: CatalogDetail = { valueType: "Text", proposal: null, id: catalogImportPreviewFixture().catalogId, key: catalogImportPreviewFixture().catalogId.replaceAll("-", ""), name: { es: "Lista", en: "List" }, description: { es: "Prueba", en: "Test" }, kind: "Manual", revision: 7, isActive: true, itemsCount: 2, usageCount: null, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
 const scope = { actorId: "actor", culture: "es" as const, permissions: ["formcatalogs.read", "formcatalogs.manage"] };
 const quiet = { deactivations: 0, emptySheet: false, manyErrors: false };
+// A change of the review reads side by side (LR2-A): the column once, as the header of its row, before and after in theirs.
+const change = (panel: ReturnType<typeof within>, column: string) => within(panel.getByRole("rowheader", { name: column }).closest("tr")!).getAllByRole("cell").slice(-2).map(cell => cell.textContent);
 afterEach(async () => { cleanup(); vi.restoreAllMocks(); queryClient.clear(); await i18n.changeLanguage("es"); });
 // It opens on the file; «Pegar desde Excel» in «Desde» turns it to the grid.
 async function mount(source: "file" | "paste" = "paste", props: Partial<Parameters<typeof CatalogImportDialog>[0]> = {}) {
@@ -271,7 +273,7 @@ it.each([
   await user.click(await screen.findByRole("tab", { name: english ? /^New/ : /^Altas/ }));
   expect(within(screen.getByRole("tabpanel")).getByRole("cell", { name: shownAfter })).toBeInTheDocument();
   await user.click(screen.getByRole("tab", { name: english ? /^Changes/ : /^Cambios/ }));
-  expect(within(screen.getByRole("tabpanel")).getByText(`${english ? "Value" : "Valor"}: ${shownBefore} → ${shownAfter}`)).toBeInTheDocument();
+  expect(change(within(screen.getByRole("tabpanel")), english ? "Value" : "Valor")).toEqual([shownBefore, shownAfter]);
   expect(apply).not.toHaveBeenCalled();
 });
 
@@ -318,8 +320,8 @@ it.each(["es", "en"] as const)("labels the Spanish translation columns of an Eng
   expect(within(errorRow).getByRole("cell", { name: text })).toBeInTheDocument();
   await user.click(screen.getByRole("tab", { name: english ? /^Changes/ : /^Cambios/ }));
   const panel = within(screen.getByRole("tabpanel"));
-  expect(panel.getByText(`${text}: Norte → Norte cambiado`)).toBeInTheDocument();
-  expect(panel.getByText(`${detail}: — → Zona norte`)).toBeInTheDocument();
+  expect(change(panel, text)).toEqual(["Norte", "Norte cambiado"]);
+  expect(change(panel, detail)).toEqual(["—", "Zona norte"]);
   expect(screen.queryByText(/textEs|detailEs/)).not.toBeInTheDocument();
 });
 
@@ -416,7 +418,7 @@ it.each([
   const headers = () => within(screen.getByRole("tabpanel")).getAllByRole("columnheader").map(node => node.textContent);
   expect(headers()).toEqual([english ? "Row" : "Fila", english ? "Code" : "Código", english ? "Text" : "Texto", ...(valueType === "Text" ? [] : [english ? "Value" : "Valor"])]);
   await user.click(screen.getByRole("tab", { name: english ? /^Changes/ : /^Cambios/ }));
-  expect(headers()).toEqual([english ? "Row" : "Fila", english ? "Code" : "Código", english ? "Changes" : "Cambios"]);
+  expect(headers()).toEqual([english ? "Row" : "Fila", english ? "Code" : "Código", english ? "Column" : "Columna", english ? "Before" : "Antes", english ? "After" : "Después"]);
   await user.click(screen.getByRole("tab", { name: english ? /^Deactivated/ : /^Bajas/ }));
   expect(headers()).toEqual([english ? "Code" : "Código", english ? "Text" : "Texto"]);
 });
@@ -481,7 +483,7 @@ it.each(["es", "en"] as const)("shows extra columns and their typed canonical va
   expect(panel.getByRole("cell", { name: "No" })).toBeInTheDocument();
   expect(screen.queryByRole("columnheader", { name: "Retirado" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("tab", { name: culture === "en" ? /^Changes/ : /^Cambios/ }));
-  expect(within(screen.getByRole("tabpanel")).getByText(`${name}: 1 → ${integer}`)).toBeInTheDocument();
+  expect(change(within(screen.getByRole("tabpanel")), name)).toEqual(["1", integer]);
 });
 
 it("aligns the numbers of the pasted rows and of every list of the review to the right", async () => {
@@ -509,7 +511,8 @@ it("aligns the numbers of the pasted rows and of every list of the review to the
     await user.click(screen.getByRole("tab", { name: tab }));
     const list = within(screen.getByRole("tabpanel"));
     expect(list.getByRole("columnheader", { name: "Fila" })).toHaveClass("text-right");
-    expect(list.getByRole("cell", { name: row })).toHaveClass("text-right");
+    // In the changes, the row number heads the lines of its option.
+    expect(list.getByRole(row === "4" ? "rowheader" : "cell", { name: new RegExp("^" + row) })).toHaveClass("text-right");
     expect(list.getByRole("columnheader", { name: text })).not.toHaveClass("text-right");
   }
 });
@@ -524,8 +527,8 @@ it("keeps each code whole in the changes, which still wrap at their spaces", asy
   await paste(user, "Code\tText\ttax_id\nS\tSur\t30-65432109-7");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await user.click(await screen.findByRole("tab", { name: /^Cambios/ }));
-  const change = within(screen.getByRole("tabpanel")).getByRole("cell", { name: "CUIT: 30-71458236-9 → 30-65432109-7" });
-  expect(Array.from(change.querySelectorAll(".whitespace-nowrap"), node => node.textContent)).toEqual(["30-71458236-9", "30-65432109-7"]);
+  const row = within(screen.getByRole("tabpanel")).getByRole("rowheader", { name: "CUIT" }).closest("tr")!;
+  expect(within(row).getAllByRole("cell").slice(-2).map(cell => Array.from(cell.querySelectorAll(".whitespace-nowrap"), node => node.textContent))).toEqual([["30-71458236-9"], ["30-65432109-7"]]);
 });
 
 it("shows the source option labels rather than their identities for added and changed catalog values", async () => {
@@ -542,6 +545,6 @@ it("shows the source option labels rather than their identities for added and ch
   expect(within(await screen.findByRole("tabpanel")).getByRole("cell", { name: "Centro" })).toBeInTheDocument();
   expect(screen.queryByText(optionId)).not.toBeInTheDocument();
   await user.click(screen.getByRole("tab", { name: /^Cambios/ }));
-  expect(screen.getByText("Zona: Norte → Centro")).toBeInTheDocument();
+  expect(change(within(screen.getByRole("tabpanel")), "Zona")).toEqual(["Norte", "Centro"]);
   expect(screen.queryByText(new RegExp(sourceId))).not.toBeInTheDocument();
 });
