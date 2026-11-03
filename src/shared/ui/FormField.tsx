@@ -20,11 +20,14 @@ interface FormFieldProps {
   /// "polite": el error se anuncia como estado (role="status"), no como alerta. Para un mensaje que cambia con cada tecla,
   /// como el que cita el valor escrito, que una alerta volvería a interrumpir en cada una.
   liveError?: "polite";
+  /// Una acción del campo, al final del renglón de la etiqueta: «Agregar dato» del mensaje de una regla (MD1-A).
+  action?: ReactNode;
   children: ReactElement<{ id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }>;
 }
 
-/// Etiqueta, control y mensaje de error, atados entre sí para lectores de pantalla (sección 7.4).
-export function FormField({ label, htmlFor, hint, help, helpLabel, error, required, liveError, children }: FormFieldProps): ReactNode {
+/// Etiqueta, control y mensaje de error, atados entre sí para lectores de pantalla (sección 7.4). La etiqueta lleva el id
+/// `<control>-label`: un control que un `<label>` no nombra, como un cuadro editable, lo apunta con `aria-labelledby`.
+export function FormField({ label, htmlFor, hint, help, helpLabel, error, required, liveError, action, children }: FormFieldProps): ReactNode {
   const { t } = useTranslation();
   const generatedId = useId();
   const controlId = htmlFor ?? children.props.id ?? generatedId;
@@ -34,7 +37,7 @@ export function FormField({ label, htmlFor, hint, help, helpLabel, error, requir
   const describedBy = [help ? helpId : undefined, message ? messageId : undefined].filter(Boolean).join(" ");
 
   const labelNode = (
-    <Label htmlFor={controlId}>
+    <Label id={`${controlId}-label`} htmlFor={controlId}>
       {label}
       {required ? <span aria-hidden="true"> *</span> : null}
     </Label>
@@ -42,13 +45,16 @@ export function FormField({ label, htmlFor, hint, help, helpLabel, error, requir
 
   return (
     <div className="flex flex-col gap-1.5">
-      {help ? (
+      {help || action ? (
         <div className="flex items-center gap-1">
           {labelNode}
           {/* La (i) no agranda el renglón de la etiqueta. */}
-          <span className="-my-1 inline-flex">
-            <InfoTip id={helpId} text={help} label={helpLabel ?? (typeof label === "string" ? t("actions.moreInfo", { label }) : t("actions.moreInfoPlain"))} />
-          </span>
+          {help ? (
+            <span className="-my-1 inline-flex">
+              <InfoTip id={helpId} text={help} label={helpLabel ?? (typeof label === "string" ? t("actions.moreInfo", { label }) : t("actions.moreInfoPlain"))} />
+            </span>
+          ) : null}
+          {action ? <div className="-my-1 ml-auto flex shrink-0 items-center gap-2">{action}</div> : null}
         </div>
       ) : labelNode}
       {cloneElement(children, {
