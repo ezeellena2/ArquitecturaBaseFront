@@ -43,6 +43,8 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   )
 }
 
+// The last row closes the table with its line, over the scroll bar or the pagination (2026-11-02), unless the table is the
+// last thing in its surface: then the surface's border closes it and a second line would double it.
 function TableBody({ className, striped = true, ...props }: React.ComponentProps<"tbody"> & { striped?: boolean }) {
   const refreshing = React.useContext(TableRefreshing)
   return (
@@ -50,7 +52,7 @@ function TableBody({ className, striped = true, ...props }: React.ComponentProps
       data-slot="table-body"
       data-striped={striped}
       inert={refreshing || undefined}
-      className={cn("[&_tr:last-child]:border-0", refreshing && "opacity-45", className)}
+      className={cn("[[data-slot=surface]>[data-slot=table-container]:last-child_&>tr:last-child]:border-b-0", refreshing && "opacity-45", className)}
       {...props}
     />
   )
