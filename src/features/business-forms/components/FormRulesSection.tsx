@@ -12,7 +12,6 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
-import { Textarea } from "@/shared/ui/textarea";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
@@ -25,7 +24,10 @@ import { newRule, newRuleAction, fixPdfAttachment, pdfAttachmentIssue, prepareRu
 import { ruleConditionSummaries, type ResponseColumn } from "../responses";
 import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 import { RevisionHistoryButton, RevisionHistoryPanel } from "./RevisionHistory";
-interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; scope: FormReadScope; onDirtyChange: (dirty: boolean) => void }
+import { parseRuleMessage, ruleMessageDataLabel, ruleMessageText, type RuleMessageData } from "../ruleMessage";
+import { RuleMessageField } from "./RuleMessageField";
+/** `prefix`: the form's prefix, for the example number of «Así llega». */
+interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; prefix: string; scope: FormReadScope; onDirtyChange: (dirty: boolean) => void }
 export function FormRulesSection(props: Props) {
   const { t } = useTranslation("forms");
   // The menu language is not part of the owner: changing it keeps the rules being edited.
@@ -36,7 +38,7 @@ export function FormRulesSection(props: Props) {
   if (deniedOwner === owner) return <Surface title={t("rules.title")} padded><p>{t("rules.noPermission")}</p></Surface>;
   return <RulesEditor key={owner} {...props} onDenied={onDenied} />;
 }
-function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDirtyChange, onDenied }: Props & { onDenied: () => void }) {
+function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZoneId, onDirtyChange, onDenied }: Props & { onDenied: () => void }) {
   const { t, i18n } = useTranslation("forms");
   // Messages are edited in the menu language; the original is shown as a reference, never copied.
   const culture = scope.culture;
@@ -160,7 +162,7 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
     <dt className="text-xs text-[var(--color-content-muted)]">{t("rules.do")}</dt><dd className="min-w-0"><ol className="space-y-1.5">{rule.actions.map((action, index) => <li key={action.id} className="grid grid-cols-[1rem_minmax(0,1fr)] gap-x-1.5">
       <span className="text-[var(--color-content-muted)] tabular-nums">{index + 1}</span>
       <div className="min-w-0 space-y-1"><p>{t("rules.actions." + action.kind)}{usesRole(action.kind) && action.roleId ? <><span className="text-[var(--color-content-muted)]"> · </span><span className="font-semibold">{options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")}</span></> : null}{action.kind === "NotifyAuthor" && action.includePdf ? <span className="text-[var(--color-content-muted)]"> · {t("rules.withPdf")}</span> : null}</p>
-        {usesMessage(action.kind) && action.text ? <RuleMessage text={localizedValue(action.text, culture, options.originalCulture)}/> : null}</div>
+        {usesMessage(action.kind) && action.text ? <RuleMessage text={localizedValue(action.text, culture, options.originalCulture)} name={data => ruleMessageDataLabel(data, options.questions, culture, options.originalCulture, t)} missing={t("rules.missingQuestion")}/> : null}</div>
     </li>)}</ol></dd>
   </dl>;
   const changes = (revision: { changes: { addedRules: number; updatedRules: number; removedRules: number; orderChanged: boolean } }) => [revision.changes.addedRules ? t("rules.historyAdded", { count: revision.changes.addedRules }) : null, revision.changes.updatedRules ? t("rules.historyUpdated", { count: revision.changes.updatedRules }) : null, revision.changes.removedRules ? t("rules.historyRemoved", { count: revision.changes.removedRules }) : null, revision.changes.orderChanged ? t("rules.historyOrderChanged") : null].filter(Boolean).join(" · ") || t("rules.historyUnchanged");
@@ -193,7 +195,13 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
               <div className="flex justify-end sm:mt-6">{[-1, 1].map(delta => <IconButton key={delta} data-move-item={action.id} data-move-delta={delta} label={t(delta < 0 ? "rules.upAction" : "rules.downAction", { number: actionIndex + 1 })} disabled={blocked || actionIndex + delta < 0 || actionIndex + delta >= rule.actions.length} onClick={() => { pendingFocus.current = { actionId: action.id, delta }; setAnnouncement(t("position", { name: t("rules.action", { number: actionIndex + delta + 1 }), position: actionIndex + delta + 1, total: rule.actions.length })); changeRule(index, { ...rule, actions: moveItem(rule.actions, actionIndex, delta) }); }}><ChevronDownIcon className={"size-4 " + (delta < 0 ? "rotate-180" : "")} /></IconButton>)}<IconButton label={t("rules.removeAction", { number: actionIndex + 1 })} disabled={blocked} onClick={() => { const neighbor = rule.actions[actionIndex + 1] ?? rule.actions[actionIndex - 1]; pendingFocus.current = { selector: neighbor ? '[data-action-editor="' + neighbor.id + '"]' : '[data-add-action="' + rule.id + '"]' }; changeRule(index, { ...rule, actions: rule.actions.filter(item => item.id !== action.id) }); }}><TrashIcon className="size-4" /></IconButton></div></div>
               {action.kind === "RequestApproval" || action.kind === "NotifyRole" ? <FormField label={t("rules.role")} error={fieldError(actionPath + ".roleId")}><NativeSelect disabled={blocked} value={action.roleId ?? ""} onChange={event => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, roleId: event.target.value || null } : item) })}><option value="">{t("rules.chooseRole")}</option>{action.roleId && !options.roles.some(role => role.id === action.roleId) ? <option value={action.roleId}>{t("rules.unavailableRole")}</option> : null}{options.roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</NativeSelect></FormField> : null}
               {action.kind === "GeneratePdf" ? <div className="text-sm"><Button asChild variant="link"><Link to={"/formularios/" + definitionId + "/pdf"}>{t("rules.viewDesign")}</Link></Button></div> : null}
-              {action.text && usesMessage(action.kind) ? <><FormField label={t("rules.message")} help={t("rules.messageHint")} hint={reference ? t("originalText", { language: t("cultures." + options.originalCulture), text: reference }) : undefined} error={textError(actionPath + ".text")}><Textarea disabled={blocked} maxLength={action.kind === "NotifyAuthor" && action.includePdf ? 1024 : 4096} placeholder={culture !== options.originalCulture ? t("missingText") : undefined} value={action.text[culture] ?? ""} onChange={event => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, text: { ...item.text, [culture]: event.target.value } } : item) })} /></FormField>{action.kind === "NotifyAuthor" ? <div data-attachment={action.id}>
+              {/* The data go as tags with «Agregar dato» and the message shows how it arrives (board MD1-A). The original shown while
+                  translating names its data in its own language. */}
+              {action.text && usesMessage(action.kind) ? <><RuleMessageField label={t("rules.message")} help={t("rules.messageHint")} error={textError(actionPath + ".text")}
+                hint={reference ? t("originalText", { language: t("cultures." + options.originalCulture), text: ruleMessageText(reference, options.questions, options.originalCulture, options.originalCulture, i18n.getFixedT(options.originalCulture, "forms")) }) : undefined}
+                value={action.text[culture] ?? ""} onChange={value => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, text: { ...item.text, [culture]: value } } : item) })}
+                culture={culture} original={options.originalCulture} questions={options.questions} choices={options.conditionChoices} event={rule.event} prefix={prefix}
+                placeholder={culture !== options.originalCulture ? t("missingText") : undefined} disabled={blocked} />{action.kind === "NotifyAuthor" ? <div data-attachment={action.id}>
                 {/* Nothing clears the attachment: its problem is told under it right away, without trying to save, with the button that fixes the order (board RP1-A). */}
                 <CheckboxField error={attachment ? t("rules.errors." + attachment.key) : fieldError(actionPath + ".includePdf")} checked={action.includePdf} disabled={blocked || (rule.event !== "Approved" && !action.includePdf)} disabledReason={rule.event !== "Approved" ? t("rules.errors.pdfOnApproval") : null} onCheckedChange={checked => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, includePdf: checked } : item) })} label={t("rules.includePdf")} />
                 {attachment?.fix ? <div className="pl-9"><Button variant="outline" size="sm" disabled={blocked} onClick={() => {
@@ -218,9 +226,14 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
   </div>;
 }
 
-// The message of an action, whole, in its box, with the data it brings ({número}, {Lote}) marked (board TL2-A).
-function RuleMessage({ text }: { text: string }) {
+// The message of an action, whole, in its box (board TL2-A), with each datum marked by its name: the number, the reason or
+// the question as it is called now (board MD1-A).
+function RuleMessage({ text, name, missing }: { text: string; name: (data: RuleMessageData) => string | null; missing: string }) {
   return text ? <p className="rounded-[var(--radius-control)] border border-[var(--color-border)]/50 bg-[var(--color-surface-muted)] px-2.5 py-1.5 break-words whitespace-pre-wrap">
-    {text.split(/(\{[^{}]+\})/).map((part, index) => /^\{[^{}]+\}$/.test(part) ? <span key={index} className="rounded-[var(--radius-control)] bg-[var(--color-brand-100)] px-1 text-xs font-medium text-[var(--color-brand-700)]">{part}</span> : part)}
+    {parseRuleMessage(text).map((part, index) => {
+      if (part.kind === "text") return part.text;
+      const label = name(part);
+      return <span key={index} className={"rounded-[var(--radius-control)] px-1 text-xs font-medium " + (label === null ? "bg-[var(--color-danger)]/10 text-[var(--color-danger)]" : "bg-[var(--color-brand-100)] text-[var(--color-brand-700)]")}>{label ?? missing}</span>;
+    })}
   </p> : null;
 }

@@ -1,68 +1,73 @@
 {
   "captures": [
     {
-      "sha256": "0ef2e14c1f12d23a02163317d1292a89ea76c1830ae092e54832fa7215bd3ea1",
+      "sha256": "c9c5a640039e8741db2f0870cf32679e3b298bd2adc1fd009260b746a0b5e061",
       "length": 281,
       "name": "conflict-es.json"
     },
     {
-      "sha256": "31cc7531406a9ec4a3e451911393e6bdab31e37c5f0095e6f3352b78da7c7238",
+      "sha256": "ffa092ed0371aabaa3f0ff84708f1b3cbfffc92011ebcf0a4dde165c791b2271",
+      "length": 535,
+      "name": "current-reference-es.json"
+    },
+    {
+      "sha256": "e6409d6dd6ec1078101d83d41b821cd473be1feec11793dd24c92aae7ada9295",
       "length": 146,
       "name": "empty-es.json"
     },
     {
-      "sha256": "52a7cc22bda66ef80c3416ea36d5f9c8746d90633e2640b998da302958d2b0b0",
+      "sha256": "7cd8a423930c78c9d244625075b8f72afc470221219f3fe7c31f95d3f3a2fe18",
       "length": 375,
       "name": "history-es.json"
     },
     {
-      "sha256": "f1c13f092cc519b801d5cdec74ebbdee2b67095e10ee36c19f4958fa9ba40c8c",
-      "length": 19227,
+      "sha256": "0d1b1e83bacfc9728b87d98961379b4bc07b7ba9e79b1b3c67608bf1d4998ec1",
+      "length": 1205,
       "name": "options-en.json"
     },
     {
-      "sha256": "f1c13f092cc519b801d5cdec74ebbdee2b67095e10ee36c19f4958fa9ba40c8c",
-      "length": 19227,
+      "sha256": "0d1b1e83bacfc9728b87d98961379b4bc07b7ba9e79b1b3c67608bf1d4998ec1",
+      "length": 1205,
       "name": "options-es.json"
     },
     {
-      "sha256": "e3adda9d675b902a282ed88dc2c8de5c333715c3c8f6a948877a13036a16a966",
-      "length": 505,
+      "sha256": "ad1187ea7f1aa0fc2ae029aa1e34199e29b5d1f3fb80e0cdde24f8bc8d1a14f9",
+      "length": 535,
       "name": "revision-es.json"
     },
     {
-      "sha256": "eaf958d556186271455bf6e58e6ceb08a18d0e085482108ebd6dcfe0b4219b06",
+      "sha256": "76fc158e67b8a12b96022147834ce4e277dfb65bcbbbf7a5a56db25e84c38db7",
       "length": 338,
       "name": "role-unavailable-es.json"
     },
     {
-      "sha256": "8e18f2b4dd70227345b657cb5281d08fb3d1c8b024a10655d61d2b5305cc8ecf",
-      "length": 501,
+      "sha256": "de91a59e59ee2b65b6f563b11dada2b3571363cfc92854853351ccad83555a84",
+      "length": 531,
       "name": "saved-es.json"
+    },
+    {
+      "sha256": "47334cb5fa590818b9a4a500221767decc93ed04714febc43202e848e18ab5d7",
+      "length": 531,
+      "name": "saved-reference-es.json"
     }
   ],
-  "sourceState": [
-    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? .claude/"
-  ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [],
+  "command": "dotnet build ArquitecturaBase.slnx --artifacts-path .artifacts/md1; FORM_RULES_HTTP_OUTPUT=<salida> dotnet test --project tests/ArquitecturaBase.Api.IntegrationTests/ArquitecturaBase.Api.IntegrationTests.csproj --artifacts-path .artifacts/md1 --no-build -- --filter-method \"*.FormDraftEndpointsTests.Rule_*\" --filter-method \"*.FormDraftEndpointsTests.A_message_*\" --filter-method \"*.FormDraftEndpointsTests.Removed_rule_permissions_and_missing_roles_cannot_change_a_revision\"",
   "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
+  "runId": "20261103-033320-1fe18b4f7bd94199b89a1168f3f19220",
   "producer": "FormRuleHttpTests and FormRuleContractCapture",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs",
-      "sha256": "a52e967dc1a915849b66bbc5a416bcca663a67344c3c246f1c45b0d72e845919"
+      "sha256": "c375eafbf03df88025a78284cd1b6503f4affdc316732e1c5f86c50af804f91b"
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs",
       "sha256": "948dcf1f6abc3594e7ccc768cdee707eb48024f481e578df9249690dd24fa4f4"
     }
   ],
-  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
-  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
+  "repositoryHead": "284ebb36bcac189f85d106ae7f21ae7e44ba7860",
+  "generatedAtUtc": "2026-11-03T03:33:20.424Z",
   "artifactSet": "rules"
 }

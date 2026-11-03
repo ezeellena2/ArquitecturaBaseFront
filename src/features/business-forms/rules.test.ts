@@ -9,6 +9,11 @@ describe("rule preparation", () => {
     expect(prepareRules([rule], original, [column])).toMatchObject({ issues: [], rules: [{ actions: [{ text: { es: "Recibimos {número}.", en: "" } }] }] });
     expect(prepareRules([{ ...rule, actions: [{ ...rule.actions[0], text: { es: "", en: "Received." } }] }], original, [column]).issues).toContainEqual({ path: "rules.0.actions.0.text.es", key: "required" });
   });
+  it("does not save a message with a question that is no longer in the form, in either language", () => {
+    const gone = "0199a0c0-0000-7000-8000-000000000099";
+    const rule = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: `Llegó {${column.fieldId}}`, en: `Arrived {${gone}}` } }] };
+    expect(prepareRules([rule], original, [column]).issues).toEqual([{ path: "rules.0.actions.0.text.en", key: "missingData" }]);
+  });
   it("normalizes decimal conditions without accepting an unfinished number", () => {
     const rule = { ...newRule(), conditions: [{ fieldId: column.fieldId, operator: "gte", values: [" 12,5 "] }], actions: [newRuleAction("NotifyAuthor")] };
     expect(prepareRules([rule], original, [column]).rules[0].conditions[0].values).toEqual(["12.5"]);

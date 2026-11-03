@@ -1,5 +1,6 @@
 import type { FormCulture, LocalizedText } from "./model";
 import { normalizeResponseQuery, type ResponseColumn, type ResponseCondition } from "./responses";
+import { hasMissingRuleData } from "./ruleMessage";
 export const ruleEvents = ["Received", "Approved", "Rejected"] as const;
 export const ruleActionKinds = ["RequestApproval", "GeneratePdf", "NotifyAuthor", "NotifyRole"] as const;
 export type RuleEvent = typeof ruleEvents[number];
@@ -50,6 +51,8 @@ export function prepareRules(rules: readonly FormRule[], original: FormCulture, 
       const text = message ? Object.fromEntries(Object.entries(action.text ?? {}).map(([culture, value]) => [culture, value.trim()])) : null;
       if (message && !text?.[original]) issues.push({ path: actionPath + ".text." + original, key: "required" });
       for (const [culture, value] of Object.entries(text ?? {})) if (value.length > (attached ? 1024 : 4096)) issues.push({ path: actionPath + ".text." + culture, key: "tooLong" });
+      // A datum whose question left the form would arrive empty: it is told under the message before saving (board MD1-A).
+      for (const [culture, value] of Object.entries(text ?? {})) if (hasMissingRuleData(value, columns)) issues.push({ path: actionPath + ".text." + culture, key: "missingData" });
       return { ...action, roleId: role ? action.roleId : null, text, includePdf: attached };
     });
     return { ...rule, conditions: normalized?.conditions ?? rule.conditions, actions };
