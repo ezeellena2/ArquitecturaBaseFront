@@ -71,7 +71,8 @@ explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `
 `TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `SegmentedControl` (`fullWidth`,
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
-`ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+`ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, la opción elegida
+(OE1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
 `CheckCheck`, `Send`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
@@ -83,6 +84,9 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
 - **Una banda de superficie.** `Surface` y tablas usan `--color-surface-header`; `Page`, `--color-page-header`; el
   diálogo conserva su encabezado blanco.
 - **Cuatro estados:** normal, hover, seleccionado y foco, con los mismos roles en navegación, tablas y listas.
+- **Lo elegido se distingue sin dudas** ([OE1-A, 2026-11-03](#opción-elegida--2026-11-03)): un relleno, una tilde, un
+  punto, un subrayado o una barra, nunca sólo un tinte; da 3:1 contra lo no elegido y su texto, 4,5:1, en cualquier
+  paleta de Apariencia.
 - **Cinco niveles tipográficos:** título de pantalla, de sección, cuerpo/dato, secundario y rótulo. Un sexto requiere
   ampliar el sistema. Título de pantalla con peso 600.
 - **Seis pasos de espacio:** 4, 8, 12, 16, 24 y 40 px (8 entre controles, 16 dentro de superficies, 24 entre secciones).
@@ -663,3 +667,36 @@ Viendo la planilla de «Recepción de insumos», el mismo día pidió dos ajuste
   después de una barra y en los espacios: «America/», «Argentina/», «Buenos Aires». Una fecha («16/03/2027») no se
   corta. En Perfil, Configuración general y el horario del negocio la zona horaria va en un desplegable de un renglón,
   que no se parte. La escena `settings-review-320` lo comprueba y su referencia cambió.
+
+## Opción elegida — 2026-11-03
+
+Cargando «¿Llegó en buen estado?», el usuario dijo que costaba distinguir cuál estaba elegida entre «Sí» y «No», y pidió
+revisar toda la aplicación para que la regla se cumpla en todos lados. La elegida era un verde casi blanco sobre blanco
+(1,1:1) y, con el mouse encima, la otra tomaba el mismo tono. Entre dos tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila «Toda la app · la opción elegida se
+distingue sin dudas» (OE0 muestra lo de antes y dónde pasaba), eligió la **A**: la elegida, rellena con el color de los
+botones. Descartó la B: el grupo en gris claro y la elegida en blanco, con un borde de 2 px y una tilde.
+
+La regla, para toda pantalla: **lo elegido se distingue por algo más que un tinte** (un relleno, una tilde, un punto, un
+subrayado o una barra), que da 3:1 contra lo no elegido, con su texto a 4,5:1, en cualquier paleta de Apariencia. Usa el
+tono de los enlaces (`brand-600`), que Apariencia oscurece solo cuando el color de los botones es claro. No se arman
+botones sueltos que se rellenan para hacer de segmentado.
+
+| Dónde | Cómo se ve la elegida | En el código |
+| --- | --- | --- |
+| Botones agrupados: el Sí o no de la carga; los filtros de Formularios, su panel, Formularios que faltan, Catálogos, Usuarios, Roles y el chat; papel, estado, origen y vista previa de catálogos | Rellena con el tono de los enlaces y su texto blanco o negro, el de más contraste (8:1 en Campo); las otras, blancas y con su texto entero. El foco es un anillo de 2 px por fuera, separado 2 px. En el celular, cada opción mide 44 × 44 px | `SegmentedControl` |
+| Tarjetas: catálogo nuevo, presentación de una pregunta, fuente de las fotos, enviar un formulario, sugerencias | Un borde de 2 px, sin moverse, y el tinte de la marca, además del punto | `RadioGroupField variant="cards"` |
+| Desplegable de un filtro (Usuarios: Rol y Creados; Catálogos: Estado) y el idioma del menú de la cuenta | La tilde a la izquierda, como en «Columnas» | `DropdownMenuRadioGroup` y `DropdownMenuRadioItem` |
+| La fila abierta de una tabla: la respuesta de la vista rápida, lo que espera una decisión | El tinte de la marca y una barra de 3 px al inicio, como las listas con detalle | `DataTable selectedRowKey`, `TableRow` e `index.css` |
+| La conversación abierta en el chat de WhatsApp | El tinte de la marca y una barra de 3 px al inicio | `WhatsAppChatPage` |
+
+Ya cumplían y no cambian de forma: los radios (el punto, ahora en el tono de los enlaces), las casillas (la tilde), las
+solapas (subrayado y negrita), el ingreso público (subrayado), el menú lateral (barra), las listas con detalle de «Campos
+de…», «Opciones» y «Filtros» (barra y tinte), la foto que se ve en grande (anillo), los menús con casillas y el combo
+de un filtro, que marca la elegida con su tilde (PL2-A). «Todos» y «Sin leer» del chat eran dos botones sueltos y pasaron
+al segmentado común, con su nombre de grupo. La vista previa de un formulario en el editor imita WhatsApp y conserva sus
+radios.
+
+`shared/ui/theme.test.ts` y `shared/lib/appearance.test.ts` comprueban esos contrastes en Campo y en paletas de
+Apariencia, incluida una clara (mostaza); la escena de «Por aprobar» mide en el navegador el tinte y la barra de la fila
+abierta (`expectOpenRow` en `src/test/visual/tableColumns.ts`).

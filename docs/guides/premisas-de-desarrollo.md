@@ -150,6 +150,12 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   corresponde a un ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo.
   Configuración usa guardado explícito: Registro usa radios; Idioma, Zona horaria y Listados usan
   `NativeSelect`. No convertir esos borradores en guardados automáticos.
+- Lo elegido se distingue sin dudas, nunca sólo con un tinte (decisión del usuario, 2026-11-03; tablero OE1-A). Pocas
+  opciones de un clic, como un Sí o no o un filtro de estado, usan `SegmentedControl`, que rellena la elegida; una
+  tarjeta, `RadioGroupField variant="cards"`; una sola elección en un desplegable, `DropdownMenuRadioItem` dentro de su
+  `DropdownMenuRadioGroup`, con su tilde; la fila abierta de una tabla, `DataTable selectedRowKey`, y lo abierto en una
+  lista con detalle, el tinte de la marca con una barra al inicio. No armar botones sueltos que se rellenan para hacer de
+  segmentado ([detalle](../design/visual-baseline.md#opción-elegida--2026-11-03)).
 - Un control deshabilitado mantiene el valor legible. Si el motivo no es evidente, `DisabledReason`
   lo muestra como tooltip al pasar el mouse o con el foco y como descripción accesible, sin textos
   al lado ni debajo del control.

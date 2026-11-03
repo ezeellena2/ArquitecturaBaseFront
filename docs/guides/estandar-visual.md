@@ -38,6 +38,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Decisión extensa en móvil | `DialogContent mobileFullscreen`, cuerpo desplazable y `DialogFooter` fuera del scroll | Variante optativa; conserva el diálogo predeterminado en otros usos |
 | Decisión previa | `ConfirmDialog` | Consecuencia y acción concreta |
 | Casillas y alternativas | `CheckboxField`, `RadioGroupField`, `Checkbox` para tablas | Opciones, estado y validación |
+| Opción elegida | `SegmentedControl` (rellena), `RadioGroupField variant="cards"` (borde de 2 px), `DropdownMenuRadioItem` (tilde), `DataTable selectedRowKey` (barra y tinte) | Cuál está elegida o abierta; la biblioteca la marca con algo más que un tinte (OE1-A) |
 | Íconos y acciones | `shared/ui/icons`, `IconButton`, `RowActions` | Nombre traducido, permiso y operación |
 | Ayuda contextual | `ActionTooltip` | Texto y control alcanzable con teclado; sin `title` nativo |
 | Explicación de un campo, una sección o una opción | `InfoTip`, `help` de `FormField`, `Surface`, `Page`, `CheckboxField` y `RadioGroupField` | La (i) con su tooltip; nunca un texto debajo o al costado (`hint` y `description`, sólo datos) |
@@ -76,7 +77,9 @@ conservan sus blancos táctiles de 44 px en móvil. Un mínimo no recorta conten
 `Button` ofrece variantes principal, secundaria, terciaria, destructiva, destructiva con borde (`destructive-outline`, para quitar algo antes de confirmarlo) y enlace; `size="inline"`
 es la acción de texto de filtros y `size="touch"` permite el tamaño táctil aprobado.
 `SegmentedControl appearance="public"` conserva la selección subrayada del acceso;
-el resto usa su variante compacta. `Input` y `Textarea` definen el aspecto de solo lectura.
+el resto usa su variante compacta, con la elegida rellena con el tono de los enlaces y su tinta, el foco por fuera y
+44 × 44 px por opción en el celular ([OE1-A](../design/visual-baseline.md#opción-elegida--2026-11-03)).
+`Input` y `Textarea` definen el aspecto de solo lectura.
 Una feature elige variantes y distribuye contenido; no cambia fondo, texto, radio o alto de un control.
 
 Para el rótulo tipográfico se usa `text-[length:var(--text-caption)]`: la pista `length` evita que
