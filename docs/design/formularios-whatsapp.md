@@ -791,3 +791,30 @@ pregunta · zonas que se pliegan»: A plegadas con el resumen, B expandidas como
 
 Las demás preguntas no tienen zonas: sus ajustes (largo, mínimo y máximo, origen de la foto, opciones propias) son campos
 del editor y siguen como están.
+
+## Reglas: el mensaje con datos, MD1-A — 2026-11-03
+
+Armando un formulario, el usuario vio el mensaje «Llegó con problemas el remito {N° de remito} de {Proveedor}. Revisá la
+recepción {número}.» y dijo que nadie va a saber que hay que poner los datos entre llaves. Del lienzo provisorio, fila
+«Formularios · reglas · el mensaje con datos», había tres tableros: A «Agregar dato» pone etiquetas, B escribir «@» abre la
+lista y C el botón escribe las llaves. Eligió **A**.
+
+- **«Agregar dato»** va al final del renglón de «Mensaje» (`FormField action`) y abre una lista con buscador:
+  - «De la respuesta»: «Número» y, al rechazar, «Motivo del rechazo»;
+  - «Preguntas», en el orden del formulario. No están las fotos ni los documentos, porque sólo llegaría el nombre del
+    archivo.
+  - Elegir pone el dato donde quedó el cursor y deja el cursor justo después.
+- **El cuadro** (`RuleMessageField`, un `contenteditable` con `role="textbox"` nombrado por la etiqueta) muestra cada dato
+  como una etiqueta con el nombre actual de su pregunta.
+  - Backspace o Supr borran la etiqueta entera; Enter es un salto de línea; las llaves escritas o pegadas no entran.
+  - Una pregunta que ya no está se ve «Pregunta no disponible», en rojo, y no deja guardar: «Quitá el dato que ya no está
+    en el formulario.».
+- **«Así llega»**, debajo, muestra el mensaje con los datos de ejemplo de la vista previa del PDF: «Ejemplo de respuesta»,
+  la primera opción, 16/10/2026, 12.500,5, «Sí» y el número con el prefijo del formulario (VIS-000001).
+- **Qué se guarda:** la pregunta por su identidad, `{FieldId}`. La etiqueta sigue a la pregunta renombrada y el mismo dato
+  sirve en los dos idiomas. El servidor convierte al leer las reglas guardadas antes con el nombre.
+- El resumen de la regla (TL2-A) y «Original (…)» muestran los datos con sus nombres. La (i) de «Mensaje» explica
+  «Agregar dato» y «Así llega».
+
+La escena `formRules.spec` («the message gets its data from a list and shows how it arrives», es/en a 1440, 390 y 320 px)
+muestra la lista abierta, las etiquetas y «Así llega».
