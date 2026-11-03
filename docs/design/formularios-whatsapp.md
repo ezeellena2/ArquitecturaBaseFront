@@ -760,3 +760,28 @@ lista de reglas: A un botón en cada sección, B solapas dentro de la sección, 
   ganan ese lugar.
 
 El editor de cada regla y los datos en el mensaje de una acción (MD1) son de otra elección y no cambian con esta.
+
+## El editor de una pregunta: zonas plegadas, ZP1-A — 2026-11-02
+
+Armando «Recepción de insumos», el usuario pidió que las zonas del editor de una pregunta «Elegir de un catálogo» se
+puedan plegar y desplegar. De dos tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila «Formularios · editor de una
+pregunta · zonas que se pliegan»: A plegadas con el resumen, B expandidas como en la carga) eligió **A**.
+
+- **Arrancan plegadas.** «Qué opciones ve cada persona» y «En WhatsApp» son `CollapsibleSection`, con la flecha en la
+  banda, como «Datos» y «Fotos y documentos» al cargar desde la app, pero cerradas: el editor queda corto y lo que no se
+  toca no ocupa lugar. Cada vez que se abre la pregunta vuelven a empezar plegadas.
+- **La banda dice lo configurado**, en una línea: los filtros en orden, uno fijo con su valor («Rubro: Agroquímicos»; el
+  de un campo de catálogo, con la etiqueta de su opción), uno según quien lo recibe con esas palabras («Zona según quien
+  lo recibe»), uno sin completar con «sin valor» y, si no hay, «Sin filtros»; «En WhatsApp», el modo y sus partes
+  («Como en el catálogo · Texto · Detalle», «Propio de esta pregunta · Código · Texto»).
+- **Expandida, «Agregar filtro…» vuelve a la banda**, en el lugar del resumen. La (i) de los filtros va junto al título,
+  plegada o no ([LC3](visual-baseline.md#leyendas-y-carga--2026-11-01)).
+- **La que tiene un error o un aviso se abre sola**, así queda a la vista y el editor puede enfocar el control marcado: un
+  error al guardar o un problema de la publicación en esa zona, los datos de las personas que no se pudieron leer, la
+  prueba con una persona que falla y un máximo que no se pudo calcular, que deja a alguien sin opciones o que no entra en
+  el tipo; en «En WhatsApp», el chequeo del largo que falla o que encuentra opciones largas. Se puede volver a plegar, y
+  sólo un problema nuevo la abre otra vez.
+
+Las demás preguntas no tienen zonas: sus ajustes (largo, mínimo y máximo, origen de la foto, opciones propias) son campos
+del editor y siguen como están.
