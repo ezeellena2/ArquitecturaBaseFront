@@ -187,4 +187,13 @@ describe("DataTable", () => {
     expect(table.closest('[data-slot="table-container"]')).not.toHaveAttribute("aria-busy");
     expect(within(table).getAllByRole("rowgroup")[1]).not.toHaveAttribute("inert");
   });
+
+  it("aligns a column of numbers to the right, its sortable header included", () => {
+    const measured: Column<Row & { hectares: string }>[] = [...columns, { id: "hectares", header: "Hectáreas", numeric: true, sortable: true, cell: (row) => row.hectares }];
+    renderWithProviders(<DataTable columns={measured} rows={[{ ...rows[0]!, hectares: "12,5" }]} rowKey={(row) => row.id} onSortChange={vi.fn()} />);
+    expect(screen.getByRole("columnheader", { name: "Hectáreas" })).toHaveClass("text-right");
+    expect(screen.getByRole("cell", { name: "12,5" })).toHaveClass("text-right");
+    expect(screen.getByRole("columnheader", { name: "Email" })).not.toHaveClass("text-right");
+    expect(screen.getByRole("cell", { name: "ana@example.com" })).not.toHaveClass("text-right");
+  });
 });

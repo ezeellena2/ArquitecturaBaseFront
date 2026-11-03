@@ -228,6 +228,28 @@
     --color-content: var(--color-table-section-foreground);
     --color-content-muted: var(--color-table-section-foreground);
   }
+  /* Toda tabla lleva una línea fina entre columnas, en el encabezado y en el cuerpo, del tono de las líneas entre filas
+     (A del 2026-11-02, primero en las planillas y después en todas). Es una sombra interior de una de las dos celdas y no
+     un borde: con `border-collapse`, el borde de una celda fija (`WideTable pinned`) se queda en su lugar al desplazar, y la
+     sombra se va con la celda. Cada celda dibuja la línea de su izquierda; una fija al inicio, la de su derecha, y la de su
+     izquierda la dibuja la celda anterior, que se va con el desplazamiento. */
+  [data-slot="table"] {
+    --table-column-line: color-mix(in oklab, var(--color-border) 50%, transparent);
+  }
+  [data-slot="table"] > [data-slot="table-header"] {
+    --table-column-line: color-mix(in oklab, var(--color-surface-header-border) 50%, transparent);
+  }
+  [data-slot="table"] > * > tr > * {
+    --table-line-start: 1px;
+    --table-line-end: 0px;
+    box-shadow: inset var(--table-line-start) 0 var(--table-column-line), inset calc(-1 * var(--table-line-end)) 0 var(--table-column-line);
+  }
+  [data-slot="table"] > * > tr > :is(:first-child, [data-pinned="start"], [data-pinned="start"] + *) {
+    --table-line-start: 0px;
+  }
+  [data-slot="table"] > * > tr > :is([data-pinned="start"], :has(+ [data-pinned="start"])) {
+    --table-line-end: 1px;
+  }
 
   .message-history {
     min-height: 0;

@@ -11,17 +11,19 @@ export interface PasteGridColumn {
   cell?: number;
   /// Una columna que no se toma: su encabezado y sus celdas van en rojo.
   invalid?: boolean;
+  /// Una columna de números: va a la derecha, como en toda tabla (A, 2026-11-02).
+  numeric?: boolean;
 }
 
 // Miles de filas pegadas serían miles de celdas: la grilla muestra las primeras y dice cuántas más hay.
 const shownRows = 100, emptyRows = 8;
-const line = "border-r border-[var(--color-border)]/60 last:border-r-0";
-const number = cn("w-8 bg-[var(--color-surface-muted)] px-1.5 text-right text-xs tabular-nums text-[var(--color-content-muted)]", line);
-const cell = cn("px-2.5 py-0", line);
+const number = "w-8 bg-[var(--color-surface-muted)] px-1.5 text-xs tabular-nums text-[var(--color-content-muted)]";
+const cell = "px-2.5 py-0";
 
 /// Una grilla para pegar filas copiadas de una planilla, como la de Excel: la cabecera ya armada, una línea alrededor de
-/// cada celda y el número de fila (IM3-A, «Importar opciones»). Vacía, su primera celda toma lo pegado, con Ctrl+V o el
-/// «Pegar» del celular; al pegar, el foco pasa a la grilla llena, donde otro pegado reemplaza las filas.
+/// cada celda (entre columnas, la de toda tabla) y el número de fila (IM3-A, «Importar opciones»). Vacía, su primera celda
+/// toma lo pegado, con Ctrl+V o el «Pegar» del celular; al pegar, el foco pasa a la grilla llena, donde otro pegado
+/// reemplaza las filas.
 ///
 /// No lee lo pegado: lo entrega como texto (`onPaste`) y el consumidor arma las filas y dice qué celda llena cada columna.
 /// Muestra las primeras 100 filas y cuántas más hay. `disabled` no toma pegados mientras su dueño trabaja.
@@ -42,17 +44,17 @@ export function PasteGrid({ label, columns, rows, describedBy, disabled = false,
   const replace = (event: ClipboardEvent) => { event.preventDefault(); onPaste(event.clipboardData.getData("text/plain")); };
   const tone = (column: PasteGridColumn) => column.invalid ? "text-[var(--color-danger)]" : undefined;
   return <div ref={root} onPaste={rows && !disabled ? replace : undefined}>
-    <WideTable label={label} aria-describedby={describedBy} className="border-collapse">
+    <WideTable label={label} aria-describedby={describedBy}>
       <TableHeader><TableRow>
-        <TableHead className={cn("w-8 px-1.5", line)}><span className="sr-only">{t("pasteGrid.row")}</span></TableHead>
-        {columns.map(column => <TableHead key={column.key} className={cn("px-2.5", line, tone(column))}>{column.label}</TableHead>)}
+        <TableHead numeric className="w-8 px-1.5"><span className="sr-only">{t("pasteGrid.row")}</span></TableHead>
+        {columns.map(column => <TableHead key={column.key} numeric={column.numeric} className={cn("px-2.5", tone(column))}>{column.label}</TableHead>)}
       </TableRow></TableHeader>
       <TableBody striped={false}>
         {rows ? rows.slice(0, shownRows).map((cells, row) => <TableRow key={row} className="h-7">
-          <TableCell className={number}>{row + 1}</TableCell>
-          {columns.map(column => <TableCell key={column.key} className={cn(cell, tone(column))}>{column.cell === undefined ? null : cells[column.cell]}</TableCell>)}
+          <TableCell numeric className={number}>{row + 1}</TableCell>
+          {columns.map(column => <TableCell key={column.key} numeric={column.numeric} className={cn(cell, tone(column))}>{column.cell === undefined ? null : cells[column.cell]}</TableCell>)}
         </TableRow>) : Array.from({ length: emptyRows }, (_, row) => <TableRow key={row} className="h-7">
-          <TableCell className={number}>{row + 1}</TableCell>
+          <TableCell numeric className={number}>{row + 1}</TableCell>
           {columns.map((column, index) => <TableCell key={column.key} className={cn(cell, !row && !index && "p-0")}>
             {!row && !index ? <textarea aria-label={t("pasteGrid.target")} placeholder={t("pasteGrid.placeholder")} value="" rows={1} autoFocus disabled={disabled}
               onPaste={event => { event.preventDefault(); take(event.clipboardData.getData("text/plain")); }} onChange={event => { if (event.target.value.trim()) take(event.target.value); }}

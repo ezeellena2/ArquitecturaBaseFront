@@ -13,6 +13,8 @@ export interface Column<TRow> {
   cell: (row: TRow) => ReactNode;
   sortable?: boolean;
   align?: "left" | "right";
+  /// Una columna de números (cantidades, medidas, importes): va a la derecha, con su encabezado (A, 2026-11-02).
+  numeric?: boolean;
 }
 
 interface DataTableProps<TRow> {
@@ -115,6 +117,7 @@ export function DataTable<TRow>({
               key={column.id}
               scope="col"
               aria-sort={ariaSort(column.id, sort)}
+              numeric={column.numeric}
               className={column.align === "right" ? "text-right" : undefined}
             >
               {column.sortable && onSortChange ? (
@@ -150,7 +153,7 @@ export function DataTable<TRow>({
               } : undefined}
             >
               {columns.map((column) => (
-                <TableCell key={column.id} className={cn("px-4", column.align === "right" ? "text-right" : undefined)}>
+                <TableCell key={column.id} numeric={column.numeric} className={cn("px-4", column.align === "right" ? "text-right" : undefined)}>
                   {column.cell(row)}
                 </TableCell>
               ))}

@@ -40,6 +40,17 @@ it("moves the focus to the filled grid, where another paste replaces the rows", 
   expect(cells()).toEqual([["1", "C", "", "Centro", ""]]);
 });
 
+it("draws the line between its columns as every table does and aligns a column of numbers to the right", () => {
+  renderWithProviders(<PasteGrid label="Grilla" rows={[["N", "30"]]} columns={[{ key: "code", label: "Código", cell: 0 }, { key: "days", label: "Plazo", cell: 1, numeric: true }]} onPaste={() => {}} />);
+  // The line is the common one of every table: no cell brings its own border.
+  for (const cell of [...screen.getAllByRole("columnheader"), ...screen.getAllByRole("cell")]) expect(cell.className).not.toMatch(/\bborder-r\b/);
+  expect(screen.getByRole("columnheader", { name: "Plazo" })).toHaveClass("text-right");
+  expect(screen.getByRole("cell", { name: "30" })).toHaveClass("text-right");
+  expect(screen.getByRole("cell", { name: "1" })).toHaveClass("text-right");
+  expect(screen.getByRole("columnheader", { name: "Código" })).not.toHaveClass("text-right");
+  expect(screen.getByRole("cell", { name: "N" })).not.toHaveClass("text-right");
+});
+
 it("shows the first 100 rows and says how many more there are", () => {
   renderWithProviders(<Sheet initial={Array.from({ length: 102 }, (_, index) => ["C" + index, "Opción " + index])} />);
   expect(screen.getAllByRole("row")).toHaveLength(1 + 100 + 1);

@@ -12,10 +12,11 @@ export function WideTable({ label, ...props }: ComponentProps<typeof Table> & { 
   return <Table {...props} scrollLabel={label} />;
 }
 
+// `data-pinned` lets the line between columns go with the pinned cell as the table scrolls (`index.css`).
 export function WideTableHead({ pinned, className, ...props }: ComponentProps<typeof TableHead> & { pinned?: Pinned }) {
-  return <TableHead {...props} className={cn(pinnedClasses(pinned), className)} />;
+  return <TableHead {...props} data-pinned={pinned} className={cn(pinnedClasses(pinned), className)} />;
 }
 
 export function WideTableCell({ pinned, className, ...props }: ComponentProps<typeof TableCell> & { pinned?: Pinned }) {
-  return <TableCell {...props} className={cn(pinnedClasses(pinned), className)} />;
+  return <TableCell {...props} data-pinned={pinned} className={cn(pinnedClasses(pinned), className)} />;
 }

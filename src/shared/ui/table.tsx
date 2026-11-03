@@ -6,6 +6,7 @@ const TableRefreshing = React.createContext(false)
 // `refreshing` (board LC2-A, 2026-11-01): while the list reads again with its previous rows in sight, a line runs under
 // the header and the body dims, out of reach, so nobody opens a row that no longer matches. The first load keeps its
 // spinner in the owner's place.
+// Every table draws a thin line between its columns, in the header and the body (A, 2026-11-02): `index.css` does it.
 function Table({ className, scrollLabel, refreshing = false, ...props }: React.ComponentProps<"table"> & { scrollLabel?: string; refreshing?: boolean }) {
   return (
     <div
@@ -83,12 +84,15 @@ function TableRow({ className, highlightExpanded = true, tone = "default", ...pr
   )
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+// `numeric` (A, 2026-11-02): a column of numbers (quantities, measures, amounts, a row number) goes to the right, header
+// included. Its owner marks the header and the cells of the same column together.
+function TableHead({ className, numeric = false, ...props }: React.ComponentProps<"th"> & { numeric?: boolean }) {
   return (
     <th
       data-slot="table-head"
       className={cn(
         "h-[var(--height-table-header)] px-4 text-left align-middle text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase whitespace-nowrap text-[var(--color-surface-header-foreground)] [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        numeric && "text-right",
         className
       )}
       {...props}
@@ -96,12 +100,15 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   )
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+// A numeric cell also takes a narrower block to the right, such as a sheet value with its maximum width, which would
+// otherwise stay at the left of a wider column.
+function TableCell({ className, numeric = false, ...props }: React.ComponentProps<"td"> & { numeric?: boolean }) {
   return (
     <td
       data-slot="table-cell"
       className={cn(
         "px-4 py-0.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        numeric && "text-right *:ml-auto",
         className
       )}
       {...props}
