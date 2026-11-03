@@ -269,7 +269,8 @@ describe("loading a response from the app", () => {
     expect(crop).toHaveValue(id(342));
   });
 
-  it.each([["phone", [1, 1, 1, 1, 1]], ["tablet", [1, 2, 1, 1]], ["computer", [2, 1, 1, 1]]] as const)(
+  // Board AR1-A: the catalog takes one column like the number and the date, so on the computer the three fill a row.
+  it.each([["phone", [1, 1, 1, 1, 1]], ["tablet", [2, 1, 1, 1]], ["computer", [3, 1, 1]]] as const)(
     "builds the rows with the columns of the %s, so every visible row has its line", async (screenSize, questionsPerRow) => {
       const narrow = { phone: ["(width < 640px)", "(width < 1024px)"], tablet: ["(width < 1024px)"], computer: [] as string[] }[screenSize];
       vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: narrow.includes(query), media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
@@ -278,6 +279,40 @@ describe("loading a response from the app", () => {
       await screen.findByText("Lo que marca el pluviómetro.");
       expect([...container.querySelectorAll("[data-entry-row]")].map(row => row.children.length)).toEqual(questionsPerRow);
     });
+
+  // Board AR2-A: the same box as the panel, before Cancelar and Enviar. Checked, the form stays for the next one.
+  it("keeps the answers for the next one when asked: says the number and focuses the first question, without «Enviada»", async () => {
+    const { sends } = setup();
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    await fill(user);
+    const keep = screen.getByRole("checkbox", { name: "Mantener las respuestas para la siguiente" });
+    expect(keep.compareDocumentPosition(screen.getByRole("button", { name: "Cancelar" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(keep);
+    await user.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Se guardó LLU-000322" })));
+    expect(screen.getByRole("heading", { name: "Nueva respuesta", level: 1 })).toBeVisible();
+    expect(screen.queryByText("Enviada")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Milímetros/)).toHaveValue("12,5");
+    expect(screen.getByRole("combobox", { name: "Lote" })).toHaveValue("Lote 4");
+    expect(screen.getByRole("checkbox", { name: "Mantener las respuestas para la siguiente" })).toBeChecked();
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "Lote" })).toHaveFocus());
+    // Each send is a new request, so the next one never takes the number of the previous one.
+    await user.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(sends).toHaveLength(2));
+    expect(sends[1].get("requestId")).not.toBe(sends[0].get("requestId"));
+    expect(answers(sends[1])).toEqual(answers(sends[0]));
+  });
+
+  it("on the phone keeps the box at the foot, over Enviar", async () => {
+    vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
+    setup();
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    const keep = await screen.findByRole("checkbox", { name: "Mantener las respuestas para la siguiente" });
+    const send = screen.getByRole("button", { name: "Enviar" });
+    expect(keep.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Cancelar" })).not.toBeInTheDocument();
+  });
 
   it("chooses the only option the filters leave", async () => {
     const form = entry();

@@ -88,24 +88,29 @@ describe("entry form", () => {
     expect(entrySignature(entry, draft)).not.toBe(entrySignature(entry, { ...draft, values: { [ids.density]: "10" } }));
   });
 
-  it("gives each type its width in the three columns, never chosen by the author (CW16)", () => {
+  // Board AR1-A: what has a single value takes one column; what needs room, the whole row. No more two columns.
+  it("gives each type one column or the whole row, never chosen by the author", () => {
     const options = (count: number, label = "Soja") => Array.from({ length: count }, (_, index) => ({ id: "00000000-0000-4000-8000-0000000001" + String(index).padStart(2, "0"), label: label + " " + index }));
     expect([question(ids.density, "decimal"), question(ids.date, "date"), question(ids.extra, "boolean")].map(entryQuestionSpan)).toEqual([1, 1, 1]);
-    expect([30, 31, 80, 81, null].map(maxLength => entryQuestionSpan(question(ids.extra, "shortText", { maxLength })))).toEqual([1, 2, 2, 3, 3]);
+    expect([30, 31, 80, 81, null].map(maxLength => entryQuestionSpan(question(ids.extra, "shortText", { maxLength })))).toEqual([1, 1, 1, 3, 3]);
     expect(entryQuestionSpan(question(ids.notes, "longText", { maxLength: 20 }))).toBe(3);
-    expect(entryQuestionSpan(entry.questions[0])).toBe(2);
-    expect(entryQuestionSpan(question(ids.crop, "choice", { options: options(5) }))).toBe(2);
-    expect(entryQuestionSpan(question(ids.crop, "choice", { options: options(6) }))).toBe(1);
-    expect(entryQuestionSpan(question(ids.crop, "choice", { options: options(2, "Una opción demasiado larga") }))).toBe(1);
-    expect(entryChoiceInRow(question(ids.crop, "choice", { options: options(2, "Una opción demasiado larga") }))).toBe(false);
+    expect(entryQuestionSpan(entry.questions[0])).toBe(1);
+    expect([options(5), options(6), options(2, "Una opción demasiado larga")].map(items => entryQuestionSpan(question(ids.crop, "choice", { options: items })))).toEqual([1, 1, 1]);
     expect(entryQuestionSpan(question(ids.crop, "multiChoice", { options: options(3), selection: { minSelected: 0, maxSelected: 3 } }))).toBe(3);
-    expect(entryQuestionSpan(question(ids.lot, "multiChoice", { catalog: { onlyOption: null, issue: null, missingData: null }, selection: { minSelected: 0, maxSelected: 3 } }))).toBe(2);
+    expect(entryQuestionSpan(question(ids.lot, "multiChoice", { catalog: { onlyOption: null, issue: null, missingData: null }, selection: { minSelected: 0, maxSelected: 3 } }))).toBe(1);
     expect(entryQuestionSpan(entry.questions[5])).toBe(3);
+  });
+
+  it("shows up to five own options in a row however long they are, and more in a dropdown list", () => {
+    const options = (count: number, label: string) => Array.from({ length: count }, (_, index) => ({ id: "00000000-0000-4000-8000-0000000001" + String(index).padStart(2, "0"), label: label + " " + index }));
+    expect(entryChoiceInRow(question(ids.crop, "choice", { options: options(2, "Una opción bastante más larga que veinte letras") }))).toBe(true);
+    expect(entryChoiceInRow(question(ids.crop, "choice", { options: options(5, "Soja") }))).toBe(true);
+    expect(entryChoiceInRow(question(ids.crop, "choice", { options: options(6, "Soja") }))).toBe(false);
   });
 
   it("puts the questions in rows of three in their order, and one that does not fit starts the next row", () => {
     const [lot, crop, density, date, notes] = entry.questions;
-    expect(entryRows([lot, density, date, crop, notes]).map(row => row.map(item => item.fieldId))).toEqual([[ids.lot, ids.density], [ids.date, ids.crop], [ids.notes]]);
+    expect(entryRows([lot, density, date, crop, notes]).map(row => row.map(item => item.fieldId))).toEqual([[ids.lot, ids.density, ids.date], [ids.crop], [ids.notes]]);
     expect(entryRows([density, date, density, lot]).map(row => row.length)).toEqual([3, 1]);
   });
 
@@ -128,8 +133,8 @@ describe("entry form", () => {
     const [lot, crop, density, date, notes] = entry.questions;
     const order = [lot, density, date, crop, notes];
     const rows = (columns: 1 | 2 | 3) => entryRows(order, columns).map(row => row.map(item => item.fieldId));
-    expect(rows(3)).toEqual([[ids.lot, ids.density], [ids.date, ids.crop], [ids.notes]]);
-    expect(rows(2)).toEqual([[ids.lot], [ids.density, ids.date], [ids.crop], [ids.notes]]);
+    expect(rows(3)).toEqual([[ids.lot, ids.density, ids.date], [ids.crop], [ids.notes]]);
+    expect(rows(2)).toEqual([[ids.lot, ids.density], [ids.date, ids.crop], [ids.notes]]);
     expect(rows(1)).toEqual([[ids.lot], [ids.density], [ids.date], [ids.crop], [ids.notes]]);
   });
 

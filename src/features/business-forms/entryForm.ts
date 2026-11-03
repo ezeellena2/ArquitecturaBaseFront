@@ -35,18 +35,20 @@ export function entryZones(entry: FormEntry): EntryZone[] {
   return [...data.length ? [{ key: "data", questions: data }] : [], ...files.length ? [{ key: "files", questions: files }] : []];
 }
 
-/** Up to five short own options go in a row; more, or longer ones, in a dropdown list (CW12). */
+/** Up to five own options go in a row however long they are, and those that do not fit wrap; more, in a dropdown list (AR1-A). */
 export function entryChoiceInRow(question: FormEntryQuestion): boolean {
-  return !!question.options && question.options.length <= 5 && question.options.every(option => option.label.length <= 20);
+  return !!question.options && question.options.length <= 5;
 }
 
-/** How many of the three columns a question takes (CW16): the width comes from its type, never from the author. */
-export function entryQuestionSpan(question: FormEntryQuestion): 1 | 2 | 3 {
-  if (question.type === "decimal" || question.type === "date" || question.type === "boolean") return 1;
-  if (question.type === "shortText") return question.maxLength === null ? 3 : question.maxLength <= 30 ? 1 : question.maxLength <= 80 ? 2 : 3;
-  if (question.type === "choice") return question.catalog || entryChoiceInRow(question) ? 2 : 1;
-  if (question.type === "multiChoice") return question.catalog ? 2 : 3;
-  return 3;
+/**
+ * How many of the three columns a question takes (AR1-A): what has a single value takes one; what needs room, the whole
+ * row. The width comes from its type, never from the author.
+ */
+export function entryQuestionSpan(question: FormEntryQuestion): 1 | 3 {
+  if (question.type === "longText" || question.type === "photo" || question.type === "document") return 3;
+  if (question.type === "shortText") return question.maxLength !== null && question.maxLength <= 80 ? 1 : 3;
+  if (question.type === "multiChoice") return question.catalog ? 1 : 3;
+  return 1;
 }
 
 /**

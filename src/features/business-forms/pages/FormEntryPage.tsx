@@ -8,10 +8,12 @@ import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
+import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
+import { notify } from "@/shared/ui/notifications";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
@@ -19,7 +21,7 @@ import type { FormEntry, FormEntrySubmitted } from "../api/entries";
 import { approvalStateVariant } from "../approvals";
 import { FormEntryForm } from "../components/FormEntryForm";
 import { FormEntrySent } from "../components/FormEntrySent";
-import type { EntryDraft } from "../entryForm";
+import { entryZones, keepForNextEntry, type EntryDraft } from "../entryForm";
 import { takeEntryDraft } from "../entryHandoff";
 import { useEntryEditor } from "../hooks/useEntryEditor";
 import { useFormEntry } from "../hooks/useFormEntry";
@@ -39,6 +41,8 @@ export function FormEntryPage() {
   const entry = query.data;
   const editor = useEntryEditor(formId, entry, scope.owner, initial);
   const [sent, setSent] = useState<{ result: FormEntrySubmitted; entry: FormEntry; draft: EntryDraft } | null>(null);
+  // «Mantener las respuestas para la siguiente» lasts while loading: coming back, it starts unchecked (AR2-A).
+  const [keep, setKeep] = useState(false);
   const guard = useUnsavedChangesGuard(editor.dirty && !sent);
   const fromSheet = (location.state as { from?: string } | null)?.from === "sheet";
   const back = fromSheet ? `/formularios/${formId}/respuestas` : "/formularios/respuestas";
@@ -65,16 +69,26 @@ export function FormEntryPage() {
   const missingForm = editor.conflict === "missing" || query.error instanceof ApiError && query.error.status === 404;
   const submitReason = editor.missing ? t("catalog.missingDataReason", { datum: editor.missing.catalog?.missingData ?? "" }) : null;
   const sendLabel = editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) }) : entry?.submitLabel ?? "…";
+  // Kept, the form stays for the next one as in the panel (AR2-A): the notice says the number, the files start empty and
+  // the focus goes back to the first question. Otherwise, «Enviada».
   const submit = async () => {
     const draft = editor.draft;
     const result = await editor.send();
-    if (result && entry && draft) setSent({ result, entry, draft });
+    if (!result || !entry || !draft) return;
+    if (!keep) { setSent({ result, entry, draft }); return; }
+    notify({ id: `entries:saved:${scope.owner}:${formId}`, kind: "success", message: t("send.saved", { number: result.number }),
+      description: t("send.savedDetail", { name: entry.name, state: t("forms:approvals.states." + result.state) }) });
+    editor.restart(keepForNextEntry(draft));
+    const first = entryZones(entry)[0]?.questions[0];
+    if (first) editor.focus(first.fieldId);
   };
+  const keepBox = <CheckboxField label={t("panel.keep")} checked={keep} onCheckedChange={setKeep}/>;
   const sendButton = (touch = false) => <DisabledReason reason={submitReason}>
     <Button type="button" size={touch ? "touch" : "default"} className={touch ? "w-full" : undefined} disabled={!entry || editor.blocked || unavailable}
       pending={editor.sending} onClick={() => void submit()}>{sendLabel}</Button>
   </DisabledReason>;
   const actions = mobile || !entry ? undefined : <>
+    {keepBox}
     <Button type="button" variant="outline" disabled={editor.sending} onClick={() => navigate(back)}>{t("common:actions.cancel")}</Button>
     {sendButton()}
   </>;
@@ -94,7 +108,7 @@ export function FormEntryPage() {
           {[0, 1, 2].map(index => <div key={index} className="flex flex-col gap-2"><Skeleton className="h-4 w-32"/><Skeleton className="h-8 w-full"/></div>)}
         </div></Surface> : null}
     </div>
-    {mobile && entry && !unavailable ? <div className="sticky bottom-0 -mx-4 mt-4 border-t border-[var(--color-border)] bg-[var(--color-surface)] p-3">{sendButton(true)}</div> : null}
+    {mobile && entry && !unavailable ? <div className="sticky bottom-0 -mx-4 mt-4 flex flex-col gap-2 border-t border-[var(--color-border)] bg-[var(--color-surface)] p-3">{keepBox}{sendButton(true)}</div> : null}
     <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("leave.title")}
       description={t("leave.description", { name: entry?.name ?? "" })} cancelLabel={t("leave.stay")} confirmLabel={t("leave.confirm")} destructive onConfirm={guard.leave}/>
   </Page>;

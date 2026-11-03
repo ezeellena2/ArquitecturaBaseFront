@@ -99,5 +99,5 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
     setState({ entry, draft: next ?? initialEntryDraft(entry) });
     setAttempted(false); setServerErrors({}); setConflict(null);
   };
-  return { draft, change, errors, send, restart, progress, sending, conflict, missing, dirty, reveal, blocked: !!missing || !!conflict };
+  return { draft, change, errors, send, restart, focus, progress, sending, conflict, missing, dirty, reveal, blocked: !!missing || !!conflict };
 }

@@ -22,7 +22,7 @@ interface Props {
   onChange: (draft: EntryDraft) => void;
   /** The message of each question with a problem, from the form or from the server. */
   errors: Readonly<Record<string, string>>;
-  /** The page shows data and files in two folding zones of up to three per row (CW16); the panel, one column (CW2-B). */
+  /** The page shows data and files in two folding zones of up to three per row (CW16); the panel, the same zones in one column (AR1-A). */
   layout: "page" | "panel";
   disabled?: boolean;
   /** Grows with each send that found something to correct: the folded zones that hold it open again. */
@@ -32,6 +32,7 @@ interface Props {
 const isFile = (question: FormEntryQuestion) => question.type === "photo" || question.type === "document";
 const gridClass = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3" } as const;
 const widthClass = { 1: "", 2: "col-span-2", 3: "col-span-3" } as const;
+const boxColumnsClass = { 1: "columns-1", 2: "columns-2", 3: "columns-3" } as const;
 
 /**
  * The questions of the active version in the editor's order, each with the control and width of its type (CW12, CW16).
@@ -54,7 +55,11 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
     observer.current = new ResizeObserver(measure);
     observer.current.observe(node);
   }, []);
-  const columns = widthRem > 0 ? entryColumns(widthRem) : phone ? 1 : tablet ? 2 : 3;
+  // The panel keeps the zones of the page in one column (AR1-A).
+  const columns = layout === "panel" ? 1 : widthRem > 0 ? entryColumns(widthRem) : phone ? 1 : tablet ? 2 : 3;
+  // The boxes of a multiple choice go in as many columns as the zone, from top to bottom, and in two in the panel except on
+  // the phone (AR1-A).
+  const boxColumns = layout === "panel" ? phone ? 1 : 2 : columns;
   const zones = entryZones(entry);
   // Opened while rendering, so the focus that follows the send finds the question with the error.
   if (reveal !== revealed) {
@@ -64,8 +69,7 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   // Number and date stay narrow (CW12): in the panel, except on the phone; on the page, within their cell, and across in one column.
   const narrowClass = layout === "panel" ? "w-full sm:w-37.5" : columns === 1 ? undefined : "w-full max-w-37.5";
   const question = (item: FormEntryQuestion) => <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}
-    narrowClass={narrowClass}/>;
-  if (layout === "panel") return <div className="flex flex-col gap-4">{entry.questions.map(question)}</div>;
+    narrowClass={narrowClass} boxColumns={boxColumns}/>;
 
   const answered = (items: FormEntryQuestion[]) => t("zone.answered", { count: items.filter(item => entryAnswered(item, draft)).length, total: items.length });
   // Folded, a zone says how many questions were answered; the files zone says what was attached, as CW16 draws it.
@@ -85,10 +89,12 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   </CollapsibleSection>)}</div>;
 }
 
-function EntryQuestion({ entry, question, draft, onChange, error, disabled, narrowClass }: {
+function EntryQuestion({ entry, question, draft, onChange, error, disabled, narrowClass, boxColumns }: {
   entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; error?: string; disabled?: boolean;
   /** The width of number and date; without it they go across. */
   narrowClass?: string;
+  /** The columns of the boxes of a multiple choice. */
+  boxColumns: 1 | 2 | 3;
 }) {
   const { t } = useTranslation("formEntries");
   const id = entryQuestionId(question.fieldId);
@@ -125,7 +131,7 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled, narr
   if (isFile(question)) return grouped(<EntryFilesField question={question} files={draft.files[question.fieldId] ?? []} maxFileSizeMiB={entry.maxFileSizeMiB} id={id}
     invalid={!!error} describedBy={describedBy} disabled={disabled}
     onChange={files => onChange({ ...draft, files: { ...draft.files, [question.fieldId]: files } })}/>, false);
-  // Up to five short options in a row; more, or longer ones, in a dropdown list (CW12).
+  // Up to five options in a row however long they are, and those that do not fit wrap; more, a dropdown list (AR1-A).
   if (question.type === "choice" && !entryChoiceInRow(question)) return field(<NativeSelect value={draft.choices[question.fieldId]?.[0]?.id ?? ""} disabled={disabled}
     onChange={event => choose(question.options?.find(option => option.id === event.target.value))}>
     <option value="">{t("page.choose")}</option>
@@ -139,12 +145,12 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled, narr
   if (question.type === "multiChoice") {
     const chosen = draft.choices[question.fieldId] ?? [];
     const max = question.selection?.maxSelected ?? 20;
-    return grouped(<div id={id} tabIndex={-1} role="group" aria-labelledby={id + "-label"} className="flex flex-col gap-1 outline-none">
+    return grouped(<div id={id} tabIndex={-1} role="group" aria-labelledby={id + "-label"} className={"gap-x-5 outline-none " + boxColumnsClass[boxColumns]}>
       {(question.options ?? []).map(option => {
         const checked = chosen.some(item => item.id === option.id);
-        return <CheckboxField key={option.id} label={option.label} checked={checked} disabled={disabled || !checked && chosen.length >= max}
+        return <div key={option.id} className="break-inside-avoid pb-1"><CheckboxField label={option.label} checked={checked} disabled={disabled || !checked && chosen.length >= max}
           onCheckedChange={next => onChange({ ...draft, choices: { ...draft.choices, [question.fieldId]: next
-            ? [...chosen, { id: option.id, title: option.label, description: null }] : chosen.filter(item => item.id !== option.id) } })}/>;
+            ? [...chosen, { id: option.id, title: option.label, description: null }] : chosen.filter(item => item.id !== option.id) } })}/></div>;
       })}
     </div>, false);
   }

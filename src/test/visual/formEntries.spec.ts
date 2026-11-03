@@ -82,9 +82,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByText(es ? "Solo los lotes de tu campo en la campaña 2026/27." : "Only the lots of your field in the 2026/27 season.")).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await assertNoPageScroll(page, width);
-    // CW16: the rows are built with the columns in use, so every visible row has its line.
-    expect(await questionsPerRow(page)).toEqual(phone ? [1, 1, 1, 1, 1, 1, 1, 1] : [1, 1, 2, 2, 1, 1]);
+    // CW16: the rows are built with the columns in use, so every visible row has its line. AR1-A: what has a single value
+    // takes one column, so the lot, the crop and the seed fill a row; the boxes of several options go in the zone's columns.
+    expect(await questionsPerRow(page)).toEqual(phone ? [1, 1, 1, 1, 1, 1, 1, 1, 1] : [3, 3, 1, 1, 1]);
     await assertControlsInsideRows(page);
+    expect(await page.getByRole("group", { name: es ? /^Labores realizadas/ : /^Tasks done/ }).evaluate(node => getComputedStyle(node).columnCount)).toBe(phone ? "1" : "3");
     // The response hangs from its form; with a header as narrow as a phone's, the breadcrumbs keep only the form and the leaf.
     const sowing = es ? "Siembra" : "Sowing";
     const leaf = es ? "Nueva respuesta" : "New response";
@@ -153,16 +155,18 @@ for (const language of ["es", "en"] as const) {
     await page.evaluate(() => document.fonts.ready);
     await assertNoPageScroll(page, 768);
     // With the forms panel open the zone is as narrow as a phone: one question per row and nothing out of its row.
-    expect(await questionsPerRow(page)).toEqual([1, 1, 1, 1, 1, 1, 1, 1]);
+    expect(await questionsPerRow(page)).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1]);
     await assertControlsInsideRows(page);
     // The header is too: the breadcrumbs keep only the form and the leaf, with nothing empty or cut.
     const short = { items: [es ? "Siembra" : "Sowing", "/", es ? "Nueva respuesta" : "New response"], squeezed: 0, leafCut: false };
     await expect.poll(() => shownCrumbs(page, language)).toEqual(short);
     await page.screenshot({ path: "test-results/form-entry-page-" + language + "-768.png", fullPage: true });
-    // Closing the panel leaves room for two: Lote, Cultivo and Semilla take both, Densidad and Hectáreas share a row.
+    // Closing the panel leaves room for two: each question of a single value takes one, so they go in pairs (AR1-A), and
+    // the boxes of several options in two columns.
     await page.getByRole("button", { name: es ? "Cerrar el panel Formularios" : "Close the Forms panel", exact: true }).click();
-    await expect.poll(() => questionsPerRow(page)).toEqual([1, 1, 1, 2, 1, 1, 1]);
+    await expect.poll(() => questionsPerRow(page)).toEqual([2, 2, 2, 1, 1, 1]);
     await assertControlsInsideRows(page);
+    expect(await page.getByRole("group", { name: es ? /^Labores realizadas/ : /^Tasks done/ }).evaluate(node => getComputedStyle(node).columnCount)).toBe("2");
     // The header is still under the phone's 40 rem, where the whole trail cuts the form's name.
     expect(await shownCrumbs(page, language)).toEqual(short);
     await page.screenshot({ path: "test-results/form-entry-page-" + language + "-768-two-columns.png", fullPage: true });
@@ -180,6 +184,45 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     await page.evaluate(() => document.fonts.ready);
     await assertNoPageScroll(page, width);
     await page.screenshot({ path: "test-results/form-entry-missing-data-" + language + "-" + width + ".png", fullPage: true });
+  });
+}
+
+// Board AR2-A: the same box as the panel, before Cancelar and Enviar or, on the phone, at the fixed foot over Enviar. Checked,
+// the form stays with the answers for the next one: the notice says the number and the focus goes back to the first question.
+for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
+  test("AR2-A keeps the answers for the next one on the page " + language + " " + width, async ({ page }) => {
+    const es = language === "es";
+    const phone = width < 640;
+    const lot = es ? "Lote" : "Lot";
+    const keepLabel = es ? "Mantener las respuestas para la siguiente" : "Keep the answers for the next one";
+    await page.setViewportSize({ width, height: 900 });
+    await open(page, "/formularios/" + formEntryFixtureIds.sowing + "/cargar", "entries", language);
+    await expect(page.getByRole("heading", { name: es ? "Nueva respuesta" : "New response", level: 1 })).toBeVisible();
+    const keep = page.getByRole("checkbox", { name: keepLabel, exact: true });
+    const send = page.getByRole("button", { name: es ? "Enviar" : "Send", exact: true });
+    await expect(keep).toBeVisible();
+    expect(await keep.evaluate((box, button) => !!(box.compareDocumentPosition(button!) & Node.DOCUMENT_POSITION_FOLLOWING), await send.elementHandle())).toBe(true);
+    await choose(page, lot, es ? "Lote 2" : "Lot 2", phone);
+    await page.getByRole("radio", { name: es ? "Soja 1ª" : "1st soybean" }).click();
+    await choose(page, es ? "Semilla" : "Seed", "DM 46i20", phone);
+    await page.getByLabel(es ? "Densidad" : "Density").fill("72,5");
+    await page.getByLabel(es ? "Hectáreas sembradas" : "Sown hectares").fill("120");
+    await page.getByLabel(es ? "Fecha de siembra" : "Sowing date").fill("2026-10-29");
+    // The label covers the checkbox row, as in CheckboxField.
+    await page.getByText(keepLabel, { exact: true }).click();
+    await expect(keep).toBeChecked();
+    await page.evaluate(() => document.fonts.ready);
+    await assertNoPageScroll(page, width);
+    await page.screenshot({ path: "test-results/form-entry-keep-" + language + "-" + width + ".png" });
+    const sends = await answerSend(page, "SIE-000014");
+    await send.click();
+    await expect(page.getByText(es ? "Se guardó SIE-000014" : "SIE-000014 was saved")).toBeVisible();
+    await expect(page.getByRole("heading", { name: es ? "Nueva respuesta" : "New response", level: 1 })).toBeVisible();
+    await expect(page.getByLabel(es ? "Densidad" : "Density")).toHaveValue("72,5");
+    await expect(phone ? page.getByRole("button", { name: lot, exact: true }) : page.getByRole("combobox", { name: lot, exact: true })).toBeFocused();
+    await expect(keep).toBeChecked();
+    expect(sends).toHaveLength(1);
+    await page.screenshot({ path: "test-results/form-entry-keep-saved-" + language + "-" + width + ".png" });
   });
 }
 

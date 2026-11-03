@@ -11,7 +11,7 @@ export const formEntryFixtureIds = { sowing: id(601), sheet: responseFormId };
  */
 export function createFormEntryVisualFixtures(language: "es" | "en", scenario: string) {
   const en = language === "en";
-  const fields = { lot: id(611), crop: id(612), seed: id(613), density: id(614), hectares: id(615), date: id(616), notes: id(617), photos: id(618), amount: id(619), detail: id(620), confirmed: id(621) };
+  const fields = { lot: id(611), crop: id(612), seed: id(613), density: id(614), hectares: id(615), date: id(616), notes: id(617), photos: id(618), amount: id(619), detail: id(620), confirmed: id(621), tasks: id(622) };
   const lots: FormEntryOption[] = Array.from({ length: 58 }, (_, index) => ({ id: id(700 + index), title: (en ? "Lot " : "Lote ") + (index + 1),
     description: ["La Esperanza", "El Ombú", "Don Pedro", "La Unión"][index % 4] }));
   const seeds: FormEntryOption[] = ["DM 46i20", "NS 4955", "SY 3x5", "DK 72-10"].map((title, index) => ({ id: id(780 + index), title, description: null }));
@@ -29,6 +29,11 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
       { fieldId: fields.density, type: "decimal", label: en ? "Density (kg/ha)" : "Densidad (kg/ha)", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
       { fieldId: fields.hectares, type: "decimal", label: en ? "Sown hectares (ha)" : "Hectáreas sembradas (ha)", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
       { fieldId: fields.date, type: "date", label: en ? "Sowing date" : "Fecha de siembra", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
+      // Several own options take the whole row, with their boxes in columns (AR1-A).
+      { fieldId: fields.tasks, type: "multiChoice", label: en ? "Tasks done" : "Labores realizadas", help: null, required: false, maxLength: null,
+        options: (en ? ["Direct seeding", "Base fertilization", "Weed control", "Inoculation", "Seed treatment", "Irrigation", "Rolling"]
+          : ["Siembra directa", "Fertilización de base", "Control de malezas", "Inoculación", "Curado de semilla", "Riego", "Rolado"]).map((label, index) => ({ id: id(800 + index), label })),
+        selection: { minSelected: 0, maxSelected: 7 }, files: null, catalog: null },
       { fieldId: fields.notes, type: "longText", label: en ? "Notes" : "Observaciones", help: null, required: false, maxLength: 500, options: null, selection: null, files: null, catalog: null },
       { fieldId: fields.photos, type: "photo", label: en ? "Lot photos" : "Fotos del lote", help: null, required: false, maxLength: null, options: null, selection: null,
         files: { minFiles: 0, maxFiles: 3, photoSource: "cameraOrGallery" }, catalog: null },

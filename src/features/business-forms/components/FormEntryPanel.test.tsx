@@ -23,13 +23,13 @@ const entry: FormEntry = { definitionId: responseFormId, versionId: id(402), ver
     { fieldId: id(31), type: "longText", label: "Observaciones", help: null, required: false, maxLength: 500, options: null, selection: null, files: null, catalog: null },
   ] };
 
-function setup(permissions = ["formrecords.read", "formrecords.create"]) {
+function setup(permissions = ["formrecords.read", "formrecords.create"], form: FormEntry = entry) {
   let searches = 0;
   const sends: FormData[] = [];
   server.use(
     http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })),
     http.post("/api/forms/definitions/:id/records/search", () => { searches++; return HttpResponse.json(responseSheetFixture()); }),
-    http.get("/api/forms/entries/:formId", () => HttpResponse.json(entry)),
+    http.get("/api/forms/entries/:formId", () => HttpResponse.json(form)),
     http.post("/api/forms/entries/:formId", async ({ request }) => {
       sends.push(await request.formData());
       return HttpResponse.json({ recordId: id(431), number: "TEST-000003", state: "Received", submittedAtUtc: "2026-10-30T13:05:00Z" });
@@ -59,6 +59,22 @@ describe("adding a response next to the sheet", () => {
     expect(JSON.parse(String(sends[0].get("answers")))).toEqual([{ fieldId: id(30), value: "12.5" }]);
     expect(within(panel).getByLabelText(/^Importe/)).toHaveValue("12,5");
     expect(router.state.location.pathname).toBe(sheet + "/nueva");
+  });
+
+  // Board AR1-A: the panel folds «Datos» and «Fotos y documentos» like the page, in one column, with the files at the end.
+  it("folds the zones of the page in one column, with the photos at the end", async () => {
+    const photos = { fieldId: id(32), type: "photo" as const, label: "Fotos del remito", help: null, required: false, maxLength: null, options: null, selection: null,
+      files: { minFiles: 0, maxFiles: 2, photoSource: "cameraOrGallery" as const }, catalog: null };
+    setup(undefined, { ...entry, questions: [entry.questions[0], photos, entry.questions[1]] });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/nueva");
+    const panel = await screen.findByRole("region", { name: "Nueva respuesta de Formulario publicado" });
+    const notes = await within(panel).findByLabelText(/^Observaciones/);
+    expect(notes.compareDocumentPosition(within(panel).getByText("Fotos del remito")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect([...panel.querySelectorAll("[data-entry-row]")].map(row => row.children.length)).toEqual([1, 1, 1]);
+    await user.click(within(panel).getByRole("button", { name: "Plegar Datos" }));
+    expect(within(panel).getByText("0 de 2 respondidas")).toBeVisible();
+    expect(within(panel).getByRole("button", { name: "Plegar Fotos y documentos" })).toHaveAttribute("aria-expanded", "true");
   });
 
   it("starts the next response empty when the answers are not kept", async () => {

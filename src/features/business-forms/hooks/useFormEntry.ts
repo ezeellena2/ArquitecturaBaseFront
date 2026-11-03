@@ -38,7 +38,8 @@ export function useEntryOptions(entry: FormEntry, fieldId: string, search: strin
 
 /**
  * Sends the loaded response. The request keeps its id while it carries the same answers, so repeating it after a cut
- * returns the first result without another number; any change makes another request. Nothing goes to MutationCache.
+ * returns the first result without another number; any change makes another request, and so does the next response
+ * once one arrived, even with the same kept answers (AR2-A). Nothing goes to MutationCache.
  */
 export function useFormEntrySubmit(formId: string) {
   const last = useRef<{ signature: string; requestId: string } | null>(null);
@@ -48,7 +49,9 @@ export function useFormEntrySubmit(formId: string) {
     if (last.current?.signature !== signature) last.current = { signature, requestId: crypto.randomUUID() };
     setProgress(0);
     try {
-      return await submitFormEntry(formId, toEntrySend(entry, draft, last.current.requestId), fraction => setProgress(fraction));
+      const result = await submitFormEntry(formId, toEntrySend(entry, draft, last.current.requestId), fraction => setProgress(fraction));
+      last.current = null;
+      return result;
     } finally {
       setProgress(null);
     }
