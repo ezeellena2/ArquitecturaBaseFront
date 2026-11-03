@@ -14,6 +14,7 @@
   "conversations": "Conversations",
   "history": "Message history",
   "search": "Search by name or phone number",
+  "show": "Show",
   "all": "All ({{count}})",
   "unread": "Unread ({{count}})",
   "draft": "Unsent draft",

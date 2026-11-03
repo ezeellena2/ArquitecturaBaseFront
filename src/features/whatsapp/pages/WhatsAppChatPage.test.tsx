@@ -167,6 +167,17 @@ it("shows that Actualizar reads the inbox again until it answers, keeping the co
   expect(await screen.findByRole("button", { name: "Actualizar" })).toBeEnabled();
 });
 
+it("chooses between all and unread conversations in a named group that says which one is pressed", async () => {
+  // OE1-A (2026-11-03): eran dos botones sueltos que no decían cuál estaba elegido; ahora es el segmentado común.
+  renderRouteWithProviders("/whatsapp/chat");
+  await screen.findByRole("button", { name: "Ana" });
+  const group = screen.getByRole("group", { name: "Mostrar" });
+  expect(within(group).getByRole("button", { name: "Todos (2)" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(group).getByRole("button", { name: "Sin leer (1)" })).toHaveAttribute("aria-pressed", "false");
+  await userEvent.click(within(group).getByRole("button", { name: "Sin leer (1)" }));
+  expect(within(group).getByRole("button", { name: "Sin leer (1)" })).toHaveAttribute("aria-pressed", "true");
+});
+
 it("keeps the conversations and their counts while a filter reads again, with a loading status", async () => {
   renderRouteWithProviders("/whatsapp/chat");
   await screen.findByRole("button", { name: "Luis" });

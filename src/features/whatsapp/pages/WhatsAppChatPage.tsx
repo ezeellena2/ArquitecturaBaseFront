@@ -10,6 +10,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { SearchInput } from "@/shared/ui/SearchInput";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Spinner } from "@/shared/ui/Spinner";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
@@ -70,8 +71,10 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
           <div className={cn("flex min-h-0 flex-col border-r border-[var(--color-border)]", selected ? "max-xl:hidden" : "")}>
             <div className="flex flex-col gap-3 border-b border-[var(--color-border)] p-3">
               <SearchInput value={search} onChange={changeSearch} label={t("search")} />
-              <div className="flex items-center gap-2"><Button size="sm" variant={!unread ? "default" : "outline"} onClick={() => { setUnread(false); setPage(1); }}>{t("all", { count: list.data?.allCount ?? 0 })}</Button>
-                <Button size="sm" variant={unread ? "default" : "outline"} onClick={() => { setUnread(true); setPage(1); }}>{t("unread", { count: list.data?.unreadCount ?? 0 })}</Button>
+              <div className="flex items-center gap-2"><SegmentedControl aria-label={t("show")} options={[
+                { key: "all", label: t("all", { count: list.data?.allCount ?? 0 }), pressed: !unread, onSelect: () => { setUnread(false); setPage(1); } },
+                { key: "unread", label: t("unread", { count: list.data?.unreadCount ?? 0 }), pressed: unread, onSelect: () => { setUnread(true); setPage(1); } },
+              ]}/>
                 {list.isPlaceholderData ? <span role="status" className="ml-auto inline-flex"><Spinner decorative /><span className="sr-only">{t("loading")}</span></span> : null}</div>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto" aria-label={t("conversations")}>
