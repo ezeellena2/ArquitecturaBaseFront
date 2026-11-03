@@ -217,7 +217,10 @@ test("filter menus and removable filters work with keyboard", async ({ page }) =
   await expect(page.getByRole("menu")).toBeVisible();
   // OE1-A: a single choice in a menu is a radio item that says which one is chosen, with its tick.
   await expect(page.getByRole("menuitemradio", { name: "Cualquier rol" })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("menuitemradio", { name: "Admin" }).click();
+  // FO1-A: each option is its name alone, without the count, and none is off.
+  const admin = page.getByRole("menuitemradio", { name: "Admin", exact: true });
+  await expect(admin).not.toHaveAttribute("aria-disabled", "true");
+  await admin.click();
   const remove = page.getByRole("button", { name: /Quitar.*[Rr]ol/ });
   await expect(remove).toBeVisible();
   await remove.focus();
