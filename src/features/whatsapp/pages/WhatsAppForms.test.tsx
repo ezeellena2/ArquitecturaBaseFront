@@ -464,6 +464,28 @@ it("keeps the forms and the pagination in sight with a loading status while anot
  expect(within(dialog).queryByText("Cargando formularios…")).not.toBeInTheDocument();
 });
 
+// The chosen form of another page stays first in the list, chosen (LR3-A), never «Elegido: …» under it.
+it("keeps the chosen form first in the list, chosen, while another page shows", async () => {
+ const next = { ...options[0], definitionId: "019abcde-1000-7000-8000-000000000011", versionId: "019abcde-1000-7000-8000-000000000012", versionNumber: 3, questionCount: 8, name: { es: "Visita técnica", en: "Technical visit" } };
+ server.use(http.get("/api/whatsapp/chats/:id/forms", ({ request }) => {
+  const page = Number(new URL(request.url).searchParams.get("page")) || 1;
+  return HttpResponse.json(formsPage(page === 2 ? [next] : options, page, 2, 5));
+ }));
+ const dialog = await openDialog();
+ await within(dialog).findByRole("radio", { name: "Registrar visita" });
+ await userEvent.click(within(dialog).getByRole("button", { name: "Página siguiente" }));
+ await userEvent.click(await within(dialog).findByRole("radio", { name: "Visita técnica" }));
+ await userEvent.click(within(dialog).getByRole("button", { name: "Página anterior" }));
+ await within(dialog).findByRole("radio", { name: "Registrar visita" });
+ const chosen = within(dialog).getByRole("radio", { name: "Visita técnica" });
+ expect(chosen).toBeChecked();
+ expect(within(dialog).getAllByRole("radio")[0]).toBe(chosen);
+ expect(within(dialog).getByText("Versión 3 · 8 preguntas")).toBeInTheDocument();
+ expect(dialog).not.toHaveTextContent("Elegido");
+ await userEvent.click(within(dialog).getByRole("radio", { name: "Registrar visita" }));
+ expect(within(dialog).queryByRole("radio", { name: "Visita técnica" })).not.toBeInTheDocument();
+});
+
 it("shows that it retries the forms list until it answers", async () => {
  vi.spyOn(notifications, "notify").mockImplementation(() => 0);
  let reads = 0;

@@ -134,7 +134,6 @@
     "formLabel": "Form",
     "optionDescription_one": "Version {{version}} · {{count}} question",
     "optionDescription_other": "Version {{version}} · {{count}} questions",
-    "selected": "Selected: {{name}} · version {{version}}",
     "language": "It arrives in {{language}}.",
     "culture": {
       "es": "Spanish",

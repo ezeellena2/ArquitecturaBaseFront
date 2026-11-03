@@ -134,7 +134,6 @@
     "formLabel": "Formulario",
     "optionDescription_one": "Versión {{version}} · {{count}} pregunta",
     "optionDescription_other": "Versión {{version}} · {{count}} preguntas",
-    "selected": "Elegido: {{name}} · versión {{version}}",
     "language": "Le llega en {{language}}.",
     "culture": {
       "es": "español",
