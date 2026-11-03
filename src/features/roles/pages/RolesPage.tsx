@@ -59,7 +59,7 @@ export function RolesPage() {
       cell: (row) => row.name,
     },
     { id: "description", header: t("columns.description"), cell: (row) => row.description ?? "—" },
-    { id: "userCount", header: t("columns.userCount"), cell: (row) => String(row.userCount) },
+    { id: "userCount", header: t("columns.userCount"), numeric: true, cell: (row) => String(row.userCount) },
     {
       id: "permissions",
       header: t("columns.permissions"),

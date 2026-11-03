@@ -115,6 +115,17 @@ describe("RolesPage", () => {
     expect(within(table).getByText("4")).toBeInTheDocument();
   });
 
+  it("aligns how many users each role has to the right, as every column of numbers", async () => {
+    server.use(...managerHandlers());
+
+    renderRouteWithProviders("/roles");
+
+    const table = await screen.findByRole("table");
+    expect(within(table).getByRole("columnheader", { name: "Usuarios" })).toHaveClass("text-right");
+    expect(within(table).getByRole("cell", { name: "4" })).toHaveClass("text-right");
+    expect(within(table).getByRole("cell", { name: "Mira usuarios y nada más." })).not.toHaveClass("text-right");
+  });
+
   it("says there are no roles yet without explaining what they are for, with Nuevo rol in the band", async () => {
     server.use(...managerHandlers());
     // Aparte y después: dentro de un mismo `server.use`, gana el primero que coincide.
