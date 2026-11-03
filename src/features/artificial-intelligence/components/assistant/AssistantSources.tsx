@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
+import { DataList } from "@/shared/ui/DataList";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { sourceDestination } from "../../assistant/model";
 import type { AssistantEvidence } from "../../api/assistant";
@@ -45,18 +46,16 @@ export function AssistantSources({
               })}
               {!evidence.isComplete ? ` · ${t("partial")}` : ""}
             </p>
+            {/* Each row in two columns (rule LR1), the datum in grey and its value beside it, not glued in a line. */}
             {evidence.rows.map((row, index) => (
-              <dl key={row.id ?? index} className="my-2 flex flex-col gap-1">
-                {row.values.map((value, valueIndex) => (
-                  <div
-                    key={valueIndex}
-                    className="flex flex-wrap gap-x-2 break-words [overflow-wrap:anywhere]"
-                  >
-                    <dt className="font-medium">{value.label}</dt>
-                    <dd>{value.value}</dd>
-                  </div>
-                ))}
-              </dl>
+              <div key={row.id ?? index} className="my-2 [overflow-wrap:anywhere]">
+                <DataList
+                  items={row.values.map((value) => ({
+                    label: value.label,
+                    value: value.value,
+                  }))}
+                />
+              </div>
             ))}
             {destination ? (
               <Button size="touch" variant="link" asChild>
