@@ -31,7 +31,8 @@ export function FormReplyValues({ rows, preserveViewport, actor="", recordId, nu
         <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} number={number} onForbidden={onForbidden} onError={onFileError} focusFallback={focusFallback} date={date}/> : t("forms.reply.valuesUnavailable") : row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}
           {row.answer.type==="choice"&&row.answer.detail ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.detail}</p> : null}{row.answer.type === "multiChoice" ? <>
             {[...new Set(row.answer.value?.flatMap(choice => choice.catalogName ? [choice.catalogName] : []) ?? [])].map(name => <p key={name} className="text-xs text-[var(--color-content-muted)]">{name}</p>)}
-            {row.answer.value?.map((choice, index) => choice.detail ? <p key={index} className="text-xs text-[var(--color-content-muted)]">{choice.label}: {choice.detail}</p> : null)}
+            {/* Each detail aligned with its choice (rule LR1), like the captured fields of a response (TL1-A), not «Frío: No enfría». */}
+            {row.answer.value?.some(choice => choice.detail) ? <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 border-l-2 border-[var(--color-surface-header)] pl-2.5 text-xs whitespace-normal">{row.answer.value.map((choice, index) => choice.detail ? <div key={index} className="contents"><dt className="text-[var(--color-content-muted)]">{choice.label}</dt><dd className="min-w-0 break-words">{choice.detail}</dd></div> : null)}</dl> : null}
           </> : null}</dd>
       </div>)}
     </dl>

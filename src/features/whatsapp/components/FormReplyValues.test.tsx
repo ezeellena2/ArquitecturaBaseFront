@@ -78,9 +78,10 @@ it.each(["es", "en"] as const)("shows a multi-choice catalog once and associates
   await act(async () => { view = renderWithProviders(<FormReplyValues rows={choices}/>); });
   expect(screen.getAllByText("Fallas de heladeras", { exact: false })).toHaveLength(1);
   expect(screen.getByText("Frío, Ruido, Luz")).toBeInTheDocument();
-  expect(screen.getByText("Frío: No enfría")).toBeInTheDocument();
-  expect(screen.getByText("Ruido: Motor ruidoso")).toBeInTheDocument();
+  // Board LR1: each detail is aligned with its choice, like the captured fields of a response (TL1-A), not «Frío: No enfría».
+  expect(screen.getByText("No enfría").closest("dd")?.previousElementSibling).toHaveTextContent(/^Frío$/);
+  expect(screen.getByText("Motor ruidoso").closest("dd")?.previousElementSibling).toHaveTextContent(/^Ruido$/);
   view.rerender(<FormReplyValues rows={[]}/>);
   expect(screen.queryByText("Fallas de heladeras")).not.toBeInTheDocument();
-  expect(screen.queryByText("Frío: No enfría")).not.toBeInTheDocument();
+  expect(screen.queryByText("No enfría")).not.toBeInTheDocument();
 });

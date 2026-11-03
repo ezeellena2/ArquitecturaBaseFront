@@ -57,6 +57,15 @@ it("reviews a suggestion without explanations under the title, with the prefille
  expect(within(dialog).getByRole("group", { name: "Datos que van prellenados" })).toHaveAccessibleDescription(help);
  for (const text of within(dialog).getAllByText(help)) expect(text).not.toBeVisible();
 });
+// Board LR1: the prefilled data of a suggestion read in two columns under their title, not as «Cliente: Ana · Fecha: …».
+it("reads the prefilled data of a suggestion in two columns", async () => {
+ renderWithProviders(<Harness />);
+ const card = (await screen.findByRole("button", { name: "Revisar y enviar" })).closest("section")!;
+ expect(card).not.toHaveTextContent("Cliente:");
+ expect(within(card).getByText("Prellenado con")).toBeInTheDocument();
+ expect(within(card).getByText("Ana").closest("dd")?.previousElementSibling).toHaveTextContent(/^Cliente$/);
+ expect(within(card).getByText("17/10/2026").closest("dd")?.previousElementSibling).toHaveTextContent(/^Fecha$/);
+});
 it("shows that it looks for a suggestion in the place of the card until the assistant answers", async () => {
  const wait = held();
  server.use(http.post("/api/whatsapp/chats/:id/assistant-suggestions", async ({ request }) => { requests.push(await request.json()); await wait.answer; return HttpResponse.json(body, { status: 202 }); }));

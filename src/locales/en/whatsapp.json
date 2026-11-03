@@ -220,7 +220,7 @@
   "assistant": {
     "suggestionLabel": "Assistant suggestion",
     "suggestion": "The assistant suggests sending {{name}}",
-    "prefilledSummary": "Prefilled with: {{fields}}",
+    "prefilled": "Prefilled with",
     "searching": "Looking for a suggestion…",
     "discard": "No, thanks",
     "discarding": "Discarding…",

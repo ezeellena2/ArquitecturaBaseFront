@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDateInZone, formatDateTimeInZone, formatTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
+import { DataList } from "@/shared/ui/DataList";
 import { MessageBubble, MessageDateDivider } from "@/shared/ui/MessageBubble";
 import { MessageCard } from "@/shared/ui/MessageCard";
 import { FormIcon } from "@/shared/ui/icons";
@@ -43,7 +44,8 @@ export function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, ac
         {item.assistant && !formValuesRevoked && item.purpose !== "Access" ? <section className="rounded-[var(--radius-control)] bg-[var(--color-surface-muted)] p-3 text-sm">
           <p className="font-medium">{t(item.origin === "Assistant" ? "assistant.whySent" : "assistant.whySuggested")}</p>
           <p className="mt-1 break-words">{item.assistant.reason}</p>
-          {item.assistant.proposedFields.length ? <dl className="mt-2 space-y-1">{item.assistant.proposedFields.map(field => <div key={field.fieldId} className="flex flex-wrap gap-x-1"><dt className="font-medium">{field.label}:</dt><dd className="break-words">{field.displayValue}</dd></div>)}</dl> : null}
+          {/* The proposed data in two columns (rule LR1), not «Cliente: Pérez Hnos.» glued in a line. */}
+          {item.assistant.proposedFields.length ? <div className="mt-2"><DataList items={item.assistant.proposedFields.map(field => ({ key: field.fieldId, label: field.label, value: field.displayValue }))}/></div> : null}
         </section> : null}
         {item.origin === "Conversation" && item.source === "outgoing" && item.operation.state === "Uncertain" ? <>
           <p>{t("review.description")}</p>

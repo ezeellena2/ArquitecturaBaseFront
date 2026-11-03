@@ -7,6 +7,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { FormIcon } from "@/shared/ui/icons";
 import { useAssistantSuggestion, type AssistantComposerContext } from "../hooks/useAssistantSuggestion";
 import { Button } from "@/shared/ui/button";
+import { DataList } from "@/shared/ui/DataList";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Textarea } from "@/shared/ui/textarea";
@@ -108,7 +109,8 @@ export function ChatComposer({ contact, actor, canSend, outgoing, draft, updateD
       {assistant.proposal ? <section aria-label={t(assistant.proposal.proposalId === null ? "assistant.configuredSuggestionLabel" : "assistant.suggestionLabel")} className="mb-2 flex flex-wrap items-start gap-2 rounded-[var(--radius-control)] border border-[var(--color-primary)] bg-[var(--color-surface-muted)] p-3">
         <FormIcon className="size-4 shrink-0" />
         <div className="min-w-0 flex-1"><p className="break-words text-sm font-medium">{t(assistant.proposal.proposalId === null ? "assistant.configuredSuggestion" : "assistant.suggestion", { name: assistant.proposal.name })}</p>
-          {assistant.proposal.fields.length ? <p className="mt-1 break-words text-sm text-[var(--color-content-muted)]">{t("assistant.prefilledSummary", { fields: assistant.proposal.fields.map(field => field.label + ": " + field.displayValue).join(" · ") })}</p> : null}
+          {/* The prefilled data in two columns under their title (rule LR1), not as «Cliente: Ana · Fecha: …» in a sentence. */}
+          {assistant.proposal.fields.length ? <div className="mt-2"><p className="text-sm text-[var(--color-content-muted)]">{t("assistant.prefilled")}</p><DataList items={assistant.proposal.fields.map(field => ({ key: field.fieldId, label: field.label, value: field.displayValue }))}/></div> : null}
         </div>
         <div className="flex flex-wrap gap-2"><DisabledReason reason={suggestionWait}><Button variant="outline" size="sm" pending={discarding} disabled={assistant.busy || !!assistant.attempt || assistant.waiting} onClick={() => void assistant.discard()}>{t(discarding ? "assistant.discarding" : "assistant.discard")}</Button></DisabledReason>
           <DisabledReason reason={suggestionWait}><Button size="sm" disabled={assistant.busy || assistant.waiting || !!draft.attempt || !!draft.form?.attempt} onClick={() => assistant.setOpen(true)}>{t("assistant.review")}</Button></DisabledReason></div>
