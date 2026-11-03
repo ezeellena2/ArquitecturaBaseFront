@@ -14,7 +14,7 @@ import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogItemsById } from "../hooks/useCatalogQueries";
 import { normalizeCatalogQuestionSource } from "../catalogQuestionSource";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
-import { FixedCatalogValue } from "./CatalogQuestionSourceSummary";
+import { FixedCatalogValue } from "./CatalogSourceValues";
 
 function FixedValue({ field, value, scope, readOnly, error, onChange }: { field: CatalogField; value: string | null; scope: CatalogReadScope; readOnly: boolean; error?: string; onChange: (value: string | null) => void }) {
   const { t } = useTranslation("forms");

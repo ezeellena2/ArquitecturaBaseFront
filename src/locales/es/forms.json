@@ -86,6 +86,7 @@
   "useCurrent": "Usar borrador actual",
   "keepMine": "Conservar mis cambios",
   "changes": "Qué cambió",
+  "reviewData": "Dato",
   "reviewPending": "Elegí qué conservar en cada diferencia antes de volver a guardar.",
   "choose": "Elegí qué conservar",
   "applyReview": "Terminar la revisión",
@@ -113,7 +114,7 @@
     "document": "Documento",
     "multiChoice": "Elegir varias"
   },
-  "reviewOption": "{{question}} · Opción: {{option}}",
+  "reviewOption": "{{question}} · la opción «{{option}}»",
   "reviewOptionOrder": "Orden de opciones de {{question}}",
   "unmappedValidation": "No pudimos guardar un dato que este editor no puede corregir.",
   "requestConflict": "El identificador corresponde a otro intento. Consultá el guardado; tu pedido sigue bloqueado.",
@@ -744,8 +745,9 @@
       "failed": "No pudimos calcular cuántas opciones ve cada persona."
     },
     "review": {
-      "changedValue": "Cambió el valor elegido",
-      "noFilters": "Sin filtros de opciones"
+      "noFilters": "Sin filtros de opciones",
+      "heading": "Título",
+      "description": "Descripción"
     },
     "zones": {
       "expand": "Expandir «{{name}}»",

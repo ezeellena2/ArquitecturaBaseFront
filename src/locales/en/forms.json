@@ -86,6 +86,7 @@
   "useCurrent": "Use current draft",
   "keepMine": "Keep my changes",
   "changes": "What changed",
+  "reviewData": "Field",
   "reviewPending": "Choose what to keep for each difference before saving again.",
   "choose": "Choose what to keep",
   "applyReview": "Finish review",
@@ -113,7 +114,7 @@
     "document": "Document",
     "multiChoice": "Choose several"
   },
-  "reviewOption": "{{question}} · Option: {{option}}",
+  "reviewOption": "{{question}} · option “{{option}}”",
   "reviewOptionOrder": "Option order for {{question}}",
   "unmappedValidation": "A value that this editor cannot correct could not be saved.",
   "requestConflict": "This identifier belongs to another attempt. Check the save; your request remains blocked.",
@@ -744,8 +745,9 @@
       "failed": "We couldn't work out how many options each person sees."
     },
     "review": {
-      "changedValue": "Selected value changed",
-      "noFilters": "No option filters"
+      "noFilters": "No option filters",
+      "heading": "Title",
+      "description": "Description"
     },
     "zones": {
       "expand": "Expand “{{name}}”",

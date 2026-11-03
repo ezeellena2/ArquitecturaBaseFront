@@ -1,14 +1,15 @@
-import { CatalogQuestionSourceSummary } from "./CatalogQuestionSourceSummary";
-import { CatalogQuestionName } from "./CatalogQuestionName";
+import type { ReactNode } from "react";
+import { CatalogConditionValue, CatalogFieldName, CatalogName, CatalogPresentationValue } from "./CatalogSourceValues";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
+import { ComparisonTable } from "@/shared/ui/ComparisonTable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/shared/ui/dialog";
-import { DataTable } from "@/shared/ui/DataTable";
 import { Surface } from "@/shared/ui/Surface";
-import { createDraftReview, localizedValue, questionEditorType, type DraftReviewRow } from "../editorModel";
-import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture, FormDefinitionSnapshot, LocalizedText } from "../model";
+import { createDraftReview, localizedValue, type DraftReviewRow } from "../editorModel";
+import { draftReviewLines, type ReviewLabel, type ReviewValue } from "../draftReviewLines";
+import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture, FormDefinitionSnapshot } from "../model";
 
 export function DraftReview({ value, definition, culture, catalogScope, auditSummary, open, onCloseAutoFocus, onOpenChange, onUseCurrent, onResolve }: {
   value: DraftEditorValue; definition: FormDefinitionSnapshot; culture: FormCulture; catalogScope?:CatalogReadScope; auditSummary?: string; open: boolean; onCloseAutoFocus?: (event: Event) => void;
@@ -28,47 +29,34 @@ export function DraftReview({ value, definition, culture, catalogScope, auditSum
   </DialogContent></Dialog>;
 }
 
+// Each change once, the datum in grey and both versions in their own column, with only what differs (LR2-A, 2026-11-03):
+// a question lists the data of its editor that changed, a catalog question names its filters and presentation, and an
+// order reads numbered, with what moved in bold.
 export function DraftReviewChanges({ value, definition, culture, catalogScope }: { value: DraftEditorValue; definition: FormDefinitionSnapshot; culture: FormCulture;catalogScope?:CatalogReadScope }) {
   const { t } = useTranslation("forms");
   const review = createDraftReview(value, definition);
-  const text = (map: LocalizedText) => Object.entries(map).map(([language, label]) => `${new Intl.DisplayNames([culture], { type: "language" }).of(language) ?? language}: ${label}`).join(" · ");
+  const catalogs = !!catalogScope?.actorId && catalogScope.permissions.includes("formcatalogs.read");
   const identity = (q: DraftQuestion) => q.fieldId ?? `new:${q.localId}`;
   const parent = (row: DraftReviewRow) => [...value.draft.fields, ...review.current.draft.fields].find(q => identity(q) === row.parentId);
-  function summary(row: DraftReviewRow, side: "mine" | "current") {
-    const item = row[side];
-    if (item === null) return t(row.kind === "offerWhen" ? "offerWhenEmpty" : row.culture ? "translationPending" : "removed");
-    if (typeof item === "string") return item || t("translationPending");
-    if (Array.isArray(item)) {
-      const source = side === "mine" ? value : review.current;
-      const question = source.draft.fields.find(q => identity(q) === row.parentId);
-      return item.map(id => {
-        if (row.kind === "optionOrder" && (question?.type === "choice" || question?.type === "multiChoice") && !question.source) {
-          const option = question.options.find(o => (o.choiceId ?? `new:${o.localId}`) === id);
-          return option ? localizedValue(option.label, culture, source.draft.culture) : t("removed");
-        }
-        const q = source.draft.fields.find(field => identity(field) === id);
-        return q ? localizedValue(q.label, culture, source.draft.culture) : t("removed");
-      }).join(" → ");
-    }
-    if ("type" in item) {
-      const q = item as DraftQuestion;
-      const help = q.help && Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => entry[1] !== null));
-      return [text(q.label), t("types." + questionEditorType(q)), t(q.required ? "required" : "optional"), help ? `${t("help")}: ${text(help)}` : "",
-        q.type === "photo" || q.type === "document" ? t("files.range", { minimum: q.files.minFiles, maximum: q.files.maxFiles }) + (q.type === "photo" ? " · " + t("files.sources." + q.files.photoSource) : "") : "",
-        q.type === "multiChoice" ? t("multiple.range", { maximum: q.selection.maxSelected }) + " · " + t("multiple.minimum") + ": " + q.selection.minSelected : "",
-        "maxLength" in q ? `${t("maxLength")}: ${q.maxLength ?? (q.type === "shortText" ? 80 : 600)}` : "",
-        (q.type === "choice" || q.type === "multiChoice") && !q.source && !review.rows.some(r => r.parentId === row.parentId && r.kind === "option") ? q.options.map(o => text(o.label)).join("; ") : ""].filter(Boolean).join(" · ");
-    }
-    if ("label" in item && typeof item.label === "object") return text(item.label as LocalizedText);
-    return text(item as LocalizedText);
+  const muted = (text: string) => <span className="text-[var(--color-content-muted)]">{text}</span>;
+  function label(item: ReviewLabel): ReactNode {
+    if (item.kind === "key") return t(item.key);
+    if (item.kind === "culture") return t(`cultures.${item.culture}`);
+    return catalogScope ? <CatalogFieldName scope={catalogScope} catalogId={item.catalogId} fieldId={item.fieldId} /> : null;
   }
-  function catalog(row:DraftReviewRow,side:"mine"|"current") {
-    const item=row[side];
-    const question = item && typeof item === "object" && "type" in item ? item as DraftQuestion : null;
-    const other = row[side === "mine" ? "current" : "mine"];
-    const otherQuestion = other && typeof other === "object" && "type" in other ? other as DraftQuestion : null;
-    return catalogScope && (question?.type === "choice" || question?.type === "multiChoice") && question.source?.catalog
-      ? <><CatalogQuestionName scope={catalogScope} id={question.source.catalog}/><CatalogQuestionSourceSummary scope={catalogScope} source={question.source} compared={otherQuestion && (otherQuestion.type === "choice" || otherQuestion.type === "multiChoice") ? otherQuestion.source : null}/></> : null;
+  function cell(item: ReviewValue | null): ReactNode {
+    if (item === null) return null;
+    switch (item.kind) {
+      case "text": return item.text;
+      case "key": return t(item.key);
+      case "missing": return muted(t(item.key));
+      case "none": return muted("—");
+      case "list": return <ol className="flex flex-col gap-0.5">{item.items.map((entry, index) => <li key={index} className="flex gap-1.5">
+        <span aria-hidden="true" className="min-w-3 text-right tabular-nums text-[var(--color-content-muted)]">{index + 1}</span><span className={entry.moved ? "font-semibold" : undefined}>{cell(entry.value)}</span></li>)}</ol>;
+      case "catalog": return catalogScope ? <CatalogName scope={catalogScope} id={item.catalogId} /> : null;
+      case "condition": return catalogScope ? <CatalogConditionValue scope={catalogScope} catalogId={item.catalogId} condition={item.condition} /> : null;
+      case "presentation": return !item.parts.length ? muted("—") : catalogScope ? <CatalogPresentationValue scope={catalogScope} catalogId={item.catalogId} parts={item.parts} /> : null;
+    }
   }
   function title(row: DraftReviewRow) {
     if (row.kind === "field") return localizedValue((row.mine as DraftQuestion | null)?.label ?? (row.current as DraftQuestion).label, culture, value.draft.culture) || t("question");
@@ -85,10 +73,7 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
     return t(row.kind === "submit" ? "submitLabel" : row.kind === "order" ? "order" : row.kind);
   }
   const rowTitle = (row: DraftReviewRow) => row.culture ? t("localizedChange", { name: title(row), language: t(`cultures.${row.culture}`) }) : title(row);
-  return <Surface><DataTable rows={review.rows} rowKey={row => row.id} emptyTitle={t("draft")} columns={[
-      { id: "change", header: t("changes"), cell: row => <p className="break-words">{rowTitle(row)}</p> },
-      { id: "current", header: t("current"), cell: row => <p className="whitespace-normal break-words">{summary(row, "current")}{catalog(row,"current")}</p> },
-      { id: "mine", header: t("mine"), cell: row => <div className="flex flex-col gap-2"><p className="whitespace-normal break-words">{summary(row, "mine")}{catalog(row,"mine")}</p>{!row.canKeep ? <p className="text-sm text-[var(--color-content-muted)]">{t(row.kind === "prefix" ? "prefixLocked" : "retired")}</p> : null}
-      </div> },
-    ]} /></Surface>;
+  return <Surface><ComparisonTable columns={{ identity: [{ key: "change", header: t("changes") }], label: t("reviewData"), before: t("current"), after: t("mine") }}
+    groups={review.rows.map(row => ({ key: row.id, identity: [rowTitle(row)], note: !row.canKeep ? t(row.kind === "prefix" ? "prefixLocked" : "retired") : undefined,
+      lines: draftReviewLines(review, row, { culture, catalogs }).map(line => ({ key: line.key, label: line.label ? label(line.label) : undefined, before: cell(line.before), after: cell(line.after) })) }))} /></Surface>;
 }

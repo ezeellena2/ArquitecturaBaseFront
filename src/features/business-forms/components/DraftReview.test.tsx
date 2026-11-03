@@ -28,10 +28,13 @@ describe("Draft review presentation", () => {
     // The comparison speaks for itself: no description under the title and no note before the choices (2026-10-31).
     expect(dialog).not.toHaveAccessibleDescription();
     expect(within(dialog).queryByText(/Ninguna opción guarda|Compará lo guardado/)).not.toBeInTheDocument();
-    expect(within(dialog).getByRole("cell", { name: "Cliente · Opción: Norte actualizado · Español" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("cell", { name: "Orden de opciones de Cliente" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("cell", { name: "Norte → Sur" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("cell", { name: "Sur → Norte actualizado" })).toBeInTheDocument();
+    // Each change once, and both versions in their own column (LR2-A): an option, never «Opción: Norte», and an order numbered.
+    expect(within(dialog).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Qué cambió", "Guardado actualmente", "Mis cambios"]);
+    const option = within(dialog).getByRole("rowheader", { name: "Cliente · la opción «Norte actualizado» · Español" }).closest("tr")!;
+    expect(within(option).getAllByRole("cell").map(cell => cell.textContent)).toEqual(["Norte", "Norte actualizado"]);
+    const order = within(dialog).getByRole("rowheader", { name: "Orden de opciones de Cliente" }).closest("tr")!;
+    expect(within(order).getAllByRole("cell").map(cell => within(cell).getAllByRole("listitem").map(item => item.textContent))).toEqual([["1Norte", "2Sur"], ["1Sur", "2Norte actualizado"]]);
+    expect(dialog).not.toHaveTextContent("→");
     expect(dialog).not.toHaveTextContent("[object Object]");
     expect(dialog).not.toHaveTextContent("choiceId");
     await userEvent.click(within(dialog).getByRole("button", { name: "Conservar mis cambios" }));
@@ -83,8 +86,30 @@ it("names catalog questions consistently when reviewing a source replacement", a
     originalCulture: "es", unavailableReasonCode: null, filters: null, proposal: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
   server.use(http.get("/api/forms/catalogs/:id",({params})=>{ return HttpResponse.json({...catalog,id:params.id,key:String(params.id).replaceAll("-","")}); }));
   await act(async () => { renderWithProviders(<DraftReview catalogScope={{actorId:"actor",culture:"es",permissions:["formcatalogs.read"]}} value={mine} definition={current} culture="es" open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
-  expect(within(screen.getByRole("dialog")).queryAllByText(/Elegir de un catálogo/)).toHaveLength(2);
-  await waitFor(()=>expect(screen.getAllByText("· "+catalog.name.es)).toHaveLength(2));
+  // The replacement is another question: the saved one leaves and the new one comes, each named by its catalog, never its GUID.
+  const dialog = screen.getByRole("dialog");
+  const sources = within(dialog).getAllByRole("rowheader", { name: "Catálogo" }).map(header => header.closest("tr")!);
+  await waitFor(() => expect(sources.map(source => within(source).getAllByRole("cell").map(cell => cell.textContent))).toEqual([[catalog.name.es, ""], ["", catalog.name.es]]));
+  expect(dialog).not.toHaveTextContent("01990000");
+});
+
+it("names a changed catalog filter by its field and reads each version's value apart", async () => {
+  const field = { id: "01990000-0000-7000-8000-000000000101", key: "category", name: { es: "Rubro" }, type: "text" as const, sourceCatalogId: null, required: false, unique: false,
+    min: null, max: null, maxLength: null, role: "filter" as const, position: 0, isActive: true, valuesCount: 2, usedBy: [] };
+  const current: FormDefinitionSnapshot = { ...definition, draft: { ...definition.draft, fields: [{ fieldId: "catalog-field", key: "field_catalog", type: "choice", label: { es: "Artículo" }, help: null, required: true,
+    source: { catalog: "01990000-0000-7000-8000-000000000091", match: [{ fieldId: field.id, value: "Agroquímicos" }] } }] } };
+  const opened = openDraftSession({ actorId: "actor", editorId: "editor" }, current).value;
+  const mine = { ...opened, draft: { ...opened.draft, fields: opened.draft.fields.map(question => question.type === "choice" && question.source
+    ? { ...question, source: { ...question.source, match: [{ fieldId: field.id, value: "Herbicidas" }] } } : question) } };
+  server.use(http.get("/api/forms/catalogs/:id", ({ params }) => HttpResponse.json({ id: params.id, key: String(params.id).replaceAll("-", ""), name: { es: "Artículos" }, description: { es: "Insumos" },
+    kind: "Manual", valueType: "Text", revision: 1, isActive: true, itemsCount: 0, usageCount: null, originalCulture: "es", unavailableReasonCode: null, filters: null, proposal: null,
+    fields: [field], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } })));
+  await act(async () => { renderWithProviders(<DraftReview catalogScope={{ actorId: "actor", culture: "es", permissions: ["formcatalogs.read"] }} value={mine} definition={current} culture="es" open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
+  const dialog = screen.getByRole("dialog");
+  expect(within(dialog).getByRole("rowheader", { name: "Artículo" })).toBeInTheDocument();
+  const filter = (await within(dialog).findByRole("rowheader", { name: "Rubro" })).closest("tr")!;
+  expect(within(filter).getAllByRole("cell").map(cell => cell.textContent)).toEqual(["Agroquímicos", "Herbicidas"]);
+  expect(dialog).not.toHaveTextContent("Rubro:");
 });
 
 it("names a multi-choice translation with the label of the selected display culture", async () => {
@@ -100,5 +125,5 @@ it("names a multi-choice translation with the label of the selected display cult
       option.choiceId === "north" ? { ...option, label: { ...option.label, es: "Mi Norte" } } : option) } : question) } };
   await act(async () => { renderWithProviders(<DraftReview value={mine} definition={current} culture="en"
     open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
-  expect(within(screen.getByRole("dialog")).getByRole("cell", { name: "Customer · Opción: North · Español" })).toBeInTheDocument();
+  expect(within(screen.getByRole("dialog")).getByRole("rowheader", { name: "Customer · la opción «North» · Español" })).toBeInTheDocument();
 });
