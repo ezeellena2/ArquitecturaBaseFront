@@ -5,19 +5,15 @@ import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback,operationalErrorMessage,readErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
-import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { Dialog,DialogContent,DialogHeader,DialogTitle } from "@/shared/ui/dialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
-import { Pagination } from "@/shared/ui/Pagination";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
@@ -29,6 +25,7 @@ import { administrativeName, localizedValue } from "../editorModel";
 import { formScopeKey,usePrivateQueryCleanup,type FormReadScope } from "../hooks/useFormQueries";
 import { responseFilterLabels,type ResponseColumn } from "../responses";
 import { mappingTargets,newSuggestion,prepareSuggestions,suggestionFieldErrors,type FormSuggestion,type SuggestionMapping } from "../suggestions";
+import { RevisionHistoryButton,RevisionHistoryPanel } from "./RevisionHistory";
 export interface FormSuggestionsSectionProps { readonly definitionId:string;readonly definitionRevision:number;readonly publishedVersionId?:string|null;readonly scope:FormReadScope;readonly timeZoneId?:string;readonly onDirtyChange:(dirty:boolean)=>void }
 export function FormSuggestionsSection(props:FormSuggestionsSectionProps) {
   const {t}=useTranslation("forms");
@@ -71,8 +68,9 @@ function SuggestionsEditor({definitionId,definitionRevision,publishedVersionId,s
   const hintId=useId();
   // Local problems show after the first try to save, and then live while they are corrected; a successful save clears it.
   const [attempted,setAttempted]=useState(false);
-  const revisionTrigger=useRef<HTMLButtonElement|null>(null);
-  const restoreRevisionFocus=useRestoreFocusOnClose(revisionView!==null);
+  // As in rules, the history opens from «Historial» in a side panel (board HI1-A), and closing it goes back to that button.
+  const [historyOpen,setHistoryOpen]=useState(false);
+  const historyTrigger=useRef<HTMLButtonElement|null>(null);
   useEffect(()=>()=>{for(const kind of notices.current)dismissNotification(notificationRoot+":"+kind);},[notificationRoot]);
   useEffect(()=>{active.current=true;return()=>{active.current=false;operation.current?.abort();onDirtyChange(false);};},[onDirtyChange]);
   useEffect(()=>{if([query.error,history.error].some(failure=>failure instanceof ApiError&&failure.status===403))onDenied();},[query.error,history.error,onDenied]);
@@ -124,13 +122,15 @@ function SuggestionsEditor({definitionId,definitionRevision,publishedVersionId,s
     requestAnimationFrame(()=>{if(active.current)host.current?.querySelector<HTMLElement>('[data-suggestion-id="'+rowId+'"] [aria-invalid="true"]')?.focus();});
   };
   const resolve=(keep:boolean)=>{if(!current||blocked)return;setBaseline(current);if(!keep){setSuggestions(current.suggestions);setExpanded(null);}setCurrent(null);setConflict(false);setApiErrors({});};
-  return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+  const changes=(revision:{changes:{addedSuggestions:number;updatedSuggestions:number;removedSuggestions:number;orderChanged:boolean}})=>[revision.changes.addedSuggestions?t("suggestions.historyAdded",{count:revision.changes.addedSuggestions}):null,revision.changes.updatedSuggestions?t("suggestions.historyUpdated",{count:revision.changes.updatedSuggestions}):null,revision.changes.removedSuggestions?t("suggestions.historyRemoved",{count:revision.changes.removedSuggestions}):null,revision.changes.orderChanged?t("rules.historyOrderChanged"):null].filter(Boolean).join(" · ")||t("rules.historyUnchanged");
+  return <div ref={host} className="flex flex-col gap-4">
     {/* As in rules, a conflict is its own surface above the editor, with rereading and choosing in its header. */}
-    {conflict?<div className="lg:col-span-2"><Surface title={t("suggestions.conflictTitle")} padded actions={<>
+    {conflict?<div><Surface title={t("suggestions.conflictTitle")} padded actions={<>
       <Button variant="outline" disabled={blocked} pending={running?.kind==="reread"} onClick={()=>void run("reread",async signal=>{const fresh=await fetchFormSuggestions(definitionId,signal);if(active.current)setCurrent(fresh);})}>{t(running?.kind==="reread"?"rereading":"suggestions.reread")}</Button>
       {current?<><Button variant="outline" disabled={blocked} onClick={()=>resolve(false)}>{t("rules.useCurrent")}</Button><Button variant="outline" disabled={blocked} onClick={()=>resolve(true)}>{t("keepMine")}</Button></>:null}
     </>}><p role="alert" className="text-sm">{t("suggestions.conflict")}</p></Surface></div>:null}
     <Surface title={t("suggestions.title")} help={t("suggestions.independent")} actions={<>
+      <RevisionHistoryButton count={history.data?.totalCount} blocked={blocked} waitReason={!busy&&cooldown.isRunning?t("responses.wait",{count:cooldown.seconds}):null} onOpen={trigger=>{historyTrigger.current=trigger;setHistoryOpen(true);}}/>
       <DisabledReason reason={!busy&&suggestions.length>=20?t("suggestions.errors.tooMany"):null}><Button data-add-suggestion variant="outline" disabled={blocked||suggestions.length>=20} onClick={()=>{const row=newSuggestion();change([...suggestions,row]);setExpanded(row.id);}}>{t("suggestions.add")}</Button></DisabledReason>
       <DisabledReason reason={saveDisabledReason}><Button disabled={blocked||conflict||!dirty||!!unavailableRow} pending={running?.kind==="save"} onClick={save}>{t(running?.kind==="save"?"suggestions.saving":"suggestions.save")}</Button></DisabledReason>
     </>}>
@@ -148,7 +148,10 @@ function SuggestionsEditor({definitionId,definitionRevision,publishedVersionId,s
         </div>:null}
       </section>;})}
     </Surface>
-    <Surface title={t("suggestions.history")} padded>{history.isPending?<Spinner/>:!history.data?<EmptyState embedded title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={()=>void history.refetch()}>{t("common:actions.retry")}</Button>}/>:<>{history.data.items.length===0?<p className="text-sm text-[var(--color-content-muted)]">{t("rules.historyEmpty")}</p>:null}<ol className="space-y-3">{history.data.items.map(revision=><li key={revision.id} className="border-b border-[var(--color-border)] pb-3"><Button variant="link" disabled={blocked} pending={running?.kind==="revision"&&running.revision===revision.revision} onClick={event=>{revisionTrigger.current=event.currentTarget;void run("revision",async signal=>{const view=await fetchSuggestionRevision(definitionId,revision.revision,signal);if(active.current)setRevisionView(view);},revision.revision);}}>{t("rules.revision",{revision:revision.revision})}</Button>{revision.revision===baseline.revision?<Badge variant="outline">{t("rules.current")}</Badge>:null}<p className="text-xs">{formatDateTimeInZone(revision.createdAtUtc,scope.culture,timeZoneId)} · {revision.author?.displayName??t("responses.unknownPerson")}</p><p className="text-xs text-[var(--color-content-muted)]">{[revision.changes.addedSuggestions?t("suggestions.historyAdded",{count:revision.changes.addedSuggestions}):null,revision.changes.updatedSuggestions?t("suggestions.historyUpdated",{count:revision.changes.updatedSuggestions}):null,revision.changes.removedSuggestions?t("suggestions.historyRemoved",{count:revision.changes.removedSuggestions}):null,revision.changes.orderChanged?t("rules.historyOrderChanged"):null].filter(Boolean).join(" · ")||t("rules.historyUnchanged")}</p></li>)}</ol>{history.data.totalPages>1?<Pagination {...history.data} onPageChange={setPage}/>:null}</>}</Surface>
-    {revisionView?<Dialog open onOpenChange={open=>{if(!open)setRevisionView(null);}}><DialogContent onCloseAutoFocus={event=>{const target=revisionTrigger.current;if(target?.isConnected&&!target.disabled){event.preventDefault();target.focus();}else restoreRevisionFocus(event);}} aria-describedby={undefined} className="max-h-[90svh] overflow-y-auto"><DialogHeader><DialogTitle>{t("rules.revision",{revision:revisionView.revision})}</DialogTitle></DialogHeader><ol className="space-y-4">{revisionView.suggestions.map(row=><li key={row.id}>{summary(row,revisionView.sourceVersionId!==options.source.versionId)}</li>)}</ol></DialogContent></Dialog>:null}
+    <RevisionHistoryPanel title={t("suggestions.history")} open={historyOpen} onClose={()=>{setHistoryOpen(false);setRevisionView(null);}} history={history} onPageChange={setPage}
+      current={baseline.revision} describe={changes} opening={running?.kind==="revision"?running.revision:undefined} blocked={blocked}
+      onOpenRevision={revision=>void run("revision",async signal=>{const view=await fetchSuggestionRevision(definitionId,revision,signal);if(active.current)setRevisionView(view);},revision)}
+      view={revisionView?{revision:revisionView.revision,content:<ol className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">{revisionView.suggestions.map(row=><li key={row.id} className="py-3">{summary(row,revisionView.sourceVersionId!==options.source.versionId)}</li>)}</ol>}:null}
+      onBack={()=>setRevisionView(null)} culture={scope.culture} timeZoneId={timeZoneId} trigger={historyTrigger}/>
   </div>;
 }

@@ -188,13 +188,33 @@ function canonicalDecimalCondition(value: string): string {
   return match ? (match[1] === "-" ? "-" : "") + match[2].replace(",", ".") : value;
 }
 
-export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: (key: string, options?: Record<string, unknown>) => string, language: string, zone = "UTC", versions: readonly { id: string; number: number }[] = []) {
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+// A condition's values as the person reads them: option labels instead of IDs, and decimals, dates and yes/no in the shared format.
+function conditionValues(values: readonly string[] | null | undefined, column: ResponseColumn | undefined, t: Translate, language: string): string[] {
+  return (values ?? []).map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? formatYesNo(value, { yes: t("responses.yes"), no: t("responses.no") }) ?? value : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, column.type === "decimal" ? canonicalDecimalCondition(value) : value, language) ?? value : value);
+}
+
+/**
+ * The conditions of a rule as it reads (board TL2-A): «Hectáreas aplicadas desde 50», with the question, the words and the
+ * values apart, so the summary can mark the question and the value. Several values of one choice read «Visita o Llamada».
+ */
+export function ruleConditionSummaries(conditions: readonly ResponseCondition[], columns: readonly ResponseColumn[], t: Translate, language: string) {
+  return [...new Set(conditions.map(item => item.fieldId))].map(fieldId => {
+    const column = columns.find(item => item.fieldId === fieldId);
+    return { key: fieldId, question: column?.label ?? "", clauses: conditions.filter(item => item.fieldId === fieldId).map(item => {
+      const values = conditionValues(item.values, column, t, language);
+      return { words: t("rules.conditionWords." + item.operator), values: values.join(item.operator === "in" ? " " + t("rules.conditionWords.or") + " " : ", ") };
+    }) };
+  });
+}
+
+export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: Translate, language: string, zone = "UTC", versions: readonly { id: string; number: number }[] = []) {
   const labels: { key: string; label: string }[] = [];
   const day = (valueUtc: string) => { const date = calendarDateInZone(valueUtc, zone); return formatTypedValue("date", date, language) ?? date; };
   for (const fieldId of new Set(query.conditions?.map(item => item.fieldId) ?? [])) {
     const column = columns.find(item => item.fieldId === fieldId);
     const parts = query.conditions?.filter(item => item.fieldId === fieldId).map(item => {
-      const values = item.values?.map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? formatYesNo(value, { yes: t("responses.yes"), no: t("responses.no") }) ?? value : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, column.type === "decimal" ? canonicalDecimalCondition(value) : value, language) ?? value : value).join(", ");
+      const values = conditionValues(item.values, column, t, language).join(", ");
       const operator = ({ anyOf: "anyOf", gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
       return [operator ? t("responses." + operator) : "", values].filter(Boolean).join(" ");
     });

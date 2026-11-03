@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeResponseQuery,
   responseFilterLabels,
+  ruleConditionSummaries,
   receivedDateBoundary,
   replaceResponseCondition,
   responseValueText,
@@ -220,4 +221,31 @@ it("keeps option arrays out of file readers and formats multi-choice filter labe
   const query = { page: 1, pageSize: 20, conditions: [{ fieldId: "faults", operator: "anyOf", values: ["noise", "cold"] }] };
   expect(responseFilterLabels(query, [column], key => key, "es")[0].label).toBe("Faults: responses.anyOf Noise, Cold");
   expect(responseFilterLabels(query, [column], key => key, "es")[0].label).not.toMatch(/noise|cold/);
+});
+
+// TL2-A: a rule reads «Hectáreas aplicadas desde 50», with the question and the value apart so each can be bold.
+it("splits a rule condition into its question, its words and its values", () => {
+  const columns: ResponseColumn[] = [
+    { fieldId: "mode", type: "choice", label: "Mode", options: [{ id: "visit", label: "Visit" }, { id: "call", label: "Call" }], introducedInVersion: 1 },
+    { fieldId: "amount", type: "decimal", label: "Amount", options: [], introducedInVersion: 1 },
+    { fieldId: "faults", type: "multiChoice", label: "Faults", options: [{ id: "cold", label: "Cold" }, { id: "noise", label: "Noise" }], introducedInVersion: 1 },
+    { fieldId: "paid", type: "boolean", label: "Paid", options: [], introducedInVersion: 1 },
+    { fieldId: "notes", type: "longText", label: "Notes", options: [], introducedInVersion: 1 },
+  ];
+  const conditions = [
+    { fieldId: "mode", operator: "in", values: ["visit", "call"] },
+    { fieldId: "amount", operator: "gte", values: ["1500.5"] }, { fieldId: "amount", operator: "lte", values: ["+2000"] },
+    { fieldId: "faults", operator: "anyOf", values: ["noise", "cold"] },
+    { fieldId: "paid", operator: "in", values: ["true"] },
+    { fieldId: "notes", operator: "answered", values: null },
+    { fieldId: "gone", operator: "in", values: ["old"] },
+  ];
+  expect(ruleConditionSummaries(conditions, columns, key => key, "es")).toEqual([
+    { key: "mode", question: "Mode", clauses: [{ words: "rules.conditionWords.in", values: "Visit rules.conditionWords.or Call" }] },
+    { key: "amount", question: "Amount", clauses: [{ words: "rules.conditionWords.gte", values: "1.500,5" }, { words: "rules.conditionWords.lte", values: "2.000" }] },
+    { key: "faults", question: "Faults", clauses: [{ words: "rules.conditionWords.anyOf", values: "Noise, Cold" }] },
+    { key: "paid", question: "Paid", clauses: [{ words: "rules.conditionWords.in", values: "responses.yes" }] },
+    { key: "notes", question: "Notes", clauses: [{ words: "rules.conditionWords.answered", values: "" }] },
+    { key: "gone", question: "", clauses: [{ words: "rules.conditionWords.in", values: "old" }] },
+  ]);
 });

@@ -5,11 +5,8 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
-import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { useCountdown } from "@/shared/hooks/useCountdown";
-import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -17,18 +14,17 @@ import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
 import { Textarea } from "@/shared/ui/textarea";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
-import { Pagination } from "@/shared/ui/Pagination";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import { ChevronDownIcon, PencilIcon, TrashIcon } from "@/shared/ui/icons";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormRules, fetchRuleHistory, fetchRuleOptions, fetchRuleRevision, saveFormRules, type FormRuleSet } from "../api/rules";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
 import { contentReference, localizedValue, moveItem } from "../editorModel";
 import { newRule, newRuleAction, fixPdfAttachment, pdfAttachmentIssue, prepareRules, ruleFieldErrors, ruleActionKinds, ruleEvents, usesMessage, usesRole, withRuleActionKind, type FormRule, type RuleActionKind } from "../rules";
-import { responseFilterLabels, type ResponseColumn } from "../responses";
+import { ruleConditionSummaries, type ResponseColumn } from "../responses";
 import { localizedIssue, localizedIssueMessage } from "../validationPaths";
+import { RevisionHistoryButton, RevisionHistoryPanel } from "./RevisionHistory";
 interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; scope: FormReadScope; onDirtyChange: (dirty: boolean) => void }
 export function FormRulesSection(props: Props) {
   const { t } = useTranslation("forms");
@@ -63,8 +59,9 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
   const [needsReview, setNeedsReview] = useState(false);
   const [current, setCurrent] = useState<FormRuleSet | null>(null);
   const [revisionView, setRevisionView] = useState<FormRuleSet | null>(null);
-  const revisionTrigger = useRef<HTMLButtonElement | null>(null);
-  const restoreRevisionFocus = useRestoreFocusOnClose(revisionView !== null);
+  // The history opens from «Historial» in a side panel (board HI1-A); the focus goes back to that button on closing.
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const historyTrigger = useRef<HTMLButtonElement | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
   const history = useQuery({ queryKey: [...root, "history", historyPage], queryFn: ({ signal }) => fetchRuleHistory(definitionId, historyPage, signal), gcTime: 0 });
   useEffect(() => { if ([query.error, history.error].some(error => error instanceof ApiError && error.status === 403)) onDenied(); }, [query.error, history.error, onDenied]);
@@ -152,14 +149,29 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
     setCurrent(null); setNeedsReview(false); setError(null);
     pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save");
   };
-  const summary = (rule: FormRule) => <><p>{t("rules.events." + rule.event)}</p>{rule.conditions.length ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("rules.if")}: {responseFilterLabels({ page: 1, pageSize: 1, conditions: rule.conditions }, columns, t, i18n.language, timeZoneId).map(item => item.label).join("; ")}</p> : null}<ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{rule.actions.map(action => <li key={action.id}>{t("rules.actions." + action.kind)}{usesRole(action.kind) && action.roleId ? " · " + (options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")) : ""}{usesMessage(action.kind) && action.text ? ": " + localizedValue(action.text, culture, options.originalCulture) : ""}</li>)}</ol></>;
-  return <div ref={host} className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+  // A rule reads in rows with their label in the same place (board TL2-A): when, if (only with conditions) and do. The data
+  // (the question, the value, the role) is bold and each message goes whole in its box.
+  const summary = (rule: FormRule) => <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-2 text-sm">
+    <dt className="text-xs text-[var(--color-content-muted)]">{t("rules.when")}</dt><dd className="min-w-0 font-semibold">{t("rules.events." + rule.event)}</dd>
+    {rule.conditions.length ? <><dt className="text-xs text-[var(--color-content-muted)]">{t("rules.if")}</dt><dd className="min-w-0"><ul className="space-y-0.5">{ruleConditionSummaries(rule.conditions, columns, t, i18n.language).map((condition, index) => <li key={condition.key}>
+      {index ? <span className="text-[var(--color-content-muted)]">{t("rules.conditionWords.and")} </span> : null}<span className="font-semibold">{condition.question || t("rules.missingQuestion")}</span>
+      {condition.clauses.map((clause, position) => <span key={position}> {clause.words}{clause.values ? <> <span className="font-semibold">{clause.values}</span></> : null}</span>)}
+    </li>)}</ul></dd></> : null}
+    <dt className="text-xs text-[var(--color-content-muted)]">{t("rules.do")}</dt><dd className="min-w-0"><ol className="space-y-1.5">{rule.actions.map((action, index) => <li key={action.id} className="grid grid-cols-[1rem_minmax(0,1fr)] gap-x-1.5">
+      <span className="text-[var(--color-content-muted)] tabular-nums">{index + 1}</span>
+      <div className="min-w-0 space-y-1"><p>{t("rules.actions." + action.kind)}{usesRole(action.kind) && action.roleId ? <><span className="text-[var(--color-content-muted)]"> · </span><span className="font-semibold">{options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")}</span></> : null}{action.kind === "NotifyAuthor" && action.includePdf ? <span className="text-[var(--color-content-muted)]"> · {t("rules.withPdf")}</span> : null}</p>
+        {usesMessage(action.kind) && action.text ? <RuleMessage text={localizedValue(action.text, culture, options.originalCulture)}/> : null}</div>
+    </li>)}</ol></dd>
+  </dl>;
+  const changes = (revision: { changes: { addedRules: number; updatedRules: number; removedRules: number; orderChanged: boolean } }) => [revision.changes.addedRules ? t("rules.historyAdded", { count: revision.changes.addedRules }) : null, revision.changes.updatedRules ? t("rules.historyUpdated", { count: revision.changes.updatedRules }) : null, revision.changes.removedRules ? t("rules.historyRemoved", { count: revision.changes.removedRules }) : null, revision.changes.orderChanged ? t("rules.historyOrderChanged") : null].filter(Boolean).join(" · ") || t("rules.historyUnchanged");
+  return <div ref={host} className="flex flex-col gap-4">
     {/* A conflict is its own surface above the editor: rereading and choosing go in its header, so the rules header keeps its shape. */}
-    {conflict ? <div className="lg:col-span-2"><Surface title={t("rules.conflictTitle")} padded actions={<>
+    {conflict ? <div><Surface title={t("rules.conflictTitle")} padded actions={<>
       <Button variant="outline" disabled={blocked} pending={running?.kind === "reread"} onClick={() => void run("reread", async signal => { const fresh = await fetchFormRules(definitionId, signal); if (active.current) setCurrent(fresh); })}>{t(running?.kind === "reread" ? "rereading" : "rules.reread")}</Button>
       {current ? <><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(false)}>{t("rules.useCurrent")}</Button><Button variant="outline" disabled={blocked} onClick={() => resolveConflict(true)}>{t("keepMine")}</Button></> : null}
     </>}><p role="alert" className="text-sm">{t("rules.conflict")}</p></Surface></div> : null}
     <Surface title={t("rules.title")} help={t("rules.independent")} actions={<>
+      <RevisionHistoryButton count={history.data?.totalCount} blocked={blocked} waitReason={!busy && cooldown.isRunning ? t("responses.wait", { count: cooldown.seconds }) : null} onOpen={trigger => { historyTrigger.current = trigger; setHistoryOpen(true); }}/>
       <DisabledReason reason={!busy && rules.length >= 20 ? t("rules.errors.tooMany") : null}><Button data-add-rule variant="outline" disabled={blocked || rules.length >= 20} onClick={() => { const rule = newRule(); change([...rules, rule]); setExpanded(rule.id); }}>{t("rules.addRule")}</Button></DisabledReason>
       <DisabledReason reason={saveDisabledReason}><Button disabled={blocked || conflict || !dirty} pending={running?.kind === "save"} onClick={save}>{t(running?.kind === "save" ? "rules.saving" : "rules.save")}</Button></DisabledReason>
     </>}>
@@ -198,7 +210,17 @@ function RulesEditor({ definitionId, definitionRevision, scope, timeZoneId, onDi
       </section>)}
     </Surface>
     <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</span>
-    <Surface title={t("rules.history")} padded>{history.isPending ? <Spinner /> : history.error && !history.data ? <EmptyState embedded title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void history.refetch()}>{t("common:actions.retry")}</Button>} /> : <>{history.data?.items.length === 0 ? <p className="text-sm text-[var(--color-content-muted)]">{t("rules.historyEmpty")}</p> : null}<ol className="space-y-3">{history.data?.items.map(revision => <li key={revision.id} className="border-b border-[var(--color-border)] pb-3"><Button variant="link" disabled={blocked} pending={running?.kind === "revision" && running.revision === revision.revision} onClick={event => { revisionTrigger.current = event.currentTarget; void run("revision", async signal => { const view = await fetchRuleRevision(definitionId, revision.revision, signal); if (active.current) setRevisionView(view); }, revision.revision); }}>{t("rules.revision", { revision: revision.revision })}</Button>{baseline.revision === revision.revision ? <Badge variant="outline">{t("rules.current")}</Badge> : null}<p className="text-xs">{formatDateTimeInZone(revision.createdAtUtc, scope.culture, timeZoneId)} · {revision.author?.displayName ?? t("responses.unknownPerson")}</p><p className="mt-1 text-xs text-[var(--color-content-muted)]">{[revision.changes.addedRules ? t("rules.historyAdded", { count: revision.changes.addedRules }) : null, revision.changes.updatedRules ? t("rules.historyUpdated", { count: revision.changes.updatedRules }) : null, revision.changes.removedRules ? t("rules.historyRemoved", { count: revision.changes.removedRules }) : null, revision.changes.orderChanged ? t("rules.historyOrderChanged") : null].filter(Boolean).join(" · ") || t("rules.historyUnchanged")}</p></li>)}</ol>{history.data && history.data.totalPages > 1 ? <Pagination {...history.data} onPageChange={setHistoryPage} /> : null}</>}</Surface>
-    {revisionView ? <Dialog open onOpenChange={open => { if (!open) setRevisionView(null); }}><DialogContent onCloseAutoFocus={event => { const target = revisionTrigger.current; if (target?.isConnected && !target.disabled) { event.preventDefault(); target.focus(); } else restoreRevisionFocus(event); }} className="max-h-[90svh] overflow-y-auto"><DialogHeader><DialogTitle>{t("rules.revision", { revision: revisionView?.revision })}</DialogTitle></DialogHeader><ol className="space-y-4">{revisionView?.rules.map(rule => <li key={rule.id}>{summary(rule)}</li>)}</ol></DialogContent></Dialog> : null}
+    <RevisionHistoryPanel title={t("rules.history")} open={historyOpen} onClose={() => { setHistoryOpen(false); setRevisionView(null); }} history={history} onPageChange={setHistoryPage}
+      current={baseline.revision} describe={changes} opening={running?.kind === "revision" ? running.revision : undefined} blocked={blocked}
+      onOpenRevision={revision => void run("revision", async signal => { const view = await fetchRuleRevision(definitionId, revision, signal); if (active.current) setRevisionView(view); }, revision)}
+      view={revisionView ? { revision: revisionView.revision, content: <ol className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">{revisionView.rules.map(rule => <li key={rule.id} className="py-3">{summary(rule)}</li>)}</ol> } : null}
+      onBack={() => setRevisionView(null)} culture={scope.culture} timeZoneId={timeZoneId} trigger={historyTrigger}/>
   </div>;
+}
+
+// The message of an action, whole, in its box, with the data it brings ({número}, {Lote}) marked (board TL2-A).
+function RuleMessage({ text }: { text: string }) {
+  return text ? <p className="rounded-[var(--radius-control)] border border-[var(--color-border)]/50 bg-[var(--color-surface-muted)] px-2.5 py-1.5 break-words whitespace-pre-wrap">
+    {text.split(/(\{[^{}]+\})/).map((part, index) => /^\{[^{}]+\}$/.test(part) ? <span key={index} className="rounded-[var(--radius-control)] bg-[var(--color-brand-100)] px-1 text-xs font-medium text-[var(--color-brand-700)]">{part}</span> : part)}
+  </p> : null;
 }

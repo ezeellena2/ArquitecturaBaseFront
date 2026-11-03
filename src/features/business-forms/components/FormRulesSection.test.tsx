@@ -101,14 +101,21 @@ it("opens an immutable historical revision without adopting it", async () => {
     http.get("/api/forms/definitions/:id/rules/revisions/:revision", () => HttpResponse.json({ ...initial(), id: historyId, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", rules: [{ id: crypto.randomUUID(), event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: "Mensaje histórico" } }] }] })));
   const dirty = vi.fn();
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={dirty} />);
-  const trigger = await screen.findByRole("button", { name: "Revisión 1" });
-  await userEvent.click(trigger);
-  const dialog = await screen.findByRole("dialog", { name: "Revisión 1" });
-  expect(within(dialog).getByText(/Mensaje histórico/)).toBeInTheDocument();
-  expect(within(dialog).queryByRole("textbox")).not.toBeInTheDocument();
+  const history = await screen.findByRole("button", { name: "Historial" });
+  await waitFor(() => expect(history).toBeEnabled());
+  await userEvent.click(history);
+  const panel = await screen.findByRole("dialog", { name: "Historial de las reglas" });
+  await userEvent.click(within(panel).getByRole("button", { name: "Revisión 1" }));
+  expect(await within(panel).findByRole("heading", { name: "Revisión 1" })).toBeInTheDocument();
+  expect(within(panel).getByText(/Mensaje histórico/)).toBeInTheDocument();
+  expect(within(panel).queryByRole("textbox")).not.toBeInTheDocument();
   expect(dirty).toHaveBeenLastCalledWith(false);
-  await userEvent.click(within(dialog).getByRole("button", { name: "Cerrar" }));
-  await waitFor(() => expect(trigger).toHaveFocus());
+  // Into the revision the focus goes to the way back; back in the list, to the revision it left; closing, to «Historial».
+  await waitFor(() => expect(within(panel).getByRole("button", { name: "Volver a las revisiones" })).toHaveFocus());
+  await userEvent.click(within(panel).getByRole("button", { name: "Volver a las revisiones" }));
+  await waitFor(() => expect(within(panel).getByRole("button", { name: "Revisión 1" })).toHaveFocus());
+  await userEvent.click(within(panel).getByRole("button", { name: "Cerrar" }));
+  await waitFor(() => expect(history).toHaveFocus());
 });
 
 it("removes rule text, history, and editor state after the server revokes rule access", async () => {
@@ -173,7 +180,8 @@ it.each(["rules", "rules/revisions"])("uses the common notification owner for fa
   await waitFor(() => expect(notify).toHaveBeenCalledOnce());
   expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: "La lectura de reglas falló." });
   expect(screen.queryByText("La lectura de reglas falló.")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+  if (path === "rules/revisions") await userEvent.click(screen.getByRole("button", { name: "Historial" }));
+  expect(await screen.findByRole("button", { name: "Reintentar" })).toBeInTheDocument();
 });
 
 it("binds the unchanged exported role validation to its rule and focuses the marked field", async () => {
@@ -211,6 +219,7 @@ const rulesHelp = "Se guardan aparte: cambiarlas no crea otra versión ni toca W
 function storedRule(message = "Mensaje guardado"): FormRule {
   return { id: crypto.randomUUID(), event: "Received", conditions: [], actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: message } }] };
 }
+const noRevisions = "Todavía no hay revisiones.";
 function serveRules(rules: readonly FormRule[], revision = 1) {
   server.use(http.get("/api/forms/definitions/:id/rules", () => HttpResponse.json({ ...initial(), id: actor, revision, rules, createdAtUtc: "2026-10-17T12:00:00Z" })));
 }
@@ -220,13 +229,14 @@ it("keeps the rules header to Add and Save without draft state, revision or expl
   const save = await screen.findByRole("button", { name: "Guardar reglas" });
   // Besides the title, the band has only its (i), whose help is hidden until it is asked for, and the two actions.
   const band = bandOf("Cuando llega una respuesta");
-  expect(within(band).getAllByRole("button").map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Más información sobre Cuando llega una respuesta", "Agregar regla", "Guardar reglas"]);
-  expect(band.textContent!.replace(rulesHelp, "")).toBe("Cuando llega una respuestaAgregar reglaGuardar reglas");
+  expect(within(band).getAllByRole("button").map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Más información sobre Cuando llega una respuesta", "Historial", "Agregar regla", "Guardar reglas"]);
+  const visible = () => band.textContent!.replace(rulesHelp, "").replace(noRevisions, "");
+  expect(visible()).toBe("Cuando llega una respuestaHistorialAgregar reglaGuardar reglas");
   expect(save).toBeDisabled();
   expect(save).not.toHaveAccessibleDescription();
   await userEvent.click(screen.getByRole("button", { name: "Editar regla 1" }));
   await userEvent.type(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
-  expect(band.textContent!.replace(rulesHelp, "")).toBe("Cuando llega una respuestaAgregar reglaGuardar reglas");
+  expect(visible()).toBe("Cuando llega una respuestaHistorialAgregar reglaGuardar reglas");
   expect(save).toBeEnabled();
   expect(screen.queryByText("Cambios sin guardar")).not.toBeInTheDocument();
   expect(screen.queryByText(/revisión 3/i)).not.toBeInTheDocument();
@@ -345,14 +355,19 @@ it("summarizes saved rule conditions with their shared readable values and opera
   serveRules([rule]);
   server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "choice", label: { es: "Cliente" }, help: null, required: true, maxLength: null, options: null, source: { catalog: actor } }], conditionChoices: { [fieldId]: [{ id: choiceId, label: "Cliente elegido" }] }, roles: [] })));
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
-  expect(await screen.findByText("Si: Cliente: Cliente elegido")).toBeVisible();
+  const value = await screen.findByText("Cliente elegido");
+  expect(value.closest("li")).toHaveTextContent("Cliente es Cliente elegido");
+  expect(value.closest("dd")?.previousElementSibling).toHaveTextContent("Si");
 });
 it("shows rule history change counts and order without loading each revision", async () => {
   setup(); let details = 0;
   server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: actor, revision: 2, createdAtUtc: "2026-10-17T12:00:00Z", author: null, hasApproval: false, changes: { addedRules: 1, updatedRules: 2, removedRules: 1, orderChanged: true } }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
     http.get("/api/forms/definitions/:id/rules/revisions/:revision", () => { details++; return HttpResponse.json(initial()); }));
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
-  await screen.findByRole("button", { name: "Revisión 2" });
+  const history = await screen.findByRole("button", { name: "Historial" });
+  await waitFor(() => expect(history).toBeEnabled());
+  await userEvent.click(history);
+  await within(await screen.findByRole("dialog", { name: "Historial de las reglas" })).findByRole("button", { name: "Revisión 2" });
   expect(screen.getByText(/1 regla agregada/)).toBeVisible(); expect(screen.getByText(/2 reglas actualizadas/)).toBeVisible(); expect(screen.getByText(/1 regla quitada/)).toBeVisible(); expect(screen.getByText(/Cambió el orden/)).toBeVisible();
   expect(details).toBe(0);
 });
@@ -472,7 +487,7 @@ it("puts a conflict in its own titled surface with reread and the choices at the
   await userEvent.click(within(band).getByRole("button", { name: "Releer reglas" }));
   await waitFor(() => expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Releer reglas", "Usar la revisión actual", "Conservar mis cambios"]));
   const rules = bandOf("Cuando llega una respuesta");
-  expect(within(rules).getAllByRole("button").map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Más información sobre Cuando llega una respuesta", "Agregar regla", "Guardar reglas"]);
+  expect(within(rules).getAllByRole("button").map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Más información sobre Cuando llega una respuesta", "Historial", "Agregar regla", "Guardar reglas"]);
   await userEvent.click(within(band).getByRole("button", { name: "Conservar mis cambios" }));
   expect(screen.queryByRole("region", { name: "Revisión de las reglas" })).not.toBeInTheDocument();
   expect(screen.getByRole("textbox", { name: "Mensaje" })).toHaveValue("Mensaje guardado propio");
@@ -624,13 +639,17 @@ it("opens a revision with its own sign without making Save say it saves", async 
   server.use(http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: actor, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", author: null, hasApproval: false, changes: { addedRules: 1, updatedRules: 0, removedRules: 0, orderChanged: false } }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
     http.get("/api/forms/definitions/:id/rules/revisions/:revision", async () => { await gate; return HttpResponse.json({ ...initial(), id: actor, revision: 1, createdAtUtc: "2026-10-16T12:00:00Z", rules: [] }); }));
   renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
-  const trigger = await screen.findByRole("button", { name: "Revisión 1" });
+  const history = await screen.findByRole("button", { name: "Historial" });
+  await waitFor(() => expect(history).toBeEnabled());
+  await userEvent.click(history);
+  const panel = await screen.findByRole("dialog", { name: "Historial de las reglas" });
+  const trigger = within(panel).getByRole("button", { name: "Revisión 1" });
   await userEvent.click(trigger);
   await waitFor(() => expect(trigger).toHaveAttribute("aria-busy", "true"));
-  expect(screen.getByRole("button", { name: "Guardar reglas" })).not.toHaveAttribute("aria-busy");
-  expect(screen.queryByRole("button", { name: "Guardando reglas…" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Guardar reglas", hidden: true })).not.toHaveAttribute("aria-busy");
+  expect(screen.queryByRole("button", { name: "Guardando reglas…", hidden: true })).not.toBeInTheDocument();
   await act(async () => release());
-  expect(await screen.findByRole("dialog", { name: "Revisión 1" })).toBeInTheDocument();
+  expect(await within(panel).findByRole("heading", { name: "Revisión 1" })).toBeInTheDocument();
 });
 
 // No notes in the rules (2026-10-31): that they are saved apart is the (i) of the title, the conditions and the message have
@@ -651,4 +670,39 @@ it("explains the rules in their (i) instead of notes", async () => {
   expect(screen.queryByText("Usá {número} y el nombre de una pregunta entre llaves para completar con la respuesta.", hidden)).not.toBeInTheDocument();
   expect(screen.queryByText("Cada respuesta recuerda con qué revisión se procesó. Los cambios se aplican a las respuestas nuevas.")).not.toBeInTheDocument();
   expect(await screen.findByText("Todavía no hay revisiones.")).toBeInTheDocument();
+});
+
+// Board HI1-A: no column with an empty history; «Historial» is off with its reason until there is a revision.
+it("keeps «Historial» off with its reason while there are no revisions", async () => {
+  setup();
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  const history = await screen.findByRole("button", { name: "Historial" });
+  await waitFor(() => expect(history).toBeDisabled());
+  expect(history).toHaveAccessibleDescription(noRevisions);
+  expect(screen.queryByRole("heading", { name: "Historial de las reglas" })).not.toBeInTheDocument();
+  await userEvent.hover(history);
+  expect(await screen.findByRole("tooltip")).toHaveTextContent(noRevisions);
+});
+
+// Board TL2-A: each rule reads in rows with their label (when, if, do); the role and the PDF go after the action, and the
+// message goes whole in its box, with the data it brings marked.
+it("reads a rule by when, if and do, with the role, the PDF and the whole message", async () => {
+  setup(); const fieldId = crypto.randomUUID();
+  serveRules([{ id: crypto.randomUUID(), event: "Approved", conditions: [{ fieldId, operator: "gte", values: ["50"] }], actions: [
+    { ...newRuleAction("NotifyRole"), roleId: actor, text: { es: "Revisá {número}" } },
+    { ...newRuleAction("GeneratePdf") },
+    { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: "Se aprobó tu registro {número} del {Lote}" } }] }]);
+  server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "decimal", label: { es: "Hectáreas aplicadas" }, help: null, required: true, maxLength: null, options: null }], conditionChoices: {}, roles: [{ id: actor, name: "Agrónomo" }] })));
+  renderWithProviders(<FormRulesSection definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  const rule = await screen.findByRole("region", { name: "Regla 1" });
+  expect([...rule.querySelectorAll("dt")].map(term => term.textContent)).toEqual(["Cuándo", "Si", "Hacer"]);
+  expect(within(rule).getByText("Se aprueba una respuesta")).toBeVisible();
+  expect(within(rule).getByText("50").closest("li")).toHaveTextContent("Hectáreas aplicadas desde 50");
+  const actions = [...rule.querySelectorAll("ol > li")];
+  expect(actions.map(item => item.textContent)).toEqual([
+    "1Avisar a las personas con un rol · AgrónomoRevisá {número}",
+    "2Armar el PDF",
+    "3Mandarle un mensaje a quien la cargó · con el PDFSe aprobó tu registro {número} del {Lote}"]);
+  expect(within(rule).getAllByText("{número}")).toHaveLength(2);
+  expect(within(rule).getByText("{Lote}")).toBeVisible();
 });
