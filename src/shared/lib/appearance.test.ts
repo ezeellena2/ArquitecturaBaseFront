@@ -22,6 +22,14 @@ describe("Global appearance", () => {
     expect(Object.keys(variables).some(key => /danger|success|warning/.test(key))).toBe(false);
   });
 
+  it.each(["#000000", "#FFFFFF", "#FFFF00", "#777777", "#335F85", "#FF0000", "#D4A20F"])("keeps the chosen option apart from the others with %s", color => {
+    const variables = appearanceVariables({ primaryColor: color, menuColor: color, headerColor: color, alternateRowColor: color });
+    // OE1-A: la elegida se rellena con este tono; las otras quedan blancas o, con el mouse, en el gris de superficie. La
+    // fila abierta lleva una barra de este tono sobre el tinte de la marca.
+    for (const background of ["#FFFFFF", variables["--color-surface-muted"], variables["--color-brand-50"]])
+      expect(contrastRatio(variables["--color-brand-600"], background)).toBeGreaterThanOrEqual(3);
+  });
+
   it("falls back to the initial palette for an incomplete or invalid palette", () => {
     expect(appearanceVariables(undefined)).toEqual({});
     expect(appearanceVariables({ ...initialAppearance, menuColor: "url(https://invalid)" })).toEqual({});

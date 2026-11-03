@@ -60,6 +60,55 @@ describe("SegmentedControl", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("fills the chosen option with the color of the buttons and leaves the others white", () => {
+    render(
+      <SegmentedControl
+        aria-label="¿Llegó en buen estado?"
+        options={[
+          { key: "true", label: "Sí", pressed: true, onSelect: vi.fn() },
+          { key: "false", label: "No", pressed: false, onSelect: vi.fn() },
+        ]}
+      />,
+    );
+
+    // OE1-A (2026-11-03): un verde casi blanco sobre blanco no decía cuál estaba elegida. El tono de los enlaces da
+    // 4,5:1 contra el blanco en cualquier paleta de Apariencia, y su tinta, 4,5:1 sobre él.
+    expect(screen.getByRole("button", { name: "Sí" })).toHaveClass("bg-[var(--color-brand-600)]", "text-[var(--color-brand-ink)]", "font-semibold");
+    expect(screen.getByRole("button", { name: "No" })).toHaveClass("text-[var(--color-content)]");
+    expect(screen.getByRole("button", { name: "No" })).not.toHaveClass("bg-[var(--color-brand-600)]");
+  });
+
+  it("draws the keyboard focus outside the option, where it shows on the filled one too", () => {
+    render(
+      <SegmentedControl
+        aria-label="¿Llegó en buen estado?"
+        options={[
+          { key: "true", label: "Sí", pressed: true, onSelect: vi.fn() },
+          { key: "false", label: "No", pressed: false, onSelect: vi.fn() },
+        ]}
+      />,
+    );
+
+    // Un contorno de la marca adentro de la opción pintada no se vería; afuera, el grupo no tiene que recortarlo.
+    expect(screen.getByRole("button", { name: "Sí" })).toHaveClass("focus-visible:outline-offset-2");
+    expect(screen.getByRole("group", { name: "¿Llegó en buen estado?" })).not.toHaveClass("overflow-hidden");
+  });
+
+  it("grows each option to the touch target on the phone", () => {
+    render(
+      <SegmentedControl
+        aria-label="¿Llegó en buen estado?"
+        options={[
+          { key: "true", label: "Sí", pressed: false, onSelect: vi.fn() },
+          { key: "false", label: "No", pressed: false, onSelect: vi.fn() },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("group", { name: "¿Llegó en buen estado?" })).toHaveClass("max-sm:h-11");
+    expect(screen.getByRole("button", { name: "Sí" })).toHaveClass("max-sm:min-w-11");
+  });
+
   it("turns every option off while its owner works", async () => {
     const onFile = vi.fn();
     render(

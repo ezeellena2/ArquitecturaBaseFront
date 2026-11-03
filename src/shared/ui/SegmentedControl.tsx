@@ -20,6 +20,10 @@ export interface SegmentedOption {
 /// angosta, como la del ingreso, donde el segmentado encabeza el formulario. Sin eso, mide lo que sus textos.
 ///
 /// `disabled` apaga todas las opciones mientras su dueño trabaja, como el origen de una importación que revisa.
+///
+/// La elegida va rellena con el color de los botones y su texto en blanco o negro, el que más contraste dé (OE1-A,
+/// 2026-11-03); las otras quedan blancas. Antes era un verde casi blanco sobre blanco y no se sabía cuál estaba elegida,
+/// sobre todo en un Sí o no. En el celular cada opción mide al menos 44 × 44 px.
 export function SegmentedControl({
   options,
   fullWidth = false,
@@ -38,7 +42,8 @@ export function SegmentedControl({
       role="group"
       aria-label={label}
       className={cn(
-        appearance === "public" ? "access-channel" : cn("shrink-0 divide-x divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] h-[var(--height-control)]"),
+        // Sin `overflow-hidden`: el contorno de foco va por fuera de la opción y el grupo no tiene que recortarlo.
+        appearance === "public" ? "access-channel" : cn("shrink-0 divide-x divide-[var(--color-border)] rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] h-[var(--height-control)] max-sm:h-11"),
         appearance === "public" ? undefined : fullWidth ? "flex w-full" : "inline-flex",
       )}
     >
@@ -51,12 +56,13 @@ export function SegmentedControl({
           disabled={disabled}
           onClick={option.onSelect}
           className={cn(
-            // El contorno de foco va hacia adentro: el grupo recorta lo que sale de su borde.
-            appearance === "public" ? undefined : cn("px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand-500)] whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"),
+            // El contorno de foco va por fuera y separado: adentro no se vería sobre la opción pintada. Sube sobre las
+            // vecinas para que ninguna lo tape. Las esquinas de la primera y la última siguen la curva del borde.
+            appearance === "public" ? undefined : cn("px-3 text-sm transition-colors focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)] whitespace-nowrap first:rounded-l-[calc(var(--radius-control)-1px)] last:rounded-r-[calc(var(--radius-control)-1px)] disabled:cursor-not-allowed disabled:opacity-50 max-sm:min-w-11"),
             fullWidth ? "flex-1" : "",
             appearance === "public" ? undefined : option.pressed
-              ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]"
-              : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)]",
+              ? "bg-[var(--color-brand-600)] font-semibold text-[var(--color-brand-ink)]"
+              : "font-medium text-[var(--color-content)] enabled:hover:bg-[var(--color-surface-muted)]",
           )}
         >
           {option.label}

@@ -58,6 +58,10 @@ describe("The shared theme", () => {
     ["--color-nav-accent", "--color-nav-surface"],
     ["--color-brand-500", "--color-control-surface"],
     ["--color-control-border", "--color-control-surface"],
+    // OE1-A: la opción elegida, rellena, contra las otras (blancas o con el mouse encima) y su barra en la fila abierta.
+    ["--color-brand-600", "--color-surface"],
+    ["--color-brand-600", "--color-surface-muted"],
+    ["--color-brand-600", "--color-brand-50"],
   ])("keeps focus and controls distinguishable: %s on %s", (foreground, background) => {
     expect(contrast(foreground, background)).toBeGreaterThanOrEqual(3);
   });
