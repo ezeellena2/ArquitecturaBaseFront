@@ -34,7 +34,8 @@ export interface ComparisonColumns {
 // the two versions.
 const keepsLine = "[--table-line-start:1px] max-sm:[--table-line-start:0px]";
 const firstLine = "max-sm:[--table-line-start:0px]";
-const cell = "align-top whitespace-normal break-words py-1.5";
+// On the phone the cells keep a narrower padding, so a long word fits in half of the width.
+const cell = "align-top whitespace-normal break-words py-1.5 max-sm:px-2.5";
 
 /**
  * Two versions of something compared side by side (board LR2-A, 2026-11-03): what changed, each datum once in grey and, in
@@ -48,8 +49,8 @@ export function ComparisonTable({ columns, groups }: { columns: ComparisonColumn
       <TableRow className="max-sm:grid max-sm:grid-cols-2">
         {columns.identity.map(column => <TableHead key={column.key} scope="col" numeric={column.numeric} className="whitespace-normal max-sm:hidden">{column.header}</TableHead>)}
         {labelled ? <TableHead scope="col" className="whitespace-normal max-sm:hidden">{columns.label}</TableHead> : null}
-        <TableHead scope="col" className={cn("whitespace-normal max-sm:h-auto max-sm:py-1.5", firstLine)}>{columns.before}</TableHead>
-        <TableHead scope="col" className="whitespace-normal max-sm:h-auto max-sm:py-1.5">{columns.after}</TableHead>
+        <TableHead scope="col" className={cn("whitespace-normal max-sm:h-auto max-sm:px-2.5 max-sm:py-1.5", firstLine)}>{columns.before}</TableHead>
+        <TableHead scope="col" className="whitespace-normal max-sm:h-auto max-sm:px-2.5 max-sm:py-1.5">{columns.after}</TableHead>
       </TableRow>
     </TableHeader>
     {groups.map(group => {

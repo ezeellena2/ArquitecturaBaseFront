@@ -52,7 +52,7 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
       case "missing": return muted(t(item.key));
       case "none": return muted("—");
       case "list": return <ol className="flex flex-col gap-0.5">{item.items.map((entry, index) => <li key={index} className="flex gap-1.5">
-        <span aria-hidden="true" className="min-w-3 text-right tabular-nums text-[var(--color-content-muted)]">{index + 1}</span><span className={entry.moved ? "font-semibold" : undefined}>{cell(entry.value)}</span></li>)}</ol>;
+        <span aria-hidden="true" className="min-w-3 text-right tabular-nums text-[var(--color-content-muted)]">{index + 1}</span><span className={"min-w-0" + (entry.moved ? " font-semibold" : "")}>{cell(entry.value)}</span></li>)}</ol>;
       case "catalog": return catalogScope ? <CatalogName scope={catalogScope} id={item.catalogId} /> : null;
       case "condition": return catalogScope ? <CatalogConditionValue scope={catalogScope} catalogId={item.catalogId} condition={item.condition} /> : null;
       case "presentation": return !item.parts.length ? muted("—") : catalogScope ? <CatalogPresentationValue scope={catalogScope} catalogId={item.catalogId} parts={item.parts} /> : null;
