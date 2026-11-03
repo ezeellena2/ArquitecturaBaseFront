@@ -113,6 +113,9 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   componentes comunes son la referencia: no cambiar la densidad de filas en una feature.
 - El cuerpo alterna blanco y el tono Campo suave (`table-row-alternate`); hover, selección y bandas de
   sección conservan prioridad. El alternado vive en la biblioteca, sin clases por listado. Aclaración elegida el 2026-10-03: Roles deja blancos los permisos individuales y diferencia los encabezados de área con la banda suave TableRow tone="section"; TableBody striped=false y highlightExpanded=false conservan esa jerarquía en ambos estados.
+- Toda tabla lleva una línea fina entre columnas, que pone la biblioteca, sin clases por pantalla. Sus columnas
+  de números (cantidades, medidas, importes, el número de fila) se marcan con `numeric` y van a la derecha,
+  encabezado incluido ([A, 2026-11-02](../design/visual-baseline.md#líneas-entre-columnas--2026-11-02)).
 - Pasar los estados de carga, error, reintento y vacío al componente. No dejar una tabla en blanco
   mientras se carga ni presentar un fallo como si fuera un listado vacío.
 - Las acciones de una fila usan `RowActions`: un grupo, acciones inocuas primero y destructiva al

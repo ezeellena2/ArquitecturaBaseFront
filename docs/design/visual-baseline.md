@@ -71,7 +71,7 @@ explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `
 `TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `SegmentedControl` (`fullWidth`,
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
-`ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing`, `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+`ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
 `CheckCheck`, `Send`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
@@ -192,6 +192,10 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
   filtros hay y permite limpiarlos. Cambiar el orden también vuelve a la página 1.
 - El backend filtra, ordena y pagina; el front no simula resultados sobre una página parcial.
 - Selección masiva con checkboxes nativos o equivalentes con nombre accesible.
+- **Líneas entre columnas y números a la derecha** ([A, 2026-11-02](#líneas-entre-columnas--2026-11-02)). Toda tabla,
+  planilla o lista, lleva una línea fina entre columnas, en el encabezado y en el cuerpo, del tono de las líneas entre
+  filas, y sus columnas de números (cantidades, medidas, importes, el número de fila) van a la derecha, encabezado
+  incluido.
 
 ## Formularios y diálogos
 
@@ -609,3 +613,36 @@ Las capturas de Información del negocio mostraban un defecto anterior, que se c
 días cortaban «Sin definir» y «Not defined», y con un día abierto los de hora cortaban «Elegir» y «Choose». Ahora miden lo
 que su opción más larga ([Información del negocio](#información-del-negocio)). Una escena lo comprueba con un día abierto
 en es/en a 1440, 390 y 320, y las seis `business-information-*` muestran los selects completos.
+
+## Líneas entre columnas — 2026-11-02
+
+Mirando la planilla de respuestas de un formulario, el usuario dijo que las columnas no se distinguían: todo se veía
+como una sola línea uniforme. Entre tres bocetos con sus datos eligió la **A**: una línea fina entre columnas y los
+números a la derecha. Descartó la B (un encabezado de dos renglones que agrupa las subcolumnas de catálogo bajo su
+pregunta, con líneas más fuertes entre grupos) y la C (sin líneas, sólo alineación y más aire). Se programó primero en
+las tablas anchas y, al verlo, pidió lo mismo **en todas las tablas**, listas incluidas. La banda del encabezado, las
+filas alternadas, el hover, la selección y el foco no cambian.
+
+| Pieza | En el código |
+| --- | --- |
+| Línea entre columnas | `src/index.css`, en toda tabla de la biblioteca, sin una prop ni clases por pantalla |
+| Números a la derecha | `numeric` en `TableHead` y `TableCell` (también `WideTableHead` y `WideTableCell`), en la columna de `DataTable` y en la de `PasteGrid` |
+
+La línea tiene el tono de las líneas entre filas: el borde común al 50 %, y en el encabezado el de su banda. Es una
+sombra interior de una de las dos celdas y no un borde, porque con `border-collapse` el borde de una celda fija se
+queda en su lugar al desplazar; la celda fija al inicio (`WideTable pinned`) lleva la línea de su derecha y se la lleva.
+Una celda de números lleva a la derecha también un bloque más angosto que la columna, como el valor de la planilla. La
+grilla de pegar ya tenía una línea propia entre columnas; ahora usa la común.
+
+Las columnas de números son las cantidades, medidas, importes y números de fila: en la planilla de respuestas, una
+pregunta decimal y una subcolumna de catálogo entera o decimal; en las opciones de un catálogo, el número de fila, un
+campo entero o decimal y el valor de un catálogo entero o decimal (lo mismo en la grilla de pegar y en las altas, los
+errores y los cambios de una importación, y la fila de «Cambiar el tipo»); en las listas, las preguntas y respuestas de
+Formularios, lo que espera una decisión y las respuestas del panel de Formularios, las opciones de Catálogos, los
+usuarios de cada rol y los pedidos y personas de Formularios que faltan. Un texto con un número («En 3 formularios»),
+una fecha o un código («VIS-000024») no es una columna de números.
+
+Cambiaron diez referencias, revisadas una por una: `users-*`, `roles-*`, `editor-*`, `settings-review-320` y
+`appearance-*`, con las líneas nuevas y, en Roles, los usuarios a la derecha. Las escenas `design`,
+`catalogResponseFields`, `catalogExtraFields`, `personData` y `catalogLoading` comprueban en el navegador las líneas,
+los números a la derecha y la línea de la columna fija al desplazar (`src/test/visual/tableColumns.ts`).

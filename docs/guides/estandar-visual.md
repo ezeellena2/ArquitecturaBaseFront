@@ -30,6 +30,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Búsqueda y filtros | `FilterBar`, `SearchInput`, `SegmentedControl`, `FilterMenuTrigger`, `FilterChip` | Opciones, conteos, permisos y estado de URL |
 | Listado | `Surface` con `DataTable` y `Pagination` | Columnas, datos y estados |
 | Tabla especial | `Surface` y primitivos `table` | Columnas y semántica; `TableRowHeader` identifica filas de una comparación |
+| Columnas de números | `numeric` en `TableHead` y `TableCell` o en la columna de `DataTable`; la línea entre columnas la pone la biblioteca en toda tabla | Cuáles columnas son números (cantidades, medidas, importes, número de fila) |
 | Secciones de una tabla | `TableSectionToggle` | Estado abierto, nombre, descripción y selección |
 | Superficie con título | `Surface` | Título y contenido; `headingLevel` conserva la jerarquía y `titleRef` permite devolver el foco |
 | Formulario | `FormField`, `Input`, `Textarea`, `NativeSelect`, campos especializados | Valores, reglas y errores de campo |
