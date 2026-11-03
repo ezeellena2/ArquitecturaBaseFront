@@ -683,8 +683,7 @@ Mirando el detalle de una respuesta y la lista de reglas, el usuario dijo que la
 leer. De los tableros del lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M)
 (filas «Formularios · textos largos»: para el detalle, A alineado, B en una línea y C en celdas; para las reglas, A
 alineadas y B agrupadas por evento) eligió **TL1-A** y **TL2-A**. No cambia lo que se muestra, sino cómo se lee: tres
-tamaños de texto y lo secundario en gris. La lista de reglas (TL2-A) quedó programada el mismo día; el detalle (TL1-A),
-por programar.
+tamaños de texto y lo secundario en gris. Las dos quedaron programadas el mismo día.
 
 El detalle de una respuesta, en la vista rápida (D2), la pantalla completa (DC1) y el celular:
 
@@ -720,23 +719,27 @@ con «Hecho» en una punta del renglón, «Aprobada» suelto y etiquetas pegadas
 cargó, el estado («Por aprobar → Aprobada» y la etiqueta «Aprobada») y el idioma del PDF («Español» y «Contenido en
 Español»). De dos tableros del lienzo provisorio (fila «Formularios · textos largos · 3»: A por momento, B una sola lista)
 eligió **A**, y confirmó que se va la vista previa chica del PDF. Ajusta [TL1-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02).
-Está por programar.
+Quedó programada el mismo día.
 
 - **Cuatro columnas fijas, iguales en todos los renglones:** Fecha, Qué pasó, Estado y Acciones, con su encabezado.
   Quién y el detalle van debajo de qué pasó, en gris. «Hecho», «Aprobada», «Rechazada», «No se pudo» o «Sin confirmar»
-  van siempre en Estado, y «Ver PDF», «Descargar», «Reintentar», «Consultar» o «Revisar», siempre en Acciones. En la
-  vista rápida las columnas son más angostas y «Ver PDF» y «Descargar» van como íconos.
+  van siempre en Estado, y «Ver PDF», «Descargar», «Reintentar», «Consultar» o «Resolver envío», siempre en Acciones. En
+  la vista rápida las columnas son más angostas y «Ver PDF» y «Descargar» van como íconos. Donde no entran las cuatro (el
+  celular), el estado y las acciones bajan debajo de qué pasó, sin el encabezado.
 - **Por momento:** bandas finas, «Al recibirla», «Aprobación», «Al aprobarla» o «Al rechazarla», que ordenan la historia
   sin decir el estado. Dentro, los renglones en el orden en que pasaron.
 - **Nada se repite.** Quién la cargó va una vez, debajo de «Se respondió el formulario» («En la app · Ana Pérez»), sin la
-  línea aparte del origen. El estado va una vez, en su columna: la decisión es un renglón («Marcos Gil la aprobó»,
-  «Agrónomo» debajo, «Aprobada» en Estado) y el motivo de un rechazo va debajo, en su recuadro. La fecha va una vez por
-  día, en el primer renglón, y la hora en todos.
+  línea aparte del origen; quien se la mandó, debajo de «Se mandó el formulario». El estado va una vez, en su columna: la
+  decisión es un renglón («Marcos Gil la aprobó», «Aprobada» en Estado) y el motivo de un rechazo va debajo, en su
+  recuadro; el rol va una vez, debajo de «Se pidió aprobación» («Rol Agrónomo»). La fecha va una vez por día, en el
+  primer renglón, y la hora en todos.
 - **El PDF, en su renglón:** el archivo y su idioma debajo de «Armar el PDF», «Hecho» en Estado y «Ver PDF» y «Descargar»
   en Acciones. Se van la vista previa chica que había fijado DC1 y «Contenido en Español»; la pestaña PDF de la vista
   rápida sigue.
-- **Un aviso a varias personas:** cada persona en su renglón, debajo de la acción, con su estado y, si hace falta,
-  «Revisar».
+- **Los avisos:** el mensaje a quien la cargó es un renglón, con su nombre debajo. Cada persona de un aviso a un rol va en
+  su renglón, debajo de la acción, aunque sea una sola, con el estado de su envío y, si hace falta, «Resolver envío»: el
+  aviso puede estar «Hecho» aunque una persona no lo haya recibido. Los acuses de WhatsApp («Entregado» y «Leído») van
+  con su hora debajo de la persona, aparte de la revisión humana.
 - **Las acciones del encabezado, junto a la navegación:** en la vista rápida, «Abrir en pantalla completa» y «Descargar ▾»
   pasan a íconos con su tooltip, en el renglón del título y antes de ↑ ↓ ×; «Abrir conversación», cuando vino por
   WhatsApp, también. En la pantalla completa siguen en la banda de la página.
