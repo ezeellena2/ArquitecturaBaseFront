@@ -683,7 +683,8 @@ Mirando el detalle de una respuesta y la lista de reglas, el usuario dijo que la
 leer. De los tableros del lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M)
 (filas «Formularios · textos largos»: para el detalle, A alineado, B en una línea y C en celdas; para las reglas, A
 alineadas y B agrupadas por evento) eligió **TL1-A** y **TL2-A**. No cambia lo que se muestra, sino cómo se lee: tres
-tamaños de texto y lo secundario en gris. Está por programar.
+tamaños de texto y lo secundario en gris. La lista de reglas (TL2-A) quedó programada el mismo día; el detalle (TL1-A),
+por programar.
 
 El detalle de una respuesta, en la vista rápida (D2), la pantalla completa (DC1) y el celular:
 
@@ -746,7 +747,8 @@ En el editor de un formulario, «Qué sugerir después» y «Cuando llega una re
 columna de 20 rem a la derecha, siempre a la vista, aunque estuviera vacío («Todavía no hay revisiones.»). El usuario dijo
 que no tiene sentido mostrarlo vacío ahí y pidió otro diseño. De tres tableros del lienzo provisorio (en la fila de la
 lista de reglas: A un botón en cada sección, B solapas dentro de la sección, C un solo historial del formulario) eligió
-**A**. Está por programar.
+**A**, programada el mismo día (`RevisionHistoryButton` y `RevisionHistoryPanel`). La escena `formRules.spec` abre el
+panel y una revisión en es/en a 1440, 390 y 320 px.
 
 - **Un botón «Historial» por sección,** con su reloj, primero entre las acciones del encabezado: en «Qué sugerir después»,
   antes de «Agregar sugerencia» y «Guardar sugerencias», y en «Cuando llega una respuesta», antes de «Agregar regla» y
