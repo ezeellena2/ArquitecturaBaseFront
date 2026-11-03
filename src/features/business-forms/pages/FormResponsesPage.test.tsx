@@ -145,9 +145,9 @@ async function openResponseTab(name: "Respuesta" | "Actividad" | "PDF") {
   await userEvent.click(await panel.findByRole("tab", { name }));
   return within(await panel.findByRole("tabpanel", { name }));
 }
+// The tab already says «Actividad»: its columns go straight in it, without a surface that repeats the title (board TL3-A).
 async function openResponseActivity() {
-  const tab = await openResponseTab("Actividad");
-  return within(tab.getByRole("region", { name: "Actividad" }));
+  return openResponseTab("Actividad");
 }
 
 beforeEach(() => {
@@ -1428,12 +1428,15 @@ it("keeps one workflow read notification in the detail without repeating its cau
     const activity = await openResponseActivity();
     const history = activity;
     await history.findByText("Armar el PDF");
+    // The moments are bands (board TL3-A): the response and what was done on receipt share «Al recibirla», in the order
+    // they happened.
     const moments = history.getAllByRole("list")[0];
-    expect(Array.from(moments.children).map(row => row.getAttribute("aria-label"))).toEqual(["Recibida", "Al recibirla", "Por aprobar → Aprobada", "Al aprobarla"]);
-    const received = within(history.getByRole("listitem", { name: "Recibida" }));
-    expect(received.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:02:00Z"]);
-    expect(history.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:02:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:03:00Z", "2026-10-16T12:04:00Z", "2026-10-16T12:05:00Z"]);
-    expect(history.getAllByText("Se pidió aprobación al rol Supervisión")).toHaveLength(1);
+    expect(Array.from(moments.children).map(row => row.getAttribute("aria-label"))).toEqual(["Al recibirla", "Aprobación", "Al aprobarla"]);
+    const received = within(history.getByRole("listitem", { name: "Al recibirla" }));
+    expect(received.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:02:00Z"]);
+    expect(history.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:02:00Z", "2026-10-16T12:03:00Z", "2026-10-16T12:04:00Z", "2026-10-16T12:05:00Z"]);
+    expect(history.getAllByText("Se pidió aprobación")).toHaveLength(1);
+    expect(history.getAllByText("Rol Supervisión")).toHaveLength(1);
     expect(history.getAllByText("Armar el PDF")).toHaveLength(1);
   });
   it("shows provider receipts separately from human resolution without inventing delivery", async () => {

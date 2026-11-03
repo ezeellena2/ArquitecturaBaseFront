@@ -10,10 +10,6 @@
       "app": "App"
     }
   },
-  "origin": {
-    "app": "{{date}} · en la app, la cargó {{name}}",
-    "appBy": "En la app, la cargó {{name}}"
-  },
   "page": {
     "title": "Nueva respuesta",
     "data": "Datos",

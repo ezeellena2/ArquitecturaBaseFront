@@ -23,7 +23,7 @@ import { approvalStateVariant } from "../approvals";
 import type { ApprovalTask } from "../api/approvals";
 import { ResponseAnswer } from "../components/ResponseAnswer";
 import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
-import { ResponseDocumentDownloads, ResponseDocumentPreview } from "../components/ResponseDocuments";
+import { ResponseDocumentActions, ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
 
 export function FormResponseFullPage() {
@@ -86,10 +86,10 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   </>}>
     <div className={cn("space-y-4", loadingTarget && "opacity-45")} inert={loadingTarget || undefined}>
       <CollapsibleSection title={t("responses.answer")} open={answerOpen} onOpenChange={setAnswerOpen} expandLabel={t("detail.expandAnswer")} collapseLabel={t("detail.collapseAnswer")} meta={t("responses.versionLabel", { version: data.versionNumber })} summary={t("detail.answerSummary", { count: data.values.length })}>
-        <div className="px-4"><ResponseAnswer record={data} actor={detail.scope.user!.id} busy={loadingTarget} photos={photos} onForbidden={deny} onError={onFileError}/></div>
+        <div className="px-4"><ResponseAnswer record={data} actor={detail.scope.user!.id} busy={loadingTarget} photos={photos} onForbidden={deny} onError={onFileError} layout="page"/></div>
       </CollapsibleSection>
       <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
-        <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} renderDocuments={runId => current?.documents.filter(document => document.runId === runId).map(document => <ResponseDocumentPreview key={document.id} owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny} enabled={activityOpen && !loadingTarget}/>)}/></div>
+        <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} documentActions={document => <ResponseDocumentActions owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny}/>}/></div>
       </CollapsibleSection>
       {current?.task && canDecide ? <ApprovalDecisionPanel key={current.task.id} embedded taskId={current.task.id} disabled={loadingTarget} actionsTarget={decisionTarget} onForbidden={navigation.denyDecision} onUnavailable={() => setUnavailableTask(taskKey)} onDecided={refresh}/> : null}
     </div>

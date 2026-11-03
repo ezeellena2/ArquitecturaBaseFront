@@ -10,7 +10,8 @@ for (const language of ["es", "en"] as const)
       const panel = width < 640 ? page.getByRole("main") : page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
       if (width < 640) await panel.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true }).click();
       else await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
-      const history = panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true });
+      // In the quick view the tab already says «Actividad»: its columns go straight in the tab panel (board TL3-A).
+      const history = width < 640 ? panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true }) : panel.getByRole("tabpanel", { name: en ? "Activity" : "Actividad", exact: true });
       await expect(history.getByText(en ? "Unconfirmed" : "Sin confirmar", { exact: true })).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(() => {

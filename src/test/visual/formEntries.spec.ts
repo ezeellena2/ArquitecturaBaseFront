@@ -268,7 +268,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // On the phone the full response keeps its activity folded.
     const expand = page.getByRole("button", { name: es ? "Expandir actividad" : "Expand activity", exact: true });
     if (width < 640) await expand.click();
-    await expect(page.getByText(es ? /en la app, la cargó/i : /in the app, loaded by/i).first()).toBeVisible();
+    await expect(page.getByText(es ? /^En la app · / : /^In the app · /).first()).toBeVisible();
     await page.screenshot({ path: "test-results/form-entry-origin-" + language + "-" + width + ".png", fullPage: true });
   });
 }

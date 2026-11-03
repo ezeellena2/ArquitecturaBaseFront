@@ -235,8 +235,9 @@ it.each(["Open", "Approved"] as const)("shows an %s approval without decision or
   renderRouteWithProviders(path + "/" + responseRecordId);
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   const moment = (await within(panel).findByRole("heading", { name: taskState === "Open" ? "Por aprobar" : "Aprobada", level: 3 })).closest("li")!;
-  await within(moment).findByText("Supervisión");
-  if (taskState === "Approved") expect(within(moment).getByText(/^Luz · /)).toBeInTheDocument();
+  // Who decided goes under the moment, next to the role, and the date at its right (board TL1-A).
+  await within(moment).findByText(taskState === "Open" ? "Supervisión" : "Supervisión · Luz");
+  if (taskState === "Approved") expect(within(moment).getByText(/^17 oct 2026/)).toBeInTheDocument();
   expect(taskReads).toBe(1);
   expect(within(panel).queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
   expect(within(panel).queryByText("No pudimos cargar los datos")).not.toBeInTheDocument();

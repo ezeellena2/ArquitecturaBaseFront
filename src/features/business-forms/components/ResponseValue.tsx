@@ -4,8 +4,10 @@ import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatTypedValue } from "@/shared/lib/typedValue";
 import { responseCatalogFieldText, responseDocumentFormat, responseFiles, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
+// The captured fields of an option, aligned under its value (board TL1-A): the field in grey and its value in the text color,
+// with a line that ties them to the value.
 function CapturedFields({ choice, culture, yes, no }: { choice: ResponseChoice; culture: string; yes: string; no: string }) {
-  return choice.fields?.length ? <dl className="mt-1 space-y-0.5 text-xs text-[var(--color-content-muted)]">{choice.fields.map(field => <div key={field.fieldId} className="flex flex-wrap gap-x-1"><dt>{field.label}</dt><dd className="min-w-0 break-words">{responseCatalogFieldText(field, culture, yes, no)}</dd></div>)}</dl> : null;
+  return choice.fields?.length ? <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 border-l-2 border-[var(--color-surface-header)] pl-2.5 text-xs whitespace-normal">{choice.fields.map(field => <div key={field.fieldId} className="contents"><dt className="text-[var(--color-content-muted)]">{field.label}</dt><dd className="min-w-0 break-words">{responseCatalogFieldText(field, culture, yes, no)}</dd></div>)}</dl> : null;
 }
 export function ResponseValue({
   cell,
@@ -86,9 +88,8 @@ export function ResponseValue({
   if (cell.type === "multiChoice" && detail)
     return <div className="min-w-0 space-y-2 break-words whitespace-pre-wrap">
       {choices.map(choice => <div key={choice.choiceId}>
-        <span>{choice.label}</span>
+        <span className={choice.fields?.length ? "font-medium" : undefined}>{choice.label}</span>
         {choice.detail ? <p className="text-xs text-[var(--color-content-muted)]">{choice.detail}</p> : null}
-        {choice.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{choice.catalogName}</p> : null}
         <CapturedFields choice={choice} culture={i18n.language} yes={t("responses.yes")} no={t("responses.no")}/>
       </div>)}
     </div>;
@@ -108,15 +109,11 @@ export function ResponseValue({
         detail ? "min-w-0 break-words whitespace-pre-wrap" : cell.type === "multiChoice" ? "max-w-64 break-words whitespace-normal" : "max-w-64 truncate"
       }
     >
-      <span>{text}</span>
+      {/* The detail no longer repeats the catalog's name under the value (TL1-A): the question already says it. */}
+      <span className={detail && choice?.fields?.length ? "font-medium" : undefined}>{text}</span>
       {choice?.detail ? (
         <p className="text-xs text-[var(--color-content-muted)]">
           {choice.detail}
-        </p>
-      ) : null}
-      {detail && choice?.catalogName ? (
-        <p className="text-xs text-[var(--color-content-muted)]">
-          {choice.catalogName}
         </p>
       ) : null}
       {detail && choice ? <CapturedFields choice={choice} culture={i18n.language} yes={t("responses.yes")} no={t("responses.no")}/> : null}

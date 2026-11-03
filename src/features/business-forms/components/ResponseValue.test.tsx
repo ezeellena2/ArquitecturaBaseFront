@@ -11,8 +11,8 @@ it.each([false, true])("preserves the captured option label and detail without c
   await act(async () => { renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-000001" label="Sucursal" detail={detail} detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/>); });
   expect(screen.getByText("Sucursal histórica", { exact: true })).toBeVisible();
   expect(screen.getByText("Detalle capturado", { exact: true })).toBeVisible();
-  if (detail) expect(screen.getByText("Catálogo histórico", { exact: true })).toBeVisible();
-  else expect(screen.queryByText("Catálogo histórico", { exact: true })).not.toBeInTheDocument();
+  // The question already names the catalog: neither the sheet nor the detail repeats it (board TL1-A).
+  expect(screen.queryByText("Catálogo histórico", { exact: true })).not.toBeInTheDocument();
   expect(screen.queryByText(/9007199254740993|9\.007\.199/)).not.toBeInTheDocument();
 });
 

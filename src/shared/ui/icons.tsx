@@ -351,5 +351,9 @@ export function LockIcon(props: IconProps) {
 export function ArrowDownIcon(props: IconProps) { return <Icon {...props}><path d="M12 5v14m-6-6 6 6 6-6"/></Icon>; }
 export function CloseIcon(props: IconProps) { return <Icon {...props}><path d="m6 6 12 12M18 6 6 18"/></Icon>; }
 export function DocumentIcon(props: IconProps) { return <Icon {...props}><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></Icon>; }
+/// The header actions of a response next to its navigation (board TL3-A): full view, download and the conversation.
+export function ExpandIcon(props: IconProps) { return <Icon {...props}><path d="M15 4h5v5M9 20H4v-5M20 4l-6 6M4 20l6-6"/></Icon>; }
+export function DownloadIcon(props: IconProps) { return <Icon {...props}><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></Icon>; }
+export function ChatIcon(props: IconProps) { return <Icon {...props}><path d="M20 11.5a8 8 0 0 1-11.7 7.1L4 20l1.4-4.1A8 8 0 1 1 20 11.5Z"/></Icon>; }
 
 export { EllipsisVertical as MoreVerticalIcon } from "lucide-react";

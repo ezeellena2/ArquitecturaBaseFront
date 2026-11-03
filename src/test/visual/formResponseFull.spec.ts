@@ -116,13 +116,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await unfold.click();
     if (mobile) await activity.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true }).click();
     const pdfAction = activity.getByRole("listitem").filter({ has: page.getByText(en ? "Generate PDF" : "Armar el PDF", { exact: true }) }).last();
-    await expect(pdfAction.getByText(docName, { exact: true })).toBeVisible();
-    const mini = pdfAction.locator('iframe[title="' + (en ? "PDF preview" : "Vista previa del PDF") + '"]');
-    await expect(mini).toBeVisible();
-    const miniBounds = (await mini.boundingBox())!;
-    expect(miniBounds.width).toBeLessThanOrEqual(320);
-    expect(miniBounds.height).toBeLessThanOrEqual(180);
-    await expect.poll(async () => (await fixtureCalls(page)).filter(call => call.path.includes("/documents/")).length).toBe(1);
+    // Board TL3-A: the copy is a row of «Al aprobarla», with its file and language under the action and «Ver PDF» and
+    // «Descargar» in Acciones, without a small preview: nothing is read until it is opened.
+    await expect(pdfAction.getByText(new RegExp("^" + docName.replace(".", "\\.") + " · "))).toBeVisible();
+    await expect(pdfAction.locator("iframe")).toHaveCount(0);
+    expect((await fixtureCalls(page)).filter(call => call.path.includes("/documents/"))).toEqual([]);
     await answer.getByRole("button", { name: en ? "Collapse response" : "Plegar respuesta", exact: true }).click();
     await activity.scrollIntoViewIfNeeded();
     await assertContained(page, width);
@@ -138,7 +136,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await dialog.focus(); // The native PDF frame otherwise owns keyboard events.
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0); await expect(view).toBeFocused();
-    const headerDownload = page.getByRole("button", { name: en ? "Download" : "Descargar", exact: true });
+    const headerDownload = page.getByRole("button", { name: en ? "Download" : "Descargar", exact: true, expanded: false });
     await headerDownload.click();
     await expect(page.getByRole("menuitem", { name: docName, exact: true })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "comprobante.pdf", exact: true })).toBeVisible();

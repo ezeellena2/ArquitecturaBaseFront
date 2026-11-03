@@ -135,7 +135,7 @@ for (const language of ["es", "en"] as const)
       await viewer.press("Escape");
       await expect(thumbnail).toBeFocused();
       await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
-      await expect(panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true })).toBeVisible();
+      await expect(panel.getByRole("tabpanel", { name: en ? "Activity" : "Actividad", exact: true })).toBeVisible();
       await page.screenshot({ path: "test-results/responses-d2-activity-" + language + "-" + width + ".png", fullPage: true });
       const next = panel.getByRole("button", { name: en ? "Next" : "Siguiente", exact: true });
       await next.focus();

@@ -349,50 +349,51 @@ it.each(["pdf", "row", "shared"] as const)("opens mobile activity only for the P
   expect(router.state.location.state).toBeNull();
   if (entry === "pdf") {
     expect(within(activity).getByRole("button", { name: "Plegar actividad" })).toHaveAttribute("aria-expanded", "true");
-    expect(await within(activity).findByText(documents[0].name)).toBeVisible();
-    await waitFor(() => expect(reads).toHaveLength(2));
+    expect(await within(activity).findByText(documents[0].name + " · Español")).toBeVisible();
+    expect(reads).toEqual([]);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("link", { name: "Volver a las respuestas" }));
     await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
     await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
     expect(screen.getByRole("button", { name: "Expandir actividad" })).toHaveAttribute("aria-expanded", "false");
-    expect(reads).toHaveLength(2);
+    expect(reads).toEqual([]);
   } else {
     expect(within(activity).getByRole("button", { name: "Expandir actividad" })).toHaveAttribute("aria-expanded", "false");
     expect(reads).toEqual([]);
     expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();
   }
 });
-it("opens fixed PDF copies in their exact action and reuses preview bytes after folding or enlarging", async () => {
+// Board TL3-A: each copy in the row of the action that made it, with its file and language under it and «Ver PDF» and
+// «Descargar» in Acciones, without a small preview: its bytes are read only when it is opened.
+it("opens each fixed PDF copy from the row of its action and reads it only when asked", async () => {
   mobile(); const { documents, reads } = setupIssuedDocuments();
   const view = renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
   await waitFor(() => expect(screen.getByRole("button", { name: "Expandir actividad" })).toBeEnabled());
-  expect(reads).toEqual([]);
   expect(screen.getByText("Recibida · Al aprobarla")).toBeVisible();
   await userEvent.click(screen.getByRole("button", { name: "Expandir actividad" }));
   const actions = await screen.findAllByText("Armar el PDF", { exact: true });
   const first = actions[0].closest("li")!;
   const second = actions[1].closest("li")!;
-  expect(within(first).getByText(documents[0].name)).toBeVisible();
-  expect(within(second).getByText(documents[1].name)).toBeVisible();
-  const preview = await within(first).findByTitle("Vista previa del PDF");
-  await waitFor(() => expect(reads).toHaveLength(2));
-  const src = preview.getAttribute("src");
+  expect(within(first).getByText(documents[0].name + " · Español")).toBeVisible();
+  expect(within(second).getByText(documents[1].name + " · Inglés")).toBeVisible();
+  expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();
+  expect(screen.queryByText(/^Contenido en/)).not.toBeInTheDocument();
+  expect(reads).toEqual([]);
   await userEvent.click(within(first).getByRole("button", { name: "Ver PDF" }));
   const dialog = await screen.findByRole("dialog");
-  expect(within(dialog).getByTitle("Vista previa del PDF")).toHaveAttribute("src", src);
-  expect(reads).toHaveLength(2);
+  const src = (await within(dialog).findByTitle("Vista previa del PDF")).getAttribute("src");
+  expect(reads).toEqual([documents[0].id]);
   await userEvent.click(within(dialog).getAllByRole("button", { name: "Cerrar" })[0]);
+  await waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith(src));
   await userEvent.click(screen.getByRole("button", { name: "Plegar actividad" }));
   await userEvent.click(screen.getByRole("button", { name: "Expandir actividad" }));
-  expect(reads).toHaveLength(2);
-  expect(within(first).getByTitle("Vista previa del PDF")).toHaveAttribute("src", src);
-  expect(within(first).queryByText("Se lo mandó Ana")).not.toBeInTheDocument();
-  expect(screen.getByText("Se lo mandó Ana")).toBeVisible();
+  expect(reads).toEqual([documents[0].id]);
+  // Whoever sent the form goes once, under «Se mandó el formulario», not in a line apart.
+  const sent = screen.getByText("Se mandó el formulario").closest("li")!;
+  expect(within(sent).getByText("Ana")).toBeVisible();
+  expect(screen.queryByText("Se lo mandó Ana")).not.toBeInTheDocument();
   view.unmount();
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith(src);
-  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
 });
 
 it("offers uploaded documents in the full download menu and reads bytes only after selection", async () => {
@@ -414,32 +415,35 @@ it("offers uploaded documents in the full download menu and reads bytes only aft
   await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledWith(expect.anything(), "remito.pdf"));
 });
 
-it("withdraws the full response when its inline issued PDF read is forbidden", async () => {
+it("withdraws the full response when its issued PDF read is forbidden", async () => {
   mobile(); setupIssuedDocuments();
   server.use(http.get("/api/forms/records/:id/documents/:documentId/content", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })));
   renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
   await userEvent.click(screen.getByRole("button", { name: "Expandir actividad" }));
+  const action = (await screen.findAllByText("Armar el PDF", { exact: true }))[0].closest("li")!;
+  await userEvent.click(within(action).getByRole("button", { name: "Ver PDF" }));
   await waitFor(() => expect(screen.queryByRole("heading", { name: "TEST-000002", level: 1 })).not.toBeInTheDocument());
   expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();
   expect(URL.createObjectURL).not.toHaveBeenCalled();
 });
-it("keeps the loaded PDF identity when anchoring changes only the return page", async () => {
-  const { reads } = setupIssuedDocuments();
+it("keeps the open PDF copy when anchoring changes only the return page", async () => {
+  const { documents, reads } = setupIssuedDocuments();
   let position = 1;
   server.use(http.post("/api/forms/definitions/:id/records/:recordId/navigation", ({ params }) => HttpResponse.json({ recordId: params.recordId,
     previousId: position === 1 ? null : priorRecordId, nextId: responseSecondId, position, totalCount: 43 })));
   renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
-  await waitFor(() => expect(screen.getAllByTitle("Vista previa del PDF")).toHaveLength(2));
-  expect(reads).toHaveLength(2);
-  const urls = screen.getAllByTitle("Vista previa del PDF").map(preview => preview.getAttribute("src"));
+  const action = (await screen.findAllByText("Armar el PDF", { exact: true }))[0].closest("li")!;
+  await userEvent.click(within(action).getByRole("button", { name: "Ver PDF" }));
+  const dialog = await screen.findByRole("dialog");
+  const src = (await within(dialog).findByTitle("Vista previa del PDF")).getAttribute("src");
+  expect(reads).toEqual([documents[0].id]);
   position = 21;
   await act(async () => { await queryClient.invalidateQueries({ predicate: query => query.queryKey[0] === "form-responses" && query.queryKey[2] === "record-navigation" }); });
-  expect(await screen.findByText("21 de 43")).toBeVisible();
-  await waitFor(() => expect(screen.getAllByTitle("Vista previa del PDF")).toHaveLength(2));
-  expect(reads).toHaveLength(2);
-  expect(screen.getAllByTitle("Vista previa del PDF").map(preview => preview.getAttribute("src"))).toEqual(urls);
+  expect(await screen.findByText("21 de 43")).toBeInTheDocument();
+  expect(within(dialog).getByTitle("Vista previa del PDF")).toHaveAttribute("src", src);
+  expect(reads).toEqual([documents[0].id]);
   expect(URL.revokeObjectURL).not.toHaveBeenCalled();
 });
 it("supplies the confirmed form parent and response number to full-page breadcrumbs", async () => {
@@ -459,7 +463,7 @@ it("says a response loaded in the app was loaded there and by whom, without a co
     return HttpResponse.json({ ...detail, channel: "app", origin: { ...detail.origin!, channelId: "app", conversationId: null, maskedAddress: null } });
   }));
   renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
-  expect((await screen.findAllByText(/en la app, la cargó Ana$/i)).length).toBeGreaterThan(0);
+  expect(await screen.findByText("En la app · Ana")).toBeVisible();
   expect(screen.queryByText("Se lo mandó Ana")).not.toBeInTheDocument();
 });
 

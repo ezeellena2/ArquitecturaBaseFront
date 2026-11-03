@@ -6,6 +6,8 @@ import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useResponseWorkspace } from "../hooks/useResponseWorkspace";
 import { responseFullPath } from "../responseNavigationPaths";
 import { Button } from "@/shared/ui/button";
+import { IconButton } from "@/shared/ui/IconButton";
+import { ChatIcon, ExpandIcon } from "@/shared/ui/icons";
 import { Badge } from "@/shared/ui/badge";
 import { Spinner } from "@/shared/ui/Spinner";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -51,7 +53,8 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   if (!allowed) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={null}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><ForbiddenPage/></ResponsePanelFrame></ResponsePanelFilesScope>;
   if (!data || unavailable) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame></ResponsePanelFilesScope>;
   return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
-    <Button variant="outline" size="sm" asChild><Link to={responseFullPath(formId, recordId, location.search)} onClick={event => {
+    {/* The header actions are icons with their tooltip, in the title row next to ↑ ↓ × (board TL3-A). */}
+    <IconButton label={t("detail.openFull")} asChild><Link to={responseFullPath(formId, recordId, location.search)} onClick={event => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       if (workspace.navigation?.selection.recordId !== recordId) {
         const source = workspace.navigation;
@@ -59,9 +62,9 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
         workspace.setNavigation(source && observed ? { ...source, selection: { recordId, taskId: observed.id }, search: location.search } : { origin: "sheet", selection: { recordId }, search: location.search });
       }
       workspace.prepareFull(recordId);
-    }}>{t("detail.openFull")}</Link></Button>
-    {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="link" size="inline" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
-    {current?.documents.length ? <ResponseDocumentDownloads documents={current.documents} downloads={downloads}/> : null}
+    }}><ExpandIcon className="size-4"/></Link></IconButton>
+    {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <IconButton label={t("responses.openChat")} asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}><ChatIcon className="size-4"/></Link></IconButton> : null}
+    {current?.documents.length ? <ResponseDocumentDownloads compact documents={current.documents} downloads={downloads}/> : null}
   </>}>
     <ResponseDetailContent state={state} formId={formId} recordId={recordId} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed}/>
   </ResponsePanelFrame></ResponsePanelFilesScope>;
