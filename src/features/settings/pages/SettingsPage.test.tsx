@@ -302,7 +302,8 @@ describe("SettingsPage", () => {
   it("breaks the time zone in the comparison only after its slashes and at its spaces, with whole words", async () => {
     server.use(http.patch("/api/settings", async ({ request }) => {
       writes.push(await request.json());
-      settings = { ...settings, defaultPageSize: 100, revision: 2 };
+      // The other person also changed the time zone: the comparison shows only what differs (LR2-A).
+      settings = { ...settings, defaultPageSize: 100, defaultTimeZoneId: "UTC", revision: 2 };
       return HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 });
     }));
     renderRouteWithProviders("/configuracion/listados");
@@ -349,7 +350,8 @@ describe("SettingsPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     const main = within(screen.getByRole("main"));
     await userEvent.click(await main.findByRole("button", { name: "Revisar valores actuales" }));
-    expect(within(await main.findByRole("table")).getAllByRole("rowheader")).toHaveLength(4);
+    // Only what differs, each setting once with both values side by side (LR2-A): the registration did not change.
+    expect(within(await main.findByRole("table")).getAllByRole("rowheader").map(header => header.textContent)).toEqual(["Idioma predeterminado", "Zona horaria predeterminada", "Filas por página"]);
     await userEvent.click(main.getByRole("button", { name: "Conservar mis cambios" }));
     expect(screen.getByRole("combobox", { name: "Zona horaria predeterminada" })).toHaveValue("UTC");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
