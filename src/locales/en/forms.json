@@ -791,9 +791,12 @@
     "columnsHidden_other": "Columns · {{count}} hidden",
     "fixedColumns": "Always visible",
     "search": "Search long text answers",
-    "filters": "More filters",
+    "filters": "Filters",
     "clear": "Clear all",
-    "apply": "Apply filters",
+    "tabs": {
+      "pending": "To approve ({{count}})",
+      "all": "All"
+    },
     "receivedFrom": "Received from",
     "receivedTo": "Received until",
     "invalidRange": "The end date must be on or after the start date.",
@@ -847,7 +850,6 @@
     "exported": "Excel workbook downloaded.",
     "wait_one": "Wait {{count}} second before trying again.",
     "wait_other": "Wait {{count}} seconds before trying again.",
-    "moreOptions": "See more options",
     "remove": "Remove filter: {{name}}",
     "people": "People",
     "noOptions": "No matching options.",
@@ -860,12 +862,8 @@
     "appliedFilters_one": "{{count}} applied filter",
     "appliedFilters_other": "{{count}} applied filters",
     "position": "{{position}} of {{count}}",
-    "viewResponses_one": "View {{count}} response",
-    "viewResponses_other": "View {{count}} responses",
     "anyOf": "any of",
-    "anyOfCount": "any of {{count}}",
-    "retrying": "Retrying…",
-    "counting": "Counting…"
+    "retrying": "Retrying…"
   },
   "rules": {
     "title": "When a response arrives",

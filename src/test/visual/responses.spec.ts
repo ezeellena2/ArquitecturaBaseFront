@@ -36,25 +36,23 @@ for (const language of ["es", "en"] as const)
         .click();
       await expect(page.getByRole("menu")).toBeVisible();
       await page.keyboard.press("Escape");
+      // Board PL1-A: «Filtros» opens what can be filtered on the left and what is chosen in the marked one on the right; on
+      // the phone it takes the screen, with the list first and the options after touching one.
       await page
-        .getByRole("button", {
-          name: en ? "More filters" : "Más filtros",
-          exact: true,
-        })
+        .getByRole("button", { name: en ? "Filters" : "Filtros", exact: true })
         .click();
-      const filters = page.getByRole("dialog");
+      const filters = page.getByRole("dialog", { name: en ? "Filters" : "Filtros" });
       await expect(filters).toBeVisible();
       expect((await filters.boundingBox())!.width).toBeLessThanOrEqual(width);
+      await filters.getByRole("button", { name: en ? "Method" : "Modalidad", exact: true }).click();
+      await expect(filters.getByRole("region", { name: en ? "Method" : "Modalidad" })).toBeVisible();
       await page.screenshot({
         path: `test-results/responses-t2-${language}-${width}.png`,
         fullPage: true,
       });
       await filters.press("Escape");
       await expect(
-        page.getByRole("button", {
-          name: en ? "More filters" : "Más filtros",
-          exact: true,
-        }),
+        page.getByRole("button", { name: en ? "Filters" : "Filtros", exact: true }),
       ).toBeFocused();
       await page
         .getByRole("button", {

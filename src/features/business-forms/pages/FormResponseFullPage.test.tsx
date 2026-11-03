@@ -193,10 +193,11 @@ it.each(["quick", "full"] as const)("continues after the resolved anchor without
 });
 it("keeps keyboard arrows in the pending queue without publishing its private sheet filter", async () => {
   const { reads } = setup(["formrecords.read", "formapprovals.decide"], true);
-  const { router } = renderRouteWithProviders(path);
+  const { router } = renderRouteWithProviders(path + "?view=all");
   await userEvent.type(await screen.findByRole("searchbox", { name: "Buscar en textos largos" }), "private pending keyboard");
   await waitFor(() => expect(reads.sheets.at(-1)?.search).toBe("private pending keyboard"));
-  await userEvent.click(screen.getByRole("link", { name: "Revisar VIS-00001" }));
+  await userEvent.click(screen.getByRole("tab", { name: /^Por aprobar/ }));
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }));
   const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await userEvent.click(await within(quick).findByRole("link", { name: "Abrir en pantalla completa" }));
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
@@ -210,6 +211,7 @@ it("keeps keyboard arrows in the pending queue without publishing its private sh
   expect(router.state.location.search).not.toContain("private");
   expect(JSON.stringify(router.state.location.state)).not.toContain("private");
   await userEvent.click(screen.getByRole("link", { name: "Volver a las respuestas" }));
+  await userEvent.click(await screen.findByRole("tab", { name: "Todas" }));
   expect(await screen.findByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("private pending keyboard");
 });
 it("withdraws only pending metadata when cross-page approval navigation is forbidden", async () => {

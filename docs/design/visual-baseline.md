@@ -186,8 +186,9 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
 
 Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsqueda):
 
-- Un buscador de texto libre, siempre visible. Hasta tres filtros frecuentes al lado; el resto en un panel avanzado con
-  contador de aplicados, que aplica el conjunto una vez. Búsqueda y filtros rápidos aplican sin botón.
+- Un buscador de texto libre, siempre visible. Hasta tres filtros frecuentes al lado; el resto en «Filtros»
+  (`FilterPanel`), con su contador de aplicados, que aplica cada cambio enseguida, como «Columnas» (PL1-A, 2026-11-02).
+  Búsqueda y filtros rápidos también aplican sin botón.
 - Filtros activos como chips removibles y una única acción “Limpiar todo”. Sin coincidencias, el vacío dice cuántos
   filtros hay y permite limpiarlos. Cambiar el orden también vuelve a la página 1.
 - El backend filtra, ordena y pagina; el front no simula resultados sobre una página parcial.

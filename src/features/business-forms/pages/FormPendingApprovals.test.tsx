@@ -50,11 +50,15 @@ it("lets a decision-only user review that form's oldest-first queue without read
  expect(reads.lists.every(url=>url.searchParams.get("definitionId")===responseFormId&&url.searchParams.get("onlyMine")==="true")).toBe(true);
 });
 
-it("places the same pending section above the readable sheet and opens the real response owner",async()=>{
+// Board PL1-A: whoever also reads responses has the queue in the tab «Por aprobar (N)», where the sheet opens when there is
+// something to decide, and the sheet in «Todas».
+it("opens in the tab of the pending ones and opens the real response owner",async()=>{
  const {reads}=setup(true);
  renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");
- const pending=await screen.findByRole("region",{name:"Por aprobar · 2"});
- expect(await screen.findByRole("columnheader",{name:"Importe"})).toBeVisible();
+ expect(await screen.findByRole("tab",{name:"Por aprobar (2)"})).toHaveAttribute("aria-selected","true");
+ expect(screen.getByRole("tab",{name:"Todas"})).toHaveAttribute("aria-selected","false");
+ const pending=await screen.findByRole("tabpanel",{name:"Por aprobar (2)"});
+ expect(screen.queryByRole("columnheader",{name:"Importe"})).not.toBeInTheDocument();
  await userEvent.click(within(pending).getByRole("link",{name:"Revisar VIS-00001"}));
  const panel=await screen.findByRole("region",{name:"Detalle de la respuesta"});
  expect(await within(panel).findByText("Importe")).toBeVisible();
@@ -68,6 +72,21 @@ it("does not expose per-form approval data to a response-only reader",async()=>{
  await screen.findByRole("columnheader",{name:"Importe"});
  expect(screen.queryByRole("region",{name:/Por aprobar/})).not.toBeInTheDocument();
  expect(reads.lists).toHaveLength(0);
+});
+
+// Board PL1-A: with nothing to decide the sheet opens in «Todas»; «Por aprobar (0)» keeps its empty state, and the tab goes
+// in the address so that «Volver» and a link come back to it.
+it("opens in Todas with nothing to decide and keeps the chosen tab in the address", async () => {
+ setup(true);
+ server.use(http.get("/api/forms/approvals",()=>HttpResponse.json({items:[],page:1,pageSize:20,totalCount:0,totalPages:0,hasPrevious:false,hasNext:false})));
+ const {router}=renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas");
+ const all=await screen.findByRole("tab",{name:"Todas"});
+ await waitFor(()=>expect(all).toHaveAttribute("aria-selected","true"));
+ expect(await screen.findByRole("columnheader",{name:"Importe"})).toBeVisible();
+ await userEvent.click(screen.getByRole("tab",{name:"Por aprobar (0)"}));
+ expect(await screen.findByRole("heading",{name:"No hay respuestas por aprobar."})).toBeVisible();
+ expect(screen.queryByRole("columnheader",{name:"Importe"})).not.toBeInTheDocument();
+ expect(new URLSearchParams(router.state.location.search).get("view")).toBe("pending");
 });
 
 // An empty queue does not explain what it would hold (decision of 2026-10-31): its title is enough.

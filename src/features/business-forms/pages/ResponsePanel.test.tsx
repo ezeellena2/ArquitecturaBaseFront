@@ -171,14 +171,16 @@ it.each([false, true])("keeps the last quick-view row selected after arrow navig
   expect(router.state.location.search).toContain("sort=-number");
   expect(new URLSearchParams(router.state.location.search).get("page")).toBe(crossingPage ? "2" : null);
 });
-it("propagates the static state filter to the settled sheet and its count", async () => {
+it("propagates the static state filter to the settled sheet and to the counts of Filtros", async () => {
   const { reads } = setup(undefined, true);
-  server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })));
+  const counts: { filter?: { state?: string } }[] = [];
+  server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => { counts.push(await request.json() as typeof counts[number]); return HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false }); }));
   renderRouteWithProviders(path); await screen.findByRole("table");
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Estado" }), "Approved");
   await waitFor(() => expect(reads.searches.at(-1)).toMatchObject({ state: "Approved" }));
-  await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-  await waitFor(() => expect(reads.searches.some(body => body.pageSize === 1 && body.state === "Approved")).toBe(true));
+  await userEvent.click(screen.getByRole("button", { name: /^Filtros/ }));
+  await userEvent.click(within(await screen.findByRole("dialog", { name: "Filtros" })).getByRole("button", { name: "Cargó" }));
+  await waitFor(() => expect(counts.some(body => body.filter?.state === "Approved")).toBe(true));
 });
 it("opens only a fixed PDF tab from the row marker and loads no bytes before explicit viewing", async () => {
   const { reads } = setup(undefined, true, true); renderRouteWithProviders(path);
@@ -246,7 +248,7 @@ it.each(["Open", "Approved"] as const)("shows an %s approval without decision or
 it.each(["sheet", "pending"])("pushes opening %s and replaces arrow navigation in browser history", async source => {
   setup(["formrecords.read", "formapprovals.decide"], true);
   const origin = path;
-  const { router } = renderRouteWithProviders(origin + (source === "pending" ? "?approvalPageSize=20&pageSize=20" : "?pageSize=20"));
+  const { router } = renderRouteWithProviders(origin + (source === "pending" ? "?approvalPageSize=20&pageSize=20" : "?pageSize=20&view=all"));
   await userEvent.click(await screen.findByRole("link", { name: rowName(source, "TEST-000002") }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   expect(router.state.historyAction).toBe("PUSH");
@@ -260,7 +262,7 @@ it.each(["sheet", "pending"])("pushes opening %s and replaces arrow navigation i
 it.each(["sheet", "pending"])("returns keyboard focus to the %s panel after clicking another row", async source => {
   setup(["formrecords.read", "formapprovals.decide"], true);
   const origin = path;
-  const { router } = renderRouteWithProviders(origin);
+  const { router } = renderRouteWithProviders(origin + (source === "sheet" ? "?view=all" : ""));
   await userEvent.click(await screen.findByRole("link", { name: rowName(source, "TEST-000002") }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("heading", { name: "TEST-000002" });
@@ -280,7 +282,7 @@ it.each([
 ] as const)("returns focus to the same %s panel after reselecting its %s", async (source, control) => {
   setup(["formrecords.read", "formapprovals.decide"], true);
   const origin = path;
-  const { router } = renderRouteWithProviders(origin);
+  const { router } = renderRouteWithProviders(origin + (source === "sheet" ? "?view=all" : ""));
   const link = await screen.findByRole("link", { name: rowName(source, "TEST-000002") });
   await userEvent.click(link);
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
@@ -319,7 +321,7 @@ it.each(["sheet", "pending"])("lets Escape close the %s panel immediately after 
   let requested = false;
   server.use(http.get("/api/forms/records/" + responseSecondId, async () => { requested = true; await gate; return HttpResponse.json(responseDetailFixture(responseSecondId)); }));
   const origin = path;
-  const { router } = renderRouteWithProviders(origin);
+  const { router } = renderRouteWithProviders(origin + (source === "sheet" ? "?view=all" : ""));
   await userEvent.click(await screen.findByRole("link", { name: rowName(source, "TEST-000002") }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("heading", { name: "TEST-000002" });

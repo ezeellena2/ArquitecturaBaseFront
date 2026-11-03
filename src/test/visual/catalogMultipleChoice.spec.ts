@@ -108,13 +108,17 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     if (width < 640) expect(textGeometry.lines).toBeGreaterThan(1);
     await contained(page, width);
     await page.screenshot({ path: info.outputPath("sheet.png"), fullPage: true });
-    const filter = page.getByRole("button", { name: label("Fallas", "Faults"), exact: true });
-    await filter.focus(); await page.keyboard.press("Enter");
-    await page.getByRole("menuitemcheckbox", { name: new RegExp(label("Frío", "Cold")) }).click();
+    // Board PL1-A: the question to choose from is filtered in «Filtros», which applies each change at once.
+    await page.getByRole("button", { name: label("Filtros", "Filters"), exact: true }).click();
+    const filters = page.getByRole("dialog", { name: label("Filtros", "Filters") });
+    await filters.getByRole("button", { name: label("Fallas", "Faults"), exact: true }).click();
+    // The label covers the checkbox row, as in CheckboxField.
+    await filters.getByText(label("Frío", "Cold"), { exact: true }).click();
+    await expect(filters.getByRole("checkbox", { name: label("Frío", "Cold"), exact: true })).toBeChecked();
     await page.keyboard.press("Escape");
     await expect.poll(async () => (await fixture(page)).some(query => query.conditions?.some(condition => condition.operator === "anyOf"))).toBe(true);
     await expect(page.getByRole("link", { name: "TEST-000001", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: label("Fallas: alguna de 1", "Faults: any of 1"), exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: label("Filtros 1", "Filters 1"), exact: true })).toBeVisible();
     await table.evaluate(node => { node.scrollLeft = 0; });
     await page.getByRole("link", { name: "TEST-000002", exact: true }).click();
     const detail = width < 640 ? page.getByRole("region", { name: label("Respuesta", "Response"), exact: true })

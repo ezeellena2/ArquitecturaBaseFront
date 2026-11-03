@@ -650,7 +650,8 @@ Mirando «Registro de aplicación», el usuario preguntó por qué la planilla t
 de «Columnas», sin «5 respuestas» y, en lugar de la banda de las por aprobar arriba, dos solapas. De dos tableros del
 lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila «Formularios ·
 respuestas · dos solapas y un solo «Filtros»»: A con lo aplicado en chips, B con lo aplicado adentro de «Filtros») eligió
-**A**, y confirmó los tres puntos que su pedido no decía (los marcados abajo). Está por programar.
+**A**, y confirmó los tres puntos que su pedido no decía (los marcados abajo). Quedó programada el mismo día, con
+`FilterPanel` en `shared/ui` y `ResponseFiltersMenu` en la planilla.
 
 - **Dos solapas.** «Por aprobar (N)» tiene la tabla de hoy (N°, Cargó, Recibida, Rol y «Revisar»), de la más vieja a la
   más nueva y sin filtros; «Todas» es la planilla con sus filtros. La planilla se abre en «Por aprobar» si la persona
@@ -674,8 +675,10 @@ Reemplaza la banda «Por aprobar · N» de arriba de la planilla (MF1 y DC0 cons
 el panel lateral «Más filtros» de T2 y el botón «Recibida», que abría el mismo panel. También el filtro de la primera
 pregunta de elegir arriba de la planilla: «Lote», el «alguna de» de [CA5](catalogos-mejoras.md), que queda adentro de
 «Filtros» con su chip. Y el contador de respuestas. La regla de «Listados y filtros» del
-[fundamento visual](visual-baseline.md#listados-y-filtros) todavía dice que el panel avanzado aplica el conjunto una vez:
-se ajusta al programar esta elección, que hace lo mismo que Usuarios.
+[fundamento visual](visual-baseline.md#listados-y-filtros), que decía que el panel avanzado aplicaba el conjunto una vez,
+se ajustó al programarla. Al programarla quedó, además: la solapa va en la dirección como `view`; cambiar de solapa cierra
+la tarea abierta y conserva la página de cada una; y quien pierde el permiso de aprobar mientras mira se queda sin
+solapas, con el aviso de «Por aprobar» y la respuesta que leía sobre la planilla, como antes.
 
 ## Textos largos: el detalle y las reglas, TL1-A y TL2-A — 2026-11-02
 

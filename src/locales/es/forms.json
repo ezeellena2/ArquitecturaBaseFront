@@ -791,9 +791,12 @@
     "columnsHidden_other": "Columnas · {{count}} ocultas",
     "fixedColumns": "Siempre visibles",
     "search": "Buscar en textos largos",
-    "filters": "Más filtros",
+    "filters": "Filtros",
     "clear": "Limpiar todo",
-    "apply": "Aplicar filtros",
+    "tabs": {
+      "pending": "Por aprobar ({{count}})",
+      "all": "Todas"
+    },
     "receivedFrom": "Recibida desde",
     "receivedTo": "Recibida hasta",
     "invalidRange": "La fecha final debe ser igual o posterior a la inicial.",
@@ -847,7 +850,6 @@
     "exported": "Descargamos la planilla de Excel.",
     "wait_one": "Esperá {{count}} segundo para volver a intentar.",
     "wait_other": "Esperá {{count}} segundos para volver a intentar.",
-    "moreOptions": "Ver más opciones",
     "remove": "Quitar filtro: {{name}}",
     "people": "Personas",
     "noOptions": "No hay opciones que coincidan.",
@@ -860,12 +862,8 @@
     "appliedFilters_one": "{{count}} filtro aplicado",
     "appliedFilters_other": "{{count}} filtros aplicados",
     "position": "{{position}} de {{count}}",
-    "viewResponses_one": "Ver {{count}} respuesta",
-    "viewResponses_other": "Ver {{count}} respuestas",
     "anyOf": "alguna de",
-    "anyOfCount": "alguna de {{count}}",
-    "retrying": "Reintentando…",
-    "counting": "Contando…"
+    "retrying": "Reintentando…"
   },
   "rules": {
     "title": "Cuando llega una respuesta",

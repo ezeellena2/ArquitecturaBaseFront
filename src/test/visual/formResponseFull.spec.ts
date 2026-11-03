@@ -169,9 +169,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: en ? "Forms" : "Formularios", level: 1, exact: true })).toBeVisible();
     await page.getByRole("link", { name: formName, exact: true }).click();
     await expect(page.getByRole("heading", { name: formName, level: 1, exact: true })).toBeVisible();
-    const pending = page.getByRole("region", { name: en ? "To approve · 2" : "Por aprobar · 2", exact: true });
+    // Board PL1-A: with something to decide the sheet opens in the tab «Por aprobar (2)».
+    const pending = page.getByRole("tabpanel", { name: en ? "To approve (2)" : "Por aprobar (2)", exact: true });
     await expect(pending.getByRole("link", { name: reviewName, exact: true })).toBeVisible();
     for (const table of await page.locator('[data-slot="table-container"]').all()) {
+      if (!await table.isVisible()) continue;
       const bounds = (await table.boundingBox())!;
       expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     }

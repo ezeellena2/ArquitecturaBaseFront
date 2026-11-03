@@ -172,5 +172,11 @@
     "placeholder": "Paste with Ctrl+V",
     "moreRows_one": "And 1 more row",
     "moreRows_other": "And {{count}} more rows"
+  },
+  "filterPanel": {
+    "applied": "filtered",
+    "back": "Back to filters",
+    "clear": "Remove",
+    "done": "Done"
   }
 }

@@ -93,8 +93,8 @@ function setup(read = false) {
 }
 
 async function openFirst() {
-  const pending = await screen.findByRole("region", { name: "Por aprobar · 2" });
-  await userEvent.click(within(pending).getByRole("link", { name: "Revisar VIS-00001" }));
+  // Alone for whoever only decides, or in the tab «Por aprobar (2)» for whoever also reads responses (board PL1-A).
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("button", { name: "Aprobar" });
   return panel;
@@ -179,7 +179,7 @@ it.each(["post", "get"] as const)("withdraws approval metadata after %s 403 whil
   }));
   const { router } = renderRouteWithProviders(path);
   const panel = await openFirst();
-  expect(await screen.findByRole("columnheader", { name: "Importe" })).toBeVisible();
+  expect(screen.queryByRole("columnheader", { name: "Importe" })).not.toBeInTheDocument();
   if (source === "post") await approveAndConfirm(within(panel));
   else {
     fixture.access.denied = true;
@@ -188,7 +188,8 @@ it.each(["post", "get"] as const)("withdraws approval metadata after %s 403 whil
   await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");
   expect(screen.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Rechazar" })).not.toBeInTheDocument();
-  expect(screen.getByRole("columnheader", { name: "Importe" })).toBeVisible();
+  expect(await screen.findByRole("columnheader", { name: "Importe" })).toBeVisible();
+  expect(screen.queryByRole("tab", { name: /^Por aprobar/ })).not.toBeInTheDocument();
   expect(screen.queryByRole("link", { name: "Revisar VIS-00001" })).not.toBeInTheDocument();
   await waitFor(() => {
     for (const query of queryClient.getQueryCache().findAll({ predicate: query => query.queryKey[0] === "form-approvals" && query.queryKey[2] === "task" }))
@@ -258,7 +259,7 @@ it("withdraws pending metadata when loading the next page is forbidden while ret
   server.use(http.get("/api/forms/approvals/:id/continuation", () => HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));
   await userEvent.click(within(panel).getByRole("button", {name:"Siguiente"}));
   await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");
-  expect(screen.getByRole("columnheader", {name:"Importe"})).toBeVisible();
+  expect(await screen.findByRole("columnheader", {name:"Importe"})).toBeVisible();
   expect(screen.queryByRole("link", {name:"Revisar VIS-00001"})).not.toBeInTheDocument();
   await waitFor(() => {
     for (const query of queryClient.getQueryCache().findAll({predicate: query => query.queryKey[0] === "form-approvals" && ["task","list","continuation"].includes(String(query.queryKey[2]))}))
@@ -353,10 +354,12 @@ it.each(["list", "task"])("announces a failed per-form %s read once and retries 
 it.each(["available", "missing"])("returns from an %s response to the same per-form pending page and private sheet filter", async availability => {
   setup(true);
   if (availability === "missing") server.use(http.get("/api/forms/records/" + responseSecondId, () => HttpResponse.json({ code: "Forms.Record.NotFound" }, { status: 404 })));
-  const { router } = renderRouteWithProviders(path + "?approvalPage=2&approvalPageSize=1&pageSize=20&columns=none");
+  const { router } = renderRouteWithProviders(path + "?approvalPage=2&approvalPageSize=1&pageSize=20&columns=none&view=all");
   const search = await screen.findByRole("searchbox", { name: "Buscar en textos largos" });
   await userEvent.type(search, "filtro privado");
   await waitFor(() => expect(search).toHaveValue("filtro privado"));
+  // The sheet is the tab «Todas»; changing tab keeps the page of the pending ones.
+  await userEvent.click(screen.getByRole("tab", { name: /^Por aprobar/ }));
   await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00002" }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("heading", { name: availability === "missing" ? "No encontramos esa respuesta o no está disponible" : "TEST-000001" });
@@ -366,6 +369,7 @@ it.each(["available", "missing"])("returns from an %s response to the same per-f
   expect(new URLSearchParams(router.state.location.search).get("approvalPage")).toBe("2");
   expect(new URLSearchParams(router.state.location.search).get("approvalPageSize")).toBe("1");
   expect(new URLSearchParams(router.state.location.search).get("columns")).toBe("none");
-  expect(screen.getByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("filtro privado");
   await waitFor(() => expect(screen.getByRole("link", { name: "Revisar VIS-00002" })).toHaveFocus());
+  await userEvent.click(screen.getByRole("tab", { name: "Todas" }));
+  expect(await screen.findByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("filtro privado");
 });

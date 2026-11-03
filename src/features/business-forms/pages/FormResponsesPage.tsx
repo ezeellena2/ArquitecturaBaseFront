@@ -34,14 +34,16 @@ import { useRereadSignal } from "../hooks/useRereadSignal";
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { FilterChip } from "@/shared/ui/FilterChip";
-import { ResponseChoiceMenu } from "../components/ResponseChoiceMenu";
-import { replaceResponseCondition, responseCatalogFieldCellText, responseFiles, responseFilterLabels, visibleResponseColumnDescriptors, visibleResponseColumns } from "../responses";
+import { Spinner } from "@/shared/ui/Spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
+import { useFormPendingApprovals } from "../hooks/useFormPendingApprovals";
+import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, visibleResponseColumnDescriptors, visibleResponseColumns } from "../responses";
 import { isNumericType } from "../catalogValues";
 import type { ResponseRow } from "../api/responses";
 import { responseFullPath } from "../responseNavigationPaths";
 import { ResponseValue } from "../components/ResponseValue";
 import { ResponseColumnsMenu } from "../components/ResponseColumnsMenu";
-import { ResponseFiltersPanel } from "../components/ResponseFiltersPanel";
+import { ResponseFiltersMenu } from "../components/ResponseFiltersMenu";
 import { ResponseExportDialog } from "../components/ResponseExportDialog";
 import { FormEntryPanel } from "../components/FormEntryPanel";
 export function FormResponsesPage() {
@@ -80,9 +82,16 @@ export function FormResponsesPage() {
   const addResponse = () => mobile
     ? navigate("/formularios/" + formId + "/cargar", { state: { from: "sheet" } })
     : navigate({ pathname: "/formularios/" + formId + "/respuestas/nueva", search: route.params.toString() });
-  const [panel, setPanel] = useState<"filters" | "export" | null>(null);
-  const [initialField, setInitialField] = useState<string | undefined>();
+  const [panel, setPanel] = useState<"export" | null>(null);
   const workspace = useContext(ResponseWorkspaceContext);
+  // Who sees responses and approves has two tabs (board PL1-A): «Por aprobar (N)», the same query as its table, and «Todas».
+  // The sheet opens in «Por aprobar» when there is something to decide and otherwise in «Todas»; the tab goes in the address.
+  const decide = !!scope.user?.permissions.includes("formapprovals.decide");
+  const pending = useFormPendingApprovals(formId, Math.max(1, Number(route.params.get("approvalPage") ?? 1) || 1),
+    Math.max(1, Number(route.params.get("approvalPageSize") ?? 20) || 20), route.params.get("approval") ?? undefined, decide);
+  const pendingCount = pending.query.data?.totalCount;
+  const tabs = decide && !pending.forbidden;
+  const view = route.params.get("view") ?? (route.params.get("approval") ? "pending" : pendingCount !== undefined ? pendingCount > 0 ? "pending" : "all" : pending.query.isError ? "all" : undefined);
   useBreadcrumbLeaf(query.data?.name);
   useLayoutEffect(() => {
     if (!baseMatch || recordId || workspace?.fullEntry?.locationKey === null || workspace?.navigation?.origin !== "sheet" || !workspace.fullEntry || !query.data || query.isPlaceholderData) return;
@@ -189,11 +198,89 @@ export function FormResponsesPage() {
     })),
   ];
   const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, i18n.language, scope.user?.timeZoneId, data?.versions);
-  const firstChoice = data?.columns.find((column) => column.type === "choice" || column.type === "multiChoice");
   const sort = route.query.sort?.replace(
     "field",
     route.query.sortFieldId ?? "field",
   );
+  // The search, the channel and the state stay in sight, side by side; the rest goes in «Filtros», which applies each change
+  // at once, and what is applied is a chip under the bar with «Limpiar todo», as in Usuarios. The count is at the foot.
+  const sheet = <>
+    <FilterBar className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {!data || data.columns.some((column) => column.type === "longText") ? (
+          <div className="w-full sm:w-72">
+            <SearchInput maxLength={100} value={route.query.search ?? ""} label={t("responses.search")}
+              onChange={(search) => route.setFilter({ ...route.query, search: search || undefined })}/>
+          </div>
+        ) : null}
+        {/* «Canal» is one more quick filter (CW6-A): App or WhatsApp. */}
+        <div className="w-full sm:w-44"><NativeSelect aria-label={t("formEntries:sheet.channel")} value={route.query.enteredInApp == null ? "" : String(route.query.enteredInApp)}
+          onChange={event => route.setFilter({ ...route.query, enteredInApp: event.target.value === "" ? undefined : event.target.value === "true" })}>
+          <option value="">{t("formEntries:sheet.allChannels")}</option>
+          <option value="true">{t("formEntries:sheet.channels.app")}</option>
+          <option value="false">{t("responses.whatsapp")}</option>
+        </NativeSelect></div>
+        {data?.hasApproval ? <div className="w-full sm:w-44"><NativeSelect aria-label={t("approvals.state")} value={route.query.state ?? ""} onChange={event => route.setFilter({ ...route.query, state: (event.target.value || undefined) as typeof route.query.state })}><option value="">{t("approvals.allStates")}</option>{(["Received", "PendingApproval", "Approved", "Rejected"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}</NativeSelect></div> : null}
+        <ResponseFiltersMenu formId={formId} query={route.query} columns={data?.columns ?? []} zone={scope.user?.timeZoneId ?? "UTC"} disabled={!data} onApply={route.setFilter}/>
+        <div className="sm:ml-auto">
+          <ResponseColumnsMenu columns={data?.columns ?? []} visible={visible} visibleCatalogFields={visibleCatalogFields}
+            onChange={(ids) => route.setColumns(data?.columns ?? [], ids)}/>
+        </div>
+      </div>
+      {hasFilters ? (
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border)] pt-3">
+          {appliedFilters.map(filter => <FilterChip key={filter.key} removeLabel={t("responses.remove", { name: filter.label })} onRemove={() => {
+            if (filter.key === "version") route.setFilter(route.query, []);
+            else if (filter.key === "state") route.setFilter({ ...route.query, state: undefined });
+            else if (filter.key === "channel") route.setFilter({ ...route.query, enteredInApp: undefined });
+            else if (filter.key === "actor") route.setFilter({ ...route.query, actorIds: [] });
+            else if (filter.key === "received") route.setFilter({ ...route.query, receivedFromUtc: undefined, receivedToUtc: undefined });
+            else if (filter.key === "search") route.setFilter({ ...route.query, search: undefined });
+            else route.setFilter({ ...route.query, conditions: route.query.conditions?.filter(item => item.fieldId !== filter.key) });
+          }}>{filter.label}</FilterChip>)}
+          <Button type="button" variant="muted-link" size="inline" onClick={() => route.setFilter({}, [])}>{t("responses.clear")}</Button>
+        </div>
+      ) : null}
+    </FilterBar>
+    <Surface>
+      <DataTable
+        columns={columns}
+        rows={data?.records.items ?? []}
+        rowKey={(row) => row.id}
+        selectedRowKey={recordId ?? (adding ? savedRecord : undefined) ?? (workspace?.navigation?.origin === "sheet" ? workspace.navigation.selection.recordId : undefined)}
+        onRowClick={row => { rememberSheet(row.id); if (row.id === recordId) setFocusRequest(value => value + 1); navigate(recordPath(row.id)); }}
+        isLoading={query.isPending}
+        refreshing={refreshing}
+        hasData={!!data}
+        error={query.error ? t(query.error instanceof ApiError && query.error.status === 404 ? "responses.unavailableForm" : "responses.loadFailed") : undefined}
+        onRetry={query.error instanceof ApiError && query.error.status === 404 ? undefined : () => {
+          void query.refetch();
+        }}
+        sort={sort}
+        onSortChange={route.toggleSort}
+        emptyTitle={t(hasFilters ? "responses.noMatches" : "responses.empty")}
+        // An empty sheet does not explain how responses arrive (decision of 2026-10-31): its title and the way out.
+        emptyAction={
+          hasFilters ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => route.setFilter({}, [])}
+            >
+              {t("responses.clear")}
+            </Button>
+          ) : canCreate ? <Button type="button" variant="outline" onClick={addResponse}>{t("formEntries:addResponse")}</Button> : undefined
+        }
+      />
+      {data ? (
+        <Pagination
+          {...data.records}
+          onPageChange={route.pagination.setPage}
+          onPageSizeChange={route.pagination.setPageSize}
+        />
+      ) : null}
+    </Surface>
+  </>;
   return (
     <div ref={container} tabIndex={-1} className="relative h-full min-h-0 outline-none">
     <div inert={mobile && !!recordId} className="h-full overflow-y-auto"><Page
@@ -221,162 +308,17 @@ export function FormResponsesPage() {
         </> : undefined
       }
     >
-      {scope.user?.permissions.includes("formapprovals.decide") ? <FormPendingApprovals formId={formId} onDecided={readAgain}/> : null}
-      <FilterBar>
-        <div className="flex flex-wrap items-center gap-3">
-          {!data ||
-          data.columns.some((column) => column.type === "longText") ? (
-            <div className="w-full sm:w-72">
-              <SearchInput
-                maxLength={100}
-                value={route.query.search ?? ""}
-                label={t("responses.search")}
-                onChange={(search) =>
-                  route.setFilter({
-                    ...route.query,
-                    search: search || undefined,
-                  })
-                }
-              />
-            </div>
-          ) : null}
-          {/* «Canal» is one more quick filter (CW6-A): App or WhatsApp. */}
-          <div className="w-full sm:w-44"><NativeSelect aria-label={t("formEntries:sheet.channel")} value={route.query.enteredInApp == null ? "" : String(route.query.enteredInApp)}
-            onChange={event => route.setFilter({ ...route.query, enteredInApp: event.target.value === "" ? undefined : event.target.value === "true" })}>
-            <option value="">{t("formEntries:sheet.allChannels")}</option>
-            <option value="true">{t("formEntries:sheet.channels.app")}</option>
-            <option value="false">{t("responses.whatsapp")}</option>
-          </NativeSelect></div>
-          {data?.hasApproval ? <NativeSelect aria-label={t("approvals.state")} value={route.query.state ?? ""} onChange={event => route.setFilter({ ...route.query, state: (event.target.value || undefined) as typeof route.query.state })}><option value="">{t("approvals.allStates")}</option>{(["Received", "PendingApproval", "Approved", "Rejected"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}</NativeSelect> : null}
-          {firstChoice ? (
-            <ResponseChoiceMenu
-              formId={formId}
-              filter={route.query}
-              column={firstChoice}
-              onChange={(ids) =>
-                route.setFilter({
-                  ...route.query,
-                  conditions: replaceResponseCondition(
-                    route.query.conditions ?? [],
-                    firstChoice.fieldId,
-                    firstChoice.type === "multiChoice" ? "anyOf" : "in",
-                    ids,
-                  ),
-                })
-              }
-              onMore={() => {
-                setInitialField(firstChoice.fieldId);
-                setPanel("filters");
-              }}
-            />
-          ) : null}
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!data}
-            onClick={() => {
-              setInitialField(undefined);
-              setPanel("filters");
-            }}
-          >
-            {t("responses.received")}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!data}
-            onClick={() => {
-              setInitialField(undefined);
-              setPanel("filters");
-            }}
-          >
-            {t("responses.filters")}
-          </Button>
-          <span className="text-sm text-[var(--color-content-muted)]">
-            {data
-              ? t("responses.count", { count: data.records.totalCount })
-              : "…"}
-          </span>
-          <ResponseColumnsMenu
-            columns={data?.columns ?? []}
-            visible={visible}
-            visibleCatalogFields={visibleCatalogFields}
-            onChange={(ids) => route.setColumns(data?.columns ?? [], ids)}
-          />
-          {hasFilters ? (
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => route.setFilter({}, [])}
-            >
-              {t("responses.clear")}
-            </Button>
-          ) : null}
-        </div>
-        {hasFilters ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {appliedFilters.map(filter => <FilterChip key={filter.key} removeLabel={t("responses.remove", { name: filter.label })} onRemove={() => {
-              if (filter.key === "version") route.setFilter(route.query, []);
-              else if (filter.key === "state") route.setFilter({ ...route.query, state: undefined });
-              else if (filter.key === "channel") route.setFilter({ ...route.query, enteredInApp: undefined });
-              else if (filter.key === "actor") route.setFilter({ ...route.query, actorIds: [] });
-              else if (filter.key === "received") route.setFilter({ ...route.query, receivedFromUtc: undefined, receivedToUtc: undefined });
-              else if (filter.key === "search") route.setFilter({ ...route.query, search: undefined });
-              else route.setFilter({ ...route.query, conditions: route.query.conditions?.filter(item => item.fieldId !== filter.key) });
-            }}>{filter.label}</FilterChip>)}
-
-          </div>
-        ) : null}
-      </FilterBar>
-      <Surface>
-        <DataTable
-          columns={columns}
-          rows={data?.records.items ?? []}
-          rowKey={(row) => row.id}
-          selectedRowKey={recordId ?? (adding ? savedRecord : undefined) ?? (workspace?.navigation?.origin === "sheet" ? workspace.navigation.selection.recordId : undefined)}
-          onRowClick={row => { rememberSheet(row.id); if (row.id === recordId) setFocusRequest(value => value + 1); navigate(recordPath(row.id)); }}
-          isLoading={query.isPending}
-          refreshing={refreshing}
-          hasData={!!data}
-          error={query.error ? t(query.error instanceof ApiError && query.error.status === 404 ? "responses.unavailableForm" : "responses.loadFailed") : undefined}
-          onRetry={query.error instanceof ApiError && query.error.status === 404 ? undefined : () => {
-            void query.refetch();
-          }}
-          sort={sort}
-          onSortChange={route.toggleSort}
-          emptyTitle={t(hasFilters ? "responses.noMatches" : "responses.empty")}
-          // An empty sheet does not explain how responses arrive (decision of 2026-10-31): its title and the way out.
-          emptyAction={
-            hasFilters ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => route.setFilter({}, [])}
-              >
-                {t("responses.clear")}
-              </Button>
-            ) : canCreate ? <Button type="button" variant="outline" onClick={addResponse}>{t("formEntries:addResponse")}</Button> : undefined
-          }
-        />
-        {data ? (
-          <Pagination
-            {...data.records}
-            onPageChange={route.pagination.setPage}
-            onPageSizeChange={route.pagination.setPageSize}
-          />
-        ) : null}
-      </Surface>
-      {panel === "filters" && data ? (
-        <ResponseFiltersPanel
-          initialFieldId={initialField}
-          formId={formId}
-          query={route.query}
-          columns={data.columns}
-          zone={scope.user?.timeZoneId ?? "UTC"}
-          onApply={route.setFilter}
-          onClose={() => setPanel(null)}
-        />
-      ) : null}
+      {/* Changing tab closes a chosen task, but keeps the page of each one. Both stay mounted: losing the permission to
+          decide takes the tabs away and leaves the notice of the queue, with the response being read, over the sheet. */}
+      {decide ? <Tabs value={view ?? ""} onValueChange={next => update({ view: next, approval: undefined, tab: undefined })}>
+        {tabs ? <TabsList aria-label={t("responses.title")}>
+          <TabsTrigger value="pending">{pendingCount === undefined ? t("overview.pendingColumn") : t("responses.tabs.pending", { count: pendingCount })}</TabsTrigger>
+          <TabsTrigger value="all">{t("responses.tabs.all")}</TabsTrigger>
+        </TabsList> : null}
+        {tabs && view === undefined ? <Spinner/> : null}
+        <TabsContent value="pending" forceMount hidden={tabs && view !== "pending"}><FormPendingApprovals formId={formId} onDecided={readAgain} inTab={tabs} pending={pending}/></TabsContent>
+        <TabsContent value="all" forceMount hidden={tabs && view !== "all"}>{sheet}</TabsContent>
+      </Tabs> : sheet}
       {panel === "export" && data ? (
         <ResponseExportDialog
           formId={formId}

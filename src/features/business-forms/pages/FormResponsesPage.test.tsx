@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,7 +13,7 @@ import {
   responseRecordId,
   responseSheetFixture,
 } from "@/test/responseFixtures";
-import { dismissNotification, notify } from "@/shared/ui/notifications";
+import { notify } from "@/shared/ui/notifications";
 import { approvalTaskFixture, approvalTaskId, approveAndConfirm } from "@/test/approvalFixtures";
 import type { ApprovalPage, ApprovalTask } from "../api/approvals";
 import type { ResponseAction, ResponseRecipient, ResponseWorkflow } from "../api/workflow";
@@ -144,6 +144,13 @@ async function openResponseTab(name: "Respuesta" | "Actividad" | "PDF") {
   const panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
   await userEvent.click(await panel.findByRole("tab", { name }));
   return within(await panel.findByRole("tabpanel", { name }));
+}
+// Board PL1-A: «Filtros» opens what can be filtered on the left and, on the right, what is chosen in the marked one.
+async function openFilters(section?: string) {
+  await userEvent.click(screen.getByRole("button", { name: /^Filtros/ }));
+  const dialog = await screen.findByRole("dialog", { name: "Filtros" });
+  if (section) await userEvent.click(within(dialog).getByRole("button", { name: section }));
+  return dialog;
 }
 // The tab already says «Actividad»: its columns go straight in it, without a surface that repeats the title (board TL3-A).
 async function openResponseActivity() {
@@ -820,215 +827,46 @@ describe("response sheet", () => {
     expect(button).toBeDisabled();
     expect(screen.getByRole("region", { name: "Detalle de la respuesta" })).toHaveFocus();
   });
-  it("shows every filter section and applies the server count for the received date draft", async () => {
+  // Each change applies at once (board PL1-A): no draft, count nor Apply; the panel stays open and the chip appears.
+  it("shows every filter section and applies the received date at once", async () => {
     setup();
     const captured = vi.fn();
-    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { const body = await request.json() as { receivedFromUtc?: string }; captured(body); const sheet = responseSheetFixture(); if (body.receivedFromUtc) sheet.records.totalCount = 9; return HttpResponse.json(sheet); }));
+    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { captured(await request.json()); return HttpResponse.json(responseSheetFixture()); }));
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("heading", { name: "Importe" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("heading", { name: "Observaciones" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("heading", { name: "Cargó" })).toBeInTheDocument();
-    const input = within(dialog).getByLabelText("Recibida desde");
-    await userEvent.type(input, "2026-10-16");
-    await within(dialog).findByRole("button", { name: "Ver 9 respuestas" });
-    expect(captured).toHaveBeenCalledWith(expect.objectContaining({ receivedFromUtc: expect.stringContaining("2026-10-16"), pageSize: 1 }));
+    const dialog = await openFilters();
+    const sections = within(dialog).getAllByRole("button").filter(button => button.closest("ul")).map(button => button.textContent);
+    expect(sections).toEqual(expect.arrayContaining(["Recibida", "Importe", "Observaciones", "Cargó", "Versión del formulario"]));
+    expect(sections[0]).toBe("Recibida");
+    fireEvent.change(within(dialog).getByLabelText("Recibida desde"), { target: { value: "2026-10-16" } });
+    await waitFor(() => expect(captured).toHaveBeenCalledWith(expect.objectContaining({ receivedFromUtc: expect.stringContaining("2026-10-1"), pageSize: 20 })));
+    expect(screen.getByRole("dialog", { name: "Filtros" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filtros 1" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /^(Aplicar filtros|Cancelar|Ver \d+ respuestas?)$/ })).not.toBeInTheDocument();
   });
-  it("counts only a settled valid decimal draft and applies that normalized value", async () => {
+  it("applies only a settled valid decimal, with its normalized value", async () => {
     setup();
-    const captured: { dimension?: string; fieldId?: string; filter: { conditions?: { values: string[] }[] } }[] = [];
-    server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => {
-      captured.push(await request.json() as typeof captured[number]);
-      return HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false });
-    }));
-    let applied: unknown;
+    const applied: { conditions?: { operator: string; values: string[] }[] }[] = [];
     server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
-      applied = await request.json();
+      applied.push(await request.json() as typeof applied[number]);
       return HttpResponse.json(responseSheetFixture());
     }));
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
-    await waitFor(() => expect(captured.length).toBeGreaterThan(1));
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 100)); });
-    const initialCount = captured.length;
+    const dialog = await openFilters("Importe");
+    const before = applied.length;
     const input = within(dialog).getByRole("textbox", { name: "Desde" });
     await userEvent.type(input, "-");
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
-    expect(captured).toHaveLength(initialCount);
-    expect(within(dialog).getByRole("button", { name: /Ver .* respuestas|Aplicar filtros/ })).toBeDisabled();
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 500)); });
+    expect(within(dialog).getByText("Ingresá un número con coma o punto decimal.")).toBeVisible();
     await userEvent.clear(input);
     await userEvent.type(input, "12,");
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
-    expect(captured).toHaveLength(initialCount);
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 500)); });
+    expect(applied).toHaveLength(before);
     await userEvent.type(input, "5");
-    expect(captured).toHaveLength(initialCount);
-    await waitFor(() => expect(captured.some(item => item.filter.conditions?.some(condition => condition.values?.includes("12.5")))).toBe(true));
-    expect(captured.filter(item => item.dimension === "presence" && item.fieldId === responseSheetFixture().columns[0].fieldId)).toHaveLength(1);
-    await userEvent.click(within(dialog).getByRole("button", { name: /Ver .* respuestas|Aplicar filtros/ }));
-    await waitFor(() => expect(applied).toMatchObject({ conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })] }));
-    expect(notify).not.toHaveBeenCalled();
-  });
-  it.each([400, 404])("applies valid filters without offering a count retry after HTTP %s", async status => {
-    setup();
-    const counts = vi.fn();
-    const applied = vi.fn();
-    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
-      const body = await request.json() as { pageSize: number; conditions?: unknown[] };
-      if (body.pageSize === 1) {
-        counts(body);
-        return HttpResponse.json({ detail: "Count unavailable", code: "Test.Count" }, { status });
-      }
-      applied(body);
-      return HttpResponse.json(responseSheetFixture());
-    }));
-    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
-    await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
-    await userEvent.type(within(dialog).getByRole("textbox", { name: "Desde" }), "12,5");
-    await waitFor(() => expect(counts).toHaveBeenCalledWith(expect.objectContaining({
-      page: 1, pageSize: 1, conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })],
-    })));
-    await waitFor(() => expect(queryClient.getQueryCache().getAll().find(query => query.queryKey[2] === "count" && query.state.status === "error")).toBeDefined());
-    expect(within(dialog).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
-    const apply = within(dialog).getByRole("button", { name: "Aplicar filtros" });
-    expect(apply).toBeEnabled();
-    await userEvent.click(apply);
-    await waitFor(() => expect(applied).toHaveBeenCalledWith(expect.objectContaining({
-      pageSize: 20, conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })],
-    })));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-  it.each(["network", "server"])("retains the filter draft and explicitly retries a %s count failure", async failure => {
-    setup();
-    let recovered = false;
-    const counts = vi.fn();
-    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
-      const body = await request.json() as { pageSize: number; conditions?: unknown[] };
-      if (body.pageSize === 1) {
-        counts(body);
-        if (!recovered && body.conditions?.length) return failure === "network" ? HttpResponse.error() : HttpResponse.json({ code: "Test.Count", traceId: "count-trace" }, { status: 503 });
-      }
-      return HttpResponse.json(responseSheetFixture());
-    }));
-    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
-    await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
-    await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
-    const input = within(dialog).getByRole("textbox", { name: "Desde" });
-    await userEvent.type(input, "12,5");
-    // La lectura de red conserva los reintentos acotados del QueryClient real.
-    if (failure === "network") await waitFor(() => expect(counts.mock.calls.length).toBeGreaterThanOrEqual(3));
-    await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
-    expect(within(dialog).getByRole("button", { name: "Aplicar filtros" })).toBeEnabled();
+    await waitFor(() => expect(applied.at(-1)).toMatchObject({ conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })] }));
+    expect(applied).toHaveLength(before + 1);
     expect(input).toHaveValue("12,5");
-    const countBeforeRetry = counts.mock.calls.length;
-    recovered = true;
-    await userEvent.click(within(dialog).getByRole("button", { name: "Reintentar" }));
-    await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
-    expect(counts).toHaveBeenCalledTimes(countBeforeRetry + 1);
-    expect(counts).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [expect.objectContaining({ values: ["12.5"] })] }));
-    expect(input).toHaveValue("12,5");
-    expect(notify).toHaveBeenCalledTimes(1);
-  });
-  it("keeps the count wait after dismissing its notice and retries only by click after expiry", async () => {
-    setup();
-    let recovered = false;
-    const counts = vi.fn();
-    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
-      const body = await request.json() as { pageSize: number };
-      if (body.pageSize === 1) {
-        counts(body);
-        if (!recovered) return HttpResponse.json({ code: "Test.Wait", detail: "Wait before counting", retryAfter: 1 }, { status: 429 });
-      }
-      return HttpResponse.json(responseSheetFixture());
-    }));
-    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
-    await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
-    await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
-    const retry = within(dialog).getByRole("button", { name: "Reintentar" });
-    expect(retry).toBeDisabled();
-    expect(within(dialog).getByRole("button", { name: "Aplicar filtros" })).toBeEnabled();
-    // The wait is the reason of the disabled Retry, not a text above it.
-    expect(retry).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar.");
-    expect(within(dialog).getByText("Esperá 1 segundo para volver a intentar.")).not.toBeVisible();
-    act(() => dismissNotification(vi.mocked(notify).mock.calls[0][0].id));
-    expect(retry).toBeDisabled();
-    expect(retry).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar.");
-    // When the wait ends, Retry is drawn again without its reason.
-    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Reintentar" })).toBeEnabled());
-    expect(counts).toHaveBeenCalledTimes(1);
-    recovered = true;
-    await userEvent.click(within(dialog).getByRole("button", { name: "Reintentar" }));
-    await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
-    expect(counts).toHaveBeenCalledTimes(2);
-    expect(notify).toHaveBeenCalledTimes(1);
-  });
-  it.each(["apply", "retry"])("can %s an edited valid filter while the count remains paused by HTTP 429", async recovery => {
-    setup();
-    let recovered = false;
-    const counts = vi.fn();
-    const applied = vi.fn();
-    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
-      const body = await request.json() as { pageSize: number };
-      if (body.pageSize === 1) {
-        counts(body);
-        if (!recovered) return HttpResponse.json({ code: "Test.Wait", detail: "Wait before counting", retryAfter: recovery === "retry" ? 1 : 60 }, { status: 429 });
-      }
-      applied(body);
-      return HttpResponse.json(responseSheetFixture());
-    }));
-    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
-    await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
-    await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
-    await userEvent.type(within(dialog).getByRole("textbox", { name: "Desde" }), "12,5");
-    const apply = within(dialog).getByRole("button", { name: "Aplicar filtros" });
-    expect(apply).toBeDisabled();
-    await waitFor(() => expect(apply).toBeEnabled());
-    if (recovery === "apply") expect(within(dialog).getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(/^Esperá [0-9]+ segundos para volver a intentar\.$/);
-    expect(counts).toHaveBeenCalledTimes(1);
-    if (recovery === "retry") {
-      const retry = () => within(dialog).getByRole("button", { name: "Reintentar" });
-      await waitFor(() => expect(retry()).toBeEnabled());
-      expect(counts).toHaveBeenCalledTimes(1);
-      recovered = true;
-      await userEvent.click(retry());
-      await within(dialog).findByRole("button", { name: "Ver 2 respuestas" });
-      expect(counts).toHaveBeenCalledTimes(2);
-      expect(counts).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [expect.objectContaining({ values: ["12.5"] })] }));
-      return;
-    }
-    await userEvent.click(apply);
-    await waitFor(() => expect(applied).toHaveBeenCalledWith(expect.objectContaining({
-      pageSize: 20, conditions: [expect.objectContaining({ operator: "gte", values: ["12.5"] })],
-    })));
-    expect(counts).toHaveBeenCalledTimes(1);
-  });
-  it("withdraws records and count recovery after the count read returns HTTP 403", async () => {
-    setup();
-    server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => {
-      const body = await request.json() as { pageSize: number };
-      return body.pageSize === 1
-        ? HttpResponse.json({ code: "Forms.Record.Forbidden" }, { status: 403 })
-        : HttpResponse.json(responseSheetFixture());
-    }));
-    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
-    await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    await screen.findByRole("heading", { name: /permiso/i });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
-    expect(screen.queryByText("TEST-000002")).not.toBeInTheDocument();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(notify).not.toHaveBeenCalled();
   });
   it.each([400, 429])("does not offer an immediate retry after a facet HTTP %s", async status => {
@@ -1040,8 +878,7 @@ describe("response sheet", () => {
     }));
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await openFilters("Cargó");
     await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
     expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
     if (status === 429) {
@@ -1051,7 +888,9 @@ describe("response sheet", () => {
       expect(within(actor).getByRole("button", { name: "Reintentar" })).toBeDisabled();
       expect(within(actor).getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(wait);
       expect(within(actor).queryByRole("status")).not.toBeInTheDocument();
-      const state = within(dialog).getAllByRole("combobox", { name: "Respuesta" })[0];
+      await userEvent.click(within(dialog).getByRole("button", { name: "Importe" }));
+      const state = await within(dialog).findByRole("combobox", { name: "Respuesta" });
+      await waitFor(() => expect(state).toBeDisabled());
       expect(state).toBeDisabled();
       expect(state).toHaveAccessibleDescription(wait);
       for (const text of within(dialog).getAllByText(wait)) expect(text).not.toBeVisible();
@@ -1078,8 +917,7 @@ describe("response sheet", () => {
     );
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await openFilters("Cargó");
     expect(
       await within(dialog).findByRole("checkbox", {
         name: "Persona sin información",
@@ -1090,8 +928,7 @@ describe("response sheet", () => {
     setup();
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await openFilters("Confirmado");
     expect(
       await within(dialog).findByRole("checkbox", { name: "No" }),
     ).toBeEnabled();
@@ -1108,7 +945,7 @@ describe("response sheet", () => {
     );
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
-    await userEvent.click(screen.getByRole("button", { name: "Más filtros" }));
+    await openFilters("Cargó");
     await screen.findByRole("heading", { name: /permiso/i });
     expect(screen.queryByText("TEST-000002")).not.toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
@@ -1485,12 +1322,13 @@ it("filters multi choices through anyOf while keeping their column unsortable", 
   const header = await screen.findByRole("columnheader", { name: "Fallas" });
   expect(within(header).queryByRole("button")).not.toBeInTheDocument();
   expect(screen.getAllByText("Ruido, Frío", { exact: true })).toHaveLength(sheet.records.items.length);
-  const trigger = screen.getByRole("button", { name: "Fallas" });
-  trigger.focus(); await userEvent.keyboard("{Enter}");
-  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: /Frío/ }));
+  // The first question to choose from is not a filter of its own over the sheet anymore: it is in «Filtros» (board PL1-A).
+  expect(screen.queryByRole("button", { name: "Fallas" })).not.toBeInTheDocument();
+  const dialog = await openFilters("Fallas");
+  await userEvent.click(await within(dialog).findByRole("checkbox", { name: "Frío" }));
   await waitFor(() => expect(requests).toContainEqual(expect.objectContaining({ conditions: [{ fieldId: single.fieldId, operator: "anyOf", values: [options[0]!.id] }] })));
   await userEvent.keyboard("{Escape}");
-  expect(screen.getByRole("button", { name: "Fallas: alguna de 1" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Filtros 1" })).toBeInTheDocument();
   expect(await screen.findByText("Fallas: alguna de Frío", { exact: true })).toBeInTheDocument();
   expect(requests.every(body => (body as { sortFieldId?: string }).sortFieldId !== single.fieldId)).toBe(true);
 });
@@ -1613,32 +1451,4 @@ describe("response sheet waits and empty states", () => {
     await userEvent.click(clear[1]);
     expect(await screen.findByRole("link", { name: "TEST-000002" })).toBeInTheDocument();
   });
-});
-
-describe("quick choice filter", () => {
-  // Reintentar does not close the menu: its spinner shows the wait until the options arrive.
-  it("keeps the choice menu open while it reads its options again", async () => {
-    setup();
-    let reads = 0;
-    let release!: () => void;
-    const gate = new Promise<void>(resolve => { release = resolve; });
-    const options = responseSheetFixture().columns.find(column => column.label === "Modalidad")!.options;
-    server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async () => {
-      if (++reads === 1) return HttpResponse.json({ code: "Test.Facet", detail: "No se pudieron contar." }, { status: 500 });
-      await gate;
-      const items = options.map(option => ({ ...option, count: 2 }));
-      return HttpResponse.json({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
-    }));
-    renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
-    await screen.findByRole("link", { name: "TEST-000002" });
-    const trigger = screen.getAllByRole("button", { name: "Modalidad" }).find(button => button.getAttribute("aria-haspopup") === "menu")!;
-    await act(async () => trigger.focus());
-    await userEvent.keyboard("{Enter}");
-    await userEvent.click(await screen.findByRole("menuitem", { name: "Reintentar" }));
-    const menu = screen.getByRole("menu");
-    expect(within(menu).getByRole("status")).toHaveTextContent("Cargando…");
-    await act(async () => release());
-    expect(await within(menu).findByRole("menuitemcheckbox", { name: /Opción histórica/ })).toBeInTheDocument();
-    expect(within(menu).queryByRole("menuitem", { name: "Reintentar" })).not.toBeInTheDocument();
-  }, 15000);
 });

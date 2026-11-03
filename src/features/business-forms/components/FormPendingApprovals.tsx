@@ -26,7 +26,13 @@ import { FormResponseDetailPage } from "../pages/FormResponseDetailPage";
 import { ApprovalDecisionPanel } from "./ApprovalDecisionPanel";
 import { ResponsePanelFrame } from "./ResponsePanelFrame";
 
-export function FormPendingApprovals({ formId, onDecided, standalone = false }: { formId: string; onDecided?: () => void; standalone?: boolean }) {
+/**
+ * «Por aprobar»: alone for whoever only decides, or as the tab «Por aprobar (N)» of the sheet (`inTab`, board PL1-A). The
+ * sheet passes its own reading of the queue (`pending`), so losing the permission here also takes its tabs away.
+ */
+export function FormPendingApprovals({ formId, onDecided, standalone = false, inTab = false, pending }: {
+  formId: string; onDecided?: () => void; standalone?: boolean; inTab?: boolean; pending?: ReturnType<typeof useFormPendingApprovals>;
+}) {
   const { t, i18n } = useTranslation("forms");
   const [params] = useSearchParams();
   const update = useQueryUpdate();
@@ -36,7 +42,8 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
   const page = Math.max(1, Number(params.get("approvalPage") ?? 1) || 1);
   const pageSize = Math.max(1, Number(params.get("approvalPageSize") ?? 20) || 20);
   const taskId = params.get("approval") ?? undefined;
-  const { scope, query, deny, forbidden } = useFormPendingApprovals(formId, page, pageSize, taskId);
+  const own = useFormPendingApprovals(formId, page, pageSize, taskId, !pending);
+  const { scope, query, deny, forbidden } = pending ?? own;
   const workspace = useResponseWorkspace(formId);
   const readScope = useResponseScope();
   const table = useRef<HTMLElement | null>(null);
@@ -124,8 +131,9 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false }: 
       {recordId ? <FormResponseDetailPage formId={formId} recordId={recordId} decisionAllowed={false} navigation={{ selectionId: recordId, previous: false, next: false, kind: "sheet", onMove: () => {}, onClose: navigation.onClose }}/> : null}</>);
   }
   if (!scope.allowed) return null;
-  return present(<><div className="mb-4" ref={node => { table.current = node; }} tabIndex={-1}>
-    <Surface title={query.data ? t("overview.pendingTitle", { count: query.data.totalCount }) : t("overview.pendingColumn")}>
+  // In its tab the title would repeat the tab, which already says how many wait.
+  return present(<><div className={inTab ? undefined : "mb-4"} ref={node => { table.current = node; }} tabIndex={-1}>
+    <Surface title={inTab ? undefined : query.data ? t("overview.pendingTitle", { count: query.data.totalCount }) : t("overview.pendingColumn")}>
       <DataTable columns={[
         { id: "number", header: t("responses.number"), cell: row => row.number },
         { id: "author", header: t("responses.actor"), cell: row => row.author.displayName ?? t("responses.unknownPerson") },
