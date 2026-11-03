@@ -34,9 +34,9 @@ Cómo se arma un formulario (2026-10-30):
 
 | Tablero | Qué define |
 | --- | --- |
-| CW12 · Cómo se arma un formulario | El autor decide el contenido y la app la forma, con una tabla fija por tipo de pregunta: texto corto con el ancho de su largo máximo, texto largo de 2 a 6 renglones, número y fecha angostos, «Sí \| No» sin nada marcado, hasta cinco opciones cortas en fila (si no, lista desplegable), elegir varias con una casilla por renglón y «Elegí hasta N», catálogo con la lista de CW3 y archivos con CW4. |
+| CW12 · Cómo se arma un formulario | El autor decide el contenido y la app la forma, con una tabla fija por tipo de pregunta: texto corto con el ancho de su largo máximo, texto largo de 2 a 6 renglones, número y fecha angostos, «Sí \| No» sin nada marcado, hasta cinco opciones cortas en fila (si no, lista desplegable), elegir varias con una casilla por renglón y «Elegí hasta N», catálogo con la lista de CW3 y archivos con CW4. Desde el 2026-11-02, [AR1-A](#dos-anchos-ar1-a--2026-11-02) pone las casillas en columnas y las opciones en fila sin mirar su largo. |
 | **CW13-A · Unidades en la etiqueta** (elegida) | La unidad la escribe el autor en la etiqueta, «Densidad (kg/ha)», igual en todos lados; el campo no la muestra adentro. |
-| **CW16 · Hasta tres por renglón y zonas plegables** (elegida) | Cada zona es una grilla de tres columnas en escritorio, dos en tableta y una en el celular y en el panel, en el orden del editor; una pregunta que no entra baja de renglón, con una línea entre renglones. Una columna: número, fecha, sí o no, texto corto de hasta 30 y lista desplegable; dos: catálogo, opciones en fila y texto corto de hasta 80; el renglón entero: texto largo, texto corto de más de 80, elegir varias, fotos y documentos. Las zonas se pliegan, arrancan abiertas y, plegadas, dicen cuántas preguntas se respondieron; al enviar, una zona plegada con algo para corregir se abre sola. |
+| **CW16 · Hasta tres por renglón y zonas plegables** (elegida) | Cada zona es una grilla de tres columnas en escritorio, dos en tableta y una en el celular y en el panel, en el orden del editor; una pregunta que no entra baja de renglón, con una línea entre renglones. Una columna: número, fecha, sí o no, texto corto de hasta 30 y lista desplegable; dos: catálogo, opciones en fila y texto corto de hasta 80; el renglón entero: texto largo, texto corto de más de 80, elegir varias, fotos y documentos. Las zonas se pliegan, arrancan abiertas y, plegadas, dicen cuántas preguntas se respondieron; al enviar, una zona plegada con algo para corregir se abre sola. Desde el 2026-11-02, [AR1-A](#dos-anchos-ar1-a--2026-11-02) deja dos anchos, una columna o el renglón entero, y el panel con sus zonas. |
 
 Quedan para etapas siguientes, con su tablero en el mismo lienzo: la vista propia de quien sólo completa (Etapa 2), corregir
 (CW10-A) y anular (CW11-A) en la Etapa 3, las listas dependientes (CW7) en la Etapa 4 y los títulos de sección (CW15-B) en la
@@ -61,6 +61,9 @@ dibujadas las preguntas en CW2-A y CW2-B.
    | Una columna | Número, fecha, sí o no, texto corto con largo máximo de hasta 30 y elegir una con lista desplegable |
    | Dos columnas | Elegir de un catálogo (una o varias), elegir una con opciones en fila y texto corto de hasta 80 |
    | El renglón entero | Texto largo, texto corto de más de 80 o sin largo máximo, elegir varias con opciones propias, foto y documento |
+
+   Desde el 2026-11-02 quedan dos anchos ([AR1-A](#dos-anchos-ar1-a--2026-11-02), por programar): lo de las dos columnas pasa a
+   una.
 
 4. **Controles por tipo (CW12).** Número y fecha, angostos: en la página, dentro de su celda y a lo ancho en una columna; en
    el panel, como en CW2-B, salvo en el celular. Sí o no, un `SegmentedControl` sin valor inicial; elegir una, hasta cinco
@@ -137,3 +140,38 @@ con la API real y PostgreSQL y Azurite de prueba: la búsqueda en un catálogo d
 «Enviada», la planilla con «Canal: App» y el origen en D2, el panel con «Mantener las respuestas para la siguiente» y quien
 sólo completa, en el celular y en inglés. Quedan la cámara de un celular real y pasar los tableros al lienzo del sistema
 visual.
+
+## Dos anchos, AR1-A — 2026-11-02
+
+Mirando «Registro de aplicación», el usuario preguntó si había que estandarizar los formularios: como son dinámicos, le
+daba la sensación de que no iban a quedar todos bien. Ya están estandarizados: el autor decide el contenido y el orden, y la
+app decide la forma por el tipo de cada pregunta. Lo que se ajusta es esa regla. En el lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila «Formularios · armado»), AR0 dibuja tres
+formularios con las reglas de hoy (uno largo con muchas preguntas de elegir, uno corto y uno con fotos y documentos) y marca
+dónde quedan mal:
+
+- renglones a medias: cuatro de nueve en el largo;
+- casillas apiladas en una columna alta;
+- preguntas parecidas que caen en fila o en lista desplegable según el largo de sus opciones;
+- una sola zona larga;
+- el panel sin zonas.
+
+De tres opciones eligió **A**: B dejaba los tres anchos de hoy con las piezas arregladas y C volvía a una columna. Está por
+programar.
+
+- **Dos anchos.** Lo que tiene un solo valor ocupa una columna: número, fecha, sí o no, texto corto de hasta 80, elegir una
+  y elegir de un catálogo, de una o de varias. Lo que necesita espacio ocupa el renglón entero: texto largo, texto corto sin
+  largo máximo o de más de 80, elegir varias con opciones propias, fotos y documentos. Se van las «dos columnas» de la tabla
+  de la regla 3: un catálogo, las opciones en fila y el texto corto de hasta 80 pasan a una. La grilla sigue siendo de tres
+  en la compu, dos en la tableta y una en el celular y en el panel, sin reordenar.
+- **Casillas en columnas.** Elegir varias reparte sus casillas en tres columnas en la compu, dos en la tableta y en el panel
+  y una en el celular, de arriba abajo, con «hasta N» en la etiqueta.
+- **Opciones en fila, siempre.** Elegir una con hasta cinco opciones las muestra en fila aunque sean largas; las que no
+  entran siguen abajo, dentro de su columna. Con más de cinco, una lista desplegable. Deja de contar el largo de cada opción
+  (los 20 caracteres de hoy).
+- **El panel con sus zonas.** Junto a la planilla (CW2-B), «Datos» y «Fotos y documentos» se pliegan como en la página, en una
+  columna, con las fotos y los documentos al final y no donde los puso el autor. Número y fecha siguen angostos.
+
+Con A, los tres formularios del tablero llenan sus renglones, salvo uno en el de fotos y documentos: la cuarta pregunta de un
+valor antes de un texto largo queda sola. Para ordenar un formulario largo están los títulos de sección (CW15-B), que siguen
+en la Etapa 5 del plan.
