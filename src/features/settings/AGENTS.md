@@ -25,7 +25,8 @@ Descartar y Guardar se apagan con «Primero revisá los valores actuales y eleg�
 (`DisabledReason`), también en Apariencia. Cada lectura
 lleva el foco al título de la comparación (`titleRef` de Surface), que aparece al final del contenido. El PATCH
 manda solo campos cambiados y expectedRevision, en un pedido atómico. Confirmar si cambia el registro.
-`SettingsForm` compone los campos, `SettingsReview` la comparación y la página coordina el flujo.
+`SettingsForm` compone los campos, `SettingsReview` la comparación (sólo los ajustes distintos, lado a lado en
+`ComparisonTable`, LR2-A) y la página coordina el flujo.
 Antes de abrir el editor, esperar la lectura fresca; luego un refetch no reemplaza el borrador.
 Preservar el borrador ante un 409/500, consultar y comparar los cuatro valores antes de repetir.
 Al conservar ediciones, adoptar cambios ajenos en campos no tocados. No suponer rollback.

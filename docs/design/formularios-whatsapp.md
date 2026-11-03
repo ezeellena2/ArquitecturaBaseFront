@@ -876,3 +876,25 @@ una respuesta. Quedó programada el mismo día; la regla general está en [Lectu
 
 El editor de cada regla, el historial y los botones del encabezado no cambian. La escena `formRules.spec` («saved rules
 read in steps») muestra tres reglas guardadas y una revisión del historial en es/en a 1440, 390 y 320 px.
+
+## La revisión del borrador lado a lado, LR2-A — 2026-11-03
+
+La revisión del borrador y «Cambios de la otra revisión para revisar» leían cada pregunta como una cadena («español:
+Cantidad · inglés: Quantity · Número con decimales · Opcional») y el origen de una pregunta de catálogo en gris chico
+(«Rubro: Herbicidas · Cambió el valor elegido»). De tres tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila LR2: A lado a lado, B cada versión
+entera en dos columnas, C de lo guardado a lo tuyo con una flecha) el usuario eligió **A**. Quedó programada el mismo
+día, también en los cambios de una importación de opciones; la regla general está en
+[Lecturas](visual-baseline.md#lecturas).
+
+- **Qué cambió, Dato, Guardado actualmente y Mis cambios:** cada dato una vez, en gris, y sus dos valores en las columnas
+  de los dos botones («Usar borrador actual», «Conservar mis cambios»).
+- **Sólo lo distinto, con los nombres del editor:** «Obligatoria», «Mínimo», «Máximo», «De dónde sale la foto»,
+  «Máximo de caracteres»; en una pregunta de catálogo, el campo de cada filtro, «En WhatsApp», «Título» y «Descripción»,
+  nombrados por id. Una pregunta que una versión no tiene muestra todos sus datos y «Quitada» una vez.
+- **Una opción y un orden:** una opción se nombra «Unidad · la opción «Kilos»», sin «Opción:», y un orden se lee
+  numerado, con lo que se movió en negrita.
+
+Al enviar un formulario desde el chat, el elegido de otra página queda primero en la lista, con su tarjeta elegida
+(**LR3-A**), en vez de «Elegido: Visita técnica · versión 3». La escena `comparisons.spec` muestra la revisión a 1440,
+390 y 320 px.

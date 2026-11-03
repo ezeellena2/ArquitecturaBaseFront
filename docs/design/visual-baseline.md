@@ -72,7 +72,7 @@ explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
 `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, la opción elegida
-(OE1-A), `StepList` y `DataList` (LR1), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+(OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
 `CheckCheck`, `Send`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
@@ -251,6 +251,14 @@ registro, lo que propuso el asistente. Regla general del 2026-11-03 ([LR1](#lect
   columna; el valor en el color del texto; una línea entre renglones. Es la forma del detalle de una respuesta (TL1-A).
   Los datos que dependen de un valor (los campos de la opción elegida) van alineados debajo de él, en la tabla chica con
   la línea a la izquierda de TL1-A.
+- **Dos versiones, lado a lado** (`ComparisonTable`, [LR2-A](#comparaciones-lado-a-lado--2026-11-03)). Una comparación
+  (la revisión antes de guardar sobre lo que guardó otra persona, los cambios de una importación) dice qué cambió y
+  nombra cada dato una sola vez, en gris y en su columna, con las dos versiones en las suyas, frente a frente; sólo entra
+  lo distinto. Lo que una versión no tiene lo dice en gris («Quitada», «Sin traducir», «—») y un orden se lee numerado,
+  con lo que se movió en negrita. En el celular, el dato ocupa su renglón y las dos versiones van debajo, en dos
+  columnas, sin desplazar de costado.
+- **Lo elegido en otra página, primero en la lista** (LR3-A). En una lista paginada para elegir, la tarjeta elegida que
+  no está en la página va arriba de las demás, marcada como elegida; nunca un renglón «Elegido: …».
 - Siguen como están la línea secundaria en gris debajo de un título (fecha · quién) y el resumen de una línea en la banda
   de una zona plegada (ZP1-A), que dice lo configurado sin abrirla.
 
@@ -754,10 +762,9 @@ del detalle de una respuesta. La regla quedó en [Lecturas](#lecturas).
 | Inicio: los valores de cada fuente de una respuesta del asistente | Dos columnas | `DataList` |
 | Pregunta de catálogo: lo que tiene la persona probada en «Como si lo recibiera» | Dos columnas, debajo de la cantidad de opciones | `DataList` |
 
-Quedan para otra pasada, porque leen una comparación y no un registro: las celdas de la revisión del borrador (la
-pregunta en una cadena de «Rótulo: valor» y el origen de una pregunta de catálogo), los cambios de una importación
-(«Zona: Norte → Centro»), la comparación de Información del negocio y «Elegido: …» del envío de un formulario cuando la
-página no lo muestra.
+Quedaron para otra pasada, porque leen una comparación y no un registro, las celdas de la revisión del borrador, los
+cambios de una importación, la comparación de Información del negocio y «Elegido: …» del envío de un formulario. Se
+resolvieron el mismo día con LR2-A y LR3-A ([Comparaciones lado a lado](#comparaciones-lado-a-lado--2026-11-03)).
 
 La escena `formRules.spec` («saved rules read in steps») muestra tres reglas guardadas y una revisión del historial en
 es/en a 1440, 390 y 320, y la de sugerencias de `formLifecycle.spec` (BA6) muestra una sugerencia con condición y datos.
@@ -786,3 +793,32 @@ deshabilitada».
 No son filtros de un listado y no entran en la regla: «Columnas» (qué columnas se ven), las condiciones de una regla o
 una sugerencia, que pueden elegir varias opciones, y «Elegidos · N» del selector de permisos de un rol, que dice cuántos
 permisos se eligieron.
+
+## Comparaciones lado a lado — 2026-11-03
+
+LR1-A dejó para otra pasada las lecturas que comparan dos versiones, porque piden su propia forma: la revisión del
+borrador, con cada pregunta en una cadena («español: Cantidad · inglés: Quantity · Número con decimales · Opcional») y
+el origen de una pregunta de catálogo en gris chico («Rubro: Herbicidas · Cambió el valor elegido»); los cambios de una
+importación («Zona: Norte → Centro»); la comparación de Información del negocio, con el horario corrido («Lunes: Abierto
+09:00–18:00», un día por renglón) y «Elegido: Visita técnica · versión 3» al enviar un formulario. Entre tres tableros
+del lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila LR2 (LR2-0
+muestra cómo se veían), el usuario eligió la **A**: el dato una vez y las dos versiones en su columna, sólo lo distinto.
+Descartó la B (cada versión entera en dos columnas, dentro de su celda, como mostraba LR1-T) y la C (sólo lo que cambió,
+en un renglón, de lo guardado a lo tuyo con una flecha). Para el elegido de otra página eligió **LR3-A**, su tarjeta
+primero en la lista; descartó LR3-B, un renglón con la tilde debajo del buscador. La regla quedó en [Lecturas](#lecturas).
+
+| Dónde | Cómo se lee ahora | En el código |
+| --- | --- | --- |
+| Revisión del borrador y «Cambios de la otra revisión para revisar» | Qué cambió, Dato, Guardado actualmente y Mis cambios. Una pregunta lista sólo los datos de su editor que cambiaron («Obligatoria», «Máximo», «De dónde sale la foto»), y una de catálogo, el campo de cada filtro, «En WhatsApp», el título y la descripción, leídos por id; una pregunta que una versión no tiene muestra todos sus datos y «Quitada» una vez; un orden va numerado. Una opción se nombra «Unidad · la opción «Kilos»», sin «Opción:» | `ComparisonTable`, `draftReviewLines`, `CatalogSourceValues` |
+| Importar opciones, «Cambios» | Fila, Código, Columna, Antes y Después; en el celular, el código y su fila encabezan sus cambios | `ComparisonTable` |
+| Información del negocio, «Revisar cambios de otro administrador» | Qué cambió, Dato, Guardado actualmente y Tu borrador: un texto, como un valor; el horario, sólo los días y fechas distintos; la ubicación, sus partes; las preguntas frecuentes, cada respuesta con su pregunta como dato | `ComparisonTable`, `businessReviewGroups` |
+| Configuración, «Revisar cambios» | Sólo los ajustes distintos, con sus dos valores; en el celular ya no se desplaza de costado | `ComparisonTable` |
+| Enviar un formulario desde el chat | El elegido de otra página va primero en la lista, con su tarjeta elegida; otra página lleva el foco a su primer formulario | `FormComposer` |
+
+En el celular las celdas usan el margen angosto del tablero, para que una palabra larga entre en media fila. La escena
+`comparisons.spec` muestra la revisión del borrador (con un conflicto que cambia preguntas, una opción y el orden) y un
+conflicto del horario del negocio a 1440, 390 y 320, sin desplazar de costado y con las dos versiones como únicas
+columnas en el celular, y el elegido de otra página a 390. `catalogLoading.spec` comprueba los cambios de una
+importación en es/en a los tres anchos y `chatForms.spec`, la tarjeta elegida al cambiar de página. Cambió una referencia,
+revisada y por esta decisión: `settings-review-320`, con los dos ajustes distintos apilados en vez de una tabla que se
+cortaba a la derecha.
