@@ -655,4 +655,5 @@ Viendo la planilla de «Recepción de insumos», el mismo día pidió dos ajuste
   superficie ya la cierra y la línea no se repite.
 - **Un código no se parte.** «Proveedor · CUIT» cortaba «30-71458236-» y «9» en dos renglones. `CellText` deja entera
   cada palabra con guion (un código, un CUIT, un número negativo) y el texto sigue cortándose en sus espacios; lo usan
-  las subcolumnas de catálogo de la planilla y los cambios de una importación. Las demás celdas de texto no cambian.
+  las subcolumnas de catálogo y la elección múltiple de la planilla y los cambios de una importación. Las demás celdas
+  de texto no cambian.
