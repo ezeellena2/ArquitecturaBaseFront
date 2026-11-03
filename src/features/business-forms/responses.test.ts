@@ -120,6 +120,17 @@ it("describes the applied values without exposing option IDs", () => {
   expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "choice", operator: "in", values: ["private-choice"] }], search: "Notes" }, [column], key => key, "es")).toEqual([{ key: "choice", label: "Mode: Visit" }, { key: "search", label: "responses.search: Notes" }]);
 });
 
+// PL2-A: the column of a catalog question has no options, so its chip, like «Cargó», uses the name remembered when it was chosen.
+it("describes a catalog option and the person with the names remembered when they were chosen", () => {
+  const column: ResponseColumn = { fieldId: "article", type: "choice", label: "Artículo", options: [], introducedInVersion: 1 };
+  const query = { page: 1, pageSize: 20, conditions: [{ fieldId: "article", operator: "in", values: ["glyphosate"] }], actorIds: ["ana"], versionIds: ["v3"] };
+  expect(responseFilterLabels(query, [column], key => key, "es", "UTC", [{ id: "v3", number: 3 }], { glyphosate: "Glifosato 48%", ana: "Ana Pérez" })).toEqual([
+    { key: "article", label: "Artículo: Glifosato 48%" },
+    { key: "actor", label: "responses.actor: Ana Pérez" },
+    { key: "version", label: "responses.version: 3" },
+  ]);
+});
+
 it("describes decimal and date conditions and the received range with the shared format", () => {
   const columns: ResponseColumn[] = [{ fieldId: "amount", type: "decimal", label: "Amount", options: [], introducedInVersion: 1 }, { fieldId: "visit", type: "date", label: "Visit", options: [], introducedInVersion: 1 }];
   const conditions = [{ fieldId: "amount", operator: "gte", values: ["1500.5"] }, { fieldId: "visit", operator: "lte", values: ["2027-03-15"] }];

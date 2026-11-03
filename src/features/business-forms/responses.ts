@@ -190,8 +190,9 @@ function canonicalDecimalCondition(value: string): string {
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 // A condition's values as the person reads them: option labels instead of IDs, and decimals, dates and yes/no in the shared format.
-function conditionValues(values: readonly string[] | null | undefined, column: ResponseColumn | undefined, t: Translate, language: string): string[] {
-  return (values ?? []).map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? t("responses.unavailableValue") : column?.type === "boolean" ? formatYesNo(value, { yes: t("responses.yes"), no: t("responses.no") }) ?? value : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, column.type === "decimal" ? canonicalDecimalCondition(value) : value, language) ?? value : value);
+// A catalog question's column has no options: its option reads by the name remembered when it was chosen (`names`).
+function conditionValues(values: readonly string[] | null | undefined, column: ResponseColumn | undefined, t: Translate, language: string, names: Readonly<Record<string, string>> = {}): string[] {
+  return (values ?? []).map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? names[value] ?? t("responses.unavailableValue") : column?.type === "boolean" ? formatYesNo(value, { yes: t("responses.yes"), no: t("responses.no") }) ?? value : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, column.type === "decimal" ? canonicalDecimalCondition(value) : value, language) ?? value : value);
 }
 
 /**
@@ -208,13 +209,14 @@ export function ruleConditionSummaries(conditions: readonly ResponseCondition[],
   });
 }
 
-export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: Translate, language: string, zone = "UTC", versions: readonly { id: string; number: number }[] = []) {
+/** The chips of the sheet. `names` holds the names remembered when an option or a person was chosen in «Filtros» (PL2-A). */
+export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: Translate, language: string, zone = "UTC", versions: readonly { id: string; number: number }[] = [], names: Readonly<Record<string, string>> = {}) {
   const labels: { key: string; label: string }[] = [];
   const day = (valueUtc: string) => { const date = calendarDateInZone(valueUtc, zone); return formatTypedValue("date", date, language) ?? date; };
   for (const fieldId of new Set(query.conditions?.map(item => item.fieldId) ?? [])) {
     const column = columns.find(item => item.fieldId === fieldId);
     const parts = query.conditions?.filter(item => item.fieldId === fieldId).map(item => {
-      const values = conditionValues(item.values, column, t, language).join(", ");
+      const values = conditionValues(item.values, column, t, language, names).join(", ");
       const operator = ({ anyOf: "anyOf", gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
       return [operator ? t("responses." + operator) : "", values].filter(Boolean).join(" ");
     });
@@ -222,8 +224,9 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
   }
   if (query.state) labels.push({ key: "state", label: t("approvals.state") + ": " + t("approvals.states." + query.state) });
   if (query.enteredInApp != null) labels.push({ key: "channel", label: t("formEntries:sheet.channel") + ": " + t(query.enteredInApp ? "formEntries:sheet.channels.app" : "responses.whatsapp") });
-  if (query.actorIds?.length) labels.push({ key: "actor", label: t("responses.people") + " · " + query.actorIds.length });
-  if (query.versionIds?.length) labels.push({ key: "version", label: t("responses.version") + " · " + query.versionIds.map(id => versions.find(item => item.id === id)?.number ?? "—").join(", ") });
+  const person = query.actorIds?.length === 1 ? names[query.actorIds[0]] : undefined;
+  if (query.actorIds?.length) labels.push({ key: "actor", label: person ? t("responses.actor") + ": " + person : t("responses.people") + " · " + query.actorIds.length });
+  if (query.versionIds?.length) labels.push({ key: "version", label: t("responses.version") + ": " + query.versionIds.map(id => versions.find(item => item.id === id)?.number ?? "—").join(", ") });
   if (query.receivedFromUtc || query.receivedToUtc) labels.push({ key: "received", label: t("responses.received") + " · " + [query.receivedFromUtc ? day(query.receivedFromUtc) : "…", query.receivedToUtc ? day(new Date(Date.parse(query.receivedToUtc) - 1).toISOString()) : "…"].join(" – ") });
   if (query.search) labels.push({ key: "search", label: t("responses.search") + ": " + query.search });
   return labels;
