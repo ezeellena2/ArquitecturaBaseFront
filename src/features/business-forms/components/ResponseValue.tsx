@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { CellText } from "@/shared/ui/CellText";
 import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatTypedValue } from "@/shared/lib/typedValue";
 import { responseCatalogFieldText, responseDocumentFormat, responseFiles, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
@@ -109,8 +110,9 @@ export function ResponseValue({
         detail ? "min-w-0 break-words whitespace-pre-wrap" : cell.type === "multiChoice" ? "max-w-64 break-words whitespace-normal" : "max-w-64 truncate"
       }
     >
-      {/* The detail no longer repeats the catalog's name under the value (TL1-A): the question already says it. */}
-      <span className={detail && choice?.fields?.length ? "font-medium" : undefined}>{text}</span>
+      {/* The detail no longer repeats the catalog's name under the value (TL1-A): the question already says it. A multiple
+          choice wraps in the sheet: a code among its labels stays whole (2026-11-02). */}
+      <span className={detail && choice?.fields?.length ? "font-medium" : undefined}>{cell.type === "multiChoice" ? <CellText text={text} /> : text}</span>
       {choice?.detail ? (
         <p className="text-xs text-[var(--color-content-muted)]">
           {choice.detail}

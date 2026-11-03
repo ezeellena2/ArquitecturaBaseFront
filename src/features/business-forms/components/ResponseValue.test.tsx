@@ -38,6 +38,17 @@ it.each([false, true])("shows every historical multi-choice label without numeri
   expect(screen.queryByRole("button", { name: /Descargar|Ver foto/ })).not.toBeInTheDocument();
 });
 
+it("keeps a code of a multiple choice whole in the sheet, whose labels still wrap at their spaces", async () => {
+  const cell: ResponseCell = { fieldId: "suppliers", type: "multiChoice", state: "Answered", value: [
+    { choiceId: "north", label: "30-71458236-9" }, { choiceId: "south", label: "Repuestos Sur" },
+  ] };
+  let view!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { view = renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-000001" label="Proveedores"
+    detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/>); });
+  expect(view.container).toHaveTextContent("30-71458236-9, Repuestos Sur");
+  expect(Array.from(view.container.querySelectorAll(".whitespace-nowrap"), node => node.textContent)).toEqual(["30-71458236-9,"]);
+});
+
 it("shows decimal and date answers with the shared format", async () => {
   const cells: ResponseCell[] = [{ fieldId: "amount", type: "decimal", state: "Answered", value: "1500.5" }, { fieldId: "visit", type: "date", state: "Answered", value: "2027-03-15" }];
   await act(async () => { renderWithProviders(<>{cells.map(cell => <ResponseValue key={cell.fieldId} cell={cell} actor="reader" recordId="record" number="VIS-1" label={cell.fieldId} detailLink="" onForbidden={() => undefined} onError={() => undefined}/>)}</>); });
