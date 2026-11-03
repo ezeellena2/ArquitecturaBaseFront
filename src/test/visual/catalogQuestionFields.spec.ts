@@ -16,10 +16,16 @@ async function enter(page: Page, language: Language, width: number, screen: stri
     await expect(menu).toHaveAttribute("aria-expanded", "false");
   }
 }
+// The zones of a catalog question start folded (ZP1-A): the scenes work inside them, so they expand them as a person would.
+// Nothing in these scenarios warns, so no zone opens by itself.
+async function expandZones(editor: Locator, language: Language, titles = [text(language, "Qué opciones ve cada persona", "Which options each person sees"), text(language, "En WhatsApp", "In WhatsApp")]) {
+  for (const title of titles) await editor.getByRole("button", { name: text(language, "Expandir «" + title + "»", "Expand “" + title + "”"), exact: true }).click();
+}
 async function open(page: Page, language: Language, width: number, scenario = "forms-catalog-fields") {
   await enter(page, language, width, "/formularios/" + fixtureFormId, text(language, "Pedir repuesto", "Request a spare part"), scenario);
   await page.getByRole("button", { name: text(language, "Editar Proveedores a consultar", "Edit Suppliers to contact"), exact: true }).click();
   const editor = page.locator("[data-question-local-id]").last();
+  await expandZones(editor, language);
   await expect(editor.getByRole("combobox", { name: text(language, "Dato de la persona", "Person’s data"), exact: true })).toHaveValue(catalogQuestionFixtureIds.attribute);
   return editor;
 }
@@ -66,9 +72,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const inherit = editor.getByRole("radio", { name: new RegExp("^" + label("Como en el catálogo", "As in the catalog")) });
     const description = editor.getByRole("combobox", { name: label("Descripción · hasta 300", "Description · up to 300"), exact: true });
     await expect(inherit).toBeChecked();
-    // The filter additions act on the whole section: they go in the band of «Qué opciones ve cada persona», beside its title.
+    // The filter additions act on the whole section: they go in the band of «Qué opciones ve cada persona», expanded. The band
+    // holds the title with its (i) and the actions.
     const filtersTitle = label("Qué opciones ve cada persona", "Which options each person sees");
-    await expect(editor.getByRole("region", { name: filtersTitle, exact: true }).getByRole("heading", { name: filtersTitle, exact: true }).locator("..").getByRole("button", { name: /^(Agregar filtro|Add (?:filter|fixed filter))/ })).toHaveCount(2);
+    await expect(editor.getByRole("region", { name: filtersTitle, exact: true }).getByRole("heading", { name: filtersTitle, exact: true }).locator("../..").getByRole("button", { name: /^(Agregar filtro|Add (?:filter|fixed filter))/ })).toHaveCount(2);
     await expect(inherit).toHaveAccessibleDescription(label("Texto · CUIT · Zona", "Text · CUIT · Zone"));
     await expect(description).toBeDisabled();
     await recipient(page, editor, language, "Juan Gómez");
@@ -120,6 +127,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // The catalog is a dropdown (2026-10-31): touching it shows the first catalogs.
     await editor.getByRole("combobox", { name: label("Catálogo", "Catalog"), exact: true }).click();
     await page.getByRole("listbox", { name: label("Catálogo", "Catalog"), exact: true }).getByRole("option", { name: new RegExp("^" + label("Proveedores", "Suppliers")) }).click();
+    await expandZones(editor, language, [label("Qué opciones ve cada persona", "Which options each person sees")]);
     // Unsaved, the field stays in its place, disabled with its reason as a tooltip, and as wide as when the form is saved.
     const sample = editor.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
     await expect(sample).toBeDisabled();

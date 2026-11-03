@@ -22,9 +22,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("link", { name: label("Ver el catálogo", "View catalog"), exact: true })).toHaveCount(0);
     await expect(page.getByText(label("Las opciones se preparan al mandar el formulario.", "Options are prepared when the form is sent."), { exact: true })).toHaveCount(0);
     const filterHint = label("Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona debe elegir del mismo catálogo.", "Filters are combined and use fields with the filter role. A person’s data must choose from the same catalog.");
-    // The common (i) keeps the text hidden as its accessible description: it is not in sight.
+    // The common (i) keeps the text hidden as its accessible description: it is not in sight. It goes beside the title of
+    // the zone, which starts folded (ZP1-A).
     await expect(page.getByText(filterHint, { exact: true })).toBeHidden();
-    await page.getByRole("button", { name: label("Cómo funcionan los filtros", "How the filters work"), exact: true }).hover();
+    await page.getByRole("button", { name: label("Más información sobre Qué opciones ve cada persona", "More about Which options each person sees"), exact: true }).hover();
     await expect(page.getByRole("tooltip")).toHaveText(filterHint);
     await page.mouse.move(0, 0);
     const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
