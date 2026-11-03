@@ -9,6 +9,14 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { CatalogQuestionSettings } from "./CatalogQuestionSettings";
 import type { DraftQuestionSource } from "../model";
 
+const filtersTitle = "Qué opciones ve cada persona", whatsappTitle = "En WhatsApp";
+// The zones start folded (ZP1-A, 2026-11-02): a test that works inside one expands it first, as a person would.
+async function expand(title: string) {
+  await userEvent.click(await screen.findByRole("button", { name: "Expandir «" + title + "»" }));
+}
+// The band is the first row of a zone: its title with the (i), what it holds or its actions, and the arrow.
+const bandOf = async (title: string) => (await screen.findByRole("region", { name: title })).firstElementChild as HTMLElement;
+
 it("keeps a catalog reference readonly without reading catalogs when the author lacks permission", async () => {
   const onCatalogChange = vi.fn();
   await act(async () => { renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage"] }} source={{ catalog: "01990000-0000-7000-8000-000000000091" }} readOnly={false} error="Revisá el catálogo." onCatalogChange={onCatalogChange} /></MemoryRouter>); });
@@ -95,6 +103,7 @@ const settings = (catalog: string, onPreviewChange = vi.fn()) => <MemoryRouter><
 it("drops the recipient chosen for a Manual catalog when the question moves to a Filters catalog", async () => {
   const requests = serveRecipientPreview(), onPreviewChange = vi.fn();
   const view = renderWithProviders(settings(manualId, onPreviewChange));
+  await expand(filtersTitle);
   const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
   await waitFor(() => expect(input).toBeEnabled());
   await userEvent.click(input); await userEvent.click(await screen.findByRole("option", { name: "Juan" }));
@@ -110,6 +119,7 @@ it("drops the recipient chosen for a Manual catalog when the question moves to a
 it("explains why a person cannot be tried before saving only on hover or focus", async () => {
   serveRecipientPreview();
   renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: manualId }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
+  await expand(filtersTitle);
   const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
   const reason = "Guardá el formulario para probar con una persona.";
   expect(input).toBeDisabled();
@@ -125,8 +135,8 @@ it("explains why a person cannot be tried before saving only on hover or focus",
   expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
 });
 
-// No note under «Qué opciones ve cada persona»: how the filters work is the help of the (i) in its band, as in «Papel»,
-// also in a form that is only read.
+// No note under «Qué opciones ve cada persona»: how the filters work is the help of the (i) beside its title (LC3), folded
+// or not, also in a form that is only read.
 it("explains the filters in the (i) of their section instead of a note", async () => {
   serveRecipientPreview();
   const hint = "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona debe elegir del mismo catálogo.";
@@ -135,7 +145,7 @@ it("explains the filters in the (i) of their section instead of a note", async (
     const section = await screen.findByRole("region", { name: "Qué opciones ve cada persona" });
     // The (i) keeps the text hidden as its accessible description: it is not in sight.
     expect(within(section).getByText(hint)).not.toBeVisible();
-    await userEvent.hover(within(section).getByRole("button", { name: "Cómo funcionan los filtros" }));
+    await userEvent.hover(within(await bandOf(filtersTitle)).getByRole("button", { name: "Más información sobre Qué opciones ve cada persona" }));
     expect(await screen.findByRole("tooltip")).toHaveTextContent(hint);
     view.unmount();
   }
@@ -145,8 +155,9 @@ it("offers filter additions in the section header", async () => {
   serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
   const onSourceChange = vi.fn();
   const view = renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={onSourceChange}/></MemoryRouter>);
-  const band = async () => within(await screen.findByRole("region", { name: "Qué opciones ve cada persona" })).getByRole("heading", { name: "Qué opciones ve cada persona" }).parentElement!;
-  // Both additions act on the whole section, so they go in its band beside the title.
+  const band = () => bandOf(filtersTitle);
+  // Both additions act on the whole section, so they go in its band, once it is expanded.
+  await expand(filtersTitle);
   // Until the person data arrive no field matches one, so the addition is off with its reason: read it again once enabled.
   await waitFor(async () => expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toBeEnabled());
   const fixed = within(await band()).getByRole("button", { name: "Agregar filtro fijo" });
@@ -157,6 +168,7 @@ it("offers filter additions in the section header", async () => {
   // A catalog without filter fields keeps them in the band, disabled, with the reason as tooltip and description, not below.
   serveRecipientPreview();
   renderWithProviders(settings(manualId));
+  await expand(filtersTitle);
   const reason = "Este catálogo no tiene campos de filtro disponibles.";
   for (const name of ["Agregar filtro según quien lo recibe", "Agregar filtro fijo"]) {
     const button = within(await band()).getByRole("button", { name });
@@ -178,6 +190,7 @@ it("offers Retry after a failed recipient preview and keeps it disabled during a
   const requests = serveRecipientPreview();
   server.use(http.post("/api/forms/definitions/:id/recipient-previews", () => { requests.previews.push(manualId); return requests.previews.length === 1 ? HttpResponse.json({ title: "Error", status: 500, traceId: "trace" }, { status: 500 }) : HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 5 }, { status: 429 }); }));
   renderWithProviders(settings(manualId));
+  await expand(filtersTitle);
   const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
   await waitFor(() => expect(input).toBeEnabled());
   await userEvent.click(input); await userEvent.click(await screen.findByRole("option", { name: "Juan" }));
@@ -259,7 +272,8 @@ it("explains why each filter addition is disabled", async () => {
   serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
   const question = (match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
   const view = renderWithProviders(question([{ fieldId: zone, value: null }]));
-  const band = async () => within(await screen.findByRole("region", { name: "Qué opciones ve cada persona" })).getByRole("heading", { name: "Qué opciones ve cada persona" }).parentElement!;
+  const band = () => bandOf(filtersTitle);
+  await expand(filtersTitle);
   // The reason is known once the person data arrive: the button gets its tooltip then, so it is read again.
   await waitFor(async () => expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toHaveAccessibleDescription("Ningún dato de las personas usa el catálogo de estos campos."));
   expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toBeDisabled();
@@ -280,6 +294,7 @@ it("explains that the filters must be complete to try with a person", async () =
   server.use(http.get("/api/forms/recipient-samples", () => HttpResponse.json(page([{ id: juan, name: "Juan" }]))));
   const question = (match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} questionId="q" definitionId={formId} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
   const view = renderWithProviders(question([{ fieldId: category, value: null }]));
+  await expand(filtersTitle);
   const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
   expect(input).toBeDisabled();
   expect(input).toHaveAccessibleDescription("Completá los filtros para probar con una persona.");
@@ -352,6 +367,7 @@ it("says it is searching in the open list while people load, and that there are 
     return HttpResponse.json(page(search === "zzz" ? [] : [{ id: juan, name: "Juan" }]));
   }));
   renderWithProviders(settings(manualId));
+  await expand(filtersTitle);
   const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
   await waitFor(() => expect(input).toBeEnabled());
   await userEvent.type(input, "zzz");
@@ -380,6 +396,7 @@ it("gives no reason that is not true yet while the person data load", async () =
   server.use(http.get("/api/forms/person-attributes", async () => { await gate; return HttpResponse.json({ items: [] }); }));
   renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }] }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
   const section = await screen.findByRole("region", { name: "Qué opciones ve cada persona" });
+  await expand(filtersTitle);
   const person = within(section).getByRole("button", { name: "Agregar filtro según quien lo recibe" });
   expect(person).toBeDisabled();
   expect(person).not.toHaveAccessibleDescription();
@@ -399,4 +416,112 @@ it("offers Retry when the maximum per person cannot be read", async () => {
   expect(await screen.findByText("Como mucho 18 por persona (Zona Sur, la más grande): entra en una pregunta de varias (20).")).toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(bodies).toHaveLength(2);
+});
+
+// ZP1-A (2026-11-02): «Qué opciones ve cada persona» and «En WhatsApp» start folded and their band says what they hold;
+// expanded, «Agregar filtro…» comes back to the band in its place.
+it("starts both zones folded, each band saying what it holds", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: null }));
+  renderWithProviders(maximumQuestion("choice", [{ fieldId: category, value: "Frío" }]));
+  const filters = await screen.findByRole("region", { name: filtersTitle });
+  const toggle = within(filters).getByRole("button", { name: "Expandir «Qué opciones ve cada persona»" });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(within(filters).getByText("Rubro: Frío")).toBeVisible();
+  expect(within(filters).queryByRole("group", { name: "Condición 1" })).not.toBeInTheDocument();
+  expect(within(filters).queryByRole("button", { name: "Agregar filtro fijo" })).not.toBeInTheDocument();
+  const whatsapp = screen.getByRole("region", { name: whatsappTitle });
+  expect(within(whatsapp).getByRole("button", { name: "Expandir «En WhatsApp»" })).toHaveAttribute("aria-expanded", "false");
+  expect(within(whatsapp).getByText("Como en el catálogo · Texto · Detalle")).toBeVisible();
+  expect(within(whatsapp).queryByRole("radio", { name: /Como en el catálogo/ })).not.toBeInTheDocument();
+  await userEvent.click(toggle);
+  expect(within(filters).getByRole("button", { name: "Plegar «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "true");
+  expect(within(filters).getByRole("group", { name: "Condición 1" })).toBeVisible();
+  expect(within(await bandOf(filtersTitle)).getByRole("button", { name: "Agregar filtro fijo" })).toBeVisible();
+  expect(within(filters).queryByText("Rubro: Frío")).not.toBeInTheDocument();
+  expect(within(whatsapp).getByRole("button", { name: "Expandir «En WhatsApp»" })).toHaveAttribute("aria-expanded", "false");
+});
+
+// A fixed filter says its value, a catalog one by the label of its option and never its GUID; one by who receives it says
+// so, and an incomplete one says it has no value.
+it("names each filter in the folded band", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  const south = "01990000-0000-7000-8000-0000000000a6";
+  server.use(http.get("/api/forms/catalogs/:id/items", ({ params }) => HttpResponse.json(page(params.id === zones ? [{ id: south, code: "S", text: { es: "Sur", en: "South" }, detail: {}, value: null, position: 1, isActive: true, fields: {}, fieldTexts: {} }] : []))));
+  const view = renderWithProviders(maximumQuestion("multiChoice", []));
+  const band = await bandOf(filtersTitle);
+  expect(within(band).getByText("Sin filtros")).toBeVisible();
+  const cases: [NonNullable<DraftQuestionSource["match"]>, string][] = [
+    [[{ fieldId: zone, personAttributeId: attribute }], "Zona según quien lo recibe"],
+    [[{ fieldId: zone, value: south }], "Zona: Sur"],
+    [[{ fieldId: category, value: null }], "Rubro: sin valor"],
+    [[{ fieldId: zone, personAttributeId: attribute }, { fieldId: category, value: "Frío" }], "Zona según quien lo recibe · Rubro: Frío"],
+  ];
+  for (const [match, text] of cases) {
+    view.rerender(maximumQuestion("multiChoice", match));
+    expect(await within(band).findByText(text)).toBeVisible();
+  }
+  expect(within(band).getByRole("button", { name: "Expandir «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "false");
+  expect(document.body).not.toHaveTextContent(south);
+});
+
+it("says the own presentation and its parts in the folded band of «En WhatsApp»", async () => {
+  renderOwnPresentation(() => HttpResponse.json({ cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] }));
+  const band = await bandOf(whatsappTitle);
+  expect(await within(band).findByText("Propio de esta pregunta · Código · Texto")).toBeVisible();
+  expect(within(band).getByRole("button", { name: "Expandir «En WhatsApp»" })).toHaveAttribute("aria-expanded", "false");
+});
+
+// A zone with an error opens by itself, so the editor can focus the marked control; the person can fold it again, and only
+// another problem opens it again.
+it("opens the zone with an error by itself, and only a new one opens it again after folding it", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: null }));
+  const question = (errors: Readonly<Record<string, readonly string[]>>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match: [{ fieldId: category, value: null }] }} questionId="q" readOnly={false} errors={errors} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
+  const view = renderWithProviders(question({ "match[0].value": ["Completá este campo."] }));
+  const filters = await screen.findByRole("region", { name: filtersTitle });
+  expect(within(filters).getByRole("button", { name: "Plegar «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "true");
+  expect(within(filters).getByText("Completá este campo.")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Expandir «En WhatsApp»" })).toHaveAttribute("aria-expanded", "false");
+  await userEvent.click(within(filters).getByRole("button", { name: "Plegar «Qué opciones ve cada persona»" }));
+  view.rerender(question({ "match[0].value": ["Completá este campo."] }));
+  expect(within(filters).getByRole("button", { name: "Expandir «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "false");
+  view.rerender(question({ "match[0].value": ["Elegí un valor de la lista."] }));
+  expect(within(filters).getByRole("button", { name: "Plegar «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "true");
+  expect(within(filters).getByText("Elegí un valor de la lista.")).toBeVisible();
+});
+
+it.each([
+  ["choice", 0, "Con estos filtros nadie ve ninguna opción."],
+  ["multiChoice", 180, "Todos ven las mismas 180: no entra en una pregunta de varias (20)."],
+] as const)("opens «Qué opciones ve cada persona» by itself when the maximum warns (%s, %i)", async (type, count, text) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  serveMaximum(async () => { await gate; return HttpResponse.json({ maximum: count, maximumLabel: null }); });
+  renderWithProviders(maximumQuestion(type, [{ fieldId: category, value: "Frío" }]));
+  const filters = await screen.findByRole("region", { name: filtersTitle });
+  expect(within(filters).getByRole("button", { name: "Expandir «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "false");
+  await act(async () => { release(); });
+  expect(await within(filters).findByText(text)).toBeVisible();
+  expect(within(filters).getByRole("button", { name: "Plegar «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByRole("button", { name: "Expandir «En WhatsApp»" })).toHaveAttribute("aria-expanded", "false");
+});
+
+it("opens «En WhatsApp» by itself when the length check warns", async () => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  renderOwnPresentation(async () => { await gate; return longTitles(); });
+  const whatsapp = await screen.findByRole("region", { name: whatsappTitle });
+  expect(within(whatsapp).getByRole("button", { name: "Expandir «En WhatsApp»" })).toHaveAttribute("aria-expanded", "false");
+  await act(async () => { release(); });
+  expect(await within(whatsapp).findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeVisible();
+  expect(within(whatsapp).getByRole("button", { name: "Plegar «En WhatsApp»" })).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByRole("button", { name: "Expandir «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "false");
+});
+
+it("opens «En WhatsApp» by itself with an error in its parts", async () => {
+  serveRecipientPreview();
+  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: manualId }} questionId="q" readOnly={false} errors={{ "presentation.title": ["Elegí al menos una parte."] }} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
+  const whatsapp = await screen.findByRole("region", { name: whatsappTitle });
+  expect(within(whatsapp).getByRole("button", { name: "Plegar «En WhatsApp»" })).toHaveAttribute("aria-expanded", "true");
+  expect(within(whatsapp).getByText("Elegí al menos una parte.")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Expandir «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "false");
 });

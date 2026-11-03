@@ -12,7 +12,8 @@ import type { DraftQuestionSource } from "../model";
 
 // The chosen option is read by id, so its label shows even beyond the first page or once it is inactive, never its GUID.
 // While it loads the value shows «…»; a failed read, or a value that is not an option of the source, says it is unavailable.
-function FixedCatalogValue({ scope, field, value }: { scope: CatalogReadScope; field: CatalogField; value: string }) {
+// The folded band of the filters (ZP1-A) names it the same way.
+export function FixedCatalogValue({ scope, field, value }: { scope: CatalogReadScope; field: CatalogField; value: string }) {
   const { t } = useTranslation("forms");
   const read = useCatalogItemsById(scope, field.sourceCatalogId ?? "", [value]);
   const option = read.data?.items.find(item => item.id === value);

@@ -688,7 +688,6 @@
     "noResults": "No catalogs match your search.",
     "filter": {
       "title": "Which options each person sees",
-      "helpLabel": "How the filters work",
       "hint": "Filters are combined and use fields with the filter role. A person’s data must choose from the same catalog.",
       "condition": "Condition {{number}}",
       "byPerson": "By who receives it",
@@ -747,6 +746,13 @@
     "review": {
       "changedValue": "Selected value changed",
       "noFilters": "No option filters"
+    },
+    "zones": {
+      "expand": "Expand “{{name}}”",
+      "collapse": "Collapse “{{name}}”",
+      "noFilters": "No filters",
+      "byPerson": "{{field}} by who receives it",
+      "noValue": "no value"
     }
   },
   "files": {

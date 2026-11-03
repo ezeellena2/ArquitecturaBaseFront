@@ -688,7 +688,6 @@
     "noResults": "No hay catálogos que coincidan con la búsqueda.",
     "filter": {
       "title": "Qué opciones ve cada persona",
-      "helpLabel": "Cómo funcionan los filtros",
       "hint": "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona debe elegir del mismo catálogo.",
       "condition": "Condición {{number}}",
       "byPerson": "Según quien lo recibe",
@@ -747,6 +746,13 @@
     "review": {
       "changedValue": "Cambió el valor elegido",
       "noFilters": "Sin filtros de opciones"
+    },
+    "zones": {
+      "expand": "Expandir «{{name}}»",
+      "collapse": "Plegar «{{name}}»",
+      "noFilters": "Sin filtros",
+      "byPerson": "{{field}} según quien lo recibe",
+      "noValue": "sin valor"
     }
   },
   "files": {

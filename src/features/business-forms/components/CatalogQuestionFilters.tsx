@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { formatCatalogFieldValue, openCatalogField, parseCatalogFieldValue } from "../catalogFields";
+import { catalogScalarText } from "../catalogValues";
 import type { CatalogField } from "../api/catalogResponse";
 import type { PersonAttribute } from "../api/personData";
 import { administrativeName } from "../editorModel";
@@ -13,6 +14,7 @@ import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogItemsById } from "../hooks/useCatalogQueries";
 import { normalizeCatalogQuestionSource } from "../catalogQuestionSource";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
+import { FixedCatalogValue } from "./CatalogQuestionSourceSummary";
 
 function FixedValue({ field, value, scope, readOnly, error, onChange }: { field: CatalogField; value: string | null; scope: CatalogReadScope; readOnly: boolean; error?: string; onChange: (value: string | null) => void }) {
   const { t } = useTranslation("forms");
@@ -51,6 +53,21 @@ export function CatalogQuestionFilterActions({ source, fields, attributes, attri
   const personReason = fixedReason ?? (personAvailable || attributesLoading ? null : t("catalogQuestion.filter.noPersonData"));
   const add = (person: boolean) => { const field = available.find(field => !person || compatible(field).length > 0); if (field) onChange(normalizeCatalogQuestionSource({ ...source, match: [...match, person ? { fieldId: field.id, personAttributeId: null } : { fieldId: field.id, value: null }] })); };
   return <><DisabledReason reason={personReason}><Button type="button" variant="outline" size="sm-wrap" disabled={!personAvailable} onClick={() => add(true)}>{t("catalogQuestion.filter.addPerson")}</Button></DisabledReason><DisabledReason reason={fixedReason}><Button type="button" variant="outline" size="sm-wrap" disabled={available.length === 0} onClick={() => add(false)}>{t("catalogQuestion.filter.addFixed")}</Button></DisabledReason></>;
+}
+// Folded, the section says its filters in one line (ZP1-A): a fixed one with its value, in the format of its type or by the
+// label of its option (never its GUID), and one by who receives it with those words; an incomplete one says it has no value.
+export function CatalogQuestionFilterSummary({ source, fields, scope }: { source: DraftQuestionSource; fields: readonly CatalogField[]; scope: CatalogReadScope }) {
+  const { t } = useTranslation("forms");
+  const match = source.match ?? [];
+  if (!match.length) return t("catalogQuestion.zones.noFilters");
+  return match.map((condition, index) => {
+    const field = fields.find(field => field.id === condition.fieldId);
+    const name = field ? administrativeName(field.name, scope.culture) : t("catalogQuestion.filter.unavailable");
+    let value: ReactNode = null;
+    if (!("personAttributeId" in condition)) value = !condition.value ? t("catalogQuestion.zones.noValue") : field?.type === "catalog" ? <FixedCatalogValue scope={scope} field={field} value={condition.value}/>
+      : field && field.type !== "text" ? catalogScalarText(field.type, condition.value, scope.culture, { yes: t("yes"), no: t("no") }) : condition.value;
+    return <Fragment key={condition.fieldId}>{index ? " · " : null}{value === null ? t("catalogQuestion.zones.byPerson", { field: name }) : <>{name}: {value}</>}</Fragment>;
+  });
 }
 export function CatalogQuestionFilters({ source, fields, attributes, attributesLoading = false, scope, readOnly, errors = {}, onChange }: { source: DraftQuestionSource; fields: readonly CatalogField[]; attributes: readonly PersonAttribute[]; attributesLoading?: boolean; scope: CatalogReadScope; readOnly: boolean; errors?: Readonly<Record<string, readonly string[]>>; onChange: (source: DraftQuestionSource) => void }) {
   const { t } = useTranslation("forms");
