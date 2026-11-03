@@ -657,3 +657,8 @@ Viendo la planilla de «Recepción de insumos», el mismo día pidió dos ajuste
   cada palabra con guion (un código, un CUIT, un número negativo) y el texto sigue cortándose en sus espacios; lo usan
   las subcolumnas de catálogo y la elección múltiple de la planilla y los cambios de una importación. Las demás celdas
   de texto no cambian.
+- **Una zona horaria se corta en sus barras.** En la comparación de Configuración, a 320 px, «America/Arg|entina/Bueno|s
+  Aires» se partía en cualquier letra (`break-all`). Ahora la comparación usa `CellText`, que entre palabras corta sólo
+  después de una barra y en los espacios: «America/», «Argentina/», «Buenos Aires». Una fecha («16/03/2027») no se
+  corta. En Perfil, Configuración general y el horario del negocio la zona horaria va en un desplegable de un renglón,
+  que no se parte. La escena `settings-review-320` lo comprueba y su referencia cambió.
