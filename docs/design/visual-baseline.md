@@ -193,6 +193,9 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
 - Un buscador de texto libre, siempre visible. Hasta tres filtros frecuentes al lado; el resto en «Filtros»
   (`FilterPanel`), con su contador de aplicados, que aplica cada cambio enseguida, como «Columnas» (PL1-A, 2026-11-02).
   Búsqueda y filtros rápidos también aplican sin botón.
+- Adentro de «Filtros», lo que se elige de una lista (una pregunta con opciones, quién la cargó, la versión) es el combo
+  común (`Autocomplete` con su flecha): cerrado dice «Todas» o la elegida; abierto, las opciones sin la cantidad ni nada
+  debajo, con la elegida tildada, y se busca escribiendo. Se elige una (PL2-A, 2026-11-03).
 - Filtros activos como chips removibles y una única acción “Limpiar todo”. Sin coincidencias, el vacío dice cuántos
   filtros hay y permite limpiarlos. Cambiar el orden también vuelve a la página 1.
 - El backend filtra, ordena y pagina; el front no simula resultados sobre una página parcial.

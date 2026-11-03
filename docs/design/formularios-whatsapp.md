@@ -158,7 +158,7 @@ sin aprobación, PDF ni asistente. Cargar desde la web queda para después (deci
 | Captura | Qué define |
 | --- | --- |
 | [T1 · La planilla](evidence/formularios-whatsapp/pla-t1-planilla.png) | «Respuestas» en el panel (MF1 la reemplaza por «Formularios», 2026-10-20), columnas fijas (número, recibida, cargó) y una por pregunta de todas las versiones; «—» si no existía y «Sin respuesta» si no se contestó. Fotos: primera miniatura y cantidad, abre el visor de F4; documentos: tipo y cantidad. Con muchas preguntas se desplaza a lo ancho y «Columnas» oculta las que sobran (elegido el 2026-10-16). |
-| [T2 · Más filtros](evidence/formularios-whatsapp/pla-t2-filtros.png) | Un filtro por pregunta según su tipo, con conteos del servidor; versión del formulario; búsqueda privada fuera de la dirección. Desde el 2026-10-25, la espera de un 429 de una faceta es el motivo de su Reintentar y su «Respuesta» apagados, sin texto en su región. Desde el 2026-11-02, [PL1-A](#respuestas-dos-solapas-y-un-solo-filtros-pl1-a--2026-11-02) lleva estos filtros a «Filtros», un desplegable como «Columnas», y se va el panel lateral. |
+| [T2 · Más filtros](evidence/formularios-whatsapp/pla-t2-filtros.png) | Un filtro por pregunta según su tipo, con conteos del servidor; versión del formulario; búsqueda privada fuera de la dirección. Desde el 2026-10-25, la espera de un 429 de una faceta es el motivo de su Reintentar y su «Respuesta» apagados, sin texto en su región. Desde el 2026-11-02, [PL1-A](#respuestas-dos-solapas-y-un-solo-filtros-pl1-a--2026-11-02) lleva estos filtros a «Filtros», un desplegable como «Columnas», y se va el panel lateral. Desde el 2026-11-03, [PL2-A](#el-filtro-de-una-pregunta-con-opciones-un-combo-pl2-a--2026-11-03): una pregunta con opciones es un combo de una opción, sin conteos, y se va «Respuesta». |
 | [T3 · Una respuesta](evidence/formularios-whatsapp/pla-t3-respuesta.png) | Lo que respondió con las preguntas de su versión, de dónde vino, historial y anterior/siguiente dentro de la planilla. A todo el ancho, con galería de fotos que abre el visor y documentos con descarga (elegido el 2026-10-16). |
 | [T4 · Estados y casos](evidence/formularios-whatsapp/pla-t4-estados.png) | Carga, sin respuestas, sin coincidencias, error, muchos formularios, sin permiso, respuesta que no está y pregunta que cambió de tipo. |
 
@@ -663,7 +663,8 @@ respuestas · dos solapas y un solo «Filtros»»: A con lo aplicado en chips, B
 - **Un solo «Filtros»**, con su ícono y la cantidad aplicada, se despliega desde el botón como «Columnas». A la izquierda
   están Recibida, cada pregunta en el orden del formulario, Cargó y Versión; a la derecha, lo que se elige en la marcada.
   Siguen el filtro de cada pregunta según su tipo, con las cantidades del servidor (una opción con cero, apagada), y
-  «Respuesta» (respondida, sin respuesta, no se preguntó) (confirmado). Cada cambio se aplica enseguida, como en
+  «Respuesta» (respondida, sin respuesta, no se preguntó) (confirmado; desde el 2026-11-03, [PL2-A](#el-filtro-de-una-pregunta-con-opciones-un-combo-pl2-a--2026-11-03):
+  un combo sin las cantidades y sin «Respuesta»). Cada cambio se aplica enseguida, como en
   «Columnas» y en «Más filtros» de Usuarios: se van «Ver N respuestas», Cancelar y «Contando…» (confirmado), y mientras
   la planilla vuelve a leer se ven la línea y las filas atenuadas (LC2-A). En el celular ocupa la pantalla: primero la
   lista y, al tocar una, sus opciones, con «‹» para volver y «Listo» al pie.
@@ -679,6 +680,35 @@ pregunta de elegir arriba de la planilla: «Lote», el «alguna de» de [CA5](ca
 se ajustó al programarla. Al programarla quedó, además: la solapa va en la dirección como `view`; cambiar de solapa cierra
 la tarea abierta y conserva la página de cada una; y quien pierde el permiso de aprobar mientras mira se queda sin
 solapas, con el aviso de «Por aprobar» y la respuesta que leía sobre la planilla, como antes.
+
+## El filtro de una pregunta con opciones: un combo, PL2-A — 2026-11-03
+
+Probando «Recepción de insumos», el usuario abrió «Artículo» y «Campo» en «Filtros» y encontró tres cosas: la caja
+«Buscar opciones», la lista con una casilla por opción y «1 respuesta» debajo de cada una, y el desplegable «Respuesta».
+Pidió un combo desplegable simple y preguntó para qué era «Respuesta». De dos tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila «el filtro de una pregunta con
+opciones: un combo simple»: A elige una, B marca varias) eligió **A**. Sobre «Respuesta», que servía para ver sólo las
+respuestas que dejaron vacía la pregunta o las de una versión en la que no existía, eligió sacarlo, en lugar de dejar
+«Sin respuesta» como una opción más del combo. Quedó programada el mismo día.
+
+- **Un combo, como cualquier desplegable**: el `Autocomplete` común con su flecha. Cerrado dice «Todas» o la elegida;
+  al tocarlo bajan «Todas», una línea y las opciones, y escribiendo ahí mismo se buscan entre todas (las del servidor,
+  no sólo las que se ven). Muestra 20 y, al pie, «Mostrar N más».
+- **Cada opción, un renglón**: sólo su nombre, sin la cantidad ni otro texto debajo. La elegida lleva la tilde a la
+  izquierda, como la opción elegida de un desplegable de filtro (OE1-A); el tablero la dibujaba a la derecha.
+- **Se elige una**: elegir cierra la lista y aplica, y el chip dice «Artículo: Glifosato 48%». «Todas», «Quitar» o la ×
+  del chip lo sacan. Sin las cantidades, una opción con cero ya no se apaga.
+- **Igual en toda pregunta con opciones**: de catálogo, de opciones propias como «Unidad» y sí o no, que no se escribe.
+  Cargó y Versión usan el mismo combo, y sus chips dicen «Cargó: Ana Pérez» y «Versión del formulario: 3».
+- **Sin «Respuesta»**, en ninguna pregunta: Foto y Documento, que sólo tenían eso, salen de la lista de «Filtros».
+- Mientras lee o busca, la lista abierta dice «Cargando…» o «Buscando…»; sin coincidencias, «No hay opciones que
+  coincidan.»; si falla, «No pudimos cargar los datos» con Reintentar al pie, apagado durante la espera de un 429 con la
+  espera como motivo.
+
+Al programarla apareció que la columna de una pregunta de catálogo no trae sus opciones, así que su chip decía «Valor no
+disponible»: el nombre de la elegida viaja con el cambio y la planilla lo recuerda, en memoria y con el filtro, para el
+combo cerrado y el chip. Reemplaza, de PL1-A, las cantidades y «Respuesta» adentro de «Filtros», y la elección de varias
+opciones de una pregunta; el «alguna de» de [CA5](catalogos-mejoras.md) sigue en su chip.
 
 ## Textos largos: el detalle y las reglas, TL1-A y TL2-A — 2026-11-02
 
