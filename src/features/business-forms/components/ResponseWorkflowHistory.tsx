@@ -132,18 +132,19 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
     return <li key={row.key} tabIndex={row.focusable ? -1 : undefined} aria-label={row.person ? t("workflow.recipient", { name: row.person }) : undefined} className="col-span-full grid grid-cols-subgrid items-start gap-y-1 border-t border-[var(--color-border)] px-3 py-2 first:border-t-0">
       <span className="tabular-nums">{row.atUtc ? <time dateTime={row.atUtc} className="flex flex-col">{newDay ? <span className="text-xs text-[var(--color-content-muted)]">{formatDateInZone(row.atUtc, i18n.language, timeZoneId)}</span> : null}{formatTimeInZone(row.atUtc, i18n.language, timeZoneId)}</time> : null}</span>
       <div className={cn("min-w-0 space-y-0.5 break-words", row.person && "border-l-2 border-[var(--color-surface-header)] pl-2.5")}><p>{row.text}</p>{row.detail}</div>
-      {/* Narrow, the state and the actions go together under what happened; wide, each in its column. */}
+      {/* On the phone the state and the actions go together under what happened; in the quick view the state has its
+          column and the actions stay under the text, so it keeps its width; wide, each in its column. */}
       <div className="col-start-2 flex flex-wrap items-center gap-2 empty:hidden @min-[26rem]:contents">
         {row.state ? <div className="@min-[26rem]:col-start-3">{row.state}</div> : null}
-        {row.actions ? <div className="flex flex-wrap items-center gap-1 @min-[26rem]:col-start-4 @min-[26rem]:justify-end">{row.actions}</div> : null}
+        {row.actions ? <div className="flex flex-wrap items-center gap-1 @min-[26rem]:col-start-2 @min-[40rem]:col-start-4 @min-[40rem]:justify-end">{row.actions}</div> : null}
       </div>
     </li>;
   };
   return <>
     <div className="@container">
-      <div className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-3 overflow-hidden rounded-md border border-[var(--color-border)] text-sm @min-[26rem]:grid-cols-[3.5rem_minmax(0,1fr)_auto_auto] @min-[40rem]:grid-cols-[6rem_minmax(0,1fr)_auto_auto]">
+      <div className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-3 overflow-hidden rounded-md border border-[var(--color-border)] text-sm @min-[26rem]:grid-cols-[3.5rem_minmax(0,1fr)_auto] @min-[40rem]:grid-cols-[6rem_minmax(0,1fr)_auto_auto]">
         <div aria-hidden="true" className="col-span-full hidden grid-cols-subgrid border-b border-[var(--color-border)] bg-[var(--color-surface-header)] px-3 py-1.5 text-xs font-semibold text-[var(--color-surface-header-foreground)] @min-[26rem]:grid">
-          <span>{t("detail.columns.date")}</span><span>{t("detail.columns.what")}</span><span>{t("detail.columns.state")}</span><span className="text-right"><span className="hidden @min-[40rem]:inline">{t("detail.columns.actions")}</span></span>
+          <span>{t("detail.columns.date")}</span><span>{t("detail.columns.what")}</span><span>{t("detail.columns.state")}</span><span className="hidden text-right @min-[40rem]:block">{t("detail.columns.actions")}</span>
         </div>
         <ol className="col-span-full grid grid-cols-subgrid">
           {bands.map(band => <li key={band.key} aria-label={band.title} className="col-span-full grid grid-cols-subgrid border-t border-[var(--color-border)] first:border-t-0">

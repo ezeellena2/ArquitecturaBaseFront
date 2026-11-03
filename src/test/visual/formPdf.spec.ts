@@ -131,6 +131,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await documents.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).click();
       expect((await download).suggestedFilename()).toBe("Visita-VIS-000024.pdf");
       expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false", "true"]);
+      // In the quick view the copy is also a row of the activity, with «Ver PDF» and «Descargar» as icons (board TL3-A).
+      await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
+      const row = panel.getByRole("tabpanel", { name: en ? "Activity" : "Actividad", exact: true }).getByRole("listitem").filter({ has: page.getByText(en ? "Generate PDF" : "Armar el PDF", { exact: true }) }).last();
+      await expect(row.getByText(/^Visita-VIS-000024\.pdf · /)).toBeVisible();
+      await expect(row.getByRole("button", { name: en ? "View PDF" : "Ver PDF", exact: true })).toBeVisible();
+      await expect(row.getByRole("button", { name: en ? "Download" : "Descargar", exact: true })).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await page.screenshot({ path: "test-results/pdf-activity-" + language + "-" + width + ".png", fullPage: true });
     }
     expect(await page.evaluate(() => (globalThis as unknown as { pdfsFixture: { writes: unknown[] } }).pdfsFixture.writes)).toEqual([]);
   });
