@@ -724,8 +724,9 @@ Quedó programada el mismo día.
 - **Cuatro columnas fijas, iguales en todos los renglones:** Fecha, Qué pasó, Estado y Acciones, con su encabezado.
   Quién y el detalle van debajo de qué pasó, en gris. «Hecho», «Aprobada», «Rechazada», «No se pudo» o «Sin confirmar»
   van siempre en Estado, y «Ver PDF», «Descargar», «Reintentar», «Consultar» o «Resolver envío», siempre en Acciones. En
-  la vista rápida las columnas son más angostas y «Ver PDF» y «Descargar» van como íconos. Donde no entran las cuatro (el
-  celular), el estado y las acciones bajan debajo de qué pasó, sin el encabezado.
+  la vista rápida las columnas son más angostas y «Ver PDF» y «Descargar» van como íconos; las acciones van debajo del
+  texto, porque dos botones como «Consultar» y «Resolver envío» le dejaban a «Qué pasó» un renglón por palabra. En el
+  celular también el estado baja debajo de qué pasó, sin el encabezado.
 - **Por momento:** bandas finas, «Al recibirla», «Aprobación», «Al aprobarla» o «Al rechazarla», que ordenan la historia
   sin decir el estado. Dentro, los renglones en el orden en que pasaron.
 - **Nada se repite.** Quién la cargó va una vez, debajo de «Se respondió el formulario» («En la app · Ana Pérez»), sin la
