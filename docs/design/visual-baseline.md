@@ -195,7 +195,8 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
 - **Líneas entre columnas y números a la derecha** ([A, 2026-11-02](#líneas-entre-columnas--2026-11-02)). Toda tabla,
   planilla o lista, lleva una línea fina entre columnas, en el encabezado y en el cuerpo, del tono de las líneas entre
   filas, y sus columnas de números (cantidades, medidas, importes, el número de fila) van a la derecha, encabezado
-  incluido.
+  incluido. La tabla cierra abajo con la línea de su última fila, salvo cuando toca el borde de su superficie, que ya
+  la cierra; un código o un número con guiones («30-71458236-9») no se parte en dos renglones.
 
 ## Formularios y diálogos
 
@@ -646,3 +647,12 @@ Cambiaron diez referencias, revisadas una por una: `users-*`, `roles-*`, `editor
 `appearance-*`, con las líneas nuevas y, en Roles, los usuarios a la derecha. Las escenas `design`,
 `catalogResponseFields`, `catalogExtraFields`, `personData` y `catalogLoading` comprueban en el navegador las líneas,
 los números a la derecha y la línea de la columna fija al desplazar (`src/test/visual/tableColumns.ts`).
+
+Viendo la planilla de «Recepción de insumos», el mismo día pidió dos ajustes más:
+
+- **La tabla cierra abajo.** La última fila conserva su línea, sobre la barra de desplazamiento o el paginado
+  (`TableBody`). Cuando la tabla es lo último de su `Surface`, como en el selector de permisos, el borde de la
+  superficie ya la cierra y la línea no se repite.
+- **Un código no se parte.** «Proveedor · CUIT» cortaba «30-71458236-» y «9» en dos renglones. `CellText` deja entera
+  cada palabra con guion (un código, un CUIT, un número negativo) y el texto sigue cortándose en sus espacios; lo usan
+  las subcolumnas de catálogo de la planilla y los cambios de una importación. Las demás celdas de texto no cambian.
