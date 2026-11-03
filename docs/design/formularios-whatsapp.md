@@ -181,7 +181,7 @@ que reunían el detalle en una sola columna. **Elegido D2**, que reemplaza ese d
 
 | Captura | Qué define |
 | --- | --- |
-| [D2 · Panel lateral sobre la planilla](evidence/formularios-whatsapp/det-d2-panel.png) | **Elegido el 2026-10-17.** Tocar una fila abre la respuesta al costado, sin salir de la planilla; ↑ ↓ (también las flechas del teclado) pasan de respuesta y Escape cierra. Arriba, el estado y los momentos uno por renglón, armados con las reglas que tenía el formulario al llegar la respuesta: Recibida con su origen, Por aprobar → Aprobada o Rechazada y lo que pasó al recibirla, aprobarla o rechazarla, con el resumen de sus acciones; lo que no aplica no se muestra. Mientras espera, Aprobar y Rechazar van en el renglón «Por aprobar». Pestañas Respuesta («pregunta · valor» con las fotos), Fotos, Actividad (las acciones por momento, con Consultar o Reintentar) y PDF (cuando hay copia), más Abrir conversación y Descargar ▾, que desde el 2026-10-25 van al borde derecho del encabezado, en el renglón del título y antes de ↑ ↓ × (si no entran, bajan de renglón y siguen a la derecha). Quien sólo aprueba conserva el panel de metadata en el celular, con ↑ ↓ arriba y la decisión fija abajo; con lectura se abre directamente DC1. Desde el 2026-10-20 es la vista rápida de escritorio: la pantalla completa es DC1 ajustado (abajo). Entrando por «Por aprobar · N», ↑ ↓ recorren lo que espera, de la más vieja a la más nueva, y el pie del panel lo dice (ajuste del 2026-10-20, versión 96). Desde el 2026-11-02, los momentos, la respuesta y la actividad se leen como en [TL1-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02). |
+| [D2 · Panel lateral sobre la planilla](evidence/formularios-whatsapp/det-d2-panel.png) | **Elegido el 2026-10-17.** Tocar una fila abre la respuesta al costado, sin salir de la planilla; ↑ ↓ (también las flechas del teclado) pasan de respuesta y Escape cierra. Arriba, el estado y los momentos uno por renglón, armados con las reglas que tenía el formulario al llegar la respuesta: Recibida con su origen, Por aprobar → Aprobada o Rechazada y lo que pasó al recibirla, aprobarla o rechazarla, con el resumen de sus acciones; lo que no aplica no se muestra. Mientras espera, Aprobar y Rechazar van en el renglón «Por aprobar». Pestañas Respuesta («pregunta · valor» con las fotos), Fotos, Actividad (las acciones por momento, con Consultar o Reintentar) y PDF (cuando hay copia), más Abrir conversación y Descargar ▾, que desde el 2026-10-25 van al borde derecho del encabezado, en el renglón del título y antes de ↑ ↓ × (si no entran, bajan de renglón y siguen a la derecha). Quien sólo aprueba conserva el panel de metadata en el celular, con ↑ ↓ arriba y la decisión fija abajo; con lectura se abre directamente DC1. Desde el 2026-10-20 es la vista rápida de escritorio: la pantalla completa es DC1 ajustado (abajo). Entrando por «Por aprobar · N», ↑ ↓ recorren lo que espera, de la más vieja a la más nueva, y el pie del panel lo dice (ajuste del 2026-10-20, versión 96). Desde el 2026-11-02, los momentos, la respuesta y la actividad se leen como en [TL1-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02), y «Abrir en pantalla completa» y «Descargar ▾» son íconos en el renglón del título, junto a ↑ ↓ × ([TL3-A](#la-actividad-y-el-encabezado-de-una-respuesta-tl3-a--2026-11-02)). |
 
 D2 está implementado sobre esos tableros: el panel conserva el listado y su orden; los momentos proceden de acciones ya capturadas, no de reglas actuales. El selector Estado y la marca PDF de la planilla usan el contrato del servidor; la decisión sin lectura de respuestas conserva sólo metadata. La [verificación del cierre](../../../ArquitecturaBase/docs/features/formularios.md#cierre-local-de-la-etapa-5-y-del-review-de-la-etapa-4) acredita navegador, capturas visuales y consumidores HTTP actuales, con sus límites explícitos.
 
@@ -192,7 +192,7 @@ lienzo como las alternativas que no se eligieron.
 | Captura | Qué define |
 | --- | --- |
 | [DC0 · De la vista rápida a la pantalla completa](evidence/formularios-whatsapp/det-dc0-vista-rapida.png) | **Elegido el 2026-10-20.** El panel D2 suma «Abrir en pantalla completa» en su cabecera. La pantalla completa tiene su dirección, se puede compartir y «Volver» lleva a la planilla con la misma fila, los filtros y el orden; ↑ ↓ también pasan de respuesta ahí: entrando por «Por aprobar · N», lo que espera, de la más vieja a la más nueva («2 de 2 por aprobar»); por la planilla, la planilla («1 de 24»). Abierta desde un enlace compartido, no trae la búsqueda ni las personas filtradas, porque los datos privados no van en la dirección; ↑ ↓ siguen el orden y las versiones de la planilla (ajuste del 2026-10-20, versión 96). Quien solo aprueba no tiene pantalla completa: el panel ya muestra la tarea. En el celular no hay vista rápida: tocar una fila abre la pantalla completa, en una columna. |
-| [DC1 ajustado · Respuesta y actividad](evidence/formularios-whatsapp/det-dc1-ajustado.png) | **Elegido el 2026-10-20.** Arriba, ↑ ↓, Abrir conversación, Descargar ▾ (el comprobante PDF y los documentos) y, mientras espera, Rechazar y Aprobar; la cabecera no repite el formulario, que está en las migas. Dos secciones a todo el ancho, que se pliegan con la flecha y, plegadas, dicen lo que tienen: «Respuesta» («pregunta · valor» con las fotos y el remito, y la versión del formulario) y «Actividad», contada como historia: quién la respondió y quién se la mandó, lo que se hizo al recibirla, la decisión y lo que se hizo después, con el PDF en «Al aprobarla» (vista previa chica y Descargar). Sin «De dónde vino», sin el PDF al costado y sin la fila de momentos de arriba. Desde el 2026-11-02, la respuesta y la actividad se leen como en [TL1-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02). |
+| [DC1 ajustado · Respuesta y actividad](evidence/formularios-whatsapp/det-dc1-ajustado.png) | **Elegido el 2026-10-20.** Arriba, ↑ ↓, Abrir conversación, Descargar ▾ (el comprobante PDF y los documentos) y, mientras espera, Rechazar y Aprobar; la cabecera no repite el formulario, que está en las migas. Dos secciones a todo el ancho, que se pliegan con la flecha y, plegadas, dicen lo que tienen: «Respuesta» («pregunta · valor» con las fotos y el remito, y la versión del formulario) y «Actividad», contada como historia: quién la respondió y quién se la mandó, lo que se hizo al recibirla, la decisión y lo que se hizo después, con el PDF en «Al aprobarla» (vista previa chica y Descargar). Sin «De dónde vino», sin el PDF al costado y sin la fila de momentos de arriba. Desde el 2026-11-02, la respuesta y la actividad se leen como en [TL1-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02), y la actividad tiene cuatro columnas fijas, con el PDF como un renglón de «Al aprobarla», sin la vista previa ([TL3-A](#la-actividad-y-el-encabezado-de-una-respuesta-tl3-a--2026-11-02)). |
 
 Etapa 5, el asistente (2026-10-10), con reglas vigentes en [ofrecimiento y prellenado](../../../ArquitecturaBase/docs/features/formularios.md#indicación-de-ofrecimiento--etapa-5), [sugerencias entre formularios](../../../ArquitecturaBase/docs/features/formularios.md#configuración-de-qué-sugerir-después--etapa-5) y [WhatsApp](../../../ArquitecturaBase/docs/features/whatsapp.md). También son de esta etapa «Cuándo lo ofrece» (03),
 el recorrido con asistente (05) y las sugerencias entre formularios (s1–s4). Decidido el 2026-10-10 y el 2026-10-11: una
@@ -695,9 +695,8 @@ El detalle de una respuesta, en la vista rápida (D2), la pantalla completa (DC1
 - **Los momentos, un renglón cada uno**, arriba de la vista rápida: el momento con su fecha a la derecha y, debajo en
   gris, quién o qué («En la app · Ana Pérez», «Agrónomo · Marcos Gil», «Armar el PDF»). «Al aprobarla» dice «1 de 1
   hecha» y lleva a «Actividad».
-- **La actividad, por momento:** la fecha va una vez, en el título de cada momento, y cada renglón tiene la hora, lo que
-  pasó, quién en gris y el estado a la derecha. El PDF sigue debajo de «Armar el PDF». Es igual en la pestaña de la
-  vista rápida y en la sección de la pantalla completa.
+- **La actividad, por momento:** la ajustó el mismo día [TL3-A](#la-actividad-y-el-encabezado-de-una-respuesta-tl3-a--2026-11-02),
+  con cada cosa en una columna fija.
 
 La lista de reglas «Cuando llega una respuesta» (G1):
 
@@ -710,3 +709,33 @@ La lista de reglas «Cuando llega una respuesta» (G1):
 - **El mensaje, entero y aparte,** en su recuadro debajo de la acción, con las variables como {número} marcadas.
 
 El editor de cada regla, el historial y los botones del encabezado no cambian.
+
+## La actividad y el encabezado de una respuesta, TL3-A — 2026-11-02
+
+Ese mismo día, mirando APL-000005, el usuario volvió sobre el detalle con dos pedidos. De los botones que en la vista
+rápida van en un renglón propio, debajo del título («Abrir en pantalla completa» y «Descargar ▾»), dijo: «estos botones
+están raros ahí». De la actividad de la pantalla completa: «no me convence tanta información así desparramada sin sentido»,
+con «Hecho» en una punta del renglón, «Aprobada» suelto y etiquetas pegadas a cualquier cosa. Además se repetían quién la
+cargó, el estado («Por aprobar → Aprobada» y la etiqueta «Aprobada») y el idioma del PDF («Español» y «Contenido en
+Español»). De dos tableros del lienzo provisorio (fila «Formularios · textos largos · 3»: A por momento, B una sola lista)
+eligió **A**, y confirmó que se va la vista previa chica del PDF. Ajusta [TL1-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02).
+Está por programar.
+
+- **Cuatro columnas fijas, iguales en todos los renglones:** Fecha, Qué pasó, Estado y Acciones, con su encabezado.
+  Quién y el detalle van debajo de qué pasó, en gris. «Hecho», «Aprobada», «Rechazada», «No se pudo» o «Sin confirmar»
+  van siempre en Estado, y «Ver PDF», «Descargar», «Reintentar», «Consultar» o «Revisar», siempre en Acciones. En la
+  vista rápida las columnas son más angostas y «Ver PDF» y «Descargar» van como íconos.
+- **Por momento:** bandas finas, «Al recibirla», «Aprobación», «Al aprobarla» o «Al rechazarla», que ordenan la historia
+  sin decir el estado. Dentro, los renglones en el orden en que pasaron.
+- **Nada se repite.** Quién la cargó va una vez, debajo de «Se respondió el formulario» («En la app · Ana Pérez»), sin la
+  línea aparte del origen. El estado va una vez, en su columna: la decisión es un renglón («Marcos Gil la aprobó»,
+  «Agrónomo» debajo, «Aprobada» en Estado) y el motivo de un rechazo va debajo, en su recuadro. La fecha va una vez por
+  día, en el primer renglón, y la hora en todos.
+- **El PDF, en su renglón:** el archivo y su idioma debajo de «Armar el PDF», «Hecho» en Estado y «Ver PDF» y «Descargar»
+  en Acciones. Se van la vista previa chica que había fijado DC1 y «Contenido en Español»; la pestaña PDF de la vista
+  rápida sigue.
+- **Un aviso a varias personas:** cada persona en su renglón, debajo de la acción, con su estado y, si hace falta,
+  «Revisar».
+- **Las acciones del encabezado, junto a la navegación:** en la vista rápida, «Abrir en pantalla completa» y «Descargar ▾»
+  pasan a íconos con su tooltip, en el renglón del título y antes de ↑ ↓ ×; «Abrir conversación», cuando vino por
+  WhatsApp, también. En la pantalla completa siguen en la banda de la página.
