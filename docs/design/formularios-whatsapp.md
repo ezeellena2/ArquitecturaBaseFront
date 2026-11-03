@@ -168,7 +168,7 @@ que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesi
 
 | Captura | Qué define |
 | --- | --- |
-| [G1 · Cuando llega una respuesta](evidence/formularios-whatsapp/reg-g1-reglas.png) | Reglas en palabras (cuándo, si, hacer en orden), una abierta para editar, Guardar reglas e historial de revisiones. Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), el encabezado tiene sólo «Agregar regla» y Guardar, al borde derecho y a la altura del título, sin «Cambios sin guardar», número de revisión ni textos junto a los botones; el número queda en el historial. La espera de un 429, un conflicto sin resolver, un límite o «Pedir aprobación» como última acción son la ayuda del botón que apagan, al pasar el mouse o con el foco. Agregar una regla o una acción no muestra «Completá este dato»: los errores se marcan al intentar guardar, que no envía y abre la primera regla con problema, y después en vivo. Desde el 2026-11-02, la lista se lee con «Cuándo», «Si» y «Hacer» alineados ([TL2-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02)). |
+| [G1 · Cuando llega una respuesta](evidence/formularios-whatsapp/reg-g1-reglas.png) | Reglas en palabras (cuándo, si, hacer en orden), una abierta para editar, Guardar reglas e historial de revisiones. Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), el encabezado tiene sólo «Agregar regla» y Guardar, al borde derecho y a la altura del título, sin «Cambios sin guardar», número de revisión ni textos junto a los botones; el número queda en el historial. La espera de un 429, un conflicto sin resolver, un límite o «Pedir aprobación» como última acción son la ayuda del botón que apagan, al pasar el mouse o con el foco. Agregar una regla o una acción no muestra «Completá este dato»: los errores se marcan al intentar guardar, que no envía y abre la primera regla con problema, y después en vivo. Desde el 2026-11-02, la lista se lee con «Cuándo», «Si» y «Hacer» alineados ([TL2-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02)) y el historial se abre con «Historial» en el encabezado ([HI1-A](#los-historiales-de-reglas-y-sugerencias-hi1-a--2026-11-02)). |
 | [G2 · El diseño del PDF](evidence/formularios-whatsapp/reg-g2-pdf.png) | Comprobante simple: nombre obligatorio en el idioma original y traducción opcional, qué preguntas incluye, quién aprobó, texto al pie y vista previa. «Incluir las fotos»: marcada, van chicas debajo de su pregunta; sin marcar, dice cuántas hay; los documentos solo se nombran (elegido el 2026-10-16). Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), sin «Cambios sin guardar» ni la revisión o su fecha junto al título; desde el 2026-10-25 tampoco va el formulario, que está en la miga; «Vista previa» va en el encabezado de su superficie y un diseño inválido no la apaga: intentarla o guardar marca y enfoca el primer error, sin pedir nada. La espera de un 429 y un conflicto son la ayuda de Guardar apagado. |
 | [G3 · Por aprobar](evidence/formularios-whatsapp/reg-g3-por-aprobar.png) | La bandeja de quien decide, en el panel con su cantidad; ordenada de la más vieja a la más nueva. MF1 (2026-10-20) la reemplaza por la columna y el filtro de «Formularios». |
 | [G4 · Aprobar o rechazar](evidence/formularios-whatsapp/reg-g4-decidir.png) | El detalle con la decisión; rechazar pide motivo; otra persona decidió antes; no aprobar lo propio. |
@@ -217,7 +217,7 @@ El modelo y las reglas están en los
 | Captura | Qué define |
 | --- | --- |
 | [La idea](evidence/formularios-whatsapp/s1-sugerir-idea.png) | Formularios independientes conectados por sugerencias: cuándo, qué datos pasan y cómo se ofrecen. |
-| [Configurar qué sugerir después](evidence/formularios-whatsapp/s2-sugerir-editor.png) | Sección del editor con su propio «Guardar sugerencias», sin republicar. Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), como en las reglas: «Agregar sugerencia» y Guardar al borde derecho del encabezado, sin «Cambios sin guardar» ni número de revisión; los límites, la falta de destino, la espera y un conflicto son la ayuda del botón que apagan; la ayuda de «Datos que pasan» va bajo el título del grupo, y los errores se marcan al intentar guardar y después en vivo. |
+| [Configurar qué sugerir después](evidence/formularios-whatsapp/s2-sugerir-editor.png) | Sección del editor con su propio «Guardar sugerencias», sin republicar. Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), como en las reglas: «Agregar sugerencia» y Guardar al borde derecho del encabezado, sin «Cambios sin guardar» ni número de revisión; los límites, la falta de destino, la espera y un conflicto son la ayuda del botón que apagan; la ayuda de «Datos que pasan» va bajo el título del grupo, y los errores se marcan al intentar guardar y después en vivo. Desde el 2026-11-02, su historial se abre con «Historial» en el encabezado ([HI1-A](#los-historiales-de-reglas-y-sugerencias-hi1-a--2026-11-02)). |
 | [En el celular](evidence/formularios-whatsapp/s3-sugerir-celular.png) | Entrega que termina en factura, y los casos «Juan no lo abre», sin IA, nada que sugerir y sin permiso. |
 | [La cadena en la web](evidence/formularios-whatsapp/s4-sugerir-cadena.png) | La respuesta recuerda de dónde vino, qué sugerencia la ofreció y por qué. |
 
@@ -739,3 +739,24 @@ Está por programar.
 - **Las acciones del encabezado, junto a la navegación:** en la vista rápida, «Abrir en pantalla completa» y «Descargar ▾»
   pasan a íconos con su tooltip, en el renglón del título y antes de ↑ ↓ ×; «Abrir conversación», cuando vino por
   WhatsApp, también. En la pantalla completa siguen en la banda de la página.
+
+## Los historiales de reglas y sugerencias, HI1-A — 2026-11-02
+
+En el editor de un formulario, «Qué sugerir después» y «Cuando llega una respuesta» tenían cada uno su historial en una
+columna de 20 rem a la derecha, siempre a la vista, aunque estuviera vacío («Todavía no hay revisiones.»). El usuario dijo
+que no tiene sentido mostrarlo vacío ahí y pidió otro diseño. De tres tableros del lienzo provisorio (en la fila de la
+lista de reglas: A un botón en cada sección, B solapas dentro de la sección, C un solo historial del formulario) eligió
+**A**. Está por programar.
+
+- **Un botón «Historial» por sección,** con su reloj, primero entre las acciones del encabezado: en «Qué sugerir después»,
+  antes de «Agregar sugerencia» y «Guardar sugerencias», y en «Cuando llega una respuesta», antes de «Agregar regla» y
+  «Guardar reglas».
+- **Vacío, apagado:** sin revisiones, el botón queda apagado y su tooltip dice «Todavía no hay revisiones.»
+  (`DisabledReason`). Mientras la sección guarda o espera un 429 se apaga con su motivo, como las demás acciones.
+- **Un panel al costado** con las revisiones, de la más nueva a la más vieja: el número, «Vigente» en la actual, la fecha,
+  quién y qué cambió. Tocar una muestra en el mismo panel su lista, como en TL2-A pero sin editar, con «‹» para volver.
+  Reemplaza el diálogo que abría una revisión. En el celular, el panel ocupa la pantalla.
+- **Las secciones, a todo el ancho:** se va la columna de la derecha, así que la lista de reglas y la de sugerencias
+  ganan ese lugar.
+
+El editor de cada regla y los datos en el mensaje de una acción (MD1) son de otra elección y no cambian con esta.
