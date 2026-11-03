@@ -72,7 +72,7 @@ explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
 `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, la opción elegida
-(OE1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+(OE1-A), `StepList` y `DataList` (LR1), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
 `CheckCheck`, `Send`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
@@ -230,6 +230,25 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
   - los errores se marcan en sus campos.
 - **Las acciones de una superficie van al borde derecho de su encabezado,** a la altura del título.
 - Breve y contextual: diálogo. Largo, seccionado o compartible: ruta propia. Un único valor puede editarse en línea.
+
+## Lecturas
+
+Una lectura es lo que se muestra de algo guardado sin editarlo: una regla plegada, una sugerencia, los datos de un
+registro, lo que propuso el asistente. Regla general del 2026-11-03 ([LR1](#lecturas-en-pasos-y-en-dos-columnas--2026-11-03)):
+
+- **Ningún rótulo suelto con texto al lado.** Cada dato va en un lugar fijo, con lo principal destacado (negrita o el
+  color del texto) y lo secundario en gris. No va un rótulo chico en gris pegado a una frase («Cuándo  Se recibe una
+  respuesta») ni «Rótulo: valor» corrido en un renglón («Cliente: Pérez Hnos.», «Zona: Norte · Rubro: Frío»).
+- **Lo que pasa en orden, en pasos** (`StepList`, LR1-A). Una regla o una sugerencia se lee de arriba abajo, un paso
+  por parte, con su ícono en una columna fija y una línea que lo une al siguiente. Las palabras que unen («Si», «y»,
+  «es», «desde») van en gris y los datos (la pregunta, el valor), en negrita; un dato aparte de una acción (el rol, «con
+  el PDF») va en una etiqueta y un texto escrito por el autor (el mensaje), entero en su recuadro.
+- **Los datos de un registro, en dos columnas** (`DataList`). El dato en gris y del mismo tamaño que el valor, en su
+  columna; el valor en el color del texto; una línea entre renglones. Es la forma del detalle de una respuesta (TL1-A).
+  Los datos que dependen de un valor (los campos de la opción elegida) van alineados debajo de él, en la tabla chica con
+  la línea a la izquierda de TL1-A.
+- Siguen como están la línea secundaria en gris debajo de un título (fecha · quién) y el resumen de una línea en la banda
+  de una zona plegada (ZP1-A), que dice lo configurado sin abrirla.
 
 ## Responsive y accesibilidad mínimos
 
@@ -703,3 +722,33 @@ radios.
 `shared/ui/theme.test.ts` y `shared/lib/appearance.test.ts` comprueban esos contrastes en Campo y en paletas de
 Apariencia, incluida una clara (mostaza); la escena de «Por aprobar» mide en el navegador el tinte y la barra de la fila
 abierta (`expectOpenRow` en `src/test/visual/tableColumns.ts`).
+
+## Lecturas en pasos y en dos columnas — 2026-11-03
+
+Mirando una regla de «Recepción de insumos», el usuario dijo que el mensaje con etiquetas le gustaba, pero no «que tenga
+texto así "Libre" sin ordenarlo correctamente en una visualización linda más amigable»: rótulos chicos en gris
+(«Cuándo», «Si», «Hacer») con frases sueltas al lado, dos numeraciones juntas y el rol pegado con un punto. Pidió que se
+cumpla en toda la app. Entre tres tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila LR1, eligió la **A**: pasos, uno
+debajo del otro, con su ícono. Descartó la B (una tabla con «Cuándo», «Si» y «Hacer» como columnas) y la C (un recuadro
+por regla, con las condiciones como los filtros de la planilla). Para los demás datos sueltos eligió las dos columnas
+del detalle de una respuesta. La regla quedó en [Lecturas](#lecturas).
+
+| Dónde | Cómo se lee ahora | En el código |
+| --- | --- | --- |
+| Reglas de «Cuando llega una respuesta», plegadas y en el historial | Pasos: el cuándo (flecha, tilde o círculo tachado), «Si» y «y» con una condición por renglón (el ícono de «Filtros») y cada acción con el suyo (escudo, PDF, mensaje, personas), el rol o «con el PDF» en una etiqueta y el mensaje entero debajo | `StepList`, `ConditionLines`, `DataTag` |
+| Sugerencias de «Qué sugerir después», plegadas y en el historial | Pasos: el formulario y cómo se ofrece, cuándo (con «La IA decide»), si y los datos que pasan como etiquetas; el historial cuenta las condiciones y los datos | `StepList`, `ConditionLines`, `DataTag` |
+| Chat de WhatsApp: «Por qué lo mandó» y lo prellenado de una sugerencia | Dos columnas, debajo del motivo y de «Prellenado con» | `DataList` |
+| Tarjeta de una respuesta en el chat: el detalle de cada opción | Alineado con su opción, en la tabla chica de TL1-A | `FormReplyValues` |
+| Inicio: los valores de cada fuente de una respuesta del asistente | Dos columnas | `DataList` |
+| Pregunta de catálogo: lo que tiene la persona probada en «Como si lo recibiera» | Dos columnas, debajo de la cantidad de opciones | `DataList` |
+
+Quedan para otra pasada, porque leen una comparación y no un registro: las celdas de la revisión del borrador (la
+pregunta en una cadena de «Rótulo: valor» y el origen de una pregunta de catálogo), los cambios de una importación
+(«Zona: Norte → Centro»), la comparación de Información del negocio y «Elegido: …» del envío de un formulario cuando la
+página no lo muestra.
+
+La escena `formRules.spec` («saved rules read in steps») muestra tres reglas guardadas y una revisión del historial en
+es/en a 1440, 390 y 320, y la de sugerencias de `formLifecycle.spec` (BA6) muestra una sugerencia con condición y datos.
+Cambiaron cuatro referencias, revisadas una por una y todas por esta decisión: `assistant-answer-{es,en}-{390,320}`, con
+los valores de la fuente en dos columnas.

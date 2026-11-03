@@ -168,7 +168,7 @@ que llegó; nadie aprueba lo que cargó. Los avisos fuera de las 24 horas necesi
 
 | Captura | Qué define |
 | --- | --- |
-| [G1 · Cuando llega una respuesta](evidence/formularios-whatsapp/reg-g1-reglas.png) | Reglas en palabras (cuándo, si, hacer en orden), una abierta para editar, Guardar reglas e historial de revisiones. Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), el encabezado tiene sólo «Agregar regla» y Guardar, al borde derecho y a la altura del título, sin «Cambios sin guardar», número de revisión ni textos junto a los botones; el número queda en el historial. La espera de un 429, un conflicto sin resolver, un límite o «Pedir aprobación» como última acción son la ayuda del botón que apagan, al pasar el mouse o con el foco. Agregar una regla o una acción no muestra «Completá este dato»: los errores se marcan al intentar guardar, que no envía y abre la primera regla con problema, y después en vivo. Desde el 2026-11-02, la lista se lee con «Cuándo», «Si» y «Hacer» alineados ([TL2-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02)) y el historial se abre con «Historial» en el encabezado ([HI1-A](#los-historiales-de-reglas-y-sugerencias-hi1-a--2026-11-02)). |
+| [G1 · Cuando llega una respuesta](evidence/formularios-whatsapp/reg-g1-reglas.png) | Reglas en palabras (cuándo, si, hacer en orden), una abierta para editar, Guardar reglas e historial de revisiones. Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), el encabezado tiene sólo «Agregar regla» y Guardar, al borde derecho y a la altura del título, sin «Cambios sin guardar», número de revisión ni textos junto a los botones; el número queda en el historial. La espera de un 429, un conflicto sin resolver, un límite o «Pedir aprobación» como última acción son la ayuda del botón que apagan, al pasar el mouse o con el foco. Agregar una regla o una acción no muestra «Completá este dato»: los errores se marcan al intentar guardar, que no envía y abre la primera regla con problema, y después en vivo. Desde el 2026-11-02 el historial se abre con «Historial» en el encabezado ([HI1-A](#los-historiales-de-reglas-y-sugerencias-hi1-a--2026-11-02)), y desde el 2026-11-03 cada regla se lee en pasos, con su ícono ([LR1-A](#reglas-y-sugerencias-en-pasos-lr1-a--2026-11-03)), en lugar de los rótulos «Cuándo», «Si» y «Hacer» de [TL2-A](#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02). |
 | [G2 · El diseño del PDF](evidence/formularios-whatsapp/reg-g2-pdf.png) | Comprobante simple: nombre obligatorio en el idioma original y traducción opcional, qué preguntas incluye, quién aprobó, texto al pie y vista previa. «Incluir las fotos»: marcada, van chicas debajo de su pregunta; sin marcar, dice cuántas hay; los documentos solo se nombran (elegido el 2026-10-16). Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), sin «Cambios sin guardar» ni la revisión o su fecha junto al título; desde el 2026-10-25 tampoco va el formulario, que está en la miga; «Vista previa» va en el encabezado de su superficie y un diseño inválido no la apaga: intentarla o guardar marca y enfoca el primer error, sin pedir nada. La espera de un 429 y un conflicto son la ayuda de Guardar apagado. |
 | [G3 · Por aprobar](evidence/formularios-whatsapp/reg-g3-por-aprobar.png) | La bandeja de quien decide, en el panel con su cantidad; ordenada de la más vieja a la más nueva. MF1 (2026-10-20) la reemplaza por la columna y el filtro de «Formularios». |
 | [G4 · Aprobar o rechazar](evidence/formularios-whatsapp/reg-g4-decidir.png) | El detalle con la decisión; rechazar pide motivo; otra persona decidió antes; no aprobar lo propio. |
@@ -217,7 +217,7 @@ El modelo y las reglas están en los
 | Captura | Qué define |
 | --- | --- |
 | [La idea](evidence/formularios-whatsapp/s1-sugerir-idea.png) | Formularios independientes conectados por sugerencias: cuándo, qué datos pasan y cómo se ofrecen. |
-| [Configurar qué sugerir después](evidence/formularios-whatsapp/s2-sugerir-editor.png) | Sección del editor con su propio «Guardar sugerencias», sin republicar. Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), como en las reglas: «Agregar sugerencia» y Guardar al borde derecho del encabezado, sin «Cambios sin guardar» ni número de revisión; los límites, la falta de destino, la espera y un conflicto son la ayuda del botón que apagan; la ayuda de «Datos que pasan» va bajo el título del grupo, y los errores se marcan al intentar guardar y después en vivo. Desde el 2026-11-02, su historial se abre con «Historial» en el encabezado ([HI1-A](#los-historiales-de-reglas-y-sugerencias-hi1-a--2026-11-02)). |
+| [Configurar qué sugerir después](evidence/formularios-whatsapp/s2-sugerir-editor.png) | Sección del editor con su propio «Guardar sugerencias», sin republicar. Desde el 2026-10-23 ([botones y estados](visual-baseline.md#botones-y-estados--2026-10-23)), como en las reglas: «Agregar sugerencia» y Guardar al borde derecho del encabezado, sin «Cambios sin guardar» ni número de revisión; los límites, la falta de destino, la espera y un conflicto son la ayuda del botón que apagan; la ayuda de «Datos que pasan» va bajo el título del grupo, y los errores se marcan al intentar guardar y después en vivo. Desde el 2026-11-02, su historial se abre con «Historial» en el encabezado ([HI1-A](#los-historiales-de-reglas-y-sugerencias-hi1-a--2026-11-02)). Desde el 2026-11-03, cada sugerencia guardada se lee en pasos, como una regla ([LR1-A](#reglas-y-sugerencias-en-pasos-lr1-a--2026-11-03)). |
 | [En el celular](evidence/formularios-whatsapp/s3-sugerir-celular.png) | Entrega que termina en factura, y los casos «Juan no lo abre», sin IA, nada que sugerir y sin permiso. |
 | [La cadena en la web](evidence/formularios-whatsapp/s4-sugerir-cadena.png) | La respuesta recuerda de dónde vino, qué sugerencia la ofreció y por qué. |
 
@@ -741,7 +741,7 @@ La lista de reglas «Cuando llega una respuesta» (G1):
   PDF, que la lista no mostraba.
 - **El mensaje, entero y aparte,** en su recuadro debajo de la acción, con las variables como {número} marcadas.
 
-El editor de cada regla, el historial y los botones del encabezado no cambian.
+El editor de cada regla, el historial y los botones del encabezado no cambian. Desde el 2026-11-03 la lista se lee en pasos ([LR1-A](#reglas-y-sugerencias-en-pasos-lr1-a--2026-11-03)): se van los rótulos y el número de cada acción, y quedan las condiciones una por renglón, el rol y «con el PDF» aparte y el mensaje entero en su recuadro.
 
 ## La actividad y el encabezado de una respuesta, TL3-A — 2026-11-02
 
@@ -793,7 +793,7 @@ panel y una revisión en es/en a 1440, 390 y 320 px.
 - **Vacío, apagado:** sin revisiones, el botón queda apagado y su tooltip dice «Todavía no hay revisiones.»
   (`DisabledReason`). Mientras la sección guarda o espera un 429 se apaga con su motivo, como las demás acciones.
 - **Un panel al costado** con las revisiones, de la más nueva a la más vieja: el número, «Vigente» en la actual, la fecha,
-  quién y qué cambió. Tocar una muestra en el mismo panel su lista, como en TL2-A pero sin editar, con «‹» para volver.
+  quién y qué cambió. Tocar una muestra en el mismo panel su lista, como en la lista ([LR1-A](#reglas-y-sugerencias-en-pasos-lr1-a--2026-11-03)) pero sin editar, con «‹» para volver.
   Reemplaza el diálogo que abría una revisión. En el celular, el panel ocupa la pantalla.
 - **Las secciones, a todo el ancho:** se va la columna de la derecha, así que la lista de reglas y la de sugerencias
   ganan ese lugar.
@@ -846,8 +846,32 @@ lista y C el botón escribe las llaves. Eligió **A**.
   la primera opción, 16/10/2026, 12.500,5, «Sí» y el número con el prefijo del formulario (VIS-000001).
 - **Qué se guarda:** la pregunta por su identidad, `{FieldId}`. La etiqueta sigue a la pregunta renombrada y el mismo dato
   sirve en los dos idiomas. El servidor convierte al leer las reglas guardadas antes con el nombre.
-- El resumen de la regla (TL2-A) y «Original (…)» muestran los datos con sus nombres. La (i) de «Mensaje» explica
+- El resumen de la regla (en pasos desde [LR1-A](#reglas-y-sugerencias-en-pasos-lr1-a--2026-11-03)) y «Original (…)» muestran los datos con sus nombres. La (i) de «Mensaje» explica
   «Agregar dato» y «Así llega».
 
 La escena `formRules.spec` («the message gets its data from a list and shows how it arrives», es/en a 1440, 390 y 320 px)
 muestra la lista abierta, las etiquetas y «Así llega».
+
+## Reglas y sugerencias en pasos, LR1-A — 2026-11-03
+
+Mirando una regla de «Recepción de insumos», el usuario dijo que el mensaje con etiquetas (MD1-A) le gustaba, pero no
+«que tenga texto así "Libre" sin ordenarlo correctamente en una visualización linda más amigable»: rótulos chicos en gris
+(«Cuándo», «Si», «Hacer») y frases sueltas al lado. De tres tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M) (fila LR1: A en pasos, B una tabla con
+columnas, C un recuadro por regla) eligió **A**, y para los demás datos sueltos de la app, las dos columnas del detalle de
+una respuesta. Quedó programada el mismo día; la regla general está en [Lecturas](visual-baseline.md#lecturas).
+
+- **Un paso por parte, en el orden en que pasa:** el cuándo, «Si» con sus condiciones y cada acción. Cada paso lleva su
+  ícono en una columna fija, unido al siguiente por una línea: una flecha cuando se recibe, una tilde cuando se aprueba
+  y un círculo tachado cuando se rechaza; las condiciones, el ícono de «Filtros»; pedir aprobación, un escudo; armar el
+  PDF, una hoja; el mensaje a quien la cargó, un globo; el aviso a un rol, personas.
+- **Las condiciones, una por renglón:** «Si» y «y» en gris al principio, la pregunta y el valor en negrita y la palabra
+  que los une en gris («Si ¿Llegó en buen estado? es No», «y Cantidad recibida desde 500»).
+- **Cada acción, un paso:** qué hace en negrita y su dato aparte, en una etiqueta: el rol o «con el PDF». Se ve que el
+  PDF se arma antes del mensaje que lo adjunta. El mensaje va entero debajo, en su recuadro, con sus datos como etiquetas.
+- **Las sugerencias, igual:** el formulario y cómo se ofrece, cuándo (sólo con «La IA decide»), si y los datos que pasan
+  como etiquetas. En el historial de cada sección, una revisión se lee en los mismos pasos (las sugerencias de otra
+  versión cuentan sus condiciones y sus datos).
+
+El editor de cada regla, el historial y los botones del encabezado no cambian. La escena `formRules.spec` («saved rules
+read in steps») muestra tres reglas guardadas y una revisión del historial en es/en a 1440, 390 y 320 px.

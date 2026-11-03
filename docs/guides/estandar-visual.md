@@ -39,6 +39,8 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Decisión previa | `ConfirmDialog` | Consecuencia y acción concreta |
 | Casillas y alternativas | `CheckboxField`, `RadioGroupField`, `Checkbox` para tablas | Opciones, estado y validación |
 | Opción elegida | `SegmentedControl` (rellena), `RadioGroupField variant="cards"` (borde de 2 px), `DropdownMenuRadioItem` (tilde), `DataTable selectedRowKey` (barra y tinte) | Cuál está elegida o abierta; la biblioteca la marca con algo más que un tinte (OE1-A) |
+| Lectura de algo que pasa en orden (una regla, una sugerencia) | `StepList` | Un paso por parte con su ícono; palabras que unen en gris y datos en negrita ([lecturas](../design/visual-baseline.md#lecturas), LR1-A) |
+| Datos de un registro, sin editar | `DataList` | Rótulos y valores ya formateados, en dos columnas; nunca «Rótulo: valor» en un renglón |
 | Íconos y acciones | `shared/ui/icons`, `IconButton`, `RowActions` | Nombre traducido, permiso y operación |
 | Ayuda contextual | `ActionTooltip` | Texto y control alcanzable con teclado; sin `title` nativo |
 | Explicación de un campo, una sección o una opción | `InfoTip`, `help` de `FormField`, `Surface`, `Page`, `CheckboxField` y `RadioGroupField` | La (i) con su tooltip; nunca un texto debajo o al costado (`hint` y `description`, sólo datos) |
