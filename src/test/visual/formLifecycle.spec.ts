@@ -82,7 +82,7 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
  test("BA6 unavailable suggestion can only be removed "+language+" "+width,async({page})=>{
   await page.setViewportSize({width,height:900});
   await page.goto("/src/test/visual/index.html?screen=/formularios/"+fixtureFormId+"&scenario=forms-lifecycle-suggestions&lang="+language);
-  const row=page.getByRole("region",{name:es?"Sugerencia 2":"Suggestion 2",exact:true});await row.scrollIntoViewIfNeeded();
+  const row=page.getByRole("region",{name:es?"Sugerencia 2":"Suggestion 2",exact:true});await row.scrollIntoViewIfNeeded();await expect(page.getByRole("region",{name:es?"Sugerencia 1":"Suggestion 1",exact:true}).locator("ol > li")).toHaveCount(4);
   await expect(row.getByRole("button")).toHaveCount(1);
   await expect(row.getByText(es?"Dado de baja":"Deactivated",{exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:es?"Guardar sugerencias":"Save suggestions",exact:true})).toBeDisabled();

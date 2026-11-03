@@ -115,4 +115,33 @@ for (const language of ["es", "en"] as const)
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       await page.screenshot({ path: "test-results/rules-message-data-" + language + "-" + width + ".png", fullPage: true });
     });
+    // Board LR1-A: each saved rule reads in steps, from top to bottom, with its icon in a fixed column: when, if and each
+    // action with its datum apart and its message whole; the history shows a revision the same way.
+    test("saved rules read in steps " + language + " at " + width, async ({ page }) => {
+      const en = language === "en";
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "&scenario=forms-rules-reading&lang=" + language);
+      const section = page.getByRole("heading", { name: en ? "When a response arrives" : "Cuando llega una respuesta", exact: true }).locator("xpath=ancestor::section[1]");
+      const rule = (number: number) => section.getByRole("region", { name: (en ? "Rule " : "Regla ") + number, exact: true });
+      await expect(rule(3)).toBeVisible();
+      const steps = (number: number) => rule(number).locator("ol > li");
+      await expect(steps(1)).toHaveText(en ? ["A response is received", "If Visit completed is No", /^Notify people with a role\s*Supervisor\s*The visit to Customer was not finished\. Check visit Number\.$/]
+        : ["Se recibe una respuesta", "Si Visita completada es No", /^Avisar a las personas con un rol\s*Supervisor\s*La visita de Cliente quedó sin terminar\. Revisá la visita Número\.$/]);
+      await expect(steps(2).nth(1).locator("li")).toHaveText(en ? ["If Customer is Pérez Hnos.", "and Amount collected from 500", "and Notes is answered"] : ["Si Cliente es Pérez Hnos.", "y Importe cobrado desde 500", "y Observaciones tiene respuesta"]);
+      await expect(steps(3)).toHaveCount(4);
+      await expect(steps(3).nth(2)).toContainText(en ? "with the PDF" : "con el PDF");
+      await expect(section.locator("[data-step-icon]")).toHaveCount(3 + 3 + 4);
+      await page.evaluate(() => document.fonts.ready);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      // On a computer the section alone; on a phone the whole page, because the bar on top would cover a part of the section.
+      await section.scrollIntoViewIfNeeded();
+      if (width >= 1024) await section.screenshot({ path: "test-results/rules-reading-" + language + "-" + width + ".png" });
+      else await page.screenshot({ path: "test-results/rules-reading-" + language + "-" + width + ".png", fullPage: true });
+      await section.getByRole("button", { name: en ? "History" : "Historial", exact: true }).click();
+      const panel = page.getByRole("dialog", { name: en ? "Rule history" : "Historial de las reglas", exact: true });
+      await panel.getByRole("button", { name: en ? "Revision 1" : "Revisión 1", exact: true }).click();
+      await expect(panel.locator("[data-step-icon]")).toHaveCount(3 + 3 + 4);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await page.screenshot({ path: "test-results/rules-reading-history-" + language + "-" + width + ".png" });
+    });
   }

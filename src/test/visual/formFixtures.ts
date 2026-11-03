@@ -112,7 +112,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   // PU1-A: a number question whose original title is longer than the 20 characters WhatsApp shows.
   if (scenario === "forms-publication-blocked") { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, [d.draft.culture]: d.draft.culture === "es" ? "Importe cobrado al cliente" : "Amount collected from the customer" } } : q) } }); }
   if(scenario === "forms-publication-budget-http"){ const budget=responseBudgetDefinition(culture);definitions.clear();definitions.set(budget.id,budget); }
-  const ruleFixture = createRuleVisualFixtures(culture, () => definitions.get(fixtureFormId));
+  const ruleFixture = createRuleVisualFixtures(culture, () => definitions.get(fixtureFormId), scenario === "forms-rules-reading");
   const publications = new Map<string, { definitionId: string; requestId: string; operationId: string; versionId: string; versionNumber: number; draftRevision: number; state: string; acceptedAtUtc: string; recoveryPath: string }>();
   const publicationStates = new Map<string,string>();
   const publicationCultures = new Map<string, FormCulture[]>();
@@ -176,7 +176,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     conditionChoices: {},
   }) : null;
   let suggestionSet: FormSuggestionSet = { id: guid(75), definitionId: fixtureFormId, sourceVersionId: guid(91), revision: 1, createdAtUtc: audit.createdAtUtc, author: audit.lastChangedBy, suggestions: [
-    { id: guid(76), destinationDefinitionId: guid(70), destinationVersionId: guid(74), mode: "Assistant", when: culture === "es" ? "Cuando pide una entrega." : "When a delivery is requested.", isActive: true, conditions: [], mappings: [] },
+    { id: guid(76), destinationDefinitionId: guid(70), destinationVersionId: guid(74), mode: "Assistant", when: culture === "es" ? "Cuando pide una entrega." : "When a delivery is requested.", isActive: true, conditions: [{ fieldId: guid(12), operator: "gte", values: ["500"] }], mappings: [{ source: { kind: "Field", fieldId: guid(10) }, destinationFieldId: guid(79) }, { source: { kind: "RecordNumber", fieldId: null }, destinationFieldId: guid(80) }] },
     { id: guid(77), destinationDefinitionId: guid(71), destinationVersionId: guid(78), mode: "Always", when: null, isActive: true, conditions: [], mappings: [] },
   ] };
   const receipts = new Map<string, { body: string; kind: "Create" | "Update"; result: FormDraftSaveResult }>();
