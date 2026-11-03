@@ -1,17 +1,19 @@
 import { useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { cn } from "@/shared/lib/utils";
-import { ChevronDownIcon } from "./icons";
+import { CheckIcon, ChevronDownIcon } from "./icons";
 import { Input } from "./input";
 export interface AutocompleteOption {
   id: string;
   label: string;
   /** A second, muted line: what tells two similar options apart. */
   description?: string | null;
-  /** Only in a multiple choice: already chosen. */
+  /** Already chosen: in a multiple choice its box is marked; in a single one, such as a filter's combo, it carries a check. */
   selected?: boolean;
   /** Cannot be chosen now, such as the rest of a multiple choice that reached its maximum. */
   disabled?: boolean;
+  /** Starts a group after a line, as the options after «Todas» in a filter's combo. */
+  separated?: boolean;
 }
 interface Props extends Omit<ComponentProps<"input">, "onChange" | "value" | "onSelect"> {
   value: string;
@@ -64,14 +66,14 @@ export function Autocomplete({ value, onValueChange, options, onSelect, footer, 
         <ul id={`${id}-list`} role="listbox" aria-label={props["aria-label"]} aria-multiselectable={multiple || undefined}
           className="z-50 w-(--radix-popover-trigger-width) min-w-48 max-h-[min(16rem,var(--radix-popover-content-available-height))] overflow-y-auto rounded-md border border-input bg-popover p-1 text-popover-foreground shadow-md">
           {header ? <li role="presentation" className="px-2.5 pt-1 pb-1.5 text-xs text-[var(--color-content-muted)]">{header}</li> : null}
-          {options.map((option, index) => <li key={option.id} role="presentation"><button type="button" role="option" id={`${id}-${index}`}
-            aria-selected={multiple ? !!option.selected : index === active} aria-disabled={option.disabled || undefined} data-active={index === active || undefined} tabIndex={-1}
-            className={cn("flex w-full items-start gap-2 break-words rounded-sm px-2.5 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground data-[active]:bg-accent data-[active]:text-accent-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50",
-              !multiple && "aria-selected:bg-accent aria-selected:text-accent-foreground")}
+          {options.map((option, index) => <li key={option.id} role="presentation" className={cn(option.separated && "mt-1 border-t border-[var(--color-border)] pt-1")}><button type="button" role="option" id={`${id}-${index}`}
+            aria-selected={multiple ? !!option.selected : option.selected ?? index === active} aria-disabled={option.disabled || undefined} data-active={index === active || undefined} tabIndex={-1}
+            className="flex w-full items-start gap-2 break-words rounded-sm px-2.5 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground data-[active]:bg-accent data-[active]:text-accent-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
             onPointerDown={event => event.preventDefault()} onMouseDown={event => event.preventDefault()} onClick={() => select(index)}>
             {multiple ? <span aria-hidden="true" className={cn("mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border border-input text-[0.6875rem] leading-none",
               option.selected && "border-[var(--color-brand-700)] bg-[var(--color-brand-700)] text-white")}>{option.selected ? "✓" : null}</span> : null}
-            <span className="min-w-0"><span className="block">{option.label}</span>{option.description ? <span className="block text-xs text-[var(--color-content-muted)]">{option.description}</span> : null}</span>
+            <span className={cn("min-w-0 flex-1", !multiple && option.selected && "font-medium")}><span className="block">{option.label}</span>{option.description ? <span className="block text-xs text-[var(--color-content-muted)]">{option.description}</span> : null}</span>
+            {!multiple && option.selected ? <CheckIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[var(--color-brand-700)]" /> : null}
           </button></li>)}
           {status != null && options.length === 0 ? <li role="presentation" className="px-2.5 py-2 text-sm text-[var(--color-content-muted)]">{status}</li> : null}
           {footer ? <li role="presentation" className="sticky bottom-0 border-t border-input bg-popover px-2.5 py-2 text-right">{footer}</li> : null}

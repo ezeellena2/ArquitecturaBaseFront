@@ -123,4 +123,16 @@ describe("Autocomplete with descriptions, states and multiple choice", () => {
     expect(select).toHaveBeenCalledWith("drift");
     expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
+  // A filter's combo (board PL2-A): the open list marks the chosen one with its check, apart from the one the arrows are on.
+  it("marks the chosen option of a single choice apart from the active one", async () => {
+    render(<Autocomplete aria-label="Artículo" value="Glifosato 48%" onValueChange={() => {}} onSelect={() => {}} dropdown
+      options={[{ id: "all", label: "Todas", selected: false }, { id: "atrazine", label: "Atrazina 50%", selected: false, separated: true }, { id: "glyphosate", label: "Glifosato 48%", selected: true }]} />);
+    await userEvent.click(screen.getByRole("combobox", { name: "Artículo" }));
+    expect(screen.getByRole("listbox")).not.toHaveAttribute("aria-multiselectable");
+    expect(screen.getByRole("option", { name: "Glifosato 48%" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{ArrowDown}");
+    expect(screen.getByRole("option", { name: "Todas" })).toHaveAttribute("data-active");
+    expect(screen.getByRole("option", { name: "Todas" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("option", { name: "Glifosato 48%" })).toHaveAttribute("aria-selected", "true");
+  });
 });

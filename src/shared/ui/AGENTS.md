@@ -53,6 +53,9 @@ el foco sigue en el campo y Escape cierra solo la lista. La lista se abre al toc
 no al recibir el foco: un foco del código (el primer error al guardar) la deja cerrada y no tapa el error del campo.
 Con `dropdown` es un combo desplegable: al final del campo va la flecha de un desplegable, decorativa (el clic pasa al campo,
 que abre la lista), para una lista que se ve antes de escribir, como el catálogo de un campo del catálogo.
+En una elección simple, la opción con `selected` es la elegida (`aria-selected`), con su tilde y aparte de la que marcan las
+flechas, como en el filtro de una pregunta (PL2-A, 2026-11-03); sin `selected` en las opciones, `aria-selected` sigue a las
+flechas. `separated` abre un grupo después de una línea, como las opciones después de «Todas».
 
 - [Biblioteca y decisiones visuales](../../../docs/design/visual-baseline.md).
 - [Reglas de componentes y accesibilidad](../../../docs/architecture.md).
