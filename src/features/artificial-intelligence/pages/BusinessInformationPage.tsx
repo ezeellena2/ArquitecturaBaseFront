@@ -5,7 +5,9 @@ import { Navigate } from "react-router";
 import { usePermissions } from "@/auth/usePermissions";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { ApiError } from "@/shared/api/ApiError";
+import { formatDateOnly } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
+import { ComparisonTable } from "@/shared/ui/ComparisonTable";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
@@ -13,11 +15,10 @@ import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableRowHeader } from "@/shared/ui/table";
 import { Textarea } from "@/shared/ui/textarea";
 import { businessInformationQueryKey, fetchBusinessInformation, type BusinessInformation } from "../api/businessInformation";
-import { businessFields, businessDetailFields, businessLimits, type BusinessField } from "../businessInformationModel";
-import { emptyBusinessDetails, mapLink, validPoint } from "../businessDetailsModel";
+import { businessLimits, businessReviewGroups, type BusinessField } from "../businessInformationModel";
+import { emptyBusinessDetails } from "../businessDetailsModel";
 import { BusinessLocationEditor } from "../components/BusinessLocationEditor";
 import { BusinessHoursEditor } from "../components/BusinessHoursEditor";
 import { BusinessFaqEditor } from "../components/BusinessFaqEditor";
@@ -36,20 +37,16 @@ export function BusinessInformationPage() {
 }
 
 function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; canManage: boolean }) {
-  const { t } = useTranslation("businessInformation");
+  const { t, i18n } = useTranslation("businessInformation");
   const presentation = useSystemPresentation();
   const editor = useBusinessInformationEditor(initial);
   const [discarding, setDiscarding] = useState(false);
   const locked = editor.busy || editor.recovery !== "none";
   const uncertain = editor.recovery === "uncertain" || editor.recovery === "missing";
   const details = editor.draft.details ?? emptyBusinessDetails(presentation.data?.defaultTimeZoneId ?? "UTC");
-  const reviewFields = [...businessFields, ...businessDetailFields];
-  function reviewText(name: typeof reviewFields[number], value: BusinessInformation) {
-    if (name === "details.location") { const location = value.details?.location; return location ? [t(location.mode), location.address, location.reference, location.area, validPoint(location.latitude, location.longitude) ? mapLink({ latitude: location.latitude!, longitude: location.longitude! }) : ""].filter(Boolean).join("\n") : ""; }
-    if (name === "details.openingHours") { const hours = value.details?.openingHours; return hours ? [hours.timeZoneId, ...hours.days.map(day => `${t(`days.${["monday","tuesday","wednesday","thursday","friday","saturday","sunday"][day.weekday]}`)}: ${t(day.status)} ${day.periods.map(period => `${period.start}–${period.end}${period.nextDay ? " (+1)" : ""}`).join(", ")}`), ...hours.exceptions.map(day => `${day.date}: ${t(day.status)} ${day.periods.map(period => `${period.start}–${period.end}${period.nextDay ? " (+1)" : ""}`).join(", ")}`)].join("\n") : ""; }
-    if (name === "details.faq") return value.details?.faq.map(entry => `${entry.question}\n${entry.answer || t("unanswered")}`).join("\n\n") ?? "";
-    return value[name];
-  }
+  // Cada dato que cambió una vez, con lo guardado y tu borrador en su columna (LR2-A); un texto que falta, en gris.
+  const reviewGroups = editor.review ? businessReviewGroups(editor.review, { ...editor.draft, revision: editor.baseline.revision }, { t, date: value => formatDateOnly(value, i18n.language) ?? value }) : [];
+  const reviewValue = (text: string, single: boolean) => text ? <span className="whitespace-pre-wrap">{text}</span> : <span className="text-[var(--color-content-muted)]">{single ? t("noValue") : "—"}</span>;
   // El texto anterior se conserva para revisarlo; qué es y qué hacer con él va en la (i) de su etiqueta.
   function legacy(name: "hours" | "location" | "faq") {
     return editor.draft[name] || editor.baseline[name] ? <div className="border-t border-[var(--color-border)] pt-3">{field(name, true, t("legacyHint"))}</div> : null;
@@ -75,13 +72,9 @@ function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; 
           <Button disabled={editor.busy} onClick={() => editor.acceptReview(true)}>{t("keepMine")}</Button></> : null}
       </>}>
         <p className="max-w-3xl text-sm">{t(editor.recovery === "conflict" ? "conflictMessage" : editor.recovery === "missing" ? "missingReceipt" : "uncertainHint")}</p>
-        {editor.review ? <>
-          <Table><TableHeader><TableRow><TableHead scope="col">{t("field")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("current")}</TableHead><TableHead scope="col" className="whitespace-normal">{t("mine")}</TableHead></TableRow></TableHeader>
-            <TableBody>{reviewFields.filter(name => editor.review && reviewText(name, editor.review) !== reviewText(name, { ...editor.draft, revision: editor.baseline.revision })).map(name => <TableRow key={name}>
-              <TableRowHeader className="whitespace-normal">{t(name === "details.location" ? "locationSection" : name === "details.openingHours" ? "hoursSection" : name === "details.faq" ? "answers" : name)}</TableRowHeader><TableCell className="min-w-48 max-w-sm whitespace-pre-wrap break-words">{editor.review && reviewText(name, editor.review) || t("noValue")}</TableCell><TableCell className="min-w-48 max-w-sm whitespace-pre-wrap break-words">{reviewText(name, { ...editor.draft, revision: editor.baseline.revision }) || t("noValue")}</TableCell>
-            </TableRow>)}</TableBody>
-          </Table>
-        </> : null}
+        {editor.review ? <ComparisonTable columns={{ identity: [{ key: "field", header: t("changes") }], label: t("field"), before: t("current"), after: t("mine") }}
+          groups={reviewGroups.map(group => ({ key: group.field, identity: [t(group.field === "details.location" ? "locationSection" : group.field === "details.openingHours" ? "hoursSection" : group.field === "details.faq" ? "answers" : group.field)],
+            lines: group.lines.map(line => ({ key: line.key, label: line.label, before: reviewValue(line.before, !line.label), after: reviewValue(line.after, !line.label) })) }))} /> : null}
       </Surface> : null}
       {/* El único aviso sobre datos sensibles va en la (i) del título de los datos del negocio. */}
       <Surface title={t("basics")} help={t("limitsHint")} padded><div className="grid gap-4 sm:grid-cols-2">{field("name")}{field("description", true)}</div></Surface>

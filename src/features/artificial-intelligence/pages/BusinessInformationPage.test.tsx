@@ -265,6 +265,32 @@ describe("business information editor", () => {
     expect(field()).toBeDisabled();
     expect(field()).toHaveValue("Shop Updated");
   });
+  // Each changed fact once, the saved value and the draft's in their columns (LR2-A): a day by its name, never «Lunes: Abierto…».
+  it("reads a conflict side by side, with only the days that changed", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    server.use(http.put("/api/ai/business-information", async ({ request }) => {
+      writes.push(await request.json() as BusinessSaveRequest);
+      const details = emptyBusinessDetails("UTC");
+      current = { ...current, services: "Semillas", revision: 2, details: { ...details, openingHours: { ...details.openingHours,
+        days: details.openingHours.days.map(day => day.weekday === 0 ? { ...day, status: "open" as const, periods: [{ start: "09:00", end: "18:00", nextDay: false }] } : day) } } };
+      return HttpResponse.json({ code: "Ai.BusinessInformation.RevisionConflict" }, { status: 409 });
+    }));
+    renderRouteWithProviders("/configuracion/negocio");
+    await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "closed");
+    await userEvent.click(save());
+    const review = await screen.findByRole("region", { name: "Revisar cambios de otro administrador" });
+    await userEvent.click(within(review).getByRole("button", { name: "Revisar cambios" }));
+    const table = await within(review).findByRole("table");
+    expect(within(table).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Qué cambió", "Dato", "Guardado actualmente", "Tu borrador"]);
+    const services = within(table).getByRole("rowheader", { name: "Productos y servicios" }).closest("tr")!;
+    expect(within(services).getAllByRole("cell").map(cell => cell.textContent)).toEqual(["Semillas", "Sin información"]);
+    expect(within(table).getByRole("rowheader", { name: "Horario de atención" })).toBeInTheDocument();
+    const monday = within(table).getByRole("rowheader", { name: "Lunes" }).closest("tr")!;
+    expect(within(monday).getAllByRole("cell").map(cell => cell.textContent)).toEqual(["Abierto 09:00–18:00", "Cerrado"]);
+    expect(within(table).queryByRole("rowheader", { name: "Martes" })).not.toBeInTheDocument();
+    expect(table).not.toHaveTextContent("Lunes:");
+  });
   it("reviews a conflict and merges untouched facts before an explicit new save", async () => {
     server.use(http.put("/api/ai/business-information", async ({ request }) => {
       writes.push(await request.json() as BusinessSaveRequest); current = { ...current, hours: "10–17", revision: 2 };

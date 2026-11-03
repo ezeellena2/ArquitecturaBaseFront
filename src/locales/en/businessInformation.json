@@ -39,6 +39,7 @@
   "conflictMessage": "Another administrator saved changes. Review the current information before saving again.",
   "review": "Review changes",
   "reviewTitle": "Review another administrator's changes",
+  "changes": "What changed",
   "field": "Field",
   "current": "Currently saved",
   "mine": "Your draft",

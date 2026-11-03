@@ -39,6 +39,7 @@
   "conflictMessage": "Otro administrador guardó cambios. Revisá la información actual antes de volver a guardar.",
   "review": "Revisar cambios",
   "reviewTitle": "Revisar cambios de otro administrador",
+  "changes": "Qué cambió",
   "field": "Dato",
   "current": "Guardado actualmente",
   "mine": "Tu borrador",
