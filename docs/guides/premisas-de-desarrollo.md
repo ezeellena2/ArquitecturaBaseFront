@@ -80,8 +80,16 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - Envolver los controles en `FilterBar`, separado de la tabla. Compone buscador, filtros principales,
   filtros secundarios y el resumen de resultados; deja que los controles pasen a otra línea en móvil.
 - Usar `SearchInput` para búsqueda con espera. Pocas opciones excluyentes y frecuentes se muestran
-  con `SegmentedControl`; un catálogo se presenta con `Select` o los menús compartidos. Los filtros
-  menos usados van en “Más filtros”; lo aplicado se muestra y se puede quitar individualmente.
+  con `SegmentedControl`; el resto, con un desplegable simple (abajo). Los filtros menos usados van
+  en “Más filtros” o en «Filtros»; lo aplicado se muestra y se puede quitar individualmente.
+- **Un filtro de opciones es un desplegable simple** (PL2-A y FO1-A, 2026-11-03), en toda la app:
+  cerrado dice «Todas» (o «Cualquier …») o la elegida; abierto, una opción por renglón, sin la
+  cantidad ni texto debajo, con la elegida tildada, y ninguna se apaga por no traer nada: si no hay
+  coincidencias, el vacío lo dice y ofrece limpiar. Con muchas opciones o que vienen del servidor
+  (las de un catálogo, las personas) es el combo común (`Autocomplete` con `dropdown`), donde se
+  busca escribiendo; con pocas y fijas, el desplegable del filtro (`FilterMenuTrigger` con opciones
+  de radio). Se elige una. Nada de listas de casillas, cajas de búsqueda sueltas ni «N respuestas»
+  debajo de cada opción.
 - En listados, usar `usePagination`, `useFilters` y `useQueryUpdate`. Búsqueda, página, tamaño, orden
   y filtros viajan en la URL con los nombres del backend; no duplicarlos en estado de la pantalla.
   El borrador interno de `SearchInput` solo permite escribir antes de confirmar la búsqueda.
@@ -89,8 +97,9 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   página 1 y filtros ausentes, y conservar el orden al limpiar. `pageSize` se fija explícitamente
   después de resolver el tamaño general, para conservarlo durante la visita. Atrás y una URL
   compartida restauran la vista.
-- Los conteos por opción salen del backend con los demás filtros aplicados e ignorando el propio.
-  No contarlos sobre la página visible. Una opción con cero coincidencias queda deshabilitada.
+- Un segmentado de pocas opciones fijas puede decir la cantidad de cada conjunto («Activos (8) ·
+  Dados de baja (2)»). Esa cantidad sale del backend con los demás filtros aplicados e ignorando el
+  propio; no se cuenta sobre la página visible.
 - Mostrar cuántos resultados hay y una acción para limpiar cuando hay filtros activos. Distinguir
   “todavía no hay datos” de “ninguno coincide”: el primero ofrece crear cuando hay permiso; el segundo,
   limpiar los filtros. Conservar la composición de `UsersFilterBar` como referencia y usar

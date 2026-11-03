@@ -708,7 +708,8 @@ respuestas que dejaron vacía la pregunta o las de una versión en la que no exi
 Al programarla apareció que la columna de una pregunta de catálogo no trae sus opciones, así que su chip decía «Valor no
 disponible»: el nombre de la elegida viaja con el cambio y la planilla lo recuerda, en memoria y con el filtro, para el
 combo cerrado y el chip. Reemplaza, de PL1-A, las cantidades y «Respuesta» adentro de «Filtros», y la elección de varias
-opciones de una pregunta; el «alguna de» de [CA5](catalogos-mejoras.md) sigue en su chip.
+opciones de una pregunta; el «alguna de» de [CA5](catalogos-mejoras.md) sigue en su chip. El mismo día el usuario pidió
+que la regla valga en toda la app: quedó como [FO1-A](visual-baseline.md#los-filtros-de-opciones-en-toda-la-app--2026-11-03).
 
 ## Textos largos: el detalle y las reglas, TL1-A y TL2-A — 2026-11-02
 

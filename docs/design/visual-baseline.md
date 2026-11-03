@@ -193,9 +193,13 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
 - Un buscador de texto libre, siempre visible. Hasta tres filtros frecuentes al lado; el resto en «Filtros»
   (`FilterPanel`), con su contador de aplicados, que aplica cada cambio enseguida, como «Columnas» (PL1-A, 2026-11-02).
   Búsqueda y filtros rápidos también aplican sin botón.
-- Adentro de «Filtros», lo que se elige de una lista (una pregunta con opciones, quién la cargó, la versión) es el combo
-  común (`Autocomplete` con su flecha): cerrado dice «Todas» o la elegida; abierto, las opciones sin la cantidad ni nada
-  debajo, con la elegida tildada, y se busca escribiendo. Se elige una (PL2-A, 2026-11-03).
+- **Un filtro de opciones es un desplegable simple**, en toda la app ([PL2-A y FO1-A](#los-filtros-de-opciones-en-toda-la-app--2026-11-03)):
+  cerrado dice «Todas» (o «Cualquier …») o la elegida; abierto, una opción por renglón, sin la cantidad ni texto debajo,
+  con la elegida tildada y ninguna apagada por no traer nada. Si son muchas o vienen del servidor (las opciones de un
+  catálogo, las personas), es el combo común (`Autocomplete` con su flecha) y se busca escribiendo, como adentro de
+  «Filtros» de la planilla; si son pocas y fijas, el desplegable del filtro (`FilterMenuTrigger` con opciones de radio),
+  como Rol en Usuarios. Se elige una. Un segmentado de pocas opciones fijas conserva la cantidad de cada conjunto
+  («Activos (8) · Dados de baja (2)»).
 - Filtros activos como chips removibles y una única acción “Limpiar todo”. Sin coincidencias, el vacío dice cuántos
   filtros hay y permite limpiarlos. Cambiar el orden también vuelve a la página 1.
 - El backend filtra, ordena y pagina; el front no simula resultados sobre una página parcial.
@@ -477,7 +481,7 @@ Se compara antes de programar; el laboratorio se borra al decidir.
 | Densidad de fila / encabezado | **36 px** / **48 px** sin expandido ni antetítulo |
 | Submenú | **Desplegable lateral**; Administración en **carril propio** |
 | Rutas al agrupar | **Se quedan** `/usuarios` y `/roles` |
-| Conteos por opción de filtro | **Ahora**, con contrato de backend |
+| Conteos por opción de filtro | **Ahora**, con contrato de backend; desde el 2026-11-03, **sólo en los segmentados**: un desplegable no lleva cantidades ([FO1-A](#los-filtros-de-opciones-en-toda-la-app--2026-11-03)) |
 | Grupo del menú al entrar | **Plegado salvo el activo** |
 | Submenú con barra contraída | **Íconos sueltos** |
 | Estado en Usuarios | **Punto** con la palabra para lector de pantalla |
@@ -759,3 +763,26 @@ La escena `formRules.spec` («saved rules read in steps») muestra tres reglas g
 es/en a 1440, 390 y 320, y la de sugerencias de `formLifecycle.spec` (BA6) muestra una sugerencia con condición y datos.
 Cambiaron cuatro referencias, revisadas una por una y todas por esta decisión: `assistant-answer-{es,en}-{390,320}`, con
 los valores de la fuente en dos columnas.
+
+## Los filtros de opciones, en toda la app — 2026-11-03
+
+Probando «Recepción de insumos», el usuario pidió que el filtro de una pregunta con opciones fuera «un combo desplegable
+simple y listo», sin la lista de casillas ni «1 respuesta» debajo de cada opción; eligió [PL2-A](formularios-whatsapp.md#el-filtro-de-una-pregunta-con-opciones-un-combo-pl2-a--2026-11-03).
+Después pidió revisar toda la aplicación para que la regla se cumpla en todos lados. Se buscaron todos los filtros de
+opciones y quedaron dos tableros en el lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila FO1. Eligió la **A**: los
+desplegables, sin cantidades, y los segmentados, como están. Descartó la B, que también les sacaba el número a los
+segmentados. La regla quedó en [Listados y filtros](#listados-y-filtros) y en las
+[premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsqueda), y reemplaza «una opción con cero coincidencias queda
+deshabilitada».
+
+| Dónde | Cómo queda | En el código |
+| --- | --- | --- |
+| Respuestas de un formulario, «Filtros»: cada pregunta con opciones, Cargó y Versión | El combo común, de a una opción y sin cantidades (PL2-A) | `ResponseFacetControl` |
+| Usuarios: Rol y «Más filtros › Creado» | El desplegable del filtro sin la cantidad a la derecha, con la elegida tildada y ninguna apagada | `UsersFilterBar` |
+| Catálogos: Estado; Respuestas: Canal y Estado | Ya eran desplegables simples; no cambian | `CatalogsPage`, `FormResponsesPage` |
+| Segmentados de Usuarios (estado), Catálogos (origen), Formularios, Diseñar formularios, Formularios que faltan y WhatsApp | Quedan, con la cantidad de cada conjunto donde la tenían, rellenos en la elegida (OE1-A) | `SegmentedControl` |
+
+No son filtros de un listado y no entran en la regla: «Columnas» (qué columnas se ven), las condiciones de una regla o
+una sugerencia, que pueden elegir varias opciones, y «Elegidos · N» del selector de permisos de un rol, que dice cuántos
+permisos se eligieron.
