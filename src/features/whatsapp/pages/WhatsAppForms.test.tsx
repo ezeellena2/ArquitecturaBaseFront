@@ -479,6 +479,8 @@ it("keeps the chosen form first in the list, chosen, while another page shows", 
  await within(dialog).findByRole("radio", { name: "Registrar visita" });
  const chosen = within(dialog).getByRole("radio", { name: "Visita técnica" });
  expect(chosen).toBeChecked();
+ // Another page moves the focus to its first form, past the chosen one that stays on top.
+ await waitFor(() => expect(within(dialog).getByRole("radio", { name: "Registrar visita" })).toHaveFocus());
  expect(within(dialog).getAllByRole("radio")[0]).toBe(chosen);
  expect(within(dialog).getByText("Versión 3 · 8 preguntas")).toBeInTheDocument();
  expect(dialog).not.toHaveTextContent("Elegido");

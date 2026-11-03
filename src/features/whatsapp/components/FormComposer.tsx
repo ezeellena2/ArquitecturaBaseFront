@@ -39,8 +39,6 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   const list = useRef<HTMLDivElement>(null);
   useEffect(()=>{if(state.fieldError)message.current?.focus();},[state.fieldError]);
   useEffect(()=>{if(state.selectionError)list.current?.querySelector<HTMLButtonElement>('[role="radio"]')?.focus();},[state.selectionError]);
-  const focusPage = useRef(false);
-  useEffect(() => { if (focusPage.current && !state.forms.isFetching && state.forms.data) { focusPage.current = false; list.current?.querySelector<HTMLButtonElement>('[role="radio"]')?.focus(); } }, [state.forms.data, state.forms.isFetching]);
   const form = state.form;
   const selected = form?.selection;
   const items = state.mayReadOptions ? state.forms.data?.page.items ?? [] : [];
@@ -48,6 +46,9 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   const offPage = Boolean(selected && !items.some(option => formOptionKey(option)===formOptionKey(selected)));
   // The chosen form of another page stays first in the list, with its chosen card (LR3-A, 2026-11-03); on its page, in its place.
   const listed = offPage&&selected&&!state.contextChanged ? [selected, ...items] : items;
+  // Another page moves the focus to its first form, past the chosen one that stays on top.
+  const focusPage = useRef(false);
+  useEffect(() => { if (focusPage.current && !state.forms.isFetching && state.forms.data) { focusPage.current = false; list.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[listed.length - items.length]?.focus(); } }, [state.forms.data, state.forms.isFetching]);
   const deadline = new Date(Date.parse(contact.lastInboundAtUtc)+24*60*60*1000).toISOString();
   const language = i18n.resolvedLanguage ?? "es";
   const name = contact.profileName ?? contact.linkedAccount?.displayName ?? t("unnamed");
