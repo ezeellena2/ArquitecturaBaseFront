@@ -723,6 +723,13 @@ radios.
 Apariencia, incluida una clara (mostaza); la escena de «Por aprobar» mide en el navegador el tinte y la barra de la fila
 abierta (`expectOpenRow` en `src/test/visual/tableColumns.ts`).
 
+Cambiaron catorce referencias, revisadas una por una: `users-*`, `editor-*` y `catalog-1440` (el segmentado con la
+elegida rellena y, en el celular, de 44 px), `whatsapp-*` y `whatsapp-access-*` a 1440 («Todos / Sin leer» como
+segmentado y la conversación abierta con tinte y barra), y `user-dialog-320` y `catalog-field-in-use-*`, donde cambia la
+página que se ve detrás del diálogo. Las de 1440 pasaban igual por la tolerancia de la comparación (0,2 % de los
+píxeles) y se tomaron otra vez para que muestren el diseño aprobado; siete que sólo traían ruido de dibujado quedaron
+como estaban. La corrida completa aprobó 815 de 815.
+
 ## Lecturas en pasos y en dos columnas — 2026-11-03
 
 Mirando una regla de «Recepción de insumos», el usuario dijo que el mensaje con etiquetas le gustaba, pero no «que tenga
