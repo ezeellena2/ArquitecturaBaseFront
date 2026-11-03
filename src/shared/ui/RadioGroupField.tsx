@@ -57,7 +57,9 @@ export function RadioGroupField({ label, options, value, onValueChange, error, v
           return (
             // `relative`: dentro de un formulario, Radix pone al lado del botón un input escondido y posicionado, para
             // que el valor viaje con el formulario. Sin un ancestro posicionado cerca, se ubica contra el diálogo.
-            <div key={option.value} className={cn("relative flex items-start gap-2.5 px-2.5 py-1.5", variant === "cards" && "rounded-[var(--radius-control)] border border-[var(--color-border)] py-2.5 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-[var(--color-surface-muted)]")}>
+            // La tarjeta elegida suma un borde de 2 px, sin moverse, y el tinte de la marca (OE1-A, 2026-11-03).
+            <div key={option.value} className={cn("relative flex items-start gap-2.5 px-2.5 py-1.5", variant === "cards" && cn("rounded-[var(--radius-control)] border py-2.5",
+              option.value === value ? "border-[var(--color-brand-600)] bg-[var(--color-brand-50)] shadow-[inset_0_0_0_1px_var(--color-brand-600)]" : "border-[var(--color-border)]"))}>
               <RadioGroup.Item
                 id={optionId}
                 value={option.value}
@@ -65,11 +67,12 @@ export function RadioGroupField({ label, options, value, onValueChange, error, v
                 aria-describedby={describedBy || undefined}
                 className={cn(
                   "mt-px inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-content-muted)] bg-[var(--color-surface)] outline-none",
-                  "focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:border-primary",
+                  // El tono de los enlaces y no el de los botones: con un color claro en Apariencia, se oscurece solo.
+                  "focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:border-[var(--color-brand-600)]",
                   "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
               >
-                <RadioGroup.Indicator className="size-2 rounded-full bg-primary" />
+                <RadioGroup.Indicator className="size-2 rounded-full bg-[var(--color-brand-600)]" />
               </RadioGroup.Item>
               <div className="flex flex-col gap-0.5">
                 {option.help ? (
