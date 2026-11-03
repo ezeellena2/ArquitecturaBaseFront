@@ -108,13 +108,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     if (width < 640) expect(textGeometry.lines).toBeGreaterThan(1);
     await contained(page, width);
     await page.screenshot({ path: info.outputPath("sheet.png"), fullPage: true });
-    // Board PL1-A: the question to choose from is filtered in «Filtros», which applies each change at once.
+    // Board PL1-A: the question to choose from is filtered in «Filtros», which applies each change at once; it is a combo where
+    // one option is chosen (PL2-A).
     await page.getByRole("button", { name: label("Filtros", "Filters"), exact: true }).click();
     const filters = page.getByRole("dialog", { name: label("Filtros", "Filters") });
     await filters.getByRole("button", { name: label("Fallas", "Faults"), exact: true }).click();
-    // The label covers the checkbox row, as in CheckboxField.
-    await filters.getByText(label("Frío", "Cold"), { exact: true }).click();
-    await expect(filters.getByRole("checkbox", { name: label("Frío", "Cold"), exact: true })).toBeChecked();
+    const faults = filters.getByRole("combobox", { name: label("Fallas", "Faults"), exact: true });
+    await faults.click();
+    await page.getByRole("listbox", { name: label("Fallas", "Faults"), exact: true }).getByRole("option", { name: label("Frío", "Cold"), exact: true }).click();
+    await expect(faults).toHaveValue(label("Frío", "Cold"));
     await page.keyboard.press("Escape");
     await expect.poll(async () => (await fixture(page)).some(query => query.conditions?.some(condition => condition.operator === "anyOf"))).toBe(true);
     await expect(page.getByRole("link", { name: "TEST-000001", exact: true })).toHaveCount(0);

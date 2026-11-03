@@ -46,10 +46,23 @@ for (const language of ["es", "en"] as const)
       expect((await filters.boundingBox())!.width).toBeLessThanOrEqual(width);
       await filters.getByRole("button", { name: en ? "Method" : "Modalidad", exact: true }).click();
       await expect(filters.getByRole("region", { name: en ? "Method" : "Modalidad" })).toBeVisible();
+      // Board PL2-A: a question with options is a combo; open, «Todas» and its options, without counts, inside the screen.
+      const combo = filters.getByRole("combobox", { name: en ? "Method" : "Modalidad", exact: true });
+      await expect(combo).toHaveAttribute("placeholder", en ? "All" : "Todas");
+      await combo.click();
+      const options = page.getByRole("listbox", { name: en ? "Method" : "Modalidad", exact: true });
+      await expect(options.getByRole("option", { name: en ? "All" : "Todas", exact: true })).toBeVisible();
+      await expect(options.getByText(en ? /\d+ responses?$/ : /\d+ respuestas?$/)).toHaveCount(0);
+      const box = (await options.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
       await page.screenshot({
         path: `test-results/responses-t2-${language}-${width}.png`,
         fullPage: true,
       });
+      // Escape closes the list first and then «Filtros», which gives the focus back to its button.
+      await combo.press("Escape");
+      await expect(options).toBeHidden();
       await filters.press("Escape");
       await expect(
         page.getByRole("button", { name: en ? "Filters" : "Filtros", exact: true }),
