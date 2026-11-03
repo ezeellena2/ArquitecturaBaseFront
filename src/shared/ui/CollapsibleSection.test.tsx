@@ -71,6 +71,27 @@ describe("CollapsibleSection", () => {
     expect(submitted).not.toHaveBeenCalled();
   });
 
+  // A zone of fields (ZP1-A, 2026-11-02): its help stays beside the title, and its actions come back to the band only open.
+  it("keeps its help beside the title and its actions in the band only while open", () => {
+    const section = (open: boolean) => <CollapsibleSection {...labels} open={open} onOpenChange={vi.fn()} summary="Dos preguntas" help="Lo que respondió la persona."
+      actions={<button type="button">Agregar filtro</button>}>
+      <a href="#file">Abrir documento</a>
+    </CollapsibleSection>;
+    const view = renderWithProviders(section(false));
+    const region = screen.getByRole("region", { name: "Respuesta" });
+    expect(within(region).getByRole("button", { name: "Más información sobre Respuesta" })).toHaveAccessibleDescription("Lo que respondió la persona.");
+    expect(within(region).queryByRole("button", { name: "Agregar filtro" })).not.toBeInTheDocument();
+    expect(within(region).getByText("Dos preguntas")).toBeVisible();
+    view.rerender(section(true));
+    const add = within(region).getByRole("button", { name: "Agregar filtro" });
+    expect(add).toBeVisible();
+    expect(within(region).getByRole("button", { name: "Más información sobre Respuesta" })).toBeInTheDocument();
+    // The actions go before the arrow, in the band, never inside the content.
+    const toggle = within(region).getByRole("button", { name: "Plegar respuesta" });
+    expect(add.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.getElementById(toggle.getAttribute("aria-controls")!)).not.toContainElement(add);
+  });
+
   it("keeps each section and its control independent", async () => {
     const user = userEvent.setup();
     renderWithProviders(<ControlledExample />);
