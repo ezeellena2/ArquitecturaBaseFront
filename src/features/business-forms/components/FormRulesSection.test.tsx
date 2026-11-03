@@ -371,8 +371,7 @@ it("summarizes saved rule conditions with their shared readable values and opera
   server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "choice", label: { es: "Cliente" }, help: null, required: true, maxLength: null, options: null, source: { catalog: actor } }], conditionChoices: { [fieldId]: [{ id: choiceId, label: "Cliente elegido" }] }, roles: [] })));
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const value = await screen.findByText("Cliente elegido");
-  expect(value.closest("li")).toHaveTextContent("Cliente es Cliente elegido");
-  expect(value.closest("dd")?.previousElementSibling).toHaveTextContent("Si");
+  expect(value.closest("li")).toHaveTextContent(/^Si Cliente es Cliente elegido$/);
 });
 it("shows rule history change counts and order without loading each revision", async () => {
   setup(); let details = 0;
@@ -699,29 +698,34 @@ it("keeps «Historial» off with its reason while there are no revisions", async
   expect(await screen.findByRole("tooltip")).toHaveTextContent(noRevisions);
 });
 
-// Board TL2-A: each rule reads in rows with their label (when, if, do); the role and the PDF go after the action, and the
-// message goes whole in its box, with the data it brings marked.
-it("reads a rule by when, if and do, with the role, the PDF and the whole message", async () => {
-  setup(); const fieldId = crypto.randomUUID(), lot = crypto.randomUUID();
-  serveRules([{ id: crypto.randomUUID(), event: "Approved", conditions: [{ fieldId, operator: "gte", values: ["50"] }], actions: [
+// Board LR1-A: a rule reads in steps, from top to bottom, each with its icon: when, if (with «y» between conditions) and each
+// action with its datum apart (the role, «con el PDF») and the whole message under it, with the data it brings marked.
+it("reads a rule in steps: when, if and each action with its datum and the whole message", async () => {
+  setup(); const fieldId = crypto.randomUUID(), lot = crypto.randomUUID(), notes = crypto.randomUUID();
+  serveRules([{ id: crypto.randomUUID(), event: "Approved", conditions: [{ fieldId, operator: "gte", values: ["50"] }, { fieldId: notes, operator: "answered", values: null }], actions: [
     { ...newRuleAction("NotifyRole"), roleId: actor, text: { es: "Revisá {número}" } },
     { ...newRuleAction("GeneratePdf") },
     { ...newRuleAction("NotifyAuthor"), includePdf: true, text: { es: `Se aprobó tu registro {número} del {${lot}}` } }] }]);
   server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [
     { fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "decimal", label: { es: "Hectáreas aplicadas" }, help: null, required: true, maxLength: null, options: null },
-    { fieldId: lot, key: "field_" + lot.replaceAll("-", ""), type: "shortText", label: { es: "Lote" }, help: null, required: true, maxLength: 80, options: null }], conditionChoices: {}, roles: [{ id: actor, name: "Agrónomo" }] })));
+    { fieldId: lot, key: "field_" + lot.replaceAll("-", ""), type: "shortText", label: { es: "Lote" }, help: null, required: true, maxLength: 80, options: null },
+    { fieldId: notes, key: "field_" + notes.replaceAll("-", ""), type: "longText", label: { es: "Observaciones" }, help: null, required: false, maxLength: 600, options: null }], conditionChoices: {}, roles: [{ id: actor, name: "Agrónomo" }] })));
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const rule = await screen.findByRole("region", { name: "Regla 1" });
-  expect([...rule.querySelectorAll("dt")].map(term => term.textContent)).toEqual(["Cuándo", "Si", "Hacer"]);
-  expect(within(rule).getByText("Se aprueba una respuesta")).toBeVisible();
-  expect(within(rule).getByText("50").closest("li")).toHaveTextContent("Hectáreas aplicadas desde 50");
-  const actions = [...rule.querySelectorAll("ol > li")];
-  expect(actions.map(item => item.textContent)).toEqual([
-    "1Avisar a las personas con un rol · AgrónomoRevisá Número",
-    "2Armar el PDF",
-    "3Mandarle un mensaje a quien la cargó · con el PDFSe aprobó tu registro Número del Lote"]);
+  // No short label next to loose text: the steps carry the order, and nothing is glued with a dot.
+  expect(rule.querySelector("dt")).toBeNull();
+  expect(rule).not.toHaveTextContent("·");
+  const steps = [...rule.querySelectorAll<HTMLElement>("ol > li")];
+  expect(steps).toHaveLength(5);
+  expect(rule.querySelectorAll("[data-step-icon]")).toHaveLength(5);
+  expect(steps[0]).toHaveTextContent(/^Se aprueba una respuesta$/);
+  expect(within(steps[1]).getAllByRole("listitem").map(item => item.textContent)).toEqual(["Si Hectáreas aplicadas desde 50", "y Observaciones tiene respuesta"]);
+  expect(steps[2]).toHaveTextContent(/^Avisar a las personas con un rol\s*Agrónomo\s*Revisá Número$/);
+  expect(within(steps[2]).getByText("Agrónomo")).not.toHaveTextContent("Avisar");
+  expect(steps[3]).toHaveTextContent(/^Armar el PDF$/);
+  expect(steps[4]).toHaveTextContent(/^Mandarle un mensaje a quien la cargó\s*con el PDF\s*Se aprobó tu registro Número del Lote$/);
+  expect(within(steps[4]).getByText("con el PDF")).not.toHaveTextContent("Mandarle");
   expect(within(rule).getAllByText("Número")).toHaveLength(2);
-  expect(within(rule).getByText("Lote")).toBeVisible();
 });
 
 // Board MD1-A: the data of a message are tags with the current name of their question, «Así llega» shows the message with
@@ -737,7 +741,7 @@ it("shows the data of a message with the current name of its question in the lis
   renderWithProviders(<FormRulesSection prefix="REC" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const rule = await screen.findByRole("region", { name: "Regla 1" });
   expect(within(rule).getByText("Proveedor del remito")).toBeVisible();
-  expect(rule.querySelector("ol > li")).toHaveTextContent("Llegó con problemas lo de Proveedor del remito. Revisá Número.");
+  expect(within(rule).getByText("Proveedor del remito").closest("li")).toHaveTextContent(/Mandarle un mensaje a quien la cargó\s*Llegó con problemas lo de Proveedor del remito\. Revisá Número\.$/);
   await userEvent.click(screen.getByRole("button", { name: "Editar regla 1" }));
   const message = screen.getByRole("textbox", { name: "Mensaje" });
   expect(messageText(message)).toBe("Llegó con problemas lo de Proveedor del remito. Revisá Número.");

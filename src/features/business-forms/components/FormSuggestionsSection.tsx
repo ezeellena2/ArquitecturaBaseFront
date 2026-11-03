@@ -16,15 +16,18 @@ import { InfoTip } from "@/shared/ui/InfoTip";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Spinner } from "@/shared/ui/Spinner";
+import { StepList } from "@/shared/ui/StepList";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
-import { PencilIcon,TrashIcon } from "@/shared/ui/icons";
+import { ChatIcon,CopyIcon,FormIcon,PencilIcon,SlidersIcon,TrashIcon } from "@/shared/ui/icons";
 import { dismissNotification,notify } from "@/shared/ui/notifications";
 import { fetchFormSuggestions,fetchSuggestionHistory,fetchSuggestionOptions,fetchSuggestionRevision,saveFormSuggestions,type FormSuggestionSet } from "../api/suggestions";
 import { administrativeName, localizedValue } from "../editorModel";
 import { formScopeKey,usePrivateQueryCleanup,type FormReadScope } from "../hooks/useFormQueries";
-import { responseFilterLabels,type ResponseColumn } from "../responses";
+import type { ResponseColumn } from "../responses";
 import { mappingTargets,newSuggestion,prepareSuggestions,suggestionFieldErrors,type FormSuggestion,type SuggestionMapping } from "../suggestions";
+import { ConditionLines } from "./ConditionLines";
+import { DataTag } from "./DataTag";
 import { RevisionHistoryButton,RevisionHistoryPanel } from "./RevisionHistory";
 export interface FormSuggestionsSectionProps { readonly definitionId:string;readonly definitionRevision:number;readonly publishedVersionId?:string|null;readonly scope:FormReadScope;readonly timeZoneId?:string;readonly onDirtyChange:(dirty:boolean)=>void }
 export function FormSuggestionsSection(props:FormSuggestionsSectionProps) {
@@ -39,7 +42,7 @@ export function FormSuggestionsSection(props:FormSuggestionsSectionProps) {
 }
 function SuggestionsEditor({definitionId,definitionRevision,publishedVersionId,scope,timeZoneId,onDirtyChange,onDenied}:FormSuggestionsSectionProps&{onDenied:()=>void}) {
   const culture=scope.culture;
-  const {t,i18n}=useTranslation("forms");
+  const {t}=useTranslation("forms");
   const root=[...formScopeKey(scope),"suggestions",definitionId];
   usePrivateQueryCleanup(root);
   const query=useQuery({queryKey:[...root,"editor",definitionRevision,publishedVersionId??null],queryFn:async({signal})=>{
@@ -107,7 +110,14 @@ function SuggestionsEditor({definitionId,definitionRevision,publishedVersionId,s
   const unavailable=(row:FormSuggestion)=>options.unavailableDestinations.find(form=>form.definitionId===row.destinationDefinitionId);
   // A suggestion without a destination yet (just added) has a neutral title, its number: «no disponible» is only for a saved destination.
   const name=(row:FormSuggestion,number?:number)=>{const destination=options.destinations.find(form=>form.definitionId===row.destinationDefinitionId);return !row.destinationDefinitionId&&number!==undefined?t("suggestions.row",{number}):!destination?unavailable(row)?administrativeName(unavailable(row)!.name,culture):t("suggestions.destinationUnavailable"):row.destinationVersionId&&destination.versionId!==row.destinationVersionId?t("suggestions.historicalDestination"):localizedValue(destination.name,culture,destination.originalCulture);};
-  const summary=(row:FormSuggestion,historical=false,number?:number)=><div className="space-y-1 text-sm"><p className="font-medium">{name(row,number)} {unavailable(row)?<Badge variant="outline">{t(unavailable(row)?.state==="Deleted"?"suggestions.deleted":"suggestions.deactivated")}</Badge>:<Badge variant="outline">{t("suggestions.modes."+row.mode)}</Badge>}{!row.isActive&&!unavailable(row)?<Badge variant="outline">{t("suggestions.inactive")}</Badge>:null}</p>{row.mode==="Assistant"&&row.when?<p>{t("suggestions.when")}: {row.when}</p>:null}{row.conditions.length?<p>{historical?t("suggestions.historyConditions",{count:row.conditions.length}):<>{t("rules.if")}: {responseFilterLabels({page:1,pageSize:1,conditions:row.conditions},columns,t,i18n.language,timeZoneId).map(item=>item.label).join("; ")}</>}</p>:null}{row.mappings.length?<p className="text-xs text-[var(--color-content-muted)]">{historical?t("suggestions.historyMappings",{count:row.mappings.length}):<>{t("suggestions.mappings")}: {row.mappings.map(mapping=>mapping.source.kind==="RecordNumber"?t("suggestions.recordNumber"):label(mapping.source.fieldId??"")).join(", ")}</>}</p>:null}</div>;
+  // A suggestion reads in steps like a rule (board LR1-A): the form it offers and how, when the AI offers it, if, and the data
+  // that pass, as tags. A historical revision counts its conditions and data.
+  const summary=(row:FormSuggestion,historical=false,number?:number)=><StepList steps={[
+    {key:"form",icon:<FormIcon/>,content:<p className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="font-semibold">{name(row,number)}</span>{unavailable(row)?<Badge variant="outline">{t(unavailable(row)?.state==="Deleted"?"suggestions.deleted":"suggestions.deactivated")}</Badge>:<Badge variant="outline">{t("suggestions.modes."+row.mode)}</Badge>}{!row.isActive&&!unavailable(row)?<Badge variant="outline">{t("suggestions.inactive")}</Badge>:null}</p>},
+    ...row.mode==="Assistant"&&row.when?[{key:"when",icon:<ChatIcon/>,content:<p className="break-words">{row.when}</p>}]:[],
+    ...row.conditions.length?[{key:"if",icon:<SlidersIcon/>,content:historical?<p className="text-[var(--color-content-muted)]">{t("suggestions.historyConditions",{count:row.conditions.length})}</p>:<ConditionLines conditions={row.conditions} columns={columns}/>}]:[],
+    ...row.mappings.length?[{key:"data",icon:<CopyIcon/>,content:historical?<p className="text-[var(--color-content-muted)]">{t("suggestions.historyMappings",{count:row.mappings.length})}</p>:<p className="flex flex-wrap items-center gap-x-1.5 gap-y-1"><span className="text-[var(--color-content-muted)]">{t("suggestions.mappings")}</span>{row.mappings.map((mapping,index)=>mapping.source.kind==="RecordNumber"?<DataTag key={index}>{t("suggestions.recordNumber")}</DataTag>:<DataTag key={index} missing={!columns.some(column=>column.fieldId===mapping.source.fieldId)}>{label(mapping.source.fieldId??"")}</DataTag>)}</p>}]:[],
+  ]}/>;
   // BA6: a suggestion to a deactivated or deleted form keeps Save off until it is removed, with its row's text as the reason.
   const unavailableRow=suggestions.map(unavailable).find(Boolean);
   const saveDisabledReason=busy?null:cooldown.isRunning?t("responses.wait",{count:cooldown.seconds}):conflict?t("rules.saveConflict"):unavailableRow?t(unavailableRow.state==="Deleted"?"suggestions.deletedHint":"suggestions.deactivatedHint"):null;

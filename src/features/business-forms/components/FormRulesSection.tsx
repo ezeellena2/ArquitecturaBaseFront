@@ -1,11 +1,12 @@
 import { FormConditionsEditor } from "./FormConditionsEditor";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
@@ -14,18 +15,21 @@ import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Spinner } from "@/shared/ui/Spinner";
+import { StepList } from "@/shared/ui/StepList";
 import { Surface } from "@/shared/ui/Surface";
-import { ChevronDownIcon, PencilIcon, TrashIcon } from "@/shared/ui/icons";
+import { ArrowDownIcon, BanIcon, ChatIcon, CheckIcon, ChevronDownIcon, DocumentIcon, PencilIcon, ShieldIcon, SlidersIcon, TrashIcon, UsersIcon } from "@/shared/ui/icons";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormRules, fetchRuleHistory, fetchRuleOptions, fetchRuleRevision, saveFormRules, type FormRuleSet } from "../api/rules";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
 import { contentReference, localizedValue, moveItem } from "../editorModel";
 import { newRule, newRuleAction, fixPdfAttachment, pdfAttachmentIssue, prepareRules, ruleFieldErrors, ruleActionKinds, ruleEvents, usesMessage, usesRole, withRuleActionKind, type FormRule, type RuleActionKind } from "../rules";
-import { ruleConditionSummaries, type ResponseColumn } from "../responses";
+import type { ResponseColumn } from "../responses";
 import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 import { RevisionHistoryButton, RevisionHistoryPanel } from "./RevisionHistory";
 import { parseRuleMessage, ruleMessageDataLabel, ruleMessageText, type RuleMessageData } from "../ruleMessage";
 import { RuleMessageField } from "./RuleMessageField";
+import { ConditionLines } from "./ConditionLines";
+import { DataTag } from "./DataTag";
 /** `prefix`: the form's prefix, for the example number of «Así llega». */
 interface Props { timeZoneId?: string; definitionId: string; definitionRevision: number; prefix: string; scope: FormReadScope; onDirtyChange: (dirty: boolean) => void }
 export function FormRulesSection(props: Props) {
@@ -151,20 +155,17 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
     setCurrent(null); setNeedsReview(false); setError(null);
     pendingNotices.current.delete("save"); dismissNotification(notificationRoot + ":save");
   };
-  // A rule reads in rows with their label in the same place (board TL2-A): when, if (only with conditions) and do. The data
-  // (the question, the value, the role) is bold and each message goes whole in its box.
-  const summary = (rule: FormRule) => <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-2 text-sm">
-    <dt className="text-xs text-[var(--color-content-muted)]">{t("rules.when")}</dt><dd className="min-w-0 font-semibold">{t("rules.events." + rule.event)}</dd>
-    {rule.conditions.length ? <><dt className="text-xs text-[var(--color-content-muted)]">{t("rules.if")}</dt><dd className="min-w-0"><ul className="space-y-0.5">{ruleConditionSummaries(rule.conditions, columns, t, i18n.language).map((condition, index) => <li key={condition.key}>
-      {index ? <span className="text-[var(--color-content-muted)]">{t("rules.conditionWords.and")} </span> : null}<span className="font-semibold">{condition.question || t("rules.missingQuestion")}</span>
-      {condition.clauses.map((clause, position) => <span key={position}> {clause.words}{clause.values ? <> <span className="font-semibold">{clause.values}</span></> : null}</span>)}
-    </li>)}</ul></dd></> : null}
-    <dt className="text-xs text-[var(--color-content-muted)]">{t("rules.do")}</dt><dd className="min-w-0"><ol className="space-y-1.5">{rule.actions.map((action, index) => <li key={action.id} className="grid grid-cols-[1rem_minmax(0,1fr)] gap-x-1.5">
-      <span className="text-[var(--color-content-muted)] tabular-nums">{index + 1}</span>
-      <div className="min-w-0 space-y-1"><p>{t("rules.actions." + action.kind)}{usesRole(action.kind) && action.roleId ? <><span className="text-[var(--color-content-muted)]"> · </span><span className="font-semibold">{options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")}</span></> : null}{action.kind === "NotifyAuthor" && action.includePdf ? <span className="text-[var(--color-content-muted)]"> · {t("rules.withPdf")}</span> : null}</p>
-        {usesMessage(action.kind) && action.text ? <RuleMessage text={localizedValue(action.text, culture, options.originalCulture)} name={data => ruleMessageDataLabel(data, options.questions, culture, options.originalCulture, t)} missing={t("rules.missingQuestion")}/> : null}</div>
-    </li>)}</ol></dd>
-  </dl>;
+  // A rule reads in steps, from top to bottom, in the order it happens (board LR1-A): when, if (only with conditions) and each
+  // action, each with its icon. The data (the question, the value) are bold and what joins them grey; the role and the PDF go
+  // apart after the action and each message goes whole in its box.
+  const summary = (rule: FormRule) => <StepList steps={[
+    { key: "when", icon: ruleEventIcons[rule.event], content: <p className="font-semibold">{t("rules.events." + rule.event)}</p> },
+    ...rule.conditions.length ? [{ key: "if", icon: <SlidersIcon/>, content: <ConditionLines conditions={rule.conditions} columns={columns}/> }] : [],
+    ...rule.actions.map(action => ({ key: action.id, icon: ruleActionIcons[action.kind], content: <>
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="font-semibold">{t("rules.actions." + action.kind)}</span>{usesRole(action.kind) && action.roleId ? <Badge variant="outline">{options.roles.find(role => role.id === action.roleId)?.name ?? t("rules.unavailableRole")}</Badge> : null}{action.kind === "NotifyAuthor" && action.includePdf ? <Badge variant="outline"><DocumentIcon/>{t("rules.withPdf")}</Badge> : null}</p>
+      {usesMessage(action.kind) && action.text ? <RuleMessage text={localizedValue(action.text, culture, options.originalCulture)} name={data => ruleMessageDataLabel(data, options.questions, culture, options.originalCulture, t)} missing={t("rules.missingQuestion")}/> : null}
+    </> })),
+  ]}/>;
   const changes = (revision: { changes: { addedRules: number; updatedRules: number; removedRules: number; orderChanged: boolean } }) => [revision.changes.addedRules ? t("rules.historyAdded", { count: revision.changes.addedRules }) : null, revision.changes.updatedRules ? t("rules.historyUpdated", { count: revision.changes.updatedRules }) : null, revision.changes.removedRules ? t("rules.historyRemoved", { count: revision.changes.removedRules }) : null, revision.changes.orderChanged ? t("rules.historyOrderChanged") : null].filter(Boolean).join(" · ") || t("rules.historyUnchanged");
   return <div ref={host} className="flex flex-col gap-4">
     {/* A conflict is its own surface above the editor: rereading and choosing go in its header, so the rules header keeps its shape. */}
@@ -179,7 +180,7 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
     </>}>
       {rules.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("rules.empty")}</p> : null}
       {rules.map((rule, index) => <section key={rule.id} data-rule-id={rule.id} aria-label={t("rules.rule", { number: index + 1 })} className="border-b border-[var(--color-border)] p-4">
-        <div className="flex items-start justify-between gap-3"><span className="text-xs text-[var(--color-content-muted)]">{index + 1}</span><div className="min-w-0 flex-1">{expanded !== rule.id ? summary(rule) : null}</div><div className="flex shrink-0">
+        <div className="flex items-start justify-between gap-3"><span className={"text-xs text-[var(--color-content-muted)] tabular-nums " + (expanded !== rule.id ? "pt-1" : "")}>{index + 1}</span><div className="min-w-0 flex-1">{expanded !== rule.id ? summary(rule) : null}</div><div className="flex shrink-0">
           <IconButton data-edit-rule={rule.id} label={t("rules.editRule", { number: index + 1 })} disabled={blocked} onClick={() => setExpanded(expanded === rule.id ? null : rule.id)} aria-expanded={expanded === rule.id}><PencilIcon className="size-4" /></IconButton>
           <IconButton label={t("rules.removeRule", { number: index + 1 })} disabled={blocked} onClick={() => { const neighbor = rules[index + 1] ?? rules[index - 1]; pendingFocus.current = { selector: neighbor ? '[data-edit-rule="' + neighbor.id + '"]' : "[data-add-rule]" }; change(rules.filter(item => item.id !== rule.id)); if (expanded === rule.id) setExpanded(null); }}><TrashIcon className="size-4" /></IconButton>
         </div></div>
@@ -226,6 +227,10 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
   </div>;
 }
 
+// The icon of each step of a rule (board LR1-A): when a response arrives, is approved or is rejected, and what each action does.
+const ruleEventIcons: Record<FormRule["event"], ReactNode> = { Received: <ArrowDownIcon/>, Approved: <CheckIcon/>, Rejected: <BanIcon/> };
+const ruleActionIcons: Record<RuleActionKind, ReactNode> = { RequestApproval: <ShieldIcon/>, GeneratePdf: <DocumentIcon/>, NotifyAuthor: <ChatIcon/>, NotifyRole: <UsersIcon/> };
+
 // The message of an action, whole, in its box (board TL2-A), with each datum marked by its name: the number, the reason or
 // the question as it is called now (board MD1-A).
 function RuleMessage({ text, name, missing }: { text: string; name: (data: RuleMessageData) => string | null; missing: string }) {
@@ -233,7 +238,7 @@ function RuleMessage({ text, name, missing }: { text: string; name: (data: RuleM
     {parseRuleMessage(text).map((part, index) => {
       if (part.kind === "text") return part.text;
       const label = name(part);
-      return <span key={index} className={"rounded-[var(--radius-control)] px-1 text-xs font-medium " + (label === null ? "bg-[var(--color-danger)]/10 text-[var(--color-danger)]" : "bg-[var(--color-brand-100)] text-[var(--color-brand-700)]")}>{label ?? missing}</span>;
+      return <DataTag key={index} missing={label === null}>{label ?? missing}</DataTag>;
     })}
   </p> : null;
 }

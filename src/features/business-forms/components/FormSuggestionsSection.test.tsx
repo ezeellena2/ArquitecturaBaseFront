@@ -290,3 +290,24 @@ it("explains a suggestion in its (i) instead of notes",async()=>{
   expect(history).toHaveAccessibleDescription("Todavía no hay revisiones.");
   expect(screen.queryByText("Todavía no hay revisiones.",hidden)).not.toBeInTheDocument();
 });
+
+// Board LR1-A: a saved suggestion reads in steps, like a rule: the form it offers with how, when the AI offers it, if (the
+// same words as the rules) and the data that pass as tags, without «Label: value» loose in a line.
+it("reads a saved suggestion in steps: the form and how, when, if and the data that pass", async () => {
+  setup();
+  const row = { id: version, destinationDefinitionId: destinationId, destinationVersionId: version, mode: "Assistant", when: "Cuando pide factura", isActive: true,
+    conditions: [{ fieldId, operator: "gte", values: ["50"] }],
+    mappings: [{ source: { kind: "Field", fieldId }, destinationFieldId: targetId }, { source: { kind: "RecordNumber", fieldId: null }, destinationFieldId: targetId }] };
+  server.use(http.get("/api/forms/definitions/:id/suggestions", () => HttpResponse.json({ ...current(), id: version, sourceVersionId: version, revision: 1, suggestions: [row], createdAtUtc: "2026-10-17T12:00:00Z" })));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  const suggestion = await screen.findByRole("region", { name: "Sugerencia 1" });
+  expect(suggestion).not.toHaveTextContent(":");
+  const steps = [...suggestion.querySelectorAll<HTMLElement>("ol > li")];
+  expect(steps).toHaveLength(4);
+  expect(suggestion.querySelectorAll("[data-step-icon]")).toHaveLength(4);
+  expect(steps[0]).toHaveTextContent(/^Facturar entrega\s*La IA decide$/);
+  expect(steps[1]).toHaveTextContent(/^Cuando pide factura$/);
+  expect(steps[2]).toHaveTextContent(/^Si Bultos desde 50$/);
+  expect(steps[3]).toHaveTextContent(/^Datos que pasan\s*Bultos\s*Número de la respuesta$/);
+  expect(within(steps[3]).getByText("Bultos")).not.toHaveTextContent("Número");
+});
