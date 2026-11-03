@@ -9,7 +9,7 @@ import { useFilters } from "@/shared/hooks/useFilters";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { Button } from "@/shared/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from "@/shared/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/shared/ui/dropdown-menu";
 import { FilterMenuTrigger } from "@/shared/ui/FilterMenuTrigger";
 import { ChevronDownIcon } from "@/shared/ui/icons";
 import { FilterBar } from "@/shared/ui/FilterBar";
@@ -54,7 +54,7 @@ export function CatalogsPage() {
   return <Page title={t("catalogs.title")} actions={newAction}>
     <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("catalogs.search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("catalogs.columns.origin")} options={(["All", "Manual", "Filters"] as const).map(key => ({ key,
       label: `${t(key === "All" ? "all" : key === "Manual" ? "catalogs.source.manual" : "catalogs.source.database")} (${list.data?.filterCounts.byKind[key === "All" ? "all" : key === "Manual" ? "manual" : "filters"] ?? "…"})`,
-      pressed: (kind ?? "All") === key, onSelect: () => filters.setFilter("kind", key === "All" ? undefined : key) }))} /></div><DropdownMenu><FilterMenuTrigger>{t("catalogs.stateFilter", { state: state ? t("catalogs.state." + state) : t("all") })}<ChevronDownIcon aria-hidden="true" className="size-3.5" /></FilterMenuTrigger><DropdownMenuContent align="start">{([undefined, ...catalogStates] as const).map(value => <DropdownMenuItem key={value ?? "All"} onSelect={() => filters.setFilter("state", value)}>{value ? t("catalogs.state." + value) : t("all")}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu></div></FilterBar>
+      pressed: (kind ?? "All") === key, onSelect: () => filters.setFilter("kind", key === "All" ? undefined : key) }))} /></div><DropdownMenu><FilterMenuTrigger>{t("catalogs.stateFilter", { state: state ? t("catalogs.state." + state) : t("all") })}<ChevronDownIcon aria-hidden="true" className="size-3.5" /></FilterMenuTrigger><DropdownMenuContent align="start"><DropdownMenuRadioGroup value={state ?? ""}>{([undefined, ...catalogStates] as const).map(value => <DropdownMenuRadioItem key={value ?? "All"} value={value ?? ""} onSelect={() => filters.setFilter("state", value)}>{value ? t("catalogs.state." + value) : t("all")}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu></div></FilterBar>
     <CatalogListTable page={visiblePage} canManage={canManage} loading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("catalogs.loadFailed") : undefined}
       onRetry={() => { void list.refetch(); }} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}
       sort={query.sort} onSortChange={pagination.toggleSort} hasFilters={hasFilters}

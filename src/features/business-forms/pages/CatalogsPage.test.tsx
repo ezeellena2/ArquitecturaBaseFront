@@ -56,10 +56,20 @@ it("requests the Unavailable state from the server and preserves origin/search/s
   server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json({ items: [], page: 1, pageSize: 1, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } }); }));
   let router!: ReturnType<typeof renderRouteWithProviders>["router"];
   await act(async () => { router = renderRouteWithProviders("/catalogos?page=5&pageSize=1&kind=Filters&sort=-name&search=supervisores").router; });
-  const user = userEvent.setup(); const trigger = await screen.findByRole("button", { name: /^Estado:/ }); trigger.focus(); await user.keyboard("{Enter}"); await user.click(await screen.findByRole("menuitem", { name: "No se puede usar" }));
+  const user = userEvent.setup(); const trigger = await screen.findByRole("button", { name: /^Estado:/ }); trigger.focus(); await user.keyboard("{Enter}"); await user.click(await screen.findByRole("menuitemradio", { name: "No se puede usar" }));
   await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("state")).toBe("Unavailable")); const params = new URLSearchParams(router.state.location.search);
   expect(params.get("kind")).toBe("Filters"); expect(params.get("search")).toBe("supervisores"); expect(params.get("sort")).toBe("-name"); expect(params.get("page")).toBeNull();
   await waitFor(() => expect(requests.some(request => request.get("state") === "Unavailable")).toBe(true)); expect(requests.at(-1)!.has("isActive")).toBe(false);
+});
+
+it("marks the chosen state in its menu", async () => {
+  // OE1-A (2026-11-03): el desplegable no decía cuál estaba elegido; ahora la elegida lleva su tilde.
+  setup(["formcatalogs.read"]);
+  server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [], page: 1, pageSize: 1, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } })));
+  await act(async () => { renderRouteWithProviders("/catalogos?state=Inactive"); });
+  const user = userEvent.setup(); const trigger = await screen.findByRole("button", { name: /^Estado:/ }); trigger.focus(); await user.keyboard("{Enter}");
+  expect(await screen.findByRole("menuitemradio", { name: "Dado de baja" })).toHaveAttribute("aria-checked", "true");
+  expect(screen.getByRole("menuitemradio", { name: "Todos" })).toHaveAttribute("aria-checked", "false");
 });
 
 // Searching, filtering, sorting or paging keeps the rows in sight, dimmed and out of reach, with the line under the header (LC2-A).

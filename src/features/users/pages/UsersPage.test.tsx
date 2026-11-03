@@ -449,8 +449,23 @@ describe("UsersPage", () => {
     trigger.focus();
     await userEvent.keyboard("{Enter}");
 
-    expect(await screen.findByRole("menuitem", { name: /soporte/i })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("menuitem", { name: /admin/i })).not.toHaveAttribute("aria-disabled", "true");
+    expect(await screen.findByRole("menuitemradio", { name: /soporte/i })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("menuitemradio", { name: /admin/i })).not.toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("marks the chosen role in its menu", async () => {
+    // OE1-A (2026-11-03): la elegida sólo cambiaba a un verde casi blanco. Ahora es una opción de radio, con su tilde.
+    server.use(...listHandlers());
+
+    renderRouteWithProviders("/usuarios?role=Admin");
+    await screen.findByRole("table");
+
+    const trigger = screen.getByRole("button", { name: /filtrar por rol/i });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+
+    expect(await screen.findByRole("menuitemradio", { name: /admin/i })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("menuitemradio", { name: "Cualquier rol" })).toHaveAttribute("aria-checked", "false");
   });
 
   it("tells apart an empty list from one that no filter matches", async () => {

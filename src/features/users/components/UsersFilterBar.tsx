@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchUserFilterCounts, userFilterCountsQueryKey, type UserFilterKey } from "../api/users";
 import type { Filters } from "@/shared/hooks/useFilters";
-import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/shared/ui/dropdown-menu";
 import { ChevronDownIcon, SlidersIcon } from "@/shared/ui/icons";
 import { SearchInput } from "@/shared/ui/SearchInput";
@@ -19,28 +19,27 @@ import { FilterBar } from "@/shared/ui/FilterBar";
 
 /// Una opción de un desplegable, con su conteo a la derecha. La de cero va deshabilitada: elegirla daría una
 /// lista vacía, y el número ya dice por qué. Dejarla apretable es ofrecer un camino que no lleva a ningún lado.
+///
+/// Es una opción de radio de su grupo, que dice cuál está elegida: la elegida lleva la tilde (OE1-A, 2026-11-03). La
+/// de "cualquiera" tiene el valor vacío.
 function OptionRow({
+  value,
   label,
   count,
-  selected,
   onSelect,
 }: {
+  value: string;
   label: string;
   count: number | undefined;
-  selected: boolean;
   onSelect: () => void;
 }) {
   return (
-    <DropdownMenuItem
-      disabled={count === 0}
-      onSelect={onSelect}
-      className={cn("justify-between gap-6", selected ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)]" : "")}
-    >
+    <DropdownMenuRadioItem value={value} disabled={count === 0} onSelect={onSelect} className="justify-between gap-6">
       <span>{label}</span>
       {count === undefined ? null : (
         <span className="text-xs tabular-nums text-[var(--color-content-muted)]">{count}</span>
       )}
-    </DropdownMenuItem>
+    </DropdownMenuRadioItem>
   );
 }
 
@@ -113,21 +112,23 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
             <ChevronDownIcon aria-hidden="true" className="size-3.5" />
           </FilterMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-48">
-            <OptionRow
-              label={t("filters.role.any")}
-              count={undefined}
-              selected={!values.role}
-              onSelect={() => setFilter("role", undefined)}
-            />
-            {roleOptions.map((role) => (
+            <DropdownMenuRadioGroup value={values.role ?? ""}>
               <OptionRow
-                key={role.name}
-                label={role.name}
-                count={role.count}
-                selected={values.role === role.name}
-                onSelect={() => setFilter("role", role.name)}
+                value=""
+                label={t("filters.role.any")}
+                count={undefined}
+                onSelect={() => setFilter("role", undefined)}
               />
-            ))}
+              {roleOptions.map((role) => (
+                <OptionRow
+                  key={role.name}
+                  value={role.name}
+                  label={role.name}
+                  count={role.count}
+                  onSelect={() => setFilter("role", role.name)}
+                />
+              ))}
+            </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -145,21 +146,23 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
             <DropdownMenuLabel className="text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]">
               {t("columns.createdAtUtc")}
             </DropdownMenuLabel>
-            <OptionRow
-              label={t("filters.createdWithin.any")}
-              count={undefined}
-              selected={!values.createdWithinDays}
-              onSelect={() => setFilter("createdWithinDays", undefined)}
-            />
-            {createdOptions.map((option) => (
+            <DropdownMenuRadioGroup value={values.createdWithinDays ?? ""}>
               <OptionRow
-                key={option.days}
-                label={t("filters.createdWithin.option", { count: option.days })}
-                count={option.count}
-                selected={values.createdWithinDays === String(option.days)}
-                onSelect={() => setFilter("createdWithinDays", String(option.days))}
+                value=""
+                label={t("filters.createdWithin.any")}
+                count={undefined}
+                onSelect={() => setFilter("createdWithinDays", undefined)}
               />
-            ))}
+              {createdOptions.map((option) => (
+                <OptionRow
+                  key={option.days}
+                  value={String(option.days)}
+                  label={t("filters.createdWithin.option", { count: option.days })}
+                  count={option.count}
+                  onSelect={() => setFilter("createdWithinDays", String(option.days))}
+                />
+              ))}
+            </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
