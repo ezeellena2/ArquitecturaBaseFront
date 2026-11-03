@@ -1443,7 +1443,7 @@ it("imports with the fields saved in this session instead of the ones loaded on 
   expect(within(await within(dialog).findByRole("tabpanel")).getByRole("columnheader", { name: "CUIT" })).toBeInTheDocument();
   expect(within(dialog).queryByText(fieldId, { exact: false })).not.toBeInTheDocument();
   act(() => within(dialog).getByRole("tab", { name: /^Cambios/ }).focus()); await user.keyboard("{Enter}");
-  expect(await within(dialog).findByText("CUIT: — → 20-2")).toBeInTheDocument();
+  expect(await within(dialog).findByRole("cell", { name: "CUIT: — → 20-2" })).toBeInTheDocument();
 });
 it("warns about long titles with the check of the applied import instead of the one loaded on entry", async () => {
   setup(); const entryTitle = "Pérez · Distribuidora del Litoral Norte", importedTitle = "Norte · Ferretería Industrial del Centro";
