@@ -18,6 +18,7 @@ import { Page } from "@/shared/ui/Page";
 import { Badge } from "@/shared/ui/badge";
 import { approvalStateVariant } from "../approvals";
 import { Surface } from "@/shared/ui/Surface";
+import { CellText } from "@/shared/ui/CellText";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { Pagination } from "@/shared/ui/Pagination";
 import { FilterBar } from "@/shared/ui/FilterBar";
@@ -179,7 +180,7 @@ export function FormResponsesPage() {
       header: catalogField ? `${column.label} · ${catalogField.label}` : column.label + (column.introducedInVersion > 1 ? " " + t("responses.sinceVersion", { version: column.introducedInVersion }) : ""),
       sortable: !catalogField && column.type !== "multiChoice",
       numeric: isNumericType(catalogField?.type ?? column.type),
-      cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words">{responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))}</span> : <ResponseValue
+      cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words"><CellText text={responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))} /></span> : <ResponseValue
           cell={row.cells.find(cell => cell.fieldId === column.fieldId)!}
           actor={scope.user!.id} recordId={row.id} number={row.number} label={column.label}
           viewerFiles={row.cells.filter(cell => cell.type === "photo").flatMap(cell => responseFiles(cell))}

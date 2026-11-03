@@ -514,6 +514,20 @@ it("aligns the numbers of the pasted rows and of every list of the review to the
   }
 });
 
+it("keeps each code whole in the changes, which still wrap at their spaces", async () => {
+  const taxId: CatalogField = { ...extraField, id: "01990000-0000-7000-8000-000000000126", key: "tax_id", name: { es: "CUIT" }, type: "text", position: 2 };
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", deactivated: [], issues: [], added: [],
+    changed: [{ row: 4, itemId: base.deactivated[0]!.itemId, code: "S", changes: [{ column: taxId.id, before: "30-71458236-9", after: "30-65432109-7" }] }],
+    counts: { ...base.counts, added: 0, changed: 1, deactivated: 0, errorRows: 0 }, confirmations: quiet });
+  const { user } = await mount("paste", { catalog: { ...catalog, fields: [taxId] } });
+  await paste(user, "Code\tText\ttax_id\nS\tSur\t30-65432109-7");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await user.click(await screen.findByRole("tab", { name: /^Cambios/ }));
+  const change = within(screen.getByRole("tabpanel")).getByRole("cell", { name: "CUIT: 30-71458236-9 → 30-65432109-7" });
+  expect(Array.from(change.querySelectorAll(".whitespace-nowrap"), node => node.textContent)).toEqual(["30-71458236-9", "30-65432109-7"]);
+});
+
 it("shows the source option labels rather than their identities for added and changed catalog values", async () => {
   const sourceId = "01990000-0000-7000-8000-000000000221", optionId = "01990000-0000-7000-8000-000000000222";
   const field: CatalogField = { ...extraField, type: "catalog", sourceCatalogId: sourceId, name: { es: "Zona" } };
