@@ -47,7 +47,7 @@ export function CatalogListTable({ page, canManage, loading, refreshing = false,
     { id: "origin", header: t("catalogs.columns.origin"), cell: row => <div><p>{t("catalogs.source." + (row.origin === "Manual" ? "manual" : "database"))}</p>
       {row.origin !== "Manual" ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.source.filters")}</p> : null}
     </div> },
-    { id: "optionsCount", header: t("catalogs.columns.options"), cell: row => row.optionsCount ?? "—" },
+    { id: "optionsCount", header: t("catalogs.columns.options"), numeric: true, cell: row => row.optionsCount ?? "—" },
     { id: "usageCount", header: t("catalogs.columns.usage"), cell: row => row.usageCount !== null && row.usageCount > 0
       ? <Button type="button" variant="link" aria-label={t("catalogs.viewUsage", { name: row.name })} onClick={() => onViewUsage(row.id)}>{t("catalogs.usage", { count: row.usageCount })}</Button> : "—" },
     { id: "state", header: t("catalogs.columns.state"), cell: row => <div>

@@ -58,6 +58,16 @@ describe("MF1 form overview", () => {
     expect(screen.queryByText("Los formularios dados de baja conservan sus respuestas y lo que espera una decisión.")).not.toBeInTheDocument();
   });
 
+  it("aligns what waits for a decision and how many responses there are to the right, as every column of numbers", async () => {
+    setup(["formrecords.read", "formapprovals.decide"]);
+    renderRouteWithProviders("/formularios/respuestas");
+    const table = await screen.findByRole("table");
+    for (const name of ["Por aprobar", "Respuestas"]) expect(within(table).getByRole("columnheader", { name })).toHaveClass("text-right");
+    expect(within(table).getByRole("cell", { name: "24" })).toHaveClass("text-right");
+    expect(within(table).getByRole("link", { name: "Revisar 2 respuestas de Registrar visita" }).closest("td")).toHaveClass("text-right");
+    expect(within(table).getByRole("columnheader", { name: "Formulario" })).not.toHaveClass("text-right");
+  });
+
   // While another filter reads, the previous rows stay dimmed and out of reach under a running line (board LC2-A).
   it("dims the previous rows while another filter reads", async () => {
     setup(["formrecords.read", "formapprovals.decide"]);

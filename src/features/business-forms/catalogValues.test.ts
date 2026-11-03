@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogScalarText, formatCatalogValue, isCanonicalCatalogValue, parseCatalogValue, type CatalogValueType } from "./catalogValues";
+import { catalogScalarText, formatCatalogValue, isCanonicalCatalogValue, isNumericType, parseCatalogValue, type CatalogValueType } from "./catalogValues";
 
 describe("catalog value presentation and exact canonical input", () => {
   it.each<[CatalogValueType, string | null, string, string | null]>([
@@ -39,5 +39,9 @@ describe("catalog value presentation and exact canonical input", () => {
     expect(isCanonicalCatalogValue("Text", null)).toBe(true);
     for (const [type, value] of [["Integer", "1500"], ["Decimal", "1500.5"], ["Date", "2028-02-29"]] as const) expect(isCanonicalCatalogValue(type, value)).toBe(true);
     for (const [type, value] of [["Text", "value"], ["Integer", null], ["Decimal", "1.500,5"], ["Decimal", "1.50"], ["Integer", "01"], ["Date", "29/02/2028"]] as const) expect(isCanonicalCatalogValue(type, value)).toBe(false);
+  });
+  it("counts integers and decimals as numbers, whether a field, an answer or the value of a catalog", () => {
+    for (const type of ["integer", "decimal", "Integer", "Decimal"]) expect(isNumericType(type)).toBe(true);
+    for (const type of ["text", "date", "boolean", "catalog", "Text", "Date", "shortText", "longText", "choice", "multiChoice"]) expect(isNumericType(type)).toBe(false);
   });
 });

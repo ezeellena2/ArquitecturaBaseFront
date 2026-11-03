@@ -60,7 +60,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   return (
     <WideTable label={t("catalogs.items.title")} refreshing={refreshing}><TableHeader><TableRow>
       {canManage ? <TableHead scope="col"><Checkbox aria-label={t("catalogs.items.selectPage")} disabled={busy || !items.length} checked={selected.length === items.length && items.length > 0 ? true : selected.length ? "indeterminate" : false} onCheckedChange={value => onSelectAll(value === true)}/></TableHead> : null}
-      <TableHead scope="col">#</TableHead>{columns.map(column => <WideTableHead key={column.id} pinned={column.id === "text" ? "start" : undefined} scope="col">{column.field ? administrativeName(column.field.name, culture) : t(column.tableLabelKey)}</WideTableHead>)}<WideTableHead pinned="end" scope="col" className="text-right">{t("actionsColumn")}</WideTableHead>
+      <TableHead numeric scope="col">#</TableHead>{columns.map(column => <WideTableHead key={column.id} pinned={column.id === "text" ? "start" : undefined} numeric={column.numeric} scope="col">{column.field ? administrativeName(column.field.name, culture) : t(column.tableLabelKey)}</WideTableHead>)}<WideTableHead pinned="end" scope="col" className="text-right">{t("actionsColumn")}</WideTableHead>
     </TableRow></TableHeader><TableBody>
       {items.map((item, index) => {
         const name = administrativeName(item.label, culture) || (item.itemId === null ? t("catalogs.items.new") : t("option", { number: item.position }));
@@ -82,7 +82,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
         }) : [];
         return <Fragment key={item.localId}><TableRow>
           {canManage ? <TableCell><Checkbox aria-label={t("catalogs.items.selectNamed", { name })} checked={selected.includes(item.localId)} disabled={busy} onCheckedChange={value => onSelect(item.localId, value === true)}/></TableCell> : null}
-          <TableCell>{item.itemId === null ? "—" : item.position}</TableCell>{columns.map(column => {
+          <TableCell numeric>{item.itemId === null ? "—" : item.position}</TableCell>{columns.map(column => {
             const error = column.id === "text" || column.id === "detail" ? localizedIssueMessage(localizedIssue(messages, column.id, culture), culture, t) : messages?.[column.errorPath]?.join(" ");
             const blur = () => onFieldBlur?.(item.localId, column.errorPath);
             let content: ReactNode;
@@ -102,7 +102,7 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
               case "detail": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineDetail", { number })} value={item.detail[culture] ?? ""} placeholder={contentReference(item.detail, culture, original)} readOnly={rowReadOnly} error={error} onChange={value => onChange({ ...item, detail: { ...item.detail, [culture]: value || null } })}/> : administrativeName(item.detail, culture) || "—"; break;
               case "isActive": content = editing ? <Checkbox aria-label={t("catalogs.items.activeNamed", { name })} checked={item.isActive} disabled={rowReadOnly} onCheckedChange={value => onChange({ ...item, isActive: value === true })}/> : <Badge variant="outline">{t(item.isActive ? "catalogs.items.active" : "catalogs.state.Inactive")}</Badge>; break;
             }
-            return <WideTableCell key={column.id} pinned={column.id === "text" ? "start" : undefined}>{content}</WideTableCell>;
+            return <WideTableCell key={column.id} pinned={column.id === "text" ? "start" : undefined} numeric={column.numeric}>{content}</WideTableCell>;
           })}
           <WideTableCell pinned="end" className="text-right">{canManage ? <div className="flex justify-end gap-1">
             {onMove ? <><IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("up", { name }) }) : t("up", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === 1} onClick={() => onMove(item, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>

@@ -484,6 +484,36 @@ it.each(["es", "en"] as const)("shows extra columns and their typed canonical va
   expect(within(screen.getByRole("tabpanel")).getByText(`${name}: 1 → ${integer}`)).toBeInTheDocument();
 });
 
+it("aligns the numbers of the pasted rows and of every list of the review to the right", async () => {
+  const branch: CatalogField = { ...extraField, id: "01990000-0000-7000-8000-000000000125", key: "branch", name: { es: "Sucursal" }, type: "text", position: 2 };
+  const base = catalogImportPreviewFixture();
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", deactivated: [],
+    issues: [{ row: 3, column: branch.id, severity: "Warning", code: "Forms.CatalogImport.TextTooLong", message: "El texto es largo", relatedRow: null, length: null }],
+    changed: [{ row: 4, itemId: base.deactivated[0]!.itemId, code: "S", changes: [{ column: extraId, before: "1", after: "30" }] }],
+    added: [{ ...base.added[0]!, value: "1500.5", fields: { [extraId]: "30", [branch.id]: "Centro" } }], counts: { ...base.counts, changed: 1, deactivated: 0, errorRows: 0, warnings: 1 }, confirmations: quiet });
+  const { user } = await mount("paste", { catalog: { ...catalog, valueType: "Decimal", fields: [extraField, branch] } });
+  await paste(user, "Code\tText\tValue\tpayment_days\tbranch\nN\tNorte\t1500.5\t30\tCentro");
+  const pasted = within(grid());
+  for (const name of ["Valor", "Plazo"]) expect(pasted.getByRole("columnheader", { name })).toHaveClass("text-right");
+  for (const name of ["1500.5", "30"]) expect(pasted.getByRole("cell", { name })).toHaveClass("text-right");
+  expect(pasted.getByRole("columnheader", { name: "Sucursal" })).not.toHaveClass("text-right");
+  expect(pasted.getByRole("cell", { name: "Centro" })).not.toHaveClass("text-right");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await user.click(await screen.findByRole("tab", { name: /^Altas/ }));
+  const added = within(screen.getByRole("tabpanel"));
+  for (const name of ["Fila", "Plazo", "Valor"]) expect(added.getByRole("columnheader", { name })).toHaveClass("text-right");
+  for (const name of ["2", "30", "1.500,5"]) expect(added.getByRole("cell", { name })).toHaveClass("text-right");
+  for (const name of ["Código", "Sucursal", "Texto"]) expect(added.getByRole("columnheader", { name })).not.toHaveClass("text-right");
+  expect(added.getByRole("cell", { name: "Centro" })).not.toHaveClass("text-right");
+  for (const [tab, row, text] of [[/^Errores y avisos/, "3", "Columna"], [/^Cambios/, "4", "Código"]] as const) {
+    await user.click(screen.getByRole("tab", { name: tab }));
+    const list = within(screen.getByRole("tabpanel"));
+    expect(list.getByRole("columnheader", { name: "Fila" })).toHaveClass("text-right");
+    expect(list.getByRole("cell", { name: row })).toHaveClass("text-right");
+    expect(list.getByRole("columnheader", { name: text })).not.toHaveClass("text-right");
+  }
+});
+
 it("shows the source option labels rather than their identities for added and changed catalog values", async () => {
   const sourceId = "01990000-0000-7000-8000-000000000221", optionId = "01990000-0000-7000-8000-000000000222";
   const field: CatalogField = { ...extraField, type: "catalog", sourceCatalogId: sourceId, name: { es: "Zona" } };

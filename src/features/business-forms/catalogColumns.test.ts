@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { catalogItemColumns, catalogTableColumns } from "./catalogColumns";
 import { newCatalogField } from "./catalogFields";
+import type { CatalogValueType } from "./catalogValues";
 
 describe("catalog option columns", () => {
   it("keeps the table and complete editor on the same ordered editable columns", () => {
@@ -30,5 +31,14 @@ describe("catalog option columns", () => {
     expect(columns.map(column => column.id)).toEqual(["text", "code", "field:" + saved.id, "field:new", "detail", "isActive"]);
     expect(columns[2]).toMatchObject({ errorPath: "fields." + saved.id, field: saved });
     expect(columns[3]).toMatchObject({ field: fresh });
+  });
+  it("marks the columns of numbers: an integer or decimal field and the value of an integer or decimal catalog", () => {
+    const fields = [{ ...newCatalogField("days", 1), type: "integer" as const }, { ...newCatalogField("amount", 2), type: "decimal" as const },
+      newCatalogField("name", 3), { ...newCatalogField("since", 4), type: "date" as const }, { ...newCatalogField("paid", 5), type: "boolean" as const }];
+    const numeric = (valueType: CatalogValueType) => catalogItemColumns(valueType, "es", fields).filter(column => column.numeric).map(column => column.id);
+    expect(numeric("Integer")).toEqual(["field:days", "field:amount", "value"]);
+    expect(numeric("Decimal")).toEqual(["field:days", "field:amount", "value"]);
+    expect(numeric("Date")).toEqual(["field:days", "field:amount"]);
+    expect(numeric("Text")).toEqual(["field:days", "field:amount"]);
   });
 });

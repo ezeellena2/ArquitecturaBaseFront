@@ -80,8 +80,8 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  const date=(value:string)=>formatDateTimeInZone(value,i18n.language,timeZoneId);
  const columns:Column<MissingTopic>[]=[
   {id:"name",header:t("missing.topic"),cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p>{row.state==="Discarded"&&row.discardedAtUtc?<p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("missing.discardedBy",{name:row.discardedBy?.displayName??"—",date:date(row.discardedAtUtc)})}</p>:null}</div>},
-  {id:"requestCount",header:t("missing.requests"),align:"right",cell:row=>row.requestCount},
-  {id:"personCount",header:t("missing.people"),align:"right",cell:row=>row.personCount},
+  {id:"requestCount",header:t("missing.requests"),numeric:true,cell:row=>row.requestCount},
+  {id:"personCount",header:t("missing.people"),numeric:true,cell:row=>row.personCount},
   {id:"lastRequestedAtUtc",header:t("missing.lastRequest"),sortable:true,cell:row=>date(row.lastRequestedAtUtc)},
   {id:"actions",header:t("actionsColumn"),align:"right",cell:row=><div className="flex justify-end gap-2">{canCreate?<Button asChild size="sm" variant="outline"><Link to="/formularios/nuevo" state={{formSeed:{ownerActorId:actorId,name:row.name}}} aria-label={t("missing.createFor",{name:row.name})}><PlusIcon className="size-4"/>{t("missing.create")}</Link></Button>:null}{row.state==="Pending"?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.discardFor",{name:row.name})} onClick={()=>setSelected(row)}>{t("missing.discard")}</Button>:null}</div>},
  ];

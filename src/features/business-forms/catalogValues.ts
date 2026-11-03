@@ -58,6 +58,10 @@ export function isCanonicalCatalogValue(type: CatalogValueType, value: string | 
 
 export const catalogTypedValueTypes: Record<Exclude<CatalogValueType, "Text">, TypedValueType> = { Integer: "integer", Decimal: "decimal", Date: "date" };
 
+/** Integers and decimals are numbers, which a wide table aligns to the right (A, 2026-11-02): the type of a field or an
+ *  answer ("decimal") or the value type of a catalog ("Integer"). */
+export const isNumericType = (type: string): boolean => ["integer", "decimal"].includes(type.toLowerCase());
+
 export function formatCatalogValue(type: CatalogValueType, value: string | null, culture: string): string {
   if (value === null) return "";
   if (type === "Text") return value;

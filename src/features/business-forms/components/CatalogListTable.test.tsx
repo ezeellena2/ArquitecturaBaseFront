@@ -50,4 +50,10 @@ describe("Chosen catalog list board K1", () => {
     expect(screen.getByRole("link", { name: "Clientes" })).toHaveAttribute("href", "/catalogos/manual");
     expect(screen.queryByRole("button", { name: "Editar Clientes" })).not.toBeInTheDocument();
   });
+  it("aligns the number of options to the right, as every column of numbers", async () => {
+    await mount("es");
+    expect(screen.getByRole("columnheader", { name: "Opciones" })).toHaveClass("text-right");
+    expect(screen.getByRole("cell", { name: "46" })).toHaveClass("text-right");
+    expect(screen.getByRole("columnheader", { name: "De dónde salen" })).not.toHaveClass("text-right");
+  });
 });

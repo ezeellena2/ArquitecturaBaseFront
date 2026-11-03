@@ -35,6 +35,7 @@ import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { ResponseChoiceMenu } from "../components/ResponseChoiceMenu";
 import { replaceResponseCondition, responseCatalogFieldCellText, responseFiles, responseFilterLabels, visibleResponseColumnDescriptors, visibleResponseColumns } from "../responses";
+import { isNumericType } from "../catalogValues";
 import type { ResponseRow } from "../api/responses";
 import { responseFullPath } from "../responseNavigationPaths";
 import { ResponseValue } from "../components/ResponseValue";
@@ -177,6 +178,7 @@ export function FormResponsesPage() {
       id,
       header: catalogField ? `${column.label} · ${catalogField.label}` : column.label + (column.introducedInVersion > 1 ? " " + t("responses.sinceVersion", { version: column.introducedInVersion }) : ""),
       sortable: !catalogField && column.type !== "multiChoice",
+      numeric: isNumericType(catalogField?.type ?? column.type),
       cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words">{responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))}</span> : <ResponseValue
           cell={row.cells.find(cell => cell.fieldId === column.fieldId)!}
           actor={scope.user!.id} recordId={row.id} number={row.number} label={column.label}

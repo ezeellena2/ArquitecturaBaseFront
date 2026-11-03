@@ -1505,6 +1505,23 @@ it("shows sealed data subcolumns without enabling sorting or requiring catalog p
   const before = requested.mock.calls.length; await userEvent.click(header); expect(requested).toHaveBeenCalledTimes(before);
 });
 
+it("aligns the numbers of the sheet to the right, a catalog's subcolumn included", async () => {
+  setup(["formrecords.read"]);
+  const sheet = responseSheetFixture(); const question = sheet.columns.find(column => column.type === "choice")!;
+  const days = { fieldId: "01990000-0000-7000-8000-000000000084", key: "days", label: "Plazo", type: "integer" as const, role: "data" as const };
+  question.fields = [days]; const [first] = sheet.records.items;
+  first!.cells.find(cell => cell.type === "decimal")!.value = "1500.5";
+  first!.cells.find(cell => cell.type === "choice")!.value = { choiceId: "01990000-0000-7000-8000-000000000085", label: "Proveedor Norte", catalogId: "01990000-0000-7000-8000-000000000086", fields: [{ fieldId: days.fieldId, label: days.label, type: days.type, role: days.role, value: "30" }] };
+  server.use(http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(sheet)));
+  renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+  const header = await screen.findByRole("columnheader", { name: "Modalidad · Plazo" });
+  const table = screen.getByRole("table");
+  for (const numeric of [header, within(table).getByRole("columnheader", { name: "Importe" }), within(table).getByRole("cell", { name: "1.500,5" }), within(table).getByRole("cell", { name: "30" })])
+    expect(numeric).toHaveClass("text-right");
+  for (const text of [within(table).getByRole("columnheader", { name: "Observaciones" }), within(table).getByRole("columnheader", { name: "Modalidad" }), within(table).getByRole("cell", { name: "Proveedor Norte" })])
+    expect(text).not.toHaveClass("text-right");
+});
+
 it("shows who loaded and the channel, and filters by the app channel without putting it in the URL", async () => {
   setup();
   const bodies: { enteredInApp?: boolean | null }[] = [];

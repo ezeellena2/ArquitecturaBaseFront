@@ -30,6 +30,14 @@ it("lists row, value and reason with the remaining count and offers to show thos
   expect(onClose).toHaveBeenCalled();
 });
 
+it("aligns the row number to the right, as every column of numbers", async () => {
+  await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Plazo de pago (días)" from="text" field={term} culture="es" convertedCount={1188} invalidCount={12} rows={rows} onClose={vi.fn()} onShowRows={vi.fn()} />); });
+  const dialog = screen.getByRole("dialog", { name: "Cambiar el tipo de «Plazo de pago (días)»" });
+  expect(within(dialog).getByRole("columnheader", { name: "Fila" })).toHaveClass("text-right");
+  expect(within(dialog).getByRole("cell", { name: "37" })).toHaveClass("text-right");
+  expect(within(dialog).getByRole("columnheader", { name: "Qué pasa" })).not.toHaveClass("text-right");
+});
+
 it("quotes each saved value as its cell showed it, in the previous type", async () => {
   await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Importe" from="decimal" field={term} culture="es" convertedCount={0} invalidCount={1} rows={[{ ...rows[0]!, value: "1500.5" }]} onClose={() => {}} onShowRows={() => {}} />); });
   expect(within(screen.getByRole("dialog")).getByRole("cell", { name: "«1.500,5» no es un número entero." })).toBeInTheDocument();

@@ -531,6 +531,16 @@ it("keeps the leave confirmation open with «Consultando…» while it consults 
   expect(router.state.location.pathname).toBe("/formularios/" + fixtureFormId);
 });
 
+it("aligns the counts of questions and responses to the right, as every column of numbers", async () => {
+  setup();
+  renderRouteWithProviders("/formularios");
+  const table = await screen.findByRole("table");
+  const questions = within(table).getByRole("columnheader", { name: "Preguntas" });
+  for (const header of [questions, within(table).getByRole("columnheader", { name: "Respuestas" })]) expect(header).toHaveClass("text-right");
+  const [first] = within(table).getAllByRole("row").slice(1);
+  expect(within(first!).getAllByRole("cell")[(questions as HTMLTableCellElement).cellIndex]).toHaveClass("text-right");
+  expect(within(table).getByRole("columnheader", { name: "Formulario" })).not.toHaveClass("text-right");
+});
 it("reports the common server cause and trace for a failed initial list", async () => {
   setup();
   server.use(http.get("/api/forms/definitions", () => Response.json({ traceId: "trace-list" }, { status: 500 })));
