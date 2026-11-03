@@ -57,6 +57,15 @@ describe("DataTable", () => {
     expect(screen.getAllByRole("row", { selected: true })).toHaveLength(1);
   });
 
+  it("paints the open row with the brand tint, not the gray of an alternate row", () => {
+    renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={row => row.id} selectedRowKey="2" />);
+
+    // OE1-A (2026-11-03): el gris de la fila abierta era casi el de una fila alternada. La barra de 3 px al inicio la
+    // pone `index.css`, junto a las líneas entre columnas; la prueba con navegador la mide.
+    expect(screen.getByRole("row", { name: "beto@example.com" })).toHaveClass("data-[state=selected]:bg-[var(--color-brand-50)]");
+    expect(screen.getByRole("row", { name: "beto@example.com" })).not.toHaveClass("data-[state=selected]:bg-muted");
+  });
+
   it("keeps existing rows unselected and outside the tab order when no row options are supplied", () => {
     renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={row => row.id} />);
 

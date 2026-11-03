@@ -250,6 +250,11 @@
   [data-slot="table"] > * > tr > :is([data-pinned="start"], :has(+ [data-pinned="start"])) {
     --table-line-end: 1px;
   }
+  /* La fila abierta (OE1-A, 2026-11-03) lleva una barra de 3 px de la marca al inicio, como las listas con detalle: otra
+     sombra interior de su primera celda, junto a las líneas entre columnas. El tinte lo pone `TableRow`. */
+  [data-slot="table"] > * > tr[data-state="selected"] > :first-child {
+    box-shadow: inset 3px 0 var(--color-brand-600), inset var(--table-line-start) 0 var(--table-column-line), inset calc(-1 * var(--table-line-end)) 0 var(--table-column-line);
+  }
 
   .message-history {
     min-height: 0;

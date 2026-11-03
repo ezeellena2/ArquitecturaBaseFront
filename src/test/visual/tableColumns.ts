@@ -66,6 +66,16 @@ async function expectWhole(cell: Locator, part: string) {
   expect(lines.every(count => count === 1)).toBe(true);
 }
 
+/**
+ * The open row (OE1-A, 2026-11-03): the brand tint, apart from the gray of an alternate row, and a 3 px bar of the brand at
+ * its start, as in the lists with a detail. The bar is one more inset shadow of the first cell, next to its column lines.
+ */
+export async function expectOpenRow(row: Locator) {
+  const style = await row.evaluate(node => ({ background: getComputedStyle(node).backgroundColor, bar: getComputedStyle(node.firstElementChild!).boxShadow }));
+  expect(style.background).toBe("rgb(240, 243, 241)");
+  expect(style.bar).toMatch(/rgb\(40, 90, 61\) 3px 0px 0px 0px inset/);
+}
+
 /** Scrolled to the end, a cell pinned at the start stays at the region's left edge with its line at its right side. */
 export async function expectPinnedLineWhileScrolled(region: Locator, pinned: Locator) {
   await region.evaluate(node => { node.scrollLeft = node.scrollWidth; });

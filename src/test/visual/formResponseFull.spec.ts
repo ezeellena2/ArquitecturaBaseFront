@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { responseFullFixtureIds } from "./formResponseFullFixtures";
+import { expectOpenRow } from "./tableColumns";
 
 const sheetPath = "/formularios/" + responseFullFixtureIds.form + "/respuestas";
 const firstPath = sheetPath + "/" + responseFullFixtureIds.first + "/completa";
@@ -205,6 +206,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const selected = page.getByRole("link", { name: reviewName, exact: true });
     await expect(selected).toBeFocused();
     await expect(selected.locator("xpath=ancestor::tr")).toHaveAttribute("aria-selected", "true");
+    await expectOpenRow(selected.locator("xpath=ancestor::tr"));
     await expect(page.getByRole(mobile ? "dialog" : "region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true })).toHaveCount(0);
     expect((await fixtureCalls(page)).filter(call => call.path.endsWith("/navigation") || call.path.endsWith("/continuation"))).toEqual([]);
     await assertContained(page, width); await assertReadOnly(page);

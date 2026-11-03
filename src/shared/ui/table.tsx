@@ -71,13 +71,15 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   )
 }
 
+// The open row (OE1-A, 2026-11-03) takes the brand tint, apart from the gray of an alternate row; `index.css` adds the
+// 3 px bar at its start, as in the lists with a detail.
 function TableRow({ className, highlightExpanded = true, tone = "default", ...props }: React.ComponentProps<"tr"> & { highlightExpanded?: boolean; tone?: "default" | "section" }) {
   return (
     <tr
       data-slot="table-row"
       data-tone={tone}
       className={cn(
-        "h-[var(--height-table-row)] border-b border-[var(--color-border)]/50 transition-colors hover:bg-[var(--color-table-row-hover)] data-[state=selected]:bg-muted",
+        "h-[var(--height-table-row)] border-b border-[var(--color-border)]/50 transition-colors hover:bg-[var(--color-table-row-hover)] data-[state=selected]:bg-[var(--color-brand-50)]",
         highlightExpanded && "has-aria-expanded:bg-muted/50",
         className
       )}
