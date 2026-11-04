@@ -981,6 +981,7 @@
     "consult": "Check status",
     "working": "Checking…",
     "retryHint": "Retry resumes only unfinished work: it never repeats confirmed actions or creates another PDF.",
+    "retryRecipientHint": "Sends the notice to this person only; the others don't get it again. First check that their WhatsApp is linked in their profile and that they wrote in the last 24 hours.",
     "states": {
       "Waiting": "Waiting",
       "Running": "In progress",
@@ -1005,7 +1006,7 @@
     "humanReviewHint": "Human review does not confirm WhatsApp delivery.",
     "reviewCheckRequired": "Check the status to see whether your review was saved before confirming it again.",
     "recipient": "Recipient: {{name}}",
-    "notSentRoleHint": "This recipient is recorded as failed. The role notice is not retried.",
+    "notSentRoleHint": "The notice becomes available for a retry to this person.",
     "delivered": "Delivered",
     "read": "Read",
     "recipientStates": {

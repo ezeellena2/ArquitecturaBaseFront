@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { sameWorkflowReviewTarget, workflowCanReview, workflowNextAction } from "./workflow";
+import { sameWorkflowReviewTarget, workflowCanRetryRecipient, workflowCanReview, workflowNextAction } from "./workflow";
 it("consults an uncertain action before allowing any retry and never repeats a confirmed action", () => {
   expect(workflowNextAction({ state: "Uncertain", canConsult: true, canRetry: true })).toBe("consult");
   expect(workflowNextAction({ state: "Uncertain", canConsult: false, canRetry: true })).toBeNull();
@@ -13,6 +13,13 @@ it("offers human review only for an uncertain recipient with its server capabili
   expect(workflowCanReview({ state: "Uncertain", canReview: false })).toBe(false);
   for (const state of ["NotFound", "Pending", "Sending", "Accepted", "Failed"] as const)
     expect(workflowCanReview({ state, canReview: true })).toBe(false);
+});
+
+it("offers a person retry only for a confirmed failure with its server capability", () => {
+  expect(workflowCanRetryRecipient({ state: "Failed", canRetry: true })).toBe(true);
+  expect(workflowCanRetryRecipient({ state: "Failed", canRetry: false })).toBe(false);
+  for (const state of ["NotFound", "Pending", "Sending", "Accepted", "Uncertain"] as const)
+    expect(workflowCanRetryRecipient({ state, canRetry: true })).toBe(false);
 });
 
 it("matches a frozen review to the exact recipient and shared run revision", () => {

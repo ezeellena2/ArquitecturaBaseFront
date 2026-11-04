@@ -68,10 +68,10 @@ it("keeps a failed approval request visible inside the receiving moment without 
 it("preserves delivery, human review and recovery controls inside an effect moment", async () => {
   const user = userEvent.setup();
   showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true,
-    recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false,
+    recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false,
       deliveredAtUtc: instant("05"), readAtUtc: instant("06"), review: { wasSent: false, reviewedAtUtc: instant("04"), reviewedBy: { userId: id(9), displayName: "Luz" } } },
-      { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain", reasonCode: null, reason: null, canReview: true, deliveredAtUtc: null, readAtUtc: null, review: null },
-      { user: { userId: id(11), displayName: "Ciro" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, deliveredAtUtc: instant("05"), readAtUtc: null, review: null }] })] });
+      { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain", reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null },
+      { user: { userId: id(11), displayName: "Ciro" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: instant("05"), readAtUtc: null, review: null }] })] });
   const effects = await receivedBand();
   expect(within(effects).getByText("3 personas")).toBeInTheDocument();
   const ana = within(within(effects).getByRole("listitem", { name: "Destinatario: Ana" }));
@@ -94,7 +94,7 @@ it("explains the action wait as the reason of the recovery buttons and of the re
   const user = userEvent.setup();
   const wait = /^Esperá [0-9]+ segundos para volver a intentar\.$/;
   showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true,
-    recipients: [{ user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain", reasonCode: null, reason: null, canReview: true, deliveredAtUtc: null, readAtUtc: null, review: null }] })] });
+    recipients: [{ user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain", reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null }] })] });
   server.use(http.post("/api/forms/records/:id/actions/:runId/review", () => HttpResponse.json({ code: "RateLimit.Exceeded", detail: "Esperá antes de resolver.", retryAfter: 30 }, { status: 429 })));
   const effects = await receivedBand();
   await user.click(within(effects).getByRole("button", { name: "Resolver envío" }));
@@ -206,8 +206,78 @@ it("has no Retry help without a Retry button", async () => {
   expect(screen.queryByText(/Reintentar retoma/)).not.toBeInTheDocument();
 });
 
+// Board RT1-A: a person of a role notice whose failure is confirmed has Retry in their own row, with its (i).
+function roleNotice(overrides: Partial<ResponseAction> = {}): ResponseAction {
+  return action({ kind: "NotifyRole", revision: 3, recipients: [
+    { user: { userId: id(8), displayName: "Ana" }, channelId: "phone", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: instant("05"), readAtUtc: null, review: null },
+    { user: { userId: id(10), displayName: "Beto" }, channelId: "phone", state: "Failed", reasonCode: "WhatsApp.FormAction.RecipientUnavailable", reason: "El destinatario no está disponible para recibir el aviso.",
+      canReview: false, canRetry: true, deliveredAtUtc: null, readAtUtc: null, review: null }], ...overrides });
+}
+const betoRow = (effects: HTMLElement) => within(within(effects).getByRole("listitem", { name: "Destinatario: Beto" }));
+
+it("offers Retry in the row of the person whose failure is confirmed, with what it does in the (i)", async () => {
+  showActivity({ ...responseWorkflowFixture(), actions: [roleNotice()] });
+  const effects = await receivedBand();
+  const beto = betoRow(effects);
+  expect(beto.getByText("No se pudo enviar")).toBeInTheDocument();
+  expect(beto.getByRole("button", { name: "Reintentar" })).toBeEnabled();
+  expect(beto.getByRole("button", { name: "Más información sobre Reintentar" })).toHaveAccessibleDescription(
+    "Le manda el aviso sólo a esta persona; a las demás no se les repite. Antes, revisá que tenga el WhatsApp vinculado en su perfil y que haya escrito en las últimas 24 horas.");
+  expect(within(within(effects).getByRole("listitem", { name: "Destinatario: Ana" })).queryByRole("button")).not.toBeInTheDocument();
+  expect(within(effects).getAllByRole("button", { name: "Reintentar" })).toHaveLength(1);
+});
+
+it("retries only that person with the revision of the notice and says Reintentando… on its button", async () => {
+  const user = userEvent.setup();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [roleNotice()] };
+  const [ana, beto] = workflow.actions[0].recipients;
+  let posted: unknown;
+  let person: unknown;
+  showActivity(workflow);
+  server.use(http.post("/api/forms/records/:id/actions/:runId/recipients/:userId/retry", async ({ request, params }) => {
+    person = params.userId; posted = await request.json(); await gate;
+    return HttpResponse.json({ ...workflow, actions: [roleNotice({ state: "Waiting", completedAtUtc: null, recipients: [ana, { ...beto, canRetry: false }] })] }, { status: 202 });
+  }));
+  const effects = await receivedBand();
+  await user.click(betoRow(effects).getByRole("button", { name: "Reintentar" }));
+  expect(within(effects).getByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+  expect(person).toBe(beto.user.userId);
+  expect(posted).toEqual({ expectedRevision: 3 });
+  await act(async () => release());
+  await waitFor(() => expect(within(effects).queryByRole("button", { name: /^Reintent/ })).not.toBeInTheDocument());
+});
+
+it("reads the activity again after a conflict instead of retrying the person twice", async () => {
+  const user = userEvent.setup();
+  const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [roleNotice()] };
+  const [ana, beto] = workflow.actions[0].recipients;
+  const sent: ResponseWorkflow = { ...workflow, actions: [roleNotice({ revision: 4, recipients: [ana, { ...beto, state: "Accepted", reasonCode: null, reason: null, canRetry: false }] })] };
+  let reads = 0;
+  let retries = 0;
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrules.manage"] })),
+    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(++reads === 1 ? workflow : sent)),
+    http.post("/api/forms/records/:id/actions/:runId/recipients/:userId/retry", () => { retries++; return HttpResponse.json({ code: "Forms.Action.StateConflict", detail: "La acción cambió. Actualizá antes de reintentar." }, { status: 409 }); }));
+  renderWithProviders(<ActivityHarness />);
+  const effects = await receivedBand();
+  await user.click(betoRow(effects).getByRole("button", { name: "Reintentar" }));
+  await waitFor(() => expect(betoRow(effects).getByText("Enviado")).toBeInTheDocument());
+  expect(betoRow(effects).queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+  expect(retries).toBe(1);
+});
+
+it("has no person Retry without rule management", async () => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
+    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json({ ...responseWorkflowFixture(), actions: [roleNotice()] })));
+  renderWithProviders(<ActivityHarness />);
+  const effects = await receivedBand();
+  expect(betoRow(effects).getByText("No se pudo enviar")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+});
+
 it("tells that a human review does not confirm the delivery in the (i) next to it", async () => {
-  showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false,
+  showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false,
     deliveredAtUtc: null, readAtUtc: null, review: { wasSent: true, reviewedAtUtc: instant("04"), reviewedBy: { userId: id(9), displayName: "Luz" } } }] })] });
   const effects = await receivedBand();
   expect(within(effects).getByText("Luz indicó que salió.")).toBeVisible();
@@ -219,17 +289,17 @@ it("resolves a send without a description, with each option's consequence in its
   const user = userEvent.setup();
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
-  const recipient = { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain" as const, reasonCode: null, reason: null, canReview: true, deliveredAtUtc: null, readAtUtc: null, review: null };
+  const recipient = { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain" as const, reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null };
   const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true, recipients: [recipient] })] };
   showActivity(workflow);
   server.use(http.post("/api/forms/records/:id/actions/:runId/review", async () => { await gate;
-    return HttpResponse.json({ ...workflow, actions: [action({ kind: "NotifyRole", recipients: [{ ...recipient, state: "Accepted", canReview: false, review: { wasSent: true, reviewedAtUtc: instant("09"), reviewedBy: { userId: id(9), displayName: "Luz" } } }] })] }); }));
+    return HttpResponse.json({ ...workflow, actions: [action({ kind: "NotifyRole", recipients: [{ ...recipient, state: "Accepted", canReview: false, canRetry: false, review: { wasSent: true, reviewedAtUtc: instant("09"), reviewedBy: { userId: id(9), displayName: "Luz" } } }] })] }); }));
   const effects = await receivedBand();
   await user.click(within(effects).getByRole("button", { name: "Resolver envío" }));
   const dialog = screen.getByRole("dialog", { name: "Resolver el envío" });
   expect(dialog).not.toHaveAccessibleDescription();
   expect(within(dialog).getByRole("radio", { name: "Salió" })).toHaveAccessibleDescription("La regla continúa sin volver a mandar este aviso.");
-  expect(within(dialog).getByRole("radio", { name: "No salió" })).toHaveAccessibleDescription("Se registra la falla de esta persona. No se reintenta el aviso al rol.");
+  expect(within(dialog).getByRole("radio", { name: "No salió" })).toHaveAccessibleDescription("El aviso queda para reintentar a esta persona.");
   await user.click(within(dialog).getByRole("radio", { name: "Salió" }));
   await user.click(within(dialog).getByRole("button", { name: "Confirmar que salió" }));
   expect(within(dialog).getByRole("button", { name: "Confirmando…" })).toHaveAttribute("aria-busy", "true");
@@ -269,7 +339,7 @@ it("says Reintentando… while it reads again a history that failed after being 
 it("reads each row in fixed columns, by moment, with the day once and the state once", async () => {
   const task: NonNullable<ResponseWorkflow["task"]> = { id: id(3), roleId: id(4), roleName: "Agrónomo", requestedAtUtc: instant("03"), state: "Approved", revision: 2, decidedAtUtc: instant("04"), decidedBy: { userId: id(9), displayName: "Marcos" }, reason: null };
   const pdf = action({ id: id(5), kind: "GeneratePdf", event: "Approved", completedAtUtc: instant("05") });
-  const notice = action({ id: id(6), event: "Approved", order: 1, completedAtUtc: instant("06"), recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, deliveredAtUtc: instant("07"), readAtUtc: instant("08"), review: null }] });
+  const notice = action({ id: id(6), event: "Approved", order: 1, completedAtUtc: instant("06"), recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: instant("07"), readAtUtc: instant("08"), review: null }] });
   showActivity({ ...responseWorkflowFixture(), recordState: "Approved", task, actions: [action({ id: id(7), kind: "RequestApproval" }), pdf, notice],
     documents: [{ id: id(12), runId: pdf.id, culture: "es", name: "Visita-TEST.pdf", size: 10, createdAtUtc: instant("05") }] }, document => <button type="button">Abrir {document.name}</button>);
   const approved = await screen.findByRole("listitem", { name: "Al aprobarla" });

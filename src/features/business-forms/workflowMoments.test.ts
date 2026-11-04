@@ -20,7 +20,7 @@ it.each([ ["Waiting", "pending"], ["Running", "pending"], ["Failed", "failed"], 
   expect(workflowMomentState({ kind: "effects", key: "effects", event: "Received", actions, completedCount: 0, totalCount: 1 })).toBe(expected);
 });
 it.each([ ["Failed", "failed"], ["Uncertain", "uncertain"], ["Pending", "pending"], ["Sending", "pending"], ["Accepted", "completed"] ] as const)("keeps recipient %s visible when its role action completed", (state, expected) => {
-  const recipient: ResponseAction["recipients"][number] = { user: { userId: "recipient", displayName: "Ana" }, channelId: null, state, reasonCode: null, reason: null, canReview: false, deliveredAtUtc: null, readAtUtc: null, review: null };
+  const recipient: ResponseAction["recipients"][number] = { user: { userId: "recipient", displayName: "Ana" }, channelId: null, state, reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null };
   const actions = [action("role", { recipients: [recipient] })];
   expect(workflowMomentState({ kind: "effects", key: "effects", event: "Received", actions, completedCount: 1, totalCount: 1 })).toBe(expected);
 });
@@ -76,7 +76,7 @@ it("omits non applicable effects and empty groups while keeping active and faile
 
 it("preserves chronological action evidence and distinct delivery and human review without rewriting a late acceptance", () => {
   const response = record();
-  const recipient: ResponseAction["recipients"][number] = { user: { userId: "recipient", displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, deliveredAtUtc: time("07"), readAtUtc: time("08"), review: { wasSent: false, reviewedAtUtc: time("04"), reviewedBy: { userId: "reviewer", displayName: "Luz" } } };
+  const recipient: ResponseAction["recipients"][number] = { user: { userId: "recipient", displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: time("07"), readAtUtc: time("08"), review: { wasSent: false, reviewedAtUtc: time("04"), reviewedBy: { userId: "reviewer", displayName: "Luz" } } };
   const late = action("late", { state: "Failed", updatedAtUtc: time("06"), completedAtUtc: time("06"), recipients: [recipient] });
   const early = action("early", { completedAtUtc: time("02.500") });
   const workflow = { ...responseWorkflowFixture(response.id), actions: [late, early] };

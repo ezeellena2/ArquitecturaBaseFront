@@ -6,7 +6,7 @@ import { ruleActionKinds, ruleEvents } from "../rules";
 const guid = z.string().uuid();
 const utc = z.iso.datetime();
 const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
-const recipient = z.strictObject({ user: author, channelId: z.string().min(1).nullable(), state: z.enum(recipientStates), reasonCode: z.string().nullable(), reason: z.string().nullable(), canReview: z.boolean(), deliveredAtUtc: utc.nullable(), readAtUtc: utc.nullable(), review: z.strictObject({ wasSent: z.boolean(), reviewedAtUtc: utc, reviewedBy: author }).nullable() });
+const recipient = z.strictObject({ user: author, channelId: z.string().min(1).nullable(), state: z.enum(recipientStates), reasonCode: z.string().nullable(), reason: z.string().nullable(), canReview: z.boolean(), canRetry: z.boolean(), deliveredAtUtc: utc.nullable(), readAtUtc: utc.nullable(), review: z.strictObject({ wasSent: z.boolean(), reviewedAtUtc: utc, reviewedBy: author }).nullable() });
 const workflow = z.strictObject({
   recordId: guid, recordState: z.enum(["Received", "PendingApproval", "Approved", "Rejected"]), ruleRevision: z.number().int().positive().nullable(),
   task: z.strictObject({ id: guid, roleId: guid, roleName: z.string().nullable(), requestedAtUtc: utc, decidedAtUtc: utc.nullable(), decidedBy: author.nullable(), reason: z.string().nullable(), revision: z.number().int().positive(), state: z.enum(["Open", "Approved", "Rejected"]) }).nullable(),
@@ -26,3 +26,4 @@ export const fetchResponseWorkflow = async (recordId: string, signal?: AbortSign
 export const continueResponseAction = async (recordId: string, runId: string, action: "consult" | "retry", signal?: AbortSignal) => readResponseWorkflow(await api.post<unknown>(path(recordId) + "/actions/" + formId(runId) + "/" + action, undefined, { signal }), recordId);
 
 export const reviewResponseAction = async (recordId: string, runId: string, body: { recipientUserId: string; expectedRevision: number; wasSent: boolean }, signal?: AbortSignal) => readResponseWorkflow(await api.post<unknown>(path(recordId) + "/actions/" + formId(runId) + "/review", body, { signal }), recordId);
+export const retryResponseRecipient = async (recordId: string, runId: string, recipientUserId: string, body: { expectedRevision: number }, signal?: AbortSignal) => readResponseWorkflow(await api.post<unknown>(path(recordId) + "/actions/" + formId(runId) + "/recipients/" + formId(recipientUserId) + "/retry", body, { signal }), recordId);

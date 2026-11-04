@@ -981,6 +981,7 @@
     "consult": "Consultar",
     "working": "Consultando…",
     "retryHint": "Reintentar retoma sólo lo que no salió: no repite lo confirmado ni arma otro PDF.",
+    "retryRecipientHint": "Le manda el aviso sólo a esta persona; a las demás no se les repite. Antes, revisá que tenga el WhatsApp vinculado en su perfil y que haya escrito en las últimas 24 horas.",
     "states": {
       "Waiting": "Esperando",
       "Running": "En curso",
@@ -1005,7 +1006,7 @@
     "humanReviewHint": "Revisión humana: no confirma la entrega de WhatsApp.",
     "reviewCheckRequired": "Consultá el estado para saber si la revisión quedó guardada antes de volver a confirmarla.",
     "recipient": "Destinatario: {{name}}",
-    "notSentRoleHint": "Se registra la falla de esta persona. No se reintenta el aviso al rol.",
+    "notSentRoleHint": "El aviso queda para reintentar a esta persona.",
     "delivered": "Entregado",
     "read": "Leído",
     "recipientStates": {

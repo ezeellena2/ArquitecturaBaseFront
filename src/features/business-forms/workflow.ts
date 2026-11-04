@@ -11,6 +11,10 @@ export interface WorkflowReviewTarget { readonly runId: string; readonly recipie
 export function workflowCanReview(recipient: { state: RecipientState; canReview: boolean }): boolean {
   return recipient.state === "Uncertain" && recipient.canReview;
 }
+// A person of a role notice is retried alone, and only when the server knows the send did not go out.
+export function workflowCanRetryRecipient(recipient: { state: RecipientState; canRetry: boolean }): boolean {
+  return recipient.state === "Failed" && recipient.canRetry;
+}
 export function sameWorkflowReviewTarget(left: WorkflowReviewTarget | null, right: WorkflowReviewTarget): boolean {
   return left?.runId === right.runId && left.recipientUserId === right.recipientUserId && left.expectedRevision === right.expectedRevision;
 }

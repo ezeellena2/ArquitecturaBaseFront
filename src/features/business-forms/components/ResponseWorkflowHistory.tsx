@@ -16,7 +16,7 @@ import type { ResponseAction, ResponseRecipient, ResponseWorkflow } from "../api
 import type { useResponseWorkflow } from "../hooks/useResponseWorkflow";
 import { approvalStateVariant } from "../approvals";
 import { composeWorkflowMoments } from "../workflowMoments";
-import { sameWorkflowReviewTarget, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
+import { sameWorkflowReviewTarget, workflowCanRetryRecipient, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 
 type IssuedDocument = ResponseWorkflow["documents"][number];
 type ApprovalTask = NonNullable<ResponseWorkflow["task"]>;
@@ -82,6 +82,13 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
   const reviewButton = (action: ResponseAction, recipient: ResponseRecipient) => canManage && workflowCanReview(recipient)
     ? <DisabledReason key={"review:" + recipient.user.userId} reason={waitReason}><Button variant="outline" size="sm" disabled={disabled} onClick={event => { reviewFocus.current = event.currentTarget.closest("li"); setWasSent(undefined); setReviewTarget({ runId: action.id, recipientUserId: recipient.user.userId, expectedRevision: action.revision }); }}>{t("workflow.review")}</Button></DisabledReason>
     : null;
+  // A person of a role notice whose failure is confirmed is retried alone, from their own row (board RT1-A).
+  const retryButton = (action: ResponseAction, recipient: ResponseRecipient) => {
+    if (!canManage || !workflowCanRetryRecipient(recipient)) return null;
+    const retrying = workflow.working?.kind === "recipient" && workflow.working.runId === action.id && workflow.working.recipientUserId === recipient.user.userId;
+    return <span key={"retry:" + recipient.user.userId} className="inline-flex items-center gap-1"><DisabledReason reason={waitReason}><Button variant="outline" size="sm" pending={retrying} disabled={disabled} onClick={() => void workflow.retryRecipient({ runId: action.id, recipientUserId: recipient.user.userId, expectedRevision: action.revision })}>{t(retrying ? "responses.retrying" : "common:actions.retry")}</Button></DisabledReason>
+      <InfoTip label={t("common:actions.moreInfo", { label: t("common:actions.retry") })} text={t("workflow.retryRecipientHint")}/></span>;
+  };
   // The message to whoever loaded it is one row, with their name under the action; each person of a role, a row of their
   // own with the state of their send, since the notice can be done while one of them did not get it.
   const actionRows = (action: ResponseAction): ActivityRow[] => {
@@ -107,8 +114,8 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
       actions: actions.length ? actions : undefined,
     };
     return [row, ...(single ? [] : action.recipients.map(recipient => {
-      const review = reviewButton(action, recipient);
-      return { key: "recipient:" + action.id + ":" + recipient.user.userId, person: recipient.user.displayName ?? unknown, text: recipient.user.displayName ?? unknown, focusable: true, detail: recipientNotes(recipient), state: recipientState(recipient), actions: review ?? undefined };
+      const control = reviewButton(action, recipient) ?? retryButton(action, recipient);
+      return { key: "recipient:" + action.id + ":" + recipient.user.userId, person: recipient.user.displayName ?? unknown, text: recipient.user.displayName ?? unknown, focusable: true, detail: recipientNotes(recipient), state: recipientState(recipient), actions: control ?? undefined };
     }))];
   };
   // The moments are thin bands that order the story without saying the state: what was done on receipt goes with the
