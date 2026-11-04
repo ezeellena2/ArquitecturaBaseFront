@@ -35,8 +35,8 @@ for (const culture of ["es", "en"] as const) {
     const fields = openDraftSession({ actorId: "http-contract", editorId: "recipient" }, saved.definition).value.draft.fields;
     const check = readFormPublicationCheck(cohort.json(file("source-check-warnings")), saved.definition.id, saved.definition.revision, fields);
     expect(check.issues).toEqual([]);
-    // NI3-B (2026-11-03): one option per person fits and stops warning; the previous joint export still carries that warning.
-    expect(check.warnings.map(warning => warning.code)).toContain("Forms.Publication.RecipientsWithoutData");
+    // NI3-B (2026-11-03): one option per person fits, so only the people without the data warn.
+    expect(check.warnings.map(warning => warning.code)).toEqual(["Forms.Publication.RecipientsWithoutData"]);
     server.use(http.get("*/api/forms/recipient-samples", () => cohort.response(file("recipient-samples"))), http.post("*/api/forms/definitions/:id/recipient-previews", () => cohort.response(file("recipient-ready"))));
     expect(await fetchRecipientSamples({ page: 1, pageSize: 20, search: "Juan" })).toEqual(cohort.json(file("recipient-samples")));
     expect(await previewRecipient(saved.definition.id, body)).toEqual(ready);
