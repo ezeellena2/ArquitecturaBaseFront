@@ -55,10 +55,12 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
   const entries = new Map([[sowing.definitionId, sowing], [sheetEntry.definitionId, sheetEntry]]);
   const createOnly = scenario === "entries-create-only";
   const names = en ? ["Sowing", "Rain", "Application", "Harvest", "Previous survey"] : ["Siembra", "Lluvia", "Aplicación", "Cosecha", "Relevamiento anterior"];
+  // Whoever only completes forms counts their own and sees their last one (CW9).
+  const counts = createOnly ? [9, 86, 12, 0, 3] : [12, 321, 125, 0, 4];
   const rows: FormOverviewRow[] = names.map((name, index) => ({ id: index === 0 ? sowing.definitionId : id(640 + index), name, prefix: ["SIE", "LLU", "APL", "COS", "REL"][index],
     deactivatedAtUtc: index === 4 ? "2026-10-20T15:00:00Z" : null, pendingApprovalCount: null,
-    responseCount: createOnly ? null : [12, 321, 125, 0, 4][index],
-    lastResponse: createOnly || index === 3 ? null : { id: id(660 + index), number: ["SIE", "LLU", "APL", "COS", "REL"][index] + "-" + String([12, 321, 125, 0, 4][index]).padStart(6, "0"),
+    responseCount: counts[index],
+    lastResponse: index === 3 ? null : { id: id(660 + index), number: ["SIE", "LLU", "APL", "COS", "REL"][index] + "-" + String(counts[index]).padStart(6, "0"),
       submittedAtUtc: "2026-10-" + String(29 - index).padStart(2, "0") + "T13:52:00Z", state: "Received" } }));
   const calls: { method: string; path: string }[] = [];
   return {

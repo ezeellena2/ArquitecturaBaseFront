@@ -365,3 +365,27 @@ for (const language of ["es", "en"] as const)
       });
     });
   }
+
+// Board CW6-C: whoever only completes forms sees the same sheet with only what they loaded, without «Cargó» nor the Excel,
+// and their response with where it stands, without the activity; on the phone the row opens it in full.
+for (const language of ["es", "en"] as const)
+  for (const width of [1440, 390, 320]) {
+    test(`own responses sheet and detail ${language} at ${width}px`, async ({ page }) => {
+      const en = language === "en";
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/src/test/visual/index.html?screen=${root}&scenario=responses-own&lang=${language}`);
+      const row = page.getByRole("link", { name: "TEST-000002", exact: true });
+      await expect(row).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await expect(page.getByRole("columnheader", { name: en ? "Submitted by" : "Cargó", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: en ? "Export to Excel" : "Exportar a Excel", exact: true })).toHaveCount(0);
+      await page.screenshot({ path: `test-results/responses-own-sheet-${language}-${width}.png`, fullPage: true });
+      await row.click();
+      if (width < 640) await expect(page.getByRole("heading", { name: "TEST-000002", level: 1 })).toBeVisible();
+      else await expect(page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta" })).toBeVisible();
+      await expect(page.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true })).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await page.screenshot({ path: `test-results/responses-own-detail-${language}-${width}.png`, fullPage: true });
+    });
+  }

@@ -236,10 +236,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const table = page.getByRole("table");
     const load = table.getByRole("button", { name: (es ? "Cargar " : "Load ") + sowing, exact: true });
     await expect(load).toBeVisible();
+    await expect(table.getByRole("link", { name: sowing, exact: true })).toBeVisible();
     if (profile === "create-only") {
-      await expect(table.getByRole("link", { name: sowing, exact: true })).toHaveCount(0);
+      // Their own entries and the last one, and the name opens the sheet of their own (CW6-C, CW9).
+      await expect(table.getByRole("columnheader", { name: es ? "Mis cargas" : "My entries", exact: true })).toBeVisible();
+      await expect(table.getByRole("columnheader", { name: es ? "Mi última carga" : "My last entry", exact: true })).toBeVisible();
+      await expect(table.getByText(es ? "Todavía no cargaste" : "Not filled in yet", { exact: true })).toBeVisible();
       await expect(page.getByRole("group", { name: es ? "Estado de los formularios" : "Form status" })).toHaveCount(0);
-    } else await expect(table.getByRole("link", { name: sowing, exact: true })).toBeVisible();
+    }
     await page.evaluate(() => document.fonts.ready);
     const area = page.locator('[data-slot="table-container"]');
     const bounds = (await area.boundingBox())!;
