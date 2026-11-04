@@ -201,10 +201,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: es ? "Publicar en WhatsApp" : "Publish on WhatsApp", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: es ? "Publicar la versión 1 en WhatsApp" : "Publish version 1 on WhatsApp", exact: true });
     const problems = dialog.getByRole("region", { name: es ? "Problemas" : "Problems", exact: true });
-    await expect(problems.getByText(es ? "Importe cobrado al cliente · Español" : "Amount collected from the customer · English", { exact: true })).toBeVisible();
+    // NI1-A (2026-11-03): a problem in the menu language does not name it.
+    await expect(problems.getByText(es ? "Importe cobrado al cliente" : "Amount collected from the customer", { exact: true })).toBeVisible();
     await expect(problems.getByText(es ? "Hasta 20 caracteres; tiene 26." : "Up to 20 characters; it has 34.", { exact: true })).toBeVisible();
     const warnings = dialog.getByRole("region", { name: es ? "Avisos" : "Warnings", exact: true });
-    await expect(warnings.getByText(es ? "Como mucho 125 opciones por persona, de un límite de 200." : "At most 125 options per person, against a limit of 200.", { exact: true })).toBeVisible();
+    // NI3-B (2026-11-03): the server warns only about a maximum that does not fit.
+    await expect(warnings.getByText(es ? "Como mucho 230 opciones por persona, de un límite de 200." : "At most 230 options per person, against a limit of 200.", { exact: true })).toBeVisible();
     const published = dialog.getByRole("region", { name: es ? "Qué se publica" : "What is published", exact: true });
     await expect(published.locator("dt", { hasText: es ? "Prefijo" : "Prefix" })).toBeVisible();
     for (const text of es ? ["Qué queda fijo", "Qué va a pasar", "Revisamos el borrador"] : ["What becomes fixed", "What happens next", "We check the saved draft"]) await expect(dialog.getByText(text)).toHaveCount(0);

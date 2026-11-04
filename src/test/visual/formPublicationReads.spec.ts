@@ -27,7 +27,8 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  const es=lang==="es";await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-failed-reload&lang=${lang}`);
  const panel=page.getByRole("region",{name:es?"No se pudo publicar · versión 1":"Could not publish · version 1",exact:true});
  await expect(panel.getByText(es?"WhatsApp rechazó la validación del formulario.":"WhatsApp rejected the form validation.",{exact:true})).toHaveCount(1);
- await expect(panel.getByText(es?"Inglés":"English",{exact:true})).toBeVisible();
+ // NI1-A (2026-11-03): the diagnostic is in English, so it names its language only with the menu in Spanish.
+ if(es)await expect(panel.getByText("Inglés",{exact:true})).toBeVisible();else await expect(panel.getByText("English",{exact:true})).toHaveCount(0);
  await expect(panel.getByText(es?"Pendiente de confirmación de WhatsApp":"Awaiting WhatsApp confirmation",{exact:true})).toHaveCount(0);
  await expect(panel.getByRole("button",{name:es?"Consultar publicación":"Check publication",exact:true})).toBeEnabled();
  await expect(page.getByRole("button",{name:es?"Publicar en WhatsApp":"Publish on WhatsApp",exact:true})).toBeEnabled();

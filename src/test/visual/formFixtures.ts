@@ -222,7 +222,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       const issues = blocked ? [{ channelId: "phone", fieldId: definition.draft.fields[amount]!.fieldId, choiceId: null, path: "draft.fields[" + amount + "].label." + definition.draft.culture, code: "WhatsApp.Flow.TextTooLong",
         message: culture === "es" ? "El texto supera el límite del componente. Revisá el texto indicado." : "The text exceeds the component limit. Review the indicated text.", limit: 20, culture: definition.draft.culture }] : [];
       const warnings = blocked ? [{ fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh",
-        message: culture === "es" ? "Revisá el máximo de opciones por persona frente al límite de WhatsApp." : "Review the maximum options per person against the WhatsApp limit.", limit: 200, maximum: 125 }] : [];
+        message: culture === "es" ? "Revisá el máximo de opciones por persona frente al límite de WhatsApp." : "Review the maximum options per person against the WhatsApp limit.", limit: 200, maximum: 230 }] : [];
       const available = !blocked && (scenario.startsWith("forms-publication") || scenario.startsWith("forms-languages-") || scenario.startsWith("forms-lifecycle"));
       const cultures = fixturePublicationCultures(definition);
       const complete = cultures.filter(item => item.isComplete).map(item => item.culture);

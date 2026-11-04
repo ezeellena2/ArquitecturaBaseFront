@@ -23,7 +23,8 @@ for (const width of [1440, 390, 320]) {
     const table = dialog.getByRole("table");
     await expect(table.getByRole("rowheader", { name: "Obligatoria", exact: true })).toBeVisible();
     await expect(table.getByRole("rowheader", { name: "Máximo de caracteres", exact: true })).toBeVisible();
-    await expect(table.getByRole("rowheader", { name: "Cliente · la opción «Distribuidora Norte» · Español", exact: true })).toBeVisible();
+    // NI1-A (2026-11-03): a change in the menu language does not name it.
+    await expect(table.getByRole("rowheader", { name: "Cliente · la opción «Distribuidora Norte»", exact: true })).toBeVisible();
     await expect(table).not.toContainText("español:");
     await dialog.screenshot({ path: info.outputPath(`draft-review-es-${width}.png`) });
     await expectSideBySide(page, table, width);
