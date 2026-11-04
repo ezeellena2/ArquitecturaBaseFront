@@ -72,9 +72,9 @@ explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
 `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, la opción elegida
-(OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+(OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `AccountRows` y `VerificationBadge hint` (PF1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
-`CheckCheck`, `Send`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
+`CheckCheck`, `Send`, `Link`, `Bell`, `ExternalLink`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
 ## Principios del sistema
 
@@ -92,6 +92,9 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
 - **Seis pasos de espacio:** 4, 8, 12, 16, 24 y 40 px (8 entre controles, 16 dentro de superficies, 24 entre secciones).
 - **La marca significa acción:** `brand` para acciones, selección y foco. Éxito, atención y peligro tienen roles
   propios; peligro solo para consecuencias destructivas.
+- **Un dato que sirve para dos cosas dice el estado de cada una** ([PF1-A, 2026-11-03](#mi-perfil-y-el-chat-de-whatsapp--2026-11-03)):
+  el número dice si sirve para entrar («Verificado») y, aparte, si su chat está vinculado y hasta cuándo llegan los
+  avisos, con la acción que lo arregla.
 - **El color nunca comunica solo:** todo estado lleva texto, ícono accesible o ambos.
   - **Excepción:** en Usuarios el estado es un punto delante del correo (verde activo, rojo inactivo) con la palabra en
     `sr-only`. Habilitar (check) y deshabilitar (encendido) son íconos con nombre y tooltip, y piden confirmación. No se
@@ -452,7 +455,8 @@ Sin elección; no se implementan sin ella.
 | Anatomía; Encabezados, íconos y color; Las mismas piezas | `index.css`, `shared/ui`, 17 íconos | Implementado; biblioteca pendiente |
 | Cómo se sostiene | tokens + componentes + tests | Norma de gobierno |
 | Roles (editar, estados, acciones) | `RoleEditorPage`, `RolesPage` | Implementado |
-| WhatsApp · Ingreso, Perfil, Usuarios con teléfono | `/login`, `/perfil`, diálogos de usuario | Implementado; mensajes por adoptar |
+| WhatsApp · Ingreso, Perfil, Usuarios con teléfono | `/login`, `/perfil`, diálogos de usuario | Implementado; mensajes por adoptar. El perfil y los medios de ingreso de usuario los reemplaza PF1-A |
+| Mi perfil · PF1-A, en el lienzo provisorio «Formularios desde la app» | `/perfil` y «Editar usuario» | [Implementado](#mi-perfil-y-el-chat-de-whatsapp--2026-11-03); falta pasarlo al lienzo del sistema visual |
 | WhatsApp · El enlace del chat | `/ingresar` (`Spinner` de 20 px; el tablero, 28) | Compatibilidad: ya no se emiten enlaces |
 | WhatsApp · Orientación y mensajes del sistema | backend | Panel 2 desactualizado: Meta aprobó la invitación como Marketing, con otro texto |
 | Plantilla · Listado | ejemplo `/usuarios` | Se duplica para cada listado |
@@ -822,3 +826,42 @@ columnas en el celular, y el elegido de otra página a 390. `catalogLoading.spec
 importación en es/en a los tres anchos y `chatForms.spec`, la tarjeta elegida al cambiar de página. Cambió una referencia,
 revisada y por esta decisión: `settings-review-320`, con los dos ajustes distintos apilados en vez de una tabla que se
 cortaba a la derecha.
+
+## Mi perfil y el chat de WhatsApp — 2026-11-03
+
+En la prueba completa, el usuario miró Mi perfil y dijo que había que mejorarlo bastante. En la misma prueba su cuenta
+tenía el número «Verificado», pero el chat de WhatsApp sin vincular, y los avisos de las reglas no le llegaban: el perfil
+no mostraba esa diferencia. El número se había confirmado antes de que existiera su chat, el primer mensaje lo creó suelto
+y un mensaje nunca vincula, una regla de identidad del backend que no cambia. Entre tres tableros del lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila «Mi perfil» (PF0 muestra cómo
+estaba, PF2 los estados del chat y PF3 las pantallas parecidas), eligió la **PF1-A**: tres zonas, una debajo de la otra,
+como Configuración. Descartó la PF1-B (dos columnas, con el chat adentro de la fila de WhatsApp) y la PF1-C (una lectura
+que se cambia en su renglón, sin un Guardar general). También aprobó que «Desvincular» vaya en rojo en «Editar usuario»,
+que cambia lo que había fijado «Editar usuario B» (gris hasta la confirmación).
+
+La regla, para toda pantalla:
+
+- **Una pantalla de ajustes se arma como Configuración:** zonas a todo el ancho, una debajo de la otra; campos del ancho de
+  lo que llevan y, en el celular, de todo el ancho; Guardar en la banda, apagado sin cambios.
+- **Lo que se lee de una cuenta va en renglones de columnas fijas** (`AccountRows`): el ícono, el dato en gris, el valor,
+  su estado y su acción, la misma pieza en Mi perfil y en «Editar usuario». Lo que no se edita, como el último ingreso, es
+  un renglón más, nunca un rótulo con su valor entre los campos.
+- **Un dato que sirve para dos cosas dice el estado de cada una:** «Verificado» es entrar con el número; si su chat está
+  vinculado y hasta cuándo llegan los avisos va aparte, con la acción que lo arregla.
+- **Quitar va en rojo antes de confirmar** también en los medios de ingreso (`destructive-outline`), y las altas dicen
+  «Agregar …» («Agregar número», como en «Editar usuario»).
+- **Una zona horaria se lee con espacios** («America/Argentina/Buenos Aires») en Mi perfil y en Configuración; lo que se
+  guarda sigue siendo el identificador de IANA.
+
+| Dónde | Cómo queda | En el código |
+| --- | --- | --- |
+| Datos del perfil | Nombre, Idioma y Zona horaria en un renglón, con los anchos de Configuración; Guardar apagado sin cambios | `ProfilePage` |
+| Medios de ingreso | Correo, WhatsApp, Google (si la cuenta entra con él) y el último ingreso. Lo que cargó un administrador dice «Sin verificar», con el porqué en el tooltip de la insignia, y el número ofrece «Verificar» con el número ya escrito; sin número, «Agregar número»; «Desvincular» en rojo | `LoginMethodsCard`, `AccountRows`, `VerificationBadge hint` |
+| Chat de WhatsApp, con WhatsApp prendido y el número verificado | Vínculo: «Vinculado», «Sin vincular» con «Vincular» (confirma el mismo número con un código) o «Sin chat todavía» con «Abrir el chat». Avisos: «Llegan hasta el …», «Pausados» con «Abrir el chat» o «No llegan»; la (i) explica las 24 horas. Al volver a la pestaña se relee | `WhatsAppChatCard`, `GET /api/me/whatsapp` del módulo de WhatsApp |
+| Editar usuario | Los mismos renglones, el ícono sin su cuadradito y «Desvincular» en rojo; con el número propio sin verificar, el diálogo se titula «Verificar el número» | `UserEditDialog` |
+| Configuración | Los campos, a todo el ancho en el celular | `SettingsForm` |
+
+El dato nuevo del backend es el estado del chat (`GET /api/me/whatsapp`): vinculado, suelto o sin chat, y hasta cuándo
+pueden salir los avisos, 24 horas después del último mensaje de la persona. Vincular usa lo que ya existía: pedir el código
+y confirmarlo con el mismo número ([WhatsApp](../../../ArquitecturaBase/docs/features/whatsapp.md)).
+

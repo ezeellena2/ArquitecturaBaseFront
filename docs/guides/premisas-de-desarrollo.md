@@ -71,6 +71,11 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - Un formulario puede tener varios campos cuando resuelven la misma tarea. La relación entre ellos,
   no la cantidad de controles, decide si van juntos. Los temas independientes no se agrupan para
   llenar espacio y las superficies no se agregan como decoración.
+- Una pantalla de ajustes, propia o de la instalación (Mi perfil, Configuración), se arma igual (PF1-A,
+  2026-11-03): zonas a todo el ancho, una debajo de la otra; campos del ancho de lo que llevan y, en el
+  celular, de todo el ancho; Guardar en la banda, apagado sin cambios. Lo que se lee de una cuenta (sus
+  medios de ingreso, el chat de su número, su último ingreso) va en `AccountRows`, y un dato que sirve para
+  dos cosas dice el estado de cada una ([detalle](../design/visual-baseline.md#mi-perfil-y-el-chat-de-whatsapp--2026-11-03)).
 - El tablero previo debe definir menú/ruta, cabecera, datos, controles, acción, estados y mensajes.
   El diseño y el plan se revisan antes del desarrollo. Si eso no está resuelto, la maqueta sigue
   siendo propuesta; no se completa su estructura improvisando durante la implementación.

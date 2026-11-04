@@ -101,9 +101,14 @@ Contrato: [WhatsApp](../../ArquitecturaBase/docs/features/whatsapp.md) (módulo 
   `loginLinkFailureOf` elige la pantalla; el reintento respeta `retryAfter`. "Volver a WhatsApp" solo con `whatsappNumber`.
 - **Cuenta sin correo:** `src/auth/accountName.ts` arma nombre e inicial (`displayName ?? email ?? phoneNumber`; primera
   letra o cifra, o "?"), no un `initialOf(...)` suelto. El número se muestra con `formattedPhoneNumber`, nunca en E.164.
-- **`/perfil`:** "Medios de ingreso" y "Datos del perfil". `LoginMethodsCard` muestra cada medio con `VerificationBadge`;
-  el único medio muestra ayuda en lugar de Desvincular (ante `409 Users.User.LastLoginMethod`, se relee `/api/me`).
-  `VerifyDestinationDialog` (`email`/`whatsapp`) pide destino y código en el mismo diálogo; el `409` de otra cuenta tiene texto propio.
+- **`/perfil`** (tablero PF1-A, 2026-11-03): tres zonas apiladas, como Configuración: "Datos del perfil", "Medios de
+  ingreso" y "Chat de WhatsApp". `LoginMethodsCard` lee cada medio en `AccountRows` con `VerificationBadge` (sin verificar,
+  con su porqué en el tooltip y «Verificar»), Google si la cuenta entra con él y el último ingreso; si el número es el único
+  medio, Desvincular queda apagado con su motivo (ante `409 Users.User.LastLoginMethod`, se relee `/api/me`).
+  `WhatsAppChatCard` lee `GET /api/me/whatsapp` con WhatsApp prendido y el número verificado: «Vincular» confirma el mismo
+  número con un código (un mensaje nunca vincula) y «Abrir el chat» abre `wa.me` con el número del negocio; al volver a
+  la pestaña relee. `VerifyDestinationDialog` (`email`/`whatsapp`) pide destino y código en el mismo diálogo, con título y
+  aviso propios para verificar o vincular (`copy`); el `409` de otra cuenta tiene texto propio.
 - **Invitación:** `UserFormDialog` (alta) y `UserEditDialog` (edición, no crea identidades) van separados. Pide canal
   (`RadioGroupField`) y consentimiento; Por correo se deshabilita sin correo. Lo cargado por un admin queda Sin verificar,
   con explicación alcanzable por teclado.

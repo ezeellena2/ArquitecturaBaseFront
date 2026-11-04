@@ -41,6 +41,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Opción elegida | `SegmentedControl` (rellena), `RadioGroupField variant="cards"` (borde de 2 px), `DropdownMenuRadioItem` (tilde), `DataTable selectedRowKey` (barra y tinte) | Cuál está elegida o abierta; la biblioteca la marca con algo más que un tinte (OE1-A) |
 | Lectura de algo que pasa en orden (una regla, una sugerencia) | `StepList` | Un paso por parte con su ícono; palabras que unen en gris y datos en negrita ([lecturas](../design/visual-baseline.md#lecturas), LR1-A) |
 | Datos de un registro, sin editar | `DataList` | Rótulos y valores ya formateados, en dos columnas; nunca «Rótulo: valor» en un renglón |
+| Lo que se lee de una cuenta: medios de ingreso, el chat de su número, el último ingreso | `AccountRows` y `AccountRow` | Ícono, dato, valor ya formateado, estado (`VerificationBadge`, con `hint` si hay un porqué) y acción; la lista elige un renglón, el dato arriba del valor o la acción junto al dato según el ancho de su contenedor (PF1-A) |
 | Dos versiones comparadas (una revisión antes de guardar, los cambios de una importación) | `ComparisonTable` | Qué cambió, cada dato una vez y las dos versiones en su columna, sólo lo distinto; en el celular, apilada sin desplazar ([lecturas](../design/visual-baseline.md#lecturas), LR2-A) |
 | Íconos y acciones | `shared/ui/icons`, `IconButton`, `RowActions` | Nombre traducido, permiso y operación |
 | Ayuda contextual | `ActionTooltip` | Texto y control alcanzable con teclado; sin `title` nativo |
@@ -58,7 +59,9 @@ ni repetir el título de Page. El cuerpo de las tablas alterna blanco y el tono 
 2026-10-03, el selector de permisos de Roles usa TableBody striped=false para los permisos blancos.
 La aclaración posterior diferencia encabezados de área con TableRow tone="section" y
 highlightExpanded=false: tono más suave que el encabezado principal, adaptado a la paleta global.
-El perfil conserva sus dos superficies aprobadas, construidas con `Surface`.
+Mi perfil se arma como Configuración (PF1-A, 2026-11-03): sus zonas una debajo de la otra, con `Surface`, los campos del
+ancho de lo que llevan (en el celular, todo el ancho) y Guardar en la banda, apagado sin cambios. Los medios de ingreso y el
+chat de WhatsApp se leen en `AccountRows`, la misma pieza que «Editar usuario».
 El resumen lateral anterior de Roles se retiró con su componente y sus tests: la selección vive en la tabla aprobada.
 
 ## Medidas y variantes
