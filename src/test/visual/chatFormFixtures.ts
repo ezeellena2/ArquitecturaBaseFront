@@ -10,6 +10,8 @@ export function createChatFormFixtures(language:"es"|"en",scenario:string){
  if(scenario==="forms-chat-no-email")contact.linkedAccount!.email=null;
  if(scenario==="forms-chat-read"){contact.linkedAccount=null;contact.formEligibility=null;}
  const options:ChatFormOption[]=Array.from({length:9},(_,i)=>({definitionId:guid(620+i),versionId:guid(640+i),versionNumber:1,prefix:"VIS",name:{es:i===0?"Registrar visita":"Formulario "+(i+1),en:i===0?"Register visit":"Form "+(i+1)},questionCount:4,submitLabel:{es:"Confirmar visita",en:"Confirm visit"}}));
+ // CW7: a form with a list that depends on another answer is loaded in the app, so it shows off with its reason.
+ if(scenario==="forms-chat-dependent"){options[1]={...options[1],name:{es:"Siembra",en:"Sowing"},dependentQuestion:{es:"Lote",en:"Lot"}};}
  const catalogScenario=scenario.startsWith("forms-chat-catalog");
  if(catalogScenario)options[0].hasCatalogQuestions=true;
  const offers=[{fieldId:guid(701),label:"Cliente",count:2},{fieldId:guid(710),label:"Supervisor",count:7}];

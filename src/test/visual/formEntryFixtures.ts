@@ -16,11 +16,18 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
     description: ["La Esperanza", "El Ombú", "Don Pedro", "La Unión"][index % 4] }));
   const seeds: FormEntryOption[] = ["DM 46i20", "NS 4955", "SY 3x5", "DK 72-10"].map((title, index) => ({ id: id(780 + index), title, description: null }));
   const missingData = scenario === "entries-missing-data";
+  // CW7: «Lote» depends on the answer to «Campo», so it waits for it and brings only that field's lots.
+  const dependent = scenario === "entries-dependent";
+  const farm = id(623);
+  const farms: FormEntryOption[] = ["La Esperanza", "El Ombú", "Don Pedro", "La Unión"].map((title, index) => ({ id: id(800 + index), title, description: null }));
   const sowing: FormEntry = { definitionId: formEntryFixtureIds.sowing, versionId: id(602), versionNumber: 3, prefix: "SIE", name: en ? "Sowing" : "Siembra", culture: language,
     submitLabel: en ? "Send" : "Enviar", maxFileSizeMiB: 25, questions: [
-      { fieldId: fields.lot, type: "choice", label: en ? "Lot" : "Lote", help: en ? "Only the lots of your field in the 2026/27 season." : "Solo los lotes de tu campo en la campaña 2026/27.",
+      ...dependent ? [{ fieldId: farm, type: "choice" as const, label: en ? "Field" : "Campo", help: null, required: true, maxLength: null, options: null, selection: null, files: null,
+        catalog: { onlyOption: null, issue: null, missingData: null } }] : [],
+      { fieldId: fields.lot, type: "choice", label: en ? "Lot" : "Lote", help: dependent ? null : en ? "Only the lots of your field in the 2026/27 season." : "Solo los lotes de tu campo en la campaña 2026/27.",
         required: true, maxLength: null, options: null, selection: null, files: null,
-        catalog: missingData ? { onlyOption: null, issue: "Forms.Record.RecipientDataMissing", missingData: en ? "Field" : "Campo" } : { onlyOption: null, issue: null, missingData: null } },
+        catalog: missingData ? { onlyOption: null, issue: "Forms.Record.RecipientDataMissing", missingData: en ? "Field" : "Campo" }
+          : { onlyOption: null, issue: null, missingData: null, ...dependent ? { dependsOn: [farm] } : {} } },
       { fieldId: fields.crop, type: "choice", label: en ? "Crop" : "Cultivo", help: null, required: true, maxLength: null,
         options: (en ? ["1st soybean", "2nd soybean", "Corn", "Wheat", "Sunflower"] : ["Soja 1ª", "Soja 2ª", "Maíz", "Trigo", "Girasol"]).map((label, index) => ({ id: id(790 + index), label })),
         selection: null, files: null, catalog: null },
@@ -72,7 +79,8 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
       const entry = entries.get(match[1]);
       if (!entry) return Response.json({ code: "Forms.Definition.NotFound" }, { status: 404 });
       if (match[2]) {
-        const source = match[2] === fields.seed ? seeds : lots;
+        const chosenFarm = farms.find(option => option.id === url.searchParams.get(`answers[${farm}]`))?.title;
+        const source = match[2] === fields.seed ? seeds : match[2] === farm ? farms : dependent ? lots.filter(lot => lot.description === chosenFarm) : lots;
         const search = (url.searchParams.get("search") ?? "").toLocaleLowerCase(language);
         const matching = source.filter(option => (option.title + " " + (option.description ?? "")).toLocaleLowerCase(language).includes(search));
         const page = Number(url.searchParams.get("page") ?? 1);

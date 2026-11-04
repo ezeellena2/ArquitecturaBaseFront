@@ -8,14 +8,20 @@ const id = (value: number) => "01990000-0000-7000-8000-" + String(value).padStar
 export const catalogQuestionFixtureIds = { suppliers: id(700), zones: id(701), question: id(703), tax: id(720), zone: id(721), category: id(722), paymentDays: id(723), attribute: id(730), center: id(740), south: id(741), juan: id(750), pablo: id(751) };
 
 // Synthetic browser transport for CE3-B/CE4-A. No captured HTTP body, API or provider is contacted.
-export function createCatalogQuestionVisualFixtures(culture: FormCulture, _scenario: string) {
+export function createCatalogQuestionVisualFixtures(culture: FormCulture, scenario: string) {
   const ids = catalogQuestionFixtureIds;
   const forms = createFormFixtureStore(culture, "forms-catalog");
   const original = forms.definitions.get(fixtureFormId)!;
+  // CW7: «Proveedor» depends on the answer to «Zona», an earlier question of the zones catalog, with a fixed category.
+  const dependent = scenario === "forms-catalog-fields-dependent";
+  const key = (fieldId: string) => "field_" + fieldId.replaceAll("-", "");
   const definition: FormDefinitionSnapshot = { ...original, name: { es: "Pedir repuesto", en: "Request a spare part" }, prefix: "PDR", draft: { ...original.draft, fields: [
-    { fieldId: id(702), key: "field_" + id(702).replaceAll("-", ""), type: "shortText", label: { es: "Sucursal", en: "Branch" }, help: null, required: true, maxLength: 80 },
-    { fieldId: id(704), key: "field_" + id(704).replaceAll("-", ""), type: "shortText", label: { es: "Repuesto", en: "Spare part" }, help: null, required: true, maxLength: 80 },
-    { fieldId: ids.question, key: "field_" + ids.question.replaceAll("-", ""), type: "multiChoice", label: { es: "Proveedores a consultar", en: "Suppliers to contact" }, help: null, required: true,
+    { fieldId: id(702), key: key(id(702)), type: "shortText", label: { es: "Sucursal", en: "Branch" }, help: null, required: true, maxLength: 80 },
+    ...dependent ? [{ fieldId: id(705), key: key(id(705)), type: "choice" as const, label: { es: "Zona", en: "Zone" }, help: null, required: true, source: { catalog: ids.zones } }] : [],
+    { fieldId: id(704), key: key(id(704)), type: "shortText", label: { es: "Repuesto", en: "Spare part" }, help: null, required: true, maxLength: 80 },
+    dependent ? { fieldId: ids.question, key: key(ids.question), type: "choice", label: { es: "Proveedor", en: "Supplier" }, help: null, required: true,
+      source: { catalog: ids.suppliers, match: [{ fieldId: ids.zone, questionId: id(705) }, { fieldId: ids.category, value: "Frío" }] } }
+    : { fieldId: ids.question, key: key(ids.question), type: "multiChoice", label: { es: "Proveedores a consultar", en: "Suppliers to contact" }, help: null, required: true,
       source: { catalog: ids.suppliers, match: [{ fieldId: ids.zone, personAttributeId: ids.attribute }] }, selection: { minSelected: 1, maxSelected: 3 } },
   ] } };
   forms.definitions.set(definition.id, definition);
@@ -43,6 +49,9 @@ export function createCatalogQuestionVisualFixtures(culture: FormCulture, _scena
       return json({ ...page(rows.filter(row => row.name.toLowerCase().includes((url.searchParams.get("search") ?? "").toLowerCase())), url.searchParams), filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } });
     }
     if (path === "/api/forms/catalogs/" + ids.suppliers) return json(catalog);
+    // What «Respuesta de» says the zone question chooses from.
+    if (path === "/api/forms/catalogs/" + ids.zones) return json({ ...catalog, id: ids.zones, key: ids.zones.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" },
+      description: { es: "Zonas de reparto", en: "Delivery zones" }, itemsCount: 2, fields: [], presentation: null } satisfies CatalogDetail);
     if (path === "/api/forms/catalogs/" + ids.suppliers + "/items") return json(page(items, url.searchParams));
     // Every composed title of these options fits: the server check of an own presentation reports nothing in either language.
     if (path === "/api/forms/catalogs/" + ids.suppliers + "/presentation-checks" && request.method === "POST") return json({ cultures: (["es", "en"] as const).map(entry => ({ culture: entry, titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] })) });

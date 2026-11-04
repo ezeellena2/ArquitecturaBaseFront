@@ -21,7 +21,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("searchbox", { name: label("Buscar catálogo", "Search catalogs"), exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: label("Ver el catálogo", "View catalog"), exact: true })).toHaveCount(0);
     await expect(page.getByText(label("Las opciones se preparan al mandar el formulario.", "Options are prepared when the form is sent."), { exact: true })).toHaveCount(0);
-    const filterHint = label("Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona debe elegir del mismo catálogo.", "Filters are combined and use fields with the filter role. A person’s data must choose from the same catalog.");
+    const filterHint = label("Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona, o la respuesta de una pregunta anterior de elegir una, tiene que elegir del mismo catálogo que el campo.", "Filters are combined and use fields with the filter role. A person’s data, or the answer to an earlier single-choice question, must choose from the same catalog as the field.");
     // The common (i) keeps the text hidden as its accessible description: it is not in sight. It goes beside the title of
     // the zone, which starts folded (ZP1-A).
     await expect(page.getByText(filterHint, { exact: true })).toBeHidden();
