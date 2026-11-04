@@ -9,20 +9,27 @@ import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { PhonePreview } from "@/shared/ui/PhonePreview";
 import { Button } from "@/shared/ui/button";
 import { InfoTip } from "@/shared/ui/InfoTip";
-import { formScreens } from "../fileQuestions";
+import { previewScreens } from "../rowsQuestions";
 import { Banner } from "@/shared/ui/Banner";
 import { missingFormTexts } from "../editorModel";
 import type { CatalogQuestionPreview, DraftEditorValue, FormCulture } from "../model";
 import { sameCatalogQuestionSource } from "../catalogQuestionSource";
 
-export function FormPreview({ value, culture, catalogPreviews = {} }: { value: DraftEditorValue; culture: FormCulture; catalogPreviews?: Readonly<Record<string, CatalogQuestionPreview | null>> }) {
+// `openQuestion` is the question open in the editor: with the block or one of its questions open, the preview shows a row.
+export function FormPreview({ value, culture, catalogPreviews = {}, openQuestion = null }: { value: DraftEditorValue; culture: FormCulture; catalogPreviews?: Readonly<Record<string, CatalogQuestionPreview | null>>; openQuestion?: string | null }) {
   const { t, i18n } = useTranslation("forms");
   const missing = culture === value.draft.culture ? 0 : missingFormTexts(value, culture);
   const previewCulture = missing ? value.draft.culture : culture;
   const { t: content } = useTranslation("forms", { lng: previewCulture });
   // Illustrative answers are strings: decimal precision, DateOnly and absent/false stay distinct.
-  const screens = formScreens(value.draft.fields);
+  const screens = previewScreens(value.draft.fields);
   const [selectedScreen, setSelectedScreen] = useState(0);
+  const [seenOpen, setSeenOpen] = useState(openQuestion);
+  if (openQuestion !== seenOpen) {
+    setSeenOpen(openQuestion);
+    const row = screens.findIndex(item => item.kind === "row" && (item.block.localId === openQuestion || item.questions.some(q => q.localId === openQuestion)));
+    if (row >= 0) setSelectedScreen(row);
+  }
   const screen = Math.min(selectedScreen, screens.length - 1);
   const lastScreen = screen === screens.length - 1;
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -34,14 +41,18 @@ export function FormPreview({ value, culture, catalogPreviews = {} }: { value: D
   // NI1-A (2026-11-03): the heading names the account's language only when it is not the menu's.
   const heading = culture === (i18n.language.startsWith("en") ? "en" : "es") ? t("preview") : t("previewForAccount", { language: t("cultureNamesInText." + culture) });
   const position = { number: screen + 1, total: screens.length };
+  const current = screens[screen]!;
+  const blockName = current.kind === "fields" ? "" : text(current.block.label) || content("rows.defaultName");
+  const title = current.kind === "row" ? content("rows.previewTitle", { name: blockName, row: 1 }) : current.kind === "ask" ? blockName : text(value.name) || content("new");
+  const rowQuestion = current.kind === "ask" ? content("rows.addRow") : current.kind === "row" && current.asks ? content("rows.addAnotherRow") : null;
   // What the preview is (illustrative, one language, sends and saves nothing) goes in the (i) of its heading, and how photos
   // and documents split the screens in the (i) of its position: no notes under the phone.
   return <section aria-label={t("preview")} className="flex min-w-0 flex-col gap-3">
     <div className="flex items-center gap-1"><h2 className="text-xs font-semibold uppercase tracking-wide">{heading}</h2><span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: heading })} text={[t("previewHint"), t("previewMissingHint"), t("previewOnly")].join(" ")} /></span></div>
     {screens.length > 1 ? <div className="flex items-center gap-1"><p lang={previewCulture} className="text-sm text-[var(--color-content-muted)]">{content("files.previewScreen", position)}</p><span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: t("files.previewScreen", position) })} text={t("files.screenHint")} /></span></div> : null}
     {missing ? <Banner>{t("previewFallback", { count: missing, requested: t("cultureNamesInText." + culture), actual: t("cultureNamesInText." + previewCulture) })}</Banner> : null}
-    <div lang={previewCulture}><PhonePreview title={text(value.name) || content("new")}>
-      {screens[screen]!.map(q => {
+    <div lang={previewCulture}><PhonePreview title={title}>
+      {(current.kind === "ask" ? [] : current.questions).map(q => {
         const label = text(q.label) || content("question");
         const answer = answers[q.localId] ?? "";
         const setAnswer = (next: string) => setAnswers(previous => ({ ...previous, [q.localId]: next }));
@@ -75,6 +86,7 @@ export function FormPreview({ value, culture, catalogPreviews = {} }: { value: D
               : <Input type={q.type === "date" ? "date" : "text"} maxLength={q.type === "shortText" ? q.maxLength ?? 80 : undefined} inputMode={q.type === "decimal" ? "decimal" : undefined} required={q.required} value={answer} onChange={e => setAnswer(e.target.value)} />}
         </FormField>;
       })}
+      {rowQuestion ? <div className="flex flex-col gap-1.5"><p className="text-sm font-medium">{rowQuestion} *</p><RadioGroupField label={rowQuestion} value={answers["rows:" + current.kind]} onValueChange={next => setAnswers(previous => ({ ...previous, ["rows:" + current.kind]: next }))} options={[{ value: "true", label: content("yes") }, { value: "false", label: content("no") }]} /></div> : null}
       <div className="mt-auto flex flex-col gap-2">{screen > 0 ? <Button type="button" variant="outline" onClick={() => setSelectedScreen(screen - 1)}>{content("files.previousScreen")}</Button> : null}<Button type="button" disabled={lastScreen} onClick={() => setSelectedScreen(screen + 1)}>{lastScreen ? text(value.draft.submitLabel) || content("submitLabel") : content("files.continue")}</Button></div>
     </PhonePreview></div>
   </section>;

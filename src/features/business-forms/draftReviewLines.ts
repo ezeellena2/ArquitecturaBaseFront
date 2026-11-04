@@ -24,14 +24,17 @@ const text = (value: string): ReviewValue => ({ kind: "text", text: value });
 const count = (value: number | null) => value === null ? { kind: "none" } as const : text(String(value));
 const identity = (question: DraftQuestion) => question.fieldId ?? `new:${question.localId}`;
 const choiceIdentity = (choice: DraftChoice) => choice.choiceId ?? `new:${choice.localId}`;
-const order = ["type", "required", "help", "catalog", "filter:", "filters", "presentation", "presentation.title", "presentation.description", "options", "multiple",
-  "selection.minimum", "selection.maximum", "files.minimum", "files.maximum", "files.source", "maxLength"];
+const order = ["type", "required", "repeated", "help", "catalog", "filter:", "filters", "presentation", "presentation.title", "presentation.description", "options", "multiple",
+  "selection.minimum", "selection.maximum", "files.minimum", "files.maximum", "files.source", "maxLength", "rows.minimum", "rows.maximum"];
 const rank = (fact: string) => order.findIndex(item => item.endsWith(":") ? fact.startsWith(item) : fact === item);
 
 // The data of a question with the names of its editor. `whole` adds what only a question that one version lacks needs:
 // its help and «Sin filtros de opciones». Without reading catalogs, the catalog data stay out, as they did before.
 function questionFacts(question: DraftQuestion, culture: FormCulture, original: FormCulture, options: { whole: boolean; catalogs: boolean; listsOptions: boolean }): Fact[] {
-  const facts: Fact[] = [{ key: "type", label: key("type"), value: key(`types.${questionEditorType(question)}`) }, { key: "required", label: key("required"), value: key(question.required ? "yes" : "no") }];
+  // The block is compared by its rows (its required follows the minimum), and a question of the block says so.
+  const facts: Fact[] = [{ key: "type", label: key("type"), value: key(`types.${questionEditorType(question)}`) },
+    ...question.type === "group" ? [] : [{ key: "required", label: key("required"), value: key(question.required ? "yes" : "no") }]];
+  if ("repeated" in question && question.repeated) facts.push({ key: "repeated", label: key("rows.repeated"), value: key("yes") });
   const help = options.whole ? localizedValue(question.help, culture, original) : "";
   if (help) facts.push({ key: "help", label: key("help"), value: text(help) });
   if (question.type === "choice" || question.type === "multiChoice") {
@@ -57,6 +60,8 @@ function questionFacts(question: DraftQuestion, culture: FormCulture, original: 
     if (question.type === "photo") facts.push({ key: "files.source", label: key("files.photoSource"), value: key(`files.sources.${question.files.photoSource ?? "cameraOrGallery"}`) });
   }
   if ("maxLength" in question) facts.push({ key: "maxLength", label: key("maxLength"), value: text(String(question.maxLength ?? (question.type === "shortText" ? 80 : 600))) });
+  if (question.type === "group") facts.push({ key: "rows.minimum", label: key("rows.minimum"), value: count(question.rows.minRows) },
+    { key: "rows.maximum", label: key("rows.maximum"), value: count(question.rows.maxRows) });
   return facts;
 }
 

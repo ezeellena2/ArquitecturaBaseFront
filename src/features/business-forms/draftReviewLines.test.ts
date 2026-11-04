@@ -112,3 +112,32 @@ describe("draftReviewLines", () => {
     ]);
   });
 });
+
+describe("the block of rows in the review", () => {
+  const withBlock: FormDefinitionSnapshot = { ...definition, draft: { ...definition.draft, fields: [...definition.draft.fields,
+    { fieldId: "items", key: "items", type: "group", label: { es: "Artículos" }, help: null, required: true, rows: { minRows: 1, maxRows: 20 } },
+    { fieldId: "quantity", key: "quantity", type: "decimal", label: { es: "Cantidad por renglón" }, help: null, required: true, repeated: true }] } };
+  const openedBlock = () => openDraftSession({ actorId: "actor", editorId: "editor" }, withBlock).value;
+
+  it("compares a block by its minimum and maximum, without «Obligatoria»", () => {
+    const value = openedBlock();
+    const mine = { ...value, draft: { ...value.draft, fields: value.draft.fields.map(question => question.type === "group"
+      ? { ...question, rows: { minRows: 0, maxRows: 20 }, required: false } : question) } };
+
+    expect(lines(mine, withBlock)).toEqual([
+      { key: "rows.minimum", label: { kind: "key", key: "rows.minimum" }, before: { kind: "text", text: "1" }, after: { kind: "text", text: "0" } },
+    ]);
+  });
+  it("says a question of the block is loaded several times when only one version has it", () => {
+    const value = openedBlock();
+    const mine = { ...value, draft: { ...value.draft, fields: value.draft.fields.filter(question => question.fieldId !== "quantity") } };
+    const review = createDraftReview(mine, withBlock);
+    const row = review.rows.find(item => item.kind === "field" && item.parentId === "quantity")!;
+
+    expect(draftReviewLines(review, row, { culture: "es", catalogs: true })).toEqual([
+      { key: "type", label: { kind: "key", key: "type" }, before: { kind: "key", key: "types.decimal" }, after: { kind: "missing", key: "removed" } },
+      { key: "required", label: { kind: "key", key: "required" }, before: { kind: "key", key: "yes" }, after: null },
+      { key: "repeated", label: { kind: "key", key: "rows.repeated" }, before: { kind: "key", key: "yes" }, after: null },
+    ]);
+  });
+});

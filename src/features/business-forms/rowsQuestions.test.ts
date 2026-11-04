@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DraftQuestion } from "./model";
-import { addRowQuestion, canRepeat, markRepeated, moveInRows, moveTopLevel, questionCount, questionNumbers, removeBlock, rowsBlock } from "./rowsQuestions";
+import { addRowQuestion, canRepeat, markRepeated, moveInRows, moveTopLevel, previewScreens, questionCount, questionNumbers, removeBlock, rowsBlock } from "./rowsQuestions";
 
 const question = (localId: string, type: "shortText" | "decimal" | "photo" = "shortText", fieldId: string | null = null): DraftQuestion =>
   type === "photo" ? { localId, fieldId, replacesFieldId: null, type, label: { es: localId }, help: null, required: false, files: { minFiles: 0, maxFiles: 1, photoSource: "cameraOrGallery" } }
@@ -85,5 +85,15 @@ describe("the block of rows in the editor", () => {
     expect(questionCount(fields)).toBe(5);
     expect(rowsBlock(fields)).toEqual({ index: 2, end: 5 });
     expect(rowsBlock([question("a")])).toBeNull();
+  });
+  it("previews the WhatsApp screens: before the block, «¿Agregás un renglón?» with a minimum of 0, one row and after it", () => {
+    const optional = { ...block(), required: false, rows: { minRows: 0, maxRows: 5 } } as DraftQuestion;
+    const screens = previewScreens([question("before"), optional, row("first"), question("after")]);
+
+    expect(screens.map(screen => screen.kind)).toEqual(["fields", "ask", "row", "fields"]);
+    expect(screens[2]).toMatchObject({ kind: "row", asks: true, questions: [{ localId: "first" }] });
+    expect(previewScreens([block(), row("first")]).map(screen => screen.kind)).toEqual(["row"]);
+    expect(previewScreens([{ ...block(), rows: { minRows: 2, maxRows: 5 } } as DraftQuestion, row("first")])[0]).toMatchObject({ asks: false });
+    expect(previewScreens([question("only")])).toEqual([{ kind: "fields", questions: [question("only")] }]);
   });
 });

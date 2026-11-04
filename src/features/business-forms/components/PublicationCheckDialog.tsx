@@ -15,6 +15,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { AlertCircleIcon, AlertTriangleIcon } from "@/shared/ui/icons";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { hasFormTexts, localizedValue } from "../editorModel";
+import { questionCount } from "../rowsQuestions";
 import { useFormPublicationCheck } from "../hooks/useFormPublicationCheck";
 import type { FormReadScope } from "../hooks/useFormQueries";
 import type { DraftEditorValue } from "../model";
@@ -141,6 +142,8 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
         return t(warning.maximumLabel ? "publication.recipientMaximumForGroup" : "publication.recipientMaximum", { count: warning.maximum, limit: warning.limit, group: warning.maximumLabel });
       case "Forms.Publication.RecipientsWithoutData":
         return t("publication.recipientsMissingData", { count: warning.count });
+      case "Forms.Publication.RowsOverChannelLimit":
+        return t("publication.rowsOverChannelLimit", { limit: warning.limit, maximum: warning.maximum });
       case "Forms.Publication.DependsOnAnswer": {
         // CW7: the list and the answers it depends on, by the names of the editor.
         const question = questionOf(warning.fieldId);
@@ -154,11 +157,13 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   const summaryRows = (diff: FormPublicationCheck["diff"] | null) => <>
     {reactivation?.nextRecordNumber ? <SummaryRow label={t("publication.nextRecordRow")}>{reactivation.nextRecordNumber}</SummaryRow> : null}
     {savedAt ? <SummaryRow label={t("publication.draftRow")}>{t("publication.savedAtValue", { date: savedAt })}</SummaryRow> : null}
-    <SummaryRow label={t("publication.questionsRow")}>{value.draft.fields.length}</SummaryRow>
+    <SummaryRow label={t("publication.questionsRow")}>{questionCount(value.draft.fields)}</SummaryRow>
     {/* The changes are against the published version, without naming it: a newer one is never labeled with a stale number. */}
     {diff?.baseVersionId && diff.added.length ? <SummaryRow label={t("publication.addedRow")}>{currentNames(diff.added)}</SummaryRow> : null}
     {diff?.baseVersionId && diff.changed.length ? <SummaryRow label={t("publication.changedRow")}>{currentNames(diff.changed)}</SummaryRow> : null}
     {diff?.baseVersionId && diff.removed.length ? <SummaryRow label={t("publication.removedRow")}>{t("publication.questions", { count: diff.removed.length })}</SummaryRow> : null}
+    {/* RG6-A: the published questions that entered the block are new ones, not removed and added. */}
+    {diff?.baseVersionId && diff.movedToRows?.length ? <SummaryRow label={t("publication.movedToRowsRow")}>{currentNames(diff.movedToRows)}</SummaryRow> : null}
   </>;
   const skeleton = (width: string) => <Skeleton className={cn("h-3", width)} />;
   const content = dirty ? null
@@ -187,7 +192,8 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
                 help={t("publication.cultureRemovedHint", { version: result.nextVersionNumber, language, original: t("cultureNamesInText." + value.draft.culture) }) + (missing.length ? " " + missingList(missing) : "")}>{t("publication.cultureRemoved")}</WithHelp>
             </Finding>;
           })}
-          {result.warnings.map((warning, index) => <Finding key={warning.path + ":" + index} tone="warning" title={questionName(warning.fieldId)}>
+          {result.warnings.map((warning, index) => <Finding key={warning.path + ":" + index} tone="warning" title={questionName(warning.fieldId)}
+            action={warning.code === "Forms.Publication.RowsOverChannelLimit" ? goTo({ channelId: null, fieldId: warning.fieldId, choiceId: null, path: warning.path, code: warning.code, message: warning.message, limit: warning.limit, culture: null }) : undefined}>
             <WithHelp label={t("publication.warningHelpLabel")} help={warning.message}>{warningDetails(warning)}</WithHelp>
             {warning.code === "Forms.Publication.RecipientsWithoutData" && warning.people.length ? <p>{warning.people.join(", ")}</p> : null}
           </Finding>)}

@@ -1,4 +1,5 @@
 import { moveItem, newQuestion } from "./editorModel";
+import { formScreens } from "./fileQuestions";
 import type { DraftQuestion, FormCulture } from "./model";
 
 // The block of rows (RG1-A) is a question of the flat list; the questions of each row follow it, marked repeated (RG6-A).
@@ -77,6 +78,27 @@ export function moveInRows(fields: readonly DraftQuestion[], localId: string, de
 export function removeBlock(fields: readonly DraftQuestion[]): readonly DraftQuestion[] {
   const block = rowsBlock(fields);
   return block ? [...fields.slice(0, block.index), ...fields.slice(block.end)] : fields;
+}
+
+// WhatsApp loads up to ten rows (RG3-A); the backend seals the same number in its Flow profile.
+const whatsAppRows = 10;
+type BlockQuestion = Extract<DraftQuestion, { type: "group" }>;
+export type PreviewScreen =
+  | { readonly kind: "fields"; readonly questions: readonly DraftQuestion[] }
+  | { readonly kind: "ask"; readonly block: BlockQuestion }
+  | { readonly kind: "row"; readonly block: BlockQuestion; readonly questions: readonly DraftQuestion[]; readonly asks: boolean };
+/** The preview follows the WhatsApp screens: before the block, «¿Agregás un renglón?» with a minimum of 0, one row as an example and after it. */
+export function previewScreens(fields: readonly DraftQuestion[]): readonly PreviewScreen[] {
+  const block = rowsBlock(fields);
+  if (!block) return formScreens(fields).map(questions => ({ kind: "fields", questions }));
+  const group = fields[block.index] as BlockQuestion;
+  const split = (part: readonly DraftQuestion[]): PreviewScreen[] => formScreens(part).filter(questions => questions.length > 0).map(questions => ({ kind: "fields", questions }));
+  const minimum = group.rows.minRows ?? 1;
+  const rows = Math.min(whatsAppRows, group.rows.maxRows ?? 1);
+  return [...split(fields.slice(0, block.index)), ...(minimum === 0 ? [{ kind: "ask" as const, block: group }] : []),
+    // From the minimum, a row ends with «¿Agregás otro renglón?», except the last one.
+    { kind: "row", block: group, questions: fields.slice(block.index + 1, block.end), asks: Math.max(minimum, 1) <= 1 && rows > 1 },
+    ...split(fields.slice(block.end))];
 }
 
 /** The list's numbers: the block is one more («5») and its questions go after it («5.1», «5.2»…). */

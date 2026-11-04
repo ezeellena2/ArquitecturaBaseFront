@@ -232,6 +232,8 @@
     "addedRow": "Agregadas",
     "changedRow": "Cambiadas",
     "removedRow": "Quitadas",
+    "movedToRowsRow": "Pasan a renglones",
+    "rowsOverChannelLimit": "En WhatsApp se cargan hasta {{limit}} renglones; el máximo es {{maximum}}.",
     "languagesRow": "Idiomas",
     "languagesHelpLabel": "Cómo se elige el idioma",
     "withoutCulture_one": "Sin el {{language}}: falta {{count}} texto",
@@ -1373,7 +1375,10 @@
     "removeDescription_other": "Se quitan el bloque «{{name}}» y sus {{count}} preguntas.",
     "removeDescription_zero": "Se quita el bloque «{{name}}», que no tiene preguntas.",
     "removeAction": "Quitar el bloque",
-    "typeLocked": "Un bloque con preguntas no cambia de tipo."
+    "typeLocked": "Un bloque con preguntas no cambia de tipo.",
+    "previewTitle": "{{name}} · renglón {{row}}",
+    "addRow": "¿Agregás un renglón?",
+    "addAnotherRow": "¿Agregás otro renglón?"
   },
   "multiple": {
     "allow": "Permitir elegir varias",

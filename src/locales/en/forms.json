@@ -232,6 +232,8 @@
     "addedRow": "Added",
     "changedRow": "Changed",
     "removedRow": "Removed",
+    "movedToRowsRow": "Move into rows",
+    "rowsOverChannelLimit": "WhatsApp loads up to {{limit}} rows; the maximum is {{maximum}}.",
     "languagesRow": "Languages",
     "languagesHelpLabel": "How the language is chosen",
     "withoutCulture_one": "Without {{language}}: {{count}} text missing",
@@ -1373,7 +1375,10 @@
     "removeDescription_other": "The block «{{name}}» and its {{count}} questions are removed.",
     "removeDescription_zero": "The block «{{name}}», which has no questions, is removed.",
     "removeAction": "Remove the block",
-    "typeLocked": "A block with questions keeps its type."
+    "typeLocked": "A block with questions keeps its type.",
+    "previewTitle": "{{name}} · row {{row}}",
+    "addRow": "Add a row?",
+    "addAnotherRow": "Add another row?"
   },
   "multiple": {
     "allow": "Allow choosing several",

@@ -34,6 +34,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("checkbox", { name: text(language, "Se carga varias veces", "Loaded several times"), exact: true })).toBeChecked();
     await expect(page.getByRole("option", { name: text(language, "Foto · No se carga varias veces", "Photo · Not loaded several times"), exact: true })).toBeDisabled();
     await expect(page.getByRole("option", { name: text(language, "Renglones · Ya hay un bloque de renglones", "Rows · There is already a block of rows"), exact: true })).toBeDisabled();
+    // With a question of the block open, the preview shows the WhatsApp screen of a row (beside the editor on a wide screen).
+    if (width >= 1024) await expect(page.getByText(text(language, "Artículos · renglón 1", "Items · row 1"), { exact: true })).toBeVisible();
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/rg6-row-question-" + language + "-" + width + ".png", fullPage: true });
   });
