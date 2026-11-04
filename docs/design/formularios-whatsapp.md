@@ -775,7 +775,8 @@ Quedó programada el mismo día.
   en Acciones. Se van la vista previa chica que había fijado DC1 y «Contenido en Español»; la pestaña PDF de la vista
   rápida sigue.
 - **Los avisos:** el mensaje a quien la cargó es un renglón, con su nombre debajo. Cada persona de un aviso a un rol va en
-  su renglón, debajo de la acción, aunque sea una sola, con el estado de su envío y, si hace falta, «Resolver envío»: el
+  su renglón, debajo de la acción, aunque sea una sola, con el estado de su envío y, si hace falta, «Resolver envío» o,
+  con la falla confirmada, «Reintentar» ([RT1-A](#reintentar-el-aviso-a-una-persona-de-un-rol-rt1-a--2026-11-03)): el
   aviso puede estar «Hecho» aunque una persona no lo haya recibido. Los acuses de WhatsApp («Entregado» y «Leído») van
   con su hora debajo de la persona, aparte de la revisión humana.
 - **Las acciones del encabezado, junto a la navegación:** en la vista rápida, «Abrir en pantalla completa» y «Descargar ▾»
@@ -929,3 +930,28 @@ Las escenas `forms.spec` (el diálogo de publicar con un problema y un máximo q
 `formPdf.spec`, `formPublicationReads.spec` y `formResponseFull.spec` comprueban los textos sin el idioma del menú, y
 `formLanguages.spec` el renglón «Idiomas» con una traducción empezada; ninguna referencia de imagen cambió.
 
+
+## Reintentar el aviso a una persona de un rol, RT1-A — 2026-11-03
+
+En la prueba completa, la regla de «Recepción de insumos» avisó al rol Agrónomo por INS-000004 y a la única persona del
+rol no le llegó: su WhatsApp no estaba vinculado. El usuario lo arregló y buscó «Reintentar» en la actividad, pero no
+estaba: el aviso a un rol termina «Hecho» cuando todas las personas lo recibieron o fallaron, y sólo se reintentaba el
+mensaje a quien la cargó. En el lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila RT, eligió **RT1-A**. Descartó
+RT1-B (un botón «Reintentar a N personas» en el renglón del aviso) y RT0 (dejarlo como estaba).
+
+- **En el renglón de la persona:** «Reintentar» va en Acciones, como «Resolver envío», con una (i) que dice que le manda
+  el aviso sólo a esa persona y qué revisar antes (el WhatsApp vinculado y la ventana de 24 horas). En la vista rápida va
+  debajo del texto de la persona, y en el celular junto a su estado.
+- **Sólo con la falla confirmada:** aparece si el servidor sabe que no salió (`canRetry`): WhatsApp lo rechazó o alguien
+  resolvió «No salió», que ahora dice «El aviso queda para reintentar a esta persona.». Un envío sin confirmar sigue con
+  «Resolver envío», y uno que salió no tiene botón. Sin `formrules.manage` se ve la falla y su motivo, sin el botón.
+- **Mientras reintenta:** sólo ese botón dice «Reintentando…» con su aro y los demás controles se apagan. El aviso vuelve
+  a «En curso» y la persona a «Por enviar»; la actividad se relee sola hasta que el aviso vuelve a «Hecho», con
+  «Enviado» y los acuses debajo de la persona, o con «No se pudo enviar» y el motivo nuevo. A las demás personas no se
+  les repite, y la acción siguiente de la regla no vuelve a correr.
+- **Si cambió:** el pedido lleva la revisión del aviso; un 409 (otra persona ya lo reintentó o lo resolvió) muestra el
+  aviso del servidor y relee la actividad antes de permitir otro intento.
+
+La escena `formWorkflow.spec` recorre el reintento de Marcos Gil, con Ana Pérez ya avisada, en es/en a 1440, 390 y 320
+px.
