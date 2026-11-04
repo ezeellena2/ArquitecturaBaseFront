@@ -22,12 +22,12 @@ de Git, este documento congela lo elegido. Las pantallas, la navegación y los t
 
 | Tablero | Qué define |
 | --- | --- |
-| **CW1-B · Desde «Formularios»** (elegida) | «Cargar» al final de cada fila de MF1 para quien tiene «Completar formularios», salvo en los dados de baja. Quien sólo completa ve «Formularios» con los nombres sin enlace, sin «Por aprobar», «Respuestas», «Última respuesta» ni el segmento de estado. En el celular, «Cargar» queda al final de la tabla, con su desplazamiento contenido. La vista propia («Mis cargas») es de la Etapa 2. |
+| **CW1-B · Desde «Formularios»** (elegida) | «Cargar» al final de cada fila de MF1 para quien tiene «Completar formularios», salvo en los dados de baja. Quien sólo completa ve «Formularios» sin «Por aprobar», «Respuestas», «Última respuesta» ni el segmento de estado; desde la Etapa 2, con «Mis cargas», «Mi última carga» y el nombre que abre su planilla ([lo propio](#lo-propio-etapa-2--2026-11-04)). En el celular, «Cargar» queda al final de la tabla, con su desplazamiento contenido. |
 | **CW2-A · En su propia página** (elegida) | «Nueva respuesta» en `/formularios/{id}/cargar`, con el formulario en las migas. «Volver» lleva a «Formularios» o a la planilla, según de dónde vino. Cancelar y Enviar en la banda; en el celular, Enviar fijo al pie. Se valida al enviar: cada error en su pregunta y el foco en la primera; después, en vivo. Salir con algo cargado pide confirmar. Mientras sube, el botón dice «Enviando… 64 %». Desde el 2026-11-02 tiene también «Mantener las respuestas para la siguiente» ([AR2-A](#mantener-lo-cargado-en-la-página-ar2-a--2026-11-02)). |
 | **CW2-B · En un panel junto a la planilla** (elegida) | «Agregar respuesta» en el encabezado de la planilla abre el panel al costado, como D2, sólo en escritorio; en el celular abre la página. Una columna; al enviar, el aviso dice el número y la planilla se relee con la respuesta marcada. «Mantener las respuestas para la siguiente» conserva todo menos los archivos. «Pantalla completa» pasa lo cargado a la página. |
 | **CW3 · Las listas** | Una pregunta de catálogo es siempre una lista con búsqueda en el servidor, de 50 en 50, con los filtros fijos y por persona de quien carga. Muestra el total, la descripción de cada opción y «Mostrar 50 más». La única opción que dejan los filtros viene elegida. En el celular, la lista ocupa la pantalla, con la búsqueda arriba y «Listo» al pie al elegir varias. Sin el dato de la persona, la página lo dice y Enviar queda apagado con el motivo. |
 | **CW4 · Fotos y documentos** | Miniaturas o archivos con «Agregar» y el contador; viajan con el envío, así que quitar no pide confirmación. Tipo, tamaño y cantidad se revisan antes de enviar. En el celular, «Tomar foto» primero y «Quitar» en rojo. |
-| **CW5 · Después de enviar** | La página muestra «Enviada» con lo que se mandó, el número y el estado, con «Cargar otra», «Volver a Formularios» y, para quien ve respuestas, «Ver en la planilla». Una versión nueva se ofrece con «Pasar a la versión nueva», conservando lo cargado; un formulario dado de baja ya no se carga. Con «Mantener las respuestas para la siguiente» marcada no se muestra: el formulario queda listo para la siguiente ([AR2-A](#mantener-lo-cargado-en-la-página-ar2-a--2026-11-02)). |
+| **CW5 · Después de enviar** | La página muestra «Enviada» con lo que se mandó, el número y el estado, con «Cargar otra», «Volver a Formularios» y «Ver en la planilla» (desde la Etapa 2, también para quien sólo completa, que ve la de lo suyo). Una versión nueva se ofrece con «Pasar a la versión nueva», conservando lo cargado; un formulario dado de baja ya no se carga. Con «Mantener las respuestas para la siguiente» marcada no se muestra: el formulario queda listo para la siguiente ([AR2-A](#mantener-lo-cargado-en-la-página-ar2-a--2026-11-02)). |
 | **CW6-A · La planilla de siempre** (elegida) | La respuesta cargada es una fila más: «Cargó» es quien la cargó y «Canal» dice App o WhatsApp, con su filtro rápido, el chip y «Limpiar todo». El detalle dice «Recibida · … · en la app, la cargó Ana Pérez» en el lugar del origen de WhatsApp. El Excel no cambia: el canal ya salía siempre. |
 
 Cómo se arma un formulario (2026-10-30):
@@ -38,7 +38,7 @@ Cómo se arma un formulario (2026-10-30):
 | **CW13-A · Unidades en la etiqueta** (elegida) | La unidad la escribe el autor en la etiqueta, «Densidad (kg/ha)», igual en todos lados; el campo no la muestra adentro. |
 | **CW16 · Hasta tres por renglón y zonas plegables** (elegida) | Cada zona es una grilla de tres columnas en escritorio, dos en tableta y una en el celular y en el panel, en el orden del editor; una pregunta que no entra baja de renglón, con una línea entre renglones. Una columna: número, fecha, sí o no, texto corto de hasta 30 y lista desplegable; dos: catálogo, opciones en fila y texto corto de hasta 80; el renglón entero: texto largo, texto corto de más de 80, elegir varias, fotos y documentos. Las zonas se pliegan, arrancan abiertas y, plegadas, dicen cuántas preguntas se respondieron; al enviar, una zona plegada con algo para corregir se abre sola. Desde el 2026-11-02, [AR1-A](#dos-anchos-ar1-a--2026-11-02) deja dos anchos, una columna o el renglón entero, y el panel con sus zonas. |
 
-Quedan para etapas siguientes, con su tablero en el mismo lienzo: la vista propia de quien sólo completa (Etapa 2), corregir
+Quedan para etapas siguientes, con su tablero en el mismo lienzo: la vista propia de quien sólo completa (Etapa 2, [hecha](#lo-propio-etapa-2--2026-11-04)), corregir
 (CW10-A) y anular (CW11-A) en la Etapa 3, las listas dependientes (CW7) en la Etapa 4 y los títulos de sección (CW15-B) en la
 Etapa 5.
 
@@ -90,8 +90,8 @@ dibujadas las preguntas en CW2-A y CW2-B.
 - **Los errores se leen donde se corrigen.** Un faltante o un formato marca su pregunta; si una opción se dio de baja entre
   abrir y enviar, su pregunta dice que «Lote 4» ya no está disponible; un corte deja un aviso que pide volver a tocar Enviar.
   La versión nueva y la baja llegan como aviso arriba, sin perder lo cargado.
-- **Quien sólo completa no lee respuestas.** «Enviada» se arma con lo que la persona cargó y el número, estado y hora del envío;
-  no pide la respuesta guardada. Las migas muestran el formulario como texto, sin enlace a una planilla que no puede abrir.
+- **«Enviada» se arma con lo enviado.** Lo que la persona cargó y el número, estado y hora del envío, sin pedir la respuesta
+  guardada. Las migas llevan a la planilla del formulario; para quien sólo completa, la de lo suyo (Etapa 2).
 - **Las migas miden la barra.** En «Nueva respuesta» y en el detalle de una respuesta, con la barra superior de menos de
   40 rem (el celular, o una tableta con un panel del menú abierto) quedan sólo el formulario y la hoja: «Siembra / Nueva
   respuesta». Decide el ancho de la barra (`@container` en `Topbar`) y no el de la pantalla, así no quedan segmentos vacíos
@@ -196,6 +196,26 @@ programada el mismo día.
   Programándolo apareció que, con las mismas respuestas mantenidas y sin archivos, el envío siguiente repetía el pedido del
   anterior y recibía su número; ahora un envío que llegó suelta su pedido, en la página y en el panel, y sólo un reintento
   después de un corte lo repite.
+
+## Lo propio, Etapa 2 — 2026-11-04
+
+Quien sólo tiene «Completar formularios» lee lo que cargó, por la app o por WhatsApp, como dibujan **CW6-C** y CW9: la misma
+planilla de siempre, recortada a lo suyo. El servidor acota cada lectura, así que una respuesta ajena no se ve ni por su
+dirección.
+
+- **«Formularios»** suma «Mis cargas» y «Mi última carga» (número y fecha, sin estado; sin cargas, «Todavía no cargaste»). El
+  nombre abre su planilla y «Cargar» sigue al final de la fila. No tiene el segmento de los dados de baja.
+- **La planilla** es la de PL1-A y PL2-A, sin la columna «Cargó», sin «Cargó» en «Filtros» y sin «Exportar a Excel», con
+  «Agregar respuesta» como siempre: el panel en la compu y la página en el celular.
+- **El detalle dice en qué quedó:** los momentos de TL1-A (cuándo llegó y por dónde, «Por WhatsApp» o «En la app», sin su
+  nombre; si la rechazaron, el motivo, sin el rol ni quién decidió), la respuesta, las fotos y el PDF. No tiene la pestaña
+  Actividad. La pantalla completa, a la que lleva la fila en el celular, muestra los mismos momentos arriba de la respuesta y
+  no tiene la sección Actividad.
+- **Después de enviar,** «Ver en la planilla» y las migas de «Nueva respuesta» llevan a su planilla.
+
+Diferencias con el dibujo, por elecciones posteriores que valen para toda la app: no hay «42 respuestas tuyas» arriba de la
+tabla (PL1-A deja la cantidad al pie, en la paginación); «Más filtros» es «Filtros» (PL1-A); y el detalle se arma con los
+momentos de TL1-A, que ponen la fecha a la derecha.
 
 ## Listas dependientes, CW7 — 2026-11-04
 
