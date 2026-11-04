@@ -3,14 +3,14 @@ import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/shared/ui/notifications";
 import { LoginMethodsCard } from "../components/LoginMethodsCard";
+import { WhatsAppChatCard } from "../components/WhatsAppChatCard";
 import { Surface } from "@/shared/ui/Surface";
-import { currentUserQueryKey, useCurrentUser } from "@/auth/useCurrentUser";
+import { currentUserQueryKey, useCurrentUser, type CurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { displayNameMaxLength } from "@/shared/api/accountRules";
 import { updateProfile } from "@/shared/api/profile";
 import { isSupportedLanguage, supportedLanguages, type SupportedLanguage } from "@/shared/i18n";
-import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
@@ -24,9 +24,9 @@ interface Draft {
   timeZoneId: string;
 }
 
-/// Las dos superficies van lado a lado desde el ancho de escritorio, y una debajo de la otra en uno más angosto. Cada
-/// una mide lo suyo (`items-start`): la de los medios de ingreso no se estira hasta el alto del formulario.
-const surfacesClassName = "grid items-start gap-4 lg:grid-cols-2";
+/// Las zonas van una debajo de la otra, a todo el ancho, como en Configuración (tablero PF1-A): los datos, los medios de
+/// ingreso y el chat de WhatsApp.
+const zonesClassName = "flex flex-col gap-4";
 
 /// Los desplegables son `<select>` nativos y no el `Select` de shadcn: la lista de zonas horarias pasa las
 /// cuatrocientas opciones, y el nativo trae gratis la búsqueda por teclado del sistema operativo y el
@@ -44,14 +44,32 @@ function timeZoneOptions(current: string | undefined): string[] {
   return current && !zones.includes(current) ? [current, ...zones].sort() : zones;
 }
 
+function draftOf(user: CurrentUser): Draft {
+  return {
+    displayName: user.displayName ?? "",
+    // Si la cuenta tuviera un idioma que el front no sabe hablar, el desplegable no lo podría mostrar.
+    culture: isSupportedLanguage(user.culture) ? user.culture : "es",
+    timeZoneId: user.timeZoneId,
+  };
+}
+
+/// Guardar se apaga sin cambios, como en el resto de la app: lo que se compara es lo que viajaría en el PUT.
+function hasChanges(draft: Draft, user: CurrentUser): boolean {
+  const saved = draftOf(user);
+
+  return (draft.displayName.trim() || null) !== (user.displayName ?? null)
+    || draft.culture !== saved.culture
+    || draft.timeZoneId !== saved.timeZoneId;
+}
+
 /// `/perfil` (sección 9 del spec de la Fase 4): nombre, idioma y zona horaria de la propia cuenta. No pide
 /// permiso, solo sesión: cualquiera edita el suyo. Se entra desde "Mi perfil", en el menú del usuario.
 ///
-/// Son dos superficies, cada una con su banda (tablero "WhatsApp · Perfil: correo y WhatsApp"): los medios de
-/// ingreso (`LoginMethodsCard`: el correo y el número, con lo que se puede agregar o sacar) y los datos del perfil,
-/// que es este formulario. El correo salió del formulario: es un medio de ingreso, no un dato que se edite acá.
+/// Se arma como Configuración (tablero PF1-A, elegido el 2026-11-03): tres zonas, una debajo de la otra. «Datos del
+/// perfil» es este formulario; «Medios de ingreso» (`LoginMethodsCard`) dice con qué entra la cuenta y su último ingreso;
+/// «Chat de WhatsApp» (`WhatsAppChatCard`), si el chat del número está vinculado y si llegan los avisos.
 export function ProfilePage() {
-  const { t, i18n } = useTranslation("profile");
+  const { t } = useTranslation("profile");
   const { data: user, isPending } = useCurrentUser();
   const queryClient = useQueryClient();
   const formId = useId();
@@ -86,12 +104,7 @@ export function ProfilePage() {
   if (user && loadedUserId !== user.id) {
     setLoadedUserId(user.id);
     setLoadedCulture(user.culture);
-    setDraft({
-      displayName: user.displayName ?? "",
-      // Si la cuenta tuviera un idioma que el front no sabe hablar, el desplegable no lo podría mostrar.
-      culture: isSupportedLanguage(user.culture) ? user.culture : "es",
-      timeZoneId: user.timeZoneId,
-    });
+    setDraft(draftOf(user));
   } else if (user && draft && loadedCulture !== user.culture) {
     // El idioma de la cuenta cambió desde afuera de esta pantalla (el menú del usuario, que lo guarda de una).
     // El desplegable tiene que seguirlo: si no, queda contradiciendo a la interfaz y el primer Guardar manda
@@ -108,16 +121,14 @@ export function ProfilePage() {
   if (!user || !draft) {
     return (
       <Page title={t("title")}>
-        {/* Mientras el perfil no llegó, las dos superficies ocupan su lugar. Si `/api/me` falló no hay nada que
-            editar: de ese error se ocupa el aviso global del queryClient, igual que en el tablero. */}
+        {/* Mientras el perfil no llegó, las zonas ocupan su lugar. Si `/api/me` falló no hay nada que editar: de ese
+            error se ocupa el aviso global del queryClient, igual que en el tablero. */}
         {isPending ? (
-          <div className={surfacesClassName}>
+          <div className={zonesClassName}>
             <Surface padded>
-              <Skeleton aria-hidden="true" className="h-14" />
               <Skeleton aria-hidden="true" className="h-14" />
             </Surface>
             <Surface padded>
-              <Skeleton aria-hidden="true" className="h-14" />
               <Skeleton aria-hidden="true" className="h-14" />
               <Skeleton aria-hidden="true" className="h-14" />
             </Surface>
@@ -132,15 +143,13 @@ export function ProfilePage() {
 
   return (
     <Page title={t("title")}>
-      <div className={surfacesClassName}>
-        <LoginMethodsCard user={user} />
-
-        {/* Guardar actúa sobre toda la superficie: va en su banda, a la altura del título, y envía el formulario por
-            su id, como en el editor de roles. */}
+      <div className={zonesClassName}>
+        {/* Guardar actúa sobre toda la zona: va en su banda, a la altura del título, y envía el formulario por su id,
+            como en el editor de roles. */}
         <Surface
           title={t("sections.details")}
           actions={
-            <Button type="submit" form={formId} pending={mutation.isPending}>
+            <Button type="submit" form={formId} disabled={!hasChanges(draft, user)} pending={mutation.isPending}>
               {mutation.isPending ? t("form.saving") : t("form.submit")}
             </Button>
           }
@@ -148,25 +157,15 @@ export function ProfilePage() {
           <form
             id={formId}
             noValidate
-            className="flex flex-col"
+            className="flex flex-wrap gap-4 p-4"
             onSubmit={(event) => {
               event.preventDefault();
               mutation.mutate(draft);
             }}
           >
-            <div className="flex flex-col gap-3.5 p-4">
-              {/* El último ingreso no se edita: es lo que el sistema registró. Llega en UTC y se muestra en la zona
-                  horaria del perfil, igual que las fechas del listado de usuarios. Va acá y no en el inicio: es un
-                  dato de la cuenta, y la cuenta se mira en su pantalla. */}
-              <div className="flex flex-col gap-1.5">
-                <p className="text-sm font-medium text-[var(--color-content)]">{t("form.lastLogin")}</p>
-                <p className="text-sm text-[var(--color-content)]">
-                  {user.lastLoginAtUtc
-                    ? formatDateTimeInZone(user.lastLoginAtUtc, i18n.language, user.timeZoneId)
-                    : t("form.lastLoginNever")}
-                </p>
-              </div>
-
+            {/* Del ancho de lo que llevan, como en Configuración: el idioma y la zona horaria miden lo mismo allá. En el
+                celular, todo el ancho. */}
+            <div className="w-full sm:w-80">
               <FormField label={t("form.displayName")} error={fieldErrors?.displayName?.[0]}>
                 <Input
                   type="text"
@@ -176,7 +175,9 @@ export function ProfilePage() {
                   onChange={(event) => setDraft({ ...draft, displayName: event.target.value })}
                 />
               </FormField>
+            </div>
 
+            <div className="w-full sm:w-72">
               <FormField label={t("form.language")} error={fieldErrors?.culture?.[0]}>
                 <NativeSelect
                   value={draft.culture}
@@ -195,9 +196,12 @@ export function ProfilePage() {
                   ))}
                 </NativeSelect>
               </FormField>
+            </div>
 
-              {/* Los nombres de las zonas no se traducen: son identificadores de IANA, los mismos que guarda el
-                  backend, y son la forma en que la gente las busca ("Montevideo", "Madrid"). */}
+            {/* Los nombres de las zonas no se traducen: son identificadores de IANA, los mismos que guarda el backend, y
+                son la forma en que la gente las busca ("Montevideo", "Madrid"). Se leen con espacios en vez de guiones
+                bajos, como en Configuración; el valor que viaja no cambia. */}
+            <div className="w-full sm:w-96">
               <FormField label={t("form.timeZone")} error={fieldErrors?.timeZoneId?.[0]}>
                 <NativeSelect
                   value={draft.timeZoneId}
@@ -205,15 +209,18 @@ export function ProfilePage() {
                 >
                   {timeZones.map((zone) => (
                     <option key={zone} value={zone}>
-                      {zone}
+                      {zone.replaceAll("_", " ")}
                     </option>
                   ))}
                 </NativeSelect>
               </FormField>
-
             </div>
           </form>
         </Surface>
+
+        <LoginMethodsCard user={user} />
+
+        <WhatsAppChatCard user={user} />
       </div>
     </Page>
   );

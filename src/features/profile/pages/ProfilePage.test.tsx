@@ -109,7 +109,7 @@ describe("ProfilePage", () => {
 
     renderRouteWithProviders("/perfil");
 
-    await screen.findByRole("textbox", { name: "Nombre" });
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre" }), " Pérez");
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
     const saving = await screen.findByRole("button", { name: "Guardando…" });
@@ -229,31 +229,58 @@ describe("ProfilePage", () => {
 
     renderRouteWithProviders("/perfil");
 
-    expect(await screen.findByText("Todavía no hay ninguno.")).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no hay ninguno")).toBeInTheDocument();
   });
 
-  it("splits the screen in two surfaces: the sign-in methods and the profile details", async () => {
+  /// Tablero PF1-A: como Configuración, una zona debajo de la otra. Los datos que se editan van primero y en un renglón;
+  /// el correo y el último ingreso son datos de los medios de ingreso, no campos.
+  it("puts the details first and the sign-in methods, with the last sign-in, below them", async () => {
     server.use(
       http.get("/api/me", () => HttpResponse.json({ ...currentUser, lastLoginAtUtc: "2026-09-18T12:00:00Z" })),
     );
 
     renderRouteWithProviders("/perfil");
 
-    const methods = within(await screen.findByRole("region", { name: "Medios de ingreso" }));
-    const details = within(screen.getByRole("region", { name: "Datos del perfil" }));
+    const detailsZone = await screen.findByRole("region", { name: "Datos del perfil" });
+    const methodsZone = screen.getByRole("region", { name: "Medios de ingreso" });
+    const details = within(detailsZone);
+    const methods = within(methodsZone);
 
-    // El correo es un medio de ingreso: sale del formulario y pasa a su superficie.
-    expect(methods.getByText("Correo electrónico")).toBeInTheDocument();
+    expect(detailsZone.compareDocumentPosition(methodsZone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(methods.getByText("ana@example.com")).toBeInTheDocument();
     expect(details.queryByText("ana@example.com")).not.toBeInTheDocument();
+    expect(methods.getByText("Último ingreso")).toBeInTheDocument();
+    expect(methods.getByText("18 sept 2026, 9:00")).toBeInTheDocument();
+    expect(details.queryByText("Último ingreso")).not.toBeInTheDocument();
 
-    // El formulario queda igual: último ingreso, nombre, idioma, zona horaria y Guardar, sin leyendas debajo de los campos.
-    expect(details.getByText("Último ingreso")).toBeInTheDocument();
-    expect(details.getByText("18 sept 2026, 9:00")).toBeInTheDocument();
+    // Sin leyendas debajo de los campos.
     expect(details.getByRole("textbox", { name: "Nombre" })).not.toHaveAccessibleDescription();
     expect(details.getByRole("combobox", { name: "Idioma" })).not.toHaveAccessibleDescription();
     expect(details.getByRole("combobox", { name: "Zona horaria" })).not.toHaveAccessibleDescription();
-    expect(details.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
+  });
+
+  it("keeps Save off until something changes, and off again when it goes back to what is saved", async () => {
+    renderRouteWithProviders("/perfil");
+
+    const name = await screen.findByRole("textbox", { name: "Nombre" });
+    const save = screen.getByRole("button", { name: "Guardar" });
+    expect(save).toBeDisabled();
+
+    await userEvent.type(name, "s");
+    expect(save).toBeEnabled();
+
+    await userEvent.type(name, "{Backspace}");
+    expect(save).toBeDisabled();
+  });
+
+  /// Como en Configuración: la zona se lee con espacios, y lo que se guarda sigue siendo el identificador de IANA.
+  it("reads the time zone with spaces instead of underscores", async () => {
+    renderRouteWithProviders("/perfil");
+
+    const zone = await screen.findByRole("combobox", { name: "Zona horaria" });
+
+    expect(zone).toHaveDisplayValue("America/Argentina/Buenos Aires");
+    expect(zone).toHaveValue("America/Argentina/Buenos_Aires");
   });
 
   it("opens for an account created with WhatsApp, without an empty email", async () => {
@@ -266,7 +293,7 @@ describe("ProfilePage", () => {
     expect(details.getByRole("textbox", { name: "Nombre" })).toHaveValue("");
 
     const methods = within(screen.getByRole("region", { name: "Medios de ingreso" }));
-    expect(methods.getByText("Todavía no agregaste uno.")).toBeInTheDocument();
+    expect(methods.getByText("Sin correo")).toBeInTheDocument();
     expect(methods.getByText("+54 9 11 2345-6789")).toBeInTheDocument();
   });
 });

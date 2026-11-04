@@ -2,36 +2,69 @@
   "title": "My profile",
   "sections": {
     "loginMethods": "Sign-in methods",
-    "details": "Profile details"
+    "details": "Profile details",
+    "chat": "WhatsApp chat"
   },
   "methods": {
     "verified": "Verified",
+    "unverified": "Unverified",
+    "unverifiedHint": "An administrator added it and you haven't signed in with it yet.",
     "email": {
       "label": "Email address",
-      "empty": "You haven't added one yet.",
+      "empty": "No email",
       "add": "Add email"
     },
     "whatsapp": {
       "label": "WhatsApp",
-      "notLinked": "Not linked",
-      "link": "Link",
+      "notLinked": "No number",
+      "link": "Add number",
+      "verify": "Verify",
       "unlink": "Unlink",
       "onlyMethod": "It's your only sign-in method: to unlink it, add an email first."
-    }
+    },
+    "google": {
+      "label": "Google",
+      "linked": "Account linked"
+    },
+    "lastLogin": "Last sign-in",
+    "lastLoginNever": "None yet"
   },
   "form": {
-    "lastLogin": "Last sign-in",
-    "lastLoginNever": "There isn't one yet.",
     "displayName": "Name",
     "language": "Language",
     "timeZone": "Time zone",
     "submit": "Save",
     "saving": "Saving…"
   },
+  "chat": {
+    "help": "With the chat linked to your account, notices and forms reach you on WhatsApp.",
+    "link": {
+      "label": "Link",
+      "linked": "Linked",
+      "notLinked": "Not linked",
+      "noChat": "No chat yet",
+      "action": "Link",
+      "title": "Link the chat",
+      "success": "Your chat is linked."
+    },
+    "notices": {
+      "label": "Notices",
+      "help": "WhatsApp lets us send you notices for 24 hours after your last message. Write to us and they start again.",
+      "until": "They arrive until {{date}}",
+      "paused": "Paused",
+      "none": "They don't arrive"
+    },
+    "open": "Open the chat",
+    "hello": "Hi"
+  },
   "linkWhatsApp": {
-    "title": "Link WhatsApp",
+    "title": "Add number",
     "taken": "This number is already linked to another account. If it's yours, ask an administrator to release it.",
-    "success": "Your WhatsApp is linked."
+    "success": "Your number was added."
+  },
+  "verifyWhatsApp": {
+    "title": "Verify your number",
+    "success": "Your number is verified."
   },
   "addEmail": {
     "title": "Add email",

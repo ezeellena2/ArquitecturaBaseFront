@@ -123,7 +123,7 @@ describe("linking WhatsApp", () => {
   });
 
   async function openAndSendNumber(number = "11 2345-6789") {
-    const dialog = await openDialog("Vincular", "Vincular WhatsApp");
+    const dialog = await openDialog("Agregar número", "Agregar número");
     await userEvent.type(within(dialog).getByRole("textbox", { name: "Número de WhatsApp" }), number);
     await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código" }));
 
@@ -133,7 +133,7 @@ describe("linking WhatsApp", () => {
   it("asks for the number, with the country first", async () => {
     linkWhatsAppServer();
 
-    const dialog = await openDialog("Vincular", "Vincular WhatsApp");
+    const dialog = await openDialog("Agregar número", "Agregar número");
 
     // Sin descripción debajo del título: «Enviar código» ya dice lo que va a pasar.
     expect(dialog).not.toHaveAccessibleDescription();
@@ -147,7 +147,7 @@ describe("linking WhatsApp", () => {
   it("checks that there is a number before sending", async () => {
     const calls = linkWhatsAppServer();
 
-    const dialog = await openDialog("Vincular", "Vincular WhatsApp");
+    const dialog = await openDialog("Agregar número", "Agregar número");
     await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código" }));
 
     expect(within(dialog).getByRole("textbox", { name: "Número de WhatsApp" })).toHaveAccessibleDescription(
@@ -163,7 +163,7 @@ describe("linking WhatsApp", () => {
 
     expect(await within(dialog).findByRole("group", { name: "Código" })).toBeInTheDocument();
     expect(calls.codeRequests).toEqual([{ country: "AR", number: "11 2345-6789" }]);
-    expect(screen.getByRole("dialog", { name: "Vincular WhatsApp" })).toBe(dialog);
+    expect(screen.getByRole("dialog", { name: "Agregar número" })).toBe(dialog);
     expect(dialog).toHaveTextContent("Te mandamos un código al +54 9 11 •••• 6789. Vence en 10 minutos.");
     // Que en WhatsApp Web no se ve va en la (i) junto a «Código», no en un renglón debajo de los botones.
     expect(within(dialog).getByRole("button", { name: "Más información sobre Código" })).toHaveAccessibleDescription(
@@ -262,7 +262,7 @@ describe("linking WhatsApp", () => {
     await typeCode(dialog, "482913");
     await userEvent.click(within(dialog).getByRole("button", { name: "Verificar" }));
 
-    expect(await screen.findByText("Vinculamos tu WhatsApp.")).toBeInTheDocument();
+    expect(await screen.findByText("Agregamos tu número.")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(calls.confirmations).toEqual([{ phone, code: "482913" }]);
 
@@ -338,7 +338,7 @@ describe("linking WhatsApp", () => {
       expect(box).toHaveAttribute("aria-invalid", "true");
     }
     // El diálogo sigue abierto: se puede escribir otro.
-    expect(screen.getByRole("dialog", { name: "Vincular WhatsApp" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Agregar número" })).toBeInTheDocument();
   });
 
   it("uses one notice for each uncertain verification and preserves the code", async () => {
@@ -545,7 +545,7 @@ describe("linking WhatsApp", () => {
   it("closes with Cancel without asking for anything", async () => {
     const calls = linkWhatsAppServer();
 
-    const dialog = await openDialog("Vincular", "Vincular WhatsApp");
+    const dialog = await openDialog("Agregar número", "Agregar número");
     await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

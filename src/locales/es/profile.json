@@ -2,36 +2,69 @@
   "title": "Mi perfil",
   "sections": {
     "loginMethods": "Medios de ingreso",
-    "details": "Datos del perfil"
+    "details": "Datos del perfil",
+    "chat": "Chat de WhatsApp"
   },
   "methods": {
     "verified": "Verificado",
+    "unverified": "Sin verificar",
+    "unverifiedHint": "Lo cargó un administrador y todavía no entraste con él.",
     "email": {
       "label": "Correo electrónico",
-      "empty": "Todavía no agregaste uno.",
+      "empty": "Sin correo",
       "add": "Agregar correo"
     },
     "whatsapp": {
       "label": "WhatsApp",
-      "notLinked": "Sin vincular",
-      "link": "Vincular",
+      "notLinked": "Sin número",
+      "link": "Agregar número",
+      "verify": "Verificar",
       "unlink": "Desvincular",
       "onlyMethod": "Es tu único medio de ingreso: para desvincularlo, primero agregá un correo."
-    }
+    },
+    "google": {
+      "label": "Google",
+      "linked": "Cuenta vinculada"
+    },
+    "lastLogin": "Último ingreso",
+    "lastLoginNever": "Todavía no hay ninguno"
   },
   "form": {
-    "lastLogin": "Último ingreso",
-    "lastLoginNever": "Todavía no hay ninguno.",
     "displayName": "Nombre",
     "language": "Idioma",
     "timeZone": "Zona horaria",
     "submit": "Guardar",
     "saving": "Guardando…"
   },
+  "chat": {
+    "help": "Con el chat vinculado a tu cuenta, te llegan por WhatsApp los avisos y los formularios.",
+    "link": {
+      "label": "Vínculo",
+      "linked": "Vinculado",
+      "notLinked": "Sin vincular",
+      "noChat": "Sin chat todavía",
+      "action": "Vincular",
+      "title": "Vincular el chat",
+      "success": "Vinculamos el chat."
+    },
+    "notices": {
+      "label": "Avisos",
+      "help": "WhatsApp deja mandarte avisos hasta 24 horas después de tu último mensaje. Si nos escribís, vuelven.",
+      "until": "Llegan hasta el {{date}}",
+      "paused": "Pausados",
+      "none": "No llegan"
+    },
+    "open": "Abrir el chat",
+    "hello": "Hola"
+  },
   "linkWhatsApp": {
-    "title": "Vincular WhatsApp",
+    "title": "Agregar número",
     "taken": "Este número ya está vinculado a otra cuenta. Si es tuyo, pedile a un administrador que lo libere.",
-    "success": "Vinculamos tu WhatsApp."
+    "success": "Agregamos tu número."
+  },
+  "verifyWhatsApp": {
+    "title": "Verificar el número",
+    "success": "Verificamos tu número."
   },
   "addEmail": {
     "title": "Agregar correo",

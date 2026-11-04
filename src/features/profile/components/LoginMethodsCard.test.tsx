@@ -76,7 +76,7 @@ describe("LoginMethodsCard", () => {
 
       const methods = await openMethods();
 
-      expect(methods.getByText("Todavía no agregaste uno.")).toBeInTheDocument();
+      expect(methods.getByText("Sin correo")).toBeInTheDocument();
       // Para qué sirve ya lo avisa el Inicio, con «Agregar correo».
       expect(methods.queryByText(/recuperás la cuenta/)).not.toBeInTheDocument();
       expect(methods.getByRole("button", { name: "Agregar correo" })).toBeInTheDocument();
@@ -95,13 +95,32 @@ describe("LoginMethodsCard", () => {
       expect(methods.getByText("Verificado")).toBeInTheDocument();
     });
 
-    it("shows a number that is not verified without the badge", async () => {
-      withProfile({ ...phoneOnlyUser, phoneNumberConfirmed: false });
+    /// Lo que carga un administrador queda sin verificar (tablero PF1-A): la insignia lo dice, con el porqué en su
+    /// tooltip, y «Verificar» confirma ese mismo número con un código, ya escrito.
+    it("says a number an administrator added is unverified, and verifies it with the number already written", async () => {
+      withProfile({ ...phoneOnlyUser, phoneNumberConfirmed: false, email: "ana@example.com", emailConfirmed: true }, whatsappLoginMethods);
 
       const methods = await openMethods();
 
       expect(methods.getByText("+54 9 11 2345-6789")).toBeInTheDocument();
-      expect(methods.queryByText("Verificado")).not.toBeInTheDocument();
+      // El único «Verificado» es el del correo.
+      expect(methods.getAllByText("Verificado")).toHaveLength(1);
+      expect(methods.getByText("Sin verificar")).toBeInTheDocument();
+      expect(methods.getByText("Lo cargó un administrador y todavía no entraste con él.")).toHaveClass("sr-only");
+
+      await userEvent.click(methods.getByRole("button", { name: "Verificar" }));
+
+      const dialog = await screen.findByRole("dialog", { name: "Verificar el número" });
+      expect(within(dialog).getByRole("textbox", { name: "Número de WhatsApp" })).toHaveValue("+5491123456789");
+    });
+
+    it("does not offer to verify a number with WhatsApp off", async () => {
+      withProfile({ ...phoneOnlyUser, phoneNumberConfirmed: false, email: "ana@example.com", emailConfirmed: true }, loginMethods);
+
+      const methods = await openMethods();
+
+      expect(methods.getByText("Sin verificar")).toBeInTheDocument();
+      expect(methods.queryByRole("button", { name: "Verificar" })).not.toBeInTheDocument();
     });
 
     it("turns Desvincular off when the number is the only way in, and gives that as its reason", async () => {
@@ -137,14 +156,14 @@ describe("LoginMethodsCard", () => {
       expect(methods.queryByText(onlyMethodHint)).not.toBeInTheDocument();
     });
 
-    it("offers to link a number when WhatsApp is on and the account has none", async () => {
+    it("offers to add a number when WhatsApp is on and the account has none", async () => {
       withProfile(currentUser, whatsappLoginMethods);
 
       const methods = await openMethods();
 
       expect(methods.getByText("WhatsApp")).toBeInTheDocument();
-      expect(methods.getByText("Sin vincular")).toBeInTheDocument();
-      expect(methods.getByRole("button", { name: "Vincular" })).toBeInTheDocument();
+      expect(methods.getByText("Sin número")).toBeInTheDocument();
+      expect(methods.getByRole("button", { name: "Agregar número" })).toBeInTheDocument();
     });
 
     it("is not there when WhatsApp is off and the account has no number", async () => {
@@ -154,7 +173,7 @@ describe("LoginMethodsCard", () => {
 
       expect(methods.getByText("ana@example.com")).toBeInTheDocument();
       expect(methods.queryByText("WhatsApp")).not.toBeInTheDocument();
-      expect(methods.queryByRole("button", { name: "Vincular" })).not.toBeInTheDocument();
+      expect(methods.queryByRole("button", { name: "Agregar número" })).not.toBeInTheDocument();
     });
 
     it("still shows a number with WhatsApp off, so it can be unlinked", async () => {
@@ -164,6 +183,25 @@ describe("LoginMethodsCard", () => {
 
       expect(methods.getByText("+54 9 11 2345-6789")).toBeInTheDocument();
       expect(methods.getByRole("button", { name: "Desvincular" })).toBeInTheDocument();
+    });
+  });
+
+  describe("the Google row", () => {
+    it("is there when the account signs in with Google, with nothing to do from here", async () => {
+      withProfile({ ...currentUser, hasGoogleLogin: true });
+
+      const methods = await openMethods();
+
+      expect(methods.getByText("Google")).toBeInTheDocument();
+      expect(methods.getByText("Cuenta vinculada")).toBeInTheDocument();
+    });
+
+    it("is not there when the account does not sign in with Google", async () => {
+      withProfile(currentUser);
+
+      const methods = await openMethods();
+
+      expect(methods.queryByText("Google")).not.toBeInTheDocument();
     });
   });
 
@@ -278,7 +316,7 @@ describe("LoginMethodsCard", () => {
       const methods = await confirmUnlink();
 
       expect(await screen.findByText("Desvinculamos tu WhatsApp.")).toBeInTheDocument();
-      expect(await methods.findByText("Sin vincular")).toBeInTheDocument();
+      expect(await methods.findByText("Sin número")).toBeInTheDocument();
       expect(methods.queryByText("+54 9 11 2345-6789")).not.toBeInTheDocument();
       expect(calls.deletes).toBe(1);
     });
@@ -300,14 +338,14 @@ describe("LoginMethodsCard", () => {
       // principio de la página y el lector de pantalla pierde el lugar.
       const title = () => screen.getByRole("heading", { name: "Medios de ingreso" });
 
-      it("goes back to the row button, which now offers to link", async () => {
+      it("goes back to the row button, which now offers to add a number", async () => {
         // El botón de la fila no se apaga mientras se desvincula (la confirmación espera abierta): apagado, no tomaría el
         // foco que le devuelve el diálogo.
         unlinkServer({ after: withoutPhone, respond: unlinked });
 
         const methods = await confirmUnlink();
 
-        await waitFor(() => expect(methods.getByRole("button", { name: "Vincular" })).toHaveFocus());
+        await waitFor(() => expect(methods.getByRole("button", { name: "Agregar número" })).toHaveFocus());
       });
 
       it("goes to the title of the surface when the row goes away", async () => {
