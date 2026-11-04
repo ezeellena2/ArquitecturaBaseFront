@@ -40,8 +40,8 @@ IA0, IA2 e IA4 tenían un solo concepto y valen con las elegidas.
 
 | Etapa del plan | De los tableros |
 | --- | --- |
-| 1 · Texto y audio, proponer y crear | La tarjeta de IA1-A para un formulario y para un catálogo sin planilla, con «Ver cómo queda», «Reemplazada» y «Borrador creado»; IA2 sin la importación; IA3-A, también para H4; de IA4, el micrófono, la grabación y el audio con su transcripción, las entradas, Inicio vacío y los casos sin permiso y de uno que ya existe. |
-| 2 · Planillas | El clip con Excel y CSV, en el chat y por WhatsApp; la tarjeta de un catálogo con sus columnas y sus filas de muestra; «Crear catálogo» con «Importar opciones» abierto; el pedido que no queda claro con una planilla y la tarjeta «Importación» con «Revisar la importación»; el archivo que no se lee. |
+| 1 · Texto y audio, proponer y crear | La tarjeta de IA1-A para un formulario y para un catálogo sin planilla, con «Ver cómo queda», «Reemplazada» y «Borrador creado»; IA2 sin la importación; IA3-A, también para H4; de IA4, el micrófono, la grabación y el audio con su transcripción, las entradas, Inicio vacío con «Armame un formulario para…» y los casos sin permiso y de uno que ya existe. |
+| 2 · Planillas | El clip con Excel y CSV, en el chat y por WhatsApp, y la sugerencia «Armame un catálogo con una planilla» de Inicio vacío; la tarjeta de un catálogo con sus columnas y sus filas de muestra; «Crear catálogo» con «Importar opciones» abierto; el pedido que no queda claro con una planilla y la tarjeta «Importación» con «Revisar la importación»; el archivo que no se lee. |
 | 3 · Documentos | PDF, fotos y Word en el clip y por WhatsApp, sobre la lectura del ADR 0022, y DOC6 con la misma propuesta. |
 
 ## Lo que se fijó al registrar
