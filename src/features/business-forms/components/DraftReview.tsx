@@ -72,7 +72,8 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
     if (row.kind === "fieldText") { const question = parent(row); return t("reviewFieldText", { question: question ? localizedValue(question.label, culture, value.draft.culture) : t("question"), field: t(row.property === "help" ? "help" : "question") }); }
     return t(row.kind === "submit" ? "submitLabel" : row.kind === "order" ? "order" : row.kind);
   }
-  const rowTitle = (row: DraftReviewRow) => row.culture ? t("localizedChange", { name: title(row), language: t(`cultures.${row.culture}`) }) : title(row);
+  // NI1-A (2026-11-03): a change names its language only when it is not the menu's.
+  const rowTitle = (row: DraftReviewRow) => row.culture && row.culture !== culture ? t("localizedChange", { name: title(row), language: t(`cultures.${row.culture}`) }) : title(row);
   return <Surface><ComparisonTable columns={{ identity: [{ key: "change", header: t("changes") }], label: t("reviewData"), before: t("current"), after: t("mine") }}
     groups={review.rows.map(row => ({ key: row.id, identity: [rowTitle(row)], note: !row.canKeep ? t(row.kind === "prefix" ? "prefixLocked" : "retired") : undefined,
       lines: draftReviewLines(review, row, { culture, catalogs }).map(line => ({ key: line.key, label: line.label ? label(line.label) : undefined, before: cell(line.before), after: cell(line.after) })) }))} /></Surface>;

@@ -34,7 +34,7 @@ export function ResponseDocumentDownloads({ documents, downloads, files = [], co
 }
 function DocumentCard({ owner, recordId, document, downloads, onForbidden, timeZoneId }: Omit<DocumentProps, "documents"> & { document: IssuedDocument }) {
   const { t, i18n } = useTranslation("forms");
-  return <div className="flex flex-wrap items-center gap-3"><div className="min-w-0 flex-1"><p className="break-words font-medium">{document.name}</p><p className="text-xs text-[var(--color-content-muted)]">{formatDateTimeInZone(document.createdAtUtc, i18n.language, timeZoneId)}</p></div><Badge variant="outline">{t("cultures." + document.culture)}</Badge><ResponseDocumentActions owner={owner} recordId={recordId} document={document} downloads={downloads} onForbidden={onForbidden} size="default"/></div>;
+  return <div className="flex flex-wrap items-center gap-3"><div className="min-w-0 flex-1"><p className="break-words font-medium">{document.name}</p><p className="text-xs text-[var(--color-content-muted)]">{formatDateTimeInZone(document.createdAtUtc, i18n.language, timeZoneId)}</p></div>{/* NI1-A (2026-11-03): only a copy in the other language names it. */}{document.culture !== (i18n.language.startsWith("en") ? "en" : "es") ? <Badge variant="outline">{t("cultures." + document.culture)}</Badge> : null}<ResponseDocumentActions owner={owner} recordId={recordId} document={document} downloads={downloads} onForbidden={onForbidden} size="default"/></div>;
 }
 /// «Ver PDF» and «Descargar» of an issued copy: in its card, in its row of the activity and, compact, as icons in the quick
 /// view (board TL3-A). The wait of a 429 is their reason, never a text at the foot.

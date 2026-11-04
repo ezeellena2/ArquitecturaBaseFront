@@ -192,7 +192,7 @@
     "listFailed": "Could not publish",
     "listPublishing": "Publishing",
     "previewNoPermission": "You no longer have permission to view this preview.",
-    "questionIssue": "Review this question · {{language}}",
+    "questionIssue": "Review this question",
     "versionTitle": "Publish version {{version}} on WhatsApp",
     "publishVersion": "Publish version {{version}}",
     "channelIssue": "The publication channel",
@@ -354,6 +354,8 @@
     },
     "presentation": {
       "title": "In WhatsApp", "heading": "Title · up to 30 characters", "description": "Description · up to 300", "add": "Add field", "example": "For example",
+      "titleTooLong_one": "1 option exceeds the 30-character title limit.", "titleTooLong_other": "{{count}} options exceed the 30-character title limit.",
+      "descriptionTooLong_one": "1 option exceeds the 300-character description limit.", "descriptionTooLong_other": "{{count}} options exceed the 300-character description limit.",
       "titleTooLongIn_one": "In {{language}}: 1 option exceeds the 30-character title limit.", "titleTooLongIn_other": "In {{language}}: {{count}} options exceed the 30-character title limit.",
       "descriptionTooLongIn_one": "In {{language}}: 1 option exceeds the 300-character description limit.", "descriptionTooLongIn_other": "In {{language}}: {{count}} options exceed the 300-character description limit.",
       "more_one": "and {{count}} more", "more_other": "and {{count}} more",

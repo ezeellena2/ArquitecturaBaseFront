@@ -68,6 +68,7 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
       state: <Badge variant={approvalStateVariant(task.state)}>{t("approvals.taskStates." + task.state)}</Badge> }] : []),
   ];
   const when = (utc: string) => formatDateTimeInZone(utc, i18n.language, timeZoneId);
+  const menu = i18n.language.startsWith("en") ? "en" : "es";
   const recipientState = (recipient: ResponseRecipient) => <Badge variant={recipientTone(recipient.state)}>{t("workflow.recipientStates." + recipient.state)}</Badge>;
   // The receipts of the provider keep their time under the person, apart from a human review.
   const recipientNotes = (recipient: ResponseRecipient) => <>
@@ -96,7 +97,8 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
     const row: ActivityRow = {
       key: "action:" + action.id, atUtc: action.completedAtUtc ?? action.updatedAtUtc, text: t("rules.actions." + action.kind), focusable: true,
       detail: <>
-        {documents.map(document => <Detail key={document.id}>{document.name} · {t("cultures." + document.culture)}</Detail>)}
+        {/* NI1-A (2026-11-03): only a copy in the other language names it. */}
+        {documents.map(document => <Detail key={document.id}>{document.name}{document.culture !== menu ? " · " + t("cultures." + document.culture) : null}</Detail>)}
         {single ? <Detail>{single.user.displayName ?? unknown}</Detail> : action.recipients.length ? <Detail>{t("detail.recipients", { count: action.recipients.length })}</Detail> : null}
         {action.reason ? <Detail>{action.reason}</Detail> : null}
         {single ? recipientNotes(single) : null}

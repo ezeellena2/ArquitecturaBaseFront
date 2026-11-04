@@ -281,7 +281,8 @@ it("reads each row in fixed columns, by moment, with the day once and the state 
   expect(approval.getAllByText(/^(Aprobada|Por aprobar)$/).map(badge => badge.textContent)).toEqual(["Aprobada"]);
   const file = within(approved.querySelector('[tabindex="-1"]') as HTMLElement);
   expect(file.getByText("Armar el PDF")).toBeInTheDocument();
-  expect(file.getByText("Visita-TEST.pdf · Español")).toBeInTheDocument();
+  // NI1-A (2026-11-03): the copy names its language only when it is not the menu's.
+  expect(file.getByText("Visita-TEST.pdf")).toBeInTheDocument();
   expect(file.getByText("Hecho")).toBeInTheDocument();
   expect(file.getByRole("button", { name: "Abrir Visita-TEST.pdf" })).toBeInTheDocument();
   // The message to whoever loaded it is one row: their name under the action and the receipts with their time.

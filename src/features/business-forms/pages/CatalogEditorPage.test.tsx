@@ -1455,13 +1455,13 @@ it("warns about long titles with the check of the applied import instead of the 
   const importedExamples = [{ itemId, title: importedTitle }, { itemId: "01990000-0000-7000-8000-0000000007a1", title: "Sur · Ferretería Industrial del Centro" }, { itemId: "01990000-0000-7000-8000-0000000007a2", title: "Oeste · Ferretería Industrial del Centro" }];
   vi.spyOn(catalogImports, "applyCatalogImport").mockResolvedValue({ catalog: { ...initial, kind: "Manual", revision: 2, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 4, titleExamples: importedExamples, descriptionTooLongCount: 0, descriptionExamples: [] }, english] } }, itemIdentityMap: {}, fieldIdentityMap: {} });
   await mount("/catalogos/" + id); const user = userEvent.setup();
-  expect(await screen.findByText("En español: 1 opción supera los 30 caracteres del título.")).toBeInTheDocument();
+  expect(await screen.findByText("1 opción supera los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.getByText(entryTitle)).toBeInTheDocument();
   await pasteRows(user, "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await user.click(await screen.findByRole("button", { name: "Aplicar" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-  expect(await screen.findByText("En español: 4 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
+  expect(await screen.findByText("4 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.getByText(importedTitle)).toBeInTheDocument();
   expect(screen.getByText("y 1 más")).toBeInTheDocument();
   expect(screen.queryByText(entryTitle)).not.toBeInTheDocument();

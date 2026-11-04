@@ -44,7 +44,8 @@ export function CatalogPresentationSection({ embedded = false, value, fields, it
     })}
     {shown ? <div className="space-y-1"><p className="text-xs font-semibold uppercase">{t("catalogs.presentation.example")}</p><div className="rounded-md border border-[var(--color-border)] p-3"><p className="break-words text-sm">{shown.title}</p>{shown.description ? <p className="break-words text-xs text-[var(--color-content-muted)]">{shown.description}</p> : null}</div></div> : null}
     {problems.length ? <div role="status" className="space-y-3">{problems.map(problem => <div key={problem.culture + "-" + problem.part} className="space-y-1">
-      <p className="text-sm text-[var(--color-warning-700)]">{t("catalogs.presentation." + problem.part + "TooLongIn", { count: problem.count, language: t("cultureNamesInText." + problem.culture) })}</p>
+      {/* NI1-A (2026-11-03): the menu language is not named; the other one is. */}
+      <p className="text-sm text-[var(--color-warning-700)]">{t("catalogs.presentation." + problem.part + (problem.culture === culture ? "TooLong" : "TooLongIn"), { count: problem.count, language: t("cultureNamesInText." + problem.culture) })}</p>
       {problem.examples.length ? <ul className="list-inside list-disc break-words text-sm">{problem.examples.map(example => <li key={example.itemId}>{example.title}</li>)}</ul> : null}
       {problem.count > problem.examples.length ? <p className="text-sm text-[var(--color-content-muted)]">{t("catalogs.presentation.more", { count: problem.count - problem.examples.length })}</p> : null}
     </div>)}</div> : null}

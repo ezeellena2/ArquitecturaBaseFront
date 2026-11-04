@@ -351,7 +351,7 @@ it.each(["pdf", "row", "shared"] as const)("opens mobile activity only for the P
   expect(router.state.location.state).toBeNull();
   if (entry === "pdf") {
     expect(within(activity).getByRole("button", { name: "Plegar actividad" })).toHaveAttribute("aria-expanded", "true");
-    expect(await within(activity).findByText(documents[0].name + " · Español")).toBeVisible();
+    expect(await within(activity).findByText(documents[0].name)).toBeVisible();
     expect(reads).toEqual([]);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("link", { name: "Volver a las respuestas" }));
@@ -377,7 +377,8 @@ it("opens each fixed PDF copy from the row of its action and reads it only when 
   const actions = await screen.findAllByText("Armar el PDF", { exact: true });
   const first = actions[0].closest("li")!;
   const second = actions[1].closest("li")!;
-  expect(within(first).getByText(documents[0].name + " · Español")).toBeVisible();
+  // NI1-A (2026-11-03): only the copy in the other language names it.
+  expect(within(first).getByText(documents[0].name)).toBeVisible();
   expect(within(second).getByText(documents[1].name + " · Inglés")).toBeVisible();
   expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();
   expect(screen.queryByText(/^Contenido en/)).not.toBeInTheDocument();

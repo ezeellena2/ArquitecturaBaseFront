@@ -450,7 +450,8 @@ describe("response sheet", () => {
     const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
     await responseView.findByText("Texto completo para revisar");
     await openResponseTab("PDF");
-    await responseView.findByText(privateDocument);
+    // The copy shows in its card and, without its language since it is the menu's (NI1-A), in the activity.
+    await responseView.findAllByText(privateDocument);
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
@@ -461,7 +462,7 @@ describe("response sheet", () => {
     expect(writes).toBe(1);
     expect(screen.queryByText("Texto completo para revisar")).not.toBeInTheDocument();
     expect(screen.queryByText(privateReason)).not.toBeInTheDocument();
-    expect(screen.queryByText(privateDocument)).not.toBeInTheDocument();
+    expect(screen.queryAllByText(privateDocument)).toHaveLength(0);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(notify).not.toHaveBeenCalled();
     await waitFor(() => expect(queryClient.getQueryCache().getAll().some(query => { const data = JSON.stringify(query.state.data) ?? ""; return data.includes(privateReason) || data.includes(privateDocument); })).toBe(false));

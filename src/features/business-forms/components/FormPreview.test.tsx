@@ -25,7 +25,9 @@ it("explains the preview in the (i) of its heading instead of notes", async () =
   const preview = screen.getByRole("region", { name: "Vista previa" });
   for (const note of ["Vista previa orientativa. La vista oficial de WhatsApp estará disponible al publicar.", "La vista previa usa un solo idioma.", "Esta vista no envía ni guarda respuestas.", "Agregá preguntas para ver cómo queda.", "Vista previa en español."])
     expect(within(preview).queryByText(note)).not.toBeInTheDocument();
-  const help = within(preview).getByRole("button", { name: "Más información sobre Vista previa para una cuenta en español" });
+  // NI1-A (2026-11-03): in the menu language, the heading does not name it.
+  expect(within(preview).getByRole("heading", { name: "Vista previa" })).toBeInTheDocument();
+  const help = within(preview).getByRole("button", { name: "Más información sobre Vista previa" });
   expect(help).toHaveAccessibleDescription("Vista previa orientativa. La vista oficial de WhatsApp estará disponible al publicar. La vista previa usa un solo idioma. Esta vista no envía ni guarda respuestas.");
   await userEvent.hover(help);
   expect(await screen.findByRole("tooltip")).toHaveTextContent("Esta vista no envía ni guarda respuestas.");
@@ -128,10 +130,12 @@ for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as c
     let view!: ReturnType<typeof renderWithProviders>;
     await act(async () => { view = renderWithProviders(<FormPreview value={partial} culture={secondary} />); });
     const preview = screen.getByRole("region", { name: ui === "es" ? "Vista previa" : "Preview" });
-    expect(within(preview).getByRole("heading", { name: ui === "es" ? "Vista previa para una cuenta en " + languages[secondary] : "Preview for an account using " + languages[secondary] })).toBeInTheDocument();
+    // NI1-A (2026-11-03): the heading names the account's language only when it is not the menu's.
+    const heading = ui === secondary ? ui === "es" ? "Vista previa" : "Preview" : ui === "es" ? "Vista previa para una cuenta en " + languages[secondary] : "Preview for an account using " + languages[secondary];
+    expect(within(preview).getByRole("heading", { name: heading })).toBeInTheDocument();
     expect(within(preview).getByText(ui === "es" ? "Se muestra en " + languages[original] + ": falta 1 texto en " + languages[secondary] + "." : "Shown in " + languages[original] + ": 1 text is untranslated in " + languages[secondary] + ".")).toBeInTheDocument();
     // That the preview uses one language is part of the (i) of the heading, not a note under the phone.
-    expect(within(preview).getByRole("button", { name: ui === "es" ? "Más información sobre Vista previa para una cuenta en " + languages[secondary] : "More about Preview for an account using " + languages[secondary] })).toHaveAccessibleDescription(new RegExp(ui === "es" ? "La vista previa usa un solo idioma\\." : "This preview uses one language\\."));
+    expect(within(preview).getByRole("button", { name: (ui === "es" ? "Más información sobre " : "More about ") + heading })).toHaveAccessibleDescription(new RegExp(ui === "es" ? "La vista previa usa un solo idioma\\." : "This preview uses one language\\."));
     expect(within(preview).queryByText(/le llega|It arrives|What an account.*receives/i)).not.toBeInTheDocument();
     await act(async () => { view.rerender(<FormPreview value={complete} culture={secondary} />); });
     // The heading already names the language: no «Vista previa en …» repeats it.

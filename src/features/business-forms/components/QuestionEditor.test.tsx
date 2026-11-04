@@ -162,6 +162,19 @@ it("shows a label error of the other language with its language name", async () 
   expect(screen.getByLabelText("Opción 1")).not.toHaveAttribute("aria-invalid");
 });
 
+// NI1-A (2026-11-03): the badge of the list names a language only when every problem of the question is in the other one.
+it.each([
+  ["es", ["draft.fields[0].label.es"], "Revisá esta pregunta"],
+  ["es", ["draft.fields[0].selection.maxSelected"], "Revisá esta pregunta"],
+  ["es", ["draft.fields[0].label.en", "draft.fields[0].options[1].label.es"], "Revisá esta pregunta"],
+  ["es", ["draft.fields[0].label.en", "draft.fields[0].help.en"], "Revisá esta pregunta · Inglés"],
+  ["en", ["draft.fields[0].label.es"], "Revisá esta pregunta · Español"],
+] as const)("with the menu in %s, problems at %j read «%s»", async (culture, paths, badge) => {
+  const issues = paths.map(path => ({ path, messages: ["Revisá el texto."], fieldLocalId: "a" }));
+  await act(async () => { renderWithProviders(<QuestionEditor question={first} position={1} total={1} culture={culture} original="es" expanded={false} readOnly={false} issues={issues} onChange={vi.fn()} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
+  expect(screen.getByText(/^Revisá esta pregunta/)).toHaveTextContent(new RegExp("^" + badge + "$"));
+});
+
 // CA4 characterization, applied only after the closed model accepts multiChoice.
 it("requires an explicit decision before replacing a saved question and every own option identity", async () => {
   const onChange = vi.fn();

@@ -1,7 +1,8 @@
-import { screen } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { ApiError } from "@/shared/api/ApiError";
+import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { FormPdfPreview } from "./FormPdfPreview";
 
@@ -32,4 +33,21 @@ it("explains the retry wait only as the reason of the disabled retry", async () 
   await userEvent.hover(retry);
   expect(await screen.findByRole("tooltip")).toHaveTextContent(/Esperá [0-9]+ segundos para volver a intentar\./);
   expect(load).toHaveBeenCalledOnce();
+});
+
+// NI1-A (2026-11-03): the PDF says its language only when it is not the menu's; a fallback names both, in lower case.
+it("names the language of the PDF only when it is not the menu's", async () => {
+  await i18n.changeLanguage("es");
+  vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:language");
+  vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+  const pdf = (culture: "es" | "en") => vi.fn(async () => ({ blob: new Blob(["%PDF"], { type: "application/pdf" }), contentLanguage: culture, fileName: null }));
+  renderWithProviders(<FormPdfPreview operationId="menu-pdf" requestedCulture="es" load={pdf("es")} onForbidden={vi.fn()}/>);
+  await screen.findByTitle("Vista previa del PDF");
+  expect(screen.queryByText(/^Contenido en/)).not.toBeInTheDocument();
+  cleanup();
+  renderWithProviders(<FormPdfPreview operationId="english-pdf" requestedCulture="en" load={pdf("en")} onForbidden={vi.fn()}/>);
+  expect(await screen.findByText("Contenido en inglés")).toBeInTheDocument();
+  cleanup();
+  renderWithProviders(<FormPdfPreview operationId="fallback-pdf" requestedCulture="en" load={pdf("es")} onForbidden={vi.fn()}/>);
+  expect(await screen.findByText("No está completo el inglés. La vista previa usa todo el contenido en español.")).toBeInTheDocument();
 });

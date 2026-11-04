@@ -132,6 +132,14 @@ it("says Descargando… on the menu trigger while one of its items downloads", a
   expect(screen.getByRole("button", { name: "Descargar" })).toBeEnabled();
 });
 
+// NI1-A (2026-11-03): a copy names its language only when it is not the menu's.
+it("names the language of a copy only when it is not the menu's", async () => {
+  renderWithProviders(<DocumentsHarness owner="document-test-owner" recordId={responseRecordId} documents={[document, { ...document, id: "0199a0c0-0000-7000-8000-000000000081", name: "Copia en inglés.pdf", culture: "en" as const }]} onForbidden={vi.fn()}/>);
+  expect(await screen.findByText("Visita aprobada.pdf")).toBeInTheDocument();
+  expect(screen.queryByText("Español")).not.toBeInTheDocument();
+  expect(screen.getByText("Inglés")).toBeInTheDocument();
+});
+
 // That an issued PDF does not change is said once, in the (i) next to the title, not under each copy nor in «Copia fija».
 it("tells once, next to its title, that the issued PDFs are fixed copies", async () => {
   const fixed = "Los PDF ya armados no cambian: son una copia fija del momento.";

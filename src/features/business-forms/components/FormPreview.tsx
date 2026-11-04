@@ -16,7 +16,7 @@ import type { CatalogQuestionPreview, DraftEditorValue, FormCulture } from "../m
 import { sameCatalogQuestionSource } from "../catalogQuestionSource";
 
 export function FormPreview({ value, culture, catalogPreviews = {} }: { value: DraftEditorValue; culture: FormCulture; catalogPreviews?: Readonly<Record<string, CatalogQuestionPreview | null>> }) {
-  const { t } = useTranslation("forms");
+  const { t, i18n } = useTranslation("forms");
   const missing = culture === value.draft.culture ? 0 : missingFormTexts(value, culture);
   const previewCulture = missing ? value.draft.culture : culture;
   const { t: content } = useTranslation("forms", { lng: previewCulture });
@@ -31,7 +31,8 @@ export function FormPreview({ value, culture, catalogPreviews = {} }: { value: D
     const selected = map?.[previewCulture];
     return selected?.trim() ? selected : "";
   };
-  const heading = t("previewForAccount", { language: t("cultureNamesInText." + culture) });
+  // NI1-A (2026-11-03): the heading names the account's language only when it is not the menu's.
+  const heading = culture === (i18n.language.startsWith("en") ? "en" : "es") ? t("preview") : t("previewForAccount", { language: t("cultureNamesInText." + culture) });
   const position = { number: screen + 1, total: screens.length };
   // What the preview is (illustrative, one language, sends and saves nothing) goes in the (i) of its heading, and how photos
   // and documents split the screens in the (i) of its position: no notes under the phone.

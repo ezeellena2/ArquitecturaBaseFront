@@ -31,7 +31,8 @@ it("shows title and description checks for each catalog language from the server
   // The loaded page has one long title of its own: with the server check, the section does not count locally.
   const long = { localId: "row", itemId: null, code: "N", label: { es: "Una opción con un texto que supera treinta" }, detail: {}, value: null, fields: {}, isActive: true, position: null };
   await act(async () => { renderWithProviders(<CatalogPresentationSection value={null} fields={[]} items={[long]} valueType="Text" culture="es" readOnly={false} check={check} onChange={() => undefined} />); });
-  expect(screen.getByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
+  // NI1-A (2026-11-03): the menu language is not named; the other one is.
+  expect(screen.getByText("41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
   for (const title of ["Distribuidora del Litoral Norte", "Ferretería Industrial del Centro", "Repuestos y Servicios del Oeste"]) expect(screen.getByText(title)).toBeInTheDocument();
   expect(screen.getByText("y 38 más")).toBeInTheDocument();
   expect(screen.getByText("En inglés: 2 opciones superan los 300 caracteres de la descripción.")).toBeInTheDocument();
@@ -50,10 +51,11 @@ it("counts long titles and descriptions of the loaded options in each catalog la
     { ...item("c", { es: "Una opción dada de baja con un texto largo", en: "Inactive" }, { es: "z".repeat(301) }), isActive: false },
   ];
   await act(async () => { renderWithProviders(<CatalogPresentationSection value={null} fields={[]} items={items} valueType="Text" culture="es" cultures={["es", "en"]} readOnly={false} onChange={() => undefined} />); });
-  expect(screen.getByText("En español: 1 opción supera los 300 caracteres de la descripción.")).toBeInTheDocument();
+  expect(screen.getByText("1 opción supera los 300 caracteres de la descripción.")).toBeInTheDocument();
   expect(screen.getByText("En inglés: 1 opción supera los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.getByText("North side of the city and its surroundings")).toBeInTheDocument();
   expect(screen.getByText("En inglés: 1 opción supera los 300 caracteres de la descripción.")).toBeInTheDocument();
-  expect(screen.queryByText(/En español: .* del título/)).not.toBeInTheDocument();
+  expect(screen.queryByText("1 opción supera los 30 caracteres del título.")).not.toBeInTheDocument();
+  expect(screen.queryByText(/^En español/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Podés guardar/)).not.toBeInTheDocument();
 });

@@ -63,7 +63,7 @@ it("shows the server title check of an own presentation over every catalog optio
   const bodies = renderOwnPresentation(longTitles);
   expect(await screen.findByRole("radio", { name: /Propio de esta pregunta/ })).toBeChecked();
   expect(await screen.findByText("C1 · Opción 1")).toBeInTheDocument();
-  expect(await screen.findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
+  expect(await screen.findByText("41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
   for (const example of ownExamples) expect(screen.getByText(example.title)).toBeInTheDocument();
   expect(screen.getByText("y 38 más")).toBeInTheDocument();
   expect(bodies).toEqual([{ presentation: ownPresentation }]);
@@ -78,7 +78,7 @@ it("offers to retry the server check of an own presentation when it fails", asyn
   expect(screen.queryByText(/superan? los 30/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Podés guardar/)).not.toBeInTheDocument();
   await userEvent.click(within(alert).getByRole("button", { name: "Reintentar" }));
-  expect(await screen.findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
+  expect(await screen.findByText("41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(bodies).toHaveLength(2);
 });
@@ -400,7 +400,7 @@ it("says the option lengths of an own presentation are being checked", async () 
   const checking = await screen.findByText("Revisando el largo de las opciones…");
   expect(checking.closest("[role=status]")).not.toBeNull();
   await act(async () => { release(); });
-  expect(await screen.findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
+  expect(await screen.findByText("41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
   expect(screen.queryByText("Revisando el largo de las opciones…")).not.toBeInTheDocument();
 });
 
@@ -527,7 +527,7 @@ it("opens «En WhatsApp» by itself when the length check warns", async () => {
   const whatsapp = await screen.findByRole("region", { name: whatsappTitle });
   expect(within(whatsapp).getByRole("button", { name: "Expandir «En WhatsApp»" })).toHaveAttribute("aria-expanded", "false");
   await act(async () => { release(); });
-  expect(await within(whatsapp).findByText("En español: 41 opciones superan los 30 caracteres del título.")).toBeVisible();
+  expect(await within(whatsapp).findByText("41 opciones superan los 30 caracteres del título.")).toBeVisible();
   expect(within(whatsapp).getByRole("button", { name: "Plegar «En WhatsApp»" })).toHaveAttribute("aria-expanded", "true");
   expect(screen.getByRole("button", { name: "Expandir «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "false");
 });

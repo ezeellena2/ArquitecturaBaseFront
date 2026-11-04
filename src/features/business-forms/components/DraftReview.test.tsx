@@ -30,7 +30,8 @@ describe("Draft review presentation", () => {
     expect(within(dialog).queryByText(/Ninguna opción guarda|Compará lo guardado/)).not.toBeInTheDocument();
     // Each change once, and both versions in their own column (LR2-A): an option, never «Opción: Norte», and an order numbered.
     expect(within(dialog).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Qué cambió", "Guardado actualmente", "Mis cambios"]);
-    const option = within(dialog).getByRole("rowheader", { name: "Cliente · la opción «Norte actualizado» · Español" }).closest("tr")!;
+    // NI1-A (2026-11-03): a change in the menu language does not name it; one in the other language does (below).
+    const option = within(dialog).getByRole("rowheader", { name: "Cliente · la opción «Norte actualizado»" }).closest("tr")!;
     expect(within(option).getAllByRole("cell").map(cell => cell.textContent)).toEqual(["Norte", "Norte actualizado"]);
     const order = within(dialog).getByRole("rowheader", { name: "Orden de opciones de Cliente" }).closest("tr")!;
     expect(within(order).getAllByRole("cell").map(cell => within(cell).getAllByRole("listitem").map(item => item.textContent))).toEqual([["1Norte", "2Sur"], ["1Sur", "2Norte actualizado"]]);
