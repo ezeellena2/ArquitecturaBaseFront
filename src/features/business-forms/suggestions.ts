@@ -4,14 +4,16 @@ export type SuggestionMode = "Assistant" | "Always";
 export interface SuggestionMapping { readonly source: { readonly kind: "Field" | "RecordNumber"; readonly fieldId: string | null }; readonly destinationFieldId: string }
 export interface FormSuggestion { readonly id: string; readonly destinationDefinitionId: string; readonly destinationVersionId: string | null; readonly mode: SuggestionMode; readonly when: string | null; readonly isActive: boolean; readonly conditions: readonly ResponseCondition[]; readonly mappings: readonly SuggestionMapping[] }
 export type FormSuggestionInput = Omit<FormSuggestion, "destinationVersionId">;
-export interface SuggestionQuestion { readonly fieldId:string; readonly type:CanonicalQuestion["type"]; readonly label:LocalizedText; readonly options?:readonly CanonicalChoice[]|null; readonly source?: { readonly catalog: string } | null }
+export interface SuggestionQuestion { readonly fieldId:string; readonly type:CanonicalQuestion["type"]; readonly label:LocalizedText; readonly options?:readonly CanonicalChoice[]|null; readonly source?: { readonly catalog: string } | null; readonly repeated?: true }
 export interface PublishedSuggestionForm { readonly definitionId: string; readonly versionId: string; readonly name: Readonly<Record<string, string>>; readonly originalCulture: "es" | "en"; readonly questions: readonly SuggestionQuestion[] }
 export interface SuggestionIssue { readonly path: string; readonly key: string }
 export const newSuggestion = (): FormSuggestion => ({ id: crypto.randomUUID(), destinationDefinitionId: "", destinationVersionId: null, mode: "Assistant", when: null, isActive: true, conditions: [], mappings: [] });
+// A question of a block of rows has one answer per row, so it neither gives nor receives a value.
+export const mappableSource = (field: SuggestionQuestion) => field.type!=="photo"&&field.type!=="document"&&field.type!=="multiChoice"&&field.type!=="group"&&!field.repeated;
 export function mappingTargets(source: SuggestionMapping["source"], questions: readonly SuggestionQuestion[], destination: readonly SuggestionQuestion[]): readonly SuggestionQuestion[] {
-  if(source.kind==="RecordNumber") return destination.filter(field=>field.type==="shortText"||field.type==="longText");
+  if(source.kind==="RecordNumber") return destination.filter(field=>(field.type==="shortText"||field.type==="longText")&&!field.repeated);
   const field=questions.find(field=>field.fieldId===source.fieldId);
-  return !field||field.type==="photo"||field.type==="document"||field.type==="multiChoice"?[]:destination.filter(target=>target.type===field.type
+  return !field||!mappableSource(field)?[]:destination.filter(target=>target.type===field.type&&!target.repeated
     && (field.type!=="choice" || field.source?.catalog != null && target.source?.catalog===field.source.catalog));
 }
 export function prepareSuggestions(suggestions: readonly FormSuggestion[], source: PublishedSuggestionForm, destinations: readonly PublishedSuggestionForm[], columns: readonly ResponseColumn[]) {

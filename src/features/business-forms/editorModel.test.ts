@@ -177,3 +177,24 @@ describe("content language", () => {
     expect(hasFormTexts({ ...form, name: { es: "Visita", en: "  " } }, "en")).toBe(false);
   });
 });
+
+it("starts a block with 1 and 20 rows and treats a change of its rows or of the mark as a change of the question", () => {
+  expect(newQuestion("group", "es", "block")).toEqual({ localId: "block", fieldId: null, replacesFieldId: null, type: "group", label: { es: "" }, help: null,
+    required: true, rows: { minRows: 1, maxRows: 20 } });
+  const rows: FormDefinitionSnapshot = { ...current, draft: { ...current.draft, fields: [
+    { fieldId: "block", key: "field_block", type: "group", label: { es: "Artículos" }, help: null, required: true, rows: { minRows: 1, maxRows: 20 } },
+    { fieldId: "quantity", key: "field_quantity", type: "decimal", label: { es: "Cantidad" }, help: null, required: false, repeated: true },
+  ] } };
+  const saved = openDraftSession(scope, rows).value;
+  const mine = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(field => field.type === "group"
+    ? { ...field, rows: { minRows: 0, maxRows: 5 }, required: false } : field) } };
+
+  const review = createDraftReview(mine, rows);
+
+  expect(review.rows).toContainEqual(expect.objectContaining({ id: "field:block", canKeep: true }));
+  expect(review.rows).not.toContainEqual(expect.objectContaining({ id: "field:quantity" }));
+  const keepMine = Object.fromEntries(review.rows.map(row => [row.id, "mine"]));
+  expect(resolveDraftReview(review, keepMine)?.draft.fields[0]).toHaveProperty("rows", { minRows: 0, maxRows: 5 });
+  const unmarked = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(field => field.type === "decimal" ? { ...field, repeated: undefined } : field) } };
+  expect(createDraftReview(unmarked, rows).rows).toContainEqual(expect.objectContaining({ id: "field:quantity" }));
+});

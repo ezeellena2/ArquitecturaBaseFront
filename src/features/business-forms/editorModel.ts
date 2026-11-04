@@ -26,7 +26,9 @@ export function newQuestion(type: QuestionEditorType, culture: FormCulture, loca
   return type === "shortText" || type === "longText" ? { ...common, type, maxLength: type === "shortText" ? 80 : 600 }
     : type === "photo" || type === "document" ? { ...common, type, files: { minFiles: 0, maxFiles: 1, ...(type === "photo" ? { photoSource: "cameraOrGallery" as const } : {}) } }
     : type === "catalogChoice" ? { ...common, type: "choice", source: { catalog: null } }
-    : type === "choice" ? { ...common, type, options: [{ localId: "first-option", choiceId: null, label: { [culture]: "" } }] } : { ...common, type };
+    : type === "choice" ? { ...common, type, options: [{ localId: "first-option", choiceId: null, label: { [culture]: "" } }] }
+    // A new block starts with 1 and 20 rows; with a minimum it is required.
+    : type === "group" ? { ...common, type, required: true, rows: { minRows: 1, maxRows: 20 } } : { ...common, type };
 }
 export function replaceQuestionType(question: DraftQuestion, type: QuestionEditorType, localId: string, culture: FormCulture): DraftQuestion {
   const next = newQuestion(type, culture, localId);
@@ -54,7 +56,7 @@ export const hasFormTexts = (value: DraftEditorValue, culture: FormCulture) => [
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const fieldIdentity = (q: DraftQuestion) => q.fieldId ?? "new:" + q.localId;
 const choiceIdentity = (o: DraftChoice) => o.choiceId ?? "new:" + o.localId;
-const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ? normalizeCatalogQuestionSource(q.source) : null, required: q.required, ...(q.type === "photo" || q.type === "document" ? { files: q.files } : {}), ...(q.type === "multiChoice" ? { selection: q.selection } : {}), ...("maxLength" in q ? { maxLength: q.maxLength } : {}) });
+const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ? normalizeCatalogQuestionSource(q.source) : null, required: q.required, ...(q.type === "photo" || q.type === "document" ? { files: q.files } : {}), ...(q.type === "multiChoice" ? { selection: q.selection } : {}), ...("maxLength" in q ? { maxLength: q.maxLength } : {}), ...(q.type === "group" ? { rows: q.rows } : {}), ...("repeated" in q && q.repeated ? { repeated: true } : {}) });
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;

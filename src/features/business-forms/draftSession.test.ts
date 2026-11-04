@@ -338,3 +338,43 @@ it("cannot confirm an old multi save into a reopened editor or another attempt",
   expect(confirmDraftSave(nextAttempt, identity, canonical)).toBe(nextAttempt);
   expect(nextAttempt.pending!.body.draft.fields[0]).toHaveProperty("selection", { minSelected: 1, maxSelected: 3 });
 });
+
+// The block of rows: its rows and the mark of each question of a row travel in the attempt and come back bound.
+const rowsBlock = { fieldId: "field-block", key: "field_block", type: "group" as const, label: { es: "Artículos" }, help: null, required: true, rows: { minRows: 1, maxRows: 20 } };
+const rowsQuantity = { fieldId: "field-quantity", key: "field_quantity", type: "decimal" as const, label: { es: "Cantidad" }, help: null, required: false, repeated: true as const };
+function rowsSaveFixture() {
+  const value: DraftEditorValue = { ...initial, draft: { ...initial.draft, fields: [
+    { localId: "block", fieldId: null, replacesFieldId: null, type: "group", label: { es: "Artículos" }, help: null, required: true, rows: { minRows: 1, maxRows: 20 } },
+    { localId: "quantity", fieldId: null, replacesFieldId: null, type: "decimal", label: { es: "Cantidad" }, help: null, required: false, repeated: true },
+  ] } };
+  const previous = result();
+  const canonical: FormDraftSaveResult = { ...previous, definition: { ...previous.definition, draft: { ...previous.definition.draft, fields: [rowsBlock, rowsQuantity] } },
+    identityMap: { fields: [
+      { localId: "block", fieldId: "field-block", key: "field_block", replacesFieldId: null },
+      { localId: "quantity", fieldId: "field-quantity", key: "field_quantity", replacesFieldId: null },
+    ], choices: [] } };
+  return { value, canonical };
+}
+it("binds a block with its rows and a question of each row with its mark", () => {
+  const { value, canonical } = rowsSaveFixture();
+  const saving = beginDraftSave(startDraftSession(scope, value), identity.requestId);
+  expect(saving.pending!.body.draft.fields[0]).toHaveProperty("rows", { minRows: 1, maxRows: 20 });
+  expect(saving.pending!.body.draft.fields[1]).toHaveProperty("repeated", true);
+
+  const confirmed = confirmDraftSave(saving, identity, canonical);
+
+  expect(confirmed.phase).toBe("Editing");
+  expect(confirmed.value.draft.fields[0]).toMatchObject({ localId: "block", fieldId: "field-block", rows: { minRows: 1, maxRows: 20 } });
+  expect(confirmed.value.draft.fields[1]).toMatchObject({ localId: "quantity", fieldId: "field-quantity", repeated: true });
+});
+it.each(["rows", "mark"] as const)("keeps the attempt uncertain when the response changes the %s", change => {
+  const { value, canonical } = rowsSaveFixture();
+  const saving = beginDraftSave(startDraftSession(scope, value), identity.requestId);
+  const { repeated: _repeated, ...single } = rowsQuantity;
+  const fields = change === "rows" ? [{ ...rowsBlock, rows: { minRows: 1, maxRows: 10 } }, rowsQuantity] : [rowsBlock, single];
+
+  const uncertain = confirmDraftSave(saving, identity, { ...canonical, definition: { ...canonical.definition, draft: { ...canonical.definition.draft, fields } } });
+
+  expect(uncertain.phase).toBe("Unconfirmed");
+  expect(uncertain.pending).toBe(saving.pending);
+});

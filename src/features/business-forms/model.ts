@@ -5,6 +5,9 @@ export interface FormFileSettings { readonly minFiles: number; readonly maxFiles
 
 export interface FormSelectionSettings { readonly minSelected: number; readonly maxSelected: number }
 export interface DraftSelectionSettings { readonly minSelected: number | null; readonly maxSelected: number | null }
+// The block of rows (RG1-A) is a question of its own; the questions of each row follow it, marked repeated (RG6-A).
+export interface FormRowSettings { readonly minRows: number; readonly maxRows: number }
+export interface DraftRowSettings { readonly minRows: number | null; readonly maxRows: number | null }
 
 export interface FormCatalogPresentation { readonly title: readonly string[]; readonly description: readonly string[] }
 // A filter compares a catalog field with a fixed value, a datum of the person or the answer of another question (CW7), which it
@@ -27,24 +30,26 @@ export interface DraftQuestionSource {
 
 export type DraftFileSettings = Omit<FormFileSettings,"minFiles"|"maxFiles"> & { readonly minFiles:number|null; readonly maxFiles:number|null };
 
-type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestionSource, TFiles = FormFileSettings, TSelection = FormSelectionSettings> = {
+type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestionSource, TFiles = FormFileSettings, TSelection = FormSelectionSettings,
+  TRows = FormRowSettings> = {
   readonly label: LocalizedText;
   readonly help: THelp;
   readonly required: boolean;
 } & (
-  | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null }
+  | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null; readonly repeated?: true }
   | { readonly type: "photo" | "document"; readonly files: TFiles; readonly source?: null }
-  | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null }
-  | { readonly type: "choice"; readonly options: readonly TOption[]; readonly source?: null }
-  | { readonly type: "choice"; readonly source: TSource; readonly options?: null }
+  | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null; readonly repeated?: true }
+  | { readonly type: "choice"; readonly options: readonly TOption[]; readonly source?: null; readonly repeated?: true }
+  | { readonly type: "choice"; readonly source: TSource; readonly options?: null; readonly repeated?: true }
   | ({ readonly type: "multiChoice"; readonly selection: TSelection } & (
     | { readonly options: readonly TOption[]; readonly source?: null }
     | { readonly source: TSource; readonly options?: null }
   ))
+  | { readonly type: "group"; readonly rows: TRows; readonly source?: null }
 );
 export type DraftChoice = { readonly localId: string; readonly choiceId: string | null; readonly label: LocalizedText };
 export type CanonicalChoice = { readonly choiceId: string; readonly label: LocalizedText };
-export type DraftQuestion = QuestionContent<DraftChoice, Readonly<Record<string, string | null>> | null, number | null, DraftQuestionSource, DraftFileSettings, DraftSelectionSettings> & {
+export type DraftQuestion = QuestionContent<DraftChoice, Readonly<Record<string, string | null>> | null, number | null, DraftQuestionSource, DraftFileSettings, DraftSelectionSettings, DraftRowSettings> & {
   readonly localId: string;
   readonly fieldId: string | null;
   readonly replacesFieldId: string | null;

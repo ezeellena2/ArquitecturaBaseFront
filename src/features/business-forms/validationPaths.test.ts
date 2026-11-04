@@ -79,3 +79,14 @@ describe("localized issues", () => {
     expect(localizedIssueMessage(undefined, "es", t)).toBeUndefined();
   });
 });
+
+it("attaches the errors of the rows and of the mark to the block and to the question of the row", () => {
+  const original = openDraftSession({ actorId: "actor", editorId: "editor" }, fixtureDefinition()).value;
+  const block = { localId: "block", fieldId: null, replacesFieldId: null, type: "group" as const, label: { es: "Artículos" }, help: null, required: true, rows: { minRows: 1, maxRows: 20 } };
+  const quantity = { localId: "quantity", fieldId: null, replacesFieldId: null, type: "decimal" as const, label: { es: "Cantidad" }, help: null, required: false, repeated: true as const };
+  const body = { ...original, requestId: "request", draft: { ...original.draft, fields: [block, quantity] } };
+
+  expect(draftFieldIssues(body, { "draft.fields[0].rows": ["Revisá los renglones."], "draft.fields[1].repeated": ["Esta pregunta no se carga varias veces."] }))
+    .toEqual([{ path: "draft.fields[0].rows", fieldLocalId: "block", messages: ["Revisá los renglones."] },
+      { path: "draft.fields[1].repeated", fieldLocalId: "quantity", messages: ["Esta pregunta no se carga varias veces."] }]);
+});

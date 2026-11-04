@@ -95,7 +95,8 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
   const dirty = rules !== null && baseline !== null && JSON.stringify(rules) !== JSON.stringify(baseline.rules);
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
   const options = query.data?.options;
-  const columns: ResponseColumn[] = options?.questions.map(field => ({ fieldId: field.fieldId, type: field.type, label: localizedValue(field.label, culture, options.originalCulture), introducedInVersion: 1, options: options.conditionChoices[field.fieldId] ?? (field.options ?? []).map(option => ({ id: option.choiceId, label: localizedValue(option.label, culture, options.originalCulture) })) })) ?? [];
+  // The block of rows has no answer of its own: only its questions can be conditions.
+  const columns: ResponseColumn[] = options?.questions.flatMap(field => field.type === "group" ? [] : [{ fieldId: field.fieldId, type: field.type, label: localizedValue(field.label, culture, options.originalCulture), introducedInVersion: 1, options: options.conditionChoices[field.fieldId] ?? (field.options ?? []).map(option => ({ id: option.choiceId, label: localizedValue(option.label, culture, options.originalCulture) })) }]) ?? [];
   const prepared = prepareRules(rules ?? [], options?.originalCulture ?? "es", columns);
   const conflict = needsReview;
   const blocked = busy || cooldown.isRunning;

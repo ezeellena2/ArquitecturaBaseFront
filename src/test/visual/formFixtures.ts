@@ -349,7 +349,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
           if (!validSelectionCounts(q.selection)) throw new Error("Invalid selection counts.");
           return { ...common, type: q.type, source: source.data, selection: { ...q.selection } };
         }
-        return { ...common, type: q.type, source: source.data };
+        return { ...common, ...(q.repeated ? { repeated: true as const } : {}), type: q.type, source: source.data };
       }
       if ((q.type === "choice" || q.type === "multiChoice") && !q.source) {
         const options = q.options.map(o => {
@@ -359,13 +359,19 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
           if (!validSelectionCounts(q.selection)) throw new Error("Invalid selection counts.");
           return { ...common, type: q.type, options, selection: { ...q.selection } };
         }
-        return { ...common, type: q.type, options };
+        return { ...common, ...(q.repeated ? { repeated: true as const } : {}), type: q.type, options };
       }
       if (q.type === "photo" || q.type === "document") {
         if (!validFileCounts(q.files)) throw new Error("Invalid file counts.");
         return { ...common, type: q.type, files: { ...q.files } };
       }
-      return q.type === "shortText" || q.type === "longText" ? { ...common, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600) } : { ...common, type: q.type };
+      if (q.type === "group") {
+        const { minRows, maxRows } = q.rows;
+        if (minRows === null || maxRows === null || minRows < 0 || minRows > maxRows || maxRows > 100 || q.required !== minRows > 0) throw new Error("Invalid row counts.");
+        return { ...common, type: q.type, rows: { minRows, maxRows } };
+      }
+      const repeated = "repeated" in q && q.repeated ? { repeated: true as const } : {};
+      return q.type === "shortText" || q.type === "longText" ? { ...common, ...repeated, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600) } : { ...common, ...repeated, type: q.type };
     });
     const definition: FormDefinitionSnapshot = { offerWhen: body.offerWhen?.trim() || null, id: previous?.id ?? guid(serial++), name: Object.fromEntries(Object.entries(body.name).map(([language, text]) => [language, text.trim()])), prefix: body.prefix, prefixLocked: previous?.prefixLocked ?? false,
       revision: (previous?.revision ?? 0) + 1, draft: { ...body.draft, fields: canonical } };

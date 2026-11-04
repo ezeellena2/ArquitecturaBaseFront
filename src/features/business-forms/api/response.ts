@@ -15,11 +15,17 @@ const catalogMatch = z.union([z.strictObject({ fieldId: guid, value: z.string().
   z.strictObject({ fieldId: guid, questionId: guid })]);
 export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, match: z.array(catalogMatch).min(1).max(20).optional(), presentation: catalogPresentation.optional() })
   .refine(source => !source.match || new Set(source.match.map(item => item.fieldId.toLowerCase())).size === source.match.length);
-export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document"]),
+const rowQuestionTypes: readonly string[] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
+export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document", "group"]),
   label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullable(), source: canonicalCatalogSourceSchema.optional(),
   files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullable() }).optional(),
   selection: z.strictObject({ minSelected: z.number().int().min(0).max(20), maxSelected: z.number().int().min(1).max(20) }).optional(),
+  rows: z.strictObject({ minRows: z.number().int().min(0).max(100), maxRows: z.number().int().min(1).max(100) }).optional(),
+  repeated: z.literal(true).optional(),
 }).superRefine((value, context) => {
+  if (value.type === "group" ? !value.rows || value.rows.minRows > value.rows.maxRows || value.required !== (value.rows.minRows > 0) : value.rows !== undefined)
+    context.addIssue({ code: "custom", message: "Invalid rows configuration." });
+  if (value.repeated && !rowQuestionTypes.includes(value.type)) context.addIssue({ code: "custom", message: "Invalid row question." });
   const fileType = value.type === "photo" || value.type === "document";
   if (fileType ? !value.files || value.files.minFiles > value.files.maxFiles || value.required !== (value.files.minFiles > 0) || (value.type === "photo" ? !value.files.photoSource : value.files.photoSource != null) : value.files !== undefined) context.addIssue({ code: "custom", message: "Invalid file configuration." });
   if (value.type === "multiChoice") {
@@ -34,13 +40,19 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
     || value.key !== `field_${value.fieldId.replaceAll("-", "").toLowerCase()}`) context.addIssue({ code: "custom", message: "Invalid configuration." });
 });
 const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,11}$/), prefixLocked: z.boolean(), revision, offerWhen: z.string().min(1).max(1000).refine(value => value === value.trim()).nullable(),
-  draft: z.strictObject({ format: z.literal(1), culture: z.enum(["es", "en"]), submitLabel: text, fields: z.array(canonicalFormFieldSchema).max(40) }),
+  draft: z.strictObject({ format: z.literal(1), culture: z.enum(["es", "en"]), submitLabel: text, fields: z.array(canonicalFormFieldSchema).max(41) }),
 }).superRefine((value, context) => {
   const { culture, fields, submitLabel } = value.draft;
   const labels = [value.name, submitLabel, ...fields.flatMap(item => [item.label, ...(item.options ?? []).map(option => option.label)])];
   const choices = fields.flatMap(item => (item.options ?? []).map(option => option.choiceId));
+  // One block at most, not counted among the forty questions, with the questions of its rows right after it.
+  const block = fields.findIndex(item => item.type === "group");
+  let end = block + 1;
+  while (block >= 0 && fields[end]?.repeated) end++;
   if (labels.some(label => !label[culture]?.trim() || Object.values(label).some(item => item !== "" && !item.trim()))
-    || new Set(fields.map(item => item.fieldId)).size !== fields.length || new Set(choices).size !== choices.length) {
+    || new Set(fields.map(item => item.fieldId)).size !== fields.length || new Set(choices).size !== choices.length
+    || fields.filter(item => item.type !== "group").length > 40 || fields.filter(item => item.type === "group").length > 1
+    || fields.some((item, index) => item.repeated && (block < 0 || index <= block || index >= end))) {
     context.addIssue({ code: "custom", message: "Invalid draft." });
   }
 });
@@ -86,8 +98,9 @@ export function recoveryPath(requestId: string): string { return `/api/forms/dra
 
 function adaptDefinition(value: z.infer<typeof definition>): FormDefinitionSnapshot {
   return { ...value, draft: { ...value.draft, fields: value.draft.fields.map((item): CanonicalQuestion => {
-    const { maxLength, options, source, files, selection, ...common } = item;
+    const { maxLength, options, source, files, selection, rows, ...common } = item;
     switch (common.type) {
+      case "group": return { ...common, type: common.type, rows: rows! };
       case "photo": case "document": return { ...common, type: common.type, files: files! };
       case "shortText": case "longText": return { ...common, type: common.type, maxLength: maxLength! };
       case "choice": return source ? { ...common, type: common.type, source } : { ...common, type: common.type, options: options! };
@@ -121,6 +134,7 @@ const publicationWarning = z.discriminatedUnion("code", [
   z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.OptionsPerRecipientHigh"), limit: z.union([z.literal(20), z.literal(200)]), maximum: warningCount, maximumLabel: z.string().min(1).optional() }),
   z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.RecipientsWithoutData"), count: warningCount.min(1), people: z.array(z.string().min(1)).max(5) }),
   z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.DependsOnAnswer") }),
+  z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.RowsOverChannelLimit"), limit: z.number().int().min(1), maximum: z.number().int().min(1).max(100) }),
 ]);
 const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: revision, nextVersionNumber: revision, compatibility: publicationCompatibility,
   canAccept: z.boolean(), acceptanceAvailability: z.enum(["Available", "Unavailable", "InProgress"]),
@@ -130,7 +144,7 @@ const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: rev
   cultures: z.array(z.strictObject({ culture: z.enum(["es", "en"]), isOriginal: z.boolean(), isComplete: z.boolean(), missing: z.array(publicationIssue) })),
   issues: z.array(publicationIssue), warnings: z.array(publicationWarning),
   diff: z.strictObject({ baseVersionId: guid.nullable(), added: z.array(guid), changed: z.array(guid), removed: z.array(guid),
-    addedCultures: z.array(z.enum(["es", "en"])), removedCultures: z.array(z.enum(["es", "en"])) }),
+    addedCultures: z.array(z.enum(["es", "en"])), removedCultures: z.array(z.enum(["es", "en"])), movedToRows: z.array(guid).min(1).optional() }),
 });
 export function readFormPublicationCheck(value: unknown, definitionId: string, expectedRevision: number, fields: readonly DraftQuestion[]) {
   const checked = read(publicationCheck, value);
@@ -140,6 +154,8 @@ export function readFormPublicationCheck(value: unknown, definitionId: string, e
     return !field || issue.choiceId !== null && (field.type !== "choice" && field.type !== "multiChoice" || !field.options?.some(option => option.choiceId?.toLowerCase() === issue.choiceId?.toLowerCase()));
   })) throw new UnsupportedFormResponse();
   if (checked.warnings.some(warning => !fields.some(field => field.fieldId?.toLowerCase() === warning.fieldId.toLowerCase()))) throw new UnsupportedFormResponse();
+  // «Pasan a renglones» names questions of the block that took the place of published ones.
+  if (checked.diff.movedToRows?.some(id => !fields.some(field => field.fieldId?.toLowerCase() === id.toLowerCase() && "repeated" in field && field.repeated))) throw new UnsupportedFormResponse();
   const hasTicket = checked.checkToken !== null && checked.checkExpiresAtUtc !== null;
   if (checked.canAccept ? !hasTicket || checked.compatibility !== "LocallyValidated" || checked.acceptanceAvailability !== "Available" || checked.issues.length !== 0 : checked.checkToken !== null || checked.checkExpiresAtUtc !== null) throw new UnsupportedFormResponse();
   if (checked.definitionId.toLowerCase() !== definitionId.toLowerCase() || checked.draftRevision !== expectedRevision) throw new UnsupportedFormResponse();

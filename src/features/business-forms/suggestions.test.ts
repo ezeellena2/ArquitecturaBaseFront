@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import type { CanonicalQuestion } from "./model";
-import { mappingTargets, newSuggestion, prepareSuggestions, suggestionFieldErrors, type FormSuggestion, type PublishedSuggestionForm } from "./suggestions";
-const field = (fieldId:string,type:CanonicalQuestion["type"]):CanonicalQuestion => { const base={fieldId,key:"field_"+fieldId.replaceAll("-",""),label:{es:fieldId},help:null,required:false}; if(type==="shortText"||type==="longText")return {...base,type,maxLength:100};if(type==="multiChoice")return {...base,type,selection:{minSelected:0,maxSelected:3},options:[{choiceId:crypto.randomUUID(),label:{es:"A"}}]};if(type==="choice")return {...base,type,options:[{choiceId:crypto.randomUUID(),label:{es:"A"}}]};if(type==="photo"||type==="document")return {...base,type,files:{minFiles:0,maxFiles:1,photoSource:type==="photo"?"cameraOrGallery":null}};return {...base,type}; };
+import { mappableSource, mappingTargets, newSuggestion, prepareSuggestions, suggestionFieldErrors, type FormSuggestion, type PublishedSuggestionForm } from "./suggestions";
+const field = (fieldId:string,type:CanonicalQuestion["type"]):CanonicalQuestion => { const base={fieldId,key:"field_"+fieldId.replaceAll("-",""),label:{es:fieldId},help:null,required:false}; if(type==="shortText"||type==="longText")return {...base,type,maxLength:100};if(type==="multiChoice")return {...base,type,selection:{minSelected:0,maxSelected:3},options:[{choiceId:crypto.randomUUID(),label:{es:"A"}}]};if(type==="choice")return {...base,type,options:[{choiceId:crypto.randomUUID(),label:{es:"A"}}]};if(type==="photo"||type==="document")return {...base,type,files:{minFiles:0,maxFiles:1,photoSource:type==="photo"?"cameraOrGallery":null}};if(type==="group")return {...base,type,required:true,rows:{minRows:1,maxRows:20}};return {...base,type}; };
 const source:PublishedSuggestionForm={definitionId:crypto.randomUUID(),versionId:crypto.randomUUID(),name:{es:"Entrega"},originalCulture:"es",questions:[field("text","shortText"),field("number","decimal"),field("photo","photo")]};
 const destination:PublishedSuggestionForm={...source,definitionId:crypto.randomUUID(),versionId:crypto.randomUUID(),name:{es:"Factura"},questions:[field("target-text","shortText"),field("target-long","longText"),field("target-number","decimal")]};
 const suggestion=():FormSuggestion=>({...newSuggestion(),destinationDefinitionId:destination.definitionId,destinationVersionId:destination.versionId,when:"Cuando pide factura"});
@@ -39,4 +39,15 @@ it("never maps a multiple-choice source or target, even when both use the same c
   const draft = { ...suggestion(), mappings: [{ source: { kind: "Field" as const, fieldId: "multi-source" }, destinationFieldId: "multi-target" }] };
   expect(prepareSuggestions([draft], { ...source, questions: sources }, [{ ...destination, questions: targets }], []).issues)
     .toContainEqual({ path: "suggestions.0.mappings.0.destinationFieldId", key: "incompatible" });
+});
+
+it("never maps the block of rows or a question of one, from or to it", () => {
+  const block = field("block", "group");
+  const repeated = { ...field("row-text", "shortText"), repeated: true as const };
+  const targets = [{ ...field("target-row", "shortText"), repeated: true as const }, field("target-plain", "shortText")];
+
+  expect(mappingTargets({ kind: "Field", fieldId: "row-text" }, [repeated], targets)).toEqual([]);
+  expect(mappingTargets({ kind: "Field", fieldId: "text" }, source.questions, targets).map(question => question.fieldId)).toEqual(["target-plain"]);
+  expect(mappingTargets({ kind: "RecordNumber", fieldId: null }, source.questions, targets).map(question => question.fieldId)).toEqual(["target-plain"]);
+  expect([block, repeated, field("text", "shortText")].filter(mappableSource).map(question => question.fieldId)).toEqual(["text"]);
 });
