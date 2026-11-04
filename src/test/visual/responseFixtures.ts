@@ -190,7 +190,15 @@ export function createResponseVisualFixtures(
     );
   let failOnce = scenario === "responses-error";
   let actionState: "Uncertain" | "Failed" | "Completed" = "Uncertain";
-  const workflow = (recordId: string) => ({ ...responseWorkflowFixture(recordId), ...(scenario === "responses-workflow" ? { recordState: "Approved", ruleRevision: 3, actions: [{ id: id(90), ruleId: id(91), kind: "NotifyAuthor", event: "Approved", order: 1, revision: 0, state: actionState, reasonCode: actionState === "Completed" ? null : "Test.Delivery", reason: actionState === "Completed" ? null : en ? "Delivery needs review." : "Revisá la entrega.", canConsult: actionState === "Uncertain", canRetry: actionState === "Failed", recipients: [{ user: { userId: id(92), displayName: "Juan Gómez" }, channelId: "WhatsApp", state: actionState === "Completed" ? "Accepted" : actionState, reasonCode: null, reason: null, canReview: actionState === "Uncertain", review: null, deliveredAtUtc: null, readAtUtc: null }], createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: actionState === "Completed" ? "2026-10-16T12:01:00Z" : null }] } : {}) });
+  // RT1-A: a role notice that did not reach Marcos, who is retried from his own row.
+  let personSent = false;
+  const rolePeople = () => [
+    { user: { userId: id(95), displayName: "Ana Pérez" }, channelId: "phone", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, review: null, deliveredAtUtc: "2026-10-16T12:02:00Z", readAtUtc: "2026-10-16T12:05:00Z" },
+    personSent ? { user: { userId: id(96), displayName: "Marcos Gil" }, channelId: "phone", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, review: null, deliveredAtUtc: "2026-10-16T21:16:00Z", readAtUtc: null }
+      : { user: { userId: id(96), displayName: "Marcos Gil" }, channelId: "phone", state: "Failed", reasonCode: "WhatsApp.FormAction.RecipientUnavailable", reason: en ? "The recipient is unavailable to receive the notice." : "El destinatario no está disponible para recibir el aviso.", canReview: false, canRetry: true, review: null, deliveredAtUtc: null, readAtUtc: null }];
+  const roleNotice = () => ({ id: id(93), ruleId: id(94), kind: "NotifyRole", event: "Received", order: 0, revision: personSent ? 2 : 1, state: "Completed", reasonCode: null, reason: null, canConsult: false, canRetry: false,
+    recipients: rolePeople(), createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: personSent ? "2026-10-16T21:16:00Z" : "2026-10-16T12:01:00Z", completedAtUtc: personSent ? "2026-10-16T21:16:00Z" : "2026-10-16T12:01:00Z" });
+  const workflow = (recordId: string) => ({ ...responseWorkflowFixture(recordId), ...(scenario === "responses-role-retry" ? { actions: [roleNotice()] } : {}), ...(scenario === "responses-workflow" ? { recordState: "Approved", ruleRevision: 3, actions: [{ id: id(90), ruleId: id(91), kind: "NotifyAuthor", event: "Approved", order: 1, revision: 0, state: actionState, reasonCode: actionState === "Completed" ? null : "Test.Delivery", reason: actionState === "Completed" ? null : en ? "Delivery needs review." : "Revisá la entrega.", canConsult: actionState === "Uncertain", canRetry: actionState === "Failed", recipients: [{ user: { userId: id(92), displayName: "Juan Gómez" }, channelId: "WhatsApp", state: actionState === "Completed" ? "Accepted" : actionState, reasonCode: null, reason: null, canReview: actionState === "Uncertain", canRetry: false, review: null, deliveredAtUtc: null, readAtUtc: null }], createdAtUtc: "2026-10-16T12:00:00Z", updatedAtUtc: "2026-10-16T12:00:00Z", completedAtUtc: actionState === "Completed" ? "2026-10-16T12:01:00Z" : null }] } : {}) });
   const exports: unknown[] = [];
   if (scenario === "responses-catalog-fields") {
     sheet.name = en ? "Request a spare part" : "Pedir repuesto";
@@ -333,6 +341,10 @@ export function createResponseVisualFixtures(
           ),
         };
         return json(result);
+      }
+      if (scenario === "responses-role-retry" && request.method === "POST" && /\/actions\/[^/]+\/recipients\/[^/]+\/retry$/.test(path)) {
+        personSent = true;
+        return json(workflow(path.split("/").at(-6)!), 202);
       }
       if (scenario === "responses-workflow" && request.method === "POST" && /\/actions\/[^/]+\/(consult|retry)$/.test(path)) {
         actionState = path.endsWith("/consult") ? "Failed" : "Completed";
