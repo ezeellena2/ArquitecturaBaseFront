@@ -44,3 +44,5 @@ Fixtures: `fixtures` (común), `assistantFixtures`, `formFixtures`, `chatFormFix
 `formRows` (RG1-A, RG6-A y RG9-A) recorre sin golden, en es/en a 1440, 390 y 320, el bloque de renglones del editor (`forms-rows`): su fila con el recuadro de sus preguntas 3.1, 3.2…, su editor con mínimo y máximo, y una pregunta del bloque con «Se carga varias veces» marcada y foto, documento y «Renglones» apagados con su motivo.
 
 IA1-A e IA2: `assistant-proposal` arma una propuesta reemplazada, un catálogo ya creado y el ajuste abierto con su pregunta nueva, más «Ver cómo queda»; `catalogs-manual-proposal`, la banda de un Manual propuesto. Ambas en es/en a 1440, 390 y 320.
+
+IA4: `assistantEntries` recorre sin golden, en es/en a 1440, 390 y 320, «Armar con la IA» en Diseñar formularios, Catálogos y Formularios que faltan (`*-assistant-entry`, que también contestan Inicio): el pedido empezado queda en el editor de una conversación nueva y la ruta no lo lleva. `assistant-entries` es Inicio vacío con la sugerencia y el texto del editor del módulo. Sus capturas van a `test-results` para compararlas con el tablero.
