@@ -135,6 +135,7 @@
     "optionDescription_one": "Version {{version}} · {{count}} question",
     "optionDescription_other": "Version {{version}} · {{count}} questions",
     "language": "It arrives in {{language}}.",
+    "dependsOnAnswer": "«{{question}}» depends on another answer: it is loaded in the app",
     "culture": {
       "es": "Spanish",
       "en": "English"
@@ -201,6 +202,7 @@
       "options_other": "{{label}}: {{count}} options",
       "recipientDataMissing": "Cannot send: {{name}} has no {{data}}, and “{{label}}” shows its options based on that data. Add it in “Edit user” and send it again.",
       "filterUnavailable": "{{label}}: the filter cannot be used. Tell the person who manages the form.",
+      "dependsOnAnswer": "«{{label}}» depends on another answer: it is loaded in the app.",
       "unavailable": "{{label}}: the catalog is unavailable. Notify its administrator.",
       "tooLarge": "{{label}}: exceeds the 200 options supported by WhatsApp. Adjust the catalog before sending.",
         "tooLargeForMultiple": "{{label}}: this person would get more than 20 options. Filter the catalog or use a single-choice question.",

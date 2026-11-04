@@ -12,7 +12,7 @@ const issueKeys: Readonly<Record<string,string>> = {
   "Forms.Record.CatalogUnavailable":"unavailable", "Forms.Record.CatalogTooLarge":"tooLarge",
   "Forms.Record.CatalogTooLargeForMultiple":"tooLargeForMultiple",
   "Forms.Record.RecipientDataMissing":"recipientDataMissing", "Forms.Record.CatalogFilterUnavailable":"filterUnavailable",
-  "Forms.Record.CatalogEmpty":"empty", "Forms.Record.CatalogOptionInvalid":"invalidOption",
+  "Forms.Record.CatalogEmpty":"empty", "Forms.Record.CatalogOptionInvalid":"invalidOption", "Forms.Record.CatalogDependsOnAnswer":"dependsOnAnswer",
 };
 /// `waitReason` is the wait of a 429: it turns off Retry and is its reason. Null when there is no wait.
 export function FormCatalogPreparation({query,waitReason,hasCatalogQuestions,recipientName}: {query:UseQueryResult<ChatFormPreparation>,waitReason:string|null,hasCatalogQuestions:boolean,recipientName:string}) {

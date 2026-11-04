@@ -14,3 +14,9 @@ export function formOptionKey(option: ChatFormOption) { return option.definition
 export function formOptionName(option: ChatFormOption, culture: RecipientCulture): string {
   return option.name[culture]?.trim() ? option.name[culture]! : option.name[culture === "es" ? "en" : "es"]!;
 }
+
+/** The question whose list depends on another answer, in the recipient's language when it has it: the form cannot be sent. */
+export function formOptionDependentQuestion(option: ChatFormOption, culture: RecipientCulture): string | null {
+  const label = option.dependentQuestion;
+  return !label ? null : label[culture]?.trim() ? label[culture]! : label[culture === "es" ? "en" : "es"] ?? null;
+}

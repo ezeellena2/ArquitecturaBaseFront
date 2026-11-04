@@ -584,3 +584,13 @@ it("shows that it checks a frozen form send from beside the composer until the l
  await waitFor(() => expect(screen.queryByRole("button", { name: "Consultando…" })).not.toBeInTheDocument());
  expect(posts).toHaveLength(1);
 });
+
+// CW7: a form with a list that depends on another answer is loaded in the app, so its card is off and says why.
+it("shows a form whose list depends on another answer off, with the question that depends", async () => {
+ options[0] = { ...options[0], dependentQuestion: { es: "Lote", en: "Lot" } };
+ const dialog = await openDialog();
+ const card = await within(dialog).findByRole("radio", { name: /Registrar visita/ });
+ expect(card).toBeDisabled();
+ expect(within(dialog).getByText("«Lote» depende de otra respuesta: se carga desde la app")).toBeInTheDocument();
+ expect(within(dialog).queryByText(/^Versión 1 ·/)).not.toBeInTheDocument();
+});

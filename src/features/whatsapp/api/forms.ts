@@ -12,7 +12,9 @@ const culture = z.enum(["es", "en"]);
 const guid = z.string().uuid();
 // Assert actual end of input, matching the backend prefix validator without accepting a trailing newline.
 const prefix = z.string().regex(/^[A-Z][A-Z0-9]{0,11}(?![\s\S])/);
-const optionSchema = z.object({ definitionId: guid, versionId: guid, versionNumber: z.number().int().positive(), prefix, name: formTextSchema, questionCount: z.number().int().nonnegative(), submitLabel: formTextSchema, hasCatalogQuestions: z.boolean().optional() }).strict();
+const optionSchema = z.object({ definitionId: guid, versionId: guid, versionNumber: z.number().int().positive(), prefix, name: formTextSchema, questionCount: z.number().int().nonnegative(), submitLabel: formTextSchema, hasCatalogQuestions: z.boolean().optional(),
+  // A form with a list that depends on another answer is loaded only in the app: this is that question's label.
+  dependentQuestion: formTextSchema.optional() }).strict();
 export type ChatFormOption = z.infer<typeof optionSchema>;
 const formsSchema = z.object({ page: z.object({ items: z.array(optionSchema), page: z.number().int().positive(), pageSize: z.number().int().positive(), totalCount: z.number().int().nonnegative(), totalPages: z.number().int().nonnegative(), hasPrevious: z.boolean(), hasNext: z.boolean() }).strict(), recipientCulture: culture.nullable(), recipientContextRevision: z.string().min(1).nullable() }).strict().refine(value => value.page.items.length === 0 || value.recipientCulture !== null && value.recipientContextRevision !== null);
 export type ChatForms = z.infer<typeof formsSchema>;
