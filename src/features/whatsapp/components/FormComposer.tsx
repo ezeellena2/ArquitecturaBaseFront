@@ -52,6 +52,8 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   useEffect(() => { if (focusPage.current && !state.forms.isFetching && state.forms.data) { focusPage.current = false; list.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[pinned]?.focus(); } }, [state.forms.data, state.forms.isFetching, pinned]);
   const deadline = new Date(Date.parse(contact.lastInboundAtUtc)+24*60*60*1000).toISOString();
   const language = i18n.resolvedLanguage ?? "es";
+  // NI1-A (2026-11-03): «Le llega en …» names the language only when it is not the menu's.
+  const menu = language.startsWith("en") ? "en" : "es";
   const name = contact.profileName ?? contact.linkedAccount?.displayName ?? t("unnamed");
   const presentationCulture = state.presentationCulture;
   const cta = presentationCulture && state.presentationReady ? t("forms.openForm",{lng:presentationCulture}) : undefined;
@@ -85,7 +87,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         <DialogHeader><DialogTitle>{t("forms.title",{name})}</DialogTitle></DialogHeader>
         {assistantOpen && assistant?.proposal ? <>
           <p className="break-words text-sm font-medium">{t("assistant.version", { name: assistant.proposal.name, version: assistant.proposal.versionNumber })}</p>
-          <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+assistant.proposal.culture)})}</p>
+          {assistant.proposal.culture !== menu ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+assistant.proposal.culture)})}</p> : null}
           {assistant.proposal.fields.length ? <fieldset aria-labelledby={prefilledTitleId} aria-describedby={prefilledHelpId} disabled={assistant.busy || Boolean(assistant.attempt)}>
             {/* The (i) goes in the legend, next to its title: there it stays usable while the boxes are off. */}
             <legend className="mb-2 flex items-center gap-1 text-xs font-medium uppercase text-[var(--color-content-muted)]"><span id={prefilledTitleId}>{t("assistant.prefilledTitle")}</span><span className="-my-1 inline-flex"><InfoTip id={prefilledHelpId} text={t("assistant.prefilledHelp", { name })} label={t("common:actions.moreInfo", { label: t("assistant.prefilledTitle") })} /></span></legend>
@@ -106,7 +108,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
             : state.forms.isPending ? <div role="status" className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t("forms.loading")}</div> : <DisabledReason reason={retryReason} className={regionReason}><fieldset className="min-w-0"><RadioGroupField label={t("forms.formLabel")} variant="cards" value={selected&&!state.contextChanged?formOptionKey(selected):undefined} onValueChange={key=>{const option=listed.find(value=>formOptionKey(value)===key);if(option)state.choose(option);}} error={state.selectionError} options={listed.map(option=>({value:formOptionKey(option),label:formOptionName(option,selected&&formOptionKey(option)===formOptionKey(selected)&&presentationCulture?presentationCulture:form?.recipientCulture??"es"),description:t("forms.optionDescription",{version:option.versionNumber,count:option.questionCount}),disabled:frozen||state.sending||state.waiting||(form?.blocked==="formUnavailable"&&option.versionId===selected?.versionId)}))} /></fieldset></DisabledReason>}
           {!state.forms.isPending&&!state.forms.isError&&!items.length ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.noResults")}</p> : null}
           {state.forms.data ? <DisabledReason reason={retryReason} className={regionReason}><fieldset disabled={state.waiting}><Pagination {...state.forms.data.page} onPageChange={page=>{focusPage.current=true;state.setPage(page);}} /></fieldset></DisabledReason> : null}
-          {presentationCulture ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+presentationCulture)})}</p> : null}
+          {presentationCulture && presentationCulture !== menu ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+presentationCulture)})}</p> : null}
         </div> : null}
         {recipientChanged ? <Banner tone="danger">{t("forms.recipientChanged")}</Banner>
           : state.mayReadOptions&&!state.contextChanged&&selected&&!frozen ? !state.presentationReady && state.preparation.isSuccess ? <div role="status" className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t("forms.preparing")}</div> : <FormCatalogPreparation hasCatalogQuestions={selected.hasCatalogQuestions===true} query={state.preparation} waitReason={retryReason} recipientName={name} /> : null}

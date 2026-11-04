@@ -309,9 +309,10 @@ it("preserves the active pointer selection and dialog when AI becomes unavailabl
  expect(sends[0].includedFieldIds).toEqual([fields[0].fieldId]);
 });
 
-it("shows the proposal presentation culture when an English account receives the complete original form", async () => {
+it("does not name the menu language when an English account receives the complete original form", async () => {
  recipientCulture = "en"; const { dialog } = await openSuggestion();
- expect(within(dialog).getByText("Le llega en español.", { exact: true })).toBeInTheDocument();
+ // NI1-A (2026-11-03): it arrives in Spanish, the menu language, so it is not named.
+ expect(within(dialog).queryByText(/^Le llega en/)).not.toBeInTheDocument();
  expect(within(dialog).getByText(/Registrar visita/)).toBeInTheDocument();
  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" })); await waitFor(() => expect(sends).toHaveLength(1));
  expect(Object.keys(sends[0]).sort()).toEqual(["includedFieldIds", "requestId"]);
