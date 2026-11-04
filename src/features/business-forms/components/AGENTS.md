@@ -85,3 +85,5 @@ Tableros con shared/ui; su dueño posee datos y avisos.
 ## Referencias
 
 - [Tableros](../../../../docs/design/formularios-whatsapp.md).
+
+`assistant/FormsProposalCard` es la tarjeta de las propuestas de Inicio (IA1-A) para formularios, catálogos Manual y de personas (H4): «Ver cómo queda» con `FormPreview` en un `Dialog` (`mobileFullscreen`), «Crear borrador» o «Crear catálogo» con el permiso de administrar, y el estado plegado («Reemplazada», o «Borrador creado» o «Catálogo creado» con su enlace). Un nombre o un prefijo en uso, o un catálogo que ya no está, lo dice la tarjeta; lo demás, el aviso común.

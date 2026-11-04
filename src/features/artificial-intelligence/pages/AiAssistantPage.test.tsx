@@ -810,5 +810,37 @@ describe("assistant waits", () => {
     release();
     expect(await within(availability).findByRole("button", { name: "Reintentar" })).toBeEnabled();
   });
+  const proposalTurn = () => ({
+    ...turn,
+    answer: { kind: "proposal", text: "Te propongo este formulario.", evidenceIds: [] },
+    evidences: [],
+    proposal: {
+      id: "0199a0c0-0000-7000-8000-000000000555",
+      capability: "forms.authoring.propose-form",
+      version: 1,
+      content: { culture: "es", name: "Control de carga", prefix: "CCC", submitLabel: "Enviar",
+        questions: [{ label: "Patente", type: "shortText", required: true, options: [], catalog: null }] },
+    },
+  });
+  it("shows the card an installed module lends under the answer, and the composer invites a change", async () => {
+    server.use(
+      http.get("/api/settings/presentation", () => HttpResponse.json({ installedFeatures: ["assistant", "forms"] })),
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.assistant.use", "formtemplates.read", "formtemplates.manage"] })),
+      http.get("/api/forms/definitions/assistant-proposals/:id", ({ params }) => HttpResponse.json({ proposalId: params.id, definitionId: null })),
+    );
+    turn = proposalTurn();
+    renderRouteWithProviders("/?conversacion=" + conversationId);
+    const card = await screen.findByRole("region", { name: "Formulario: Control de carga" });
+    expect(within(card).getByRole("button", { name: "Crear borrador" })).toBeInTheDocument();
+    expect(screen.getByText("Te propongo este formulario.")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveAttribute("placeholder", "Pedí un cambio o hacé otra consulta…");
+  });
+  it("reads a proposal answer alone when its module is not installed", async () => {
+    turn = proposalTurn();
+    renderRouteWithProviders("/?conversacion=" + conversationId);
+    await screen.findByText("Te propongo este formulario.");
+    expect(screen.queryByRole("region", { name: /Control de carga/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveAttribute("placeholder", "Preguntale al sistema…");
+  });
 });
 

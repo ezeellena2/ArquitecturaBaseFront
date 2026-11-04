@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { MessageBubble, MessageDateDivider, type MessageDeliveryState } from "@/shared/ui/MessageBubble";
 import { MessageHistory } from "@/shared/ui/MessageHistory";
+import { AssistantProposalCard } from "@/shared/ui/assistant/AssistantProposalCard";
 
 // Referencia local con componentes reales, no una segunda implementación visual.
 export function Catalog() {
@@ -95,6 +96,18 @@ export function Catalog() {
                 read: t("whatsapp:status.Read"), failed: t("whatsapp:status.Failed"), uncertain: t("whatsapp:status.Uncertain"),
                 reviewed: t("whatsapp:status.Reviewed"), unknown: t("whatsapp:status.Unknown") })[state] }} />)}
         </MessageHistory>
+      </Surface>
+      {/* IA1-A (2026-11-04): the proposal card, open and folded as replaced or created; the module brings its content. */}
+      <Surface title={english ? "Assistant proposal" : "Propuesta del asistente"} padded>
+        <AssistantProposalCard kind={english ? "Form" : "Formulario"} title={english ? "Truck load control" : "Control de carga de camiones"}
+          summary={english ? "CCC · 2 questions" : "CCC · 2 preguntas"}
+          actions={<><Button size="sm" variant="outline">{english ? "See how it looks" : "Ver cómo queda"}</Button><Button size="sm">{english ? "Create draft" : "Crear borrador"}</Button></>}>
+          <ol className="flex flex-col gap-2"><li>1. {english ? "License plate" : "Patente"}</li><li>2. {english ? "Net kilos" : "Kilos netos"}</li></ol>
+        </AssistantProposalCard>
+        <AssistantProposalCard kind={english ? "Form" : "Formulario"} title={english ? "Truck load control" : "Control de carga de camiones"}
+          folded={{ state: english ? "Replaced" : "Reemplazada" }} />
+        <AssistantProposalCard kind={english ? "Catalog" : "Catálogo"} title={english ? "Carriers" : "Transportistas"}
+          folded={{ state: english ? "Catalog created" : "Catálogo creado", action: <Button size="sm" variant="link">{english ? "Open the catalog" : "Abrir el catálogo"}</Button> }} />
       </Surface>
       {formPieces ? <Surface title={english ? "Form controls" : "Controles de formularios"} padded>
         <div className="flex flex-col gap-4">

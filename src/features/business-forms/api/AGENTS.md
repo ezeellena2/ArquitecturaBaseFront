@@ -79,3 +79,5 @@ Familias:
 - [Regla funcional](../../../../../ArquitecturaBase/docs/features/formularios.md) y [ciclo de vida](../../../../../ArquitecturaBase/docs/features/formularios.md#dar-de-baja-reactivar-y-eliminar--2026-10-21).
 - [Cohortes HTTP](../../../test/httpCohort.ts) y [guía del arnés](../../../test/AGENTS.md).
 - Ejemplos: `response.ts` (guard completo), `lifecycleHttpContract.test.ts`, `httpContract.test.ts`, `catalogCurrentHttpContract.test.ts`.
+
+`assistantProposals` crea el borrador o el catálogo de una propuesta de Inicio y lee su estado (el Id creado o null). `approveManualCatalogProposal` aprueba un Manual con sólo la revisión. La propuesta del detalle de un catálogo trae `originalProposal` (H4) o `manual`, la procedencia con cualquier `channelId` y `requestedIn` cuando se pidió en la app.

@@ -204,10 +204,17 @@ export function createAssistantVisualFixtures(
         }))
       : [];
   if (previousTurns.length) turn = { ...turn, ordinal: 11 };
+  // IA1-A (2026-11-04): a form proposal replaced by its adjustment, and a catalog proposal that already created its catalog.
+  const scene = scenario === "assistant-proposal" ? proposalScene(turn, en) : null;
+  if (scene) { previousTurns.push(...scene.previous); turn = scene.current; }
   let turnReads = 0;
   let removed = false;
   return async (request: Request): Promise<Response | undefined> => {
     const path = new URL(request.url).pathname;
+    if (scene && path.startsWith("/api/forms/definitions/assistant-proposals/"))
+      return json({ proposalId: path.split("/").at(-1), definitionId: null });
+    if (scene && path.startsWith("/api/forms/catalogs/assistant-proposals/"))
+      return json({ proposalId: path.split("/").at(-1), catalogId: scene.createdCatalogId });
     if (!path.startsWith("/api/ai/assistant")) return undefined;
     if (request.method === "GET") traffic.reads.push(request.url); else traffic.writes++;
     if (path.endsWith("/bootstrap"))
@@ -308,5 +315,39 @@ export function createAssistantVisualFixtures(
     throw new Error(
       `Missing assistant visual fixture for ${request.method} ${path}`,
     );
+  };
+}
+// IA1-A (2026-11-04): the first form proposal, a catalog proposal that already created its catalog and the adjustment that
+// replaces the first one, with its new question.
+function proposalScene(base: AssistantTurn, en: boolean) {
+  const ids = (index: number) => `0199a0c0-0000-7000-8004-${String(index).padStart(12, "0")}`;
+  const culture = en ? "en" : "es";
+  const plate = { label: en ? "License plate" : "Patente", type: "shortText", required: true, options: [], catalog: null };
+  const field = { label: en ? "Field" : "Campo", type: "catalog", required: true, options: [], catalog: { id: ids(90), name: en ? "Fields" : "Campos" } };
+  const carrier = { label: en ? "Carrier company" : "Empresa de transporte", type: "shortText", required: false, options: [], catalog: null };
+  const tare = { label: en ? "Tare" : "Tara", type: "number", required: true, options: [], catalog: null };
+  const net = { label: en ? "Net kilos" : "Kilos netos", type: "number", required: true, options: [], catalog: null };
+  const form = (id: number, questions: readonly unknown[]) => ({ id: ids(id), capability: "forms.authoring.propose-form", version: 1,
+    content: { culture, name: en ? "Truck load control" : "Control de carga de camiones", prefix: "CCC", submitLabel: en ? "Submit" : "Enviar", questions } });
+  const turnOf = (ordinal: number, question: string, text: string, proposal: AssistantTurn["proposal"]): AssistantTurn => ({
+    ...base, turnId: ids(ordinal), requestId: ids(10 + ordinal), ordinal, state: "completed", stage: "finished", question,
+    answer: { kind: "proposal", text, evidenceIds: [] }, evidences: [], proposal });
+  return {
+    createdCatalogId: ids(99),
+    previous: [
+      turnOf(1, en ? "Make me a form to control truck loads." : "Armame un formulario para controlar la carga de camiones.",
+        en ? "I used the Fields catalog, which already exists; the carrier company stays as text. If you want, I can also make a catalog of carriers."
+          : "Usé el catálogo Campos, que ya existe; la empresa de transporte quedó como texto. Si querés, armo también un catálogo de transportistas.",
+        form(21, [plate, field, carrier, tare])),
+      turnOf(2, en ? "Yes, make the catalog of carriers." : "Sí, armá el catálogo de transportistas.",
+        en ? "This is the catalog of carriers: the code is the tax ID and each option, the company name."
+          : "Este es el catálogo de transportistas: el código es el CUIT y cada opción, la razón social.",
+        { id: ids(22), capability: "forms.authoring.propose-catalog", version: 1, content: { culture, name: en ? "Carriers" : "Transportistas",
+          description: en ? "Companies that bring the load" : "Empresas que traen la carga", valueType: "text", code: en ? "Tax ID" : "CUIT",
+          option: en ? "Company name" : "Razón social", fields: [{ name: en ? "Phone" : "Teléfono", type: "text" }] } }),
+    ],
+    current: turnOf(3, en ? "Remove the tare and add the net kilos." : "Sacá la tara y agregá los kilos netos.",
+      en ? "I removed the tare and added the net kilos, required." : "Saqué la tara y agregué los kilos netos, obligatorios.",
+      form(23, [plate, field, carrier, net])),
   };
 }

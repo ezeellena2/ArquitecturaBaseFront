@@ -4,6 +4,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { DashboardPage } from "@/features/home/pages/DashboardPage";
+import { acceptsProposal } from "@/features/business-forms/assistantProposalCapabilities";
+import {
+  AssistantProposalContext,
+  type AssistantProposalCardProps,
+  type AssistantProposalExtension,
+} from "@/shared/hooks/assistantProposalContext";
 import { Page } from "@/shared/ui/Page";
 import { Spinner } from "@/shared/ui/Spinner";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -13,6 +19,23 @@ const AiAssistantPage = lazy(() =>
     (module) => ({ default: module.AiAssistantPage }),
   ),
 );
+const LazyFormsProposalCard = lazy(() =>
+  import("@/features/business-forms/components/assistant/FormsProposalCard").then(
+    (module) => ({ default: module.FormsProposalCard }),
+  ),
+);
+function FormsProposalCard(props: AssistantProposalCardProps) {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <LazyFormsProposalCard {...props} />
+    </Suspense>
+  );
+}
+// Home shows the cards of the installed modules; without forms, a proposal answer reads alone.
+const formsProposals: AssistantProposalExtension = {
+  accepts: acceptsProposal,
+  Card: FormsProposalCard,
+};
 export function AuthenticatedHome() {
   const { t } = useTranslation();
   const user = useCurrentUser();
@@ -58,7 +81,15 @@ export function AuthenticatedHome() {
         </Page>
       }
     >
-      <AiAssistantPage key={user.data?.id} />
+      <AssistantProposalContext
+        value={
+          presentation.data?.installedFeatures?.includes("forms")
+            ? formsProposals
+            : null
+        }
+      >
+        <AiAssistantPage key={user.data?.id} />
+      </AssistantProposalContext>
     </Suspense>
   ) : (
     <DashboardPage />

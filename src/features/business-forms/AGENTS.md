@@ -28,3 +28,5 @@ Lectura obligatoria: la [regla funcional del backend](../../../../ArquitecturaBa
 - [Arquitectura: formularios](../../../docs/architecture.md#áreas-con-guía-propia) y [premisas de pantallas](../../../docs/guides/premisas-de-desarrollo.md).
 - Guías hijas: [api](api/AGENTS.md), [hooks](hooks/AGENTS.md), [components](components/AGENTS.md) y [pages](pages/AGENTS.md).
 - [Cohortes HTTP](../../test/httpCohort.ts) y [arnés de pruebas](../../test/AGENTS.md).
+
+Propuestas de Inicio (IA1-A e IA2): `assistantProposal` lee el contenido de las tres capacidades del módulo (formulario, catálogo Manual y personas de H4), arma la vista previa con el mismo mapeo que usa el servidor al crear y marca las preguntas nuevas; `assistantProposalCapabilities` es la lista liviana que usa app. La tarjeta vive en `components/assistant` y se presta a Inicio por el punto de extensión.

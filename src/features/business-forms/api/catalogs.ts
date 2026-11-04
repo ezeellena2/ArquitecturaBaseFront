@@ -79,6 +79,12 @@ export async function approveCatalogProposal(id: string, body: ApproveCatalogPro
   if (saved.catalog.revision !== body.expectedRevision + 1 || saved.catalog.proposal?.state !== "Approved") throw new UnsupportedCatalogResponse();
   return saved;
 }
+// A Manual proposal is edited like any Manual catalog: approving only activates it, with its options and fields as they are.
+export async function approveManualCatalogProposal(id: string, expectedRevision: number, signal?: AbortSignal) {
+  const saved = readCatalogSave(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/proposal/approve", { expectedRevision }, { signal }), [], id, expectedRevision);
+  if (saved.catalog.kind !== "Manual" || saved.catalog.revision !== expectedRevision + 1 || saved.catalog.proposal?.state !== "Approved" || !saved.catalog.isActive) throw new UnsupportedCatalogResponse();
+  return saved;
+}
 export async function discardCatalogProposal(id: string, expectedRevision: number, signal?: AbortSignal) {
   const discarded = readCatalog(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/proposal/discard", { expectedRevision }, { signal }), id);
   if (discarded.revision !== expectedRevision + 1 || discarded.proposal?.state !== "Discarded") throw new UnsupportedCatalogResponse();

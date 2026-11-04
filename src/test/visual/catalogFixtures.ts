@@ -19,6 +19,16 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
     catalog = { ...catalog, valueType: "Decimal", name: { es: "Recargo por zona", en: "Zone surcharge" } };
     items = items.map((item, index) => ({ ...item, value: ["0", "1500.5", "3200"][index]!, text: { es: ["CABA", "GBA", "Interior"][index]!, en: ["CABA", "GBA", "Inland"][index]! } }));
   }
+  // IA2 (2026-11-04): a Manual catalog the Home assistant proposed, inactive and pending, before importing its options.
+  if (scenario === "catalogs-manual-proposal") {
+    catalog = { ...catalog, name: { es: "Transportistas" }, description: { es: "Empresas que traen la carga" }, isActive: false, itemsCount: 0,
+      proposal: { state: "Pending", originalCulture: "es", requestedBy: { userId: "01990000-0000-7000-8000-000000000088", displayName: "Ana Pérez" },
+        requestedAtUtc: "2026-11-03T13:00:00Z", decidedBy: null, decidedAtUtc: null,
+        provenance: { modelProfileId: "visual-profile", modelProfileVersion: 1, instructionsId: "home-system", instructionsVersion: 2, occurredAtUtc: "2026-11-03T13:00:00Z", channelId: "home" },
+        manual: { culture: "es", name: "Transportistas", description: "Empresas que traen la carga", valueType: "text", code: "CUIT", option: "Razón social", fields: [] },
+        requestedIn: "app" } };
+    items = [];
+  }
   let conflict = scenario === "catalogs-conflict";
   let identity = 100;
   const writes: { method: string; body: CreateManualCatalogBody | UpdateManualCatalogBody }[] = [];

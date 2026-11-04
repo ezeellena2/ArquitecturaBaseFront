@@ -541,6 +541,9 @@
       "discardHint": "No se activará ni podrá usarse en formularios. Se conserva quién la pidió y la propuesta original.",
       "discarded": "Propuesta descartada.",
       "requested": "La pidió {{name}} por WhatsApp el {{date}}.",
+      "requestedInApp": "La pidió {{name}} en el chat de Inicio el {{date}}.",
+      "approved": "Propuesta aprobada: el catálogo quedó activo.",
+      "saveFirst": "Guardá o descartá los cambios antes de aprobar.",
       "decided": "La resolvió {{name}} el {{date}}.",
       "unsupportedColumn": "No se pudo filtrar por «{{criterion}}»: ese dato no existe en la vista Usuarios.",
       "states": {
@@ -1361,5 +1364,34 @@
     "changeTitle": "¿Crear una pregunta nueva?",
     "changeDescription": "Cambiar entre elegir una y varias crea una pregunta nueva. Las respuestas anteriores conservan la pregunta original.",
     "changeAction": "Crear la pregunta nueva"
+  },
+  "assistantProposals": {
+    "replaced": "Reemplazada",
+    "form": {
+      "kind": "Formulario",
+      "summary_one": "{{prefix}} · {{count}} pregunta",
+      "summary_other": "{{prefix}} · {{count}} preguntas",
+      "preview": "Ver cómo queda",
+      "previewTitle": "Cómo queda · {{name}}",
+      "create": "Crear borrador",
+      "creating": "Creando…",
+      "created": "Borrador creado",
+      "open": "Abrir el borrador",
+      "catalogExists": "{{name}}, ya existe",
+      "required": "Obligatoria",
+      "new": "Nueva"
+    },
+    "catalog": {
+      "kind": "Catálogo",
+      "summary_one": "{{type}} · {{count}} campo",
+      "summary_other": "{{type}} · {{count}} campos",
+      "create": "Crear catálogo",
+      "creating": "Creando…",
+      "created": "Catálogo creado",
+      "open": "Abrir el catálogo",
+      "code": "Código",
+      "option": "Opción",
+      "people": "Personas"
+    }
   }
 }

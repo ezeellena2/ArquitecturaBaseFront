@@ -541,6 +541,9 @@
       "discardHint": "It will stay inactive and cannot be used in forms. The requester and original proposal are retained.",
       "discarded": "Proposal discarded.",
       "requested": "Requested by {{name}} via WhatsApp on {{date}}.",
+      "requestedInApp": "Requested by {{name}} in the Home chat on {{date}}.",
+      "approved": "Proposal approved: the catalog is now active.",
+      "saveFirst": "Save or discard your changes before approving.",
       "decided": "Resolved by {{name}} on {{date}}.",
       "unsupportedColumn": "Could not filter by “{{criterion}}”: that field does not exist in the Users view.",
       "states": {
@@ -1361,5 +1364,34 @@
     "changeTitle": "Create a new question?",
     "changeDescription": "Switching between one choice and several creates a new question. Previous responses keep the original question.",
     "changeAction": "Create the new question"
+  },
+  "assistantProposals": {
+    "replaced": "Replaced",
+    "form": {
+      "kind": "Form",
+      "summary_one": "{{prefix}} · {{count}} question",
+      "summary_other": "{{prefix}} · {{count}} questions",
+      "preview": "See how it looks",
+      "previewTitle": "How it looks · {{name}}",
+      "create": "Create draft",
+      "creating": "Creating…",
+      "created": "Draft created",
+      "open": "Open the draft",
+      "catalogExists": "{{name}}, already exists",
+      "required": "Required",
+      "new": "New"
+    },
+    "catalog": {
+      "kind": "Catalog",
+      "summary_one": "{{type}} · {{count}} field",
+      "summary_other": "{{type}} · {{count}} fields",
+      "create": "Create catalog",
+      "creating": "Creating…",
+      "created": "Catalog created",
+      "open": "Open the catalog",
+      "code": "Code",
+      "option": "Option",
+      "people": "People"
+    }
   }
 }

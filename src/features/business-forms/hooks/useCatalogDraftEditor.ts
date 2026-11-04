@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
 import type { CatalogItemMove } from "../api/catalogs";
-import { createManualCatalog, fetchCatalog, updateManualCatalog, createFiltersCatalog, updateFiltersCatalog, previewCatalogFilters, approveCatalogProposal, discardCatalogProposal } from "../api/catalogs";
+import { createManualCatalog, fetchCatalog, updateManualCatalog, createFiltersCatalog, updateFiltersCatalog, previewCatalogFilters, approveCatalogProposal, approveManualCatalogProposal, discardCatalogProposal } from "../api/catalogs";
 import type { CatalogDetail, CatalogItem, CatalogSave, CatalogFilterPreview } from "../api/catalogResponse";
 import { catalogDraftBody, catalogDraftInCulture, catalogDraftUpdateBody, catalogItemFieldIssues, discardCatalogDraftItem, loadCatalogDraftItems, markCatalogDraftItemDeleted, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
 import { catalogItemChanges, type CatalogManualItemValue } from "../catalogItemEdits";
@@ -20,7 +20,7 @@ export interface CatalogReadScope { readonly actorId: string | null; readonly cu
 // Only a stale revision requires rereading. Other 409s are business errors the author corrects in the editor.
 const isRevisionConflict = (error: unknown) => error instanceof ApiError && error.code === "Forms.Catalog.RevisionConflict";
 // What the editor waits for while it is busy: the page shows the wait on the control that started it.
-export type CatalogEditorWork = "save" | "preview" | "discardProposal" | "readCurrent";
+export type CatalogEditorWork = "save" | "preview" | "approveProposal" | "discardProposal" | "readCurrent";
 interface EditorState {
   readonly owner: string;
   readonly epoch: object;
@@ -183,6 +183,25 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
       if (operation.current === controller) { operation.current = null; if (isCurrentOwner()) setState(value => ({ ...value, busy: false })); }
     }
   }, [client, owned, owner, scope.actorId, scope.culture, kind, valueType, isCurrentOwner, accepts]);
+  // A Manual proposal is approved as it was saved: approving only activates it and keeps the decision.
+  const approveManualProposal = useCallback(async () => {
+    const captured = stateRef.current.draft;
+    if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview
+      || captured.kind !== "Manual" || captured.proposal?.state !== "Pending" || !captured.id || captured.revision === null) return;
+    const controller = new AbortController(); operation.current = controller;
+    setState(value => ({ ...value, busy: true, working: "approveProposal", error: null, saved: null }));
+    try {
+      const saved = await approveManualCatalogProposal(captured.id, captured.revision, controller.signal);
+      if (!accepts(owner, controller) || !permissionsRef.current.canManage) return;
+      setState({ ...fresh(owner, saved.catalog, kind, valueType, scope.culture), saved });
+      void client.invalidateQueries({ queryKey: ["form-catalogs", scope.actorId] });
+      return saved;
+    } catch (error) {
+      if (accepts(owner, controller)) { const review = isRevisionConflict(error); setState(value => ({ ...value, busy: false, error, requiresReview: review, ...(review ? { current: null } : {}) })); }
+    } finally {
+      if (operation.current === controller) { operation.current = null; if (isCurrentOwner()) setState(value => ({ ...value, busy: false })); }
+    }
+  }, [client, owned, owner, scope.actorId, scope.culture, kind, valueType, isCurrentOwner, accepts]);
   const clearPreview = useCallback(() => {
     if (owned && isCurrentOwner() && !operation.current) setState(value => ({ ...value, previewResult: null, error: null }));
   }, [owned, isCurrentOwner]);
@@ -229,5 +248,5 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0 || draft.deleteItems.length > 0 || draft.sortAlphabetically);
   return { draft, dirty, busy: owned && state.busy, working: owned && state.busy ? state.working : null, requiresReview: owned && state.requiresReview, current: owned ? state.current : null, confirmed: owned ? state.confirmed : null,
     saved: owned ? state.saved : null, previewResult: owned && canManage ? state.previewResult : null, error: owned ? state.error : null, canSave: owned && canManage && !state.busy && !state.requiresReview,
-    changeSort, observeCatalog, changeMetadata, changeFilters, changeFields, changePresentation, clearPreview, preview, changeItem, discardItem, changeItemDeletion, changeMove, clearMoves, loadItems, save, discardProposal, readCurrent, adoptCurrent };
+    changeSort, observeCatalog, changeMetadata, changeFilters, changeFields, changePresentation, clearPreview, preview, changeItem, discardItem, changeItemDeletion, changeMove, clearMoves, loadItems, save, approveManualProposal, discardProposal, readCurrent, adoptCurrent };
 }

@@ -40,3 +40,5 @@ Fixtures: `fixtures` (común), `assistantFixtures`, `formFixtures`, `chatFormFix
 - [Arnés del front y cohortes HTTP](../AGENTS.md); [configuración](../../../playwright.config.ts) y [servidor](server.mjs).
 
 `formDependentLists` (CW7) recorre sin golden, en es/en a 1440, 390 y 320, el filtro según otra respuesta en el editor (`forms-catalog-fields-dependent`), la lista que espera y se limpia en la carga (`entries-dependent`) y el formulario apagado en el chat (`forms-chat-dependent`); sus capturas van a `test-results` para compararlas con el tablero.
+
+IA1-A e IA2: `assistant-proposal` arma una propuesta reemplazada, un catálogo ya creado y el ajuste abierto con su pregunta nueva, más «Ver cómo queda»; `catalogs-manual-proposal`, la banda de un Manual propuesto. Ambas en es/en a 1440, 390 y 320.

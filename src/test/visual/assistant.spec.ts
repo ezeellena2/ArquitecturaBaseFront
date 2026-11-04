@@ -306,3 +306,26 @@ test("assistant preserves reading position and draft on a failed GET, and delete
     ),
   ).toBe(1);
 });
+// IA1-A (2026-11-04): the adjusted form proposal open with its new question, the replaced one and the created catalog folded,
+// and «Ver cómo queda» in its dialog (full screen on the phone).
+for (const lang of ["es", "en"] as const)
+  for (const width of [1440, 390, 320])
+    test(`assistant proposal ${lang} ${width}`, async ({ page }) => {
+      const es = lang === "es";
+      await page.setViewportSize({ width, height: 1000 });
+      await page.clock.install({ time: new Date("2026-11-04T15:00:00Z") });
+      await page.goto(`/src/test/visual/index.html?${new URLSearchParams({ screen: `/?conversacion=${assistantFixtureConversationId}`, lang, scenario: "assistant-proposal" })}`);
+      const card = page.getByRole("region", { name: es ? "Formulario: Control de carga de camiones" : "Form: Truck load control" }).last();
+      await expect(card.getByRole("button", { name: es ? "Crear borrador" : "Create draft", exact: true })).toBeVisible();
+      await expect(page.getByText(es ? "Reemplazada" : "Replaced", { exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name: es ? "Abrir el catálogo" : "Open the catalog", exact: true })).toBeVisible();
+      await expect(page.getByRole("textbox", { name: es ? "Tu pregunta" : "Your question", exact: true }))
+        .toHaveAttribute("placeholder", es ? "Pedí un cambio o hacé otra consulta…" : "Ask for a change or ask something else…");
+      await page.evaluate(() => document.fonts.ready);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(page).toHaveScreenshot(`assistant-proposal-${lang}-${width}.png`, { fullPage: true });
+      await card.getByRole("button", { name: es ? "Ver cómo queda" : "See how it looks", exact: true }).click();
+      await expect(page.getByRole("dialog", { name: es ? "Cómo queda · Control de carga de camiones" : "How it looks · Truck load control" })).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      await expect(page).toHaveScreenshot(`assistant-proposal-preview-${lang}-${width}.png`);
+    });

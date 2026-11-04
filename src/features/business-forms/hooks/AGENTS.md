@@ -68,3 +68,5 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 - Tests: `useFormDraftEditor.test.tsx`, `useFormPublication.test.ts`, `useFormPublicationCheck.test.ts`, `useCatalogDraftEditor.test.tsx`, `useCatalogQueries.test.tsx`, `useUnobservedQueryCleanup.test.tsx` y, en la raíz, `draftSession.test.ts`, `editorModel.test.ts`, `catalogDraft.test.ts`, `workflow.test.ts`.
 - Regla funcional: [guardado y recuperación](../../../../../ArquitecturaBase/docs/features/formularios.md#un-guardado-y-recuperación-exacta) y [publicación](../../../../../ArquitecturaBase/docs/features/formularios.md#aceptación-durable--primer-corte-2b-2026-10-10).
 - [Editores privados](../../../../docs/architecture.md#reglas) y [un dueño por hecho](../../../../docs/guides/mensajes-y-estados.md#un-dueño-por-hecho).
+
+`useAssistantProposalCreation` lee si la propuesta de esta persona ya creó su borrador o su catálogo (`form-assistant-proposals`, por cuenta y propuesta), crea una sola vez y abre lo creado. `useCatalogDraftEditor.approveManualProposal` aprueba un Manual propuesto tal como está guardado.
