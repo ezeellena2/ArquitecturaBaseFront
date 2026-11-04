@@ -72,10 +72,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const inherit = editor.getByRole("radio", { name: new RegExp("^" + label("Como en el catálogo", "As in the catalog")) });
     const description = editor.getByRole("combobox", { name: label("Descripción · hasta 300", "Description · up to 300"), exact: true });
     await expect(inherit).toBeChecked();
-    // The filter additions act on the whole section: they go in the band of «Qué opciones ve cada persona», expanded. The band
-    // holds the title with its (i) and the actions.
+    // The filter additions (by who receives it, fixed and by another answer) act on the whole section: they go in the band of
+    // «Qué opciones ve cada persona», expanded. The band holds the title with its (i) and the actions.
     const filtersTitle = label("Qué opciones ve cada persona", "Which options each person sees");
-    await expect(editor.getByRole("region", { name: filtersTitle, exact: true }).getByRole("heading", { name: filtersTitle, exact: true }).locator("../..").getByRole("button", { name: /^(Agregar filtro|Add (?:filter|fixed filter))/ })).toHaveCount(2);
+    await expect(editor.getByRole("region", { name: filtersTitle, exact: true }).getByRole("heading", { name: filtersTitle, exact: true }).locator("../..").getByRole("button", { name: /^(Agregar filtro|Add (?:filter|fixed filter))/ })).toHaveCount(3);
     await expect(inherit).toHaveAccessibleDescription(label("Texto · CUIT · Zona", "Text · CUIT · Zone"));
     await expect(description).toBeDisabled();
     await recipient(page, editor, language, "Juan Gómez");
