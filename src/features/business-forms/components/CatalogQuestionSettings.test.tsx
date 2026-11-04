@@ -139,7 +139,7 @@ it("explains why a person cannot be tried before saving only on hover or focus",
 // or not, also in a form that is only read.
 it("explains the filters in the (i) of their section instead of a note", async () => {
   serveRecipientPreview();
-  const hint = "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona debe elegir del mismo catálogo.";
+  const hint = "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona, o la respuesta de una pregunta anterior de elegir una, tiene que elegir del mismo catálogo que el campo.";
   for (const readOnly of [false, true]) {
     const view = renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: manualId }} questionId="q" readOnly={readOnly} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
     const section = await screen.findByRole("region", { name: "Qué opciones ve cada persona" });
@@ -539,4 +539,41 @@ it("opens «En WhatsApp» by itself with an error in its parts", async () => {
   expect(within(whatsapp).getByRole("button", { name: "Plegar «En WhatsApp»" })).toHaveAttribute("aria-expanded", "true");
   expect(within(whatsapp).getByText("Elegí al menos una parte.")).toBeVisible();
   expect(screen.getByRole("button", { name: "Expandir «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "false");
+});
+
+// CW7: a filter by another answer names an earlier single choice of its field's catalog; the other questions say why not.
+it("adds a filter by another answer and lets choose only an earlier single choice of the field's catalog", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  server.use(http.get("/api/forms/catalogs/:id", ({ params }) => HttpResponse.json(params.id === zones ? { ...detail(zones, "Manual"), name: { es: "Zonas", en: "Zones" } }
+    : { ...detail(maximumCatalog, "Manual"), name: { es: "Proveedores", en: "Suppliers" }, itemsCount: 200, fields: [filterField(zone, "zone", "Zona", "catalog", 1), filterField(category, "category", "Rubro", "text", 2)] })));
+  const answers = { current: "Proveedor", choices: (sourceCatalogId: string | null) => [
+    { id: "q-zone", number: 1, label: "Zona", catalog: zones, reason: sourceCatalogId === zones ? null : "otherCatalog" as const },
+    { id: "q-seed", number: 2, label: "Semilla", catalog: maximumCatalog, reason: "otherCatalog" as const },
+    { id: "q-product", number: 4, label: "Producto", catalog: zones, reason: "later" as const }] };
+  server.use(http.get("/api/forms/recipient-samples", () => HttpResponse.json(page([]))));
+  const onSourceChange = vi.fn();
+  const view = renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog }} questionId="q" answers={answers} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={onSourceChange}/></MemoryRouter>);
+  await expand(filtersTitle);
+  const add = async () => within(await bandOf(filtersTitle)).getByRole("button", { name: "Agregar filtro según otra respuesta" });
+  await waitFor(async () => expect(await add()).toBeEnabled());
+  await userEvent.click(await add());
+  expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog, match: [{ fieldId: zone, questionId: null }] });
+  view.unmount();
+
+  const chosen = vi.fn();
+  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match: [{ fieldId: zone, questionId: null }] }} questionId="q" definitionId="definition" answers={answers} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={chosen}/></MemoryRouter>);
+  await expand(filtersTitle);
+  const condition = await screen.findByRole("group", { name: "Condición 1" });
+  expect(within(condition).getByText("Según otra respuesta")).toBeInTheDocument();
+  await userEvent.click(within(condition).getByRole("combobox", { name: "Respuesta de" }));
+  const zoneOption = await screen.findByRole("option", { name: /Zona \(pregunta 1\)/ });
+  await waitFor(() => expect(zoneOption).toHaveTextContent("Elige de Zonas"));
+  expect(zoneOption).not.toHaveAttribute("aria-disabled");
+  expect(screen.getByRole("option", { name: /Semilla \(pregunta 2\)/ })).toHaveAttribute("aria-disabled", "true");
+  expect(screen.getByRole("option", { name: /Semilla \(pregunta 2\)/ })).toHaveTextContent("Elige de Proveedores: otro catálogo");
+  expect(screen.getByRole("option", { name: /Producto \(pregunta 4\)/ })).toHaveTextContent("Va después de Proveedor");
+  await userEvent.click(zoneOption);
+  expect(chosen).toHaveBeenLastCalledWith({ catalog: maximumCatalog, match: [{ fieldId: zone, questionId: "q-zone" }] });
+  // It is tried by loading the form: the test with a person is off with that reason, and no maximum is read.
+  expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toHaveAccessibleDescription("Depende de otra respuesta: se prueba cargando el formulario.");
 });

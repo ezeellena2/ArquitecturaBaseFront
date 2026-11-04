@@ -7,9 +7,12 @@ export interface FormSelectionSettings { readonly minSelected: number; readonly 
 export interface DraftSelectionSettings { readonly minSelected: number | null; readonly maxSelected: number | null }
 
 export interface FormCatalogPresentation { readonly title: readonly string[]; readonly description: readonly string[] }
+// A filter compares a catalog field with a fixed value, a datum of the person or the answer of another question (CW7), which it
+// names by its field identity or, while new, by its local one.
 export type FormCatalogMatch<TValue = string> = { readonly fieldId: string } & (
-  | { readonly value: TValue; readonly personAttributeId?: never }
-  | { readonly personAttributeId: TValue; readonly value?: never }
+  | { readonly value: TValue; readonly personAttributeId?: never; readonly questionId?: never }
+  | { readonly personAttributeId: TValue; readonly value?: never; readonly questionId?: never }
+  | { readonly questionId: TValue; readonly value?: never; readonly personAttributeId?: never }
 );
 export interface FormQuestionSource {
   readonly catalog: string;

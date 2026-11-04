@@ -1,6 +1,6 @@
 import { copyCatalogQuestionSource, normalizeCatalogQuestionSource, sameCatalogQuestionSource } from "./catalogQuestionSource";
 import type {
-  CanonicalQuestion, DraftEditorValue, DraftQuestion, DraftWriteBody, FormDefinitionSnapshot,
+  CanonicalQuestion, DraftEditorValue, DraftQuestion, DraftQuestionSource, DraftWriteBody, FormDefinitionSnapshot,
   FormDraftSaveResult, FormIdentityMap,
 } from "./model";
 
@@ -99,6 +99,11 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
   const fieldMap = new Map(result.identityMap.fields.map(field => [field.localId, field]));
   const canonicalFields = new Map(canonical.map(field => [field.fieldId, field]));
   const choiceMap = new Map(result.identityMap.choices.map(choice => [choiceKey(choice.fieldLocalId, choice.localId), choice]));
+  // A filter by another answer names a new question by its local identity; the save names it by the field identity it gave it.
+  const named = (source: DraftQuestionSource | null | undefined): DraftQuestionSource | null | undefined => source && {
+    ...source, ...(source.match ? { match: source.match.map(match => "questionId" in match && match.questionId && fieldMap.has(match.questionId)
+      ? { fieldId: match.fieldId, questionId: fieldMap.get(match.questionId)!.fieldId } : match) } : {}),
+  };
   if (fieldMap.size !== input.length || fieldMap.size !== result.identityMap.fields.length
     || canonicalFields.size !== canonical.length || canonical.length !== input.length
     || choiceMap.size !== result.identityMap.choices.length) return null;
@@ -117,7 +122,7 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
     if (field.type === "multiChoice" && saved.type === "multiChoice"
       && (field.selection.minSelected !== saved.selection.minSelected || field.selection.maxSelected !== saved.selection.maxSelected)) return null;
     const options = new Map<string, string>();
-    if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !sameCatalogQuestionSource(field.source, saved.source)) return null;
+    if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !sameCatalogQuestionSource(named(field.source), saved.source)) return null;
     if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !field.source && !saved.source) {
       const savedOptions = new Map(saved.options.map(option => [option.choiceId, option]));
       if (savedOptions.size !== saved.options.length || field.options.length !== saved.options.length) return null;

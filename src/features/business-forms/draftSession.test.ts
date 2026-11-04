@@ -243,6 +243,26 @@ it("opens and confirms a catalog choice without materializing local options", ()
   expect(confirmDraftSave(attempt, identity, wrong).phase).toBe("Unconfirmed");
 });
 
+it("confirms a list that depends on a new question by the field identity the save gave that question (CW7)", () => {
+  const zone = { localId: "q-zone", fieldId: null, replacesFieldId: null, type: "choice", label: { es: "Zona" }, help: null, required: true, source: { catalog: "catalog-zones" } } as const;
+  const supplier = { localId: "q-supplier", fieldId: null, replacesFieldId: null, type: "choice", label: { es: "Proveedor" }, help: null, required: true,
+    source: { catalog: "catalog-suppliers", match: [{ fieldId: "field-zone-filter", questionId: "q-zone" }] } } as const;
+  const saving = beginDraftSave(startDraftSession(scope, { ...initial, draft: { ...initial.draft, fields: [zone, supplier] } }), "request-dependent");
+  expect(saving.pending!.body.draft.fields[1]).toMatchObject({ source: { match: [{ fieldId: "field-zone-filter", questionId: "q-zone" }] } });
+  const saved: FormDraftSaveResult = { ...result("request-dependent"),
+    definition: { ...result().definition, draft: { ...initial.draft, fields: [
+      { fieldId: "field-zone", key: "field_zone", type: "choice", label: { es: "Zona" }, help: null, required: true, source: { catalog: "catalog-zones" } },
+      { fieldId: "field-supplier", key: "field_supplier", type: "choice", label: { es: "Proveedor" }, help: null, required: true,
+        source: { catalog: "catalog-suppliers", match: [{ fieldId: "field-zone-filter", questionId: "field-zone" }] } },
+    ] } },
+    identityMap: { fields: [{ localId: "q-zone", fieldId: "field-zone", key: "field_zone", replacesFieldId: null },
+      { localId: "q-supplier", fieldId: "field-supplier", key: "field_supplier", replacesFieldId: null }], choices: [] } };
+  const confirmed = confirmDraftSave(saving, { ...scope, requestId: "request-dependent" }, saved);
+  expect(confirmed.phase).toBe("Editing");
+  expect(confirmed.value.draft.fields[1]).toMatchObject({ localId: "q-supplier", fieldId: "field-supplier",
+    source: { match: [{ fieldId: "field-zone-filter", questionId: "field-zone" }] } });
+});
+
 it("keeps the monolingual offer instruction through opening, frozen save and canonical recovery", () => {
   const definition = { ...result().definition, offerWhen: "Cuando visitó a un cliente" };
   const opened = openDraftSession(scope, definition);

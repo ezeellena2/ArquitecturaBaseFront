@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -20,10 +20,14 @@ import { FileQuestionSettings } from "./FileQuestionSettings";
 import { SelectionRangeFields } from "./SelectionRangeFields";
 import { changeQuestionMultiplicity, validSelectionCounts } from "../selectionQuestions";
 import { CatalogQuestionSettings } from "./CatalogQuestionSettings";
+import type { AnswerQuestions } from "./CatalogQuestionFilters";
+import { answerChoices } from "../dependentLists";
 
 const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
-export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, definitionId = null, previewCulture = culture, onPreviewChange, filesAvailable = false }: {
+export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, definitionId = null, previewCulture = culture, onPreviewChange, filesAvailable = false, questions }: {
   question: DraftQuestion; position: number; total: number; culture: FormCulture; original: FormCulture; expanded: boolean; readOnly: boolean;
+  /** The questions of the form, whose answers a catalog list can depend on (CW7). */
+  questions?: readonly DraftQuestion[];
   catalogScope?: CatalogReadScope; definitionId?: string | null; previewCulture?: FormCulture; onPreviewChange?: (questionId: string, preview: CatalogQuestionPreview | null) => void; filesAvailable?: boolean;
   issues: readonly DraftFieldIssue[]; onChange: (question: DraftQuestion) => void; onExpand: (open: boolean) => void; onMove: (delta: number) => void; onRemove: () => void;
 }) {
@@ -37,6 +41,9 @@ export function QuestionEditor({ question, position, total, culture, original, e
   const [announcement, setAnnouncement] = useState("");
   const [confirmation, setConfirmation] = useState<{ type: QuestionEditorType } | { option: string } | { catalog: string } | { multiple: boolean } | null>(null);
   const label = localizedValue(question.label, culture, original) || t("question");
+  // The other questions whose answer this list can depend on, by the source catalog of a filter field (CW7).
+  const answers = useMemo<AnswerQuestions | undefined>(() => questions && { current: label,
+    choices: sourceCatalogId => answerChoices(questions, question.localId, sourceCatalogId, culture, original) }, [questions, question.localId, label, culture, original]);
   const reference = (text: Readonly<Record<string, string | null>> | null) => culture !== original && text?.[original] ? t("originalText", { language: t("cultures." + original), text: text[original] }) : undefined;
   // Without a language selector, an error of the other language is shown under the same field, naming its language.
   const localizedError = (matches: (issue: DraftFieldIssue) => boolean) => {
@@ -117,7 +124,7 @@ export function QuestionEditor({ question, position, total, culture, original, e
         </div>
       </div>
       {question.type === "photo" || question.type === "document" ? <FileQuestionSettings question={question} readOnly={readOnly} error={fieldError("files")} onChange={onChange} /> : null}
-      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} type={question.type} questionId={question.localId} definitionId={definitionId} contentCulture={previewCulture} onPreviewChange={onPreviewChange} onSourceChange={source => onChange({ ...question, source })} errors={Object.fromEntries(issues.filter(issue => issue.path.includes(".source.") && !issue.choiceLocalId).map(issue => [issue.path.split(".source.")[1]!, issue.messages]))} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
+      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} type={question.type} questionId={question.localId} answers={answers} definitionId={definitionId} contentCulture={previewCulture} onPreviewChange={onPreviewChange} onSourceChange={source => onChange({ ...question, source })} errors={Object.fromEntries(issues.filter(issue => issue.path.includes(".source.") && !issue.choiceLocalId).map(issue => [issue.path.split(".source.")[1]!, issue.messages]))} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
         if (catalogId === question.source?.catalog) return;
         if (question.fieldId) setConfirmation({ catalog: catalogId });
         else onChange(changeQuestionCatalog(question, catalogId, question.localId));

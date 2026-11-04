@@ -79,6 +79,14 @@ describe("catalog question source", () => {
     expect(sameCatalogQuestionSource({ catalog, match: [{ fieldId: firstField, personAttributeId: attribute }] }, { catalog, match: [{ fieldId: firstField, personAttributeId: catalog }] })).toBe(false);
   });
 
+  it("tells a filter by another answer from the other kinds and by the question it names (CW7)", () => {
+    const source: FormQuestionSource = { catalog, match: [{ fieldId: firstField, questionId: attribute }] };
+    expect(sameCatalogQuestionSource(source, { catalog, match: [{ fieldId: firstField, questionId: attribute }] })).toBe(true);
+    expect(sameCatalogQuestionSource(source, { catalog, match: [{ fieldId: firstField, questionId: catalog }] })).toBe(false);
+    expect(sameCatalogQuestionSource(source, { catalog, match: [{ fieldId: firstField, personAttributeId: attribute }] })).toBe(false);
+    expect(sameCatalogQuestionSource(source, { catalog, match: [{ fieldId: firstField, value: attribute }] })).toBe(false);
+  });
+
   it("treats presentation order and explicit presentation as part of the source", () => {
     const source: FormQuestionSource = { catalog, presentation: { title: ["text", "code"], description: [firstField, secondField] } };
     expect(sameCatalogQuestionSource(source, { catalog, presentation: { title: ["code", "text"], description: [firstField, secondField] } })).toBe(false);

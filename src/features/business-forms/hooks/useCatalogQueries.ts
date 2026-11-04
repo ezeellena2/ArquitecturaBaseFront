@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
 import { checkCatalogPresentation, fetchCatalog, fetchCatalogItems, fetchCatalogPage, type CatalogItemsQuery, type CatalogListQuery, fetchCatalogFilterOptions, type CatalogFilterOptionsQuery } from "../api/catalogs";
 import type { CatalogPresentation } from "../api/catalogResponse";
 import type { CatalogReadScope } from "./useCatalogDraftEditor";
@@ -12,6 +12,14 @@ export function useCatalogDetail(scope: CatalogReadScope, id: string, errorOwner
   const key = [...catalogScopeKey(scope), "detail", id] as const;
   useUnobservedQueryCleanup(key);
   return useQuery({ queryKey: key, queryFn: ({ signal }) => fetchCatalog(id, signal), enabled: canRead(scope) && id !== "", staleTime: 0, gcTime: 0, meta: { errorOwner } });
+}
+/** The names of several catalogs, read like their detail: the questions a list can depend on say what they choose from (CW7). */
+export function useCatalogNames(scope: CatalogReadScope, ids: readonly string[]): Readonly<Record<string, Readonly<Record<string, string>>>> {
+  return useQueries({
+    queries: [...new Set(ids)].map(id => ({ queryKey: [...catalogScopeKey(scope), "detail", id] as const, queryFn: ({ signal }: { signal: AbortSignal }) => fetchCatalog(id, signal),
+      enabled: canRead(scope) && id !== "", staleTime: 0, gcTime: 0, meta: { errorOwner: "local" as const } })),
+    combine: results => Object.fromEntries(results.flatMap(result => result.data ? [[result.data.id, result.data.name]] : [])),
+  });
 }
 export function useCatalogItems(scope: CatalogReadScope, id: string, revision: number | null, query: CatalogItemsQuery, errorOwner: "local" | "global" = "local") {
   const root = [...catalogScopeKey(scope), "items", id, revision] as const;

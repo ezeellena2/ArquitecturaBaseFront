@@ -216,6 +216,7 @@
     "recipientMaximum_other": "Como mucho {{count}} opciones por persona, de un límite de {{limit}}.",
     "recipientMaximumForGroup_one": "Como mucho {{count}} opción por persona ({{group}}), de un límite de {{limit}}.",
     "recipientMaximumForGroup_other": "Como mucho {{count}} opciones por persona ({{group}}), de un límite de {{limit}}.",
+    "dependsOnAnswer": "Por WhatsApp, {{form}} no se puede mandar mientras «{{question}}» dependa de {{answers}}. En la app se carga igual.",
     "recipientsMissingData_one": "{{count}} persona no tiene el dato necesario para recibirlo.",
     "recipientsMissingData_other": "{{count}} personas no tienen el dato necesario para recibirlo.",
     "problems": "Problemas",
@@ -695,7 +696,7 @@
     "noResults": "No hay catálogos que coincidan con la búsqueda.",
     "filter": {
       "title": "Qué opciones ve cada persona",
-      "hint": "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona debe elegir del mismo catálogo.",
+      "hint": "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona, o la respuesta de una pregunta anterior de elegir una, tiene que elegir del mismo catálogo que el campo.",
       "condition": "Condición {{number}}",
       "byPerson": "Según quien lo recibe",
       "fixed": "Filtro fijo",
@@ -711,7 +712,18 @@
       "unavailable": "Campo no disponible",
       "unavailableValue": "Valor no disponible",
       "invalidValue": "Revisá el valor y el tipo del campo.",
-      "dataFailed": "No se pudieron leer los datos de las personas."
+      "dataFailed": "No se pudieron leer los datos de las personas.",
+      "byAnswer": "Según otra respuesta",
+      "addAnswer": "Agregar filtro según otra respuesta",
+      "answerOf": "Respuesta de",
+      "answerQuestion": "{{label}} (pregunta {{number}})",
+      "answerCatalog": "Elige de {{catalog}}",
+      "answerOtherCatalog": "Elige de {{catalog}}: otro catálogo",
+      "answerMultiple": "Elige varias",
+      "answerLater": "Va después de {{question}}",
+      "noAnswerQuestion": "Ninguna pregunta anterior de elegir una elige del catálogo de estos campos.",
+      "noAnswerMatches": "Ninguna pregunta coincide.",
+      "questionUnavailable": "Pregunta no disponible"
     },
     "presentation": {
       "mode": "Qué viaja a WhatsApp",
@@ -724,6 +736,7 @@
       "asRecipient": "Como si lo recibiera",
       "saveFirst": "Guardá el formulario para probar con una persona.",
       "completeFilters": "Completá los filtros para probar con una persona.",
+      "dependsOnAnswer": "Depende de otra respuesta: se prueba cargando el formulario.",
       "loading": "Preparando las opciones de esta persona…",
       "denied": "Ya no tenés permiso para probar con personas.",
       "failed": "No se pudo preparar la vista previa.",
@@ -760,7 +773,8 @@
       "collapse": "Plegar «{{name}}»",
       "noFilters": "Sin filtros",
       "byPerson": "{{field}} según quien lo recibe",
-      "noValue": "sin valor"
+      "noValue": "sin valor",
+      "byAnswer": "{{field}} según la respuesta de «{{question}}»"
     }
   },
   "files": {

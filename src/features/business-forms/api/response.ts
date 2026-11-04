@@ -11,7 +11,8 @@ const helpText = text.refine(map => Object.keys(map).length > 0 && Object.values
 const choice = z.strictObject({ choiceId: guid, label: text });
 const presentationPart = z.union([z.enum(["text", "code", "detail", "value"]), guid]);
 const catalogPresentation = z.strictObject({ title: z.array(presentationPart).min(1).max(24), description: z.array(presentationPart).max(24) });
-const catalogMatch = z.union([z.strictObject({ fieldId: guid, value: z.string().min(1).max(300) }), z.strictObject({ fieldId: guid, personAttributeId: guid })]);
+const catalogMatch = z.union([z.strictObject({ fieldId: guid, value: z.string().min(1).max(300) }), z.strictObject({ fieldId: guid, personAttributeId: guid }),
+  z.strictObject({ fieldId: guid, questionId: guid })]);
 export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, match: z.array(catalogMatch).min(1).max(20).optional(), presentation: catalogPresentation.optional() })
   .refine(source => !source.match || new Set(source.match.map(item => item.fieldId.toLowerCase())).size === source.match.length);
 export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document"]),
@@ -119,6 +120,7 @@ const warningTarget = { fieldId: guid, path: z.string(), message: z.string() };
 const publicationWarning = z.discriminatedUnion("code", [
   z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.OptionsPerRecipientHigh"), limit: z.union([z.literal(20), z.literal(200)]), maximum: warningCount, maximumLabel: z.string().min(1).optional() }),
   z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.RecipientsWithoutData"), count: warningCount.min(1), people: z.array(z.string().min(1)).max(5) }),
+  z.strictObject({ ...warningTarget, code: z.literal("Forms.Publication.DependsOnAnswer") }),
 ]);
 const publicationCheck = z.strictObject({ definitionId: guid, draftRevision: revision, nextVersionNumber: revision, compatibility: publicationCompatibility,
   canAccept: z.boolean(), acceptanceAvailability: z.enum(["Available", "Unavailable", "InProgress"]),

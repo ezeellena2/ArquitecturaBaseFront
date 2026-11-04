@@ -12,7 +12,7 @@ import { AlertTriangleIcon, CheckIcon } from "@/shared/ui/icons";
 import { cn } from "@/shared/lib/utils";
 import { openCatalogField } from "../catalogFields";
 import { catalogOptionPresentation, presentationPartNames } from "../catalogPresentation";
-import { normalizeCatalogQuestionSource } from "../catalogQuestionSource";
+import { matchKind, normalizeCatalogQuestionSource } from "../catalogQuestionSource";
 import { administrativeName } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItems, useCatalogPresentationCheck } from "../hooks/useCatalogQueries";
@@ -20,7 +20,7 @@ import { usePersonAttributes } from "../hooks/usePersonData";
 import { useRecipientMaximum, useRecipientPreview, useRecipientSamples } from "../hooks/useRecipientPreview";
 import type { CatalogQuestionPreview, DraftQuestionSource, FormCulture } from "../model";
 import { CatalogPresentationSection } from "./CatalogPresentationSection";
-import { CatalogQuestionFilterActions, CatalogQuestionFilterSummary, CatalogQuestionFilters } from "./CatalogQuestionFilters";
+import { CatalogQuestionFilterActions, CatalogQuestionFilterSummary, CatalogQuestionFilters, type AnswerQuestions } from "./CatalogQuestionFilters";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 
 // The most options one person can get in the question type: a question of several shows 20, the dropdown 200.
@@ -54,8 +54,10 @@ function useZoneOpen(problem: string) {
   return [open, setOpen] as const;
 }
 
-export function CatalogQuestionSettings({ scope, source, type = "choice", questionId = "catalog", definitionId = null, contentCulture = scope.culture, readOnly, error, errors = {}, onCatalogChange, onSourceChange, onPreviewChange, children }: {
+export function CatalogQuestionSettings({ scope, source, type = "choice", questionId = "catalog", definitionId = null, contentCulture = scope.culture, readOnly, error, errors = {}, answers, onCatalogChange, onSourceChange, onPreviewChange, children }: {
   scope: CatalogReadScope; source: DraftQuestionSource; type?: "choice" | "multiChoice"; questionId?: string; definitionId?: string | null; contentCulture?: FormCulture; readOnly: boolean; error?: string; errors?: Readonly<Record<string, readonly string[]>>; children?: ReactNode;
+  /** The questions of the form a list can depend on (CW7). */
+  answers?: AnswerQuestions;
   onCatalogChange: (catalogId: string) => void; onSourceChange?: (source: DraftQuestionSource) => void; onPreviewChange?: (questionId: string, preview: CatalogQuestionPreview | null) => void;
 }) {
   const { t } = useTranslation("forms"), { t: content } = useTranslation("forms", { lng: contentCulture });
@@ -110,13 +112,15 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   const [filtersOpen, setFiltersOpen] = useZoneOpen(filtersProblem);
   const [presentationOpen, setPresentationOpen] = useZoneOpen(presentationProblem);
   const filtersTitle = t("catalogQuestion.filter.title"), presentationTitle = t("catalogs.presentation.title");
+  // A list that depends on another answer (CW7) is tried by loading the form: neither the test with a person nor the maximum apply.
+  const dependsOnAnswer = (source.match ?? []).some(match => matchKind(match) === "answer");
   return <div data-question-control="source" className="space-y-4"><CatalogQuestionSelector scope={scope} value={source.catalog ?? ""} selectedName={onSourceChange ? catalog ? administrativeName(catalog.name, scope.culture) : null : undefined} readOnly={readOnly} error={error} onChange={onCatalogChange}/>{children}
     {onSourceChange && source.catalog && canRead ? catalog ? catalog.kind === "Manual" ? <>
       <CollapsibleSection title={filtersTitle} help={t("catalogQuestion.filter.hint")} open={filtersOpen} onOpenChange={setFiltersOpen} expandLabel={t("catalogQuestion.zones.expand", { name: filtersTitle })} collapseLabel={t("catalogQuestion.zones.collapse", { name: filtersTitle })}
-        summary={<CatalogQuestionFilterSummary source={source} fields={fields} scope={scope}/>} actions={!readOnly ? <CatalogQuestionFilterActions source={source} fields={fields} attributes={attributes.data?.items ?? []} attributesLoading={attributes.isLoading} onChange={change}/> : null}>
-        <div className="flex flex-col gap-4 p-4"><CatalogQuestionFilters source={source} fields={fields} attributes={attributes.data?.items ?? []} attributesLoading={attributes.isLoading} scope={scope} readOnly={readOnly} errors={errors} onChange={change}/>
+        summary={<CatalogQuestionFilterSummary source={source} fields={fields} scope={scope} answers={answers}/>} actions={!readOnly ? <CatalogQuestionFilterActions source={source} fields={fields} attributes={attributes.data?.items ?? []} attributesLoading={attributes.isLoading} answers={answers} onChange={change}/> : null}>
+        <div className="flex flex-col gap-4 p-4"><CatalogQuestionFilters source={source} fields={fields} attributes={attributes.data?.items ?? []} attributesLoading={attributes.isLoading} scope={scope} readOnly={readOnly} errors={errors} answers={answers} onChange={change}/>
         {attributes.isError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.filter.dataFailed")}</p> : null}
-        <FormField label={t("catalogQuestion.preview.asRecipient")}><DisabledReason reason={!definitionId ? t("catalogQuestion.preview.saveFirst") : !preview.complete ? t("catalogQuestion.preview.completeFilters") : null} className="grid w-full"><Autocomplete value={search ?? preview.person?.name ?? ""} options={(samples.data?.items ?? []).map(person => ({ id: person.id, label: person.name }))} disabled={!preview.available || !preview.complete} status={sampleStatus} aria-label={t("catalogQuestion.preview.asRecipient")} onValueChange={text => { setSearch(text); if (!text) { onPreviewChange?.(questionId, null); preview.select(null); } }} onBlur={() => setSearch(null)} onSelect={id => { const person = samples.data?.items.find(person => person.id === id); if (person) { onPreviewChange?.(questionId, null); preview.select(person); setSearch(null); } }}/></DisabledReason></FormField>
+        <FormField label={t("catalogQuestion.preview.asRecipient")}><DisabledReason reason={!definitionId ? t("catalogQuestion.preview.saveFirst") : dependsOnAnswer ? t("catalogQuestion.preview.dependsOnAnswer") : !preview.complete ? t("catalogQuestion.preview.completeFilters") : null} className="grid w-full"><Autocomplete value={search ?? preview.person?.name ?? ""} options={(samples.data?.items ?? []).map(person => ({ id: person.id, label: person.name }))} disabled={!preview.available || !preview.complete} status={sampleStatus} aria-label={t("catalogQuestion.preview.asRecipient")} onValueChange={text => { setSearch(text); if (!text) { onPreviewChange?.(questionId, null); preview.select(null); } }} onBlur={() => setSearch(null)} onSelect={id => { const person = samples.data?.items.find(person => person.id === id); if (person) { onPreviewChange?.(questionId, null); preview.select(person); setSearch(null); } }}/></DisabledReason></FormField>
         {preview.busy ? <div role="status" className="flex items-center gap-2"><Spinner/><p className="text-sm">{t("catalogQuestion.preview.loading")}</p></div> : samplesRetrying ? <div role="status" className="flex items-center gap-2"><Spinner decorative/><p className="text-sm">{t("searching")}</p></div> : preview.denied || samples.denied ? <p role="alert" className="text-sm">{t("catalogQuestion.preview.denied")}</p> : preview.error || samples.isError ? <div role="alert"><p className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.preview.failed")}</p>{offerRetry ? <DisabledReason reason={retryDisabled ? t("wait", { count: retryWait }) : null}><Button type="button" variant="link" disabled={retryDisabled} onClick={() => { if (samples.isError) { setSamplesRetrying(true); void samples.refetch().finally(() => setSamplesRetrying(false)); } else preview.retry(); }}>{t("common:actions.retry")}</Button></DisabledReason> : null}</div> : preview.result ? <div role="status" className="space-y-1"><p className="text-sm font-medium">{t(preview.result.state === "Ready" ? "catalogQuestion.preview.count" : preview.result.state === "RecipientDataMissing" ? "catalogQuestion.preview.missingData" : "catalogQuestion.preview.unavailable", { count: preview.result.optionCount })}</p>{preview.result.recipient.values.length ? <DataList items={preview.result.recipient.values.map(value => ({ key: value.attributeId, label: value.name, value: value.text || "—" }))}/> : null}{preview.result.exceedsLimit ? <p className="text-sm text-[var(--color-warning-700)]">{t("catalogQuestion.preview.exceeds", { limit: preview.result.limit })}</p> : null}</div> : null}
         <RecipientMaximumState maximum={maximum} type={type} byPerson={(source.match ?? []).some(match => "personAttributeId" in match)}/></div>
       </CollapsibleSection>

@@ -216,6 +216,7 @@
     "recipientMaximum_other": "At most {{count}} options per person, against a limit of {{limit}}.",
     "recipientMaximumForGroup_one": "At most {{count}} option per person ({{group}}), against a limit of {{limit}}.",
     "recipientMaximumForGroup_other": "At most {{count}} options per person ({{group}}), against a limit of {{limit}}.",
+    "dependsOnAnswer": "{{form}} cannot be sent by WhatsApp while «{{question}}» depends on {{answers}}. It can still be loaded in the app.",
     "recipientsMissingData_one": "{{count}} person is missing the data needed to receive it.",
     "recipientsMissingData_other": "{{count}} people are missing the data needed to receive it.",
     "problems": "Problems",
@@ -695,7 +696,7 @@
     "noResults": "No catalogs match your search.",
     "filter": {
       "title": "Which options each person sees",
-      "hint": "Filters are combined and use fields with the filter role. A person’s data must choose from the same catalog.",
+      "hint": "Filters are combined and use fields with the filter role. A person’s data, or the answer to an earlier single-choice question, must choose from the same catalog as the field.",
       "condition": "Condition {{number}}",
       "byPerson": "By who receives it",
       "fixed": "Fixed filter",
@@ -711,7 +712,18 @@
       "unavailable": "Field unavailable",
       "unavailableValue": "Unavailable value",
       "invalidValue": "Check the value and the field type.",
-      "dataFailed": "Could not read people’s data."
+      "dataFailed": "Could not read people’s data.",
+      "byAnswer": "By another answer",
+      "addAnswer": "Add filter by another answer",
+      "answerOf": "Answer to",
+      "answerQuestion": "{{label}} (question {{number}})",
+      "answerCatalog": "Chooses from {{catalog}}",
+      "answerOtherCatalog": "Chooses from {{catalog}}: another catalog",
+      "answerMultiple": "Chooses several",
+      "answerLater": "Comes after {{question}}",
+      "noAnswerQuestion": "No earlier single-choice question chooses from the catalog of these fields.",
+      "noAnswerMatches": "No question matches.",
+      "questionUnavailable": "Question not available"
     },
     "presentation": {
       "mode": "What goes to WhatsApp",
@@ -724,6 +736,7 @@
       "asRecipient": "As if received by",
       "saveFirst": "Save the form to try it with a person.",
       "completeFilters": "Complete the filters to try it with a person.",
+      "dependsOnAnswer": "It depends on another answer: try it by loading the form.",
       "loading": "Preparing this person’s options…",
       "denied": "You no longer have permission to try people.",
       "failed": "Could not prepare the preview.",
@@ -760,7 +773,8 @@
       "collapse": "Collapse “{{name}}”",
       "noFilters": "No filters",
       "byPerson": "{{field}} by who receives it",
-      "noValue": "no value"
+      "noValue": "no value",
+      "byAnswer": "{{field}} by the answer to «{{question}}»"
     }
   },
   "files": {

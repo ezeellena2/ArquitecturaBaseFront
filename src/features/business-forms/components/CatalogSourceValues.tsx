@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { matchKind } from "../catalogQuestionSource";
 import type { CatalogField } from "../api/catalogResponse";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItemsById } from "../hooks/useCatalogQueries";
@@ -39,9 +40,11 @@ export function CatalogConditionValue({ scope, catalogId, condition }: { scope: 
   const detail = useCatalogDetail(scope, catalogId, "global");
   const attributes = usePersonAttributes(scope, "personAttributeId" in condition);
   if ("personAttributeId" in condition) return administrativeName(attributes.data?.items.find(attribute => attribute.id === condition.personAttributeId)?.name, scope.culture) || t("catalogQuestion.filter.personData");
+  // A filter by another answer (CW7) is told by its kind; its question is a question of the same form.
+  if (matchKind(condition) === "answer") return t("catalogQuestion.filter.byAnswer");
   const field = detail.data?.fields?.find(item => item.id === condition.fieldId);
   if (field?.type === "catalog") return condition.value ? <FixedCatalogValue scope={scope} field={field} value={condition.value} /> : t("translationPending");
-  if (condition.value === null) return t("translationPending");
+  if (condition.value == null) return t("translationPending");
   return field && field.type !== "text" ? catalogScalarText(field.type, condition.value, scope.culture, { yes: t("yes"), no: t("no") }) : condition.value;
 }
 

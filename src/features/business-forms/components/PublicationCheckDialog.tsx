@@ -141,6 +141,13 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
         return t(warning.maximumLabel ? "publication.recipientMaximumForGroup" : "publication.recipientMaximum", { count: warning.maximum, limit: warning.limit, group: warning.maximumLabel });
       case "Forms.Publication.RecipientsWithoutData":
         return t("publication.recipientsMissingData", { count: warning.count });
+      case "Forms.Publication.DependsOnAnswer": {
+        // CW7: the list and the answers it depends on, by the names of the editor.
+        const question = questionOf(warning.fieldId);
+        const answers = (question?.source?.match ?? []).flatMap(match => "questionId" in match && match.questionId ? [questionName(match.questionId)] : []);
+        return t("publication.dependsOnAnswer", { form: localizedValue(value.name, scope.culture, value.draft.culture), question: questionName(warning.fieldId),
+          answers: list.format(answers.map(name => "«" + (name ?? "") + "»")) });
+      }
     }
   };
   const currentNames = (ids: readonly string[]) => value.draft.fields.filter(q => q.fieldId && ids.includes(q.fieldId)).map(q => localizedValue(q.label, scope.culture, value.draft.culture)).join(", ");

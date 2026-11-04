@@ -345,6 +345,20 @@ it("says one option, not «1 opciones», for a maximum of one", async () => {
   expect(screen.getByText("Como mucho 2 opciones por persona (Norte), de un límite de 20.")).toBeInTheDocument();
 });
 
+// CW7: a list that depends on another answer is published, and the warning says WhatsApp cannot send the form meanwhile.
+it("warns that WhatsApp cannot send a list that depends on another answer, without stopping the publication", async () => {
+  const answer = value.draft.fields[0]!;
+  const lot = { localId: "lot", fieldId: "0199a0d0-0000-7000-8000-000000000001", replacesFieldId: null, type: "choice" as const, label: { es: "Lote" }, help: null, required: true,
+    source: { catalog: "0199a0d0-0000-7000-8000-000000000002", match: [{ fieldId: "0199a0d0-0000-7000-8000-000000000003", questionId: answer.fieldId! }] } };
+  result = { ...checked, warnings: [{ fieldId: lot.fieldId, path: "draft.fields[2].source.match", code: "Forms.Publication.DependsOnAnswer",
+    message: "Por WhatsApp no se puede mandar mientras una pregunta dependa de otra respuesta. En la app se carga igual." }] };
+  await mount(undefined, { ...value, draft: { ...value.draft, fields: [...value.draft.fields, lot] } });
+  const warnings = zone("Avisos");
+  expect(within(warnings).getByText("Lote")).toBeInTheDocument();
+  expect(within(warnings).getByText(`Por WhatsApp, ${value.name.es} no se puede mandar mientras «Lote» dependa de «${answer.label.es}». En la app se carga igual.`)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
+});
+
 // NI3-B (2026-11-03): the server warns about a maximum only when it does not fit or nobody sees an option.
 it("says nobody sees an option when the maximum is zero", async () => {
   result = { ...checked, warnings: [{ fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh", message: "Revisá el máximo.", limit: 200, maximum: 0 }] };
