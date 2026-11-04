@@ -896,3 +896,4 @@ El dato nuevo del backend es el estado del chat (`GET /api/me/whatsapp`): vincul
 pueden salir los avisos, 24 horas después del último mensaje de la persona. Vincular usa lo que ya existía: pedir el código
 y confirmarlo con el mismo número ([WhatsApp](../../../ArquitecturaBase/docs/features/whatsapp.md)).
 
+La escena `profile` recorre las tres zonas a 1440, 390 y 320 en es/en con referencias nuevas `profile-chat-{es,en}-{1440,390,320}`: el chat sin vincular con «Vincular», el estado de cada medio en la misma columna y en el renglón de su valor en escritorio, «Desvincular» en rojo y nada que desplace de costado. Cambiaron tres referencias, revisadas y por esta decisión: `profile-1440` y `profile-320` (las zonas apiladas, «Agregar número» y el último ingreso como renglón) y `appearance-dark-table`, que abre «Editar usuario» con los renglones compartidos. Las de Configuración no cambian: a 320 los campos ya ocupaban todo el ancho.
