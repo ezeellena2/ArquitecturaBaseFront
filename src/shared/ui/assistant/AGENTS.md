@@ -18,3 +18,5 @@ No habilitar edición, branching, regeneración ni cola por añadir controles ge
 Fuentes: [arquitectura](../../../../docs/architecture.md), [diseño](../../../../docs/design/inicio-asistente-propuesta.md).
 
 AssistantWorkspace compone panel plegable de 256 px y Dialog móvil compartido. AssistantConversationList usa ThreadList/Item/More nativos para una línea, grupos y menú con foco; ConversationActions contiene sólo callbacks de presentación. No gestionar aquí paginado HTTP, permisos, creación o borrado. Delete nativo del runtime no reemplaza la confirmación de la feature. La referencia elegida del panel está archivada en design-lab/history/home-assistant-conversations-2026-10-05; regresiones productivas en src/test/visual/screenshots/assistant-conversations-*.png.
+
+`AssistantProposalCard` (IA1-A) es la propuesta bajo la respuesta que la trajo: la banda con el tipo y las acciones, el nombre con su resumen y el cuerpo que aporta el módulo; reemplazada o creada, se pliega a una línea con su estado y, si hay, el enlace a lo creado. Usa `Badge` y `Button`, no conoce sesión, HTTP ni módulos, y está en el catálogo local abierta y plegada.

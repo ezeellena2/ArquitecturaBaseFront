@@ -14,6 +14,7 @@ import { useAuiState } from "@assistant-ui/react";
 import { useCurrentUser, currentUserQueryKey } from "@/auth/useCurrentUser";
 import { AccountRecoveryNotice } from "@/auth/components/AccountRecoveryNotice";
 import { ApiError } from "@/shared/api/ApiError";
+import { AssistantProposalContext } from "@/shared/hooks/assistantProposalContext";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
@@ -43,7 +44,7 @@ import {
   type AssistantState,
   type AssistantTurn,
 } from "../api/assistant";
-import { assistantKey, isActiveTurn } from "../assistant/model";
+import { assistantKey, isActiveTurn, proposalNeighbors } from "../assistant/model";
 import { useAssistantConversation } from "../hooks/useAssistantConversation";
 import { useAssistantTurnActions } from "../hooks/useAssistantTurnActions";
 import { AssistantRuntimeProvider } from "../components/assistant/AssistantRuntimeProvider";
@@ -66,11 +67,16 @@ const MessageContext = createContext<{
 function ConfirmedMessage() {
   const { t, i18n } = useTranslation("assistant");
   const value = useContext(MessageContext);
+  const proposals = useContext(AssistantProposalContext);
   const message = useAuiState((state) => state.message);
   const requestId = message.metadata.custom.requestId;
   const turn = value.turns.find((item) => item.requestId === requestId);
   if (!turn) return null;
   const role = message.role === "user" ? "user" : "assistant";
+  const proposal =
+    role === "assistant" && turn.proposal && proposals?.accepts(turn.proposal)
+      ? { ...proposalNeighbors(value.turns, turn), Card: proposals.Card }
+      : null;
   return (
     <AssistantMessage
       role={role}
@@ -83,6 +89,14 @@ function ConfirmedMessage() {
       )}
       copyLabel={role === "assistant" ? t("copy") : undefined}
     >
+      {proposal && turn.proposal ? (
+        <proposal.Card
+          requestId={turn.requestId}
+          proposal={turn.proposal}
+          previous={proposal.previous}
+          replaced={proposal.replaced}
+        />
+      ) : null}
       {role === "assistant" ? (
         <AssistantSources
           evidences={turn.evidences}
@@ -96,6 +110,7 @@ function ConfirmedMessage() {
 export function AiAssistantPage() {
   const { t, i18n } = useTranslation(["assistant", "common"]);
   const { data: user } = useCurrentUser();
+  const proposals = useContext(AssistantProposalContext);
   const client = useQueryClient();
   const [params] = useSearchParams();
   const update = useQueryUpdate();
@@ -286,6 +301,10 @@ export function AiAssistantPage() {
     data.conversation.isFetching ||
     bootstrap.data?.availability !== "available" ||
     (!!conversationId && !data.conversation.data);
+  // With a proposal in the thread, the composer invites a change as much as another question.
+  const hasProposal = data.turns.some(
+    (turn) => !!turn.proposal && !!proposals?.accepts(turn.proposal),
+  );
   // Each request on its way shows it on the control that sent it; the cancellation, on the turn it cancels.
   const working = actions.working?.action;
   const cancelling = working === "cancel" ? actions.working?.target : undefined;
@@ -520,7 +539,7 @@ export function AiAssistantPage() {
                       <AssistantComposer
                         label={t("question")}
                         hint={t("keyboardHelp")}
-                        placeholder={t("placeholder")}
+                        placeholder={t(hasProposal ? "placeholderProposal" : "placeholder")}
                         sendLabel={t(working === "submit" ? "sending" : "send")}
                         sending={working === "submit"}
                         value={draft}

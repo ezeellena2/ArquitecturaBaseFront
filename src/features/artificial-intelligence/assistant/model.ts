@@ -14,6 +14,25 @@ export function isActiveTurn(
 ) {
   return turn?.state === "pending" || turn?.state === "running";
 }
+/** The proposal of the same capability before this one, and whether a later one replaced it: asking for a catalog after a
+ *  form does not replace the form. The server refuses to create a replaced one too. */
+export function proposalNeighbors(
+  turns: readonly AssistantTurn[],
+  turn: AssistantTurn,
+) {
+  const same = turns
+    .filter(
+      (item) =>
+        item.state === "completed" &&
+        item.proposal?.capability === turn.proposal?.capability,
+    )
+    .toSorted((left, right) => left.ordinal - right.ordinal);
+  const index = same.findIndex((item) => item.turnId === turn.turnId);
+  return {
+    previous: index > 0 ? (same[index - 1].proposal ?? null) : null,
+    replaced: index >= 0 && index < same.length - 1,
+  };
+}
 export function createSubmission(
   requestId: string,
   question: string,

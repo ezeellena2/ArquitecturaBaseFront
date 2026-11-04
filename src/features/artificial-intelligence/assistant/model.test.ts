@@ -4,6 +4,7 @@ import {
   projectMessages,
   sourceDestination,
   isActiveTurn,
+  proposalNeighbors,
 } from "./model";
 import type { AssistantTurn } from "../api/assistant";
 const base = {
@@ -71,5 +72,18 @@ describe("assistant confirmed state", () => {
     expect(isActiveTurn({ state: "running" })).toBe(true);
     expect(isActiveTurn({ state: "completed" })).toBe(false);
     expect(isActiveTurn({ state: "uncertain" })).toBe(false);
+  });
+  it("replaces a proposal only with a later completed one of the same capability", () => {
+    const proposal = (id: string, capability: string) => ({ id, capability, version: 1, content: {} });
+    const turnWith = (ordinal: number, capability: string | null, state: AssistantTurn["state"] = "completed") => ({
+      ...base, turnId: "t" + ordinal, requestId: "r" + ordinal, ordinal, state,
+      ...(capability ? { proposal: proposal("p" + ordinal, capability) } : {}),
+    } satisfies AssistantTurn);
+    const first = turnWith(1, "fixture.form"), catalog = turnWith(2, "fixture.catalog"), answer = turnWith(3, null);
+    const second = turnWith(4, "fixture.form"), unfinished = turnWith(5, "fixture.form", "failed");
+    const turns = [second, unfinished, first, catalog, answer];
+    expect(proposalNeighbors(turns, first)).toEqual({ previous: null, replaced: true });
+    expect(proposalNeighbors(turns, second)).toEqual({ previous: first.proposal, replaced: false });
+    expect(proposalNeighbors(turns, catalog)).toEqual({ previous: null, replaced: false });
   });
 });

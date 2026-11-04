@@ -3,6 +3,7 @@
   "welcomeHelp": "Ask about the system using your account's access. Each answer includes its sources.",
   "question": "Your question",
   "placeholder": "Ask the system…",
+  "placeholderProposal": "Ask for a change or ask something else…",
   "keyboardHelp": "Enter adds a line. Ctrl+Enter or ⌘+Enter send.",
   "send": "Send",
   "sending": "Sending…",

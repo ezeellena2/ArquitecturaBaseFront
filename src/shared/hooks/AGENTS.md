@@ -33,3 +33,5 @@ Las lecturas privadas de archivo declaran dueño local del error; el consumidor 
 `useBreadcrumbLeaf` permite además el nombre confirmado del padre: una pantalla de detalle puede nombrar su sección sin depender de la página parcial del menú. Ambos nombres se retiran juntos al desmontar.
 
 `userDataSectionContext` es el contrato neutral de una sección opcional de cuenta: componente, estado de guardado y apertura del editor por id, con un aviso opcional (`onClosed`) que app llama una sola vez cuando ese editor se cierra, por guardar o por cancelar, para que quien lo abrió relea lo suyo. No conoce módulos, HTTP ni valores; app aporta la implementación y el diálogo coordina dos guardados independientes.
+
+`assistantProposalContext` es el punto de extensión de las propuestas de Inicio (IA1-A): `accepts` y la tarjeta (`Card`) que app compone, con lazy, por cada módulo instalado. La tarjeta recibe el pedido del turno, la propuesta, la anterior de la misma capacidad y si una posterior la reemplazó. Sin un módulo, la respuesta se lee sola. No conoce HTTP ni módulos.

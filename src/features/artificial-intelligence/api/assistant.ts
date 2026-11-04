@@ -81,6 +81,15 @@ const turn = z.strictObject({
   culture: z.enum(["es", "en"]),
   timeZoneId: z.string().min(1),
   cancelRequestedAtUtc: utc.nullable(),
+  // Only a turn that closed on a proposal carries it; its content belongs to the module that owns the capability.
+  proposal: z
+    .strictObject({
+      id,
+      capability: z.string().min(1),
+      version: z.number().int().positive(),
+      content: z.unknown(),
+    })
+    .optional(),
 });
 const bootstrap = z.strictObject({
   availability: z.enum([

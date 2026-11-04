@@ -3,6 +3,7 @@
   "welcomeHelp": "Consultá información del sistema con los accesos de tu cuenta. Cada respuesta incluye sus fuentes.",
   "question": "Tu pregunta",
   "placeholder": "Preguntale al sistema…",
+  "placeholderProposal": "Pedí un cambio o hacé otra consulta…",
   "keyboardHelp": "Enter agrega una línea. Ctrl+Enter o ⌘+Enter envían.",
   "send": "Enviar",
   "sending": "Enviando…",

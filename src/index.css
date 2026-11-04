@@ -458,6 +458,12 @@ table {
 .assistant-message[data-role=user] { display: flex; justify-content: flex-end; }
 .assistant-user-bubble { padding: 0.5rem 1rem; border-radius: var(--radius-assistant-bubble); background: var(--color-surface-muted); }
 .assistant-availability { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.625rem; padding-inline: 0.5rem; font-size: var(--text-sm); color: var(--color-content-muted); }
+/* Propuesta en el hilo (IA1-A, 2026-11-04): banda con el tipo y las acciones; reemplazada o creada, se pliega a una línea. */
+.assistant-proposal { margin-top: 1rem; border: 1px solid var(--color-assistant-border); border-radius: var(--radius-card); background: var(--color-surface); white-space: normal; }
+.assistant-proposal-band { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--color-assistant-border); border-radius: var(--radius-card) var(--radius-card) 0 0; background: var(--color-assistant-composer); }
+.assistant-proposal-band h3 { font-size: var(--text-sm); font-weight: 600; }
+.assistant-proposal-body { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem; }
+.assistant-proposal[data-folded=true] { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.625rem; padding: 0.5rem 0.75rem; }
 
 /* Internal assistant history, approved 2026-10-05. Native thread-list primitives use global tokens. */
 .conversation-workspace { display:flex; flex:1; min-height:0; min-width:0; border:1px solid var(--color-border); border-radius:var(--radius-card); overflow:hidden; }
