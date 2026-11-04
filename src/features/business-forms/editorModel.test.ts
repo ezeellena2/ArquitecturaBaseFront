@@ -198,3 +198,12 @@ it("starts a block with 1 and 20 rows and treats a change of its rows or of the 
   const unmarked = { ...saved, draft: { ...saved.draft, fields: saved.draft.fields.map(field => field.type === "decimal" ? { ...field, repeated: undefined } : field) } };
   expect(createDraftReview(unmarked, rows).rows).toContainEqual(expect.objectContaining({ id: "field:quantity" }));
 });
+
+it("keeps the mark of a question of the block when its new type fits a row, and a question turned into the block starts required", () => {
+  const quantity = { localId: "q", fieldId: "field-q", replacesFieldId: null, type: "decimal" as const, label: { es: "Cantidad" }, help: null, required: false, repeated: true as const };
+
+  expect(replaceQuestionType(quantity, "shortText", "new", "es")).toMatchObject({ type: "shortText", repeated: true, replacesFieldId: "field-q" });
+  expect(replaceQuestionType(quantity, "photo", "new", "es")).not.toHaveProperty("repeated");
+  const { repeated: _repeated, ...single } = quantity;
+  expect(replaceQuestionType(single, "group", "new", "es")).toMatchObject({ type: "group", required: true, rows: { minRows: 1, maxRows: 20 }, label: { es: "Cantidad" } });
+});

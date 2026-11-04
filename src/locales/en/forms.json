@@ -112,7 +112,8 @@
     "catalogChoice": "Choose from a catalog",
     "photo": "Photo",
     "document": "Document",
-    "multiChoice": "Choose several"
+    "multiChoice": "Choose several",
+    "group": "Rows"
   },
   "reviewOption": "{{question}} · option “{{option}}”",
   "reviewOptionOrder": "Option order for {{question}}",
@@ -1350,6 +1351,29 @@
     "noPending": "No responses to approve.",
     "noDeactivated": "No deactivated forms",
     "pendingNavigation": "{{position}} of {{count}} to approve"
+  },
+  "rows": {
+    "name": "Name",
+    "defaultName": "Rows",
+    "title": "Rows",
+    "minimum": "Minimum",
+    "maximum": "Maximum",
+    "maximumHint": "WhatsApp loads up to 10 rows; the app, up to the maximum.",
+    "invalidRange": "Choose a minimum between 0 and the maximum, and a maximum between 1 and 100.",
+    "summary_one": "{{minimum}} to {{maximum}} · {{count}} question",
+    "summary_other": "{{minimum}} to {{maximum}} · {{count}} questions",
+    "band": "Questions of each row",
+    "blockExists": "There is already a block of rows",
+    "notRepeated": "Not loaded several times",
+    "repeated": "Loaded several times",
+    "repeatedHint": "Loaded once per row, in the block's table.",
+    "multipleReason": "A question of the block of rows picks a single option.",
+    "removeTitle": "Remove the block?",
+    "removeDescription_one": "The block «{{name}}» and its question are removed.",
+    "removeDescription_other": "The block «{{name}}» and its {{count}} questions are removed.",
+    "removeDescription_zero": "The block «{{name}}», which has no questions, is removed.",
+    "removeAction": "Remove the block",
+    "typeLocked": "A block with questions keeps its type."
   },
   "multiple": {
     "allow": "Allow choosing several",

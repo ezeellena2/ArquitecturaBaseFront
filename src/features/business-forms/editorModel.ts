@@ -32,8 +32,11 @@ export function newQuestion(type: QuestionEditorType, culture: FormCulture, loca
 }
 export function replaceQuestionType(question: DraftQuestion, type: QuestionEditorType, localId: string, culture: FormCulture): DraftQuestion {
   const next = newQuestion(type, culture, localId);
-  return { ...next, ...(next.type === "photo" || next.type === "document" ? { files: { ...next.files, minFiles: question.required ? 1 : 0 } } : {}), label: question.label, help: question.help, required: question.required,
-    replacesFieldId: question.fieldId ?? question.replacesFieldId };
+  // A question of the block stays in it while its new type fits a row; the block's required follows its minimum.
+  const repeated = "repeated" in question && question.repeated && next.type !== "photo" && next.type !== "document" && next.type !== "group";
+  return { ...next, ...(next.type === "photo" || next.type === "document" ? { files: { ...next.files, minFiles: question.required ? 1 : 0 } } : {}), label: question.label, help: question.help,
+    required: next.type === "group" ? next.required : question.required, ...(repeated ? { repeated: true } : {}),
+    replacesFieldId: question.fieldId ?? question.replacesFieldId } as DraftQuestion;
 }
 export function changeQuestionCatalog(question: DraftQuestion, catalogId: string, localId: string): DraftQuestion {
   if ((question.type !== "choice" && question.type !== "multiChoice") || !question.source || question.source.catalog === catalogId) return question;

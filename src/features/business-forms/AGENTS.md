@@ -8,7 +8,7 @@ Lectura obligatoria: la [regla funcional del backend](../../../../ArquitecturaBa
 - [`hooks/`](hooks/AGENTS.md): dueños de lecturas, borradores en memoria, publicación, workflow, navegación del panel y descargas.
 - [`components/`](components/AGENTS.md): piezas de pantalla por tema, compuestas con `shared/ui`.
 - [`pages/`](pages/AGENTS.md): una página por ruta de `/formularios` y `/catalogos`; coordinan permisos, URL, guardas y diálogos.
-- Raíz: lógica pura con su test al lado. Borrador (`model`, `draftSession`, `editorModel`, `validationPaths`, `fileQuestions`, `missingFormSeed`) catálogos (`catalogDraft`, `catalogItemEdits`, `catalogFilterDraft`) y la carga desde la app (`entryForm`, `entryHandoff`) se explican en `hooks`; `responses`, `rules`, `suggestions`, `pdfDesign`, `approvals`, `workflow*` y las presentaciones de publicación y ciclo de vida, en `components`.
+- Raíz: lógica pura con su test al lado. Borrador (`model`, `draftSession`, `editorModel`, `validationPaths`, `fileQuestions`, `rowsQuestions`, `missingFormSeed`) catálogos (`catalogDraft`, `catalogItemEdits`, `catalogFilterDraft`) y la carga desde la app (`entryForm`, `entryHandoff`) se explican en `hooks`; `responses`, `rules`, `suggestions`, `pdfDesign`, `approvals`, `workflow*` y las presentaciones de publicación y ciclo de vida, en `components`.
 
 ## Al modificar
 

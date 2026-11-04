@@ -89,6 +89,18 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       return { ...common, source: { catalog: "01990000-0000-7000-8000-000000000080" } };
     }) } });
   }
+  // RG1-A: the block of rows «Artículos», with three questions of each row between «Contacto» and «Fecha de visita».
+  if (scenario === "forms-rows") {
+    const original = definitions.get(fixtureFormId)!;
+    const [customer, contact, , date] = original.draft.fields;
+    definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: [customer!, contact!,
+      { fieldId: guid(181), key: key(guid(181)), type: "group", label: { es: "Artículos", en: "Items" }, help: null, required: true, rows: { minRows: 1, maxRows: 20 } },
+      { fieldId: guid(182), key: key(guid(182)), type: "choice", label: { es: "Artículo", en: "Item" }, help: null, required: true, repeated: true,
+        options: [{ choiceId: guid(185), label: { es: "Urea granulada", en: "Granular urea" } }, { choiceId: guid(186), label: { es: "Glifosato 64%", en: "Glyphosate 64%" } }] },
+      { fieldId: guid(183), key: key(guid(183)), type: "decimal", label: { es: "Cantidad", en: "Quantity" }, help: null, required: true, repeated: true },
+      { fieldId: guid(184), key: key(guid(184)), type: "longText", label: { es: "Observaciones", en: "Notes" }, help: null, required: false, maxLength: 600, repeated: true },
+      date!] } });
+  }
   if (scenario === "forms-multiple-own" || scenario === "forms-catalog-multiple") {
     const definition = definitions.get(fixtureFormId)!;
     definitions.set(fixtureFormId, { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map((field, index) => {

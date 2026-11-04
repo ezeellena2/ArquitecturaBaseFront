@@ -22,12 +22,23 @@ import { changeQuestionMultiplicity, validSelectionCounts } from "../selectionQu
 import { CatalogQuestionSettings } from "./CatalogQuestionSettings";
 import type { AnswerQuestions } from "./CatalogQuestionFilters";
 import { answerChoices } from "../dependentLists";
+import { canRepeat } from "../rowsQuestions";
 
-const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
-export function QuestionEditor({ question, position, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, definitionId = null, previewCulture = culture, onPreviewChange, filesAvailable = false, questions }: {
+const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice", "photo", "document", "group"];
+const validRows = (rows: { minRows: number | null; maxRows: number | null }) => rows.minRows !== null && rows.maxRows !== null
+  && Number.isInteger(rows.minRows) && Number.isInteger(rows.maxRows) && rows.minRows >= 0 && rows.maxRows >= 1 && rows.maxRows <= 100 && rows.minRows <= rows.maxRows;
+export function QuestionEditor({ question, position, number, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, definitionId = null, previewCulture = culture, onPreviewChange, filesAvailable = false, questions, blockExists = false, rowCount = 0, onRepeatedChange }: {
   question: DraftQuestion; position: number; total: number; culture: FormCulture; original: FormCulture; expanded: boolean; readOnly: boolean;
+  /** What the list shows: «5» or, in the block of rows, «5.2». */
+  number?: string;
   /** The questions of the form, whose answers a catalog list can depend on (CW7). */
   questions?: readonly DraftQuestion[];
+  /** RG9-A: with a block in the form, «Renglones» is off with its reason. */
+  blockExists?: boolean;
+  /** The questions of the block, for its line in the list. */
+  rowCount?: number;
+  /** RG6-A: «Se carga varias veces» moves the question into or out of the block, so the list owns it. */
+  onRepeatedChange?: (repeated: boolean) => void;
   catalogScope?: CatalogReadScope; definitionId?: string | null; previewCulture?: FormCulture; onPreviewChange?: (questionId: string, preview: CatalogQuestionPreview | null) => void; filesAvailable?: boolean;
   issues: readonly DraftFieldIssue[]; onChange: (question: DraftQuestion) => void; onExpand: (open: boolean) => void; onMove: (delta: number) => void; onRemove: () => void;
 }) {
@@ -90,20 +101,28 @@ export function QuestionEditor({ question, position, total, culture, original, e
     if (question.fieldId) setConfirmation({ type });
     else onChange(replaceQuestionType(question, type, crypto.randomUUID(), original));
   }
+  const repeated = "repeated" in question && question.repeated === true;
+  // A block with questions keeps its type: as another type its questions would be left without a block.
+  const typeLocked = question.type === "group" && rowCount > 0;
+  // RG9-A: an option that cannot be chosen says why after «·», as files without storage already do.
+  const typeReason = (type: QuestionEditorType) => type === "group" && blockExists && question.type !== "group" ? t("rows.blockExists")
+    : (type === "photo" || type === "document") && repeated ? t("rows.notRepeated")
+    : (type === "photo" || type === "document") && !filesAvailable ? t("files.storageMissing") : null;
+  const rowsError = question.type === "group" ? fieldError("rows(?:\\.(?:minRows|maxRows))?") ?? (!validRows(question.rows) ? t("rows.invalidRange") : undefined) : undefined;
   const selectionError = question.type === "multiChoice" ? fieldError("selection(?:\\.(?:minSelected|maxSelected))?") ?? (!validSelectionCounts(question.selection) ? t("multiple.invalidRange") : !question.source && question.selection.minSelected > question.options.length ? t("multiple.impossibleMinimum") : undefined) : undefined;
   // «Agregar opción» se apaga en el tope (20 en una de varias, 50 en una de elección) con el tope como motivo.
   const optionLimit = question.type === "multiChoice" ? 20 : 50;
   const optionsFull = (question.type === "choice" || question.type === "multiChoice") && (question.options?.length ?? 0) >= optionLimit;
   const optionError = fieldError("options") ?? (question.type === "multiChoice" && !question.source && question.options.length > 20 ? t("multiple.optionLimit") : undefined);
-  const selectionControls = <>{question.type === "choice" || question.type === "multiChoice" ? <CheckboxField label={t("multiple.allow")} checked={question.type === "multiChoice"} disabled={readOnly} onCheckedChange={multiple => {
+  const selectionControls = <>{question.type === "choice" || question.type === "multiChoice" ? <CheckboxField label={t("multiple.allow")} checked={question.type === "multiChoice"} disabled={readOnly || repeated} disabledReason={repeated ? t("rows.multipleReason") : null} onCheckedChange={multiple => {
         if (question.fieldId) setConfirmation({ multiple });
         else onChange(changeQuestionMultiplicity(question, multiple, question.localId, () => crypto.randomUUID()));
       }} /> : null}
       {question.type === "multiChoice" ? <div data-question-control="selection" className="space-y-2"><SelectionRangeFields value={{ minimum: question.selection.minSelected, maximum: question.selection.maxSelected }} limit={20} minimumLabel={t("multiple.minimum")} minimumHelp={t("multiple.hint")} maximumLabel={t("multiple.maximum")} readOnly={readOnly} error={selectionError} onChange={range => onChange({ ...question, selection: { minSelected: range.minimum, maxSelected: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })}/></div> : null}</>;
   return <div ref={rootRef} data-question-local-id={question.localId} className="border-t border-[var(--color-border)] first:border-t-0">
     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
-      <span className="text-sm text-[var(--color-content-muted)]">{position}</span>
-      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{t("types." + questionEditorType(question))}{question.type === "photo" || question.type === "document" ? " · " + t("files.range", { minimum: question.files.minFiles, maximum: question.files.maxFiles }) + (question.type === "photo" ? " · " + t("files.sources." + question.files.photoSource) : "") : ""}{question.type === "multiChoice" ? " · " + t("multiple.range", { maximum: question.selection.maxSelected }) : ""}{!expanded && (question.type === "choice" || question.type === "multiChoice") && question.source?.catalog && catalogScope ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog} /> : null} · {t(question.required ? "required" : "optional")}{culture !== original && missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{culture !== original && !question.label[culture]?.trim() ? <Badge variant="outline" className="text-[var(--color-content-muted)]">{t("missingText")}</Badge> : null}{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{issueBadge}</Badge> : null}</div>
+      <span className="text-sm text-[var(--color-content-muted)]">{number ?? position}</span>
+      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{question.type === "group" ? t("types.group") + " · " + t("rows.summary", { minimum: question.rows.minRows ?? "—", maximum: question.rows.maxRows ?? "—", count: rowCount }) : <>{t("types." + questionEditorType(question))}{question.type === "photo" || question.type === "document" ? " · " + t("files.range", { minimum: question.files.minFiles, maximum: question.files.maxFiles }) + (question.type === "photo" ? " · " + t("files.sources." + question.files.photoSource) : "") : ""}{question.type === "multiChoice" ? " · " + t("multiple.range", { maximum: question.selection.maxSelected }) : ""}{!expanded && (question.type === "choice" || question.type === "multiChoice") && question.source?.catalog && catalogScope ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog} /> : null} · {t(question.required ? "required" : "optional")}</>}{culture !== original && missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{culture !== original && !question.label[culture]?.trim() ? <Badge variant="outline" className="text-[var(--color-content-muted)]">{t("missingText")}</Badge> : null}{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{issueBadge}</Badge> : null}</div>
       <div className="flex items-center gap-1">
         {!readOnly ? <>
         <IconButton size="icon-sm" label={t("up", { name: label })} disabled={readOnly || position === 1} disabledLabel={t("position", { name: label, position, total })} data-move-item={question.localId} data-move-delta={-1} onClick={() => moveQuestion(-1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
@@ -115,11 +134,13 @@ export function QuestionEditor({ question, position, total, culture, original, e
     </div>
     {expanded ? <div className="flex flex-col gap-4 bg-[var(--color-surface-muted)] p-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label={t("question")} hint={reference(question.label)} error={fieldError("label")}><Input data-question-control="label" ref={inputRef} readOnly={readOnly} placeholder={culture !== original ? t("missingText") : undefined} value={question.label[culture] ?? ""} onChange={e => onChange({ ...question, label: { ...question.label, [culture]: e.target.value } })} /></FormField>
-        <FormField label={t("type")} error={fieldError("type")}><NativeSelect disabled={readOnly} value={questionEditorType(question)} onChange={e => changeType(e.target.value as QuestionEditorType)}>{types.map(type => <option key={type} value={type} disabled={type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read") || (type === "photo" || type === "document") && !filesAvailable}>{t(`types.${type}`)}{(type === "photo" || type === "document") && !filesAvailable ? " · " + t("files.storageMissing") : ""}</option>)}</NativeSelect></FormField>
+        <FormField label={t(question.type === "group" ? "rows.name" : "question")} hint={reference(question.label)} error={fieldError("label")}><Input data-question-control="label" ref={inputRef} readOnly={readOnly} placeholder={culture !== original ? t("missingText") : undefined} value={question.label[culture] ?? ""} onChange={e => onChange({ ...question, label: { ...question.label, [culture]: e.target.value } })} /></FormField>
+        <FormField label={t("type")} error={fieldError("type")}><DisabledReason reason={typeLocked && !readOnly ? t("rows.typeLocked") : null} className="grid w-full"><NativeSelect disabled={readOnly || typeLocked} value={questionEditorType(question)} onChange={e => changeType(e.target.value as QuestionEditorType)}>{types.map(type => { const reason = typeReason(type); return <option key={type} value={type} disabled={reason !== null || type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read")}>{t(`types.${type}`)}{reason ? " · " + reason : ""}</option>; })}</NativeSelect></DisabledReason></FormField>
         <FormField label={t("helpOptional")} hint={reference(question.help)} error={fieldError("help")}><Textarea data-question-control="help" readOnly={readOnly} placeholder={culture !== original && question.help?.[original]?.trim() ? t("missingText") : undefined} value={question.help?.[culture] ?? ""} onChange={e => onChange({ ...question, help: { ...question.help, [culture]: e.target.value || null } })} /></FormField>
         <div className="flex flex-col gap-4">
-          {question.type !== "photo" && question.type !== "document" ? <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly} onCheckedChange={checked => onChange(question.type === "multiChoice" ? { ...question, required: checked, selection: { ...question.selection, minSelected: checked ? Math.max(1, question.selection.minSelected ?? 0) : 0 } } : { ...question, required: checked })} /> : null}
+          {question.type === "group" ? <div data-question-control="rows" className="flex flex-col gap-2"><p className="text-sm font-medium">{t("rows.title")}</p><SelectionRangeFields value={{ minimum: question.rows.minRows, maximum: question.rows.maxRows }} limit={100} minimumLabel={t("rows.minimum")} maximumLabel={t("rows.maximum")} maximumHelp={t("rows.maximumHint")} readOnly={readOnly} error={rowsError} onChange={range => onChange({ ...question, rows: { minRows: range.minimum, maxRows: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })} /></div> : null}
+          {question.type !== "photo" && question.type !== "document" && question.type !== "group" ? <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly} onCheckedChange={checked => onChange(question.type === "multiChoice" ? { ...question, required: checked, selection: { ...question.selection, minSelected: checked ? Math.max(1, question.selection.minSelected ?? 0) : 0 } } : { ...question, required: checked })} /> : null}
+          {onRepeatedChange && canRepeat(question) ? <CheckboxField label={t("rows.repeated")} help={t("rows.repeatedHint")} error={fieldError("repeated")} checked={repeated} disabled={readOnly} onCheckedChange={onRepeatedChange} /> : null}
           {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><Input type="number" min={1} max={10000} readOnly={readOnly} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></FormField> : null}
         </div>
       </div>

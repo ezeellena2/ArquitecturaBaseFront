@@ -41,4 +41,6 @@ Fixtures: `fixtures` (común), `assistantFixtures`, `formFixtures`, `chatFormFix
 
 `formDependentLists` (CW7) recorre sin golden, en es/en a 1440, 390 y 320, el filtro según otra respuesta en el editor (`forms-catalog-fields-dependent`), la lista que espera y se limpia en la carga (`entries-dependent`) y el formulario apagado en el chat (`forms-chat-dependent`); sus capturas van a `test-results` para compararlas con el tablero.
 
+`formRows` (RG1-A, RG6-A y RG9-A) recorre sin golden, en es/en a 1440, 390 y 320, el bloque de renglones del editor (`forms-rows`): su fila con el recuadro de sus preguntas 3.1, 3.2…, su editor con mínimo y máximo, y una pregunta del bloque con «Se carga varias veces» marcada y foto, documento y «Renglones» apagados con su motivo.
+
 IA1-A e IA2: `assistant-proposal` arma una propuesta reemplazada, un catálogo ya creado y el ajuste abierto con su pregunta nueva, más «Ver cómo queda»; `catalogs-manual-proposal`, la banda de un Manual propuesto. Ambas en es/en a 1440, 390 y 320.

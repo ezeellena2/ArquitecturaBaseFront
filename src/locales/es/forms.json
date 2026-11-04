@@ -112,7 +112,8 @@
     "catalogChoice": "Elegir de un catálogo",
     "photo": "Foto",
     "document": "Documento",
-    "multiChoice": "Elegir varias"
+    "multiChoice": "Elegir varias",
+    "group": "Renglones"
   },
   "reviewOption": "{{question}} · la opción «{{option}}»",
   "reviewOptionOrder": "Orden de opciones de {{question}}",
@@ -1350,6 +1351,29 @@
     "noPending": "No hay respuestas por aprobar.",
     "noDeactivated": "No hay formularios dados de baja",
     "pendingNavigation": "{{position}} de {{count}} por aprobar"
+  },
+  "rows": {
+    "name": "Nombre",
+    "defaultName": "Renglones",
+    "title": "Renglones",
+    "minimum": "Mínimo",
+    "maximum": "Máximo",
+    "maximumHint": "En WhatsApp se cargan hasta 10 renglones; en la app, hasta el máximo.",
+    "invalidRange": "Elegí un mínimo entre 0 y el máximo, y un máximo entre 1 y 100.",
+    "summary_one": "de {{minimum}} a {{maximum}} · {{count}} pregunta",
+    "summary_other": "de {{minimum}} a {{maximum}} · {{count}} preguntas",
+    "band": "Preguntas de cada renglón",
+    "blockExists": "Ya hay un bloque de renglones",
+    "notRepeated": "No se carga varias veces",
+    "repeated": "Se carga varias veces",
+    "repeatedHint": "Se carga una vez por renglón, en la tabla del bloque.",
+    "multipleReason": "En el bloque de renglones se elige una sola opción.",
+    "removeTitle": "¿Quitar el bloque?",
+    "removeDescription_one": "Se quitan el bloque «{{name}}» y su pregunta.",
+    "removeDescription_other": "Se quitan el bloque «{{name}}» y sus {{count}} preguntas.",
+    "removeDescription_zero": "Se quita el bloque «{{name}}», que no tiene preguntas.",
+    "removeAction": "Quitar el bloque",
+    "typeLocked": "Un bloque con preguntas no cambia de tipo."
   },
   "multiple": {
     "allow": "Permitir elegir varias",
