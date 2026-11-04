@@ -29,9 +29,16 @@ const CODE_LENGTH = 6;
 
 const emailSchema = z.email();
 
-/// Vincular WhatsApp lleva los países a los que se mandan códigos (`whatsappCountries`), y arranca en el primero.
+/// Vincular WhatsApp lleva los países a los que se mandan códigos (`whatsappCountries`), y arranca en el primero. Con el
+/// número de la cuenta ya escrito (`initialPhone`) sirve para verificarlo o para vincular su chat, que se nombran con su
+/// propio título y aviso (`copy`): confirmar el número es lo mismo en los tres casos.
 export type VerifyDestinationDialogProps = (
-  | { readonly channel: "whatsapp"; readonly countries: readonly string[]; readonly initialPhone?: string }
+  | {
+      readonly channel: "whatsapp";
+      readonly countries: readonly string[];
+      readonly initialPhone?: string;
+      readonly copy?: { readonly title: string; readonly success: string };
+    }
   | { readonly channel: "email" }
 ) & {
   readonly onClose: () => void;
@@ -90,10 +97,15 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
   const { seconds: retrySeconds, isRunning: isRetryLimited, restart: restartRetry } = useCountdown(0);
   const { seconds: resendSeconds, isRunning: isResendWaiting, restart: restartResend } = useCountdown(0);
 
+  const whatsappCopy = props.channel === "whatsapp" ? props.copy : undefined;
   const copy =
     channel === "whatsapp"
-      ? { title: t("linkWhatsApp.title"), taken: t("linkWhatsApp.taken") }
-      : { title: t("addEmail.title"), taken: t("addEmail.taken") };
+      ? {
+          title: whatsappCopy?.title ?? t("linkWhatsApp.title"),
+          taken: t("linkWhatsApp.taken"),
+          success: whatsappCopy?.success ?? t("linkWhatsApp.success"),
+        }
+      : { title: t("addEmail.title"), taken: t("addEmail.taken"), success: t("addEmail.success") };
 
   function startCodeStep(destination: SentTo, resendAfterSeconds: number) {
     setSentTo(destination);
@@ -179,7 +191,7 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
         ? confirmPhoneLink({ phone: destination.phone, code })
         : confirmEmail({ email: destination.email, code }),
     onSuccess: async () => {
-      notify({id: "verify-destination:success", kind: "success", message: channel === "whatsapp" ? t("linkWhatsApp.success") : t("addEmail.success")});
+      notify({id: "verify-destination:success", kind: "success", message: copy.success});
       // El perfil lo usan las filas de esta pantalla, el menú del usuario, la barra lateral y el aviso del inicio.
       await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       onClose();

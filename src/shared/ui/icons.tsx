@@ -355,5 +355,10 @@ export function DocumentIcon(props: IconProps) { return <Icon {...props}><path d
 export function ExpandIcon(props: IconProps) { return <Icon {...props}><path d="M15 4h5v5M9 20H4v-5M20 4l-6 6M4 20l6-6"/></Icon>; }
 export function DownloadIcon(props: IconProps) { return <Icon {...props}><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></Icon>; }
 export function ChatIcon(props: IconProps) { return <Icon {...props}><path d="M20 11.5a8 8 0 0 1-11.7 7.1L4 20l1.4-4.1A8 8 0 1 1 20 11.5Z"/></Icon>; }
+/// The link of the WhatsApp chat with the account, and the notices it brings (Mi perfil, board PF1-A).
+export function LinkIcon(props: IconProps) { return <Icon {...props}><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></Icon>; }
+export function BellIcon(props: IconProps) { return <Icon {...props}><path d="M10.3 20a2 2 0 0 0 3.4 0"/><path d="M4.3 15.3A1 1 0 0 0 5 17h14a1 1 0 0 0 .7-1.7C18.4 14 17 12.5 17 8A5 5 0 0 0 7 8c0 4.5-1.4 6-2.7 7.3"/></Icon>; }
+/// A link that opens outside the app, in another tab: the WhatsApp chat of the business.
+export function ExternalLinkIcon(props: IconProps) { return <Icon {...props}><path d="M14 4h6v6M10 14 20 4"/><path d="M18 13.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4.5"/></Icon>; }
 
 export { EllipsisVertical as MoreVerticalIcon } from "lucide-react";
