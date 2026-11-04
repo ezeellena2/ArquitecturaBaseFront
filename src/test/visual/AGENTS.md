@@ -38,3 +38,5 @@ Fixtures: `fixtures` (común), `assistantFixtures`, `formFixtures`, `chatFormFix
 
 - [Catálogo y revisión con navegador](../../../docs/guides/estandar-visual.md#catálogo-y-revisión-con-navegador); [motivo para no optimizar el CSS](../../../docs/design/visual-baseline.md#pendiente-de-compilación-css--2026-10-12).
 - [Arnés del front y cohortes HTTP](../AGENTS.md); [configuración](../../../playwright.config.ts) y [servidor](server.mjs).
+
+`formDependentLists` (CW7) recorre sin golden, en es/en a 1440, 390 y 320, el filtro según otra respuesta en el editor (`forms-catalog-fields-dependent`), la lista que espera y se limpia en la carga (`entries-dependent`) y el formulario apagado en el chat (`forms-chat-dependent`); sus capturas van a `test-results` para compararlas con el tablero.

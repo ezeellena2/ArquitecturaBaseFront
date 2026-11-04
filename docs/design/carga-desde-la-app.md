@@ -196,3 +196,36 @@ programada el mismo día.
   Programándolo apareció que, con las mismas respuestas mantenidas y sin archivos, el envío siguiente repetía el pedido del
   anterior y recibía su número; ahora un envío que llegó suelta su pedido, en la página y en el panel, y sólo un reintento
   después de un corte lo repite.
+
+## Listas dependientes, CW7 — 2026-11-04
+
+Una pregunta de catálogo filtra sus opciones por la respuesta de otra pregunta del mismo formulario, como dibuja **CW7** («Un
+lote según el campo elegido»), sólo en la app. La regla está en
+[formularios](../../../ArquitecturaBase/docs/features/formularios.md#listas-dependientes--etapa-4-2026-11-04).
+
+- **En el editor,** «Qué opciones ve cada persona» suma «Agregar filtro según otra respuesta» después de los otros dos, en la
+  banda de la zona. Apagado, su motivo (`DisabledReason`) dice que no hay un campo de catálogo libre con una pregunta anterior
+  de su catálogo («Ninguna pregunta anterior de elegir una elige del catálogo de estos campos.»). La condición dice «Según otra
+  respuesta» y tiene «Campo» (sólo los de tipo catálogo) y «Respuesta de»: un combo desplegable (`Autocomplete` con `dropdown`)
+  con las demás preguntas de catálogo, «Campo (pregunta 1)», y debajo lo que eligen («Elige de Campos») o, apagadas, por qué no
+  sirven: «Elige de Artículos: otro catálogo», «Elige varias» o «Va después de Lote». Plegada, la banda dice «Campo según la
+  respuesta de «Campo»». La (i) de la zona suma que la respuesta tiene que ser de una pregunta anterior de elegir una del mismo
+  catálogo que el campo. «Como si lo recibiera» queda apagado con «Depende de otra respuesta: se prueba cargando el
+  formulario.» y no hay línea del máximo por persona.
+- **En la app,** la lista espera: apagada, dice en su campo «Elegí primero «Campo»» (en el celular, en su botón). Con el campo
+  elegido trae sólo sus lotes y la cuenta los nombra, «15 opciones de El Ombú»; elegir otro campo limpia el lote. Si al enviar
+  el servidor rechaza un lote que ya no corresponde, se marca en su pregunta como una opción dada de baja.
+- **Al publicar,** el aviso va en «Avisos», con la pregunta como título: «Por WhatsApp, Siembra no se puede mandar mientras
+  «Lote» dependa de «Campo». En la app se carga igual.» Publicar sigue habilitado.
+- **En el chat de WhatsApp,** «Enviar formulario» muestra la tarjeta apagada, con ««Lote» depende de otra respuesta: se carga
+  desde la app» en lugar de la versión y las preguntas. El asistente no lo ofrece.
+
+Diferencias con el dibujo:
+
+- La cuenta de la lista dice «opciones» y no «lotes», como las demás listas, porque el catálogo no guarda cómo se llaman sus
+  opciones; y la lista apagada nombra la pregunta («Elegí primero «Campo»») en lugar de «el campo».
+- La insignia «Nuevo» de la condición es una nota del tablero, como sus círculos naranjas.
+- El aviso de publicar y la tarjeta del chat siguen los diseños posteriores al tablero: PU1-A, con la pregunta como título del
+  aviso, y las tarjetas de «Enviar formulario» con el elegido de otra página primero (LR3-A), en lugar de la lista con búsqueda
+  dibujada.
+- Las condiciones van en el orden de sus campos, como las demás, y no en el orden en que se agregaron.
