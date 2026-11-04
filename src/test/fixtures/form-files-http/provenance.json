@@ -1,49 +1,66 @@
 {
-  "captures": [
-    {
-      "sha256": "0b9a7e424c17ed1916be983d3e83fadf31c34ae3801e8aa61a35640a0ce80202",
-      "length": 1824,
-      "name": "draft-created.json"
-    },
-    {
-      "sha256": "fec071412beb7f1f6e06002ffb8c753008cdd93a1ca258b53fdce22bebaf126c",
-      "length": 2770,
-      "name": "reply-completed.json"
-    },
-    {
-      "sha256": "ef4cba66a0accf8b1fcbe1d22d6c179168747ab76beee8421f41a57e2d9299da",
-      "length": 1935,
-      "name": "reply-downloading.json"
-    },
-    {
-      "sha256": "fec071412beb7f1f6e06002ffb8c753008cdd93a1ca258b53fdce22bebaf126c",
-      "length": 2770,
-      "name": "reply-reloaded.json"
-    },
-    {
-      "sha256": "d2ad2c54d9a3962ea26bf3138be879e7bc8454d2bfae19008ccb09eb343e3202",
-      "length": 1828,
-      "name": "reply-without-read.json"
-    }
-  ],
-  "sourceState": [
-    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? .claude/"
-  ],
+  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "schemaVersion": 1,
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "WhatsAppFormFilesIntegrationTests",
+  "sourceState": [
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
+  ],
+  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-      "sha256": "ec0604766d8491f15864f69d6caa92c5c1b25fe12b94b8e53be0446a6936bea0"
+      "sha256": "7176b2f78850c34ec8f336a55afb3b9edc37a716db93030394e3cdcc3571f7d7"
     }
   ],
-  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
-  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
-  "artifactSet": "form-files"
+  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "captures": [
+    {
+      "length": 1824,
+      "name": "draft-created.json",
+      "sha256": "4a830ff0c811efb82cb810dbbcbf180701151e979d577fa0778f4b7a792f4e80"
+    },
+    {
+      "length": 2770,
+      "name": "reply-completed.json",
+      "sha256": "293a1b4ed2f02daa2e5cdd53ca5771d0522047afb07b0777e7cdddd925a6633f"
+    },
+    {
+      "length": 1935,
+      "name": "reply-downloading.json",
+      "sha256": "2ce9ff1a99d48fb2a42ddbd8ac30887611d505239469ed2a5e5626f06057a0ad"
+    },
+    {
+      "length": 2770,
+      "name": "reply-reloaded.json",
+      "sha256": "293a1b4ed2f02daa2e5cdd53ca5771d0522047afb07b0777e7cdddd925a6633f"
+    },
+    {
+      "length": 1828,
+      "name": "reply-without-read.json",
+      "sha256": "81ffd9be9e197b5d8a2fe2a91a978034b999a1d971092d9b61f336351076d639"
+    }
+  ],
+  "artifactSet": "form-files",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

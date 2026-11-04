@@ -1,181 +1,36 @@
 {
-  "captures": [
-    {
-      "sha256": "074160a5bab0a62fc929091f9f0fc843382c0f0dd249433c5477a0814d5552e6",
-      "length": 1197,
-      "name": "approval-approved-d2-es.json"
-    },
-    {
-      "sha256": "587d916543123c0fc8bc9d368907c3503fb2a707ba918f83e5214a49178f9ae6",
-      "length": 574,
-      "name": "approval-failed-without-task-d2-es.json"
-    },
-    {
-      "sha256": "be751c5ad63a107fe8f087ecba76849f62592643ec91ad1e971630817d874023",
-      "length": 760,
-      "name": "approval-pending-d2-approved-es.json"
-    },
-    {
-      "sha256": "9a6f2766dba3f45620b6a5b8f66194ee00e257549b332911621a18c258e71401",
-      "length": 760,
-      "name": "approval-pending-d2-rejected-es.json"
-    },
-    {
-      "sha256": "10673c689e41238369a10d41cbf377453198ff32994795d7f804fe2b0ffefbf3",
-      "length": 1216,
-      "name": "approval-rejected-d2-es.json"
-    },
-    {
-      "sha256": "2f23e2316d49256290fe0da27bf395ccb495701ed265c12069df858ed26e5659",
-      "length": 772,
-      "name": "completed-en.json"
-    },
-    {
-      "sha256": "8ff192c703f065b5e588e88bf6186a87c6ce5a43216fe341fc8f1dbaba6fba64",
-      "length": 852,
-      "name": "consult-es.json"
-    },
-    {
-      "sha256": "d5ce02ceafbbf3a367a9f97788b28a618972e3b7b62977a402a981826512f71a",
-      "length": 249,
-      "name": "control-forbidden-es.json"
-    },
-    {
-      "sha256": "a50ee3a4173f8bc8d6784f5d78157d77787db0f41850e14ba03df965eb0f6eed",
-      "length": 2636,
-      "name": "e2e-approved-notice-fallback-es.json"
-    },
-    {
-      "sha256": "7f01353488b0bdb16705ff17e12e45265f967a491ecff7ca767915bffa517d25",
-      "length": 2839,
-      "name": "e2e-catalog-original-item-en.json"
-    },
-    {
-      "sha256": "5e3ddc8b6ba92bdf7a213fdddfbc98774fe02791ab5567db7d9974c12a4ddadc",
-      "length": 2839,
-      "name": "e2e-english-en.json"
-    },
-    {
-      "sha256": "b90cf6b7185e4f29bb8af586e3e346de37010c95bb5c9dc09a702b26f965f598",
-      "length": 2636,
-      "name": "e2e-footer-fallback-es.json"
-    },
-    {
-      "sha256": "743d872517275f9f3cf4499f718cd55f63229752aeb4e577f4b7a830e45458d6",
-      "length": 852,
-      "name": "failed-en.json"
-    },
-    {
-      "sha256": "2759b7b3758111076761c6d22405e05fa9cb2050d5b11a338f9fe5c8d5da9685",
-      "length": 877,
-      "name": "failed-es.json"
-    },
-    {
-      "sha256": "dd5f980c9387ce7830559e1aff06f6f1c136aeacf6caddd4cc35197be3c92f12",
-      "length": 514,
-      "name": "not-applicable-es.json"
-    },
-    {
-      "sha256": "33e8db25622dad20cf9b79852b17ac8c4b0c2937a73461c217de6898c496dbaf",
-      "length": 1444,
-      "name": "pdf-completed-es.json"
-    },
-    {
-      "sha256": "a70d730140d49bc0b4f60a14655fc155346f19696f1b39d98163f8f79290d277",
-      "length": 249,
-      "name": "read-forbidden-es.json"
-    },
-    {
-      "sha256": "601803034ca89c8fc30795db627b53899b0f9af2a361a19ac99ea67b623abeee",
-      "length": 750,
-      "name": "retry-en.json"
-    },
-    {
-      "sha256": "c5b1023da53bcc0606779cead838c8233ae9b06cde50385a0affda34f29ffa96",
-      "length": 905,
-      "name": "review-completed-es.json"
-    },
-    {
-      "sha256": "6c67b86929e31914fe1469f3fe2e6e54425bc1ddfe054d7ad8a45edfb970c0d0",
-      "length": 1096,
-      "name": "review-failed-es.json"
-    },
-    {
-      "sha256": "348441b2e7ee279a678d55a3fcfce476d74a8967b74005ddde7a372fa74c0fa9",
-      "length": 986,
-      "name": "review-not-sent-es.json"
-    },
-    {
-      "sha256": "5aa0c90b832c8efd744e36eb43f56649b92b6e0f3395e649900edccd5c1c09d6",
-      "length": 985,
-      "name": "review-sent-es.json"
-    },
-    {
-      "sha256": "c547240e0d1609421a8cc908c689e7fdb06a1b6cdffc733f775c058ac47d7a3d",
-      "length": 1384,
-      "name": "role-completed-en.json"
-    },
-    {
-      "sha256": "2d6ca71cfbddd56d2db558d47e6801538b80a8525e97cdfd0faf62fab378e443",
-      "length": 1396,
-      "name": "role-completed-es.json"
-    },
-    {
-      "sha256": "ba68f09aae2d52eecdaa1afa8bfa0c156e7a4ff21b0eb6f5403aac491473a653",
-      "length": 940,
-      "name": "role-delivered-read-en.json"
-    },
-    {
-      "sha256": "ba68f09aae2d52eecdaa1afa8bfa0c156e7a4ff21b0eb6f5403aac491473a653",
-      "length": 940,
-      "name": "role-delivered-read-es.json"
-    },
-    {
-      "sha256": "630c35452254072142e4e23abc488f54f12ed242905a2e8bd5def97e8aad7548",
-      "length": 922,
-      "name": "role-late-accepted-read-only-en.json"
-    },
-    {
-      "sha256": "630c35452254072142e4e23abc488f54f12ed242905a2e8bd5def97e8aad7548",
-      "length": 922,
-      "name": "role-late-accepted-read-only-es.json"
-    },
-    {
-      "sha256": "67bfb5efbeb1b52e6262eb868627d783fc2b3b69dda882f2a00920125aee9779",
-      "length": 1125,
-      "name": "role-uncertain-es.json"
-    },
-    {
-      "sha256": "68a41764e06e1907d5e03caca7e3382d7497be6d2acb20c11b176e0e71087a80",
-      "length": 861,
-      "name": "running-es.json"
-    },
-    {
-      "sha256": "cde12793b15887e854bc5453f68cf531e070716c5b9f6b0f41564f11c812a347",
-      "length": 864,
-      "name": "uncertain-es.json"
-    },
-    {
-      "sha256": "41dca71d9d9b751b33db443e3cf55ed03274ff24622668a327e0cc13de51758d",
-      "length": 490,
-      "name": "waiting-es.json"
-    }
-  ],
-  "sourceState": [
-    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? .claude/"
-  ],
+  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "schemaVersion": 1,
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "FormWorkflowHttpTests and FormDetailMomentsHttpTests and FormApprovalHttpTests and FormPdfHttpTests and FormWorkflowEndToEndHttpTests and FormResponseHttpTests and FormPublishedVersionFixture and FormRecordCaptureIntegrationTests and FormActionRecoveryIntegrationTests and FormDraftDurabilityTests and FormPdfRendererFixture and CapturingFormActionChannel and FormWorkflowContractCapture",
+  "sourceState": [
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
+  ],
+  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormWorkflowHttpTests.cs",
-      "sha256": "d90bd18a8783e6d8947f9893088321871f092a3fc34d16fa97d6cb6490192a42"
+      "sha256": "5f297e67fe888394284f01da91678e4590a8531a77babb52d504ed692ff79482"
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDetailMomentsHttpTests.cs",
@@ -215,7 +70,7 @@
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPdfRendererFixture.cs",
-      "sha256": "9f77ab087df305af0d962c435a190d12474e08fbe03afcb6189beb1a45ee34db"
+      "sha256": "e10509cfad0d32e58e3f882397964562a73fddf53b9fcfeab8a1fd95dcb02f93"
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/CapturingFormActionChannel.cs",
@@ -226,7 +81,189 @@
       "sha256": "8029016cee122d094727bf5e6f1f151d0db36f60d8d90427d73202c5a7bdee90"
     }
   ],
-  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
-  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
-  "artifactSet": "workflow"
+  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "captures": [
+    {
+      "length": 1203,
+      "name": "approval-approved-d2-es.json",
+      "sha256": "614ed276bbaa4ea2fd2e3539d828c9df3ff9a401bf60937c1bbc19d6d9875b32"
+    },
+    {
+      "length": 578,
+      "name": "approval-failed-without-task-d2-es.json",
+      "sha256": "42ab7dcf3292e36e759dc7c517c5ebc5daf656314bf49200a1b2839ef1d8700c"
+    },
+    {
+      "length": 760,
+      "name": "approval-pending-d2-approved-es.json",
+      "sha256": "ee0daa05cce34c94acce72d4c01dbe32448fd3f934091da553a906326e9af1ed"
+    },
+    {
+      "length": 760,
+      "name": "approval-pending-d2-rejected-es.json",
+      "sha256": "bb739994d51d4d535a9d33254bed8b8b9af4163f0dc1dec701b84232b151d5be"
+    },
+    {
+      "length": 1222,
+      "name": "approval-rejected-d2-es.json",
+      "sha256": "6ed53f16568554116877c4c9ea269fd47464e43308f3ca96271544ff3a6331f9"
+    },
+    {
+      "length": 789,
+      "name": "completed-en.json",
+      "sha256": "cbb6406be04f9691818cb6c301effc8ec4c253d800336a70ab7c5d74b0ac92ec"
+    },
+    {
+      "length": 871,
+      "name": "consult-es.json",
+      "sha256": "62e312e03d3f7509620f26567e827470dc28b3fd22455fac8ed8076d8e4ca2c9"
+    },
+    {
+      "length": 249,
+      "name": "control-forbidden-es.json",
+      "sha256": "b261d913167e9ce279d7069b76946a7c98c7e9e6a1b815597f394e9760088505"
+    },
+    {
+      "length": 2700,
+      "name": "e2e-approved-notice-fallback-es.json",
+      "sha256": "dd9aac8e1caf725d6ca12dbcac05fd9b6dc121c80c13cab879a5468fe882234c"
+    },
+    {
+      "length": 2905,
+      "name": "e2e-catalog-original-item-en.json",
+      "sha256": "c73a92b8856ac391d37ce8c4ad46730b80d199ddcf9861c3fca22d327c2bad1b"
+    },
+    {
+      "length": 2905,
+      "name": "e2e-english-en.json",
+      "sha256": "48ce9203b66d2a4816fb306ae9aad5e33b4b770f82d9488397ac230223cf128a"
+    },
+    {
+      "length": 2700,
+      "name": "e2e-footer-fallback-es.json",
+      "sha256": "3950b802b23d71dfbf6f5eafc4488959c6219e3c180e3d408cfa275507f5f6a3"
+    },
+    {
+      "length": 869,
+      "name": "failed-en.json",
+      "sha256": "79c2cb9101400025c3646f30d7fd149100e196b4100f9837bf9f8cd3e626c4c2"
+    },
+    {
+      "length": 894,
+      "name": "failed-es.json",
+      "sha256": "e737f064c3b54e51c3f45fca73552868bccf3bb6153ab789589eb9c546659680"
+    },
+    {
+      "length": 514,
+      "name": "not-applicable-es.json",
+      "sha256": "f3fcdc25b836ff1200ba30e90c4da2883d3942c00ce23835d83748aaee220167"
+    },
+    {
+      "length": 1462,
+      "name": "pdf-completed-es.json",
+      "sha256": "fa47d19a901788257a47830fcfcab1c98825e4ba2216c6de33e64cbc780ed6ad"
+    },
+    {
+      "length": 249,
+      "name": "read-forbidden-es.json",
+      "sha256": "ef272e5fd64363badde691f81062ae5dcc80fb444c8dcc41ee78e916ad284a17"
+    },
+    {
+      "length": 769,
+      "name": "retry-en.json",
+      "sha256": "2d30e502829ffdf6b774a8f71ccafb3caa49369e60f96a2e8e0a24e1d53532f0"
+    },
+    {
+      "length": 928,
+      "name": "review-completed-es.json",
+      "sha256": "be6863761f876e6d4a886d260a4958dfac046c45b40f69f42bfa6e82ab795149"
+    },
+    {
+      "length": 1119,
+      "name": "review-failed-es.json",
+      "sha256": "1ff04546df3e055c9f26efd6c55b67d0ab6c77dc55595169432b67b092a4b2b9"
+    },
+    {
+      "length": 1007,
+      "name": "review-not-sent-es.json",
+      "sha256": "45e2c733f56046d5260077283be4e8c5f5fc65412af7fe175ede9fb4f4809647"
+    },
+    {
+      "length": 1006,
+      "name": "review-sent-es.json",
+      "sha256": "0e3cd95a2cf0bff281f107878b11c72e06f140b31e71f764dc35f808ea1696a7"
+    },
+    {
+      "length": 1425,
+      "name": "role-completed-en.json",
+      "sha256": "7c60635d1375783b826cc98e243aaf2b84edcc843b56c1e39b2f048c58d3ac09"
+    },
+    {
+      "length": 1437,
+      "name": "role-completed-es.json",
+      "sha256": "ad8cddf804d0569c23c41894c53789adc4552423e4e69f0a8564e0724a47a34d"
+    },
+    {
+      "length": 967,
+      "name": "role-delivered-read-en.json",
+      "sha256": "640f34c7b78bf68f6323df702313244c4cade4533e63bf81fe4b89469966f16f"
+    },
+    {
+      "length": 967,
+      "name": "role-delivered-read-es.json",
+      "sha256": "640f34c7b78bf68f6323df702313244c4cade4533e63bf81fe4b89469966f16f"
+    },
+    {
+      "length": 947,
+      "name": "role-late-accepted-read-only-en.json",
+      "sha256": "60e27310d7ca1a9a4f7d0bb6f26ac1525af37406509c71b092e6e580e5352629"
+    },
+    {
+      "length": 947,
+      "name": "role-late-accepted-read-only-es.json",
+      "sha256": "60e27310d7ca1a9a4f7d0bb6f26ac1525af37406509c71b092e6e580e5352629"
+    },
+    {
+      "length": 1071,
+      "name": "role-retried-en.json",
+      "sha256": "e33f20cc749518d557ae606ae1f1b86c45d679b63fd27e7713ca669baa639c8e"
+    },
+    {
+      "length": 1128,
+      "name": "role-retry-en.json",
+      "sha256": "25c3900480e61d9765d84e5d59d6e29f5c84f7e64392ccda27d6fb656f26a94c"
+    },
+    {
+      "length": 1145,
+      "name": "role-retry-offered-en.json",
+      "sha256": "23fba66ec72110dd6bc9099aee95f136a27cb29d1bb1f74c5f19d8c9c0969227"
+    },
+    {
+      "length": 1162,
+      "name": "role-retry-offered-es.json",
+      "sha256": "2a4c9f89b275c3e91d80a0d125687d03c01e133affc5b80d0dfa7d26062e39b2"
+    },
+    {
+      "length": 1159,
+      "name": "role-uncertain-es.json",
+      "sha256": "f98bfcf5c734631eae01fdbbed119e27bd932152373a97bf1cff458c84505230"
+    },
+    {
+      "length": 878,
+      "name": "running-es.json",
+      "sha256": "baffdd1cec854c4b8a17f6e97a83e5900bffe46d84fc0cad5812f043a7d9287e"
+    },
+    {
+      "length": 881,
+      "name": "uncertain-es.json",
+      "sha256": "912e8e609274e739d502e5e3d20f13ceb0942c8f7af281abceefd91b85952f66"
+    },
+    {
+      "length": 490,
+      "name": "waiting-es.json",
+      "sha256": "c32184f31b0dc293daf78415c1824011dfd2583e9a7a73d0944f4bdefc526ec7"
+    }
+  ],
+  "artifactSet": "workflow",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

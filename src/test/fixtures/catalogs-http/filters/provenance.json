@@ -1,64 +1,81 @@
 {
-  "captures": [
-    {
-      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
-      "length": 273,
-      "name": "create-request.json"
-    },
-    {
-      "sha256": "e6aac68664169cc7e4ecbd4805594c8b2954ae16c69f90d315a39449b335ada2",
-      "length": 636,
-      "name": "created.json"
-    },
-    {
-      "sha256": "182f91d2e91ff770c314f9fabd787ddd24d00b77589563ab3ad69b2f2cccad53",
-      "length": 813,
-      "name": "detail.json"
-    },
-    {
-      "sha256": "d972cabac0e424e5acde38b78af972194f49cbd75de0585c70071d052cb16e4c",
-      "length": 56034,
-      "name": "options.json"
-    },
-    {
-      "sha256": "de0c5e2fad3f691d76c06c9826880bf86538a647f91be85ab4a6a2395f027efc",
-      "length": 328,
-      "name": "preview-request.json"
-    },
-    {
-      "sha256": "cfcbd51b59ce54ab9a6d3554ed78e9d8f75f7a1ba5a2fb1ca9bf2679431ba733",
-      "length": 201,
-      "name": "preview.json"
-    },
-    {
-      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
-      "length": 289,
-      "name": "update-request.json"
-    },
-    {
-      "sha256": "a90e7270af16ef39a28c129da471bdfcd7a698bea3e18282d83c3ba140baba44",
-      "length": 635,
-      "name": "updated.json"
-    }
-  ],
-  "sourceState": [
-    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? .claude/"
-  ],
+  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "schemaVersion": 1,
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "FormCatalogFiltersEndpointsTests",
+  "sourceState": [
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
+  ],
+  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
       "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71"
     }
   ],
-  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
-  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
-  "artifactSet": "catalog-filters"
+  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "captures": [
+    {
+      "length": 273,
+      "name": "create-request.json",
+      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82"
+    },
+    {
+      "length": 636,
+      "name": "created.json",
+      "sha256": "fe42852f94de1d7cc561faf5d3c808dda39079b48e54172d19196c1b832a3007"
+    },
+    {
+      "length": 813,
+      "name": "detail.json",
+      "sha256": "61a0dc560899862b34400aca1f9016d681de5926cb972790b7f2ec9ed224862f"
+    },
+    {
+      "length": 56866,
+      "name": "options.json",
+      "sha256": "6332a7994b624f0abbd4b97607a2d35916c9655e3dfbac98a34ab4a27841c79e"
+    },
+    {
+      "length": 328,
+      "name": "preview-request.json",
+      "sha256": "5baa0e17d8be7294b888eecc26bb267641cb56cede250ce00783f221f46ec8fe"
+    },
+    {
+      "length": 201,
+      "name": "preview.json",
+      "sha256": "c22d1396aade247614cba475a273708b9fc7cd3d46032d3b0924f8fda0bed528"
+    },
+    {
+      "length": 289,
+      "name": "update-request.json",
+      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c"
+    },
+    {
+      "length": 635,
+      "name": "updated.json",
+      "sha256": "236b3820473ea6b7ca51a874561666a1bd4c16c34dd9219ab8bd99428a9b215a"
+    }
+  ],
+  "artifactSet": "catalog-filters",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

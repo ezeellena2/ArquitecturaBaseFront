@@ -1,68 +1,95 @@
 {
-  "captures": [
-    {
-      "sha256": "0ef2e14c1f12d23a02163317d1292a89ea76c1830ae092e54832fa7215bd3ea1",
-      "length": 281,
-      "name": "conflict-es.json"
-    },
-    {
-      "sha256": "31cc7531406a9ec4a3e451911393e6bdab31e37c5f0095e6f3352b78da7c7238",
-      "length": 146,
-      "name": "empty-es.json"
-    },
-    {
-      "sha256": "52a7cc22bda66ef80c3416ea36d5f9c8746d90633e2640b998da302958d2b0b0",
-      "length": 375,
-      "name": "history-es.json"
-    },
-    {
-      "sha256": "f1c13f092cc519b801d5cdec74ebbdee2b67095e10ee36c19f4958fa9ba40c8c",
-      "length": 19227,
-      "name": "options-en.json"
-    },
-    {
-      "sha256": "f1c13f092cc519b801d5cdec74ebbdee2b67095e10ee36c19f4958fa9ba40c8c",
-      "length": 19227,
-      "name": "options-es.json"
-    },
-    {
-      "sha256": "e3adda9d675b902a282ed88dc2c8de5c333715c3c8f6a948877a13036a16a966",
-      "length": 505,
-      "name": "revision-es.json"
-    },
-    {
-      "sha256": "eaf958d556186271455bf6e58e6ceb08a18d0e085482108ebd6dcfe0b4219b06",
-      "length": 338,
-      "name": "role-unavailable-es.json"
-    },
-    {
-      "sha256": "8e18f2b4dd70227345b657cb5281d08fb3d1c8b024a10655d61d2b5305cc8ecf",
-      "length": 501,
-      "name": "saved-es.json"
-    }
-  ],
-  "sourceState": [
-    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? .claude/"
-  ],
+  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "schemaVersion": 1,
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "FormRuleHttpTests and FormRuleContractCapture",
+  "sourceState": [
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
+  ],
+  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs",
-      "sha256": "a52e967dc1a915849b66bbc5a416bcca663a67344c3c246f1c45b0d72e845919"
+      "sha256": "c375eafbf03df88025a78284cd1b6503f4affdc316732e1c5f86c50af804f91b"
     },
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs",
       "sha256": "948dcf1f6abc3594e7ccc768cdee707eb48024f481e578df9249690dd24fa4f4"
     }
   ],
-  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
-  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
-  "artifactSet": "rules"
+  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "captures": [
+    {
+      "length": 281,
+      "name": "conflict-es.json",
+      "sha256": "dfa9b2f21447f7309aabee7eadfe92e8db6c5f185936c7eeaa528c2078369715"
+    },
+    {
+      "length": 537,
+      "name": "current-reference-es.json",
+      "sha256": "53bc520c65613d0100c91a5acd25a5823a7467c85b11648f4e70e7f14ea1acb1"
+    },
+    {
+      "length": 146,
+      "name": "empty-es.json",
+      "sha256": "a8198bebd4a531ba79701a7296d481cf5df967e786289a15aa8d34851a18d3f7"
+    },
+    {
+      "length": 377,
+      "name": "history-es.json",
+      "sha256": "dea5af7f7913d3e0237f68231ce3233a04153e180f17d74ca8ee9e171eaaa490"
+    },
+    {
+      "length": 47887,
+      "name": "options-en.json",
+      "sha256": "3fbbad4f5685be04ea7ea1c90838bcd494447c53a0a4f0109d340226ebae15e3"
+    },
+    {
+      "length": 47887,
+      "name": "options-es.json",
+      "sha256": "3fbbad4f5685be04ea7ea1c90838bcd494447c53a0a4f0109d340226ebae15e3"
+    },
+    {
+      "length": 537,
+      "name": "revision-es.json",
+      "sha256": "9ae55b2b80890119472a7d019a9aa35279dd043e6afd23ac37e386782ce266fb"
+    },
+    {
+      "length": 338,
+      "name": "role-unavailable-es.json",
+      "sha256": "74961ca36c952bce1d776fda31d449e7da7263a94231f0cd26b9c7ba905a05d7"
+    },
+    {
+      "length": 533,
+      "name": "saved-es.json",
+      "sha256": "44fdbf42e648f04b867f974a7083dc28a643dde6a5a18268b8ada0283a55fdff"
+    },
+    {
+      "length": 533,
+      "name": "saved-reference-es.json",
+      "sha256": "ae294cc6232b7c639d506d427c3ae7f62581a473461df986b87f7e6ad10be406"
+    }
+  ],
+  "artifactSet": "rules",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

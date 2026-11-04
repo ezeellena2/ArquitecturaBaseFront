@@ -1,47 +1,32 @@
 {
-  "captures": [
-    {
-      "sha256": "2cff42a248ecd8380deb5a2ca6949a3212ba74d44f3b6ed425f9595493643d15",
-      "length": 551,
-      "name": "bootstrap.json"
-    },
-    {
-      "sha256": "9a7200d06d75ecf3c6d709e39b194f5e44d3f0bb9291fdd8b5e7ab13cef36cf0",
-      "length": 728,
-      "name": "canceled.json"
-    },
-    {
-      "sha256": "de3ac3e44f078760a5f223eb903e945bf28789216ecba33dc33d6719ed232138",
-      "length": 288,
-      "name": "submitted.json"
-    },
-    {
-      "sha256": "f6adca792892aecec150d4608d2786471935f3bce93f79742df8b5a652dcad9b",
-      "length": 997,
-      "name": "turn-completed.json"
-    },
-    {
-      "sha256": "ae8ad198409b39e3eff42f38911beceb8ce5dfc5bc07e114d370dd067e3654b6",
-      "length": 524,
-      "name": "turn-pending.json"
-    },
-    {
-      "sha256": "0b8e8a6f11ce16c7cc1777666452d9509081f6894b16785f7522b1c0738d7d4c",
-      "length": 1098,
-      "name": "turns.json"
-    }
-  ],
-  "sourceState": [
-    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? .claude/"
-  ],
+  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "schemaVersion": 1,
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and AiAssistantResponses",
+  "sourceState": [
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
+  ],
+  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs",
@@ -64,7 +49,39 @@
       "sha256": "41e4cd44cbb9b23cf682feed238f6bb30d3cf98f10d0189198404f8674340a71"
     }
   ],
-  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
-  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
-  "artifactSet": "ai-assistant"
+  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "captures": [
+    {
+      "length": 551,
+      "name": "bootstrap.json",
+      "sha256": "2cff42a248ecd8380deb5a2ca6949a3212ba74d44f3b6ed425f9595493643d15"
+    },
+    {
+      "length": 734,
+      "name": "canceled.json",
+      "sha256": "a83e388f7ea842cbad3d0f9eb49118e0446e5223498b1f57d32e047f5ba7a24a"
+    },
+    {
+      "length": 292,
+      "name": "submitted.json",
+      "sha256": "ddf7a2cf9bc9ba4c1b7319e6e161c305ec5404787a0a928ae311d45f45cd1052"
+    },
+    {
+      "length": 1003,
+      "name": "turn-completed.json",
+      "sha256": "1eb2a28ea2271eaa0587bb2f1264a2b102316161c606b8d02ac6ef7d85753e28"
+    },
+    {
+      "length": 528,
+      "name": "turn-pending.json",
+      "sha256": "feb91aa3478762ad8325bc888f125f7e7d9cca4fc4f32f44d54465eb7ff36f62"
+    },
+    {
+      "length": 1104,
+      "name": "turns.json",
+      "sha256": "be4e275f355e0a72b03ca9d08b70984c1cde2a51838ccec718545df305e241b6"
+    }
+  ],
+  "artifactSet": "ai-assistant",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }

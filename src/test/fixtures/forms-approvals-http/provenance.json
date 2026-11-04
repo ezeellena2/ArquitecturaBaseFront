@@ -1,102 +1,32 @@
 {
-  "captures": [
-    {
-      "sha256": "3bf5fdf2ae5674b32b8d77b1315526f399f75c7bb97ae694fcced3da0bf29c33",
-      "length": 1309,
-      "name": "approval-continuation-closed-en.json"
-    },
-    {
-      "sha256": "d52f63a9d06f7f8144795f4b7599cf18b2ba3eef63bb95a7966d5c4356d0e2ce",
-      "length": 1315,
-      "name": "approval-continuation-closed-es.json"
-    },
-    {
-      "sha256": "a62f61415681236625d46f886dc7cfd87742792566a50dd3ff4eee41a3df04b6",
-      "length": 738,
-      "name": "approval-continuation-next-en.json"
-    },
-    {
-      "sha256": "741ed67e66db858dd041d2427439c7780b869f6948c32d0c9b3a9fcbd60f7ba9",
-      "length": 741,
-      "name": "approval-continuation-next-es.json"
-    },
-    {
-      "sha256": "914deacf0352efe6d32dfc15122528937d5181dd642a52f9f276c40d9bc474ad",
-      "length": 742,
-      "name": "approval-continuation-previous-en.json"
-    },
-    {
-      "sha256": "8ad13cb8d1132a277936f812b645991fd16bbd6287578d7c07cd622484258e78",
-      "length": 745,
-      "name": "approval-continuation-previous-es.json"
-    },
-    {
-      "sha256": "665815e8ac0cf9941225164f55bdfd5c7269d9c01d67d997ecfc47c5f37eb1a8",
-      "length": 271,
-      "name": "conflict-approved-es.json"
-    },
-    {
-      "sha256": "356e34fd4563c0f59f123c99148e22bc6ceecafbd1165f45d8e9eff355dd1f9f",
-      "length": 271,
-      "name": "conflict-rejected-es.json"
-    },
-    {
-      "sha256": "6aea6dfe6561984cdc5c54ead84d47d2cf29e48253ae282aef237404adad4661",
-      "length": 11,
-      "name": "count-es.json"
-    },
-    {
-      "sha256": "600b3460da5d07edab32b2c8afd0e8e7c7e70fb693edcd208c40de0f5080659c",
-      "length": 264,
-      "name": "decision-approved-es.json"
-    },
-    {
-      "sha256": "b1b4797f5325754e750fedf0f7335be96edc5ee454154ffcaad41bfa931cf5f0",
-      "length": 283,
-      "name": "decision-rejected-es.json"
-    },
-    {
-      "sha256": "0f5f914dcbf27268198b43e975e81e214cad271f22a8b3819b8a7477fedf5221",
-      "length": 648,
-      "name": "inbox-en.json"
-    },
-    {
-      "sha256": "a01c872ad3acfb68ee1b540302fb0ac15fd1d16c11beff79db33d9db6cb6be6b",
-      "length": 651,
-      "name": "inbox-es.json"
-    },
-    {
-      "sha256": "52156aaa47aa0ced6ceafcb5ce1979f610846ce98bd21d35faf922bda2555f77",
-      "length": 265,
-      "name": "own-response-es.json"
-    },
-    {
-      "sha256": "543dfc5dc266f73f844b26ae752912eef43b6cc90e8e9d65a1542c49bb0019fb",
-      "length": 649,
-      "name": "task-approved-es.json"
-    },
-    {
-      "sha256": "964b40ad11fa9a869c0435b466d47f200797163797240f70a3cb8ee6da736ffc",
-      "length": 550,
-      "name": "task-open-es.json"
-    },
-    {
-      "sha256": "7c631834f9aa58c168de165f3a2f84f2f96f866851eb7d4ed3cc5681b8154f23",
-      "length": 668,
-      "name": "task-rejected-es.json"
-    }
-  ],
-  "sourceState": [
-    " M docs/plans/2026-10-29-cargar-formularios-desde-la-app.md",
-    " M docs/plans/README.md",
-    " M docs/plans/formularios/README.md",
-    "?? .claude/"
-  ],
+  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "schemaVersion": 1,
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261030-150528-410851a029b14d0d82bfbefe4b5e81a8",
   "producer": "FormApprovalHttpTests and FormApprovalContinuationHttpTests and FormResponseHttpTests and FormApprovalContinuationFixture and FormPublishedVersionFixture and FormApprovalContractCapture",
+  "sourceState": [
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
+    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
+  ],
+  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormApprovalHttpTests.cs",
@@ -123,7 +53,94 @@
       "sha256": "ac2c5fedffaac7f26a69ebd09075f340adf0c88812a3e54c410817e012a209b3"
     }
   ],
-  "repositoryHead": "9a986c03430b288ee09221d3d1e9e13f5d04f332",
-  "generatedAtUtc": "2026-10-30T15:53:41.8376999Z",
-  "artifactSet": "approvals"
+  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "captures": [
+    {
+      "length": 1309,
+      "name": "approval-continuation-closed-en.json",
+      "sha256": "4bb554d64539d96cd2e826688417452ccf79b6f8bb74c2c1de1d2a38aa095ed7"
+    },
+    {
+      "length": 1315,
+      "name": "approval-continuation-closed-es.json",
+      "sha256": "55cb9a8229a2d89a561cb251b6ea2d6d036308524ff1110da3749bd622bebb1f"
+    },
+    {
+      "length": 738,
+      "name": "approval-continuation-next-en.json",
+      "sha256": "8e8c6285bf3f8621bb31aab15974722ec29c3a0de69b90ff26c6ea524b41c1b0"
+    },
+    {
+      "length": 741,
+      "name": "approval-continuation-next-es.json",
+      "sha256": "3692dd4a974f241e2caedd22d4c23884629e4aead1df2f5ef74faa4efd08e45e"
+    },
+    {
+      "length": 742,
+      "name": "approval-continuation-previous-en.json",
+      "sha256": "c3c80a13daedfab4180702c43dc2207ca4727c18e9e7d036f8968a91e2a6db4b"
+    },
+    {
+      "length": 745,
+      "name": "approval-continuation-previous-es.json",
+      "sha256": "7c3479486532b5f64da5dffe29d89ee9efce6c40d97898429561f530fd3ac85e"
+    },
+    {
+      "length": 271,
+      "name": "conflict-approved-es.json",
+      "sha256": "db9f353c998d8bedc315e4c6789d1cf759a768dc8412cbf439ddf81637d18850"
+    },
+    {
+      "length": 271,
+      "name": "conflict-rejected-es.json",
+      "sha256": "0049c7f020ffc881c0645cc0139ae8c058f7219c72adb9990cfda254acf1a470"
+    },
+    {
+      "length": 11,
+      "name": "count-es.json",
+      "sha256": "6aea6dfe6561984cdc5c54ead84d47d2cf29e48253ae282aef237404adad4661"
+    },
+    {
+      "length": 266,
+      "name": "decision-approved-es.json",
+      "sha256": "b2e7491894a066df007979f03c3dc08e073545de3829c6a0fe825f14ee9a9c29"
+    },
+    {
+      "length": 285,
+      "name": "decision-rejected-es.json",
+      "sha256": "9a23740bc7fb81a6e0db8d35bbdfcae4c7df7613492c4f07d2c6384a4911c7d4"
+    },
+    {
+      "length": 648,
+      "name": "inbox-en.json",
+      "sha256": "e9116fa6b7dea20a50709fcccdf1a94578223587df7cfcf38f514fadb9778a27"
+    },
+    {
+      "length": 651,
+      "name": "inbox-es.json",
+      "sha256": "05cbcecd0d10aed09ee57059fbf94907df96a45e776e3f84f9f3e2194f8a8bda"
+    },
+    {
+      "length": 265,
+      "name": "own-response-es.json",
+      "sha256": "721c5c3513e0e047250ddabe67b538439bea4452fcf254127cad4ea233ec5f47"
+    },
+    {
+      "length": 651,
+      "name": "task-approved-es.json",
+      "sha256": "e85b8b45c5472d240259af0b2a1439ae03a48352b64a8aca97b767dae563ef7b"
+    },
+    {
+      "length": 550,
+      "name": "task-open-es.json",
+      "sha256": "c51b5bcf23a19fbcd3e8bb50f8de636205d61ad0c04455597f20ffde8fa93759"
+    },
+    {
+      "length": 670,
+      "name": "task-rejected-es.json",
+      "sha256": "0de33608390d37c1ed7691364f89f182a755a3b83304f0384aadefcd57617dbe"
+    }
+  ],
+  "artifactSet": "approvals",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
 }
