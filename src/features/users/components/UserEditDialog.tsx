@@ -25,8 +25,8 @@ import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods
 import { rolesQueryKey } from "@/shared/api/roles";
 import { UserDataSectionContext, type UserDataSaveState } from "@/shared/hooks/userDataSectionContext";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { cn } from "@/shared/lib/utils";
 import { Surface } from "@/shared/ui/Surface";
+import { AccountRow, AccountRows } from "@/shared/ui/AccountRows";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -46,97 +46,24 @@ interface DraftValues {
 
 type IconComponent = ComponentType<{ className?: string }>;
 
-/// Lo que comparten las filas de la caja: el margen de la caja y la raya entre una fila y la siguiente.
-const rowClass = "mx-3.5 grid gap-x-3 border-[var(--color-border)]/60 [&:not(:first-child)]:border-t";
-
-/// El ícono del medio, en su caja de 32 px: la primera columna de cada fila.
-function MethodIcon({ icon: Icon, className }: { icon: IconComponent; className?: string }) {
+/// El valor de una fila de "Medios de ingreso": el tooltip común permite consultar el dato completo con mouse y teclado
+/// cuando no entra en su columna. En el celular el valor baja de renglón para conservar todos sus caracteres.
+function MethodValue({ value }: { value: string }) {
   return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface-muted)] text-[var(--color-content-muted)]",
-        className,
-      )}
-    >
-      <Icon className="size-4.25" />
-    </span>
-  );
-}
-
-/// Una fila de "Medios de ingreso" (tablero "Editar usuario · B", punto 1): el ícono, qué medio es arriba de su valor
-/// (o de lo que falta), la insignia en una columna propia y la acción con su texto. Las columnas son fijas para que las
-/// insignias y las acciones de las dos filas queden alineadas. Una acción sin insignia (agregar) ocupa las dos columnas.
-///
-/// La insignia y la acción van siempre en el mismo lugar del árbol: así "Desvincular" y "Agregar número" son el mismo
-/// botón, y al desvincular el foco se queda en él.
-///
-/// En un teléfono las cuatro columnas no entran (al valor le quedaban 13 px): por debajo de `sm` la insignia baja
-/// debajo del valor y la acción queda a la derecha. El tablero no dibuja el teléfono; desde `sm` es el tablero.
-function MethodRow({
-  icon,
-  label,
-  value,
-  empty,
-  badge,
-  action,
-}: {
-  icon: IconComponent;
-  label: string;
-  value: string | null;
-  /// Lo que se lee cuando falta el valor ("Sin correo").
-  empty: string;
-  badge: ReactNode;
-  action: ReactNode;
-}) {
-  return (
-    <li
-      className={cn(
-        rowClass,
-        "grid-cols-[2rem_minmax(0,1fr)_auto] items-center py-2.5 sm:grid-cols-[2rem_minmax(0,1fr)_5.75rem_6.5rem]",
-      )}
-    >
-      <MethodIcon icon={icon} className="row-span-2 sm:row-span-1" />
-      <span className="col-start-2 row-start-1 flex min-w-0 flex-col gap-px">
-        <span className="text-sm leading-4.5 font-medium text-[var(--color-content)]">{label}</span>
-        {value === null ? (
-          <span className="text-sm leading-5 text-[var(--color-content-muted)]">{empty}</span>
-        ) : (
-          // El tooltip común permite consultar el dato completo con mouse y teclado.
-          // En móvil el valor baja de renglón para conservar todos sus caracteres.
-          <ActionTooltip label={value}>
-            <span tabIndex={0} className="text-sm leading-5 text-[var(--color-content)] [overflow-wrap:anywhere] sm:truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]">
-              {value}
-            </span>
-          </ActionTooltip>
-        )}
+    <ActionTooltip label={value}>
+      <span tabIndex={0} className="min-w-0 [overflow-wrap:anywhere] @md:truncate focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]">
+        {value}
       </span>
-      {badge ? (
-        <span className="col-start-2 row-start-2 mt-1 justify-self-start sm:col-start-3 sm:row-start-1 sm:mt-0">
-          {badge}
-        </span>
-      ) : null}
-      {action ? (
-        <span
-          className={cn(
-            "col-start-3 row-span-2 row-start-1 justify-self-end sm:row-span-1",
-            badge ? "sm:col-start-4" : "sm:col-span-2 sm:col-start-3",
-          )}
-        >
-          {action}
-        </span>
-      ) : null}
-    </li>
+    </ActionTooltip>
   );
 }
 
-/// La fila abierta en su campo, al agregar un correo o un número (tablero B, punto 3): el ícono queda en su columna, a
-/// la altura del campo, y el campo ocupa el resto.
-function FieldRow({ icon, children }: { icon: IconComponent; children: ReactNode }) {
+/// La fila abierta en su campo, al agregar un correo o un número (tablero B, punto 3): el ícono queda en la columna de
+/// los íconos de `AccountRow`, a la altura de la caja de texto y no del rótulo, y el campo ocupa el resto.
+function FieldRow({ icon: Icon, children }: { icon: IconComponent; children: ReactNode }) {
   return (
-    <li className={cn(rowClass, "grid-cols-[2rem_minmax(0,1fr)] items-start pt-2.5 pb-3")}>
-      {/* La etiqueta del campo y su separación: el ícono se centra con la caja de texto, no con el rótulo. */}
-      <MethodIcon icon={icon} className="mt-5.5" />
+    <li className="grid grid-cols-[1rem_minmax(0,1fr)] items-start gap-x-3 px-4 pt-2.5 pb-3">
+      <Icon className="mt-8 size-4 text-[var(--color-content-muted)]" />
       <div className="min-w-0">{children}</div>
     </li>
   );
@@ -311,20 +238,12 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
   // o al llegar con el teclado, y como texto del disparador para el lector de pantalla, que en modo exploración no lee
   // la descripción de algo que no recibe foco. Sin una nota al pie de la caja.
   function badgeFor(verified: boolean) {
-    if (verified) {
-      return <VerificationBadge verified>{t("methods.verified")}</VerificationBadge>;
-    }
-
-    return (
-      <ActionTooltip label={t("methods.unverifiedHint")}>
-        <span
-          tabIndex={0}
-          className="inline-flex shrink-0 rounded-[var(--radius-control)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]"
-        >
-          <VerificationBadge verified={false}>{t("methods.unverified")}</VerificationBadge>
-          <span className="sr-only">{t("methods.unverifiedHint")}</span>
-        </span>
-      </ActionTooltip>
+    return verified ? (
+      <VerificationBadge verified>{t("methods.verified")}</VerificationBadge>
+    ) : (
+      <VerificationBadge verified={false} hint={t("methods.unverifiedHint")}>
+        {t("methods.unverified")}
+      </VerificationBadge>
     );
   }
 
@@ -395,7 +314,11 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                   contenido. Con el reenvío abierto el cuerpo no entraba, y en vez de scrollear, la caja se comía la fila
                   de WhatsApp. */}
               <Surface title={t("methods.title")} headingLevel={3}>
-                <ul className="flex flex-col">
+                {/* Los mismos renglones que Mi perfil (tablero PF1-A, `AccountRows`): en el diálogo, el dato va arriba del
+                    valor y la insignia y la acción en sus columnas, alineadas entre filas. La insignia y la acción van
+                    siempre en el mismo lugar del árbol: así "Desvincular" y "Agregar número" son el mismo botón, y al
+                    desvincular el foco se queda en él. */}
+                <AccountRows>
                   {isAddingEmail ? (
                     <FieldRow icon={MailIcon}>
                       <FormField label={t("form.email")} error={errors.fields.email}>
@@ -413,12 +336,12 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                       </FormField>
                     </FieldRow>
                   ) : (
-                    <MethodRow
+                    <AccountRow
                       icon={MailIcon}
                       label={t("methods.email")}
-                      value={detail.email}
-                      empty={t("methods.noEmail")}
-                      badge={detail.email === null ? null : badgeFor(detail.emailConfirmed)}
+                      value={detail.email === null ? t("methods.noEmail") : <MethodValue value={detail.email} />}
+                      muted={detail.email === null}
+                      badge={detail.email === null ? undefined : badgeFor(detail.emailConfirmed)}
                       action={
                         detail.email === null ? (
                           <Button type="button" variant="outline" size="sm" onClick={() => startAdding("email")}>
@@ -450,13 +373,14 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                     </FieldRow>
                   ) : phone !== null || whatsappEnabled ? (
                     // Un número que ya está se muestra siempre, aunque WhatsApp se haya apagado, para poder desvincularlo.
-                    // Desvincular va discreto, sin rojo: el rojo aparece recién en la confirmación, que dice qué se pierde.
-                    <MethodRow
+                    // Quitar va en rojo antes de confirmar (`destructive-outline`, aprobado con PF3 el 2026-11-03): la
+                    // confirmación dice qué se pierde.
+                    <AccountRow
                       icon={SmartphoneIcon}
                       label={t("methods.whatsApp")}
-                      value={phone}
-                      empty={t("methods.noPhone")}
-                      badge={phone === null ? null : badgeFor(detail.phoneNumberConfirmed)}
+                      value={phone === null ? t("methods.noPhone") : <MethodValue value={phone} />}
+                      muted={phone === null}
+                      badge={phone === null ? undefined : badgeFor(detail.phoneNumberConfirmed)}
                       action={
                         <div className="flex flex-col items-end gap-1">
                           {isOwnAccount && phone !== null && !detail.phoneNumberConfirmed && whatsappEnabled ? (
@@ -466,7 +390,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                           ) : null}
                           <Button
                             type="button"
-                            variant={phone === null ? "outline" : "ghost"}
+                            variant={phone === null ? "outline" : "destructive-outline"}
                             size="sm"
                             // "Desvincular" solo, entre varias filas, no dice qué se desvincula ni de quién.
                             aria-label={phone === null ? undefined : t("methods.unlinkFor", { user: userName(detail) })}
@@ -480,7 +404,7 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
                       }
                     />
                   ) : null}
-                </ul>
+                </AccountRows>
                 {/* Que el número es su único medio de ingreso lo dice la confirmación de «Desvincular». */}
               </Surface>
 
@@ -524,7 +448,10 @@ export function UserEditDialog({ user, onClose }: { user: UserListItem; onClose:
           />
         ) : null}
         {isLinkingOwnPhone ? (
-          <VerifyDestinationDialog channel="whatsapp" countries={countries} initialPhone={detail?.phoneNumber ?? undefined} onClose={() => {
+          <VerifyDestinationDialog channel="whatsapp" countries={countries} initialPhone={detail?.phoneNumber ?? undefined}
+            // Con el número que ya tiene es «Verificar»; sin número, el alta («Agregar número»), el título de siempre.
+            copy={detail?.phoneNumber ? { title: t("profile:verifyWhatsApp.title"), success: t("profile:verifyWhatsApp.success") } : undefined}
+            onClose={() => {
             setIsLinkingOwnPhone(false);
             void Promise.all([
               queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),

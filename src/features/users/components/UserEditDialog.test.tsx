@@ -135,7 +135,7 @@ describe("UserEditDialog", () => {
     );
     const dialog = await openEdit(self.email!);
     await userEvent.click(dialog.getByRole("button", { name: "Agregar número" }));
-    const verification = await screen.findByRole("dialog", { name: "Vincular WhatsApp" });
+    const verification = await screen.findByRole("dialog", { name: "Agregar número" });
     await userEvent.type(within(verification).getByRole("textbox", { name: "Número de WhatsApp" }), "11 2345-6789");
     await userEvent.click(within(verification).getByRole("button", { name: "Enviar código" }));
     expect(await within(verification).findByRole("group", { name: "Código" })).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe("UserEditDialog", () => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, id: self.id, permissions: ["users.read", "users.manage"] })));
     const dialog = await openEdit(self.formattedPhoneNumber!);
     await userEvent.click(dialog.getByRole("button", { name: "Verificar" }));
-    const verification = await screen.findByRole("dialog", { name: "Vincular WhatsApp" });
+    const verification = await screen.findByRole("dialog", { name: "Verificar el número" });
     expect(within(verification).getByRole("textbox", { name: "Número de WhatsApp" })).toHaveValue(self.phoneNumber);
   });
 
@@ -168,7 +168,7 @@ describe("UserEditDialog", () => {
     );
     const dialog = await openEdit(self.email!);
     await userEvent.click(dialog.getByRole("button", { name: "Agregar número" }));
-    const verification = await screen.findByRole("dialog", { name: "Vincular WhatsApp" });
+    const verification = await screen.findByRole("dialog", { name: "Agregar número" });
     await userEvent.type(within(verification).getByRole("textbox", { name: "Número de WhatsApp" }), "11 2345-6789");
     await userEvent.click(within(verification).getByRole("button", { name: "Enviar código" }));
     expect(await within(verification).findByRole("button", { name: "Reenviar en 60 s" })).toBeDisabled();
