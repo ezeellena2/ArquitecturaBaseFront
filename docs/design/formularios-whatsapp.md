@@ -229,7 +229,7 @@ mezclar. **I1–I3 se eligieron el 2026-10-18**: reemplazan lo de E y P1 sobre l
 | Captura | Qué define |
 | --- | --- |
 | [I1 · El editor con la traducción opcional](evidence/formularios-whatsapp/idi-i1-editor.png) | «Textos en» con el original obligatorio y el inglés opcional. Lo que falta se cuenta como «3 sin traducir», en gris, y cada texto dice «Sin traducir», sin alerta. La vista previa muestra lo que recibe una cuenta en inglés: entero en español mientras falte algo y entero en inglés al completarlo, nunca mezclado. **Desde el 2026-10-23 (decisión del punto 35 del review de Catálogos E2) no hay «Textos en»:** se edita en el idioma del menú; con el menú en el otro idioma cada texto es la traducción, con «Sin traducir», el original como referencia y los faltantes contados por pregunta. Un error del otro idioma, de guardado o ubicado desde la comprobación de publicación, se ve bajo el mismo campo («En inglés: …»). Para traducir se cambia el idioma del menú; con cambios sin guardar, el menú pide confirmación antes de descartarlos. |
-| [I2 · Publicar con la traducción incompleta](evidence/formularios-whatsapp/idi-i2-publicar.png) | La comprobación no frena por una traducción que falta: dice «En WhatsApp, en español» y avisa «El inglés no se publica», con lo que le falta y «Completar el inglés». A Meta van solo los idiomas completos; sumar el inglés después es la versión siguiente. Desde el 2026-10-23, «Completar el inglés» se ofrece sólo con el menú en inglés, el idioma en que se edita; con el menú en español el aviso sólo lista lo que falta. La fecha del borrador guardado va en la descripción del diálogo, no junto a los botones del pie, y la espera de un 429 es la ayuda de Reintentar (decisión del 2026-10-23). |
+| [I2 · Publicar con la traducción incompleta](evidence/formularios-whatsapp/idi-i2-publicar.png) | La comprobación no frena por una traducción que falta: dice «En WhatsApp, en español» y avisa «El inglés no se publica», con lo que le falta y «Completar el inglés». A Meta van solo los idiomas completos; sumar el inglés después es la versión siguiente. Desde el 2026-10-23, «Completar el inglés» se ofrece sólo con el menú en inglés, el idioma en que se edita; con el menú en español el aviso sólo lista lo que falta. La fecha del borrador guardado va en la descripción del diálogo, no junto a los botones del pie, y la espera de un 429 es la ayuda de Reintentar (decisión del 2026-10-23). Desde el 2026-11-03 ([NI2-C](#el-idioma-sólo-cuando-es-el-otro-ni1-a-ni2-c-y-ni3-b--2026-11-03)), un formulario escrito en el idioma del menú, con la traducción sin empezar, no habla de idiomas. |
 | [I3 · Los idiomas al publicar](evidence/formularios-whatsapp/idi-i3-idiomas.png) | La confirmación con la traducción incompleta o completa, y una versión nueva que suma el inglés o lo pierde, con aviso. |
 
 Dar de baja, reactivar y eliminar (2026-10-20, versión 88 del lienzo), con las reglas de
@@ -567,6 +567,8 @@ idioma (nombre y pie del PDF, nombre de un campo del catálogo y de un dato de l
   menú en ese idioma.
 - Un error de guardado o de la comprobación en el otro idioma se ve bajo el mismo campo, con su idioma
   («En inglés: …»), sin cambiar de idioma; lo que no tiene control conserva su aviso.
+- Desde el 2026-11-03 ([NI1-A](#el-idioma-sólo-cuando-es-el-otro-ni1-a-ni2-c-y-ni3-b--2026-11-03)), un texto en el
+  idioma del menú nunca dice su idioma: sólo se nombra el otro.
 - Cambiar el idioma del menú con cambios sin guardar los conserva en el editor del formulario y en los de catálogos (punto 41
   del review de E2): es el mismo objeto en la otra traducción. Sólo el diseño del PDF se reinicia con el idioma y pide
   confirmación antes de descartarlos.
@@ -590,7 +592,8 @@ pasar» y queda sólo el prefijo que se fija.
 - Sin descripción ni párrafos: el diálogo son zonas con líneas entre filas. «Problemas» (lo que frena) y «Avisos» (lo que
   conviene revisar, incluido un idioma que deja de publicarse) aparecen sólo si hay alguno, cada fila con su ícono, qué
   es, el detalle y, si corresponde, «Ir a la pregunta». «Qué se publica» va siempre, en filas: borrador guardado,
-  preguntas, agregadas, cambiadas y quitadas respecto de la versión publicada, idiomas y, mientras está libre, el prefijo.
+  preguntas, agregadas, cambiadas y quitadas respecto de la versión publicada, idiomas (desde NI2-C, no con un solo idioma,
+  el del menú, y la traducción sin empezar) y, mientras está libre, el prefijo.
 - Un texto que pasa su límite lo dice en concreto: «Hasta 20 caracteres; tiene 26.» (y «La ayuda: …» o «La opción «…»: …»
   cuando no es el título). El límite viene del compilador del canal y el largo sale del borrador guardado.
 - La ayuda va en las (i): qué son los problemas y los avisos, qué falta en un idioma (hasta tres por nombre y el resto
@@ -898,3 +901,31 @@ día, también en los cambios de una importación de opciones; la regla general 
 Al enviar un formulario desde el chat, el elegido de otra página queda primero en la lista, con su tarjeta elegida
 (**LR3-A**), en vez de «Elegido: Visita técnica · versión 3». La escena `comparisons.spec` muestra la revisión a 1440,
 390 y 320 px.
+
+## El idioma, sólo cuando es el otro: NI1-A, NI2-C y NI3-B — 2026-11-03
+
+Publicando «Parte diario de labores», sólo en español y con el menú en español, el usuario vio «Revisá esta pregunta ·
+Español» en la etiqueta de una pregunta y «Gasoil consumido (litros) · Español» en cada problema de «Publicar en
+WhatsApp», y preguntó por qué, si eso «solo aplica en el cambio de idioma». En el lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila NI, eligió:
+
+- **NI1-A, en toda la app:** un texto nombra su idioma sólo cuando no es el del menú. Cambiaron la etiqueta de la
+  pregunta (con el otro idioma sólo si todos sus problemas son de ese idioma), los problemas al publicar y los de una
+  publicación no aceptada, la revisión de los cambios de otra persona, el largo de las opciones en «En WhatsApp», la
+  vista previa del PDF y su copia fija, la vista previa del formulario, los PDF de una respuesta y «Le llega en …» al
+  enviar desde el chat. Descartó NI1-B, que cambiaba sólo lo de editar. La tabla de dónde quedó está en el
+  [fundamento visual](visual-baseline.md#el-idioma-sólo-cuando-es-el-otro--2026-11-03).
+- **NI2-C, el renglón «Idiomas»:** un formulario escrito en el idioma del menú, sin ningún texto en el otro, publica sin
+  hablar de idiomas: «Qué se publica» no tiene el renglón (tampoco su esqueleto mientras comprueba), la superficie de la
+  publicación no dice «En WhatsApp, en español» y el aviso dice «Publicamos la versión 3.». El renglón vuelve con una
+  traducción empezada («Español · Sin el inglés: faltan 3 textos»), con los dos idiomas o con el menú en el otro
+  idioma. Reemplaza lo que I2 y PU1-A fijaban a propósito. Descartó NI2-B («Español» solo) y NI2-A (como estaba).
+- **NI3-B, el aviso de opciones por persona:** el servidor avisa sólo cuando el máximo pasa el límite (200 en una
+  elección, 20 en varias) o da cero, como el editor de la pregunta, que con 4 de 200 ya muestra la tilde verde. Con
+  cero dice «Con estos filtros nadie ve ninguna opción.». Descartó NI3-A, que avisaba siempre que la pregunta filtra por
+  persona.
+
+Las escenas `forms.spec` (el diálogo de publicar con un problema y un máximo que no entra), `comparisons.spec`,
+`formPdf.spec`, `formPublicationReads.spec` y `formResponseFull.spec` comprueban los textos sin el idioma del menú, y
+`formLanguages.spec` el renglón «Idiomas» con una traducción empezada; ninguna referencia de imagen cambió.
+

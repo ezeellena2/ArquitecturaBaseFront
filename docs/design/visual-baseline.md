@@ -92,6 +92,9 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
 - **Seis pasos de espacio:** 4, 8, 12, 16, 24 y 40 px (8 entre controles, 16 dentro de superficies, 24 entre secciones).
 - **La marca significa acción:** `brand` para acciones, selección y foco. Éxito, atención y peligro tienen roles
   propios; peligro solo para consecuencias destructivas.
+- **El idioma, sólo cuando es el otro** ([NI1-A, 2026-11-03](#el-idioma-sólo-cuando-es-el-otro--2026-11-03)): un texto
+  nombra su idioma («· Inglés», «En inglés: …», «Le llega en inglés.») sólo cuando no es el del menú. Lo que está en el
+  idioma del menú no lo dice, y un formulario en un solo idioma, el del menú, no habla de idiomas.
 - **Un dato que sirve para dos cosas dice el estado de cada una** ([PF1-A, 2026-11-03](#mi-perfil-y-el-chat-de-whatsapp--2026-11-03)):
   el número dice si sirve para entrar («Verificado») y, aparte, si su chat está vinculado y hasta cuándo llegan los
   avisos, con la acción que lo arregla.
@@ -826,6 +829,34 @@ columnas en el celular, y el elegido de otra página a 390. `catalogLoading.spec
 importación en es/en a los tres anchos y `chatForms.spec`, la tarjeta elegida al cambiar de página. Cambió una referencia,
 revisada y por esta decisión: `settings-review-320`, con los dos ajustes distintos apilados en vez de una tabla que se
 cortaba a la derecha.
+
+## El idioma, sólo cuando es el otro — 2026-11-03
+
+Publicando «Parte diario de labores», un formulario sólo en español con el menú en español, el usuario vio «Revisá esta
+pregunta · Español» en la etiqueta de una pregunta y «Gasoil consumido (litros) · Español» en cada problema del diálogo de
+publicar, y preguntó por qué, si eso «solo aplica en el cambio de idioma». I1 ya nombraba sólo el otro idioma debajo de un
+campo («En inglés: …»). Se buscaron en toda la app los textos que nombran el idioma del menú y quedaron tableros en el
+lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila NI. Eligió la
+**NI1-A**, en toda la app; descartó NI1-B, que cambiaba sólo lo de editar y dejaba la vista previa, los PDF de una
+respuesta y «Le llega en …» como estaban. En la misma ronda eligió NI2-C y NI3-B, del diálogo de publicar
+([detalle](formularios-whatsapp.md#el-idioma-sólo-cuando-es-el-otro-ni1-a-ni2-c-y-ni3-b--2026-11-03)). La regla quedó en
+los [principios](#principios-del-sistema) y en las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-selección).
+
+| Dónde | Con el idioma del menú | Con el otro idioma | En el código |
+| --- | --- | --- | --- |
+| Editor: la etiqueta de una pregunta con problemas | «Revisá esta pregunta» | «Revisá esta pregunta · Inglés», si todos sus problemas son del otro | `QuestionEditor` |
+| Publicar: «Problemas» y los de una publicación no aceptada | El nombre de la pregunta o del texto, sin idioma | «Gasoil consumido (litros) · Inglés»; debajo del problema rechazado, «Inglés» | `PublicationCheckDialog`, `PublicationProgress` |
+| Revisión de los cambios de otra persona | «Nombre» | «Nombre · Inglés» | `DraftReview` |
+| Catálogo y pregunta de catálogo: el largo en «En WhatsApp» | «1 opción supera los 30 caracteres del título.» | «En inglés: 1 opción supera…» | `CatalogPresentationSection` |
+| Vista previa del PDF y copia fija de una respuesta | Sin renglón | «Contenido en inglés»; si falta la traducción, «No está completo el inglés. La vista previa usa todo el contenido en español.», en minúscula | `FormPdfPreview` |
+| Vista previa del formulario en el editor | «Vista previa» | «Vista previa para una cuenta en inglés» | `FormPreview` |
+| PDF de una respuesta, en su tarjeta y en la actividad | Sin etiqueta | «Inglés» | `ResponseDocuments`, `ResponseWorkflowHistory` |
+| Enviar un formulario desde el chat, también el del asistente | Sin renglón | «Le llega en inglés.» | `FormComposer` |
+
+Ya cumplían, porque nombran sólo el otro idioma: «Original (Español): …» y «En inglés: …» debajo de un campo cuando se
+traduce, y la columna de la traducción al importar opciones. Siguen nombrando un idioma, porque es lo que se dice y no el
+idioma de un texto: «Completar el inglés», «Se suma el inglés.» y el aviso de un idioma que deja de publicarse. Los
+selectores de idioma del menú, del perfil y de Configuración no entran en la regla.
 
 ## Mi perfil y el chat de WhatsApp — 2026-11-03
 

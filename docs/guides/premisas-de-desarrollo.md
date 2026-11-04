@@ -151,6 +151,10 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   descripción accesible del control. El placeholder muestra un ejemplo; no reemplaza la etiqueta. Usar `Input`, `Textarea`, `Select`,
   `MultiSelect` y `NativeSelect`; estos últimos sirven para listas extensas y selección nativa.
   Teléfonos y códigos usan `PhoneField` y `OtpInput` cuando corresponda.
+- Un texto nombra su idioma sólo cuando no es el del menú (decisión del usuario, 2026-11-03; tablero NI1-A): «Original
+  (Español): …», «En inglés: …», «· Inglés», «Le llega en inglés.». Lo que está en el idioma del menú (un error, un
+  problema al publicar, un cambio, un PDF, la vista previa) no lo dice, y un formulario en un solo idioma, el del menú,
+  no habla de idiomas ([detalle](../design/visual-baseline.md#el-idioma-sólo-cuando-es-el-otro--2026-11-03)).
 - Los campos heredan fondo, borde, foco y validación. Conservar `aria-invalid`, `aria-describedby`,
   límites del contrato y autocompletado pertinente. No cambiar los controles solo para esconder
   una validación o un estado deshabilitado.
