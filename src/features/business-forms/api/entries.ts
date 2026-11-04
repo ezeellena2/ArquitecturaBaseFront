@@ -13,13 +13,16 @@ const questionSchema = z.strictObject({
   options: z.array(z.strictObject({ id: z.string().uuid(), label: z.string().min(1) })).min(1).nullable(),
   selection: z.strictObject({ minSelected: z.number().int().min(0).max(20), maxSelected: z.number().int().min(1).max(20) }).nullable(),
   files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullable() }).nullable(),
-  catalog: z.strictObject({ onlyOption: entryOptionSchema.nullable(), issue: z.string().min(1).nullable(), missingData: z.string().min(1).nullable() }).nullable(),
+  // A list that depends on other answers (CW7) names those questions and waits for them, with nothing chosen beforehand.
+  catalog: z.strictObject({ onlyOption: entryOptionSchema.nullable(), issue: z.string().min(1).nullable(), missingData: z.string().min(1).nullable(),
+    dependsOn: z.array(z.string().uuid()).min(1).optional() }).nullable(),
 }).superRefine((value, context) => {
   const files = value.type === "photo" || value.type === "document";
   const list = value.type === "choice" || value.type === "multiChoice";
   if (files !== (value.files !== null) || (value.type === "multiChoice") !== (value.selection !== null)
     || (!list && (value.options !== null || value.catalog !== null)) || (list && (value.options === null) === (value.catalog === null))
-    || (value.catalog?.missingData != null && value.catalog.issue === null) || (value.catalog?.onlyOption != null && value.catalog.issue !== null))
+    || (value.catalog?.missingData != null && value.catalog.issue === null) || (value.catalog?.onlyOption != null && value.catalog.issue !== null)
+    || (value.catalog?.dependsOn !== undefined && (value.catalog.onlyOption !== null || value.catalog.issue !== null)))
     context.addIssue({ code: "custom", message: "Invalid entry question." });
 });
 export const formEntrySchema = z.strictObject({
@@ -61,10 +64,12 @@ function entryPath(formId: string): string {
 export async function fetchFormEntry(formId: string, signal: AbortSignal): Promise<FormEntry> {
   return readFormEntry(await api.get<unknown>(entryPath(formId), { signal, cache: "no-store" }));
 }
+/** A page of a catalog question's options; a dependent list sends the option chosen in each question it waits for (CW7). */
 export async function fetchFormEntryOptions(formId: string, versionId: string, fieldId: string, page: number, search: string,
-  signal: AbortSignal): Promise<FormEntryOptionsPage> {
+  signal: AbortSignal, answers: Readonly<Record<string, string>> = {}): Promise<FormEntryOptionsPage> {
   const params = new URLSearchParams({ page: String(page), pageSize: "50" });
   if (search) params.set("search", search);
+  for (const [questionId, optionId] of Object.entries(answers)) params.set(`answers[${uuid.parse(questionId)}]`, uuid.parse(optionId));
   return readFormEntryOptions(await api.get<unknown>(`${entryPath(formId)}/versions/${uuid.parse(versionId)}/questions/${uuid.parse(fieldId)}/options?${params}`,
     { signal, cache: "no-store" }));
 }

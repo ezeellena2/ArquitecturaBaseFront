@@ -24,12 +24,15 @@ export function useFormEntry(formId: string) {
   return { scope, query };
 }
 
-/** A catalog question's options for the person who loads, fifty at a time, searched in the server. */
-export function useEntryOptions(entry: FormEntry, fieldId: string, search: string, enabled: boolean) {
+/**
+ * A catalog question's options for the person who loads, fifty at a time, searched in the server; a list that depends on
+ * other answers is read for the ones chosen (CW7).
+ */
+export function useEntryOptions(entry: FormEntry, fieldId: string, search: string, enabled: boolean, answers: Readonly<Record<string, string>> = {}) {
   const { owner } = useFormEntryScope();
   return useInfiniteQuery({
-    queryKey: ["form-entry-options", owner, entry.definitionId, entry.versionId, fieldId, search],
-    queryFn: ({ pageParam, signal }) => fetchFormEntryOptions(entry.definitionId, entry.versionId, fieldId, pageParam, search, signal),
+    queryKey: ["form-entry-options", owner, entry.definitionId, entry.versionId, fieldId, search, answers],
+    queryFn: ({ pageParam, signal }) => fetchFormEntryOptions(entry.definitionId, entry.versionId, fieldId, pageParam, search, signal, answers),
     initialPageParam: 1,
     getNextPageParam: last => last.hasNext ? last.page + 1 : undefined,
     enabled, gcTime: 0, retry: false, meta: { errorOwner: "local" },

@@ -12,7 +12,7 @@ import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
 import type { FormEntry, FormEntryQuestion } from "../api/entries";
-import { entryAnswered, entryChoiceInRow, entryColumns, entryQuestionId, entryQuestionWidth, entryRows, entryTextRows, entryZones, type EntryDraft, type EntryZone } from "../entryForm";
+import { clearDependentChoices, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryQuestionId, entryQuestionWidth, entryRows, entryTextRows, entryZones, type EntryDraft, type EntryZone } from "../entryForm";
 import { EntryCatalogField } from "./EntryCatalogField";
 import { EntryFilesField } from "./EntryFilesField";
 
@@ -125,9 +125,21 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled, narr
     <FormField label={question.label} htmlFor={id} required={question.required} hint={question.help ?? undefined} error={error}>{control}</FormField>
   </div>;
 
-  if (question.catalog) return grouped(<EntryCatalogField entry={entry} question={question} chosen={draft.choices[question.fieldId] ?? []} id={id}
-    invalid={!!error} describedBy={message ? messageId : undefined} disabled={blocked}
-    onChange={chosen => onChange({ ...draft, choices: { ...draft.choices, [question.fieldId]: chosen } })}/>);
+  if (question.catalog) {
+    // A list that depends on other answers (CW7) waits for them, saying which in its field, and lists only theirs; another
+    // option in a question clears the lists that depend on it.
+    const answers = entryDependencyAnswers(question, draft);
+    const waitingFor = answers ? undefined : entry.questions.find(item => question.catalog?.dependsOn?.includes(item.fieldId) && !draft.choices[item.fieldId]?.length)?.label;
+    const answerTitle = question.catalog.dependsOn?.map(fieldId => draft.choices[fieldId]?.[0]?.title).join(" · ");
+    const before = (draft.choices[question.fieldId] ?? []).map(option => option.id).join();
+    return grouped(<EntryCatalogField entry={entry} question={question} chosen={draft.choices[question.fieldId] ?? []} id={id}
+      invalid={!!error} describedBy={message ? messageId : undefined} disabled={blocked || !answers} answers={answers ?? undefined} waitingFor={waitingFor}
+      answerTitle={answerTitle || undefined}
+      onChange={chosen => {
+        const next = { ...draft, choices: { ...draft.choices, [question.fieldId]: chosen } };
+        onChange(chosen.map(option => option.id).join() === before ? next : clearDependentChoices(entry, next, question.fieldId));
+      }}/>);
+  }
   if (isFile(question)) return grouped(<EntryFilesField question={question} files={draft.files[question.fieldId] ?? []} maxFileSizeMiB={entry.maxFileSizeMiB} id={id}
     invalid={!!error} describedBy={describedBy} disabled={disabled}
     onChange={files => onChange({ ...draft, files: { ...draft.files, [question.fieldId]: files } })}/>, false);

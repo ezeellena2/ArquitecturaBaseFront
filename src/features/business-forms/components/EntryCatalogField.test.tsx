@@ -126,3 +126,46 @@ describe("a catalog question while loading", () => {
     await waitFor(() => expect(within(list).getAllByRole("option")).toHaveLength(4));
   });
 });
+
+describe("a list that depends on another answer (CW7)", () => {
+  const field = id(512), ombu = id(531), esperanza = id(532);
+  const question = (fieldId: string, label: string, dependsOn?: string[]): FormEntry["questions"][number] => ({ fieldId, type: "choice", label, help: null, required: true,
+    maxLength: null, options: null, selection: null, files: null, catalog: { onlyOption: null, issue: null, missingData: null, ...(dependsOn ? { dependsOn } : {}) } });
+
+  it("waits for the field, lists only its lots with the field in the count and is cleared when the field changes", async () => {
+    const requests: URLSearchParams[] = [];
+    server.use(
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.create"] })),
+      http.get("/api/forms/entries/:formId", () => HttpResponse.json({ ...entry(false), questions: [question(field, "Campo"), question(id(511), "Lote", [field])] })),
+      http.get("/api/forms/entries/:formId/versions/:versionId/questions/:fieldId/options", ({ request, params }) => {
+        const query = new URL(request.url).searchParams;
+        if (params.fieldId !== field) requests.push(query);
+        const items = params.fieldId === field ? [{ id: ombu, title: "El Ombú", description: null }, { id: esperanza, title: "La Esperanza", description: null }]
+          : query.get(`answers[${field}]`) === ombu ? lots.slice(0, 2) : lots.slice(2);
+        return HttpResponse.json({ items, page: 1, pageSize: 50, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
+      }),
+    );
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    const lot = await screen.findByRole("combobox", { name: "Lote" });
+    expect(lot).toBeDisabled();
+    expect(lot).toHaveAttribute("placeholder", "Elegí primero «Campo»");
+    const campo = screen.getByRole("combobox", { name: "Campo" });
+    await user.click(campo);
+    await user.click(await screen.findByRole("option", { name: "El Ombú" }));
+    await waitFor(() => expect(lot).toBeEnabled());
+    await user.click(lot);
+    const list = await screen.findByRole("listbox", { name: "Lote" });
+    expect(within(list).getByText("2 opciones de El Ombú")).toBeVisible();
+    await user.click(within(list).getByRole("option", { name: "Lote 2" }));
+    expect(lot).toHaveValue("Lote 2");
+    expect(requests.at(-1)?.get(`answers[${field}]`)).toBe(ombu);
+    // Another field clears the lot chosen for the first one.
+    await user.click(campo);
+    await user.click(await screen.findByRole("option", { name: "La Esperanza" }));
+    expect(lot).toHaveValue("");
+    await user.click(lot);
+    expect(await within(await screen.findByRole("listbox", { name: "Lote" })).findByRole("option", { name: "Lote 3" })).toBeVisible();
+    expect(requests.at(-1)?.get(`answers[${field}]`)).toBe(esperanza);
+  });
+});

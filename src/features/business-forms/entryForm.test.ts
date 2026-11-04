@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FormEntry, FormEntryQuestion } from "./api/entries";
-import { carryEntryDraft, entryAnswered, entryChoiceInRow, entryColumns, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
+import { carryEntryDraft, clearDependentChoices, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
 
 const ids = { lot: "00000000-0000-4000-8000-000000000001", crop: "00000000-0000-4000-8000-000000000002", density: "00000000-0000-4000-8000-000000000003",
   date: "00000000-0000-4000-8000-000000000004", notes: "00000000-0000-4000-8000-000000000005", photos: "00000000-0000-4000-8000-000000000006",
@@ -140,5 +140,27 @@ describe("entry form", () => {
 
   it("fits three columns on the computer, two on a tablet and one on the phone by the zone's width in rem", () => {
     expect([19, 29.9, 30, 45.9, 46, 90].map(entryColumns)).toEqual([1, 1, 2, 2, 3, 3]);
+  });
+});
+
+describe("lists that depend on another answer (CW7)", () => {
+  const field = question(ids.lot, "choice", { catalog: { onlyOption: null, issue: null, missingData: null } });
+  const lot = question(ids.crop, "choice", { catalog: { onlyOption: null, issue: null, missingData: null, dependsOn: [ids.lot] } });
+  const product = question(ids.extra, "multiChoice", { selection: { minSelected: 0, maxSelected: 3 }, catalog: { onlyOption: null, issue: null, missingData: null, dependsOn: [ids.crop] } });
+  const dependent: FormEntry = { ...entry, questions: [field, lot, product, question(ids.notes, "shortText", { required: false, maxLength: 80 })] };
+  const option = (id: string, title: string) => ({ id, title, description: null });
+
+  it("waits for the option chosen in each question it depends on", () => {
+    const empty = { values: {}, choices: {}, files: {} };
+    expect(entryDependencyAnswers(field, empty)).toEqual({});
+    expect(entryDependencyAnswers(lot, empty)).toBeNull();
+    expect(entryDependencyAnswers(lot, { ...empty, choices: { [ids.lot]: [option(ids.only, "El Ombú")] } })).toEqual({ [ids.lot]: ids.only });
+  });
+
+  it("clears what depends on a changed answer, and what depends on that in turn, keeping the rest", () => {
+    const draft = { values: { [ids.notes]: "ok" }, files: {}, choices: { [ids.lot]: [option(ids.only, "El Ombú")], [ids.crop]: [option(ids.soy, "Lote 3")],
+      [ids.extra]: [option(ids.density, "Glifosato")] } };
+    expect(clearDependentChoices(dependent, draft, ids.lot)).toEqual({ values: { [ids.notes]: "ok" }, files: {}, choices: { [ids.lot]: [option(ids.only, "El Ombú")] } });
+    expect(clearDependentChoices(dependent, draft, ids.extra)).toBe(draft);
   });
 });

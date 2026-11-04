@@ -21,6 +21,12 @@ interface Props {
   invalid?: boolean;
   describedBy?: string;
   disabled?: boolean;
+  /** A list that depends on other answers (CW7): the option chosen in each, which the server filters by. */
+  answers?: Readonly<Record<string, string>>;
+  /** The label of the question it still waits for: the list stays off and says it in its field. */
+  waitingFor?: string;
+  /** The titles of the answers it depends on, which the count of the list names («4 opciones de El Ombú»). */
+  answerTitle?: string;
 }
 
 /**
@@ -32,11 +38,11 @@ export function EntryCatalogField(props: Props) {
   return mobile ? <MobileCatalogField {...props}/> : <DesktopCatalogField {...props}/>;
 }
 
-function useOptionsSearch(entry: FormEntry, question: FormEntryQuestion, enabled: boolean) {
+function useOptionsSearch(entry: FormEntry, question: FormEntryQuestion, enabled: boolean, answers?: Readonly<Record<string, string>>) {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   useEffect(() => { const timer = window.setTimeout(() => setDebounced(search.trim()), 300); return () => window.clearTimeout(timer); }, [search]);
-  const options = useEntryOptions(entry, question.fieldId, debounced, enabled);
+  const options = useEntryOptions(entry, question.fieldId, debounced, enabled, answers);
   const items = options.data?.pages.flatMap(page => page.items) ?? [];
   return { search, setSearch, debounced, options, items, total: options.data?.pages[0]?.totalCount };
 }
@@ -52,13 +58,15 @@ function ListState({ loading, failed, empty, search, onRetry }: { loading: boole
   return null;
 }
 
-function DesktopCatalogField({ entry, question, chosen, onChange, id, invalid, describedBy, disabled }: Props) {
+function DesktopCatalogField({ entry, question, chosen, onChange, id, invalid, describedBy, disabled, answers, waitingFor, answerTitle }: Props) {
   const { t } = useTranslation("formEntries");
   const multiple = question.type === "multiChoice";
   const max = question.selection?.maxSelected ?? 1;
   const [opened, setOpened] = useState(false);
   const [typing, setTyping] = useState(false);
-  const list = useOptionsSearch(entry, question, opened && !disabled);
+  const list = useOptionsSearch(entry, question, opened && !disabled, answers);
+  // The count of the list names the answer it depends on (CW7): «4 opciones de El Ombú».
+  const count = (total: number) => answerTitle ? t("catalog.countOf", { count: total, answer: answerTitle }) : t("catalog.count", { count: total });
   const single = multiple ? undefined : chosen[0];
   const full = multiple && chosen.length >= max;
   const state = <ListState loading={list.options.isPending && opened} failed={list.options.isError} empty={list.options.isSuccess && list.items.length === 0}
@@ -66,12 +74,12 @@ function DesktopCatalogField({ entry, question, chosen, onChange, id, invalid, d
   const field = <div className="flex min-w-0 items-center gap-2">
     <div className="min-w-0 flex-1">
       <Autocomplete id={id} aria-label={question.label} aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled}
-        placeholder={multiple || !single ? t("catalog.search", { label: question.label }) : undefined}
+        placeholder={waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : multiple || !single ? t("catalog.search", { label: question.label }) : undefined}
         value={typing || multiple ? list.search : single?.title ?? ""} multiple={multiple}
         onFocus={() => setOpened(true)} onClick={() => setOpened(true)}
         onBlur={() => { setTyping(false); list.setSearch(""); }}
         onValueChange={value => { setOpened(true); setTyping(true); list.setSearch(value); }}
-        header={list.total !== undefined && list.items.length > 0 ? t("catalog.count", { count: list.total }) : undefined}
+        header={list.total !== undefined && list.items.length > 0 ? count(list.total) : undefined}
         status={list.items.length === 0 && opened ? state ?? undefined : undefined}
         footer={list.options.hasNextPage ? <Button type="button" variant="link" size="inline" pending={list.options.isFetchingNextPage} {...keepFocus} onClick={() => void list.options.fetchNextPage()}>{t(list.options.isFetchingNextPage ? "catalog.loadingMore" : "catalog.more")}</Button> : undefined}
         options={list.items.map(option => ({ id: option.id, label: option.title, description: option.description,
@@ -97,13 +105,14 @@ function DesktopCatalogField({ entry, question, chosen, onChange, id, invalid, d
 }
 
 /** In the phone the list opens full screen, with the search on top, rows of 56 and, choosing several, «Listo» at the foot. */
-function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, describedBy, disabled }: Props) {
+function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, describedBy, disabled, answers, waitingFor, answerTitle }: Props) {
   const { t } = useTranslation("formEntries");
   const multiple = question.type === "multiChoice";
   const max = question.selection?.maxSelected ?? 1;
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<FormEntryOption[]>([]);
-  const list = useOptionsSearch(entry, question, open);
+  const list = useOptionsSearch(entry, question, open, answers);
+  const count = (total: number) => answerTitle ? t("catalog.countOf", { count: total, answer: answerTitle }) : t("catalog.count", { count: total });
   const full = multiple && picked.length >= max;
   const close = () => { setOpen(false); list.setSearch(""); };
   const state = <ListState loading={list.options.isPending} failed={list.options.isError} empty={list.options.isSuccess && list.items.length === 0}
@@ -115,7 +124,8 @@ function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, de
       <div className="flex min-w-0 items-center gap-2">
         <Button type="button" variant="outline" size="touch" id={id} aria-haspopup="dialog" aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled}
           className="min-w-0 flex-1 justify-start" onClick={() => { setPicked([...chosen]); setOpen(true); }}>
-          <span className={"truncate font-normal " + (!multiple && chosen[0] ? "" : "text-[var(--color-content-muted)]")}>{!multiple && chosen[0] ? chosen[0].title : t("catalog.search", { label: question.label })}</span>
+          <span className={"truncate font-normal " + (!multiple && chosen[0] ? "" : "text-[var(--color-content-muted)]")}>{!multiple && chosen[0] ? chosen[0].title
+            : waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : t("catalog.search", { label: question.label })}</span>
         </Button>
         {!multiple && chosen[0] && !disabled ? <Button type="button" variant="ghost" size="touch" aria-label={t("catalog.clear", { label: chosen[0].title })} onClick={() => onChange([])}><CloseIcon className="size-4"/></Button> : null}
       </div>
@@ -129,7 +139,7 @@ function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, de
         <div className="border-b border-[var(--color-border)] p-3">
           <Input autoFocus aria-label={t("catalog.search", { label: question.label })} placeholder={t("catalog.search", { label: question.label })}
             value={list.search} onChange={event => list.setSearch(event.target.value)}/>
-          {list.total !== undefined && list.items.length > 0 ? <p className="mt-2 text-xs text-[var(--color-content-muted)]">{t("catalog.count", { count: list.total })}</p> : null}
+          {list.total !== undefined && list.items.length > 0 ? <p className="mt-2 text-xs text-[var(--color-content-muted)]">{count(list.total)}</p> : null}
           {full ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("catalog.chosenOf", { count: picked.length, max })}</p> : null}
         </div>
         <ul role="listbox" aria-label={question.label} aria-multiselectable={multiple || undefined} className="min-h-0 flex-1 overflow-y-auto">

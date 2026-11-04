@@ -99,6 +99,32 @@ export function initialEntryDraft(entry: FormEntry): EntryDraft {
   return { values: {}, choices, files: {} };
 }
 
+/**
+ * The options a list that depends on other answers waits for (CW7): the option chosen in each of those questions, by its id,
+ * or null while one is missing. A list that depends on nothing waits for nothing.
+ */
+export function entryDependencyAnswers(question: FormEntryQuestion, draft: EntryDraft): Record<string, string> | null {
+  const answers: Record<string, string> = {};
+  for (const fieldId of question.catalog?.dependsOn ?? []) {
+    const chosen = draft.choices[fieldId]?.[0];
+    if (!chosen) return null;
+    answers[fieldId] = chosen.id;
+  }
+  return answers;
+}
+
+/** Another option in a question clears the lists that depend on it, and theirs in turn: what they offered was for the other one. */
+export function clearDependentChoices(entry: FormEntry, draft: EntryDraft, fieldId: string): EntryDraft {
+  const cleared = new Set<string>(), pending = [fieldId];
+  while (pending.length) {
+    const changed = pending.pop()!;
+    for (const question of entry.questions)
+      if (question.catalog?.dependsOn?.includes(changed) && !cleared.has(question.fieldId)) { cleared.add(question.fieldId); pending.push(question.fieldId); }
+  }
+  if (![...cleared].some(id => draft.choices[id])) return draft;
+  return { ...draft, choices: Object.fromEntries(Object.entries(draft.choices).filter(([id]) => !cleared.has(id))) };
+}
+
 /** Each question's first problem, in the order of the form; an empty object can be sent. */
 export function validateEntry(entry: FormEntry, draft: EntryDraft): Record<string, EntryProblem> {
   const problems: Record<string, EntryProblem> = {};
