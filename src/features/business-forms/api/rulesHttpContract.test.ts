@@ -3,15 +3,23 @@ import { http } from "msw";
 import { httpCohort } from "@/test/httpCohort";
 import { server } from "@/test/mocks/server";
 import { readRuleSet, readRuleOptions, fetchFormRules, fetchRuleOptions, fetchRuleHistory, fetchRuleRevision, saveFormRules } from "./rules";
+import { parseRuleMessage } from "../ruleMessage";
 it("reads saved rules and their original-only text from unchanged backend bodies", () => {
   const cohort = httpCohort("rules"); const provenance = cohort.verify(); expect(provenance.producer).toContain("FormRuleHttpTests");
   expect(readRuleSet(cohort.json("empty-es.json")).revision).toBe(0);
   const saved = readRuleSet(cohort.json("saved-es.json")); expect(saved.revision).toBe(1);
-  // The message brings the number and the question «Nombre»: by its name until the joint export of 2026-10-30, by its
-  // identity since MD1-A (2026-11-03), which the next joint export brings.
-  expect(saved.rules[0].actions[0].text).toEqual({ es: expect.stringMatching(/^Recibimos \{número\}: \{[^{}]+\}$/) });
+  // Saved with the question's name, the message is read with its identity (MD1-A).
+  const question = readRuleOptions(cohort.json("options-es.json")).questions[0];
+  expect(question.label.es).toBe("Nombre");
+  expect(saved.rules[0].actions[0].text).toEqual({ es: "Recibimos {número}: {" + question.fieldId + "}" });
   expect(readRuleSet(cohort.json("revision-es.json"))).toEqual(saved);
   for (const culture of ["es", "en"]) expect(readRuleOptions(cohort.json("options-" + culture + ".json")).definitionId).toBe(saved.definitionId);
+});
+it("reads a message that references its question by identity, also after the question is renamed", () => {
+  const cohort = httpCohort("rules");
+  for (const file of ["saved-reference-es.json", "current-reference-es.json"])
+    expect(parseRuleMessage(readRuleSet(cohort.json(file)).rules[0].actions[0].text!.es)).toEqual([
+      { kind: "text", text: "Recibimos " }, { kind: "number" }, { kind: "text", text: ": " }, { kind: "question", fieldId: expect.stringMatching(/^[0-9a-f-]{36}$/) }]);
 });
 it("passes raw rules, options, history and revision bodies through their real HTTP adapters", async () => {
   const cohort = httpCohort("rules"); const saved = readRuleSet(cohort.json("saved-es.json")); const path = "/api/forms/definitions/" + saved.definitionId + "/rules";
