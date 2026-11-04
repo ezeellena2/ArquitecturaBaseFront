@@ -9,11 +9,12 @@ import {
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useSearchParams, Link } from "react-router";
+import { useLocation, useSearchParams, Link } from "react-router";
 import { useAuiState } from "@assistant-ui/react";
 import { useCurrentUser, currentUserQueryKey } from "@/auth/useCurrentUser";
 import { AccountRecoveryNotice } from "@/auth/components/AccountRecoveryNotice";
 import { ApiError } from "@/shared/api/ApiError";
+import { readAssistantDraft } from "@/shared/hooks/assistantDraftState";
 import { AssistantProposalContext } from "@/shared/hooks/assistantProposalContext";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
@@ -117,7 +118,9 @@ export function AiAssistantPage() {
   const conversationId = params.get("conversacion") ?? undefined;
   const userId = user?.id ?? "";
   const permissionsVersion = [...(user?.permissions ?? [])].sort().join("|");
-  const [draft, setDraft] = useState("");
+  // A request begun on another screen («Armar con la IA») opens a new conversation with it in the composer, unsent.
+  const location = useLocation();
+  const [draft, setDraft] = useState(() => (conversationId ? "" : readAssistantDraft(location.state) ?? ""));
   const [localError, setLocalError] = useState<string>();
   const [accepted, setAccepted] = useState<AssistantAccepted>();
   const [panelExpanded, setPanelExpanded] = useState(true);
@@ -305,6 +308,9 @@ export function AiAssistantPage() {
   const hasProposal = data.turns.some(
     (turn) => !!turn.proposal && !!proposals?.accepts(turn.proposal),
   );
+  // An installed module adds its requests to empty Home, by this person's permissions, and may say so in the composer.
+  const moduleSuggestions = proposals?.suggestions?.(user?.permissions ?? []) ?? [];
+  const emptyPlaceholder = proposals?.placeholder?.(user?.permissions ?? []) ?? null;
   // Each request on its way shows it on the control that sent it; the cancellation, on the turn it cancels.
   const working = actions.working?.action;
   const cancelling = working === "cancel" ? actions.working?.target : undefined;
@@ -433,8 +439,8 @@ export function AiAssistantPage() {
                         <Spinner />
                       ) : null
                     }
-                    suggestions={<AssistantSuggestions items={bootstrap.data.suggestions.slice(0, 3)} disabled={disabled}
-                      onChoose={question => { setDraft(question); setLocalError(undefined); }} />}
+                    suggestions={<AssistantSuggestions items={[...moduleSuggestions, ...bootstrap.data.suggestions.slice(0, 3)]} disabled={disabled}
+                      onChoose={question => { setDraft(moduleSuggestions.find(item => item.question === question)?.draft ?? question); setLocalError(undefined); }} />}
                     availability={bootstrap.data.availability !== "available" ? (
                       <div role="status" className="assistant-availability">
                         <span>{t(`availability.${bootstrap.data.availability}`)}</span>
@@ -539,7 +545,7 @@ export function AiAssistantPage() {
                       <AssistantComposer
                         label={t("question")}
                         hint={t("keyboardHelp")}
-                        placeholder={t(hasProposal ? "placeholderProposal" : "placeholder")}
+                        placeholder={hasProposal ? t("placeholderProposal") : (emptyPlaceholder ?? t("placeholder"))}
                         sendLabel={t(working === "submit" ? "sending" : "send")}
                         sending={working === "submit"}
                         value={draft}

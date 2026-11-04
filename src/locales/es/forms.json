@@ -1391,6 +1391,9 @@
   },
   "assistantProposals": {
     "replaced": "Reemplazada",
+    "placeholder": "Preguntale al sistema o pedile que arme un formulario…",
+    "suggestions": { "form": "Armame un formulario para…" },
+    "entries": { "label": "Armar con la IA", "form": "Armame un formulario para ", "catalog": "Armame un catálogo de ", "missing": "Armame un formulario para registrar {{topic}}", "labelFor": "Armar con la IA un formulario para {{name}}" },
     "form": {
       "kind": "Formulario",
       "summary_one": "{{prefix}} · {{count}} pregunta",

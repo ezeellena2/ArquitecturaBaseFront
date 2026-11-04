@@ -16,9 +16,19 @@ export interface AssistantProposalCardProps {
   /** A later proposal of the same capability replaced this one: it folds to one line and can no longer be created. */
   readonly replaced: boolean;
 }
+/** A request begun for empty Home: what the suggestion says and what it leaves in the composer, without sending it. */
+export interface AssistantDraftSuggestion {
+  readonly id: string;
+  readonly question: string;
+  readonly draft: string;
+}
 export interface AssistantProposalExtension {
   readonly accepts: (proposal: AssistantProposal) => boolean;
   readonly Card: ComponentType<AssistantProposalCardProps>;
+  /** The module's suggestions for empty Home, by the person's permissions, in the menu language. */
+  readonly suggestions?: (permissions: readonly string[]) => readonly AssistantDraftSuggestion[];
+  /** What the empty composer says when this person can ask the module for something; null keeps Home's own text. */
+  readonly placeholder?: (permissions: readonly string[]) => string | null;
 }
 /** App composes the cards of the installed modules. The assistant never imports a module: without one, the answer reads alone. */
 export const AssistantProposalContext = createContext<AssistantProposalExtension | null>(null);

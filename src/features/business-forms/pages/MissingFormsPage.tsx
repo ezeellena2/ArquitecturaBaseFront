@@ -2,6 +2,7 @@ import {useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState} from "rea
 import {useQuery,useQueryClient,keepPreviousData} from "@tanstack/react-query";
 import {useTranslation} from "react-i18next";
 import {Link,useSearchParams} from "react-router";
+import { assistantDraftState, canAskAssistant } from "@/shared/hooks/assistantDraftState";
 import {useCurrentUser} from "@/auth/useCurrentUser";
 import {ApiError} from "@/shared/api/ApiError";
 import {errorFeedback,readErrorMessage} from "@/shared/api/errorFeedback";
@@ -33,7 +34,7 @@ export function MissingFormsPage(){
  return <MissingForms key={JSON.stringify([user.id,culture,[...user.permissions].sort()])} actorId={user.id} culture={culture} permissionsKey={[...user.permissions].sort().join(",")} timeZoneId={user.timeZoneId} canCreate={user.permissions.includes("formtemplates.read")}/>;
 }
 function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{actorId:string;culture:"es"|"en";permissionsKey:string;timeZoneId?:string;canCreate:boolean}){
- const {t,i18n}=useTranslation("forms");const client=useQueryClient();const presentation=useSystemPresentation();
+ const {t,i18n}=useTranslation("forms");const client=useQueryClient();const presentation=useSystemPresentation();const askAssistant=canAskAssistant(presentation.data?.installedFeatures,permissionsKey.split(","));
  const pagination=usePagination(presentation.data?.defaultPageSize,true);const [params]=useSearchParams();const update=useQueryUpdate();
  const state=params.get("state")==="Discarded"?"Discarded":"Pending";
  const query:MissingRequestQuery={page:Number.isSafeInteger(pagination.page)&&pagination.page>0?pagination.page:1,pageSize:Number.isSafeInteger(pagination.pageSize)&&pagination.pageSize>=1&&pagination.pageSize<=100?pagination.pageSize:presentation.data?.defaultPageSize??20,search:pagination.search,state,sort:pagination.sort==="lastRequestedAtUtc"||pagination.sort==="-lastRequestedAtUtc"?pagination.sort:undefined};
@@ -83,7 +84,7 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
   {id:"requestCount",header:t("missing.requests"),numeric:true,cell:row=>row.requestCount},
   {id:"personCount",header:t("missing.people"),numeric:true,cell:row=>row.personCount},
   {id:"lastRequestedAtUtc",header:t("missing.lastRequest"),sortable:true,cell:row=>date(row.lastRequestedAtUtc)},
-  {id:"actions",header:t("actionsColumn"),align:"right",cell:row=><div className="flex justify-end gap-2">{canCreate?<Button asChild size="sm" variant="outline"><Link to="/formularios/nuevo" state={{formSeed:{ownerActorId:actorId,name:row.name}}} aria-label={t("missing.createFor",{name:row.name})}><PlusIcon className="size-4"/>{t("missing.create")}</Link></Button>:null}{row.state==="Pending"?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.discardFor",{name:row.name})} onClick={()=>setSelected(row)}>{t("missing.discard")}</Button>:null}</div>},
+  {id:"actions",header:t("actionsColumn"),align:"right",cell:row=><div className="flex justify-end gap-2">{canCreate&&askAssistant?<Button asChild size="sm" variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.missing",{topic:row.name.charAt(0).toLocaleLowerCase(culture)+row.name.slice(1)}))} aria-label={t("assistantProposals.entries.labelFor",{name:row.name})}>{t("assistantProposals.entries.label")}</Link></Button>:null}{canCreate?<Button asChild size="sm" variant="outline"><Link to="/formularios/nuevo" state={{formSeed:{ownerActorId:actorId,name:row.name}}} aria-label={t("missing.createFor",{name:row.name})}><PlusIcon className="size-4"/>{t("missing.create")}</Link></Button>:null}{row.state==="Pending"?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.discardFor",{name:row.name})} onClick={()=>setSelected(row)}>{t("missing.discard")}</Button>:null}</div>},
  ];
  const filtered=!!query.search;const globallyEmpty=data?.stateCounts.pending===0&&data.stateCounts.discarded===0;
  // The wait of a 429 is the reason of every control it turns off: the filters and the table give it as their tooltip and

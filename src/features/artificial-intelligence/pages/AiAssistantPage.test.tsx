@@ -842,5 +842,29 @@ describe("assistant waits", () => {
     expect(screen.queryByRole("region", { name: /Control de carga/ })).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveAttribute("placeholder", "Preguntale al sistema…");
   });
+  it("adds the module's request to empty Home for whoever can design forms, and leaves it in the composer", async () => {
+    server.use(
+      http.get("/api/settings/presentation", () => HttpResponse.json({ installedFeatures: ["assistant", "forms"] })),
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.assistant.use", "formtemplates.read", "formtemplates.manage"] })),
+    );
+    renderRouteWithProviders("/");
+    const field = await screen.findByRole("textbox", { name: "Tu pregunta" });
+    expect(field).toHaveAttribute("placeholder", "Preguntale al sistema o pedile que arme un formulario…");
+    await userEvent.click(await screen.findByRole("button", { name: "Armame un formulario para…" }));
+    expect(field).toHaveValue("Armame un formulario para ");
+    expect(screen.getByRole("button", { name: "¿Cuántos usuarios activos hay?" })).toBeInTheDocument();
+    expect(writes).toHaveLength(0);
+  });
+  it("keeps Home's own suggestions and text for whoever cannot design forms", async () => {
+    server.use(
+      http.get("/api/settings/presentation", () => HttpResponse.json({ installedFeatures: ["assistant", "forms"] })),
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.assistant.use", "formtemplates.read"] })),
+    );
+    renderRouteWithProviders("/", { state: { assistantDraft: "Armame un formulario para " } });
+    const field = await screen.findByRole("textbox", { name: "Tu pregunta" });
+    expect(field).toHaveAttribute("placeholder", "Preguntale al sistema…");
+    expect(field).toHaveValue("Armame un formulario para ");
+    expect(screen.queryByRole("button", { name: "Armame un formulario para…" })).not.toBeInTheDocument();
+  });
 });
 

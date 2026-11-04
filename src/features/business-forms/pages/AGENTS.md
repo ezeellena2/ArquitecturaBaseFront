@@ -62,3 +62,5 @@ Cada ruta exige sólo su permiso: respuestas no dependen de leer plantillas ni c
 - [Premisas de pantallas](../../../../docs/guides/premisas-de-desarrollo.md#modales-y-formularios-con-ruta-propia) y [tableros](../../../../docs/design/formularios-whatsapp.md#los-tableros).
 
 CatalogEditorPage muestra en un Manual propuesto (IA2) la banda de H4: el estado en `Page.status`, quién lo pidió y dónde («en el chat de Inicio» con `requestedIn: "app"`), «Descartar propuesta» y «Aprobar y activar», apagado con su motivo mientras haya cambios sin guardar; el botón de reactivar no aparece mientras está pendiente o descartada. CatalogFiltersEditorPage nombra el lugar del pedido igual.
+
+«Armar con la IA» (IA4) va antes de «Nuevo formulario» y de «Nuevo catálogo», y en cada fila de Formularios que faltan antes de «Crear formulario», sólo con el asistente instalado, `ai.assistant.use` y el permiso de diseñar: abre Inicio con el pedido empezado («Armame un formulario para registrar …» con el tema), sin mandarlo. Lo recorre `AssistantEntries.test.tsx`.

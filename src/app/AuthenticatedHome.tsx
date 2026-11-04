@@ -1,10 +1,14 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { DashboardPage } from "@/features/home/pages/DashboardPage";
-import { acceptsProposal } from "@/features/business-forms/assistantProposalCapabilities";
+import {
+  acceptsProposal,
+  formsAssistantPlaceholder,
+  formsAssistantSuggestions,
+} from "@/features/business-forms/assistantProposalCapabilities";
 import {
   AssistantProposalContext,
   type AssistantProposalCardProps,
@@ -31,11 +35,21 @@ function FormsProposalCard(props: AssistantProposalCardProps) {
     </Suspense>
   );
 }
-// Home shows the cards of the installed modules; without forms, a proposal answer reads alone.
-const formsProposals: AssistantProposalExtension = {
-  accepts: acceptsProposal,
-  Card: FormsProposalCard,
-};
+// Home shows the cards and suggestions of the installed modules; without forms, a proposal answer reads alone. The module's
+// texts load with its namespace, here, so its suggestions read in the menu language.
+function FormsProposals({ children }: { children: ReactNode }) {
+  const { t } = useTranslation("forms");
+  const value = useMemo<AssistantProposalExtension>(
+    () => ({
+      accepts: acceptsProposal,
+      Card: FormsProposalCard,
+      suggestions: (permissions) => formsAssistantSuggestions(permissions, t),
+      placeholder: (permissions) => formsAssistantPlaceholder(permissions, t),
+    }),
+    [t],
+  );
+  return <AssistantProposalContext value={value}>{children}</AssistantProposalContext>;
+}
 export function AuthenticatedHome() {
   const { t } = useTranslation();
   const user = useCurrentUser();
@@ -81,15 +95,13 @@ export function AuthenticatedHome() {
         </Page>
       }
     >
-      <AssistantProposalContext
-        value={
-          presentation.data?.installedFeatures?.includes("forms")
-            ? formsProposals
-            : null
-        }
-      >
+      {presentation.data?.installedFeatures?.includes("forms") ? (
+        <FormsProposals>
+          <AiAssistantPage key={user.data?.id} />
+        </FormsProposals>
+      ) : (
         <AiAssistantPage key={user.data?.id} />
-      </AssistantProposalContext>
+      )}
     </Suspense>
   ) : (
     <DashboardPage />

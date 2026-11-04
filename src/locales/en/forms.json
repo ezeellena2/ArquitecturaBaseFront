@@ -1391,6 +1391,9 @@
   },
   "assistantProposals": {
     "replaced": "Replaced",
+    "placeholder": "Ask the system or have it build a form…",
+    "suggestions": { "form": "Build me a form for…" },
+    "entries": { "label": "Build with AI", "form": "Build me a form for ", "catalog": "Build me a catalog of ", "missing": "Build me a form to record {{topic}}", "labelFor": "Build with AI a form for {{name}}" },
     "form": {
       "kind": "Form",
       "summary_one": "{{prefix}} · {{count}} question",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { assistantDraftState, canAskAssistant } from "@/shared/hooks/assistantDraftState";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
@@ -50,7 +51,8 @@ export function CatalogsPage() {
     notify({ id: feedbackId, kind: "error", message: readErrorMessage(list.error, t) });
   }, [list.error, list.data, feedbackId, t]);
   if (!user?.permissions.includes("formcatalogs.read") || (list.error instanceof ApiError && list.error.status === 403)) return <ForbiddenPage />;
-  const newAction = canManage ? <Button type="button" onClick={() => setChoosingOrigin(true)}>{t("catalogs.new")}</Button> : undefined;
+  // «Armar con la IA» goes before «Nuevo catálogo» and opens Home with the request begun (IA4).
+  const newAction = canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.catalog"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button type="button" onClick={() => setChoosingOrigin(true)}>{t("catalogs.new")}</Button></> : undefined;
   return <Page title={t("catalogs.title")} actions={newAction}>
     <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("catalogs.search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("catalogs.columns.origin")} options={(["All", "Manual", "Filters"] as const).map(key => ({ key,
       label: `${t(key === "All" ? "all" : key === "Manual" ? "catalogs.source.manual" : "catalogs.source.database")} (${list.data?.filterCounts.byKind[key === "All" ? "all" : key === "Manual" ? "manual" : "filters"] ?? "…"})`,
