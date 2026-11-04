@@ -23,12 +23,12 @@ export function SettingsForm({ draft, errors, disabled, onChange }: Props) {
   return <>
     <Surface title={t("sections.regional")} help={t("hints.regional")} padded>
       <div className="flex flex-wrap gap-4">
-        <div className="w-72 max-w-full"><FormField label={t("fields.defaultCulture")} error={errors.defaultCulture}>
+        <div className="w-full sm:w-72"><FormField label={t("fields.defaultCulture")} error={errors.defaultCulture}>
           <NativeSelect value={draft.defaultCulture} disabled={disabled} onChange={event => onChange({ defaultCulture: event.target.value as SettingsDraft["defaultCulture"] })}>
             {["es", "en"].map(language => <option key={language} value={language}>{t(`common:language.${language}`)}</option>)}
           </NativeSelect>
         </FormField></div>
-        <div className="w-96 max-w-full"><FormField label={t("fields.defaultTimeZoneId")} error={errors.defaultTimeZoneId}>
+        <div className="w-full sm:w-96"><FormField label={t("fields.defaultTimeZoneId")} error={errors.defaultTimeZoneId}>
           <NativeSelect value={draft.defaultTimeZoneId} disabled={disabled} onChange={event => onChange({ defaultTimeZoneId: event.target.value })}>
             {zones.map(zone => <option key={zone} value={zone}>{zone.replaceAll("_", " ")}</option>)}
           </NativeSelect>
@@ -40,7 +40,7 @@ export function SettingsForm({ draft, errors, disabled, onChange }: Props) {
       </div>
     </Surface>
     <Surface title={t("sections.lists")} padded>
-      <div className="w-72 max-w-full"><FormField label={t("fields.defaultPageSize")} help={t("hints.listados")} error={errors.defaultPageSize}>
+      <div className="w-full sm:w-72"><FormField label={t("fields.defaultPageSize")} help={t("hints.listados")} error={errors.defaultPageSize}>
         <NativeSelect value={draft.defaultPageSize} disabled={disabled} onChange={event => onChange({ defaultPageSize: Number(event.target.value) })}>
           {[10, 20, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
         </NativeSelect>
