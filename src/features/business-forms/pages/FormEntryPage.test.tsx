@@ -122,8 +122,8 @@ describe("loading a response from the app", () => {
     expect(answers(sends[0])).toEqual([{ fieldId: fields.lot, value: lots[0].id }, { fieldId: fields.rain, value: "12.5" }, { fieldId: fields.date, value: "2026-10-29" }]);
     expect(sends[0].getAll("fileFieldIds")).toEqual([fields.photos]);
     expect((sends[0].getAll("files")[0] as File).name).toBe("pluviometro.jpg");
-    // Whoever only completes forms cannot read the saved response: there is no way to the sheet.
-    expect(screen.queryByRole("button", { name: "Ver en la planilla" })).not.toBeInTheDocument();
+    // Whoever only completes forms sees it in the sheet of their own responses (CW6-C).
+    expect(screen.getByRole("button", { name: "Ver en la planilla" })).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Cargar otra" }));
     expect(await screen.findByRole("heading", { name: "Nueva respuesta", level: 1 })).toBeVisible();

@@ -98,14 +98,12 @@ export function Breadcrumbs() {
   );
 }
 
-/** «Nueva respuesta» hangs from its form; whoever only completes forms has no sheet, so the form's name stays as text. */
+/** «Nueva respuesta» hangs from its form's sheet, which whoever loads can open: with only «Completar formularios», their own (CW6-C). */
 function EntryBreadcrumbs({ formId, leaf, parent }: { formId: string; leaf?: string; parent?: string }) {
-  const { data: user } = useCurrentUser();
-  const sheet = !!user?.permissions.some(permission => permission === "formrecords.read" || permission === "formapprovals.decide");
-  return <ResponseBreadcrumbs formId={formId} detail sheet={sheet} leaf={leaf} parent={parent} />;
+  return <ResponseBreadcrumbs formId={formId} detail leaf={leaf} parent={parent} />;
 }
 
-function ResponseBreadcrumbs({ formId, detail, sheet = true, leaf, parent }: { formId?: string; detail: boolean; sheet?: boolean; leaf?: string; parent?: string }) {
+function ResponseBreadcrumbs({ formId, detail, leaf, parent }: { formId?: string; detail: boolean; leaf?: string; parent?: string }) {
   const { t } = useTranslation();
   // Under 40 rem of bar (the phone, or a tablet with a menu panel open) only the form and the leaf; the bar decides, not the screen.
   const ancestorClassName = detail && formId ? "hidden @min-[40rem]:block" : "";
@@ -113,7 +111,7 @@ function ResponseBreadcrumbs({ formId, detail, sheet = true, leaf, parent }: { f
     <li className={ancestorClassName}><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator className={ancestorClassName}/>
     <li className={"truncate text-[var(--color-content-muted)] " + ancestorClassName}>{t("navigation.forms")}</li><Separator className={ancestorClassName}/>
     {formId ? <><li className={ancestorClassName}><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.formOverview")}</Link></li><Separator className={ancestorClassName}/></> : null}
-    {detail && formId ? <><li className="min-w-0 truncate">{sheet ? <Link to={"/formularios/" + formId + "/respuestas"} className={linkClassName}>{parent ?? t("navigation.responses")}</Link> : parent ?? t("navigation.responses")}</li><Separator/></> : null}
+    {detail && formId ? <><li className="min-w-0 truncate"><Link to={"/formularios/" + formId + "/respuestas"} className={linkClassName}>{parent ?? t("navigation.responses")}</Link></li><Separator/></> : null}
     <li aria-current="page" className={"truncate font-medium" + (detail ? " shrink-0" : "")}>{leaf ?? t(formId ? "navigation.responses" : "navigation.formOverview")}</li>
   </ol></nav>;
 }

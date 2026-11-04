@@ -1407,6 +1407,19 @@ it("shows who loaded and the channel, and filters by the app channel without put
   await waitFor(() => expect(bodies.at(-1)?.enteredInApp).toBeUndefined());
 });
 
+// Whoever only completes forms sees the same sheet with only what they loaded (CW6-C): the server narrows it, and the sheet
+// leaves out «Cargó» and the Excel while keeping «Agregar respuesta».
+it("shows whoever only completes forms the sheet of their own without Cargó nor the Excel", async () => {
+  setup(["formrecords.create"]);
+  renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+  const table = await screen.findByRole("table");
+  await within(table).findByRole("link", { name: "TEST-000002" });
+  expect(within(table).queryByRole("columnheader", { name: "Cargó" })).not.toBeInTheDocument();
+  expect(within(table).getByRole("columnheader", { name: "Canal" })).toBeVisible();
+  expect(screen.getAllByRole("button", { name: "Agregar respuesta" }).length).toBeGreaterThan(0);
+  expect(screen.queryByRole("button", { name: "Exportar a Excel" })).not.toBeInTheDocument();
+});
+
 describe("response sheet waits and empty states", () => {
   // Searching keeps the previous rows dimmed and out of reach under a running line (board LC2-A).
   it("dims the previous rows while a search reads", async () => {

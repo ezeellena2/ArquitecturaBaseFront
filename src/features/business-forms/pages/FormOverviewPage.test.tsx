@@ -206,18 +206,28 @@ it.each([
   } finally { unmount(); await i18n.changeLanguage("es"); }
 });
 
-it("lets whoever only completes forms load one from its row without opening the sheet", async () => {
+it("shows whoever only completes forms their own entries, opens their sheet and loads from the row (CW6-C)", async () => {
   const payload = overview();
-  payload.forms.items[0] = { ...payload.forms.items[0], pendingApprovalCount: null, responseCount: null, lastResponse: null };
+  payload.forms.items[0] = { ...payload.forms.items[0], pendingApprovalCount: null, responseCount: 12,
+    lastResponse: { id: responseRecordId, number: "VIS-000024", submittedAtUtc: "2026-10-21T12:30:00Z", state: "Approved" } };
   payload.forms.items.push({ id: "0199a0c0-0000-7000-8000-000000000226", name: "Control anterior", prefix: "ANT", deactivatedAtUtc: "2026-10-20T15:00:00Z",
-    pendingApprovalCount: null, responseCount: null, lastResponse: null });
+    pendingApprovalCount: null, responseCount: 0, lastResponse: null });
   payload.filterCounts.deactivatedPending = null;
   setup(["formrecords.create"], payload);
   const { router } = renderRouteWithProviders("/formularios/respuestas");
   const table = await screen.findByRole("table");
-  expect(await within(table).findByText("Registrar visita")).toBeVisible();
-  expect(within(table).queryByRole("link", { name: "Registrar visita" })).not.toBeInTheDocument();
+  expect(await within(table).findByRole("link", { name: "Registrar visita" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas");
+  expect(within(table).getByRole("columnheader", { name: "Mis cargas" })).toBeVisible();
+  expect(within(table).getByRole("columnheader", { name: "Mi última carga" })).toBeVisible();
   expect(within(table).queryByRole("columnheader", { name: "Respuestas" })).not.toBeInTheDocument();
+  const own = within(table).getByRole("link", { name: "Registrar visita" }).closest("tr")!;
+  expect(within(own).getByText("12", { exact: true })).toBeVisible();
+  expect(within(own).getByRole("link", { name: "VIS-000024" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+  // The last entry says its number and when, without its state.
+  expect(within(own).queryByText("Aprobada", { exact: true })).not.toBeInTheDocument();
+  const none = within(table).getByRole("link", { name: "Control anterior" }).closest("tr")!;
+  expect(within(none).getByText("Todavía no cargaste", { exact: true })).toBeVisible();
+  expect(within(none).getByText("—", { exact: true })).toBeVisible();
   expect(screen.queryByRole("group", { name: "Estado de los formularios" })).not.toBeInTheDocument();
   expect(within(table).queryByRole("button", { name: "Cargar Control anterior" })).not.toBeInTheDocument();
   await userEvent.click(within(table).getByRole("button", { name: "Cargar Registrar visita" }));

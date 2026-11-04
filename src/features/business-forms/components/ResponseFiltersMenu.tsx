@@ -106,10 +106,11 @@ export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, 
     ...columns.filter(column => column.type !== "photo" && column.type !== "document").map(column => ({ key: column.fieldId, label: column.label,
       applied: conditions.some(item => item.fieldId === column.fieldId),
       onClear: () => apply({ conditions: conditions.filter(item => item.fieldId !== column.fieldId) }), content: question(column) })),
-    { key: "actor", label: t("responses.actor"), separated: true, applied: !!query.actorIds?.length, onClear: () => apply({ actorIds: [] }),
+    // Whoever only loads sees only what they loaded: «Cargó» would always be them (CW6-C).
+    ...(scope.ownOnly ? [] : [{ key: "actor", label: t("responses.actor"), separated: true, applied: !!query.actorIds?.length, onClear: () => apply({ actorIds: [] }),
       content: <ResponseFacetControl formId={formId} filter={facetFilter} onReadError={onReadError} dimension="actor" label={t("responses.actor")}
-        selected={actor} selectedLabel={actor ? names[actor] : undefined} onChange={(id, label) => apply({ actorIds: id ? [id] : [] }, undefined, named(id, label))}/> },
-    { key: "version", label: t("responses.version"), applied: !!query.versionIds?.length, onClear: () => apply({}, []),
+        selected={actor} selectedLabel={actor ? names[actor] : undefined} onChange={(id, label) => apply({ actorIds: id ? [id] : [] }, undefined, named(id, label))}/> }]),
+    { key: "version", label: t("responses.version"), separated: scope.ownOnly, applied: !!query.versionIds?.length, onClear: () => apply({}, []),
       content: <ResponseFacetControl formId={formId} filter={facetFilter} onReadError={onReadError} dimension="version" label={t("responses.version")}
         selected={version} selectedLabel={version ? names[version] : undefined} onChange={(id, label) => apply({}, id ? [id] : [], named(id, label))}/> },
   ];

@@ -21,11 +21,14 @@ export function useResponseScope() {
   const { data: user } = useCurrentUser();
   const { i18n } = useTranslation();
   const context = useContext(ResponseWorkspaceContext);
+  // Whoever only loads reads their own responses: the server narrows every read to them (CW6-C).
+  const ownOnly = !user?.permissions.includes("formrecords.read") && !!user?.permissions.includes("formrecords.create");
   const allowed =
-    !!user?.permissions.includes("formrecords.read") && !context?.denied;
+    (!!user?.permissions.includes("formrecords.read") || ownOnly) && !context?.denied;
   return {
     user,
     allowed,
+    ownOnly,
     culture: i18n.language.startsWith("en") ? "en" : "es",
     owner: [
       user?.id ?? "",

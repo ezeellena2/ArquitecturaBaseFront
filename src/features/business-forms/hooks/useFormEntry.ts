@@ -10,7 +10,7 @@ export function useFormEntryScope() {
   const { data: user } = useCurrentUser();
   const { i18n } = useTranslation();
   const owner = [user?.id ?? "", i18n.language, [...(user?.permissions ?? [])].sort().join(",")].join(":");
-  return { user, owner, canCreate: !!user?.permissions.includes("formrecords.create"), canRead: !!user?.permissions.includes("formrecords.read") };
+  return { user, owner, canCreate: !!user?.permissions.includes("formrecords.create") };
 }
 
 /** The active version to load, read again on each opening: a new version or a deactivation must show at once. */

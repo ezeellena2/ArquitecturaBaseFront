@@ -100,6 +100,20 @@ it.each(["row", "direct"])("opens the full page on mobile through the %s entry",
   expect(screen.queryByRole("dialog", { name: "Detalle de la respuesta" })).not.toBeInTheDocument();
 });
 
+// Whoever only completes forms also opens their own response in full (on the phone, a row goes there): where it stands, as in
+// the quick view, and the answer, without the activity (CW6-C).
+it("opens the own response of whoever only completes forms in full with where it stands and without the activity", async () => {
+  const { tasks } = setup(["formrecords.create"], true);
+  Object.assign(tasks[0], { state: "Rejected", decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" }, reason: "Faltó la foto del remito." });
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  expect(await screen.findByText("Faltó la foto del remito.")).toBeVisible();
+  expect(screen.getByText("Por WhatsApp", { exact: true })).toBeVisible();
+  expect(screen.queryByText(/Supervisión|Luz/)).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /respuesta$/ })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /actividad$/ })).not.toBeInTheDocument();
+});
+
 it("keeps decision-only users in the metadata quick view and refuses the full route", async () => {
   const { reads } = setup(["formapprovals.decide"], true);
   const { router } = renderRouteWithProviders(path + "/" + responseRecordId + "/completa");

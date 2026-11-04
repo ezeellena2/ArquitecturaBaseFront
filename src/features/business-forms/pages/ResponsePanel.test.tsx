@@ -110,6 +110,20 @@ it("keeps the mounted sheet and private filter when a response opens and closes 
   expect(screen.getByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("private visit");
   await waitFor(() => expect(row).toHaveFocus());
 });
+// Whoever only completes forms sees where their response stands (CW6-C): the state, the reason and the PDF, without the
+// activity, their own name nor who decided.
+it("shows whoever only completes forms where their response stands without the activity", async () => {
+  const { tasks } = setup(["formrecords.create"], true, true);
+  Object.assign(tasks[0], { state: "Rejected", decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" }, reason: "La dosis es para otro cultivo." });
+  renderRouteWithProviders(path);
+  await userEvent.click(await screen.findByRole("link", { name: "TEST-000002" }));
+  const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+  expect(await within(panel).findByText("La dosis es para otro cultivo.")).toBeVisible();
+  expect(within(panel).getByText("Por WhatsApp", { exact: true })).toBeVisible();
+  expect(within(panel).queryByText(/Supervisión|Luz/)).not.toBeInTheDocument();
+  expect(within(panel).queryByRole("tab", { name: "Actividad" })).not.toBeInTheDocument();
+  expect(within(panel).getByRole("tab", { name: "PDF" })).toBeInTheDocument();
+});
 it("closes from the focused Activity tab on Escape and restores the same filtered row", async () => {
   const { reads } = setup(); const { router } = renderRouteWithProviders(path);
   await screen.findByRole("table");

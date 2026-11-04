@@ -44,8 +44,9 @@ export function FormOverviewPage() {
     : !scope.canRead && !scope.canCreate || pendingOnly ? "overview.noPending"
     : state === "Deactivated" ? "overview.noDeactivated"
     : "responses.noForms";
-  // Whoever only completes forms has no sheet to open (CW1-B): the name is text and «Cargar» is the way in.
-  const canOpen = scope.canRead || scope.canDecide;
+  // Whoever only completes forms opens the sheet of their own (CW6-C), without the segment of deactivated forms.
+  const canOpen = scope.canRead || scope.canDecide || scope.canCreate;
+  const own = scope.canCreate && !scope.canRead;
   const formPath = (id: string) => "/formularios/" + id + "/respuestas";
   const columns: Column<FormOverviewRow>[] = [
     { id: "name", header: t("formColumn"), cell: row => <div className="inline-flex items-center gap-2 whitespace-nowrap">{canOpen ? <Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link> : <span className="font-medium">{row.name}</span>}{row.deactivatedAtUtc ? <Badge variant="outline">{t("lifecycle.stateWithoutVersion")}</Badge> : null}</div> },
@@ -54,12 +55,17 @@ export function FormOverviewPage() {
       { id: "responses", header: t("overview.responses"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount ?? "—" },
       { id: "lastResponse", header: t("overview.lastResponse"), cell: (row: FormOverviewRow) => row.lastResponse ? <div className="inline-flex items-center gap-2 whitespace-nowrap"><Link to={formPath(row.id) + "/" + row.lastResponse.id} className="font-medium text-[var(--color-brand-700)] underline">{row.lastResponse.number}</Link><time className="text-xs text-[var(--color-content-muted)]" dateTime={row.lastResponse.submittedAtUtc}>{formatDateTimeInZone(row.lastResponse.submittedAtUtc, i18n.language, scope.user?.timeZoneId)}</time><Badge variant={approvalStateVariant(row.lastResponse.state)}>{t("approvals.states." + row.lastResponse.state)}</Badge></div> : <span className="text-sm text-[var(--color-content-muted)]">{t("overview.noResponses")}</span> },
     ] : []),
+    // Whoever only loads counts their own responses and sees their last one, without its state (CW9).
+    ...(own ? [
+      { id: "myEntries", header: t("overview.myEntries"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount || "—" },
+      { id: "myLastEntry", header: t("overview.myLastEntry"), cell: (row: FormOverviewRow) => row.lastResponse ? <div className="inline-flex items-center gap-2 whitespace-nowrap"><Link to={formPath(row.id) + "/" + row.lastResponse.id} className="font-medium text-[var(--color-brand-700)] underline">{row.lastResponse.number}</Link><time className="text-xs text-[var(--color-content-muted)]" dateTime={row.lastResponse.submittedAtUtc}>{formatDateTimeInZone(row.lastResponse.submittedAtUtc, i18n.language, scope.user?.timeZoneId)}</time></div> : <span className="text-sm text-[var(--color-content-muted)]">{t("overview.noEntries")}</span> },
+    ] : []),
     ...(scope.canCreate ? [{ id: "load", header: "", align: "right" as const, cell: (row: FormOverviewRow) => row.deactivatedAtUtc ? null
       : <Button type="button" variant="outline" size="sm" aria-label={t("formEntries:loadForm", { name: row.name })}
         onClick={() => navigate("/formularios/" + row.id + "/cargar", { state: { from: "overview" } })}>{t("formEntries:load")}</Button> }] : []),
   ];
   return <Page title={t("overview.title")}>
-    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput maxLength={100} label={t("overview.search")} value={pagination.search ?? ""} onChange={pagination.setSearch}/></div>{canOpen ? <div className="max-w-full overflow-x-auto">
+    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput maxLength={100} label={t("overview.search")} value={pagination.search ?? ""} onChange={pagination.setSearch}/></div>{scope.canRead || scope.canDecide ? <div className="max-w-full overflow-x-auto">
       <SegmentedControl aria-label={t("overview.state")} options={[
         { key: "Active", label: t("active") + " (" + (data?.filterCounts.active ?? "—") + ")", pressed: !pendingOnly && state === "Active", onSelect: () => update({ state: undefined, page: undefined }) },
         { key: "Deactivated", label: t("deactivated") + " (" + (data?.filterCounts.deactivated ?? "—") + ")", pressed: !pendingOnly && state === "Deactivated", onSelect: () => update({ state: "Deactivated", page: undefined }) },

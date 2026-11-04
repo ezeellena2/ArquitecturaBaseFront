@@ -53,7 +53,8 @@ export function FormEntryPage() {
     const exits = <>
       <Button type="button" onClick={() => { setSent(null); editor.restart(); }}>{t("sent.loadAnother")}</Button>
       <Button type="button" variant="outline" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>
-      {scope.canRead ? <Button type="button" variant="outline" onClick={() => navigate(`/formularios/${formId}/respuestas/${sent.result.recordId}`)}>{t("sent.viewInSheet")}</Button> : null}
+      {/* Whoever loads it can see it in the sheet: with only «Completar formularios», the sheet of their own (CW6-C). */}
+      <Button type="button" variant="outline" onClick={() => navigate(`/formularios/${formId}/respuestas/${sent.result.recordId}`)}>{t("sent.viewInSheet")}</Button>
     </>;
     return <Page title={sent.result.number} backTo={{ to: "/formularios/respuestas", label: t("forms:overview.title") }}
       status={<Badge variant={approvalStateVariant(sent.result.state)}>{t("forms:approvals.states." + sent.result.state)}</Badge>}>

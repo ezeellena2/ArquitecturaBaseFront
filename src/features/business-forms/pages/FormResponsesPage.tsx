@@ -170,12 +170,13 @@ export function FormResponsesPage() {
           scope.user?.timeZoneId,
         ),
     },
-    {
+    // Whoever only loads sees the same sheet with only what they loaded, without «Cargó» (CW6-C).
+    ...(scope.ownOnly ? [] : [{
       id: "actor",
       header: t("responses.actor"),
       sortable: true,
-      cell: (row) => row.actor.displayName ?? t("responses.unknownPerson"),
-    },
+      cell: (row: ResponseRow) => row.actor.displayName ?? t("responses.unknownPerson"),
+    }]),
     {
       id: "channel",
       header: t("formEntries:sheet.channel"),

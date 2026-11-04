@@ -24,10 +24,10 @@ const delivered: ResponseColumn = { fieldId: "01990000-0000-7000-8000-0000000009
 const dose: ResponseColumn = { fieldId: "01990000-0000-7000-8000-000000000920", type: "decimal", label: "Dosis", introducedInVersion: 1, options: [] };
 const photo: ResponseColumn = { fieldId: "01990000-0000-7000-8000-000000000950", type: "photo", label: "Foto del remito", introducedInVersion: 1, options: [] };
 const ana = "01990000-0000-7000-8000-0000000009a1", version3 = "01990000-0000-7000-8000-0000000009b3";
-function setup({ gate }: { gate?: Promise<void> } = {}) {
+function setup({ gate, permissions = ["formrecords.read"] }: { gate?: Promise<void>; permissions?: string[] } = {}) {
   const counts: unknown[] = [];
   server.use(
-    http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
+    http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })),
     http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => {
       const body = await request.json() as { dimension: string; fieldId?: string; search?: string };
       counts.push(body);
@@ -59,6 +59,17 @@ it("lists what can be filtered and starts with Recibida, without Apply, Cancelar
   expect(panel.getByRole("region", { name: "Recibida" })).toBeInTheDocument();
   expect(panel.queryByRole("button", { name: /^(Aplicar|Cancelar|Ver \d+ respuestas?)$/ })).not.toBeInTheDocument();
   expect(panel.queryByText("Contando…")).not.toBeInTheDocument();
+});
+
+// Whoever only completes forms filters what they loaded: «Cargó» would always be them (CW6-C).
+it("leaves Cargó out for whoever only completes forms and does not count by person", async () => {
+  const counts = setup({ permissions: ["formrecords.create"] });
+  menu(selected);
+  const panel = await open();
+  expect(panel.getAllByRole("button").filter(button => button.closest("ul")).map(button => button.textContent)).toEqual(["Recibida", "Fallas", "Artículo", "¿Llegó completo?", "Dosis", "Versión del formulario"]);
+  await userEvent.click(panel.getByRole("button", { name: "Versión del formulario" }));
+  expect(await (await openCombo(panel, "Versión del formulario")).findByRole("option", { name: "Versión 3" })).toBeVisible();
+  expect(counts).not.toContainEqual(expect.objectContaining({ dimension: "actor" }));
 });
 
 // Board PL2-A: a question with options is a combo that says «Todas» or the chosen one; choosing one closes it and applies at once.

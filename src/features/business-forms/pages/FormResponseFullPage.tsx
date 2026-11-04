@@ -23,6 +23,7 @@ import { approvalStateVariant } from "../approvals";
 import type { ApprovalTask } from "../api/approvals";
 import { ResponseAnswer } from "../components/ResponseAnswer";
 import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
+import { ResponseMoments } from "../components/ResponseDetailContent";
 import { ResponseDocumentActions, ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
 
@@ -85,12 +86,14 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
   </>}>
     <div className={cn("space-y-4", loadingTarget && "opacity-45")} inert={loadingTarget || undefined}>
+      {/* Whoever only loads sees where their response stands, as in the quick view, without the activity (CW6-C). */}
+      {detail.scope.ownOnly ? <ResponseMoments data={data} current={current} own timeZoneId={detail.scope.user?.timeZoneId}/> : null}
       <CollapsibleSection title={t("responses.answer")} open={answerOpen} onOpenChange={setAnswerOpen} expandLabel={t("detail.expandAnswer")} collapseLabel={t("detail.collapseAnswer")} meta={t("responses.versionLabel", { version: data.versionNumber })} summary={t("detail.answerSummary", { count: data.values.length })}>
         <div className="px-4"><ResponseAnswer record={data} actor={detail.scope.user!.id} busy={loadingTarget} photos={photos} onForbidden={deny} onError={onFileError} layout="page"/></div>
       </CollapsibleSection>
-      <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
+      {detail.scope.ownOnly ? null : <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
         <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} documentActions={document => <ResponseDocumentActions owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny}/>}/></div>
-      </CollapsibleSection>
+      </CollapsibleSection>}
       {current?.task && canDecide ? <ApprovalDecisionPanel key={current.task.id} embedded taskId={current.task.id} disabled={loadingTarget} actionsTarget={decisionTarget} onForbidden={navigation.denyDecision} onUnavailable={() => setUnavailableTask(taskKey)} onDecided={refresh}/> : null}
     </div>
   </Page></div>;
