@@ -137,6 +137,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   const warningDetails = (warning: PublicationWarning) => {
     switch (warning.code) {
       case "Forms.Publication.OptionsPerRecipientHigh":
+        if (warning.maximum === 0) return t("catalogQuestion.maximum.none");
         return t(warning.maximumLabel ? "publication.recipientMaximumForGroup" : "publication.recipientMaximum", { count: warning.maximum, limit: warning.limit, group: warning.maximumLabel });
       case "Forms.Publication.RecipientsWithoutData":
         return t("publication.recipientsMissingData", { count: warning.count });

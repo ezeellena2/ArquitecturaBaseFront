@@ -345,6 +345,14 @@ it("says one option, not «1 opciones», for a maximum of one", async () => {
   expect(screen.getByText("Como mucho 2 opciones por persona (Norte), de un límite de 20.")).toBeInTheDocument();
 });
 
+// NI3-B (2026-11-03): the server warns about a maximum only when it does not fit or nobody sees an option.
+it("says nobody sees an option when the maximum is zero", async () => {
+  result = { ...checked, warnings: [{ fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh", message: "Revisá el máximo.", limit: 200, maximum: 0 }] };
+  await mount();
+  expect(within(zone("Avisos")).getByText("Con estos filtros nadie ve ninguna opción.")).toBeInTheDocument();
+  expect(screen.queryByText(/Como mucho 0/)).not.toBeInTheDocument();
+});
+
 // The wait of a 429 is not written in the dialog: it is the reason of the disabled Retry.
 it("explains the check wait as the reason of Retry", async () => {
   const wait = "Esperá 30 segundos para volver a intentar.";
