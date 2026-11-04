@@ -48,6 +48,8 @@ export function questionTexts(question: DraftQuestion) {
 }
 export const missingQuestionTexts = (question: DraftQuestion, culture: FormCulture) => questionTexts(question).filter(map => !map[culture]?.trim()).length;
 export const missingFormTexts = (value: DraftEditorValue, culture: FormCulture) => [value.name, value.draft.submitLabel, ...value.draft.fields.flatMap(questionTexts)].filter(map => !map[culture]?.trim()).length;
+// NI2-C (2026-11-03): a translation nobody started has no text of the form in that language.
+export const hasFormTexts = (value: DraftEditorValue, culture: FormCulture) => [value.name, value.draft.submitLabel, ...value.draft.fields.flatMap(questionTexts)].some(map => !!map[culture]?.trim());
 
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const fieldIdentity = (q: DraftQuestion) => q.fieldId ?? "new:" + q.localId;

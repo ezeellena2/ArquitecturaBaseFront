@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedValue, newQuestion, missingFormTexts, changeQuestionCatalog, administrativeName, contentReference, contentRequired, ownTexts } from "./editorModel";
+import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedValue, newQuestion, missingFormTexts, changeQuestionCatalog, administrativeName, contentReference, contentRequired, ownTexts, emptyForm, hasFormTexts } from "./editorModel";
 import { openDraftSession } from "./draftSession";
 import type { FormDefinitionSnapshot } from "./model";
 
@@ -164,5 +164,16 @@ describe("content language", () => {
     expect(administrativeName({ es: null, en: "Customers" }, "es")).toBe("Customers");
     expect(administrativeName({ es: "Clientes", en: "Customers" }, "en")).toBe("Customers");
     expect(administrativeName(null, "es")).toBe("");
+  });
+  // NI2-C (2026-11-03): a translation nobody started has no text of the form in that language.
+  it("knows whether a form has any text in a language", () => {
+    const form = emptyForm("es");
+    const question = { ...newQuestion("choice", "es", "q"), label: { es: "Cliente" } };
+    expect(hasFormTexts(form, "es")).toBe(true);
+    expect(hasFormTexts({ ...form, draft: { ...form.draft, fields: [question] } }, "en")).toBe(false);
+    if (question.type !== "choice" || question.source) throw new Error("Expected own choices.");
+    const option = { ...question, options: [{ ...question.options[0]!, label: { es: "Norte", en: "North" } }] };
+    expect(hasFormTexts({ ...form, draft: { ...form.draft, fields: [option] } }, "en")).toBe(true);
+    expect(hasFormTexts({ ...form, name: { es: "Visita", en: "  " } }, "en")).toBe(false);
   });
 });

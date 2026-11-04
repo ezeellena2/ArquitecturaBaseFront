@@ -95,7 +95,7 @@ describe("Chosen publication board PU1-A", () => {
     result = { ...checked, canAccept: false, issues: [tooLong("draft.fields[2].label.es", amount!.fieldId, 20), tooLong("draft.fields[5].help.es", notes!.fieldId, 80), tooLong("draft.fields[0].options[1].label.es", customer!.fieldId, 15, choice)] };
     await mount(undefined, long);
     const problems = zone("Problemas");
-    expect(within(problems).getByText("Importe cobrado al cliente · Español")).toBeInTheDocument();
+    expect(within(problems).getByText("Importe cobrado al cliente")).toBeInTheDocument();
     expect(within(problems).getByText("Hasta 20 caracteres; tiene 26.")).toBeInTheDocument();
     expect(within(problems).getByText("La ayuda: hasta 80 caracteres; tiene 95.")).toBeInTheDocument();
     expect(within(problems).getByText("La opción «Distribuidora Norte»: hasta 15 caracteres; tiene 19.")).toBeInTheDocument();
@@ -103,6 +103,18 @@ describe("Chosen publication board PU1-A", () => {
     expect(screen.getByRole("button", { name: "Publicar versión 3" })).toHaveAccessibleDescription("Corregí los problemas para publicar.");
     await userEvent.click(within(problems).getAllByRole("button", { name: "Ir a la pregunta" })[0]!);
     expect(onGoToIssue).toHaveBeenCalledExactlyOnceWith(result.issues[0]);
+  });
+  // NI1-A (2026-11-03): a problem names its language only when it is not the menu's.
+  it("names the language of a problem only when it is the other one", async () => {
+    const amount = definition.draft.fields[2]!;
+    const tooLong = (culture: "es" | "en") => ({ channelId: "phone", fieldId: amount.fieldId, choiceId: null, path: "draft.fields[2].label." + culture, code: "WhatsApp.Flow.TextTooLong",
+      message: "El texto supera el límite del componente. Revisá el texto indicado.", limit: 10, culture });
+    result = { ...checked, canAccept: false, issues: [tooLong("es"), tooLong("en")] };
+    await mount();
+    const problems = zone("Problemas");
+    expect(within(problems).getByText("Importe cobrado")).toBeInTheDocument();
+    expect(within(problems).getByText("Importe cobrado · Inglés")).toBeInTheDocument();
+    expect(within(problems).queryByText(/· Español/)).not.toBeInTheDocument();
   });
   it("while checking, Publish says so with its spinner and the zone has a skeleton", async () => {
     busy = true;
@@ -205,6 +217,33 @@ it("warns before removing a published language", async () => {
   expect(within(warnings).getByText("Deja de publicarse.")).toBeInTheDocument();
   expect(within(warnings).getByRole("button", { name: "Qué cambia para el inglés" })).toHaveAccessibleDescription("Desde la versión 3, las cuentas en inglés lo reciben en español.");
   expect(row(zone("Qué se publica"), "Idiomas")).toHaveTextContent(/^Español$/);
+});
+
+// NI2-C (2026-11-03): a form only in the menu language, with no translation started, says nothing about languages.
+const spanishOnly = (form: DraftEditorValue): DraftEditorValue => JSON.parse(JSON.stringify(form, (key: string, text: unknown) => key === "en" ? undefined : text));
+it("has no languages row for a form only in the menu language with no translation started", async () => {
+  incompleteReport(8, "es", false);
+  await mount(manage, spanishOnly(value));
+  const published = zone("Qué se publica");
+  expect(within(published).queryByText("Idiomas", { selector: "dt" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/^Sin el inglés/)).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
+});
+it("leaves the languages row out of the skeleton too, so nothing jumps when the check arrives", async () => {
+  busy = true;
+  await mount(manage, spanishOnly(value));
+  expect(within(zone("Qué se publica")).queryByText("Idiomas", { selector: "dt" })).not.toBeInTheDocument();
+  cleanup();
+  await mount(manage);
+  expect(within(zone("Qué se publica")).getByText("Idiomas", { selector: "dt" })).toBeInTheDocument();
+});
+it("keeps the languages row while the menu is in the language nobody started", async () => {
+  await i18n.changeLanguage("en");
+  incompleteReport(8, "es", false);
+  await mount(manage, spanishOnly(value));
+  const languages = row(zone("What is published"), "Languages");
+  expect(languages).toHaveTextContent(/^Spanish/);
+  expect(within(languages).getByText("Without English: 8 texts missing")).toBeInTheDocument();
 });
 
 it("renders the complete publication decision in English without changing content cultures", async () => {

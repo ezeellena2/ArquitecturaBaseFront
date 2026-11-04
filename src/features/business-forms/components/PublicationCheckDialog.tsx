@@ -14,7 +14,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
 import { AlertCircleIcon, AlertTriangleIcon } from "@/shared/ui/icons";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import { localizedValue } from "../editorModel";
+import { hasFormTexts, localizedValue } from "../editorModel";
 import { useFormPublicationCheck } from "../hooks/useFormPublicationCheck";
 import type { FormReadScope } from "../hooks/useFormQueries";
 import type { DraftEditorValue } from "../model";
@@ -91,6 +91,9 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   const checking = !dirty && (check.busy || !check.result && !check.error);
   const result = dirty || checking ? null : check.result;
   const list = new Intl.ListFormat(scope.culture, { type: "conjunction" });
+  // NI2-C (2026-11-03): written in the menu language, with no translation started, the form says nothing about languages,
+  // not even while checking.
+  const monolingual = value.draft.culture === scope.culture && !hasFormTexts(value, scope.culture === "es" ? "en" : "es");
   const questionOf = (fieldId: string | null) => value.draft.fields.find(q => !!q.fieldId && q.fieldId.toLowerCase() === fieldId?.toLowerCase());
   const questionName = (fieldId: string | null) => { const question = questionOf(fieldId); return question ? localizedValue(question.label, scope.culture, value.draft.culture) : null; };
   const choiceName = (issue: PublicationIssue) => {
@@ -101,7 +104,8 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   const issueName = (issue: PublicationIssue) => {
     const name = questionName(issue.fieldId)
       ?? (issue.path.startsWith("name") ? t("name") : issue.path.startsWith("draft.submitLabel") ? t("submitLabel") : issue.channelId || issue.path === "channel" ? t("publication.channelIssue") : t("publication.formIssue"));
-    return issue.culture ? t("localizedChange", { name, language: t("cultures." + issue.culture) }) : name;
+    // NI1-A (2026-11-03): a problem names its language only when it is not the menu's.
+    return issue.culture && issue.culture !== scope.culture ? t("localizedChange", { name, language: t("cultures." + issue.culture) }) : name;
   };
   // A text over its limit says how long it is, and which text when it is not the title (the limit comes in the issue).
   const issueDetail = (issue: PublicationIssue) => {
@@ -155,7 +159,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
         <dl aria-hidden="true" className={rows}>
           {savedAt ? <SummaryRow label={t("publication.draftRow")}>{skeleton("w-40")}</SummaryRow> : null}
           <SummaryRow label={t("publication.questionsRow")}>{skeleton("w-8")}</SummaryRow>
-          <SummaryRow label={t("publication.languagesRow")}>{skeleton("w-52")}</SummaryRow>
+          {!monolingual ? <SummaryRow label={t("publication.languagesRow")}>{skeleton("w-52")}</SummaryRow> : null}
           {!prefixLocked ? <SummaryRow label={t("publication.prefixRow")}>{skeleton("w-36")}</SummaryRow> : null}
         </dl>
       </div>
@@ -184,7 +188,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
       <Surface title={t("publication.summary")} headingLevel={3}>
         <dl className={rows}>
           {summaryRows(result.diff)}
-          {publishedCultures.length ? <SummaryRow label={t("publication.languagesRow")}>
+          {publishedCultures.length && !monolingual ? <SummaryRow label={t("publication.languagesRow")}>
             <span>{list.format(publishedCultures.map((culture, index) => t((index ? "cultureNamesInText." : "cultures.") + culture)))}</span>
             {publishedCultures.length > 1 ? <InfoTip label={t("publication.languagesHelpLabel")} text={t("publication.severalLanguagesHint")} /> : null}
             {addedCultures.map(culture => <span key={culture} className={muted}>{t("publication.cultureAdded", { language: t("cultureNamesInText." + culture) })}</span>)}

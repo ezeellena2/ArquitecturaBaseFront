@@ -210,6 +210,7 @@
     "cultureAdded": "{{language}} is added.",
     "cultureRemoved": "It will no longer be published.",
     "cultureRemovedHint": "From version {{version}}, accounts in {{language}} receive it in {{original}}.",
+    "publishedVersion": "Version {{version}} is published.",
     "publishedLanguages": "Version {{version}} is published in {{languages}}.",
     "recipientMaximum_one": "At most {{count}} option per person, against a limit of {{limit}}.",
     "recipientMaximum_other": "At most {{count}} options per person, against a limit of {{limit}}.",

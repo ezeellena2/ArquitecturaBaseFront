@@ -14,7 +14,8 @@ function session(state:"Uncertain"|"Publishing"):ReturnType<typeof useFormPublic
 it("shows one review warning for an uncertain confirmed publication and preserves consultation without replay",async()=>{const publication=session("Uncertain");const onReplay=vi.fn();await act(async()=>{renderWithProviders(<PublicationProgress publication={publication} feedbackId="uncertain-review" onReplay={onReplay} />);});expect(screen.getAllByText(reviewHint)).toHaveLength(1);expect(screen.getByText("Aceptada")).toBeInTheDocument();expect(screen.getByText("Pendiente de confirmación de WhatsApp")).toBeInTheDocument();await userEvent.click(screen.getByRole("button",{name:"Consultar publicación"}));expect(publication.consult).toHaveBeenCalledOnce();expect(screen.queryByRole("button",{name:"Repetir el mismo pedido"})).not.toBeInTheDocument();expect(onReplay).not.toHaveBeenCalled();});
 it("retains the separate review warning when the main status describes another publication state",async()=>{await act(async()=>{renderWithProviders(<PublicationProgress publication={session("Publishing")} feedbackId="publishing-review" onReplay={vi.fn()} />);});expect(screen.getAllByText(reviewHint)).toHaveLength(1);});
 
-it("announces a newly published operation once with its captured languages", async () => {
+// NI2-C (2026-11-03): published only in the menu language, it does not name it.
+it("announces a newly published operation once, without naming the menu language alone", async () => {
   const original = session("Publishing");
   const status = { ...original.status!, state: "Published" as const, requiresReview: false, cultures: ["es" as const] };
   const receipt = { ...status, state: "Accepted" as const, recoveryPath: "/api/forms/definitions/definition/publications/request" };
@@ -23,12 +24,11 @@ it("announces a newly published operation once with its captured languages", asy
   expect(screen.getByRole("status")).toBeInTheDocument();
   view.rerender(<PublicationProgress publication={publication} feedbackId="published-language" onReplay={vi.fn()} />);
   await act(async () => {});
-  const persistent = screen.getByText("En WhatsApp, en español");
-  expect(persistent.closest('[role="status"], [role="alert"], [aria-live]')).toBeNull();
+  expect(screen.getByRole("heading", { name: "Publicado · versión 2" })).toBeInTheDocument();
+  expect(screen.queryByText(/^En WhatsApp, en/)).not.toBeInTheDocument();
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  expect(screen.queryByText("Publicamos la versión 2, en español.")).not.toBeInTheDocument();
   expect(notify).toHaveBeenCalledOnce();
-  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Publicamos la versión 2, en español." }));
+  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Publicamos la versión 2." }));
   vi.mocked(notify).mockClear();
   view.rerender(<PublicationProgress publication={{ ...publication }} feedbackId="published-language" onReplay={vi.fn()} />);
   expect(notify).not.toHaveBeenCalled();
@@ -57,6 +57,16 @@ it("keeps the published English UI state static and announces the result only on
   expect(screen.getByText("On WhatsApp, in Spanish and English").closest('[role="status"], [role="alert"], [aria-live]')).toBeNull();
   expect(screen.getByRole("heading", { name: "Published · version 2" })).toBeInTheDocument();
   expect(notify).toHaveBeenCalledOnce();
+});
+
+// NI1-A (2026-11-03): a problem of a publication that did not go through names its language only when it is the other one.
+it("names the language of a publication problem only when it is not the menu's", async () => {
+  const original = session("Publishing");
+  const issue = (culture: "es" | "en", message: string) => ({ channelId: "phone", fieldId: null, choiceId: null, path: "name." + culture, code: "WhatsApp.Flow.TextTooLong", message, limit: 20, culture });
+  await act(async () => { renderWithProviders(<PublicationProgress publication={{ ...original, status: { ...original.status!, state: "Failed", requiresReview: false, issues: [issue("es", "El nombre es largo."), issue("en", "The name is long.")] } }} feedbackId="rejected-issues" onReplay={vi.fn()} />); });
+  expect(screen.getByText("El nombre es largo.")).toBeInTheDocument();
+  expect(screen.queryByText("Español")).not.toBeInTheDocument();
+  expect(screen.getByText("Inglés")).toBeInTheDocument();
 });
 
 // The inventory of legends (P16 to P19, 2026-11-01): the title and the steps say the state; no paragraph repeats it.
