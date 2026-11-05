@@ -18,26 +18,29 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
   const missingData = scenario === "entries-missing-data";
   // CW7: «Lote» depends on the answer to «Campo», so it waits for it and brings only that field's lots.
   const dependent = scenario === "entries-dependent";
+  // CW15-B: a zone per section title; the photos still go at the end.
+  const titled = scenario === "entries-sections";
+  const section = (es: string, english: string) => titled ? { section: en ? english : es } : {};
   const farm = id(623);
   const farms: FormEntryOption[] = ["La Esperanza", "El Ombú", "Don Pedro", "La Unión"].map((title, index) => ({ id: id(800 + index), title, description: null }));
   const sowing: FormEntry = { definitionId: formEntryFixtureIds.sowing, versionId: id(602), versionNumber: 3, prefix: "SIE", name: en ? "Sowing" : "Siembra", culture: language,
     submitLabel: en ? "Send" : "Enviar", maxFileSizeMiB: 25, questions: [
       ...dependent ? [{ fieldId: farm, type: "choice" as const, label: en ? "Field" : "Campo", help: null, required: true, maxLength: null, options: null, selection: null, files: null,
         catalog: { onlyOption: null, issue: null, missingData: null } }] : [],
-      { fieldId: fields.lot, type: "choice", label: en ? "Lot" : "Lote", help: dependent ? null : en ? "Only the lots of your field in the 2026/27 season." : "Solo los lotes de tu campo en la campaña 2026/27.",
+      { ...section("Lote y cultivo", "Lot and crop"), fieldId: fields.lot, type: "choice", label: en ? "Lot" : "Lote", help: dependent ? null : en ? "Only the lots of your field in the 2026/27 season." : "Solo los lotes de tu campo en la campaña 2026/27.",
         required: true, maxLength: null, options: null, selection: null, files: null,
         catalog: missingData ? { onlyOption: null, issue: "Forms.Record.RecipientDataMissing", missingData: en ? "Field" : "Campo" }
           : { onlyOption: null, issue: null, missingData: null, ...dependent ? { dependsOn: [farm] } : {} } },
       { fieldId: fields.crop, type: "choice", label: en ? "Crop" : "Cultivo", help: null, required: true, maxLength: null,
         options: (en ? ["1st soybean", "2nd soybean", "Corn", "Wheat", "Sunflower"] : ["Soja 1ª", "Soja 2ª", "Maíz", "Trigo", "Girasol"]).map((label, index) => ({ id: id(790 + index), label })),
         selection: null, files: null, catalog: null },
-      { fieldId: fields.seed, type: "choice", label: en ? "Seed" : "Semilla", help: null, required: true, maxLength: null, options: null, selection: null, files: null,
+      { ...section("Siembra", "Sowing"), fieldId: fields.seed, type: "choice", label: en ? "Seed" : "Semilla", help: null, required: true, maxLength: null, options: null, selection: null, files: null,
         catalog: { onlyOption: null, issue: null, missingData: null } },
       { fieldId: fields.density, type: "decimal", label: en ? "Density (kg/ha)" : "Densidad (kg/ha)", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
       { fieldId: fields.hectares, type: "decimal", label: en ? "Sown hectares (ha)" : "Hectáreas sembradas (ha)", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
       { fieldId: fields.date, type: "date", label: en ? "Sowing date" : "Fecha de siembra", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
       // Several own options take the whole row, with their boxes in columns (AR1-A).
-      { fieldId: fields.tasks, type: "multiChoice", label: en ? "Tasks done" : "Labores realizadas", help: null, required: false, maxLength: null,
+      { ...section("Labores", "Tasks"), fieldId: fields.tasks, type: "multiChoice", label: en ? "Tasks done" : "Labores realizadas", help: null, required: false, maxLength: null,
         options: (en ? ["Direct seeding", "Base fertilization", "Weed control", "Inoculation", "Seed treatment", "Irrigation", "Rolling"]
           : ["Siembra directa", "Fertilización de base", "Control de malezas", "Inoculación", "Curado de semilla", "Riego", "Rolado"]).map((label, index) => ({ id: id(800 + index), label })),
         selection: { minSelected: 0, maxSelected: 7 }, files: null, catalog: null },

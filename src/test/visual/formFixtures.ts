@@ -89,6 +89,12 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       return { ...common, source: { catalog: "01990000-0000-7000-8000-000000000080" } };
     }) } });
   }
+  // CW15-B: three section titles between the questions of the visit.
+  if (scenario === "forms-sections") {
+    const original = definitions.get(fixtureFormId)!;
+    definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, sections: [{ start: 0, title: { es: "Visita", en: "Visit" } },
+      { start: 2, title: { es: "Cobro", en: "Payment" } }, { start: 4, title: { es: "Cierre", en: "Closing" } }] } });
+  }
   // RG1-A: the block of rows «Artículos», with three questions of each row between «Contacto» and «Fecha de visita».
   if (scenario === "forms-rows") {
     const original = definitions.get(fixtureFormId)!;
