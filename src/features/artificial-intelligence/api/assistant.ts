@@ -50,6 +50,11 @@ const acceptedFields = {
   pollingAfterSeconds: z.number().int().positive(),
 };
 const accepted = z.strictObject(acceptedFields);
+const failure = z.strictObject({
+  code: z.string(),
+  detail: z.string(),
+  recovery: z.enum(["reviewUncertainty", "newAttempt"]),
+});
 const turn = z.strictObject({
   ...acceptedFields,
   turnId: id,
@@ -64,13 +69,7 @@ const turn = z.strictObject({
     })
     .nullable(),
   evidences: z.array(evidence),
-  failure: z
-    .strictObject({
-      code: z.string(),
-      detail: z.string(),
-      recovery: z.enum(["reviewUncertainty", "newAttempt"]),
-    })
-    .nullable(),
+  failure: failure.nullable(),
   usage: z
     .strictObject({
       inputTokens: z.number().int().nullable(),
@@ -90,6 +89,16 @@ const turn = z.strictObject({
       content: z.unknown(),
     })
     .optional(),
+  // A dictated turn names its recording and carries what the server heard in it (IA4).
+  audio: z.strictObject({ requestId: id, transcript: z.string() }).optional(),
+});
+// Where the normalization of a recording is; the transcript once it completed (IA4).
+const audioStatus = z.strictObject({
+  requestId: id,
+  state: assistantStateSchema,
+  transcript: z.string().nullable(),
+  failure: failure.nullable(),
+  pollingAfterSeconds: z.number().int().positive(),
 });
 const bootstrap = z.strictObject({
   availability: z.enum([
@@ -103,6 +112,8 @@ const bootstrap = z.strictObject({
   suggestions: z.array(z.strictObject({ id: z.string(), question: z.string() })),
   limits: z.strictObject({ questionMaxLength: z.number().int().positive() }),
   configurationDestination: z.literal("aiConfiguration").nullable(),
+  // Whether Home takes a recording: a provider that hears what the browser records, and private storage.
+  audio: z.boolean(),
 });
 const summaryFields = {
   conversationId: id,
@@ -139,12 +150,15 @@ export type AssistantTurn = z.infer<typeof turn>;
 export type AssistantConversation = z.infer<typeof conversation>;
 export type AssistantConversationSummary = z.infer<typeof conversationSummary>;
 export type AssistantBootstrap = z.infer<typeof bootstrap>;
+export type AssistantAudioStatus = z.infer<typeof audioStatus>;
 export interface AssistantSubmit {
   readonly requestId: string;
   readonly conversationId: string | null;
   readonly expectedRevision: number | null;
   readonly expectedConnectionRevision: number;
   readonly question: string;
+  /// The normalization of a recording: the server takes its transcript, never the browser (IA4).
+  readonly audioRequestId?: string;
 }
 function read<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
@@ -203,6 +217,17 @@ export const assistantApi = {
         { signal },
       ),
     ),
+  // A recording goes in multipart, like every file the app sends; the server recognizes its type by its bytes.
+  uploadAudio: async (requestId: string, recording: Blob, signal?: AbortSignal) => {
+    const body = new FormData();
+    body.append("requestId", requestId);
+    body.append("file", recording, recording.type.startsWith("audio/mp4") ? "recording.m4a" : "recording.webm");
+    return read(audioStatus, await api.upload<unknown>(`${base}/audio`, body, () => {}, { signal }));
+  },
+  audio: async (requestId: string, signal?: AbortSignal) =>
+    read(audioStatus, await api.get<unknown>(`${base}/audio/${encodeURIComponent(requestId)}`, { signal })),
+  audioFile: (requestId: string, signal?: AbortSignal) =>
+    api.blob(`${base}/audio/${encodeURIComponent(requestId)}/file`, { signal }),
   remove: (id: string, signal?: AbortSignal) =>
     api.delete<void>(`${base}/conversations/${encodeURIComponent(id)}`, {
       signal,

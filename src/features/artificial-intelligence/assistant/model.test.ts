@@ -60,6 +60,17 @@ describe("assistant confirmed state", () => {
     });
     expect(Object.isFrozen(body)).toBe(true);
   });
+  it("names the recording only in a dictated turn, so a typed one keeps its body", () => {
+    expect(createSubmission("r1", "", 8, undefined, "a1")).toEqual({
+      requestId: "r1", question: "", expectedConnectionRevision: 8, conversationId: null, expectedRevision: null, audioRequestId: "a1",
+    });
+    expect(createSubmission("r1", "hola", 8)).not.toHaveProperty("audioRequestId");
+  });
+  it("shows a dictated turn without typed text as the person's message", () => {
+    const dictated = { ...base, question: "", audio: { requestId: "a1", transcript: "Armame un formulario" } };
+    expect(projectMessages([dictated]).map(message => [message.id, message.role])).toEqual([["t1:user", "user"], ["t1:assistant", "assistant"]]);
+    expect(projectMessages([{ ...base, question: "" }]).map(message => message.role)).toEqual(["assistant"]);
+  });
   it("allows only known destinations and current source permissions", () => {
     expect(sourceDestination("users", ["users.read"])).toBe("/usuarios");
     expect(sourceDestination("users", [])).toBeUndefined();

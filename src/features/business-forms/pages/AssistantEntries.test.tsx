@@ -20,7 +20,7 @@ function setup(permissions: string[], features = ["forms", "assistant"]) {
     http.all("/api/forms/definitions*", ({ request }) => store.handle(request)),
     http.get("/api/forms/catalogs", () => HttpResponse.json({ ...empty, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } })),
     http.get("/api/forms/missing-requests", () => HttpResponse.json({ ...empty, items: [topic], totalCount: 1, totalPages: 1, totalRequests: 5, stateCounts: { pending: 1, discarded: 0 } })),
-    http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available", connectionRevision: 1, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null })),
+    http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available", connectionRevision: 1, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false })),
     http.get("/api/ai/assistant/conversations", () => HttpResponse.json(empty)));
 }
 async function open(path: string) {

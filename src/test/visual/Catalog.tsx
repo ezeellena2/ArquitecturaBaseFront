@@ -29,6 +29,7 @@ import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { MessageBubble, MessageDateDivider, type MessageDeliveryState } from "@/shared/ui/MessageBubble";
 import { MessageHistory } from "@/shared/ui/MessageHistory";
 import { AssistantProposalCard } from "@/shared/ui/assistant/AssistantProposalCard";
+import { AssistantRecorder } from "@/shared/ui/assistant/AssistantRecorder";
 
 // Referencia local con componentes reales, no una segunda implementación visual.
 export function Catalog() {
@@ -37,6 +38,7 @@ export function Catalog() {
   const formPieces = new URLSearchParams(location.search).get("scenario") === "form-controls";
   const tabPieces = new URLSearchParams(location.search).get("scenario") === "tabs";
   const [confirm, setConfirm] = useState(false);
+  const [recording] = useState(() => new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], { type: "audio/webm" }));
   const [formOpen, setFormOpen] = useState(false);
   const [selection, setSelection] = useState<string[]>(["User"]);
   const [choice, setChoice] = useState("InviteOnly");
@@ -108,6 +110,13 @@ export function Catalog() {
           folded={{ state: english ? "Replaced" : "Reemplazada" }} />
         <AssistantProposalCard kind={english ? "Catalog" : "Catálogo"} title={english ? "Carriers" : "Transportistas"}
           folded={{ state: english ? "Catalog created" : "Catálogo creado", action: <Button size="sm" variant="link">{english ? "Open the catalog" : "Abrir el catálogo"}</Button> }} />
+      </Surface>
+      {/* IA4 (2026-11-04): the recording in the composer, while recording and stopped to listen to before sending. */}
+      <Surface title={english ? "Recording" : "Grabación"} padded>
+        <AssistantRecorder status={english ? "Recording · 0:12" : "Grabando · 0:12"} audioLabel={english ? "Your recording" : "Tu audio"}
+          discardLabel={english ? "Discard" : "Descartar"} stopLabel={english ? "Stop" : "Detener"} onDiscard={() => {}} onStop={() => {}} takeFocus={false} />
+        <AssistantRecorder recording={recording} status="" audioLabel={english ? "Your recording" : "Tu audio"}
+          discardLabel={english ? "Discard" : "Descartar"} stopLabel={english ? "Stop" : "Detener"} onDiscard={() => {}} onStop={() => {}} takeFocus={false} />
       </Surface>
       {formPieces ? <Surface title={english ? "Form controls" : "Controles de formularios"} padded>
         <div className="flex flex-col gap-4">

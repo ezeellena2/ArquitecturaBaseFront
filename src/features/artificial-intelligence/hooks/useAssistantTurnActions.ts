@@ -155,6 +155,7 @@ export function useAssistantTurnActions({
       id: string;
       revision: number;
     },
+    audioRequestId?: string,
   ) {
     if (inFlight.current || frozen.current || cooldown.isRunning) return false;
     frozen.current = createSubmission(
@@ -162,6 +163,7 @@ export function useAssistantTurnActions({
       question,
       connectionRevision,
       conversation,
+      audioRequestId,
     );
     return send(frozen.current, "submit");
   }

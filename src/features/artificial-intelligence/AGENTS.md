@@ -37,6 +37,14 @@ en test/fixtures/ai-assistant-http; los dobles de comportamiento no lo acreditan
 cuerpos intactos con httpCohort("aiAssistant") por el cliente, MSW y los adaptadores del modelo: pending activo,
 completed con respuesta y canceled con un intento nuevo, y el texto es/en de cada estado.
 
+Audio de Inicio (IA4): con `bootstrap.audio` y un navegador que graba, el micrófono abre la grabación de
+`useAudioRecorder` (tope de 1.000.000 bytes). Al mandar, `useAssistantDictation` sube el audio por `api.upload` con su
+propio `requestId`, sigue la normalización con `pollingAfterSeconds` y recién entonces `actions.submit` manda el turno con
+`audioRequestId` y el texto opcional; el mismo audio conserva su pedido en un reintento y, si el servidor no lo entendió,
+dice el motivo debajo del editor y el próximo intento usa otro. El hilo muestra el audio del turno (`AssistantTurnAudio`:
+«Escuchar» baja la grabación por `audio/{id}/file`) y la transcripción en gris; un turno dictado sin texto también es un
+mensaje de la persona. Una grabación sin mandar cuenta como borrador para la guarda de salida.
+
 El panel interno usa useAssistantConversationList con usePagination/QueryCache privado (cuenta, idioma y revisión de permisos), 20 filas por defecto y GET acotados. conversationGroups recibe ahora UTC y zona del perfil; se recalcula al abrir/reanudar, sin timer paralelo. RuntimeProvider aísla la API experimental de threadList fijada en 0.15.23; callbacks sólo piden la navegación autorizada de AiAssistantPage. Nueva conversación no escribe hasta la aceptación; list/detail son autoridad de títulos. El borrado confirmado retira título y turnos del caché y luego invalida la página.
 
 Propuestas (IA1-A): el turno trae `proposal` sólo si cerró con una (Id, capacidad, versión y el contenido del dueño, que esta feature no lee). ConfirmedMessage muestra, debajo del texto, la tarjeta del módulo que la acepta por `AssistantProposalContext`, con la anterior de la misma capacidad y si una posterior la reemplazó (`proposalNeighbors`: por ordinal y sólo turnos completos; un catálogo pedido después de un formulario no lo reemplaza). Con una propuesta en el hilo, el editor dice «Pedí un cambio o hacé otra consulta…». Sin el módulo instalado, la respuesta se lee sola.

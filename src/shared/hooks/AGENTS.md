@@ -10,6 +10,10 @@ Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva y guardas
 - Los formularios en ruta propia usan guarda y hoja de migas; conservá `stay` después de `leave` y apagá la guarda mientras se guarda.
 - Una guarda con `remountsOnLanguageChange` (la de un editor cuya clave lleva la cultura: hoy, el diseño del PDF) se anota con cambios en un registro del módulo mientras está montada; `hasUnsavedChanges()` dice si alguna perdería lo escrito al cambiar el idioma del menú, que no pasa por el router. Lo consulta el menú de usuario antes de cambiarlo; `useHasUnsavedChanges()` es lo mismo como estado y con él la sincronización del idioma de la cuenta espera. Una pantalla que conserva su borrador con el idioma nuevo (el formulario, los catálogos Manual y de Filtros, roles, configuración, chat, IA) no pasa la opción: no tiene nada que descartar.
 - Los diálogos montados al abrir usan `useRestoreFocusOnClose`; probá navegación y teclado, no solo estado interno.
+- `useAudioRecorder(maxBytes)` graba una sola vez del micrófono lo que acepta el servidor (WebM o MP4, a 32 kbps) y lo deja en
+  el navegador para escucharlo antes de mandarlo; al llegar al tope corta con lo que entró y suelta el micrófono al terminar
+  o descartar. `supported` es falso sin `MediaRecorder` o sin un tipo admitido; `denied`, si la persona no da el permiso. No
+  sube nada: lo hace el dueño. Se prueba con el doble `FakeMediaRecorder` de `test/mocks/mediaRecorder`.
 - `useCountdown` conserva `initialSeconds` sólo al montar y `seconds`, `isRunning`, `restart` (incluido updater funcional). Calcula contra un deadline monotónico con `performance.now`; el timer sólo recalcula y `visibilitychange` visible recupera el plazo tras suspensión. Limpiá timer/listener al desmontar y verificá StrictMode, reinicio y consumidores de acceso/verificación. Es presentación: el servidor autoriza y define los plazos.
 
 ## Referencias

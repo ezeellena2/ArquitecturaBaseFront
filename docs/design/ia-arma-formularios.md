@@ -57,6 +57,12 @@ Los tableros no lo dicen; se resolvió con la opción más simple que cumple el 
   completa (`mobileFullscreen`).
 - Las esperas y los errores siguen el contrato común: mientras la IA arma, los estados del turno de hoy; al crear, el botón
   con su carga; un nombre o un prefijo en uso lo dice la tarjeta (IA2), y lo demás, el aviso común.
+- El micrófono aparece cuando la instalación oye lo que graba el navegador (WebM o MP4) y hay almacenamiento privado (el
+  `audio` del bootstrap) y el navegador puede grabar; sin el permiso del micrófono, lo dice debajo del editor.
+- Al mandar un audio, la flecha muestra la espera mientras sube, se transcribe y viaja el turno; si no se entendió, el motivo
+  va debajo del editor y el audio queda para mandarlo otra vez.
+- En el hilo, el audio de un mensaje se oye con «Escuchar», que baja la grabación sólo cuando la persona la quiere oír, como
+  los audios del chat de WhatsApp; la transcripción en gris va siempre debajo.
 
 ## Lo que cambia de lo que hay
 

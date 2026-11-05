@@ -74,6 +74,10 @@ export function ArrowUpIcon(props: IconProps) {
   return <Icon {...props}><path d="M12 19V5m-6 6 6-6 6 6" /></Icon>;
 }
 
+export function MicIcon(props: IconProps) {
+  return <Icon {...props}><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3" /></Icon>;
+}
+
 export function CopyIcon(props: IconProps) {
   return <Icon {...props}><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" /></Icon>;
 }

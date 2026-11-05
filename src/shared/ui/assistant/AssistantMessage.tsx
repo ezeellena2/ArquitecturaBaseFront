@@ -8,6 +8,7 @@ export function AssistantMessage({
   timeLabel,
   timestamp,
   copyLabel,
+  media,
   children,
 }: {
   role: "user" | "assistant";
@@ -15,6 +16,8 @@ export function AssistantMessage({
   timeLabel: string;
   timestamp: string;
   copyLabel?: string;
+  /// What the person sent besides the text (a recording and its transcript): it goes in the bubble, after the text.
+  media?: ReactNode;
   children?: ReactNode;
 }) {
   return (
@@ -30,6 +33,7 @@ export function AssistantMessage({
             <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
               <MessagePrimitive.Parts />
             </div>
+            {media}
           </div>
         ) : (
           <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">

@@ -44,6 +44,7 @@ export function createAssistantVisualFixtures(
             : "available",
     connectionRevision: 7,
     configurationDestination: "aiConfiguration",
+    audio: scenario.startsWith("assistant-audio"),
     limits: { questionMaxLength: 4000 },
     suggestions: [
       {
@@ -155,6 +156,10 @@ export function createAssistantVisualFixtures(
     };
   if (turn.contentAccess === "blocked")
     turn = { ...turn, question: null, answer: null, evidences: [] };
+  // IA4 (2026-11-04): a dictated question without typed text, with what the server heard in it.
+  if (scenario === "assistant-audio")
+    turn = { ...turn, question: "", audio: { requestId: "0199a0c0-0000-7000-8000-000000000555",
+      transcript: en ? "Tell me how many users are active and how many are not." : "Decime cuántos usuarios están activos y cuántos no." } };
   const conversation = (): AssistantConversation => ({
     conversationId: assistantFixtureConversationId,
     title: turn.contentAccess === "allowed" ? bootstrap.suggestions[0].question : en ? "Private conversation" : "Conversación privada",

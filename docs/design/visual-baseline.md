@@ -426,7 +426,11 @@ Capturas, decisiones, alcance, piezas y estado: [formularios-whatsapp.md](formul
 - El marco ocupa el contenido de `Page` (viewport solo acá). Hilo/editor de 672 px en una columna de 704 px. Vacío:
   bienvenida y editor centrados, sugerencias debajo. Conversando: pregunta a la derecha, respuesta a la izquierda sin
   tarjeta, fuentes tipadas debajo y editor redondeado al pie, con envío por flecha.
-- Disponibilidad junto al editor, sin panel exterior ni banda Conversación. Sin adjuntos ni regeneración.
+- Disponibilidad junto al editor, sin panel exterior ni banda Conversación. Sin regeneración. Desde el 2026-11-04 (IA4) el
+  micrófono va a la izquierda de la flecha cuando Inicio acepta audio: «Grabando · 0:12» con «Descartar» y «Detener», el
+  audio listo para escucharlo antes de mandarlo con «Agregá un texto, si querés…», y en el hilo el audio con «Escuchar» y la
+  transcripción en gris debajo (escena `assistant-audio`). El clip llega con la Etapa 2 de [la IA arma
+  formularios](ia-arma-formularios.md).
 - Vive en `shared/ui/assistant` e `index.css`. Capturas `assistant-*.png`; verificación en el
   [registro de corrección](../verification/inicio-asistente-correccion-2026-10-04.md).
 

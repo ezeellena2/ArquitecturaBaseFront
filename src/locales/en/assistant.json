@@ -91,5 +91,20 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "previous": "Earlier"
+  },
+  "audio": {
+    "record": "Record audio",
+    "recordingStatus": "Recording · {{time}}",
+    "stop": "Stop",
+    "discard": "Discard",
+    "yours": "Your recording",
+    "placeholder": "Add some text, if you want…",
+    "denied": "The microphone could not be used. Check the browser permission.",
+    "invalid": "The recording cannot be read. Record it again.",
+    "failed": "The recording could not be understood. Try recording it again.",
+    "listen": "Listen",
+    "loading": "Loading…",
+    "recording": "Message recording",
+    "gone": "The recording is no longer available."
   }
 }

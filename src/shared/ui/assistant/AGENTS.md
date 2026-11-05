@@ -8,7 +8,11 @@ bienvenida/editor centrados en vacío, sugerencias debajo y editor al pie tras e
 ComposerPrimitive.Input conserva su forma propia, label accesible, ayuda oculta y error asociado;
 no FormField/Surface ni textarea rectangular dentro del editor. Radios/colores viven en index.css.
 Una condición durable va junto al editor, sin panel punteado exterior. No agregar adjuntos,
-regeneración o controles sin capacidad productiva para imitar una demo.
+regeneración o controles sin capacidad productiva para imitar una demo. La grabación ya la tiene (IA4):
+`AssistantRecorder` muestra «Grabando · 0:12» con «Descartar» y «Detener» o el audio listo con `PrivateAudio`; el
+compositor suma el micrófono (`record`) a la izquierda de la flecha, el grabador arriba del texto (`recorder`) y, con un
+audio listo, la flecha y Ctrl/Meta+Enter lo mandan por el dueño (`onSendRecording`), aun sin texto y fuera del runtime;
+`AssistantMessage.media` pone el audio y su transcripción dentro de la burbuja. Grabar es de `useAudioRecorder`.
 No conoce sesión, contratos HTTP, proveedor ni features. La feature aporta textos, estado confirmado,
 fuentes, acciones y borrador. No incorporar HTML, Markdown arbitrario, imágenes ni tools ejecutables.
 Enter agrega línea; Ctrl/Meta+Enter envían y respetan IME. Scroll no roba la posición de lectura.

@@ -41,6 +41,7 @@ export function createSubmission(
     id: string;
     revision: number;
   },
+  audioRequestId?: string,
 ): AssistantSubmit {
   return Object.freeze({
     requestId,
@@ -48,6 +49,8 @@ export function createSubmission(
     expectedConnectionRevision: connectionRevision,
     conversationId: conversation?.id ?? null,
     expectedRevision: conversation?.revision ?? null,
+    // Only a dictated turn names its recording: a typed one keeps the body it always had.
+    ...(audioRequestId ? { audioRequestId } : {}),
   });
 }
 export function projectMessages(
@@ -56,11 +59,12 @@ export function projectMessages(
   return turns.flatMap((turn) => {
     if (turn.contentAccess !== "allowed") return [];
     const result: ThreadMessageLike[] = [];
-    if (turn.question)
+    // A dictated turn may carry no typed text: its recording and transcript still make the message.
+    if (turn.question || turn.audio)
       result.push({
         id: `${turn.turnId}:user`,
         role: "user",
-        content: [{ type: "text", text: turn.question }],
+        content: [{ type: "text", text: turn.question ?? "" }],
         createdAt: new Date(turn.submittedAtUtc),
         metadata: { custom: { requestId: turn.requestId } },
       });

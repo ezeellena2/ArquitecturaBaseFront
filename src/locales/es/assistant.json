@@ -91,5 +91,20 @@
     "today": "Hoy",
     "yesterday": "Ayer",
     "previous": "Anteriores"
+  },
+  "audio": {
+    "record": "Grabar un audio",
+    "recordingStatus": "Grabando · {{time}}",
+    "stop": "Detener",
+    "discard": "Descartar",
+    "yours": "Tu audio",
+    "placeholder": "Agregá un texto, si querés…",
+    "denied": "No se pudo usar el micrófono. Revisá el permiso del navegador.",
+    "invalid": "El audio no se puede leer. Grabalo de nuevo.",
+    "failed": "No se pudo entender el audio. Probá grabarlo de nuevo.",
+    "listen": "Escuchar",
+    "loading": "Cargando…",
+    "recording": "Audio del mensaje",
+    "gone": "El audio ya no está disponible."
   }
 }

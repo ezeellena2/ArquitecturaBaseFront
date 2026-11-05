@@ -19,6 +19,8 @@ import { queryClient } from "@/shared/api/queryClient";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { installMicrophone, removeMicrophone } from "@/test/mocks/mediaRecorder";
+import { captureUploads } from "@/test/mocks/xhrUpload";
 import type {
   AssistantAccepted,
   AssistantTurn,
@@ -126,6 +128,7 @@ beforeEach(() => {
         ],
         limits: { questionMaxLength: 4000 },
         configurationDestination: null,
+        audio: false,
       }),
     ),
     http.get("/api/ai/assistant/conversations", () =>
@@ -799,7 +802,7 @@ describe("assistant waits", () => {
     let hold: Promise<void> | undefined;
     server.use(http.get("/api/ai/assistant/bootstrap", async () => {
       if (hold) await hold;
-      return HttpResponse.json({ availability: "capacityLimited", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null });
+      return HttpResponse.json({ availability: "capacityLimited", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false });
     }));
     renderRouteWithProviders("/");
     const availability = (await screen.findByText("La capacidad del asistente está ocupada")).closest("[role=status]") as HTMLElement;
@@ -867,4 +870,104 @@ describe("assistant waits", () => {
     expect(screen.queryByRole("button", { name: "Armame un formulario para…" })).not.toBeInTheDocument();
   });
 });
+describe("dictated turns (IA4)", () => {
+  const audioRequestId = "0199a0c0-0000-7000-8000-000000000555";
+  const status = (state: string, transcript: string | null, failure: unknown = null) =>
+    ({ requestId: audioRequestId, state, transcript, failure, pollingAfterSeconds: 1 });
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => "blob:recording");
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    server.use(
+      http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available", connectionRevision: 7, suggestions: [],
+        limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: true })),
+      http.post("/api/ai/assistant/turns", async ({ request }) => {
+        const body = (await request.json()) as AssistantSubmit;
+        writes.push(body);
+        turn = { ...turn, requestId: body.requestId, question: body.question,
+          audio: body.audioRequestId ? { requestId: body.audioRequestId, transcript: "Armame un formulario de visitas" } : undefined };
+        return HttpResponse.json(acceptedOf(turn), { status: 202 });
+      }),
+    );
+  });
+  afterEach(() => removeMicrophone());
 
+  async function record() {
+    await userEvent.click(await screen.findByRole("button", { name: "Grabar un audio" }));
+    expect(await screen.findByText(/^Grabando · 0:0\d$/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Detener" }));
+    expect((await screen.findByLabelText("Tu audio")).tagName).toBe("AUDIO");
+  }
+
+  it("records, lets the person listen and sends the recording with its text once the server heard it", async () => {
+    installMicrophone();
+    const uploads = captureUploads([{ status: 202, body: status("pending", null) }]);
+    const polled: string[] = [];
+    server.use(http.get("/api/ai/assistant/audio/:id", ({ params }) => {
+      polled.push(String(params.id));
+      return HttpResponse.json(status("completed", "Armame un formulario de visitas"));
+    }));
+    renderRouteWithProviders("/");
+    await record();
+    const field = screen.getByRole("textbox", { name: "Tu pregunta" });
+    expect(field).toHaveAttribute("placeholder", "Agregá un texto, si querés…");
+    expect(screen.queryByRole("button", { name: "Grabar un audio" })).not.toBeInTheDocument();
+    await pasteText(field, "para clientes");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1), { timeout: 3000 });
+    const uploaded = String(uploads[0].body.get("requestId"));
+    expect(uploads[0].url).toBe("/api/ai/assistant/audio");
+    expect(polled).toEqual([uploaded]);
+    expect(writes[0]).toMatchObject({ question: "para clientes", audioRequestId: uploaded });
+    expect(await screen.findByText("Armame un formulario de visitas")).toHaveClass("assistant-transcript");
+    expect(screen.getByRole("button", { name: "Escuchar" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Grabar un audio" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Tu audio")).not.toBeInTheDocument();
+  });
+
+  it("keeps the recording when the server could not hear it, and a new attempt uploads it under another request", async () => {
+    installMicrophone();
+    const uploads = captureUploads([
+      { status: 202, body: status("failed", null, { code: "Ai.Assistant.ContentUnavailable", detail: "No se pudo leer el audio.", recovery: "newAttempt" }) },
+      { status: 202, body: status("completed", "Armame un formulario de visitas") },
+    ]);
+    renderRouteWithProviders("/");
+    await record();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText("No se pudo leer el audio.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Tu audio")).toBeInTheDocument();
+    expect(writes).toHaveLength(0);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+    expect(writes[0]).toMatchObject({ question: "", audioRequestId: uploads[1].body.get("requestId") });
+  });
+
+  it("discards a recording without sending anything", async () => {
+    installMicrophone();
+    const uploads = captureUploads([{ status: 202, body: status("completed", "x") }]);
+    renderRouteWithProviders("/");
+    await record();
+    await userEvent.click(screen.getByRole("button", { name: "Descartar" }));
+    expect(screen.queryByLabelText("Tu audio")).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveAttribute("placeholder", "Preguntale al sistema…");
+    expect(uploads).toHaveLength(0);
+    expect(writes).toHaveLength(0);
+  });
+
+  it("says so under the composer when the person does not allow the microphone", async () => {
+    installMicrophone({ allowed: false });
+    renderRouteWithProviders("/");
+    await userEvent.click(await screen.findByRole("button", { name: "Grabar un audio" }));
+    expect(await screen.findByText("No se pudo usar el micrófono. Revisá el permiso del navegador.")).toBeInTheDocument();
+  });
+
+  it("offers no microphone when Home takes no recording or the browser cannot record", async () => {
+    server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available", connectionRevision: 7, suggestions: [],
+      limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false })));
+    installMicrophone();
+    renderRouteWithProviders("/");
+    await screen.findByRole("textbox", { name: "Tu pregunta" });
+    expect(screen.queryByRole("button", { name: "Grabar un audio" })).not.toBeInTheDocument();
+  });
+});

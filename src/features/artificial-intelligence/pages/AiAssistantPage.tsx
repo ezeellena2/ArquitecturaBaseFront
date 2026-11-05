@@ -37,6 +37,8 @@ import {
 import { AssistantThread } from "@/shared/ui/assistant/AssistantThread";
 import { AssistantMessage } from "@/shared/ui/assistant/AssistantMessage";
 import { AssistantComposer } from "@/shared/ui/assistant/AssistantComposer";
+import { AssistantRecorder } from "@/shared/ui/assistant/AssistantRecorder";
+import { useAudioRecorder } from "@/shared/hooks/useAudioRecorder";
 import { AssistantSuggestions } from "@/shared/ui/assistant/AssistantSuggestions";
 import { notify } from "@/shared/ui/notifications";
 import {
@@ -48,6 +50,8 @@ import {
 import { assistantKey, isActiveTurn, proposalNeighbors } from "../assistant/model";
 import { useAssistantConversation } from "../hooks/useAssistantConversation";
 import { useAssistantTurnActions } from "../hooks/useAssistantTurnActions";
+import { useAssistantDictation } from "../hooks/useAssistantDictation";
+import { AssistantTurnAudio } from "../components/assistant/AssistantTurnAudio";
 import { AssistantRuntimeProvider } from "../components/assistant/AssistantRuntimeProvider";
 import { AssistantWelcome } from "../components/assistant/AssistantWelcome";
 import { AssistantSources } from "../components/assistant/AssistantSources";
@@ -55,6 +59,8 @@ import { AssistantOperationState } from "../components/assistant/AssistantOperat
 import { AssistantConversationPanel } from "../components/assistant/AssistantConversationPanel";
 import { AssistantWorkspace } from "@/shared/ui/assistant/AssistantWorkspace";
 import { useAssistantConversationList } from "../hooks/useAssistantConversationList";
+const audioMaximumBytes = 1_000_000;
+const elapsed = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 const announcedStates: readonly AssistantState[] = [
   "failed",
   "uncertain",
@@ -89,6 +95,7 @@ function ConfirmedMessage() {
         value.timeZone,
       )}
       copyLabel={role === "assistant" ? t("copy") : undefined}
+      media={role === "user" && turn.audio ? <AssistantTurnAudio requestId={turn.audio.requestId} transcript={turn.audio.transcript} /> : undefined}
     >
       {proposal && turn.proposal ? (
         <proposal.Card
@@ -185,8 +192,11 @@ export function AiAssistantPage() {
       void client.invalidateQueries({ queryKey: currentUserQueryKey });
     },
   });
+  // IA4: one recording per message, up to the bound of a WhatsApp audio; leaving the page loses it like a draft.
+  const recorder = useAudioRecorder(audioMaximumBytes);
+  const dictation = useAssistantDictation({ userId, onForbidden: () => setForbidden(true) });
   const navigation = useUnsavedChangesGuard(
-    !!draft.trim() || actions.uncertain,
+    !!draft.trim() || actions.uncertain || recorder.state !== "idle",
     { queryKeys: ["conversacion"] },
   );
   useEffect(() => {
@@ -314,6 +324,26 @@ export function AiAssistantPage() {
   // Each request on its way shows it on the control that sent it; the cancellation, on the turn it cancels.
   const working = actions.working?.action;
   const cancelling = working === "cancel" ? actions.working?.target : undefined;
+  // IA4: a recording travels first and its turn after it; the arrow shows the spinner for both.
+  const sendingRecording = dictation.normalizing || (working === "submit" && recorder.state === "ready");
+  const composerDisabled = disabled || dictation.normalizing || recorder.state === "starting" || recorder.state === "recording";
+  async function sendRecording() {
+    const recording = recorder.recording;
+    if (!recording || composerDisabled || !bootstrap.data) return;
+    const max = bootstrap.data.limits.questionMaxLength;
+    if (draft.trim().length > max) {
+      setLocalError(t("questionTooLong", { max }));
+      return;
+    }
+    setLocalError(undefined);
+    const audioRequestId = await dictation.normalize(recording);
+    if (!audioRequestId) return;
+    const sent = await actions.submit(draft, bootstrap.data.connectionRevision,
+      conversationId && data.conversation.data ? { id: conversationId, revision: data.conversation.data.revision } : undefined, audioRequestId);
+    if (!sent) return;
+    recorder.discard();
+    setDraft("");
+  }
   async function submit(question: string) {
     const max = bootstrap.data?.limits.questionMaxLength ?? 4000;
     if (!question.trim()) {
@@ -545,16 +575,26 @@ export function AiAssistantPage() {
                       <AssistantComposer
                         label={t("question")}
                         hint={t("keyboardHelp")}
-                        placeholder={hasProposal ? t("placeholderProposal") : (emptyPlaceholder ?? t("placeholder"))}
-                        sendLabel={t(working === "submit" ? "sending" : "send")}
-                        sending={working === "submit"}
+                        placeholder={recorder.state === "ready" ? t("audio.placeholder")
+                          : hasProposal ? t("placeholderProposal") : (emptyPlaceholder ?? t("placeholder"))}
+                        sendLabel={t(working === "submit" || dictation.normalizing ? "sending" : "send")}
+                        sending={working === "submit" || dictation.normalizing}
                         value={draft}
                         onValueChange={(value) => {
                           setDraft(value);
                           setLocalError(undefined);
                         }}
-                        disabled={disabled}
-                        error={localError ?? actions.fieldError}
+                        disabled={composerDisabled}
+                        error={localError ?? dictation.error ?? (recorder.denied ? t("audio.denied") : undefined) ?? actions.fieldError}
+                        record={bootstrap.data.audio && recorder.supported && recorder.state === "idle"
+                          ? { label: t("audio.record"), onStart: () => { dictation.clearError(); void recorder.start(); } } : undefined}
+                        recorder={recorder.state === "recording" || recorder.state === "ready" ? (
+                          <AssistantRecorder recording={recorder.state === "ready" ? recorder.recording : undefined}
+                            status={t("audio.recordingStatus", { time: elapsed(recorder.seconds) })} audioLabel={t("audio.yours")}
+                            discardLabel={t("audio.discard")} stopLabel={t("audio.stop")} disabled={sendingRecording}
+                            onDiscard={() => { dictation.clearError(); recorder.discard(); }} onStop={recorder.stop} />
+                        ) : undefined}
+                        onSendRecording={recorder.state === "ready" ? () => void sendRecording() : undefined}
                       />
                     }
                   />

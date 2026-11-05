@@ -306,6 +306,22 @@ test("assistant preserves reading position and draft on a failed GET, and delete
     ),
   ).toBe(1);
 });
+// IA4 (2026-11-04): a dictated question in the thread, with «Escuchar» and its transcript in gray, and the microphone left of
+// the arrow because Home takes a recording.
+for (const lang of ["es", "en"] as const)
+  for (const width of [1440, 390, 320])
+    test(`assistant audio ${lang} ${width}`, async ({ page }) => {
+      const es = lang === "es";
+      await page.setViewportSize({ width, height: 1000 });
+      await page.clock.install({ time: new Date("2026-11-04T15:00:00Z") });
+      await page.goto(`/src/test/visual/index.html?${new URLSearchParams({ screen: `/?conversacion=${assistantFixtureConversationId}`, lang, scenario: "assistant-audio" })}`);
+      await expect(page.getByText(es ? "Decime cuántos usuarios están activos y cuántos no." : "Tell me how many users are active and how many are not.", { exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: es ? "Escuchar" : "Listen", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: es ? "Grabar un audio" : "Record audio", exact: true })).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(page).toHaveScreenshot(`assistant-audio-${lang}-${width}.png`, { fullPage: true });
+    });
 // IA1-A (2026-11-04): the adjusted form proposal open with its new question, the replaced one and the created catalog folded,
 // and «Ver cómo queda» in its dialog (full screen on the phone).
 for (const lang of ["es", "en"] as const)
