@@ -40,7 +40,7 @@ Cómo se arma un formulario (2026-10-30):
 
 Quedan para etapas siguientes, con su tablero en el mismo lienzo: la vista propia de quien sólo completa (Etapa 2, [hecha](#lo-propio-etapa-2--2026-11-04)), corregir
 (CW10-A) y anular (CW11-A) en la Etapa 3, las listas dependientes (CW7) en la Etapa 4 y los títulos de sección (CW15-B) en la
-Etapa 5.
+Etapa 5 ([hechos](#títulos-de-sección-cw15-b--2026-11-05)).
 
 ## Cómo se arma cada pregunta
 
@@ -71,9 +71,9 @@ dibujadas las preguntas en CW2-A y CW2-B.
    la lista con búsqueda de CW3; fotos y documentos, como en CW4. El texto largo crece de 2 a 6 renglones con su largo
    máximo.
 5. **Unidades en la etiqueta (CW13-A).** «Densidad (kg/ha)»: sin sufijo dentro del campo ni dato «Unidad» nuevo.
-6. **Títulos de sección, en una etapa posterior (CW15-B).** Serán un elemento nuevo del editor: en la app, una zona por título;
-   en WhatsApp, un subtítulo. En la Etapa 1 sólo existen «Datos» y «Fotos y documentos», y la página dibuja la lista de zonas
-   que recibe (`entryZones`), así los títulos suman zonas sin rehacerla.
+6. **Títulos de sección (CW15-B, desde el 2026-11-05).** Un elemento del editor que no es una pregunta: en la app, una zona
+   por título; en WhatsApp, un subtítulo. `entryZones` arma la lista de zonas y la página dibuja la que recibe
+   ([detalle](#títulos-de-sección-cw15-b--2026-11-05)).
 
 ## Decisiones de diseño
 
@@ -249,3 +249,32 @@ Diferencias con el dibujo:
   aviso, y las tarjetas de «Enviar formulario» con el elegido de otra página primero (LR3-A), en lugar de la lista con búsqueda
   dibujada.
 - Las condiciones van en el orden de sus campos, como las demás, y no en el orden en que se agregaron.
+
+## Títulos de sección, CW15-B — 2026-11-05
+
+El autor ordena un formulario largo con títulos entre las preguntas, como dibuja **CW15-B** («Cada sección en su zona»): la app
+arma una zona por título y WhatsApp lo muestra como subtítulo. La regla está en
+[formularios](../../../ArquitecturaBase/docs/features/formularios.md#títulos-de-sección--etapa-5-2026-11-05).
+
+- **En el editor,** la banda de «Preguntas» suma «Agregar título» antes de «Agregar pregunta»: agrega un título vacío al final
+  de la lista y lo abre con el foco en «Título». El título es un renglón más de la lista, sin número, en negrita sobre el tono
+  de las bandas y con «Título de sección» debajo, y tiene ↑ ↓, lápiz y tacho como una pregunta. ↑ ↓ lo mueven entre preguntas,
+  y una pregunta que lo cruza pasa a la otra sección; el título salta el bloque de renglones entero y nunca queda adentro.
+  Quitarlo no pide confirmación. Abierto, edita el título en el idioma del menú, con el original como referencia al traducir;
+  sin traducción, el renglón dice «Sin traducir». Las preguntas se numeran sin contar los títulos y, con 40 títulos, «Agregar
+  título» se apaga con su motivo.
+- **En la vista previa,** cada título es un subtítulo justo arriba de la primera pregunta de su sección, en la pantalla de esa
+  pregunta, como en WhatsApp; una sección que empieza con el bloque lo lleva arriba de su primera pantalla.
+- **Al publicar,** un título sin preguntas debajo es un problema con el título como nombre y «Ir al título», que lo abre; un
+  título sin traducir figura entre lo que le falta a ese idioma («Cierre · el título»).
+- **En la app,** la página y el panel abren una zona plegable por título, con el título en su banda y en el orden del editor.
+  Lo que va antes del primer título queda en «Datos», y las fotos y los documentos van al final, en «Fotos y documentos», como
+  pide AR1-A: una sección de sólo archivos no arma zona.
+- **En WhatsApp,** el subtítulo va antes de la primera pregunta de su sección, sin pantallas nuevas.
+
+Diferencias con el dibujo:
+
+- En la lista de preguntas, el tipo va debajo del nombre, como en las preguntas de siempre, y no a la derecha; el renglón del
+  título lleva ↑ ↓, lápiz y tacho como una pregunta.
+- La primera zona del dibujo se llama «Lote» porque el formulario arranca con ese título; sin un título al principio, lo de
+  antes del primero queda en «Datos».
