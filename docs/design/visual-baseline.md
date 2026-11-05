@@ -98,6 +98,9 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
 - **Un dato que sirve para dos cosas dice el estado de cada una** ([PF1-A, 2026-11-03](#mi-perfil-y-el-chat-de-whatsapp--2026-11-03)):
   el número dice si sirve para entrar («Verificado») y, aparte, si su chat está vinculado y hasta cuándo llegan los
   avisos, con la acción que lo arregla.
+- **Lo que carga no mueve lo que ya se ve** (2026-11-05): un bloque de carga ocupa el lugar de lo que reemplaza, y un
+  dato que se suma a algo visible, como el número de «Formularios» en el menú, carga en su mismo renglón. No se agrega
+  un renglón debajo que desaparezca al llegar el dato y haga subir al resto.
 - **El color nunca comunica solo:** todo estado lleva texto, ícono accesible o ambos.
   - **Excepción:** en Usuarios el estado es un punto delante del correo (verde activo, rojo inactivo) con la palabra en
     `sr-only`. Habilitar (check) y deshabilitar (encendido) son íconos con nombre y tooltip, y piden confirmación. No se

@@ -179,6 +179,25 @@ it("loads the global pending badge only after its menu opens on another screen",
   expect(counts).toBe(1);
 });
 
+// While the count loads, its loading mark takes the place of the number in the «Formularios» row: nothing is added
+// under it to vanish when the count arrives and pull the rest of the panel up (2026-11-05).
+it("keeps the loading mark of the pending badge inside its menu row", async () => {
+  setup(["formrecords.read", "formapprovals.decide", "formtemplates.read"]);
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  server.use(http.get("/api/forms/approvals/count", async () => { await gate; return HttpResponse.json({ count: 3 }); }));
+  renderRouteWithProviders("/perfil");
+  await userEvent.click(await screen.findByRole("button", { name: "Gestión de formularios" }));
+  const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
+  const marks = () => [...panel.querySelectorAll<HTMLElement>('[data-slot="skeleton"]')];
+  const overview = await within(panel).findByRole("link", { name: "Formularios" });
+  await waitFor(() => expect(marks()).toHaveLength(1));
+  expect(overview).toContainElement(marks()[0]);
+  await act(async () => release());
+  expect(await within(panel).findByRole("link", { name: "Formularios (3)" })).toHaveAttribute("href", "/formularios/respuestas");
+  expect(marks()).toHaveLength(0);
+});
+
 it("renders the inactive-form action with its visible English label", async () => {
   setup(["formrecords.read", "formapprovals.decide"]);
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions: ["formrecords.read", "formapprovals.decide"] })));

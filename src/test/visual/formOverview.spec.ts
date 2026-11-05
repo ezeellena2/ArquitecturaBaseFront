@@ -132,3 +132,29 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     await assertNoWrites(page);
   });
 }
+
+// The menu count arrives after the menu. While it loads, «Formularios» keeps its row and nothing under it moves when the
+// number appears (2026-11-05): in the panel at 1440 and in the drawer at 390.
+type HeldCount = { formOverviewFixture: { holdCount(): void; releaseCount(): void } };
+for (const width of [1440, 390]) {
+  test("MF1 menu count loads without moving the menu " + width, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/src/test/visual/index.html?screen=" + encodeURIComponent("/perfil") + "&scenario=forms-overview&lang=es");
+    await expect(page.getByRole("heading", { name: "Mi perfil", level: 1, exact: true })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => (window as typeof window & HeldCount).formOverviewFixture.holdCount());
+    if (width < 768) await page.getByRole("button", { name: "Menú de navegación", exact: true }).click();
+    await page.getByRole("button", { name: "Gestión de formularios", exact: true }).click();
+    const overview = page.getByRole("link", { name: /^Formularios(?: \(\d+\))?$/ });
+    await expect(overview).toHaveAccessibleName("Formularios");
+    const rows = [overview, ...["Diseñar formularios", "Catálogos", "Formularios que faltan"].map(name => page.getByRole("link", { name, exact: true }))];
+    const geometry = () => Promise.all(rows.map(async row => { const box = (await row.boundingBox())!; return { y: box.y, height: box.height }; }));
+    const loading = await geometry();
+    await page.screenshot({ path: "test-results/form-overview-menu-count-loading-" + width + ".png" });
+    await page.evaluate(() => (window as typeof window & HeldCount).formOverviewFixture.releaseCount());
+    await expect(overview).toHaveAccessibleName("Formularios (4)");
+    expect(await geometry()).toEqual(loading);
+    await page.screenshot({ path: "test-results/form-overview-menu-count-loaded-" + width + ".png" });
+    await assertNoWrites(page);
+  });
+}

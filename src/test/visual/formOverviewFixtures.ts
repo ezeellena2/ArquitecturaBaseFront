@@ -31,12 +31,19 @@ export function createFormOverviewVisualFixtures(language: "es" | "en", scenario
     } : null,
   }));
   const calls: { method: string; path: string }[] = [];
-  return { permissions, calls, async handle(request: Request): Promise<Response | null> {
+  // A scene holds the menu count to measure the menu while it loads, and releases it to measure it again.
+  let countHeld = false;
+  const heldCounts: (() => void)[] = [];
+  return { permissions, calls,
+    holdCount() { countHeld = true; },
+    releaseCount() { countHeld = false; heldCounts.splice(0).forEach(release => release()); },
+    async handle(request: Request): Promise<Response | null> {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/api/forms/")) return null;
     calls.push({ method: request.method, path: url.pathname });
     if (request.method !== "GET") return Response.json({ code: "Test.ReadOnlyScenario" }, { status: 405 });
     if (url.pathname === "/api/forms/approvals/count") {
+      if (countHeld) await new Promise<void>(resolve => { heldCounts.push(resolve); });
       if (!canDecide) return Response.json({ code: "Authorization.Forbidden" }, { status: 403 });
       const definitionId = url.searchParams.get("definitionId");
       return Response.json({ count: rows.filter(row => !definitionId || row.id === definitionId)

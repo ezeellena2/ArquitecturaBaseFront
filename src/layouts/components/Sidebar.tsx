@@ -37,18 +37,21 @@ interface BranchControls {
 }
 
 /// Un ítem de navegación. Contraído, solo el ícono (con Tooltip) y el texto queda para el lector de pantalla.
-/// Los íconos salen del mismo modelo para el panel, sus submenús y la barra contraída.
+/// Los íconos salen del mismo modelo para el panel, sus submenús y la barra contraída. `trailing` va en el mismo
+/// renglón, después del texto: el bloque de carga del número de «Formularios».
 function NavItem({
   item,
   label,
   collapsed,
   showIcon = true,
+  trailing,
   onNavigate,
 }: {
   item: NavigationLink;
   label: string;
   collapsed: boolean;
   showIcon?: boolean;
+  trailing?: ReactNode;
   onNavigate?: () => void;
 }) {
   const Icon = item.icon;
@@ -74,6 +77,7 @@ function NavItem({
     >
       {showIcon ? <Icon className="size-4 shrink-0" /> : null}
       {collapsed ? <span className="sr-only">{label}</span> : <span className="min-w-0 break-words leading-4">{label}</span>}
+      {collapsed ? null : trailing}
     </Link>
   );
 
@@ -674,10 +678,13 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   );
 }
 
+/// «Formularios», con lo que espera tu decisión. Mientras el número carga, su lugar lo ocupa un bloque de carga en el
+/// mismo renglón: debajo no se agrega nada que desaparezca al llegar el número y suba al resto del panel.
 function FormsOverviewLink({onNavigate}:{onNavigate?:()=>void}) {
  const overview=useContext(FormsOverviewNavigationContext);const {t}=useTranslation();const {has,isPending}=usePermissions();
  if(isPending)return <Skeleton className="h-9"/>;
  if(!has(["formrecords.read","formapprovals.decide","formrecords.create"]))return null;
- const count=has("formapprovals.decide")?overview?.count:undefined;
- return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide","formrecords.create"]}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} collapsed={false} onNavigate={onNavigate}/>{overview?.pending?<Skeleton className="h-4"/>:overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
+ const pending=overview?.pending===true;
+ const count=has("formapprovals.decide")&&!pending?overview?.count:undefined;
+ return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide","formrecords.create"]}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} trailing={pending?<Skeleton aria-hidden="true" className="h-3 w-5 shrink-0"/>:undefined} collapsed={false} onNavigate={onNavigate}/>{!pending&&overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
 }
