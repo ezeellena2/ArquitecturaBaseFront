@@ -143,6 +143,7 @@
     "closeTitle": "Discard the correction?",
     "closeDescription": "What you changed is not saved.",
     "closeConfirm": "Discard",
+    "stay": "Keep correcting",
     "unavailable": "This response can no longer be corrected.",
     "loadFailed": "The response could not be opened to correct it."
   }

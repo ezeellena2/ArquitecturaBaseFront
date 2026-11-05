@@ -69,7 +69,7 @@ export function FormEntryCorrectionPanel({ formId, recordId, number, onClose, on
         {editor.sending ? t("correction.saving", { percent: Math.round((editor.progress ?? 0) * 100) }) : t("correction.save")}</Button></DisabledReason>
     </footer>
     <ConfirmDialog open={closing || guard.isBlocked} onOpenChange={open => { if (!open) { setClosing(false); guard.stay(); } }}
-      title={t("correction.closeTitle")} description={t("correction.closeDescription")} cancelLabel={t("leave.stay")} confirmLabel={t("correction.closeConfirm")} destructive
+      title={t("correction.closeTitle")} description={t("correction.closeDescription")} cancelLabel={t("correction.stay")} confirmLabel={t("correction.closeConfirm")} destructive
       onConfirm={() => { if (closing) { setClosing(false); guard.allowNextNavigation(); onClose(); } else guard.leave(); }}/>
   </section>;
 }

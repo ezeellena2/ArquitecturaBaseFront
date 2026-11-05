@@ -66,6 +66,6 @@ export function FormEntryCorrectionPage() {
     </div>
     {mobile && entry ? <div className="sticky bottom-0 -mx-4 mt-4 flex flex-col gap-2 border-t border-[var(--color-border)] bg-[var(--color-surface)] p-3">{saveButton(true)}</div> : null}
     <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("correction.closeTitle")}
-      description={t("correction.closeDescription")} cancelLabel={t("leave.stay")} confirmLabel={t("correction.closeConfirm")} destructive onConfirm={guard.leave}/>
+      description={t("correction.closeDescription")} cancelLabel={t("correction.stay")} confirmLabel={t("correction.closeConfirm")} destructive onConfirm={guard.leave}/>
   </Page>;
 }

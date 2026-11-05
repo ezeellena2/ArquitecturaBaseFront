@@ -94,6 +94,22 @@ describe("correcting a response next to the sheet (CW10-A)", () => {
     expect(screen.queryByRole("dialog", { name: "¿Descartar la corrección?" })).not.toBeInTheDocument();
   });
 
+  it("asks before closing with changes and keeps them to go on correcting", async () => {
+    setup();
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    await user.click(await screen.findByRole("button", { name: "Corregir" }));
+    const panel = await screen.findByRole("region", { name: "Corregir TEST-000002 de Formulario publicado" });
+    const amount = await within(panel).findByLabelText(/^Importe/);
+    await user.clear(amount);
+    await user.type(amount, "13");
+    await user.click(within(panel).getByRole("button", { name: "Cancelar" }));
+    const ask = await screen.findByRole("dialog", { name: "¿Descartar la corrección?" });
+    await user.click(within(ask).getByRole("button", { name: "Seguir corrigiendo" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "¿Descartar la corrección?" })).not.toBeInTheDocument());
+    expect(within(panel).getByLabelText(/^Importe/)).toHaveValue("13");
+  });
+
   it("offers nothing to whoever may not change the response", async () => {
     setup(false);
     renderRouteWithProviders(sheet + "/" + responseRecordId);

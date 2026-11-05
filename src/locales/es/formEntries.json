@@ -143,6 +143,7 @@
     "closeTitle": "¿Descartar la corrección?",
     "closeDescription": "Lo que cambiaste no se guarda.",
     "closeConfirm": "Descartar",
+    "stay": "Seguir corrigiendo",
     "unavailable": "Esta respuesta ya no se puede corregir.",
     "loadFailed": "No se pudo abrir la respuesta para corregirla."
   }
