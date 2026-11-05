@@ -4,7 +4,7 @@ import type { FormReplyDisplayRow, FormReplyDisplayValue } from './formReplyValu
 // Unavailable is a presentation fallback for an invalid projection, never a server processing state.
 export type FormReplyPresentation = { readonly fileCount?:number; readonly receivedAtUtc?:string } & (
   | { readonly state: 'Pending' | 'Downloading' | 'RetryingFiles' | 'Rejected' | 'Unrecognized' | 'Unavailable'; readonly name: string | null; readonly rejectionCode?: string | null; readonly rejectedQuestion?: string | null }
-  | { readonly state: 'Completed'; readonly name: string; readonly recordNumber: string; readonly recordId?:string;
+  | { readonly state: 'Completed'; readonly name: string; readonly recordNumber: string; readonly recordId?:string; readonly amendment?: 'Replaced' | 'Voided';
       readonly values: readonly FormReplyDisplayRow[] | null; readonly valuesRevoked?: boolean; readonly messageRemoved?: boolean });
 
 function answer(row: FormReplyValue): FormReplyDisplayValue {
@@ -18,6 +18,6 @@ export function toFormReplyPresentation(reply: FormReply | null): FormReplyPrese
   if (reply === null) return null;
   const metadata={...(reply.fileCount===undefined?{}:{fileCount:reply.fileCount}),...(reply.receivedAtUtc===undefined?{}:{receivedAtUtc:reply.receivedAtUtc})};
   if (reply.state !== 'Completed') return reply.state==='Rejected' ? { ...metadata,state:reply.state,name:reply.name,rejectionCode:reply.rejectionCode,rejectedQuestion:reply.rejectedQuestion } : {...metadata,state:reply.state,name:reply.name};
-  return { ...metadata,state: 'Completed', name: reply.name, recordNumber: reply.number, recordId:reply.recordId,
+  return { ...metadata,state: 'Completed', name: reply.name, recordNumber: reply.number, recordId:reply.recordId, ...(reply.amendment ? { amendment: reply.amendment } : {}),
     values: reply.values?.map(row => ({ id: row.fieldId, label: row.label, answer: answer(row) })) ?? null };
 }

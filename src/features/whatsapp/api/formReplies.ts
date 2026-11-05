@@ -36,7 +36,9 @@ const historical = { definitionId: guid, versionId: guid, versionNumber: z.numbe
 const optionalHistorical = { definitionId: guid.nullable(), versionId: guid.nullable(), versionNumber: historical.versionNumber.nullable(), name: text.nullable() };
 const noRecord = { recordId: z.null(), number: z.null(), values: z.null() };
 const schema = z.discriminatedUnion('state', [
-  z.strictObject({ state: z.literal('Completed'), ...historical, ...fileMetadata, recordId: guid, number, values: values.nullable() }),
+  // A response later corrected («Replaced») or voided («Voided») keeps what arrived and says so (CW10-A, CW11-A).
+  z.strictObject({ state: z.literal('Completed'), ...historical, ...fileMetadata, recordId: guid, number, values: values.nullable(),
+    amendment: z.enum(['Replaced', 'Voided']).optional() }),
   z.strictObject({ state: z.literal('Pending'), ...optionalHistorical, ...fileMetadata, ...noRecord }),
   z.strictObject({ state: z.literal('Downloading'), ...optionalHistorical, ...fileMetadata, ...noRecord }),
   z.strictObject({ state: z.literal('RetryingFiles'), ...optionalHistorical, ...fileMetadata, ...noRecord }),

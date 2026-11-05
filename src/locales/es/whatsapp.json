@@ -179,6 +179,8 @@
       "rejected": "No pudimos guardar la respuesta del formulario.",
       "unrecognized": "Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.",
       "saved": "Guardada como {{number}}",
+      "corrected": "Después se corrigió: {{number}} quedó reemplazada por su corrección.",
+      "voided": "Después se anuló {{number}}.",
       "savedName": "Respuesta del formulario {{name}}, guardada como {{number}}",
       "stateName": "Respuesta del formulario {{name}}",
       "noPermission": "No tenés permiso para ver las respuestas de este formulario.",

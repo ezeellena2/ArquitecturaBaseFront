@@ -179,6 +179,8 @@
       "rejected": "We could not save the form reply.",
       "unrecognized": "A form reply arrived that could not be matched to a send. It was not saved.",
       "saved": "Saved as {{number}}",
+      "corrected": "{{number}} was corrected later: its correction replaced it.",
+      "voided": "{{number}} was voided later.",
       "savedName": "Form reply {{name}}, saved as {{number}}",
       "stateName": "Form reply {{name}}",
       "noPermission": "You do not have permission to view this form’s answers.",
