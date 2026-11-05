@@ -504,7 +504,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                       {isPending && dependsOnPermissions(item) ? (
                         <Skeleton
                           aria-hidden="true"
-                          className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-10" : "h-7.5")}
+                          className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-7.5" : "h-7.5")}
                         />
                       ) : isBranch(item) ? (
                         <NavBranch
@@ -532,8 +532,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           })}
 
           {formsItems.length > 0 || has(["formrecords.read", "formapprovals.decide", "formrecords.create"]) ? (
-            <div className="mt-2 border-t border-[var(--color-border)] pt-2">
-              {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "h-9" : "h-7.5"} /> : isMobile ? (
+            <div className={cn("mt-2 border-t border-[var(--color-border)] pt-2", iconsOnly ? "flex justify-center" : "")}>
+              {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "size-7.5" : "h-7.5"} /> : isMobile ? (
                 <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<FormsOverviewLink onNavigate={onNavigate}/>} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={forms.icon} label={t(forms.labelKey)} open={openPanel === "forms"} collapsed={iconsOnly} panelId={panelId}
@@ -543,8 +543,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           ) : null}
           {/* WhatsApp se separa de Inicio con la misma línea que Administración. */}
           {whatsappItems.length > 0 ? (
-            <div className="mt-2 border-t border-[var(--color-border)] pt-2">
-              {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "h-9" : "h-7.5"} /> : isMobile ? (
+            <div className={cn("mt-2 border-t border-[var(--color-border)] pt-2", iconsOnly ? "flex justify-center" : "")}>
+              {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "size-7.5" : "h-7.5"} /> : isMobile ? (
                 <ul><li><NavBranch labelKey={whatsapp.labelKey} icon={whatsapp.icon} items={whatsappItems} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={whatsapp.icon} label={t(whatsapp.labelKey)} open={openPanel === "whatsapp"} collapsed={iconsOnly} panelId={panelId}
@@ -566,7 +566,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
               {adminPending ? (
                 <Skeleton
                   aria-hidden="true"
-                  className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-10" : "h-7.5 w-full")}
+                  className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-7.5" : "h-7.5 w-full")}
                 />
               ) : isMobile ? (
                 <ul className="flex flex-col gap-1">

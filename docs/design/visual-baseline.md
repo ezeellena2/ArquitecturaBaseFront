@@ -98,12 +98,13 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
 - **Un dato que sirve para dos cosas dice el estado de cada una** ([PF1-A, 2026-11-03](#mi-perfil-y-el-chat-de-whatsapp--2026-11-03)):
   el número dice si sirve para entrar («Verificado») y, aparte, si su chat está vinculado y hasta cuándo llegan los
   avisos, con la acción que lo arregla.
-- **Lo que carga no mueve lo que ya se ve** (2026-11-05): un bloque de carga ocupa el lugar y el alto de lo que
-  reemplaza, como el de un renglón del menú, y un dato que se suma a algo visible, como el número de «Formularios» en el
-  menú, carga en su mismo renglón. No se agrega un renglón debajo que desaparezca al llegar el dato y haga subir al resto.
+- **Lo que carga no mueve lo que ya se ve** (2026-11-05): un bloque de carga ocupa el lugar y la medida de lo que
+  reemplaza, como un renglón del menú o el avatar con el lugar de su flecha, y un dato que se suma a algo visible, como
+  el número de «Formularios» en el menú, carga en su mismo renglón. No se agrega un renglón debajo que desaparezca al
+  llegar el dato y haga subir al resto.
 - **Un bloque de carga se distingue de la superficie donde está** (2026-11-05), como en la página. En el panel claro
-  del menú, donde el tono apagado de la página no se distinguía, es un tinte del texto sobre lo que tenga detrás: se ve
-  sobre el panel y sobre el renglón señalado.
+  del menú y en el avatar de la barra superior, donde el tono apagado de la página no se distinguía, es un tinte del
+  texto sobre lo que tenga detrás: se ve sobre la superficie y sobre el renglón señalado.
 - **El color nunca comunica solo:** todo estado lleva texto, ícono accesible o ambos.
   - **Excepción:** en Usuarios el estado es un punto delante del correo (verde activo, rojo inactivo) con la palabra en
     `sr-only`. Habilitar (check) y deshabilitar (encendido) son íconos con nombre y tooltip, y piden confirmación. No se
@@ -182,9 +183,10 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
   plegado manual no se recuerda; la barra contraída sí. `layouts/navigation.ts` abastece panel, cajón y barra contraída.
 - **Agrupar no cambia rutas:** `/usuarios` y `/roles` no se anidan; enlaces guardados y `returnUrl` siguen igual.
 - **Cada hijo conserva su permiso:** sin ninguno no se ve el grupo. Se pide en la ruta y se repite en la navegación.
-- Contraída: íconos centrados en controles de 30 px (40 en estados auxiliares de carga/error), separador corto en lugar
-  del rótulo y control de plegar de 20 px sobre el borde. Sin submenús: los hijos suben como íconos sueltos;
-  Administración sigue siendo un botón que abre el panel.
+- Contraída: íconos centrados en controles de 30 px, también los botones de los paneles y los bloques de carga
+  (2026-11-05; antes medían 40 y el menú se corría al llegar los permisos); el aviso de error va en un recuadro de 40,
+  separador corto en lugar del rótulo y control de plegar de 20 px sobre el borde. Sin submenús: los hijos suben como
+  íconos sueltos; Administración sigue siendo un botón que abre el panel.
 
 ## Íconos y acciones
 

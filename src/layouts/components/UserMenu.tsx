@@ -46,9 +46,15 @@ export function UserMenu() {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   if (!user) {
-    // El menú necesita el nombre para poder nombrarse, así que hasta que llega no hay menú: queda el bloque
-    // de carga del avatar, del mismo tamaño, para que después no aparezca de golpe.
-    return isPending ? <Skeleton aria-hidden="true" className="size-6 shrink-0 rounded-[var(--radius-control)]" /> : null;
+    // El menú necesita el nombre para poder nombrarse, así que hasta que llega no hay menú: queda el bloque de carga
+    // del avatar en su lugar, con el de la flecha reservado, para que el avatar no aparezca corrido. Sobre la banda
+    // el bloque es un tinte del texto (`loading-tint`): el tono apagado de la página casi no se distingue de ella.
+    return isPending ? (
+      <span aria-hidden="true" className="flex shrink-0 items-center gap-1.5">
+        <Skeleton className="loading-tint size-6 shrink-0 rounded-[var(--radius-control)]" />
+        <span className="size-4" />
+      </span>
+    ) : null;
   }
 
   const displayName = accountNameOf(user);

@@ -440,49 +440,61 @@ test("a complete email uses the common tooltip inside the actual user editor", a
   await expect(page.locator(":focus")).toBeVisible();
 });
 
-// While the profile loads, the menu does not know the permissions yet: each row that depends on one keeps its place with
-// a loading block of the row's height that can be seen on its own surface (2026-11-05). In the bar and in the open panel
-// of «Gestión de formularios» nothing moves when the permissions arrive; rows without permission may leave then. The
-// count's block is seen too inside «Formularios» while it is the current page, highlighted with the panel's hover.
+// While the profile loads, the shell does not know the permissions or the account yet. Each menu row that depends on a
+// permission keeps its place with a loading block of the row's size, and the user menu keeps the avatar's place with
+// room for its arrow; every block can be seen on its own surface (2026-11-05). In the bar, expanded or collapsed, in the
+// open panel of «Gestión de formularios» and in the top bar nothing moves when the profile arrives; rows without
+// permission may leave then. The count's block is seen too inside «Formularios», highlighted as the current page.
 type HeldLoads = { releaseVisualProfile(): void; formOverviewFixture: { holdCount(): void; releaseCount(): void } };
-test("the menu keeps its rows in place while permissions load, with loading blocks that can be seen", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.addInitScript(() => {
-    let release!: () => void;
-    Object.assign(window, { visualProfileHold: new Promise<void>(resolve => { release = resolve; }), releaseVisualProfile: () => release() });
+for (const collapsed of [false, true]) {
+  test(`the shell keeps its place while the profile loads, with loading blocks that can be seen${collapsed ? ", the bar collapsed" : ""}`, async ({ page }) => {
+    const state = collapsed ? "collapsed" : "expanded";
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(sidebar => {
+      let release!: () => void;
+      Object.assign(window, { visualProfileHold: new Promise<void>(resolve => { release = resolve; }), releaseVisualProfile: () => release() });
+      localStorage.setItem("arquitecturabase.sidebar", JSON.stringify(sidebar));
+    }, state);
+    await page.goto(`/src/test/visual/index.html?${new URLSearchParams({ screen: "/formularios/respuestas", lang: "es", scenario: "forms-overview" })}`);
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => (window as typeof window & HeldLoads).formOverviewFixture.holdCount());
+    const menu = page.getByRole("navigation", { name: "Navegación principal", exact: true });
+    const panel = page.getByRole("navigation", { name: "Gestión de formularios", exact: true });
+    const topbar = page.getByRole("banner");
+    const marks = (region: Locator) => region.locator('[data-slot="skeleton"]');
+    // Forms, WhatsApp and Administration in the bar; «Formularios» and its three pages in the panel; the avatar above.
+    await expect(marks(menu)).toHaveCount(3);
+    await expect(marks(panel)).toHaveCount(4);
+    await expect(marks(topbar)).toHaveCount(1);
+    const boxes = (targets: Locator[]) => Promise.all(targets.map(async target => (await target.boundingBox())!));
+    const loadingMenu = await boxes(await marks(menu).all());
+    const loadingPanel = await boxes(await marks(panel).all());
+    const [loadingAvatar] = await boxes([marks(topbar)]);
+    // On white, the page's loading block stands about 1.10 from its surface; in the light panel it stood 1.01, unseen.
+    for (const mark of [...await marks(menu).all(), ...await marks(panel).all(), marks(topbar)]) expect.soft(await contrastWithSurface(mark)).toBeGreaterThan(1.08);
+    await page.screenshot({ path: `test-results/shell-profile-loading-${state}-1440.png` });
+    await page.evaluate(() => (window as typeof window & HeldLoads).releaseVisualProfile());
+    const trigger = menu.getByRole("button", { name: "Gestión de formularios", exact: true });
+    const rows = [panel.getByRole("link", { name: /^Formularios(?: \(\d+\))?$/ }), ...["Diseñar formularios", "Catálogos", "Formularios que faltan"].map(name => panel.getByRole("link", { name, exact: true }))];
+    const avatar = topbar.getByRole("button", { name: "Menú de Ana Pérez", exact: true }).locator("span").first();
+    await expect(trigger).toBeVisible();
+    await expect(rows[0]).toHaveAttribute("aria-current", "page");
+    const [row, loadedAvatar, home] = await boxes([trigger, avatar, menu.getByRole("link", { name: "Inicio", exact: true })]);
+    // Collapsed, the button of a panel is centered like the icons above it.
+    if (collapsed) expect.soft(row.x + row.width / 2).toBeCloseTo(home.x + home.width / 2, 1);
+    expect(loadingMenu[0]).toEqual(row);
+    // Without their permissions WhatsApp and Administration leave; while loading they measured a row as well.
+    expect(loadingMenu.map(box => [box.width, box.height])).toEqual(loadingMenu.map(() => [row.width, row.height]));
+    expect(await boxes(rows)).toEqual(loadingPanel);
+    expect(loadedAvatar).toEqual(loadingAvatar);
+    await expect(marks(rows[0])).toHaveCount(1);
+    expect.soft(await contrastWithSurface(marks(rows[0]))).toBeGreaterThan(1.08);
+    await page.screenshot({ path: `test-results/shell-profile-count-loading-${state}-1440.png` });
+    await page.evaluate(() => (window as typeof window & HeldLoads).formOverviewFixture.releaseCount());
+    await expect(rows[0]).toHaveAccessibleName("Formularios (4)");
+    await page.screenshot({ path: `test-results/shell-profile-loaded-${state}-1440.png` });
   });
-  await page.goto(`/src/test/visual/index.html?${new URLSearchParams({ screen: "/formularios/respuestas", lang: "es", scenario: "forms-overview" })}`);
-  await page.evaluate(() => document.fonts.ready);
-  await page.evaluate(() => (window as typeof window & HeldLoads).formOverviewFixture.holdCount());
-  const menu = page.getByRole("navigation", { name: "Navegación principal", exact: true });
-  const panel = page.getByRole("navigation", { name: "Gestión de formularios", exact: true });
-  const marks = (region: Locator) => region.locator('[data-slot="skeleton"]');
-  // Forms, WhatsApp and Administration in the bar; «Formularios» and its three pages in the panel.
-  await expect(marks(menu)).toHaveCount(3);
-  await expect(marks(panel)).toHaveCount(4);
-  const boxes = (rows: Locator[]) => Promise.all(rows.map(async row => { const box = (await row.boundingBox())!; return { y: box.y, height: box.height }; }));
-  const loadingMenu = await boxes(await marks(menu).all());
-  const loadingPanel = await boxes(await marks(panel).all());
-  // On white, the page's loading block stands about 1.10 from its surface; in the light panel it stood 1.01, unseen.
-  for (const mark of [...await marks(menu).all(), ...await marks(panel).all()]) expect.soft(await contrastWithSurface(mark)).toBeGreaterThan(1.08);
-  await page.screenshot({ path: "test-results/menu-permissions-loading-1440.png" });
-  await page.evaluate(() => (window as typeof window & HeldLoads).releaseVisualProfile());
-  const trigger = menu.getByRole("button", { name: "Gestión de formularios", exact: true });
-  const rows = [panel.getByRole("link", { name: /^Formularios(?: \(\d+\))?$/ }), ...["Diseñar formularios", "Catálogos", "Formularios que faltan"].map(name => panel.getByRole("link", { name, exact: true }))];
-  await expect(trigger).toBeVisible();
-  await expect(rows[0]).toHaveAttribute("aria-current", "page");
-  const [row] = await boxes([trigger]);
-  expect(loadingMenu[0]).toEqual(row);
-  // Without their permissions WhatsApp and Administration leave; while loading they measured a row as well.
-  expect(loadingMenu.map(box => box.height)).toEqual([row.height, row.height, row.height]);
-  expect(await boxes(rows)).toEqual(loadingPanel);
-  await expect(marks(rows[0])).toHaveCount(1);
-  expect.soft(await contrastWithSurface(marks(rows[0]))).toBeGreaterThan(1.08);
-  await page.screenshot({ path: "test-results/menu-permissions-count-loading-1440.png" });
-  await page.evaluate(() => (window as typeof window & HeldLoads).formOverviewFixture.releaseCount());
-  await expect(rows[0]).toHaveAccessibleName("Formularios (4)");
-  await page.screenshot({ path: "test-results/menu-permissions-loaded-1440.png" });
-});
+}
 
 // WCAG contrast between a loading block and what is painted behind it, translucent layers included. A canvas
 // composites the backgrounds down to the first opaque one, whatever CSS color syntax they use.
