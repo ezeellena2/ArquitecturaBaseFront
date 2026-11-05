@@ -22,17 +22,21 @@ const isList = (question: FormEntryQuestion) => question.type === "choice" || qu
 /** The id of a question's control, so a problem can take the focus to it. */
 export const entryQuestionId = (fieldId: string) => "entry-" + fieldId;
 
-/** A folding zone of the loading page and the questions it holds. */
-export interface EntryZone { key: string; questions: FormEntryQuestion[] }
+/** A folding zone of the loading page and the questions it holds; the zone of a section title (CW15-B) carries its title. */
+export interface EntryZone { key: string; title?: string; questions: FormEntryQuestion[] }
 
 /**
- * The zones of the loading page (CW16): the data in the editor's order and the photos and documents at the end. Section
- * titles, a later stage, add one zone per title to this list; the page draws whatever zones it receives.
+ * The zones of the loading page (CW16 and CW15-B): one per section title, in the editor's order, with what comes before the
+ * first title in «Datos», and the photos and documents at the end. A section of only files has no zone of its own.
  */
 export function entryZones(entry: FormEntry): EntryZone[] {
-  const data = entry.questions.filter(question => !isFile(question));
+  const zones: EntryZone[] = [{ key: "data", questions: [] }];
+  for (const question of entry.questions) {
+    if (question.section) zones.push({ key: "section:" + question.fieldId, title: question.section, questions: [] });
+    if (!isFile(question)) zones.at(-1)!.questions.push(question);
+  }
   const files = entry.questions.filter(isFile);
-  return [...data.length ? [{ key: "data", questions: data }] : [], ...files.length ? [{ key: "files", questions: files }] : []];
+  return [...zones.filter(zone => zone.questions.length > 0), ...files.length ? [{ key: "files", questions: files }] : []];
 }
 
 /** Up to five own options go in a row however long they are, and those that do not fit wrap; more, in a dropdown list (AR1-A). */

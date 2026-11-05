@@ -16,6 +16,8 @@ const questionSchema = z.strictObject({
   // A list that depends on other answers (CW7) names those questions and waits for them, with nothing chosen beforehand.
   catalog: z.strictObject({ onlyOption: entryOptionSchema.nullable(), issue: z.string().min(1).nullable(), missingData: z.string().min(1).nullable(),
     dependsOn: z.array(z.string().uuid()).min(1).optional() }).nullable(),
+  // The title of the section that starts at this question (CW15-B): the page opens a zone with it.
+  section: z.string().min(1).max(80).optional(),
 }).superRefine((value, context) => {
   const files = value.type === "photo" || value.type === "document";
   const list = value.type === "choice" || value.type === "multiChoice";

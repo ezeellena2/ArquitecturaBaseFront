@@ -79,7 +79,7 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
     const parts = [count("photo") ? t("sent.photos", { count: count("photo") }) : null, count("document") ? t("sent.files", { count: count("document") }) : null].filter(Boolean);
     return parts.length ? parts.join(" · ") : answered(items);
   };
-  const title = (zone: EntryZone) => zone.key === "files" ? t("page.files") : t("page.data");
+  const title = (zone: EntryZone) => zone.title ?? (zone.key === "files" ? t("page.files") : t("page.data"));
   return <div ref={measured} className="flex flex-col gap-4">{zones.map(zone => <CollapsibleSection key={zone.key} title={title(zone)} open={!folded[zone.key]}
     onOpenChange={open => setFolded(current => ({ ...current, [zone.key]: !open }))} expandLabel={t("zone.expand", { name: title(zone) })}
     collapseLabel={t("zone.collapse", { name: title(zone) })} summary={summary(zone.questions)}>
