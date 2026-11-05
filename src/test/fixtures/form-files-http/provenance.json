@@ -1,44 +1,54 @@
 {
-  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
-  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
+  "artifactSet": "form-files",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "WhatsAppFormFilesIntegrationTests",
+  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "sourceState": [
+    " M ../../../AGENTS.md",
+    " M ../../../docs/architecture/backend.md",
+    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
+    " M ../../../docs/guides/configurar-arca.md",
+    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
+    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
+    " M ../../../docs/plans/README.md",
+    "?? ../../../docs/features/arca.md",
+    "?? ../../../docs/guides/quitar-arca.md"
+  ],
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
+  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-      "sha256": "7176b2f78850c34ec8f336a55afb3b9edc37a716db93030394e3cdcc3571f7d7"
+      "sha256": "7176b2f78850c34ec8f336a55afb3b9edc37a716db93030394e3cdcc3571f7d7",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs"
     }
   ],
-  "producer": "WhatsAppFormFilesIntegrationTests",
-  "schemaVersion": 1,
-  "artifactSet": "form-files",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "sourceState": [],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "sha256": "ed4500a39264c1ffa1fa349b40cfac2d560294838cb4b6f65f39aef29b4a295c",
-      "name": "draft-created.json",
-      "length": 1824
+      "length": 1824,
+      "sha256": "609802832dd4751d320662bdece48e2678ad1c16b3a73d01938800e0d04c1ea6",
+      "name": "draft-created.json"
     },
     {
-      "sha256": "55584304df0ce233f000c871f3985052cdd085ba943f288a7c8e40665b7030c1",
-      "name": "reply-completed.json",
-      "length": 2770
+      "length": 2766,
+      "sha256": "ab7f5b52e65631dba6b25b8e3d211f81c4005ab503f04feb0b0f287f78f92a66",
+      "name": "reply-completed.json"
     },
     {
-      "sha256": "59278e21ea8bdbd5dabb2c9336ee778a9102297f5df06b678d070aa1be6302a8",
-      "name": "reply-downloading.json",
-      "length": 1935
+      "length": 1931,
+      "sha256": "e08124cad6bff685b9545f9d23e8e9080dcd1a31bf5cab0c94eb471293131951",
+      "name": "reply-downloading.json"
     },
     {
-      "sha256": "55584304df0ce233f000c871f3985052cdd085ba943f288a7c8e40665b7030c1",
-      "name": "reply-reloaded.json",
-      "length": 2770
+      "length": 2766,
+      "sha256": "ab7f5b52e65631dba6b25b8e3d211f81c4005ab503f04feb0b0f287f78f92a66",
+      "name": "reply-reloaded.json"
     },
     {
-      "sha256": "e1d8e313e07fa1b60d333c769ff23ae7d86ec8c4356b7f1945f09095f6355c39",
-      "name": "reply-without-read.json",
-      "length": 1828
+      "length": 1824,
+      "sha256": "57793f33b8c738409be7288f8f0e4f2f833cb0b729226c42285ff7292de17c91",
+      "name": "reply-without-read.json"
     }
-  ]
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

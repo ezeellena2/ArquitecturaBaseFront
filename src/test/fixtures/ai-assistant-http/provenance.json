@@ -1,65 +1,75 @@
 {
-  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
-  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
+  "artifactSet": "ai-assistant",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and AiAssistantResponses",
+  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "sourceState": [
+    " M ../../../AGENTS.md",
+    " M ../../../docs/architecture/backend.md",
+    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
+    " M ../../../docs/guides/configurar-arca.md",
+    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
+    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
+    " M ../../../docs/plans/README.md",
+    "?? ../../../docs/features/arca.md",
+    "?? ../../../docs/guides/quitar-arca.md"
+  ],
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
+  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs",
-      "sha256": "f40367cd7a4b3159caef9681fefa34b57f5ec246ab7234ec449b7fbee9d64a08"
+      "sha256": "f40367cd7a4b3159caef9681fefa34b57f5ec246ab7234ec449b7fbee9d64a08",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs",
-      "sha256": "1c38cc8d6f920f988352ec031a634220fad619a2ad11ad25fa0854c2d75801f4"
+      "sha256": "1c38cc8d6f920f988352ec031a634220fad619a2ad11ad25fa0854c2d75801f4",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs",
-      "sha256": "d1437ebf116810877abac455df7d77c89dcaf76a5484c4342b01ed8a9da23c0f"
+      "sha256": "d1437ebf116810877abac455df7d77c89dcaf76a5484c4342b01ed8a9da23c0f",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs",
-      "sha256": "928239d73c884ea660e3af23b36f91e9ac14b43e4b5fcae1edd582e341643544"
+      "sha256": "928239d73c884ea660e3af23b36f91e9ac14b43e4b5fcae1edd582e341643544",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs"
     },
     {
-      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs",
-      "sha256": "8224b3254f5bc487acdd3aa423221cf4d6f586f7e2353172e809834b02c8d730"
+      "sha256": "8224b3254f5bc487acdd3aa423221cf4d6f586f7e2353172e809834b02c8d730",
+      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs"
     }
   ],
-  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and AiAssistantResponses",
-  "schemaVersion": 1,
-  "artifactSet": "ai-assistant",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "sourceState": [],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
+      "length": 565,
       "sha256": "aba4c6c25f87e85682a200a408acef4e61e2aa2e0f47069525404658cf3aa297",
-      "name": "bootstrap.json",
-      "length": 565
+      "name": "bootstrap.json"
     },
     {
-      "sha256": "a38fb4c3b00cc920d670166f41f773d5ac05adf9eec2c1f8cb9991c019509f4f",
-      "name": "canceled.json",
-      "length": 734
+      "length": 728,
+      "sha256": "d4ee3d8957fbd0125a0f21b654d19a77ad7d94583f08ce31759e75b46a0e60b3",
+      "name": "canceled.json"
     },
     {
-      "sha256": "e1d286efc82ef4a69a7fdcd1d2c4073698c0c8ee336bd6c52860bb2a96a7bfd9",
-      "name": "submitted.json",
-      "length": 292
+      "length": 288,
+      "sha256": "22376eeffcd93d1898719ff86871177a39bc1d201def121b04edc11d4ad14aa9",
+      "name": "submitted.json"
     },
     {
-      "sha256": "7f9654ba267fb0268533d20eb728c509f8805325439bb50d7654abba33539f57",
-      "name": "turn-completed.json",
-      "length": 1003
+      "length": 997,
+      "sha256": "83193c36b1dabde81ed2d72fbff3338a49ca2294db186ca734a662b7c27299e9",
+      "name": "turn-completed.json"
     },
     {
-      "sha256": "1497796e699c98c16296771108d69900fcef1f37e3db05574e7d259dc9c5efed",
-      "name": "turn-pending.json",
-      "length": 528
+      "length": 524,
+      "sha256": "2dc35c024826c9178d3566e9c72a5d336c79ffb876226705005b7f352c20bfbf",
+      "name": "turn-pending.json"
     },
     {
-      "sha256": "9073bf97f5a4560d9629e0ba378f2bb602b2b8aec8f8301fcfe091056eebf2d5",
-      "name": "turns.json",
-      "length": 1104
+      "length": 1098,
+      "sha256": "fcfb85a94a2ee0e83fff5932ac4f4bfbe07af353fa0cb4cc4ed78833fa9b860d",
+      "name": "turns.json"
     }
-  ]
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

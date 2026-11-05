@@ -1,284 +1,294 @@
 {
-  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
-  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
+  "artifactSet": "manual-catalogs",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "FormCatalogEndpointsTests and FormCatalogEndpointsTests.Fields and FormCatalogValueHttpTests and FormCatalogFieldInUseIntegrationTests and FormRecipientScenario and FormCatalogContractCapture",
+  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "sourceState": [
+    " M ../../../AGENTS.md",
+    " M ../../../docs/architecture/backend.md",
+    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
+    " M ../../../docs/guides/configurar-arca.md",
+    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
+    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
+    " M ../../../docs/plans/README.md",
+    "?? ../../../docs/features/arca.md",
+    "?? ../../../docs/guides/quitar-arca.md"
+  ],
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
+  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs",
-      "sha256": "c7ec12d843576325de7f45b10504b1980bc1b267def76e0c1fee09fd6b99226c"
+      "sha256": "c7ec12d843576325de7f45b10504b1980bc1b267def76e0c1fee09fd6b99226c",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.Fields.cs",
-      "sha256": "50409f6e4e9ece2a39f3482658e6bceac5e6bc0c9ecf5dabb0f980c76dfcbbf3"
+      "sha256": "50409f6e4e9ece2a39f3482658e6bceac5e6bc0c9ecf5dabb0f980c76dfcbbf3",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.Fields.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogValueHttpTests.cs",
-      "sha256": "c4340d21fd4686ab5ea7863080dfee623a97ed7d816fa4e8f73109e03c5a31cb"
+      "sha256": "c4340d21fd4686ab5ea7863080dfee623a97ed7d816fa4e8f73109e03c5a31cb",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogValueHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFieldInUseIntegrationTests.cs",
-      "sha256": "892f6c8ecaa7b2cbe37a6d5add4de145e4e2132f69a30893072b903c3a658197"
+      "sha256": "892f6c8ecaa7b2cbe37a6d5add4de145e4e2132f69a30893072b903c3a658197",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFieldInUseIntegrationTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRecipientScenario.cs",
-      "sha256": "fa152b125c8ef79714284695dab48b17a04daac71f15cb1b3a12a9f51f237c88"
+      "sha256": "fbf377cae54441f704159d978eb131dea04e203172b84b09b4e2607e3c7a1b2f",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRecipientScenario.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogContractCapture.cs",
-      "sha256": "839b78e578ebe3a9e6a7c4e9071f717e133c0d081be5e874beaf688ba6b8e710"
+      "sha256": "839b78e578ebe3a9e6a7c4e9071f717e133c0d081be5e874beaf688ba6b8e710",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogContractCapture.cs"
     }
   ],
-  "producer": "FormCatalogEndpointsTests and FormCatalogEndpointsTests.Fields and FormCatalogValueHttpTests and FormCatalogFieldInUseIntegrationTests and FormRecipientScenario and FormCatalogContractCapture",
-  "schemaVersion": 1,
-  "artifactSet": "manual-catalogs",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "sourceState": [],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "sha256": "8f51908f62ce1851db76c583e6daacd0a669be496d622f965692033f5c101862",
-      "name": "conflict-en.json",
-      "length": 259
+      "length": 259,
+      "sha256": "b4d2b7925cf51610d2f09478fa1c6d93be22bb91820c92d5217145bda159844d",
+      "name": "conflict-en.json"
     },
     {
-      "sha256": "2a6ecf21b35690864730f4bfe64ba59547b72cf552a92943ff120e263d839906",
-      "name": "conflict-es.json",
-      "length": 267
+      "length": 267,
+      "sha256": "cc4e08b1571dd26869f4c44a4db8b47410a4dea3543a7ccf1bc5d4f1f1484be1",
+      "name": "conflict-es.json"
     },
     {
-      "sha256": "b9e7dd0e3944e72bbd2c949889b93853397f0580494cec14bb8143cefcc5cd8f",
-      "name": "conflict-request.request.json",
-      "length": 306
+      "length": 306,
+      "sha256": "044b0d0112b160bc924ac18c6a423856796a655f7207a5d3f3264a23504c70e1",
+      "name": "conflict-request.request.json"
     },
     {
-      "sha256": "d0bb4ba0eb9586b1f02ee0cca4a7a4020c7c8658a7f8c9a8126db49e395a7d0c",
-      "name": "create-duplicate-positions-request.request.json",
-      "length": 451
+      "length": 451,
+      "sha256": "7b86a760fc0bfc0d18ad54e8f113bdc195cb0a73b6473b1f1d3cbc419f13aa54",
+      "name": "create-duplicate-positions-request.request.json"
     },
     {
+      "length": 430,
       "sha256": "fd76ca19fd574108d1a45461fea9e652cc606f10eb4541a3011bcc69897422c6",
-      "name": "create-request.request.json",
-      "length": 430
+      "name": "create-request.request.json"
     },
     {
-      "sha256": "6b7d365c3597a8141e16e8bf42e5969d6507398e770a3a047236011c32d4cf7f",
-      "name": "created.json",
-      "length": 827
+      "length": 827,
+      "sha256": "2b7ba68c90c9410d0cd3714d807d6eb519f44eb53bc8621010d0928aa60c8d5d",
+      "name": "created.json"
     },
     {
-      "sha256": "4098ed57b026fa7bac7372a717540f7bae0dd9f83d5210d5b52d375f576f4ad1",
-      "name": "description-optional-created.json",
-      "length": 700
+      "length": 700,
+      "sha256": "24276a8a0f156d434c098234c8a20458c1da19a8a0a5982ec92cfec6ede44501",
+      "name": "description-optional-created.json"
     },
     {
-      "sha256": "552c56cae2dedd6e18330cf577eef9b9b4dc184d36333d51038582ea09e62066",
-      "name": "detail.json",
-      "length": 680
+      "length": 680,
+      "sha256": "7ce6e269dfe8b57d386dd59cd8579f03f163694e2b67fe9e6b1ce96c9856dc92",
+      "name": "detail.json"
     },
     {
-      "sha256": "ffde536b4cb96f039d40651701d95354de5531813651355c72bb11cde0880258",
-      "name": "english-original-created.json",
-      "length": 922
+      "length": 922,
+      "sha256": "388188e1ddbb7ce5e18dea0d5aa2db3b87c6d8b426366a2443915bd2a9f6f632",
+      "name": "english-original-created.json"
     },
     {
-      "sha256": "270fce801b9017c0ecc81edf7bd0902031a2d51293ba0020a8f30c4e787fd868",
-      "name": "english-original-detail-es.json",
-      "length": 774
+      "length": 774,
+      "sha256": "9e76faf3b1201f76a8e1fda270b724ffef222bddf55338dd985ad6ca02841522",
+      "name": "english-original-detail-es.json"
     },
     {
-      "sha256": "2dfb2bacbc409986967ed97fd1b03eca0c3846b084136891fea540cd893634d0",
-      "name": "fields-conversion-error.json",
-      "length": 509
+      "length": 509,
+      "sha256": "37e9a54061181307e2be81e0fb3a70c80ac1dfd25b8c5d03d094aa29b83ac218",
+      "name": "fields-conversion-error.json"
     },
     {
-      "sha256": "6c26dc15630f15e70ed32c5a5822ddb3cc6bf97ee2c5a515996f506d17abea6e",
-      "name": "fields-create.request.json",
-      "length": 524
+      "length": 524,
+      "sha256": "d0b7ca0bd458e4bd3cffe4c08a5de8c1c680484ab6ae7501e8ba6fbda4a891f5",
+      "name": "fields-create.request.json"
     },
     {
-      "sha256": "a0eaed4b7acf686cd8c7cf88681d1df774a8d10ca9d11fe4615b20b6038f49cd",
-      "name": "fields-created.json",
-      "length": 1123
+      "length": 1123,
+      "sha256": "88835d67d96e3b4643b123b8e67fc70329ad6e68d96c71789aeca69539344b21",
+      "name": "fields-created.json"
     },
     {
-      "sha256": "3f2835fcb50980a4800ba218d255585ea1ad1369cb81e84a5632b5b9ea861944",
-      "name": "fields-detail.json",
-      "length": 976
+      "length": 976,
+      "sha256": "61e731b81c77a8b24c47e871001b7df2ee61fcac5b93e4ec16128c116b12751c",
+      "name": "fields-detail.json"
     },
     {
-      "sha256": "899a1b6f3ad670013b1a364c4f6fe6f6eff69c7ba3e1f0efebde2afb54722e8f",
-      "name": "fields-in-use.json",
-      "length": 812
+      "length": 812,
+      "sha256": "7b6dc6d7342a4781a3f1e7f033629996dc0c6260610a96b35a43b4852643641a",
+      "name": "fields-in-use.json"
     },
     {
-      "sha256": "2950472672803e83bb9484364bd15f27b4538c6e8854be16efb85e201bdd02b7",
-      "name": "fields-items.json",
-      "length": 333
+      "length": 333,
+      "sha256": "7527f591b3e0f03a3d97e75b349f817530ec76a897b4c109f70ccd24303d9325",
+      "name": "fields-items.json"
     },
     {
-      "sha256": "4a1a031e9adc78765fb3b2c5c5c03fbf018d39526410134da4a67030a190d3f0",
-      "name": "fields-presentation.json",
-      "length": 1477
+      "length": 1477,
+      "sha256": "7ef6247389cefb1819803d48818b0d52dcdcdd34626e1e498925e49c795ea3f3",
+      "name": "fields-presentation.json"
     },
     {
-      "sha256": "72b53767c0681616d625835e4b7fdf1f835f35134f702179167b05816d505b3f",
-      "name": "fields-removal-confirmation.json",
-      "length": 380
+      "length": 380,
+      "sha256": "e867591d65642ccb0f0323b9217ec865b2194367bd2c72ac79572642779c6d4e",
+      "name": "fields-removal-confirmation.json"
     },
     {
-      "sha256": "7295a6a0ab5343b49be3ddf6101954e782264cd84234f8cc5fac11f60b129858",
-      "name": "fields-removed.json",
-      "length": 1030
+      "length": 1030,
+      "sha256": "5dcc8b8ab6b2eeba93ec3ef6a8e7d90a0a212dc30445a7462f1aa15b1c58abdd",
+      "name": "fields-removed.json"
     },
     {
-      "sha256": "4a0eaa04ab534a62111a9e6d931412e993debca4583600fec6f0f8d7e42c1d88",
-      "name": "fields-required-error.json",
-      "length": 397
+      "length": 397,
+      "sha256": "886b888e8912e101c1eefde790bec0b441c87a1eff912b5114be9f7a1578b64a",
+      "name": "fields-required-error.json"
     },
     {
-      "sha256": "30d1ae63eb614c4abff51e003a638f2c6d1af15e65da7138bf41e45178ad4837",
-      "name": "fields-rules-error-en.json",
-      "length": 589
+      "length": 589,
+      "sha256": "237773547dc15fba40d61366e2513d7bb7bd4dcb60de850b4722ea060c6db581",
+      "name": "fields-rules-error-en.json"
     },
     {
-      "sha256": "338f995707e6d99a178a9bb06b4f4163643dcca629b62d998bab6dc8f806615e",
-      "name": "fields-rules-error-es.json",
-      "length": 611
+      "length": 611,
+      "sha256": "30f3986e9f75c7751c27a36c80fb5eed44d258bc5f9f3143a97fc5f5c69dddb5",
+      "name": "fields-rules-error-es.json"
     },
     {
-      "sha256": "71a87d07559e18d2fc474f950e67418c9ecbeaa0ddfad16112771d693fc9ded9",
-      "name": "fields-source-in-use.json",
-      "length": 305
+      "length": 305,
+      "sha256": "fea4af6e04942f07238c2baa1a788d9a216b4bc08e117fed715117183caeb32e",
+      "name": "fields-source-in-use.json"
     },
     {
-      "sha256": "67ffe2c6f171f2b661f08d54e696cbdccc32cdd7b8b0304c26df5a47a431a0ea",
-      "name": "fields-source-items.json",
-      "length": 496
+      "length": 496,
+      "sha256": "219e6ed62ff15825a807849213d71400feb11a16f2e3ada39ce429d5ab29963d",
+      "name": "fields-source-items.json"
     },
     {
-      "sha256": "87ab440e76c957baa9b86451b0788e4e74ddcd7017ab966accc2a18eb8cc5bea",
-      "name": "fields-unique-error.json",
-      "length": 407
+      "length": 407,
+      "sha256": "6ed754e86331c5f9e91fdaed9aeac427315d4bd9ffbf48affb4ced335f77f2d5",
+      "name": "fields-unique-error.json"
     },
     {
-      "sha256": "fee2b5a907f27ed539eec52840ff903d5ee65e732a3cdf27f027c9882aa8a122",
-      "name": "fields-update.request.json",
-      "length": 637
+      "length": 637,
+      "sha256": "47f6c0dd2808cd6387dc50cec0f993117c199aa7d7320d441da09e6a4c23ffea",
+      "name": "fields-update.request.json"
     },
     {
-      "sha256": "75a37f4700a89a2ab6c06e770d3b7f49c9c0a0f558210f673fd4fab1ae083a59",
-      "name": "fields-usage-detail.json",
-      "length": 2198
+      "length": 2198,
+      "sha256": "e425dfcb32ae50f4e7d497a8854b47d6522dbc1601171692d6fd648ea90166e9",
+      "name": "fields-usage-detail.json"
     },
     {
-      "sha256": "7fd1961fa15f6b50f7d52f43d5d6a4532a9eac89dbe5e049aa3339593ad73c5d",
-      "name": "fields-values-saved.json",
-      "length": 1033
+      "length": 1033,
+      "sha256": "c101e44df78f1ee09c307126e661ca78c05512a9bdb77bcc6c770d5a6f996264",
+      "name": "fields-values-saved.json"
     },
     {
+      "length": 260,
       "sha256": "f2053f12129752a1c990160caa43b9f310fbad7a5b40a36cdbeb5bc275bdace0",
-      "name": "inactive-request.request.json",
-      "length": 260
+      "name": "inactive-request.request.json"
     },
     {
-      "sha256": "1c872cf257236c543eaac9238c5110284e2d202184730fc35759b4f7bb4fd7a9",
-      "name": "items.json",
-      "length": 749
+      "length": 749,
+      "sha256": "ee7722ab6ea599e416209a47af24d32fa1d74a2c53ba33305a9f7d3a2f9c823a",
+      "name": "items.json"
     },
     {
-      "sha256": "433baa3c03f1739655b06b5bb0972bb2831b45fb8e3ef9bce38554c9ea2a6a5a",
-      "name": "list-en.json",
-      "length": 398
+      "length": 398,
+      "sha256": "4e67e5024ab3b8ee8a6ea5970fe84c09536793a1ead0c8264e1dd5a6ad3ac639",
+      "name": "list-en.json"
     },
     {
-      "sha256": "6f2290a3f2549fcc2ae6b6afdbde5f02d56e74402d6c5aca328c4a2542d02476",
-      "name": "list-es.json",
-      "length": 407
+      "length": 407,
+      "sha256": "32303706774c9808a2b65c8d8df8508419b13063fdc807211ba423fcce542b6e",
+      "name": "list-es.json"
     },
     {
+      "length": 229,
       "sha256": "6b269a4b479323ca1528f5cae5bd48fe7dde6e58b083488e73a3134c0a9de87e",
-      "name": "missing-revision-request.request.json",
-      "length": 229
+      "name": "missing-revision-request.request.json"
     },
     {
-      "sha256": "12ab62a87b1ec1d8d8f07c7ca44f38c26c83618f05db9bb5cb8d3250b35ca183",
-      "name": "original-missing-error.json",
-      "length": 318
+      "length": 318,
+      "sha256": "d29f74db03514d69f3620e2d684b6f0a47cbab7f884fafce121f46ee61dfefbb",
+      "name": "original-missing-error.json"
     },
     {
-      "sha256": "181a0dba1fab78e26f44a20850e829810426919180859be7662ce0a0eaaaeff1",
-      "name": "queued-moves-request.request.json",
-      "length": 323
+      "length": 323,
+      "sha256": "8605db4319913c4a1602161d030bb02f87575536d90868f2703781377046a6e3",
+      "name": "queued-moves-request.request.json"
     },
     {
-      "sha256": "0e8e19e8085fba52d4f60d9be706c1245fcf2da0b43f38c7ec4e415daf1e2001",
-      "name": "typed-date-created.json",
-      "length": 863
+      "length": 863,
+      "sha256": "951f8d040bb9ff3122de0821b3ca3f5d52784f354cddfbc403ab8d29ef6c47b2",
+      "name": "typed-date-created.json"
     },
     {
-      "sha256": "7d3e0c985160d7e74e5ee6940caf1accb1ed7ad1f5881fdf196606b043815da6",
-      "name": "typed-date-items.json",
-      "length": 309
+      "length": 309,
+      "sha256": "9f62e66afc291403401fdcc9d7f12eb851b7d152bfd6c2c0bccc64420c0cea4d",
+      "name": "typed-date-items.json"
     },
     {
-      "sha256": "7d2b476920bd32c6791bd59ed60e1c92833b163d604a62880de06131d46532af",
-      "name": "typed-decimal-created.json",
-      "length": 866
+      "length": 866,
+      "sha256": "4ce9dc501be328429eb84e303c08ed301d212d4f3ae8af37ef00366eee40982d",
+      "name": "typed-decimal-created.json"
     },
     {
-      "sha256": "4b6b1934796416fe7409ec7b4174b4ca6099291f72c9e58a0d3840463d65095e",
-      "name": "typed-decimal-items.json",
-      "length": 306
+      "length": 306,
+      "sha256": "26c5891a3591d9e05d503364bd473332ace1a91df6ea84c0c8ac97e154aa642b",
+      "name": "typed-decimal-items.json"
     },
     {
-      "sha256": "dc6a43240a1faa85bde9e38885ad91fc29f71c5772d0a5f33fb404e1d011c4ac",
-      "name": "typed-integer-created.json",
-      "length": 866
+      "length": 866,
+      "sha256": "1c9c156bb2173b70f0c7d38f436eac1ed9cf51b058cd2346ffa782c93493dabf",
+      "name": "typed-integer-created.json"
     },
     {
-      "sha256": "76631285833d68a2515a6a0f8d69364b6821187237c38e3becb9c8a321d69698",
-      "name": "typed-integer-items.json",
-      "length": 303
+      "length": 303,
+      "sha256": "0be304c3a51f57d557c77cf3f7134baf391c0d54c05a00ca513fbc583fe612e4",
+      "name": "typed-integer-items.json"
     },
     {
-      "sha256": "e3cae706a5de0729665b5a29b8d823610ea6cfe1023b13a876c8e0326b55ee88",
-      "name": "typed-invalid-value-en.json",
-      "length": 332
+      "length": 332,
+      "sha256": "9f3b51b9ea87041164257489852bef8c558e96f13432382df375a8fef6e0737d",
+      "name": "typed-invalid-value-en.json"
     },
     {
-      "sha256": "c365156c824a18aad00dd0b2930e828764e31e7da8b6862a3a429d981d5d40c2",
-      "name": "typed-invalid-value-es.json",
-      "length": 346
+      "length": 346,
+      "sha256": "2c403a025990d9c1b2d47e78c2538651f64bac5655c262300812c84fe6bbc9b7",
+      "name": "typed-invalid-value-es.json"
     },
     {
-      "sha256": "ae3ca888c9c4907699acdb5c5db2855d6e53da68b0409d488037793875d417dc",
-      "name": "typed-required-value.json",
-      "length": 315
+      "length": 315,
+      "sha256": "619d45bc0876f08ca23a3e6e9d732d12d75d898112e759ba96e019b02bb32f45",
+      "name": "typed-required-value.json"
     },
     {
-      "sha256": "791c0a62ac91652ce1f5b016daed23f044b4e98c4b42203b8ca1d8526f1375e0",
-      "name": "typed-text-created.json",
-      "length": 863
+      "length": 863,
+      "sha256": "30d9b815773d340a4f4a98cf7735fecabc3d756d28dbf7c285a400d4af6130c9",
+      "name": "typed-text-created.json"
     },
     {
-      "sha256": "a623615510f9e0abbf4e02de5e075107195861cc9d1cfb79bd5b32a9a9607def",
-      "name": "typed-text-items.json",
-      "length": 301
+      "length": 301,
+      "sha256": "d2204063cf3611097f90c204f753fa9a77bf88bfbd796eea2951b0b80a0e2095",
+      "name": "typed-text-items.json"
     },
     {
-      "sha256": "e69f37617a65318680fad9d8464b589107e418570eea7894f88376bb88c2ac20",
-      "name": "typed-type-change-rejected.json",
-      "length": 246
+      "length": 246,
+      "sha256": "5b39e579238d6f14ec0d9cc041a10c6f6347693933e9e114788bdd6e0e3de670",
+      "name": "typed-type-change-rejected.json"
     },
     {
-      "sha256": "661522937a95e75755d8e471163b8a337de7d1a807f822fa32c1e1219583a12c",
-      "name": "update-request.request.json",
-      "length": 492
+      "length": 492,
+      "sha256": "c9cb7a9f0951c5432e8276bac097a54a6d3766022bd2e9dccc562c3bcbae4e95",
+      "name": "update-request.request.json"
     },
     {
-      "sha256": "7d059c88b47c3cb55047d69e4c29a36736b23da9164eb05755f4ca4c03741095",
-      "name": "updated.json",
-      "length": 785
+      "length": 785,
+      "sha256": "0699754f077bdac014c09d6e60fb5a223364a8bf106f21f4234d1f152da8cf02",
+      "name": "updated.json"
     }
-  ]
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

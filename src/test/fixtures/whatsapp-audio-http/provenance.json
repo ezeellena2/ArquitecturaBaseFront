@@ -1,38 +1,48 @@
 {
-  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
-  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
+  "artifactSet": "whatsapp-audio",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
+  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "sourceState": [
+    " M ../../../AGENTS.md",
+    " M ../../../docs/architecture/backend.md",
+    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
+    " M ../../../docs/guides/configurar-arca.md",
+    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
+    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
+    " M ../../../docs/plans/README.md",
+    "?? ../../../docs/features/arca.md",
+    "?? ../../../docs/guides/quitar-arca.md"
+  ],
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
+  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs",
-      "sha256": "637bea494b142895a3505a692d1c5ad602cf4669572ee412c65357d8d28781d7"
+      "sha256": "637bea494b142895a3505a692d1c5ad602cf4669572ee412c65357d8d28781d7",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs",
-      "sha256": "6b74eb532ed4dcacc757837a51dbf36dbf51fe8c712ec5254da8e1818ad80b33"
+      "sha256": "6b74eb532ed4dcacc757837a51dbf36dbf51fe8c712ec5254da8e1818ad80b33",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs"
     }
   ],
-  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
-  "schemaVersion": 1,
-  "artifactSet": "whatsapp-audio",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "sourceState": [],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
+      "length": 53,
       "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
-      "name": "audio-request.json",
-      "length": 53
+      "name": "audio-request.json"
     },
     {
-      "sha256": "3dc50aa566eff225d7d3772a00cf4664dd4d29b1c801568eefe64e387b6b13b9",
-      "name": "audio-thread-completed.json",
-      "length": 975
+      "length": 975,
+      "sha256": "fe2e5d8692f2cf9c4ba0bb345c0895353962d2c8b92fcdc10a7739af087272f5",
+      "name": "audio-thread-completed.json"
     },
     {
-      "sha256": "a687098bff0a8a13f3c5f5a5ff725b8e34827d45b3774c93eb53d01035c357b4",
-      "name": "audio-thread-pending.json",
-      "length": 933
+      "length": 933,
+      "sha256": "3b7ff249974b8305594e30ac6ba797700a1ffb22af5dd8c137735c81e342aaa6",
+      "name": "audio-thread-pending.json"
     }
-  ]
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

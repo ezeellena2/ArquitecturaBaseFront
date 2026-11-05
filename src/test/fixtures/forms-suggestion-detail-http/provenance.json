@@ -1,33 +1,43 @@
 {
-  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
-  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
+  "artifactSet": "suggestion-details",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
+  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "sourceState": [
+    " M ../../../AGENTS.md",
+    " M ../../../docs/architecture/backend.md",
+    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
+    " M ../../../docs/guides/configurar-arca.md",
+    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
+    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
+    " M ../../../docs/plans/README.md",
+    "?? ../../../docs/features/arca.md",
+    "?? ../../../docs/guides/quitar-arca.md"
+  ],
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
+  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs",
-      "sha256": "c4c66116c0f344513804b507eeafb058187b91fe350ac56d1467dce9e53c4b84"
+      "sha256": "c4c66116c0f344513804b507eeafb058187b91fe350ac56d1467dce9e53c4b84",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs",
-      "sha256": "2324870879f4d3be2da6f58febe5878db246307e235fa3058a5de256ca7558ee"
+      "sha256": "2324870879f4d3be2da6f58febe5878db246307e235fa3058a5de256ca7558ee",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs"
     }
   ],
-  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
-  "schemaVersion": 1,
-  "artifactSet": "suggestion-details",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "sourceState": [],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "sha256": "f64bed26b70d0c9569e82142640138e5d6b6c9ffeb95ef4e0165d9074ee8a095",
-      "name": "detail-en.json",
-      "length": 2059
+      "length": 2075,
+      "sha256": "1da6e7e4abac8b558672ff5b8db195f0111fee218a10d802a59dbd1451dd1e97",
+      "name": "detail-en.json"
     },
     {
-      "sha256": "e63e524a3cd585ee9b227a6cf7212c9ef8795dc326adbc9a279a2d29d380634e",
-      "name": "detail-es.json",
-      "length": 2063
+      "length": 2079,
+      "sha256": "a14c98a19ad7d41630a60debbd3e7942a67d497822d20e1eb90843ec2adb1917",
+      "name": "detail-es.json"
     }
-  ]
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

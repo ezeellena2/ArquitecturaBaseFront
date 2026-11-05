@@ -1,59 +1,69 @@
 {
-  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
-  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
+  "artifactSet": "catalog-filters",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "FormCatalogFiltersEndpointsTests",
+  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "sourceState": [
+    " M ../../../AGENTS.md",
+    " M ../../../docs/architecture/backend.md",
+    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
+    " M ../../../docs/guides/configurar-arca.md",
+    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
+    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
+    " M ../../../docs/plans/README.md",
+    "?? ../../../docs/features/arca.md",
+    "?? ../../../docs/guides/quitar-arca.md"
+  ],
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
+  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
-      "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71"
+      "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs"
     }
   ],
-  "producer": "FormCatalogFiltersEndpointsTests",
-  "schemaVersion": 1,
-  "artifactSet": "catalog-filters",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "sourceState": [],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
+      "length": 273,
       "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
-      "name": "create-request.json",
-      "length": 273
+      "name": "create-request.json"
     },
     {
-      "sha256": "6f9a1e89f3874457f98ec24715d9a4cf0972a5e7a0eb161e4ee4e00f9fe70c1c",
-      "name": "created.json",
-      "length": 636
+      "length": 636,
+      "sha256": "7a59d899faabc8c1ed55167dbc6c3021fe7fc36460fcec4cfbb0a4e7efccfae4",
+      "name": "created.json"
     },
     {
-      "sha256": "21762d7c7ca68a4b9dd7eedbb0df35fa6349aa04673294b5d6fd568fd0c8eb4d",
-      "name": "detail.json",
-      "length": 813
+      "length": 813,
+      "sha256": "9d03b88e91edafec01c478ffb374d4c1538e4137071082d029bf7a621d77e13a",
+      "name": "detail.json"
     },
     {
-      "sha256": "a115653da051813e89b91b2f1183453c600d9ac6409d6826c39898953b3edd0b",
-      "name": "options.json",
-      "length": 57393
+      "length": 63253,
+      "sha256": "671cb38b61fb55ea1212a5703c3b71fa9163f2bc7303c253e49d0ddcf7edf4e6",
+      "name": "options.json"
     },
     {
-      "sha256": "98172feaeb19f846eac4cdb06c2a291879aed631131456ed89e0b4489f05014c",
-      "name": "preview-request.json",
-      "length": 328
+      "length": 328,
+      "sha256": "2c1ced9701f7886b4cceff2f239edba66109f252ed0f73076fcaf234e2b64b59",
+      "name": "preview-request.json"
     },
     {
-      "sha256": "8b185c63afbd1837fe22a3936509d05bb77523cdf43d5b118d43d8cffa5feabc",
-      "name": "preview.json",
-      "length": 201
+      "length": 201,
+      "sha256": "4f73e26fedc693b0a53be96b3409812a0c6cccca5d804311769106f03f6e9dec",
+      "name": "preview.json"
     },
     {
+      "length": 289,
       "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
-      "name": "update-request.json",
-      "length": 289
+      "name": "update-request.json"
     },
     {
-      "sha256": "f526b3b4ea08301ce117f9a25165545c3d811addd84c2f2d5f6064e35e2e07bd",
-      "name": "updated.json",
-      "length": 635
+      "length": 635,
+      "sha256": "7a631baafed5003e96abb5e879c040759bf0ed7569d4e4c5dff9425dc55f7636",
+      "name": "updated.json"
     }
-  ]
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

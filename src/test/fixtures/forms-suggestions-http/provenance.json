@@ -1,63 +1,73 @@
 {
-  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
-  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
+  "artifactSet": "suggestions",
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
+  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "sourceState": [
+    " M ../../../AGENTS.md",
+    " M ../../../docs/architecture/backend.md",
+    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
+    " M ../../../docs/guides/configurar-arca.md",
+    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
+    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
+    " M ../../../docs/plans/README.md",
+    "?? ../../../docs/features/arca.md",
+    "?? ../../../docs/guides/quitar-arca.md"
+  ],
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
+  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs",
-      "sha256": "b007eb804d9742074b96411b362d63222ff3c8dff67cdbb7304f9d53133d8e71"
+      "sha256": "b007eb804d9742074b96411b362d63222ff3c8dff67cdbb7304f9d53133d8e71",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs",
-      "sha256": "282934f48206ca0fbfbf7e82b08277b941f67c490eeb82bb8b45ee555b37fdec"
+      "sha256": "282934f48206ca0fbfbf7e82b08277b941f67c490eeb82bb8b45ee555b37fdec",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionContractCapture.cs"
     }
   ],
-  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
-  "schemaVersion": 1,
-  "artifactSet": "suggestions",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "sourceState": [],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "sha256": "4366705339825eb5a0b5e6fc0b70a071cf9127df096e3573e89b9ccf3988ae33",
-      "name": "conflict-es.json",
-      "length": 276
+      "length": 276,
+      "sha256": "f911696411fcbda125163397b54a243b6dd0a96d0618bd439082052b0927e0b7",
+      "name": "conflict-es.json"
     },
     {
-      "sha256": "2a132c1f2d3aee326bbe922c2288b7ca1a9a156eb0af5c662d8815d481eb7830",
-      "name": "empty-es.json",
-      "length": 152
+      "length": 152,
+      "sha256": "a0f664dda3a172f24c2fae54c320333a7bc48a25654e71f37666e157b9c8265b",
+      "name": "empty-es.json"
     },
     {
-      "sha256": "ab6888322e021633a2b59cc081d7c3b16b15f7611168578e1ba159d147460a89",
-      "name": "history-es.json",
-      "length": 373
+      "length": 373,
+      "sha256": "b8ccbba6c57bfd1bfccb7b7aaaab4d0f2e697f94adea33c3a5a2a10bbff59c1f",
+      "name": "history-es.json"
     },
     {
-      "sha256": "e427d8aa90b80d39cb58cf528b1c82888cef5d2d6c47fc59984c2fc9df417a19",
-      "name": "options-en.json",
-      "length": 27270
+      "length": 140134,
+      "sha256": "d088f65680f417a1cf73acf0c5b3cb7cb396a2d0e6b676e627de6a310ba28dd6",
+      "name": "options-en.json"
     },
     {
-      "sha256": "e427d8aa90b80d39cb58cf528b1c82888cef5d2d6c47fc59984c2fc9df417a19",
-      "name": "options-es.json",
-      "length": 27270
+      "length": 140134,
+      "sha256": "d088f65680f417a1cf73acf0c5b3cb7cb396a2d0e6b676e627de6a310ba28dd6",
+      "name": "options-es.json"
     },
     {
-      "sha256": "f00633966252968ae013c0876c6fa7d8ed47378b0aba8f950f6129a08b036b24",
-      "name": "revision-es.json",
-      "length": 680
+      "length": 680,
+      "sha256": "3a7b1b9f5567295f1b1d9fdf6c8c0e2b8745a27964e69d8f12c3890cffe3b353",
+      "name": "revision-es.json"
     },
     {
-      "sha256": "f00633966252968ae013c0876c6fa7d8ed47378b0aba8f950f6129a08b036b24",
-      "name": "saved-es.json",
-      "length": 680
+      "length": 680,
+      "sha256": "3a7b1b9f5567295f1b1d9fdf6c8c0e2b8745a27964e69d8f12c3890cffe3b353",
+      "name": "saved-es.json"
     },
     {
-      "sha256": "3dc222e9b834884b9440cca2f0d9b94cca08fd1023839bced999e1105534c0a1",
-      "name": "source-unpublished-es.json",
-      "length": 285
+      "length": 285,
+      "sha256": "51bb1c4fbacb4d46266eb0b3c099d3a032dac10370530034b6b16876d91fa79b",
+      "name": "source-unpublished-es.json"
     }
-  ]
+  ],
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }
