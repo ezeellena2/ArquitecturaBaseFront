@@ -28,6 +28,7 @@ vigente de la migración y los controles automáticos pendientes.
 | [`src/app/`](../src/app/AGENTS.md) | Monta providers, router y rutas; MF1 compone el conteo global de pendientes por contexto neutral y las entradas OR, sin lecturas del menú dinámico anterior. RouterProvider de DOM confirma la salida voluntaria a login; compone la sección opcional de Datos por contrato neutral. |
 | [`src/auth/`](../src/auth/AGENTS.md) | Contiene configuración y proveedor OIDC, sesión actual, renovación, guards y requisito de permisos compartido entre rutas y menú, nombre de cuenta y preferencia de idioma. |
 | [`src/features/`](../src/features/AGENTS.md) | Cada área contiene páginas, componentes, API y errores propios. |
+| [`src/features/arca/`](../src/features/arca/AGENTS.md) | Conexión con ARCA en una pantalla: alta y conexión activa por zonas, una carpeta por familia (conexión, padrón, facturación) y la página que compone sus zonas sin que una familia importe a otra. |
 | [`src/features/artificial-intelligence/`](../src/features/artificial-intelligence/AGENTS.md) | Conexión, catálogo/prueba y editor guiado del negocio; asistente autorizado de consultas con historial privado y recuperación durable. Catálogo/Places sólo en el editor; claves fuera de caches/storage; asistente adapta estado confirmado y conserva UUID/body en aceptación incierta. |
 | [`src/features/auth/`](../src/features/auth/AGENTS.md) | Compone la landing pública aprobada con PublicLanding, ingreso, registro, código, enlace de un solo uso y callback. |
 | [`src/features/business-forms/`](../src/features/business-forms/AGENTS.md) | Índice de Formularios: alcance, lectura obligatoria e invariantes transversales (permisos propios, claves por actor/permisos/cultura, datos privados en memoria, revisión y 409, idioma original, contratos estrictos, tableros). |
@@ -72,7 +73,7 @@ El laboratorio de WhatsApp también conserva la propuesta pendiente
 [`?screen=ubicacion-lugar`](design/ubicacion-por-lugar.md): búsqueda externa por nombre y
 enlace de ficha, sin cambios en el contrato o guardado productivos.
 
-Las páginas, API, componentes y utilidades internas de una feature siguen su guía de área cuando no tienen guía propia: `whatsapp/pages`, `artificial-intelligence/{hooks,pages}`, `auth/pages` y `users/components` siguen la de su área. Los componentes individuales de UI siguen shared/ui; los idiomas siguen locales. Los documentos de diseño y las recetas siguen docs/AGENTS.md.
+Las páginas, API, componentes y utilidades internas de una feature siguen su guía de área cuando no tienen guía propia: `whatsapp/pages`, `artificial-intelligence/{hooks,pages}`, `arca/{connection,registry,invoicing,pages}`, `auth/pages` y `users/components` siguen la de su área. Los componentes individuales de UI siguen shared/ui; los idiomas siguen locales. Los documentos de diseño y las recetas siguen docs/AGENTS.md.
 
 No se crean pares en `bin`, `obj`, `node_modules`, `dist`, `artifacts`, archivos individuales ni carpetas vacías. Un subámbito nuevo se justifica por una responsabilidad o riesgo que el padre no explica suficientemente.
 

@@ -1,0 +1,146 @@
+{
+  "title": "ARCA",
+  "readOnly": "Read only",
+  "unavailable": "We couldn't read the connection.",
+  "zone": "{{step}} · {{title}}",
+  "status": {
+    "none": "Not connected",
+    "AwaitingCertificate": "Awaiting the certificate",
+    "Unverified": "Not verified",
+    "Active": "Active",
+    "NeedsAttention": "Needs attention"
+  },
+  "environment": {
+    "Testing": "Testing",
+    "Production": "Production"
+  },
+  "empty": {
+    "title": "Not connected to ARCA",
+    "connect": "Connect to ARCA"
+  },
+  "data": {
+    "title": "Details",
+    "cuit": "CUIT",
+    "cuitInvalid": "Check the CUIT: it has eleven digits and the last one is the check digit.",
+    "environment": "Environment",
+    "environmentHelp": "Testing is for trying things out and its receipts have no fiscal validity.",
+    "alias": "Alias",
+    "aliasHelp": "The name you will give the certificate in ARCA.",
+    "aliasInvalid": "The alias has 3 to 30 lowercase letters, digits or hyphens, and starts with a letter.",
+    "services": "Services it uses",
+    "requiredHelp": "Always: it brings the company's details.",
+    "generate": "Generate the request",
+    "generating": "Generating…",
+    "change": "Change",
+    "cancel": "Cancel",
+    "summary": "{{cuit}} · {{environment}} · alias “{{alias}}”"
+  },
+  "request": {
+    "title": "Certificate request",
+    "summary": "Request generated for the alias “{{alias}}”",
+    "download": "Download the request",
+    "downloadAgain": "Download again",
+    "downloading": "Downloading…"
+  },
+  "certificate": {
+    "title": "Certificate",
+    "testingHelp": "In testing, these steps are done in WSASS.",
+    "stepAlias": "In ARCA, under “Digital certificate management”, add the alias “{{alias}}” with the request.",
+    "stepDownload": "Download the certificate ARCA gives you.",
+    "stepAuthorize": "Under “Relationship manager”, authorize {{services}} for the alias.",
+    "openArca": "Open ARCA",
+    "file": "ARCA certificate (.crt)",
+    "choose": "Choose file",
+    "drop": "Drop the certificate (.crt) or",
+    "uploading": "Uploading…",
+    "summary": "Expires on {{date}}",
+    "alias": "Alias",
+    "expires": "Expires",
+    "expired": "Expired",
+    "renew": "Renew",
+    "renewAlias": "Alias of the new certificate",
+    "renewGenerate": "Generate the request",
+    "current": "Current",
+    "next": "New",
+    "pendingRequest": "Request generated · certificate missing",
+    "pendingLoaded": "Certificate uploaded · test missing",
+    "upload": "Upload the certificate",
+    "cancelRenewal": "Cancel the renewal",
+    "cancelling": "Cancelling…",
+    "soon": "The certificate expires on {{date}}. Renew it beforehand so invoicing is not interrupted.",
+    "expiredBanner": "The certificate expired on {{date}}. You can't issue until you renew it."
+  },
+  "test": {
+    "title": "Test",
+    "run": "Test",
+    "again": "Test again",
+    "running": "Testing…",
+    "lastTested": "Tested on {{date}} at {{time}}",
+    "notTested": "Not tested"
+  },
+  "checks": {
+    "Ready": "Responds",
+    "ticket": "Ticket valid until {{time}}",
+    "NotAuthorized": "The service still needs to be authorized for the alias “{{alias}}”",
+    "Blocked": "ARCA won't accept another request until {{time}}",
+    "ClockSkew": "The server time doesn't match ARCA's",
+    "Unavailable": "ARCA didn't answer",
+    "Failed": "ARCA rejected the request"
+  },
+  "services": {
+    "title": "Services",
+    "uses": "This company uses it: {{service}}",
+    "usesLabel": "This company uses it",
+    "authorize": "Authorize {{service}} for the alias in ARCA and test the connection.",
+    "names": {
+      "ws_sr_constancia_inscripcion": "Registration certificate",
+      "wsfe": "Electronic invoicing"
+    }
+  },
+  "activate": "Activate the connection",
+  "activating": "Activating…",
+  "disconnect": {
+    "action": "Disconnect",
+    "title": "Disconnect ARCA?",
+    "description": "The private key and the access tickets are deleted. To issue again, you'll need to generate a new certificate.",
+    "pending": "Disconnecting…"
+  },
+  "conflict": {
+    "title": "Review",
+    "text": "Someone else changed the connection while you were editing it.",
+    "read": "Read the current one",
+    "reading": "Reading…"
+  },
+  "registry": {
+    "title": "Company",
+    "help": "The details come from the ARCA registry every time the connection is tested.",
+    "legalName": "Legal name",
+    "cuit": "CUIT",
+    "vatCondition": "VAT status",
+    "fiscalAddress": "Fiscal address",
+    "empty": "The company's details arrive with the first test.",
+    "vat": {
+      "RegisteredTaxpayer": "Registered taxpayer",
+      "Monotax": "Monotributo",
+      "Exempt": "Exempt",
+      "NotRegistered": "Not registered"
+    }
+  },
+  "invoicing": {
+    "title": "Invoicing · Point of sale",
+    "help": "Choose one no other system uses: the platform keeps the numbering.",
+    "pointOfSale": "Point of sale",
+    "number": "Number",
+    "option": "{{number}} · {{type}}",
+    "blocked": "{{number}} · blocked in ARCA",
+    "none": "ARCA returned no web service points of sale for this CUIT.",
+    "search": "Search again",
+    "searching": "Searching…",
+    "loadError": "We couldn't get the points of sale.",
+    "notChosen": "Not chosen",
+    "change": "Change",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel"
+  }
+}

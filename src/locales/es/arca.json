@@ -1,0 +1,146 @@
+{
+  "title": "ARCA",
+  "readOnly": "Solo lectura",
+  "unavailable": "No pudimos leer la conexión.",
+  "zone": "{{step}} · {{title}}",
+  "status": {
+    "none": "Sin conexión",
+    "AwaitingCertificate": "Esperando el certificado",
+    "Unverified": "Sin verificar",
+    "Active": "Activa",
+    "NeedsAttention": "Requiere atención"
+  },
+  "environment": {
+    "Testing": "Homologación",
+    "Production": "Producción"
+  },
+  "empty": {
+    "title": "Sin conexión con ARCA",
+    "connect": "Conectar con ARCA"
+  },
+  "data": {
+    "title": "Datos",
+    "cuit": "CUIT",
+    "cuitInvalid": "Revisá la CUIT: tiene once dígitos y el último es el verificador.",
+    "environment": "Ambiente",
+    "environmentHelp": "Homologación sirve para probar y sus comprobantes no tienen validez fiscal.",
+    "alias": "Alias",
+    "aliasHelp": "El nombre con el que vas a crear el certificado en ARCA.",
+    "aliasInvalid": "El alias va de 3 a 30 letras minúsculas, números o guiones, y empieza con una letra.",
+    "services": "Servicios que usa",
+    "requiredHelp": "Siempre: trae los datos de la empresa.",
+    "generate": "Generar el pedido",
+    "generating": "Generando…",
+    "change": "Cambiar",
+    "cancel": "Cancelar",
+    "summary": "{{cuit}} · {{environment}} · alias «{{alias}}»"
+  },
+  "request": {
+    "title": "Pedido de certificado",
+    "summary": "Pedido generado para el alias «{{alias}}»",
+    "download": "Descargar el pedido",
+    "downloadAgain": "Descargar de nuevo",
+    "downloading": "Descargando…"
+  },
+  "certificate": {
+    "title": "Certificado",
+    "testingHelp": "En homologación, estos pasos se hacen en WSASS.",
+    "stepAlias": "En ARCA, en «Administración de certificados digitales», agregá el alias «{{alias}}» con el pedido.",
+    "stepDownload": "Descargá el certificado que te da ARCA.",
+    "stepAuthorize": "En «Administrador de relaciones», autorizá {{services}} para el alias.",
+    "openArca": "Abrir ARCA",
+    "file": "Certificado de ARCA (.crt)",
+    "choose": "Elegir archivo",
+    "drop": "Arrastrá el certificado (.crt) o",
+    "uploading": "Subiendo…",
+    "summary": "Vence el {{date}}",
+    "alias": "Alias",
+    "expires": "Vence",
+    "expired": "Venció",
+    "renew": "Renovar",
+    "renewAlias": "Alias del certificado nuevo",
+    "renewGenerate": "Generar el pedido",
+    "current": "Actual",
+    "next": "Nuevo",
+    "pendingRequest": "Pedido generado · falta el certificado",
+    "pendingLoaded": "Certificado cargado · falta la prueba",
+    "upload": "Subir el certificado",
+    "cancelRenewal": "Cancelar la renovación",
+    "cancelling": "Cancelando…",
+    "soon": "El certificado vence el {{date}}. Renovalo antes para no cortar la facturación.",
+    "expiredBanner": "El certificado venció el {{date}}. No se puede emitir hasta renovarlo."
+  },
+  "test": {
+    "title": "Prueba",
+    "run": "Probar",
+    "again": "Probar de nuevo",
+    "running": "Probando…",
+    "lastTested": "Probado el {{date}} a las {{time}}",
+    "notTested": "Sin probar"
+  },
+  "checks": {
+    "Ready": "Responde",
+    "ticket": "Ticket vigente hasta las {{time}}",
+    "NotAuthorized": "Falta autorizar el servicio para el alias «{{alias}}»",
+    "Blocked": "ARCA no acepta otro pedido hasta las {{time}}",
+    "ClockSkew": "La hora del servidor no coincide con la de ARCA",
+    "Unavailable": "ARCA no respondió",
+    "Failed": "ARCA rechazó la consulta"
+  },
+  "services": {
+    "title": "Servicios",
+    "uses": "Lo usa esta empresa: {{service}}",
+    "usesLabel": "Lo usa esta empresa",
+    "authorize": "Autorizá {{service}} para el alias en ARCA y probá la conexión.",
+    "names": {
+      "ws_sr_constancia_inscripcion": "Constancia de inscripción",
+      "wsfe": "Facturación electrónica"
+    }
+  },
+  "activate": "Activar la conexión",
+  "activating": "Activando…",
+  "disconnect": {
+    "action": "Desconectar",
+    "title": "¿Desconectar ARCA?",
+    "description": "Se borran la clave privada y los tickets de acceso. Para volver a emitir hay que generar un certificado nuevo.",
+    "pending": "Desconectando…"
+  },
+  "conflict": {
+    "title": "Revisar",
+    "text": "Otra persona cambió la conexión mientras la editabas.",
+    "read": "Leer lo actual",
+    "reading": "Leyendo…"
+  },
+  "registry": {
+    "title": "Empresa",
+    "help": "Los datos salen del padrón de ARCA cada vez que se prueba la conexión.",
+    "legalName": "Razón social",
+    "cuit": "CUIT",
+    "vatCondition": "Condición frente al IVA",
+    "fiscalAddress": "Domicilio fiscal",
+    "empty": "Los datos de la empresa llegan con la primera prueba.",
+    "vat": {
+      "RegisteredTaxpayer": "Responsable inscripto",
+      "Monotax": "Monotributo",
+      "Exempt": "Exento",
+      "NotRegistered": "No inscripto"
+    }
+  },
+  "invoicing": {
+    "title": "Facturación · Punto de venta",
+    "help": "Elegí uno que no use otro sistema: la numeración la lleva la plataforma.",
+    "pointOfSale": "Punto de venta",
+    "number": "Número",
+    "option": "{{number}} · {{type}}",
+    "blocked": "{{number}} · bloqueado en ARCA",
+    "none": "ARCA no devolvió puntos de venta de web service para esta CUIT.",
+    "search": "Volver a buscar",
+    "searching": "Buscando…",
+    "loadError": "No pudimos traer los puntos de venta.",
+    "notChosen": "Sin elegir",
+    "change": "Cambiar",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "cancel": "Cancelar"
+  }
+}

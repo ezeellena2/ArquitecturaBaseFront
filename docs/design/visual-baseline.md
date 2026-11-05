@@ -377,6 +377,13 @@ revisión pendiente como motivo. Recorridos:
 - Horarios, fechas especiales y FAQ con validación real; los textos anteriores quedan para revisión manual.
   [Detalle](../../../ArquitecturaBase/docs/reviews/2026-10-03-informacion-del-negocio-guiada.md).
 
+### ARCA (2026-11-05)
+
+- `/configuracion/arca`, con `arca.read`: una sola pantalla sin estado en la URL. El alta va por zonas numeradas que se
+  habilitan de a una (AC1-A) y la conexión activa, por zonas con su acción en la banda (AC2-A); los estados son los de AC3.
+- Cada familia de servicios suma su zona; hoy, Facturación con el punto de venta. Capturas `arca-*.png`.
+- Tableros, textos, lo que se fijó al registrar y piezas: [arca-conexion.md](arca-conexion.md).
+
 ### Chat de WhatsApp
 
 - `/whatsapp/chat`: panel con la geometría de Administración, bandeja y conversación en `Surface`, historial y compositor.

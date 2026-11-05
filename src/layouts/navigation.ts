@@ -70,6 +70,7 @@ export const administration: NavigationPanel = {
       { labelKey: "navigation.appearance", to: "/configuracion/apariencia", icon: PaletteIcon, permission: "settings.manage" },
       { labelKey: "navigation.ai", to: "/configuracion/ia", icon: PreferencesIcon, permission: "ai.read" },
       { labelKey: "navigation.businessInformation", to: "/configuracion/negocio", icon: PreferencesIcon, permission: "ai.business.read" },
+      { labelKey: "navigation.arca", to: "/configuracion/arca", icon: PreferencesIcon, permission: "arca.read" },
     ] },
   ],
 };

@@ -143,6 +143,10 @@ export const routes: RouteObject[] = [
                 element: <ProtectedRoute permission="ai.business.read" />,
                 children: [{ path: "/configuracion/negocio", lazy: async () => ({ Component: (await import("@/features/artificial-intelligence/pages/BusinessInformationPage")).BusinessInformationPage }) }],
               },
+              {
+                element: <ProtectedRoute permission="arca.read" />,
+                children: [{ path: "/configuracion/arca", lazy: async () => ({ Component: (await import("@/features/arca/pages/ArcaSettingsPage")).ArcaSettingsPage }) }],
+              },
             ],
           },
         ],
